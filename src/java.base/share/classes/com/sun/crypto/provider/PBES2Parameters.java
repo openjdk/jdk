@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,15 +92,15 @@ import sun.security.util.*;
  */
 abstract class PBES2Parameters extends AlgorithmParametersSpi {
 
-    private static ObjectIdentifier pkcs5PBKDF2_OID =
+    private static final ObjectIdentifier pkcs5PBKDF2_OID =
             ObjectIdentifier.of(KnownOIDs.PBKDF2WithHmacSHA1);
-    private static ObjectIdentifier pkcs5PBES2_OID =
+    private static final ObjectIdentifier pkcs5PBES2_OID =
             ObjectIdentifier.of(KnownOIDs.PBES2);
-    private static ObjectIdentifier aes128CBC_OID =
+    private static final ObjectIdentifier aes128CBC_OID =
             ObjectIdentifier.of(KnownOIDs.AES_128$CBC$NoPadding);
-    private static ObjectIdentifier aes192CBC_OID =
+    private static final ObjectIdentifier aes192CBC_OID =
             ObjectIdentifier.of(KnownOIDs.AES_192$CBC$NoPadding);
-    private static ObjectIdentifier aes256CBC_OID =
+    private static final ObjectIdentifier aes256CBC_OID =
             ObjectIdentifier.of(KnownOIDs.AES_256$CBC$NoPadding);
 
     // the PBES2 algorithm name
@@ -166,6 +166,8 @@ abstract class PBES2Parameters extends AlgorithmParametersSpi {
         case "HmacSHA256":
         case "HmacSHA384":
         case "HmacSHA512":
+        case "HmacSHA512/224":
+        case "HmacSHA512/256":
             kdfAlgo_OID = ObjectIdentifier.of(KnownOIDs.findMatch(kdfAlgo));
             break;
         default:
@@ -174,7 +176,6 @@ abstract class PBES2Parameters extends AlgorithmParametersSpi {
         }
 
         if (cipherAlgo.equals("AES")) {
-            this.keysize = keysize;
             switch (keysize) {
             case 128:
                 cipherAlgo_OID = aes128CBC_OID;
@@ -269,48 +270,36 @@ abstract class PBES2Parameters extends AlgorithmParametersSpi {
         }
         iCount = pBKDF2_params.data.getInteger();
 
-        DerValue prf = null;
         // keyLength INTEGER (1..MAX) OPTIONAL,
-        if (pBKDF2_params.data.available() > 0) {
-            DerValue keyLength = pBKDF2_params.data.getDerValue();
-            if (keyLength.tag == DerValue.tag_Integer) {
-                keysize = keyLength.getInteger() * 8; // keysize (in bits)
-            } else {
-                // Should be the prf
-                prf = keyLength;
-            }
+        var ksDer = pBKDF2_params.data.getOptional(DerValue.tag_Integer);
+        if (ksDer.isPresent()) {
+            keysize = ksDer.get().getInteger() * 8; // keysize (in bits)
         }
+
         // prf AlgorithmIdentifier {{PBKDF2-PRFs}} DEFAULT algid-hmacWithSHA1
-        String kdfAlgo = "HmacSHA1";
-        if (prf == null) {
-            if (pBKDF2_params.data.available() > 0) {
-                prf = pBKDF2_params.data.getDerValue();
-            }
-        }
-        if (prf != null) {
+        String kdfAlgo;
+        var prfDer = pBKDF2_params.data.getOptional(DerValue.tag_Sequence);
+        if (prfDer.isPresent()) {
+            DerValue prf = prfDer.get();
             kdfAlgo_OID = prf.data.getOID();
             KnownOIDs o = KnownOIDs.findMatch(kdfAlgo_OID.toString());
             if (o == null || (!o.stdName().equals("HmacSHA1") &&
-                !o.stdName().equals("HmacSHA224") &&
-                !o.stdName().equals("HmacSHA256") &&
-                !o.stdName().equals("HmacSHA384") &&
-                !o.stdName().equals("HmacSHA512"))) {
+                    !o.stdName().equals("HmacSHA224") &&
+                    !o.stdName().equals("HmacSHA256") &&
+                    !o.stdName().equals("HmacSHA384") &&
+                    !o.stdName().equals("HmacSHA512") &&
+                    !o.stdName().equals("HmacSHA512/224") &&
+                    !o.stdName().equals("HmacSHA512/256"))) {
                 throw new IOException("PBE parameter parsing error: "
                         + "expecting the object identifier for a HmacSHA key "
                         + "derivation function");
             }
             kdfAlgo = o.stdName();
-
-            if (prf.data.available() != 0) {
-                // parameter is 'NULL' for all HmacSHA KDFs
-                DerValue parameter = prf.data.getDerValue();
-                if (parameter.tag != DerValue.tag_Null) {
-                    throw new IOException("PBE parameter parsing error: "
-                            + "not an ASN.1 NULL tag");
-                }
-            }
+            prf.data.getOptional(DerValue.tag_Null);
+            prf.data.atEnd();
+        } else {
+            kdfAlgo = "HmacSHA1";
         }
-
         return kdfAlgo;
     }
 
@@ -349,7 +338,7 @@ abstract class PBES2Parameters extends AlgorithmParametersSpi {
             T engineGetParameterSpec(Class<T> paramSpec)
         throws InvalidParameterSpecException
     {
-        if (PBEParameterSpec.class.isAssignableFrom(paramSpec)) {
+        if (paramSpec.isAssignableFrom(PBEParameterSpec.class)) {
             return paramSpec.cast(
                 new PBEParameterSpec(this.salt, this.iCount, this.cipherParam));
         } else {
@@ -375,7 +364,7 @@ abstract class PBES2Parameters extends AlgorithmParametersSpi {
         }
 
         DerOutputStream prf = new DerOutputStream();
-        // algorithm is id-hmacWithSHA1/SHA224/SHA256/SHA384/SHA512
+        // algorithm is id-hmacWith<MD>
         prf.putOID(kdfAlgo_OID);
         // parameters is 'NULL'
         prf.putNull();
@@ -412,7 +401,8 @@ abstract class PBES2Parameters extends AlgorithmParametersSpi {
      *
      * The algorithn name pattern is: "PBEWith<prf>And<encryption>"
      * where <prf> is one of: HmacSHA1, HmacSHA224, HmacSHA256, HmacSHA384,
-     * or HmacSHA512, and <encryption> is AES with a keysize suffix.
+     * HmacSHA512, HmacSHA512/224, or HmacSHA512/256 and <encryption> is
+     * AES with a keysize suffix.
      */
     protected String engineToString() {
         return pbes2AlgorithmName;
@@ -454,6 +444,18 @@ abstract class PBES2Parameters extends AlgorithmParametersSpi {
         }
     }
 
+    public static final class HmacSHA512_224AndAES_128 extends PBES2Parameters {
+        public HmacSHA512_224AndAES_128() throws NoSuchAlgorithmException {
+            super("PBEWithHmacSHA512/224AndAES_128");
+        }
+    }
+
+    public static final class HmacSHA512_256AndAES_128 extends PBES2Parameters {
+        public HmacSHA512_256AndAES_128() throws NoSuchAlgorithmException {
+            super("PBEWithHmacSHA512/256AndAES_128");
+        }
+    }
+
     public static final class HmacSHA1AndAES_256 extends PBES2Parameters {
         public HmacSHA1AndAES_256() throws NoSuchAlgorithmException {
             super("PBEWithHmacSHA1AndAES_256");
@@ -481,6 +483,18 @@ abstract class PBES2Parameters extends AlgorithmParametersSpi {
     public static final class HmacSHA512AndAES_256 extends PBES2Parameters {
         public HmacSHA512AndAES_256() throws NoSuchAlgorithmException {
             super("PBEWithHmacSHA512AndAES_256");
+        }
+    }
+
+    public static final class HmacSHA512_224AndAES_256 extends PBES2Parameters {
+        public HmacSHA512_224AndAES_256() throws NoSuchAlgorithmException {
+            super("PBEWithHmacSHA512/224AndAES_256");
+        }
+    }
+
+    public static final class HmacSHA512_256AndAES_256 extends PBES2Parameters {
+        public HmacSHA512_256AndAES_256() throws NoSuchAlgorithmException {
+            super("PBEWithHmacSHA512/256AndAES_256");
         }
     }
 }

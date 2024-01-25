@@ -19,8 +19,11 @@ grant codeBase "jrt:/java.net.http" {
     permission java.lang.RuntimePermission "accessClassInPackage.sun.net.util";
     permission java.lang.RuntimePermission "accessClassInPackage.sun.net.www";
     permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.misc";
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.ref";
     permission java.lang.RuntimePermission "modifyThread";
     permission java.net.SocketPermission "*","connect,resolve";
+    // required if the HTTPClient is configured to use a local bind address
+    permission java.net.SocketPermission "localhost:*","listen,resolve";
     permission java.net.URLPermission "http:*","*:*";
     permission java.net.URLPermission "https:*","*:*";
     permission java.net.URLPermission "ws:*","*:*";
@@ -47,6 +50,8 @@ grant codeBase "jrt:/java.smartcardio" {
                    "accessClassInPackage.sun.security.jca";
     permission java.lang.RuntimePermission
                    "accessClassInPackage.sun.security.util";
+    permission java.lang.RuntimePermission
+                   "accessClassInPackage.jdk.internal.util";
     permission java.util.PropertyPermission
                    "javax.smartcardio.TerminalFactory.DefaultType", "read";
     permission java.util.PropertyPermission "os.name", "read";
@@ -92,6 +97,8 @@ grant codeBase "jrt:/java.xml.crypto" {
     permission java.security.SecurityPermission
                    "com.sun.org.apache.xml.internal.security.register";
     permission java.security.SecurityPermission
+                   "getProperty.jdk.xml.dsig.hereFunctionSupported";
+    permission java.security.SecurityPermission
                    "getProperty.jdk.xml.dsig.secureValidationPolicy";
     permission java.lang.RuntimePermission
                    "accessClassInPackage.com.sun.org.apache.xml.internal.*";
@@ -99,6 +106,8 @@ grant codeBase "jrt:/java.xml.crypto" {
                    "accessClassInPackage.com.sun.org.apache.xpath.internal";
     permission java.lang.RuntimePermission
                    "accessClassInPackage.com.sun.org.apache.xpath.internal.*";
+    permission java.io.FilePermission "<<ALL FILES>>","read";
+    permission java.net.SocketPermission "*", "connect,resolve";
 };
 
 
@@ -110,22 +119,19 @@ grant codeBase "jrt:/jdk.charsets" {
     permission java.util.PropertyPermission "os.name", "read";
     permission java.lang.RuntimePermission "charsetProvider";
     permission java.lang.RuntimePermission
-                   "accessClassInPackage.jdk.internal.misc";
-    permission java.lang.RuntimePermission "accessClassInPackage.sun.nio.cs";
-};
-
-grant codeBase "jrt:/jdk.crypto.ec" {
+                   "accessClassInPackage.jdk.internal.access";
     permission java.lang.RuntimePermission
-                   "accessClassInPackage.sun.security.*";
-    permission java.lang.RuntimePermission "loadLibrary.sunec";
-    permission java.security.SecurityPermission "putProviderProperty.SunEC";
-    permission java.security.SecurityPermission "clearProviderProperties.SunEC";
-    permission java.security.SecurityPermission "removeProviderProperty.SunEC";
+                   "accessClassInPackage.jdk.internal.misc";
+    permission java.lang.RuntimePermission
+                   "accessClassInPackage.jdk.internal.util";
+    permission java.lang.RuntimePermission "accessClassInPackage.sun.nio.cs";
 };
 
 grant codeBase "jrt:/jdk.crypto.cryptoki" {
     permission java.lang.RuntimePermission
                    "accessClassInPackage.com.sun.crypto.provider";
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.misc";
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.access";
     permission java.lang.RuntimePermission
                    "accessClassInPackage.sun.security.*";
     permission java.lang.RuntimePermission "accessClassInPackage.sun.nio.ch";
@@ -157,20 +163,8 @@ grant codeBase "jrt:/jdk.internal.le" {
     permission java.security.AllPermission;
 };
 
-grant codeBase "jrt:/jdk.internal.vm.compiler" {
+grant codeBase "jrt:/jdk.graal.compiler" {
     permission java.security.AllPermission;
-};
-
-grant codeBase "jrt:/jdk.internal.vm.compiler.management" {
-    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.vm.compiler.collections";
-    permission java.lang.RuntimePermission "accessClassInPackage.jdk.vm.ci.runtime";
-    permission java.lang.RuntimePermission "accessClassInPackage.jdk.vm.ci.services";
-    permission java.lang.RuntimePermission "accessClassInPackage.org.graalvm.compiler.core.common";
-    permission java.lang.RuntimePermission "accessClassInPackage.org.graalvm.compiler.debug";
-    permission java.lang.RuntimePermission "accessClassInPackage.org.graalvm.compiler.hotspot";
-    permission java.lang.RuntimePermission "accessClassInPackage.org.graalvm.compiler.options";
-    permission java.lang.RuntimePermission "accessClassInPackage.org.graalvm.compiler.phases.common.jmx";
-    permission java.lang.RuntimePermission "accessClassInPackage.org.graalvm.compiler.serviceprovider";
 };
 
 grant codeBase "jrt:/jdk.jsobject" {

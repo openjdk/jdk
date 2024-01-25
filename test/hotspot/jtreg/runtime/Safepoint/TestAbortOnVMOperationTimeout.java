@@ -26,8 +26,9 @@ import jdk.test.lib.process.*;
 
 /*
  * @test TestAbortOnVMOperationTimeout
- * @bug 8181143
+ * @bug 8181143 8269523 8307653
  * @summary Check abort on VM timeout is working
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -36,36 +37,40 @@ import jdk.test.lib.process.*;
 
 public class TestAbortOnVMOperationTimeout {
 
+    // A static array is unlikely to be optimised away by the JIT.
+    static Object[] arr;
+
     public static void main(String[] args) throws Exception {
         if (args.length > 0) {
-            Object[] arr = new Object[10_000_000];
+            arr = new Object[10_000_000];
             for (int i = 0; i < arr.length; i++) {
                arr[i] = new Object();
             }
+            // Try to force at least one full GC cycle.
+            System.gc();
             return;
         }
 
-        // These should definitely pass: more than a minute is enough for Serial to act.
-        // The values are deliberately non-round to trip off periodic task granularity.
-        for (int delay : new int[]{63423, 12388131}) {
-            testWith(delay, true);
-        }
+        // This should definitely pass: more than 3 minutes is enough for Serial to act.
+        // The value is deliberately non-round to trip off periodic task granularity.
+        testWith(183423, true);
 
-        // These should fail: Serial is not very fast. Traversing 10M objects in 5 ms
-        // means less than 0.5 ns per object, which is not doable.
-        for (int delay : new int[]{0, 1, 5}) {
+        // These should fail: Serial is not very fast but we have seen the test
+        // execute as quickly as 2ms!
+        for (int delay : new int[]{0, 1}) {
             testWith(delay, false);
         }
     }
 
     public static void testWith(int delay, boolean shouldPass) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+AbortVMOnVMOperationTimeout",
                 "-XX:AbortVMOnVMOperationTimeoutDelay=" + delay,
                 "-Xmx256m",
                 "-XX:+UseSerialGC",
                 "-XX:-CreateCoredumpOnCrash",
+                "-Xlog:gc*=info",
                 "TestAbortOnVMOperationTimeout",
                 "foo"
         );
@@ -74,9 +79,9 @@ public class TestAbortOnVMOperationTimeout {
         if (shouldPass) {
             output.shouldHaveExitValue(0);
         } else {
-            output.shouldMatch("VM operation took too long");
+            output.shouldContain("VM operation took too long");
             output.shouldNotHaveExitValue(0);
         }
+        output.reportDiagnosticSummary();
     }
 }
-

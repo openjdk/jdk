@@ -25,6 +25,7 @@
  * @test
  * @bug 6852574
  * @summary Tests Enum subclass encoding
+ * @run main/othervm -Djava.security.manager=allow Test6852574
  * @author Sergey Malenkov
  */
 

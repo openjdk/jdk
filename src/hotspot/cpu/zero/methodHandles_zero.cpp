@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2009, 2010, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -40,7 +40,7 @@
 
 void MethodHandles::invoke_target(Method* method, TRAPS) {
 
-  JavaThread *thread = THREAD->as_Java_thread();
+  JavaThread *thread = THREAD;
   ZeroStack *stack = thread->zero_stack();
   InterpreterFrame *frame = thread->top_zero_frame()->as_interpreter_frame();
   interpreterState istate = frame->interpreter_state();
@@ -57,7 +57,7 @@ void MethodHandles::invoke_target(Method* method, TRAPS) {
 
 oop MethodHandles::popFromStack(TRAPS) {
 
-  JavaThread *thread = THREAD->as_Java_thread();
+  JavaThread *thread = THREAD;
   InterpreterFrame *frame = thread->top_zero_frame()->as_interpreter_frame();
   interpreterState istate = frame->interpreter_state();
   intptr_t* topOfStack = istate->stack();
@@ -84,7 +84,7 @@ void MethodHandles::setup_frame_anchor(JavaThread* thread) {
     frame = frame->next();
   }
 
-  assert(frame != NULL, "must be");
+  assert(frame != nullptr, "must be");
   thread->set_last_Java_frame(frame, sp);
 }
 
@@ -93,7 +93,7 @@ void MethodHandles::teardown_frame_anchor(JavaThread* thread) {
 }
 
 void MethodHandles::throw_AME(Klass* rcvr, Method* interface_method, TRAPS) {
-  JavaThread* thread = THREAD->as_Java_thread();
+  JavaThread* thread = THREAD;
   bool has_last_Java_frame = thread->has_last_Java_frame();
   if (!has_last_Java_frame) {
     setup_frame_anchor(thread);
@@ -105,7 +105,7 @@ void MethodHandles::throw_AME(Klass* rcvr, Method* interface_method, TRAPS) {
 }
 
 void MethodHandles::throw_NPE(TRAPS) {
-  JavaThread* thread = THREAD->as_Java_thread();
+  JavaThread* thread = THREAD;
   bool has_last_Java_frame = thread->has_last_Java_frame();
   if (!has_last_Java_frame) {
     setup_frame_anchor(thread);
@@ -118,7 +118,7 @@ void MethodHandles::throw_NPE(TRAPS) {
 
 int MethodHandles::method_handle_entry_invokeBasic(Method* method, intptr_t UNUSED, TRAPS) {
 
-  JavaThread *thread = THREAD->as_Java_thread();
+  JavaThread *thread = THREAD;
   InterpreterFrame *frame = thread->top_zero_frame()->as_interpreter_frame();
   interpreterState istate = frame->interpreter_state();
   intptr_t* topOfStack = istate->stack();
@@ -127,7 +127,7 @@ int MethodHandles::method_handle_entry_invokeBasic(Method* method, intptr_t UNUS
   int numArgs = method->size_of_parameters();
 
   oop recv = STACK_OBJECT(-numArgs);
-  if (recv == NULL) {
+  if (recv == nullptr) {
     throw_NPE(THREAD);
     return 0;
   }
@@ -156,7 +156,7 @@ int MethodHandles::method_handle_entry_linkToStaticOrSpecial(Method* method, int
 }
 
 int MethodHandles::method_handle_entry_linkToInterface(Method* method, intptr_t UNUSED, TRAPS) {
-  JavaThread *thread = THREAD->as_Java_thread();
+  JavaThread *thread = THREAD;
   InterpreterFrame *frame = thread->top_zero_frame()->as_interpreter_frame();
   interpreterState istate = frame->interpreter_state();
 
@@ -172,7 +172,7 @@ int MethodHandles::method_handle_entry_linkToInterface(Method* method, intptr_t 
 
   int numArgs = target->size_of_parameters();
   oop recv = STACK_OBJECT(-numArgs);
-  if (recv == NULL) {
+  if (recv == nullptr) {
     throw_NPE(THREAD);
     return 0;
   }
@@ -190,7 +190,7 @@ int MethodHandles::method_handle_entry_linkToInterface(Method* method, intptr_t 
   // that the method no longer exists (got deleted) or is private.
   // Private class methods can never be an implementation of an
   // interface method. In those cases, throw AME.
-  if (vmtarget != NULL) {
+  if (vmtarget != nullptr) {
     invoke_target(vmtarget, THREAD);
   } else {
     throw_AME(recv->klass(), target, THREAD);
@@ -200,7 +200,7 @@ int MethodHandles::method_handle_entry_linkToInterface(Method* method, intptr_t 
 }
 
 int MethodHandles::method_handle_entry_linkToVirtual(Method* method, intptr_t UNUSED, TRAPS) {
-  JavaThread *thread = THREAD->as_Java_thread();
+  JavaThread *thread = THREAD;
 
   InterpreterFrame *frame = thread->top_zero_frame()->as_interpreter_frame();
   interpreterState istate = frame->interpreter_state();
@@ -216,7 +216,7 @@ int MethodHandles::method_handle_entry_linkToVirtual(Method* method, intptr_t UN
 
   int numArgs = target->size_of_parameters();
   oop recv = STACK_OBJECT(-numArgs);
-  if (recv == NULL) {
+  if (recv == nullptr) {
     throw_NPE(THREAD);
     return 0;
   }
@@ -258,7 +258,7 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
     return ZeroInterpreterGenerator::generate_entry_impl(masm, (address) MethodHandles::method_handle_entry_linkToVirtual);
   default:
     ShouldNotReachHere();
-    return NULL;
+    return nullptr;
   }
 }
 

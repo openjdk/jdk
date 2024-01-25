@@ -24,8 +24,8 @@
 /*
   test
   @bug 4784285 4785920
+  @key printer
   @summary check whether Print- and Page- dialogs are modal and correct window activated after their closing
-  @author son@sparc.spb.su: area=PrinterJob.modality
   @run applet/manual=yesno PrinterDialogsModalityTest.html
 */
 

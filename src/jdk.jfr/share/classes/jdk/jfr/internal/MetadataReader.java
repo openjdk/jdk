@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import static jdk.jfr.internal.MetadataDescriptor.ELEMENT_TYPE;
 import java.io.DataInput;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +51,7 @@ import jdk.jfr.ValueDescriptor;
 import jdk.jfr.internal.MetadataDescriptor.Element;
 import jdk.jfr.internal.consumer.RecordingInput;
 import jdk.jfr.internal.consumer.StringParser;
+import jdk.jfr.internal.util.Utils;
 
 /**
  * Parses metadata.
@@ -66,6 +67,7 @@ final class MetadataReader {
     public MetadataReader(RecordingInput input) throws IOException {
         this.input = input;
         int size = input.readInt();
+        input.require(size, "Metadata string pool size %d exceeds available data" );
         this.pool = new ArrayList<>(size);
         StringParser p = new StringParser(null, false);
         for (int i = 0; i < size; i++) {
@@ -73,18 +75,19 @@ final class MetadataReader {
         }
         descriptor = new MetadataDescriptor();
         Element root = createElement();
-        Element metadata = root.elements("metadata").get(0);
+        Element metadata = root.elements("metadata").getFirst();
         declareTypes(metadata);
         defineTypes(metadata);
         annotateTypes(metadata);
         buildEvenTypes();
-        Element time = root.elements("region").get(0);
+        Element time = root.elements("region").getFirst();
         descriptor.gmtOffset = time.attribute(MetadataDescriptor.ATTRIBUTE_GMT_OFFSET, 1);
+        descriptor.dst = time.attribute(MetadataDescriptor.ATTRIBUTE_DST, 0L);
         descriptor.locale = time.attribute(MetadataDescriptor.ATTRIBUTE_LOCALE, "");
         descriptor.root = root;
         if (Logger.shouldLog(LogTag.JFR_SYSTEM_PARSER, LogLevel.TRACE)) {
              List<Type> ts = new ArrayList<>(types.values());
-             Collections.sort(ts, (x,y) -> x.getName().compareTo(y.getName()));
+             ts.sort(Comparator.comparing(Type::getName));
              for (Type t : ts) {
                  t.log("Found", LogTag.JFR_SYSTEM_PARSER, LogLevel.TRACE);
              }
@@ -124,8 +127,8 @@ final class MetadataReader {
             type.setAnnotations(aes);
 
             int index = 0;
-            if (type instanceof PlatformEventType) {
-                List<SettingDescriptor> settings = ((PlatformEventType) type).getAllSettings();
+            if (type instanceof PlatformEventType pType) {
+                List<SettingDescriptor> settings = pType.getAllSettings();
                 for (Element settingElement : typeElement.elements(ELEMENT_SETTING)) {
                     ArrayList<AnnotationElement> annotations = new ArrayList<>();
                     for (Element annotationElement : settingElement.elements(ELEMENT_ANNOTATION)) {
@@ -180,33 +183,26 @@ final class MetadataReader {
 
     private Object objectify(String typeName, String text) throws IOException {
         try {
-            switch (typeName) {
-            case "int":
-                return Integer.valueOf(text);
-            case "long":
-                return Long.valueOf(text);
-            case "double":
-                return Double.valueOf(text);
-            case "float":
-                return Float.valueOf(text);
-            case "short":
-                return Short.valueOf(text);
-            case "char":
-                if (text.length() != 1) {
-                    throw new IOException("Unexpected size of char");
+            return switch (typeName) {
+                case "int" -> Integer.valueOf(text);
+                case "long" -> Long.valueOf(text);
+                case "double" ->   Double.valueOf(text);
+                case "float" -> Float.valueOf(text);
+                case "short" -> Short.valueOf(text);
+                case "char" -> {
+                    if (text.length() != 1) {
+                        throw new IOException("Unexpected size of char");
+                    }
+                    yield text.charAt(0);
                 }
-                return text.charAt(0);
-            case "byte":
-                return Byte.valueOf(text);
-            case "boolean":
-                return Boolean.valueOf(text);
-            case "java.lang.String":
-                return text;
-            }
+                case "byte" -> Byte.valueOf(text);
+                case "boolean" -> Boolean.valueOf(text);
+                case "java.lang.String" -> text;
+                default -> throw new IOException("Unsupported type for annotation " + typeName);
+            };
         } catch (IllegalArgumentException iae) {
             throw new IOException("Could not parse text representation of " + typeName);
         }
-        throw new IOException("Unsupported type for annotation " + typeName);
     }
 
     private Type getType(String attribute, Element element) {
@@ -221,8 +217,8 @@ final class MetadataReader {
 
     private void buildEvenTypes() {
         for (Type type : descriptor.types) {
-            if (type instanceof PlatformEventType) {
-                descriptor.eventTypes.add(PrivateAccess.getInstance().newEventType((PlatformEventType) type));
+            if (type instanceof PlatformEventType pType) {
+                descriptor.eventTypes.add(PrivateAccess.getInstance().newEventType(pType));
             }
         }
     }

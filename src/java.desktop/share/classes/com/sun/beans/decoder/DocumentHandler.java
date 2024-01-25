@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,7 @@ import jdk.internal.access.SharedSecrets;
  * @see ElementHandler
  */
 public final class DocumentHandler extends DefaultHandler {
+    @SuppressWarnings("removal")
     private final AccessControlContext acc = AccessController.getContext();
     private final Map<String, Class<? extends ElementHandler>> handlers = new HashMap<>();
     private final Map<String, Object> environment = new HashMap<>();
@@ -198,8 +199,8 @@ public final class DocumentHandler extends DefaultHandler {
      * Indicates whether the variable with specified identifier is defined.
      *
      * @param id  the identifier
-     * @return @{code true} if the variable is defined;
-     *         @{code false} otherwise
+     * @return {@code true} if the variable is defined;
+     *         {@code false} otherwise
      */
     public boolean hasVariable(String id) {
         return this.environment.containsKey(id);
@@ -229,18 +230,18 @@ public final class DocumentHandler extends DefaultHandler {
     }
 
     /**
-     * Returns the array of readed objects.
+     * Returns the array of read objects.
      *
-     * @return the array of readed objects
+     * @return the array of read objects
      */
     public Object[] getObjects() {
         return this.objects.toArray();
     }
 
     /**
-     * Adds the object to the list of readed objects.
+     * Adds the object to the list of read objects.
      *
-     * @param object  the object that is readed from XML document
+     * @param object  the object that is read from XML document
      */
     void addObject(Object object) {
         this.objects.add(object);
@@ -366,6 +367,7 @@ public final class DocumentHandler extends DefaultHandler {
      *
      * @param input  the input source to parse
      */
+    @SuppressWarnings("removal")
     public void parse(final InputSource input) {
         if ((this.acc == null) && (null != System.getSecurityManager())) {
             throw new SecurityException("AccessControlContext is not set");
@@ -376,7 +378,7 @@ public final class DocumentHandler extends DefaultHandler {
                 try {
                     SAXParserFactory.newInstance().newSAXParser().parse(input, DocumentHandler.this);
                 }
-                catch (ParserConfigurationException exception) {
+                catch (ParserConfigurationException | IOException exception) {
                     handleException(exception);
                 }
                 catch (SAXException wrapper) {
@@ -384,9 +386,6 @@ public final class DocumentHandler extends DefaultHandler {
                     if (exception == null) {
                         exception = wrapper;
                     }
-                    handleException(exception);
-                }
-                catch (IOException exception) {
                     handleException(exception);
                 }
                 return null;

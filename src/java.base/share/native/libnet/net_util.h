@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,14 +45,12 @@
  *
  * The naming convention for field IDs is
  *      <class abbrv>_<fieldName>ID
- * i.e. psi_timeoutID is PlainSocketImpl's timeout field's ID.
  */
 extern jclass ia_class;
 extern jfieldID iac_addressID;
 extern jfieldID iac_familyID;
 extern jfieldID iac_hostNameID;
 extern jfieldID iac_origHostNameID;
-extern jfieldID ia_preferIPv6AddressID;
 
 JNIEXPORT void JNICALL initInetAddressIDs(JNIEnv *env);
 
@@ -84,13 +82,6 @@ extern jfieldID ni_addrsID;
 extern jfieldID ni_descID;
 extern jmethodID ni_ctrID;
 
-/* PlainSocketImpl fields */
-extern jfieldID psi_timeoutID;
-extern jfieldID psi_fdID;
-extern jfieldID psi_addressID;
-extern jfieldID psi_portID;
-extern jfieldID psi_localportID;
-
 /* DatagramPacket fields */
 extern jfieldID dp_addressID;
 extern jfieldID dp_portID;
@@ -118,9 +109,6 @@ JNIEXPORT void JNICALL Java_java_net_NetworkInterface_init(JNIEnv *env, jclass c
 
 JNIEXPORT void JNICALL NET_ThrowNew(JNIEnv *env, int errorNum, char *msg);
 
-void NET_ThrowCurrent(JNIEnv *env, char *msg);
-
-jfieldID NET_GetFileDescriptorID(JNIEnv *env);
 
 JNIEXPORT jint JNICALL ipv4_available();
 JNIEXPORT jint JNICALL ipv6_available();
@@ -154,8 +142,6 @@ NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port,
 JNIEXPORT jobject JNICALL
 NET_SockaddrToInetAddress(JNIEnv *env, SOCKETADDRESS *sa, int *port);
 
-void platformInit();
-
 JNIEXPORT jint JNICALL NET_GetPortFromSockaddr(SOCKETADDRESS *sa);
 
 JNIEXPORT jboolean JNICALL
@@ -176,9 +162,6 @@ int NET_IsZeroAddr(jbyte* caddr);
  */
 
 JNIEXPORT int JNICALL
-NET_SocketAvailable(int fd, int *pbytes);
-
-JNIEXPORT int JNICALL
 NET_GetSockOpt(int fd, int level, int opt, void *result, int *len);
 
 JNIEXPORT int JNICALL
@@ -187,17 +170,15 @@ NET_SetSockOpt(int fd, int level, int opt, const void *arg, int len);
 JNIEXPORT int JNICALL
 NET_Bind(int fd, SOCKETADDRESS *sa, int len);
 
-JNIEXPORT int JNICALL
-NET_MapSocketOption(jint cmd, int *level, int *optname);
-
-JNIEXPORT int JNICALL
-NET_MapSocketOptionV6(jint cmd, int *level, int *optname);
-
 JNIEXPORT jint JNICALL
 NET_EnableFastTcpLoopback(int fd);
 
 unsigned short in_cksum(unsigned short *addr, int len);
 
 jint NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout);
+
+int lookupCharacteristicsToAddressFamily(int characteristics);
+
+int addressesInSystemOrder(int characteristics);
 
 #endif /* NET_UTILS_H */

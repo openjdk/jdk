@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,8 @@
 #ifndef SHARE_INTERPRETER_BYTECODES_HPP
 #define SHARE_INTERPRETER_BYTECODES_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // Bytecodes specifies all bytecodes used in the VM and
 // provides utility functions to get bytecode attributes.
@@ -306,8 +307,10 @@ class Bytecodes: AllStatic {
     number_of_codes
   };
 
+  static_assert(number_of_codes <= 256, "too many bytecodes");
+
   // Flag bits derived from format strings, can_trap, can_rewrite, etc.:
-  enum Flags {
+  enum Flags : jchar {
     // semantic flags:
     _bc_can_trap      = 1<<0,     // bytecode execution can trap or block
     _bc_can_rewrite   = 1<<1,     // bytecode execution has an alternate form
@@ -336,22 +339,22 @@ class Bytecodes: AllStatic {
   };
 
  private:
-  static bool        _is_initialized;
-  static const char* _name          [number_of_codes];
-  static BasicType   _result_type   [number_of_codes];
-  static s_char      _depth         [number_of_codes];
-  static u_char      _lengths       [number_of_codes];
-  static Code        _java_code     [number_of_codes];
-  static jchar       _flags         [(1<<BitsPerByte)*2]; // all second page for wide formats
+  static       bool        _is_initialized;
+  static const char* const _name       [number_of_codes];
+  static const BasicType   _result_type[number_of_codes];
+  static const s_char      _depth      [number_of_codes];
+  static const u_char      _lengths    [number_of_codes];
+  static const Code        _java_code  [number_of_codes];
+  static       jchar       _flags      [(1<<BitsPerByte)*2]; // all second page for wide formats
 
-  static void        def(Code code, const char* name, const char* format, const char* wide_format, BasicType result_type, int depth, bool can_trap);
-  static void        def(Code code, const char* name, const char* format, const char* wide_format, BasicType result_type, int depth, bool can_trap, Code java_code);
+  static void def_flags(Code code, const char* format, const char* wide_format, bool can_trap, Code java_code);
 
   // Verify that bcp points into method
 #ifdef ASSERT
   static bool        check_method(const Method* method, address bcp);
 #endif
   static bool check_must_rewrite(Bytecodes::Code bc);
+  static jchar compute_flags  (const char* format, jchar more_flags);  // compute the flags
 
  public:
   // Conversion
@@ -364,12 +367,12 @@ class Bytecodes: AllStatic {
   // argument is used for conversion of breakpoints into the original
   // bytecode.  The CI uses these methods but guarantees that
   // breakpoints are hidden so the method argument should be passed as
-  // NULL since in that case the bcp and Method* are unrelated
+  // null since in that case the bcp and Method* are unrelated
   // memory.
   static Code       code_at(const Method* method, address bcp) {
-    assert(method == NULL || check_method(method, bcp), "bcp must point into method");
+    assert(method == nullptr || check_method(method, bcp), "bcp must point into method");
     Code code = cast(*bcp);
-    assert(code != _breakpoint || method != NULL, "need Method* to decode breakpoint");
+    assert(code != _breakpoint || method != nullptr, "need Method* to decode breakpoint");
     return (code != _breakpoint) ? code : non_breakpoint_code_at(method, bcp);
   }
   static Code       java_code_at(const Method* method, address bcp) {
@@ -403,8 +406,8 @@ class Bytecodes: AllStatic {
   static bool        uses_cp_cache  (Code code)    { check(code);      return has_all_flags(code, _fmt_has_j, false); }
   // if 'end' is provided, it indicates the end of the code buffer which
   // should not be read past when parsing.
-  static int         special_length_at(Bytecodes::Code code, address bcp, address end = NULL);
-  static int         raw_special_length_at(address bcp, address end = NULL);
+  static int         special_length_at(Bytecodes::Code code, address bcp, address end = nullptr);
+  static int         raw_special_length_at(address bcp, address end = nullptr);
   static int         length_for_code_at(Bytecodes::Code code, address bcp)  { int l = length_for(code); return l > 0 ? l : special_length_at(code, bcp); }
   static int         length_at      (Method* method, address bcp)  { return length_for_code_at(code_at(method, bcp), bcp); }
   static int         java_length_at (Method* method, address bcp)  { return length_for_code_at(java_code_at(method, bcp), bcp); }
@@ -416,12 +419,12 @@ class Bytecodes: AllStatic {
                                                            || code == _fconst_0 || code == _dconst_0); }
   static bool        is_return      (Code code)    { return (_ireturn <= code && code <= _return); }
   static bool        is_invoke      (Code code)    { return (_invokevirtual <= code && code <= _invokedynamic); }
+  static bool        is_field_code  (Code code)    { return (_getstatic <= java_code(code) && java_code(code) <= _putfield); }
   static bool        has_receiver   (Code code)    { assert(is_invoke(code), "");  return code == _invokevirtual ||
                                                                                           code == _invokespecial ||
                                                                                           code == _invokeinterface; }
   static bool        has_optional_appendix(Code code) { return code == _invokedynamic || code == _invokehandle; }
 
-  static int         compute_flags  (const char* format, int more_flags = 0);  // compute the flags
   static int         flags          (int code, bool is_wide) {
     assert(code == (u_char)code, "must be a byte");
     return _flags[code + (is_wide ? (1<<BitsPerByte) : 0)];

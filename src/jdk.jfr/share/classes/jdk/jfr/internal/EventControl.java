@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import jdk.internal.module.Checks;
 import jdk.internal.module.Modules;
 import jdk.jfr.AnnotationElement;
 import jdk.jfr.Enabled;
@@ -44,25 +45,22 @@ import jdk.jfr.SettingDefinition;
 import jdk.jfr.StackTrace;
 import jdk.jfr.Threshold;
 import jdk.jfr.events.ActiveSettingEvent;
-import jdk.jfr.internal.EventInstrumentation.SettingInfo;
+import jdk.jfr.events.StackFilter;
+import jdk.jfr.internal.JVM;
 import jdk.jfr.internal.settings.CutoffSetting;
 import jdk.jfr.internal.settings.EnabledSetting;
+import jdk.jfr.internal.settings.LevelSetting;
 import jdk.jfr.internal.settings.PeriodSetting;
 import jdk.jfr.internal.settings.StackTraceSetting;
 import jdk.jfr.internal.settings.ThresholdSetting;
 import jdk.jfr.internal.settings.ThrottleSetting;
+import jdk.jfr.internal.util.Utils;
 
 // This class can't have a hard reference from PlatformEventType, since it
 // holds SettingControl instances that need to be released
 // when a class is unloaded (to avoid memory leaks).
 public final class EventControl {
-    final static class NamedControl {
-        public final String name;
-        public final Control control;
-        NamedControl(String name, Control control) {
-            this.name = name;
-            this.control = control;
-        }
+    record NamedControl(String name, Control control) {
     }
     static final String FIELD_SETTING_PREFIX = "setting";
     private static final Type TYPE_ENABLED = TypeLibrary.createType(EnabledSetting.class);
@@ -71,14 +69,16 @@ public final class EventControl {
     private static final Type TYPE_PERIOD = TypeLibrary.createType(PeriodSetting.class);
     private static final Type TYPE_CUTOFF = TypeLibrary.createType(CutoffSetting.class);
     private static final Type TYPE_THROTTLE = TypeLibrary.createType(ThrottleSetting.class);
+    private static final long STACK_FILTER_ID = Type.getTypeId(StackFilter.class);
+    private static final Type TYPE_LEVEL = TypeLibrary.createType(LevelSetting.class);
 
-    private final ArrayList<SettingInfo> settingInfos = new ArrayList<>();
+    private final ArrayList<SettingControl> settingControls = new ArrayList<>();
     private final ArrayList<NamedControl> namedControls = new ArrayList<>(5);
     private final PlatformEventType type;
     private final String idName;
 
     EventControl(PlatformEventType eventType) {
-        if (eventType.hasDuration()) {
+        if (eventType.hasThreshold()) {
             addControl(Threshold.NAME, defineThreshold(eventType));
         }
         if (eventType.hasStackTrace()) {
@@ -93,19 +93,95 @@ public final class EventControl {
         if (eventType.hasThrottle()) {
             addControl(Throttle.NAME, defineThrottle(eventType));
         }
+        if (eventType.hasLevel()) {
+            addControl(Level.NAME, defineLevel(eventType));
+        }
         addControl(Enabled.NAME, defineEnabled(eventType));
 
-        ArrayList<AnnotationElement> aes = new ArrayList<>(eventType.getAnnotationElements());
+        addStackFilters(eventType);
+        List<AnnotationElement> aes = new ArrayList<>(eventType.getAnnotationElements());
         remove(eventType, aes, Threshold.class);
         remove(eventType, aes, Period.class);
         remove(eventType, aes, Enabled.class);
         remove(eventType, aes, StackTrace.class);
         remove(eventType, aes, Cutoff.class);
         remove(eventType, aes, Throttle.class);
-        aes.trimToSize();
+        remove(eventType, aes, StackFilter.class);
         eventType.setAnnotations(aes);
         this.type = eventType;
         this.idName = String.valueOf(eventType.getId());
+    }
+
+    private void addStackFilters(PlatformEventType eventType) {
+        String[] filter = getStackFilter(eventType);
+        if (filter != null) {
+            int size = filter.length;
+            List<String> types = new ArrayList<>(size);
+            List<String> methods = new ArrayList<>(size);
+            for (String frame : filter) {
+                int index = frame.indexOf("::");
+                String clazz = null;
+                String method = null;
+                boolean valid = false;
+                if (index != -1) {
+                    clazz = frame.substring(0, index);
+                    method = frame.substring(index + 2);
+                    if (clazz.isEmpty()) {
+                        clazz = null;
+                        valid = isValidMethod(method);
+                    } else {
+                        valid = isValidType(clazz) && isValidMethod(method);
+                    }
+                } else {
+                    clazz = frame;
+                    valid = isValidType(frame);
+                }
+                if (valid) {
+                    if (clazz == null) {
+                        types.add(null);
+                    } else {
+                        types.add(clazz.replace(".", "/"));
+                    }
+                    // If unqualified class name equals method name, it's a constructor
+                    String className = clazz.substring(clazz.lastIndexOf(".") + 1);
+                    if (className.equals(method)) {
+                        method = "<init>";
+                    }
+                    methods.add(method);
+                } else {
+                    Logger.log(LogTag.JFR, LogLevel.WARN, "@StackFrameFilter element ignored, not a valid Java identifier.");
+                }
+            }
+            if (!types.isEmpty()) {
+                String[] typeArray = types.toArray(new String[0]);
+                String[] methodArray = methods.toArray(new String[0]);
+                long id = MetadataRepository.getInstance().registerStackFilter(typeArray, methodArray);
+                eventType.setStackFilterId(id);
+            }
+        }
+    }
+
+    private String[] getStackFilter(PlatformEventType eventType) {
+        for (var a : eventType.getAnnotationElements()) {
+            if (a.getTypeId() == STACK_FILTER_ID) {
+                return (String[])a.getValue("value");
+            }
+        }
+        return null;
+    }
+
+    private boolean isValidType(String className) {
+        if (className.length() < 1 || className.length() > 65535) {
+            return false;
+        }
+        return Checks.isClassName(className);
+    }
+
+    private boolean isValidMethod(String method) {
+        if (method.length() < 1 || method.length() > 65535) {
+            return false;
+        }
+        return Checks.isJavaIdentifier(method);
     }
 
     private boolean hasControl(String name) {
@@ -151,7 +227,7 @@ public final class EventControl {
                             String name = m.getName();
                             Name n = m.getAnnotation(Name.class);
                             if (n != null) {
-                                name = n.value();
+                                name = Utils.validJavaIdentifier(n.value(), name);
                             }
 
                             if (!hasControl(name)) {
@@ -170,10 +246,8 @@ public final class EventControl {
         try {
             Module settingModule = settingsClass.getModule();
             Modules.addReads(settingModule, EventControl.class.getModule());
-            int index = settingInfos.size();
-            SettingInfo si = new SettingInfo(FIELD_SETTING_PREFIX + index, index);
-            si.settingControl = instantiateSettingControl(settingsClass);
-            Control c = new Control(si.settingControl, null);
+            SettingControl settingControl = instantiateSettingControl(settingsClass);
+            Control c = new Control(settingControl, null);
             c.setDefault();
             String defaultValue = c.getValue();
             if (defaultValue != null) {
@@ -188,7 +262,7 @@ public final class EventControl {
                 aes.trimToSize();
                 addControl(settingName, c);
                 eventType.add(PrivateAccess.getInstance().newSettingDescriptor(settingType, settingName, defaultValue, aes));
-                settingInfos.add(si);
+                settingControls.add(settingControl);
             }
         } catch (InstantiationException e) {
             // Programming error by user, fail fast
@@ -268,6 +342,14 @@ public final class EventControl {
         return new Control(new ThrottleSetting(type), def);
     }
 
+    private static Control defineLevel(PlatformEventType type) {
+        Level level = type.getAnnotation(Level.class);
+        String[] values = level.value();
+        String def = values[0];
+        type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_LEVEL, Level.NAME, def, Collections.emptyList()));
+        return new Control(new LevelSetting(type, values), def);
+    }
+
     private static Control definePeriod(PlatformEventType type) {
         Period period = type.getAnnotation(Period.class);
         String def = "everyChunk";
@@ -287,21 +369,19 @@ public final class EventControl {
         }
     }
 
-    void writeActiveSettingEvent() {
+    void writeActiveSettingEvent(long timestamp) {
         if (!type.isRegistered()) {
             return;
         }
-        ActiveSettingEvent event = ActiveSettingEvent.EVENT.get();
         for (NamedControl nc : namedControls) {
-            if (Utils.isSettingVisible(nc.control, type.hasEventHook())) {
+            if (nc.control.isVisible(type.hasEventHook()) && type.isVisible()) {
                 String value = nc.control.getLastValue();
                 if (value == null) {
                     value = nc.control.getDefaultValue();
                 }
-                event.id = type.getId();
-                event.name = nc.name;
-                event.value = value;
-                event.commit();
+                if (ActiveSettingEvent.enabled()) {
+                    ActiveSettingEvent.commit(timestamp, type.getId(), nc.name(), value);
+                }
             }
         }
     }
@@ -318,7 +398,14 @@ public final class EventControl {
         return idName;
     }
 
-    public List<SettingInfo> getSettingInfos() {
-        return settingInfos;
+    /**
+     * A malicious user must never be able to run a callback in the wrong
+     * context. Methods on SettingControl must therefore never be invoked directly
+     * by JFR, instead use jdk.jfr.internal.Control.
+     *
+     * The returned list is only to be used inside EventConfiguration
+     */
+    public List<SettingControl> getSettingControls() {
+        return settingControls;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package javax.crypto.spec;
 
-import java.math.BigInteger;
 import java.security.spec.AlgorithmParameterSpec;
 
 /**
@@ -45,10 +44,10 @@ import java.security.spec.AlgorithmParameterSpec;
 public class DHGenParameterSpec implements AlgorithmParameterSpec {
 
     // The size in bits of the prime modulus
-    private int primeSize;
+    private final int primeSize;
 
     // The size in bits of the random exponent (private value)
-    private int exponentSize;
+    private final int exponentSize;
 
     /**
      * Constructs a parameter set for the generation of Diffie-Hellman

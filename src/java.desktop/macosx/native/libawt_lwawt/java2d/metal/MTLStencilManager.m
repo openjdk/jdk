@@ -30,9 +30,11 @@
 
 @implementation MTLStencilManager {
     id<MTLDepthStencilState> _stencilState;
+    id<MTLDepthStencilState> _genStencilState;
 }
 
 @synthesize stencilState = _stencilState;
+@synthesize genStencilState = _genStencilState;
 
 - (id _Nonnull)initWithDevice:(id<MTLDevice>) device {
     self = [super init];
@@ -50,6 +52,14 @@
         stencilDescriptor.backFaceStencil.stencilCompareFunction = MTLCompareFunctionEqual;
         stencilDescriptor.backFaceStencil.stencilFailureOperation = MTLStencilOperationKeep;
         _stencilState = [device newDepthStencilStateWithDescriptor:stencilDescriptor];
+
+        MTLDepthStencilDescriptor* genStencilDescriptor;
+        genStencilDescriptor = [[MTLDepthStencilDescriptor new] autorelease];
+        genStencilDescriptor.backFaceStencil.stencilCompareFunction = MTLCompareFunctionAlways;
+        genStencilDescriptor.backFaceStencil.depthStencilPassOperation = MTLStencilOperationReplace;
+        genStencilDescriptor.frontFaceStencil.stencilCompareFunction = MTLCompareFunctionAlways;
+        genStencilDescriptor.frontFaceStencil.depthStencilPassOperation = MTLStencilOperationReplace;
+        _genStencilState = [device newDepthStencilStateWithDescriptor:genStencilDescriptor];
     }
     return self;
 }

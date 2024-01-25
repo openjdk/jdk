@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 8151486 8218266
  * @summary Call Class.forName() on the system classloader from a class loaded
  *          from a custom classloader, using the current class's protection domain.
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @build jdk.test.lib.Utils
@@ -84,7 +85,9 @@ public class ProtectionDomainCacheTest {
                                                               CLASSFILENAME);
             Files.delete(classFile);
 
-            loadAndRun(jarFilePath);
+            for (int i = 0; i < 20; i++) {
+                loadAndRun(jarFilePath);
+            }
 
             // Give the GC a chance to unload protection domains
             for (int i = 0; i < 100; i++) {
@@ -95,17 +98,18 @@ public class ProtectionDomainCacheTest {
     }
 
     public static void main(String args[]) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                                       "-Djava.security.policy==" + System.getProperty("test.src") + File.separator + "test.policy",
                                       "-Dtest.classes=" + System.getProperty("test.classes", "."),
                                       "-XX:+UnlockDiagnosticVMOptions",
                                       "-XX:VerifySubSet=dictionary",
                                       "-XX:+VerifyAfterGC",
-                                      "-Xlog:gc+verify,protectiondomain=debug",
+                                      "-Xlog:gc+verify,protectiondomain=trace",
                                       "-Djava.security.manager",
                                       Test.class.getName());
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("PD in set is not alive");
+        output.shouldContain("HandshakeForPD::do_thread");
         output.shouldHaveExitValue(0);
     }
 }

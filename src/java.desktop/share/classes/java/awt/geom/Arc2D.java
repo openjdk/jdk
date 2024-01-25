@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -777,7 +777,7 @@ public abstract class Arc2D extends RectangularShape {
      * elliptical boundary of the arc.
      *
      * @return A {@code Point2D} object representing the
-     * x,y coordinates  of the ending point of the arc.
+     * x,y coordinates of the ending point of the arc.
      * @since 1.2
      */
     public Point2D getEndPoint() {
@@ -1303,7 +1303,7 @@ public abstract class Arc2D extends RectangularShape {
          * outside of rectagle with left top corner coordinates
          * (min(center x, start point x, end point x),
          *  min(center y, start point y, end point y))
-         * and rigth bottom corner coordinates
+         * and right bottom corner coordinates
          * (max(center x, start point x, end point x),
          *  max(center y, start point y, end point y)).
          * So we'll check axis segments outside of rectangle above.

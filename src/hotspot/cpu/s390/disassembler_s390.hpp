@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -34,27 +34,12 @@
     return "s390";
   }
 
-  static bool valid_opcodes[256];
-  static bool is_valid_opcode_at(address here);
-
-  // Find preceding instruction.
-  //
-  // Starting at the passed location, the n-th preceding (towards lower addresses)
-  // location is searched, the contents of which - if interpreted as
-  // instructions - has the passed location as n-th successor.
-  //  - If multiple such locations exist between (here-n*instr_maxlen()) and here,
-  //    the most distant location is selected.
-  //  - If no such location exists, NULL is returned. The caller should then
-  //    terminate its search and react properly.
-  static address find_prev_instr(address here, int n_instr);
-  static int     count_instr(address begin, address end);
-
   // special-case instruction decoding.
   // There may be cases where the binutils disassembler doesn't do
   // the perfect job. In those cases, decode_instruction0 may kick in
   // and do it right.
   // If nothing had to be done, just return "here", otherwise return "here + instr_len(here)"
-  static address decode_instruction0(address here, outputStream* st, address virtual_begin = NULL);
+  static address decode_instruction0(address here, outputStream* st, address virtual_begin = nullptr);
 
   // platform-specific instruction annotations (like value of loaded constants)
   static void annotate(address pc, outputStream* st);

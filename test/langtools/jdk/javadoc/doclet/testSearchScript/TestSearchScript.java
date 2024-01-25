@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8178982 8220497 8210683 8241982
+ * @bug 8178982 8220497 8210683 8241982 8297216 8303056
  * @summary Test the search feature of javadoc.
  * @library ../../lib
  * @library /test/lib
@@ -41,10 +41,9 @@ import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 
 import jtreg.SkippedException;
@@ -56,24 +55,27 @@ import jtreg.SkippedException;
 public class TestSearchScript extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestSearchScript tester = new TestSearchScript();
+        var tester = new TestSearchScript();
         tester.runTests();
     }
 
     private Invocable getEngine() throws ScriptException, IOException, NoSuchMethodException {
+        // For installing and using GraalVM JS on stock JDK see
+        // https://github.com/oracle/graaljs/blob/master/docs/user/RunOnJDK.md
+        // and https://github.com/graalvm/graal-js-jdk11-maven-demo
         ScriptEngineManager engineManager = new ScriptEngineManager();
         // Use "js" engine name to use any available JavaScript engine.
         ScriptEngine engine = engineManager.getEngineByName("js");
         if (engine == null) {
             throw new SkippedException("JavaScript engine is not available.");
         }
-        // For GraalJS set Nashorn compatibility mode via Bindings,
+        // Set Nashorn compatibility mode via Bindings for use with GraalVM JS,
         // see https://github.com/graalvm/graaljs/blob/master/docs/user/ScriptEngine.md
         Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
         bindings.put("polyglot.js.nashorn-compat", true);
-        engine.eval(new BufferedReader(new FileReader(new File(testSrc, "javadoc-search.js"))));
+        engine.eval(Files.newBufferedReader(Path.of(testSrc).resolve("javadoc-search.js")));
         Invocable inv = (Invocable) engine;
-        inv.invokeFunction("loadIndexFiles", outputDir.getAbsolutePath());
+        inv.invokeFunction("loadIndexFiles", outputDir.toAbsolutePath().toString());
         return inv;
     }
 
@@ -110,7 +112,7 @@ public class TestSearchScript extends JavadocTester {
                                         "mappkg.impl.MyMap.MyMap()", "mappkg.impl.MyMap.MyMap(Map)", "mappkg.system.property"));
         checkSearch(inv, "MAP", List.of("mapmodule", "mapmodule/mappkg", "mapmodule/mappkg.impl", "mappkg.Map", "mappkg.impl.MyMap",
                                         "mappkg.impl.MyMap.MyMap()", "mappkg.impl.MyMap.MyMap(Map)", "mappkg.system.property"));
-        checkSearch(inv, "value", List.of("mappkg.impl.MyMap.OTHER_VALUE", "mappkg.impl.MyMap.some_value"));
+        checkSearch(inv, "value", List.of("mappkg.impl.MyMap.some_value", "mappkg.impl.MyMap.OTHER_VALUE"));
         checkSearch(inv, "VALUE", List.of("mappkg.impl.MyMap.OTHER_VALUE", "mappkg.impl.MyMap.some_value"));
         checkSearch(inv, "map.other", List.of("mappkg.impl.MyMap.OTHER_VALUE"));
         checkSearch(inv, "Map.Some_", List.of("mappkg.impl.MyMap.some_value"));
@@ -168,13 +170,20 @@ public class TestSearchScript extends JavadocTester {
         // search tag
         checkSearch(inv, "search tag", List.of("search tag", "multiline search tag"));
         checkSearch(inv, "search   tag", List.of("search tag", "multiline search tag"));
-        checkSearch(inv, "search ", List.of("multiline search tag", "search tag"));
-        checkSearch(inv, "tag", List.of("multiline search tag", "search tag"));
-        checkSearch(inv, "sea", List.of("multiline search tag", "search tag"));
+        checkSearch(inv, "search ", List.of("search tag", "multiline search tag"));
+        checkSearch(inv, "tag", List.of("search tag", "multiline search tag"));
+        checkSearch(inv, "sea", List.of("search tag", "multiline search tag"));
         checkSearch(inv, "multi", List.of("multiline search tag"));
         checkSearch(inv, "ear", List.of());
-    }
 
+        // multiple space separated tokens
+        checkSearch(inv, "my map map", List.of("mappkg.impl.MyMap.MyMap(Map)", "mappkg.impl.MyMap.MyMap()"));
+        checkSearch(inv, "map get", List.of("mappkg.Map.get(Object)", "mappkg.impl.MyMap.get(Object)"));
+        checkSearch(inv, "get", List.of("mappkg.impl.MyMap.get(Object)", "mappkg.Map.get(Object)"));
+        checkSearch(inv, "get o", List.of("mappkg.Map.get(Object)", "mappkg.impl.MyMap.get(Object)"));
+        checkSearch(inv, "put o o", List.of("mappkg.Map.put(Object, Object)", "mappkg.impl.MyMap.put(Object, Object)"));
+        checkSearch(inv, "put(o o)", List.of("mappkg.Map.put(Object, Object)", "mappkg.impl.MyMap.put(Object, Object)"));
+    }
 
     @Test
     public void testPackageSource() throws ScriptException, IOException, NoSuchMethodException {
@@ -188,16 +197,16 @@ public class TestSearchScript extends JavadocTester {
         Invocable inv = getEngine();
 
         // exact match, case sensitvity, left boundaries
-        checkSearch(inv, "list", List.of("listpkg", "listpkg.List", "listpkg.ListProvider", "listpkg.MyList",
-                                         "listpkg.MyListFactory", "listpkg.ListProvider.ListProvider()",
+        checkSearch(inv, "list", List.of("listpkg", "listpkg.List", "listpkg.MyList", "listpkg.ListProvider",
+                                         "listpkg.MyListFactory", "listpkg.MyList.MyList()",
                                          "listpkg.MyListFactory.createList(ListProvider, MyListFactory)",
-                                         "listpkg.ListProvider.makeNewList()",
-                                         "listpkg.MyList.MyList()", "listpkg.MyListFactory.MyListFactory()"));
-        checkSearch(inv, "List", List.of("listpkg", "listpkg.List", "listpkg.ListProvider", "listpkg.MyList",
-                                         "listpkg.MyListFactory", "listpkg.ListProvider.ListProvider()",
+                                         "listpkg.ListProvider.ListProvider()", "listpkg.ListProvider.makeNewList()",
+                                         "listpkg.MyListFactory.MyListFactory()"));
+        checkSearch(inv, "List", List.of("listpkg", "listpkg.List", "listpkg.MyList", "listpkg.ListProvider",
+                                         "listpkg.MyListFactory", "listpkg.MyList.MyList()",
                                          "listpkg.MyListFactory.createList(ListProvider, MyListFactory)",
-                                         "listpkg.ListProvider.makeNewList()",
-                                         "listpkg.MyList.MyList()", "listpkg.MyListFactory.MyListFactory()"));
+                                         "listpkg.ListProvider.ListProvider()", "listpkg.ListProvider.makeNewList()",
+                                         "listpkg.MyListFactory.MyListFactory()"));
         // partial match
         checkSearch(inv, "fact", List.of("listpkg.MyListFactory", "listpkg.MyListFactory.MyListFactory()"));
         checkSearch(inv, "pro", List.of("listpkg.ListProvider", "listpkg.ListProvider.ListProvider()"));
@@ -279,9 +288,9 @@ public class TestSearchScript extends JavadocTester {
         checkSearch(inv, "some", List.of("listpkg.Nolist.SOME_INT_CONSTANT"));
         checkSearch(inv, "SOME", List.of("listpkg.Nolist.SOME_INT_CONSTANT"));
         checkSearch(inv, "Some", List.of("listpkg.Nolist.SOME_INT_CONSTANT"));
-        checkSearch(inv, "int", List.of("listpkg.Nolist.SOME_INT_CONSTANT"));
-        checkSearch(inv, "INT", List.of("listpkg.Nolist.SOME_INT_CONSTANT"));
-        checkSearch(inv, "Int", List.of("listpkg.Nolist.SOME_INT_CONSTANT"));
+        checkSearch(inv, "int", List.of("All Classes and Interfaces", "listpkg.Nolist.SOME_INT_CONSTANT"));
+        checkSearch(inv, "INT", List.of("All Classes and Interfaces", "listpkg.Nolist.SOME_INT_CONSTANT"));
+        checkSearch(inv, "Int", List.of("All Classes and Interfaces", "listpkg.Nolist.SOME_INT_CONSTANT"));
         checkSearch(inv, "int_con", List.of("listpkg.Nolist.SOME_INT_CONSTANT"));
         checkSearch(inv, "INT_CON", List.of("listpkg.Nolist.SOME_INT_CONSTANT"));
         checkSearch(inv, "NT", List.of());
@@ -290,9 +299,9 @@ public class TestSearchScript extends JavadocTester {
         checkSearch(inv, "_CONST", List.of("listpkg.Nolist.SOME_INT_CONSTANT"));
 
         // Test for all packages, all classes links
-        checkSearch(inv, "all", List.of("All Packages", "All Classes"));
-        checkSearch(inv, "All", List.of("All Packages", "All Classes"));
-        checkSearch(inv, "ALL", List.of("All Packages", "All Classes"));
+        checkSearch(inv, "all", List.of("All Packages", "All Classes and Interfaces"));
+        checkSearch(inv, "All", List.of("All Packages", "All Classes and Interfaces"));
+        checkSearch(inv, "ALL", List.of("All Packages", "All Classes and Interfaces"));
 
         // test for generic types, var-arg and array args
         checkSearch(inv, "(map<string, ? ext collection>)",
@@ -304,14 +313,98 @@ public class TestSearchScript extends JavadocTester {
         checkSearch(inv, "(e..", List.of("listpkg.List.of(E...)"));
         checkSearch(inv, "(int[]", List.of("listpkg.Nolist.withArrayArg(int[])"));
         checkSearch(inv, "(i[]", List.of("listpkg.Nolist.withArrayArg(int[])"));
+
+        // multiple space separated tokens
+        checkSearch(inv, "list of", List.of("listpkg.List.of()", "listpkg.List.of(E)",
+                "listpkg.List.of(E, E)", "listpkg.List.of(E, E, E)", "listpkg.List.of(E, E, E, E)",
+                "listpkg.List.of(E, E, E, E, E)", "listpkg.List.of(E...)"));
+        checkSearch(inv, "list of e", List.of("listpkg.List.of(E)", "listpkg.List.of(E, E)",
+                "listpkg.List.of(E, E, E)", "listpkg.List.of(E, E, E, E)",
+                "listpkg.List.of(E, E, E, E, E)", "listpkg.List.of(E...)"));
+        checkSearch(inv, "list of e e e", List.of("listpkg.List.of(E, E, E)",
+                "listpkg.List.of(E, E, E, E)", "listpkg.List.of(E, E, E, E, E)"));
+        checkSearch(inv, "list of e..", List.of("listpkg.List.of(E...)"));
+
+        checkSearch(inv, "list with", List.of());
+        checkSearch(inv, "nolist with", List.of("listpkg.Nolist.withVarArgs(Object...)",
+                "listpkg.Nolist.withArrayArg(int[])",
+                "listpkg.Nolist.withTypeParams(Map<String, ? extends Collection>)"));
+        checkSearch(inv, "with arg", List.of("listpkg.Nolist.withVarArgs(Object...)",
+                "listpkg.Nolist.withArrayArg(int[])"));
+        checkSearch(inv, "with int", List.of("listpkg.Nolist.withArrayArg(int[])"));
+        checkSearch(inv, "with map", List.of(
+                "listpkg.Nolist.withTypeParams(Map<String, ? extends Collection>)"));
+
+        // search for numeric strings
+        checkSearch(inv, "1", List.of("listpkg.MyList.abc123xyz()"));
+        checkSearch(inv, "12", List.of("listpkg.MyList.abc123xyz()"));
+        checkSearch(inv, "12 x", List.of("listpkg.MyList.abc123xyz()"));
+        checkSearch(inv, "123 x", List.of("listpkg.MyList.abc123xyz()"));
+        checkSearch(inv, "1 x", List.of("listpkg.MyList.abc123xyz()"));
+        checkSearch(inv, "2 x", List.of());
+        checkSearch(inv, "3", List.of("listpkg.MyList.M_3X"));
+        checkSearch(inv, "3x", List.of("listpkg.MyList.M_3X"));
+        checkSearch(inv, "_3", List.of("listpkg.MyList.M_3X"));
+        checkSearch(inv, "3 x", List.of("listpkg.MyList.M_3X"));
+
+        // Unicode camel-case tests
+        checkSearch(inv, "νέα λίστα", List.of("listpkg.ListProvider.δημιουργήστεΝέαΛίστα()"));
+        checkSearch(inv, "δημ νέα λίσ", List.of("listpkg.ListProvider.δημιουργήστεΝέαΛίστα()"));
+        checkSearch(inv, "δ ν λ", List.of("listpkg.ListProvider.δημιουργήστεΝέαΛίστα()"));
+        checkSearch(inv, "ν λ", List.of("listpkg.ListProvider.δημιουργήστεΝέαΛίστα()"));
+        checkSearch(inv, "δημιουργήστεΝέαΛίστα", List.of("listpkg.ListProvider.δημιουργήστεΝέαΛίστα()"));
+        checkSearch(inv, "δηΝέΛίσ", List.of("listpkg.ListProvider.δημιουργήστεΝέαΛίστα()"));
+        checkSearch(inv, "δΝΛ", List.of("listpkg.ListProvider.δημιουργήστεΝέαΛίστα()"));
+        checkSearch(inv, "ΝΛ", List.of("listpkg.ListProvider.δημιουργήστεΝέαΛίστα()"));
+        checkSearch(inv, "δημ λίστα", List.of("listpkg.ListProvider.δημιουργήστεΝέαΛίστα()"));
+        checkSearch(inv, "сделать новый список", List.of("listpkg.ListProvider.сделатьНовыйСписок()"));
+        checkSearch(inv, "сде нов спи", List.of("listpkg.ListProvider.сделатьНовыйСписок()"));
+        checkSearch(inv, "с н с", List.of("listpkg.ListProvider.сделатьНовыйСписок()"));
+        checkSearch(inv, "н с", List.of("listpkg.ListProvider.сделатьНовыйСписок()"));
+        checkSearch(inv, "сделатьНовыйСписок", List.of("listpkg.ListProvider.сделатьНовыйСписок()"));
+        checkSearch(inv, "сдеНовСпис", List.of("listpkg.ListProvider.сделатьНовыйСписок()"));
+        checkSearch(inv, "сНС", List.of("listpkg.ListProvider.сделатьНовыйСписок()"));
+        checkSearch(inv, "сН", List.of("listpkg.ListProvider.сделатьНовыйСписок()"));
+        checkSearch(inv, "сдеН Спи", List.of("listpkg.ListProvider.сделатьНовыйСписок()"));
+
+        // Negative Unicode camel-case tests
+        checkSearch(inv, "Νέα ίστα", List.of());
+        checkSearch(inv, "α λίστα", List.of());
+        checkSearch(inv, "ηΝΛ", List.of());
+        checkSearch(inv, "овый", List.of());
+        checkSearch(inv, "д н с", List.of());
+        checkSearch(inv, "пи", List.of());
+        checkSearch(inv, "НОВЫЙС ПИСОК", List.of());
+    }
+
+    @Test
+    public void testChannelSearch() throws ScriptException, IOException, NoSuchMethodException {
+        javadoc("-d", "out-channel",
+                "-Xdoclint:none",
+                "-use",
+                "-sourcepath", testSrc,
+                "channels");
+        checkExit(Exit.OK);
+
+        Invocable inv = getEngine();
+
+        checkSearch(inv, "FileChannel", List.of("channels.FileChannel", "channels.FileChannel.Map",
+                "channels.FileChannel.FileChannel()"));
+        checkSearch(inv, "FileChannel.", List.of("channels.FileChannel.Map",
+                "channels.FileChannel.FileChannel()", "channels.FileChannel.map(FileChannel.Map, int)"));
+        checkSearch(inv, "filechannel.M", List.of("channels.FileChannel.Map",
+                "channels.FileChannel.map(FileChannel.Map, int)"));
+        checkSearch(inv, "FileChannel.map", List.of("channels.FileChannel.Map",
+                "channels.FileChannel.map(FileChannel.Map, int)"));
+        checkSearch(inv, "FileChannel.map(", List.of("channels.FileChannel.map(FileChannel.Map, int)"));
     }
 
     void checkSearch(Invocable inv, String query, List<String> results) throws ScriptException, NoSuchMethodException {
-        checkList((List) inv.invokeFunction("search", query), results);
+        checkList(query, (List<?>) inv.invokeFunction("search", query), results);
     }
 
-    void checkList(List<?> result, List<?> expected) {
-        checking("Checking list: " + result);
+    void checkList(String query, List<?> result, List<?> expected) {
+        checking("Checking result for query \"" + query + "\"");
         if (!expected.equals(result)) {
             failed("Expected: " + expected + ", got: " + result);
         } else {
@@ -321,7 +414,7 @@ public class TestSearchScript extends JavadocTester {
 
     void checkNullSearch(Invocable inv, String query) throws ScriptException, NoSuchMethodException {
         Object result = inv.invokeFunction("search", query);
-        checking("Checking null result");
+        checking("Checking result for query \"" + query + "\"");
         if (result == null) {
             passed("Result is null as expected");
         } else {

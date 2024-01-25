@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,10 @@
  *      8235458
  * @summary javac shouldn't fail when an annotation processor report a message about an annotation on a module
  *          javac should process annotated module when imports statement are present
+ * @library /tools/lib
  * @modules jdk.compiler
+ * @build toolbox.ToolBox
+ * @run main ReportOnImportedModuleAnnotation
  */
 
 import java.io.PrintWriter;
@@ -41,6 +44,8 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 
+import toolbox.ToolBox;
+
 public class ReportOnImportedModuleAnnotation {
 
     public static void main(String[] args) throws Exception {
@@ -48,6 +53,9 @@ public class ReportOnImportedModuleAnnotation {
         final Path testOutputPath = Path.of(System.getProperty("test.classes"));
 
         final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+
+        // Clean any existing files in output directory
+        (new ToolBox()).cleanDirectory(testOutputPath);
 
         // Compile annotation and processor modules
         StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
@@ -63,7 +71,7 @@ public class ReportOnImportedModuleAnnotation {
         fileManager.setLocationFromPaths(StandardLocation.CLASS_OUTPUT, List.of(testOutputPath));
 
         final StringWriter outputWriter = new StringWriter();
-        compiler.getTask(outputWriter, fileManager, null, List.of("-XDrawDiagnostics", "--module", "mod"), null, null).call();
+        compiler.getTask(outputWriter, fileManager, null, List.of("-XDrawDiagnostics", "--module", "mod", "-proc:full"), null, null).call();
 
         String actualOutput = outputWriter.toString();
         String expectedOutput = Files.readString(testBasePath.resolve("ReportOnImportedModuleAnnotation.out"));

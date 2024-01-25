@@ -36,7 +36,7 @@ import org.xml.sax.SAXNotRecognizedException;
  * @test
  * @bug 4969110
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.Bug4969110
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Bug4969110
  * @run testng/othervm validation.Bug4969110
  * @summary Test ValidationHandler.set/getProperty() throws a correct exception
  * instead of a sun internal exception in case the "property name" parameter is invalid.

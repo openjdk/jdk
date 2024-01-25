@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import javax.swing.plaf.FontUIResource;
 
+import sun.awt.OSInfo;
 import sun.util.logging.PlatformLogger;
 
 /**
@@ -55,16 +56,19 @@ public final class FontUtilities {
 
     // This static initializer block figures out the OS constants.
     static {
+        initStatic();
+    }
 
+    @SuppressWarnings("removal")
+    private static void initStatic() {
         AccessController.doPrivileged(new PrivilegedAction<Object>() {
             @SuppressWarnings("deprecation") // PlatformLogger.setLevel is deprecated.
             @Override
             public Object run() {
-                String osName = System.getProperty("os.name", "unknownOS");
 
-                isLinux = osName.startsWith("Linux");
+                isLinux = OSInfo.getOSType() == OSInfo.OSType.LINUX;
 
-                isMacOSX = osName.contains("OS X"); // TODO: MacOSX
+                isMacOSX = OSInfo.getOSType() == OSInfo.OSType.MACOSX;
                 if (isMacOSX) {
                     // os.version has values like 10.13.6, 10.14.6
                     // If it is not positively recognised as 10.13 or less,
@@ -96,7 +100,7 @@ public final class FontUtilities {
                 } else {
                     useJDKScaler = false;
                 }
-                isWindows = osName.startsWith("Windows");
+                isWindows = OSInfo.getOSType() == OSInfo.OSType.WINDOWS;
                 String debugLevel =
                     System.getProperty("sun.java2d.debugfonts");
 
@@ -226,7 +230,7 @@ public final class FontUtilities {
      * which would mean all ranges would need to be checked so be sure
      * CTL is not needed, the method returns as soon as it recognises
      * the code point is outside of a CTL ranges.
-     * NOTE: Since this method accepts an 'int' it is asssumed to properly
+     * NOTE: Since this method accepts an 'int' it is assumed to properly
      * represent a CHARACTER. ie it assumes the caller has already
      * converted surrogate pairs into supplementary characters, and so
      * can handle this case and doesn't need to be told such a case is
@@ -409,10 +413,9 @@ public final class FontUtilities {
         FontManager fm = FontManagerFactory.getInstance();
         Font2D dialog = fm.findFont2D("dialog", font.getStyle(), FontManager.NO_FALLBACK);
         // Should never be null, but MACOSX fonts are not CompositeFonts
-        if (dialog == null || !(dialog instanceof CompositeFont)) {
+        if (!(dialog instanceof CompositeFont dialog2D)) {
             return fuir;
         }
-        CompositeFont dialog2D = (CompositeFont)dialog;
         PhysicalFont physicalFont = (PhysicalFont)font2D;
         ConcurrentHashMap<PhysicalFont, CompositeFont> compMap = compMapRef.get();
         if (compMap == null) { // Its been collected.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@
 Node* CardTableBarrierSetC2::byte_map_base_node(GraphKit* kit) const {
   // Get base of card map
   CardTable::CardValue* card_table_base = ci_card_table_address();
-   if (card_table_base != NULL) {
+   if (card_table_base != nullptr) {
      return kit->makecon(TypeRawPtr::make((address)card_table_base));
    } else {
      return kit->null();
@@ -58,22 +58,18 @@ void CardTableBarrierSetC2::post_barrier(GraphKit* kit,
                                          Node* val,
                                          BasicType bt,
                                          bool use_precise) const {
-  // No store check needed if we're storing a NULL or an old object
-  // (latter case is probably a string constant). The concurrent
-  // mark sweep garbage collector, however, needs to have all nonNull
-  // oop updates flagged via card-marks.
-  if (val != NULL && val->is_Con()) {
-    // must be either an oop or NULL
+  // No store check needed if we're storing a null.
+  if (val != nullptr && val->is_Con()) {
     const Type* t = val->bottom_type();
-    if (t == TypePtr::NULL_PTR || t == Type::TOP)
-      // stores of null never (?) need barriers
+    if (t == TypePtr::NULL_PTR || t == Type::TOP) {
       return;
+    }
   }
 
   if (use_ReduceInitialCardMarks()
       && obj == kit->just_allocated_object(kit->control())) {
     // We can skip marks on a freshly-allocated object in Eden.
-    // Keep this code in sync with new_deferred_store_barrier() in runtime.cpp.
+    // Keep this code in sync with CardTableBarrierSet::on_slowpath_allocation_exit.
     // That routine informs GC to take appropriate compensating steps,
     // upon a slow-path allocation, so as to make this card-mark
     // elision safe.
@@ -83,9 +79,11 @@ void CardTableBarrierSetC2::post_barrier(GraphKit* kit,
   if (!use_precise) {
     // All card marks for a (non-array) instance are in one place:
     adr = obj;
+  } else {
+    // Else it's an array (or unknown), and we want more precise card marks.
   }
-  // (Else it's an array (or unknown), and we want more precise card marks.)
-  assert(adr != NULL, "");
+
+  assert(adr != nullptr, "");
 
   IdealKit ideal(kit, true);
 
@@ -93,14 +91,16 @@ void CardTableBarrierSetC2::post_barrier(GraphKit* kit,
   Node* cast = __ CastPX(__ ctrl(), adr);
 
   // Divide by card size
-  Node* card_offset = __ URShiftX( cast, __ ConI(CardTable::card_shift) );
+  Node* card_offset = __ URShiftX(cast, __ ConI(CardTable::card_shift()));
 
   // Combine card table base and card offset
-  Node* card_adr = __ AddP(__ top(), byte_map_base_node(kit), card_offset );
+  Node* card_adr = __ AddP(__ top(), byte_map_base_node(kit), card_offset);
 
   // Get the alias_index for raw card-mark memory
   int adr_type = Compile::AliasIdxRaw;
-  Node*   zero = __ ConI(0); // Dirty card value
+
+  // Dirty card value to store
+  Node* dirty = __ ConI(CardTable::dirty_card_val());
 
   if (UseCondCardMark) {
     // The classic GC reference write barrier is typically implemented
@@ -111,11 +111,11 @@ void CardTableBarrierSetC2::post_barrier(GraphKit* kit,
     // stores.  In theory we could relax the load from ctrl() to
     // no_ctrl, but that doesn't buy much latitude.
     Node* card_val = __ load( __ ctrl(), card_adr, TypeInt::BYTE, T_BYTE, adr_type);
-    __ if_then(card_val, BoolTest::ne, zero);
+    __ if_then(card_val, BoolTest::ne, dirty);
   }
 
-  // Smash zero into card
-  __ store(__ ctrl(), card_adr, zero, T_BYTE, adr_type, MemNode::unordered);
+  // Smash dirty value into card
+  __ store(__ ctrl(), card_adr, dirty, T_BYTE, adr_type, MemNode::unordered);
 
   if (UseCondCardMark) {
     __ end_if();
@@ -136,8 +136,8 @@ void CardTableBarrierSetC2::clone(GraphKit* kit, Node* src, Node* dst, Node* siz
     // Put in store barrier for any and all oops we are sticking
     // into this object.  (We could avoid this if we could prove
     // that the object type contains no oop fields at all.)
-    Node* no_particular_value = NULL;
-    Node* no_particular_field = NULL;
+    Node* no_particular_value = nullptr;
+    Node* no_particular_field = nullptr;
     int raw_adr_idx = Compile::AliasIdxRaw;
     post_barrier(kit, kit->control(),
                  kit->memory(raw_adr_type),
@@ -176,7 +176,7 @@ void CardTableBarrierSetC2::eliminate_gc_barrier(PhaseMacroExpand* macro, Node* 
   }
 }
 
-bool CardTableBarrierSetC2::array_copy_requires_gc_barriers(bool tightly_coupled_alloc, BasicType type, bool is_clone, ArrayCopyPhase phase) const {
+bool CardTableBarrierSetC2::array_copy_requires_gc_barriers(bool tightly_coupled_alloc, BasicType type, bool is_clone, bool is_clone_instance, ArrayCopyPhase phase) const {
   bool is_oop = is_reference_type(type);
   return is_oop && (!tightly_coupled_alloc || !use_ReduceInitialCardMarks());
 }

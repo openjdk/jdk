@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  *          java.base/jdk.internal.misc
  *          java.management
  * @compile -XDignore.symbol.file OverriderMsg.java
- * @run main/othervm OverriderMsg
+ * @run driver OverriderMsg
  */
 
 // This test checks that the super class name is included in the message when
@@ -125,7 +125,7 @@ public class OverriderMsg {
     public static void main(String... args) throws Exception {
         dump_HasFinal();
         dump_Overrider();
-        ProcessBuilder pb = ProcessTools.createTestJvm("-cp", ".",  "Overrider");
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder("-cp", ".",  "Overrider");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain(
             "java.lang.IncompatibleClassChangeError: class Overrider overrides final method HasFinal.m(Ljava/lang/String;)V");

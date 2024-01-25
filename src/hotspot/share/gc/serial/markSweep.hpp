@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,9 @@
 #define SHARE_GC_SERIAL_MARKSWEEP_HPP
 
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/genOopClosures.hpp"
+#include "gc/shared/preservedMarks.inline.hpp"
+#include "gc/shared/referenceProcessor.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "memory/iterator.hpp"
 #include "oops/markWord.hpp"
@@ -35,13 +37,12 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/stack.hpp"
 
-class ReferenceProcessor;
 class DataLayout;
 class SerialOldTracer;
 class STWGCTimer;
 
 // MarkSweep takes care of global mark-compact garbage collection for a
-// GenCollectedHeap using a four-phase pointer forwarding algorithm.  All
+// SerialHeap using a four-phase pointer forwarding algorithm.  All
 // generations are assumed to support marking; those that can also support
 // compaction.
 //
@@ -86,7 +87,6 @@ class MarkSweep : AllStatic {
   //
   friend class AdjustPointerClosure;
   friend class KeepAliveClosure;
-  friend class VM_MarkSweep;
 
   //
   // Vars
@@ -100,17 +100,18 @@ class MarkSweep : AllStatic {
   static Stack<ObjArrayTask, mtGC>             _objarray_stack;
 
   // Space for storing/restoring mark word
-  static Stack<markWord, mtGC>                 _preserved_mark_stack;
-  static Stack<oop, mtGC>                      _preserved_oop_stack;
+  static PreservedMarksSet               _preserved_overflow_stack_set;
   static size_t                          _preserved_count;
   static size_t                          _preserved_count_max;
   static PreservedMark*                  _preserved_marks;
 
-  // Reference processing (used in ...follow_contents)
+  static AlwaysTrueClosure               _always_true_closure;
   static ReferenceProcessor*             _ref_processor;
 
   static STWGCTimer*                     _gc_timer;
   static SerialOldTracer*                _gc_tracer;
+
+  static StringDedup::Requests* _string_dedup_requests;
 
   // Non public closures
   static KeepAliveClosure keep_alive;
@@ -131,8 +132,7 @@ class MarkSweep : AllStatic {
   static uint total_invocations() { return _total_invocations; }
 
   // Reference Processing
-  static ReferenceProcessor* const ref_processor() { return _ref_processor; }
-  static void set_ref_processor(ReferenceProcessor* rp);
+  static ReferenceProcessor* ref_processor() { return _ref_processor; }
 
   static STWGCTimer* gc_timer() { return _gc_timer; }
   static SerialOldTracer* gc_tracer() { return _gc_tracer; }
@@ -142,13 +142,9 @@ class MarkSweep : AllStatic {
   static void adjust_marks();   // Adjust the pointers in the preserved marks table
   static void restore_marks();  // Restore the marks that we saved in preserve_mark
 
-  static int adjust_pointers(oop obj);
+  static size_t adjust_pointers(oop obj);
 
   static void follow_stack();   // Empty marking stack.
-
-  static void follow_klass(Klass* klass);
-
-  static void follow_cld(ClassLoaderData* cld);
 
   template <class T> static inline void adjust_pointer(T* p);
 
@@ -170,15 +166,13 @@ class MarkSweep : AllStatic {
   static void follow_array_chunk(objArrayOop array, int index);
 };
 
-class MarkAndPushClosure: public OopIterateClosure {
+class MarkAndPushClosure: public ClaimMetadataVisitingOopIterateClosure {
 public:
-  template <typename T> void do_oop_work(T* p);
-  virtual void do_oop(oop* p);
-  virtual void do_oop(narrowOop* p);
+  MarkAndPushClosure(int claim) : ClaimMetadataVisitingOopIterateClosure(claim) {}
 
-  virtual bool do_metadata() { return true; }
-  virtual void do_klass(Klass* k);
-  virtual void do_cld(ClassLoaderData* cld);
+  template <typename T> void do_oop_work(T* p);
+  virtual void do_oop(      oop* p);
+  virtual void do_oop(narrowOop* p);
 
   void set_ref_discoverer(ReferenceDiscoverer* rd) {
     set_ref_discoverer_internal(rd);
@@ -191,21 +185,6 @@ class AdjustPointerClosure: public BasicOopIterateClosure {
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
   virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS; }
-};
-
-class PreservedMark {
-private:
-  oop _obj;
-  markWord _mark;
-
-public:
-  void init(oop obj, markWord mark) {
-    _obj = obj;
-    _mark = mark;
-  }
-
-  void adjust_pointer();
-  void restore();
 };
 
 #endif // SHARE_GC_SERIAL_MARKSWEEP_HPP

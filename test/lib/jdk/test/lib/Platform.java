@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,17 @@
 
 package jdk.test.lib;
 
+import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Platform {
@@ -48,6 +51,7 @@ public class Platform {
     private static final String compiler    = privilegedGetProperty("sun.management.compiler");
     private static final String testJdk     = privilegedGetProperty("test.jdk");
 
+    @SuppressWarnings("removal")
     private static String privilegedGetProperty(String key) {
         return AccessController.doPrivileged((
                 PrivilegedAction<String>) () -> System.getProperty(key));
@@ -78,7 +82,7 @@ public class Platform {
     }
 
     public static boolean isTieredSupported() {
-        return compiler.contains("Tiered Compilers");
+        return (compiler != null) && compiler.contains("Tiered Compilers");
     }
 
     public static boolean isInt() {
@@ -186,12 +190,29 @@ public class Platform {
         return vmVersion;
     }
 
+    public static boolean isMusl() {
+        try {
+            ProcessBuilder pb = new ProcessBuilder("ldd", "--version");
+            pb.redirectErrorStream(true);
+            Process p = pb.start();
+            BufferedReader b = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            String l = b.readLine();
+            if (l != null && l.contains("musl")) { return true; }
+        } catch(Exception e) {
+        }
+        return false;
+    }
+
     public static boolean isAArch64() {
         return isArch("aarch64");
     }
 
     public static boolean isARM() {
         return isArch("arm.*");
+    }
+
+    public static boolean isRISCV64() {
+        return isArch("riscv64");
     }
 
     public static boolean isPPC() {
@@ -240,63 +261,106 @@ public class Platform {
         return true;
     }
 
-    /**
-     * Return true if the test JDK is signed, otherwise false. Only valid on OSX.
-     */
-    public static boolean isSignedOSX() throws IOException {
-        // We only care about signed binaries for 10.14 and later (actually 10.14.5, but
-        // for simplicity we'll also include earlier 10.14 versions).
-        if (getOsVersionMajor() == 10 && getOsVersionMinor() < 14) {
-            return false; // assume not signed
-        }
-
-        // Find the path to the java binary.
+    private static Process launchCodesignOnJavaBinary() throws IOException {
         String jdkPath = System.getProperty("java.home");
         Path javaPath = Paths.get(jdkPath + "/bin/java");
         String javaFileName = javaPath.toAbsolutePath().toString();
         if (Files.notExists(javaPath)) {
             throw new FileNotFoundException("Could not find file " + javaFileName);
         }
-
-        // Run codesign on the java binary.
-        ProcessBuilder pb = new ProcessBuilder("codesign", "-d", "-v", javaFileName);
-        pb.redirectError(ProcessBuilder.Redirect.DISCARD);
-        pb.redirectOutput(ProcessBuilder.Redirect.DISCARD);
+        ProcessBuilder pb = new ProcessBuilder("codesign", "--display", "--verbose", javaFileName);
+        pb.redirectErrorStream(true); // redirect stderr to stdout
         Process codesignProcess = pb.start();
+        return codesignProcess;
+    }
+
+    public static boolean hasOSXPlistEntries() throws IOException {
+        Process codesignProcess = launchCodesignOnJavaBinary();
+        BufferedReader is = new BufferedReader(new InputStreamReader(codesignProcess.getInputStream()));
+        String line;
+        while ((line = is.readLine()) != null) {
+            System.out.println("STDOUT: " + line);
+            if (line.indexOf("Info.plist=not bound") != -1) {
+                return false;
+            }
+            if (line.indexOf("Info.plist entries=") != -1) {
+                return true;
+            }
+        }
+        System.out.println("No matching Info.plist entry was found");
+        return false;
+    }
+
+    /**
+     * Return true if the test JDK is hardened, otherwise false. Only valid on OSX.
+     */
+    public static boolean isHardenedOSX() throws IOException {
+        // We only care about hardened binaries for 10.14 and later (actually 10.14.5, but
+        // for simplicity we'll also include earlier 10.14 versions).
+        if (getOsVersionMajor() == 10 && getOsVersionMinor() < 14) {
+            return false; // assume not hardened
+        }
+        Process codesignProcess = launchCodesignOnJavaBinary();
+        BufferedReader is = new BufferedReader(new InputStreamReader(codesignProcess.getInputStream()));
+        String line;
+        boolean isHardened = false;
+        boolean hardenedStatusConfirmed = false; // set true when we confirm whether or not hardened
+        while ((line = is.readLine()) != null) {
+            System.out.println("STDOUT: " + line);
+            if (line.indexOf("flags=0x10000(runtime)") != -1 ) {
+                hardenedStatusConfirmed = true;
+                isHardened = true;
+                System.out.println("Target JDK is hardened. Some tests may be skipped.");
+            } else if (line.indexOf("flags=0x20002(adhoc,linker-signed)") != -1 ) {
+                hardenedStatusConfirmed = true;
+                isHardened = false;
+                System.out.println("Target JDK is adhoc linker-signed, but not hardened.");
+            } else if (line.indexOf("flags=0x2(adhoc)") != -1 ) {
+                hardenedStatusConfirmed = true;
+                isHardened = false;
+                System.out.println("Target JDK is adhoc signed, but not hardened.");
+            } else if (line.indexOf("code object is not signed at all") != -1) {
+                hardenedStatusConfirmed = true;
+                isHardened = false;
+                System.out.println("Target JDK is not signed, therefore not hardened.");
+            }
+        }
+        if (!hardenedStatusConfirmed) {
+            System.out.println("Could not confirm if TargetJDK is hardened. Assuming not hardened.");
+            isHardened = false;
+        }
+
         try {
             if (codesignProcess.waitFor(10, TimeUnit.SECONDS) == false) {
-                System.err.println("Timed out waiting for the codesign process to complete. Assuming not signed.");
+                System.err.println("Timed out waiting for the codesign process to complete. Assuming not hardened.");
                 codesignProcess.destroyForcibly();
-                return false; // assume not signed
+                return false; // assume not hardened
             }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
 
-        // Check codesign result to see if java binary is signed. Here are the
-        // exit code meanings:
-        //    0: signed
-        //    1: not signed
-        //    2: invalid arguments
-        //    3: only has meaning with the -R argument.
-        // So we should always get 0 or 1 as an exit value.
-        if (codesignProcess.exitValue() == 0) {
-            System.out.println("Target JDK is signed. Some tests may be skipped.");
-            return true; // signed
-        } else if (codesignProcess.exitValue() == 1) {
-            System.out.println("Target JDK is not signed.");
-            return false; // not signed
-        } else {
-            System.err.println("Executing codesign failed. Assuming unsigned: " +
-                               codesignProcess.exitValue());
-            return false; // not signed
-        }
+        return isHardened;
     }
 
     private static boolean isArch(String archnameRE) {
         return Pattern.compile(archnameRE, Pattern.CASE_INSENSITIVE)
                       .matcher(osArch)
                       .matches();
+    }
+
+    public static boolean isOracleLinux7() {
+        if (System.getProperty("os.name").toLowerCase().contains("linux") &&
+                System.getProperty("os.version").toLowerCase().contains("el")) {
+            Pattern p = Pattern.compile("el(\\d+)");
+            Matcher m = p.matcher(System.getProperty("os.version"));
+            if (m.find()) {
+                try {
+                    return Integer.parseInt(m.group(1)) <= 7;
+                } catch (NumberFormatException nfe) {}
+            }
+        }
+        return false;
     }
 
     /**
@@ -311,6 +375,27 @@ public class Platform {
         } else {
             return "so";
         }
+    }
+
+    /**
+     * Returns the usual file prefix of a shared library, e.g. "lib" on linux, empty on windows.
+     * @return file name prefix
+     */
+    public static String sharedLibraryPrefix() {
+        if (isWindows()) {
+            return "";
+        } else {
+            return "lib";
+        }
+    }
+
+    /**
+     * Returns the usual full shared lib name of a name without prefix and extension, e.g. for jsig
+     * "libjsig.so" on linux, "jsig.dll" on windows.
+     * @return the full shared lib name
+     */
+    public static String buildSharedLibraryName(String name) {
+        return sharedLibraryPrefix() + name + "." + sharedLibraryExt();
     }
 
     /*
@@ -332,11 +417,20 @@ public class Platform {
      * Returns absolute path to directory containing shared libraries in the tested JDK.
      */
     public static Path libDir() {
-        Path dir = Paths.get(testJdk);
+        return libDir(Paths.get(testJdk)).toAbsolutePath();
+    }
+
+    /**
+     * Resolves a given path, to a JDK image, to the directory containing shared libraries.
+     *
+     * @param image the path to a JDK image
+     * @return the resolved path to the directory containing shared libraries
+     */
+    public static Path libDir(Path image) {
         if (Platform.isWindows()) {
-            return dir.resolve("bin").toAbsolutePath();
+            return image.resolve("bin");
         } else {
-            return dir.resolve("lib").toAbsolutePath();
+            return image.resolve("lib");
         }
     }
 
@@ -354,6 +448,8 @@ public class Platform {
             return "client";
         } else if (Platform.isMinimal()) {
             return "minimal";
+        } else if (Platform.isZero()) {
+            return "zero";
         } else {
             throw new Error("TESTBUG: unsupported vm variant");
         }
@@ -368,7 +464,6 @@ public class Platform {
                  isWindows()) &&
                 !isZero()    &&
                 !isMinimal() &&
-                !isAArch64() &&
                 !isARM());
     }
 
@@ -376,6 +471,6 @@ public class Platform {
      * This should match the #if condition in ClassListParser::load_class_from_source().
      */
     public static boolean areCustomLoadersSupportedForCDS() {
-        return (is64bit() && (isLinux() || isOSX()));
+        return (is64bit() && (isLinux() || isOSX() || isWindows()));
     }
 }

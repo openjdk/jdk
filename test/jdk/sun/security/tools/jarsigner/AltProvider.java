@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4906940 8130302 8194152
+ * @bug 4906940 8130302 8194152 8281175
  * @summary -providerPath, -providerClass, -addprovider, and -providerArg
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -81,33 +81,28 @@ public class AltProvider {
         // Without new provider
         testBoth("", 1, "DUMMYKS not found");
 
-        // legacy use (-providerPath only supported by keytool)
-        testKeytool("-providerPath mods/test.dummy " +
-                "-providerClass org.test.dummy.DummyProvider -providerArg full",
-                0, "loadProviderByClass: org.test.dummy.DummyProvider");
-
         // legacy, on classpath
-        testBoth("-J-cp -Jmods/test.dummy " +
+        testBoth("-providerpath mods/test.dummy " +
                 "-providerClass org.test.dummy.DummyProvider -providerArg full",
                 0, "loadProviderByClass: org.test.dummy.DummyProvider");
 
         // Wrong name
-        testBoth("-J-cp -Jmods/test.dummy " +
+        testBoth("-providerpath mods/test.dummy " +
                 "-providerClass org.test.dummy.Dummy -providerArg full",
                 1, "Provider \"org.test.dummy.Dummy\" not found");
 
         // Not a provider name
-        testBoth("-J-cp -Jmods/test.dummy " +
+        testBoth("-providerpath mods/test.dummy " +
                 "-providerClass java.lang.Object -providerArg full",
                 1, "java.lang.Object not a provider");
 
         // without arg
-        testBoth("-J-cp -Jmods/test.dummy " +
+        testBoth("-providerpath mods/test.dummy " +
                 "-providerClass org.test.dummy.DummyProvider",
                 1, "DUMMYKS not found");
 
         // old -provider still works
-        testBoth("-J-cp -Jmods/test.dummy " +
+        testBoth("-providerpath mods/test.dummy " +
                 "-provider org.test.dummy.DummyProvider -providerArg full",
                 0, "loadProviderByClass: org.test.dummy.DummyProvider");
 

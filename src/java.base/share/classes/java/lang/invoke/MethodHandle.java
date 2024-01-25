@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package java.lang.invoke;
 
 
+import jdk.internal.loader.ClassLoaders;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import java.lang.constant.ClassDesc;
@@ -33,6 +34,7 @@ import java.lang.constant.Constable;
 import java.lang.constant.DirectMethodHandleDesc;
 import java.lang.constant.MethodHandleDesc;
 import java.lang.constant.MethodTypeDesc;
+import java.lang.ref.SoftReference;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
@@ -266,7 +268,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
  *
  * <h2>Usage examples</h2>
  * Here are some examples of usage:
- * <blockquote><pre>{@code
+ * {@snippet lang="java" :
 Object x, y; String s; int i;
 MethodType mt; MethodHandle mh;
 MethodHandles.Lookup lookup = MethodHandles.lookup();
@@ -302,7 +304,7 @@ mt = MethodType.methodType(void.class, String.class);
 mh = lookup.findVirtual(java.io.PrintStream.class, "println", mt);
 mh.invokeExact(System.out, "Hello, world.");
 // invokeExact(Ljava/io/PrintStream;Ljava/lang/String;)V
- * }</pre></blockquote>
+ * }
  * Each of the above calls to {@code invokeExact} or plain {@code invoke}
  * generates a single invokevirtual instruction with
  * the symbolic type descriptor indicated in the following comment.
@@ -438,7 +440,9 @@ mh.invokeExact(System.out, "Hello, world.");
  * @author John Rose, JSR 292 EG
  * @since 1.7
  */
-public abstract class MethodHandle implements Constable {
+public abstract sealed class MethodHandle implements Constable
+    permits NativeMethodHandle, DirectMethodHandle,
+            DelegatingMethodHandle, BoundMethodHandle {
 
     /**
      * Internal marker interface which distinguishes (to the Java compiler)
@@ -449,12 +453,9 @@ public abstract class MethodHandle implements Constable {
     @interface PolymorphicSignature { }
 
     private final MethodType type;
-    /*private*/
-    final LambdaForm form;
-    // form is not private so that invokers can easily fetch it
-    /*private*/
-    MethodHandle asTypeCache;
-    // asTypeCache is not private so that invokers can easily fetch it
+    /*private*/ final LambdaForm form; // form is not private so that invokers can easily fetch it
+    private MethodHandle asTypeCache;
+    private SoftReference<MethodHandle> asTypeSoftCache;
 
     private byte customizationCount;
 
@@ -694,7 +695,7 @@ public abstract class MethodHandle implements Constable {
      * It can therefore be used as a bridge between native or reflective code and method handles.
      * @apiNote
      * This call is approximately equivalent to the following code:
-     * <blockquote><pre>{@code
+     * {@snippet lang="java" :
      * // for jumbo argument lists, adapt varargs explicitly:
      * int N = (arguments == null? 0: arguments.length);
      * int M = this.type.parameterCount();
@@ -717,7 +718,7 @@ public abstract class MethodHandle implements Constable {
      * // Handle fixed arity and non-jumbo variable arity invocation.
      * MethodHandle invoker = MethodHandles.spreadInvoker(this.type(), 0);
      * Object result = invoker.invokeExact(this, arguments);
-     * }</pre></blockquote>
+     * }
      *
      * @param arguments the arguments to pass to the target
      * @return the result returned by the target
@@ -739,9 +740,9 @@ public abstract class MethodHandle implements Constable {
      * of the argument list.
      * <p>
      * This method is also equivalent to the following code:
-     * <blockquote><pre>{@code
+     * {@snippet lang="java" :
      *   invokeWithArguments(arguments.toArray())
-     * }</pre></blockquote>
+     * }
      * <p>
      * Jumbo-sized lists are acceptable if this method handle has variable arity.
      * See {@link #invokeWithArguments(Object[])} for details.
@@ -808,15 +809,15 @@ public abstract class MethodHandle implements Constable {
      *     (The types do not need to be related in any particular way.
      *     This is because a dynamic value of null can convert to any reference type.)
      * <li>If <em>T0</em> and <em>T1</em> are primitives, then a Java method invocation
-     *     conversion (JLS 5.3) is applied, if one exists.
+     *     conversion (JLS {@jls 5.3}) is applied, if one exists.
      *     (Specifically, <em>T0</em> must convert to <em>T1</em> by a widening primitive conversion.)
      * <li>If <em>T0</em> is a primitive and <em>T1</em> a reference,
-     *     a Java casting conversion (JLS 5.5) is applied if one exists.
+     *     a Java casting conversion (JLS {@jls 5.5}) is applied if one exists.
      *     (Specifically, the value is boxed from <em>T0</em> to its wrapper class,
      *     which is then widened as needed to <em>T1</em>.)
      * <li>If <em>T0</em> is a reference and <em>T1</em> a primitive, an unboxing
      *     conversion will be applied at runtime, possibly followed
-     *     by a Java method invocation conversion (JLS 5.3)
+     *     by a Java method invocation conversion (JLS {@jls 5.3})
      *     on the primitive value.  (These are the primitive widening conversions.)
      *     <em>T0</em> must be a wrapper class or a supertype of one.
      *     (In the case where <em>T0</em> is Object, these are the conversions
@@ -855,34 +856,120 @@ public abstract class MethodHandle implements Constable {
      * @throws WrongMethodTypeException if the conversion cannot be made
      * @see MethodHandles#explicitCastArguments
      */
-    public MethodHandle asType(MethodType newType) {
+    public final MethodHandle asType(MethodType newType) {
         // Fast path alternative to a heavyweight {@code asType} call.
         // Return 'this' if the conversion will be a no-op.
         if (newType == type) {
             return this;
         }
         // Return 'this.asTypeCache' if the conversion is already memoized.
-        MethodHandle atc = asTypeCached(newType);
-        if (atc != null) {
-            return atc;
+        MethodHandle at = asTypeCached(newType);
+        if (at != null) {
+            return at;
         }
-        return asTypeUncached(newType);
+        return setAsTypeCache(asTypeUncached(newType));
     }
 
     private MethodHandle asTypeCached(MethodType newType) {
         MethodHandle atc = asTypeCache;
         if (atc != null && newType == atc.type) {
-            return atc;
+            return atc; // cache hit
+        }
+        SoftReference<MethodHandle> softCache = asTypeSoftCache;
+        if (softCache != null) {
+            atc = softCache.get();
+            if (atc != null && newType == atc.type) {
+                return atc; // soft cache hit
+            }
         }
         return null;
+    }
+
+    private MethodHandle setAsTypeCache(MethodHandle at) {
+        // Don't introduce a strong reference in the cache if newType depends on any class loader other than
+        // current method handle already does to avoid class loader leaks.
+        if (isSafeToCache(at.type)) {
+            asTypeCache = at;
+        } else {
+            asTypeSoftCache = new SoftReference<>(at);
+        }
+        return at;
     }
 
     /** Override this to change asType behavior. */
     /*non-public*/
     MethodHandle asTypeUncached(MethodType newType) {
-        if (!type.isConvertibleTo(newType))
-            throw new WrongMethodTypeException("cannot convert "+this+" to "+newType);
-        return asTypeCache = MethodHandleImpl.makePairwiseConvert(this, newType, true);
+        if (!type.isConvertibleTo(newType)) {
+            throw new WrongMethodTypeException("cannot convert " + this + " to " + newType);
+        }
+        return MethodHandleImpl.makePairwiseConvert(this, newType, true);
+    }
+
+    /**
+     * Returns true if {@code newType} does not depend on any class loader other than current method handle already does.
+     * May conservatively return false in order to be efficient.
+     */
+    private boolean isSafeToCache(MethodType newType) {
+        ClassLoader loader = getApproximateCommonClassLoader(type);
+        return keepsAlive(newType, loader);
+    }
+
+    /**
+     * Tries to find the most specific {@code ClassLoader} which keeps all the classes mentioned in {@code mt} alive.
+     * In the worst case, returns a {@code ClassLoader} which relates to some of the classes mentioned in {@code mt}.
+     */
+    private static ClassLoader getApproximateCommonClassLoader(MethodType mt) {
+        ClassLoader loader = mt.rtype().getClassLoader();
+        for (Class<?> ptype : mt.ptypes()) {
+            ClassLoader ploader = ptype.getClassLoader();
+            if (isAncestorLoaderOf(loader, ploader)) {
+                loader = ploader; // pick more specific loader
+            } else {
+                // Either loader is a descendant of ploader or loaders are unrelated. Ignore both cases.
+                // When loaders are not related, just pick one and proceed. It reduces the precision of keepsAlive, but
+                // doesn't compromise correctness.
+            }
+        }
+        return loader;
+    }
+
+    /* Returns true when {@code loader} keeps components of {@code mt} reachable either directly or indirectly through the loader delegation chain. */
+    private static boolean keepsAlive(MethodType mt, ClassLoader loader) {
+        for (Class<?> ptype : mt.ptypes()) {
+            if (!keepsAlive(ptype, loader)) {
+                return false;
+            }
+        }
+        return keepsAlive(mt.rtype(), loader);
+    }
+
+    /* Returns true when {@code loader} keeps {@code cls} either directly or indirectly through the loader delegation chain. */
+    private static boolean keepsAlive(Class<?> cls, ClassLoader loader) {
+        ClassLoader defLoader = cls.getClassLoader();
+        if (isBuiltinLoader(defLoader)) {
+            return true; // built-in loaders are always reachable
+        }
+        return isAncestorLoaderOf(defLoader, loader);
+    }
+
+    private static boolean isAncestorLoaderOf(ClassLoader ancestor, ClassLoader descendant) {
+        // Assume built-in loaders are interchangeable and all custom loaders delegate to one of them.
+        if (isBuiltinLoader(ancestor)) {
+            return true;
+        }
+        // Climb up the descendant chain until a built-in loader is encountered.
+        for (ClassLoader loader = descendant; !isBuiltinLoader(loader); loader = loader.getParent()) {
+            if (loader == ancestor) {
+                return true;
+            }
+        }
+        return false; // no direct relation between loaders is found
+    }
+
+    private static boolean isBuiltinLoader(ClassLoader loader) {
+        return loader == null ||
+               loader == ClassLoaders.platformClassLoader() ||
+               loader == ClassLoaders.appClassLoader();
     }
 
     /**
@@ -921,7 +1008,7 @@ public abstract class MethodHandle implements Constable {
      * if the array does not have the correct number of elements.
      * <p>
      * Here are some simple examples of array-spreading method handles:
-     * <blockquote><pre>{@code
+     * {@snippet lang="java" :
 MethodHandle equals = publicLookup()
   .findVirtual(String.class, "equals", methodType(boolean.class, Object.class));
 assert( (boolean) equals.invokeExact("me", (Object)"me"));
@@ -963,7 +1050,7 @@ MethodHandle caString3 = caToString.asCollector(char[].class, 3);
 assertEquals("[A, B, C]", (String) caString3.invokeExact('A', 'B', 'C'));
 MethodHandle caToString2 = caString3.asSpreader(char[].class, 2);
 assertEquals("[A, B, C]", (String) caToString2.invokeExact('A', "BC".toCharArray()));
-     * }</pre></blockquote>
+     * }
      * @param arrayType usually {@code Object[]}, the type of the array argument from which to extract the spread arguments
      * @param arrayLength the number of arguments to spread from an incoming array argument
      * @return a new method handle which spreads its final array argument,
@@ -993,7 +1080,7 @@ assertEquals("[A, B, C]", (String) caToString2.invokeExact('A', "BC".toCharArray
      * argument to indicate at which position in the parameter list the spreading should take place.
      *
      * @apiNote Example:
-     * <blockquote><pre>{@code
+     * {@snippet lang="java" :
     MethodHandle compare = LOOKUP.findStatic(Objects.class, "compare", methodType(int.class, Object.class, Object.class, Comparator.class));
     MethodHandle compare2FromArray = compare.asSpreader(0, Object[].class, 2);
     Object[] ints = new Object[]{3, 9, 7, 7};
@@ -1001,7 +1088,7 @@ assertEquals("[A, B, C]", (String) caToString2.invokeExact('A', "BC".toCharArray
     assertTrue((int) compare2FromArray.invoke(Arrays.copyOfRange(ints, 0, 2), cmp) < 0);
     assertTrue((int) compare2FromArray.invoke(Arrays.copyOfRange(ints, 1, 3), cmp) > 0);
     assertTrue((int) compare2FromArray.invoke(Arrays.copyOfRange(ints, 2, 4), cmp) == 0);
-     * }</pre></blockquote>
+     * }
      * @param spreadArgPos the position (zero-based index) in the argument list at which spreading should start.
      * @param arrayType usually {@code Object[]}, the type of the array argument from which to extract the spread arguments
      * @param arrayLength the number of arguments to spread from an incoming array argument
@@ -1092,14 +1179,14 @@ assertEquals("[A, B, C]", (String) caToString2.invokeExact('A', "BC".toCharArray
      *     .withVarargs(mh.isVarargsCollector())}
      * <p>
      * This call is approximately equivalent to the following code:
-     * <blockquote><pre>{@code
+     * {@snippet lang="java" :
      * if (makeVarargs == isVarargsCollector())
      *   return this;
      * else if (makeVarargs)
      *   return asVarargsCollector(type().lastParameterType());
      * else
      *   return asFixedArity();
-     * }</pre></blockquote>
+     * }
      * @param makeVarargs true if the return method handle should have variable arity behavior
      * @return a method handle of the same type, with possibly adjusted variable arity behavior
      * @throws IllegalArgumentException if {@code makeVarargs} is true and
@@ -1149,7 +1236,7 @@ assertEquals("[A, B, C]", (String) caToString2.invokeExact('A', "BC".toCharArray
      * or {@link #withVarargs withVarargs} instead.
      * <p>
      * Here are some examples of array-collecting method handles:
-     * <blockquote><pre>{@code
+     * {@snippet lang="java" :
 MethodHandle deepToString = publicLookup()
   .findStatic(Arrays.class, "deepToString", methodType(String.class, Object[].class));
 assertEquals("[won]",   (String) deepToString.invokeExact(new Object[]{"won"}));
@@ -1175,7 +1262,7 @@ MethodHandle longsToString = publicLookup()
   .findStatic(Arrays.class, "toString", methodType(String.class, long[].class))
   .asCollector(long[].class, 1);
 assertEquals("[123]", (String) longsToString.invokeExact((long)123));
-     * }</pre></blockquote>
+     * }
      * <p>
      * <em>Note:</em> The resulting adapter is never a {@linkplain MethodHandle#asVarargsCollector
      * variable-arity method handle}, even if the original target method handle was.
@@ -1209,7 +1296,7 @@ assertEquals("[123]", (String) longsToString.invokeExact((long)123));
      * index is zero-based.
      *
      * @apiNote Examples:
-     * <blockquote><pre>{@code
+     * {@snippet lang="java" :
     StringWriter swr = new StringWriter();
     MethodHandle swWrite = LOOKUP.findVirtual(StringWriter.class, "write", methodType(void.class, char[].class, int.class, int.class)).bindTo(swr);
     MethodHandle swWrite4 = swWrite.asCollector(0, char[].class, 4);
@@ -1219,7 +1306,7 @@ assertEquals("[123]", (String) longsToString.invokeExact((long)123));
     assertEquals("BCPQRS", swr.toString());
     swWrite4.invoke('W', 'X', 'Y', 'Z', 3, 1);
     assertEquals("BCPQRSZ", swr.toString());
-     * }</pre></blockquote>
+     * }
      * <p>
      * <em>Note:</em> The resulting adapter is never a {@linkplain MethodHandle#asVarargsCollector
      * variable-arity method handle}, even if the original target method handle was.
@@ -1244,13 +1331,9 @@ assertEquals("[123]", (String) longsToString.invokeExact((long)123));
         asCollectorChecks(arrayType, collectArgPos, arrayLength);
         BoundMethodHandle mh = rebind();
         MethodType resultType = type().asCollectorType(arrayType, collectArgPos, arrayLength);
-        MethodHandle newArray = MethodHandleImpl.varargsArray(arrayType, arrayLength);
-        LambdaForm lform = mh.editor().collectArgumentArrayForm(1 + collectArgPos, newArray);
-        if (lform != null) {
-            return mh.copyWith(resultType, lform);
-        }
-        lform = mh.editor().collectArgumentsForm(1 + collectArgPos, newArray.type().basicType());
-        return mh.copyWithExtendL(resultType, lform, newArray);
+        MethodHandle collector = MethodHandleImpl.varargsArray(arrayType, arrayLength);
+        LambdaForm lform = mh.editor().collectArgumentsForm(1 + collectArgPos, collector.type().basicType());
+        return mh.copyWithExtendL(resultType, lform, collector);
     }
 
     /**
@@ -1318,7 +1401,7 @@ assertEquals("[123]", (String) longsToString.invokeExact((long)123));
      * a new array of type {@code arrayType}, whose elements
      * comprise (in order) the replaced arguments.
      * <p>
-     * The caller type must provides as least enough arguments,
+     * The caller type must provide at least enough arguments,
      * and of the correct type, to satisfy the target's requirement for
      * positional arguments before the trailing array argument.
      * Thus, the caller must supply, at a minimum, {@code N-1} arguments,
@@ -1376,7 +1459,7 @@ assertEquals("[123]", (String) longsToString.invokeExact((long)123));
      * It may (or may not) return the original variable arity method handle.
      * <p>
      * Here is an example, of a list-making variable arity method handle:
-     * <blockquote><pre>{@code
+     * {@snippet lang="java" :
 MethodHandle deepToString = publicLookup()
   .findStatic(Arrays.class, "deepToString", methodType(String.class, Object[].class));
 MethodHandle ts1 = deepToString.asVarargsCollector(Object[].class);
@@ -1398,7 +1481,7 @@ assertEquals("[three, thee, tee]", asList.invoke((Object[])argv).toString());
 List ls = (List) asList.invoke((Object)argv);
 assertEquals(1, ls.size());
 assertEquals("[three, thee, tee]", Arrays.toString((Object[])ls.get(0)));
-     * }</pre></blockquote>
+     * }
      * <p style="font-size:smaller;">
      * <em>Discussion:</em>
      * These rules are designed as a dynamically-typed variation
@@ -1412,7 +1495,7 @@ assertEquals("[three, thee, tee]", Arrays.toString((Object[])ls.get(0)));
      * array or a single element of an array to be collected.
      * Note that the dynamic type of the trailing argument has no
      * effect on this decision, only a comparison between the symbolic
-     * type descriptor of the call site and the type descriptor of the method handle.)
+     * type descriptor of the call site and the type descriptor of the method handle.
      *
      * @param arrayType often {@code Object[]}, the type of the array argument which will collect the arguments
      * @return a new method handle which can collect any number of trailing arguments
@@ -1467,10 +1550,10 @@ assertEquals("[three, thee, tee]", Arrays.toString((Object[])ls.get(0)));
      * except that {@link #isVarargsCollector isVarargsCollector}
      * will be false.
      * The fixed-arity method handle may (or may not) be the
-     * a previous argument to {@code asVarargsCollector}.
+     * previous argument to {@code asVarargsCollector}.
      * <p>
      * Here is an example, of a list-making variable arity method handle:
-     * <blockquote><pre>{@code
+     * {@snippet lang="java" :
 MethodHandle asListVar = publicLookup()
   .findStatic(Arrays.class, "asList", methodType(List.class, Object[].class))
   .asVarargsCollector(Object[].class);
@@ -1489,7 +1572,7 @@ assertEquals("[three, thee, tee]", asListVar.invoke(argv).toString());
 assertEquals("[three, thee, tee]", asListFix.invoke(argv).toString());
 assertEquals(1, ((List) asListVar.invoke((Object)argv)).size());
 assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
-     * }</pre></blockquote>
+     * }
      *
      * @return a new method handle which accepts only a fixed number of arguments
      * @see #asVarargsCollector
@@ -1562,32 +1645,22 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
             return Optional.empty();
         }
 
-        switch (info.getReferenceKind()) {
-            case REF_getField:
-                return Optional.of(MethodHandleDesc.ofField(DirectMethodHandleDesc.Kind.GETTER, owner, name, type.returnType()));
-            case REF_putField:
-                return Optional.of(MethodHandleDesc.ofField(DirectMethodHandleDesc.Kind.SETTER, owner, name, type.parameterType(0)));
-            case REF_getStatic:
-                return Optional.of(MethodHandleDesc.ofField(DirectMethodHandleDesc.Kind.STATIC_GETTER, owner, name, type.returnType()));
-            case REF_putStatic:
-                return Optional.of(MethodHandleDesc.ofField(DirectMethodHandleDesc.Kind.STATIC_SETTER, owner, name, type.parameterType(0)));
-            case REF_invokeVirtual:
-                return Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.VIRTUAL, owner, name, type));
-            case REF_invokeStatic:
-                return isInterface ?
-                        Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.INTERFACE_STATIC, owner, name, type)) :
-                        Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.STATIC, owner, name, type));
-            case REF_invokeSpecial:
-                return isInterface ?
-                        Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.INTERFACE_SPECIAL, owner, name, type)) :
-                        Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.SPECIAL, owner, name, type));
-            case REF_invokeInterface:
-                return Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.INTERFACE_VIRTUAL, owner, name, type));
-            case REF_newInvokeSpecial:
-                return Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.CONSTRUCTOR, owner, name, type));
-            default:
-                return Optional.empty();
-        }
+        return switch (info.getReferenceKind()) {
+            case REF_getField         -> Optional.of(MethodHandleDesc.ofField(DirectMethodHandleDesc.Kind.GETTER, owner, name, type.returnType()));
+            case REF_putField         -> Optional.of(MethodHandleDesc.ofField(DirectMethodHandleDesc.Kind.SETTER, owner, name, type.parameterType(0)));
+            case REF_getStatic        -> Optional.of(MethodHandleDesc.ofField(DirectMethodHandleDesc.Kind.STATIC_GETTER, owner, name, type.returnType()));
+            case REF_putStatic        -> Optional.of(MethodHandleDesc.ofField(DirectMethodHandleDesc.Kind.STATIC_SETTER, owner, name, type.parameterType(0)));
+            case REF_invokeVirtual    -> Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.VIRTUAL, owner, name, type));
+            case REF_invokeStatic     -> isInterface ?
+                                          Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.INTERFACE_STATIC, owner, name, type)) :
+                                          Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.STATIC, owner, name, type));
+            case REF_invokeSpecial    -> isInterface ?
+                                          Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.INTERFACE_SPECIAL, owner, name, type)) :
+                                          Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.SPECIAL, owner, name, type));
+            case REF_invokeInterface  -> Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.INTERFACE_VIRTUAL, owner, name, type));
+            case REF_newInvokeSpecial -> Optional.of(MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.CONSTRUCTOR, owner, name, type));
+            default -> Optional.empty();
+        };
     }
 
     /**
@@ -1595,9 +1668,9 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
      * starting with the string {@code "MethodHandle"} and
      * ending with the string representation of the method handle's type.
      * In other words, this method returns a string equal to the value of:
-     * <blockquote><pre>{@code
+     * {@snippet lang="java" :
      * "MethodHandle" + type().toString()
-     * }</pre></blockquote>
+     * }
      * <p>
      * (<em>Note:</em>  Future releases of this API may add further information
      * to the string representation.
@@ -1615,9 +1688,19 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
     }
     /** Return a string with a several lines describing the method handle structure.
      *  This string would be suitable for display in an IDE debugger.
+     * @param indentLevel If negative, return only information about this MethodHandle.
+     *  Otherwise, return information about this MethodHandle and (recursively) all other
+     *  MethodHandles, if any, that are invoked directly or indirectly by this MethodHandle.
+     *  During the recursion, `indentLevel` is incremented (see
+     *  BoundMethodHandle.internalValues()) to improve readability of
+     *  the nested structure.
      */
+    String debugString(int indentLevel) {
+        return type + " : " + internalForm().debugString(indentLevel) +
+               internalProperties(indentLevel);
+    }
     String debugString() {
-        return type+" : "+internalForm()+internalProperties();
+        return debugString(-1);
     }
 
     //// Implementation methods.
@@ -1636,7 +1719,8 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
         try {
             return this.withVarargs(true);
         } catch (IllegalArgumentException ex) {
-            throw member.makeAccessException("cannot make variable arity", null);
+            throw new IllegalAccessException("cannot make variable arity: " + member +
+                    " does not have a trailing array parameter");
         }
     }
 
@@ -1684,6 +1768,11 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
     }
 
     /*non-public*/
+    Object intrinsicData() {
+        return null;
+    }
+
+    /*non-public*/
     MethodHandle withInternalMemberName(MemberName member, boolean isInvokeSpecial) {
         if (member != null) {
             return MethodHandleImpl.makeWrappedMember(this, member, isInvokeSpecial);
@@ -1709,12 +1798,29 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
     }
 
     /*non-public*/
-    Object internalValues() {
+    Object internalValues(int indentLevel) {
         return null;
+    }
+
+    /**
+     * Various debugging methods in MethodHandle (and subclasses thereof) and LambdaForm
+     * take an `indentLevel` argument, so that {@link java.lang.invoke.MethodHandle.debugString(int)}
+     * can return nested structures in a readable fashion. This method returns a string to be
+     * prepended to each line at the specified level.
+     */
+    static String debugPrefix(int indentLevel) {
+        if (indentLevel <= 0) {
+            return "";
+        }
+        return "    ".repeat(indentLevel);
     }
 
     /*non-public*/
     Object internalProperties() {
+        return internalProperties(-1);
+    }
+
+    Object internalProperties(int indentLevel) {
         // Override to something to follow this.form, like "\n& FOO=bar"
         return "";
     }

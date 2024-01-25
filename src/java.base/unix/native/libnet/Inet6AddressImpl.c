@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,8 @@
 #include "java_net_InetAddress.h"
 #include "java_net_Inet4AddressImpl.h"
 #include "java_net_Inet6AddressImpl.h"
+#include "java_net_spi_InetAddressResolver_LookupPolicy.h"
+
 
 #define SET_NONBLOCKING(fd) {       \
     int flags = fcntl(fd, F_GETFL); \
@@ -74,13 +76,12 @@ Java_java_net_Inet6AddressImpl_getLocalHostName(JNIEnv *env, jobject this) {
 #if defined(MACOSX)
 /* also called from Inet4AddressImpl.c */
 __private_extern__ jobjectArray
-lookupIfLocalhost(JNIEnv *env, const char *hostname, jboolean includeV6)
+lookupIfLocalhost(JNIEnv *env, const char *hostname, jboolean includeV6, int characteristics)
 {
     jobjectArray result = NULL;
     char myhostname[NI_MAXHOST + 1];
     struct ifaddrs *ifa = NULL;
-    int familyOrder = 0;
-    int count = 0, i, j;
+    int i, j;
     int addrs4 = 0, addrs6 = 0, numV4Loopbacks = 0, numV6Loopbacks = 0;
     jboolean includeLoopback = JNI_FALSE;
     jobject name;
@@ -151,7 +152,7 @@ lookupIfLocalhost(JNIEnv *env, const char *hostname, jboolean includeV6)
     result = (*env)->NewObjectArray(env, arraySize, ia_class, NULL);
     if (!result) goto done;
 
-    if ((*env)->GetStaticBooleanField(env, ia_class, ia_preferIPv6AddressID)) {
+    if ((characteristics & java_net_spi_InetAddressResolver_LookupPolicy_IPV6_FIRST) != 0) {
         i = includeLoopback ? addrs6 : (addrs6 - numV6Loopbacks);
         j = 0;
     } else {
@@ -204,7 +205,7 @@ lookupIfLocalhost(JNIEnv *env, const char *hostname, jboolean includeV6)
  */
 JNIEXPORT jobjectArray JNICALL
 Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
-                                                 jstring host) {
+                                                 jstring host, jint characteristics) {
     jobjectArray ret = NULL;
     const char *hostname;
     int error = 0;
@@ -218,20 +219,20 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
         JNU_ThrowNullPointerException(env, "host argument is null");
         return NULL;
     }
-    hostname = JNU_GetStringPlatformChars(env, host, JNI_FALSE);
+    hostname = JNU_GetStringPlatformCharsStrict(env, host, NULL);
     CHECK_NULL_RETURN(hostname, NULL);
 
     // try once, with our static buffer
     memset(&hints, 0, sizeof(hints));
     hints.ai_flags = AI_CANONNAME;
-    hints.ai_family = AF_UNSPEC;
+    hints.ai_family = lookupCharacteristicsToAddressFamily(characteristics);
 
     error = getaddrinfo(hostname, NULL, &hints, &res);
 
     if (error) {
 #if defined(MACOSX)
         // if getaddrinfo fails try getifaddrs
-        ret = lookupIfLocalhost(env, hostname, JNI_TRUE);
+        ret = lookupIfLocalhost(env, hostname, JNI_TRUE, characteristics);
         if (ret != NULL || (*env)->ExceptionCheck(env)) {
             goto cleanupAndReturn;
         }
@@ -242,8 +243,6 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
     } else {
         int i = 0, inetCount = 0, inet6Count = 0, inetIndex = 0,
             inet6Index = 0, originalIndex = 0;
-        int addressPreference =
-            (*env)->GetStaticIntField(env, ia_class, ia_preferIPv6AddressID);;
         iterator = res;
         while (iterator != NULL) {
             // skip duplicates
@@ -322,13 +321,13 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
             goto cleanupAndReturn;
         }
 
-        if (addressPreference == java_net_InetAddress_PREFER_IPV6_VALUE) {
+        if ((characteristics & java_net_spi_InetAddressResolver_LookupPolicy_IPV6_FIRST) != 0) {
             inetIndex = inet6Count;
             inet6Index = 0;
-        } else if (addressPreference == java_net_InetAddress_PREFER_IPV4_VALUE) {
+        } else if ((characteristics & java_net_spi_InetAddressResolver_LookupPolicy_IPV4_FIRST) != 0) {
             inetIndex = 0;
             inet6Index = inetCount;
-        } else if (addressPreference == java_net_InetAddress_PREFER_SYSTEM_VALUE) {
+        } else {
             inetIndex = inet6Index = originalIndex = 0;
         }
 
@@ -371,7 +370,8 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
                 (*env)->SetObjectArrayElement(env, ret, (inet6Index | originalIndex), iaObj);
                 inet6Index++;
             }
-            if (addressPreference == java_net_InetAddress_PREFER_SYSTEM_VALUE) {
+            // Check if addresses are requested to be returned in SYSTEM order
+            if (addressesInSystemOrder(characteristics)) {
                 originalIndex++;
                 inetIndex = inet6Index = 0;
             }
@@ -463,12 +463,16 @@ tcp_ping6(JNIEnv *env, SOCKETADDRESS *sa, SOCKETADDRESS *netif, jint timeout,
 
     // set TTL
     if (ttl > 0) {
-        setsockopt(fd, IPPROTO_IPV6, IPV6_UNICAST_HOPS, &ttl, sizeof(ttl));
+        if (setsockopt(fd, IPPROTO_IPV6, IPV6_UNICAST_HOPS, &ttl, sizeof(ttl)) < 0) {
+            NET_ThrowNew(env, errno, "setsockopt IPV6_UNICAST_HOPS failed");
+            close(fd);
+            return JNI_FALSE;
+        }
     }
 
     // A network interface was specified, so let's bind to it.
     if (netif != NULL) {
-        if (bind(fd, &netif->sa, sizeof(struct sockaddr_in6)) <0) {
+        if (bind(fd, &netif->sa, sizeof(struct sockaddr_in6)) < 0) {
             NET_ThrowNew(env, errno, "Can't bind socket");
             close(fd);
             return JNI_FALSE;
@@ -479,7 +483,7 @@ tcp_ping6(JNIEnv *env, SOCKETADDRESS *sa, SOCKETADDRESS *netif, jint timeout,
     SET_NONBLOCKING(fd);
 
     sa->sa6.sin6_port = htons(7); // echo port
-    connect_rv = NET_Connect(fd, &sa->sa, sizeof(struct sockaddr_in6));
+    connect_rv = connect(fd, &sa->sa, sizeof(struct sockaddr_in6));
 
     // connection established or refused immediately, either way it means
     // we were able to reach the host!
@@ -545,7 +549,7 @@ ping6(JNIEnv *env, jint fd, SOCKETADDRESS *sa, SOCKETADDRESS *netif,
     struct icmp6_hdr *icmp6;
     struct sockaddr_in6 sa_recv;
     jchar pid;
-    struct timeval tv;
+    struct timeval tv = { 0, 0 };
     size_t plen = sizeof(struct icmp6_hdr) + sizeof(tv);
 
 #if defined(__linux__)
@@ -557,11 +561,19 @@ ping6(JNIEnv *env, jint fd, SOCKETADDRESS *sa, SOCKETADDRESS *netif,
     setsockopt(fd, SOL_RAW, IPV6_CHECKSUM, &csum_offset, sizeof(int));
 #endif
 
-    setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &size, sizeof(size));
+    if (setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &size, sizeof(size)) < 0) {
+        NET_ThrowNew(env, errno, "setsockopt SO_RCVBUF failed");
+        close(fd);
+        return JNI_FALSE;
+    }
 
     // sets the ttl (max number of hops)
     if (ttl > 0) {
-        setsockopt(fd, IPPROTO_IPV6, IPV6_UNICAST_HOPS, &ttl, sizeof(ttl));
+        if (setsockopt(fd, IPPROTO_IPV6, IPV6_UNICAST_HOPS, &ttl, sizeof(ttl)) < 0) {
+            NET_ThrowNew(env, errno, "setsockopt IPV6_UNICAST_HOPS failed");
+            close(fd);
+            return JNI_FALSE;
+        }
     }
 
     // a specific interface was specified, so let's bind the socket

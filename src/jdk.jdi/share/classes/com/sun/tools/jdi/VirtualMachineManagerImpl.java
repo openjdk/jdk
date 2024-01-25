@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManagerService {
     private static VirtualMachineManagerImpl vmm;
 
     public static VirtualMachineManager virtualMachineManager() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             JDIPermission vmmPermission =
@@ -98,12 +99,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManagerService {
 
             try {
                 connector = connectors.next();
-            } catch (ThreadDeath x) {
-                throw x;
-            } catch (Exception x) {
-                System.err.println(x);
-                continue;
-            } catch (Error x) {
+            } catch (Exception | Error x) {
                 System.err.println(x);
                 continue;
             }
@@ -127,12 +123,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManagerService {
 
             try {
                 transportService = transportServices.next();
-            } catch (ThreadDeath x) {
-                throw x;
-            } catch (Exception x) {
-                System.err.println(x);
-                continue;
-            } catch (Error x) {
+            } catch (Exception | Error x) {
                 System.err.println(x);
                 continue;
             }
@@ -235,7 +226,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManagerService {
             vm = new VirtualMachineImpl(this, connection, process,
                                                    ++vmSequenceNumber);
         } catch (VMDisconnectedException e) {
-            throw new IOException(e.getMessage());
+            throw new IOException(e);
         }
         targets.add(vm);
         return vm;

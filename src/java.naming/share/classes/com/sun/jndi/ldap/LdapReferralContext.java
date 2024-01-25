@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,13 @@ package com.sun.jndi.ldap;
 
 import javax.naming.*;
 import javax.naming.directory.*;
-import javax.naming.spi.*;
 import javax.naming.ldap.*;
 
 import java.util.Hashtable;
 import java.util.StringTokenizer;
 import com.sun.jndi.toolkit.dir.SearchFilter;
+import com.sun.naming.internal.NamingManagerHelper;
+import com.sun.naming.internal.ObjectFactoriesFilter;
 
 /**
  * A context for handling referrals.
@@ -116,8 +117,8 @@ final class LdapReferralContext implements DirContext, LdapContext {
 
             Object obj;
             try {
-                obj = NamingManager.getObjectInstance(ref, null, null, env);
-
+                obj = NamingManagerHelper.getObjectInstance(ref, null, null,
+                        env, ObjectFactoriesFilter::checkLdapFilter);
             } catch (NamingException e) {
 
                 if (handleReferrals == LdapClient.LDAP_REF_THROW) {
@@ -198,8 +199,8 @@ final class LdapReferralContext implements DirContext, LdapContext {
 
     void setHopCount(int hopCount) {
         this.hopCount = hopCount;
-        if ((refCtx != null) && (refCtx instanceof LdapCtx)) {
-            ((LdapCtx)refCtx).setHopCount(hopCount);
+        if (refCtx instanceof LdapCtx ldapCtx) {
+            ldapCtx.setHopCount(hopCount);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, BELLSOFT. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,7 +25,6 @@
 /*
  * @test
  * @summary Test compiler intrinsics for signum
- * @requires os.arch=="aarch64"
  * @library /test/lib
  *
  * @run main/othervm
@@ -35,6 +34,10 @@
  * @run main/othervm
  *      -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
  *      -XX:-UseSignumIntrinsic -XX:+UseCopySignIntrinsic
+ *      compiler.intrinsics.math.TestSignumIntrinsic
+ * @run main/othervm
+ *      -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
+ *      -Xcomp -XX:+UseSignumIntrinsic
  *      compiler.intrinsics.math.TestSignumIntrinsic
  */
 
@@ -100,7 +103,7 @@ public class TestSignumIntrinsic {
             float arg = fcase[0];
             float expected = fcase[1];
             float calculated = Math.signum(arg);
-            Asserts.assertEQ(expected, calculated, "Unexpected float result");
+            Asserts.assertEQ(expected, calculated, "Unexpected float result from " + arg);
             accum += calculated;
         }
         return accum;
@@ -112,7 +115,7 @@ public class TestSignumIntrinsic {
             double arg = dcase[0];
             double expected = dcase[1];
             double calculated = Math.signum(arg);
-            Asserts.assertEQ(expected, calculated, "Unexpected double result");
+            Asserts.assertEQ(expected, calculated, "Unexpected double result from " + arg);
             accum += calculated;
         }
         return accum;

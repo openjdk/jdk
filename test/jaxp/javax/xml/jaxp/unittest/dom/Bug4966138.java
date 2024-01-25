@@ -36,7 +36,7 @@ import org.w3c.dom.TypeInfo;
  * @test
  * @bug 4966138
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true dom.Bug4966138
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow dom.Bug4966138
  * @run testng/othervm dom.Bug4966138
  * @summary Test Element's TypeInfo.getTypeName() returns a name instead of null in case the element is declared using anonymous simple type.
  */

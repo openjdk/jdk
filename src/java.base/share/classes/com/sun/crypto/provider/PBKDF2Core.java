@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,14 +28,16 @@ package com.sun.crypto.provider;
 import java.security.InvalidKeyException;
 import java.security.spec.KeySpec;
 import java.security.spec.InvalidKeySpecException;
+import java.util.Arrays;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactorySpi;
 import javax.crypto.spec.PBEKeySpec;
 
 /**
  * This class implements a key factory for PBE keys derived using
- * PBKDF2 with HmacSHA1/HmacSHA224/HmacSHA256/HmacSHA384/HmacSHA512
- * pseudo random function (PRF) as defined in PKCS#5 v2.1.
+ * PBKDF2 with HmacSHA1, HmacSHA224, HmacSHA256, HmacSHA384, HmacSHA512,
+ * HmacSHA512/224, and HmacSHA512/256 pseudo random function (PRF) as
+ * defined in PKCS#5 v2.1.
  *
  * @author Valerie Peng
  *
@@ -62,11 +64,11 @@ abstract class PBKDF2Core extends SecretKeyFactorySpi {
     protected SecretKey engineGenerateSecret(KeySpec keySpec)
         throws InvalidKeySpecException
     {
-        if (!(keySpec instanceof PBEKeySpec)) {
-            throw new InvalidKeySpecException("Invalid key spec");
+        if (keySpec instanceof PBEKeySpec ks) {
+            return new PBKDF2KeyImpl(ks, prfAlgo);
+        } else {
+            throw new InvalidKeySpecException("Only PBEKeySpec is accepted");
         }
-        PBEKeySpec ks = (PBEKeySpec) keySpec;
-        return new PBKDF2KeyImpl(ks, prfAlgo);
     }
 
     /**
@@ -88,21 +90,27 @@ abstract class PBKDF2Core extends SecretKeyFactorySpi {
      */
     protected KeySpec engineGetKeySpec(SecretKey key, Class<?> keySpecCl)
         throws InvalidKeySpecException {
-        if (key instanceof javax.crypto.interfaces.PBEKey) {
+        if (key instanceof javax.crypto.interfaces.PBEKey pKey) {
             // Check if requested key spec is amongst the valid ones
             if ((keySpecCl != null)
-                && PBEKeySpec.class.isAssignableFrom(keySpecCl)) {
-                javax.crypto.interfaces.PBEKey pKey =
-                    (javax.crypto.interfaces.PBEKey) key;
-                return new PBEKeySpec
-                    (pKey.getPassword(), pKey.getSalt(),
-                     pKey.getIterationCount(), pKey.getEncoded().length*8);
+                    && keySpecCl.isAssignableFrom(PBEKeySpec.class)) {
+                char[] passwd = pKey.getPassword();
+                byte[] encoded = pKey.getEncoded();
+                try {
+                    return new PBEKeySpec(passwd, pKey.getSalt(),
+                            pKey.getIterationCount(), encoded.length * 8);
+                } finally {
+                    if (passwd != null) {
+                        Arrays.fill(passwd, (char) 0);
+                    }
+                    Arrays.fill(encoded, (byte)0);
+                }
             } else {
-                throw new InvalidKeySpecException("Invalid key spec");
+                throw new InvalidKeySpecException
+                        ("Only PBEKeySpec is accepted");
             }
         } else {
-            throw new InvalidKeySpecException("Invalid key " +
-                                               "format/algorithm");
+            throw new InvalidKeySpecException("Only PBEKey is accepted");
         }
     }
 
@@ -129,25 +137,32 @@ abstract class PBKDF2Core extends SecretKeyFactorySpi {
                 return key;
             }
             // Check if key implements the PBEKey
-            if (key instanceof javax.crypto.interfaces.PBEKey) {
-                javax.crypto.interfaces.PBEKey pKey =
-                    (javax.crypto.interfaces.PBEKey) key;
+            if (key instanceof javax.crypto.interfaces.PBEKey pKey) {
+                char[] password = pKey.getPassword();
+                byte[] encoding = pKey.getEncoded();
+                PBEKeySpec spec =
+                        new PBEKeySpec(password,
+                                pKey.getSalt(),
+                                pKey.getIterationCount(),
+                                encoding.length*8);
                 try {
-                    PBEKeySpec spec =
-                        new PBEKeySpec(pKey.getPassword(),
-                                       pKey.getSalt(),
-                                       pKey.getIterationCount(),
-                                       pKey.getEncoded().length*8);
                     return new PBKDF2KeyImpl(spec, prfAlgo);
                 } catch (InvalidKeySpecException re) {
-                    InvalidKeyException ike = new InvalidKeyException
-                        ("Invalid key component(s)");
-                    ike.initCause(re);
-                    throw ike;
+                    throw new InvalidKeyException
+                        ("Invalid key component(s)", re);
+                } finally {
+                    if (password != null) {
+                        Arrays.fill(password, (char) 0);
+                        spec.clearPassword();
+                    }
+                    Arrays.fill(encoding, (byte)0);
                 }
+            } else {
+                throw new InvalidKeyException("Only PBEKey is accepted");
             }
         }
-        throw new InvalidKeyException("Invalid key format/algorithm");
+        throw new InvalidKeyException("Only PBKDF2With" + prfAlgo +
+                " key with RAW format is accepted");
     }
 
     public static final class HmacSHA1 extends PBKDF2Core {
@@ -177,6 +192,18 @@ abstract class PBKDF2Core extends SecretKeyFactorySpi {
     public static final class HmacSHA512 extends PBKDF2Core {
         public HmacSHA512() {
             super("HmacSHA512");
+        }
+    }
+
+    public static final class HmacSHA512_224 extends PBKDF2Core {
+        public HmacSHA512_224() {
+            super("HmacSHA512/224");
+        }
+    }
+
+    public static final class HmacSHA512_256 extends PBKDF2Core {
+        public HmacSHA512_256() {
+            super("HmacSHA512/256");
         }
     }
 }

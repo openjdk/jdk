@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,8 @@ public class JavaThread extends Thread {
   private static final boolean DEBUG = System.getProperty("sun.jvm.hotspot.runtime.JavaThread.DEBUG") != null;
 
   private static long          threadObjFieldOffset;
+  private static long          lockStackTopOffset;
+  private static long          lockStackBaseOffset;
   private static AddressField  anchorField;
   private static AddressField  lastJavaSPField;
   private static AddressField  lastJavaPCField;
@@ -52,6 +54,8 @@ public class JavaThread extends Thread {
   private static AddressField  stackBaseField;
   private static CIntegerField stackSizeField;
   private static CIntegerField terminatedField;
+  private static AddressField activeHandlesField;
+  private static long oopPtrSize;
 
   private static JavaThreadPDAccess access;
 
@@ -84,6 +88,7 @@ public class JavaThread extends Thread {
   private static synchronized void initialize(TypeDataBase db) {
     Type type = db.lookupType("JavaThread");
     Type anchorType = db.lookupType("JavaFrameAnchor");
+    Type typeLockStack = db.lookupType("LockStack");
 
     threadObjFieldOffset = type.getField("_threadObj").getOffset();
 
@@ -95,6 +100,11 @@ public class JavaThread extends Thread {
     stackBaseField    = type.getAddressField("_stack_base");
     stackSizeField    = type.getCIntegerField("_stack_size");
     terminatedField   = type.getCIntegerField("_terminated");
+    activeHandlesField = type.getAddressField("_active_handles");
+
+    lockStackTopOffset = type.getField("_lock_stack").getOffset() + typeLockStack.getField("_top").getOffset();
+    lockStackBaseOffset = type.getField("_lock_stack").getOffset() + typeLockStack.getField("_base[0]").getOffset();
+    oopPtrSize = VM.getVM().getAddressSize();
 
     UNINITIALIZED     = db.lookupIntConstant("_thread_uninitialized").intValue();
     NEW               = db.lookupIntConstant("_thread_new").intValue();
@@ -122,7 +132,7 @@ public class JavaThread extends Thread {
   }
 
   /** NOTE: for convenience, this differs in definition from the underlying VM.
-      Only "pure" JavaThreads return true; CompilerThreads, the CodeCacheSweeperThread,
+      Only "pure" JavaThreads return true; CompilerThreads,
       JVMDIDebuggerThreads return false.
       FIXME:
       consider encapsulating platform-specific functionality in an
@@ -325,7 +335,7 @@ public class JavaThread extends Thread {
   //
 
   public OSThread getOSThread() {
-    return (OSThread) VMObjectFactory.newObject(OSThread.class, osThreadField.getValue(addr));
+    return VMObjectFactory.newObject(OSThread.class, osThreadField.getValue(addr));
   }
 
   public Address getStackBase() {
@@ -352,7 +362,7 @@ public class JavaThread extends Thread {
       VMOopHandle vmOopHandle = VMObjectFactory.newObject(VMOopHandle.class, addr);
       obj = vmOopHandle.resolve();
     } catch (Exception e) {
-      e.printStackTrace();
+      System.out.println("WARNING: could not get Thread object: " + e);
     }
     return obj;
   }
@@ -392,6 +402,23 @@ public class JavaThread extends Thread {
     return stackBase.greaterThan(a) && sp.lessThanOrEqual(a);
   }
 
+  public boolean isLockOwned(OopHandle obj) {
+    long current = lockStackBaseOffset;
+    long end = addr.getJIntAt(lockStackTopOffset);
+    if (Assert.ASSERTS_ENABLED) {
+      Assert.that(current <= end, "current stack offset must be above base offset");
+    }
+
+    while (current < end) {
+      Address oop = addr.getAddressAt(current);
+      if (oop.equals(obj)) {
+        return true;
+      }
+      current += oopPtrSize;
+    }
+    return false;
+  }
+
   public boolean isLockOwned(Address a) {
     Address stackBase = getStackBase();
     Address stackLimit = stackBase.addOffsetTo(-getStackSize());
@@ -404,9 +431,21 @@ public class JavaThread extends Thread {
   public Oop getCurrentParkBlocker() {
     Oop threadObj = getThreadObj();
     if (threadObj != null) {
-      return OopUtilities.threadOopGetParkBlocker(threadObj);
+      try {
+        return OopUtilities.threadOopGetParkBlocker(threadObj);
+      } catch (Exception e) {
+        System.out.println("Could not get current park blocker: " + e);
+      }
     }
     return null;
+  }
+
+  public JNIHandleBlock activeHandles() {
+    Address a = activeHandlesField.getAddress(addr);
+    if (a == null) {
+      return null;
+    }
+    return new JNIHandleBlock(a);
   }
 
   public void printInfoOn(PrintStream tty) {
@@ -471,34 +510,78 @@ public class JavaThread extends Thread {
     return access.getLastSP(addr);
   }
 
+  // Print the contents of all registers in the thread's context
+  public void printThreadContextOn(PrintStream out, boolean verbose){
+    ThreadContext tc = getThreadProxy().getContext();
+    for (int r = 0; r < tc.getNumRegisters(); r++) {
+      Address regAddr = tc.getRegisterAsAddress(r);
+      System.out.format("%s: %s", tc.getRegisterName(r), regAddr);
+      if (regAddr == null) {
+        System.out.println();
+      } else {
+        PointerLocation l = PointerFinder.find(regAddr);
+        if (l.isUnknown()) {
+          System.out.println();
+        } else {
+          System.out.print(": ");
+          l.printOn(System.out, false, verbose);
+        }
+      }
+    }
+  }
 
   public void printThreadInfoOn(PrintStream out){
-    Oop threadOop = this.getThreadObj();
+      String threadName = "<unknown>";
+      boolean daemon = false;
+      int priority = java.lang.Thread.MIN_PRIORITY - 1;
+      String statusName = "<unknown>";
 
-    out.print("\"");
-    out.print(this.getThreadName());
-    out.print("\" #");
-    out.print(OopUtilities.threadOopGetTID(threadOop));
-    if(OopUtilities.threadOopGetDaemon(threadOop)){
-      out.print(" daemon");
-    }
-    out.print(" prio=");
-    out.print(OopUtilities.threadOopGetPriority(threadOop));
-    out.print(" tid=");
-    out.print(this.getAddress());
-    out.print(" nid=");
-    out.print(String.format("0x%x ",this.getOSThread().threadId()));
-    out.print(getOSThread().getThreadState().getPrintVal());
-    out.print(" [");
-    if(this.getLastJavaSP() == null){
-      out.print(String.format(ADDRESS_FORMAT,0L));
-    } else {
-      out.print(this.getLastJavaSP().andWithMask(~0xFFF));
-    }
-    out.println("]");
-    out.print("   java.lang.Thread.State: ");
-    out.println(OopUtilities.threadOopGetThreadStatusName(threadOop));
-    out.print("   JavaThread state: _thread_");
-    out.println(this.getThreadState().toString().toLowerCase());
+      Oop threadOop = this.getThreadObj();
+      if (threadOop == null) {
+          System.out.println("Could not get the java Thread object. Thread info will be limited.");
+      } else {
+          // Some of these accesses can throw an Exception if we are in the
+          // middle of a GC, so be cautious.
+          try {
+              threadName = this.getThreadName();
+          } catch (Exception e) {}
+          try {
+              // These all rely on the FieldHolder object, so if one fails, they all fail.
+              daemon = OopUtilities.threadOopGetDaemon(threadOop);
+              priority = OopUtilities.threadOopGetPriority(threadOop);
+              statusName = OopUtilities.threadOopGetThreadStatusName(threadOop);
+          } catch (Exception e) {}
+          out.print("\"");
+          out.print(threadName);
+          out.print("\" #");
+          out.print(OopUtilities.threadOopGetTID(threadOop));
+          if (daemon) {
+              out.print(" daemon");
+          }
+          out.print(" prio=");
+          if (priority == java.lang.Thread.MIN_PRIORITY - 1) {
+              out.print("<unknown>");
+          } else {
+              out.print(priority);
+          }
+      }
+      out.print(" tid=");
+      out.print(this.getAddress());
+      out.print(" nid=");
+      out.print(String.format("%d ", this.getOSThread().threadId()));
+      out.print(getOSThread().getThreadState().getPrintVal());
+      out.print(" [");
+      if (this.getLastJavaSP() == null) {
+          out.print(String.format(ADDRESS_FORMAT, 0L));
+      } else {
+          out.print(this.getLastJavaSP().andWithMask(~0xFFF));
+      }
+      out.println("]");
+      if (threadOop != null) {
+          out.print("   java.lang.Thread.State: ");
+          out.println(statusName);
+      }
+      out.print("   JavaThread state: _thread_");
+      out.println(this.getThreadState().toString().toLowerCase());
   }
 }

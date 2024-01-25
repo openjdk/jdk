@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "jfr/recorder/jfrEventSetting.inline.hpp"
 
 JfrNativeSettings JfrEventSetting::_jvm_event_settings;
+bool JfrEventSetting::_internal_types = false;
 
 bool JfrEventSetting::set_threshold(jlong id, jlong threshold_ticks) {
   JfrEventId event_id = (JfrEventId)id;
@@ -34,11 +35,10 @@ bool JfrEventSetting::set_threshold(jlong id, jlong threshold_ticks) {
   return true;
 }
 
-bool JfrEventSetting::set_cutoff(jlong id, jlong cutoff_ticks) {
+void JfrEventSetting::set_miscellaneous(jlong id, jlong level) {
   JfrEventId event_id = (JfrEventId)id;
   assert(bounds_check_event(event_id), "invariant");
-  setting(event_id).cutoff_ticks = cutoff_ticks;
-  return true;
+  setting(event_id).miscellaneous = level;
 }
 
 void JfrEventSetting::set_stacktrace(jlong id, bool enabled) {
@@ -58,6 +58,15 @@ void JfrEventSetting::set_large(JfrEventId event_id) {
   setting(event_id).large = true;
 }
 
+void JfrEventSetting::unhide_internal_types() {
+  _internal_types = true;
+}
+
+bool JfrEventSetting::is_internal_types_visible() {
+  return _internal_types;
+}
+
+
 #ifdef ASSERT
 bool JfrEventSetting::bounds_check_event(jlong id) {
   if ((unsigned)id < FIRST_EVENT_ID) {
@@ -69,3 +78,4 @@ bool JfrEventSetting::bounds_check_event(jlong id) {
   return true;
 }
 #endif // ASSERT
+

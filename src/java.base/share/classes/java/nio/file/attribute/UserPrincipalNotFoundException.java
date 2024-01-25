@@ -40,6 +40,9 @@ public class UserPrincipalNotFoundException
     @java.io.Serial
     static final long serialVersionUID = -5369283889045833024L;
 
+    /**
+     * The user principal name.
+     */
     private final String name;
 
     /**

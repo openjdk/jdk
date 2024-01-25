@@ -28,127 +28,116 @@ import java.io.IOException;
 import com.sun.org.apache.bcel.internal.Const;
 
 /**
- * This class is derived from the abstract {@link Constant}
- * and represents a reference to the name and signature
- * of a field or method.
+ * This class is derived from the abstract {@link Constant} and represents a reference to the name and signature of a
+ * field or method.
  *
- * @see     Constant
+ * @see Constant
  */
 public final class ConstantNameAndType extends Constant {
 
-    private int name_index; // Name of field/method
-    private int signature_index; // and its signature.
-
+    private int nameIndex; // Name of field/method
+    private int signatureIndex; // and its signature.
 
     /**
      * Initialize from another object.
+     *
+     * @param c Source to copy.
      */
     public ConstantNameAndType(final ConstantNameAndType c) {
         this(c.getNameIndex(), c.getSignatureIndex());
     }
 
-
     /**
      * Initialize instance from file data.
      *
      * @param file Input stream
-     * @throws IOException
+     * @throws IOException if an I/O error occurs.
      */
     ConstantNameAndType(final DataInput file) throws IOException {
         this(file.readUnsignedShort(), file.readUnsignedShort());
     }
 
-
     /**
-     * @param name_index Name of field/method
-     * @param signature_index and its signature
+     * @param nameIndex Name of field/method
+     * @param signatureIndex and its signature
      */
-    public ConstantNameAndType(final int name_index, final int signature_index) {
+    public ConstantNameAndType(final int nameIndex, final int signatureIndex) {
         super(Const.CONSTANT_NameAndType);
-        this.name_index = name_index;
-        this.signature_index = signature_index;
+        this.nameIndex = nameIndex;
+        this.signatureIndex = signatureIndex;
     }
 
-
     /**
-     * Called by objects that are traversing the nodes of the tree implicitely
-     * defined by the contents of a Java class. I.e., the hierarchy of methods,
-     * fields, attributes, etc. spawns a tree of objects.
+     * Called by objects that are traversing the nodes of the tree implicitly defined by the contents of a Java class.
+     * I.e., the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
      *
      * @param v Visitor object
      */
     @Override
-    public void accept( final Visitor v ) {
+    public void accept(final Visitor v) {
         v.visitConstantNameAndType(this);
     }
-
 
     /**
      * Dump name and signature index to file stream in binary format.
      *
      * @param file Output file stream
-     * @throws IOException
+     * @throws IOException if an I/O error occurs.
      */
     @Override
-    public void dump( final DataOutputStream file ) throws IOException {
+    public void dump(final DataOutputStream file) throws IOException {
         file.writeByte(super.getTag());
-        file.writeShort(name_index);
-        file.writeShort(signature_index);
+        file.writeShort(nameIndex);
+        file.writeShort(signatureIndex);
     }
 
+    /**
+     * @return name
+     */
+    public String getName(final ConstantPool cp) {
+        return cp.constantToString(getNameIndex(), Const.CONSTANT_Utf8);
+    }
 
     /**
      * @return Name index in constant pool of field/method name.
      */
     public int getNameIndex() {
-        return name_index;
+        return nameIndex;
     }
 
-
-    /** @return name
+    /**
+     * @return signature
      */
-    public String getName( final ConstantPool cp ) {
-        return cp.constantToString(getNameIndex(), Const.CONSTANT_Utf8);
+    public String getSignature(final ConstantPool cp) {
+        return cp.constantToString(getSignatureIndex(), Const.CONSTANT_Utf8);
     }
-
 
     /**
      * @return Index in constant pool of field/method signature.
      */
     public int getSignatureIndex() {
-        return signature_index;
+        return signatureIndex;
     }
-
-
-    /** @return signature
-     */
-    public String getSignature( final ConstantPool cp ) {
-        return cp.constantToString(getSignatureIndex(), Const.CONSTANT_Utf8);
-    }
-
 
     /**
-     * @param name_index the name index of this constant
+     * @param nameIndex the name index of this constant
      */
-    public void setNameIndex( final int name_index ) {
-        this.name_index = name_index;
+    public void setNameIndex(final int nameIndex) {
+        this.nameIndex = nameIndex;
     }
-
 
     /**
-     * @param signature_index the signature index in the constant pool of this type
+     * @param signatureIndex the signature index in the constant pool of this type
      */
-    public void setSignatureIndex( final int signature_index ) {
-        this.signature_index = signature_index;
+    public void setSignatureIndex(final int signatureIndex) {
+        this.signatureIndex = signatureIndex;
     }
-
 
     /**
      * @return String representation
      */
     @Override
     public String toString() {
-        return super.toString() + "(name_index = " + name_index + ", signature_index = "
-                + signature_index + ")";
+        return super.toString() + "(nameIndex = " + nameIndex + ", signatureIndex = " + signatureIndex + ")";
     }
 }

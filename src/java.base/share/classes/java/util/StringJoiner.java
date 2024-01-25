@@ -24,6 +24,9 @@
  */
 package java.util;
 
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
+
 /**
  * {@code StringJoiner} is used to construct a sequence of characters separated
  * by a delimiter and optionally starting with a supplied prefix
@@ -63,6 +66,8 @@ package java.util;
  * @since  1.8
 */
 public final class StringJoiner {
+    private static final String[] EMPTY_STRING_ARRAY = new String[0];
+
     private final String prefix;
     private final String delimiter;
     private final String suffix;
@@ -158,27 +163,15 @@ public final class StringJoiner {
      */
     @Override
     public String toString() {
-        final String[] elts = this.elts;
-        if (elts == null && emptyValue != null) {
-            return emptyValue;
-        }
         final int size = this.size;
-        final int addLen = prefix.length() + suffix.length();
+        var elts = this.elts;
         if (size == 0) {
-            if (addLen == 0) {
-                return "";
+            if (emptyValue != null) {
+                return emptyValue;
             }
-            return prefix + suffix;
+            elts = EMPTY_STRING_ARRAY;
         }
-        final String delimiter = this.delimiter;
-        StringBuilder sb = new StringBuilder(len + addLen).append(prefix);
-        if (size > 0) {
-            sb.append(elts[0]);
-            for (int i = 1; i < size; i++) {
-                sb.append(delimiter).append(elts[i]);
-            }
-        }
-        return sb.append(suffix).toString();
+        return JLA.join(prefix, suffix, delimiter, elts, size);
     }
 
     /**
@@ -233,7 +226,7 @@ public final class StringJoiner {
      */
     public StringJoiner merge(StringJoiner other) {
         Objects.requireNonNull(other);
-        if (other.elts == null) {
+        if (other.size == 0) {
             return this;
         }
         other.compactElts();
@@ -241,15 +234,11 @@ public final class StringJoiner {
     }
 
     private void compactElts() {
-        if (size > 1) {
-            StringBuilder sb = new StringBuilder(len).append(elts[0]);
-            int i = 1;
-            do {
-                sb.append(delimiter).append(elts[i]);
-                elts[i] = null;
-            } while (++i < size);
+        int sz = size;
+        if (sz > 1) {
+            elts[0] = JLA.join("", "", delimiter, elts, sz);
+            Arrays.fill(elts, 1, sz, null);
             size = 1;
-            elts[0] = sb.toString();
         }
     }
 
@@ -267,4 +256,6 @@ public final class StringJoiner {
         return (size == 0 && emptyValue != null) ? emptyValue.length() :
             len + prefix.length() + suffix.length();
     }
+
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 }

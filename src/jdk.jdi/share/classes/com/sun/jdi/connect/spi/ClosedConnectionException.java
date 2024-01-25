@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,9 +33,9 @@ package com.sun.jdi.connect.spi;
  * <p> When a thread is blocked in {@link Connection#readPacket
  * readPacket} waiting for packet from a target VM the
  * {@link Connection} may be closed asynchronous by another
- * thread invokving the {@link Connection#close close} method.
+ * thread invoking the {@link Connection#close close} method.
  * When this arises the thread in readPacket will throw this
- * exception. Similiarly when a thread is blocked in
+ * exception. Similarly when a thread is blocked in
  * {@link Connection#writePacket} the Connection may be closed.
  * When this occurs the thread in writePacket will throw
  * this exception.

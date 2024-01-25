@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8169676 8175055
+ * @bug 8169676 8175055 8323016
  * @summary boolean result of Option.process is often ignored
  * @modules jdk.compiler/com.sun.tools.javac.api
  * @modules jdk.compiler/com.sun.tools.javac.main
@@ -79,7 +79,7 @@ public class BadOptionsTest extends TestRunner {
                 .run(Task.Expect.FAIL)
                 .writeAll();
         checkFound(result.getOutput(Task.OutputKind.DIRECT),
-                "javadoc: error - error: no value for --add-modules option");
+                "error: no value for --add-modules option");
         checkNotFound(result, "Exception", "at jdk.javadoc/");
     }
 
@@ -104,7 +104,7 @@ public class BadOptionsTest extends TestRunner {
                 .run(Task.Expect.FAIL)
                 .writeAll();
         checkFound(result.getOutput(Task.OutputKind.DIRECT),
-                "javadoc: error - error: no value for --add-exports option");
+                "error: no value for --add-exports option");
         checkNotFound(result, "Exception", "at jdk.javadoc/");
     }
 
@@ -116,7 +116,7 @@ public class BadOptionsTest extends TestRunner {
                 .run(Task.Expect.FAIL)
                 .writeAll();
         checkFound(result.getOutput(Task.OutputKind.DIRECT),
-                "javadoc: error - error: bad value for --add-exports option: 'm/p'");
+                "error: bad value for --add-exports option: 'm/p'");
         checkNotFound(result, "Exception", "at jdk.javadoc/");
     }
 
@@ -149,6 +149,75 @@ public class BadOptionsTest extends TestRunner {
                 "error: cannot specify both --source-path and --module-source-path");
         checkFound(result.getOutput(Task.OutputKind.DIRECT),
                 "1 error");
+    }
+
+    @Test
+    public void testOptionNotFound_NoSuggestions() {
+        var result = new JavadocTask(tb, Task.Mode.CMDLINE)
+                .options("--not-a-path")
+                .run(Task.Expect.FAIL)
+                .writeAll();
+        checkFound(String.join("\n", result.getOutputLines(Task.OutputKind.DIRECT)),
+                """
+                    error: invalid flag: --not-a-path
+                    For more details on available options, use --help or --help-extra"""
+        );
+    }
+
+    @Test
+    public void testOptionNotFound_OneSuggestion() {
+        var result = new JavadocTask(tb, Task.Mode.CMDLINE)
+                .options("--middle-path")
+                .run(Task.Expect.FAIL)
+                .writeAll();
+        checkFound(String.join("\n", result.getOutputLines(Task.OutputKind.DIRECT)),
+                """
+                    error: invalid flag: --middle-path
+                    Did you mean: --module-path
+                    For more details on available options, use --help or --help-extra"""
+        );
+    }
+
+    @Test
+    public void testOptionNotFound_TwoSuggestions() {
+        var result = new JavadocTask(tb, Task.Mode.CMDLINE)
+                .options("--sourcepath")
+                .run(Task.Expect.FAIL)
+                .writeAll();
+        checkFound(String.join("\n", result.getOutputLines(Task.OutputKind.DIRECT)),
+                """
+                    error: invalid flag: --sourcepath
+                    Did you mean one of: --source-path -sourcepath
+                    For more details on available options, use --help or --help-extra"""
+        );
+    }
+
+    @Test
+    public void testOptionNotFound_ThreeSuggestions() {
+        var result = new JavadocTask(tb, Task.Mode.CMDLINE)
+                .options("--classpath")
+                .run(Task.Expect.FAIL)
+                .writeAll();
+        checkFound(String.join("\n", result.getOutputLines(Task.OutputKind.DIRECT)),
+                """
+                    error: invalid flag: --classpath
+                    Did you mean one of: --class-path -classpath -bootclasspath
+                    For more details on available options, use --help or --help-extra"""
+        );
+    }
+
+    @Test
+    public void testOptionNotFound_DocletOption() {
+        var result = new JavadocTask(tb, Task.Mode.CMDLINE)
+                .options("-tiglet")
+                .run(Task.Expect.FAIL)
+                .writeAll();
+        checkFound(String.join("\n", result.getOutputLines(Task.OutputKind.DIRECT)),
+                """
+                    error: invalid flag: -tiglet
+                    Did you mean: -taglet
+                    For more details on available options, use --help or --help-extra"""
+        );
     }
 
     private void checkFound(String log, String... expect) {

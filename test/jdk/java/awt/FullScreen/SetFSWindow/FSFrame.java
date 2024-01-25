@@ -28,8 +28,8 @@
  * @summary verify that isFullScreenSupported and getFullScreenWindow work
  * correctly with and without a SecurityManager. Note that the test may fail
  * on older Gnome versions (see bug 6500686).
- * @run main FSFrame
- * @run main/othervm -Dsun.java2d.noddraw=true FSFrame
+ * @run main/othervm -Djava.security.manager=allow FSFrame
+ * @run main/othervm -Djava.security.manager=allow -Dsun.java2d.noddraw=true FSFrame
  */
 
 import java.awt.*;

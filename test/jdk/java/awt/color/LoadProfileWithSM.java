@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ import java.awt.color.*;
  * @test
  * @bug 8058969 8178708
  * @summary test standard profiles loads with SecurityManager installed.
- * @run main/othervm LoadProfileWithSM
+ * @run main/othervm -Djava.security.manager=allow LoadProfileWithSM
  */
 
 public class LoadProfileWithSM {

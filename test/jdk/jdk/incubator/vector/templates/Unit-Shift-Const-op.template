@@ -1,0 +1,10 @@
+    static $type$ [[TEST]]_binary_const($type$ a) {
+        return ($type$)([[TEST_OP]]);
+    }
+
+    @Test(dataProvider = "$type$UnaryOpProvider")
+    static void [[TEST]]$vectorteststype$ScalarShiftConst(IntFunction<$type$[]> fa) {
+[[KERNEL]]
+        assertShiftConstEquals(r, a, $vectorteststype$::[[TEST]]_binary_const);
+    }
+

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -72,35 +72,45 @@ inline D atomic_fastcall(F stub, volatile D *dest, T1 arg1, T2 arg2) {
 template<size_t byte_size>
 struct Atomic::PlatformAdd {
   template<typename D, typename I>
-  D fetch_and_add(D volatile* dest, I add_value, atomic_memory_order order) const;
+  D fetch_then_add(D volatile* dest, I add_value, atomic_memory_order order) const;
 
   template<typename D, typename I>
-  D add_and_fetch(D volatile* dest, I add_value, atomic_memory_order order) const {
-    D value = fetch_and_add(dest, add_value, order) + add_value;
+  D add_then_fetch(D volatile* dest, I add_value, atomic_memory_order order) const {
+    D value = fetch_then_add(dest, add_value, order) + add_value;
     return value;
   }
 };
 
 template<>
 template<typename D, typename I>
-inline D Atomic::PlatformAdd<4>::fetch_and_add(D volatile* dest, I add_value,
-                                               atomic_memory_order order) const {
+inline D Atomic::PlatformAdd<4>::fetch_then_add(D volatile* dest, I add_value,
+                                                atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(I));
   STATIC_ASSERT(4 == sizeof(D));
-  D old_value
-    = atomic_fastcall(aarch64_atomic_fetch_add_4_impl, dest, add_value);
-  return old_value;
+  aarch64_atomic_stub_t stub;
+  switch (order) {
+  case memory_order_relaxed:
+    stub = aarch64_atomic_fetch_add_4_relaxed_impl; break;
+  default:
+    stub = aarch64_atomic_fetch_add_4_impl; break;
+  }
+  return atomic_fastcall(stub, dest, add_value);
 }
 
 template<>
 template<typename D, typename I>
-inline D Atomic::PlatformAdd<8>::fetch_and_add(D volatile* dest, I add_value,
-                                               atomic_memory_order order) const {
+inline D Atomic::PlatformAdd<8>::fetch_then_add(D volatile* dest, I add_value,
+                                                atomic_memory_order order) const {
   STATIC_ASSERT(8 == sizeof(I));
   STATIC_ASSERT(8 == sizeof(D));
-  D old_value
-    = atomic_fastcall(aarch64_atomic_fetch_add_8_impl, dest, add_value);
-  return old_value;
+  aarch64_atomic_stub_t stub;
+  switch (order) {
+  case memory_order_relaxed:
+    stub = aarch64_atomic_fetch_add_8_relaxed_impl; break;
+  default:
+    stub = aarch64_atomic_fetch_add_8_impl; break;
+  }
+  return atomic_fastcall(stub, dest, add_value);
 }
 
 template<>
@@ -151,6 +161,11 @@ inline T Atomic::PlatformCmpxchg<4>::operator()(T volatile* dest,
   switch (order) {
   case memory_order_relaxed:
     stub = aarch64_atomic_cmpxchg_4_relaxed_impl; break;
+  case memory_order_release:
+    stub = aarch64_atomic_cmpxchg_4_release_impl; break;
+  case memory_order_acq_rel:
+  case memory_order_seq_cst:
+    stub = aarch64_atomic_cmpxchg_4_seq_cst_impl; break;
   default:
     stub = aarch64_atomic_cmpxchg_4_impl; break;
   }
@@ -169,6 +184,11 @@ inline T Atomic::PlatformCmpxchg<8>::operator()(T volatile* dest,
   switch (order) {
   case memory_order_relaxed:
     stub = aarch64_atomic_cmpxchg_8_relaxed_impl; break;
+  case memory_order_release:
+    stub = aarch64_atomic_cmpxchg_8_release_impl; break;
+  case memory_order_acq_rel:
+  case memory_order_seq_cst:
+    stub = aarch64_atomic_cmpxchg_8_seq_cst_impl; break;
   default:
     stub = aarch64_atomic_cmpxchg_8_impl; break;
   }

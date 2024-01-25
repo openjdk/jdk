@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -80,7 +80,7 @@ void PrintCLDMetaspaceInfoClosure::do_cld(ClassLoaderData* cld) {
   }
 
   ClassLoaderMetaspace* msp = cld->metaspace_or_null();
-  if (msp == NULL) {
+  if (msp == nullptr) {
     _num_loaders_without_metaspace++;
     return;
   }
@@ -109,17 +109,17 @@ void PrintCLDMetaspaceInfoClosure::do_cld(ClassLoaderData* cld) {
     _out->print(UINTX_FORMAT_W(4) ": ", _num_loaders);
 
     // Print "CLD for [<loader name>,] instance of <loader class name>"
-    // or    "CLD for <hidden or anonymous class>, loaded by [<loader name>,] instance of <loader class name>"
+    // or    "CLD for <hidden>, loaded by [<loader name>,] instance of <loader class name>"
     ResourceMark rm;
-    const char* name = NULL;
-    const char* class_name = NULL;
+    const char* name = nullptr;
+    const char* class_name = nullptr;
 
     // Note: this should also work if unloading:
     Klass* k = cld->class_loader_klass();
-    if (k != NULL) {
+    if (k != nullptr) {
       class_name = k->external_name();
       Symbol* s = cld->name();
-      if (s != NULL) {
+      if (s != nullptr) {
         name = s->as_C_string();
       }
     } else {
@@ -133,12 +133,12 @@ void PrintCLDMetaspaceInfoClosure::do_cld(ClassLoaderData* cld) {
     }
     _out->print(":");
     if (cld->has_class_mirror_holder()) {
-      _out->print(" <hidden or anonymous class>, loaded by");
+      _out->print(" <hidden class>, loaded by");
     }
-    if (name != NULL) {
+    if (name != nullptr) {
       _out->print(" \"%s\"", name);
     }
-    if (class_name != NULL) {
+    if (class_name != nullptr) {
       _out->print(" instance of %s", class_name);
     }
 

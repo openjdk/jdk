@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,20 @@
 
 // -- This file was mechanically generated: Do not edit! -- //
 
+
+
+
+
 import java.nio.*;
+
+
+
+
+
+
+
+
+
 
 
 public class BasicLong
@@ -472,6 +485,73 @@ public class BasicLong
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     private static void fail(String problem,
                              LongBuffer xb, LongBuffer yb,
                              long x, long y) {
@@ -548,6 +628,60 @@ public class BasicLong
 
         absBulkPutArray(b);
         absBulkGet(b);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1057,6 +1191,26 @@ public class BasicLong
 
     }
 
+    public static void testToString() {
+        final int cap = 10;
+
+
+
+
+
+
+
+
+
+
+        LongBuffer nondirect1 = LongBuffer.allocate(cap);
+        if (!nondirect1.toString().equals(Basic.toString(nondirect1))) {
+           fail("Heap buffer toString is incorrect: "
+                  + nondirect1.toString() + " vs " + Basic.toString(nondirect1));
+        }
+
+    }
+
     public static void test() {
         testAllocate();
         test(0, LongBuffer.allocate(7 * 1024), false);
@@ -1078,6 +1232,8 @@ public class BasicLong
 
         putBuffer();
 
+
+        testToString();
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,31 +27,16 @@ package sun.security.util;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.security.CodeSigner;
-import java.security.GeneralSecurityException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.SignatureException;
-import java.security.Timestamp;
+import java.security.*;
 import java.security.cert.CertPath;
-import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.HexFormat;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.security.cert.X509Certificate;
+import java.util.*;
 import java.util.jar.Attributes;
-import java.util.jar.JarException;
-import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
+import sun.security.action.GetIntegerAction;
 import sun.security.jca.Providers;
 import sun.security.pkcs.PKCS7;
 import sun.security.pkcs.SignerInfo;
@@ -61,34 +46,24 @@ public class SignatureFileVerifier {
     /* Are we debugging ? */
     private static final Debug debug = Debug.getInstance("jar");
 
-    /**
-     * Holder class to delay initialization of DisabledAlgorithmConstraints
-     * until needed.
-     */
-    private static class ConfigurationHolder {
-        static final DisabledAlgorithmConstraints JAR_DISABLED_CHECK =
-            new DisabledAlgorithmConstraints(
-                    DisabledAlgorithmConstraints.PROPERTY_JAR_DISABLED_ALGS);
-    }
-
-    private ArrayList<CodeSigner[]> signerCache;
+    private final ArrayList<CodeSigner[]> signerCache;
 
     private static final String ATTR_DIGEST =
         "-DIGEST-" + ManifestDigester.MF_MAIN_ATTRS.toUpperCase(Locale.ENGLISH);
 
     /** the PKCS7 block for this .DSA/.RSA/.EC file */
-    private PKCS7 block;
+    private final PKCS7 block;
 
     /** the raw bytes of the .SF file */
     private byte[] sfBytes;
 
-    /** the name of the signature block file, uppercased and without
+    /** the name of the signature block file, uppercase and without
      *  the extension (.DSA/.RSA/.EC)
      */
-    private String name;
+    private final String name;
 
     /** the ManifestDigester */
-    private ManifestDigester md;
+    private final ManifestDigester md;
 
     /** cache of created MessageDigest objects */
     private HashMap<String, MessageDigest> createdDigests;
@@ -97,15 +72,23 @@ public class SignatureFileVerifier {
     private boolean workaround = false;
 
     /* for generating certpath objects */
-    private CertificateFactory certificateFactory = null;
+    private final CertificateFactory certificateFactory;
 
-    /** Algorithms that have been checked if they are weak. */
-    private Map<String, Boolean> permittedAlgs= new HashMap<>();
-
-    /** TSA timestamp of signed jar.  The newest timestamp is used.  If there
-     *  was no TSA timestamp used when signed, current time is used ("null").
+    /** Algorithms that have been previously checked against disabled
+     *  constraints.
      */
-    private Timestamp timestamp = null;
+    private final Map<String, Boolean> permittedAlgs = new HashMap<>();
+
+    /** ConstraintsParameters for checking disabled algorithms */
+    private JarConstraintsParameters params;
+
+    private static final String META_INF = "META-INF/";
+
+    // the maximum allowed size in bytes for the signature-related files
+    public static final int MAX_SIG_FILE_SIZE = initializeMaxSigFileSize();
+
+    // The maximum size of array to allocate. Some VMs reserve some header words in an array.
+    private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
 
     /**
      * Create the named SignatureFileVerifier.
@@ -169,6 +152,18 @@ public class SignatureFileVerifier {
 
     /**
      * Utility method used by JarVerifier and JarSigner
+     * to determine if a path is located directly in the
+     * META-INF/ directory
+     *
+     * @param name the path name to check
+     * @return true if the path resides in META-INF directly, ignoring case
+     */
+    public static boolean isInMetaInf(String name) {
+        return name.regionMatches(true, 0, META_INF, 0, META_INF.length())
+                && name.lastIndexOf('/') < META_INF.length();
+    }
+    /**
+     * Utility method used by JarVerifier and JarSigner
      * to determine the signature file names and PKCS7 block
      * files names that are supported
      *
@@ -179,7 +174,7 @@ public class SignatureFileVerifier {
      */
     public static boolean isBlockOrSF(String s) {
         // Note: keep this in sync with j.u.z.ZipFile.Source#isSignatureRelated
-        // we currently only support DSA and RSA PKCS7 blocks
+        // we currently only support DSA, RSA or EC PKCS7 blocks
         return s.endsWith(".SF")
             || s.endsWith(".DSA")
             || s.endsWith(".RSA")
@@ -189,21 +184,20 @@ public class SignatureFileVerifier {
     /**
      * Returns the signed JAR block file extension for a key.
      *
+     * Returns "DSA" for unknown algorithms. This is safe because the
+     * signature verification process does not require the extension to
+     * match the key algorithm as long as it is "RSA", "DSA", or "EC."
+     *
      * @param key the key used to sign the JAR file
      * @return the extension
      * @see #isBlockOrSF(String)
      */
     public static String getBlockExtension(PrivateKey key) {
-        String keyAlgorithm = key.getAlgorithm().toUpperCase(Locale.ENGLISH);
-        if (keyAlgorithm.equals("RSASSA-PSS")) {
-            return "RSA";
-        } else if (keyAlgorithm.equals("EDDSA")
-                || keyAlgorithm.equals("ED25519")
-                || keyAlgorithm.equals("ED448")) {
-            return "EC";
-        } else {
-            return keyAlgorithm;
-        }
+        return switch (key.getAlgorithm().toUpperCase(Locale.ENGLISH)) {
+            case "RSA", "RSASSA-PSS" -> "RSA";
+            case "EC", "EDDSA", "ED25519", "ED448" -> "EC";
+            default -> "DSA";
+        };
     }
 
     /**
@@ -217,19 +211,15 @@ public class SignatureFileVerifier {
      * @return true if the input file name is signature related
      */
     public static boolean isSigningRelated(String name) {
+        if (!isInMetaInf(name)) {
+            return false;
+        }
         name = name.toUpperCase(Locale.ENGLISH);
-        if (!name.startsWith("META-INF/")) {
-            return false;
-        }
-        name = name.substring(9);
-        if (name.indexOf('/') != -1) {
-            return false;
-        }
-        if (isBlockOrSF(name) || name.equals("MANIFEST.MF")) {
+        if (isBlockOrSF(name) || name.equals("META-INF/MANIFEST.MF")) {
             return true;
-        } else if (name.startsWith("SIG-")) {
+        } else if (name.startsWith("SIG-", META_INF.length())) {
             // check filename extension
-            // see http://docs.oracle.com/javase/7/docs/technotes/guides/jar/jar.html#Digital_Signatures
+            // see https://docs.oracle.com/en/java/javase/19/docs/specs/jar/jar.html#digital-signatures
             // for what filename extensions are legal
             int extIndex = name.lastIndexOf('.');
             if (extIndex != -1) {
@@ -254,8 +244,7 @@ public class SignatureFileVerifier {
 
     /** get digest from cache */
 
-    private MessageDigest getDigest(String algorithm)
-            throws SignatureException {
+    private MessageDigest getDigest(String algorithm) {
         if (createdDigests == null)
             createdDigests = new HashMap<>();
 
@@ -280,16 +269,16 @@ public class SignatureFileVerifier {
      *
      */
     public void process(Hashtable<String, CodeSigner[]> signers,
-            List<Object> manifestDigests)
+            List<Object> manifestDigests, String manifestName)
         throws IOException, SignatureException, NoSuchAlgorithmException,
-            JarException, CertificateException
+            CertificateException
     {
         // calls Signature.getInstance() and MessageDigest.getInstance()
         // need to use local providers here, see Providers class
         Object obj = null;
         try {
             obj = Providers.startJarVerification();
-            processImpl(signers, manifestDigests);
+            processImpl(signers, manifestDigests, manifestName);
         } finally {
             Providers.stopJarVerification(obj);
         }
@@ -297,9 +286,9 @@ public class SignatureFileVerifier {
     }
 
     private void processImpl(Hashtable<String, CodeSigner[]> signers,
-            List<Object> manifestDigests)
+            List<Object> manifestDigests, String manifestName)
         throws IOException, SignatureException, NoSuchAlgorithmException,
-            JarException, CertificateException
+            CertificateException
     {
         Manifest sf = new Manifest();
         sf.read(new ByteArrayInputStream(sfBytes));
@@ -309,7 +298,7 @@ public class SignatureFileVerifier {
 
         if ((version == null) || !(version.equalsIgnoreCase("1.0"))) {
             // XXX: should this be an exception?
-            // for now we just ignore this signature file
+            // for now, we just ignore this signature file
             return;
         }
 
@@ -320,32 +309,23 @@ public class SignatureFileVerifier {
                                         name);
         }
 
-
         CodeSigner[] newSigners = getSigners(infos, block);
 
         // make sure we have something to do all this work for...
-        if (newSigners == null)
+        if (newSigners == null) {
             return;
+        }
 
-        /*
-         * Look for the latest timestamp in the signature block.  If an entry
-         * has no timestamp, use current time (aka null).
-         */
-        for (CodeSigner s: newSigners) {
-            if (debug != null) {
-                debug.println("Gathering timestamp for:  " + s.toString());
-            }
-            if (s.getTimestamp() == null) {
-                timestamp = null;
-                break;
-            } else if (timestamp == null) {
-                timestamp = s.getTimestamp();
-            } else {
-                if (timestamp.getTimestamp().before(
-                        s.getTimestamp().getTimestamp())) {
-                    timestamp = s.getTimestamp();
-                }
-            }
+        // check if any of the algorithms used to verify the SignerInfos
+        // are disabled
+        params = new JarConstraintsParameters(newSigners);
+        Set<String> notDisabledAlgorithms =
+            SignerInfo.verifyAlgorithms(infos, params, name + " PKCS7");
+
+        // add the SignerInfo algorithms that are ok to the permittedAlgs map
+        // so they are not checked again
+        for (String algorithm : notDisabledAlgorithms) {
+            permittedAlgs.put(algorithm, Boolean.TRUE);
         }
 
         Iterator<Map.Entry<String,Attributes>> entries =
@@ -387,7 +367,7 @@ public class SignatureFileVerifier {
         }
 
         // MANIFEST.MF is always regarded as signed
-        updateSigners(newSigners, signers, JarFile.MANIFEST_NAME);
+        updateSigners(newSigners, signers, manifestName);
     }
 
     /**
@@ -396,15 +376,17 @@ public class SignatureFileVerifier {
      * store the result. If the algorithm is in the map use that result.
      * False is returned for weak algorithm, true for good algorithms.
      */
-    boolean permittedCheck(String key, String algorithm) {
+    private boolean permittedCheck(String key, String algorithm) {
         Boolean permitted = permittedAlgs.get(algorithm);
         if (permitted == null) {
             try {
-                ConfigurationHolder.JAR_DISABLED_CHECK.permits(algorithm,
-                        new ConstraintsParameters(timestamp));
-            } catch(GeneralSecurityException e) {
+                params.setExtendedExceptionMsg(name + ".SF", key + " attribute");
+                DisabledAlgorithmConstraints
+                    .jarConstraints().permits(algorithm, params, false);
+            } catch (GeneralSecurityException e) {
                 permittedAlgs.put(algorithm, Boolean.FALSE);
-                permittedAlgs.put(key.toUpperCase(), Boolean.FALSE);
+                permittedAlgs.put(key.toUpperCase(Locale.ENGLISH),
+                        Boolean.FALSE);
                 if (debug != null) {
                     if (e.getMessage() != null) {
                         debug.println(key + ":  " + e.getMessage());
@@ -459,7 +441,7 @@ public class SignatureFileVerifier {
     private boolean verifyManifestHash(Manifest sf,
                                        ManifestDigester md,
                                        List<Object> manifestDigests)
-         throws IOException, SignatureException
+         throws SignatureException
     {
         Attributes mattr = sf.getMainAttributes();
         boolean manifestSigned = false;
@@ -530,7 +512,7 @@ public class SignatureFileVerifier {
     }
 
     private boolean verifyManifestMainAttrs(Manifest sf, ManifestDigester md)
-         throws IOException, SignatureException
+         throws SignatureException
     {
         Attributes mattr = sf.getMainAttributes();
         boolean attrsVerified = true;
@@ -561,6 +543,10 @@ public class SignatureFileVerifier {
                 MessageDigest digest = getDigest(algorithm);
                 if (digest != null) {
                     ManifestDigester.Entry mde = md.getMainAttsEntry(false);
+                    if (mde == null) {
+                        throw new SignatureException("Manifest Main Attribute check " +
+                                "failed due to missing main attributes entry");
+                    }
                     byte[] computedHash = mde.digest(digest);
                     byte[] expectedHash =
                         Base64.getMimeDecoder().decode((String)se.getValue());
@@ -624,7 +610,7 @@ public class SignatureFileVerifier {
     private boolean verifySection(Attributes sfAttr,
                                   String name,
                                   ManifestDigester md)
-         throws IOException, SignatureException
+         throws SignatureException
     {
         boolean oneDigestVerified = false;
         ManifestDigester.Entry mde = md.get(name,block.isOldStyle());
@@ -758,7 +744,7 @@ public class SignatureFileVerifier {
         }
 
         if (signers != null) {
-            return signers.toArray(new CodeSigner[signers.size()]);
+            return signers.toArray(new CodeSigner[0]);
         } else {
             return null;
         }
@@ -781,7 +767,6 @@ public class SignatureFileVerifier {
         if (set == subset)
             return true;
 
-        boolean match;
         for (int i = 0; i < subset.length; i++) {
             if (!contains(set, subset[i]))
                 return false;
@@ -800,8 +785,6 @@ public class SignatureFileVerifier {
         // special case
         if ((oldSigners == null) && (signers == newSigners))
             return true;
-
-        boolean match;
 
         // make sure all oldSigners are in signers
         if ((oldSigners != null) && !isSubSet(oldSigners, signers))
@@ -855,5 +838,25 @@ public class SignatureFileVerifier {
         }
         signerCache.add(cachedSigners);
         signers.put(name, cachedSigners);
+    }
+
+    private static int initializeMaxSigFileSize() {
+        /*
+         * System property "jdk.jar.maxSignatureFileSize" used to configure
+         * the maximum allowed number of bytes for the signature-related files
+         * in a JAR file.
+         */
+        int tmp = GetIntegerAction.privilegedGetProperty(
+                "jdk.jar.maxSignatureFileSize", 16000000);
+        if (tmp < 0 || tmp > MAX_ARRAY_SIZE) {
+            if (debug != null) {
+                debug.println("The default signature file size of 16000000 bytes " +
+                        "will be used for the jdk.jar.maxSignatureFileSize " +
+                        "system property since the specified value " +
+                        "is out of range: " + tmp);
+            }
+            tmp = 16000000;
+        }
+        return tmp;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,9 +44,11 @@
 class CompiledICHolder : public CHeapObj<mtCompiler> {
   friend class VMStructs;
  private:
+#ifdef ASSERT
   static volatile int _live_count; // allocated
   static volatile int _live_not_claimed_count; // allocated but not yet in use so not
                                                // reachable by iterating over nmethods
+#endif
 
   Metadata* _holder_metadata;
   Klass*    _holder_klass;    // to avoid name conflict with oopDesc::_klass
@@ -58,15 +60,17 @@ class CompiledICHolder : public CHeapObj<mtCompiler> {
   CompiledICHolder(Metadata* metadata, Klass* klass, bool is_method = true);
   ~CompiledICHolder() NOT_DEBUG_RETURN;
 
+#ifdef ASSERT
   static int live_count() { return _live_count; }
   static int live_not_claimed_count() { return _live_not_claimed_count; }
+#endif
 
   // accessors
   Klass*    holder_klass()  const     { return _holder_klass; }
   Metadata* holder_metadata() const   { return _holder_metadata; }
 
-  static int holder_metadata_offset() { return offset_of(CompiledICHolder, _holder_metadata); }
-  static int holder_klass_offset()    { return offset_of(CompiledICHolder, _holder_klass); }
+  static ByteSize holder_metadata_offset() { return byte_offset_of(CompiledICHolder, _holder_metadata); }
+  static ByteSize holder_klass_offset()    { return byte_offset_of(CompiledICHolder, _holder_klass); }
 
   CompiledICHolder* next()     { return _next; }
   void set_next(CompiledICHolder* n) { _next = n; }

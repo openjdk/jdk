@@ -1,0 +1,109 @@
+#
+# Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+name: 'Get bundles'
+description: 'Download resulting JDK bundles'
+inputs:
+  platform:
+    description: 'Platform name'
+    required: true
+  debug-suffix:
+    description: 'File name suffix denoting debug level, possibly empty'
+    required: false
+outputs:
+  jdk-path:
+    description: 'Path to the installed JDK bundle'
+    value: ${{ steps.path-name.outputs.jdk }}
+  symbols-path:
+    description: 'Path to the installed symbols bundle'
+    value: ${{ steps.path-name.outputs.symbols }}
+  tests-path:
+    description: 'Path to the installed tests bundle'
+    value: ${{ steps.path-name.outputs.tests }}
+
+runs:
+  using: composite
+  steps:
+    - name: 'Download bundles artifact'
+      id: download-bundles
+      uses: actions/download-artifact@v3
+      with:
+        name: bundles-${{ inputs.platform }}${{ inputs.debug-suffix }}
+        path: bundles
+      continue-on-error: true
+
+    - name: 'Download bundles artifact (retry)'
+      uses: actions/download-artifact@v3
+      with:
+        name: bundles-${{ inputs.platform }}${{ inputs.debug-suffix }}
+        path: bundles
+      if: steps.download-bundles.outcome == 'failure'
+
+    - name: 'Unpack bundles'
+      run: |
+        if [[ -e bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}.zip ]]; then
+          echo 'Unpacking jdk bundle...'
+          mkdir -p bundles/jdk
+          unzip -q bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}.zip -d bundles/jdk
+        fi
+
+        if [[ -e bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz ]]; then
+          echo 'Unpacking jdk bundle...'
+          mkdir -p bundles/jdk
+          tar -xf bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz -C bundles/jdk
+        fi
+
+        if [[ -e bundles/symbols-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz ]]; then
+          echo 'Unpacking symbols bundle...'
+          mkdir -p bundles/symbols
+          tar -xf bundles/symbols-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz -C bundles/symbols
+        fi
+
+        if [[ -e bundles/tests-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz ]]; then
+          echo 'Unpacking tests bundle...'
+          mkdir -p bundles/tests
+          tar -xf bundles/tests-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz -C bundles/tests
+        fi
+      shell: bash
+
+    - name: 'Export paths to where bundles are installed'
+      id: path-name
+      run: |
+        # Export the paths
+
+        jdk_dir="$GITHUB_WORKSPACE/$(dirname $(find bundles/jdk -name bin -type d))"
+        symbols_dir="$GITHUB_WORKSPACE/$(dirname $(find bundles/symbols -name bin -type d))"
+        tests_dir="$GITHUB_WORKSPACE/bundles/tests"
+
+        if [[ '${{ runner.os }}' == 'Windows' ]]; then
+          jdk_dir="$(cygpath $jdk_dir)"
+          symbols_dir="$(cygpath $symbols_dir)"
+          tests_dir="$(cygpath $tests_dir)"
+        fi
+
+        echo "jdk=$jdk_dir" >> $GITHUB_OUTPUT
+        echo "symbols=$symbols_dir" >> $GITHUB_OUTPUT
+        echo "tests=$tests_dir" >> $GITHUB_OUTPUT
+      shell: bash

@@ -87,6 +87,7 @@ public class bug4275046 {
         table.getColumnModel().getColumn(1).setCellEditor(comboEditor);
 
         frame.add(table);
+        frame.setLocationRelativeTo(null);
         frame.pack();
         frame.setSize(550, 400);
         frame.setVisible(true);
@@ -117,6 +118,7 @@ public class bug4275046 {
 
     private void runTest() throws Exception {
         robot.waitForIdle();
+        robot.delay(1000);
 
         // Click the first cell in the "color" column
         SwingUtilities.invokeAndWait(new Runnable() {
@@ -175,6 +177,7 @@ public class bug4275046 {
             public void run() {
             // Read the edited value of from the cell
             editedValue = table.getModel().getValueAt(0, 1);
+            editedValue = ((String)editedValue).toLowerCase();
             System.out.println("The edited value is = " + editedValue);
             testResult = editedValue.equals(EXPECTED_VALUE);
             if (testResult) {

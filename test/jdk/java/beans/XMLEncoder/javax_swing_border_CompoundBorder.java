@@ -25,6 +25,7 @@
  * @test
  * @bug 6402062 6487891
  * @summary Tests CompoundBorder encoding
+ * @run main/othervm -Djava.security.manager=allow javax_swing_border_CompoundBorder
  * @author Sergey Malenkov
  */
 

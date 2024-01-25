@@ -80,7 +80,8 @@ public class UseCustomSocketFactory {
         }
 
         JavaVM serverVM = new JavaVM("HelloImpl",
-                                     "-Djava.security.policy=" +
+                                     "-Djava.security.manager=allow" +
+                                     " -Djava.security.policy=" +
                                      TestParams.defaultPolicy +
                                      " -Drmi.registry.port=" +
                                      registryPort,

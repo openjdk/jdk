@@ -25,14 +25,15 @@
  * @test
  * @bug 8250768
  * @library /tools/lib
+ * @enablePreview
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
- *      jdk.jdeps/com.sun.tools.classfile
+ *      java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox toolbox.JavacTask
  * @run main PreviewAutoSuppress
  */
-import com.sun.tools.classfile.ClassFile;
+import java.lang.classfile.*;
 import java.io.InputStream;
 import java.nio.file.Files;
 import toolbox.JavacTask;
@@ -96,17 +97,12 @@ public class PreviewAutoSuppress extends TestRunner {
         List<String> expected =
                 List.of("Outer.java:3:5: compiler.warn.preview.feature.use.plural: (compiler.misc.feature.records)",
                         "Outer.java:3:5: compiler.warn.preview.feature.use.plural: (compiler.misc.feature.records)",
-                        "Outer.java:4:5: compiler.warn.declared.using.preview: kindname.record, test.Outer.R",
-                        "Use.java:3:8: compiler.warn.declared.using.preview: kindname.record, test.Outer.R",
-                        "4 warnings");
+                        "2 warnings");
         if (!log.equals(expected))
             throw new Exception("expected output not found" + log);
-        checkPreviewClassfile(classes.resolve("test").resolve("Outer.class"),
-                              true); //TODO: correct?
-        checkPreviewClassfile(classes.resolve("test").resolve("Outer$R.class"),
-                              true);
-        checkPreviewClassfile(classes.resolve("test").resolve("Use.class"),
-                              true);
+        checkPreviewClassfile(classes.resolve("test").resolve("Outer.class"), true); //TODO: correct?
+        checkPreviewClassfile(classes.resolve("test").resolve("Outer$R.class"),true);
+        checkPreviewClassfile(classes.resolve("test").resolve("Use.class"),false);
     }
 
     @Test
@@ -211,11 +207,11 @@ public class PreviewAutoSuppress extends TestRunner {
 
     private void checkPreviewClassfile(Path p, boolean preview) throws Exception {
         try (InputStream in = Files.newInputStream(p)) {
-            ClassFile cf = ClassFile.read(in);
-            if (preview && cf.minor_version != 65535) {
-                throw new IllegalStateException("Expected preview class, but got: " + cf.minor_version);
-            } else if (!preview && cf.minor_version != 0) {
-                throw new IllegalStateException("Expected minor version == 0 but got: " + cf.minor_version);
+            ClassModel cf = ClassFile.of().parse(in.readAllBytes());
+            if (preview && cf.minorVersion() != 65535) {
+                throw new IllegalStateException("Expected preview class, but got: " + cf.minorVersion());
+            } else if (!preview && cf.minorVersion() != 0) {
+                throw new IllegalStateException("Expected minor version == 0 but got: " + cf.minorVersion());
             }
         }
     }

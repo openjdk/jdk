@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,10 +71,6 @@ import static javax.lang.model.SourceVersion.*;
  *            methods.  Use {@code Void} for visitors that do not need an
  *            additional parameter.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
- *
  * @see TypeKindVisitor7
  * @see TypeKindVisitor8
  * @see TypeKindVisitor9
@@ -109,14 +105,14 @@ public class TypeKindVisitor6<R, P> extends SimpleTypeVisitor6<R, P> {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc TypeVisitor}
      *
      * @implSpec This implementation dispatches to the visit method for
      * the specific {@linkplain TypeKind kind} of primitive type:
      * {@code BOOLEAN}, {@code BYTE}, etc.
      *
-     * @param t {@inheritDoc}
-     * @param p {@inheritDoc}
+     * @param t {@inheritDoc TypeVisitor}
+     * @param p {@inheritDoc TypeVisitor}
      * @return  the result of the kind-specific visit method
      */
     @Override
@@ -257,14 +253,14 @@ public class TypeKindVisitor6<R, P> extends SimpleTypeVisitor6<R, P> {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc TypeVisitor}
      *
      * @implSpec This implementation dispatches to the visit method for
      * the specific {@linkplain TypeKind kind} of pseudo-type:
      * {@code VOID}, {@code PACKAGE}, {@code MODULE}, or {@code NONE}.
      *
-     * @param t {@inheritDoc}
-     * @param p {@inheritDoc}
+     * @param t {@inheritDoc TypeVisitor}
+     * @param p {@inheritDoc TypeVisitor}
      * @return  the result of the kind-specific visit method
      */
     @Override

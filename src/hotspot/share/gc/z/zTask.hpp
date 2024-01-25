@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,30 +24,36 @@
 #ifndef SHARE_GC_Z_ZTASK_HPP
 #define SHARE_GC_Z_ZTASK_HPP
 
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "memory/allocation.hpp"
 
 class ZTask : public StackObj {
 private:
-  class GangTask : public AbstractGangTask {
+  class Task : public WorkerTask {
   private:
-    ZTask* const _ztask;
+    ZTask* const _task;
 
   public:
-    GangTask(ZTask* ztask, const char* name);
+    Task(ZTask* task, const char* name);
 
     virtual void work(uint worker_id);
   };
 
-  GangTask _gang_task;
+  Task _worker_task;
 
 public:
   ZTask(const char* name);
 
   const char* name() const;
-  AbstractGangTask* gang_task();
+  WorkerTask* worker_task();
 
   virtual void work() = 0;
+};
+
+class ZRestartableTask : public ZTask {
+public:
+  ZRestartableTask(const char* name);
+  virtual void resize_workers(uint nworkers);
 };
 
 #endif // SHARE_GC_Z_ZTASK_HPP

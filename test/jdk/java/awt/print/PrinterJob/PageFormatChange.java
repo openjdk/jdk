@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 6359283
+ * @key printer
  * @summary pagedialog needs to update based on change of printer.
  * @run main/manual PageFormatChange
  */
@@ -34,7 +35,7 @@ import javax.print.*;
 public class PageFormatChange {
 
     static String[] text = {
-    "This is is a manual test intended to be run on Windows, and you",
+    "This is a manual test intended to be run on Windows, and you",
     "must have at least two printers installed, and ideally the second",
     "printer should support large paper sizes. When the pageDialog appears",
     "first change printers, then choose a large paper size, then OK",

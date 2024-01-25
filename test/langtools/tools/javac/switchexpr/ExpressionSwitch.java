@@ -1,12 +1,12 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8206986 8222169 8224031 8240964
+ * @bug 8206986 8222169 8224031 8240964 8267119 8268670 8321582
  * @summary Check expression switch works.
- * @compile/fail/ref=ExpressionSwitch-old.out -source 9 -Xlint:-options -XDrawDiagnostics ExpressionSwitch.java
  * @compile ExpressionSwitch.java
  * @run main ExpressionSwitch
  */
 
+// * @compile/fail/ref=ExpressionSwitch-old.out --release 9 -XDrawDiagnostics ExpressionSwitch.java
 import java.util.Objects;
 import java.util.function.Supplier;
 
@@ -34,6 +34,17 @@ public class ExpressionSwitch {
         assertEquals(convert2(""), -1);
         localClass(T.A);
         assertEquals(castSwitchExpressions(T.A), "A");
+        testTypeInference(true, 0);
+        assertEquals(yieldPrimitiveDotClass("byte"), byte.class);
+        assertEquals(yieldPrimitiveDotClass("char"), char.class);
+        assertEquals(yieldPrimitiveDotClass("short"), short.class);
+        assertEquals(yieldPrimitiveDotClass("int"), int.class);
+        assertEquals(yieldPrimitiveDotClass("long"), long.class);
+        assertEquals(yieldPrimitiveDotClass("float"), float.class);
+        assertEquals(yieldPrimitiveDotClass("double"), double.class);
+        assertEquals(yieldPrimitiveDotClass("void"), void.class);
+        assertEquals(yieldPrimitiveDotClass("boolean"), boolean.class);
+        assertEquals(yieldPrimitiveDotClass("other"), null);
     }
 
     private String print(T t) {
@@ -119,6 +130,41 @@ public class ExpressionSwitch {
         };
     }
 
+    private int yieldUnaryNumberOperator(String s, int a) {
+        return switch (s) {
+            case "a": yield +a;
+            case "b": yield -a;
+            case "c": yield ~a; // intentionally repeated ~a, test the case clause
+            case "d": yield ++a;
+            case "e": yield --a;
+            case "f": yield a++;
+            case "g": yield a--;
+            default: yield ~a; // intentionally repeated ~a, test the default clause
+        };
+    }
+
+    private boolean yieldUnaryNotOperator(String s, boolean b) {
+        return switch (s) {
+            case "a": yield !b; // intentionally repeated !b, test the case clause
+            default: yield !b; // intentionally repeated !b, test the default clause
+        };
+    }
+
+    private Class<?> yieldPrimitiveDotClass(String s) {
+        return switch (s) {
+            case "byte":    yield byte.class;
+            case "char":    yield char.class;
+            case "short":   yield short.class;
+            case "int":     yield int.class;
+            case "long":    yield long.class;
+            case "float":   yield float.class;
+            case "double":  yield double.class;
+            case "void":    yield void.class;
+            case "boolean": yield boolean.class;
+            default: yield null;
+        };
+    }
+
     private void localClass(T t) {
         String good = "good";
         class L {
@@ -144,6 +190,17 @@ public class ExpressionSwitch {
         };
     }
 
+    private void testTypeInference(boolean b, int i) {
+        m(s -> s.length(), String.class);
+        m(b ? s -> s.length() : s -> s.length(), String.class);
+        m(switch (i) {
+            case 0 -> s -> s.length();
+            default -> s -> s.length();
+        }, String.class);
+    }
+
+    <Z> void m(Consumer<Z> c, Class<Z> cl) {}
+
     private void check(T t, String expected) {
         String result = print(t);
         assertEquals(result, expected);
@@ -161,5 +218,9 @@ public class ExpressionSwitch {
     void t() {
         Runnable r = () -> {};
         r.run();
+    }
+
+    interface Consumer<Z> {
+        public void consume(Z z);
     }
 }

@@ -51,7 +51,7 @@ import org.xml.sax.InputSource;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true org.w3c.dom.ptests.ElementTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow org.w3c.dom.ptests.ElementTest
  * @run testng/othervm org.w3c.dom.ptests.ElementTest
  * @summary Test for the methods of Element Interface
  */

@@ -54,7 +54,7 @@ import sun.swing.UIAction;
  * event listeners or subclassing from the ones supplied in this class.
  * <p>
  * For adding specific actions,
- * overide <code>installKeyboardActions</code> to add actions in response to
+ * override <code>installKeyboardActions</code> to add actions in response to
  * KeyStroke bindings. See the article <a href="https://docs.oracle.com/javase/tutorial/uiswing/misc/keybinding.html">How to Use Key Bindings</a>
  *
  * @author Arnaud Weber
@@ -95,7 +95,7 @@ public class BasicComboBoxUI extends ComboBoxUI {
     protected ComboPopup popup;
 
     /**
-     * The Component that the @{code ComboBoxEditor} uses for editing.
+     * The Component that the {@code ComboBoxEditor} uses for editing.
      */
     protected Component editor;
 
@@ -169,7 +169,7 @@ public class BasicComboBoxUI extends ComboBoxUI {
     private Handler handler;
 
     /**
-     * The time factor to treate the series of typed alphanumeric key
+     * The time factor to treat the series of typed alphanumeric key
      * as prefix for first letter navigation.
      */
     private long timeFactor = 1000L;
@@ -706,7 +706,7 @@ public class BasicComboBoxUI extends ComboBoxUI {
     }
 
 
-    // Syncronizes the ToolTip text for the components within the combo box to be the
+    // Synchronizes the ToolTip text for the components within the combo box to be the
     // same value as the combo box ToolTip text.
     private void updateToolTipTextForChildren() {
         Component[] children = comboBox.getComponents();
@@ -1664,7 +1664,7 @@ public class BasicComboBoxUI extends ComboBoxUI {
             else if (key == ENTER) {
                 if (comboBox.isPopupVisible()) {
                     // If ComboBox.noActionOnKeyNavigation is set,
-                    // forse selection of list item
+                    // force selection of list item
                     if (UIManager.getBoolean("ComboBox.noActionOnKeyNavigation")) {
                         Object listItem = ui.popup.getList().getSelectedValue();
                         if (listItem != null) {

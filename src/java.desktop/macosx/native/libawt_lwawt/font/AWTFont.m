@@ -379,6 +379,9 @@ JNI_COCOA_ENTER(env);
     CTFontRef ctfont = (CTFontRef)nsFont;
     CFArrayRef tagsArray =
         CTFontCopyAvailableTables(ctfont, kCTFontTableOptionNoOptions);
+    if (tagsArray == NULL) {
+        return NULL;
+    }
     CFIndex numTags = CFArrayGetCount(tagsArray);
     for (i=0; i<numTags; i++) {
         if (tag ==
@@ -582,4 +585,15 @@ JNI_COCOA_ENTER(env);
     }
     CFRelease(fds);
 JNI_COCOA_EXIT(env);
+}
+
+static CFStringRef EMOJI_FONT_NAME = CFSTR("Apple Color Emoji");
+
+bool IsEmojiFont(CTFontRef font)
+{
+    CFStringRef name = CTFontCopyFullName(font);
+    if (name == NULL) return false;
+    bool isFixedColor = CFStringCompare(name, EMOJI_FONT_NAME, 0) == kCFCompareEqualTo;
+    CFRelease(name);
+    return isFixedColor;
 }

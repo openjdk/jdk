@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,32 @@
 /*
  * @test
  * @bug 4851625 4900189 4939441
+ * @build Tests
+ * @build HyperbolicTests
+ * @run main HyperbolicTests
  * @summary Tests for {Math, StrictMath}.{sinh, cosh, tanh}
- * @author Joseph D. Darcy
  */
+
+import static java.lang.Double.longBitsToDouble;
 
 public class HyperbolicTests {
     private HyperbolicTests(){}
 
     static final double NaNd = Double.NaN;
+
+    public static void main(String... argv) {
+        int failures = 0;
+
+        failures += testSinh();
+        failures += testCosh();
+        failures += testTanh();
+
+        if (failures > 0) {
+            System.err.println("Testing the hyperbolic functions incurred "
+                               + failures + " failures.");
+            throw new RuntimeException();
+        }
+    }
 
     /**
      * Test accuracy of {Math, StrictMath}.sinh.  The specified
@@ -235,19 +253,12 @@ public class HyperbolicTests {
                                                 3.0);
         }
 
+        for(double nan : Tests.NaNs) {
+            failures += testSinhCaseWithUlpDiff(nan, NaNd, 0);
+        }
+
         double [][] specialTestCases = {
             {0.0,                       0.0},
-            {NaNd,                      NaNd},
-            {Double.longBitsToDouble(0x7FF0000000000001L),      NaNd},
-            {Double.longBitsToDouble(0xFFF0000000000001L),      NaNd},
-            {Double.longBitsToDouble(0x7FF8555555555555L),      NaNd},
-            {Double.longBitsToDouble(0xFFF8555555555555L),      NaNd},
-            {Double.longBitsToDouble(0x7FFFFFFFFFFFFFFFL),      NaNd},
-            {Double.longBitsToDouble(0xFFFFFFFFFFFFFFFFL),      NaNd},
-            {Double.longBitsToDouble(0x7FFDeadBeef00000L),      NaNd},
-            {Double.longBitsToDouble(0xFFFDeadBeef00000L),      NaNd},
-            {Double.longBitsToDouble(0x7FFCafeBabe00000L),      NaNd},
-            {Double.longBitsToDouble(0xFFFCafeBabe00000L),      NaNd},
             {Double.POSITIVE_INFINITY,  Double.POSITIVE_INFINITY}
         };
 
@@ -271,7 +282,7 @@ public class HyperbolicTests {
 
         // For values of x larger than 22, the e^(-x) term is
         // insignificant to the floating-point result.  Util exp(x)
-        // overflows around 709.8, sinh(x) ~= exp(x)/2; will will test
+        // overflows around 709.8, sinh(x) ~= exp(x)/2; will test
         // 10000 values in this range.
 
         long trans22 = Double.doubleToLongBits(22.0);
@@ -355,19 +366,11 @@ public class HyperbolicTests {
                                                 double expected,
                                                 double tolerance) {
         int failures = 0;
-        failures += Tests.testTolerance("Math.sinh(double)",
-                                        input, Math.sinh(input),
-                                        expected, tolerance);
-        failures += Tests.testTolerance("Math.sinh(double)",
-                                        -input, Math.sinh(-input),
-                                        -expected, tolerance);
+        failures += Tests.testTolerance("Math.sinh",        input, Math::sinh,        expected, tolerance);
+        failures += Tests.testTolerance("Math.sinh",       -input, Math::sinh,       -expected, tolerance);
 
-        failures += Tests.testTolerance("StrictMath.sinh(double)",
-                                        input, StrictMath.sinh(input),
-                                        expected, tolerance);
-        failures += Tests.testTolerance("StrictMath.sinh(double)",
-                                        -input, StrictMath.sinh(-input),
-                                        -expected, tolerance);
+        failures += Tests.testTolerance("StrictMath.sinh",  input, StrictMath::sinh,  expected, tolerance);
+        failures += Tests.testTolerance("StrictMath.sinh", -input, StrictMath::sinh, -expected, tolerance);
         return failures;
     }
 
@@ -375,22 +378,13 @@ public class HyperbolicTests {
                                               double expected,
                                               double ulps) {
         int failures = 0;
-        failures += Tests.testUlpDiff("Math.sinh(double)",
-                                      input, Math.sinh(input),
-                                      expected, ulps);
-        failures += Tests.testUlpDiff("Math.sinh(double)",
-                                      -input, Math.sinh(-input),
-                                      -expected, ulps);
+        failures += Tests.testUlpDiff("Math.sinh",        input, Math::sinh,        expected, ulps);
+        failures += Tests.testUlpDiff("Math.sinh",       -input, Math::sinh,       -expected, ulps);
 
-        failures += Tests.testUlpDiff("StrictMath.sinh(double)",
-                                      input, StrictMath.sinh(input),
-                                      expected, ulps);
-        failures += Tests.testUlpDiff("StrictMath.sinh(double)",
-                                      -input, StrictMath.sinh(-input),
-                                      -expected, ulps);
+        failures += Tests.testUlpDiff("StrictMath.sinh",  input, StrictMath::sinh,  expected, ulps);
+        failures += Tests.testUlpDiff("StrictMath.sinh", -input, StrictMath::sinh, -expected, ulps);
         return failures;
     }
-
 
     /**
      * Test accuracy of {Math, StrictMath}.cosh.  The specified
@@ -594,20 +588,12 @@ public class HyperbolicTests {
                                                 3.0);
         }
 
+        for(double nan : Tests.NaNs) {
+            failures += testCoshCaseWithUlpDiff(nan, NaNd, 0);
+        }
 
         double [][] specialTestCases = {
             {0.0,                       1.0},
-            {NaNd,                      NaNd},
-            {Double.longBitsToDouble(0x7FF0000000000001L),      NaNd},
-            {Double.longBitsToDouble(0xFFF0000000000001L),      NaNd},
-            {Double.longBitsToDouble(0x7FF8555555555555L),      NaNd},
-            {Double.longBitsToDouble(0xFFF8555555555555L),      NaNd},
-            {Double.longBitsToDouble(0x7FFFFFFFFFFFFFFFL),      NaNd},
-            {Double.longBitsToDouble(0xFFFFFFFFFFFFFFFFL),      NaNd},
-            {Double.longBitsToDouble(0x7FFDeadBeef00000L),      NaNd},
-            {Double.longBitsToDouble(0xFFFDeadBeef00000L),      NaNd},
-            {Double.longBitsToDouble(0x7FFCafeBabe00000L),      NaNd},
-            {Double.longBitsToDouble(0xFFFCafeBabe00000L),      NaNd},
             {Double.POSITIVE_INFINITY,  Double.POSITIVE_INFINITY}
         };
 
@@ -630,7 +616,7 @@ public class HyperbolicTests {
 
         // For values of x larger than 22, the e^(-x) term is
         // insignificant to the floating-point result.  Util exp(x)
-        // overflows around 709.8, cosh(x) ~= exp(x)/2; will will test
+        // overflows around 709.8, cosh(x) ~= exp(x)/2; will test
         // 10000 values in this range.
 
         long trans22 = Double.doubleToLongBits(22.0);
@@ -733,22 +719,13 @@ public class HyperbolicTests {
                                               double expected,
                                               double ulps) {
         int failures = 0;
-        failures += Tests.testUlpDiff("Math.cosh(double)",
-                                      input, Math.cosh(input),
-                                      expected, ulps);
-        failures += Tests.testUlpDiff("Math.cosh(double)",
-                                      -input, Math.cosh(-input),
-                                      expected, ulps);
+        failures += Tests.testUlpDiff("Math.cosh",        input, Math::cosh,       expected, ulps);
+        failures += Tests.testUlpDiff("Math.cosh",       -input, Math::cosh,       expected, ulps);
 
-        failures += Tests.testUlpDiff("StrictMath.cosh(double)",
-                                      input, StrictMath.cosh(input),
-                                      expected, ulps);
-        failures += Tests.testUlpDiff("StrictMath.cosh(double)",
-                                      -input, StrictMath.cosh(-input),
-                                      expected, ulps);
+        failures += Tests.testUlpDiff("StrictMath.cosh",  input, StrictMath::cosh, expected, ulps);
+        failures += Tests.testUlpDiff("StrictMath.cosh", -input, StrictMath::cosh, expected, ulps);
         return failures;
     }
-
 
     /**
      * Test accuracy of {Math, StrictMath}.tanh.  The specified
@@ -952,20 +929,12 @@ public class HyperbolicTests {
                                                 3.0);
         }
 
+        for(double nan : Tests.NaNs) {
+            failures += testTanhCaseWithUlpDiff(nan, NaNd, 0);
+        }
 
         double [][] specialTestCases = {
             {0.0,                       0.0},
-            {NaNd,                      NaNd},
-            {Double.longBitsToDouble(0x7FF0000000000001L),      NaNd},
-            {Double.longBitsToDouble(0xFFF0000000000001L),      NaNd},
-            {Double.longBitsToDouble(0x7FF8555555555555L),      NaNd},
-            {Double.longBitsToDouble(0xFFF8555555555555L),      NaNd},
-            {Double.longBitsToDouble(0x7FFFFFFFFFFFFFFFL),      NaNd},
-            {Double.longBitsToDouble(0xFFFFFFFFFFFFFFFFL),      NaNd},
-            {Double.longBitsToDouble(0x7FFDeadBeef00000L),      NaNd},
-            {Double.longBitsToDouble(0xFFFDeadBeef00000L),      NaNd},
-            {Double.longBitsToDouble(0x7FFCafeBabe00000L),      NaNd},
-            {Double.longBitsToDouble(0xFFFCafeBabe00000L),      NaNd},
             {Double.POSITIVE_INFINITY,  1.0}
         };
 
@@ -1007,19 +976,11 @@ public class HyperbolicTests {
                                                 double expected,
                                                 double tolerance) {
         int failures = 0;
-        failures += Tests.testTolerance("Math.tanh(double",
-                                        input, Math.tanh(input),
-                                        expected, tolerance);
-        failures += Tests.testTolerance("Math.tanh(double",
-                                        -input, Math.tanh(-input),
-                                        -expected, tolerance);
+        failures += Tests.testTolerance("Math.tanh",       input, Math::tanh,         expected, tolerance);
+        failures += Tests.testTolerance("Math.tanh",      -input, Math::tanh,        -expected, tolerance);
 
-        failures += Tests.testTolerance("StrictMath.tanh(double",
-                                        input, StrictMath.tanh(input),
-                                        expected, tolerance);
-        failures += Tests.testTolerance("StrictMath.tanh(double",
-                                        -input, StrictMath.tanh(-input),
-                                        -expected, tolerance);
+        failures += Tests.testTolerance("StrictMath.tanh",  input, StrictMath::tanh,  expected, tolerance);
+        failures += Tests.testTolerance("StrictMath.tanh", -input, StrictMath::tanh, -expected, tolerance);
         return failures;
     }
 
@@ -1028,35 +989,11 @@ public class HyperbolicTests {
                                               double ulps) {
         int failures = 0;
 
-        failures += Tests.testUlpDiffWithAbsBound("Math.tanh(double)",
-                                                  input, Math.tanh(input),
-                                                  expected, ulps, 1.0);
-        failures += Tests.testUlpDiffWithAbsBound("Math.tanh(double)",
-                                                  -input, Math.tanh(-input),
-                                                  -expected, ulps, 1.0);
+        failures += Tests.testUlpDiffWithAbsBound("Math.tanh",       input,  Math::tanh,       expected, ulps, 1.0);
+        failures += Tests.testUlpDiffWithAbsBound("Math.tanh",      -input,  Math::tanh,      -expected, ulps, 1.0);
 
-        failures += Tests.testUlpDiffWithAbsBound("StrictMath.tanh(double)",
-                                                  input, StrictMath.tanh(input),
-                                                  expected, ulps, 1.0);
-        failures += Tests.testUlpDiffWithAbsBound("StrictMath.tanh(double)",
-                                                  -input, StrictMath.tanh(-input),
-                                                  -expected, ulps, 1.0);
+        failures += Tests.testUlpDiffWithAbsBound("StrictMath.tanh",  input, StrictMath::tanh,  expected, ulps, 1.0);
+        failures += Tests.testUlpDiffWithAbsBound("StrictMath.tanh", -input, StrictMath::tanh, -expected, ulps, 1.0);
         return failures;
     }
-
-
-    public static void main(String argv[]) {
-        int failures = 0;
-
-        failures += testSinh();
-        failures += testCosh();
-        failures += testTanh();
-
-        if (failures > 0) {
-            System.err.println("Testing the hyperbolic functions incurred "
-                               + failures + " failures.");
-            throw new RuntimeException();
-        }
-    }
-
 }

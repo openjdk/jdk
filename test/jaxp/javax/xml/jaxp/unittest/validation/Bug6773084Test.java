@@ -55,7 +55,7 @@ import org.xml.sax.SAXParseException;
  * @test
  * @bug 6773084
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.Bug6773084Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Bug6773084Test
  * @run testng/othervm validation.Bug6773084Test
  * @summary Test Schema object is thread safe.
  */

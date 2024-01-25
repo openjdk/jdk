@@ -49,7 +49,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * @test
  * @bug 6989956
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.tck.Bug6989956Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.tck.Bug6989956Test
  * @run testng/othervm validation.tck.Bug6989956Test
  * @summary Test Validation can process correctly that maxOccurs in Choice less than maxOccurs in Elements contained in the Choice.
  */

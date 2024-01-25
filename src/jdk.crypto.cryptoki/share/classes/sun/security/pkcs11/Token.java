@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import sun.security.jca.JCAUtil;
 import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.TemplateManager.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
+import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
 
 /**
  * PKCS#11 token.
@@ -45,28 +46,34 @@ import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
  * @author  Andreas Sterbenz
  * @since   1.5
  */
-class Token implements Serializable {
+final class Token implements Serializable {
 
     // need to be serializable to allow SecureRandom to be serialized
+    @Serial
     private static final long serialVersionUID = 2541527649100571747L;
 
     // how often to check if the token is still present (in ms)
     // this is different from checking if a token has been inserted,
-    // that is done in SunPKCS11. Currently 50 ms.
-    private final static long CHECK_INTERVAL = 50;
+    // that is done in SunPKCS11. Currently, 50 ms.
+    private static final long CHECK_INTERVAL = 50;
 
     final SunPKCS11 provider;
 
+    @SuppressWarnings("serial") // Type of field is not Serializable
     final PKCS11 p11;
 
+    @SuppressWarnings("serial") // Type of field is not Serializable
     final Config config;
 
+    @SuppressWarnings("serial") // Type of field is not Serializable
     final CK_TOKEN_INFO tokenInfo;
 
     // session manager to pool sessions
+    @SuppressWarnings("serial") // Type of field is not Serializable
     final SessionManager sessionManager;
 
     // template manager to customize the attributes used when creating objects
+    @SuppressWarnings("serial") // Type of field is not Serializable
     private final TemplateManager templateManager;
 
     // flag indicating whether we need to explicitly cancel operations
@@ -75,16 +82,20 @@ class Token implements Serializable {
     final boolean explicitCancel;
 
     // translation cache for secret keys
+    @SuppressWarnings("serial") // Type of field is not Serializable
     final KeyCache secretCache;
 
     // translation cache for asymmetric keys (public and private)
+    @SuppressWarnings("serial") // Type of field is not Serializable
     final KeyCache privateCache;
 
     // cached instances of the various key factories, initialized on demand
+    @SuppressWarnings("serial") // Type of field is not Serializable
     private volatile P11KeyFactory rsaFactory, dsaFactory, dhFactory, ecFactory;
 
     // table which maps mechanisms to the corresponding cached
     // MechanismInfo objects
+    @SuppressWarnings("serial") // Type of field is not Serializable
     private final Map<Long, CK_MECHANISM_INFO> mechInfoMap;
 
     // single SecureRandomSpi instance we use per token
@@ -93,6 +104,7 @@ class Token implements Serializable {
 
     // single KeyStoreSpi instance we use per provider
     // initialized on demand
+    @SuppressWarnings("serial") // Type of field is not Serializable
     private volatile P11KeyStore keyStore;
 
     // whether this token is a removable token
@@ -117,10 +129,10 @@ class Token implements Serializable {
     private long lastLoginCheck;
 
     // mutex for token-present-check
-    private final static Object CHECK_LOCK = new Object();
+    private static final Object CHECK_LOCK = new Object();
 
     // object for indicating unsupported mechanism in 'mechInfoMap'
-    private final static CK_MECHANISM_INFO INVALID_MECH =
+    private static final CK_MECHANISM_INFO INVALID_MECH =
         new CK_MECHANISM_INFO(0, 0, 0);
 
     // flag indicating whether the token supports raw secret key material import
@@ -156,8 +168,7 @@ class Token implements Serializable {
         privateCache = new KeyCache();
         templateManager = config.getTemplateManager();
         explicitCancel = config.getExplicitCancel();
-        mechInfoMap =
-            new ConcurrentHashMap<Long, CK_MECHANISM_INFO>(10);
+        mechInfoMap = new ConcurrentHashMap<>(10);
     }
 
     boolean isWriteProtected() {
@@ -230,7 +241,7 @@ class Token implements Serializable {
     // ensure that we are logged in
     // call provider.login() if not
     void ensureLoggedIn(Session session) throws PKCS11Exception, LoginException {
-        if (isLoggedIn(session) == false) {
+        if (!isLoggedIn(session)) {
             provider.login(null, null);
         }
     }
@@ -238,14 +249,14 @@ class Token implements Serializable {
     // return whether this token object is valid (i.e. token not removed)
     // returns value from last check, does not perform new check
     boolean isValid() {
-        if (removable == false) {
+        if (!removable) {
             return true;
         }
         return valid;
     }
 
     void ensureValid() {
-        if (isValid() == false) {
+        if (!isValid()) {
             throw new ProviderException("Token has been removed");
         }
     }
@@ -253,10 +264,10 @@ class Token implements Serializable {
     // return whether a token is present (i.e. token not removed)
     // returns cached value if current, otherwise performs new check
     boolean isPresent(long sessionID) {
-        if (removable == false) {
+        if (!removable) {
             return true;
         }
-        if (valid == false) {
+        if (!valid) {
             return false;
         }
         long time = System.currentTimeMillis();
@@ -281,7 +292,7 @@ class Token implements Serializable {
                     }
                     valid = ok;
                     lastPresentCheck = System.currentTimeMillis();
-                    if (ok == false) {
+                    if (!ok) {
                         destroy();
                     }
                 }
@@ -291,8 +302,12 @@ class Token implements Serializable {
     }
 
     void destroy() {
-        valid = false;
+        secretCache.clear();
+        privateCache.clear();
+
+        sessionManager.clearPools();
         provider.uninitToken(this);
+        valid = false;
     }
 
     Session getObjSession() throws PKCS11Exception {
@@ -385,7 +400,7 @@ class Token implements Serializable {
                                                 mechanism);
                 mechInfoMap.put(mechanism, result);
             } catch (PKCS11Exception e) {
-                if (e.getErrorCode() != PKCS11Constants.CKR_MECHANISM_INVALID) {
+                if (!e.match(CKR_MECHANISM_INVALID)) {
                     throw e;
                 } else {
                     mechInfoMap.put(mechanism, INVALID_MECH);
@@ -402,7 +417,7 @@ class Token implements Serializable {
             SecureRandom random = JCAUtil.getSecureRandom();
             tokenId = new byte[20];
             random.nextBytes(tokenId);
-            serializedTokens.add(new WeakReference<Token>(this));
+            serializedTokens.add(new WeakReference<>(this));
         }
         return tokenId;
     }
@@ -411,14 +426,30 @@ class Token implements Serializable {
     // NOTE that elements are never removed from this list
     // the assumption is that the number of tokens that are serialized
     // is relatively small
-    private static final List<Reference<Token>> serializedTokens =
-        new ArrayList<Reference<Token>>();
+    private static final List<Reference<Token>> serializedTokens = new ArrayList<>();
 
+    @java.io.Serial
     private Object writeReplace() throws ObjectStreamException {
-        if (isValid() == false) {
-            throw new NotSerializableException("Token has been removed");
+        if (!isValid()) {
+            throw new InvalidObjectException("Token has been removed");
         }
         return new TokenRep(this);
+    }
+
+    /**
+     * Restores the state of this object from the stream.
+     * <p>
+     * Deserialization of this object is not supported.
+     *
+     * @param  stream the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
+     */
+    @java.io.Serial
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException {
+        throw new InvalidObjectException(
+                "Tokens are not directly deserializable");
     }
 
     // serialized representation of a token
@@ -426,6 +457,7 @@ class Token implements Serializable {
     // and if the token has not been removed in the meantime
     private static class TokenRep implements Serializable {
 
+        @Serial
         private static final long serialVersionUID = 3503721168218219807L;
 
         private final byte[] tokenId;
@@ -434,6 +466,7 @@ class Token implements Serializable {
             tokenId = token.getTokenId();
         }
 
+        @java.io.Serial
         private Object readResolve() throws ObjectStreamException {
             for (Reference<Token> tokenRef : serializedTokens) {
                 Token token = tokenRef.get();
@@ -443,7 +476,7 @@ class Token implements Serializable {
                     }
                 }
             }
-            throw new NotSerializableException("Could not find token");
+            throw new InvalidObjectException("Could not find token");
         }
     }
 

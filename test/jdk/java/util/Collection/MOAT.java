@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,9 +137,13 @@ public class MOAT {
         testMap(Collections.synchronizedNavigableMap(new TreeMap<Integer,Integer>()));
 
         // Unmodifiable wrappers
-        testImmutableSet(unmodifiableSet(new HashSet<>(Arrays.asList(1,2,3))));
+        testImmutableSet(unmodifiableSet(new HashSet<>(Arrays.asList(1,2,3))), 99);
         testImmutableList(unmodifiableList(Arrays.asList(1,2,3)));
         testImmutableMap(unmodifiableMap(Collections.singletonMap(1,2)));
+        testImmutableSeqColl(unmodifiableSequencedCollection(Arrays.asList(1,2,3)), 99);
+        testImmutableSeqColl(unmodifiableSequencedSet(new LinkedHashSet<>(Arrays.asList(1,2,3))), 99);
+        var lhm = new LinkedHashMap<Integer,Integer>(); lhm.put(1,2); lhm.put(3, 4);
+        testImmutableSeqMap(unmodifiableSequencedMap(lhm));
         testCollMutatorsAlwaysThrow(unmodifiableSet(new HashSet<>(Arrays.asList(1,2,3))));
         testCollMutatorsAlwaysThrow(unmodifiableSet(Collections.emptySet()));
         testEmptyCollMutatorsAlwaysThrow(unmodifiableSet(Collections.emptySet()));
@@ -169,7 +173,7 @@ public class MOAT {
         testEmptySet(Collections.emptySet());
         testEmptySet(Collections.emptySortedSet());
         testEmptySet(Collections.emptyNavigableSet());
-        testImmutableSet(emptySet);
+        testImmutableSet(emptySet, 99);
 
         List<Integer> emptyList = emptyList();
         testCollection(emptyList);
@@ -194,7 +198,7 @@ public class MOAT {
         Set<Integer> singletonSet = singleton(1);
         equal(singletonSet.size(), 1);
         testCollection(singletonSet);
-        testImmutableSet(singletonSet);
+        testImmutableSet(singletonSet, 99);
 
         List<Integer> singletonList = singletonList(1);
         equal(singletonList.size(), 1);
@@ -322,20 +326,20 @@ public class MOAT {
                 Set.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                 Set.of(integerArray))) {
             testCollection(set);
-            testImmutableSet(set);
+            testImmutableSet(set, 99);
             testCollMutatorsAlwaysThrow(set);
         }
 
         Set<Integer> setCopy = Set.copyOf(Arrays.asList(1, 2, 3));
         testCollection(setCopy);
-        testImmutableSet(setCopy);
+        testImmutableSet(setCopy, 99);
         testCollMutatorsAlwaysThrow(setCopy);
 
         Set<Integer> setCollected = Stream.of(1, 1, 2, 3, 2, 3)
                                           .collect(Collectors.toUnmodifiableSet());
         equal(setCollected, Set.of(1, 2, 3));
         testCollection(setCollected);
-        testImmutableSet(setCollected);
+        testImmutableSet(setCollected, 99);
         testCollMutatorsAlwaysThrow(setCollected);
 
         // Immutable Map
@@ -462,12 +466,12 @@ public class MOAT {
             testEmptyIterator(((NavigableSet<T>)c).descendingIterator());
     }
 
-    private static void testImmutableCollection(final Collection<Integer> c) {
+    private static <T> void testImmutableCollection(final Collection<T> c, T t) {
         THROWS(UnsupportedOperationException.class,
-               () -> c.add(99),
-               () -> c.addAll(singleton(99)));
+               () -> c.add(t),
+               () -> c.addAll(singleton(t)));
         if (! c.isEmpty()) {
-            final Integer first = c.iterator().next();
+            final T first = c.iterator().next();
             THROWS(UnsupportedOperationException.class,
                    () -> c.clear(),
                    () -> c.remove(first),
@@ -476,13 +480,36 @@ public class MOAT {
         }
     }
 
-    private static void testImmutableSet(final Set<Integer> c) {
-        testImmutableCollection(c);
+    private static <T> void testImmutableSeqColl(final SequencedCollection<T> c, T t) {
+        SequencedCollection<T> r = c.reversed();
+        testImmutableCollection(c, t);
+        testImmutableCollection(r, t);
+        THROWS(UnsupportedOperationException.class,
+               () -> c.addFirst(t),
+               () -> c.addLast(t),
+               () -> r.addFirst(t),
+               () -> r.addLast(t));
+        if (! c.isEmpty()) {
+            THROWS(UnsupportedOperationException.class,
+                   () -> c.removeFirst(),
+                   () -> c.removeLast(),
+                   () -> r.removeFirst(),
+                   () -> r.removeLast());
+        }
+    }
+
+    private static <T> void testImmutableSet(final Set<T> c, T t) {
+        testImmutableCollection(c, t);
+    }
+
+    private static <T> void testImmutableSeqSet(final SequencedSet<T> c, T t) {
+        testImmutableSeqColl(c, t);
     }
 
     private static void testImmutableList(final List<Integer> c) {
         testList(c);
-        testImmutableCollection(c);
+        testImmutableCollection(c, 42);
+        testImmutableSeqColl(c, 42);
         THROWS(UnsupportedOperationException.class,
                () -> c.set(0,42),
                () -> c.add(0,42),
@@ -606,6 +633,15 @@ public class MOAT {
         check(! m.containsKey(1));
     }
 
+    private static void testImmutableMapEntry(final Map.Entry<Integer,Integer> me) {
+        Integer key = me.getKey();
+        Integer val = me.getValue();
+        THROWS(UnsupportedOperationException.class,
+               () -> me.setValue(3));
+        equal(key, me.getKey());
+        equal(val, me.getValue());
+    }
+
     private static void testImmutableMap(final Map<Integer,Integer> m) {
         THROWS(UnsupportedOperationException.class,
                () -> m.put(1,1),
@@ -615,18 +651,39 @@ public class MOAT {
             THROWS(UnsupportedOperationException.class,
                    () -> m.remove(first),
                    () -> m.clear());
-            final Map.Entry<Integer,Integer> me
-                = m.entrySet().iterator().next();
-            Integer key = me.getKey();
-            Integer val = me.getValue();
-            THROWS(UnsupportedOperationException.class,
-                   () -> me.setValue(3));
-            equal(key, me.getKey());
-            equal(val, me.getValue());
+            testImmutableMapEntry(m.entrySet().iterator().next());
         }
-        testImmutableSet(m.keySet());
-        testImmutableCollection(m.values());
-        //testImmutableSet(m.entrySet());
+        testImmutableSet(m.keySet(), 99);
+        testImmutableCollection(m.values(), 99);
+        testImmutableSet(m.entrySet(), Map.entry(42, 43));
+    }
+
+    private static void testImmutableSeqMap(final SequencedMap<Integer,Integer> m) {
+        SequencedMap<Integer,Integer> r = m.reversed();
+        testImmutableMap(m);
+        testImmutableMap(r);
+        THROWS(UnsupportedOperationException.class,
+               () -> m.putFirst(0, 0),
+               () -> m.putLast(0, 0),
+               () -> r.putFirst(0, 0),
+               () -> r.putLast(0, 0));
+        if (! m.isEmpty()) {
+            THROWS(UnsupportedOperationException.class,
+                   () -> m.pollFirstEntry(),
+                   () -> m.pollLastEntry(),
+                   () -> r.pollFirstEntry(),
+                   () -> r.pollLastEntry());
+            testImmutableMapEntry(m.sequencedEntrySet().getFirst());
+            testImmutableMapEntry(r.sequencedEntrySet().getFirst());
+            testImmutableMapEntry(m.sequencedEntrySet().reversed().getFirst());
+            testImmutableMapEntry(r.sequencedEntrySet().reversed().getFirst());
+        }
+        testImmutableSeqSet(m.sequencedKeySet(), 99);
+        testImmutableSeqColl(m.sequencedValues(), 99);
+        testImmutableSeqSet(m.sequencedEntrySet(), Map.entry(42, 43));
+        testImmutableSeqSet(r.sequencedKeySet(), 99);
+        testImmutableSeqColl(r.sequencedValues(), 99);
+        testImmutableSeqSet(r.sequencedEntrySet(), Map.entry(42, 43));
     }
 
     private static void clear(Map<?,?> m) {

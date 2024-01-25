@@ -30,6 +30,8 @@ import nsk.share.TestFailure;
 import nsk.share.test.TestUtils;
 import jdk.internal.org.objectweb.asm.Label;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
+
+import static java.lang.invoke.MethodHandleInfo.REF_newInvokeSpecial;
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import static jdk.internal.org.objectweb.asm.ClassWriter.*;
@@ -290,11 +292,12 @@ public class ClassFileGenerator implements Visitor {
         }
     }
 
-    private void prepareParams(CallMethod callSite) {
-        // Prepare receiver
+    private void prepareReceiver(CallMethod callSite) {
         switch(callSite.invokeInsn()) {
             case SPECIAL: // Put receiver (this) on stack
-                mv.visitVarInsn(ALOAD,0);
+                if (!callSite.isConstructorCall()) {
+                    mv.visitVarInsn(ALOAD, 0);
+                }
                 break;
             case VIRTUAL:
             case INTERFACE: // Construct receiver
@@ -304,7 +307,7 @@ public class ClassFileGenerator implements Visitor {
                     mv.visitTypeInsn(NEW, receiver);
                     mv.visitInsn(DUP);
                     mv.visitMethodInsn(INVOKESPECIAL, receiver,
-                                       "<init>", "()V", false);
+                            "<init>", "()V", false);
                 } else {
                     // Use "this"
                     mv.visitVarInsn(ALOAD, 0);
@@ -314,7 +317,10 @@ public class ClassFileGenerator implements Visitor {
                 break;
             case STATIC: break;
         }
+    }
 
+    private void prepareParams(CallMethod callSite) {
+        prepareReceiver(callSite);
         // Push parameters on stack
         for (Param p : callSite.params()) {
             p.visit(this);
@@ -323,12 +329,21 @@ public class ClassFileGenerator implements Visitor {
     }
 
     private static Handle convertToHandle(CallMethod callSite) {
-        return new Handle(
-                /* tag */ callSite.invokeInsn().tag(),
-                /* owner */ callSite.staticClass().intlName(),
-                /* name */ callSite.methodName(),
-                /* desc */ callSite.methodDesc(),
-                /* interface */ callSite.isInterface());
+        if (callSite.isConstructorCall()) {
+            return new Handle(
+                    /* tag */   REF_newInvokeSpecial,
+                    /* owner */ callSite.staticClass().intlName(),
+                    /* name */  callSite.methodName(),
+                    /* desc */  callSite.methodDesc(),
+                    /* interface */ false);
+        } else {
+            return new Handle(
+                    /* tag */ callSite.invokeInsn().tag(),
+                    /* owner */ callSite.staticClass().intlName(),
+                    /* name */ callSite.methodName(),
+                    /* desc */ callSite.methodDesc(),
+                    /* interface */ callSite.isInterface());
+        }
     }
 
     private Handle generateBootstrapMethod(CallMethod callSite) {
@@ -356,9 +371,13 @@ public class ClassFileGenerator implements Visitor {
     }
 
     private static String mhCallSiteDesc(CallMethod callSite) {
-        return (callSite.invokeInsn() != CallMethod.Invoke.STATIC) ?
-                prependType(callSite.methodDesc(), callSite.staticClass().intlName()) :
-                callSite.methodDesc(); // ignore receiver for static call
+        if (callSite.isConstructorCall()) {
+            return String.format("()L%s;", callSite.staticClass().intlName());
+        }
+        if (callSite.invokeInsn() == CallMethod.Invoke.STATIC) {
+            return callSite.methodDesc(); // ignore receiver
+        }
+        return prependType(callSite.methodDesc(), callSite.staticClass().intlName());
     }
 
     private void generateIndyCall(CallMethod callSite) {
@@ -368,7 +387,8 @@ public class ClassFileGenerator implements Visitor {
         prepareParams(callSite);
 
         // Call method
-        mv.visitInvokeDynamicInsn(callSite.methodName(), callSiteDesc, bootstrap);
+        String name = callSite.isConstructorCall() ? "init" : callSite.methodName();
+        mv.visitInvokeDynamicInsn(name, callSiteDesc, bootstrap);
 
         // Pop method result, if necessary
         if (callSite.popReturnValue()) {
@@ -402,18 +422,26 @@ public class ClassFileGenerator implements Visitor {
     }
 
     private void generateDirectCall(CallMethod callSite) {
-        prepareParams(callSite);
+        if (callSite.isConstructorCall()) {
+            String receiver = callSite.receiverClass().intlName();
+            // Construct new instance
+            mv.visitTypeInsn(NEW, receiver);
+            mv.visitMethodInsn(INVOKESPECIAL, receiver,
+                    "<init>", "()V", false);
+        } else {
+            prepareParams(callSite);
 
-        // Call method
-        mv.visitMethodInsn(
-                callSite.invokeInsn().opcode(),
-                callSite.staticClass().intlName(),
-                callSite.methodName(), callSite.methodDesc(),
-                callSite.isInterface());
+            // Call method
+            mv.visitMethodInsn(
+                    callSite.invokeInsn().opcode(),
+                    callSite.staticClass().intlName(),
+                    callSite.methodName(), callSite.methodDesc(),
+                    callSite.isInterface());
 
-        // Pop method result, if necessary
-        if (callSite.popReturnValue()) {
-            mv.visitInsn(POP);
+            // Pop method result, if necessary
+            if (callSite.popReturnValue()) {
+                mv.visitInsn(POP);
+            }
         }
     }
 

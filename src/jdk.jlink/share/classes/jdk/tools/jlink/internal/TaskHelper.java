@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,6 +81,7 @@ public final class TaskHelper {
             return this;
         }
         public final String key;
+        @SuppressWarnings("serial") // Array component type is not Serializable
         public final Object[] args;
         public boolean showUsage;
     }
@@ -129,7 +130,7 @@ public final class TaskHelper {
                       String shortname,
                       boolean isTerminal)
         {
-            this(hasArg, processing, false, name, shortname, "", isTerminal);
+            this(hasArg, processing, hidden, name, shortname, "", isTerminal);
         }
 
         public Option(boolean hasArg, Processing<T> processing, String name, String shortname, boolean isTerminal) {
@@ -229,7 +230,6 @@ public final class TaskHelper {
         private final List<Plugin> plugins;
         private String lastSorter;
         private boolean listPlugins;
-        private Path existingImage;
 
         // plugin to args maps. Each plugin may be used more than once in command line.
         // Each such occurrence results in a Map of arguments. So, there could be multiple
@@ -258,13 +258,6 @@ public final class TaskHelper {
                     throw newBadArgs("err.no.such.plugin", arg);
                 },
                 false, "--disable-plugin"));
-            mainOptions.add(new PluginOption(true, (task, opt, arg) -> {
-                Path path = Paths.get(arg);
-                if (!Files.exists(path) || !Files.isDirectory(path)) {
-                    throw newBadArgs("err.image.must.exist", path);
-                }
-                existingImage = path.toAbsolutePath();
-            }, true, "--post-process-path"));
             mainOptions.add(new PluginOption(true,
                     (task, opt, arg) -> {
                         lastSorter = arg;
@@ -305,7 +298,7 @@ public final class TaskHelper {
 
             // make sure that more than one plugin does not use the same option!
             if (optionsSeen.contains(option)) {
-                throw new BadArgs("err.plugin.mutiple.options",
+                throw new BadArgs("err.plugin.multiple.options",
                         option);
             }
             optionsSeen.add(option);
@@ -416,11 +409,12 @@ public final class TaskHelper {
             return null;
         }
 
-        private PluginsConfiguration getPluginsConfig(Path output, Map<String, String> launchers
-                    ) throws IOException, BadArgs {
+        private PluginsConfiguration getPluginsConfig(Path output, Map<String, String> launchers,
+                                                      Platform targetPlatform)
+                throws IOException, BadArgs {
             if (output != null) {
                 if (Files.exists(output)) {
-                    throw new PluginException(PluginsResourceBundle.
+                    throw new IllegalArgumentException(PluginsResourceBundle.
                             getMessage("err.dir.already.exits", output));
                 }
             }
@@ -432,7 +426,7 @@ public final class TaskHelper {
                 List<Map<String, String>> argsMaps = entry.getValue();
 
                 // same plugin option may be used multiple times in command line.
-                // we call configure once for each occurrence. It is upto the plugin
+                // we call configure once for each occurrence. It is up to the plugin
                 // to 'merge' and/or 'override' arguments.
                 for (Map<String, String> map : argsMaps) {
                     try {
@@ -464,7 +458,7 @@ public final class TaskHelper {
             // recreate or postprocessing don't require an output directory.
             ImageBuilder builder = null;
             if (output != null) {
-                builder = new DefaultImageBuilder(output, launchers);
+                builder = new DefaultImageBuilder(output, launchers, targetPlatform);
             }
 
             return new Jlink.PluginsConfiguration(pluginsList,
@@ -715,13 +709,10 @@ public final class TaskHelper {
                 + bundleHelper.getMessage(key, args));
     }
 
-    public PluginsConfiguration getPluginsConfig(Path output, Map<String, String> launchers)
+    public PluginsConfiguration getPluginsConfig(Path output, Map<String, String> launchers,
+                                                 Platform targetPlatform)
             throws IOException, BadArgs {
-        return pluginOptions.getPluginsConfig(output, launchers);
-    }
-
-    public Path getExistingImage() {
-        return pluginOptions.existingImage;
+        return pluginOptions.getPluginsConfig(output, launchers, targetPlatform);
     }
 
     public void showVersion(boolean full) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,20 +93,20 @@ public class ECPoint {
      * @return true if {@code obj} is an instance of
      * ECPoint and the affine coordinates match, false otherwise.
      */
+    @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
         if (this == POINT_INFINITY) return false;
-        if (obj instanceof ECPoint) {
-            return ((x.equals(((ECPoint)obj).x)) &&
-                    (y.equals(((ECPoint)obj).y)));
-        }
-        return false;
+
+        return obj instanceof ECPoint other
+                && ((x.equals(other.x))
+                && (y.equals(other.y)));
     }
 
     /**
-     * Returns a hash code value for this elliptic curve point.
-     * @return a hash code value.
+     * {@return the hash code value for this elliptic curve point}
      */
+    @Override
     public int hashCode() {
         if (this == POINT_INFINITY) return 0;
         return x.hashCode() << 5 + y.hashCode();

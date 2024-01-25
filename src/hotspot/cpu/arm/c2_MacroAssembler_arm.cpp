@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ void C2_MacroAssembler::char_arrays_equals(Register ary1, Register ary2,
   mov(result, 1, eq);
   b(Ldone, eq);
 
-  // word by word compare, dont't need alignment check
+  // word by word compare, don't need alignment check
   bind(Lvector);
 
   // Shift ary1 and ary2 to the end of the arrays, negate limit
@@ -78,15 +78,9 @@ void C2_MacroAssembler::char_arrays_equals(Register ary1, Register ary2,
   // mov(result_reg, 1);  //equal
 }
 
-void C2_MacroAssembler::fast_lock(Register Roop, Register Rbox, Register Rscratch, Register Rscratch2, Register scratch3) {
+void C2_MacroAssembler::fast_lock(Register Roop, Register Rbox, Register Rscratch, Register Rscratch2) {
   assert(VM_Version::supports_ldrex(), "unsupported, yet?");
-
-  Register Rmark      = Rscratch2;
-
-  assert(Roop != Rscratch, "");
-  assert(Roop != Rmark, "");
-  assert(Rbox != Rscratch, "");
-  assert(Rbox != Rmark, "");
+  assert_different_registers(Roop, Rbox, Rscratch, Rscratch2);
 
   Label fast_lock, done;
 
@@ -97,37 +91,42 @@ void C2_MacroAssembler::fast_lock(Register Roop, Register Rbox, Register Rscratc
     b(done, ne);
   }
 
-  if (UseBiasedLocking && !UseOptoBiasInlining) {
-    assert(scratch3 != noreg, "need extra temporary for -XX:-UseOptoBiasInlining");
-    biased_locking_enter(Roop, Rmark, Rscratch, false, scratch3, done, done);
-    // Fall through if lock not biased otherwise branch to done
+  if (LockingMode == LM_LIGHTWEIGHT) {
+
+    lightweight_lock(Roop /* obj */, Rbox /* t1 */, Rscratch /* t2 */, Rscratch2 /* t3 */,
+                     1 /* savemask (save t1) */, done);
+
+    // Success: set Z
+    cmp(Roop, Roop);
+
+  } else if (LockingMode == LM_LEGACY) {
+
+    Register Rmark      = Rscratch2;
+
+    ldr(Rmark, Address(Roop, oopDesc::mark_offset_in_bytes()));
+    tst(Rmark, markWord::unlocked_value);
+    b(fast_lock, ne);
+
+    // Check for recursive lock
+    // See comments in InterpreterMacroAssembler::lock_object for
+    // explanations on the fast recursive locking check.
+    // -1- test low 2 bits
+    movs(Rscratch, AsmOperand(Rmark, lsl, 30));
+    // -2- test (hdr - SP) if the low two bits are 0
+    sub(Rscratch, Rmark, SP, eq);
+    movs(Rscratch, AsmOperand(Rscratch, lsr, exact_log2(os::vm_page_size())), eq);
+    // If still 'eq' then recursive locking OK
+    // set to zero if recursive lock, set to non zero otherwise (see discussion in JDK-8153107)
+    str(Rscratch, Address(Rbox, BasicLock::displaced_header_offset_in_bytes()));
+    b(done);
+
+    bind(fast_lock);
+    str(Rmark, Address(Rbox, BasicLock::displaced_header_offset_in_bytes()));
+
+    bool allow_fallthrough_on_failure = true;
+    bool one_shot = true;
+    cas_for_lock_acquire(Rmark, Rbox, Roop, Rscratch, done, allow_fallthrough_on_failure, one_shot);
   }
-
-  // Invariant: Rmark loaded below does not contain biased lock pattern
-
-  ldr(Rmark, Address(Roop, oopDesc::mark_offset_in_bytes()));
-  tst(Rmark, markWord::unlocked_value);
-  b(fast_lock, ne);
-
-  // Check for recursive lock
-  // See comments in InterpreterMacroAssembler::lock_object for
-  // explanations on the fast recursive locking check.
-  // -1- test low 2 bits
-  movs(Rscratch, AsmOperand(Rmark, lsl, 30));
-  // -2- test (hdr - SP) if the low two bits are 0
-  sub(Rscratch, Rmark, SP, eq);
-  movs(Rscratch, AsmOperand(Rscratch, lsr, exact_log2(os::vm_page_size())), eq);
-  // If still 'eq' then recursive locking OK
-  // set to zero if recursive lock, set to non zero otherwise (see discussion in JDK-8153107)
-  str(Rscratch, Address(Rbox, BasicLock::displaced_header_offset_in_bytes()));
-  b(done);
-
-  bind(fast_lock);
-  str(Rmark, Address(Rbox, BasicLock::displaced_header_offset_in_bytes()));
-
-  bool allow_fallthrough_on_failure = true;
-  bool one_shot = true;
-  cas_for_lock_acquire(Rmark, Rbox, Roop, Rscratch, done, allow_fallthrough_on_failure, one_shot);
 
   bind(done);
 
@@ -138,30 +137,36 @@ void C2_MacroAssembler::fast_lock(Register Roop, Register Rbox, Register Rscratc
 
 void C2_MacroAssembler::fast_unlock(Register Roop, Register Rbox, Register Rscratch, Register Rscratch2) {
   assert(VM_Version::supports_ldrex(), "unsupported, yet?");
-
-  Register Rmark      = Rscratch2;
-
-  assert(Roop != Rscratch, "");
-  assert(Roop != Rmark, "");
-  assert(Rbox != Rscratch, "");
-  assert(Rbox != Rmark, "");
+  assert_different_registers(Roop, Rbox, Rscratch, Rscratch2);
 
   Label done;
 
-  if (UseBiasedLocking && !UseOptoBiasInlining) {
-    biased_locking_exit(Roop, Rscratch, done);
+  if (LockingMode == LM_LIGHTWEIGHT) {
+
+    lightweight_unlock(Roop /* obj */, Rbox /* t1 */, Rscratch /* t2 */, Rscratch2 /* t3 */,
+                       1 /* savemask (save t1) */, done);
+
+    cmp(Roop, Roop); // Success: Set Z
+    // Fall through
+
+  } else if (LockingMode == LM_LEGACY) {
+
+    Register Rmark      = Rscratch2;
+
+    // Find the lock address and load the displaced header from the stack.
+    ldr(Rmark, Address(Rbox, BasicLock::displaced_header_offset_in_bytes()));
+    // If hdr is null, we've got recursive locking and there's nothing more to do
+    cmp(Rmark, 0);
+    b(done, eq);
+
+    // Restore the object header
+    bool allow_fallthrough_on_failure = true;
+    bool one_shot = true;
+    cas_for_lock_release(Rbox, Rmark, Roop, Rscratch, done, allow_fallthrough_on_failure, one_shot);
   }
-
-  ldr(Rmark, Address(Rbox, BasicLock::displaced_header_offset_in_bytes()));
-  // If hdr is NULL, we've got recursive locking and there's nothing more to do
-  cmp(Rmark, 0);
-  b(done, eq);
-
-  // Restore the object header
-  bool allow_fallthrough_on_failure = true;
-  bool one_shot = true;
-  cas_for_lock_release(Rmark, Rbox, Roop, Rscratch, done, allow_fallthrough_on_failure, one_shot);
-
   bind(done);
-}
 
+  // At this point flags are set as follows:
+  //  EQ -> Success
+  //  NE -> Failure, branch to slow path
+}

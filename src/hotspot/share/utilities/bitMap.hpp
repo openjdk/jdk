@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,7 @@ class BitMap {
   bm_word_t* _map;     // First word in bitmap
   idx_t      _size;    // Size of bitmap (in bits)
 
+ protected:
   // The maximum allowable size of a bitmap, in words or bits.
   // Limit max_size_in_bits so aligning up to a word boundary never overflows.
   static idx_t max_size_in_words() { return raw_to_words_align_down(~idx_t(0)); }
@@ -93,16 +94,29 @@ class BitMap {
     return raw_to_words_align_down(bit);
   }
 
-  // Helper for get_next_{zero,one}_bit variants.
+  // Helper for find_first_{set,clear}_bit variants.
   // - flip designates whether searching for 1s or 0s.  Must be one of
   //   find_{zeros,ones}_flip.
-  // - aligned_right is true if r_index is a priori on a bm_word_t boundary.
+  // - aligned_right is true if end is a priori on a bm_word_t boundary.
+  // - returns end if not found.
   template<bm_word_t flip, bool aligned_right>
-  inline idx_t get_next_bit_impl(idx_t l_index, idx_t r_index) const;
+  inline idx_t find_first_bit_impl(idx_t beg, idx_t end) const;
 
-  // Values for get_next_bit_impl flip parameter.
+  // Helper for find_last_{set,clear}_bit variants.
+  // - flip designates whether searching for 1s or 0s.  Must be one of
+  //   find_{zeros,ones}_flip.
+  // - aligned_left is true if beg is a priori on a bm_word_t boundary.
+  // - returns end if not found.
+  template<bm_word_t flip, bool aligned_left>
+  inline idx_t find_last_bit_impl(idx_t beg, idx_t end) const;
+
+  // Values for find_{first,last}_bit_impl flip parameter.
   static const bm_word_t find_ones_flip = 0;
   static const bm_word_t find_zeros_flip = ~(bm_word_t)0;
+
+  template<typename ReturnType> struct IterateInvoker;
+
+  struct IteratorImpl;
 
   // Threshold for performing small range operation, even when large range
   // operation was requested. Measured in words.
@@ -110,7 +124,6 @@ class BitMap {
 
   static bool is_small_range_of_words(idx_t beg_full_word, idx_t end_full_word);
 
- protected:
   // Return the position of bit within the word that contains it (e.g., if
   // bitmap words are 32 bits, return a number 0 <= n <= 31).
   static idx_t bit_in_word(idx_t bit) { return bit & (BitsPerWord - 1); }
@@ -125,7 +138,6 @@ class BitMap {
   // Return the array of bitmap words, or a specific word from it.
   bm_word_t* map()                 { return _map; }
   const bm_word_t* map() const     { return _map; }
-  bm_word_t  map(idx_t word) const { return _map[word]; }
 
   // Return a pointer to the word containing the specified bit.
   bm_word_t* word_addr(idx_t bit) {
@@ -135,12 +147,17 @@ class BitMap {
     return map() + to_words_align_down(bit);
   }
 
+  // Get a word and flip its bits according to flip.
+  bm_word_t flipped_word(idx_t word, bm_word_t flip) const {
+    return _map[word] ^ flip;
+  }
+
   // Set a word to a specified value or to all ones; clear a word.
   void set_word  (idx_t word, bm_word_t val) { _map[word] = val; }
   void set_word  (idx_t word)            { set_word(word, ~(bm_word_t)0); }
   void clear_word(idx_t word)            { _map[word] = 0; }
 
-  static inline const bm_word_t load_word_ordered(const volatile bm_word_t* const addr, atomic_memory_order memory_order);
+  static inline bm_word_t load_word_ordered(const volatile bm_word_t* const addr, atomic_memory_order memory_order);
 
   // Utilities for ranges of bits.  Ranges are half-open [beg, end).
 
@@ -160,53 +177,6 @@ class BitMap {
 
   idx_t count_one_bits_within_word(idx_t beg, idx_t end) const;
   idx_t count_one_bits_in_range_of_words(idx_t beg_full_word, idx_t end_full_word) const;
-
-  // Verification.
-
-  // Verify size_in_bits does not exceed max_size_in_bits().
-  static void verify_size(idx_t size_in_bits) NOT_DEBUG_RETURN;
-  // Verify bit is less than size().
-  void verify_index(idx_t bit) const NOT_DEBUG_RETURN;
-  // Verify bit is not greater than size().
-  void verify_limit(idx_t bit) const NOT_DEBUG_RETURN;
-  // Verify [beg,end) is a valid range, e.g. beg <= end <= size().
-  void verify_range(idx_t beg, idx_t end) const NOT_DEBUG_RETURN;
-
-  // Allocation Helpers.
-
-  // Allocates and clears the bitmap memory.
-  template <class Allocator>
-  static bm_word_t* allocate(const Allocator&, idx_t size_in_bits, bool clear = true);
-
-  // Reallocates and clears the new bitmap memory.
-  template <class Allocator>
-  static bm_word_t* reallocate(const Allocator&, bm_word_t* map, idx_t old_size_in_bits, idx_t new_size_in_bits, bool clear = true);
-
-  // Free the bitmap memory.
-  template <class Allocator>
-  static void free(const Allocator&, bm_word_t* map, idx_t size_in_bits);
-
-  // Protected functions, that are used by BitMap sub-classes that support them.
-
-  // Resize the backing bitmap memory.
-  //
-  // Old bits are transfered to the new memory
-  // and the extended memory is cleared.
-  template <class Allocator>
-  void resize(const Allocator& allocator, idx_t new_size_in_bits, bool clear);
-
-  // Set up and clear the bitmap memory.
-  //
-  // Precondition: The bitmap was default constructed and has
-  // not yet had memory allocated via resize or (re)initialize.
-  template <class Allocator>
-  void initialize(const Allocator& allocator, idx_t size_in_bits, bool clear);
-
-  // Set up and clear the bitmap memory.
-  //
-  // Can be called on previously initialized bitmaps.
-  template <class Allocator>
-  void reinitialize(const Allocator& allocator, idx_t new_size_in_bits, bool clear);
 
   // Set the map and size.
   void update(bm_word_t* map, idx_t size) {
@@ -259,8 +229,8 @@ class BitMap {
   // will CAS the value into the bitmap and is quite a bit slower.
   // The parallel version also returns a value indicating if the
   // calling thread was the one that changed the value of the bit.
-  void at_put(idx_t index, bool value);
-  bool par_at_put(idx_t index, bool value);
+  void at_put(idx_t bit, bool value);
+  bool par_at_put(idx_t bit, bool value);
 
   // Update a range of bits.  Ranges are half-open [beg, end).
   void set_range   (idx_t beg, idx_t end);
@@ -284,33 +254,106 @@ class BitMap {
   void clear_large();
   inline void clear();
 
-  // Iteration support.  Applies the closure to the index for each set bit,
-  // starting from the least index in the range to the greatest, in order.
-  // The iteration terminates if the closure returns false.  Returns true if
-  // the iteration completed, false if terminated early because the closure
-  // returned false.  If the closure modifies the bitmap, modifications to
-  // bits at indices greater than the current index will affect which further
-  // indices the closure will be applied to.
-  // precondition: beg and end form a valid range.
-  bool iterate(BitMapClosure* cl, idx_t beg, idx_t end);
-  bool iterate(BitMapClosure* cl);
+  // Verification.
 
-  // Looking for 1's and 0's at indices equal to or greater than "l_index",
-  // stopping if none has been found before "r_index", and returning
-  // "r_index" (which must be at most "size") in that case.
-  idx_t get_next_one_offset (idx_t l_index, idx_t r_index) const;
-  idx_t get_next_zero_offset(idx_t l_index, idx_t r_index) const;
+  // Verify size_in_bits does not exceed max_size_in_bits().
+  static void verify_size(idx_t size_in_bits) NOT_DEBUG_RETURN;
+  // Verify bit is less than size().
+  void verify_index(idx_t bit) const NOT_DEBUG_RETURN;
+  // Verify bit is not greater than size().
+  void verify_limit(idx_t bit) const NOT_DEBUG_RETURN;
+  // Verify [beg,end) is a valid range, e.g. beg <= end <= size().
+  void verify_range(idx_t beg, idx_t end) const NOT_DEBUG_RETURN;
 
-  idx_t get_next_one_offset(idx_t offset) const {
-    return get_next_one_offset(offset, size());
+  // Applies an operation to the index of each set bit in [beg, end), in
+  // increasing (decreasing for reverse iteration) order.
+  //
+  // If i is an index of the bitmap, the operation is either
+  // - function(i)
+  // - cl->do_bit(i)
+  // The result of an operation must be either void or convertible to bool.
+  //
+  // If an operation returns false then the iteration stops at that index.
+  // The result of the iteration is true unless the iteration was stopped by
+  // an operation returning false.
+  //
+  // If an operation modifies the bitmap, modifications to bits at indices
+  // greater than (less than for reverse iteration) the current index will
+  // affect which further indices the operation will be applied to.
+  //
+  // See also the Iterator and ReverseIterator classes.
+  //
+  // precondition: beg and end form a valid range for the bitmap.
+  template<typename Function>
+  bool iterate(Function function, idx_t beg, idx_t end) const;
+
+  template<typename BitMapClosureType>
+  bool iterate(BitMapClosureType* cl, idx_t beg, idx_t end) const;
+
+  template<typename Function>
+  bool iterate(Function function) const {
+    return iterate(function, 0, size());
   }
-  idx_t get_next_zero_offset(idx_t offset) const {
-    return get_next_zero_offset(offset, size());
+
+  template<typename BitMapClosureType>
+  bool iterate(BitMapClosureType* cl) const {
+    return iterate(cl, 0, size());
   }
 
-  // Like "get_next_one_offset", except requires that "r_index" is
+  template<typename Function>
+  bool reverse_iterate(Function function, idx_t beg, idx_t end) const;
+
+  template<typename BitMapClosureType>
+  bool reverse_iterate(BitMapClosureType* cl, idx_t beg, idx_t end) const;
+
+  template<typename Function>
+  bool reverse_iterate(Function function) const {
+    return reverse_iterate(function, 0, size());
+  }
+
+  template<typename BitMapClosureType>
+  bool reverse_iterate(BitMapClosureType* cl) const {
+    return reverse_iterate(cl, 0, size());
+  }
+
+  class Iterator;
+  class ReverseIterator;
+  class RBFIterator;
+  class ReverseRBFIterator;
+
+  // Return the index of the first set (or clear) bit in the range [beg, end),
+  // or end if none found.
+  // precondition: beg and end form a valid range for the bitmap.
+  idx_t find_first_set_bit(idx_t beg, idx_t end) const;
+  idx_t find_first_clear_bit(idx_t beg, idx_t end) const;
+
+  idx_t find_first_set_bit(idx_t beg) const {
+    return find_first_set_bit(beg, size());
+  }
+  idx_t find_first_clear_bit(idx_t beg) const {
+    return find_first_clear_bit(beg, size());
+  }
+
+  // Like "find_first_set_bit", except requires that "end" is
   // aligned to bitsizeof(bm_word_t).
-  idx_t get_next_one_offset_aligned_right(idx_t l_index, idx_t r_index) const;
+  idx_t find_first_set_bit_aligned_right(idx_t beg, idx_t end) const;
+
+  // Return the index of the last set (or clear) bit in the range [beg, end),
+  // or end if none found.
+  // precondition: beg and end form a valid range for the bitmap.
+  idx_t find_last_set_bit(idx_t beg, idx_t end) const;
+  idx_t find_last_clear_bit(idx_t beg, idx_t end) const;
+
+  idx_t find_last_set_bit(idx_t beg) const {
+    return find_last_set_bit(beg, size());
+  }
+  idx_t find_last_clear_bit(idx_t beg) const {
+    return find_last_clear_bit(beg, size());
+  }
+
+  // Like "find_last_set_bit", except requires that "beg" is
+  // aligned to bitsizeof(bm_word_t).
+  idx_t find_last_set_bit_aligned_left(idx_t beg, idx_t end) const;
 
   // Returns the number of bits set in the bitmap.
   idx_t count_one_bits() const;
@@ -351,84 +394,254 @@ class BitMap {
 #endif
 };
 
-// A concrete implementation of the the "abstract" BitMap class.
+// Implementation support for bitmap iteration.  While it could be used to
+// support bi-directional iteration, it is only intended to be used for
+// uni-directional iteration.  The directionality is determined by the using
+// class.
+struct BitMap::IteratorImpl {
+  const BitMap* _map;
+  idx_t _cur_beg;
+  idx_t _cur_end;
+
+  void assert_not_empty() const NOT_DEBUG_RETURN;
+
+  // Constructs an empty iterator.
+  IteratorImpl();
+
+  // Constructs an iterator for map, over the range [beg, end).
+  // May be constructed for one of forward or reverse iteration.
+  // precondition: beg and end form a valid range for map.
+  // precondition: either beg == end or
+  // (1) if for forward iteration, then beg must designate a set bit,
+  // (2) if for reverse iteration, then end-1 must designate a set bit.
+  IteratorImpl(const BitMap* map, idx_t beg, idx_t end);
+
+  // Returns true if the remaining iteration range is empty.
+  bool is_empty() const;
+
+  // Returns the index of the first set bit in the remaining iteration range.
+  // precondition: !is_empty()
+  // precondition: constructed for forward iteration.
+  idx_t first() const;
+
+  // Returns the index of the last set bit in the remaining iteration range.
+  // precondition: !is_empty()
+  // precondition: constructed for reverse iteration.
+  idx_t last() const;
+
+  // Updates first() to the position of the first set bit in the range
+  // [first() + 1, last()]. The iterator instead becomes empty if there
+  // aren't any set bits in that range.
+  // precondition: !is_empty()
+  // precondition: constructed for forward iteration.
+  void step_first();
+
+  // Updates last() to the position of the last set bit in the range
+  // [first(), last()). The iterator instead becomes empty if there aren't
+  // any set bits in that range.
+  // precondition: !is_empty()
+  // precondition: constructed for reverse iteration.
+  void step_last();
+};
+
+// Provides iteration over the indices of the set bits in a range of a bitmap,
+// in increasing order. This is an alternative to the iterate() function.
+class BitMap::Iterator {
+  IteratorImpl _impl;
+
+public:
+  // Constructs an empty iterator.
+  Iterator();
+
+  // Constructs an iterator for map, over the range [0, map.size()).
+  explicit Iterator(const BitMap& map);
+
+  // Constructs an iterator for map, over the range [beg, end).
+  // If there are no set bits in that range, the resulting iterator is empty.
+  // Otherwise, index() is initially the position of the first set bit in
+  // that range.
+  // precondition: beg and end form a valid range for map.
+  Iterator(const BitMap& map, idx_t beg, idx_t end);
+
+  // Returns true if the remaining iteration range is empty.
+  bool is_empty() const;
+
+  // Returns the index of the first set bit in the remaining iteration range.
+  // precondition: !is_empty()
+  idx_t index() const;
+
+  // Updates index() to the position of the first set bit in the range
+  // [index(), end), where end was the corresponding constructor argument.
+  // The iterator instead becomes empty if there aren't any set bits in
+  // that range.
+  // precondition: !is_empty()
+  void step();
+
+  // Range-based for loop support.
+  RBFIterator begin() const;
+  RBFIterator end() const;
+};
+
+// Provides iteration over the indices of the set bits in a range of a bitmap,
+// in decreasing order. This is an alternative to the reverse_iterate() function.
+class BitMap::ReverseIterator {
+  IteratorImpl _impl;
+
+  static idx_t initial_end(const BitMap& map, idx_t beg, idx_t end);
+
+public:
+  // Constructs an empty iterator.
+  ReverseIterator();
+
+  // Constructs a reverse iterator for map, over the range [0, map.size()).
+  explicit ReverseIterator(const BitMap& map);
+
+  // Constructs a reverse iterator for map, over the range [beg, end).
+  // If there are no set bits in that range, the resulting iterator is empty.
+  // Otherwise, index() is initially the position of the last set bit in
+  // that range.
+  // precondition: beg and end form a valid range for map.
+  ReverseIterator(const BitMap& map, idx_t beg, idx_t end);
+
+  // Returns true if the remaining iteration range is empty.
+  bool is_empty() const;
+
+  // Returns the index of the last set bit in the remaining iteration range.
+  // precondition: !is_empty()
+  idx_t index() const;
+
+  // Updates index() to the position of the last set bit in the range
+  // [beg, index()), where beg was the corresponding constructor argument.
+  // The iterator instead becomes empty if there aren't any set bits in
+  // that range.
+  // precondition: !is_empty()
+  void step();
+
+  // Range-based for loop support.
+  ReverseRBFIterator begin() const;
+  ReverseRBFIterator end() const;
+};
+
+// Provides range-based for loop iteration support.  This class is not
+// intended for direct use by an application.  It provides the functionality
+// required by a range-based for loop with an Iterator as the range.
+class BitMap::RBFIterator {
+  friend class Iterator;
+
+  IteratorImpl _impl;
+
+  RBFIterator(const BitMap* map, idx_t beg, idx_t end);
+
+public:
+  bool operator!=(const RBFIterator& i) const;
+  idx_t operator*() const;
+  RBFIterator& operator++();
+};
+
+// Provides range-based for loop reverse iteration support.  This class is
+// not intended for direct use by an application.  It provides the
+// functionality required by a range-based for loop with a ReverseIterator
+// as the range.
+class BitMap::ReverseRBFIterator {
+  friend class ReverseIterator;
+
+  IteratorImpl _impl;
+
+  ReverseRBFIterator(const BitMap* map, idx_t beg, idx_t end);
+
+public:
+  bool operator!=(const ReverseRBFIterator& i) const;
+  idx_t operator*() const;
+  ReverseRBFIterator& operator++();
+};
+
+// CRTP: BitmapWithAllocator exposes the following Allocator interfaces upward to GrowableBitMap.
+//
+//  bm_word_t* allocate(idx_t size_in_words) const;
+//  void free(bm_word_t* map, idx_t size_in_words) const
+//
+template <class BitMapWithAllocator>
+class GrowableBitMap : public BitMap {
+ protected:
+  GrowableBitMap() : GrowableBitMap(nullptr, 0) {}
+  GrowableBitMap(bm_word_t* map, idx_t size_in_bits) : BitMap(map, size_in_bits) {}
+
+ public:
+  // Set up and optionally clear the bitmap memory.
+  //
+  // Precondition: The bitmap was default constructed and has
+  // not yet had memory allocated via resize or (re)initialize.
+  void initialize(idx_t size_in_bits, bool clear = true);
+
+  // Set up and optionally clear the bitmap memory.
+  //
+  // Can be called on previously initialized bitmaps.
+  void reinitialize(idx_t new_size_in_bits, bool clear = true);
+
+  // Protected functions, that are used by BitMap sub-classes that support them.
+
+  // Resize the backing bitmap memory.
+  //
+  // Old bits are transferred to the new memory
+  // and the extended memory is optionally cleared.
+  void resize(idx_t new_size_in_bits, bool clear = true);
+};
+
+// A concrete implementation of the "abstract" BitMap class.
 //
 // The BitMapView is used when the backing storage is managed externally.
 class BitMapView : public BitMap {
  public:
-  BitMapView() : BitMap(NULL, 0) {}
+  BitMapView() : BitMapView(nullptr, 0) {}
   BitMapView(bm_word_t* map, idx_t size_in_bits) : BitMap(map, size_in_bits) {}
 };
 
-// A BitMap with storage in a ResourceArea.
-class ResourceBitMap : public BitMap {
+// A BitMap with storage in a specific Arena.
+class ArenaBitMap : public GrowableBitMap<ArenaBitMap> {
+  Arena* const _arena;
+
+  NONCOPYABLE(ArenaBitMap);
 
  public:
-  ResourceBitMap() : BitMap(NULL, 0) {}
-  // Conditionally clears the bitmap memory.
-  ResourceBitMap(idx_t size_in_bits, bool clear = true);
+  ArenaBitMap(Arena* arena, idx_t size_in_bits, bool clear = true);
 
-  // Resize the backing bitmap memory.
-  //
-  // Old bits are transfered to the new memory
-  // and the extended memory is cleared.
-  void resize(idx_t new_size_in_bits);
-
-  // Set up and clear the bitmap memory.
-  //
-  // Precondition: The bitmap was default constructed and has
-  // not yet had memory allocated via resize or initialize.
-  void initialize(idx_t size_in_bits);
-
-  // Set up and clear the bitmap memory.
-  //
-  // Can be called on previously initialized bitmaps.
-  void reinitialize(idx_t size_in_bits);
+  bm_word_t* allocate(idx_t size_in_words) const;
+  bm_word_t* reallocate(bm_word_t* old_map, size_t old_size_in_words, size_t new_size_in_words) const;
+  void free(bm_word_t* map, idx_t size_in_words) const {
+    // ArenaBitMaps don't free memory.
+  }
 };
 
-// A BitMap with storage in a specific Arena.
-class ArenaBitMap : public BitMap {
+// A BitMap with storage in the current threads resource area.
+class ResourceBitMap : public GrowableBitMap<ResourceBitMap> {
  public:
-  // Clears the bitmap memory.
-  ArenaBitMap(Arena* arena, idx_t size_in_bits);
+  ResourceBitMap() : ResourceBitMap(0) {}
+  explicit ResourceBitMap(idx_t size_in_bits, bool clear = true);
 
- private:
-  NONCOPYABLE(ArenaBitMap);
+  bm_word_t* allocate(idx_t size_in_words) const;
+  bm_word_t* reallocate(bm_word_t* old_map, size_t old_size_in_words, size_t new_size_in_words) const;
+  void free(bm_word_t* map, idx_t size_in_words) const {
+    // ResourceBitMaps don't free memory.
+  }
 };
 
 // A BitMap with storage in the CHeap.
-class CHeapBitMap : public BitMap {
+class CHeapBitMap : public GrowableBitMap<CHeapBitMap> {
+  // NMT memory type
+  const MEMFLAGS _flags;
 
- private:
   // Don't allow copy or assignment, to prevent the
   // allocated memory from leaking out to other instances.
   NONCOPYABLE(CHeapBitMap);
 
-  // NMT memory type
-  MEMFLAGS _flags;
-
  public:
-  CHeapBitMap(MEMFLAGS flags = mtInternal) : BitMap(NULL, 0), _flags(flags) {}
-  // Clears the bitmap memory.
-  CHeapBitMap(idx_t size_in_bits, MEMFLAGS flags = mtInternal, bool clear = true);
+  explicit CHeapBitMap(MEMFLAGS flags) : GrowableBitMap(0, false), _flags(flags) {}
+  CHeapBitMap(idx_t size_in_bits, MEMFLAGS flags, bool clear = true);
   ~CHeapBitMap();
 
-  // Resize the backing bitmap memory.
-  //
-  // Old bits are transfered to the new memory
-  // and the extended memory is (optionally) cleared.
-  void resize(idx_t new_size_in_bits, bool clear = true);
-
-  // Set up and (optionally) clear the bitmap memory.
-  //
-  // Precondition: The bitmap was default constructed and has
-  // not yet had memory allocated via resize or initialize.
-  void initialize(idx_t size_in_bits, bool clear = true);
-
-  // Set up and (optionally) clear the bitmap memory.
-  //
-  // Can be called on previously initialized bitmaps.
-  void reinitialize(idx_t size_in_bits, bool clear = true);
+  bm_word_t* allocate(idx_t size_in_words) const;
+  bm_word_t* reallocate(bm_word_t* old_map, size_t old_size_in_words, size_t new_size_in_words) const;
+  void free(bm_word_t* map, idx_t size_in_words) const;
 };
 
 // Convenience class wrapping BitMap which provides multiple bits per slot.

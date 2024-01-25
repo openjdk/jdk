@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -507,7 +507,6 @@ public class ScrollPane extends Container implements Accessible {
         Component c = getComponent(0);
         Point p = getScrollPosition();
         Dimension cs = calculateChildSize();
-        Dimension vs = getViewportSize();
 
         c.reshape(- p.x, - p.y, cs.width, cs.height);
         ScrollPanePeer peer = (ScrollPanePeer)this.peer;
@@ -518,7 +517,7 @@ public class ScrollPane extends Container implements Accessible {
         // update adjustables... the viewport size may have changed
         // with the scrollbars coming or going so the viewport size
         // is updated before the adjustables.
-        vs = getViewportSize();
+        Dimension vs = getViewportSize();
         hAdjustable.setSpan(0, cs.width, vs.width);
         vAdjustable.setSpan(0, cs.height, vs.height);
     }
@@ -740,8 +739,7 @@ public class ScrollPane extends Container implements Accessible {
     /**
      * Invoked when the value of the adjustable has changed.
      */
-    class PeerFixer implements AdjustmentListener, java.io.Serializable
-    {
+    static class PeerFixer implements AdjustmentListener, java.io.Serializable {
         /**
          * Use serialVersionUID from JDK 1.1.1 for interoperability.
          */
@@ -777,7 +775,7 @@ public class ScrollPane extends Container implements Accessible {
             }
         }
 
-        private ScrollPane scroller;
+        private final ScrollPane scroller;
     }
 
 

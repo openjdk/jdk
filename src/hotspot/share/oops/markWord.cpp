@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "oops/markWord.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "utilities/ostream.hpp"
 
@@ -69,8 +69,8 @@ void markWord::print_on(outputStream* st, bool print_monitor_info) const {
     st->print(" monitor(" INTPTR_FORMAT ")=", value());
     if (print_monitor_info) {
       ObjectMonitor* mon = monitor();
-      if (mon == NULL) {
-        st->print("NULL (this should never be seen!)");
+      if (mon == nullptr) {
+        st->print("null (this should never be seen!)");
       } else {
         mon->print_on(st);
       }
@@ -80,18 +80,13 @@ void markWord::print_on(outputStream* st, bool print_monitor_info) const {
     st->print(" locked(" INTPTR_FORMAT ")", value());
   } else {
     st->print(" mark(");
-    // Biased bit is 3rd rightmost bit
-    if (is_neutral()) {   // last bits = 001
+    if (is_neutral()) {   // last bits = 01
       st->print("is_neutral");
       if (has_no_hash()) {
         st->print(" no_hash");
       } else {
         st->print(" hash=" INTPTR_FORMAT, hash());
       }
-    } else if (has_bias_pattern()) {  // last bits = 101
-      st->print("is_biased");
-      JavaThread* jt = biased_locker();
-      st->print(" biased_locker=" INTPTR_FORMAT " epoch=%d", p2i(jt), bias_epoch());
     } else {
       st->print("??");
     }

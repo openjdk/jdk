@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,12 +31,13 @@
 #include "code/debugInfoRec.hpp"
 #include "code/dependencies.hpp"
 #include "code/exceptionHandlerTable.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "compiler/compilerThread.hpp"
-#include "compiler/oopMap.hpp"
 #include "oops/methodData.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 
 class CompileTask;
+class OopMapSet;
 
 // ciEnv
 //
@@ -44,9 +45,9 @@ class CompileTask;
 // to the VM.
 class ciEnv : StackObj {
   CI_PACKAGE_ACCESS_TO
-
   friend class CompileBroker;
   friend class Dependencies;  // for get_object, during logging
+  friend class RecordLocation;
   friend class PrepareExtraDataClosure;
 
 private:
@@ -78,7 +79,6 @@ private:
   bool  _jvmti_can_walk_any_space;
 
   // Cache DTrace flags
-  bool  _dtrace_extended_probes;
   bool  _dtrace_method_probes;
   bool  _dtrace_alloc_probes;
 
@@ -107,7 +107,7 @@ private:
   ciInstance* _the_min_jint_string; // The Java string "-2147483648"
 
   // Look up a klass by name from a particular class loader (the accessor's).
-  // If require_local, result must be defined in that class loader, or NULL.
+  // If require_local, result must be defined in that class loader, or null.
   // If !require_local, a result from remote class loader may be reported,
   // if sufficient class loader constraints exist such that initiating
   // a class loading request from the given loader is bound to return
@@ -131,7 +131,7 @@ private:
                                    int pool_index, int cache_index,
                                    ciInstanceKlass* accessor);
   ciField*   get_field_by_index(ciInstanceKlass* loading_klass,
-                                int field_index);
+                                int field_index, Bytecodes::Code bc);
   ciMethod*  get_method_by_index(const constantPoolHandle& cpool,
                                  int method_index, Bytecodes::Code bc,
                                  ciInstanceKlass* loading_klass);
@@ -149,7 +149,7 @@ private:
                                         int pool_index, int cache_index,
                                         ciInstanceKlass* loading_klass);
   ciField*   get_field_by_index_impl(ciInstanceKlass* loading_klass,
-                                     int field_index);
+                                     int field_index, Bytecodes::Code bc);
   ciMethod*  get_method_by_index_impl(const constantPoolHandle& cpool,
                                       int method_index, Bytecodes::Code bc,
                                       ciInstanceKlass* loading_klass);
@@ -164,10 +164,13 @@ private:
                            Bytecodes::Code  bc,
                            constantTag      tag);
 
+  ciConstant unbox_primitive_value(ciObject* cibox, BasicType expected_bt = T_ILLEGAL);
+  ciConstant get_resolved_constant(const constantPoolHandle& cpool, int obj_index);
+
   // Get a ciObject from the object factory.  Ensures uniqueness
   // of ciObjects.
   ciObject* get_object(oop o) {
-    if (o == NULL) {
+    if (o == nullptr) {
       return _null_object_instance;
     } else {
       return _factory->get(o);
@@ -175,17 +178,17 @@ private:
   }
 
   ciSymbol* get_symbol(Symbol* o) {
-    if (o == NULL) {
+    if (o == nullptr) {
       ShouldNotReachHere();
-      return NULL;
+      return nullptr;
     } else {
       return _factory->get_symbol(o);
     }
   }
 
   ciMetadata* get_metadata(Metadata* o) {
-    if (o == NULL) {
-      return NULL;
+    if (o == nullptr) {
+      return nullptr;
     } else {
       return _factory->get_metadata(o);
     }
@@ -196,31 +199,31 @@ private:
   }
 
   ciInstance* get_instance(oop o) {
-    if (o == NULL) return NULL;
+    if (o == nullptr) return nullptr;
     return get_object(o)->as_instance();
   }
   ciObjArrayKlass* get_obj_array_klass(Klass* o) {
-    if (o == NULL) return NULL;
+    if (o == nullptr) return nullptr;
     return get_metadata(o)->as_obj_array_klass();
   }
   ciTypeArrayKlass* get_type_array_klass(Klass* o) {
-    if (o == NULL) return NULL;
+    if (o == nullptr) return nullptr;
     return get_metadata(o)->as_type_array_klass();
   }
   ciKlass* get_klass(Klass* o) {
-    if (o == NULL) return NULL;
+    if (o == nullptr) return nullptr;
     return get_metadata(o)->as_klass();
   }
   ciInstanceKlass* get_instance_klass(Klass* o) {
-    if (o == NULL) return NULL;
+    if (o == nullptr) return nullptr;
     return get_metadata(o)->as_instance_klass();
   }
   ciMethod* get_method(Method* o) {
-    if (o == NULL) return NULL;
+    if (o == nullptr) return nullptr;
     return get_metadata(o)->as_method();
   }
   ciMethodData* get_method_data(MethodData* o) {
-    if (o == NULL) return NULL;
+    if (o == nullptr) return nullptr;
     return get_metadata(o)->as_method_data();
   }
 
@@ -266,7 +269,7 @@ private:
   }
 
   // See if we already have an unloaded klass for the given name
-  // or return NULL if not.
+  // or return null if not.
   ciKlass *check_get_unloaded_klass(ciKlass*  accessing_klass, ciSymbol* name) {
     return _factory->get_unloaded_klass(accessing_klass, name, false);
   }
@@ -316,12 +319,12 @@ public:
 
   // This is true if the compilation is not going to produce code.
   // (It is reasonable to retry failed compilations.)
-  bool failing() { return _failure_reason != NULL; }
+  bool failing() const { return _failure_reason != nullptr; }
 
   // Reason this compilation is failing, such as "too many basic blocks".
-  const char* failure_reason() { return _failure_reason; }
+  const char* failure_reason() const { return _failure_reason; }
 
-  // Return state of appropriate compilability
+  // Return state of appropriate compatibility
   int compilable() { return _compilable; }
 
   const char* retry_message() const {
@@ -331,10 +334,10 @@ public:
       case ciEnv::MethodCompilable_never:
         return "not retryable";
       case ciEnv::MethodCompilable:
-        return NULL;
+        return nullptr;
       default:
         ShouldNotReachHere();
-        return NULL;
+        return nullptr;
     }
   }
 
@@ -354,17 +357,16 @@ public:
 
   // Cache DTrace flags
   void  cache_dtrace_flags();
-  bool  dtrace_extended_probes() const { return _dtrace_extended_probes; }
   bool  dtrace_method_probes()   const { return _dtrace_method_probes; }
   bool  dtrace_alloc_probes()    const { return _dtrace_alloc_probes; }
 
   // The compiler task which has created this env.
   // May be useful to find out compile_id, comp_level, etc.
-  CompileTask* task() { return _task; }
+  CompileTask* task() const { return _task; }
 
   // Handy forwards to the task:
   int comp_level();   // task()->comp_level()
-  uint compile_id();  // task()->compile_id()
+  int compile_id();  // task()->compile_id()
 
   // Register the result of a compilation.
   void register_method(ciMethod*                 target,
@@ -379,9 +381,9 @@ public:
                        AbstractCompiler*         compiler,
                        bool                      has_unsafe_access,
                        bool                      has_wide_vectors,
-                       RTMState                  rtm_state = NoRTM,
-                       const GrowableArrayView<RuntimeStub*>& native_invokers = GrowableArrayView<RuntimeStub*>::EMPTY);
-
+                       bool                      has_monitors,
+                       int                       immediate_oops_patched,
+                       RTMState                  rtm_state = NoRTM);
 
   // Access to certain well known ciObjects.
 #define VM_CLASS_FUNC(name, ignore_s) \
@@ -392,11 +394,11 @@ public:
 #undef VM_CLASS_FUNC
 
   ciInstance* NullPointerException_instance() {
-    assert(_NullPointerException_instance != NULL, "initialization problem");
+    assert(_NullPointerException_instance != nullptr, "initialization problem");
     return _NullPointerException_instance;
   }
   ciInstance* ArithmeticException_instance() {
-    assert(_ArithmeticException_instance != NULL, "initialization problem");
+    assert(_ArithmeticException_instance != nullptr, "initialization problem");
     return _ArithmeticException_instance;
   }
 
@@ -419,6 +421,10 @@ public:
   }
   ciInstance* unloaded_ciinstance();
 
+  ciInstanceKlass* get_box_klass_for_primitive_type(BasicType type);
+
+  ciKlass*  find_system_klass(ciSymbol* klass_name);
+
   // Note:  To find a class from its name string, use ciSymbol::make,
   // but consider adding to vmSymbols.hpp instead.
 
@@ -438,7 +444,7 @@ public:
   static ciEnv* current(CompilerThread *thread) { return thread->env(); }
 
   // Per-compiler data.  (Used by C2 to publish the Compile* pointer.)
-  void* compiler_data() { return _compiler_data; }
+  void* compiler_data() const { return _compiler_data; }
   void set_compiler_data(void* x) { _compiler_data = x; }
 
   // Notice that a method has been inlined in the current compile;
@@ -460,12 +466,50 @@ public:
   // RedefineClasses support
   void metadata_do(MetadataClosure* f) { _factory->metadata_do(f); }
 
+  // Replay support
+private:
+  static int klass_compare(const InstanceKlass* const &ik1, const InstanceKlass* const &ik2) {
+    if (ik1 > ik2) {
+      return 1;
+    } else if (ik1 < ik2) {
+      return -1;
+    } else {
+      return 0;
+    }
+  }
+  bool dyno_loc(const InstanceKlass* ik, const char *&loc) const;
+  void set_dyno_loc(const InstanceKlass* ik);
+  void record_best_dyno_loc(const InstanceKlass* ik);
+  bool print_dyno_loc(outputStream* out, const InstanceKlass* ik) const;
+
+  GrowableArray<const InstanceKlass*>* _dyno_klasses;
+  GrowableArray<const char *>*         _dyno_locs;
+
+#define MAX_DYNO_NAME_LENGTH 1024
+  char _dyno_name[MAX_DYNO_NAME_LENGTH+1];
+
+public:
   // Dump the compilation replay data for the ciEnv to the stream.
   void dump_replay_data(int compile_id);
   void dump_inline_data(int compile_id);
   void dump_replay_data(outputStream* out);
   void dump_replay_data_unsafe(outputStream* out);
+  void dump_replay_data_helper(outputStream* out);
   void dump_compile_data(outputStream* out);
+  void dump_replay_data_version(outputStream* out);
+
+  const char *dyno_name(const InstanceKlass* ik) const;
+  const char *replay_name(const InstanceKlass* ik) const;
+  const char *replay_name(ciKlass* i) const;
+
+  void record_lambdaform(Thread* thread, oop obj);
+  void record_member(Thread* thread, oop obj);
+  void record_mh(Thread* thread, oop obj);
+  void record_call_site_obj(Thread* thread, oop obj);
+  void record_call_site_method(Thread* thread, Method* adapter);
+  void process_invokedynamic(const constantPoolHandle &cp, int index, JavaThread* thread);
+  void process_invokehandle(const constantPoolHandle &cp, int index, JavaThread* thread);
+  void find_dynamic_call_sites();
 };
 
 #endif // SHARE_CI_CIENV_HPP

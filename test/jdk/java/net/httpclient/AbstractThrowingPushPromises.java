@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,19 +30,18 @@
  * Concrete tests that extend this abstract class will need to include
  * the following jtreg tags:
  *
- * @library /test/lib http2/server
- * @build jdk.test.lib.net.SimpleSSLContext HttpServerAdapters
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.test.lib.net.SimpleSSLContext
  *        ReferenceTracker AbstractThrowingPushPromises
+ *        jdk.httpclient.test.lib.common.HttpServerAdapters
  *        <concrete-class-name>
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
  * @run testng/othervm -Djdk.internal.httpclient.debug=true <concrete-class-name>
  */
 
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.ITestContext;
+import org.testng.ITestResult;
+import org.testng.SkipException;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeMethod;
@@ -68,6 +67,7 @@ import java.net.http.HttpResponse.BodySubscriber;
 import java.net.http.HttpResponse.PushPromiseHandler;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -79,6 +79,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -86,10 +87,13 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.http2.Http2TestServer;
 
 import static java.lang.System.out;
 import static java.lang.System.err;
 import static java.lang.String.format;
+import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
@@ -151,17 +155,37 @@ public abstract class AbstractThrowingPushPromises implements HttpServerAdapters
         return Boolean.getBoolean("jdk.internal.httpclient.debug");
     }
 
+    final AtomicReference<SkipException> skiptests = new AtomicReference<>();
+    void checkSkip() {
+        var skip = skiptests.get();
+        if (skip != null) throw skip;
+    }
+    static String name(ITestResult result) {
+        var params = result.getParameters();
+        return result.getName()
+                + (params == null ? "()" : Arrays.toString(result.getParameters()));
+    }
+
     @BeforeMethod
     void beforeMethod(ITestContext context) {
         if (stopAfterFirstFailure() && context.getFailedTests().size() > 0) {
-            throw new RuntimeException("some tests failed");
+            if (skiptests.get() == null) {
+                SkipException skip = new SkipException("some tests failed");
+                skip.setStackTrace(new StackTraceElement[0]);
+                skiptests.compareAndSet(null, skip);
+            }
         }
     }
 
     @AfterClass
-    static final void printFailedTests() {
+    static final void printFailedTests(ITestContext context) {
         out.println("\n=========================");
         try {
+            // Exceptions should already have been added to FAILURES
+            // var failed = context.getFailedTests().getAllResults().stream()
+            //        .collect(Collectors.toMap(r -> name(r), ITestResult::getThrowable));
+            // FAILURES.putAll(failed);
+
             out.printf("%n%sCreated %d servers and %d clients%n",
                     now(), serverCount.get(), clientCount.get());
             if (FAILURES.isEmpty()) return;
@@ -316,6 +340,24 @@ public abstract class AbstractThrowingPushPromises implements HttpServerAdapters
                 assertEquals(promisedBody, promised.uri().toASCIIString());
             }
             assertEquals(3, pushPromises.size());
+            if (!sameClient) {
+                // Wait for the client to be garbage collected.
+                // we use the ReferenceTracker API rather than HttpClient::close here,
+                // because these tests inject faults by throwing inside callbacks, which
+                // is more likely to get HttpClient::close wedged until jtreg times out.
+                // By using the ReferenceTracker, we will get some diagnosis about what
+                // is keeping the client alive if it doesn't get GC'ed within the
+                // expected time frame.
+                var tracker = TRACKER.getTracker(client);
+                client = null;
+                System.gc();
+                System.out.println(now() + "waiting for client to shutdown: " + tracker.getName());
+                System.err.println(now() + "waiting for client to shutdown: " + tracker.getName());
+                var error = TRACKER.check(tracker, 10000);
+                if (error != null) throw error;
+                System.out.println(now() + "client shutdown normally: " + tracker.getName());
+                System.err.println(now() + "client shutdown normally: " + tracker.getName());
+            }
         }
     }
 
@@ -360,6 +402,7 @@ public abstract class AbstractThrowingPushPromises implements HttpServerAdapters
                                     Finisher finisher, Thrower thrower)
             throws Exception
     {
+        checkSkip();
         out.printf("%n%s%s%n", now(), name);
         try {
             testThrowing(uri, sameClient, handlers, finisher, thrower);
@@ -399,6 +442,24 @@ public abstract class AbstractThrowingPushPromises implements HttpServerAdapters
             }
             if (response != null) {
                 finisher.finish(where, req.uri(), response, thrower, promiseMap);
+            }
+            if (!sameClient) {
+                // Wait for the client to be garbage collected.
+                // we use the ReferenceTracker API rather than HttpClient::close here,
+                // because these tests inject faults by throwing inside callbacks, which
+                // is more likely to get HttpClient::close wedged until jtreg times out.
+                // By using the ReferenceTracker, we will get some diagnosis about what
+                // is keeping the client alive if it doesn't get GC'ed within the
+                // expected time frame.
+                var tracker = TRACKER.getTracker(client);
+                client = null;
+                System.gc();
+                System.out.println(now() + "waiting for client to shutdown: " + tracker.getName());
+                System.err.println(now() + "waiting for client to shutdown: " + tracker.getName());
+                var error = TRACKER.check(tracker, 10000);
+                if (error != null) throw error;
+                System.out.println(now() + "client shutdown normally: " + tracker.getName());
+                System.err.println(now() + "client shutdown normally: " + tracker.getName());
             }
         }
     }
@@ -681,13 +742,13 @@ public abstract class AbstractThrowingPushPromises implements HttpServerAdapters
         HttpTestHandler h2_fixedLengthHandler = new HTTP_FixedLengthHandler();
         HttpTestHandler h2_chunkedHandler = new HTTP_ChunkedHandler();
 
-        http2TestServer = HttpTestServer.of(new Http2TestServer("localhost", false, 0));
+        http2TestServer = HttpTestServer.create(HTTP_2);
         http2TestServer.addHandler(h2_fixedLengthHandler, "/http2/fixed");
         http2TestServer.addHandler(h2_chunkedHandler, "/http2/chunk");
         http2URI_fixed = "http://" + http2TestServer.serverAuthority() + "/http2/fixed/x";
         http2URI_chunk = "http://" + http2TestServer.serverAuthority() + "/http2/chunk/x";
 
-        https2TestServer = HttpTestServer.of(new Http2TestServer("localhost", true, sslContext));
+        https2TestServer = HttpTestServer.create(HTTP_2, sslContext);
         https2TestServer.addHandler(h2_fixedLengthHandler, "/https2/fixed");
         https2TestServer.addHandler(h2_chunkedHandler, "/https2/chunk");
         https2URI_fixed = "https://" + https2TestServer.serverAuthority() + "/https2/fixed/x";
@@ -704,7 +765,7 @@ public abstract class AbstractThrowingPushPromises implements HttpServerAdapters
                 sharedClient == null ? null : sharedClient.toString();
         sharedClient = null;
         Thread.sleep(100);
-        AssertionError fail = TRACKER.check(500);
+        AssertionError fail = TRACKER.check(5000);
         try {
             http2TestServer.stop();
             https2TestServer.stop();

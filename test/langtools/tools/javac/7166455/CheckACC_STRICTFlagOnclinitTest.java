@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 7166455
  * @summary javac doesn't set ACC_STRICT bit on <clinit> for strictfp class
  * @modules jdk.jdeps/com.sun.tools.classfile
+ * @compile -source 16 -target 16 CheckACC_STRICTFlagOnclinitTest.java
  * @run main CheckACC_STRICTFlagOnclinitTest
  */
 
@@ -102,5 +103,20 @@ public strictfp class CheckACC_STRICTFlagOnclinitTest {
             }
         }
     }
+
+// this version of the code can be used when ClassFile API in not in a preview
+//    void check(String dir, String... fileNames) throws IOException{
+//        for (String fileName : fileNames) {
+//            ClassModel classFileToCheck = ClassFile.of().parse(new File(dir, fileName).toPath());
+//
+//            for (MethodModel method : classFileToCheck.methods()) {
+//                if ((method.flags().flagsMask() & ClassFile.ACC_STRICT) == 0) {
+//                    errors.add(String.format(offendingMethodErrorMessage,
+//                            method.methodName().stringValue(),
+//                            classFileToCheck.thisClass().asInternalName()));
+//                }
+//            }
+//        }
+//    }
 
 }

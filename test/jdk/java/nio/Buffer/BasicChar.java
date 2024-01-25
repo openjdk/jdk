@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,20 @@
 
 // -- This file was mechanically generated: Do not edit! -- //
 
+
+
+
+
 import java.nio.*;
+
+
+
+
+
+
+
+import java.util.function.IntFunction;
+
 
 
 public class BasicChar
@@ -472,6 +485,73 @@ public class BasicChar
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     private static void fail(String problem,
                              CharBuffer xb, CharBuffer yb,
                              char x, char y) {
@@ -550,6 +630,60 @@ public class BasicChar
         absBulkGet(b);
 
 
+        // 8306623 and 8306959
+        String str = "in violet night walking beneath a reign of uncouth stars";
+        char[] chars = str.toCharArray();
+        int cslen = chars.length;
+        CharSequence[] csqs = new CharSequence[] {
+            str,
+            new StringBuffer(str),
+            new StringBuilder(str),
+            CharBuffer.wrap(chars),
+            ByteBuffer.allocateDirect(2*chars.length).asCharBuffer()
+        };
+
+        int[][] bounds = new int[][] {
+            {-1, cslen},         // negative start
+            {0, -1},             // negative end
+            {1, 0},              // start > end
+            {cslen/2, cslen + 1} // end > cslen
+        };
+
+        IntFunction<CharBuffer>[] producers = new IntFunction[] {
+            (i) -> CharBuffer.allocate(i),
+            (i) -> ByteBuffer.allocateDirect(2*i).asCharBuffer()
+        };
+
+        for (IntFunction<CharBuffer> f : producers) {
+            for (CharSequence csq : csqs) {
+                // append() should throw BufferOverflowException
+                final CharBuffer cbBOE = f.apply(cslen/8);
+                tryCatch(cbBOE, BufferOverflowException.class, () ->
+                    cbBOE.append(csq, cslen/4, cslen/2));
+
+                CharBuffer cb = f.apply(7);
+                tryCatch(cbBOE, BufferOverflowException.class, () ->
+                    cb.append(csq.subSequence(0, 8), 0, 8));
+
+                // append() should throw IndexOutOfBoundsException
+                final CharBuffer cbIOOBE = f.apply(cslen + 1);
+                for (int[] bds : bounds)
+                    tryCatch(cbIOOBE, IndexOutOfBoundsException.class, () ->
+                        cbIOOBE.append(csq, bds[0], bds[1]));
+
+                tryCatch(cb, IndexOutOfBoundsException.class, () ->
+                    cb.append(csq.subSequence(0, 8), 4, 12));
+
+                // should append nothing
+                int rem = cb.remaining();
+                ck(cb, cb.append(csq, 0, 0).remaining(), rem);
+
+                // should fill the buffer
+                int start = (csq.length() - rem)/2;
+                ck(cb, cb.append(csq, start, start + rem).remaining(), 0);
+            }
+        }
+        // end 8306623 and 8306959
 
         bulkPutString(b);
         relGet(b);
@@ -1057,6 +1191,26 @@ public class BasicChar
 
     }
 
+    public static void testToString() {
+        final int cap = 10;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    }
+
     public static void test() {
         testAllocate();
         test(0, CharBuffer.allocate(7 * 1024), false);
@@ -1078,6 +1232,8 @@ public class BasicChar
 
         putBuffer();
 
+
+        testToString();
     }
 
 }

@@ -25,18 +25,18 @@
  * @test
  * @bug 8245245
  * @summary Test for Websocket URI encoding during HandShake
- * @library /test/lib
- * @build jdk.test.lib.net.SimpleSSLContext
- * @modules java.net.http
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.TestServerConfigurator
+ * @modules java.net.http/jdk.internal.net.http.common
  *          jdk.httpserver
  * @run testng/othervm -Djdk.internal.httpclient.debug=true HandshakeUrlEncodingTest
  */
 
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
 import com.sun.net.httpserver.HttpExchange;
+import jdk.httpclient.test.lib.common.TestServerConfigurator;
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
 import org.testng.annotations.AfterTest;
@@ -112,21 +112,22 @@ public class HandshakeUrlEncodingTest {
                     .join();
                 fail("Expected to throw");
             } catch (CompletionException ce) {
-                Throwable t = getCompletionCause(ce);
+                final Throwable t = getCompletionCause(ce);
                 if (!(t instanceof WebSocketHandshakeException)) {
                     throw new AssertionError("Unexpected exception", t);
                 }
-                WebSocketHandshakeException wse = (WebSocketHandshakeException) t;
+                final WebSocketHandshakeException wse = (WebSocketHandshakeException) t;
                 assertNotNull(wse.getResponse());
-                assertNotNull(wse.getResponse().body());
-                assertEquals(wse.getResponse().body().getClass(), String.class);
-                String body = (String)wse.getResponse().body();
-                String expectedBody = "/?&raw=abc+def/ghi=xyz&encoded=abc%2Bdef%2Fghi%3Dxyz";
+                assertNotNull(wse.getResponse().uri());
+                assertNotNull(wse.getResponse().statusCode());
+                final String rawQuery = wse.getResponse().uri().getRawQuery();
+                final String expectedRawQuery = "&raw=abc+def/ghi=xyz&encoded=abc%2Bdef%2Fghi%3Dxyz";
+                assertEquals(rawQuery, expectedRawQuery);
+                final String body = (String) wse.getResponse().body();
+                final String expectedBody = "/?" + expectedRawQuery;
                 assertEquals(body, expectedBody);
                 out.println("Status code is " + wse.getResponse().statusCode());
-                out.println("Response is " + body);
-                assertNotNull(wse.getResponse().statusCode());
-                out.println("Status code is " + wse.getResponse().statusCode());
+                out.println("Response is " + wse.getResponse());
                 assertEquals(wse.getResponse().statusCode(), 400);
             }
         }
@@ -153,7 +154,7 @@ public class HandshakeUrlEncodingTest {
         httpTestServer.createContext("/", new UrlHandler());
 
         httpsTestServer = HttpsServer.create(sa, 10);
-        httpsTestServer.setHttpsConfigurator(new HttpsConfigurator(sslContext));
+        httpsTestServer.setHttpsConfigurator(new TestServerConfigurator(sa.getAddress(), sslContext));
         httpsURI = URIBuilder.newBuilder()
                              .scheme("wss")
                              .host("localhost")

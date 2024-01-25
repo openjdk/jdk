@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "asm/macroAssembler.inline.hpp"
+#include "jvm.h"
 #include "memory/resourceArea.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals_extension.hpp"
@@ -128,10 +128,16 @@ void VM_Version::early_initialize() {
   // use proper dmb instruction
   get_os_cpu_info();
 
+  // Future cleanup: if SUPPORTS_NATIVE_CX8 is defined then we should not need
+  // any alternative solutions. At present this allows for the theoretical
+  // possibility of building for ARMv7 and then running on ARMv5 or 6. If that
+  // is impossible then the ARM port folk should clean this up.
   _kuser_helper_version = *(int*)KUSER_HELPER_VERSION_ADDR;
+#ifndef SUPPORTS_NATIVE_CX8
   // armv7 has the ldrexd instruction that can be used to implement cx8
   // armv5 with linux >= 3.1 can use kernel helper routine
   _supports_cx8 = (supports_ldrexd() || supports_kuser_cmpxchg64());
+#endif
 }
 
 void VM_Version::initialize() {
@@ -140,7 +146,7 @@ void VM_Version::initialize() {
   // Making this stub must be FIRST use of assembler
   const int stub_size = 128;
   BufferBlob* stub_blob = BufferBlob::create("get_cpu_info", stub_size);
-  if (stub_blob == NULL) {
+  if (stub_blob == nullptr) {
     vm_exit_during_initialization("Unable to allocate get_cpu_info stub");
   }
 
@@ -278,7 +284,7 @@ void VM_Version::initialize() {
   _supports_atomic_getadd8 = supports_ldrexd();
 
 #ifdef COMPILER2
-  assert(_supports_cx8 && _supports_atomic_getset4 && _supports_atomic_getadd4
+  assert(supports_cx8() && _supports_atomic_getset4 && _supports_atomic_getadd4
          && _supports_atomic_getset8 && _supports_atomic_getadd8, "C2: atomic operations must be supported");
 #endif
   char buf[512];
@@ -335,7 +341,6 @@ void VM_Version::initialize() {
   }
 
   UNSUPPORTED_OPTION(TypeProfileLevel);
-  UNSUPPORTED_OPTION(CriticalJNINatives);
 
   FLAG_SET_DEFAULT(TypeProfileLevel, 0); // unsupported
 
@@ -349,15 +354,16 @@ void VM_Version::initialize() {
   _is_initialized = true;
 }
 
-bool VM_Version::use_biased_locking() {
-  get_os_cpu_info();
-  // The cost of CAS on uniprocessor ARM v6 and later is low compared to the
-  // overhead related to slightly longer Biased Locking execution path.
-  // Testing shows no improvement when running with Biased Locking enabled
-  // on an ARMv6 and higher uniprocessor systems.  The situation is different on
-  // ARMv5 and MP systems.
-  //
-  // Therefore the Biased Locking is enabled on ARMv5 and ARM MP only.
-  //
-  return (!os::is_MP() && (arm_arch() > 5)) ? false : true;
+void VM_Version::initialize_cpu_information(void) {
+  // do nothing if cpu info has been initialized
+  if (_initialized) {
+    return;
+  }
+
+  _no_of_cores  = os::processor_count();
+  _no_of_threads = _no_of_cores;
+  _no_of_sockets = _no_of_cores;
+  snprintf(_cpu_name, CPU_TYPE_DESC_BUF_SIZE - 1, "ARM%d", _arm_arch);
+  snprintf(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "%s", _features_string);
+  _initialized = true;
 }

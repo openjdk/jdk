@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,19 @@ public class LingeredAppWithLock extends LingeredApp {
         classLock2.start();
         objectLock.start();
         primitiveLock.start();
+
+        // Wait until all threads have reached their blocked or timed wait state
+        while ((classLock1.getState() != Thread.State.BLOCKED &&
+                classLock1.getState() != Thread.State.TIMED_WAITING) ||
+               (classLock2.getState() != Thread.State.BLOCKED &&
+                classLock2.getState() != Thread.State.TIMED_WAITING) ||
+               (objectLock.getState() != Thread.State.TIMED_WAITING) ||
+               (primitiveLock.getState() != Thread.State.TIMED_WAITING)) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ex) {
+            }
+        }
 
         LingeredApp.main(args);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,8 @@
  */
 package javax.swing.text;
 
-import javax.swing.event.*;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.UndoableEditListener;
 
 /**
  * <p>
@@ -174,7 +175,7 @@ import javax.swing.event.*;
  * <p>In the Swing text API's document model, the interface Element defines a structural piece of a Document,
  * like a paragraph, a line of text, or a list item in an HTML document.
  * <p>Every Element is either a <i>branch</i> or a <i>leaf</i>. If an element is a branch,
- * the <code>isLeaf()</code> method returns false. If an element is a a leaf, <code>isLeaf()</code> returns true.
+ * the <code>isLeaf()</code> method returns false. If an element is a leaf, <code>isLeaf()</code> returns true.
  * <p>Branches can have any number of children. Leaves do not have children.
  * To determine how many children a branch has, you can call <code>getElementCount()</code>.
  * To determine the parent of an Element, you can call <code>getParentElement()</code>.
@@ -277,7 +278,7 @@ import javax.swing.event.*;
  * <p>Removing text from a DefaultStyledDocument is similar to removing text from
  * a PlainDocument. The only difference is the extra level of Elements.
  * Consider what would happen if you deleted two characters at Offset 1
- * from Figure 10, above. Since the the second Element of Paragraph 1 is
+ * from Figure 10, above. Since the second Element of Paragraph 1 is
  * completely contained in the deleted region, it would be removed.
  * Assuming the attributes of Paragraph 1's first child matched those of
  * Paragraph2's first child, the results would be those shown in <u>Figure 11</u>.
@@ -422,38 +423,44 @@ public interface Document {
 
     /**
      * Removes a portion of the content of the document.
-     * This will cause a DocumentEvent of type
-     * DocumentEvent.EventType.REMOVE to be sent to the
-     * registered DocumentListeners, unless an exception
+     * This will cause a {@code DocumentEvent} of type
+     * {@code DocumentEvent.EventType.REMOVE} to be sent to the
+     * registered {@code DocumentListener}s, unless an exception
      * is thrown.  The notification will be sent to the
-     * listeners by calling the removeUpdate method on the
-     * DocumentListeners.
+     * listeners by calling the {@code removeUpdate} method on the
+     * {@code DocumentListener}.
      * <p>
      * To ensure reasonable behavior in the face
      * of concurrency, the event is dispatched after the
      * mutation has occurred. This means that by the time a
      * notification of removal is dispatched, the document
      * has already been updated and any marks created by
-     * <code>createPosition</code> have already changed.
+     * {@code createPosition} have already changed.
      * For a removal, the end of the removal range is collapsed
      * down to the start of the range, and any marks in the removal
      * range are collapsed down to the start of the range.
-     * <p style="text-align:center"><img src="doc-files/Document-remove.gif"
+     * <p>
+     * For example, if the document contains the text
+     * <i>&lsquo;The quick brown fox&rsquo;</i>,
+     * calling {@code remove(4, 6)} will remove the word
+     * <i>&lsquo;quick&rsquo;</i> and the following space from the text,
+     * and all the marks in the range 4&ndash;10 will be collapsed to 4.
+     * <p style="text-align:center"><img src="doc-files/Document-remove.svg"
      *  alt="Diagram shows removal of 'quick' from 'The quick brown fox.'">
      * <p>
-     * If the Document structure changed as result of the removal,
-     * the details of what Elements were inserted and removed in
+     * If the document structure changed as result of the removal,
+     * the details of what {@code Element}s were inserted and removed in
      * response to the change will also be contained in the generated
-     * DocumentEvent. It is up to the implementation of a Document
+     * {@code DocumentEvent}. It is up to the implementation of a {@code Document}
      * to decide how the structure should change in response to a
      * remove.
      * <p>
-     * If the Document supports undo/redo, an UndoableEditEvent will
+     * If the {@code Document} supports undo/redo, an {@code UndoableEditEvent} will
      * also be generated.
      *
      * @param offs  the offset from the beginning &gt;= 0
      * @param len   the number of characters to remove &gt;= 0
-     * @exception BadLocationException  some portion of the removal range
+     * @throws BadLocationException  some portion of the removal range
      *   was not a valid part of the document.  The location in the exception
      *   is the first bad position encountered.
      * @see javax.swing.event.DocumentEvent
@@ -466,7 +473,7 @@ public interface Document {
     /**
      * Inserts a string of content.  This will cause a DocumentEvent
      * of type DocumentEvent.EventType.INSERT to be sent to the
-     * registered DocumentListers, unless an exception is thrown.
+     * registered DocumentListeners, unless an exception is thrown.
      * The DocumentEvent will be delivered by calling the
      * insertUpdate method on the DocumentListener.
      * The offset and length of the generated DocumentEvent
@@ -490,7 +497,7 @@ public interface Document {
      * @param str    the string to insert
      * @param a      the attributes to associate with the inserted
      *   content.  This may be null if there are no attributes.
-     * @exception BadLocationException  the given insert position is not a valid
+     * @throws BadLocationException  the given insert position is not a valid
      * position within the document
      * @see javax.swing.event.DocumentEvent
      * @see javax.swing.event.DocumentListener
@@ -507,7 +514,7 @@ public interface Document {
      *   start of the text &gt;= 0
      * @param length  the length of the desired string &gt;= 0
      * @return the text, in a String of length &gt;= 0
-     * @exception BadLocationException  some portion of the given range
+     * @throws BadLocationException  some portion of the given range
      *   was not a valid part of the document.  The location in the exception
      *   is the first bad position encountered.
      */
@@ -534,7 +541,7 @@ public interface Document {
      * &nbsp; text.setPartialReturn(true);
      * &nbsp; while (nleft &gt; 0) {
      * &nbsp;     doc.getText(offs, nleft, text);
-     * &nbsp;     // do someting with text
+     * &nbsp;     // do something with text
      * &nbsp;     nleft -= text.count;
      * &nbsp;     offs += text.count;
      * &nbsp; }
@@ -546,7 +553,7 @@ public interface Document {
      * @param length  the length of the desired string &gt;= 0
      * @param txt the Segment object to return the text in
      *
-     * @exception BadLocationException  Some portion of the given range
+     * @throws BadLocationException  Some portion of the given range
      *   was not a valid part of the document.  The location in the exception
      *   is the first bad position encountered.
      */
@@ -582,7 +589,7 @@ public interface Document {
      *
      * @param offs  the offset from the start of the document &gt;= 0
      * @return the position
-     * @exception BadLocationException  if the given position does not
+     * @throws BadLocationException  if the given position does not
      *   represent a valid location in the associated document
      */
     public Position createPosition(int offs) throws BadLocationException;

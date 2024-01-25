@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +27,7 @@
 
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceChunkFreeListSummary.hpp"
+#include "memory/metaspaceStats.hpp"
 
 class outputStream;
 
@@ -49,7 +51,7 @@ class MetaspaceGCThresholdUpdater : public AllStatic {
         return "expand_and_allocate";
       default:
         assert(false, "Got bad updater: %d", (int) updater);
-        return NULL;
+        return nullptr;
     };
   }
 };
@@ -72,9 +74,9 @@ class MetaspaceGC : public AllStatic {
 
   static size_t capacity_until_GC();
   static bool inc_capacity_until_GC(size_t v,
-                                    size_t* new_cap_until_GC = NULL,
-                                    size_t* old_cap_until_GC = NULL,
-                                    bool* can_retry = NULL);
+                                    size_t* new_cap_until_GC = nullptr,
+                                    size_t* old_cap_until_GC = nullptr,
+                                    bool* can_retry = nullptr);
   static size_t dec_capacity_until_GC(size_t v);
 
   // The amount to increase the high-water-mark (_capacity_until_GC)
@@ -115,13 +117,17 @@ public:
   static size_t reserved_bytes()                                { return reserved_words() * BytesPerWord; }
   static size_t reserved_bytes(Metaspace::MetadataType mdtype)  { return reserved_words(mdtype) * BytesPerWord; }
 
+  // Retrieve all statistics in one go; make sure the values are consistent.
+  static MetaspaceStats get_statistics(Metaspace::MetadataType mdtype);
+  static MetaspaceCombinedStats get_combined_statistics();
+
   // (See JDK-8251342). Implement or Consolidate.
   static MetaspaceChunkFreeListSummary chunk_free_list_summary(Metaspace::MetadataType mdtype) {
     return MetaspaceChunkFreeListSummary(0,0,0,0,0,0,0,0);
   }
 
   // Log change in used metadata.
-  static void print_metaspace_change(const metaspace::MetaspaceSizesSnapshot& pre_meta_values);
+  static void print_metaspace_change(const MetaspaceCombinedStats& pre_meta_values);
 
   // This will print out a basic metaspace usage report but
   // unlike print_report() is guaranteed not to lock or to walk the CLDG.

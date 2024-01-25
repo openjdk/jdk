@@ -23,7 +23,7 @@
  */
 
 /*
- * @test TestEvilSyncBug
+ * @test
  * @summary Tests for crash/assert when attaching init thread during shutdown
  * @requires vm.gc.Shenandoah
  * @library /test/lib
@@ -56,14 +56,13 @@ public class TestEvilSyncBug {
 
             for (int c = 0; c < NUM_RUNS; c++) {
                 Callable<Void> task = () -> {
-                    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xms128m",
+                    OutputAnalyzer output = ProcessTools.executeLimitedTestJava("-Xms128m",
                             "-Xmx128m",
                             "-XX:+UnlockExperimentalVMOptions",
                             "-XX:+UnlockDiagnosticVMOptions",
                             "-XX:+UseShenandoahGC",
                             "-XX:ShenandoahGCHeuristics=aggressive",
                             "TestEvilSyncBug", "test");
-                    OutputAnalyzer output = new OutputAnalyzer(pb.start());
                     output.shouldHaveExitValue(0);
                     return null;
                 };

@@ -43,7 +43,7 @@ void displayAndLog(HWND hDlg, int nIDDlgItem, FILE *logfile, char *msg, ...);
 /*
  * writes a text string to a logfile
  */
-void logString(FILE *logfile, char *msg, ...);
+void logString(FILE *logfile, const char *msg, ...);
 
 /**
  * returns accessibility information for an AccessibleContext

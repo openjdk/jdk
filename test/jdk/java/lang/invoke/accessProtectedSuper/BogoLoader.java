@@ -121,7 +121,7 @@ public class BogoLoader extends ClassLoader {
                 if (verbose) {
                     System.err.println("Loading classloader class " + name);
                 }
-                byte[] classData = getClass(name);;
+                byte[] classData = getClass(name);
                 boolean expanded = false;
                 if (!noReplace && replaced.containsKey(name)) {
                     if (verbose) {

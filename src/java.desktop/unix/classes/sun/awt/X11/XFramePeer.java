@@ -34,6 +34,7 @@ import java.awt.Insets;
 import java.awt.MenuBar;
 import java.awt.Rectangle;
 import java.awt.peer.FramePeer;
+import sun.awt.SunToolkit;
 import sun.util.logging.PlatformLogger;
 import sun.awt.AWTAccessor;
 
@@ -66,11 +67,7 @@ class XFramePeer extends XDecoratedPeer implements FramePeer {
         state = 0;
         undecorated = Boolean.valueOf(target.isUndecorated());
         winAttr.nativeDecor = !target.isUndecorated();
-        if (winAttr.nativeDecor) {
-            winAttr.decorations = XWindowAttributesData.AWT_DECOR_ALL;
-        } else {
-            winAttr.decorations = XWindowAttributesData.AWT_DECOR_NONE;
-        }
+        winAttr.decorations = getWindowDecorationBits();
         winAttr.functions = MWMConstants.MWM_FUNC_ALL;
         winAttr.isResizable = true; // target.isResizable();
         winAttr.title = target.getTitle();
@@ -80,6 +77,38 @@ class XFramePeer extends XDecoratedPeer implements FramePeer {
                      Integer.valueOf(winAttr.decorations), Boolean.valueOf(winAttr.initialResizability),
                      Boolean.valueOf(!winAttr.nativeDecor), Integer.valueOf(winAttr.initialState));
         }
+
+        registerWindowDecorationChangeListener();
+    }
+
+    private void registerWindowDecorationChangeListener() {
+        if (SunToolkit.isInstanceOf(target, "javax.swing.RootPaneContainer")) { // avoid unnecessary class loading
+            javax.swing.JRootPane rootpane = ((javax.swing.RootPaneContainer) target).getRootPane();
+            rootpane.addPropertyChangeListener(MWM_DECOR_TITLE_PROPERTY_NAME, e -> winAttr.decorations = getWindowDecorationBits() );
+        }
+    }
+
+    private int getWindowDecorationBits() {
+        int decorations = XWindowAttributesData.AWT_DECOR_NONE;
+        final Frame target = (Frame)(this.target);
+        final boolean useNativeDecor = !target.isUndecorated();
+        if (useNativeDecor) {
+            decorations = XWindowAttributesData.AWT_DECOR_ALL;
+
+            if (!getWindowTitleVisible()) {
+                // NB: the window must be [re-]mapped to make this change effective. Also, window insets will probably
+                // change and that'll be caught by one of the subsequent property change events in XDecoratedPeer
+                // (not necessarily the very next event, though).
+                decorations = XWindowAttributesData.AWT_DECOR_BORDER;
+            }
+
+            if (log.isLoggable(PlatformLogger.Level.FINE)) {
+                log.fine("Frame''s initial decorations affected by the client property {0}={1}",
+                         MWM_DECOR_TITLE_PROPERTY_NAME, getMWMDecorTitleProperty());
+            }
+        }
+
+        return decorations;
     }
 
     void postInit(XCreateWindowParams params) {

@@ -37,7 +37,7 @@ import org.xml.sax.SAXException;
  * @test
  * @bug 6964720
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.tck.Bug6964720Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.tck.Bug6964720Test
  * @run testng/othervm validation.tck.Bug6964720Test
  * @summary Test Schema doesn't allow the inexpressible union of two attribute wildcards.
  */

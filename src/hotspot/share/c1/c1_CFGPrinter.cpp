@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,13 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "c1/c1_CFGPrinter.hpp"
 #include "c1/c1_IR.hpp"
 #include "c1/c1_InstructionPrinter.hpp"
 #include "c1/c1_LIR.hpp"
 #include "c1/c1_LinearScan.hpp"
 #include "c1/c1_ValueStack.hpp"
+#include "jvm.h"
 
 #ifndef PRODUCT
 
@@ -57,7 +57,7 @@ void CFGPrinter::print_intervals(IntervalList* intervals, const char* name) {
 
 
 CFGPrinterOutput::CFGPrinterOutput(Compilation* compilation)
- : _output(NULL),
+ : _output(nullptr),
    _compilation(compilation),
    _do_print_HIR(false),
    _do_print_LIR(false)
@@ -65,7 +65,7 @@ CFGPrinterOutput::CFGPrinterOutput(Compilation* compilation)
   char file_name[O_BUFLEN];
   jio_snprintf(file_name, sizeof(file_name), "output_tid" UINTX_FORMAT "_pid%u.cfg",
                os::current_thread_id(), os::current_process_id());
-  _output = new(ResourceObj::C_HEAP, mtCompiler) fileStream(file_name, "at");
+  _output = new (mtCompiler) fileStream(file_name, "at");
 }
 
 void CFGPrinterOutput::inc_indent() {
@@ -209,7 +209,7 @@ void CFGPrinterOutput::print_HIR(BlockBegin* block) {
   print_begin("HIR");
 
   Value cur = block->next();
-  while (cur != NULL) {
+  while (cur != nullptr) {
     print_HIR(cur);
     cur = cur->next();
   }
@@ -231,11 +231,9 @@ void CFGPrinterOutput::print_LIR(BlockBegin* block) {
 
 void CFGPrinterOutput::print_block(BlockBegin* block) {
   print_begin("block");
-
   print("name \"B%d\"", block->block_id());
-
   print("from_bci %d", block->bci());
-  print("to_bci %d", (block->end() == NULL ? -1 : block->end()->printable_bci()));
+  print("to_bci %d", (block->end() == nullptr ? -1 : block->end()->printable_bci()));
 
   output()->indent();
   output()->print("predecessors ");
@@ -247,8 +245,10 @@ void CFGPrinterOutput::print_block(BlockBegin* block) {
 
   output()->indent();
   output()->print("successors ");
-  for (i = 0; i < block->number_of_sux(); i++) {
-    output()->print("\"B%d\" ", block->sux_at(i)->block_id());
+  if (block->end() != nullptr) {
+    for (i = 0; i < block->number_of_sux(); i++) {
+      output()->print("\"B%d\" ", block->sux_at(i)->block_id());
+    }
   }
   output()->cr();
 
@@ -272,7 +272,7 @@ void CFGPrinterOutput::print_block(BlockBegin* block) {
   if (block->is_set(BlockBegin::linear_scan_loop_end_flag))     output()->print("\"lle\" ");
   output()->cr();
 
-  if (block->dominator() != NULL) {
+  if (block->dominator() != nullptr) {
     print("dominator \"B%d\"", block->dominator()->block_id());
   }
   if (block->loop_index() != -1) {
@@ -324,7 +324,7 @@ void CFGPrinterOutput::print_intervals(IntervalList* intervals, const char* name
   print("name \"%s\"", name);
 
   for (int i = 0; i < intervals->length(); i++) {
-    if (intervals->at(i) != NULL) {
+    if (intervals->at(i) != nullptr) {
       intervals->at(i)->print_on(output(), true);
     }
   }

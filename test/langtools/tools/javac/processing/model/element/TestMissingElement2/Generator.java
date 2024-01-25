@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,8 +61,7 @@ public class Generator extends JavacTestingAbstractProcessor {
     void createFile(TypeElement e) {
         try {
             JavaFileObject fo = filer.createSourceFile(e.getSimpleName());
-            Writer out = fo.openWriter();
-            try {
+            try (Writer out = fo.openWriter()) {
                 switch (e.getKind()) {
                     case CLASS:
                         out.write("import java.util.*;\n");
@@ -83,11 +82,9 @@ public class Generator extends JavacTestingAbstractProcessor {
                         out.write("}\n");
                         break;
                 }
-            } finally {
-                out.close();
             }
         } catch (IOException ex) {
-            messager.printMessage(Diagnostic.Kind.ERROR, "problem writing file: " + ex);
+            messager.printError("problem writing file: " + ex);
         }
     }
 

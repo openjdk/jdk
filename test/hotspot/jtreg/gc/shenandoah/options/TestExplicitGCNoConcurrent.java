@@ -23,7 +23,7 @@
  */
 
 /*
- * @test TestExplicitGCNoConcurrent
+ * @test
  * @summary Test that Shenandoah reacts to explicit GC flags appropriately
  * @requires vm.gc.Shenandoah
  * @library /test/lib
@@ -60,7 +60,7 @@ public class TestExplicitGCNoConcurrent {
         };
 
         for (String opt : opts) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
                     "-Xmx128m",
                     "-XX:+UnlockExperimentalVMOptions",
                     "-XX:+UseShenandoahGC",
@@ -70,7 +70,6 @@ public class TestExplicitGCNoConcurrent {
                     "-XX:ShenandoahGCHeuristics=passive",
                     TestExplicitGCNoConcurrent.class.getName(),
                     "test");
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
             for (String p : concurrent) {
                 output.shouldNotContain(p);
             }

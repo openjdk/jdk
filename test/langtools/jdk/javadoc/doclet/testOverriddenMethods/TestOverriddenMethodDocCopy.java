@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ public class TestOverriddenMethodDocCopy extends JavadocTester {
      * @param args the array of command line arguments.
      */
     public static void main(String... args) throws Exception {
-        TestOverriddenMethodDocCopy tester = new TestOverriddenMethodDocCopy();
+        var tester = new TestOverriddenMethodDocCopy();
         tester.runTests();
     }
 
@@ -54,7 +54,7 @@ public class TestOverriddenMethodDocCopy extends JavadocTester {
 
         checkOutput("pkg1/SubClass.html", true,
                 """
-                    <span class="descfrm-type-label">Description copied from class:&nbsp;<code><a hr\
+                    <span class="description-from-type-label">Description copied from class:&nbsp;<code><a hr\
                     ef="BaseClass.html#overriddenMethodWithDocsToCopy()">BaseClass</a></code></span>""");
     }
 }

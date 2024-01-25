@@ -30,11 +30,10 @@ import java.net.InetSocketAddress;
 import java.net.http.HttpTimeoutException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
-import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.function.Function;
-import java.net.http.HttpHeaders;
+
 import jdk.internal.net.http.common.FlowTube;
 import jdk.internal.net.http.common.MinimalFuture;
 import static java.net.http.HttpResponse.BodyHandlers.discarding;
@@ -153,12 +152,17 @@ final class PlainTunnelingConnection extends HttpConnection {
 
     @Override
     ConnectionPool.CacheKey cacheKey() {
-        return new ConnectionPool.CacheKey(null, proxyAddr);
+        return ConnectionPool.cacheKey(false, null, proxyAddr);
     }
 
     @Override
     public void close() {
-        delegate.close();
+        close(null);
+    }
+
+    @Override
+    void close(Throwable cause) {
+        delegate.close(cause);
         connected = false;
     }
 

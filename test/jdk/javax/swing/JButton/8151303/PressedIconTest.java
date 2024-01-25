@@ -26,7 +26,9 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.Robot;
+import java.awt.Toolkit;
 import java.awt.event.InputEvent;
 import java.awt.image.BaseMultiResolutionImage;
 import java.awt.image.BufferedImage;
@@ -56,37 +58,56 @@ public class PressedIconTest {
     private static volatile double scale = -1;
     private static volatile int centerX;
     private static volatile int centerY;
+    private static volatile Point location;
+    // move away from cursor
+    private final static int OFFSET_X = -20;
+    private final static int OFFSET_Y = -20;
 
     public static void main(String[] args) throws Exception {
         Robot robot = new Robot();
-        robot.setAutoDelay(50);
+        robot.setAutoDelay(100);
 
         SwingUtilities.invokeAndWait(() -> createAndShowGUI());
         robot.waitForIdle();
+        robot.delay(1000);
 
         SwingUtilities.invokeAndWait(() -> {
             scale = frame.getGraphicsConfiguration().getDefaultTransform()
                     .getScaleX();
-            Point location = frame.getLocation();
+            location = frame.getLocation();
             Dimension size = frame.getSize();
             centerX = location.x + size.width / 2;
             centerY = location.y + size.height / 2;
         });
         robot.waitForIdle();
 
+        System.out.println("scale " + scale);
+
         robot.mouseMove(centerX, centerY);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
         robot.waitForIdle();
-        Thread.sleep(100);
-        Color color = robot.getPixelColor(centerX, centerY);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.waitForIdle();
+        Color color = robot.getPixelColor(centerX - OFFSET_X, centerY - OFFSET_Y);
+
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        Rectangle screen = new Rectangle(0, 0, (int) screenSize.getWidth(), (int) screenSize.getHeight());
+        BufferedImage img = robot.createScreenCapture(screen);
+        javax.imageio.ImageIO.write(img, "png", new java.io.File("image.png"));
+
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+
 
         SwingUtilities.invokeAndWait(() -> frame.dispose());
 
-        if ((scale == 1 && !similar(color, COLOR_1X))
-                || (scale == 2 && !similar(color, COLOR_2X))) {
-            throw new RuntimeException("Colors are different!");
+        if (scale == 1 && !similar(color, COLOR_1X)) {
+            System.out.println("color " + color + " COLOR_1X " + COLOR_1X);
+            throw new RuntimeException("Colors is different for scale=1!");
         }
+        if (scale == 2 && !similar(color, COLOR_2X)) {
+            System.out.println("color " + color + " COLOR_2X " + COLOR_2X);
+            throw new RuntimeException("Colors is different for scale=2!");
+        }
+        System.out.println("Test Passed");
     }
 
     private static void createAndShowGUI() {
@@ -108,6 +129,8 @@ public class PressedIconTest {
         panel.add(button, BorderLayout.CENTER);
 
         frame.getContentPane().add(panel);
+        frame.setUndecorated(true);
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 

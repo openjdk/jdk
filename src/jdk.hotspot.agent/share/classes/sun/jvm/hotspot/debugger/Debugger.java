@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,6 +109,11 @@ public interface Debugger extends SymbolLookup, ThreadAccess {
       null. */
   public CDebugger getCDebugger() throws DebuggerException;
 
+  /**
+   * Find address and executable which contains symbol.
+   */
+  public String findSymbol(String symbol);
+
   /** the following methods are intended only for RemoteDebuggerClient */
   public long getJBooleanSize();
   public long getJByteSize();
@@ -127,7 +132,4 @@ public interface Debugger extends SymbolLookup, ThreadAccess {
 
   public ReadResult readBytesFromProcess(long address, long numBytes)
     throws DebuggerException;
-
-  public void writeBytesToProcess(long address, long numBytes, byte[] data)
-    throws UnmappedAddressException, DebuggerException;
 }

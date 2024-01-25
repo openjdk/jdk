@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,8 +24,7 @@
  */
 
 #include "precompiled.hpp"
-#include "asm/assembler.hpp"
-#include "assembler_zero.inline.hpp"
+#include "asm/assembler.inline.hpp"
 #include "code/icBuffer.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/bytecodes.hpp"
@@ -48,10 +47,10 @@ void InlineCacheBuffer::assemble_ic_buffer_code(address code_begin,
 address InlineCacheBuffer::ic_buffer_entry_point(address code_begin) {
   // NB ic_stub_code_size() must return the size of the code we generate
   ShouldNotCallThis();
-  return NULL;
+  return nullptr;
 }
 
 void* InlineCacheBuffer::ic_buffer_cached_value(address code_begin) {
   ShouldNotCallThis();
-  return NULL;
+  return nullptr;
 }

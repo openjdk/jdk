@@ -25,7 +25,7 @@
  * @test
  * @bug 8159855
  * @summary test ToolProvider SPI
- * @run main/othervm ToolProviderTest
+ * @run main/othervm -Djava.security.manager=allow ToolProviderTest
  */
 
 import java.io.IOException;
@@ -122,7 +122,7 @@ public class ToolProviderTest {
                 // system property
                 System.getProperty("java.home");
                 if (haveSecurityManager) {
-                    throw new Error("exception exception not thrown");
+                    throw new Error("exception not thrown");
                 }
             } catch (SecurityException e) {
                 if (!haveSecurityManager) {

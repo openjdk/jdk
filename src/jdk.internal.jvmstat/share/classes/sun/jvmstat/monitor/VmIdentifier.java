@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,7 +174,7 @@ public class VmIdentifier {
     private void validate() throws URISyntaxException {
         // file:// uri, which is a special case where the lvmid is not required.
         String s = getScheme();
-        if ((s != null) && (s.compareTo("file") == 0)) {
+        if ("file".equals(s)) {
             return;
         }
         if (getLocalVmId() == -1) {
@@ -373,26 +373,6 @@ public class VmIdentifier {
             }
         } catch (NumberFormatException e) { }
         return result;
-    }
-
-    /**
-     * Return the mode indicated in this VmIdentifier.
-     *
-     * @return String - the mode string. If no mode is specified, then "r"
-     *                  is returned. otherwise, the specified mode is returned.
-     */
-    public String getMode() {
-        String query = getQuery();
-        if (query != null) {
-            String[] queryArgs = query.split("\\+");
-            for (int i = 0; i < queryArgs.length; i++) {
-                if (queryArgs[i].startsWith("mode=")) {
-                    int index = queryArgs[i].indexOf('=');
-                    return queryArgs[i].substring(index+1);
-                }
-            }
-        }
-        return "r";
     }
 
     /**

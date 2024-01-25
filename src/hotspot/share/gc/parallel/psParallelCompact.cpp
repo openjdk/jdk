@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,13 @@
  */
 
 #include "precompiled.hpp"
-#include "aot/aotLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
+#include "compiler/oopMap.hpp"
 #include "gc/parallel/parallelArguments.hpp"
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
 #include "gc/parallel/parMarkBitMap.inline.hpp"
@@ -40,7 +40,9 @@
 #include "gc/parallel/psPromotionManager.inline.hpp"
 #include "gc/parallel/psRootType.hpp"
 #include "gc/parallel/psScavenge.hpp"
+#include "gc/parallel/psStringDedup.hpp"
 #include "gc/parallel/psYoungGen.hpp"
+#include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcId.hpp"
@@ -59,12 +61,14 @@
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/workerPolicy.hpp"
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
+#include "gc/shared/workerUtils.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/instanceClassLoaderKlass.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
@@ -76,8 +80,8 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/safepoint.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/vmThread.hpp"
-#include "services/memTracker.hpp"
 #include "services/memoryService.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
@@ -133,7 +137,7 @@ ParallelCompactData::RegionData::dc_completed = 0xcU << dc_shift;
 SpaceInfo PSParallelCompact::_space_info[PSParallelCompact::last_space_id];
 
 SpanSubjectToDiscoveryClosure PSParallelCompact::_span_based_discoverer;
-ReferenceProcessor* PSParallelCompact::_ref_processor = NULL;
+ReferenceProcessor* PSParallelCompact::_ref_processor = nullptr;
 
 double PSParallelCompact::_dwl_mean;
 double PSParallelCompact::_dwl_std_dev;
@@ -148,15 +152,15 @@ void SplitInfo::record(size_t src_region_idx, size_t partial_obj_size,
 {
   assert(src_region_idx != 0, "invalid src_region_idx");
   assert(partial_obj_size != 0, "invalid partial_obj_size argument");
-  assert(destination != NULL, "invalid destination argument");
+  assert(destination != nullptr, "invalid destination argument");
 
   _src_region_idx = src_region_idx;
   _partial_obj_size = partial_obj_size;
   _destination = destination;
 
   // These fields may not be updated below, so make sure they're clear.
-  assert(_dest_region_addr == NULL, "should have been cleared");
-  assert(_first_src_addr == NULL, "should have been cleared");
+  assert(_dest_region_addr == nullptr, "should have been cleared");
+  assert(_first_src_addr == nullptr, "should have been cleared");
 
   // Determine the number of destination regions for the partial object.
   HeapWord* const last_word = destination + partial_obj_size - 1;
@@ -189,10 +193,10 @@ void SplitInfo::clear()
 {
   _src_region_idx = 0;
   _partial_obj_size = 0;
-  _destination = NULL;
+  _destination = nullptr;
   _destination_count = 0;
-  _dest_region_addr = NULL;
-  _first_src_addr = NULL;
+  _dest_region_addr = nullptr;
+  _first_src_addr = nullptr;
   assert(!is_valid(), "sanity");
 }
 
@@ -201,10 +205,10 @@ void SplitInfo::verify_clear()
 {
   assert(_src_region_idx == 0, "not clear");
   assert(_partial_obj_size == 0, "not clear");
-  assert(_destination == NULL, "not clear");
+  assert(_destination == nullptr, "not clear");
   assert(_destination_count == 0, "not clear");
-  assert(_dest_region_addr == NULL, "not clear");
-  assert(_first_src_addr == NULL, "not clear");
+  assert(_dest_region_addr == nullptr, "not clear");
+  assert(_first_src_addr == nullptr, "not clear");
 }
 #endif  // #ifdef ASSERT
 
@@ -410,36 +414,27 @@ print_initial_summary_data(ParallelCompactData& summary_data,
 }
 #endif  // #ifndef PRODUCT
 
-#ifdef  ASSERT
-size_t add_obj_count;
-size_t add_obj_size;
-size_t mark_bitmap_count;
-size_t mark_bitmap_size;
-#endif  // #ifdef ASSERT
-
 ParallelCompactData::ParallelCompactData() :
-  _region_start(NULL),
-  DEBUG_ONLY(_region_end(NULL) COMMA)
-  _region_vspace(NULL),
+  _heap_start(nullptr),
+  DEBUG_ONLY(_heap_end(nullptr) COMMA)
+  _region_vspace(nullptr),
   _reserved_byte_size(0),
-  _region_data(NULL),
+  _region_data(nullptr),
   _region_count(0),
-  _block_vspace(NULL),
-  _block_data(NULL),
+  _block_vspace(nullptr),
+  _block_data(nullptr),
   _block_count(0) {}
 
-bool ParallelCompactData::initialize(MemRegion covered_region)
+bool ParallelCompactData::initialize(MemRegion reserved_heap)
 {
-  _region_start = covered_region.start();
-  const size_t region_size = covered_region.word_size();
-  DEBUG_ONLY(_region_end = _region_start + region_size;)
+  _heap_start = reserved_heap.start();
+  const size_t heap_size = reserved_heap.word_size();
+  DEBUG_ONLY(_heap_end = _heap_start + heap_size;)
 
-  assert(region_align_down(_region_start) == _region_start,
+  assert(region_align_down(_heap_start) == _heap_start,
          "region start not aligned");
-  assert((region_size & RegionSizeOffsetMask) == 0,
-         "region size not a multiple of RegionSize");
 
-  bool result = initialize_region_data(region_size) && initialize_block_data();
+  bool result = initialize_region_data(heap_size) && initialize_block_data();
   return result;
 }
 
@@ -451,11 +446,11 @@ ParallelCompactData::create_vspace(size_t count, size_t element_size)
   const size_t granularity = os::vm_allocation_granularity();
   _reserved_byte_size = align_up(raw_bytes, MAX2(page_sz, granularity));
 
-  const size_t rs_align = page_sz == (size_t) os::vm_page_size() ? 0 :
+  const size_t rs_align = page_sz == os::vm_page_size() ? 0 :
     MAX2(page_sz, granularity);
-  ReservedSpace rs(_reserved_byte_size, rs_align, rs_align > 0);
-  os::trace_page_sizes("Parallel Compact Data", raw_bytes, raw_bytes, page_sz, rs.base(),
-                       rs.size());
+  ReservedSpace rs(_reserved_byte_size, rs_align, page_sz);
+  os::trace_page_sizes("Parallel Compact Data", raw_bytes, raw_bytes, rs.base(),
+                       rs.size(), page_sz);
 
   MemTracker::record_virtual_memory_type((address)rs.base(), mtGC);
 
@@ -472,9 +467,11 @@ ParallelCompactData::create_vspace(size_t count, size_t element_size)
   return 0;
 }
 
-bool ParallelCompactData::initialize_region_data(size_t region_size)
+bool ParallelCompactData::initialize_region_data(size_t heap_size)
 {
-  const size_t count = (region_size + RegionSizeOffsetMask) >> Log2RegionSize;
+  assert(is_aligned(heap_size, RegionSize), "precondition");
+
+  const size_t count = heap_size >> Log2RegionSize;
   _region_vspace = create_vspace(count, sizeof(RegionData));
   if (_region_vspace != 0) {
     _region_data = (RegionData*)_region_vspace->reserved_low_addr();
@@ -532,12 +529,10 @@ HeapWord* ParallelCompactData::partial_obj_end(size_t region_idx) const
 
 void ParallelCompactData::add_obj(HeapWord* addr, size_t len)
 {
-  const size_t obj_ofs = pointer_delta(addr, _region_start);
+  const size_t obj_ofs = pointer_delta(addr, _heap_start);
   const size_t beg_region = obj_ofs >> Log2RegionSize;
+  // end_region is inclusive
   const size_t end_region = (obj_ofs + len - 1) >> Log2RegionSize;
-
-  DEBUG_ONLY(Atomic::inc(&add_obj_count);)
-  DEBUG_ONLY(Atomic::add(&add_obj_size, len);)
 
   if (beg_region == end_region) {
     // All in one region.
@@ -549,7 +544,6 @@ void ParallelCompactData::add_obj(HeapWord* addr, size_t len)
   const size_t beg_ofs = region_offset(addr);
   _region_data[beg_region].add_live_obj(RegionSize - beg_ofs);
 
-  Klass* klass = ((oop)addr)->klass();
   // Middle regions--completely spanned by this object.
   for (size_t region = beg_region + 1; region < end_region; ++region) {
     _region_data[region].set_partial_obj_size(RegionSize);
@@ -565,8 +559,8 @@ void ParallelCompactData::add_obj(HeapWord* addr, size_t len)
 void
 ParallelCompactData::summarize_dense_prefix(HeapWord* beg, HeapWord* end)
 {
-  assert(region_offset(beg) == 0, "not RegionSize aligned");
-  assert(region_offset(end) == 0, "not RegionSize aligned");
+  assert(is_region_aligned(beg), "not RegionSize aligned");
+  assert(is_region_aligned(end), "not RegionSize aligned");
 
   size_t cur_region = addr_to_region_idx(beg);
   const size_t end_region = addr_to_region_idx(end);
@@ -698,7 +692,7 @@ bool ParallelCompactData::summarize(SplitInfo& split_info,
                                     HeapWord* target_beg, HeapWord* target_end,
                                     HeapWord** target_next)
 {
-  HeapWord* const source_next_val = source_next == NULL ? NULL : *source_next;
+  HeapWord* const source_next_val = source_next == nullptr ? nullptr : *source_next;
   log_develop_trace(gc, compaction)(
       "sb=" PTR_FORMAT " se=" PTR_FORMAT " sn=" PTR_FORMAT
       "tb=" PTR_FORMAT " te=" PTR_FORMAT " tn=" PTR_FORMAT,
@@ -719,7 +713,7 @@ bool ParallelCompactData::summarize(SplitInfo& split_info,
       // at which the source space can be 'split' so that part is copied to the
       // target space and the rest is copied elsewhere.
       if (dest_addr + words > target_end) {
-        assert(source_next != NULL, "source_next is NULL when splitting");
+        assert(source_next != nullptr, "source_next is null when splitting");
         *source_next = summarize_split_space(cur_region, split_info, dest_addr,
                                              target_end, target_next);
         return false;
@@ -762,7 +756,7 @@ bool ParallelCompactData::summarize(SplitInfo& split_info,
         destination_count += 1;
         // Data from cur_region will be copied to the start of dest_region_2.
         _region_data[dest_region_2].set_source_region(cur_region);
-      } else if (region_offset(dest_addr) == 0) {
+      } else if (is_region_aligned(dest_addr)) {
         // Data from cur_region will be copied to the start of the destination
         // region.
         _region_data[dest_region_1].set_source_region(cur_region);
@@ -781,7 +775,7 @@ bool ParallelCompactData::summarize(SplitInfo& split_info,
 }
 
 HeapWord* ParallelCompactData::calc_new_pointer(HeapWord* addr, ParCompactionManager* cm) const {
-  assert(addr != NULL, "Should detect NULL oop earlier");
+  assert(addr != nullptr, "Should detect null oop earlier");
   assert(ParallelScavengeHeap::heap()->is_in(addr), "not in heap");
   assert(PSParallelCompact::mark_bitmap()->is_marked(addr), "not marked");
 
@@ -817,7 +811,7 @@ HeapWord* ParallelCompactData::calc_new_pointer(HeapWord* addr, ParCompactionMan
   const size_t block_offset = addr_to_block_ptr(addr)->offset();
 
   const ParMarkBitMap* bitmap = PSParallelCompact::mark_bitmap();
-  const size_t live = bitmap->live_words_in_range(cm, search_start, oop(addr));
+  const size_t live = bitmap->live_words_in_range(cm, search_start, cast_to_oop(addr));
   result += block_offset + live;
   DEBUG_ONLY(PSParallelCompact::check_new_location(addr, result));
   return result;
@@ -843,9 +837,8 @@ void ParallelCompactData::verify_clear()
 STWGCTimer          PSParallelCompact::_gc_timer;
 ParallelOldTracer   PSParallelCompact::_gc_tracer;
 elapsedTimer        PSParallelCompact::_accumulated_time;
-unsigned int        PSParallelCompact::_total_invocations = 0;
 unsigned int        PSParallelCompact::_maximum_compaction_gc_num = 0;
-CollectorCounters*  PSParallelCompact::_counters = NULL;
+CollectorCounters*  PSParallelCompact::_counters = nullptr;
 ParMarkBitMap       PSParallelCompact::_mark_bitmap;
 ParallelCompactData PSParallelCompact::_summary_data;
 
@@ -853,41 +846,15 @@ PSParallelCompact::IsAliveClosure PSParallelCompact::_is_alive_closure;
 
 bool PSParallelCompact::IsAliveClosure::do_object_b(oop p) { return mark_bitmap()->is_marked(p); }
 
-class PCReferenceProcessor: public ReferenceProcessor {
-public:
-  PCReferenceProcessor(
-    BoolObjectClosure* is_subject_to_discovery,
-    BoolObjectClosure* is_alive_non_header) :
-      ReferenceProcessor(is_subject_to_discovery,
-      ParallelGCThreads,   // mt processing degree
-      true,                // mt discovery
-      ParallelGCThreads,   // mt discovery degree
-      true,                // atomic_discovery
-      is_alive_non_header) {
-  }
-
-  template<typename T> bool discover(oop obj, ReferenceType type) {
-    T* referent_addr = (T*) java_lang_ref_Reference::referent_addr_raw(obj);
-    T heap_oop = RawAccess<>::oop_load(referent_addr);
-    oop referent = CompressedOops::decode_not_null(heap_oop);
-    return PSParallelCompact::mark_bitmap()->is_unmarked(referent)
-        && ReferenceProcessor::discover_reference(obj, type);
-  }
-  virtual bool discover_reference(oop obj, ReferenceType type) {
-    if (UseCompressedOops) {
-      return discover<narrowOop>(obj, type);
-    } else {
-      return discover<oop>(obj, type);
-    }
-  }
-};
-
 void PSParallelCompact::post_initialize() {
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   _span_based_discoverer.set_span(heap->reserved_region());
   _ref_processor =
-    new PCReferenceProcessor(&_span_based_discoverer,
-                             &_is_alive_closure); // non-header is alive closure
+    new ReferenceProcessor(&_span_based_discoverer,
+                           ParallelGCThreads,   // mt processing degree
+                           ParallelGCThreads,   // mt discovery degree
+                           false,               // concurrent_discovery
+                           &_is_alive_closure); // non-header is alive closure
 
   _counters = new CollectorCounters("Parallel full collection pauses", 1);
 
@@ -991,14 +958,10 @@ void PSParallelCompact::pre_compact()
   _space_info[from_space_id].set_space(heap->young_gen()->from_space());
   _space_info[to_space_id].set_space(heap->young_gen()->to_space());
 
-  DEBUG_ONLY(add_obj_count = add_obj_size = 0;)
-  DEBUG_ONLY(mark_bitmap_count = mark_bitmap_size = 0;)
-
   // Increment the invocation count
   heap->increment_total_collections(true);
 
-  // We need to track unique mark sweep invocations as well.
-  _total_invocations++;
+  CodeCache::on_gc_marking_cycle_start();
 
   heap->print_heap_before_gc();
   heap->trace_heap_before_gc(&_gc_tracer);
@@ -1027,12 +990,17 @@ void PSParallelCompact::post_compact()
   GCTraceTime(Info, gc, phases) tm("Post Compact", &_gc_timer);
   ParCompactionManager::remove_all_shadow_regions();
 
+  CodeCache::on_gc_marking_cycle_finish();
+  CodeCache::arm_all_nmethods();
+
   for (unsigned int id = old_space_id; id < last_space_id; ++id) {
     // Clear the marking bitmap, summary data and split info.
     clear_data_covering_space(SpaceId(id));
     // Update top().  Must be done after clearing the bitmap and summary data.
     _space_info[id].publish_new_top();
   }
+
+  ParCompactionManager::flush_all_string_dedup_requests();
 
   MutableSpace* const eden_space = _space_info[eden_space_id].space();
   MutableSpace* const from_space = _space_info[from_space_id].space();
@@ -1049,16 +1017,22 @@ void PSParallelCompact::post_compact()
     to_space->is_empty();
 
   PSCardTable* ct = heap->card_table();
-  MemRegion old_mr = heap->old_gen()->reserved();
+  MemRegion old_mr = heap->old_gen()->committed();
   if (young_gen_empty) {
-    ct->clear(MemRegion(old_mr.start(), old_mr.end()));
+    ct->clear_MemRegion(old_mr);
   } else {
-    ct->invalidate(MemRegion(old_mr.start(), old_mr.end()));
+    ct->dirty_MemRegion(old_mr);
   }
 
-  // Delete metaspaces for unloaded class loaders and clean up loader_data graph
-  ClassLoaderDataGraph::purge(/*at_safepoint*/true);
-  DEBUG_ONLY(MetaspaceUtils::verify();)
+  {
+    // Delete metaspaces for unloaded class loaders and clean up loader_data graph
+    GCTraceTime(Debug, gc, phases) t("Purge Class Loader Data", gc_timer());
+    ClassLoaderDataGraph::purge(true /* at_safepoint */);
+    DEBUG_ONLY(MetaspaceUtils::verify();)
+  }
+
+  // Need to clear claim bits for the next mark.
+  ClassLoaderDataGraph::clear_claimed_marks();
 
   heap->prune_scavengable_nmethods();
 
@@ -1094,11 +1068,12 @@ PSParallelCompact::compute_dense_prefix_via_density(const SpaceId id,
     ++full_count;
   }
 
-  assert(total_invocations() >= _maximum_compaction_gc_num, "sanity");
-  const size_t gcs_since_max = total_invocations() - _maximum_compaction_gc_num;
+  const uint total_invocations = ParallelScavengeHeap::heap()->total_full_collections();
+  assert(total_invocations >= _maximum_compaction_gc_num, "sanity");
+  const size_t gcs_since_max = total_invocations - _maximum_compaction_gc_num;
   const bool interval_ended = gcs_since_max > HeapMaximumCompactionInterval;
   if (maximum_compaction || cp == end_cp || interval_ended) {
-    _maximum_compaction_gc_num = total_invocations();
+    _maximum_compaction_gc_num = total_invocations;
     return sd.region_to_addr(cp);
   }
 
@@ -1279,7 +1254,7 @@ PSParallelCompact::first_dead_space_region(const RegionData* beg,
     RegionData* const middle_ptr = sd.region(middle);
     HeapWord* const dest = middle_ptr->destination();
     HeapWord* const addr = sd.region_to_addr(middle);
-    assert(dest != NULL, "sanity");
+    assert(dest != nullptr, "sanity");
     assert(dest <= addr, "must move left");
 
     if (middle > left && dest < addr) {
@@ -1309,7 +1284,7 @@ PSParallelCompact::dead_wood_limit_region(const RegionData* beg,
     RegionData* const middle_ptr = sd.region(middle);
     HeapWord* const dest = middle_ptr->destination();
     HeapWord* const addr = sd.region_to_addr(middle);
-    assert(dest != NULL, "sanity");
+    assert(dest != nullptr, "sanity");
     assert(dest <= addr, "must move left");
 
     const size_t dead_to_left = pointer_delta(addr, dest);
@@ -1334,10 +1309,10 @@ PSParallelCompact::reclaimed_ratio(const RegionData* const cp,
 {
   ParallelCompactData& sd = summary_data();
 
-  assert(cp != NULL, "sanity");
-  assert(bottom != NULL, "sanity");
-  assert(top != NULL, "sanity");
-  assert(new_top != NULL, "sanity");
+  assert(cp != nullptr, "sanity");
+  assert(bottom != nullptr, "sanity");
+  assert(top != nullptr, "sanity");
+  assert(new_top != nullptr, "sanity");
   assert(top >= new_top, "summary data problem?");
   assert(new_top > bottom, "space is empty; should not be here");
   assert(new_top >= cp->destination(), "sanity");
@@ -1393,12 +1368,13 @@ PSParallelCompact::compute_dense_prefix(const SpaceId id,
   // The gc number is saved whenever a maximum compaction is done, and used to
   // determine when the maximum compaction interval has expired.  This avoids
   // successive max compactions for different reasons.
-  assert(total_invocations() >= _maximum_compaction_gc_num, "sanity");
-  const size_t gcs_since_max = total_invocations() - _maximum_compaction_gc_num;
+  const uint total_invocations = ParallelScavengeHeap::heap()->total_full_collections();
+  assert(total_invocations >= _maximum_compaction_gc_num, "sanity");
+  const size_t gcs_since_max = total_invocations - _maximum_compaction_gc_num;
   const bool interval_ended = gcs_since_max > HeapMaximumCompactionInterval ||
-    total_invocations() == HeapFirstMaximumCompactionCount;
+    total_invocations == HeapFirstMaximumCompactionCount;
   if (maximum_compaction || full_cp == top_cp || interval_ended) {
-    _maximum_compaction_gc_num = total_invocations();
+    _maximum_compaction_gc_num = total_invocations;
     return sd.region_to_addr(full_cp);
   }
 
@@ -1449,7 +1425,7 @@ void PSParallelCompact::summarize_spaces_quick()
     const MutableSpace* space = _space_info[i].space();
     HeapWord** nta = _space_info[i].new_top_addr();
     bool result = _summary_data.summarize(_space_info[i].split_info(),
-                                          space->bottom(), space->top(), NULL,
+                                          space->bottom(), space->top(), nullptr,
                                           space->bottom(), space->end(), nta);
     assert(result, "space must fit into itself");
     _space_info[i].set_dense_prefix(space->bottom());
@@ -1518,8 +1494,8 @@ void PSParallelCompact::fill_dense_prefix_end(SpaceId id)
     CollectedHeap::fill_with_object(obj_beg, obj_len);
     _mark_bitmap.mark_obj(obj_beg, obj_len);
     _summary_data.add_obj(obj_beg, obj_len);
-    assert(start_array(id) != NULL, "sanity");
-    start_array(id)->allocate_block(obj_beg);
+    assert(start_array(id) != nullptr, "sanity");
+    start_array(id)->update_for_block(obj_beg, obj_beg + obj_len);
   }
 }
 
@@ -1558,7 +1534,7 @@ PSParallelCompact::summarize_space(SpaceId id, bool maximum_compaction)
       // Compute the destination of each Region, and thus each object.
       _summary_data.summarize_dense_prefix(space->bottom(), dense_prefix_end);
       _summary_data.summarize(_space_info[id].split_info(),
-                              dense_prefix_end, space->top(), NULL,
+                              dense_prefix_end, space->top(), nullptr,
                               dense_prefix_end, space->end(),
                               _space_info[id].new_top_addr());
     }
@@ -1605,23 +1581,9 @@ void PSParallelCompact::summary_phase_msg(SpaceId dst_space_id,
 }
 #endif  // #ifndef PRODUCT
 
-void PSParallelCompact::summary_phase(ParCompactionManager* cm,
-                                      bool maximum_compaction)
+void PSParallelCompact::summary_phase(bool maximum_compaction)
 {
   GCTraceTime(Info, gc, phases) tm("Summary Phase", &_gc_timer);
-
-#ifdef ASSERT
-  log_develop_debug(gc, marking)(
-      "add_obj_count=" SIZE_FORMAT " "
-      "add_obj_bytes=" SIZE_FORMAT,
-      add_obj_count,
-      add_obj_size * HeapWordSize);
-  log_develop_debug(gc, marking)(
-      "mark_bitmap_count=" SIZE_FORMAT " "
-      "mark_bitmap_bytes=" SIZE_FORMAT,
-      mark_bitmap_count,
-      mark_bitmap_size * HeapWordSize);
-#endif // ASSERT
 
   // Quick summarization of each space into itself, to see how much is live.
   summarize_spaces_quick();
@@ -1666,7 +1628,7 @@ void PSParallelCompact::summary_phase(ParCompactionManager* cm,
       // All the live data will fit.
       bool done = _summary_data.summarize(_space_info[id].split_info(),
                                           space->bottom(), space->top(),
-                                          NULL,
+                                          nullptr,
                                           *new_top_addr, dst_space_end,
                                           new_top_addr);
       assert(done, "space must fit into old gen");
@@ -1675,14 +1637,14 @@ void PSParallelCompact::summary_phase(ParCompactionManager* cm,
       _space_info[id].set_new_top(space->bottom());
     } else if (live > 0) {
       // Attempt to fit part of the source space into the target space.
-      HeapWord* next_src_addr = NULL;
+      HeapWord* next_src_addr = nullptr;
       bool done = _summary_data.summarize(_space_info[id].split_info(),
                                           space->bottom(), space->top(),
                                           &next_src_addr,
                                           *new_top_addr, dst_space_end,
                                           new_top_addr);
       assert(!done, "space should not fit into old gen");
-      assert(next_src_addr != NULL, "sanity");
+      assert(next_src_addr != nullptr, "sanity");
 
       // The source space becomes the new target, so the remainder is compacted
       // within the space itself.
@@ -1694,7 +1656,7 @@ void PSParallelCompact::summary_phase(ParCompactionManager* cm,
                                     SpaceId(id), next_src_addr, space->top());)
       done = _summary_data.summarize(_space_info[id].split_info(),
                                      next_src_addr, space->top(),
-                                     NULL,
+                                     nullptr,
                                      space->bottom(), dst_space_end,
                                      new_top_addr);
       assert(done, "space must fit when compacted into itself");
@@ -1719,16 +1681,14 @@ void PSParallelCompact::summary_phase(ParCompactionManager* cm,
 // may be true because this method can be called without intervening
 // activity.  For example when the heap space is tight and full measure
 // are being taken to free space.
-void PSParallelCompact::invoke(bool maximum_heap_compaction) {
+bool PSParallelCompact::invoke(bool maximum_heap_compaction) {
   assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
   assert(Thread::current() == (Thread*)VMThread::vm_thread(),
          "should be in vm thread");
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-  GCCause::Cause gc_cause = heap->gc_cause();
   assert(!heap->is_gc_active(), "not reentrant");
 
-  PSAdaptiveSizePolicy* policy = heap->size_policy();
   IsGCActiveMark mark;
 
   if (ScavengeBeforeFullGC) {
@@ -1738,15 +1698,15 @@ void PSParallelCompact::invoke(bool maximum_heap_compaction) {
   const bool clear_all_soft_refs =
     heap->soft_ref_policy()->should_clear_all_soft_refs();
 
-  PSParallelCompact::invoke_no_policy(clear_all_soft_refs ||
-                                      maximum_heap_compaction);
+  return PSParallelCompact::invoke_no_policy(clear_all_soft_refs ||
+                                             maximum_heap_compaction);
 }
 
 // This method contains no policy. You should probably
 // be calling invoke() instead.
 bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at a safepoint");
-  assert(ref_processor() != NULL, "Sanity");
+  assert(ref_processor() != nullptr, "Sanity");
 
   if (GCLocker::check_active_before_gc()) {
     return false;
@@ -1757,10 +1717,6 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
   GCIdMark gc_id_mark;
   _gc_timer.register_gc_start();
   _gc_tracer.report_gc_start(heap->gc_cause(), _gc_timer.gc_start());
-
-  TimeStamp marking_start;
-  TimeStamp compaction_start;
-  TimeStamp collection_exit;
 
   GCCause::Cause gc_cause = heap->gc_cause();
   PSYoungGen* young_gen = heap->young_gen();
@@ -1783,23 +1739,20 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
 
   const PreGenGCValues pre_gc_values = heap->get_pre_gc_values();
 
-  // Get the compaction manager reserved for the VM thread.
-  ParCompactionManager* const vmthread_cm = ParCompactionManager::get_vmthread_cm();
-
   {
     const uint active_workers =
-      WorkerPolicy::calc_active_workers(ParallelScavengeHeap::heap()->workers().total_workers(),
+      WorkerPolicy::calc_active_workers(ParallelScavengeHeap::heap()->workers().max_workers(),
                                         ParallelScavengeHeap::heap()->workers().active_workers(),
                                         Threads::number_of_non_daemon_threads());
-    ParallelScavengeHeap::heap()->workers().update_active_workers(active_workers);
+    ParallelScavengeHeap::heap()->workers().set_active_workers(active_workers);
 
-    GCTraceCPUTime tcpu;
-    GCTraceTime(Info, gc) tm("Pause Full", NULL, gc_cause, true);
+    GCTraceCPUTime tcpu(&_gc_tracer);
+    GCTraceTime(Info, gc) tm("Pause Full", nullptr, gc_cause, true);
 
     heap->pre_full_gc_dump(&_gc_timer);
 
     TraceCollectorStats tcs(counters());
-    TraceMemoryManagerStats tms(heap->old_gc_manager(), gc_cause);
+    TraceMemoryManagerStats tms(heap->old_gc_manager(), gc_cause, "end of major GC");
 
     if (log_is_enabled(Debug, gc, heap, exit)) {
       accumulated_time()->start();
@@ -1812,17 +1765,17 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     DerivedPointerTable::clear();
 #endif
 
-    ref_processor()->enable_discovery();
-    ref_processor()->setup_policy(maximum_heap_compaction);
+    ref_processor()->start_discovery(maximum_heap_compaction);
 
-    bool marked_for_unloading = false;
+    ClassUnloadingContext ctx(1 /* num_nmethod_unlink_workers */,
+                              false /* unregister_nmethods_during_purge */,
+                              false /* lock_codeblob_free_separately */);
 
-    marking_start.update();
-    marking_phase(vmthread_cm, maximum_heap_compaction, &_gc_tracer);
+    marking_phase(&_gc_tracer);
 
     bool max_on_system_gc = UseMaximumCompactionOnSystemGC
       && GCCause::is_user_requested_gc(gc_cause);
-    summary_phase(vmthread_cm, maximum_heap_compaction || max_on_system_gc);
+    summary_phase(maximum_heap_compaction || max_on_system_gc);
 
 #if COMPILER2_OR_JVMCI
     assert(DerivedPointerTable::is_active(), "Sanity");
@@ -1833,7 +1786,6 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     // needed by the compaction for filling holes in the dense prefix.
     adjust_roots();
 
-    compaction_start.update();
     compact();
 
     ParCompactionManager::verify_all_region_stack_empty();
@@ -1948,16 +1900,8 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     old_gen->object_space()->check_mangled_unused_area_complete();
   }
 
-  NOT_PRODUCT(ref_processor()->verify_no_references_recorded());
-
-  collection_exit.update();
-
   heap->print_heap_after_gc();
   heap->trace_heap_after_gc(&_gc_tracer);
-
-  log_debug(gc, task, time)("VM-Thread " JLONG_FORMAT " " JLONG_FORMAT " " JLONG_FORMAT,
-                         marking_start.ticks(), compaction_start.ticks(),
-                         collection_exit.ticks());
 
   AdaptiveSizePolicyOutput::print(size_policy, heap->total_collections());
 
@@ -1983,7 +1927,7 @@ public:
     ParCompactionManager* cm = ParCompactionManager::gc_thread_compaction_manager(_worker_id);
 
     PCMarkAndPushClosure mark_and_push_closure(cm);
-    MarkingCodeBlobClosure mark_and_push_in_blobs(&mark_and_push_closure, !CodeBlobToOopClosure::FixRelocations);
+    MarkingCodeBlobClosure mark_and_push_in_blobs(&mark_and_push_closure, !CodeBlobToOopClosure::FixRelocations, true /* keepalive nmethods */);
 
     thread->oops_do(&mark_and_push_closure, &mark_and_push_in_blobs);
 
@@ -1992,90 +1936,55 @@ public:
   }
 };
 
-static void mark_from_roots_work(ParallelRootType::Value root_type, uint worker_id) {
-  assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
-
-  ParCompactionManager* cm =
-    ParCompactionManager::gc_thread_compaction_manager(worker_id);
-  PCMarkAndPushClosure mark_and_push_closure(cm);
-
-  switch (root_type) {
-    case ParallelRootType::class_loader_data:
-      {
-        CLDToOopClosure cld_closure(&mark_and_push_closure, ClassLoaderData::_claim_strong);
-        ClassLoaderDataGraph::always_strong_cld_do(&cld_closure);
-      }
-      break;
-
-    case ParallelRootType::code_cache:
-      // Do not treat nmethods as strong roots for mark/sweep, since we can unload them.
-      //ScavengableNMethods::scavengable_nmethods_do(CodeBlobToOopClosure(&mark_and_push_closure));
-      AOTLoader::oops_do(&mark_and_push_closure);
-      break;
-
-    case ParallelRootType::sentinel:
-    DEBUG_ONLY(default:) // DEBUG_ONLY hack will create compile error on release builds (-Wswitch) and runtime check on debug builds
-      fatal("Bad enumeration value: %u", root_type);
-      break;
-  }
-
-  // Do the real work
-  cm->follow_marking_stacks();
-}
-
-static void steal_marking_work(TaskTerminator& terminator, uint worker_id) {
+void steal_marking_work(TaskTerminator& terminator, uint worker_id) {
   assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
 
   ParCompactionManager* cm =
     ParCompactionManager::gc_thread_compaction_manager(worker_id);
 
-  oop obj = NULL;
-  ObjArrayTask task;
   do {
-    while (ParCompactionManager::steal_objarray(worker_id,  task)) {
+    oop obj = nullptr;
+    ObjArrayTask task;
+    if (ParCompactionManager::steal_objarray(worker_id,  task)) {
       cm->follow_array((objArrayOop)task.obj(), task.index());
-      cm->follow_marking_stacks();
-    }
-    while (ParCompactionManager::steal(worker_id, obj)) {
+    } else if (ParCompactionManager::steal(worker_id, obj)) {
       cm->follow_contents(obj);
-      cm->follow_marking_stacks();
     }
+    cm->follow_marking_stacks();
   } while (!terminator.offer_termination());
 }
 
-class MarkFromRootsTask : public AbstractGangTask {
-  typedef AbstractRefProcTaskExecutor::ProcessTask ProcessTask;
+class MarkFromRootsTask : public WorkerTask {
   StrongRootsScope _strong_roots_scope; // needed for Threads::possibly_parallel_threads_do
   OopStorageSetStrongParState<false /* concurrent */, false /* is_const */> _oop_storage_set_par_state;
-  SequentialSubTasksDone _subtasks;
   TaskTerminator _terminator;
   uint _active_workers;
 
 public:
   MarkFromRootsTask(uint active_workers) :
-      AbstractGangTask("MarkFromRootsTask"),
+      WorkerTask("MarkFromRootsTask"),
       _strong_roots_scope(active_workers),
-      _subtasks(),
       _terminator(active_workers, ParCompactionManager::oop_task_queues()),
-      _active_workers(active_workers) {
-    _subtasks.set_n_threads(active_workers);
-    _subtasks.set_n_tasks(ParallelRootType::sentinel);
-  }
+      _active_workers(active_workers) {}
 
   virtual void work(uint worker_id) {
-    for (uint task = 0; _subtasks.try_claim_task(task); /*empty*/ ) {
-      mark_from_roots_work(static_cast<ParallelRootType::Value>(task), worker_id);
+    ParCompactionManager* cm = ParCompactionManager::gc_thread_compaction_manager(worker_id);
+    PCMarkAndPushClosure mark_and_push_closure(cm);
+
+    {
+      CLDToOopClosure cld_closure(&mark_and_push_closure, ClassLoaderData::_claim_stw_fullgc_mark);
+      ClassLoaderDataGraph::always_strong_cld_do(&cld_closure);
+
+      // Do the real work
+      cm->follow_marking_stacks();
     }
-    _subtasks.all_tasks_completed();
 
     PCAddThreadRootsMarkingTaskClosure closure(worker_id);
-    Threads::possibly_parallel_threads_do(true /*parallel */, &closure);
+    Threads::possibly_parallel_threads_do(true /* is_par */, &closure);
 
     // Mark from OopStorages
     {
-      ParCompactionManager* cm = ParCompactionManager::gc_thread_compaction_manager(worker_id);
-      PCMarkAndPushClosure closure(cm);
-      _oop_storage_set_par_state.oops_do(&closure);
+      _oop_storage_set_par_state.oops_do(&mark_and_push_closure);
       // Do the real work
       cm->follow_marking_stacks();
     }
@@ -2086,61 +1995,35 @@ public:
   }
 };
 
-class PCRefProcTask : public AbstractGangTask {
-  typedef AbstractRefProcTaskExecutor::ProcessTask ProcessTask;
-  ProcessTask& _task;
-  uint _ergo_workers;
+class ParallelCompactRefProcProxyTask : public RefProcProxyTask {
   TaskTerminator _terminator;
 
 public:
-  PCRefProcTask(ProcessTask& task, uint ergo_workers) :
-      AbstractGangTask("PCRefProcTask"),
-      _task(task),
-      _ergo_workers(ergo_workers),
-      _terminator(_ergo_workers, ParCompactionManager::oop_task_queues()) {
+  ParallelCompactRefProcProxyTask(uint max_workers)
+    : RefProcProxyTask("ParallelCompactRefProcProxyTask", max_workers),
+      _terminator(_max_workers, ParCompactionManager::oop_task_queues()) {}
+
+  void work(uint worker_id) override {
+    assert(worker_id < _max_workers, "sanity");
+    ParCompactionManager* cm = (_tm == RefProcThreadModel::Single) ? ParCompactionManager::get_vmthread_cm() : ParCompactionManager::gc_thread_compaction_manager(worker_id);
+    PCMarkAndPushClosure keep_alive(cm);
+    BarrierEnqueueDiscoveredFieldClosure enqueue;
+    ParCompactionManager::FollowStackClosure complete_gc(cm, (_tm == RefProcThreadModel::Single) ? nullptr : &_terminator, worker_id);
+    _rp_task->rp_work(worker_id, PSParallelCompact::is_alive_closure(), &keep_alive, &enqueue, &complete_gc);
   }
 
-  virtual void work(uint worker_id) {
-    ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-    assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
-
-    ParCompactionManager* cm =
-      ParCompactionManager::gc_thread_compaction_manager(worker_id);
-    PCMarkAndPushClosure mark_and_push_closure(cm);
-    ParCompactionManager::FollowStackClosure follow_stack_closure(cm);
-    _task.work(worker_id, *PSParallelCompact::is_alive_closure(),
-               mark_and_push_closure, follow_stack_closure);
-
-    steal_marking_work(_terminator, worker_id);
+  void prepare_run_task_hook() override {
+    _terminator.reset_for_reuse(_queue_count);
   }
 };
 
-class RefProcTaskExecutor: public AbstractRefProcTaskExecutor {
-  void execute(ProcessTask& process_task, uint ergo_workers) {
-    assert(ParallelScavengeHeap::heap()->workers().active_workers() == ergo_workers,
-           "Ergonomically chosen workers (%u) must be equal to active workers (%u)",
-           ergo_workers, ParallelScavengeHeap::heap()->workers().active_workers());
-
-    PCRefProcTask task(process_task, ergo_workers);
-    ParallelScavengeHeap::heap()->workers().run_task(&task);
-  }
-};
-
-void PSParallelCompact::marking_phase(ParCompactionManager* cm,
-                                      bool maximum_heap_compaction,
-                                      ParallelOldTracer *gc_tracer) {
+void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
   // Recursively traverse all live objects and mark them
   GCTraceTime(Info, gc, phases) tm("Marking Phase", &_gc_timer);
 
-  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   uint active_gc_threads = ParallelScavengeHeap::heap()->workers().active_workers();
 
-  PCMarkAndPushClosure mark_and_push_closure(cm);
-  ParCompactionManager::FollowStackClosure follow_stack_closure(cm);
-
-  // Need new claim bits before marking starts.
-  ClassLoaderDataGraph::clear_claimed_marks();
-
+  ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_stw_fullgc_mark);
   {
     GCTraceTime(Debug, gc, phases) tm("Par Mark", &_gc_timer);
 
@@ -2155,18 +2038,9 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
     ReferenceProcessorStats stats;
     ReferenceProcessorPhaseTimes pt(&_gc_timer, ref_processor()->max_num_queues());
 
-    if (ref_processor()->processing_is_mt()) {
-      ref_processor()->set_active_mt_degree(active_gc_threads);
-
-      RefProcTaskExecutor task_executor;
-      stats = ref_processor()->process_discovered_references(
-        is_alive_closure(), &mark_and_push_closure, &follow_stack_closure,
-        &task_executor, &pt);
-    } else {
-      stats = ref_processor()->process_discovered_references(
-        is_alive_closure(), &mark_and_push_closure, &follow_stack_closure, NULL,
-        &pt);
-    }
+    ref_processor()->set_active_mt_degree(active_gc_threads);
+    ParallelCompactRefProcProxyTask task(ref_processor()->max_num_queues());
+    stats = ref_processor()->process_discovered_references(task, pt);
 
     gc_tracer->report_gc_reference_stats(stats);
     pt.print_all_references();
@@ -2177,42 +2051,60 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
 
   {
     GCTraceTime(Debug, gc, phases) tm("Weak Processing", &_gc_timer);
-    WeakProcessor::weak_oops_do(is_alive_closure(), &do_nothing_cl);
+    WeakProcessor::weak_oops_do(&ParallelScavengeHeap::heap()->workers(),
+                                is_alive_closure(),
+                                &do_nothing_cl,
+                                1);
   }
 
   {
     GCTraceTime(Debug, gc, phases) tm_m("Class Unloading", &_gc_timer);
 
-    // Follow system dictionary roots and unload classes.
-    bool purged_class = SystemDictionary::do_unloading(&_gc_timer);
+    ClassUnloadingContext* ctx = ClassUnloadingContext::context();
 
-    // Unload nmethods.
-    CodeCache::do_unloading(is_alive_closure(), purged_class);
+    bool unloading_occurred;
+    {
+      CodeCache::UnlinkingScope scope(is_alive_closure());
+
+      // Follow system dictionary roots and unload classes.
+      unloading_occurred = SystemDictionary::do_unloading(&_gc_timer);
+
+      // Unload nmethods.
+      CodeCache::do_unloading(unloading_occurred);
+    }
+
+    {
+      GCTraceTime(Debug, gc, phases) t("Purge Unlinked NMethods", gc_timer());
+      // Release unloaded nmethod's memory.
+      ctx->purge_nmethods();
+    }
+    {
+      GCTraceTime(Debug, gc, phases) ur("Unregister NMethods", &_gc_timer);
+      ParallelScavengeHeap::heap()->prune_unlinked_nmethods();
+    }
+    {
+      GCTraceTime(Debug, gc, phases) t("Free Code Blobs", gc_timer());
+      ctx->free_code_blobs();
+    }
 
     // Prune dead klasses from subklass/sibling/implementor lists.
-    Klass::clean_weak_klass_links(purged_class);
+    Klass::clean_weak_klass_links(unloading_occurred);
 
     // Clean JVMCI metadata handles.
-    JVMCI_ONLY(JVMCI::do_unloading(purged_class));
+    JVMCI_ONLY(JVMCI::do_unloading(unloading_occurred));
   }
 
-  _gc_tracer.report_object_count_after_gc(is_alive_closure());
-}
-
-#ifdef ASSERT
-void PCAdjustPointerClosure::verify_cm(ParCompactionManager* cm) {
-  assert(cm != NULL, "associate ParCompactionManage should not be NULL");
-  auto vmthread_cm = ParCompactionManager::get_vmthread_cm();
-  if (Thread::current()->is_VM_thread()) {
-    assert(cm == vmthread_cm, "VM threads should use ParCompactionManager from get_vmthread_cm()");
-  } else {
-    assert(Thread::current()->is_GC_task_thread(), "Must be a GC thread");
-    assert(cm != vmthread_cm, "GC threads should use ParCompactionManager from gc_thread_compaction_manager()");
+  {
+    GCTraceTime(Debug, gc, phases) tm("Report Object Count", &_gc_timer);
+    _gc_tracer.report_object_count_after_gc(is_alive_closure(), &ParallelScavengeHeap::heap()->workers());
   }
-}
+#if TASKQUEUE_STATS
+  ParCompactionManager::oop_task_queues()->print_and_reset_taskqueue_stats("Oop Queue");
+  ParCompactionManager::_objarray_task_queues->print_and_reset_taskqueue_stats("ObjArrayOop Queue");
 #endif
+}
 
-class PSAdjustTask final : public AbstractGangTask {
+class PSAdjustTask final : public WorkerTask {
   SubTasksDone                               _sub_tasks;
   WeakProcessor::Task                        _weak_proc_task;
   OopStorageSetStrongParState<false, false>  _oop_storage_iter;
@@ -2220,21 +2112,18 @@ class PSAdjustTask final : public AbstractGangTask {
 
   enum PSAdjustSubTask {
     PSAdjustSubTask_code_cache,
-    PSAdjustSubTask_aot,
-    PSAdjustSubTask_old_ref_process,
-    PSAdjustSubTask_young_ref_process,
 
     PSAdjustSubTask_num_elements
   };
 
 public:
   PSAdjustTask(uint nworkers) :
-    AbstractGangTask("PSAdjust task"),
+    WorkerTask("PSAdjust task"),
     _sub_tasks(PSAdjustSubTask_num_elements),
     _weak_proc_task(nworkers),
     _nworkers(nworkers) {
-    // Need new claim bits when tracing through and adjusting pointers.
-    ClassLoaderDataGraph::clear_claimed_marks();
+
+    ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_stw_fullgc_adjust);
     if (nworkers > 1) {
       Threads::change_thread_claim_token();
     }
@@ -2253,7 +2142,7 @@ public:
     }
     _oop_storage_iter.oops_do(&adjust);
     {
-      CLDToOopClosure cld_closure(&adjust, ClassLoaderData::_claim_strong);
+      CLDToOopClosure cld_closure(&adjust, ClassLoaderData::_claim_stw_fullgc_adjust);
       ClassLoaderDataGraph::cld_do(&cld_closure);
     }
     {
@@ -2263,19 +2152,6 @@ public:
     if (_sub_tasks.try_claim_task(PSAdjustSubTask_code_cache)) {
       CodeBlobToOopClosure adjust_code(&adjust, CodeBlobToOopClosure::FixRelocations);
       CodeCache::blobs_do(&adjust_code);
-    }
-    if (_sub_tasks.try_claim_task(PSAdjustSubTask_aot)) {
-      AOT_ONLY(AOTLoader::oops_do(&adjust);)
-    }
-    if (_sub_tasks.try_claim_task(PSAdjustSubTask_old_ref_process)) {
-      PSParallelCompact::ref_processor()->weak_oops_do(&adjust);
-    }
-    if (_sub_tasks.try_claim_task(PSAdjustSubTask_young_ref_process)) {
-      // Roots were visited so references into the young gen in roots
-      // may have been scanned.  Process them also.
-      // Should the reference processor have a span that excludes
-      // young gen objects?
-      PSScavenge::reference_processor()->weak_oops_do(&adjust);
     }
     _sub_tasks.all_tasks_claimed();
   }
@@ -2346,7 +2222,6 @@ void PSParallelCompact::prepare_region_draining_tasks(uint parallel_gc_threads)
   FillableRegionLogger region_logger;
   for (unsigned int id = to_space_id; id + 1 > old_space_id; --id) {
     SpaceInfo* const space_info = _space_info + id;
-    MutableSpace* const space = space_info->space();
     HeapWord* const new_top = space_info->new_top();
 
     const size_t beg_region = sd.addr_to_region_idx(space_info->dense_prefix());
@@ -2376,7 +2251,7 @@ class TaskQueue : StackObj {
   uint _insert_index;
   PSParallelCompact::UpdateDensePrefixTask* _backing_array;
 public:
-  explicit TaskQueue(uint size) : _counter(0), _size(size), _insert_index(0), _backing_array(NULL) {
+  explicit TaskQueue(uint size) : _counter(0), _size(size), _insert_index(0), _backing_array(nullptr) {
     _backing_array = NEW_C_HEAP_ARRAY(PSParallelCompact::UpdateDensePrefixTask, _size, mtGC);
   }
   ~TaskQueue() {
@@ -2390,7 +2265,7 @@ public:
   }
 
   bool try_claim(PSParallelCompact::UpdateDensePrefixTask& reference) {
-    uint claimed = Atomic::fetch_and_add(&_counter, 1u);
+    uint claimed = Atomic::fetch_then_add(&_counter, 1u);
     if (claimed < _insert_index) {
       reference = _backing_array[claimed];
       return true;
@@ -2556,18 +2431,15 @@ static void compaction_with_stealing_work(TaskTerminator* terminator, uint worke
   }
 }
 
-class UpdateDensePrefixAndCompactionTask: public AbstractGangTask {
-  typedef AbstractRefProcTaskExecutor::ProcessTask ProcessTask;
+class UpdateDensePrefixAndCompactionTask: public WorkerTask {
   TaskQueue& _tq;
   TaskTerminator _terminator;
-  uint _active_workers;
 
 public:
   UpdateDensePrefixAndCompactionTask(TaskQueue& tq, uint active_workers) :
-      AbstractGangTask("UpdateDensePrefixAndCompactionTask"),
+      WorkerTask("UpdateDensePrefixAndCompactionTask"),
       _tq(tq),
-      _terminator(active_workers, ParCompactionManager::region_task_queues()),
-      _active_workers(active_workers) {
+      _terminator(active_workers, ParCompactionManager::region_task_queues()) {
   }
   virtual void work(uint worker_id) {
     ParCompactionManager* cm = ParCompactionManager::gc_thread_compaction_manager(worker_id);
@@ -2582,6 +2454,10 @@ public:
     // Once a thread has drained it's stack, it should try to steal regions from
     // other threads.
     compaction_with_stealing_work(&_terminator, worker_id);
+
+    // At this point all regions have been compacted, so it's now safe
+    // to update the deferred objects that cross region boundaries.
+    cm->drain_deferred_objects();
   }
 };
 
@@ -2590,7 +2466,6 @@ void PSParallelCompact::compact() {
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   PSOldGen* old_gen = heap->old_gen();
-  old_gen->start_array()->reset();
   uint active_gc_threads = ParallelScavengeHeap::heap()->workers().active_workers();
 
   // for [0..last_space_id)
@@ -2611,22 +2486,11 @@ void PSParallelCompact::compact() {
     ParallelScavengeHeap::heap()->workers().run_task(&task);
 
 #ifdef  ASSERT
-    // Verify that all regions have been processed before the deferred updates.
+    // Verify that all regions have been processed.
     for (unsigned int id = old_space_id; id < last_space_id; ++id) {
       verify_complete(SpaceId(id));
     }
 #endif
-  }
-
-  {
-    GCTraceTime(Trace, gc, phases) tm("Deferred Updates", &_gc_timer);
-    // Update the deferred objects, if any. In principle, any compaction
-    // manager can be used. However, since the current thread is VM thread, we
-    // use the rightful one to keep the verification logic happy.
-    ParCompactionManager* cm = ParCompactionManager::get_vmthread_cm();
-    for (unsigned int id = old_space_id; id < last_space_id; ++id) {
-      update_deferred_objects(cm, SpaceId(id));
-    }
   }
 
   DEBUG_ONLY(write_block_fill_histogram());
@@ -2673,8 +2537,8 @@ void PSParallelCompact::verify_complete(SpaceId space_id) {
 #endif  // #ifdef ASSERT
 
 inline void UpdateOnlyClosure::do_addr(HeapWord* addr) {
-  _start_array->allocate_block(addr);
-  compaction_manager()->update_contents(oop(addr));
+  _start_array->update_for_block(addr, addr + cast_to_oop(addr)->size());
+  compaction_manager()->update_contents(cast_to_oop(addr));
 }
 
 // Update interior oops in the ranges of regions [beg_region, end_region).
@@ -2755,32 +2619,22 @@ PSParallelCompact::SpaceId PSParallelCompact::space_id(HeapWord* addr) {
   return last_space_id;
 }
 
-void PSParallelCompact::update_deferred_objects(ParCompactionManager* cm,
-                                                SpaceId id) {
-  assert(id < last_space_id, "bad space id");
-
+void PSParallelCompact::update_deferred_object(ParCompactionManager* cm, HeapWord *addr) {
+#ifdef ASSERT
   ParallelCompactData& sd = summary_data();
-  const SpaceInfo* const space_info = _space_info + id;
+  size_t region_idx = sd.addr_to_region_idx(addr);
+  assert(sd.region(region_idx)->completed(), "first region must be completed before deferred updates");
+  assert(sd.region(region_idx + 1)->completed(), "second region must be completed before deferred updates");
+#endif
+
+  const SpaceInfo* const space_info = _space_info + space_id(addr);
   ObjectStartArray* const start_array = space_info->start_array();
-
-  const MutableSpace* const space = space_info->space();
-  assert(space_info->dense_prefix() >= space->bottom(), "dense_prefix not set");
-  HeapWord* const beg_addr = space_info->dense_prefix();
-  HeapWord* const end_addr = sd.region_align_up(space_info->new_top());
-
-  const RegionData* const beg_region = sd.addr_to_region_ptr(beg_addr);
-  const RegionData* const end_region = sd.addr_to_region_ptr(end_addr);
-  const RegionData* cur_region;
-  for (cur_region = beg_region; cur_region < end_region; ++cur_region) {
-    HeapWord* const addr = cur_region->deferred_obj_addr();
-    if (addr != NULL) {
-      if (start_array != NULL) {
-        start_array->allocate_block(addr);
-      }
-      cm->update_contents(oop(addr));
-      assert(oopDesc::is_oop_or_null(oop(addr)), "Expected an oop or NULL at " PTR_FORMAT, p2i(oop(addr)));
-    }
+  if (start_array != nullptr) {
+    start_array->update_for_block(addr, addr + cast_to_oop(addr)->size());
   }
+
+  cm->update_contents(cast_to_oop(addr));
+  assert(oopDesc::is_oop(cast_to_oop(addr)), "Expected an oop at " PTR_FORMAT, p2i(cast_to_oop(addr)));
 }
 
 // Skip over count live words starting from beg, and return the address of the
@@ -3027,7 +2881,6 @@ void PSParallelCompact::fill_region(ParCompactionManager* cm, MoveAndUpdateClosu
     if (closure.is_full()) {
       decrement_destination_counts(cm, src_space_id, src_region_idx,
                                    closure.source());
-      region_ptr->set_deferred_obj_addr(NULL);
       closure.complete_region(cm, dest_addr, region_ptr);
       return;
     }
@@ -3072,7 +2925,7 @@ void PSParallelCompact::fill_region(ParCompactionManager* cm, MoveAndUpdateClosu
     if (status == ParMarkBitMap::would_overflow) {
       // The last object did not fit.  Note that interior oop updates were
       // deferred, then copy enough of the object to fill the region.
-      region_ptr->set_deferred_obj_addr(closure.destination());
+      cm->push_deferred_object(closure.destination());
       status = closure.copy_until_full(); // copies from closure.source()
 
       decrement_destination_counts(cm, src_space_id, src_region_idx,
@@ -3084,7 +2937,6 @@ void PSParallelCompact::fill_region(ParCompactionManager* cm, MoveAndUpdateClosu
     if (status == ParMarkBitMap::full) {
       decrement_destination_counts(cm, src_space_id, src_region_idx,
                                    closure.source());
-      region_ptr->set_deferred_obj_addr(NULL);
       closure.complete_region(cm, dest_addr, region_ptr);
       return;
     }
@@ -3157,12 +3009,6 @@ bool PSParallelCompact::steal_unavailable_region(ParCompactionManager* cm, size_
 // the shadow region by copying live objects from source regions of the unavailable one. Once
 // the unavailable region becomes available, the data in the shadow region will be copied back.
 // Shadow regions are empty regions in the to-space and regions between top and end of other spaces.
-//
-// For more details, please refer to §4.2 of the VEE'19 paper:
-// Haoyu Li, Mingyu Wu, Binyu Zang, and Haibo Chen. 2019. ScissorGC: scalable and efficient
-// compaction for Java full garbage collection. In Proceedings of the 15th ACM SIGPLAN/SIGOPS
-// International Conference on Virtual Execution Environments (VEE 2019). ACM, New York, NY, USA,
-// 108-121. DOI: https://doi.org/10.1145/3313808.3313820
 void PSParallelCompact::initialize_shadow_regions(uint parallel_gc_threads)
 {
   const ParallelCompactData& sd = PSParallelCompact::summary_data();
@@ -3277,7 +3123,7 @@ void MoveAndUpdateClosure::complete_region(ParCompactionManager *cm, HeapWord *d
 
 ParMarkBitMapClosure::IterationStatus
 MoveAndUpdateClosure::do_addr(HeapWord* addr, size_t words) {
-  assert(destination() != NULL, "sanity");
+  assert(destination() != nullptr, "sanity");
   assert(bitmap()->obj_size(addr) == words, "bad size");
 
   _source = addr;
@@ -3289,8 +3135,8 @@ MoveAndUpdateClosure::do_addr(HeapWord* addr, size_t words) {
   }
 
   // The start_array must be updated even if the object is not moving.
-  if (_start_array != NULL) {
-    _start_array->allocate_block(destination());
+  if (_start_array != nullptr) {
+    _start_array->update_for_block(destination(), destination() + words);
   }
 
   if (copy_destination() != source()) {
@@ -3298,9 +3144,9 @@ MoveAndUpdateClosure::do_addr(HeapWord* addr, size_t words) {
     Copy::aligned_conjoint_words(source(), copy_destination(), words);
   }
 
-  oop moved_oop = (oop) copy_destination();
+  oop moved_oop = cast_to_oop(copy_destination());
   compaction_manager()->update_contents(moved_oop);
-  assert(oopDesc::is_oop_or_null(moved_oop), "Expected an oop or NULL at " PTR_FORMAT, p2i(moved_oop));
+  assert(oopDesc::is_oop_or_null(moved_oop), "Expected an oop or null at " PTR_FORMAT, p2i(moved_oop));
 
   update_state(words);
   assert(copy_destination() == cast_from_oop<HeapWord*>(moved_oop) + moved_oop->size(), "sanity");
@@ -3330,7 +3176,6 @@ UpdateOnlyClosure::UpdateOnlyClosure(ParMarkBitMap* mbm,
                                      ParCompactionManager* cm,
                                      PSParallelCompact::SpaceId space_id) :
   ParMarkBitMapClosure(mbm, cm),
-  _space_id(space_id),
   _start_array(PSParallelCompact::start_array(space_id))
 {
 }
@@ -3355,8 +3200,9 @@ FillClosure::do_addr(HeapWord* addr, size_t size) {
   CollectedHeap::fill_with_objects(addr, size);
   HeapWord* const end = addr + size;
   do {
-    _start_array->allocate_block(addr);
-    addr += oop(addr)->size();
+    size_t size = cast_to_oop(addr)->size();
+    _start_array->update_for_block(addr, addr + size);
+    addr += size;
   } while (addr < end);
   return ParMarkBitMap::incomplete;
 }

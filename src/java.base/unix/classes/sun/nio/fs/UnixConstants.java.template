@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,10 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#ifdef _ALLBSD_SOURCE
+#include <sys/attr.h>
+#include <sys/clonefile.h>
+#endif
 
 /* To be able to name the Java constants the same as the C constants without
    having the preprocessor rewrite those identifiers, add PREFIX_ to all
@@ -120,7 +124,7 @@ class UnixConstants {
 // fgetxattr error codes for absent attributes depend on the OS:
 #ifdef _ALLBSD_SOURCE
     static final int PREFIX_XATTR_NOT_FOUND = ENOATTR;
-#elif __linux__
+#elif defined(__linux__)
     static final int PREFIX_XATTR_NOT_FOUND = ENODATA;
 #else
     // not supported (dummy values will not be used at runtime).
@@ -129,6 +133,10 @@ class UnixConstants {
 
     static final int PREFIX_ERANGE = ERANGE;
     static final int PREFIX_EMFILE = EMFILE;
+
+#ifdef _ALLBSD_SOURCE
+    static final int PREFIX_ENOTSUP = ENOTSUP;
+#endif
 
     // flags used with openat/unlinkat/etc.
 #if defined(AT_SYMLINK_NOFOLLOW) && defined(AT_REMOVEDIR)
@@ -140,4 +148,28 @@ class UnixConstants {
     static final int PREFIX_AT_REMOVEDIR = 00;
 #endif
 
+#ifdef _ALLBSD_SOURCE
+    // flags used with clonefile
+    static final int PREFIX_CLONE_NOFOLLOW = CLONE_NOFOLLOW;
+    static final int PREFIX_CLONE_NOOWNERCOPY = CLONE_NOOWNERCOPY;
+
+    // flags used with fsetattrlist
+    static final int PREFIX_ATTR_CMN_CRTIME = ATTR_CMN_CRTIME;
+    static final int PREFIX_ATTR_CMN_MODTIME = ATTR_CMN_MODTIME;
+    static final int PREFIX_ATTR_CMN_ACCTIME = ATTR_CMN_ACCTIME;
+    static final int PREFIX_FSOPT_NOFOLLOW = FSOPT_NOFOLLOW;
+#else
+    // not supported (dummy values will not be used at runtime).
+    static final int PREFIX_ATTR_CMN_CRTIME = 00;
+    static final int PREFIX_ATTR_CMN_MODTIME = 00;
+    static final int PREFIX_ATTR_CMN_ACCTIME = 00;
+    static final int PREFIX_FSOPT_NOFOLLOW = 00;
+#endif
+
+#ifdef __linux__
+    // advice flags used with posix_fadvise(2)
+    static final int PREFIX_POSIX_FADV_SEQUENTIAL = POSIX_FADV_SEQUENTIAL;
+    static final int PREFIX_POSIX_FADV_NOREUSE    = POSIX_FADV_NOREUSE;
+    static final int PREFIX_POSIX_FADV_WILLNEED   = POSIX_FADV_WILLNEED;
+#endif
 }

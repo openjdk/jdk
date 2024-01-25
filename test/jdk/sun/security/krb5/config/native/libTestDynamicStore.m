@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -62,7 +60,9 @@ int addMapping(SCDynamicStoreRef store) {
 
 int addAll(SCDynamicStoreRef store) {
     NSArray *keys = [NSArray arrayWithObjects:@"A.COM", @"B.COM", nil];
-    fprintf(stderr, "%d\n", SCDynamicStoreSetValue(store, (CFStringRef) KERBEROS_DEFAULT_REALMS, keys));
+    Boolean b = SCDynamicStoreSetValue(store, (CFStringRef) KERBEROS_DEFAULT_REALMS, keys);
+    fprintf(stderr, "%d\n", b);
+    if (!b) return 0;
 
     NSDictionary *k1 = [NSDictionary dictionaryWithObjectsAndKeys:
         @"kdc1.a.com", @"host", nil];

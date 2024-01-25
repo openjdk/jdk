@@ -255,7 +255,7 @@ public class CLHSDB {
         exceed the given number of characters per line. Strips
         extraneous whitespace. */
     private String formatMessage(String message, int charsPerLine) {
-        StringBuffer buf = new StringBuffer(message.length());
+        StringBuilder buf = new StringBuilder(message.length());
         StringTokenizer tokenizer = new StringTokenizer(message);
         int curLineLength = 0;
         while (tokenizer.hasMoreTokens()) {

@@ -79,19 +79,12 @@ public class T6836682 {
     static long computeCRC(File inFile) throws IOException {
         byte[] buffer = new byte[8192];
         CRC32 crc = new CRC32();
-        FileInputStream fis = null;
-        BufferedInputStream bis = null;
-        try {
-            fis = new FileInputStream(inFile);
-            bis = new BufferedInputStream(fis);
+        try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(inFile))) {
             int n = bis.read(buffer);
             while (n > 0) {
                 crc.update(buffer, 0, n);
                 n = bis.read(buffer);
             }
-        } finally {
-            Utils.close(bis);
-            Utils.close(fis);
         }
         return crc.getValue();
     }
@@ -109,14 +102,11 @@ public class T6836682 {
             long minlength) throws IOException {
         Utils.createClassFile(javaFile, null, true);
         File classFile = new File(Utils.getClassFileName(javaFile));
-        ZipOutputStream zos = null;
-        BufferedOutputStream bos = null;
-        FileInputStream fis = null;
-        try {
-            zos = new ZipOutputStream(new FileOutputStream(jarFile));
+        try (
+          ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(jarFile));
+          BufferedOutputStream bos = new BufferedOutputStream(zos)) {
             zos.setLevel(ZipOutputStream.STORED);
             zos.setMethod(0);
-            bos = new BufferedOutputStream(zos);
 
             ZipEntry ze = new ZipEntry("large.data");
             ze.setCompressedSize(getCount(minlength) * BUFFER_LEN);
@@ -132,14 +122,11 @@ public class T6836682 {
             ze.setCrc(computeCRC(classFile));
             ze.setMethod(ZipEntry.STORED);
             zos.putNextEntry(ze);
-            fis = new FileInputStream(classFile);
-            Utils.copyStream(fis, bos);
+            try (FileInputStream fis = new FileInputStream(classFile)) {
+                Utils.copyStream(fis, bos);
+            }
             bos.flush();
             zos.closeEntry();
-        } finally {
-            Utils.close(bos);
-            Utils.close(zos);
-            Utils.close(fis);
         }
         // deleted to prevent accidental linkage
         new File(Utils.getClassFileName(javaFile)).delete();
@@ -148,12 +135,9 @@ public class T6836682 {
     static void createLargeJar(File jarFile, File javaFile) throws IOException {
         File classFile = new File(Utils.getClassFileName(javaFile));
         Utils.createClassFile(javaFile, null, true);
-        ZipOutputStream zos = null;
-        FileInputStream fis = null;
         final int MAX = Short.MAX_VALUE * 2 + 10;
         ZipEntry ze = null;
-        try {
-            zos = new ZipOutputStream(new FileOutputStream(jarFile));
+        try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(jarFile))) {
             zos.setLevel(ZipOutputStream.STORED);
             zos.setMethod(ZipOutputStream.STORED);
             for (int i = 0; i < MAX ; i++) {
@@ -170,14 +154,13 @@ public class T6836682 {
             ze.setSize(classFile.length());
             ze.setCrc(computeCRC(classFile));
             zos.putNextEntry(ze);
-            fis = new FileInputStream(classFile);
-            Utils.copyStream(fis, zos);
+            try (FileInputStream fis = new FileInputStream(classFile)) {
+                Utils.copyStream(fis, zos);
+            }
         } finally {
-            Utils.close(zos);
-            Utils.close(fis);
-        // deleted to prevent accidental linkage
-        new File(Utils.getClassFileName(javaFile)).delete();
-    }
+            // deleted to prevent accidental linkage
+            new File(Utils.getClassFileName(javaFile)).delete();
+        }
     }
 
     // a jar with entries exceeding 64k + a class file for the existential test

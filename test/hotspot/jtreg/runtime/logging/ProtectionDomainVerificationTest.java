@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test ProtectionDomainVerificationTest
  * @bug 8149064
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @run driver ProtectionDomainVerificationTest
@@ -38,28 +39,30 @@ public class ProtectionDomainVerificationTest {
     public static void main(String... args) throws Exception {
 
         // -Xlog:protectiondomain=trace
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:protectiondomain=trace",
-                                                                  "-Xmx128m",
-                                                                  Hello.class.getName(), "security_manager");
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:protectiondomain=trace",
+                                                                             "-Xmx128m",
+                                                                             "-Djava.security.manager=allow",
+                                                                             Hello.class.getName(), "security_manager");
         new OutputAnalyzer(pb.start())
         .shouldHaveExitValue(0)
         .shouldContain("[protectiondomain] Checking package access")
-        .shouldContain("[protectiondomain] pd set count = #");
+        .shouldContain("[protectiondomain] adding protection domain for class");
 
         // -Xlog:protectiondomain=debug
-        pb = ProcessTools.createJavaProcessBuilder("-Xlog:protectiondomain=debug",
-                                                                  "-Xmx128m",
-                                                                  Hello.class.getName(), "security_manager");
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:protectiondomain=debug",
+                                                              "-Xmx128m",
+                                                              "-Djava.security.manager=allow",
+                                                              Hello.class.getName(), "security_manager");
         new OutputAnalyzer(pb.start())
         .shouldHaveExitValue(0)
         .shouldContain("[protectiondomain] Checking package access")
-        .shouldNotContain("pd set count = #");
+        .shouldNotContain("[protectiondomain] adding protection domain for class");
 
         // -Xlog:protectiondomain=debug
-        pb = ProcessTools.createJavaProcessBuilder("-Xlog:protectiondomain=trace",
-                                                   "-Xmx128m",
-                                                   "-Djava.security.manager=disallow",
-                                                   Hello.class.getName());
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:protectiondomain=trace",
+                                                              "-Xmx128m",
+                                                              "-Djava.security.manager=disallow",
+                                                              Hello.class.getName());
         new OutputAnalyzer(pb.start())
         .shouldHaveExitValue(0)
         .shouldNotContain("[protectiondomain] Checking package access")

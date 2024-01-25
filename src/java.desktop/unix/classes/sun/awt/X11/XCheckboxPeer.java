@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -258,7 +258,7 @@ class XCheckboxPeer extends XComponentPeer implements CheckboxPeer {
     }
 
     private int getCheckboxSize(FontMetrics fm) {
-        // the motif way of sizing is a bit inscutible, but this
+        // the motif way of sizing is a bit inscrutable, but this
         // is a fair approximation
         return (fm.getHeight() * 76 / 100) - 1;
     }
@@ -417,7 +417,7 @@ class XCheckboxPeer extends XComponentPeer implements CheckboxPeer {
         }
     }
 
-    // TODO: copied directly from XButtonPeer.  Should probabaly be shared
+    // TODO: copied directly from XButtonPeer.  Should probably be shared
     protected void paintFocus(Graphics g, int x, int y, int w, int h) {
         g.setColor(focusColor);
         g.drawRect(x,y,w,h);

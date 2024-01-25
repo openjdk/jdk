@@ -35,7 +35,7 @@ import org.w3c.dom.NamedNodeMap;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true org.w3c.dom.ptests.DocumentTypeTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow org.w3c.dom.ptests.DocumentTypeTest
  * @run testng/othervm org.w3c.dom.ptests.DocumentTypeTest
  * @summary Test DocumentType
  */

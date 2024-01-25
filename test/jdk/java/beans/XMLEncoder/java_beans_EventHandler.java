@@ -25,6 +25,7 @@
  * @test
  * @bug 6402062 6487891
  * @summary Tests EventHandler encoding
+ * @run main/othervm -Djava.security.manager=allow java_beans_EventHandler
  * @author Sergey Malenkov
  */
 

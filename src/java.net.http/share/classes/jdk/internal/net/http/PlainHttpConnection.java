@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,13 +36,14 @@ import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 
 import jdk.internal.net.http.common.FlowTube;
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.MinimalFuture;
+import jdk.internal.net.http.common.TimeSource;
 import jdk.internal.net.http.common.Utils;
 
 /**
@@ -52,14 +53,14 @@ import jdk.internal.net.http.common.Utils;
  */
 class PlainHttpConnection extends HttpConnection {
 
-    private final Object reading = new Object();
     protected final SocketChannel chan;
     private final SocketTube tube; // need SocketTube to call signalClosed().
-    private final PlainHttpPublisher writePublisher = new PlainHttpPublisher(reading);
+    private final PlainHttpPublisher writePublisher = new PlainHttpPublisher();
     private volatile boolean connected;
-    private boolean closed;
+    private volatile boolean closed;
     private volatile ConnectTimerEvent connectTimerEvent;  // may be null
     private volatile int unsuccessfulAttempts;
+    private final ReentrantLock stateLock = new ReentrantLock();
 
     // Indicates whether a connection attempt has succeeded or should be retried.
     // If the attempt failed, and shouldn't be retried, there will be an exception
@@ -140,15 +141,19 @@ class PlainHttpConnection extends HttpConnection {
                     debug.log("ConnectEvent: connect finished: %s, cancelled: %s, Local addr: %s",
                               finished, exchange.multi.requestCancelled(), chan.getLocalAddress());
                 assert finished || exchange.multi.requestCancelled() : "Expected channel to be connected";
-                // complete async since the event runs on the SelectorManager thread
-                cf.completeAsync(() -> ConnectState.SUCCESS, client().theExecutor());
+                if (connectionOpened()) {
+                    // complete async since the event runs on the SelectorManager thread
+                    cf.completeAsync(() -> ConnectState.SUCCESS, client().theExecutor());
+                } else throw new ConnectException("Connection closed");
             } catch (Throwable e) {
                 if (canRetryConnect(e)) {
                     unsuccessfulAttempts++;
+                    // complete async since the event runs on the SelectorManager thread
                     cf.completeAsync(() -> ConnectState.RETRY, client().theExecutor());
                     return;
                 }
                 Throwable t = Utils.toConnectException(e);
+                // complete async since the event runs on the SelectorManager thread
                 client().theExecutor().execute( () -> cf.completeExceptionally(t));
                 close();
             }
@@ -156,11 +161,13 @@ class PlainHttpConnection extends HttpConnection {
 
         @Override
         public void abort(IOException ioe) {
+            // complete async since the event runs on the SelectorManager thread
             client().theExecutor().execute( () -> cf.completeExceptionally(ioe));
             close();
         }
     }
 
+    @SuppressWarnings("removal")
     @Override
     public CompletableFuture<Void> connectAsync(Exchange<?> exchange) {
         CompletableFuture<ConnectState> cf = new MinimalFuture<>();
@@ -178,6 +185,27 @@ class PlainHttpConnection extends HttpConnection {
                 }
             }
 
+            var localAddr = client().localAddress();
+            if (localAddr != null) {
+                if (debug.on()) {
+                    debug.log("binding to configured local address " + localAddr);
+                }
+                var sockAddr = new InetSocketAddress(localAddr, 0);
+                PrivilegedExceptionAction<SocketChannel> pa = () -> chan.bind(sockAddr);
+                try {
+                    AccessController.doPrivileged(pa);
+                    if (debug.on()) {
+                        debug.log("bind completed " + localAddr);
+                    }
+                } catch (PrivilegedActionException e) {
+                    var cause = e.getCause();
+                    if (debug.on()) {
+                        debug.log("bind to " + localAddr + " failed: " + cause.getMessage());
+                    }
+                    throw cause;
+                }
+            }
+
             PrivilegedExceptionAction<Boolean> pa =
                     () -> chan.connect(Utils.resolveAddress(address));
             try {
@@ -187,7 +215,9 @@ class PlainHttpConnection extends HttpConnection {
             }
             if (finished) {
                 if (debug.on()) debug.log("connect finished without blocking");
-                cf.complete(ConnectState.SUCCESS);
+                if (connectionOpened()) {
+                    cf.complete(ConnectState.SUCCESS);
+                } else throw new ConnectException("connection closed");
             } else {
                 if (debug.on()) debug.log("registering connect event");
                 client().registerEvent(new ConnectEvent(cf, exchange));
@@ -196,6 +226,9 @@ class PlainHttpConnection extends HttpConnection {
         } catch (Throwable throwable) {
             cf.completeExceptionally(Utils.toConnectException(throwable));
             try {
+                if (Log.channel()) {
+                    Log.logChannel("Closing connection: connect failed due to: " + throwable);
+                }
                 close();
             } catch (Exception x) {
                 if (debug.on())
@@ -206,11 +239,29 @@ class PlainHttpConnection extends HttpConnection {
                 .thenCompose(Function.identity());
     }
 
+    boolean connectionOpened() {
+        boolean closed = this.closed;
+        if (closed) return false;
+        stateLock.lock();
+        try {
+            closed = this.closed;
+            if (!closed) {
+                client().connectionOpened(this);
+            }
+            // connectionOpened might call close() if the client
+            // is shutting down.
+            closed = this.closed;
+        } finally {
+            stateLock.unlock();
+        }
+        return !closed;
+    }
+
     /**
      * On some platforms, a ConnectEvent may be raised and a ConnectionException
      * may occur with the message "Connection timed out: no further information"
      * before our actual connection timeout has expired. In this case, this
-     * method will be called with a {@code connect} state of {@code ConnectState.RETRY)
+     * method will be called with a {@code connect} state of {@code ConnectState.RETRY)}
      * and we will retry once again.
      * @param connect indicates whether the connection was successful or should be retried
      * @param failed the failure if the connection failed
@@ -239,7 +290,7 @@ class PlainHttpConnection extends HttpConnection {
         if (unsuccessfulAttempts > 0) return false;
         ConnectTimerEvent timer = connectTimerEvent;
         if (timer == null) return true;
-        return timer.deadline().isAfter(Instant.now());
+        return timer.deadline().isAfter(TimeSource.now());
     }
 
     @Override
@@ -267,10 +318,23 @@ class PlainHttpConnection extends HttpConnection {
         try {
             this.chan = SocketChannel.open();
             chan.configureBlocking(false);
-            trySetReceiveBufferSize(client.getReceiveBufferSize());
             if (debug.on()) {
-                int bufsize = getInitialBufferSize();
+                int bufsize = getSoReceiveBufferSize();
                 debug.log("Initial receive buffer size is: %d", bufsize);
+                bufsize = getSoSendBufferSize();
+                debug.log("Initial send buffer size is: %d", bufsize);
+            }
+            if (trySetReceiveBufferSize(client.getReceiveBufferSize())) {
+                if (debug.on()) {
+                    int bufsize = getSoReceiveBufferSize();
+                    debug.log("Receive buffer size configured: %d", bufsize);
+                }
+            }
+            if (trySetSendBufferSize(client.getSendBufferSize())) {
+                if (debug.on()) {
+                    int bufsize = getSoSendBufferSize();
+                    debug.log("Send buffer size configured: %d", bufsize);
+                }
             }
             chan.setOption(StandardSocketOptions.TCP_NODELAY, true);
             // wrap the channel in a Tube for async reading and writing
@@ -280,26 +344,52 @@ class PlainHttpConnection extends HttpConnection {
         }
     }
 
-    private int getInitialBufferSize() {
+    private int getSoReceiveBufferSize() {
         try {
             return chan.getOption(StandardSocketOptions.SO_RCVBUF);
-        } catch(IOException x) {
+        } catch (IOException x) {
             if (debug.on())
                 debug.log("Failed to get initial receive buffer size on %s", chan);
         }
         return 0;
     }
 
-    private void trySetReceiveBufferSize(int bufsize) {
+    private int getSoSendBufferSize() {
+        try {
+            return chan.getOption(StandardSocketOptions.SO_SNDBUF);
+        } catch (IOException x) {
+            if (debug.on())
+                debug.log("Failed to get initial receive buffer size on %s", chan);
+        }
+        return 0;
+    }
+
+    private boolean trySetReceiveBufferSize(int bufsize) {
         try {
             if (bufsize > 0) {
                 chan.setOption(StandardSocketOptions.SO_RCVBUF, bufsize);
+                return true;
             }
-        } catch(IOException x) {
+        } catch (IOException x) {
             if (debug.on())
                 debug.log("Failed to set receive buffer size to %d on %s",
                           bufsize, chan);
         }
+        return false;
+    }
+
+    private boolean trySetSendBufferSize(int bufsize) {
+        try {
+            if (bufsize > 0) {
+                chan.setOption(StandardSocketOptions.SO_SNDBUF, bufsize);
+                return true;
+            }
+        } catch (IOException x) {
+            if (debug.on())
+                debug.log("Failed to set send buffer size to %d on %s",
+                        bufsize, chan);
+        }
+        return false;
     }
 
     @Override
@@ -311,38 +401,50 @@ class PlainHttpConnection extends HttpConnection {
         return "PlainHttpConnection: " + super.toString();
     }
 
-    /**
-     * Closes this connection
-     */
     @Override
     public void close() {
-        synchronized (this) {
-            if (closed) {
-                return;
-            }
-            closed = true;
-        }
+        close(null);
+    }
+
+    @Override
+    void close(Throwable cause) {
+        var closed = this.closed;
+        if (closed) return;
+        stateLock.lock();
         try {
+            if (closed = this.closed) return;
+            closed = this.closed = true;
             Log.logTrace("Closing: " + toString());
             if (debug.on())
                 debug.log("Closing channel: " + client().debugInterestOps(chan));
+            var connectTimerEvent = this.connectTimerEvent;
             if (connectTimerEvent != null)
                 client().cancelTimer(connectTimerEvent);
-            chan.close();
-            tube.signalClosed();
+            if (Log.channel()) {
+                Log.logChannel("Closing channel: " + chan);
+            }
+            try {
+                chan.close();
+                tube.signalClosed(cause);
+            } finally {
+                client().connectionClosed(this);
+            }
         } catch (IOException e) {
+            debug.log("Closing resulted in " + e);
             Log.logTrace("Closing resulted in " + e);
+        } finally {
+            stateLock.unlock();
         }
     }
 
 
     @Override
     ConnectionPool.CacheKey cacheKey() {
-        return new ConnectionPool.CacheKey(address, null);
+        return ConnectionPool.cacheKey(false, address, null);
     }
 
     @Override
-    synchronized boolean connected() {
+    boolean connected() {
         return connected;
     }
 

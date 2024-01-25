@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,40 +25,35 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import com.sun.source.doctree.DocTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.TextBuilder;
-import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.DocletElement;
-import jdk.javadoc.internal.doclets.toolkit.OverviewElement;
-import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
-import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
-import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
-import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
-
-import javax.lang.model.element.Element;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.WeakHashMap;
+import java.util.stream.Collectors;
+
+import javax.lang.model.element.Element;
+
+import com.sun.source.doctree.DocTree;
+
+import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
+import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
+import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.doclets.toolkit.DocletElement;
+import jdk.javadoc.internal.doclets.toolkit.OverviewElement;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
+import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
+import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
 
 import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toList;
 
 /**
  * Generates the file with the summary of all the system properties.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class SystemPropertiesWriter extends HtmlDocletWriter {
 
@@ -71,37 +66,22 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
      * Constructs SystemPropertiesWriter object.
      *
      * @param configuration The current configuration
-     * @param filename Path to the file which is getting generated.
      */
-    public SystemPropertiesWriter(HtmlConfiguration configuration, DocPath filename) {
-        super(configuration, filename);
+    public SystemPropertiesWriter(HtmlConfiguration configuration) {
+        super(configuration, DocPaths.SYSTEM_PROPERTIES, false);
     }
 
-    public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
-        generate(configuration, DocPaths.SYSTEM_PROPERTIES);
-    }
-
-    private static void generate(HtmlConfiguration configuration, DocPath fileName) throws DocFileIOException {
-        boolean hasSystemProperties = configuration.mainIndex != null
-                && !configuration.mainIndex.getItems(DocTree.Kind.SYSTEM_PROPERTY).isEmpty();
+    @Override
+    public void buildPage() throws DocFileIOException {
+        boolean hasSystemProperties = configuration.indexBuilder != null
+                && !configuration.indexBuilder.getItems(DocTree.Kind.SYSTEM_PROPERTY).isEmpty();
         if (!hasSystemProperties) {
-            // Cannot defer this check any further, because of the super() call
-            // that prints out notices on creating files, etc.
-            //
-            // There is probably a better place for this kind of checks (see how
-            // this is achieved in other "optional" pages, like Constant Values
-            // and Serialized Form).
             return;
         }
-        SystemPropertiesWriter systemPropertiesGen = new SystemPropertiesWriter(configuration, fileName);
-        systemPropertiesGen.buildSystemPropertiesPage();
-        configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.SYSTEM_PROPERTIES);
-    }
 
-    /**
-     * Prints all the system properties to the file.
-     */
-    protected void buildSystemPropertiesPage() throws DocFileIOException {
+        writeGenerating();
+        configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.SYSTEM_PROPERTIES);
+
         String title = resources.getText("doclet.systemProperties");
         HtmlTree body = getBody(getWindowTitle(title));
         Content mainContent = new ContentBuilder();
@@ -115,20 +95,20 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
                 .setFooter(getFooter()));
         printHtmlDocument(null, "system properties", body);
 
-        if (configuration.mainIndex != null) {
-            configuration.mainIndex.add(IndexItem.of(IndexItem.Category.TAGS, title, path));
+        if (configuration.indexBuilder != null) {
+            configuration.indexBuilder.add(IndexItem.of(IndexItem.Category.TAGS, title, path));
         }
     }
 
     /**
-     * Adds all the system properties to the content tree.
+     * Adds all the system properties to the content.
      *
-     * @param content HtmlTree content to which the links will be added
+     * @param target the content to which the links will be added
      */
-    protected void addSystemProperties(Content content) {
+    protected void addSystemProperties(Content target) {
         Map<String, List<IndexItem>> searchIndexMap = groupSystemProperties();
         Content separator = Text.of(", ");
-        Table table = new Table(HtmlStyle.summaryTable)
+        var table = new Table<Void>(HtmlStyle.summaryTable)
                 .setCaption(contents.systemPropertiesSummaryLabel)
                 .setHeader(new TableHeader(contents.propertyLabel, contents.referencedIn))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
@@ -143,12 +123,12 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
             }
             table.addRow(propertyName, HtmlTree.DIV(HtmlStyle.block, separatedReferenceLinks));
         }
-        content.add(table);
+        target.add(table);
     }
 
     private Map<String, List<IndexItem>> groupSystemProperties() {
-        return configuration.mainIndex.getItems(DocTree.Kind.SYSTEM_PROPERTY).stream()
-                .collect(groupingBy(IndexItem::getLabel, TreeMap::new, toList()));
+        return configuration.indexBuilder.getItems(DocTree.Kind.SYSTEM_PROPERTY).stream()
+                .collect(groupingBy(IndexItem::getLabel, TreeMap::new, Collectors.toCollection(ArrayList::new)));
     }
 
     private Content createLink(IndexItem i) {
@@ -157,8 +137,7 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
         if (element instanceof OverviewElement) {
             return links.createLink(pathToRoot.resolve(i.getUrl()),
                     resources.getText("doclet.Overview"));
-        } else if (element instanceof DocletElement) {
-            DocletElement e = (DocletElement) element;
+        } else if (element instanceof DocletElement e) {
             // Implementations of DocletElement do not override equals and
             // hashCode; putting instances of DocletElement in a map is not
             // incorrect, but might well be inefficient

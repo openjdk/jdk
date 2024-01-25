@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,9 @@
 
 //------------------------------Static Initializers----------------------------
 // allocate arena used by forms
-Arena  *Form::arena = Form::generate_arena(); //  = Form::generate_arena();
-Arena *Form::generate_arena() {
-  return (new Arena);
+AdlArena  *Form::arena = Form::generate_arena(); //  = Form::generate_arena();
+AdlArena *Form::generate_arena() {
+  return (new AdlArena);
 }
 
 //------------------------------NameList---------------------------------------
@@ -40,7 +40,7 @@ const char  *NameList::_signal3  = "$$SIGNAL3$$";
 
 // Constructor and Destructor
 NameList::NameList() : _cur(0), _max(4), _iter(0), _justReset(true) {
-  _names = (const char**) AllocateHeap(_max*sizeof(char*));
+  _names = (const char**) AdlAllocateHeap(_max*sizeof(char*));
 }
 NameList::~NameList() {
   // The following free is a double-free, and crashes the program:
@@ -49,7 +49,7 @@ NameList::~NameList() {
 
 void   NameList::addName(const char *name) {
   if (_cur == _max) {
-    _names = (const char**) ReAllocateHeap(_names, (_max *=2)*sizeof(char*));
+    _names = (const char**) AdlReAllocateHeap(_names, (_max *=2)*sizeof(char*));
   }
   _names[_cur++] = name;
 }
@@ -68,11 +68,11 @@ int    NameList::count()  const { return _cur; }
 
 void   NameList::reset()   { _iter = 0; _justReset = true;}
 const char  *NameList::iter()    {
-  if (_justReset) {_justReset=false; return (_iter < _cur ? _names[_iter] : NULL);}
-  else return (_iter <_cur-1 ? _names[++_iter] : NULL);
+  if (_justReset) {_justReset=false; return (_iter < _cur ? _names[_iter] : nullptr);}
+  else return (_iter <_cur-1 ? _names[++_iter] : nullptr);
 }
-const char  *NameList::current() { return (_iter < _cur ? _names[_iter] : NULL); }
-const char  *NameList::peek(int skip) { return (_iter + skip < _cur ? _names[_iter + skip] : NULL); }
+const char  *NameList::current() { return (_iter < _cur ? _names[_iter] : nullptr); }
+const char  *NameList::peek(int skip) { return (_iter + skip < _cur ? _names[_iter + skip] : nullptr); }
 
 // Return 'true' if current entry is signal
 bool  NameList::current_is_signal() {
@@ -88,7 +88,7 @@ bool  NameList::is_signal(const char *entry) {
 // Search for a name in the list
 bool   NameList::search(const char *name) {
   const char *entry;
-  for(reset(); (entry = iter()) != NULL; ) {
+  for(reset(); (entry = iter()) != nullptr; ) {
     if(!strcmp(entry,name)) return true;
   }
   return false;
@@ -98,7 +98,7 @@ bool   NameList::search(const char *name) {
 int    NameList::index(const char *name) {
   int         cnt = 0;
   const char *entry;
-  for(reset(); (entry = iter()) != NULL; ) {
+  for(reset(); (entry = iter()) != nullptr; ) {
     if(!strcmp(entry,name)) return cnt;
     cnt++;
   }
@@ -107,7 +107,7 @@ int    NameList::index(const char *name) {
 
 // Return name at index in list
 const char  *NameList::name(intptr_t  index) {
-  return ( index < _cur ? _names[index] : NULL);
+  return ( index < _cur ? _names[index] : nullptr);
 }
 
 void   NameList::dump() { output(stderr); }
@@ -116,14 +116,14 @@ void   NameList::output(FILE *fp) {
   fprintf(fp, "\n");
 
   // Run iteration over all entries, independent of position of iterator.
-  const char *name       = NULL;
+  const char *name       = nullptr;
   int         iter       = 0;
   bool        justReset  = true;
 
   while( ( name  = (justReset ?
-                    (justReset=false, (iter < _cur ? _names[iter] : NULL)) :
-                    (iter < _cur-1 ? _names[++iter] : NULL)) )
-         != NULL ) {
+                    (justReset=false, (iter < _cur ? _names[iter] : nullptr)) :
+                    (iter < _cur-1 ? _names[++iter] : nullptr)) )
+         != nullptr ) {
     fprintf( fp, "  %s,\n", name);
   }
   fprintf(fp, "\n");
@@ -171,7 +171,7 @@ void   NameAndList::output(FILE *fp) {
   // Output the associated list of names
   const char *name;
   fprintf(fp, " (");
-  for (reset(); (name = iter()) != NULL;) {
+  for (reset(); (name = iter()) != nullptr;) {
     fprintf(fp, "  %s,\n", name);
   }
   fprintf(fp, ")");
@@ -180,39 +180,39 @@ void   NameAndList::output(FILE *fp) {
 
 //------------------------------Form-------------------------------------------
 OpClassForm   *Form::is_opclass()     const {
-  return NULL;
+  return nullptr;
 }
 
 OperandForm   *Form::is_operand()     const {
-  return NULL;
+  return nullptr;
 }
 
 InstructForm  *Form::is_instruction() const {
-  return NULL;
+  return nullptr;
 }
 
 MachNodeForm  *Form::is_machnode() const {
-  return NULL;
+  return nullptr;
 }
 
 AttributeForm *Form::is_attribute() const {
-  return NULL;
+  return nullptr;
 }
 
 Effect        *Form::is_effect() const {
-  return NULL;
+  return nullptr;
 }
 
 ResourceForm  *Form::is_resource() const {
-  return NULL;
+  return nullptr;
 }
 
 PipeClassForm *Form::is_pipeclass() const {
-  return NULL;
+  return nullptr;
 }
 
 Form::DataType Form::ideal_to_const_type(const char *name) const {
-  if( name == NULL ) { return Form::none; }
+  if( name == nullptr ) { return Form::none; }
 
   if (strcmp(name,"ConI")==0) return Form::idealI;
   if (strcmp(name,"ConP")==0) return Form::idealP;
@@ -227,7 +227,7 @@ Form::DataType Form::ideal_to_const_type(const char *name) const {
 }
 
 Form::DataType Form::ideal_to_sReg_type(const char *name) const {
-  if( name == NULL ) { return Form::none; }
+  if( name == nullptr ) { return Form::none; }
 
   if (strcmp(name,"sRegI")==0) return Form::idealI;
   if (strcmp(name,"sRegP")==0) return Form::idealP;
@@ -238,7 +238,7 @@ Form::DataType Form::ideal_to_sReg_type(const char *name) const {
 }
 
 Form::DataType Form::ideal_to_Reg_type(const char *name) const {
-  if( name == NULL ) { return Form::none; }
+  if( name == nullptr ) { return Form::none; }
 
   if (strcmp(name,"RegI")==0) return Form::idealI;
   if (strcmp(name,"RegP")==0) return Form::idealP;
@@ -262,13 +262,13 @@ Form::DataType Form::is_load_from_memory(const char *opType) const {
   if( strcmp(opType,"LoadNKlass")==0 ) return Form::idealNKlass;
   if( strcmp(opType,"LoadL")==0 )  return Form::idealL;
   if( strcmp(opType,"LoadL_unaligned")==0 )  return Form::idealL;
-  if( strcmp(opType,"LoadPLocked")==0 )  return Form::idealP;
   if( strcmp(opType,"LoadP")==0 )  return Form::idealP;
   if( strcmp(opType,"LoadN")==0 )  return Form::idealN;
   if( strcmp(opType,"LoadRange")==0 )  return Form::idealI;
   if( strcmp(opType,"LoadS")==0 )  return Form::idealS;
   if( strcmp(opType,"LoadVector")==0 )  return Form::idealV;
   if( strcmp(opType,"LoadVectorGather")==0 )  return Form::idealV;
+  if( strcmp(opType,"LoadVectorGatherMasked")==0 )  return Form::idealV;
   if( strcmp(opType,"LoadVectorMasked")==0 )  return Form::idealV;
   assert( strcmp(opType,"Load") != 0, "Must type Loads" );
   return Form::none;
@@ -287,6 +287,7 @@ Form::DataType Form::is_store_to_memory(const char *opType) const {
   if( strcmp(opType,"StoreNKlass")==0)  return Form::idealNKlass;
   if( strcmp(opType,"StoreVector")==0 )  return Form::idealV;
   if( strcmp(opType,"StoreVectorScatter")==0 )  return Form::idealV;
+  if( strcmp(opType,"StoreVectorScatterMasked")==0 )  return Form::idealV;
   if( strcmp(opType,"StoreVectorMasked")==0 )  return Form::idealV;
   assert( strcmp(opType,"Store") != 0, "Must type Stores" );
   return Form::none;
@@ -301,8 +302,8 @@ Form::InterfaceType Form::interface_type(FormDict &globals) const {
 FormList::~FormList()  {
   // // This list may not own its elements
   // Form *cur  = _root;
-  // Form *next = NULL;
-  // for( ; (cur = next) != NULL; ) {
+  // Form *next = nullptr;
+  // for( ; (cur = next) != nullptr; ) {
   //   next = (Form *)cur->_next;
   //   delete cur;
   // }
@@ -310,7 +311,7 @@ FormList::~FormList()  {
 
 //------------------------------FormDict---------------------------------------
 // Constructor
-FormDict::FormDict( CmpKey cmp, Hash hash, Arena *arena )
+FormDict::FormDict( CmpKey cmp, Hash hash, AdlArena *arena )
   : _form(cmp, hash, arena) {
 }
 FormDict::~FormDict() {
@@ -322,12 +323,12 @@ int FormDict::Size(void) const {
 }
 
 // Insert inserts the given key-value pair into the dictionary.  The prior
-// value of the key is returned; NULL if the key was not previously defined.
+// value of the key is returned; null if the key was not previously defined.
 const Form  *FormDict::Insert(const char *name, Form *form) {
   return (Form*)_form.Insert((void*)name, (void*)form);
 }
 
-// Finds the value of a given key; or NULL if not found.
+// Finds the value of a given key; or null if not found.
 // The dictionary is NOT changed.
 const Form  *FormDict::operator [](const char *name) const {
   return (Form*)_form[name];

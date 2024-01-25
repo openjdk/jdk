@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,17 +32,14 @@ public class Rint {
     static int testRintCase(double input, double expected) {
         int failures = 0;
         double result;
-        failures += Tests.test("Math.rint",  input, Math.rint(input),   expected);
-        failures += Tests.test("Math.rint", -input, Math.rint(-input), -expected);
-        failures += Tests.test("StrictMath.rint",
-                               input, StrictMath.rint(input),   expected);
-        failures += Tests.test("StrictMath.rint", -input,
-                               StrictMath.rint(-input), -expected);
+        failures += Tests.test("Math.rint",        input, Math::rint,        expected);
+        failures += Tests.test("Math.rint",       -input, Math::rint,       -expected);
+        failures += Tests.test("StrictMath.rint",  input, StrictMath::rint,  expected);
+        failures += Tests.test("StrictMath.rint", -input, StrictMath::rint, -expected);
         return failures;
     }
 
-
-    public static void main(String args[]) {
+    public static void main(String... args) {
         int failures = 0;
         double twoToThe52 = Math.scalb(1.0, 52); // 2^52
 
@@ -96,7 +93,6 @@ public class Rint {
             {Double.NaN,                        Double.NaN}
 
         };
-
 
         for(int i = 0; i < testCases.length; i++) {
             failures += testRintCase(testCases[i][0], testCases[i][1]);

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +26,15 @@
  * @test
  * @bug 8252204
  * @summary Verify UseSHA3Intrinsics option processing on supported CPU.
- * @library /test/lib testcases /
- * @modules java.base/jdk.internal.misc
- *          java.management
+ * @library /test/lib /
+ * @requires vm.flagless
+ * @requires os.arch == "aarch64" & os.family == "mac"
+ * @comment sha3 is only implemented on AArch64 for now.
+ *          UseSHA3Intrinsics is only auto-enabled on Apple silicon, because it
+ *          may introduce performance regression on others. See JDK-8297092.
  *
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
  *                   compiler.intrinsics.sha.cli.TestUseSHA3IntrinsicsOptionOnSupportedCPU

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,7 @@ import java.nio.charset.Charset;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.Security;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLProtocolException;
 import javax.net.ssl.SSLSocket;
@@ -66,6 +63,7 @@ final class AlpnExtension {
     static final Charset alpnCharset;
 
     static {
+        @SuppressWarnings("removal")
         String alpnCharsetString = AccessController.doPrivileged(
                 (PrivilegedAction<String>) ()
                         -> Security.getProperty("jdk.tls.alpnCharset"));
@@ -446,7 +444,7 @@ final class AlpnExtension {
 
             // Clean or register the extension
             //
-            // No further use of the request and respond extension any more.
+            // No further use of the request and respond extension.
             shc.handshakeExtensions.remove(SSLExtension.CH_ALPN);
 
             return extData;
@@ -473,7 +471,6 @@ final class AlpnExtension {
             AlpnSpec requestedAlps =
                     (AlpnSpec)chc.handshakeExtensions.get(SSLExtension.CH_ALPN);
             if (requestedAlps == null ||
-                    requestedAlps.applicationProtocols == null ||
                     requestedAlps.applicationProtocols.isEmpty()) {
                 throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
                     "Unexpected " + SSLExtension.CH_ALPN.name + " extension");
@@ -505,7 +502,7 @@ final class AlpnExtension {
 
             // Clean or register the extension
             //
-            // No further use of the request and respond extension any more.
+            // No further use of the request and respond extension.
             chc.handshakeExtensions.remove(SSLExtension.CH_ALPN);
         }
     }

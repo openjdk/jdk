@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,7 @@
  * @bug 8015635
  * @summary Test ensures that the ReservedCodeCacheSize is at most MAXINT
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
+ * @requires vm.flagless
  *
  * @run driver compiler.codecache.CheckUpperLimit
  */
@@ -42,7 +41,7 @@ public class CheckUpperLimit {
         ProcessBuilder pb;
         OutputAnalyzer out;
 
-        pb = ProcessTools.createJavaProcessBuilder("-XX:ReservedCodeCacheSize=2049m", "-version");
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:ReservedCodeCacheSize=2049m", "-version");
         out = new OutputAnalyzer(pb.start());
         out.shouldContain("Invalid ReservedCodeCacheSize=");
         out.shouldHaveExitValue(1);

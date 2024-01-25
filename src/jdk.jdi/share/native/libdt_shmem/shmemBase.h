@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 #define JAVASOFT_SHMEMBASE_H
 
 void exitTransportWithError(char *msg, char *fileName,
-                            char *date, int lineNumber);
+                            int lineNumber);
 
 typedef struct SharedMemoryConnection SharedMemoryConnection;
 typedef struct SharedMemoryTransport SharedMemoryTransport;
@@ -53,7 +53,7 @@ jint shmemBase_getlasterror(char *msg, jint size);
 #define SHMEM_ASSERT(expression)  \
 do {                            \
     if (!(expression)) {                \
-        exitTransportWithError("assertion failed", __FILE__, __DATE__, __LINE__); \
+        exitTransportWithError("assertion failed", __FILE__, __LINE__); \
     } \
 } while (0)
 #else
@@ -63,7 +63,7 @@ do {                            \
 #define SHMEM_GUARANTEE(expression) \
 do {                            \
     if (!(expression)) {                \
-        exitTransportWithError("assertion failed", __FILE__, __DATE__, __LINE__); \
+        exitTransportWithError("assertion failed", __FILE__, __LINE__); \
     } \
 } while (0)
 

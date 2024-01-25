@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,6 @@ public abstract class RTMGenericCommandLineOptionTest {
 
     protected static final String RTM_INSTR_ERROR
             = "RTM instructions are not available on this CPU";
-    protected static final String RTM_OS_ERROR
-            = "RTM is not supported on this OS version";
     protected static final String RTM_UNSUPPORTED_VM_ERROR
             = "RTM locking optimization is not supported in this VM";
     protected static final String RTM_FOR_STACK_LOCKS_WARNING
@@ -45,9 +43,6 @@ public abstract class RTMGenericCommandLineOptionTest {
             + "flag is off";
     protected static final String RTM_COUNT_INCR_WARNING
             = "must be a power of 2, resetting it to 64";
-    protected static final String RTM_BIASED_LOCKING_WARNING
-            = "Biased locking is not supported with RTM locking; "
-            + "ignoring UseBiasedLocking flag";
 
     protected final String optionName;
     protected final String errorMessage;
@@ -87,7 +82,7 @@ public abstract class RTMGenericCommandLineOptionTest {
     }
 
     public void runTestCases() throws Throwable {
-        if (Platform.isX86() || Platform.isX64() || Platform.isPPC()) {
+        if (Platform.isX86() || Platform.isX64()) {
             if (Platform.isServer()) {
                 runX86SupportedVMTestCases();
             } else {

@@ -12,7 +12,7 @@ public class TwrVarKinds implements AutoCloseable {
     static TwrVarKinds r3 = new TwrVarKinds();
     TwrVarKinds r4 = new TwrVarKinds();
 
-    public static void main(String... args) {
+    public static void meth() {
 
         TwrVarKinds r5 = new TwrVarKinds();
 

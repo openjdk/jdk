@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,9 @@
  * @modules java.base/jdk.internal.misc
  * @modules java.instrument
  * @requires vm.jvmti
- * @run main RedefineRecord buildagent
- * @run main/othervm/timeout=6000 RedefineRecord runtest
+ * @requires vm.flagless
+ * @run driver RedefineRecord buildagent
+ * @run driver/timeout=6000 RedefineRecord runtest
  */
 
 import java.io.FileNotFoundException;
@@ -101,7 +102,7 @@ public class RedefineRecord {
             return;
         }
         if (argv.length == 1 && argv[0].equals("runtest")) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-XX:MetaspaceSize=12m",
                 "-XX:MaxMetaspaceSize=12m",
                 "-javaagent:redefineagent.jar",

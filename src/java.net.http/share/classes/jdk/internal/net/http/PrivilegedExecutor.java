@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,9 +39,10 @@ class PrivilegedExecutor implements Executor {
     /** The underlying executor. May be provided by the user. */
     final Executor executor;
     /** The ACC to execute the tasks within. */
+    @SuppressWarnings("removal")
     final AccessControlContext acc;
 
-    public PrivilegedExecutor(Executor executor, AccessControlContext acc) {
+    public PrivilegedExecutor(Executor executor, @SuppressWarnings("removal") AccessControlContext acc) {
         Objects.requireNonNull(executor);
         Objects.requireNonNull(acc);
         this.executor = executor;
@@ -50,11 +51,13 @@ class PrivilegedExecutor implements Executor {
 
     private static class PrivilegedRunnable implements Runnable {
         private final Runnable r;
+        @SuppressWarnings("removal")
         private final AccessControlContext acc;
-        PrivilegedRunnable(Runnable r, AccessControlContext acc) {
+        PrivilegedRunnable(Runnable r, @SuppressWarnings("removal") AccessControlContext acc) {
             this.r = r;
             this.acc = acc;
         }
+        @SuppressWarnings("removal")
         @Override
         public void run() {
             PrivilegedAction<Void> pa = () -> { r.run(); return null; };

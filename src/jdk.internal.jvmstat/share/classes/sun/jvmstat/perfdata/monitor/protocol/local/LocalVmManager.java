@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 
 package sun.jvmstat.perfdata.monitor.protocol.local;
 
-import sun.jvmstat.monitor.*;
-import sun.jvmstat.monitor.event.*;
 import java.util.*;
 import java.util.regex.*;
 import java.io.*;
@@ -35,105 +33,55 @@ import java.io.*;
  * Class for managing the LocalMonitoredVm instances on the local system.
  * <p>
  * This class is responsible for the mechanism that detects the active
- * HotSpot Java Virtual Machines on the local host and possibly for a
- * specific user. The ability to detect all possible HotSpot Java Virtual
+ * HotSpot Java Virtual Machines on the local host that can be accessed
+ * by the current user. The ability to detect all possible HotSpot Java Virtual
  * Machines on the local host may be limited by the permissions of the
- * principal running this JVM.
+ * current user running this JVM.
  *
  * @author Brian Doherty
  * @since 1.5
  */
 public class LocalVmManager {
-    private String userName;                 // user name for monitored jvm
-    private List<String> tmpdirs;
-    private Pattern userPattern;
-    private Matcher userMatcher;
-    private FilenameFilter userFilter;
-    private Pattern filePattern;
-    private Matcher fileMatcher;
-    private FilenameFilter fileFilter;
-    private Pattern tmpFilePattern;
-    private Matcher tmpFileMatcher;
-    private FilenameFilter tmpFileFilter;
+    private FilenameFilter userDirFilter;
+    private FilenameFilter userDirFileFilter;
 
     /**
      * Creates a LocalVmManager instance for the local system.
      * <p>
-     * Manages LocalMonitoredVm instances for which the principal
+     * Manages LocalMonitoredVm instances for which the current user
      * has appropriate permissions.
      */
     public LocalVmManager() {
-        this(null);
-    }
-
-    /**
-     * Creates a LocalVmManager instance for the given user.
-     * <p>
-     * Manages LocalMonitoredVm instances for all JVMs owned by the specified
-     * user.
-     *
-     * @param user the name of the user
-     */
-    public LocalVmManager(String user) {
-        this.userName = user;
-
-
-        if (userName == null) {
-            tmpdirs = PerfDataFile.getTempDirectories(null, 0);
-            userPattern = Pattern.compile(PerfDataFile.userDirNamePattern);
-            userMatcher = userPattern.matcher("");
-
-            userFilter = new FilenameFilter() {
-                public boolean accept(File dir, String name) {
-                    userMatcher.reset(name);
-                    return userMatcher.lookingAt();
-                }
-            };
-        } else {
-            tmpdirs = PerfDataFile.getTempDirectories(userName, 0);
-        }
-
-        filePattern = Pattern.compile(PerfDataFile.fileNamePattern);
-        fileMatcher = filePattern.matcher("");
-
-        fileFilter = new FilenameFilter() {
+        // The files are in {tmpdir}/hsperfdata_{any_user_name}/[0-9]+
+        Pattern userDirPattern = Pattern.compile(PerfDataFile.userDirNamePattern);
+        userDirFilter = new FilenameFilter() {
             public boolean accept(File dir, String name) {
-                fileMatcher.reset(name);
-                return fileMatcher.matches();
+                return userDirPattern.matcher(name).lookingAt();
             }
         };
 
-        tmpFilePattern = Pattern.compile(PerfDataFile.tmpFileNamePattern);
-        tmpFileMatcher = tmpFilePattern.matcher("");
-
-        tmpFileFilter = new FilenameFilter() {
+        Pattern userDirFilePattern = Pattern.compile(PerfDataFile.fileNamePattern);
+        userDirFileFilter = new FilenameFilter() {
             public boolean accept(File dir, String name) {
-                tmpFileMatcher.reset(name);
-                return tmpFileMatcher.matches();
+                return userDirFilePattern.matcher(name).matches();
             }
         };
     }
 
     /**
-     * Return the current set of monitorable Java Virtual Machines.
-     * <p>
-     * The set returned by this method depends on the user name passed
-     * to the constructor. If no user name was specified, then this
-     * method will return all candidate JVMs on the system. Otherwise,
-     * only the JVMs for the given user will be returned. This assumes
-     * that principal associated with this JVM has the appropriate
-     * permissions to access the target set of JVMs.
+     * Return the current set of monitorable Java Virtual Machines that
+     * are accessible by the current user.
      *
      * @return Set - the Set of monitorable Java Virtual Machines
      */
     public synchronized Set<Integer> activeVms() {
         /*
-         * This method is synchronized because the Matcher object used by
-         * fileFilter is not safe for concurrent use, and this method is
-         * called by multiple threads. Before this method was synchronized,
-         * we'd see strange file names being matched by the matcher.
+         * TODO: this method was synchronized due to its thread-unsafe use of the regexp
+         * Matcher objects. That is not the case anymore, but I am too afraid to change
+         * it now. Maybe fix this later in a separate RFE.
          */
         Set<Integer> jvmSet = new HashSet<Integer>();
+        List<String> tmpdirs = PerfDataFile.getTempDirectories(0);
 
         for (String dir : tmpdirs) {
             File tmpdir = new File(dir);
@@ -141,65 +89,28 @@ public class LocalVmManager {
                 continue;
             }
 
-            if (userName == null) {
-                /*
-                 * get a list of all of the user temporary directories and
-                 * iterate over the list to find any files within those directories.
-                 */
-                File[] dirs = tmpdir.listFiles(userFilter);
-                for (int i = 0 ; i < dirs.length; i ++) {
-                    if (!dirs[i].isDirectory()) {
-                        continue;
-                    }
 
-                    // get a list of files from the directory
-                    File[] files = dirs[i].listFiles(fileFilter);
-                    if (files != null) {
-                        for (int j = 0; j < files.length; j++) {
-                            if (files[j].isFile() && files[j].canRead()) {
-                                int vmid = PerfDataFile.getLocalVmId(files[j]);
-                                if (vmid != -1) {
-                                  jvmSet.add(vmid);
-                                }
-                            }
-                        }
-                    }
+            // Look for the files {tmpdir}/hsperfdata_{any_user_name}/[0-9]+
+            // that are readable by the current user.
+            File[] dirs = tmpdir.listFiles(userDirFilter);
+            for (File subDir : dirs) {
+                if (!subDir.isDirectory()) {
+                    continue;
                 }
-            } else {
-                /*
-                 * Check if the user directory can be accessed. Any of these
-                 * conditions may have asynchronously changed between subsequent
-                 * calls to this method.
-                 */
 
-                // get the list of files from the specified user directory
-                File[] files = tmpdir.listFiles(fileFilter);
-
+                // get a list of files from the directory
+                File[] files = subDir.listFiles(userDirFileFilter);
                 if (files != null) {
-                    for (int j = 0; j < files.length; j++) {
-                        if (files[j].isFile() && files[j].canRead()) {
-                            int vmid = PerfDataFile.getLocalVmId(files[j]);
+                    for (File file : files) {
+                        if (file.isFile() && file.canRead()) {
+                            int vmid = PerfDataFile.getLocalVmId(file);
                             if (vmid != -1) {
-                              jvmSet.add(vmid);
+                                jvmSet.add(vmid);
                             }
                         }
                     }
                 }
             }
-
-            // look for any 1.4.1 files
-            File[] files = tmpdir.listFiles(tmpFileFilter);
-            if (files != null) {
-                for (int j = 0; j < files.length; j++) {
-                    if (files[j].isFile() && files[j].canRead()) {
-                        int vmid = PerfDataFile.getLocalVmId(files[j]);
-                        if (vmid != -1) {
-                          jvmSet.add(vmid);
-                        }
-                    }
-                }
-            }
-
         }
         return jvmSet;
     }

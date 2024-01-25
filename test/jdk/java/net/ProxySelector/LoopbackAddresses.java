@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,15 +27,25 @@
  * @summary PIT: Can no launch jnlp application via 127.0.0.1 address on the web server.
  *          This test might fail intermittently as it needs a server that
  *          binds to the wildcard address.
- * @modules java.base/sun.net.www
- * @library ../../../sun/net/www/httptest/ /test/lib
- * @build ClosedChannelList TestHttpServer HttpTransaction HttpCallback
+ * @library /test/lib
  * @compile LoopbackAddresses.java
  * @run main/othervm LoopbackAddresses
  */
 
-import java.net.*;
-import java.io.*;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.HttpURLConnection;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.URL;
+import java.nio.charset.Charset;
+import java.util.concurrent.Executors;
+
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
 import jdk.test.lib.net.URIBuilder;
 
 /**
@@ -43,17 +53,8 @@ import jdk.test.lib.net.URIBuilder;
  * addresses when selecting proxies. This is the existing behaviour.
  */
 
-public class LoopbackAddresses implements HttpCallback {
-    static TestHttpServer server;
-
-    public void request (HttpTransaction req) {
-        req.setResponseEntityBody ("Hello .");
-        try {
-            req.sendResponse (200, "Ok");
-            req.orderlyClose();
-        } catch (IOException e) {
-        }
-    }
+public class LoopbackAddresses {
+    static HttpServer server;
 
     public static void main(String[] args) {
         try {
@@ -63,15 +64,17 @@ public class LoopbackAddresses implements HttpCallback {
             // to answer both for the loopback and "localhost".
             // Though "localhost" usually point to the loopback there is no
             // hard guarantee.
-            server = new TestHttpServer (new LoopbackAddresses(), 1, 10, 0);
-            ProxyServer pserver = new ProxyServer(InetAddress.getByName("localhost"), server.getLocalPort());
+            server = HttpServer.create(new InetSocketAddress(loopback, 0), 10, "/", new LoopbackAddressesHandler());
+            server.setExecutor(Executors.newSingleThreadExecutor());
+            server.start();
+            ProxyServer pserver = new ProxyServer(InetAddress.getByName("localhost"), server.getAddress().getPort());
             // start proxy server
             new Thread(pserver).start();
 
             System.setProperty("http.proxyHost", loopback.getHostAddress());
             System.setProperty("http.proxyPort", pserver.getPort()+"");
 
-            URL url = new URL("http://localhost:"+server.getLocalPort());
+            URL url = new URL("http://localhost:"+server.getAddress().getPort());
 
             try {
                 HttpURLConnection urlc = (HttpURLConnection)url.openConnection ();
@@ -85,7 +88,7 @@ public class LoopbackAddresses implements HttpCallback {
                 url = URIBuilder.newBuilder()
                       .scheme("http")
                       .host(loopback.getHostAddress())
-                      .port(server.getLocalPort())
+                      .port(server.getAddress().getPort())
                       .toURL();
                 HttpURLConnection urlc = (HttpURLConnection)url.openConnection ();
                 int respCode = urlc.getResponseCode();
@@ -97,7 +100,7 @@ public class LoopbackAddresses implements HttpCallback {
             throw new RuntimeException(e);
         } finally {
             if (server != null) {
-                server.terminate();
+                server.stop(1);
             }
         }
 
@@ -148,6 +151,21 @@ public class LoopbackAddresses implements HttpCallback {
 */
         public int getPort() {
             return ss.getLocalPort();
+        }
+    }
+}
+
+class LoopbackAddressesHandler implements HttpHandler {
+
+    @Override
+    public void handle(HttpExchange exchange) throws IOException {
+        try {
+            exchange.sendResponseHeaders(200, 0);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        try(PrintWriter pw = new PrintWriter(exchange.getResponseBody(), false, Charset.forName("UTF-8"))) {
+            pw.print("Hello .");
         }
     }
 }

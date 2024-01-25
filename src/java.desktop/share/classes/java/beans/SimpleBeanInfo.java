@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import java.security.PrivilegedAction;
  * BeanInfo classes.
  * <p>
  * It defaults to providing "noop" information, and can be selectively
- * overriden to provide more explicit information on chosen topics.
+ * overridden to provide more explicit information on chosen topics.
  * When the introspector sees the "noop" values, it will apply low
  * level introspection and design patterns to automatically analyze
  * the target bean.
@@ -154,6 +154,7 @@ public class SimpleBeanInfo implements BeanInfo {
      * @return an image object. May be null if the load failed.
      * @see java.beans.SimpleBeanInfo#loadImage(String)
      */
+    @SuppressWarnings("removal")
     private Image loadStandardImage(final String resourceName) {
         return AccessController.doPrivileged(
                 (PrivilegedAction<Image>) () -> loadImage(resourceName));

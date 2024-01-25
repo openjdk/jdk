@@ -22,14 +22,15 @@
  */
 
 /*
- * @test 8247352
+ * @test 8247352 8293348
  * @summary test different configurations of sealed classes, same compilation unit, diff pkg or mdl, etc
  * @library /tools/lib
+ * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
  *          jdk.compiler/com.sun.tools.javac.code
- *          jdk.jdeps/com.sun.tools.classfile
+ *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox toolbox.JavacTask
  * @run main SealedDiffConfigurationsTest
  */
@@ -42,7 +43,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.stream.IntStream;
 
-import com.sun.tools.classfile.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.PermittedSubclassesAttribute;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.ConstantPoolException;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.util.Assert;
 import toolbox.TestRunner;
@@ -50,8 +54,6 @@ import toolbox.ToolBox;
 import toolbox.JavacTask;
 import toolbox.Task;
 import toolbox.Task.OutputKind;
-
-import static com.sun.tools.classfile.ConstantPool.*;
 
 public class SealedDiffConfigurationsTest extends TestRunner {
     ToolBox tb;
@@ -92,7 +94,6 @@ public class SealedDiffConfigurationsTest extends TestRunner {
 
         new JavacTask(tb)
                 .outdir(out)
-                .options("--enable-preview", "-source", Integer.toString(Runtime.version().feature()))
                 .files(findJavaFiles(test))
                 .run()
                 .writeAll();
@@ -121,7 +122,6 @@ public class SealedDiffConfigurationsTest extends TestRunner {
         new JavacTask(tb)
                 .outdir(out)
                 .files(findJavaFiles(test))
-                .options("--enable-preview", "-source", Integer.toString(Runtime.version().feature()))
                 .run()
                 .writeAll();
 
@@ -131,30 +131,29 @@ public class SealedDiffConfigurationsTest extends TestRunner {
     }
 
     private void checkSealedClassFile(Path out, String cfName, List<String> expectedSubTypeNames) throws ConstantPoolException, Exception {
-        ClassFile sealedCF = ClassFile.read(out.resolve(cfName));
-        Assert.check((sealedCF.access_flags.flags & Flags.FINAL) == 0, String.format("class at file %s must not be final", cfName));
-        PermittedSubclasses_attribute permittedSubclasses = (PermittedSubclasses_attribute)sealedCF.attributes.get("PermittedSubclasses");
-        Assert.check(permittedSubclasses.subtypes.length == expectedSubTypeNames.size());
+        ClassModel sealedCF = ClassFile.of().parse(out.resolve(cfName));
+        Assert.check((sealedCF.flags().flagsMask() & ClassFile.ACC_FINAL) == 0, String.format("class at file %s must not be final", cfName));
+        PermittedSubclassesAttribute permittedSubclasses = sealedCF.findAttribute(Attributes.PERMITTED_SUBCLASSES).orElseThrow();
+        Assert.check(permittedSubclasses.permittedSubclasses().size() == expectedSubTypeNames.size());
         List<String> subtypeNames = new ArrayList<>();
-        IntStream.of(permittedSubclasses.subtypes).forEach(i -> {
+        permittedSubclasses.permittedSubclasses().forEach(i -> {
             try {
-                subtypeNames.add(((CONSTANT_Class_info)sealedCF.constant_pool.get(i)).getName());
+                subtypeNames.add(i.name().stringValue());
             } catch (ConstantPoolException ex) {
             }
         });
-        subtypeNames.sort((s1, s2) -> s1.compareTo(s2));
         for (int i = 0; i < expectedSubTypeNames.size(); i++) {
             Assert.check(expectedSubTypeNames.get(0).equals(subtypeNames.get(0)));
         }
     }
 
     private void checkSubtypeClassFile(Path out, String cfName, String superClassName, boolean shouldBeFinal) throws Exception {
-        ClassFile subCF1 = ClassFile.read(out.resolve(cfName));
+        ClassModel subCF1 = ClassFile.of().parse(out.resolve(cfName));
         if (shouldBeFinal) {
-            Assert.check((subCF1.access_flags.flags & Flags.FINAL) != 0, String.format("class at file %s must be final", cfName));
+            Assert.check((subCF1.flags().flagsMask() & ClassFile.ACC_FINAL) != 0, String.format("class at file %s must be final", cfName));
         }
-        Assert.checkNull((PermittedSubclasses_attribute)subCF1.attributes.get("PermittedSubclasses"));
-        Assert.check(((CONSTANT_Class_info)subCF1.constant_pool.get(subCF1.super_class)).getName().equals(superClassName));
+        Assert.checkNull(subCF1.findAttribute(Attributes.PERMITTED_SUBCLASSES).orElse(null));
+        Assert.check(subCF1.superclass().orElseThrow().name().equalsString(superClassName));
     }
 
     @Test
@@ -188,7 +187,6 @@ public class SealedDiffConfigurationsTest extends TestRunner {
         new JavacTask(tb)
                 .outdir(out)
                 .files(findJavaFiles(pkg))
-                .options("--enable-preview", "-source", Integer.toString(Runtime.version().feature()))
                 .run()
                 .writeAll();
 
@@ -210,7 +208,7 @@ public class SealedDiffConfigurationsTest extends TestRunner {
                            "}");
 
         List<String> error = new JavacTask(tb)
-                .options("-XDrawDiagnostics", "--enable-preview", "-source", Integer.toString(Runtime.version().feature()))
+                .options("-XDrawDiagnostics")
                 .files(findJavaFiles(test))
                 .run(Task.Expect.FAIL)
                 .writeAll()
@@ -236,7 +234,7 @@ public class SealedDiffConfigurationsTest extends TestRunner {
                         "}");
 
         List<String> error = new JavacTask(tb)
-                .options("-XDrawDiagnostics", "--enable-preview", "-source", Integer.toString(Runtime.version().feature()))
+                .options("-XDrawDiagnostics")
                 .files(findJavaFiles(test))
                 .run(Task.Expect.FAIL)
                 .writeAll()
@@ -275,7 +273,7 @@ public class SealedDiffConfigurationsTest extends TestRunner {
                           "}");
 
         List<String> error = new JavacTask(tb)
-                .options("-XDrawDiagnostics", "--enable-preview", "-source", Integer.toString(Runtime.version().feature()))
+                .options("-XDrawDiagnostics")
                 .files(findJavaFiles(pkg))
                 .run(Task.Expect.FAIL)
                 .writeAll()
@@ -309,7 +307,7 @@ public class SealedDiffConfigurationsTest extends TestRunner {
                         "}");
 
         List<String> error = new JavacTask(tb)
-                .options("-XDrawDiagnostics", "--enable-preview", "-source", Integer.toString(Runtime.version().feature()))
+                .options("-XDrawDiagnostics")
                 .files(findJavaFiles(pkg))
                 .run(Task.Expect.FAIL)
                 .writeAll()
@@ -342,7 +340,7 @@ public class SealedDiffConfigurationsTest extends TestRunner {
                         "}");
 
         List<String> error = new JavacTask(tb)
-                .options("-XDrawDiagnostics", "--enable-preview", "-source", Integer.toString(Runtime.version().feature()))
+                .options("-XDrawDiagnostics")
                 .files(findJavaFiles(pkg))
                 .run(Task.Expect.FAIL)
                 .writeAll()
@@ -377,7 +375,7 @@ public class SealedDiffConfigurationsTest extends TestRunner {
                         "}");
 
         List<String> error = new JavacTask(tb)
-                .options("-XDrawDiagnostics", "--enable-preview", "-source", Integer.toString(Runtime.version().feature()))
+                .options("-XDrawDiagnostics")
                 .files(findJavaFiles(pkg1, pkg2))
                 .run(Task.Expect.FAIL)
                 .writeAll()
@@ -413,7 +411,7 @@ public class SealedDiffConfigurationsTest extends TestRunner {
                         "}");
 
         List<String> error = new JavacTask(tb)
-                .options("-XDrawDiagnostics", "--enable-preview", "-source", Integer.toString(Runtime.version().feature()))
+                .options("-XDrawDiagnostics")
                 .files(findJavaFiles(pkg1, pkg2))
                 .run(Task.Expect.FAIL)
                 .writeAll()
@@ -453,7 +451,7 @@ public class SealedDiffConfigurationsTest extends TestRunner {
         Files.createDirectories(out);
 
         List<String> error = new JavacTask(tb)
-                .options("-XDrawDiagnostics", "--enable-preview", "-source", Integer.toString(Runtime.version().feature()))
+                .options("-XDrawDiagnostics")
                 .files(findJavaFiles(pkg1, pkg2))
                 .run(Task.Expect.FAIL)
                 .writeAll()
@@ -479,7 +477,7 @@ public class SealedDiffConfigurationsTest extends TestRunner {
         tb.createDirectories(classes);
 
         new JavacTask(tb)
-                .options("--module-source-path", src.toString(), "--enable-preview", "-source", Integer.toString(Runtime.version().feature()))
+                .options("--module-source-path", src.toString())
                 .outdir(classes)
                 .files(findJavaFiles(src))
                 .run()
@@ -498,7 +496,7 @@ public class SealedDiffConfigurationsTest extends TestRunner {
         tb.createDirectories(classes);
 
         new JavacTask(tb)
-                .options("--module-source-path", src.toString(), "--enable-preview", "-source", Integer.toString(Runtime.version().feature()))
+                .options("--module-source-path", src.toString())
                 .outdir(classes)
                 .files(findJavaFiles(src))
                 .run()
@@ -519,8 +517,7 @@ public class SealedDiffConfigurationsTest extends TestRunner {
 
         List<String> error = new JavacTask(tb)
                 .options("-XDrawDiagnostics", "--module-source-path",
-                        src.toString(), "--enable-preview",
-                        "-source", Integer.toString(Runtime.version().feature()))
+                        src.toString())
                 .outdir(classes)
                 .files(findJavaFiles(src))
                 .run(Task.Expect.FAIL)
@@ -550,8 +547,7 @@ public class SealedDiffConfigurationsTest extends TestRunner {
 
         List<String> error = new JavacTask(tb)
                 .options("-XDrawDiagnostics", "--module-source-path",
-                        src.toString(), "--enable-preview",
-                        "-source", Integer.toString(Runtime.version().feature()))
+                        src.toString())
                 .outdir(classes)
                 .files(findJavaFiles(src))
                 .run(Task.Expect.FAIL)
@@ -590,9 +586,7 @@ public class SealedDiffConfigurationsTest extends TestRunner {
             new JavacTask(tb)
                 .options("-XDrawDiagnostics",
                         "--module-source-path", src.toString(),
-                        "--add-reads", "mSealed=mSub",
-                        "--enable-preview",
-                        "-source", Integer.toString(Runtime.version().feature()))
+                        "--add-reads", "mSealed=mSub")
                 .outdir(classes)
                 .files(findJavaFiles(src))
                 .run(Task.Expect.FAIL)
@@ -601,8 +595,6 @@ public class SealedDiffConfigurationsTest extends TestRunner {
 
         List<String> expected = List.of(
             "Base.java:1:46: compiler.err.class.in.module.cant.extend.sealed.in.diff.module: a.Base, mSealed",
-            "- compiler.note.preview.plural: DEFAULT",
-            "- compiler.note.preview.recompile",
             "1 error"
         );
         if (!error.containsAll(expected)) {
@@ -623,8 +615,7 @@ public class SealedDiffConfigurationsTest extends TestRunner {
 
         new JavacTask(tb)
                 .options("-XDrawDiagnostics", "--module-source-path",
-                        src.toString(), "--enable-preview",
-                        "-source", Integer.toString(Runtime.version().feature()))
+                        src.toString())
                 .outdir(classes)
                 .files(findJavaFiles(src_m))
                 .run()
@@ -633,8 +624,7 @@ public class SealedDiffConfigurationsTest extends TestRunner {
 
         new JavacTask(tb)
                 .options("-XDrawDiagnostics", "--module-source-path",
-                        src.toString(), "--enable-preview", "-doe",
-                        "-source", Integer.toString(Runtime.version().feature()))
+                        src.toString(), "-doe")
                 .outdir(classes)
                 .files(findJavaFiles(src_m.resolve("pkg").resolve("a")))
                 .run()
@@ -643,8 +633,7 @@ public class SealedDiffConfigurationsTest extends TestRunner {
 
         new JavacTask(tb)
                 .options("-XDrawDiagnostics", "--module-source-path",
-                        src.toString(), "--enable-preview", "-doe",
-                        "-source", Integer.toString(Runtime.version().feature()))
+                        src.toString(), "-doe")
                 .outdir(classes)
                 .files(findJavaFiles(src_m.resolve("pkg").resolve("b")))
                 .run()
@@ -656,8 +645,7 @@ public class SealedDiffConfigurationsTest extends TestRunner {
         //implicit compilations:
         new JavacTask(tb)
                 .options("-XDrawDiagnostics", "--module-source-path",
-                        src.toString(), "--enable-preview", "-doe",
-                        "-source", Integer.toString(Runtime.version().feature()))
+                        src.toString(), "-doe")
                 .outdir(classes)
                 .files(findJavaFiles(src_m.resolve("pkg").resolve("a")))
                 .run()
@@ -668,12 +656,76 @@ public class SealedDiffConfigurationsTest extends TestRunner {
 
         new JavacTask(tb)
                 .options("-XDrawDiagnostics", "--module-source-path",
-                        src.toString(), "--enable-preview", "-doe",
-                        "-source", Integer.toString(Runtime.version().feature()))
+                        src.toString(), "-doe")
                 .outdir(classes)
                 .files(findJavaFiles(src_m.resolve("pkg").resolve("b")))
                 .run()
                 .writeAll()
                 .getOutputLines(OutputKind.DIRECT);
+    }
+
+    @Test //JDK-8293348
+    public void testSupertypePermitsLoop(Path base) throws Exception {
+        Path src = base.resolve("src");
+
+        tb.writeJavaFiles(src,
+                          "class Main implements T2 {}",
+                          "non-sealed interface T2 extends T {}",
+                          "sealed interface T permits T2 {}");
+
+        Path out = base.resolve("out");
+
+        Files.createDirectories(out);
+
+        new JavacTask(tb)
+                .outdir(out)
+                .files(findJavaFiles(src))
+                .run()
+                .writeAll();
+
+        Files.delete(out.resolve("Main.class"));
+        Files.delete(out.resolve("T.class"));
+
+        new JavacTask(tb)
+                .outdir(out)
+                .options("-cp", out.toString(),
+                         "-sourcepath", src.toString())
+                .files(src.resolve("Main.java"))
+                .run()
+                .writeAll();
+    }
+
+    @Test
+    public void testClientSwapsPermittedSubclassesOrder(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path foo = src.resolve("Foo.java");
+        Path fooUser = src.resolve("FooUser.java");
+
+        tb.writeFile(foo,
+                """
+                public sealed interface Foo {
+                    record R1() implements Foo {}
+                    record R2() implements Foo {}
+                }
+                """);
+
+        tb.writeFile(fooUser,
+                """
+                public class FooUser {
+                    // see that the order of arguments differ from the order of subclasses of Foo in the source above
+                    // we need to check that the order of permitted subclasses of Foo in the class file corresponds to the
+                    // original order in the source code
+                    public void blah(Foo.R2 a, Foo.R1 b) {}
+                }
+                """);
+
+        Path out = base.resolve("out");
+        Files.createDirectories(out);
+
+        new JavacTask(tb)
+                .outdir(out)
+                .files(fooUser, foo)
+                .run();
+        checkSealedClassFile(out, "Foo.class", List.of("Foo$R1", "Foo$R2"));
     }
 }

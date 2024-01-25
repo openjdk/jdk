@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, the original author or authors.
+ * Copyright (c) 2002-2020, the original author or authors.
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -36,6 +36,7 @@ public final class LineReaderBuilder {
     Highlighter highlighter;
     Parser parser;
     Expander expander;
+    CompletionMatcher completionMatcher;
 
     private LineReaderBuilder() {
     }
@@ -103,6 +104,11 @@ public final class LineReaderBuilder {
         return this;
     }
 
+    public LineReaderBuilder completionMatcher(CompletionMatcher completionMatcher) {
+        this.completionMatcher = completionMatcher;
+        return this;
+    }
+
     public LineReader build() {
         Terminal terminal = this.terminal;
         if (terminal == null) {
@@ -112,6 +118,12 @@ public final class LineReaderBuilder {
                 throw new IOError(e);
             }
         }
+
+        String appName = this.appName;
+        if (null == appName) {
+            appName = terminal.getName();
+        }
+
         LineReaderImpl reader = new LineReaderImpl(terminal, appName, variables);
         if (history != null) {
             reader.setHistory(history);
@@ -132,6 +144,9 @@ public final class LineReaderBuilder {
         }
         if (expander != null) {
             reader.setExpander(expander);
+        }
+        if (completionMatcher != null) {
+            reader.setCompletionMatcher(completionMatcher);
         }
         for (Map.Entry<LineReader.Option, Boolean> e : options.entrySet()) {
             reader.option(e.getKey(), e.getValue());

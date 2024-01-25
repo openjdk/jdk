@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,36 +28,53 @@
 #include "memory/allocation.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/pair.hpp"
 
+class G1FullCollector;
 class HeapRegion;
+class PreservedMarks;
 
 class G1FullGCCompactionPoint : public CHeapObj<mtGC> {
+  G1FullCollector* _collector;
   HeapRegion* _current_region;
-  HeapWord*   _threshold;
   HeapWord*   _compaction_top;
+  PreservedMarks* _preserved_stack;
   GrowableArray<HeapRegion*>* _compaction_regions;
   GrowableArrayIterator<HeapRegion*> _compaction_region_iterator;
 
   bool object_will_fit(size_t size);
-  void initialize_values(bool init_threshold);
+  void initialize_values();
   void switch_region();
   HeapRegion* next_region();
+  uint find_contiguous_before(HeapRegion* hr, uint num_regions);
 
 public:
-  G1FullGCCompactionPoint();
+  G1FullGCCompactionPoint(G1FullCollector* collector, PreservedMarks* preserved_stack);
   ~G1FullGCCompactionPoint();
 
   bool has_regions();
   bool is_initialized();
-  void initialize(HeapRegion* hr, bool init_threshold);
+  void initialize(HeapRegion* hr);
   void update();
   void forward(oop object, size_t size);
+  void forward_humongous(HeapRegion* hr);
   void add(HeapRegion* hr);
+  void add_humongous(HeapRegion* hr);
 
-  HeapRegion* remove_last();
+  void remove_at_or_above(uint bottom);
   HeapRegion* current_region();
 
   GrowableArray<HeapRegion*>* regions();
+
+  PreservedMarks* preserved_stack() const {
+    assert(_preserved_stack != nullptr, "must be initialized");
+    return _preserved_stack;
+  }
+
+  void set_preserved_stack(PreservedMarks* preserved_stack) {
+    assert(_preserved_stack == nullptr, "only initialize once");
+    _preserved_stack = preserved_stack;
+  }
 };
 
 #endif // SHARE_GC_G1_G1FULLGCCOMPACTIONPOINT_HPP

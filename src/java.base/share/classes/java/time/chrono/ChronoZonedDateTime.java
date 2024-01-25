@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,26 +195,25 @@ public interface ChronoZonedDateTime<D extends ChronoLocalDate>
 
     @Override
     default int get(TemporalField field) {
-        if (field instanceof ChronoField) {
-            switch ((ChronoField) field) {
-                case INSTANT_SECONDS:
+        if (field instanceof ChronoField chronoField) {
+            return switch (chronoField) {
+                case INSTANT_SECONDS ->
                     throw new UnsupportedTemporalTypeException("Invalid field 'InstantSeconds' for get() method, use getLong() instead");
-                case OFFSET_SECONDS:
-                    return getOffset().getTotalSeconds();
-            }
-            return toLocalDateTime().get(field);
+                case OFFSET_SECONDS -> getOffset().getTotalSeconds();
+                default -> toLocalDateTime().get(field);
+            };
         }
         return Temporal.super.get(field);
     }
 
     @Override
     default long getLong(TemporalField field) {
-        if (field instanceof ChronoField) {
-            switch ((ChronoField) field) {
-                case INSTANT_SECONDS: return toEpochSecond();
-                case OFFSET_SECONDS: return getOffset().getTotalSeconds();
-            }
-            return toLocalDateTime().getLong(field);
+        if (field instanceof ChronoField chronoField) {
+            return switch (chronoField) {
+                case INSTANT_SECONDS -> toEpochSecond();
+                case OFFSET_SECONDS -> getOffset().getTotalSeconds();
+                default -> toLocalDateTime().getLong(field);
+            };
         }
         return field.getFrom(this);
     }
@@ -570,7 +569,11 @@ public interface ChronoZonedDateTime<D extends ChronoLocalDate>
      * This default implementation performs the comparison defined above.
      *
      * @param other  the other date-time to compare to, not null
-     * @return the comparator value, negative if less, positive if greater
+     * @return the comparator value, that is the comparison of this with the {@code other} values for the instant,
+     *          the local date-time, the zone ID, and the chronology, in order, returning the first non-zero result,
+     *          and otherwise returning zero
+     * @see #isBefore
+     * @see #isAfter
      */
     @Override
     default int compareTo(ChronoZonedDateTime<?> other) {

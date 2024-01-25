@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,11 +30,7 @@ import java.nio.ByteBuffer;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -331,60 +327,63 @@ final class ClientHello {
 
         @Override
         public String toString() {
+            MessageFormat messageFormat;
+            Object[] messageFields;
             if (isDTLS) {
-                MessageFormat messageFormat = new MessageFormat(
-                    "\"ClientHello\": '{'\n" +
-                    "  \"client version\"      : \"{0}\",\n" +
-                    "  \"random\"              : \"{1}\",\n" +
-                    "  \"session id\"          : \"{2}\",\n" +
-                    "  \"cookie\"              : \"{3}\",\n" +
-                    "  \"cipher suites\"       : \"{4}\",\n" +
-                    "  \"compression methods\" : \"{5}\",\n" +
-                    "  \"extensions\"          : [\n" +
-                    "{6}\n" +
-                    "  ]\n" +
-                    "'}'",
-                    Locale.ENGLISH);
-                Object[] messageFields = {
-                    ProtocolVersion.nameOf(clientVersion),
-                    Utilities.toHexString(clientRandom.randomBytes),
-                    sessionId.toString(),
-                    Utilities.toHexString(cookie),
-                    getCipherSuiteNames().toString(),
-                    Utilities.toHexString(compressionMethod),
-                    Utilities.indent(Utilities.indent(extensions.toString()))
+                messageFormat = new MessageFormat(
+                        """
+                                "ClientHello": '{'
+                                  "client version"      : "{0}",
+                                  "random"              : "{1}",
+                                  "session id"          : "{2}",
+                                  "cookie"              : "{3}",
+                                  "cipher suites"       : "{4}",
+                                  "compression methods" : "{5}",
+                                  "extensions"          : [
+                                {6}
+                                  ]
+                                '}'""",
+                        Locale.ENGLISH);
+                messageFields = new Object[]{
+                        ProtocolVersion.nameOf(clientVersion),
+                        Utilities.toHexString(clientRandom.randomBytes),
+                        sessionId.toString(),
+                        Utilities.toHexString(cookie),
+                        getCipherSuiteNames().toString(),
+                        Utilities.toHexString(compressionMethod),
+                        Utilities.indent(Utilities.indent(extensions.toString()))
                 };
 
-                return messageFormat.format(messageFields);
             } else {
-                MessageFormat messageFormat = new MessageFormat(
-                    "\"ClientHello\": '{'\n" +
-                    "  \"client version\"      : \"{0}\",\n" +
-                    "  \"random\"              : \"{1}\",\n" +
-                    "  \"session id\"          : \"{2}\",\n" +
-                    "  \"cipher suites\"       : \"{3}\",\n" +
-                    "  \"compression methods\" : \"{4}\",\n" +
-                    "  \"extensions\"          : [\n" +
-                    "{5}\n" +
-                    "  ]\n" +
-                    "'}'",
-                    Locale.ENGLISH);
-                Object[] messageFields = {
-                    ProtocolVersion.nameOf(clientVersion),
-                    Utilities.toHexString(clientRandom.randomBytes),
-                    sessionId.toString(),
-                    getCipherSuiteNames().toString(),
-                    Utilities.toHexString(compressionMethod),
-                    Utilities.indent(Utilities.indent(extensions.toString()))
+                messageFormat = new MessageFormat(
+                        """
+                                "ClientHello": '{'
+                                  "client version"      : "{0}",
+                                  "random"              : "{1}",
+                                  "session id"          : "{2}",
+                                  "cipher suites"       : "{3}",
+                                  "compression methods" : "{4}",
+                                  "extensions"          : [
+                                {5}
+                                  ]
+                                '}'""",
+                        Locale.ENGLISH);
+                messageFields = new Object[]{
+                        ProtocolVersion.nameOf(clientVersion),
+                        Utilities.toHexString(clientRandom.randomBytes),
+                        sessionId.toString(),
+                        getCipherSuiteNames().toString(),
+                        Utilities.toHexString(compressionMethod),
+                        Utilities.indent(Utilities.indent(extensions.toString()))
                 };
 
-                return messageFormat.format(messageFields);
             }
+            return messageFormat.format(messageFields);
         }
     }
 
     /**
-     * The "ClientHello" handshake message kick start producer.
+     * The "ClientHello" handshake message kick-start producer.
      */
     private static final
             class ClientHelloKickstartProducer implements SSLProducer {
@@ -401,9 +400,6 @@ final class ClientHello {
 
             // clean up this producer
             chc.handshakeProducers.remove(SSLHandshake.CLIENT_HELLO.id);
-
-            // the max protocol version this client is supporting.
-            ProtocolVersion maxProtocolVersion = chc.maximumActiveProtocol;
 
             // session ID of the ClientHello message
             SessionId sessionId = new SessionId(new byte[0]);
@@ -475,7 +471,7 @@ final class ClientHello {
                 SSLConfiguration.useExtendedMasterSecret) {
 
                 boolean isEmsAvailable = chc.sslConfig.isAvailable(
-                    SSLExtension.CH_EXTENDED_MASTER_SECRET, sessionVersion);
+                        SSLExtension.CH_EXTENDED_MASTER_SECRET, sessionVersion);
                 if (isEmsAvailable && !session.useExtendedMasterSecret &&
                         !SSLConfiguration.allowLegacyResumption) {
                     // perform full handshake instead
@@ -538,14 +534,6 @@ final class ClientHello {
                 if (!session.getProtocolVersion().useTLS13PlusSpec()) {
                     sessionId = session.getSessionId();
                 }
-                if (!maxProtocolVersion.equals(sessionVersion)) {
-                    maxProtocolVersion = sessionVersion;
-
-                    // Update protocol version number in underlying socket and
-                    // handshake output stream, so that the output records
-                    // (at the record layer) have the correct version
-                    chc.setVersion(sessionVersion);
-                }
 
                 // If no new session is allowed, force use of the previous
                 // session ciphersuite, and add the renegotiation SCSV if
@@ -579,15 +567,15 @@ final class ClientHello {
                             "No new session is allowed and " +
                             "no existing session can be resumed");
                 }
-
-                if (maxProtocolVersion.useTLS13PlusSpec() &&
-                        SSLConfiguration.useCompatibilityMode) {
-                    // In compatibility mode, the TLS 1.3 legacy_session_id
-                    // field MUST be non-empty, so a client not offering a
-                    // pre-TLS 1.3 session MUST generate a new 32-byte value.
-                    sessionId =
+            }
+            if (sessionId.length() == 0 &&
+                    chc.maximumActiveProtocol.useTLS13PlusSpec() &&
+                    SSLConfiguration.useCompatibilityMode) {
+                // In compatibility mode, the TLS 1.3 legacy_session_id
+                // field MUST be non-empty, so a client not offering a
+                // pre-TLS 1.3 session MUST generate a new 32-byte value.
+                sessionId =
                         new SessionId(true, chc.sslContext.getSecureRandom());
-                }
             }
 
             ProtocolVersion minimumVersion = ProtocolVersion.NONE;
@@ -623,7 +611,7 @@ final class ClientHello {
             }
 
             // Create the handshake message.
-            ProtocolVersion clientHelloVersion = maxProtocolVersion;
+            ProtocolVersion clientHelloVersion = chc.maximumActiveProtocol;
             if (clientHelloVersion.useTLS13PlusSpec()) {
                 // In (D)TLS 1.3, the client indicates its version preferences
                 // in the "supported_versions" extension and the client_version
@@ -656,7 +644,7 @@ final class ClientHello {
             chm.write(chc.handshakeOutput);
             chc.handshakeOutput.flush();
 
-            // Reserve the initial ClientHello message for the follow on
+            // Reserve the initial ClientHello message for the follow-on
             // cookie exchange if needed.
             chc.initialClientHelloMsg = chm;
 
@@ -1208,7 +1196,7 @@ final class ClientHello {
             }
 
             if (!shc.handshakeProducers.isEmpty()) {
-                // unlikely, but please double check.
+                // unlikely, but please double-check.
                 throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                     "unknown handshake producers: " + shc.handshakeProducers);
             }
@@ -1390,25 +1378,30 @@ final class ClientHello {
                 shc.resumingSession = resumingSession ? previous : null;
             }
 
-            HelloCookieManager hcm =
-                shc.sslContext.getHelloCookieManager(ProtocolVersion.DTLS10);
-            if (!shc.isResumption &&
-                !hcm.isCookieValid(shc, clientHello, clientHello.cookie)) {
-                //
-                // Perform cookie exchange for DTLS handshaking if no cookie
-                // or the cookie is invalid in the ClientHello message.
-                //
-                // update the responders
-                shc.handshakeProducers.put(
-                        SSLHandshake.HELLO_VERIFY_REQUEST.id,
-                        SSLHandshake.HELLO_VERIFY_REQUEST);
 
-                //
-                // produce response handshake message
-                //
-                SSLHandshake.HELLO_VERIFY_REQUEST.produce(context, clientHello);
+            // We will by default exchange DTLS cookies for all handshakes
+            // (new and resumed) unless jdk.tls.enableDtlsResumeCookie=false.
+            // The property only affects the cookie exchange for resumption.
+            if (!shc.isResumption || SSLConfiguration.enableDtlsResumeCookie) {
+                HelloCookieManager hcm =
+                        shc.sslContext.getHelloCookieManager(ProtocolVersion.DTLS10);
+                if (!hcm.isCookieValid(shc, clientHello, clientHello.cookie)) {
+                    //
+                    // Perform cookie exchange for DTLS handshaking if no cookie
+                    // or the cookie is invalid in the ClientHello message.
+                    //
+                    // update the responders
+                    shc.handshakeProducers.put(
+                            SSLHandshake.HELLO_VERIFY_REQUEST.id,
+                            SSLHandshake.HELLO_VERIFY_REQUEST);
 
-                return;
+                    //
+                    // produce response handshake message
+                    //
+                    SSLHandshake.HELLO_VERIFY_REQUEST.produce(context, clientHello);
+
+                    return;
+                }
             }
 
             // cache the client random number for further using

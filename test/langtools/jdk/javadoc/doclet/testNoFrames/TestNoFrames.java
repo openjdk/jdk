@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import javadoc.tester.JavadocTester;
 public class TestNoFrames extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestNoFrames tester = new TestNoFrames();
+        var tester = new TestNoFrames();
         tester.runTests();
     }
 
@@ -59,7 +59,7 @@ public class TestNoFrames extends JavadocTester {
 
         checkOutput(Output.OUT, true,
                 """
-                    javadoc: warning - The --no-frames option is no longer required and may be removed
-                    in a future release.""");
+                    warning: The --no-frames option is no longer required and may be removed
+                      in a future release.""");
     }
 }

@@ -35,8 +35,7 @@
 
 package java.util.concurrent;
 
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
+import jdk.internal.misc.Unsafe;
 
 /**
  * A {@link ForkJoinTask} with a completion action performed when
@@ -420,6 +419,8 @@ import java.lang.invoke.VarHandle;
  * new HeaderBuilder(p, ...).fork();
  * new BodyBuilder(p, ...).fork();}</pre>
  *
+ * @param <T> the type of the result of the completer
+ *
  * @since 1.8
  * @author Doug Lea
  */
@@ -523,6 +524,10 @@ public abstract class CountedCompleter<T> extends ForkJoinTask<T> {
         return pending;
     }
 
+    final void initPending(int count) {
+        U.putInt(this, PENDING, count);
+    }
+
     /**
      * Sets the pending count to the given value.
      *
@@ -538,7 +543,7 @@ public abstract class CountedCompleter<T> extends ForkJoinTask<T> {
      * @param delta the value to add
      */
     public final void addToPendingCount(int delta) {
-        PENDING.getAndAdd(this, delta);
+        U.getAndAddInt(this, PENDING, delta);
     }
 
     /**
@@ -550,12 +555,12 @@ public abstract class CountedCompleter<T> extends ForkJoinTask<T> {
      * @return {@code true} if successful
      */
     public final boolean compareAndSetPendingCount(int expected, int count) {
-        return PENDING.compareAndSet(this, expected, count);
+        return U.compareAndSetInt(this, PENDING, expected, count);
     }
 
     // internal-only weak version
     final boolean weakCompareAndSetPendingCount(int expected, int count) {
-        return PENDING.weakCompareAndSet(this, expected, count);
+        return U.weakCompareAndSetInt(this, PENDING, expected, count);
     }
 
     /**
@@ -723,13 +728,14 @@ public abstract class CountedCompleter<T> extends ForkJoinTask<T> {
      *                 processed.
      */
     public final void helpComplete(int maxTasks) {
-        ForkJoinPool.WorkQueue q; Thread t; boolean owned;
-        if (owned = (t = Thread.currentThread()) instanceof ForkJoinWorkerThread)
+        ForkJoinPool.WorkQueue q; Thread t; boolean internal;
+        if (internal =
+            (t = Thread.currentThread()) instanceof ForkJoinWorkerThread)
             q = ((ForkJoinWorkerThread)t).workQueue;
         else
             q = ForkJoinPool.commonQueue();
         if (q != null && maxTasks > 0)
-            q.helpComplete(this, owned, maxTasks);
+            q.helpComplete(this, internal, maxTasks);
     }
 
     // ForkJoinTask overrides
@@ -738,12 +744,11 @@ public abstract class CountedCompleter<T> extends ForkJoinTask<T> {
      * Supports ForkJoinTask exception propagation.
      */
     @Override
-    final int trySetException(Throwable ex) {
+    final void onAuxExceptionSet(Throwable ex) {
         CountedCompleter<?> a = this, p = a;
-        do {} while (isExceptionalStatus(a.trySetThrown(ex)) &&
-                     a.onExceptionalCompletion(ex, p) &&
-                     (a = (p = a).completer) != null && a.status >= 0);
-        return status;
+        do {} while (a.onExceptionalCompletion(ex, p) &&
+                     (a = (p = a).completer) != null &&
+                     a.trySetThrown(ex));
     }
 
     /**
@@ -777,15 +782,16 @@ public abstract class CountedCompleter<T> extends ForkJoinTask<T> {
     @Override
     protected void setRawResult(T t) { }
 
-    // VarHandle mechanics
-    private static final VarHandle PENDING;
+    /*
+     * This class uses jdk-internal Unsafe for atomics and special
+     * memory modes, rather than VarHandles, to avoid initialization
+     * dependencies in other jdk components that require early
+     * parallelism.
+     */
+    private static final Unsafe U;
+    private static final long PENDING;
     static {
-        try {
-            MethodHandles.Lookup l = MethodHandles.lookup();
-            PENDING = l.findVarHandle(CountedCompleter.class, "pending", int.class);
-
-        } catch (ReflectiveOperationException e) {
-            throw new ExceptionInInitializerError(e);
-        }
+        U = Unsafe.getUnsafe();
+        PENDING = U.objectFieldOffset(CountedCompleter.class, "pending");
     }
 }

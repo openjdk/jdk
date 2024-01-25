@@ -34,7 +34,7 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true test.astro.NamespaceContextTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow test.astro.NamespaceContextTest
  * @run testng/othervm test.astro.NamespaceContextTest
  * @summary javax.xml.namespace.QName tests
  */

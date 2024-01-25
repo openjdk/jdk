@@ -51,6 +51,7 @@ public class JShellToolBuilder implements JavaShellToolBuilder {
     private PersistentStorage prefs = null;
     private Map<String, String> vars = null;
     private Locale locale = Locale.getDefault();
+    private boolean interactiveTerminal;
     private boolean capturePrompt = false;
 
     /**
@@ -208,6 +209,12 @@ public class JShellToolBuilder implements JavaShellToolBuilder {
         return this;
     }
 
+    @Override
+    public JavaShellToolBuilder interactiveTerminal(boolean terminal) {
+        this.interactiveTerminal = terminal;
+        return this;
+    }
+
     /**
      * Create a tool instance for testing. Not in JavaShellToolBuilder.
      *
@@ -221,7 +228,7 @@ public class JShellToolBuilder implements JavaShellToolBuilder {
             vars = System.getenv();
         }
         JShellTool sh = new JShellTool(cmdIn, cmdOut, cmdErr, console, userIn,
-                userOut, userErr, prefs, vars, locale);
+                userOut, userErr, prefs, vars, locale, interactiveTerminal);
         sh.testPrompt = capturePrompt;
         return sh;
     }

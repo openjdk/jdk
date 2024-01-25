@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,8 @@ import jdk.internal.access.SharedSecrets;
  *
  * <p> HttpCookie class can accept all these 3 forms of syntax.
  *
+ * @spec https://www.rfc-editor.org/info/rfc2109 RFC 2109: HTTP State Management Mechanism
+ * @spec https://www.rfc-editor.org/info/rfc2965 RFC 2965: HTTP State Management Mechanism
  * @author Edward Wang
  * @since 1.6
  */
@@ -368,7 +370,7 @@ public final class HttpCookie implements Cloneable {
      */
     public void setDomain(String pattern) {
         if (pattern != null)
-            domain = pattern.toLowerCase();
+            domain = pattern.toLowerCase(Locale.ROOT);
         else
             domain = pattern;
     }
@@ -474,7 +476,7 @@ public final class HttpCookie implements Cloneable {
 
     /**
      * Returns {@code true} if sending this cookie should be restricted to a
-     * secure protocol, or {@code false} if the it can be sent using any
+     * secure protocol, or {@code false} if it can be sent using any
      * protocol.
      *
      * @return  {@code false} if the cookie can be sent over any standard
@@ -741,8 +743,8 @@ public final class HttpCookie implements Cloneable {
      */
     @Override
     public int hashCode() {
-        int h1 = name.toLowerCase().hashCode();
-        int h2 = (domain!=null) ? domain.toLowerCase().hashCode() : 0;
+        int h1 = name.toLowerCase(Locale.ROOT).hashCode();
+        int h2 = (domain!=null) ? domain.toLowerCase(Locale.ROOT).hashCode() : 0;
         int h3 = (path!=null) ? path.hashCode() : 0;
 
         return h1 + h2 + h3;
@@ -975,7 +977,7 @@ public final class HttpCookie implements Cloneable {
         // strip off the surrounding "-sign if there's any
         attrValue = stripOffSurroundingQuote(attrValue);
 
-        CookieAttributeAssignor assignor = assignors.get(attrName.toLowerCase());
+        CookieAttributeAssignor assignor = assignors.get(attrName.toLowerCase(Locale.ROOT));
         if (assignor != null) {
             assignor.assign(cookie, attrName, attrValue);
         } else {
@@ -1077,14 +1079,14 @@ public final class HttpCookie implements Cloneable {
     private static int guessCookieVersion(String header) {
         int version = 0;
 
-        header = header.toLowerCase();
-        if (header.indexOf("expires=") != -1) {
+        header = header.toLowerCase(Locale.ROOT);
+        if (header.contains("expires=")) {
             // only netscape cookie using 'expires'
             version = 0;
-        } else if (header.indexOf("version=") != -1) {
+        } else if (header.contains("version=")) {
             // version is mandatory for rfc 2965/2109 cookie
             version = 1;
-        } else if (header.indexOf("max-age") != -1) {
+        } else if (header.contains("max-age")) {
             // rfc 2965/2109 use 'max-age'
             version = 1;
         } else if (startsWithIgnoreCase(header, SET_COOKIE2)) {

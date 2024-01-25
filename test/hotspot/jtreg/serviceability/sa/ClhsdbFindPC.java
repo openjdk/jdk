@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,10 @@ import jdk.test.lib.util.CoreUtils;
 import jtreg.SkippedException;
 
 /**
- * @test
+ * @test id=xcomp-process
  * @bug 8193124
  * @summary Test the clhsdb 'findpc' command with Xcomp on live process
+ * @requires vm.compMode != "Xcomp"
  * @requires vm.hasSA
  * @requires vm.compiler1.enabled
  * @requires vm.opt.DeoptimizeALot != true
@@ -43,32 +44,31 @@ import jtreg.SkippedException;
  */
 
 /**
- * @test
+ * @test id=xcomp-core
  * @bug 8193124
  * @summary Test the clhsdb 'findpc' command with Xcomp on core file
  * @requires vm.compMode != "Xcomp"
  * @requires vm.hasSA
  * @requires vm.compiler1.enabled
+ * @requires vm.opt.DeoptimizeALot != true
  * @library /test/lib
  * @run main/othervm/timeout=480 ClhsdbFindPC true true
  */
 
 /**
- * @test
+ * @test id=no-xcomp-process
  * @bug 8193124
  * @summary Test the clhsdb 'findpc' command w/o Xcomp on live process
  * @requires vm.hasSA
  * @requires vm.compiler1.enabled
- * @requires vm.opt.DeoptimizeALot != true
  * @library /test/lib
  * @run main/othervm/timeout=480 ClhsdbFindPC false false
  */
 
 /**
- * @test
+ * @test id=no-xcomp-core
  * @bug 8193124
  * @summary Test the clhsdb 'findpc' command w/o Xcomp on core file
- * @requires vm.compMode != "Xcomp"
  * @requires vm.hasSA
  * @requires vm.compiler1.enabled
  * @library /test/lib
@@ -93,9 +93,9 @@ public class ClhsdbFindPC {
             theApp = new LingeredApp();
             theApp.setForceCrash(withCore);
             if (withXcomp) {
-                LingeredApp.startApp(theApp, "-Xcomp");
+                LingeredApp.startApp(theApp, "-Xcomp", CoreUtils.getAlwaysPretouchArg(withCore));
             } else {
-                LingeredApp.startApp(theApp, "-Xint");
+                LingeredApp.startApp(theApp, "-Xint", CoreUtils.getAlwaysPretouchArg(withCore));
             }
             System.out.print("Started LingeredApp ");
             if (withXcomp) {
@@ -182,6 +182,28 @@ public class ClhsdbFindPC {
                                           methodAddr));
             runTest(withCore, cmds, expStrMap);
 
+            // Rerun above findpc command, but this time using "whatis", which is an alias for "findpc".
+            cmdStr = "whatis " + methodAddr;
+            cmds = List.of(cmdStr);
+            expStrMap = new HashMap<>();
+            expStrMap.put(cmdStr, List.of("Method ",
+                                          "LingeredApp.steadyState",
+                                          methodAddr));
+            runTest(withCore, cmds, expStrMap);
+
+            // Run "mem -v <addr>/30" on a Method*. The first line will look like:
+            //   Address 0x0000152e30403530: Method jdk/test/lib/apps/LingeredApp.steadyState(Ljava/lang/Object;)V@0x0000152e30403530
+            // Followed by lines displaying the memory contents, including interpretation
+            // of any contents that are addresses.
+            cmdStr = "mem -v " + methodAddr + "/30";
+            cmds = List.of(cmdStr);
+            expStrMap = new HashMap<>();
+            expStrMap.put(cmdStr, List.of("Method jdk/test/lib/apps/LingeredApp.steadyState",
+                                          methodAddr,
+                                          /* The following is from a field in the Method object. */
+                                          "In interpreter codelet: method entry point"));
+            runTest(withCore, cmds, expStrMap);
+
             // Run findpc on a JavaThread*. We can find one in the jstack output.
             // The tid for a thread is it's JavaThread*. For example:
             //  "main" #1 prio=5 tid=0x00000080263398f0 nid=0x277e0 ...
@@ -193,6 +215,15 @@ public class ClhsdbFindPC {
             cmds = List.of(cmdStr);
             expStrMap = new HashMap<>();
             expStrMap.put(cmdStr, List.of("Is of type JavaThread"));
+            runTest(withCore, cmds, expStrMap);
+
+            // Use findpc on an address that is only 4 byte aligned and is the
+            // last 4 bytes of a 4k page. This is for testing JDK-8292201.
+            String badAddress = tid.substring(0, tid.length() - 3) + "ffc";
+            cmdStr = "findpc " + badAddress;
+            cmds = List.of(cmdStr);
+            expStrMap = new HashMap<>();
+            expStrMap.put(cmdStr, List.of("In unknown location"));
             runTest(withCore, cmds, expStrMap);
 
             // Run findpc on a java stack address. We can find one in the jstack output.
@@ -209,7 +240,8 @@ public class ClhsdbFindPC {
                 cmdStr = "findpc " + stackAddress;
                 cmds = List.of(cmdStr);
                 expStrMap = new HashMap<>();
-                expStrMap.put(cmdStr, List.of("In java stack"));
+                // Note, sometimes a stack address points to a hotspot type, thus allow for "Is of type".
+                expStrMap.put(cmdStr, List.of("(In java stack)|(Is of type)"));
                 runTest(withCore, cmds, expStrMap);
             }
 

@@ -85,6 +85,10 @@ void ParallelArguments::initialize() {
   if (FLAG_IS_DEFAULT(MarkSweepDeadRatio)) {
     FLAG_SET_DEFAULT(MarkSweepDeadRatio, 1);
   }
+
+  if (FLAG_IS_DEFAULT(ParallelRefProcEnabled) && ParallelGCThreads > 1) {
+    FLAG_SET_DEFAULT(ParallelRefProcEnabled, true);
+  }
 }
 
 // The alignment used for boundary between young gen and old gen
@@ -93,6 +97,8 @@ static size_t default_gen_alignment() {
 }
 
 void ParallelArguments::initialize_alignments() {
+  // Initialize card size before initializing alignments
+  CardTable::initialize_card_size();
   SpaceAlignment = GenAlignment = default_gen_alignment();
   HeapAlignment = compute_heap_alignment();
 }

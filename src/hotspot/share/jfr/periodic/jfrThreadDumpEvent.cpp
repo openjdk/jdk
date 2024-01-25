@@ -38,7 +38,7 @@
 *  param: cmd = the DCMD to execute (including options)
 */
 static bool execute_dcmd(bufferedStream& st, const char* const cmd) {
-  Thread* THREAD = Thread::current();
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
   assert(!HAS_PENDING_EXCEPTION, "dcmd does not expect pending exceptions on entry!");
   // delegate to DCmd execution
   DCmd::parse_and_execute(DCmd_Source_Internal, &st, cmd, ' ', THREAD);
@@ -57,7 +57,6 @@ static bool execute_dcmd(bufferedStream& st, const char* const cmd) {
 
 // caller needs ResourceMark
 const char* JfrDcmdEvent::thread_dump() {
-  assert(EventThreadDump::is_enabled(), "invariant");
   bufferedStream st;
   execute_dcmd(st, "Thread.print");
   return st.as_string();

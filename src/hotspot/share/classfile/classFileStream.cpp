@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ ClassFileStream::ClassFileStream(const u1* buffer,
   _source(source),
   _need_verify(verify_stream),
   _from_boot_loader_modules_image(from_boot_loader_modules_image) {
-    assert(buffer != NULL, "caller should throw NPE");
+    assert(buffer != nullptr, "caller should throw NPE");
 }
 
 const u1* ClassFileStream::clone_buffer() const {
@@ -54,10 +54,10 @@ const u1* ClassFileStream::clone_buffer() const {
   return new_buffer_start;
 }
 
-const char* const ClassFileStream::clone_source() const {
+const char* ClassFileStream::clone_source() const {
   const char* const src = source();
-  char* source_copy = NULL;
-  if (src != NULL) {
+  char* source_copy = nullptr;
+  if (src != nullptr) {
     size_t source_len = strlen(src);
     source_copy = NEW_RESOURCE_ARRAY(char, source_len + 1);
     strncpy(source_copy, src, source_len + 1);
@@ -74,13 +74,4 @@ const ClassFileStream* ClassFileStream::clone() const {
                              clone_source(),
                              need_verify(),
                              from_boot_loader_modules_image());
-}
-
-uint64_t ClassFileStream::compute_fingerprint() const {
-  int classfile_size = length();
-  int classfile_crc = ClassLoader::crc32(0, (const char*)buffer(), length());
-  uint64_t fingerprint = (uint64_t(classfile_size) << 32) | uint64_t(uint32_t(classfile_crc));
-  assert(fingerprint != 0, "must not be zero");
-
-  return fingerprint;
 }

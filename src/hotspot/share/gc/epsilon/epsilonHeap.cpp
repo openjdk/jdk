@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2017, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +30,7 @@
 #include "gc/epsilon/epsilonThreadLocalData.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/locationPrinter.inline.hpp"
+#include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/metaspaceUtils.hpp"
@@ -73,10 +75,6 @@ jint EpsilonHeap::initialize() {
   return JNI_OK;
 }
 
-void EpsilonHeap::post_initialize() {
-  CollectedHeap::post_initialize();
-}
-
 void EpsilonHeap::initialize_serviceability() {
   _pool = new EpsilonMemoryPool(this);
   _memory_manager.add_pool(_pool);
@@ -104,14 +102,14 @@ EpsilonHeap* EpsilonHeap::heap() {
   return named_heap<EpsilonHeap>(CollectedHeap::Epsilon);
 }
 
-HeapWord* EpsilonHeap::allocate_work(size_t size) {
+HeapWord* EpsilonHeap::allocate_work(size_t size, bool verbose) {
   assert(is_object_aligned(size), "Allocation size should be aligned: " SIZE_FORMAT, size);
 
-  HeapWord* res = NULL;
+  HeapWord* res = nullptr;
   while (true) {
     // Try to allocate, assume space is available
     res = _space->par_allocate(size);
-    if (res != NULL) {
+    if (res != nullptr) {
       break;
     }
 
@@ -121,7 +119,7 @@ HeapWord* EpsilonHeap::allocate_work(size_t size) {
 
       // Try to allocate under the lock, assume another thread was able to expand
       res = _space->par_allocate(size);
-      if (res != NULL) {
+      if (res != nullptr) {
         break;
       }
 
@@ -140,7 +138,7 @@ HeapWord* EpsilonHeap::allocate_work(size_t size) {
         assert(expand, "Should be able to expand");
       } else {
         // No space left:
-        return NULL;
+        return nullptr;
       }
 
       _space->set_end((HeapWord *) _virtual_space.high());
@@ -150,7 +148,7 @@ HeapWord* EpsilonHeap::allocate_work(size_t size) {
   size_t used = _space->used();
 
   // Allocation successful, update counters
-  {
+  if (verbose) {
     size_t last = _last_counter_update;
     if ((used - last >= _step_counter_update) && Atomic::cmpxchg(&_last_counter_update, last, used) == last) {
       _monitoring_support->update_counters();
@@ -158,7 +156,7 @@ HeapWord* EpsilonHeap::allocate_work(size_t size) {
   }
 
   // ...and print the occupancy line, if needed
-  {
+  if (verbose) {
     size_t last = _last_heap_print;
     if ((used - last >= _step_heap_print) && Atomic::cmpxchg(&_last_heap_print, last, used) == last) {
       print_heap_info(used);
@@ -238,7 +236,7 @@ HeapWord* EpsilonHeap::allocate_new_tlab(size_t min_size,
   // All prepared, let's do it!
   HeapWord* res = allocate_work(size);
 
-  if (res != NULL) {
+  if (res != nullptr) {
     // Allocation successful
     *actual_size = size;
     if (EpsilonElasticTLABDecay) {
@@ -261,6 +259,11 @@ HeapWord* EpsilonHeap::allocate_new_tlab(size_t min_size,
 HeapWord* EpsilonHeap::mem_allocate(size_t size, bool *gc_overhead_limit_was_exceeded) {
   *gc_overhead_limit_was_exceeded = false;
   return allocate_work(size);
+}
+
+HeapWord* EpsilonHeap::allocate_loaded_archive_space(size_t size) {
+  // Cannot use verbose=true because Metaspace is not initialized
+  return allocate_work(size, /* verbose = */false);
 }
 
 void EpsilonHeap::collect(GCCause::Cause cause) {
@@ -293,10 +296,9 @@ void EpsilonHeap::object_iterate(ObjectClosure *cl) {
 void EpsilonHeap::print_on(outputStream *st) const {
   st->print_cr("Epsilon Heap");
 
-  // Cast away constness:
-  ((VirtualSpace)_virtual_space).print_on(st);
+  _virtual_space.print_on(st);
 
-  if (_space != NULL) {
+  if (_space != nullptr) {
     st->print_cr("Allocation space:");
     _space->print_on(st);
   }
@@ -331,9 +333,10 @@ void EpsilonHeap::print_heap_info(size_t used) const {
 }
 
 void EpsilonHeap::print_metaspace_info() const {
-  size_t reserved  = MetaspaceUtils::reserved_bytes();
-  size_t committed = MetaspaceUtils::committed_bytes();
-  size_t used      = MetaspaceUtils::used_bytes();
+  MetaspaceCombinedStats stats = MetaspaceUtils::get_combined_statistics();
+  size_t reserved  = stats.reserved();
+  size_t committed = stats.committed();
+  size_t used      = stats.used();
 
   if (reserved != 0) {
     log_info(gc, metaspace)("Metaspace: " SIZE_FORMAT "%s reserved, " SIZE_FORMAT "%s (%.2f%%) committed, "

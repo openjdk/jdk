@@ -34,7 +34,7 @@ import org.w3c.dom.DOMImplementation;
  * @test
  * @bug 8042244
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true dom.DOMXPathTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow dom.DOMXPathTest
  * @run testng/othervm dom.DOMXPathTest
  * @summary Verifies that the experimental DOM L3 XPath implementation is no longer available.
  */

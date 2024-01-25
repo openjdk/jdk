@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ public class CompilerToVMHelper {
     }
 
     public static HotSpotResolvedObjectType lookupType(String name,
-            Class<?> accessClass, boolean resolve) throws ClassNotFoundException {
+            Class<?> accessClass, boolean resolve) throws NoClassDefFoundError {
         if (accessClass == null) {
             throw new NullPointerException();
         }
@@ -94,32 +94,28 @@ public class CompilerToVMHelper {
 
     public static HotSpotResolvedObjectType lookupTypeHelper(String name,
             Class<?> accessingClass, boolean resolve) {
-        try {
-            return lookupType(name, accessingClass, resolve);
-        } catch (ClassNotFoundException e) {
-            throw (NoClassDefFoundError) new NoClassDefFoundError().initCause(e);
-        }
+        return lookupType(name, accessingClass, resolve);
     }
 
-    public static Object resolvePossiblyCachedConstantInPool(ConstantPool constantPool, int cpi) {
-        DirectHotSpotObjectConstantImpl obj = (DirectHotSpotObjectConstantImpl) CTVM.resolvePossiblyCachedConstantInPool((HotSpotConstantPool) constantPool, cpi);
+    public static Object lookupConstantInPool(ConstantPool constantPool, int cpi, boolean resolve) {
+        DirectHotSpotObjectConstantImpl obj = (DirectHotSpotObjectConstantImpl) CTVM.lookupConstantInPool((HotSpotConstantPool) constantPool, cpi, resolve);
         return obj.object;
     }
 
-    public static int lookupNameAndTypeRefIndexInPool(ConstantPool constantPool, int cpi) {
-        return CTVM.lookupNameAndTypeRefIndexInPool((HotSpotConstantPool) constantPool, cpi);
+    public static int lookupNameAndTypeRefIndexInPool(ConstantPool constantPool, int rawIndex, int opcode) {
+        return CTVM.lookupNameAndTypeRefIndexInPool((HotSpotConstantPool) constantPool, rawIndex, opcode);
     }
 
-    public static String lookupNameInPool(ConstantPool constantPool, int cpi) {
-        return CTVM.lookupNameInPool((HotSpotConstantPool) constantPool, cpi);
+    public static String lookupNameInPool(ConstantPool constantPool, int rawIndex, int opcode) {
+        return CTVM.lookupNameInPool((HotSpotConstantPool) constantPool, rawIndex, opcode);
     }
 
-    public static String lookupSignatureInPool(ConstantPool constantPool, int cpi) {
-        return CTVM.lookupSignatureInPool((HotSpotConstantPool) constantPool, cpi);
+    public static String lookupSignatureInPool(ConstantPool constantPool, int rawIndex, int opcode) {
+        return CTVM.lookupSignatureInPool((HotSpotConstantPool) constantPool, rawIndex, opcode);
     }
 
-    public static int lookupKlassRefIndexInPool(ConstantPool constantPool, int cpi) {
-        return CTVM.lookupKlassRefIndexInPool((HotSpotConstantPool) constantPool, cpi);
+    public static int lookupKlassRefIndexInPool(ConstantPool constantPool, int rawIndex, int opcode) {
+        return CTVM.lookupKlassRefIndexInPool((HotSpotConstantPool) constantPool, rawIndex, opcode);
     }
 
     public static Object lookupKlassInPool(ConstantPool constantPool, int cpi) {
@@ -128,12 +124,8 @@ public class CompilerToVMHelper {
 
     public static HotSpotResolvedJavaMethod lookupMethodInPool(
             ConstantPool constantPool, int cpi, byte opcode) {
-        return CTVM.lookupMethodInPool((HotSpotConstantPool) constantPool, cpi, opcode);
-    }
-
-    public static void resolveInvokeDynamicInPool(
-            ConstantPool constantPool, int cpi) {
-        CTVM.resolveInvokeDynamicInPool((HotSpotConstantPool) constantPool, cpi);
+        HotSpotResolvedJavaMethodImpl caller = null;
+        return CTVM.lookupMethodInPool((HotSpotConstantPool) constantPool, cpi, opcode, null);
     }
 
     public static void resolveInvokeHandleInPool(
@@ -149,11 +141,6 @@ public class CompilerToVMHelper {
     public static HotSpotResolvedObjectType resolveFieldInPool(
             ConstantPool constantPool, int cpi, ResolvedJavaMethod method, byte opcode, int[] info) {
         return CTVM.resolveFieldInPool((HotSpotConstantPool) constantPool, cpi, (HotSpotResolvedJavaMethodImpl) method, opcode, info);
-    }
-
-    public static int constantPoolRemapInstructionOperandFromCache(
-            ConstantPool constantPool, int cpci) {
-        return CTVM.constantPoolRemapInstructionOperandFromCache((HotSpotConstantPool) constantPool, cpci);
     }
 
     public static Object lookupAppendixInPool(
@@ -172,12 +159,7 @@ public class CompilerToVMHelper {
             speculations = new byte[0];
             failedSpeculationsAddress = 0L;
         }
-        return CTVM.installCode(target, compiledCode, code, failedSpeculationsAddress, speculations);
-    }
-
-    public static int getMetadata(TargetDescription target,
-            HotSpotCompiledCode compiledCode, HotSpotMetaData metaData) {
-        return CTVM.getMetadata(target, compiledCode, metaData);
+        return CTVM.installCode(compiledCode, code, failedSpeculationsAddress, speculations);
     }
 
     public static void resetCompilationStatistics() {
@@ -247,8 +229,8 @@ public class CompilerToVMHelper {
         CTVM.reprofile((HotSpotResolvedJavaMethodImpl)method);
     }
 
-    public static void invalidateHotSpotNmethod(HotSpotNmethod nmethodMirror) {
-        CTVM.invalidateHotSpotNmethod(nmethodMirror);
+    public static void invalidateHotSpotNmethod(HotSpotNmethod nmethodMirror, boolean deoptimize) {
+        CTVM.invalidateHotSpotNmethod(nmethodMirror, deoptimize);
     }
 
     public static long[] collectCounters() {
@@ -281,11 +263,6 @@ public class CompilerToVMHelper {
         return CTVM.iterateFrames(initialMethods, matchingMethods, initialSkip, visitor);
     }
 
-    public static void materializeVirtualObjects(
-            HotSpotStackFrameReference stackFrame, boolean invalidate) {
-        CTVM.materializeVirtualObjects(stackFrame, invalidate);
-    }
-
     public static int getVtableIndexForInterfaceMethod(HotSpotResolvedObjectType type,
             HotSpotResolvedJavaMethod method) {
         return CTVM.getVtableIndexForInterfaceMethod((HotSpotResolvedObjectTypeImpl) type, (HotSpotResolvedJavaMethodImpl) method);
@@ -306,11 +283,6 @@ public class CompilerToVMHelper {
 
     public static HotSpotConstantPool getConstantPool(MetaspaceObject object) {
         return CTVM.getConstantPool(object);
-    }
-
-    public static HotSpotResolvedObjectType getResolvedJavaType(MetaspaceObject base,
-            long displacement, boolean compressed) {
-        return CTVM.getResolvedJavaType(base, displacement, compressed);
     }
 
     public static long getMetaspacePointer(Object o) {

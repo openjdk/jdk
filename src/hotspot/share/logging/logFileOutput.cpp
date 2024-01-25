@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,14 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
+#include "logging/logAsyncWriter.hpp"
 #include "logging/logConfiguration.hpp"
 #include "logging/logFileOutput.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/os.inline.hpp"
-#include "utilities/globalDefinitions.hpp"
+#include "runtime/os.hpp"
 #include "utilities/defaultStream.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 const char* const LogFileOutput::Prefix = "file=";
 const char* const LogFileOutput::FileOpenMode = "a";
@@ -43,8 +44,8 @@ char        LogFileOutput::_pid_str[PidBufferSize];
 char        LogFileOutput::_vm_start_time_str[StartTimeBufferSize];
 
 LogFileOutput::LogFileOutput(const char* name)
-    : LogFileStreamOutput(NULL), _name(os::strdup_check_oom(name, mtLogging)),
-      _file_name(NULL), _archive_name(NULL), _current_file(0),
+    : LogFileStreamOutput(nullptr), _name(os::strdup_check_oom(name, mtLogging)),
+      _file_name(nullptr), _archive_name(nullptr), _current_file(0),
       _file_count(DefaultFileCount), _is_default_file_count(true), _archive_name_len(0),
       _rotate_size(DefaultFileSize), _current_size(0), _rotation_semaphore(1) {
   assert(strstr(name, Prefix) == name, "invalid output name '%s': missing prefix: %s", name, Prefix);
@@ -71,7 +72,7 @@ void LogFileOutput::set_file_name_parameters(jlong vm_start_time) {
 }
 
 LogFileOutput::~LogFileOutput() {
-  if (_stream != NULL) {
+  if (_stream != nullptr) {
     if (fclose(_stream) != 0) {
       jio_fprintf(defaultStream::error_stream(), "Could not close log file '%s' (%s).\n",
                   _file_name, os::strerror(errno));
@@ -89,11 +90,6 @@ static size_t parse_value(const char* value_str) {
     return SIZE_MAX;
   }
   return value;
-}
-
-static bool file_exists(const char* filename) {
-  struct stat dummy_stat;
-  return os::stat(filename, &dummy_stat) == 0;
 }
 
 static uint number_of_digits(uint number) {
@@ -138,7 +134,7 @@ static uint next_file_number(const char* filename,
     assert(ret > 0 && static_cast<size_t>(ret) == len - 1,
            "incorrect buffer length calculation");
 
-    if (file_exists(archive_name) && !is_regular_file(archive_name)) {
+    if (os::file_exists(archive_name) && !is_regular_file(archive_name)) {
       // We've encountered something that's not a regular file among the
       // possible file rotation targets. Fail immediately to prevent
       // problems later.
@@ -149,7 +145,7 @@ static uint next_file_number(const char* filename,
     }
 
     // Stop looking if we find an unused file name
-    if (!file_exists(archive_name)) {
+    if (!os::file_exists(archive_name)) {
       next_num = i;
       found = true;
       break;
@@ -169,61 +165,33 @@ static uint next_file_number(const char* filename,
   return next_num;
 }
 
-bool LogFileOutput::parse_options(const char* options, outputStream* errstream) {
-  if (options == NULL || strlen(options) == 0) {
-    return true;
-  }
-  bool success = true;
-  char* opts = os::strdup_check_oom(options, mtLogging);
-
-  char* comma_pos;
-  char* pos = opts;
-  do {
-    comma_pos = strchr(pos, ',');
-    if (comma_pos != NULL) {
-      *comma_pos = '\0';
-    }
-
-    char* equals_pos = strchr(pos, '=');
-    if (equals_pos == NULL) {
-      errstream->print_cr("Invalid option '%s' for log file output.", pos);
-      success = false;
-      break;
-    }
-    char* key = pos;
-    char* value_str = equals_pos + 1;
-    *equals_pos = '\0';
-
+bool LogFileOutput::set_option(const char* key, const char* value, outputStream* errstream) {
+  bool success = LogFileStreamOutput::set_option(key, value, errstream);
+  if (!success) {
     if (strcmp(FileCountOptionKey, key) == 0) {
-      size_t value = parse_value(value_str);
-      if (value > MaxRotationFileCount) {
+      size_t sizeval = parse_value(value);
+      if (sizeval > MaxRotationFileCount) {
         errstream->print_cr("Invalid option: %s must be in range [0, %u]",
                             FileCountOptionKey,
                             MaxRotationFileCount);
-        success = false;
-        break;
+      } else {
+        _file_count = static_cast<uint>(sizeval);
+        _is_default_file_count = false;
+        success = true;
       }
-      _file_count = static_cast<uint>(value);
-      _is_default_file_count = false;
     } else if (strcmp(FileSizeOptionKey, key) == 0) {
-      julong value;
-      success = Arguments::atojulong(value_str, &value);
-      if (!success || (value > SIZE_MAX)) {
+      julong longval;
+      success = Arguments::atojulong(value, &longval);
+      if (!success || (longval > SIZE_MAX)) {
         errstream->print_cr("Invalid option: %s must be in range [0, "
                             SIZE_FORMAT "]", FileSizeOptionKey, (size_t)SIZE_MAX);
         success = false;
-        break;
+      } else {
+        _rotate_size = static_cast<size_t>(longval);
+        success = true;
       }
-      _rotate_size = static_cast<size_t>(value);
-    } else {
-      errstream->print_cr("Invalid option '%s' for log file output.", key);
-      success = false;
-      break;
     }
-    pos = comma_pos + 1;
-  } while (comma_pos != NULL);
-
-  os::free(opts);
+  }
   return success;
 }
 
@@ -232,7 +200,7 @@ bool LogFileOutput::initialize(const char* options, outputStream* errstream) {
     return false;
   }
 
-  bool file_exist = file_exists(_file_name);
+  bool file_exist = os::file_exists(_file_name);
   if (file_exist && _is_default_file_count && is_fifo_file(_file_name)) {
     _file_count = 0; // Prevent file rotation for fifo's such as named pipes.
   }
@@ -270,7 +238,7 @@ bool LogFileOutput::initialize(const char* options, outputStream* errstream) {
   }
 
   _stream = os::fopen(_file_name, FileOpenMode);
-  if (_stream == NULL) {
+  if (_stream == nullptr) {
     errstream->print_cr("Error opening log file '%s': %s",
                         _file_name, os::strerror(errno));
     return false;
@@ -284,14 +252,29 @@ bool LogFileOutput::initialize(const char* options, outputStream* errstream) {
   return true;
 }
 
-int LogFileOutput::write(const LogDecorations& decorations, const char* msg) {
-  if (_stream == NULL) {
+class RotationLocker : public StackObj {
+  Semaphore& _sem;
+
+ public:
+  RotationLocker(Semaphore& sem) : _sem(sem) {
+    sem.wait();
+  }
+
+  ~RotationLocker() {
+    _sem.signal();
+  }
+};
+
+int LogFileOutput::write_blocking(const LogDecorations& decorations, const char* msg) {
+  RotationLocker lock(_rotation_semaphore);
+  if (_stream == nullptr) {
     // An error has occurred with this output, avoid writing to it.
     return 0;
   }
 
-  _rotation_semaphore.wait();
-  int written = LogFileStreamOutput::write(decorations, msg);
+  int written = write_internal(decorations, msg);
+  // Need to flush to the filesystem before should_rotate()
+  written = flush() ? written : -1;
   if (written > 0) {
     _current_size += written;
 
@@ -299,18 +282,38 @@ int LogFileOutput::write(const LogDecorations& decorations, const char* msg) {
       rotate();
     }
   }
-  _rotation_semaphore.signal();
 
   return written;
 }
 
-int LogFileOutput::write(LogMessageBuffer::Iterator msg_iterator) {
-  if (_stream == NULL) {
+int LogFileOutput::write(const LogDecorations& decorations, const char* msg) {
+  if (_stream == nullptr) {
     // An error has occurred with this output, avoid writing to it.
     return 0;
   }
 
-  _rotation_semaphore.wait();
+  AsyncLogWriter* aio_writer = AsyncLogWriter::instance();
+  if (aio_writer != nullptr) {
+    aio_writer->enqueue(*this, decorations, msg);
+    return 0;
+  }
+
+  return write_blocking(decorations, msg);
+}
+
+int LogFileOutput::write(LogMessageBuffer::Iterator msg_iterator) {
+  if (_stream == nullptr) {
+    // An error has occurred with this output, avoid writing to it.
+    return 0;
+  }
+
+  AsyncLogWriter* aio_writer = AsyncLogWriter::instance();
+  if (aio_writer != nullptr) {
+    aio_writer->enqueue(*this, msg_iterator);
+    return 0;
+  }
+
+  RotationLocker lock(_rotation_semaphore);
   int written = LogFileStreamOutput::write(msg_iterator);
   if (written > 0) {
     _current_size += written;
@@ -319,13 +322,12 @@ int LogFileOutput::write(LogMessageBuffer::Iterator msg_iterator) {
       rotate();
     }
   }
-  _rotation_semaphore.signal();
 
   return written;
 }
 
 void LogFileOutput::archive() {
-  assert(_archive_name != NULL && _archive_name_len > 0, "Rotation must be configured before using this function.");
+  assert(_archive_name != nullptr && _archive_name_len > 0, "Rotation must be configured before using this function.");
   int ret = jio_snprintf(_archive_name, _archive_name_len, "%s.%0*u",
                          _file_name, _file_count_max_digits, _current_file);
   assert(ret >= 0, "Buffer should always be large enough");
@@ -346,13 +348,12 @@ void LogFileOutput::force_rotate() {
     // Rotation not possible
     return;
   }
-  _rotation_semaphore.wait();
+
+  RotationLocker lock(_rotation_semaphore);
   rotate();
-  _rotation_semaphore.signal();
 }
 
 void LogFileOutput::rotate() {
-
   if (fclose(_stream)) {
     jio_fprintf(defaultStream::error_stream(), "Error closing file '%s' during log rotation (%s).\n",
                 _file_name, os::strerror(errno));
@@ -363,7 +364,7 @@ void LogFileOutput::rotate() {
 
   // Open the active log file using the same stream as before
   _stream = os::fopen(_file_name, FileOpenMode);
-  if (_stream == NULL) {
+  if (_stream == nullptr) {
     jio_fprintf(defaultStream::error_stream(), "Could not reopen file '%s' during log rotation (%s).\n",
                 _file_name, os::strerror(errno));
     return;
@@ -377,14 +378,14 @@ void LogFileOutput::rotate() {
 char* LogFileOutput::make_file_name(const char* file_name,
                                     const char* pid_string,
                                     const char* timestamp_string) {
-  char* result = NULL;
+  char* result = nullptr;
 
   // Lets start finding out if we have any %d and/or %t in the name.
   // We will only replace the first occurrence of any placeholder
   const char* pid = strstr(file_name, PidFilenamePlaceholder);
   const char* timestamp = strstr(file_name, TimestampFilenamePlaceholder);
 
-  if (pid == NULL && timestamp == NULL) {
+  if (pid == nullptr && timestamp == nullptr) {
     // We found no place-holders, return the simple filename
     return os::strdup_check_oom(file_name, mtLogging);
   }
@@ -399,8 +400,8 @@ char* LogFileOutput::make_file_name(const char* file_name,
   size_t second_replace_len = 0;
 
   // If we found a %p, then setup our variables accordingly
-  if (pid != NULL) {
-    if (timestamp == NULL || pid < timestamp) {
+  if (pid != nullptr) {
+    if (timestamp == nullptr || pid < timestamp) {
       first = pid_string;
       first_pos = pid - file_name;
       first_replace_len = strlen(PidFilenamePlaceholder);
@@ -411,8 +412,8 @@ char* LogFileOutput::make_file_name(const char* file_name,
     }
   }
 
-  if (timestamp != NULL) {
-    if (pid == NULL || timestamp < pid) {
+  if (timestamp != nullptr) {
+    if (pid == nullptr || timestamp < pid) {
       first = timestamp_string;
       first_pos = timestamp - file_name;
       first_replace_len = strlen(TimestampFilenamePlaceholder);
@@ -458,10 +459,9 @@ char* LogFileOutput::make_file_name(const char* file_name,
 }
 
 void LogFileOutput::describe(outputStream *out) {
-  LogOutput::describe(out);
-  out->print(" ");
-
-  out->print("filecount=%u,filesize=" SIZE_FORMAT "%s", _file_count,
+  LogFileStreamOutput::describe(out);
+  out->print(",filecount=%u,filesize=" SIZE_FORMAT "%s,async=%s", _file_count,
              byte_size_in_proper_unit(_rotate_size),
-             proper_unit_for_byte_size(_rotate_size));
+             proper_unit_for_byte_size(_rotate_size),
+             LogConfiguration::is_async_mode() ? "true" : "false");
 }

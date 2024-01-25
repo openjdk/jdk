@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,10 @@ else
   JVM_EXCLUDE_PATTERNS += /zero/
 endif
 
+ifeq ($(JVM_VARIANT), core)
+  JVM_CFLAGS_FEATURES += -DVMTYPE=\"Core\"
+endif
+
 ifeq ($(JVM_VARIANT), custom)
   JVM_CFLAGS_FEATURES += -DVMTYPE=\"Custom\"
 endif
@@ -84,7 +88,7 @@ ifneq ($(call check-jvm-feature, jvmti), true)
       jvmtiImpl.cpp jvmtiManageCapabilities.cpp jvmtiRawMonitor.cpp jvmtiUtil.cpp jvmtiTrace.cpp \
       jvmtiCodeBlobEvents.cpp jvmtiEnv.cpp jvmtiRedefineClasses.cpp jvmtiEnvBase.cpp jvmtiEnvThreadState.cpp \
       jvmtiTagMap.cpp jvmtiEventController.cpp evmCompat.cpp jvmtiEnter.xsl jvmtiExport.cpp \
-      jvmtiClassFileReconstituter.cpp jvmtiTagMapTable.cpp
+      jvmtiClassFileReconstituter.cpp jvmtiTagMapTable.cpp jvmtiAgent.cpp jvmtiAgentList.cpp
 endif
 
 ifneq ($(call check-jvm-feature, jvmci), true)
@@ -116,38 +120,10 @@ endif
 ifneq ($(call check-jvm-feature, cds), true)
   JVM_CFLAGS_FEATURES += -DINCLUDE_CDS=0
   JVM_EXCLUDE_FILES += \
-      archiveBuilder.cpp \
-      archiveUtils.cpp \
-      classListParser.cpp \
       classLoaderDataShared.cpp \
       classLoaderExt.cpp \
-      cppVtables.cpp \
-      dumpAllocStats.cpp \
-      dynamicArchive.cpp \
-      filemap.cpp \
-      heapShared.cpp \
-      lambdaFormInvokers.cpp \
-      metaspaceShared.cpp \
-      metaspaceShared_$(HOTSPOT_TARGET_CPU).cpp \
-      metaspaceShared_$(HOTSPOT_TARGET_CPU_ARCH).cpp \
-      sharedClassUtil.cpp \
-      sharedPathsMiscInfo.cpp \
       systemDictionaryShared.cpp
-endif
-
-ifneq ($(call check-jvm-feature, nmt), true)
-  JVM_CFLAGS_FEATURES += -DINCLUDE_NMT=0
-  JVM_EXCLUDE_FILES += \
-      memBaseline.cpp memReporter.cpp mallocTracker.cpp virtualMemoryTracker.cpp nmtCommon.cpp \
-      memTracker.cpp nmtDCmd.cpp mallocSiteTable.cpp threadStackTracker.cpp
-endif
-
-ifneq ($(call check-jvm-feature, aot), true)
-  JVM_CFLAGS_FEATURES += -DINCLUDE_AOT=0
-  JVM_EXCLUDE_FILES += \
-      compiledIC_aot_x86_64.cpp compiledIC_aot_aarch64.cpp      \
-      compilerRuntime.cpp aotCodeHeap.cpp aotCompiledMethod.cpp \
-      aotLoader.cpp compiledIC_aot.cpp
+  JVM_EXCLUDE_PATTERNS += cds/
 endif
 
 ifneq ($(call check-jvm-feature, g1gc), true)
@@ -173,6 +149,7 @@ endif
 ifneq ($(call check-jvm-feature, zgc), true)
   JVM_CFLAGS_FEATURES += -DINCLUDE_ZGC=0
   JVM_EXCLUDE_PATTERNS += gc/z
+  JVM_EXCLUDE_PATTERNS += gc/x
 endif
 
 ifneq ($(call check-jvm-feature, shenandoahgc), true)
@@ -189,12 +166,20 @@ endif
 ################################################################################
 
 ifeq ($(call check-jvm-feature, link-time-opt), true)
-  # NOTE: Disable automatic opimization level and let the explicit cflag control
-  # optimization level instead. This activates O3 on slowdebug builds, just
-  # like the old build, but it's probably not right.
-  JVM_OPTIMIZATION :=
-  JVM_CFLAGS_FEATURES += -O3 -flto
-  JVM_LDFLAGS_FEATURES += -O3 -flto -fuse-linker-plugin -fno-strict-aliasing
+  # Set JVM_OPTIMIZATION directly so other jvm-feature flags can override it
+  # later on if desired
+  JVM_OPTIMIZATION := HIGHEST_JVM
+  ifeq ($(call isCompiler, gcc), true)
+    JVM_CFLAGS_FEATURES += -flto=auto -fuse-linker-plugin -fno-strict-aliasing -fno-fat-lto-objects
+    JVM_LDFLAGS_FEATURES += $(CXX_O_FLAG_HIGHEST_JVM) -flto=auto -fuse-linker-plugin -fno-strict-aliasing
+  else ifeq ($(call isCompiler, microsoft), true)
+    JVM_CFLAGS_FEATURES += -GL
+    JVM_LDFLAGS_FEATURES += -LTCG:INCREMENTAL
+  endif
+else
+  ifeq ($(call isCompiler, gcc), true)
+    JVM_LDFLAGS_FEATURES += -O1
+  endif
 endif
 
 ifeq ($(call check-jvm-feature, opt-size), true)
@@ -204,7 +189,6 @@ ifeq ($(call check-jvm-feature, opt-size), true)
       assembler.cpp \
       barrierSet.cpp \
       basicLock.cpp \
-      biasedLocking.cpp \
       bytecode.cpp \
       bytecodeInterpreter.cpp \
       c1_Compilation.cpp \

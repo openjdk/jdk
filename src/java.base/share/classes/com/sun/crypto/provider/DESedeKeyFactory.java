@@ -31,6 +31,7 @@ import javax.crypto.spec.DESedeKeySpec;
 import java.security.InvalidKeyException;
 import java.security.spec.KeySpec;
 import java.security.spec.InvalidKeySpecException;
+import java.util.Arrays;
 import javax.crypto.spec.SecretKeySpec;
 
 /**
@@ -63,15 +64,20 @@ public final class DESedeKeyFactory extends SecretKeyFactorySpi {
         throws InvalidKeySpecException {
 
         try {
+            byte[] encoded;
             if (keySpec instanceof DESedeKeySpec) {
-                return new DESedeKey(((DESedeKeySpec)keySpec).getKey());
+                encoded = ((DESedeKeySpec)keySpec).getKey();
+            } else if (keySpec instanceof SecretKeySpec) {
+                encoded = ((SecretKeySpec)keySpec).getEncoded();
+            } else {
+                throw new InvalidKeySpecException
+                        ("Inappropriate key specification");
             }
-            if (keySpec instanceof SecretKeySpec) {
-                return new DESedeKey(((SecretKeySpec)keySpec).getEncoded());
-
+            try {
+                return new DESedeKey(encoded);
+            } finally {
+                Arrays.fill(encoded, (byte)0);
             }
-            throw new InvalidKeySpecException
-                ("Inappropriate key specification");
         } catch (InvalidKeyException e) {
             throw new InvalidKeySpecException(e.getMessage());
         }
@@ -103,8 +109,14 @@ public final class DESedeKeyFactory extends SecretKeyFactorySpi {
 
                 // Check if requested key spec is amongst the valid ones
                 if (keySpec.isAssignableFrom(DESedeKeySpec.class)) {
-                    return new DESedeKeySpec(key.getEncoded());
-
+                    byte[] encoded = key.getEncoded();
+                    try {
+                        return new DESedeKeySpec(encoded);
+                    } finally {
+                        if (encoded != null) {
+                            Arrays.fill(encoded, (byte) 0);
+                        }
+                    }
                 } else {
                     throw new InvalidKeySpecException
                         ("Inappropriate key specification");

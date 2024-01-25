@@ -26,11 +26,12 @@
 #define SHARE_GC_SHARED_CARDTABLEBARRIERSET_INLINE_HPP
 
 #include "gc/shared/cardTableBarrierSet.hpp"
+
 #include "gc/shared/cardTable.hpp"
 #include "runtime/atomic.hpp"
 
 template <DecoratorSet decorators, typename T>
-inline void CardTableBarrierSet::write_ref_field_post(T* field, oop newVal) {
+inline void CardTableBarrierSet::write_ref_field_post(T* field) {
   volatile CardValue* byte = _card_table->byte_for(field);
   *byte = CardTable::dirty_card_val();
 }

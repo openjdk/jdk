@@ -26,7 +26,7 @@
  * Google Author(s): Sascha Brawer, Behdad Esfahbod
  */
 
-#ifndef HB_OT_H_IN
+#if !defined(HB_OT_H_IN) && !defined(HB_NO_SINGLE_HEADER_ERROR)
 #error "Include <hb-ot.h> instead."
 #endif
 
@@ -66,6 +66,8 @@ hb_ot_color_palette_color_get_name_id (hb_face_t *face,
  * @HB_OT_COLOR_PALETTE_FLAG_USABLE_WITH_DARK_BACKGROUND: Flag indicating that the color
  *   palette is appropriate to use when displaying the font on a dark background such as black.
  *
+ * Flags that describe the properties of color palette.
+ *
  * Since: 2.1.0
  */
 typedef enum { /*< flags >*/
@@ -95,13 +97,18 @@ hb_ot_color_has_layers (hb_face_t *face);
 
 /**
  * hb_ot_color_layer_t:
+ * @glyph: the glyph ID of the layer
+ * @color_index: the palette color index of the layer
  *
  * Pairs of glyph and color index.
  *
+ * A color index of 0xFFFF does not refer to a palette
+ * color, but indicates that the foreground color should
+ * be used.
+ *
  * Since: 2.1.0
  **/
-typedef struct hb_ot_color_layer_t
-{
+typedef struct hb_ot_color_layer_t {
   hb_codepoint_t glyph;
   unsigned int   color_index;
 } hb_ot_color_layer_t;
@@ -112,6 +119,15 @@ hb_ot_color_glyph_get_layers (hb_face_t           *face,
                               unsigned int         start_offset,
                               unsigned int        *layer_count, /* IN/OUT.  May be NULL. */
                               hb_ot_color_layer_t *layers /* OUT.     May be NULL. */);
+
+/* COLRv1 */
+
+HB_EXTERN hb_bool_t
+hb_ot_color_has_paint (hb_face_t *face);
+
+HB_EXTERN hb_bool_t
+hb_ot_color_glyph_has_paint (hb_face_t      *face,
+                             hb_codepoint_t  glyph);
 
 /*
  * SVG

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,16 @@
 
 /*
  * @test
- * @bug 8138766 8227059 8227595
+ * @bug 8138766 8227059 8227595 8267319
  * @summary New default -sigalg for keytool
  * @library /test/lib
  * @build java.base/sun.security.rsa.RSAKeyPairGenerator
  *        java.base/sun.security.provider.DSAKeyPairGenerator
- *        jdk.crypto.ec/sun.security.ec.ECKeyPairGenerator
+ *        java.base/sun.security.ec.ECKeyPairGenerator
  * @run main DefaultSignatureAlgorithm
- * @modules jdk.crypto.ec
+ *
+ * This test uses RSA, DSA, and EC inside this test directory, not the providers
+ * from the jdk
  */
 
 import jdk.test.lib.Asserts;
@@ -46,8 +48,8 @@ public class DefaultSignatureAlgorithm {
     static int pos = 0;
 
     public static void main(String[] args) throws Exception {
-        check("RSA", 1024, null, "SHA256withRSA");
-        check("RSA", 3072, null, "SHA256withRSA");
+        check("RSA", 1024, null, "SHA384withRSA");
+        check("RSA", 3072, null, "SHA384withRSA");
         check("RSA", 3073, null, "SHA384withRSA");
         check("RSA", 7680, null, "SHA384withRSA");
         check("RSA", 7681, null, "SHA512withRSA");
@@ -82,10 +84,7 @@ public class DefaultSignatureAlgorithm {
             throws Exception {
         String patchArg = "-J--patch-module=java.base="
                 + System.getProperty("test.classes")
-                + File.separator + "patches" + File.separator + "java.base"
-                + " -J--patch-module=jdk.crypto.ec="
-                + System.getProperty("test.classes")
-                + File.separator + "patches" + File.separator + "jdk.crypto.ec";
+                + File.separator + "patches" + File.separator + "java.base";
         return kt(patchArg + " -genkeypair -alias " + alias
                 + " -dname CN=" + alias + " " + options);
     }

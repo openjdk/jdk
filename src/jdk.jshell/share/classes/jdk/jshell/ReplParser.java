@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,12 @@
 
 package jdk.jshell;
 
+import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.TypeTag;
 import com.sun.tools.javac.parser.JavacParser;
-import com.sun.tools.javac.parser.ParserFactory;
 import com.sun.tools.javac.parser.Tokens.Comment;
-import com.sun.tools.javac.parser.Tokens.Comment.CommentStyle;
 import com.sun.tools.javac.parser.Tokens.Token;
-import com.sun.tools.javac.resources.CompilerProperties;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.CLASS;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.COLON;
@@ -43,6 +41,7 @@ import static com.sun.tools.javac.parser.Tokens.TokenKind.INTERFACE;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.LPAREN;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.MONKEYS_AT;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.SEMI;
+import static com.sun.tools.javac.parser.Tokens.TokenKind.SWITCH;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.VOID;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCAnnotation;
@@ -59,7 +58,6 @@ import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Position;
 
-import static com.sun.tools.javac.parser.Tokens.TokenKind.IDENTIFIER;
 /**
  * This is a subclass of JavacParser which overrides one method with a modified
  * verson of that method designed to allow parsing of one "snippet" of Java
@@ -71,8 +69,9 @@ class ReplParser extends JavacParser {
 
     // force starting in expression mode
     private final boolean forceExpression;
+    private final Source source;
 
-    public ReplParser(ParserFactory fac,
+    public ReplParser(ReplParserFactory fac,
             com.sun.tools.javac.parser.Lexer S,
             boolean keepDocComments,
             boolean keepLineMap,
@@ -80,6 +79,7 @@ class ReplParser extends JavacParser {
             boolean forceExpression) {
         super(fac, S, keepDocComments, keepLineMap, keepEndPositions);
         this.forceExpression = forceExpression;
+        this.source = fac.source;
     }
 
     /**
@@ -114,9 +114,9 @@ class ReplParser extends JavacParser {
                 seenImport = true;
                 defs.append(importDeclaration());
             } else {
-                Comment docComment = token.comment(CommentStyle.JAVADOC);
+                Comment docComment = token.docComment();
                 if (firstTypeDecl && !seenImport && !seenPackage) {
-                    docComment = firstToken.comment(CommentStyle.JAVADOC);
+                    docComment = firstToken.docComment();
                 }
                 List<? extends JCTree> udefs = replUnit(mods, docComment);
                // if (def instanceof JCExpressionStatement)
@@ -176,6 +176,11 @@ class ReplParser extends JavacParser {
                     return List.<JCTree>of(parseStatement());
                 }
                 //fall-through
+            case SWITCH:
+                if (token.kind == SWITCH && !Feature.SWITCH_EXPRESSION.allowedInSource(source)) {
+                    return List.<JCTree>of(parseStatement());
+                }
+                //fall-through
             default:
                 JCModifiers mods = modifiersOpt(pmods);
                 if (token.kind == CLASS
@@ -195,7 +200,6 @@ class ReplParser extends JavacParser {
                     List<JCAnnotation> annosAfterParams = annotationsOpt(Tag.ANNOTATION);
 
                     if (annosAfterParams.nonEmpty()) {
-                        checkSourceLevel(annosAfterParams.head.pos, Feature.ANNOTATIONS_AFTER_TYPE_PARAMS);
                         mods.annotations = mods.annotations.appendList(annosAfterParams);
                         if (mods.pos == Position.NOPOS) {
                             mods.pos = mods.annotations.head.pos;
@@ -221,10 +225,10 @@ class ReplParser extends JavacParser {
                         nextToken();
                         JCStatement stat = parseStatement();
                         return List.<JCTree>of(F.at(pos).Labelled(prevToken.name(), stat));
-                    } else if ((isVoid || (lastmode & TYPE) != 0) && LAX_IDENTIFIER.accepts(token.kind)) {
+                    } else if ((isVoid || (lastmode & TYPE) != 0) && LAX_IDENTIFIER.test(token.kind)) {
                         // we have "Type Ident", so we can assume it is variable or method declaration
                         pos = token.pos;
-                        Name name = ident();
+                        Name name = identOrUnderscore();
                         if (token.kind == LPAREN) {
                         // method declaration
                             //mods.flags |= Flags.STATIC;

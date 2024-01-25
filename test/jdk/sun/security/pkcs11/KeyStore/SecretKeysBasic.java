@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,8 +20,19 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+/* @test
+ * @bug 6599979
+ * @summary Ensure that re-assigning the alias works
+ * @library /test/lib ..
+ * @run testng/othervm SecretKeysBasic
+ */
+import jtreg.SkippedException;
+import org.testng.SkipException;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 import java.io.*;
+import java.nio.file.Path;
 import java.util.*;
 import java.security.*;
 import javax.crypto.*;
@@ -42,8 +53,22 @@ public class SecretKeysBasic extends PKCS11Test {
     private static final String KS_TYPE = "PKCS11";
     private static Provider provider;
 
-    public static void main(String[] args) throws Exception {
-        main(new SecretKeysBasic());
+    @BeforeClass
+    public void setUp() throws Exception {
+        copyNssCertKeyToClassesDir();
+        setCommonSystemProps();
+        System.setProperty("TOKEN", "nss");
+        System.setProperty("CUSTOM_P11_CONFIG", Path.of(BASE)
+                .resolve("BasicData").resolve("p11-nss.txt").toString());
+    }
+
+    @Test
+    public void testBasic() throws Exception {
+        try {
+            main(new SecretKeysBasic());
+        } catch (SkippedException se) {
+            throw new SkipException("One or more tests are skipped");
+        }
     }
 
     public void main(Provider p) throws Exception {

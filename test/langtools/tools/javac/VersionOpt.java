@@ -46,7 +46,7 @@ public class VersionOpt {
         // As such, it is only effective in testing the "standard" compiler,
         // and not any development version being tested via --patch-modules.
         // Check the version of the compiler being used, and let the test pass
-        // automatically if is is a development version.
+        // automatically if it is a development version.
         Class<?> javacClass = com.sun.tools.javac.Main.class;
         URL location = javacClass.getProtectionDomain().getCodeSource().getLocation();
         if (!location.toString().equals("jrt:/jdk.compiler")) {

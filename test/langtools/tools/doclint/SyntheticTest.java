@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,22 +23,22 @@
 
 /*
  * @test
- * @bug 8004832
+ * @bug 8004832 8249634
  * @summary Add new doclint package
  * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
- * @run main DocLintTester -Xmsgs:all SyntheticTest.java
+ * @run main DocLintTester -Xmsgs:all -ref SyntheticTest.out SyntheticTest.java
  */
 
 /**
  * This is a test that messages are not generated for synthesized elements
- * such as default constructors and enum methods.
+ * such as enum methods, and that a message *is* generated for a default constructor
  */
 public class SyntheticTest {
     // No explicit constructor implies a default constructor
 
     /** enum E */
-    enum E {
+    public enum E {
         /** enum member E1 */
         E1,
         /** enum member E2 */

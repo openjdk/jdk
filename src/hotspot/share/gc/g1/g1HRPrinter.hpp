@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@
 
 #define SKIP_RETIRED_FULL_REGIONS 1
 
+class FreeRegionList;
+
 class G1HRPrinter {
 
 private:
@@ -44,7 +46,7 @@ public:
   // In some places we iterate over a list in order to generate output
   // for the list's elements. By exposing this we can avoid this
   // iteration if the printer is not active.
-  const bool is_active() { return log_is_enabled(Trace, gc, region); }
+  bool is_active() { return log_is_enabled(Trace, gc, region); }
 
   // The methods below are convenient wrappers for the print() method.
 
@@ -85,6 +87,8 @@ public:
       print("CLEANUP", hr);
     }
   }
+
+  void cleanup(FreeRegionList* free_list);
 
   void post_compaction(HeapRegion* hr) {
     if (is_active()) {

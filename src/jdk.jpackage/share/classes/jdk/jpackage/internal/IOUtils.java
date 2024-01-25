@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package jdk.jpackage.internal;
 
+import jdk.internal.util.OperatingSystem;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
@@ -35,18 +37,29 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
+import java.nio.file.CopyOption;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
+import javax.xml.transform.Result;
+import javax.xml.transform.Source;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.stax.StAXResult;
 
 /**
  * IOUtils
@@ -56,6 +69,8 @@ import javax.xml.stream.XMLStreamWriter;
 public class IOUtils {
 
     public static void deleteRecursive(Path directory) throws IOException {
+        final AtomicReference<IOException> exception = new AtomicReference<>();
+
         if (!Files.exists(directory)) {
             return;
         }
@@ -64,17 +79,21 @@ public class IOUtils {
             @Override
             public FileVisitResult visitFile(Path file,
                             BasicFileAttributes attr) throws IOException {
-                if (Platform.getPlatform() == Platform.WINDOWS) {
+                if (OperatingSystem.isWindows()) {
                     Files.setAttribute(file, "dos:readonly", false);
                 }
-                Files.delete(file);
+                try {
+                    Files.delete(file);
+                } catch (IOException ex) {
+                    exception.compareAndSet(null, ex);
+                }
                 return FileVisitResult.CONTINUE;
             }
 
             @Override
             public FileVisitResult preVisitDirectory(Path dir,
                             BasicFileAttributes attr) throws IOException {
-                if (Platform.getPlatform() == Platform.WINDOWS) {
+                if (OperatingSystem.isWindows()) {
                     Files.setAttribute(dir, "dos:readonly", false);
                 }
                 return FileVisitResult.CONTINUE;
@@ -83,18 +102,27 @@ public class IOUtils {
             @Override
             public FileVisitResult postVisitDirectory(Path dir, IOException e)
                             throws IOException {
-                Files.delete(dir);
+                try {
+                    Files.delete(dir);
+                } catch (IOException ex) {
+                    exception.compareAndSet(null, ex);
+                }
                 return FileVisitResult.CONTINUE;
             }
         });
+        if (exception.get() != null) {
+            throw exception.get();
+        }
     }
 
-    public static void copyRecursive(Path src, Path dest) throws IOException {
-        copyRecursive(src, dest, List.of());
+    public static void copyRecursive(Path src, Path dest, CopyOption... options)
+            throws IOException {
+        copyRecursive(src, dest, List.of(), options);
     }
 
     public static void copyRecursive(Path src, Path dest,
-            final List<String> excludes) throws IOException {
+            final List<String> excludes, CopyOption... options)
+            throws IOException {
         Files.walkFileTree(src, new SimpleFileVisitor<Path>() {
             @Override
             public FileVisitResult preVisitDirectory(final Path dir,
@@ -111,7 +139,7 @@ public class IOUtils {
             public FileVisitResult visitFile(final Path file,
                     final BasicFileAttributes attrs) throws IOException {
                 if (!excludes.contains(file.toFile().getName())) {
-                    Files.copy(file, dest.resolve(src.relativize(file)));
+                    Files.copy(file, dest.resolve(src.relativize(file)), options);
                 }
                 return FileVisitResult.CONTINUE;
             }
@@ -176,14 +204,24 @@ public class IOUtils {
     static void exec(ProcessBuilder pb, boolean testForPresenceOnly,
             PrintStream consumer, boolean writeOutputToFile, long timeout)
             throws IOException {
+        exec(pb, testForPresenceOnly, consumer, writeOutputToFile,
+                timeout, false);
+    }
+
+    static void exec(ProcessBuilder pb, boolean testForPresenceOnly,
+            PrintStream consumer, boolean writeOutputToFile,
+            long timeout, boolean quiet) throws IOException {
         List<String> output = new ArrayList<>();
-        Executor exec = Executor.of(pb).setWriteOutputToFile(writeOutputToFile)
-                .setTimeout(timeout).setOutputConsumer(lines -> {
-            lines.forEach(output::add);
-            if (consumer != null) {
-                output.forEach(consumer::println);
-            }
-        });
+        Executor exec = Executor.of(pb)
+                .setWriteOutputToFile(writeOutputToFile)
+                .setTimeout(timeout)
+                .setQuiet(quiet)
+                .setOutputConsumer(lines -> {
+                    lines.forEach(output::add);
+                    if (consumer != null) {
+                        output.forEach(consumer::println);
+                    }
+                });
 
         if (testForPresenceOnly) {
             exec.execute();
@@ -229,7 +267,7 @@ public class IOUtils {
         t.start();
 
         int ret = p.waitFor();
-        Log.verbose(pb.command(), list, ret);
+        Log.verbose(pb.command(), list, ret, IOUtils.getPID(p));
 
         result.clear();
         result.addAll(list);
@@ -299,6 +337,44 @@ public class IOUtils {
         }
     }
 
+    public static void mergeXmls(XMLStreamWriter xml, Collection<Source> sources)
+            throws XMLStreamException, IOException {
+        xml = (XMLStreamWriter) Proxy.newProxyInstance(
+                XMLStreamWriter.class.getClassLoader(), new Class<?>[]{
+            XMLStreamWriter.class}, new SkipDocumentHandler(xml));
+
+        try {
+            TransformerFactory tf = TransformerFactory.newInstance();
+            Result result = new StAXResult(xml);
+            for (var src : sources) {
+                tf.newTransformer().transform(src, result);
+            }
+        } catch (TransformerException ex) {
+            // Should never happen
+            throw new RuntimeException(ex);
+        }
+    }
+
+    public static DocumentBuilderFactory initDocumentBuilderFactory() {
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newDefaultInstance();
+        try {
+            dbf.setFeature(
+                    "http://apache.org/xml/features/nonvalidating/load-external-dtd",
+                    false);
+        } catch (ParserConfigurationException ex) {
+            throw new IllegalStateException(ex);
+        }
+        return dbf;
+    }
+
+    public static DocumentBuilder initDocumentBuilder() {
+        try {
+            return initDocumentBuilderFactory().newDocumentBuilder();
+        } catch (ParserConfigurationException ex) {
+            throw new IllegalStateException(ex);
+        }
+    }
+
     public static Path getParent(Path p) {
         Path parent = p.getParent();
         if (parent == null) {
@@ -319,6 +395,17 @@ public class IOUtils {
             throw iae;
         }
         return filename;
+    }
+
+    public static long getPID(Process p) {
+        try {
+            return p.pid();
+        } catch (UnsupportedOperationException ex) {
+            Log.verbose(ex); // Just log exception and ignore it. This method
+                             // is used for verbose output, so not a problem
+                             // if unsupported.
+            return -1;
+        }
     }
 
     private static class PrettyPrintHandler implements InvocationHandler {
@@ -380,5 +467,25 @@ public class IOUtils {
         private final Map<Integer, Boolean> hasChildElement = new HashMap<>();
         private static final String INDENT = "  ";
         private static final String EOL = "\n";
+    }
+
+    private static class SkipDocumentHandler implements InvocationHandler {
+
+        SkipDocumentHandler(XMLStreamWriter target) {
+            this.target = target;
+        }
+
+        @Override
+        public Object invoke(Object proxy, Method method, Object[] args) throws
+                Throwable {
+            switch (method.getName()) {
+                case "writeStartDocument", "writeEndDocument" -> {
+                }
+                default -> method.invoke(target, args);
+            }
+            return null;
+        }
+
+        private final XMLStreamWriter target;
     }
 }

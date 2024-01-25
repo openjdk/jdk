@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -197,8 +197,8 @@ public class BasicSpinnerUI extends SpinnerUI
             spinner.addChangeListener(getHandler());
         }
         JComponent editor = spinner.getEditor();
-        if (editor != null && editor instanceof JSpinner.DefaultEditor) {
-            JTextField tf = ((JSpinner.DefaultEditor)editor).getTextField();
+        if (editor instanceof JSpinner.DefaultEditor defaultEditor) {
+            JTextField tf = defaultEditor.getTextField();
             if (tf != null) {
                 tf.addFocusListener(nextButtonHandler);
                 tf.addFocusListener(previousButtonHandler);
@@ -422,7 +422,7 @@ public class BasicSpinnerUI extends SpinnerUI
      * <p>
      * The <code>replaceEditor</code> method is called when the spinners
      * editor is changed with <code>JSpinner.setEditor</code>.  If you've
-     * overriden this method, then you'll probably want to override
+     * overridden this method, then you'll probably want to override
      * <code>replaceEditor</code> as well.
      *
      * @return the JSpinners editor JComponent, spinner.getEditor() by default
@@ -709,9 +709,7 @@ public class BasicSpinnerUI extends SpinnerUI
                         spinner.setValue(value);
                         select(spinner);
                     }
-                } catch (IllegalArgumentException iae) {
-                    UIManager.getLookAndFeel().provideErrorFeedback(spinner);
-                } catch (ParseException pe) {
+                } catch (IllegalArgumentException | ParseException ex) {
                     UIManager.getLookAndFeel().provideErrorFeedback(spinner);
                 }
             }
@@ -868,7 +866,7 @@ public class BasicSpinnerUI extends SpinnerUI
 
                     if (child != null && SwingUtilities.isDescendingFrom(
                                                         child, spinner)) {
-                        child.requestFocus();
+                        child.requestFocus(FocusEvent.Cause.MOUSE_EVENT);
                     }
                 }
             }
@@ -1097,7 +1095,7 @@ public class BasicSpinnerUI extends SpinnerUI
             }
         }
 
-        // Syncronizes the ToolTip text for the components within the spinner
+        // Synchronizes the ToolTip text for the components within the spinner
         // to be the same value as the spinner ToolTip text.
         private void updateToolTipTextForChildren(JComponent spinner) {
             String toolTipText = spinner.getToolTipText();

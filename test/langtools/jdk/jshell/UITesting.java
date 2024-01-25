@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.Writer;
+import java.lang.reflect.Field;
+import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Locale;
@@ -91,13 +93,14 @@ public class UITesting {
                         .promptCapture(true)
                         .persistence(new HashMap<>())
                         .locale(Locale.US)
-                        .run("--no-startup");
+                        .run("--no-startup",
+                             "--execution", Presets.TEST_DEFAULT_EXECUTION);
             } catch (Exception ex) {
                 throw new IllegalStateException(ex);
             }
         });
 
-        Writer inputSink = new OutputStreamWriter(input.createOutput()) {
+        Writer inputSink = new OutputStreamWriter(input.createOutput(), StandardCharsets.UTF_8) {
             @Override
             public void write(String str) throws IOException {
                 super.write(str);
@@ -108,15 +111,19 @@ public class UITesting {
         runner.start();
 
         try {
+            Class<?> jshellToolClass = Class.forName("jdk.internal.jshell.tool.JShellTool");
+            Field promptField = jshellToolClass.getDeclaredField("PROMPT");
+            promptField.setAccessible(true);
+            promptField.set(null, PROMPT);
+            Field continuationPromptField = jshellToolClass.getDeclaredField("CONTINUATION_PROMPT");
+            continuationPromptField.setAccessible(true);
+            continuationPromptField.set(null, CONTINUATION_PROMPT);
             waitOutput(out, PROMPT);
             test.test(inputSink, out);
         } finally {
-            inputSink.write(INTERRUPT + INTERRUPT + "/exit");
+            inputSink.write(INTERRUPT + INTERRUPT + "/exit\n");
 
-            runner.join(1000);
-            if (runner.isAlive()) {
-                runner.stop();
-            }
+            runner.join();
         }
     }
 

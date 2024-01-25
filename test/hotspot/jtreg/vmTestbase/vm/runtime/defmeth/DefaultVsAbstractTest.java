@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,17 +21,31 @@
  * questions.
  */
 
+/*
+ * @test
+ *
+ * @modules java.base/jdk.internal.org.objectweb.asm:+open java.base/jdk.internal.org.objectweb.asm.util:+open
+ * @library /vmTestbase /test/lib
+ *
+ * @comment build retransform.jar in current dir
+ * @run driver vm.runtime.defmeth.shared.BuildJar
+ *
+ * @run driver jdk.test.lib.FileInstaller . .
+ * @run main/othervm/native
+ *      -agentlib:redefineClasses
+ *      -javaagent:retransform.jar
+ *      vm.runtime.defmeth.DefaultVsAbstractTest
+ */
 package vm.runtime.defmeth;
 
-import nsk.share.test.TestBase;
+import java.util.Set;
+
 import vm.runtime.defmeth.shared.DefMethTest;
-import vm.runtime.defmeth.shared.annotation.KnownFailure;
 import vm.runtime.defmeth.shared.data.*;
-import vm.runtime.defmeth.shared.data.method.param.NewInstanceParam;
 import vm.runtime.defmeth.shared.builder.TestBuilder;
+
+import static jdk.internal.org.objectweb.asm.Opcodes.ACC_SYNCHRONIZED;
 import static vm.runtime.defmeth.shared.ExecutionMode.*;
-import static vm.runtime.defmeth.shared.data.method.body.CallMethod.Invoke.*;
-import static vm.runtime.defmeth.shared.data.method.body.CallMethod.IndexbyteOp.*;
 
 /**
  * Tests on interaction of default methods with abstract methods
@@ -47,7 +61,11 @@ import static vm.runtime.defmeth.shared.data.method.body.CallMethod.IndexbyteOp.
 public class DefaultVsAbstractTest extends DefMethTest {
 
     public static void main(String[] args) {
-        TestBase.runTest(new DefaultVsAbstractTest(), args);
+        DefMethTest.runTest(DefaultVsAbstractTest.class,
+                /* majorVer */ Set.of(MIN_MAJOR_VER, MAX_MAJOR_VER),
+                /* flags    */ Set.of(0, ACC_SYNCHRONIZED),
+                /* redefine */ Set.of(false, true),
+                /* execMode */ Set.of(DIRECT, REFLECTION, INVOKE_EXACT, INVOKE_GENERIC, INVOKE_WITH_ARGS, INDY));
     }
 
     /*
@@ -56,9 +74,7 @@ public class DefaultVsAbstractTest extends DefMethTest {
      *
      * TEST: new C() throws InstantiationError
      */
-    public void test0() {
-        TestBuilder b = factory.getBuilder();
-
+    public void test0(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I").returns(1).build()
             .build();
@@ -70,8 +86,7 @@ public class DefaultVsAbstractTest extends DefMethTest {
         b.test()
             .callSite(I, C, "m", "()I")
             .throws_(InstantiationError.class)
-            .done()
-        .run();
+            .done();
     }
 
     /*
@@ -87,11 +102,7 @@ public class DefaultVsAbstractTest extends DefMethTest {
      * TEST: C c = new D(); c.m() ==> AME
      * TEST: D d = new D(); d.m() ==> AME
      */
-    @KnownFailure(modes = {INVOKE_EXACT, INVOKE_GENERIC, INVOKE_WITH_ARGS, INDY }) // Test1_I_D_m: NPE instead of AME
-                                                                                   // Test3_D_D_m: AME => IAE => ICCE instead of AME
-    public void test1() {
-        TestBuilder b = factory.getBuilder();
-
+    public void test1(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I").returns(1).build()
             .build();
@@ -113,8 +124,7 @@ public class DefaultVsAbstractTest extends DefMethTest {
         .test()
             .callSite(D, D, "m", "()I")
             .throws_(AbstractMethodError.class)
-            .done()
-        .run();
+            .done();
     }
 
     /*
@@ -130,11 +140,7 @@ public class DefaultVsAbstractTest extends DefMethTest {
      * TEST: C o = new D(); o.m()I throws AME
      * TEST: D o = new D(); o.m()I throws AME
      */
-    @KnownFailure(modes = { INVOKE_EXACT, INVOKE_GENERIC, INVOKE_WITH_ARGS, INDY }) // Test1_I_D_m: NPE instead of AME
-                                                                                    // Test3_D_D_m: AME => IAE => ICCE instead of AME
-    public void test2() {
-        TestBuilder b = factory.getBuilder();
-
+    public void test2(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I").returns(1).build()
             .build();
@@ -156,8 +162,7 @@ public class DefaultVsAbstractTest extends DefMethTest {
         .test()
             .callSite(D, D, "m", "()I")
             .throws_(AbstractMethodError.class)
-            .done()
-        .run();
+            .done();
     }
 
     /*
@@ -175,9 +180,7 @@ public class DefaultVsAbstractTest extends DefMethTest {
      * TEST: C o = new D(); o.m()I == 2
      * TEST: D o = new D(); o.m()I == 2
      */
-    public void test3() {
-        TestBuilder b = factory.getBuilder();
-
+    public void test3(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I").returns(1).build()
             .build();
@@ -199,8 +202,7 @@ public class DefaultVsAbstractTest extends DefMethTest {
             .done()
         .test()  // D d = new C(); ...
             .callSite(D, D, "m", "()I").returns(2)
-            .done()
-        .run();
+            .done();
     }
 
     /*
@@ -218,14 +220,7 @@ public class DefaultVsAbstractTest extends DefMethTest {
      * TEST: D o = new C(); o.m()I throws AME
      * TEST: C o = new C(); o.m()I throws AME
      */
-    @KnownFailure(modes = {
-        INVOKE_EXACT, INVOKE_GENERIC, INVOKE_WITH_ARGS, INDY // Test1_I_C_m: NPE instead of AME
-                                                             // Test3_D_C_m: AME => IAE => ICCE instead of AME
-                                                             // Test4_C_C_m: AME => IAE => ICCE instead of AME
-    })
-    public void test4() {
-        TestBuilder b = factory.getBuilder();
-
+    public void test4(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I").returns(1).build()
                 .build();
@@ -253,8 +248,7 @@ public class DefaultVsAbstractTest extends DefMethTest {
         .test() // C c = new C(); ...
             .callSite(C, C, "m", "()I")
             .throws_(AbstractMethodError.class)
-            .done()
-        .run();
+            .done();
     }
 
     /*
@@ -274,9 +268,7 @@ public class DefaultVsAbstractTest extends DefMethTest {
      * TEST: I o = new C(); o.m()I == 2
      * TEST: I o = new C(); o.m()I == 2
      */
-    public void test5() {
-        TestBuilder b = factory.getBuilder();
-
+    public void test5(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I").returns(1).build()
             .build();
@@ -306,8 +298,7 @@ public class DefaultVsAbstractTest extends DefMethTest {
         .test() // C c = new C(); ...
             .callSite(I, C, "m", "()I")
             .returns(2)
-            .done()
-        .run();
+            .done();
     }
 
     /*
@@ -331,9 +322,7 @@ public class DefaultVsAbstractTest extends DefMethTest {
      * TEST: D o = new C(); o.m()I == 3
      * TEST: J o = new C(); o.m()I == 3
      */
-    public void test6() {
-        TestBuilder b = factory.getBuilder();
-
+    public void test6(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I").returns(1).build()
             .build();
@@ -367,8 +356,7 @@ public class DefaultVsAbstractTest extends DefMethTest {
             .done()
         .test() // C c = new C(); ...
             .callSite(J, C, "m", "()I").returns(3)
-            .done()
-        .run();
+            .done();
     }
 
     /*
@@ -388,9 +376,7 @@ public class DefaultVsAbstractTest extends DefMethTest {
      *                returns 1 for REFLECTION and INVOKE_WITH_ARGS
      *                ICCE for other modes
      */
-    public void testInvokeInterfaceClassDefaultMethod() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testInvokeInterfaceClassDefaultMethod(TestBuilder b) {
         Interface I = b.intf("I")
             .abstractMethod("m", "()I").build()
             .build();
@@ -419,16 +405,14 @@ public class DefaultVsAbstractTest extends DefMethTest {
         if (exeMode.equals("REFLECTION") ||
             exeMode.equals("INVOKE_WITH_ARGS")) {
             b.test().interfaceCallSite(A, B, "m", "()I")
-             .returns(1).done()
-             .run();
+             .returns(1).done();
         } else {
             // ICCE in other modes due to
             // JVMS-5.4.3.4. Interface Method Resolution
             //   When resolving an interface method reference:
             //     If C is not an interface, interface method resolution throws an IncompatibleClassChangeError.
             b.test().interfaceCallSite(A, B, "m", "()I")
-             .throws_(IncompatibleClassChangeError.class).done()
-             .run();
+             .throws_(IncompatibleClassChangeError.class).done();
         }
     }
 
@@ -445,14 +429,9 @@ public class DefaultVsAbstractTest extends DefMethTest {
      *
      * class B extends A implements J;
      *
-     * TEST: A o = new B(); o.m()I
-     *                ICCE for DIRECT mode
-     *                AME for REFLECTION and INVOKE_WITH_ARGS modes
-     *                IAE for other modes
+     * TEST: A o = new B(); o.m()I throws ICCE
      */
-    public void testInvokeInterfaceClassAbstractMethod() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testInvokeInterfaceClassAbstractMethod(TestBuilder b) {
         Interface I = b.intf("I")
             .abstractMethod("m", "()I").build()
             .build();
@@ -465,18 +444,11 @@ public class DefaultVsAbstractTest extends DefMethTest {
 
         ConcreteClass B = b.clazz("B").extend(A).implement(J).build();
 
-        String exeMode = factory.getExecutionMode();
-
-        // ICCE in direct mode due to
         // JVMS-5.4.3.4. Interface Method Resolution
         //   When resolving an interface method reference:
         //     If C is not an interface, interface method resolution throws an IncompatibleClassChangeError.
-        Class expectedError = IncompatibleClassChangeError.class;;
-
         b.test().interfaceCallSite(A, B, "m", "()I")
-         .throws_(expectedError).done()
-         .run();
-
+         .throws_(IncompatibleClassChangeError.class).done();
     }
 
     /*
@@ -492,12 +464,9 @@ public class DefaultVsAbstractTest extends DefMethTest {
      *
      * class B extends A implements J;
      *
-     * TEST: A o = new B(); o.m()I
-     *                ICCE for all modes
+     * TEST: A o = new B(); o.m()I throws ICCE
      */
-    public void testInvokeInterfaceMultipleDefinedClassDefaultMethod() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testInvokeInterfaceMultipleDefinedClassDefaultMethod(TestBuilder b) {
         Interface I = b.intf("I")
             .defaultMethod("m", "()I").returns(1).build()
             .build();
@@ -510,17 +479,11 @@ public class DefaultVsAbstractTest extends DefMethTest {
 
         ConcreteClass B = b.clazz("B").extend(A).implement(J).build();
 
-        String exeMode = factory.getExecutionMode();
-
-        // ICCE in direct mode due to
         // JVMS-5.4.3.4. Interface Method Resolution
         //   When resolving an interface method reference:
         //     If C is not an interface, interface method resolution throws an IncompatibleClassChangeError.
-        Class expectedError = IncompatibleClassChangeError.class;
-
         b.test().interfaceCallSite(A, B, "m", "()I")
-         .throws_(expectedError).done()
-         .run();
+         .throws_(IncompatibleClassChangeError.class).done();
     }
 
 }

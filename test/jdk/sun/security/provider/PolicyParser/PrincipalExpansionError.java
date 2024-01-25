@@ -110,7 +110,7 @@ public class PrincipalExpansionError {
                     ("PrincipalExpansionError test failed (file not found)");
                 java.io.FileNotFoundException fnfe =
                         (java.io.FileNotFoundException)e;
-                throw new SecurityException("PrincipalExpansionError" +
+                throw new SecurityException("PrincipalExpansionError " +
                         "test failed (file not found)");
             } else {
                 // i don't know???

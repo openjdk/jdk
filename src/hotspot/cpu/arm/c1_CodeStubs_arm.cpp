@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,22 +51,6 @@ void CounterOverflowStub::emit_code(LIR_Assembler* ce) {
   ce->verify_oop_map(_info);
 
   __ b(_continuation);
-}
-
-
-// TODO: ARM - is it possible to inline these stubs into the main code stream?
-
-
-RangeCheckStub::RangeCheckStub(CodeEmitInfo* info, LIR_Opr index, LIR_Opr array)
-  : _index(index), _array(array), _throw_index_out_of_bounds_exception(false) {
-  assert(info != NULL, "must have info");
-  _info = new CodeEmitInfo(info);
-}
-
-RangeCheckStub::RangeCheckStub(CodeEmitInfo* info, LIR_Opr index)
-  : _index(index), _array(NULL), _throw_index_out_of_bounds_exception(true) {
-  assert(info != NULL, "must have info");
-  _info = new CodeEmitInfo(info);
 }
 
 void RangeCheckStub::emit_code(LIR_Assembler* ce) {
@@ -191,16 +175,6 @@ void NewObjectArrayStub::emit_code(LIR_Assembler* ce) {
   ce->verify_oop_map(_info);
   __ b(_continuation);
 }
-
-
-// Implementation of MonitorAccessStubs
-
-MonitorEnterStub::MonitorEnterStub(LIR_Opr obj_reg, LIR_Opr lock_reg, CodeEmitInfo* info)
-: MonitorAccessStub(obj_reg, lock_reg)
-{
-  _info = new CodeEmitInfo(info);
-}
-
 
 void MonitorEnterStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
@@ -345,7 +319,7 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
 
   address entry = __ pc();
   NativeGeneralJump::insert_unconditional((address)_pc_start, entry);
-  address target = NULL;
+  address target = nullptr;
   relocInfo::relocType reloc_type = relocInfo::none;
   switch (_id) {
     case access_field_id:  target = Runtime1::entry_for(Runtime1::access_field_patching_id); break;

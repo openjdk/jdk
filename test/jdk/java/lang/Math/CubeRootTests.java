@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,15 @@
  * @test
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
+ * @build Tests
  * @run main CubeRootTests
  * @bug 4347132 4939441 8078672
  * @summary Tests for {Math, StrictMath}.cbrt (use -Dseed=X to set PRNG seed)
- * @author Joseph D. Darcy
  * @key randomness
  */
 
 import jdk.test.lib.RandomFactory;
+import static java.lang.Double.longBitsToDouble;
 
 public class CubeRootTests {
     private CubeRootTests(){}
@@ -43,40 +44,28 @@ public class CubeRootTests {
     // Initialize shared random number generator
     static java.util.Random rand = RandomFactory.getRandom();
 
-    static int testCubeRootCase(double input, double expected) {
+    private static int testCubeRootCase(double input, double expected) {
         int failures=0;
 
-        double minus_input = -input;
-        double minus_expected = -expected;
-
-        failures+=Tests.test("Math.cbrt(double)", input,
-                             Math.cbrt(input), expected);
-        failures+=Tests.test("Math.cbrt(double)", minus_input,
-                             Math.cbrt(minus_input), minus_expected);
-        failures+=Tests.test("StrictMath.cbrt(double)", input,
-                             StrictMath.cbrt(input), expected);
-        failures+=Tests.test("StrictMath.cbrt(double)", minus_input,
-                             StrictMath.cbrt(minus_input), minus_expected);
+        failures+=Tests.test("Math.cbrt",        input, Math::cbrt,        expected);
+        failures+=Tests.test("Math.cbrt",       -input, Math::cbrt,       -expected);
+        failures+=Tests.test("StrictMath.cbrt",  input, StrictMath::cbrt,  expected);
+        failures+=Tests.test("StrictMath.cbrt", -input, StrictMath::cbrt, -expected);
 
         return failures;
     }
 
-    static int testCubeRoot() {
+    private static int testCubeRoot() {
         int failures = 0;
+
+        for(double nan : Tests.NaNs) {
+            failures += testCubeRootCase(nan, NaNd);
+        }
+
         double [][] testCases = {
-            {NaNd,                      NaNd},
-            {Double.longBitsToDouble(0x7FF0000000000001L),      NaNd},
-            {Double.longBitsToDouble(0xFFF0000000000001L),      NaNd},
-            {Double.longBitsToDouble(0x7FF8555555555555L),      NaNd},
-            {Double.longBitsToDouble(0xFFF8555555555555L),      NaNd},
-            {Double.longBitsToDouble(0x7FFFFFFFFFFFFFFFL),      NaNd},
-            {Double.longBitsToDouble(0xFFFFFFFFFFFFFFFFL),      NaNd},
-            {Double.longBitsToDouble(0x7FFDeadBeef00000L),      NaNd},
-            {Double.longBitsToDouble(0xFFFDeadBeef00000L),      NaNd},
-            {Double.longBitsToDouble(0x7FFCafeBabe00000L),      NaNd},
-            {Double.longBitsToDouble(0xFFFCafeBabe00000L),      NaNd},
             {Double.POSITIVE_INFINITY,  Double.POSITIVE_INFINITY},
             {Double.NEGATIVE_INFINITY,  Double.NEGATIVE_INFINITY},
+
             {+0.0,                      +0.0},
             {-0.0,                      -0.0},
             {+1.0,                      +1.0},
@@ -324,7 +313,7 @@ public class CubeRootTests {
         return failures;
     }
 
-    public static void main(String argv[]) {
+    public static void main(String... argv) {
         int failures = 0;
 
         failures += testCubeRoot();

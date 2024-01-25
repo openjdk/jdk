@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,9 @@
 package sun.security.pkcs11;
 
 import java.util.*;
-
 import java.security.ProviderException;
 
 import sun.security.util.Debug;
-
 import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
 
@@ -69,9 +67,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 final class SessionManager {
 
-    private final static int DEFAULT_MAX_SESSIONS = 32;
+    private static final int DEFAULT_MAX_SESSIONS = 32;
 
-    private final static Debug debug = Debug.getInstance("pkcs11");
+    private static final Debug debug = Debug.getInstance("pkcs11");
 
     // token instance
     private final Token token;
@@ -80,7 +78,7 @@ final class SessionManager {
     private final int maxSessions;
 
     // total number of active sessions
-    private AtomicInteger activeSessions = new AtomicInteger();
+    private final AtomicInteger activeSessions = new AtomicInteger();
 
     // pool of available object sessions
     private final Pool objSessions;
@@ -90,7 +88,7 @@ final class SessionManager {
 
     // maximum number of active sessions during this invocation, for debugging
     private int maxActiveSessions;
-    private Object maxActiveSessionsLock;
+    private final Object maxActiveSessionsLock;
 
     // flags to use in the C_OpenSession() call
     private final long openSessionFlags;
@@ -114,9 +112,9 @@ final class SessionManager {
         this.token = token;
         this.objSessions = new Pool(this, true);
         this.opSessions = new Pool(this, false);
-        if (debug != null) {
-            maxActiveSessionsLock = new Object();
-        }
+        this.maxActiveSessionsLock = (debug != null)
+                ? new Object()
+                : null;
     }
 
     // returns whether only a fairly low number of sessions are
@@ -163,7 +161,7 @@ final class SessionManager {
     }
 
     Session killSession(Session session) {
-        if ((session == null) || (token.isValid() == false)) {
+        if ((session == null) || (!token.isValid())) {
             return null;
         }
         if (debug != null) {
@@ -171,15 +169,16 @@ final class SessionManager {
             System.out.println("Killing session (" + location + ") active: "
                 + activeSessions.get());
         }
-        closeSession(session);
+
+        session.kill();
+        activeSessions.decrementAndGet();
         return null;
     }
 
     Session releaseSession(Session session) {
-        if ((session == null) || (token.isValid() == false)) {
+        if ((session == null) || (!token.isValid())) {
             return null;
         }
-
         if (session.hasObjects()) {
             objSessions.release(session);
         } else {
@@ -188,21 +187,32 @@ final class SessionManager {
         return null;
     }
 
+    void clearPools() {
+        objSessions.closeAll();
+        opSessions.closeAll();
+    }
+
     void demoteObjSession(Session session) {
-        if (token.isValid() == false) {
+        if (!token.isValid()) {
             return;
         }
         if (debug != null) {
             System.out.println("Demoting session, active: " +
                 activeSessions.get());
         }
+
         boolean present = objSessions.remove(session);
-        if (present == false) {
+        if (!present) {
             // session is currently in use
             // will be added to correct pool on release, nothing to do now
             return;
         }
-        opSessions.release(session);
+        // Objects could have been added to this session by other thread between
+        // check in Session.removeObject method and objSessions.remove call
+        // higher. Therefore, releaseSession method, which performs additional
+        // check for objects, is used here to avoid placing this session
+        // in wrong pool due to race condition.
+        releaseSession(session);
     }
 
     private Session openSession() throws PKCS11Exception {
@@ -238,15 +248,16 @@ final class SessionManager {
         private final SessionManager mgr;
         private final AbstractQueue<Session> pool;
         private final int SESSION_MAX = 5;
+        private volatile boolean closed = false;
 
         // Object session pools can contain unlimited sessions.
         // Operation session pools are limited and enforced by the queue.
         Pool(SessionManager mgr, boolean obj) {
             this.mgr = mgr;
             if (obj) {
-                pool = new LinkedBlockingQueue<Session>();
+                pool = new LinkedBlockingQueue<>();
             } else {
-                pool = new LinkedBlockingQueue<Session>(SESSION_MAX);
+                pool = new LinkedBlockingQueue<>(SESSION_MAX);
             }
         }
 
@@ -260,7 +271,7 @@ final class SessionManager {
 
         void release(Session session) {
             // Object session pools never return false, only Operation ones
-            if (!pool.offer(session)) {
+            if (closed || !pool.offer(session)) {
                 mgr.closeSession(session);
                 free();
             }
@@ -268,6 +279,9 @@ final class SessionManager {
 
         // Free any old operation session if this queue is full
         void free() {
+            // quick return path
+            if (pool.size() == 0) return;
+
             int n = SESSION_MAX;
             int i = 0;
             Session oldestSession;
@@ -291,6 +305,14 @@ final class SessionManager {
             }
         }
 
+        // empty out all sessions inside 'pool' and close them.
+        // however the Pool can still accept sessions
+        void closeAll() {
+            closed = true;
+            Session s;
+            while ((s = pool.poll()) != null) {
+                mgr.killSession(s);
+            }
+        }
     }
-
 }

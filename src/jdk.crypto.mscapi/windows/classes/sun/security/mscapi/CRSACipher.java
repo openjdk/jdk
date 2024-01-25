@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.security.*;
 import java.security.Key;
 import java.security.interfaces.*;
 import java.security.spec.*;
+import java.util.Arrays;
 
 import javax.crypto.*;
 import javax.crypto.spec.*;
@@ -61,21 +62,24 @@ import sun.security.util.KeyUtil;
  */
 public final class CRSACipher extends CipherSpi {
 
+    private static final int ERROR_INVALID_PARAMETER = 0x57;
+    private static final int NTE_INVALID_PARAMETER = 0x80090027;
+
     // constant for an empty byte array
-    private final static byte[] B0 = new byte[0];
+    private static final byte[] B0 = new byte[0];
 
     // mode constant for public key encryption
-    private final static int MODE_ENCRYPT = 1;
+    private static final int MODE_ENCRYPT = 1;
     // mode constant for private key decryption
-    private final static int MODE_DECRYPT = 2;
+    private static final int MODE_DECRYPT = 2;
     // mode constant for private key encryption (signing)
-    private final static int MODE_SIGN    = 3;
+    private static final int MODE_SIGN    = 3;
     // mode constant for public key decryption (verifying)
-    private final static int MODE_VERIFY  = 4;
+    private static final int MODE_VERIFY  = 4;
 
     // constant for PKCS#1 v1.5 RSA
-    private final static String PAD_PKCS1 = "PKCS1Padding";
-    private final static int PAD_PKCS1_LENGTH = 11;
+    private static final String PAD_PKCS1 = "PKCS1Padding";
+    private static final int PAD_PKCS1_LENGTH = 11;
 
     // current mode, one of MODE_* above. Set when init() is called
     private int mode;
@@ -100,6 +104,8 @@ public final class CRSACipher extends CipherSpi {
 
     // cipher parameter for TLS RSA premaster secret
     private AlgorithmParameterSpec spec = null;
+
+    private boolean forTlsPremasterSecret = false;
 
     // the source of randomness
     private SecureRandom random;
@@ -171,6 +177,9 @@ public final class CRSACipher extends CipherSpi {
             }
             spec = params;
             this.random = random;   // for TLS RSA premaster secret
+            this.forTlsPremasterSecret = true;
+        } else {
+            this.forTlsPremasterSecret = false;
         }
         init(opmode, key);
     }
@@ -204,7 +213,8 @@ public final class CRSACipher extends CipherSpi {
             encrypt = false;
             break;
         default:
-            throw new InvalidKeyException("Unknown mode: " + opmode);
+            // should never happen; checked by Cipher.init()
+            throw new AssertionError("Unknown mode: " + opmode);
         }
 
         if (!(key instanceof CKey)) {
@@ -277,8 +287,7 @@ public final class CRSACipher extends CipherSpi {
     }
 
     // internal doFinal() method. Here we perform the actual RSA operation
-    private byte[] doFinal() throws BadPaddingException,
-            IllegalBlockSizeException {
+    private byte[] doFinal() throws IllegalBlockSizeException {
         if (bufOfs > buffer.length) {
             throw new IllegalBlockSizeException("Data must not be longer "
                 + "than " + (buffer.length - paddingLength)  + " bytes");
@@ -289,25 +298,25 @@ public final class CRSACipher extends CipherSpi {
             switch (mode) {
             case MODE_SIGN:
                 return encryptDecrypt(data, bufOfs,
-                    privateKey.getHCryptKey(), true);
+                    privateKey, true);
 
             case MODE_VERIFY:
                 return encryptDecrypt(data, bufOfs,
-                    publicKey.getHCryptKey(), false);
+                    publicKey, false);
 
             case MODE_ENCRYPT:
                 return encryptDecrypt(data, bufOfs,
-                    publicKey.getHCryptKey(), true);
+                    publicKey, true);
 
             case MODE_DECRYPT:
                 return encryptDecrypt(data, bufOfs,
-                    privateKey.getHCryptKey(), false);
+                    privateKey, false);
 
             default:
                 throw new AssertionError("Internal error");
             }
 
-        } catch (KeyException e) {
+        } catch (KeyException | BadPaddingException e) {
             throw new ProviderException(e);
 
         } finally {
@@ -330,14 +339,14 @@ public final class CRSACipher extends CipherSpi {
 
     // see JCE spec
     protected byte[] engineDoFinal(byte[] in, int inOfs, int inLen)
-            throws BadPaddingException, IllegalBlockSizeException {
+            throws IllegalBlockSizeException {
         update(in, inOfs, inLen);
         return doFinal();
     }
 
     // see JCE spec
     protected int engineDoFinal(byte[] in, int inOfs, int inLen, byte[] out,
-            int outOfs) throws ShortBufferException, BadPaddingException,
+            int outOfs) throws ShortBufferException,
             IllegalBlockSizeException {
         if (outputSize > out.length - outOfs) {
             throw new ShortBufferException
@@ -353,6 +362,7 @@ public final class CRSACipher extends CipherSpi {
     // see JCE spec
     protected byte[] engineWrap(Key key) throws InvalidKeyException,
             IllegalBlockSizeException {
+
         byte[] encoded = key.getEncoded(); // TODO - unextractable key
         if ((encoded == null) || (encoded.length == 0)) {
             throw new InvalidKeyException("Could not obtain encoded key");
@@ -361,12 +371,7 @@ public final class CRSACipher extends CipherSpi {
             throw new InvalidKeyException("Key is too long for wrapping");
         }
         update(encoded, 0, encoded.length);
-        try {
-            return doFinal();
-        } catch (BadPaddingException e) {
-            // should not occur
-            throw new InvalidKeyException("Wrapping failed", e);
-        }
+        return doFinal();
     }
 
     // see JCE spec
@@ -387,31 +392,31 @@ public final class CRSACipher extends CipherSpi {
         update(wrappedKey, 0, wrappedKey.length);
         try {
             encoded = doFinal();
-        } catch (BadPaddingException e) {
-            if (isTlsRsaPremasterSecret) {
-                failover = e;
-            } else {
-                throw new InvalidKeyException("Unwrapping failed", e);
-            }
         } catch (IllegalBlockSizeException e) {
             // should not occur, handled with length check above
             throw new InvalidKeyException("Unwrapping failed", e);
         }
 
-        if (isTlsRsaPremasterSecret) {
-            if (!(spec instanceof TlsRsaPremasterSecretParameterSpec)) {
-                throw new IllegalStateException(
-                        "No TlsRsaPremasterSecretParameterSpec specified");
+        try {
+            if (isTlsRsaPremasterSecret) {
+                if (!forTlsPremasterSecret) {
+                    throw new IllegalStateException(
+                            "No TlsRsaPremasterSecretParameterSpec specified");
+                }
+
+                // polish the TLS premaster secret
+                encoded = KeyUtil.checkTlsPreMasterSecretKey(
+                        ((TlsRsaPremasterSecretParameterSpec) spec).getClientVersion(),
+                        ((TlsRsaPremasterSecretParameterSpec) spec).getServerVersion(),
+                        random, encoded, encoded == null);
             }
 
-            // polish the TLS premaster secret
-            encoded = KeyUtil.checkTlsPreMasterSecretKey(
-                ((TlsRsaPremasterSecretParameterSpec)spec).getClientVersion(),
-                ((TlsRsaPremasterSecretParameterSpec)spec).getServerVersion(),
-                random, encoded, (failover != null));
+            return constructKey(encoded, algorithm, type);
+        } finally {
+            if (encoded != null) {
+                Arrays.fill(encoded, (byte) 0);
+            }
         }
-
-        return constructKey(encoded, algorithm, type);
     }
 
     // see JCE spec
@@ -492,10 +497,33 @@ public final class CRSACipher extends CipherSpi {
     }
 
     /*
-     * Encrypt/decrypt a data buffer using Microsoft Crypto API with HCRYPTKEY.
+     * Encrypt/decrypt a data buffer using Microsoft Crypto API or CNG.
      * It expects and returns ciphertext data in big-endian form.
      */
-    private native static byte[] encryptDecrypt(byte[] data, int dataSize,
-        long hCryptKey, boolean doEncrypt) throws KeyException;
+    private byte[] encryptDecrypt(byte[] data, int dataSize,
+            CKey key, boolean doEncrypt) throws KeyException, BadPaddingException {
+        int[] returnStatus = new int[1];
+        byte[] result;
+        if (key.getHCryptKey() != 0) {
+            result = encryptDecrypt(returnStatus, data, dataSize, key.getHCryptKey(), doEncrypt);
+        } else {
+            result = cngEncryptDecrypt(returnStatus, data, dataSize, key.getHCryptProvider(), doEncrypt);
+        }
+        if ((returnStatus[0] == ERROR_INVALID_PARAMETER) || (returnStatus[0] == NTE_INVALID_PARAMETER)) {
+            if (forTlsPremasterSecret) {
+                result = null;
+            } else {
+                throw new BadPaddingException("Error " + returnStatus[0] + " returned by MSCAPI");
+            }
+        } else if (returnStatus[0] != 0) {
+            throw new KeyException("Error " + returnStatus[0] + " returned by MSCAPI");
+        }
 
+        return result;
+    }
+
+    private static native byte[] encryptDecrypt(int[] returnStatus, byte[] data, int dataSize,
+            long key, boolean doEncrypt) throws KeyException;
+    private static native byte[] cngEncryptDecrypt(int[] returnStatus, byte[] data, int dataSize,
+            long key, boolean doEncrypt) throws KeyException;
 }

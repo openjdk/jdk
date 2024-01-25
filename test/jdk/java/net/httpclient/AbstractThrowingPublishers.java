@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@ import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.ITestContext;
+import org.testng.ITestResult;
+import org.testng.SkipException;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeMethod;
@@ -50,6 +52,7 @@ import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -63,14 +66,19 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
 import java.util.concurrent.SubmissionPublisher;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.http2.Http2TestServer;
 
 import static java.lang.String.format;
 import static java.lang.System.out;
+import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
@@ -138,17 +146,37 @@ public abstract class AbstractThrowingPublishers implements HttpServerAdapters {
         return Boolean.getBoolean("jdk.internal.httpclient.debug");
     }
 
+    final AtomicReference<SkipException> skiptests = new AtomicReference<>();
+    void checkSkip() {
+        var skip = skiptests.get();
+        if (skip != null) throw skip;
+    }
+    static String name(ITestResult result) {
+        var params = result.getParameters();
+        return result.getName()
+                + (params == null ? "()" : Arrays.toString(result.getParameters()));
+    }
+
     @BeforeMethod
     void beforeMethod(ITestContext context) {
         if (stopAfterFirstFailure() && context.getFailedTests().size() > 0) {
-            throw new RuntimeException("some tests failed");
+            if (skiptests.get() == null) {
+                SkipException skip = new SkipException("some tests failed");
+                skip.setStackTrace(new StackTraceElement[0]);
+                skiptests.compareAndSet(null, skip);
+            }
         }
     }
 
     @AfterClass
-    static final void printFailedTests() {
+    static final void printFailedTests(ITestContext context) {
         out.println("\n=========================");
         try {
+            // Exceptions should already have been added to FAILURES
+            // var failed = context.getFailedTests().getAllResults().stream()
+            //        .collect(Collectors.toMap(r -> name(r), ITestResult::getThrowable));
+            // FAILURES.putAll(failed);
+
             out.printf("%n%sCreated %d servers and %d clients%n",
                     now(), serverCount.get(), clientCount.get());
             if (FAILURES.isEmpty()) return;
@@ -360,6 +388,24 @@ public abstract class AbstractThrowingPublishers implements HttpServerAdapters {
 
             String body = response.join().body();
             assertEquals(body, Stream.of(BODY.split("\\|")).collect(Collectors.joining()));
+            if (!sameClient) {
+                // Wait for the client to be garbage collected.
+                // we use the ReferenceTracker API rather than HttpClient::close here,
+                // because these tests inject faults by throwing inside callbacks, which
+                // is more likely to get HttpClient::close wedged until jtreg times out.
+                // By using the ReferenceTracker, we will get some diagnosis about what
+                // is keeping the client alive if it doesn't get GC'ed within the
+                // expected time frame.
+                var tracker = TRACKER.getTracker(client);
+                client = null;
+                System.gc();
+                System.out.println(now() + "waiting for client to shutdown: " + tracker.getName());
+                System.err.println(now() + "waiting for client to shutdown: " + tracker.getName());
+                var error = TRACKER.check(tracker, 10000);
+                if (error != null) throw error;
+                System.out.println(now() + "client shutdown normally: " + tracker.getName());
+                System.err.println(now() + "client shutdown normally: " + tracker.getName());
+            }
         }
     }
 
@@ -385,6 +431,7 @@ public abstract class AbstractThrowingPublishers implements HttpServerAdapters {
                                     boolean async, Set<Where> whereValues)
             throws Exception
     {
+        checkSkip();
         out.printf("%n%s%s%n", now(), name);
         try {
             testThrowing(uri, sameClient, publishers, finisher, thrower, async, whereValues);
@@ -440,6 +487,24 @@ public abstract class AbstractThrowingPublishers implements HttpServerAdapters {
             }
             if (response != null) {
                 finisher.finish(where, response, thrower);
+            }
+            if (!sameClient) {
+                // Wait for the client to be garbage collected.
+                // we use the ReferenceTracker API rather than HttpClient::close here,
+                // because these tests inject faults by throwing inside callbacks, which
+                // is more likely to get HttpClient::close wedged until jtreg times out.
+                // By using the ReferenceTracker, we will get some diagnosis about what
+                // is keeping the client alive if it doesn't get GC'ed within the
+                // expected time frame.
+                var tracker = TRACKER.getTracker(client);
+                client = null;
+                System.gc();
+                System.out.println(now() + "waiting for client to shutdown: " + tracker.getName());
+                System.err.println(now() + "waiting for client to shutdown: " + tracker.getName());
+                var error = TRACKER.check(tracker, 10000);
+                if (error != null) throw error;
+                System.out.println(now() + "client shutdown normally: " + tracker.getName());
+                System.err.println(now() + "client shutdown normally: " + tracker.getName());
             }
         }
     }
@@ -665,16 +730,13 @@ public abstract class AbstractThrowingPublishers implements HttpServerAdapters {
         // HTTP/1.1
         HttpTestHandler h1_fixedLengthHandler = new HTTP_FixedLengthHandler();
         HttpTestHandler h1_chunkHandler = new HTTP_ChunkedHandler();
-        InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
-        httpTestServer = HttpTestServer.of(HttpServer.create(sa, 0));
+        httpTestServer = HttpTestServer.create(HTTP_1_1);
         httpTestServer.addHandler(h1_fixedLengthHandler, "/http1/fixed");
         httpTestServer.addHandler(h1_chunkHandler, "/http1/chunk");
         httpURI_fixed = "http://" + httpTestServer.serverAuthority() + "/http1/fixed/x";
         httpURI_chunk = "http://" + httpTestServer.serverAuthority() + "/http1/chunk/x";
 
-        HttpsServer httpsServer = HttpsServer.create(sa, 0);
-        httpsServer.setHttpsConfigurator(new HttpsConfigurator(sslContext));
-        httpsTestServer = HttpTestServer.of(httpsServer);
+        httpsTestServer = HttpTestServer.create(HTTP_1_1, sslContext);
         httpsTestServer.addHandler(h1_fixedLengthHandler, "/https1/fixed");
         httpsTestServer.addHandler(h1_chunkHandler, "/https1/chunk");
         httpsURI_fixed = "https://" + httpsTestServer.serverAuthority() + "/https1/fixed/x";
@@ -684,13 +746,13 @@ public abstract class AbstractThrowingPublishers implements HttpServerAdapters {
         HttpTestHandler h2_fixedLengthHandler = new HTTP_FixedLengthHandler();
         HttpTestHandler h2_chunkedHandler = new HTTP_ChunkedHandler();
 
-        http2TestServer = HttpTestServer.of(new Http2TestServer("localhost", false, 0));
+        http2TestServer = HttpTestServer.create(HTTP_2);
         http2TestServer.addHandler(h2_fixedLengthHandler, "/http2/fixed");
         http2TestServer.addHandler(h2_chunkedHandler, "/http2/chunk");
         http2URI_fixed = "http://" + http2TestServer.serverAuthority() + "/http2/fixed/x";
         http2URI_chunk = "http://" + http2TestServer.serverAuthority() + "/http2/chunk/x";
 
-        https2TestServer = HttpTestServer.of(new Http2TestServer("localhost", true, sslContext));
+        https2TestServer = HttpTestServer.create(HTTP_2, sslContext);
         https2TestServer.addHandler(h2_fixedLengthHandler, "/https2/fixed");
         https2TestServer.addHandler(h2_chunkedHandler, "/https2/chunk");
         https2URI_fixed = "https://" + https2TestServer.serverAuthority() + "/https2/fixed/x";

@@ -1,6 +1,5 @@
-
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,20 +25,25 @@
 
 package sun.lwawt.macosx;
 
-import java.awt.*;
-
-import java.io.*;
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.awt.Image;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.UnsupportedFlavorException;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.Charset;
-import java.text.Normalizer;
-import java.text.Normalizer.Form;
-import java.util.*;
-import java.util.regex.*;
-import java.awt.datatransfer.*;
-import java.nio.charset.StandardCharsets;
-import sun.awt.datatransfer.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import sun.awt.datatransfer.DataTransferer;
+import sun.awt.datatransfer.ToolkitThreadBlockedHandler;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class CDataTransferer extends DataTransferer {
     private static final Map<String, Long> predefinedClipboardNameMap;
@@ -133,7 +137,7 @@ public class CDataTransferer extends DataTransferer {
             String charset = Charset.defaultCharset().name();
             if (transferable != null && transferable.isDataFlavorSupported(javaTextEncodingFlavor)) {
                 try {
-                    charset = new String((byte[]) transferable.getTransferData(javaTextEncodingFlavor), StandardCharsets.UTF_8);
+                    charset = new String((byte[]) transferable.getTransferData(javaTextEncodingFlavor), UTF_8);
                 } catch (UnsupportedFlavorException cannotHappen) {
                 }
             }
@@ -141,13 +145,15 @@ public class CDataTransferer extends DataTransferer {
             String xml = new String(bytes, charset);
             // macosx pasteboard returns a property list that consists of one URL
             // let's extract it.
-            return new URL(extractURL(xml));
+            @SuppressWarnings("deprecation")
+            var result = new URL(extractURL(xml));
+            return result;
         }
 
         if(isUriListFlavor(flavor) && format == CF_FILE) {
             // dragQueryFile works fine with files and url,
             // it parses and extracts values from property list.
-            // maxosx always returns property list for
+            // macosx always returns property list for
             // CF_URL and CF_FILE
             String[] strings = dragQueryFile(bytes);
             if(strings == null) {
@@ -156,11 +162,9 @@ public class CDataTransferer extends DataTransferer {
             bytes = String.join(System.getProperty("line.separator"),
                     strings).getBytes();
             // now we extracted uri from xml, now we should treat it as
-            // regular string that allows to translate data to target represantation
+            // regular string that allows to translate data to target representation
             // class by base method
             format = CF_STRING;
-        } else if (format == CF_STRING) {
-            bytes = Normalizer.normalize(new String(bytes, "UTF8"), Form.NFC).getBytes("UTF8");
         }
 
         return super.translateBytes(bytes, flavor, format, transferable);

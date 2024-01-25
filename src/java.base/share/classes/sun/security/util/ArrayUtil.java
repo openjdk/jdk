@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,9 @@
 
 package sun.security.util;
 
-import java.util.List;
-import java.util.function.BiFunction;
-import java.security.*;
 import jdk.internal.util.Preconditions;
+
+import java.security.ProviderException;
 
 
 /**
@@ -36,11 +35,6 @@ import jdk.internal.util.Preconditions;
  */
 
 public final class ArrayUtil {
-
-    private static final BiFunction<String, List<Number>,
-            ArrayIndexOutOfBoundsException> AIOOBE_SUPPLIER =
-            Preconditions.outOfBoundsExceptionFormatter
-            (ArrayIndexOutOfBoundsException::new);
 
     public static void blockSizeCheck(int len, int blockSize) {
         if ((len % blockSize) != 0) {
@@ -50,7 +44,7 @@ public final class ArrayUtil {
 
     public static void nullAndBoundsCheck(byte[] array, int offset, int len) {
         // NPE is thrown when array is null
-        Preconditions.checkFromIndexSize(offset, len, array.length, AIOOBE_SUPPLIER);
+        Preconditions.checkFromIndexSize(offset, len, array.length, Preconditions.AIOOBE_FORMATTER);
     }
 
     private static void swap(byte[] arr, int i, int j) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import java.util.TreeSet;
 import java.util.stream.Stream;
 
 import static java.lang.invoke.LambdaForm.BasicType.*;
+import static java.lang.invoke.MethodHandleStatics.CLASSFILE_VERSION;
 import static java.lang.invoke.MethodTypeForm.*;
 import static java.lang.invoke.LambdaForm.Kind.*;
 
@@ -47,7 +48,7 @@ import static java.lang.invoke.LambdaForm.Kind.*;
  * generate classes ahead of time.
  */
 class GenerateJLIClassesHelper {
-    // Map from DirectMethodHandle method type name to index to LambdForms
+    // Map from DirectMethodHandle method type name to index to LambdaForms
     static final Map<String, Integer> DMH_METHOD_TYPE_MAP =
             Map.of(
                     DIRECT_INVOKE_VIRTUAL.methodName,     LF_INVVIRTUAL,
@@ -504,7 +505,7 @@ class GenerateJLIClassesHelper {
      */
     private static byte[] generateCodeBytesForLFs(String className, String[] names, LambdaForm[] forms) {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS + ClassWriter.COMPUTE_FRAMES);
-        cw.visit(Opcodes.V1_8, Opcodes.ACC_PRIVATE + Opcodes.ACC_FINAL + Opcodes.ACC_SUPER,
+        cw.visit(CLASSFILE_VERSION, Opcodes.ACC_PRIVATE + Opcodes.ACC_FINAL + Opcodes.ACC_SUPER,
                 className, null, InvokerBytecodeGenerator.INVOKER_SUPER_NAME, null);
         cw.visitSource(className.substring(className.lastIndexOf('/') + 1), null);
 

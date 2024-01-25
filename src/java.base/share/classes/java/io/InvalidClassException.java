@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,8 +74,33 @@ public class InvalidClassException extends ObjectStreamException {
     }
 
     /**
+     * Report an InvalidClassException for the reason and cause specified.
+     *
+     * @param reason  String describing the reason for the exception.
+     * @param cause the cause
+     * @since 19
+     */
+    public InvalidClassException(String reason, Throwable cause) {
+        super(reason, cause);
+    }
+
+    /**
+     * Report an InvalidClassException for the reason and cause specified.
+     *
+     * @param cname   a String naming the invalid class.
+     * @param reason  String describing the reason for the exception.
+     * @param cause the cause
+     * @since 19
+     */
+    public InvalidClassException(String cname, String reason, Throwable cause) {
+        super(reason, cause);
+        classname = cname;
+    }
+
+    /**
      * Produce the message and include the classname, if present.
      */
+    @Override
     public String getMessage() {
         if (classname == null)
             return super.getMessage();

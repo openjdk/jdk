@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,6 +179,11 @@ abstract class UnixFileStore
      * @return <code>true</code> if enabled, <code>false</code> if disabled or unable to determine
      */
     protected boolean isExtendedAttributesEnabled(UnixPath path) {
+        if (!UnixNativeDispatcher.xattrSupported()) {
+            // avoid I/O if native code doesn't support xattr
+            return false;
+        }
+
         int fd = -1;
         try {
             fd = path.openForAttributeAccess(false);
@@ -192,7 +197,7 @@ abstract class UnixFileStore
             if (e.errno() == UnixConstants.XATTR_NOT_FOUND)
                 return true;
         } finally {
-            UnixNativeDispatcher.close(fd);
+            UnixNativeDispatcher.close(fd, e -> null);
         }
         return false;
     }
@@ -229,9 +234,8 @@ abstract class UnixFileStore
     public boolean equals(Object ob) {
         if (ob == this)
             return true;
-        if (!(ob instanceof UnixFileStore))
+        if (!(ob instanceof UnixFileStore other))
             return false;
-        UnixFileStore other = (UnixFileStore)ob;
         return (this.dev == other.dev) &&
                Arrays.equals(this.entry.dir(), other.entry.dir()) &&
                this.entry.name().equals(other.entry.name());
@@ -265,6 +269,7 @@ abstract class UnixFileStore
     /**
      * Returns status to indicate if file system supports a given feature
      */
+    @SuppressWarnings("removal")
     FeatureStatus checkIfFeaturePresent(String feature) {
         if (props == null) {
             synchronized (loadLock) {
@@ -283,7 +288,7 @@ abstract class UnixFileStore
         if (value != null) {
             String[] values = value.split("\\s");
             for (String s: values) {
-                s = s.trim().toLowerCase();
+                s = s.trim().toLowerCase(Locale.ROOT);
                 if (s.equals(feature)) {
                     return FeatureStatus.PRESENT;
                 }

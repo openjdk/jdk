@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,16 +34,14 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
 
+import jdk.test.lib.JDWP;
 import jdk.test.lib.Utils;
 import jdk.test.lib.apps.LingeredApp;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 
 public class JdwpAllowTest {
@@ -59,7 +57,7 @@ public class JdwpAllowTest {
             res = s.getInputStream().read(buffer);
         }
         catch (SocketException ex) {
-            ex.printStackTrace();
+            ex.printStackTrace(System.out);
             // pass
         } finally {
             if (s != null) {
@@ -76,16 +74,14 @@ public class JdwpAllowTest {
          return new String[] { jdwpArgs };
     }
 
-    private static Pattern listenRegexp = Pattern.compile("Listening for transport \\b(.+)\\b at address: \\b(\\d+)\\b");
     private static int detectPort(LingeredApp app) {
         long maxWaitTime = System.currentTimeMillis()
                 + Utils.adjustTimeout(10000);  // 10 seconds adjusted for TIMEOUT_FACTOR
         while (true) {
             String s = app.getProcessStdout();
-            Matcher m = listenRegexp.matcher(s);
-            if (m.find()) {
-                // m.group(1) is transport, m.group(2) is port
-                return Integer.parseInt(m.group(2));
+            JDWP.ListenAddress addr = JDWP.parseListenAddress(s);
+            if (addr != null) {
+                return Integer.parseInt(addr.address());
             }
             if (System.currentTimeMillis() > maxWaitTime) {
                 throw new RuntimeException("Could not detect port from '" + s + "' (timeout)");
@@ -102,7 +98,7 @@ public class JdwpAllowTest {
 
     public static void positiveTest(String testName, String allowOpt)
         throws InterruptedException, IOException {
-        System.err.println("\nStarting " + testName);
+        System.out.println("\nStarting " + testName);
         String[] cmd = prepareCmd(allowOpt);
 
         LingeredApp a = LingeredApp.startApp(cmd);
@@ -115,12 +111,12 @@ public class JdwpAllowTest {
         if (res < 0) {
             throw new RuntimeException(testName + " FAILED");
         }
-        System.err.println(testName + " PASSED");
+        System.out.println(testName + " PASSED");
     }
 
     public static void negativeTest(String testName, String allowOpt)
         throws InterruptedException, IOException {
-        System.err.println("\nStarting " + testName);
+        System.out.println("\nStarting " + testName);
         String[] cmd = prepareCmd(allowOpt);
 
         LingeredApp a = LingeredApp.startApp(cmd);
@@ -131,24 +127,24 @@ public class JdwpAllowTest {
             a.stopApp();
         }
         if (res > 0) {
-            System.err.println(testName + ": res=" + res);
+            System.out.println(testName + ": res=" + res);
             throw new RuntimeException(testName + " FAILED");
         }
-        System.err.println(testName + ": returned a negative code as expected: " + res);
-        System.err.println(testName + " PASSED");
+        System.out.println(testName + ": returned a negative code as expected: " + res);
+        System.out.println(testName + " PASSED");
     }
 
     public static void badAllowOptionTest(String testName, String allowOpt)
         throws InterruptedException, IOException {
-        System.err.println("\nStarting " + testName);
+        System.out.println("\nStarting " + testName);
         String[] cmd = prepareCmd(allowOpt);
 
         LingeredApp a;
         try {
             a = LingeredApp.startApp(cmd);
         } catch (IOException ex) {
-            System.err.println(testName + ": caught expected IOException");
-            System.err.println(testName + " PASSED");
+            System.out.println(testName + ": caught expected IOException");
+            System.out.println(testName + " PASSED");
             return;
         }
         // LingeredApp.startApp is expected to fail, but if not, terminate the app
@@ -158,7 +154,7 @@ public class JdwpAllowTest {
 
     /*
      * Generate allow address by changing random bit in the local address
-     * and calculate 2 masks (prefix length) - one is matches original local address
+     * and calculate 2 masks (prefix length) - one matches original local address
      * and another doesn't.
      */
     private static class MaskTest {
@@ -171,8 +167,16 @@ public class JdwpAllowTest {
             localAddress = addr.getHostAddress();
             byte[] bytes = addr.getAddress();
             Random r = new Random();
-            // prefix length must be >= 1, so bitToChange must be >= 2
-            int bitToChange = r.nextInt(bytes.length * 8 - 3) + 2;
+            // Prefix length is 1..32 for IPv4, 1..128 for IPv6.
+            // bitToChange is zero-based and must be >0 (for 0 "good" prefix length would be 0).
+            // Corner cases (for 127.0.0.1):
+            //   bitToChange == 1 => allow address = 0.0.0.0
+            //     - "good" allow mask is "0.0.0.0/1";
+            //     - "bad" allow mask is "0.0.0.0/2";
+            //   bitToChange == 31 => allow address = 127.0.0.0
+            //     - "good" allow mask is "127.0.0.0/31";
+            //     - "bad" allow mask is "127.0.0.0/32".
+            int bitToChange = r.nextInt(bytes.length * 8 - 2) + 1;
             setBit(bytes, bitToChange, !getBit(bytes, bitToChange));
             // clear rest of the bits for mask address
             for (int i = bitToChange + 1; i < bytes.length * 8; i++) {
@@ -180,8 +184,8 @@ public class JdwpAllowTest {
             }
             allowAddress = InetAddress.getByAddress(bytes).getHostAddress();
 
-            prefixLengthBad = bitToChange;
-            prefixLengthGood = bitToChange - 1;
+            prefixLengthGood = bitToChange;
+            prefixLengthBad = bitToChange + 1;
         }
 
         private static boolean getBit(byte[] bytes, int pos) {
@@ -207,7 +211,7 @@ public class JdwpAllowTest {
             throw new RuntimeException("No addresses is returned for 'localhost'");
         }
         localAddr = addrs[0].getHostAddress();
-        System.err.println("localhost address: " + localAddr);
+        System.out.println("localhost address: " + localAddr);
 
         for (int i =  0; i < addrs.length; i++) {
             maskTests.add(new MaskTest(addrs[i]));
@@ -247,11 +251,11 @@ public class JdwpAllowTest {
             localAddr = test.localAddress;
             positiveTest("PositiveMaskTest(" + test.localAddress + ")",
                          test.allowAddress + "/" + test.prefixLengthGood);
-            positiveTest("NegativeMaskTest(" + test.localAddress + ")",
+            negativeTest("NegativeMaskTest(" + test.localAddress + ")",
                          test.allowAddress + "/" + test.prefixLengthBad);
         }
 
-        System.err.println("\nTest PASSED");
+        System.out.println("\nTest PASSED");
     }
 
 }

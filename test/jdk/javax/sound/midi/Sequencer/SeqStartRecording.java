@@ -27,6 +27,7 @@ import javax.sound.midi.Sequencer;
 
 /**
  * @test
+ * @key sound
  * @bug 5001943
  * @summary Sequencer.startRecording throws unexpected NPE
  */

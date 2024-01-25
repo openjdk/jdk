@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,11 @@
 
 package com.sun.tools.javac.comp;
 
-import java.util.*;
 
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Attribute.TypeCompound;
 import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Symbol.*;
-import com.sun.tools.javac.code.Type.IntersectionClassType;
-import com.sun.tools.javac.code.Types.FunctionDescriptorLookupError;
-import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.tree.JCTree.JCMemberReference.ReferenceKind;
@@ -80,12 +76,7 @@ public class TransTypes extends TreeTranslator {
     private final Resolve resolve;
     private final CompileStates compileStates;
 
-    /** Switch: is complex graph inference supported? */
-    private final boolean allowGraphInference;
-
-    /** Switch: are default methods supported? */
-    private final boolean allowInterfaceBridges;
-
+    @SuppressWarnings("this-escape")
     protected TransTypes(Context context) {
         context.put(transTypesKey, this);
         compileStates = CompileStates.instance(context);
@@ -96,9 +87,6 @@ public class TransTypes extends TreeTranslator {
         types = Types.instance(context);
         make = TreeMaker.instance(context);
         resolve = Resolve.instance(context);
-        Source source = Source.instance(context);
-        allowInterfaceBridges = Feature.DEFAULT_METHODS.allowedInSource(source);
-        allowGraphInference = Feature.GRAPH_INFERENCE.allowedInSource(source);
         annotate = Annotate.instance(context);
         attr = Attr.instance(context);
     }
@@ -562,13 +550,31 @@ public class TransTypes extends TreeTranslator {
     }
 
     public void visitCase(JCCase tree) {
-        tree.pats = translate(tree.pats, null);
+        tree.labels = translate(tree.labels, null);
+        tree.guard = translate(tree.guard, syms.booleanType);
         tree.stats = translate(tree.stats);
+        result = tree;
+    }
+
+    @Override
+    public void visitAnyPattern(JCAnyPattern tree) {
         result = tree;
     }
 
     public void visitBindingPattern(JCBindingPattern tree) {
         tree.var = translate(tree.var, null);
+        result = tree;
+    }
+
+    @Override
+    public void visitConstantCaseLabel(JCConstantCaseLabel tree) {
+        tree.expr = translate(tree.expr, null);
+        result = tree;
+    }
+
+    @Override
+    public void visitPatternCaseLabel(JCPatternCaseLabel tree) {
+        tree.pat = translate(tree.pat, null);
         result = tree;
     }
 
@@ -578,9 +584,17 @@ public class TransTypes extends TreeTranslator {
             selsuper.tsym == syms.enumSym;
         Type target = enumSwitch ? erasure(tree.selector.type) : syms.intType;
         tree.selector = translate(tree.selector, target);
-        tree.cases = translate(tree.cases);
+        tree.cases = translate(tree.cases, tree.type);
         tree.type = erasure(tree.type);
         result = retype(tree, tree.type, pt);
+    }
+
+    public void visitRecordPattern(JCRecordPattern tree) {
+        tree.fullComponentTypes = tree.record.getRecordComponents()
+                                             .map(rc -> types.memberType(tree.type, rc));
+        tree.deconstructor = translate(tree.deconstructor, null);
+        tree.nested = translate(tree.nested, null);
+        result = tree;
     }
 
     public void visitSynchronized(JCSynchronized tree) {
@@ -652,8 +666,7 @@ public class TransTypes extends TreeTranslator {
         tree.meth = translate(tree.meth, null);
         Symbol meth = TreeInfo.symbol(tree.meth);
         Type mt = meth.erasure(types);
-        boolean useInstantiatedPtArgs =
-                allowGraphInference && !types.isSignaturePolymorphic((MethodSymbol)meth.baseSymbol());
+        boolean useInstantiatedPtArgs = !types.isSignaturePolymorphic((MethodSymbol)meth.baseSymbol());
         List<Type> argtypes = useInstantiatedPtArgs ?
                 tree.meth.type.getParameterTypes() :
                 mt.getParameterTypes();
@@ -687,7 +700,7 @@ public class TransTypes extends TreeTranslator {
                 erasure(tree.constructorType) :
                 null;
 
-        List<Type> argtypes = erasedConstructorType != null && allowGraphInference ?
+        List<Type> argtypes = erasedConstructorType != null ?
                 erasedConstructorType.getParameterTypes() :
                 tree.constructor.erasure(types).getParameterTypes();
 
@@ -767,7 +780,7 @@ public class TransTypes extends TreeTranslator {
             JCTypeCast typeCast = newExpression.hasTag(Tag.TYPECAST)
                 ? (JCTypeCast) newExpression
                 : null;
-            tree.expr = typeCast != null && types.isSameType(typeCast.type, originalTarget)
+            tree.expr = typeCast != null && types.isSameType(typeCast.type, tree.type)
                 ? typeCast.expr
                 : newExpression;
         }
@@ -775,7 +788,7 @@ public class TransTypes extends TreeTranslator {
             Type.IntersectionClassType ict = (Type.IntersectionClassType)originalTarget;
             for (Type c : ict.getExplicitComponents()) {
                 Type ec = erasure(c);
-                if (!types.isSameType(ec, tree.type)) {
+                if (!types.isSameType(ec, tree.type) && (!types.isSameType(ec, pt))) {
                     tree.expr = coerce(tree.expr, ec);
                 }
             }
@@ -822,6 +835,14 @@ public class TransTypes extends TreeTranslator {
             tree.type = erasure(tree.type);
             result = tree;
         }
+    }
+
+    public void visitStringTemplate(JCStringTemplate tree) {
+        tree.processor = translate(tree.processor, erasure(tree.processor.type));
+        tree.expressions = tree.expressions.stream()
+                .map(e -> translate(e, erasure(e.type))).collect(List.collector());
+        tree.type = erasure(tree.type);
+        result = tree;
     }
 
     public void visitSelect(JCFieldAccess tree) {
@@ -948,9 +969,7 @@ public class TransTypes extends TreeTranslator {
                 super.visitClassDef(tree);
                 make.at(tree.pos);
                 ListBuffer<JCTree> bridges = new ListBuffer<>();
-                if (allowInterfaceBridges || (tree.sym.flags() & INTERFACE) == 0) {
-                    addBridges(tree.pos(), c, bridges);
-                }
+                addBridges(tree.pos(), c, bridges);
                 tree.defs = bridges.toList().prependList(tree.defs);
                 tree.type = erasure(tree.type);
             } finally {

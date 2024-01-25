@@ -1,11 +1,35 @@
-## PC/SC Lite v1.8.26
+## PC/SC Lite v1.9.9
+
+### PC/SC Lite Notice
+```
+MUSCLE SmartCard Development ( https://pcsclite.apdu.fr/ )
+
+Only 3 header files are included in this distribution: winscard.h, wintypes.h, pcsclite.h
+
+Copyright for winscard.h:
+ * Copyright (C) 1999-2003
+ *  David Corcoran <corcoran@musclecard.com>
+ * Copyright (C) 2002-2009
+ *  Ludovic Rousseau <ludovic.rousseau@free.fr>
+
+Copyright for wintypes.h:
+ * Copyright (C) 1999
+ *  David Corcoran <corcoran@musclecard.com>
+ * Copyright (C) 2002-2011
+ *  Ludovic Rousseau <ludovic.rousseau@free.fr>
+
+Copyright for pcsclite.h:
+ * Copyright (C) 1999-2004
+ *  David Corcoran <corcoran@musclecard.com>
+ * Copyright (C) 2002-2011
+ *  Ludovic Rousseau <ludovic.rousseau@free.fr>
+ * Copyright (C) 2005
+ *  Martin Paljak <martin@paljak.pri.ee>
+
+```
 
 ### PC/SC Lite License
-<pre>
-
-Copyright (c) 1999-2003 David Corcoran <corcoran@linuxnet.com>
-Copyright (c) 2001-2011 Ludovic Rousseau <ludovic.rousseau@free.fr>
-All rights reserved.
+```
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions
@@ -19,9 +43,6 @@ are met:
 3. The name of the author may not be used to endorse or promote products
    derived from this software without specific prior written permission.
 
-Changes to this license can be made only by the copyright author with
-explicit written consent.
-
 THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
 IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
 OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
@@ -33,4 +54,4 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-</pre>
+```

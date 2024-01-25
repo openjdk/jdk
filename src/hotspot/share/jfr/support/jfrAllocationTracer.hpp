@@ -32,7 +32,7 @@ class Thread;
 
 class JfrAllocationTracer : public StackObj {
  public:
-  JfrAllocationTracer(const Klass* klass, HeapWord* obj, size_t alloc_size, bool outside_tlab, Thread* thread);
+  JfrAllocationTracer(const Klass* klass, HeapWord* obj, size_t alloc_size, bool outside_tlab, JavaThread* thread);
 };
 
 #endif // SHARE_JFR_SUPPORT_JFRALLOCATIONTRACER_HPP

@@ -25,6 +25,7 @@
  * @test
  * @bug 6736248
  * @summary Tests PropertyEditor for value of subtype Enum with security manager
+ * @run main/othervm -Djava.security.manager=allow TestEnumSubclass
  * @author Sergey Malenkov
  * @modules java.compiler
  *          java.desktop

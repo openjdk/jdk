@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import sun.security.krb5.EncryptionKey;
 import sun.security.krb5.KrbException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import sun.security.krb5.*;
@@ -201,11 +202,9 @@ public final class ServiceCreds {
                     continue;   // skip this legacy bound keytab
                 }
             }
-            for (KerberosKey k: ktab.getKeys(princ)) {
-                keys.add(k);
-            }
+            Collections.addAll(keys, ktab.getKeys(princ));
         }
-        return keys.toArray(new KerberosKey[keys.size()]);
+        return keys.toArray(new KerberosKey[0]);
     }
 
     /**

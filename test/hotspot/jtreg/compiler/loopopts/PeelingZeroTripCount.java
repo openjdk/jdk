@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +27,7 @@
  * @bug 8215044
  * @summary C2 crash in loopTransform.cpp with assert(cl->trip_count() > 0) failed: peeling a fully unrolled loop
  *
- * @run main/othervm -XX:CompileOnly=PeelingZeroTripCount.test PeelingZeroTripCount
+ * @run main/othervm -XX:CompileOnly=PeelingZeroTripCount::test PeelingZeroTripCount
  *
  */
 

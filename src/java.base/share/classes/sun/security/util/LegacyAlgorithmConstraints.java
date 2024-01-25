@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package sun.security.util;
 import java.security.AlgorithmParameters;
 import java.security.CryptoPrimitive;
 import java.security.Key;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -40,7 +39,7 @@ public class LegacyAlgorithmConstraints extends AbstractAlgorithmConstraints {
     public static final String PROPERTY_TLS_LEGACY_ALGS =
             "jdk.tls.legacyAlgorithms";
 
-    private final List<String> legacyAlgorithms;
+    private final Set<String> legacyAlgorithms;
 
     public LegacyAlgorithmConstraints(String propertyName,
             AlgorithmDecomposer decomposer) {

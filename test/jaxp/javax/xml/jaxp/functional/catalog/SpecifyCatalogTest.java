@@ -44,7 +44,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8077931
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true catalog.SpecifyCatalogTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow catalog.SpecifyCatalogTest
  * @run testng/othervm catalog.SpecifyCatalogTest
  * @summary This case tests how to specify the catalog files.
  */

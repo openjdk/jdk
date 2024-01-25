@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -209,7 +209,7 @@ JNIEXPORT jlong JNICALL Java_sun_tools_attach_VirtualMachineImpl_openProcess
             } else {
                 char err_mesg[255];
                 /* include the last error in the default detail message */
-                sprintf(err_mesg, "OpenProcess(pid=%d) failed; LastError=0x%x",
+                snprintf(err_mesg, sizeof(err_mesg), "OpenProcess(pid=%d) failed; LastError=0x%x",
                     (int)pid, (int)GetLastError());
                 JNU_ThrowIOExceptionWithLastError(env, err_mesg);
             }
@@ -399,6 +399,7 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_enqueue
     /*
      * Setup data to copy to target process
      */
+    memset(&data, 0, sizeof(data));
     data._GetModuleHandle = _GetModuleHandle;
     data._GetProcAddress = _GetProcAddress;
 
@@ -491,7 +492,7 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_enqueue
                         break;
                     default : {
                         char errmsg[128];
-                        sprintf(errmsg, "Remote thread failed for unknown reason (%d)", exitCode);
+                        snprintf(errmsg, sizeof(errmsg), "Remote thread failed for unknown reason (%d)", exitCode);
                         JNU_ThrowInternalError(env, errmsg);
                     }
                 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -406,40 +406,20 @@ public class T6920317 {
         /** Read a file. */
         byte[] read(File file) {
             byte[] bytes = new byte[(int) file.length()];
-            DataInputStream in = null;
-            try {
-                in = new DataInputStream(new FileInputStream(file));
+            try (DataInputStream in = new DataInputStream(new FileInputStream(file))) {
                 in.readFully(bytes);
             } catch (IOException e) {
                 error("Error reading file: " + e);
-            } finally {
-                if (in != null) {
-                    try {
-                        in.close();
-                    } catch (IOException e) {
-                        error("Error closing file: " + e);
-                    }
-                }
             }
             return  bytes;
         }
 
         /** Write a file. */
         void write(JavaFileObject file, byte[] bytes) {
-            OutputStream out = null;
-            try {
-                out = file.openOutputStream();
+            try (OutputStream out = file.openOutputStream()) {
                 out.write(bytes, 0, bytes.length);
             } catch (IOException e) {
                 error("Error writing file: " + e);
-            } finally {
-                if (out != null) {
-                    try {
-                        out.close();
-                    } catch (IOException e) {
-                        error("Error closing file: " + e);
-                    }
-                }
             }
         }
 
@@ -453,7 +433,7 @@ public class T6920317 {
         /** Report an error to the annotation processing system. */
         void error(String msg) {
             Messager messager = processingEnv.getMessager();
-            messager.printMessage(Diagnostic.Kind.ERROR, msg);
+            messager.printError(msg);
         }
 
         int round;

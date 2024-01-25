@@ -39,7 +39,7 @@ import org.xml.sax.SAXException;
  * @test
  * @bug 6879614
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true dom.Bug6879614Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow dom.Bug6879614Test
  * @run testng/othervm dom.Bug6879614Test
  * @summary Test DocumentBuilder can parse the certain xml.
  */

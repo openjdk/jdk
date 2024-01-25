@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.security.Security;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Common library for various security test helper functions.
@@ -53,6 +54,26 @@ public final class SecurityUtils {
     }
 
     /**
+     * Adds the specified protocols to the jdk.tls.disabledAlgorithms
+     * security property
+     */
+    public static void addToDisabledTlsAlgs(String... protocols) {
+        addToDisabledArgs("jdk.tls.disabledAlgorithms", List.of(protocols));
+    }
+
+    /**
+     * Adds constraints to the specified security property.
+     */
+    public static void addToDisabledArgs(String prop, List<String> constraints) {
+        String value = Security.getProperty(prop);
+        value = Stream.concat(Arrays.stream(value.split(",")),
+                        constraints.stream())
+                .map(String::trim)
+                .collect(Collectors.joining(","));
+        Security.setProperty(prop, value);
+    }
+
+    /**
      * Removes the specified protocols from the jdk.tls.disabledAlgorithms
      * security property.
      */
@@ -61,11 +82,18 @@ public final class SecurityUtils {
                                List.<String>of(protocols));
     }
 
-    private static void removeFromDisabledAlgs(String prop, List<String> algs) {
+    /**
+     * Removes constraints that contain the specified constraint from the
+     * specified security property. For example, List.of("SHA1") will remove
+     * any constraint containing "SHA1".
+     */
+    public static void removeFromDisabledAlgs(String prop,
+            List<String> constraints) {
         String value = Security.getProperty(prop);
         value = Arrays.stream(value.split(","))
                       .map(s -> s.trim())
-                      .filter(s -> !algs.contains(s))
+                      .filter(s -> constraints.stream()
+                          .allMatch(constraint -> !s.contains(constraint)))
                       .collect(Collectors.joining(","));
         Security.setProperty(prop, value);
     }

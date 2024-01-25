@@ -1,0 +1,7 @@
+    @Test(dataProvider = "$type$UnaryOpMaskProvider")
+    static void [[TEST]]$vectorteststype$ScalarShiftMaskedConst(IntFunction<$type$[]> fa,
+                                          IntFunction<boolean[]> fm) {
+[[KERNEL]]
+        assertShiftConstEquals(r, a, mask, $vectorteststype$::[[TEST]]_binary_const);
+    }
+

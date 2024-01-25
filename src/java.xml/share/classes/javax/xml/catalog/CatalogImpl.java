@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,8 @@ import com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -43,6 +41,7 @@ import static javax.xml.catalog.BaseEntry.CatalogEntryType;
 import static javax.xml.catalog.CatalogFeatures.DEFER_TRUE;
 import javax.xml.catalog.CatalogFeatures.Feature;
 import static javax.xml.catalog.CatalogMessages.formatMessage;
+import javax.xml.catalog.CatalogResolver.NotFoundAction;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -61,8 +60,8 @@ class CatalogImpl extends GroupEntry implements Catalog {
     //Value of the defer attribute to determine if alternative catalogs are read
     boolean isDeferred = true;
 
-    //Value of the resolve attribute
-    ResolveType resolveType = ResolveType.STRICT;
+    //Value of the resolve attribute mapped to the resolver's action type
+    NotFoundAction resolveType = NotFoundAction.STRICT;
 
     //indicate whether the Catalog is empty
     boolean isEmpty;
@@ -142,7 +141,8 @@ class CatalogImpl extends GroupEntry implements Catalog {
                 if (verifyCatalogFile(null, uri)) {
                     systemId = temp;
                     try {
-                        baseURI = new URL(systemId);
+                        @SuppressWarnings("deprecation")
+                        URL _unused = baseURI = new URL(systemId);
                     } catch (MalformedURLException e) {
                         CatalogMessages.reportRunTimeError(CatalogMessages.ERR_INVALID_PATH,
                                 new Object[]{temp}, e);
@@ -260,7 +260,7 @@ class CatalogImpl extends GroupEntry implements Catalog {
      * @param value The value of the resolve attribute
      */
     public final void setResolve(String value) {
-        resolveType = ResolveType.getType(value);
+        resolveType = NotFoundAction.getType(value);
     }
 
     /**
@@ -268,7 +268,7 @@ class CatalogImpl extends GroupEntry implements Catalog {
      *
      * @return The value of the resolve attribute
      */
-    public final ResolveType getResolve() {
+    public final NotFoundAction getResolve() {
         return resolveType;
     }
 
@@ -413,14 +413,14 @@ class CatalogImpl extends GroupEntry implements Catalog {
     void loadNextCatalogs() {
         //loads catalogs specified in nextCatalogs
         if (nextCatalogs != null) {
-            nextCatalogs.stream().forEach((next) -> {
+            nextCatalogs.forEach((next) -> {
                 getCatalog(this, next.getCatalogURI());
             });
         }
 
         //loads catalogs from the input list
         if (inputFiles != null) {
-            inputFiles.stream().forEach((uri) -> {
+            inputFiles.forEach((uri) -> {
                 getCatalog(null, URI.create(uri));
             });
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@
 
 class LogMessageBuffer;
 
+class outputStream;
+
 // The tagset represents a combination of tags that occur in a log call somewhere.
 // Tagsets are created automatically by the LogTagSetMappings and should never be
 // instantiated directly somewhere else.
@@ -64,6 +66,10 @@ class LogTagSet {
  public:
   static void describe_tagsets(outputStream* out);
   static void list_all_tagsets(outputStream* out);
+
+  void wait_until_no_readers() const {
+    _output_list.wait_until_no_readers();
+  }
 
   static LogTagSet* first() {
     return _list;
@@ -102,6 +108,10 @@ class LogTagSet {
     _output_list.clear();
   }
 
+  PrefixWriter write_prefix() {
+    return _write_prefix;
+  }
+
   void set_output_level(LogOutput* output, LogLevelType level) {
     _output_list.set_output_level(output, level);
   }
@@ -110,6 +120,7 @@ class LogTagSet {
   // of its current outputs combined with the given decorators.
   void update_decorators(const LogDecorators& decorator = LogDecorators::None);
 
+  void label(outputStream* st, const char* separator = ",") const;
   int label(char *buf, size_t len, const char* separator = ",") const;
   bool has_output(const LogOutput* output);
 
@@ -158,6 +169,7 @@ public:
 // will instantiate the LogTagSetMapping template, which in turn creates the static field for that
 // tagset. This _tagset contains the configuration for those tags.
 template <LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag>
-LogTagSet LogTagSetMapping<T0, T1, T2, T3, T4, GuardTag>::_tagset(&LogPrefix<T0, T1, T2, T3, T4>::prefix, T0, T1, T2, T3, T4);
+LogTagSet LogTagSetMapping<T0, T1, T2, T3, T4, GuardTag>::_tagset{&LogPrefix<T0, T1, T2, T3, T4>::prefix, T0, T1, T2, T3, T4};
 
+extern const size_t vwrite_buffer_size;
 #endif // SHARE_LOGGING_LOGTAGSET_HPP

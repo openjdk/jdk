@@ -24,7 +24,7 @@
  * Google Author(s): Behdad Esfahbod
  */
 
-#ifndef HB_H_IN
+#if !defined(HB_H_IN) && !defined(HB_NO_SINGLE_HEADER_ERROR)
 #error "Include <hb.h> instead."
 #endif
 
@@ -36,6 +36,20 @@
 
 HB_BEGIN_DECLS
 
+/**
+ * hb_shape_plan_t:
+ *
+ * Data type for holding a shaping plan.
+ *
+ * Shape plans contain information about how HarfBuzz will shape a
+ * particular text segment, based on the segment's properties and the
+ * capabilities in the font face in use.
+ *
+ * Shape plans can be queried about how shaping will perform, given a set
+ * of specific input parameters (script, language, direction, features,
+ * etc.).
+ *
+ **/
 typedef struct hb_shape_plan_t hb_shape_plan_t;
 
 HB_EXTERN hb_shape_plan_t *
@@ -88,8 +102,8 @@ hb_shape_plan_set_user_data (hb_shape_plan_t    *shape_plan,
                              hb_bool_t           replace);
 
 HB_EXTERN void *
-hb_shape_plan_get_user_data (hb_shape_plan_t    *shape_plan,
-                             hb_user_data_key_t *key);
+hb_shape_plan_get_user_data (const hb_shape_plan_t *shape_plan,
+                             hb_user_data_key_t    *key);
 
 
 HB_EXTERN hb_bool_t

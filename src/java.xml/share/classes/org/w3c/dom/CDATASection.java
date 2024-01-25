@@ -61,7 +61,7 @@ package org.w3c.dom;
  * therefore possible to have the character sequence <code>"]]&gt;"</code>
  * in the content, which is illegal in a CDATA section per section 2.7 of [<a href='http://www.w3.org/TR/2004/REC-xml-20040204'>XML 1.0</a>]. The
  * presence of this character sequence must generate a fatal error during
- * serialization or the cdata section must be splitted before the
+ * serialization or the cdata section must be split before the
  * serialization (see also the parameter <code>"split-cdata-sections"</code>
  * in the <code>DOMConfiguration</code> interface).
  * <p ><b>Note:</b> Because no markup is recognized within a
@@ -78,6 +78,8 @@ package org.w3c.dom;
  * exception when a character is missing from the encoding, making the task
  * of ensuring that data is not corrupted on serialization more difficult.
  * <p>See also the <a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407'>Document Object Model (DOM) Level 3 Core Specification</a>.
+ *
+ * @since 1.4, DOM Level 2
  */
 public interface CDATASection extends Text {
 }

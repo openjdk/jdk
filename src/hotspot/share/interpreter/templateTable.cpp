@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,8 +48,8 @@ void Template::initialize(int flags, TosState tos_in, TosState tos_out, generato
 
 
 Bytecodes::Code Template::bytecode() const {
-  int i = this - TemplateTable::_template_table;
-  if (i < 0 || i >= Bytecodes::number_of_codes) i = this - TemplateTable::_template_table_wide;
+  int i = (int)(this - TemplateTable::_template_table);
+  if (i < 0 || i >= Bytecodes::number_of_codes) i = (int)(this - TemplateTable::_template_table_wide);
   return Bytecodes::cast(i);
 }
 
@@ -202,8 +202,8 @@ void TemplateTable::def(Bytecodes::Code code, int flags, TosState in, TosState o
 }
 
 
-void TemplateTable::def(Bytecodes::Code code, int flags, TosState in, TosState out, void (*gen)(bool arg    ), bool arg) {
-  def(code, flags, in, out, (Template::generator)gen, (int)arg);
+void TemplateTable::def(Bytecodes::Code code, int flags, TosState in, TosState out, void (*gen)(LdcType ldct), LdcType ldct) {
+  def(code, flags, in, out, (Template::generator)gen, (int)ldct);
 }
 
 
@@ -250,8 +250,8 @@ void TemplateTable::initialize() {
   def(Bytecodes::_dconst_1            , ____|____|____|____, vtos, dtos, dconst              ,  1           );
   def(Bytecodes::_bipush              , ubcp|____|____|____, vtos, itos, bipush              ,  _           );
   def(Bytecodes::_sipush              , ubcp|____|____|____, vtos, itos, sipush              ,  _           );
-  def(Bytecodes::_ldc                 , ubcp|____|clvm|____, vtos, vtos, ldc                 ,  false       );
-  def(Bytecodes::_ldc_w               , ubcp|____|clvm|____, vtos, vtos, ldc                 ,  true        );
+  def(Bytecodes::_ldc                 , ubcp|____|clvm|____, vtos, vtos, ldc                 ,  ldc_normal  );
+  def(Bytecodes::_ldc_w               , ubcp|____|clvm|____, vtos, vtos, ldc                 ,  ldc_wide    );
   def(Bytecodes::_ldc2_w              , ubcp|____|clvm|____, vtos, vtos, ldc2_w              ,  _           );
   def(Bytecodes::_iload               , ubcp|____|clvm|____, vtos, itos, iload               ,  _           );
   def(Bytecodes::_lload               , ubcp|____|____|____, vtos, ltos, lload               ,  _           );
@@ -484,8 +484,8 @@ void TemplateTable::initialize() {
   def(Bytecodes::_fast_linearswitch   , ubcp|disp|____|____, itos, vtos, fast_linearswitch   ,  _           );
   def(Bytecodes::_fast_binaryswitch   , ubcp|disp|____|____, itos, vtos, fast_binaryswitch   ,  _           );
 
-  def(Bytecodes::_fast_aldc           , ubcp|____|clvm|____, vtos, atos, fast_aldc           ,  false       );
-  def(Bytecodes::_fast_aldc_w         , ubcp|____|clvm|____, vtos, atos, fast_aldc           ,  true        );
+  def(Bytecodes::_fast_aldc           , ubcp|____|clvm|____, vtos, atos, fast_aldc           ,  ldc_normal  );
+  def(Bytecodes::_fast_aldc_w         , ubcp|____|clvm|____, vtos, atos, fast_aldc           ,  ldc_wide    );
 
   def(Bytecodes::_return_register_finalizer , ____|disp|clvm|____, vtos, vtos, _return       ,  vtos        );
 

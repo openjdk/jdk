@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,12 +33,12 @@ import java.util.Hashtable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Date;
 import java.util.Iterator;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.StringTokenizer;
 import java.util.Collections;
+import java.util.Locale;
 import java.util.Map;
 import java.util.List;
 import java.security.Permission;
@@ -132,6 +132,8 @@ import sun.security.action.GetPropertyAction;
  * instance, unless particular protocol specifications specify different behaviours
  * for it.
  *
+ * @spec https://www.rfc-editor.org/info/rfc2616
+ *      RFC 2616: Hypertext Transfer Protocol -- HTTP/1.1
  * @author  James Gosling
  * @see     java.net.URL#openConnection()
  * @see     java.net.URLConnection#connect()
@@ -306,7 +308,7 @@ public abstract class URLConnection {
 
         if (map == null) {
             fileNameMap = map = new FileNameMap() {
-                private FileNameMap internalMap =
+                private final FileNameMap internalMap =
                     sun.net.www.MimeTable.loadTable();
 
                 public String getContentTypeFor(String fileName) {
@@ -334,6 +336,7 @@ public abstract class URLConnection {
      * @since 1.2
      */
     public static void setFileNameMap(FileNameMap map) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) sm.checkSetFactory();
         fileNameMap = map;
@@ -588,6 +591,14 @@ public abstract class URLConnection {
      * unmodifiable List of Strings that represents
      * the corresponding field values.
      *
+     * This method is overridden by the subclasses of {@code URLConnection}.
+     *
+     * In the implementation of these methods, if a given key has multiple
+     * corresponding values, they must be returned in the order they were added,
+     * preserving the insertion-order.
+     *
+     * @implSpec The default implementation of this method returns an empty map always.
+     *
      * @return a Map of header fields
      * @since 1.4
      */
@@ -603,18 +614,20 @@ public abstract class URLConnection {
      * headers. Classes for that connection type can override this method
      * and short-circuit the parsing.
      *
-     * @param   name      the name of the header field.
-     * @param   Default   the default value.
+     * @param   name          the name of the header field.
+     * @param   defaultValue  the default value.
      * @return  the value of the named field, parsed as an integer. The
-     *          {@code Default} value is returned if the field is
+     *          {@code defaultValue} value is returned if the field is
      *          missing or malformed.
      */
-    public int getHeaderFieldInt(String name, int Default) {
-        String value = getHeaderField(name);
-        try {
-            return Integer.parseInt(value);
-        } catch (Exception e) { }
-        return Default;
+    public int getHeaderFieldInt(String name, int defaultValue) {
+        final String value = getHeaderField(name);
+        if (value != null) {
+            try {
+                return Integer.parseInt(value);
+            } catch (NumberFormatException e) { }
+        }
+        return defaultValue;
     }
 
     /**
@@ -625,19 +638,21 @@ public abstract class URLConnection {
      * headers. Classes for that connection type can override this method
      * and short-circuit the parsing.
      *
-     * @param   name      the name of the header field.
-     * @param   Default   the default value.
+     * @param   name          the name of the header field.
+     * @param   defaultValue  the default value.
      * @return  the value of the named field, parsed as a long. The
-     *          {@code Default} value is returned if the field is
+     *          {@code defaultValue} value is returned if the field is
      *          missing or malformed.
      * @since 1.7
      */
-    public long getHeaderFieldLong(String name, long Default) {
-        String value = getHeaderField(name);
-        try {
-            return Long.parseLong(value);
-        } catch (Exception e) { }
-        return Default;
+    public long getHeaderFieldLong(String name, long defaultValue) {
+        final String value = getHeaderField(name);
+        if (value != null) {
+            try {
+                return Long.parseLong(value);
+            } catch (NumberFormatException e) { }
+        }
+        return defaultValue;
     }
 
     /**
@@ -650,19 +665,21 @@ public abstract class URLConnection {
      * headers. Classes for that connection type can override this method
      * and short-circuit the parsing.
      *
-     * @param   name     the name of the header field.
-     * @param   Default   a default value.
+     * @param   name          the name of the header field.
+     * @param   defaultValue  a default value.
      * @return  the value of the field, parsed as a date. The value of the
-     *          {@code Default} argument is returned if the field is
+     *          {@code defaultValue} argument is returned if the field is
      *          missing or malformed.
      */
     @SuppressWarnings("deprecation")
-    public long getHeaderFieldDate(String name, long Default) {
-        String value = getHeaderField(name);
-        try {
-            return Date.parse(value);
-        } catch (Exception e) { }
-        return Default;
+    public long getHeaderFieldDate(String name, long defaultValue) {
+        final String value = getHeaderField(name);
+        if (value != null) {
+            try {
+                return Date.parse(value);
+            } catch (Exception e) { }
+        }
+        return defaultValue;
     }
 
     /**
@@ -830,6 +847,12 @@ public abstract class URLConnection {
      * A SocketTimeoutException can be thrown when reading from the
      * returned input stream if the read timeout expires before data
      * is available for read.
+     *
+     * @apiNote The {@code InputStream} returned by this method can wrap an
+     * {@link java.util.zip.InflaterInputStream InflaterInputStream}, whose
+     * {@link java.util.zip.InflaterInputStream#read(byte[], int, int)
+     * read(byte[], int, int)} method can modify any element of the output
+     * buffer.
      *
      * @return     an input stream that reads from this open connection.
      * @throws     IOException              if an I/O error occurs while
@@ -1077,7 +1100,7 @@ public abstract class URLConnection {
      * @since 9
      */
     public static void setDefaultUseCaches(String protocol, boolean defaultVal) {
-        protocol = protocol.toLowerCase(Locale.US);
+        protocol = URL.lowerCaseProtocol(protocol);
         defaultCaching.put(protocol, defaultVal);
     }
 
@@ -1093,7 +1116,7 @@ public abstract class URLConnection {
      * @since 9
      */
     public static boolean getDefaultUseCaches(String protocol) {
-        Boolean protoDefault = defaultCaching.get(protocol.toLowerCase(Locale.US));
+        Boolean protoDefault = defaultCaching.get(URL.lowerCaseProtocol(protocol));
         if (protoDefault != null) {
             return protoDefault.booleanValue();
         } else {
@@ -1132,6 +1155,10 @@ public abstract class URLConnection {
      * Adds a general request property specified by a
      * key-value pair.  This method will not overwrite
      * existing values associated with the same key.
+     *
+     * This method could be a no-op if appending a value
+     * to the map is not supported by the protocol being
+     * used in a given subclass.
      *
      * @param   key     the keyword by which the request is known
      *                  (e.g., "{@code Accept}").
@@ -1179,6 +1206,16 @@ public abstract class URLConnection {
      * field names. Each Map value is a unmodifiable List
      * of Strings that represents the corresponding
      * field values.
+     *
+     * If multiple values for a given key are added via the
+     * {@link #addRequestProperty(String, String)} method,
+     * these values will be returned in the order they were
+     * added. This method must preserve the insertion order
+     * of such values.
+     *
+     * The default implementation of this method preserves the insertion order when
+     * multiple values are added for a given key. The values are returned in the order they
+     * were added.
      *
      * @return  a Map of the general request properties for this connection.
      * @throws IllegalStateException if already connected
@@ -1264,6 +1301,7 @@ public abstract class URLConnection {
         if (factory != null) {
             throw new Error("factory already defined");
         }
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkSetFactory();
@@ -1377,6 +1415,7 @@ public abstract class URLConnection {
         return UnknownContentHandler.INSTANCE;
     }
 
+    @SuppressWarnings("removal")
     private ContentHandler lookupContentHandlerViaProvider(String contentType) {
         return AccessController.doPrivileged(
                 new PrivilegedAction<>() {
@@ -1416,7 +1455,7 @@ public abstract class URLConnection {
      */
     private String typeToPackageName(String contentType) {
         // make sure we canonicalize the class name: all lower case
-        contentType = contentType.toLowerCase();
+        contentType = contentType.toLowerCase(Locale.ROOT);
         int len = contentType.length();
         char nm[] = new char[len];
         contentType.getChars(0, len, nm, 0);
@@ -1815,7 +1854,7 @@ public abstract class URLConnection {
      * Returns -1, If EOF is reached before len bytes are read, returns 0
      * otherwise
      */
-    private static int readBytes(int c[], int len, InputStream is)
+    private static int readBytes(int[] c, int len, InputStream is)
                 throws IOException {
 
         byte buf[] = new byte[len];

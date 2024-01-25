@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,14 +45,14 @@ import java.util.TimeZone;
  * for the {@link #getOffset(int,int,int,int,int,int) getOffset}
  * method that takes Gregorian calendar date fields.
  * <p>
- * This table covers transitions from 1900 until 2037 (as of version
- * 1.4), Before 1900, it assumes that there was no daylight saving
+ * This table covers transitions from 1900 until 2100 (as of version
+ * 23), Before 1900, it assumes that there was no daylight saving
  * time and the <code>getOffset</code> methods always return the
  * {@link #getRawOffset} value. No Local Mean Time is supported. If a
  * specified date is beyond the transition table and this time zone is
- * supposed to observe daylight saving time in 2037, it delegates
+ * supposed to observe daylight saving time in 2100, it delegates
  * operations to a {@link java.util.SimpleTimeZone SimpleTimeZone}
- * object created using the daylight saving time schedule as of 2037.
+ * object created using the daylight saving time schedule as of 2100.
  * <p>
  * The date items, transitions, GMT offset(s), etc. are read from a database
  * file. See {@link ZoneInfoFile} for details.
@@ -70,7 +70,6 @@ public class ZoneInfo extends TimeZone {
     private static final long DST_MASK = 0xf0L;
     private static final int DST_NSHIFT = 4;
     // this bit field is reserved for abbreviation support
-    private static final long ABBR_MASK = 0xf00L;
     private static final int TRANSITION_NSHIFT = 12;
 
     /**
@@ -285,7 +284,7 @@ public class ZoneInfo extends TimeZone {
             int dstoffset = tz.getOffset(msec) - rawOffset;
 
             // Check if it's in a standard-to-daylight transition.
-            if (dstoffset > 0 && tz.getOffset(msec - dstoffset) == rawoffset) {
+            if (dstoffset > 0 && tz.getOffset(msec - dstoffset) == rawoffset && type == WALL_TIME) {
                 dstoffset = 0;
             }
 
@@ -394,7 +393,7 @@ public class ZoneInfo extends TimeZone {
         }
 
         long dateInMillis = gcal.getTime(date) + milliseconds;
-        dateInMillis -= (long) rawOffset; // make it UTC
+        dateInMillis -= rawOffset; // make it UTC
         return getOffsets(dateInMillis, null, UTC_TIME);
     }
 
@@ -404,7 +403,7 @@ public class ZoneInfo extends TimeZone {
      * historical ones, if applicable.
      *
      * @param offsetMillis the base time zone offset to GMT.
-     * @see getRawOffset
+     * @see #getRawOffset
      */
     public synchronized void setRawOffset(int offsetMillis) {
         if (offsetMillis == rawOffset + rawOffsetDiff) {
@@ -525,20 +524,6 @@ public class ZoneInfo extends TimeZone {
         return dstSavings;
     }
 
-//    /**
-//     * @return the last year in the transition table or -1 if this
-//     * time zone doesn't observe any daylight saving time.
-//     */
-//    public int getMaxTransitionYear() {
-//      if (transitions == null) {
-//          return -1;
-//      }
-//      long val = transitions[transitions.length - 1];
-//      int offset = this.offsets[(int)(val & OFFSET_MASK)] + rawOffsetDiff;
-//      val = (val >> TRANSITION_NSHIFT) + offset;
-//      CalendarDate lastDate = Gregorian.getCalendarDate(val);
-//      return lastDate.getYear();
-//    }
 
     /**
      * Returns a string representation of this time zone.
@@ -669,10 +654,9 @@ public class ZoneInfo extends TimeZone {
         if (this == obj) {
             return true;
         }
-        if (!(obj instanceof ZoneInfo)) {
+        if (!(obj instanceof ZoneInfo that)) {
             return false;
         }
-        ZoneInfo that = (ZoneInfo) obj;
         return (getID().equals(that.getID())
                 && (getLastRawOffset() == that.getLastRawOffset())
                 && (checksum == that.checksum));

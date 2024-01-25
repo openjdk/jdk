@@ -25,6 +25,7 @@
  * @test
  * @bug 6505888
  * @summary Tests SingletonList encoding
+ * @run main/othervm -Djava.security.manager=allow java_util_Collections_SingletonList
  * @author Sergey Malenkov
  */
 

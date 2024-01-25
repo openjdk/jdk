@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,9 +21,7 @@
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
 import com.sun.java_cup.internal.runtime.Symbol;
-import com.sun.org.apache.xalan.internal.XalanConstants;
 import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
-import com.sun.org.apache.xalan.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ErrorMsg;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.MethodType;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type;
@@ -43,16 +41,16 @@ import java.util.StringTokenizer;
 import javax.xml.XMLConstants;
 import javax.xml.catalog.CatalogFeatures;
 import jdk.xml.internal.ErrorHandlerProxy;
+import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.JdkXmlFeatures;
 import jdk.xml.internal.JdkXmlUtils;
 import jdk.xml.internal.SecuritySupport;
+import jdk.xml.internal.XMLSecurityManager;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
-import org.xml.sax.SAXNotRecognizedException;
-import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.AttributesImpl;
 
@@ -62,7 +60,7 @@ import org.xml.sax.helpers.AttributesImpl;
  * @author G. Todd Miller
  * @author Morten Jorgensen
  * @author Erwin Bolwidt <ejb@klomp.org>
- * @LastModified: July 2019
+ * @LastModified: July 2023
  */
 public class Parser implements Constants, ContentHandler {
 
@@ -469,62 +467,21 @@ public class Parser implements Constants, ContentHandler {
      * @return The root of the abstract syntax tree
      */
     public SyntaxTreeNode parse(InputSource input) {
-        try {
-            final XMLReader reader = JdkXmlUtils.getXMLReader(_overrideDefaultParser,
-                    _xsltc.isSecureProcessing());
+        final XMLReader reader = JdkXmlUtils.getXMLReader(
+                (XMLSecurityManager)_xsltc.getProperty(JdkConstants.SECURITY_MANAGER),
+                _overrideDefaultParser,
+                _xsltc.isSecureProcessing(),
+                _xsltc.getFeature(JdkXmlFeatures.XmlFeature.USE_CATALOG),
+                (CatalogFeatures)_xsltc.getProperty(JdkXmlFeatures.CATALOG_FEATURES));
 
-            JdkXmlUtils.setXMLReaderPropertyIfSupport(reader, XMLConstants.ACCESS_EXTERNAL_DTD,
-                    _xsltc.getProperty(XMLConstants.ACCESS_EXTERNAL_DTD), true);
+        JdkXmlUtils.setXMLReaderPropertyIfSupport(reader, XMLConstants.ACCESS_EXTERNAL_DTD,
+                _xsltc.getProperty(XMLConstants.ACCESS_EXTERNAL_DTD), true);
 
+        // try setting other JDK-impl properties, ignore if not supported
+        JdkXmlUtils.setXMLReaderPropertyIfSupport(reader, JdkConstants.CDATA_CHUNK_SIZE,
+            _xsltc.getProperty(JdkConstants.CDATA_CHUNK_SIZE), false);
 
-            boolean supportCatalog = true;
-            boolean useCatalog = _xsltc.getFeature(JdkXmlFeatures.XmlFeature.USE_CATALOG);
-            try {
-                reader.setFeature(JdkXmlUtils.USE_CATALOG, useCatalog);
-            }
-            catch (SAXNotRecognizedException | SAXNotSupportedException e) {
-                supportCatalog = false;
-            }
-
-            if (supportCatalog && useCatalog) {
-                try {
-                    CatalogFeatures cf = (CatalogFeatures)_xsltc.getProperty(JdkXmlFeatures.CATALOG_FEATURES);
-                        if (cf != null) {
-                            for (CatalogFeatures.Feature f : CatalogFeatures.Feature.values()) {
-                                reader.setProperty(f.getPropertyName(), cf.get(f));
-                            }
-                        }
-                } catch (SAXNotRecognizedException e) {
-                    //shall not happen for internal settings
-                }
-            }
-
-            String lastProperty = "";
-            try {
-                XMLSecurityManager securityManager =
-                        (XMLSecurityManager)_xsltc.getProperty(XalanConstants.SECURITY_MANAGER);
-                for (XMLSecurityManager.Limit limit : XMLSecurityManager.Limit.values()) {
-                    lastProperty = limit.apiProperty();
-                    reader.setProperty(lastProperty, securityManager.getLimitValueAsString(limit));
-                }
-                if (securityManager.printEntityCountInfo()) {
-                    lastProperty = XalanConstants.JDK_ENTITY_COUNT_INFO;
-                    reader.setProperty(XalanConstants.JDK_ENTITY_COUNT_INFO, XalanConstants.JDK_YES);
-                }
-            } catch (SAXException se) {
-                XMLSecurityManager.printWarning(reader.getClass().getName(), lastProperty, se);
-            }
-
-            // try setting other JDK-impl properties, ignore if not supported
-            JdkXmlUtils.setXMLReaderPropertyIfSupport(reader, JdkXmlUtils.CDATA_CHUNK_SIZE,
-                _xsltc.getProperty(JdkXmlUtils.CDATA_CHUNK_SIZE), false);
-
-            return(parse(reader, input));
-        }
-        catch (SAXException e) {
-            reportError(ERROR, new ErrorMsg(e.getMessage()));
-        }
-        return null;
+        return(parse(reader, input));
     }
 
     public SyntaxTreeNode getDocumentRoot() {
@@ -591,7 +548,7 @@ public class Parser implements Constants, ContentHandler {
                 path = SystemIDResolver.getAbsoluteURI(path);
                 String accessError = SecuritySupport.checkAccess(path,
                         (String)_xsltc.getProperty(XMLConstants.ACCESS_EXTERNAL_STYLESHEET),
-                        XalanConstants.ACCESS_EXTERNAL_ALL);
+                        JdkConstants.ACCESS_EXTERNAL_ALL);
                 if (accessError != null) {
                     ErrorMsg msg = new ErrorMsg(ErrorMsg.ACCESSING_XSLT_TARGET_ERR,
                             SecuritySupport.sanitizePath(_target), accessError,
@@ -1169,6 +1126,9 @@ public class Parser implements Constants, ContentHandler {
                                             expression, parent));
         }
         catch (Exception e) {
+            if (ErrorMsg.XPATH_LIMIT.equals(e.getMessage())) {
+                throw new RuntimeException(ErrorMsg.XPATH_LIMIT);
+            }
             if (_xsltc.debug()) e.printStackTrace();
             reportError(ERROR, new ErrorMsg(ErrorMsg.XPATH_PARSER_ERR,
                                             expression, parent));

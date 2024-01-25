@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,10 +207,10 @@ public abstract class VectorMask<E> extends jdk.internal.vm.vector.VectorSupport
         offset = VectorIntrinsics.checkFromIndexSize(offset, laneCount, bits.length);
         return VectorSupport.load(
                 vsp.maskType(), vsp.elementType(), laneCount,
-                bits, (long) offset + Unsafe.ARRAY_BOOLEAN_BASE_OFFSET,
+                bits, (long) offset + Unsafe.ARRAY_BOOLEAN_BASE_OFFSET, false,
                 bits, offset, vsp,
                 (c, idx, s)
-                  -> s.opm(n -> c[idx + n]));
+                  -> s.opm(n -> c[((int )idx) + n]));
     }
 
     /**
@@ -237,26 +237,25 @@ public abstract class VectorMask<E> extends jdk.internal.vm.vector.VectorSupport
      */
     @ForceInline
     public static <E> VectorMask<E> fromLong(VectorSpecies<E> species, long bits) {
-        AbstractSpecies<E> vspecies = (AbstractSpecies<E>) species;
-        int laneCount = vspecies.laneCount();
-        if (laneCount < Long.SIZE) {
-            int extraSignBits = Long.SIZE - laneCount;
-            bits <<= extraSignBits;
-            bits >>= extraSignBits;
-        }
-        if (bits == (bits >> 1)) {
-            // Special case.
-            assert(bits == 0 || bits == -1);
-            return vspecies.maskAll(bits != 0);
-        }
-        // FIXME: Intrinsify this.
-        long shifted = bits;
-        boolean[] a = new boolean[laneCount];
-        for (int i = 0; i < a.length; i++) {
-            a[i] = ((shifted & 1) != 0);
-            shifted >>= 1;  // replicate sign bit
-        }
-        return fromValues(vspecies, a);
+        AbstractSpecies<E> vsp = (AbstractSpecies<E>) species;
+        bits = bits & (0xFFFFFFFFFFFFFFFFL >>> (64 - vsp.laneCount()));
+        return VectorSupport.fromBitsCoerced(vsp.maskType(), vsp.elementType(), vsp.laneCount(), bits,
+                                             VectorSupport.MODE_BITS_COERCED_LONG_TO_MASK, vsp,
+                                             (m, s) -> {
+                                                 if (m == (m >> 1)) {
+                                                     // Special case.
+                                                     assert(m == 0 || m == -1);
+                                                     return s.maskAll(m != 0);
+                                                 }
+
+                                                 long shifted = m;
+                                                 boolean[] a = new boolean[s.laneCount()];
+                                                 for (int i = 0; i < a.length; i++) {
+                                                     a[i] = ((shifted & 1) != 0);
+                                                     shifted >>= 1;  // replicate sign bit
+                                                 }
+                                                 return fromValues(s, a);
+                                              });
     }
 
     /**
@@ -315,7 +314,7 @@ public abstract class VectorMask<E> extends jdk.internal.vm.vector.VectorSupport
      * return a;
      * }</pre>
      *
-     * @return an array containing the the lane elements of this vector
+     * @return an array containing the lane elements of this vector
      */
     public abstract boolean[] toArray();
 
@@ -399,20 +398,18 @@ public abstract class VectorMask<E> extends jdk.internal.vm.vector.VectorSupport
     public abstract VectorMask<E> or(VectorMask<E> m);
 
     /**
-     * Determines logical equivalence of this mask
-     * to a second input mask (as boolean {@code a==b}
-     * or {@code a^~b}).
+     * Determines logical symmetric difference
+     * (as {@code a^b}) of this mask and a second input mask.
      * <p>
-     * This is a lane-wise binary operation tests each
-     * corresponding pair of mask bits for equality.
-     * It is also equivalent to a inverse {@code XOR}
-     * operation ({@code ^~}) on the mask bits.
+     * This is a lane-wise binary operation which applies
+     * the logical {@code XOR} operation
+     * ({@code ^}) to each corresponding pair of mask bits.
      *
      * @param m the input mask
-     * @return a mask showing where the two input masks were equal
-     * @see #equals
+     * @return the result of logically disjunctively disjoining the two
+     * input masks
      */
-    public abstract VectorMask<E> eq(VectorMask<E> m);
+    public abstract VectorMask<E> xor(VectorMask<E> m);
 
     /**
      * Logically subtracts a second input mask
@@ -426,6 +423,23 @@ public abstract class VectorMask<E> extends jdk.internal.vm.vector.VectorSupport
      * @return the result of logically subtracting the second mask from this mask
      */
     public abstract VectorMask<E> andNot(VectorMask<E> m);
+
+    /**
+     * Determines logical equivalence of this mask
+     * to a second input mask (as boolean {@code a==b}
+     * or {@code a^~b}).
+     * <p>
+     * This is a lane-wise binary operation tests each
+     * corresponding pair of mask bits for equality.
+     * It is also equivalent to the logical {@code XNOR}
+     * operation ({@code ^~}) to each corresponding pair
+     * of mask bits.
+     *
+     * @param m the input mask
+     * @return a mask showing where the two input masks were equal
+     * @see #equals
+     */
+    public abstract VectorMask<E> eq(VectorMask<E> m);
 
     /**
      * Logically negates this mask.
@@ -473,6 +487,39 @@ public abstract class VectorMask<E> extends jdk.internal.vm.vector.VectorSupport
     public abstract VectorMask<E> indexInRange(int offset, int limit);
 
     /**
+     * Removes lanes numbered {@code N} from this mask where the
+     * adjusted index {@code N+offset}, is not in the range
+     * {@code [0..limit-1]}.
+     *
+     * <p> In all cases the series of set and unset lanes is assigned
+     * as if by using infinite precision or {@code VLENGTH-}saturating
+     * additions or subtractions, without overflow or wrap-around.
+     *
+     * @apiNote
+     *
+     * This method performs a SIMD emulation of the check performed by
+     * {@link Objects#checkIndex(long,long)}, on the index numbers in
+     * the range {@code [offset..offset+VLENGTH-1]}.  If an exception
+     * is desired, the resulting mask can be compared with the
+     * original mask; if they are not equal, then at least one lane
+     * was out of range, and exception processing can be performed.
+     *
+     * <p> A mask which is a series of {@code N} set lanes followed by
+     * a series of unset lanes can be obtained by calling
+     * {@code allTrue.indexInRange(0, N)}, where {@code allTrue} is a
+     * mask of all true bits.  A mask of {@code N1} unset lanes
+     * followed by {@code N2} set lanes can be obtained by calling
+     * {@code allTrue.indexInRange(-N1, N2)}.
+     *
+     * @param offset the starting index
+     * @param limit the upper-bound (exclusive) of index range
+     * @return the original mask, with out-of-range lanes unset
+     * @see VectorSpecies#indexInRange(long, long)
+     * @since 19
+     */
+    public abstract VectorMask<E> indexInRange(long offset, long limit);
+
+    /**
      * Returns a vector representation of this mask, the
      * lane bits of which are set or unset in correspondence
      * to the mask bits.
@@ -516,6 +563,8 @@ public abstract class VectorMask<E> extends jdk.internal.vm.vector.VectorSupport
      * @param i the lane index
      *
      * @return true if the lane at index {@code i} is set, otherwise false
+     * @throws IndexOutOfBoundsException if the index is out of range
+     * ({@code < 0 || >= length()})
      */
     public abstract boolean laneIsSet(int i);
 
@@ -552,6 +601,24 @@ public abstract class VectorMask<E> extends jdk.internal.vm.vector.VectorSupport
      * @see Vector#check(VectorSpecies)
      */
     public abstract <F> VectorMask<F> check(VectorSpecies<F> species);
+
+    /**
+     * Checks that this mask has the same class with the given mask class,
+     * and it has the same species with given vector's species,
+     * and returns this mask unchanged.
+     * The effect is similar to this pseudocode:
+     * {@code getClass() == maskClass &&
+     *        vectorSpecies() == vector.species()
+     *        ? this
+     *        : throw new ClassCastException()}.
+     *
+     * @param maskClass the class required for this mask
+     * @param vector its species required for this mask
+     * @param <F> the boxed element type of the required species
+     * @return the same mask
+     * @throws ClassCastException if the species is wrong
+     */
+    abstract <F> VectorMask<F> check(Class<? extends VectorMask<F>> maskClass, Vector<F> vector);
 
     /**
      * Returns a string representation of this mask, of the form
@@ -601,6 +668,18 @@ public abstract class VectorMask<E> extends jdk.internal.vm.vector.VectorSupport
     public final int hashCode() {
         return Objects.hash(vectorSpecies(), Arrays.hashCode(toArray()));
     }
+
+    /**
+     * Compresses set lanes from this mask.
+     *
+     * Returns a mask which is a series of {@code N} set lanes
+     * followed by a series of unset lanes, where {@code N} is
+     * the true count of this mask.
+     *
+     * @return the compressed mask of this mask
+     * @since 19
+     */
+    public abstract VectorMask<E> compress();
 
     // ==== JROSE NAME CHANGES ====
 

@@ -193,7 +193,7 @@ void AwtDebugSupport::AssertCallback(const char * expr, const char * file, int l
                   NULL);
 
     if (msgBuffer == NULL) {
-        msgBuffer = "<Could not get GetLastError() message text>";
+        msgBuffer = (LPSTR)"<Could not get GetLastError() message text>";
     }
     // format the assertion message
     _snprintf(assertMsg, ASSERT_MSG_SIZE, AssertFmt, expr, file, line, lastError, msgBuffer);

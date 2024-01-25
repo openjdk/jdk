@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,7 @@ public abstract class HttpContext {
     /**
      * Returns this context's {@link List} of {@linkplain Filter filters}. This
      * is the actual list used by the server when dispatching requests so
-     * modifications to this list immediately affect the the handling of exchanges.
+     * modifications to this list immediately affect the handling of exchanges.
      *
      * @return a {@link List} containing the filters of this context
      */
@@ -103,7 +103,7 @@ public abstract class HttpContext {
 
     /**
      * Sets the {@link Authenticator} for this {@code HttpContext}. Once an authenticator
-     * is establised on a context, all client requests must be authenticated,
+     * is established on a context, all client requests must be authenticated,
      * and the given object will be invoked to validate each request. Each call
      * to this method replaces any previous value set.
      *

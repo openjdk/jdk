@@ -61,9 +61,9 @@ public class US_ASCII
         return new Encoder(this);
     }
 
-    private static class Decoder extends CharsetDecoder {
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
-        private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+    private static class Decoder extends CharsetDecoder {
 
         private Decoder(Charset cs) {
             super(cs, 1.0f, 1.0f);
@@ -158,6 +158,10 @@ public class US_ASCII
             int dl = dst.arrayOffset() + dst.limit();
             assert (dp <= dl);
             dp = (dp <= dl ? dp : dl);
+
+            int n = JLA.encodeASCII(sa, sp, da, dp, Math.min(sl - sp, dl - dp));
+            sp += n;
+            dp += n;
 
             try {
                 while (sp < sl) {

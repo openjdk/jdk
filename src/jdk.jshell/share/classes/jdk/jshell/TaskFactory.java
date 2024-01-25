@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import com.sun.source.tree.Tree;
 import com.sun.source.util.Trees;
 import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.util.Context;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import javax.tools.Diagnostic;
@@ -52,8 +53,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
-import static java.util.stream.Collectors.toList;
 import java.util.stream.Stream;
 import javax.lang.model.util.Elements;
 import javax.tools.FileObject;
@@ -81,8 +80,13 @@ import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Enter;
 import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.comp.Resolve;
+import com.sun.tools.javac.parser.JavacParser;
+import com.sun.tools.javac.parser.Lexer;
 import com.sun.tools.javac.parser.Parser;
 import com.sun.tools.javac.parser.ParserFactory;
+import com.sun.tools.javac.parser.ScannerFactory;
+import static com.sun.tools.javac.parser.Tokens.TokenKind.AMP;
+import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCExpression;
 import com.sun.tools.javac.tree.JCTree.JCTypeCast;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
@@ -105,7 +109,7 @@ class TaskFactory {
     private final MemoryFileManager fileManager;
     private final JShell state;
     private String classpath = System.getProperty("java.class.path");
-    private final static Version INITIAL_SUPPORTED_VER = Version.parse("9");
+    private static final Version INITIAL_SUPPORTED_VER = Version.parse("9");
 
     TaskFactory(JShell state) {
         this.state = state;
@@ -169,7 +173,7 @@ class TaskFactory {
         List<String> allOptions = new ArrayList<>();
 
         allOptions.add("--should-stop=at=FLOW");
-        allOptions.add("-Xlint:unchecked");
+        allOptions.add("-Xlint:unchecked,-strictfp");
         allOptions.add("-proc:none");
         allOptions.addAll(extraArgs);
 
@@ -186,12 +190,12 @@ class TaskFactory {
 
         return runTask(wraps.stream(),
                        sh,
-                       List.of("-Xlint:unchecked", "-proc:none", "-parameters"),
+                       List.of("-Xlint:unchecked,-strictfp", "-proc:none", "-parameters"),
                        (jti, diagnostics) -> new CompileTask(sh, jti, diagnostics),
                        worker);
     }
 
-    private <S, T extends BaseTask, Z> Z runTask(Stream<S> inputs,
+    private synchronized <S, T extends BaseTask<S>, Z> Z runTask(Stream<S> inputs,
                                                  SourceHandler<S> sh,
                                                  List<String> options,
                                                  BiFunction<JavacTaskImpl, DiagnosticCollector<JavaFileObject>, T> creator,
@@ -201,7 +205,7 @@ class TaskFactory {
             allOptions.addAll(state.extraCompilerOptions);
             Iterable<? extends JavaFileObject> compilationUnits = inputs
                             .map(in -> sh.sourceToFileObject(fileManager, in))
-                            .collect(Collectors.toList());
+                            .toList();
             DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
             state.debug(DBG_FMGR, "Task (%s %s) Options: %s\n", this, compilationUnits, allOptions);
             return javacTaskPool.getTask(null, fileManager, diagnostics, allOptions, null,
@@ -232,7 +236,7 @@ class TaskFactory {
             });
     }
 
-    interface Worker<T extends BaseTask, Z> {
+    interface Worker<T extends BaseTask<?>, Z> {
         public Z withTask(T task);
     }
 
@@ -260,15 +264,26 @@ class TaskFactory {
     private interface SourceHandler<T> {
 
         JavaFileObject sourceToFileObject(MemoryFileManager fm, T t);
+        T sourceForFileObject(JavaFileObject file);
 
         Diag diag(Diagnostic<? extends JavaFileObject> d);
     }
 
     private class StringSourceHandler implements SourceHandler<String> {
 
+        private final Map<URI, String> file2Snippet = new HashMap<>();
+
         @Override
         public JavaFileObject sourceToFileObject(MemoryFileManager fm, String src) {
-            return fm.createSourceFileObject(src, "$NeverUsedName$", src);
+            JavaFileObject result = fm.createSourceFileObject(src, "$NeverUsedName$", src);
+
+            file2Snippet.put(result.toUri(), src);
+            return result;
+        }
+
+        @Override
+        public String sourceForFileObject(JavaFileObject file) {
+            return file2Snippet.get(file.toUri());
         }
 
         @Override
@@ -310,9 +325,19 @@ class TaskFactory {
 
     private class WrapSourceHandler implements SourceHandler<OuterWrap> {
 
+        private final Map<URI, OuterWrap> file2Snippet = new HashMap<>();
+
         @Override
         public JavaFileObject sourceToFileObject(MemoryFileManager fm, OuterWrap w) {
-            return fm.createSourceFileObject(w, w.classFullName(), w.wrapped());
+            JavaFileObject result = fm.createSourceFileObject(w, w.classFullName(), w.wrapped());
+
+            file2Snippet.put(result.toUri(), w);
+            return result;
+        }
+
+        @Override
+        public OuterWrap sourceForFileObject(JavaFileObject file) {
+            return file2Snippet.get(file.toUri());
         }
 
         /**
@@ -334,7 +359,7 @@ class TaskFactory {
      * Parse a snippet of code (as a String) using the parser subclass.  Return
      * the parse tree (and errors).
      */
-    class ParseTask extends BaseTask {
+    class ParseTask extends BaseTask<String> {
 
         private final Iterable<? extends CompilationUnitTree> cuts;
         private final List<? extends Tree> units;
@@ -343,7 +368,7 @@ class TaskFactory {
                           JavacTaskImpl task,
                           DiagnosticCollector<JavaFileObject> diagnostics,
                           boolean forceExpression) {
-            super(sh, task, diagnostics);
+            super(sh, task, diagnostics, false);
             ReplParserFactory.preRegister(context, forceExpression);
             cuts = parse();
             units = Util.stream(cuts)
@@ -351,7 +376,7 @@ class TaskFactory {
                         List<? extends ImportTree> imps = cut.getImports();
                         return (!imps.isEmpty() ? imps : cut.getTypeDecls()).stream();
                     })
-                    .collect(toList());
+                    .toList();
         }
 
         private Iterable<? extends CompilationUnitTree> parse() {
@@ -375,14 +400,14 @@ class TaskFactory {
     /**
      * Run the normal "analyze()" pass of the compiler over the wrapped snippet.
      */
-    class AnalyzeTask extends BaseTask {
+    class AnalyzeTask extends BaseTask<OuterWrap> {
 
         private final Iterable<? extends CompilationUnitTree> cuts;
 
         private AnalyzeTask(SourceHandler<OuterWrap> sh,
                             JavacTaskImpl task,
                             DiagnosticCollector<JavaFileObject> diagnostics) {
-            super(sh, task, diagnostics);
+            super(sh, task, diagnostics, true);
             cuts = analyze();
         }
 
@@ -413,14 +438,14 @@ class TaskFactory {
     /**
      * Unit the wrapped snippet to class files.
      */
-    class CompileTask extends BaseTask {
+    class CompileTask extends BaseTask<OuterWrap> {
 
         private final Map<OuterWrap, List<OutputMemoryJavaFileObject>> classObjs = new HashMap<>();
 
         CompileTask(SourceHandler<OuterWrap>sh,
                     JavacTaskImpl jti,
                     DiagnosticCollector<JavaFileObject> diagnostics) {
-            super(sh, jti, diagnostics);
+            super(sh, jti, diagnostics, true);
         }
 
         boolean compile() {
@@ -471,24 +496,28 @@ class TaskFactory {
         javacTaskPool = new JavacTaskPool(5);
     }
 
-    abstract class BaseTask {
+    abstract class BaseTask<S> {
 
         final DiagnosticCollector<JavaFileObject> diagnostics;
         final JavacTaskImpl task;
         private DiagList diags = null;
-        private final SourceHandler<?> sourceHandler;
+        private final SourceHandler<S> sourceHandler;
         final Context context;
         private Types types;
         private JavacMessages messages;
         private Trees trees;
 
-        private <T>BaseTask(SourceHandler<T> sh,
+        private BaseTask(SourceHandler<S> sh,
                             JavacTaskImpl task,
-                            DiagnosticCollector<JavaFileObject> diagnostics) {
+                            DiagnosticCollector<JavaFileObject> diagnostics,
+                            boolean analyzeParserFactory) {
             this.sourceHandler = sh;
             this.task = task;
             context = task.getContext();
             this.diagnostics = diagnostics;
+            if (analyzeParserFactory) {
+                JShellAnalyzeParserFactory.preRegister(context);
+            }
         }
 
         abstract Iterable<? extends CompilationUnitTree> cuTrees();
@@ -593,6 +622,10 @@ class TaskFactory {
                         diag.getStartPosition(), diag.getEndPosition(), diag.getMessage(null));
             }
         }
+
+        S sourceForFile(JavaFileObject sourceFile) {
+            return sourceHandler.sourceForFileObject(sourceFile);
+        }
     }
 
     /**The variable types inferred for "var"s may be non-denotable.
@@ -669,7 +702,7 @@ class TaskFactory {
             Symtab syms = Symtab.instance(context);
             Names names = Names.instance(context);
             Log log  = Log.instance(context);
-            ParserFactory parserFactory = ParserFactory.instance(context);
+            JShellAnalyzeParserFactory parserFactory = (JShellAnalyzeParserFactory) ParserFactory.instance(context);
             Attr attr = Attr.instance(context);
             Enter enter = Enter.instance(context);
             DisableAccessibilityResolve rs = (DisableAccessibilityResolve) Resolve.instance(context);
@@ -685,26 +718,28 @@ class TaskFactory {
                 //ignore any errors:
                 JavaFileObject prev = log.useSource(null);
                 DiscardDiagnosticHandler h = new DiscardDiagnosticHandler(log);
-                try {
-                    //parse the type as a cast, i.e. "(<typeName>) x". This is to support
-                    //intersection types:
-                    CharBuffer buf = CharBuffer.wrap(("(" + typeName +")x\u0000").toCharArray(), 0, typeName.length() + 3);
-                    Parser parser = parserFactory.newParser(buf, false, false, false);
-                    JCExpression expr = parser.parseExpression();
-                    if (expr.hasTag(Tag.TYPECAST)) {
-                        //if parsed OK, attribute and set the type:
-                        var2OriginalType.put(field, field.type);
+                parserFactory.runPermitIntersectionTypes(() -> {
+                    try {
+                        //parse the type as a cast, i.e. "(<typeName>) x". This is to support
+                        //intersection types:
+                        CharBuffer buf = CharBuffer.wrap(("(" + typeName +")x\u0000").toCharArray(), 0, typeName.length() + 3);
+                        Parser parser = parserFactory.newParser(buf, false, false, false);
+                        JCExpression expr = parser.parseExpression();
+                        if (expr.hasTag(Tag.TYPECAST)) {
+                            //if parsed OK, attribute and set the type:
+                            var2OriginalType.put(field, field.type);
 
-                        JCTypeCast tree = (JCTypeCast) expr;
-                        rs.runWithoutAccessChecks(() -> {
-                            field.type = attr.attribType(tree.clazz,
-                                                         enter.getEnvs().iterator().next().enclClass.sym);
-                        });
+                            JCTypeCast tree = (JCTypeCast) expr;
+                            rs.runWithoutAccessChecks(() -> {
+                                field.type = attr.attribType(tree.clazz,
+                                                             enter.getEnvs().iterator().next().enclClass.sym);
+                            });
+                        }
+                    } finally {
+                        log.popDiagnosticHandler(h);
+                        log.useSource(prev);
                     }
-                } finally {
-                    log.popDiagnosticHandler(h);
-                    log.useSource(prev);
-                }
+                });
             }
         }
     }
@@ -753,4 +788,52 @@ class TaskFactory {
         private static final class Marker {}
     }
 
+    private static final class JShellAnalyzeParserFactory extends ParserFactory {
+        public static void preRegister(Context context) {
+            if (context.get(Marker.class) == null) {
+                context.put(parserFactoryKey, ((Factory<ParserFactory>) c -> new JShellAnalyzeParserFactory(c)));
+                context.put(Marker.class, new Marker());
+            }
+        }
+
+        private final ScannerFactory scannerFactory;
+        private boolean permitIntersectionTypes;
+
+        public JShellAnalyzeParserFactory(Context context) {
+            super(context);
+            this.scannerFactory = ScannerFactory.instance(context);
+        }
+
+        /**Run the given Runnable with intersection type permitted.
+         *
+         * @param r Runnnable to run
+         */
+        public void runPermitIntersectionTypes(Runnable r) {
+            boolean prevPermitIntersectionTypes = permitIntersectionTypes;
+            try {
+                permitIntersectionTypes = true;
+                r.run();
+            } finally {
+                permitIntersectionTypes = prevPermitIntersectionTypes;
+            }
+        }
+
+        @Override
+        public JavacParser newParser(CharSequence input, boolean keepDocComments, boolean keepEndPos, boolean keepLineMap, boolean parseModuleInfo) {
+            com.sun.tools.javac.parser.Lexer lexer = scannerFactory.newScanner(input, keepDocComments);
+            return new JavacParser(this, lexer, keepDocComments, keepLineMap, keepEndPos, parseModuleInfo) {
+                @Override
+                public JCExpression parseType(boolean allowVar, com.sun.tools.javac.util.List<JCTree.JCAnnotation> annotations) {
+                    int pos = token.pos;
+                    JCExpression t = super.parseType(allowVar, annotations);
+                    if (permitIntersectionTypes) {
+                        t = parseIntersectionType(pos, t);
+                    }
+                    return t;
+                }
+            };
+        }
+
+        private static final class Marker {}
+    }
 }

@@ -34,7 +34,7 @@ import org.w3c.dom.Document;
  * @test
  * @bug 4966082
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true dom.Bug4966082
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow dom.Bug4966082
  * @run testng/othervm dom.Bug4966082
  * @summary Test Element.getSchemaTypeInfo() returns an instance of TypeInfo instead of null when the document's schema is an XML DTD.
  */

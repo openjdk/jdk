@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,42 @@ package jdk.jfr.event.runtime;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class LatchedThread extends Thread {
+public class LatchedThread implements Runnable {
     public final static ThreadGroup THREAD_GROUP = new ThreadGroup("Latched Threads");
+    public final Thread thread;
     private final CountDownLatch latch = new CountDownLatch(1);
     private final AtomicBoolean alive = new AtomicBoolean(true);
 
+    public LatchedThread(String name, boolean isVirtual) {
+        if (isVirtual) {
+            thread = Thread.ofVirtual().name(name).unstarted(this);
+        } else {
+            thread = Thread.ofPlatform().name(name).group(THREAD_GROUP).unstarted(this);
+        }
+    }
+
     public LatchedThread(String name) {
-        super(THREAD_GROUP, name);
+        this(name, false);
+    }
+
+    public void start() {
+        thread.start();
+    }
+
+    public void join() throws InterruptedException {
+        thread.join();
     }
 
     public void awaitStarted() throws InterruptedException {
         latch.await();
+    }
+
+    public long getId() {
+        return thread.getId();
+    }
+
+    public String getName() {
+        return thread.getName();
     }
 
     public void stopAndJoin() throws InterruptedException {

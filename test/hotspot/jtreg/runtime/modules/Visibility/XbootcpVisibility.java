@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @summary Ensure that a package whose module has not been defined to the boot loader
  *          is correctly located with -Xbootclasspath/a
  * @requires !(os.family == "windows")
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -103,7 +104,7 @@ public class XbootcpVisibility {
         Files.delete(Paths.get(System.getProperty("test.classes") +  File.separator +
                                                                "p2" + File.separator + "Vis1_C.class"));
 
-        new OutputAnalyzer(ProcessTools.createJavaProcessBuilder(
+        new OutputAnalyzer(ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-Xbootclasspath/a:nonexistent.jar",
                 "-Xbootclasspath/a:mods1",
                 "Vis1_A")

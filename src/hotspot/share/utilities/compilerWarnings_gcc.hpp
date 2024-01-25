@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,18 @@
 #define ATTRIBUTE_SCANF(fmt,vargs)  __attribute__((format(scanf, fmt, vargs)))
 #endif
 
-#define PRAGMA_DISABLE_GCC_WARNING_AUX(x) _Pragma(#x)
-#define PRAGMA_DISABLE_GCC_WARNING(option_string) \
-  PRAGMA_DISABLE_GCC_WARNING_AUX(GCC diagnostic ignored option_string)
+#define PRAGMA_DISABLE_GCC_WARNING(optstring) _Pragma(STR(GCC diagnostic ignored optstring))
+
+#define PRAGMA_DIAG_PUSH             _Pragma("GCC diagnostic push")
+#define PRAGMA_DIAG_POP              _Pragma("GCC diagnostic pop")
+
+#if !defined(__clang_major__) && (__GNUC__ >= 12)
+// Disable -Wdangling-pointer which is introduced in GCC 12.
+#define PRAGMA_DANGLING_POINTER_IGNORED PRAGMA_DISABLE_GCC_WARNING("-Wdangling-pointer")
+
+// Disable -Winfinite-recursion which is introduced in GCC 12.
+#define PRAGMA_INFINITE_RECURSION_IGNORED PRAGMA_DISABLE_GCC_WARNING("-Winfinite-recursion")
+#endif
 
 #define PRAGMA_FORMAT_NONLITERAL_IGNORED                \
   PRAGMA_DISABLE_GCC_WARNING("-Wformat-nonliteral")     \
@@ -50,14 +59,40 @@
 #define PRAGMA_STRINGOP_TRUNCATION_IGNORED PRAGMA_DISABLE_GCC_WARNING("-Wstringop-truncation")
 #endif
 
-#if defined(__clang_major__) && \
-      (__clang_major__ >= 4 || \
-      (__clang_major__ >= 3 && __clang_minor__ >= 1)) || \
-    ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 6)) || (__GNUC__ > 4)
-// Tested to work with clang version 3.1 and better.
-#define PRAGMA_DIAG_PUSH             _Pragma("GCC diagnostic push")
-#define PRAGMA_DIAG_POP              _Pragma("GCC diagnostic pop")
+// Disable -Wstringop-overflow which is introduced in GCC 7.
+// https://gcc.gnu.org/gcc-7/changes.html
+#if !defined(__clang_major__) && (__GNUC__ >= 7)
+#define PRAGMA_STRINGOP_OVERFLOW_IGNORED PRAGMA_DISABLE_GCC_WARNING("-Wstringop-overflow")
+#endif
 
-#endif // clang/gcc version check
+#define PRAGMA_NONNULL_IGNORED PRAGMA_DISABLE_GCC_WARNING("-Wnonnull")
+
+#if (__GNUC__ >= 10)
+// TODO: Re-enable warning attribute for Clang once
+// https://github.com/llvm/llvm-project/issues/56519 is fixed and released.
+// || (defined(__clang_major__) && (__clang_major__ >= 14))
+
+// Use "warning" attribute to detect uses of "forbidden" functions.
+//
+// Note: The warning attribute is available since GCC 9, but disabling pragmas
+// does not work reliably in ALLOW_C_FUNCTION. GCC 10+ and up work fine.
+//
+// Note: _FORTIFY_SOURCE transforms calls to certain functions into calls to
+// associated "checking" functions, and that transformation seems to occur
+// *before* the attribute check.  We use fortification in fastdebug builds,
+// so uses of functions that are both forbidden and fortified won't cause
+// forbidden warnings in such builds.
+#define FORBID_C_FUNCTION(signature, alternative) \
+  extern "C" __attribute__((__warning__(alternative))) signature;
+
+// Disable warning attribute over the scope of the affected statement.
+// The name serves only to document the intended function.
+#define ALLOW_C_FUNCTION(name, ...)                     \
+  PRAGMA_DIAG_PUSH                                      \
+  PRAGMA_DISABLE_GCC_WARNING("-Wattribute-warning")     \
+  __VA_ARGS__                                           \
+  PRAGMA_DIAG_POP
+
+#endif // gcc10+
 
 #endif // SHARE_UTILITIES_COMPILERWARNINGS_GCC_HPP

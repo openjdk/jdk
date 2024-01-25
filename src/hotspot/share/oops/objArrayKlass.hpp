@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ class ObjArrayKlass : public ArrayKlass {
   friend class JVMCIVMStructs;
 
  public:
-  static const KlassID ID = ObjArrayKlassID;
+  static const KlassKind Kind = ObjArrayKlassKind;
 
  private:
   // If you add a new field that points to any metaspace object, you
@@ -65,14 +65,14 @@ class ObjArrayKlass : public ArrayKlass {
   PackageEntry* package() const;
 
   // Compiler/Interpreter offset
-  static ByteSize element_klass_offset() { return in_ByteSize(offset_of(ObjArrayKlass, _element_klass)); }
+  static ByteSize element_klass_offset() { return byte_offset_of(ObjArrayKlass, _element_klass); }
 
   // Dispatched operation
   bool can_be_primary_super_slow() const;
   GrowableArray<Klass*>* compute_secondary_supers(int num_extra_slots,
                                                   Array<InstanceKlass*>* transitive_interfaces);
   DEBUG_ONLY(bool is_objArray_klass_slow()  const  { return true; })
-  int oop_size(oop obj) const;
+  size_t oop_size(oop obj) const;
 
   // Allocation
   static ObjArrayKlass* allocate_objArray_klass(ClassLoaderData* loader_data,
@@ -95,15 +95,7 @@ class ObjArrayKlass : public ArrayKlass {
   void do_copy(arrayOop s, size_t src_offset,
                arrayOop d, size_t dst_offset,
                int length, TRAPS);
- protected:
-  // Returns the ObjArrayKlass for n'th dimension.
-  virtual Klass* array_klass_impl(bool or_null, int n, TRAPS);
-
-  // Returns the array class with this class as element type.
-  virtual Klass* array_klass_impl(bool or_null, TRAPS);
-
  public:
-
   static ObjArrayKlass* cast(Klass* k) {
     return const_cast<ObjArrayKlass*>(cast(const_cast<const Klass*>(k)));
   }
@@ -150,12 +142,8 @@ class ObjArrayKlass : public ArrayKlass {
   template <typename T, class OopClosureType>
   inline void oop_oop_iterate_elements_bounded(objArrayOop a, OopClosureType* closure, void* low, void* high);
 
-  template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_elements_bounded(objArrayOop a, OopClosureType* closure, MemRegion mr);
-
  public:
-  // JVM support
-  jint compute_modifier_flags(TRAPS) const;
+  jint compute_modifier_flags() const;
 
  public:
   // Printing

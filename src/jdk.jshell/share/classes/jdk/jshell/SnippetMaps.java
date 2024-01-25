@@ -37,7 +37,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.toList;
 import static jdk.jshell.Util.PREFIX_PATTERN;
 import static jdk.jshell.Util.REPL_PACKAGE;
 import static jdk.internal.jshell.debug.InternalDebugControl.DBG_DEP;
@@ -102,13 +101,12 @@ final class SnippetMaps {
         StringBuilder sb = new StringBuilder();
         sb.append("package ").append(REPL_PACKAGE).append(";\n");
         for (Snippet si : keyIndexToSnippet) {
-            if (si != null && si.status().isDefined() && (except == null || !except.contains(si.key()))) {
+            if (si != null && si.status().isDefined() && (except == null || !except.contains(si.key())) && si.name() != null && !si.name().isEmpty()) {
                 sb.append(si.importLine(state));
             }
         }
         if (plus != null) {
-            plus.stream()
-                    .forEach(psi -> sb.append(psi.importLine(state)));
+            plus.forEach(psi -> sb.append(psi.importLine(state)));
         }
         return sb.toString();
     }
@@ -164,21 +162,20 @@ final class SnippetMaps {
         List<String> klasses = importSnippets()
                                .filter(isi -> !isi.isStar)
                                .map(isi -> isi.fullname)
-                               .collect(toList());
+                               .toList();
         for (String k : klasses) {
             if (k.equals(full)) {
-                return full.substring(full.lastIndexOf(".")+1, full.length());
+                return full.substring(full.lastIndexOf(".")+1);
             }
         }
-        List<String> pkgs = importSnippets()
+        if (pkg.isEmpty()) {
+            return full;
+        }
+        Stream<String> pkgs = importSnippets()
                                .filter(isi -> isi.isStar)
-                               .map(isi -> isi.fullname.substring(0, isi.fullname.lastIndexOf(".")))
-                               .collect(toList());
-        pkgs.add(0, "java.lang");
-        for (String ipkg : pkgs) {
-            if (!ipkg.isEmpty() && ipkg.equals(pkg)) {
-                return full.substring(pkg.length() + 1);
-            }
+                               .map(isi -> isi.fullname.substring(0, isi.fullname.lastIndexOf(".")));
+        if (Stream.concat(Stream.of("java.lang"), pkgs).anyMatch(pkg::equals)) {
+            return full.substring(pkg.length() + 1);
         }
         return full;
     }

@@ -25,6 +25,7 @@
  * @test %I% %G%
  * @bug 4935607
  * @summary Tests transient properties
+ * @run main/othervm -Djava.security.manager=allow Test4935607
  * @author Sergey Malenkov
  */
 

@@ -48,7 +48,6 @@
 
 #undef LSA_SUCCESS
 #define LSA_SUCCESS(Status) ((Status) >= 0)
-#define EXIT_FAILURE -1 // mdu
 
 /*
  * Library-wide static references
@@ -76,6 +75,7 @@ BOOL native_debug = 0;
 
 BOOL PackageConnectLookup(PHANDLE,PULONG);
 
+static
 NTSTATUS ConstructTicketRequest(JNIEnv *env,
                                 UNICODE_STRING DomainName,
                                 PKERB_RETRIEVE_TKT_REQUEST *outRequest,
@@ -823,6 +823,7 @@ ShowLastError(
     if (native_debug) {
         if (0 == dwRes) {
             printf("LSA: FormatMessage failed with %d\n", GetLastError());
+            // #define EXIT_FAILURE -1 // mdu
             // ExitProcess(EXIT_FAILURE);
         } else {
             printf("LSA: %S",szMsgBuf);
@@ -1006,7 +1007,7 @@ jobject BuildTicketFlags(JNIEnv *env, PULONG flags) {
     jobject ticketFlags = NULL;
     jbyteArray ary;
     /*
-     * mdu: Convert the bytes to nework byte order before copying
+     * mdu: Convert the bytes to network byte order before copying
      * them to a Java byte array.
      */
     ULONG nlflags = htonl(*flags);

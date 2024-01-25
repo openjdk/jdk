@@ -26,19 +26,21 @@
  * @bug 8226585 8250768
  * @summary Verify behavior w.r.t. preview feature API errors and warnings
  * @library /tools/lib /tools/javac/lib
+ * @enablePreview
  * @modules
  *      java.base/jdk.internal.javac
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.file
  *      jdk.compiler/com.sun.tools.javac.main
  *      jdk.compiler/com.sun.tools.javac.util
- *      jdk.jdeps/com.sun.tools.classfile
+ *      java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox toolbox.JavacTask
  * @build combo.ComboTestHelper
  * @run main PreviewErrors
  */
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -54,8 +56,8 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 import javax.tools.Diagnostic;
 
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ConstantPoolException;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassFile;
 import java.io.FileWriter;
 import java.io.UncheckedIOException;
 import java.io.Writer;
@@ -234,9 +236,7 @@ public class PreviewErrors extends ComboInstance<PreviewErrors> {
 
                 new JavacTask(tb)
                         .outdir(classesJavaBase)
-                        .options("--patch-module", "java.base=" + srcJavaBase.toString(),
-                                 "--enable-preview",
-                                 "-source", String.valueOf(Runtime.version().feature()))
+                        .options("--patch-module", "java.base=" + srcJavaBase.toString())
                         .files(tb.findJavaFiles(srcJavaBase))
                         .run()
                         .writeAll();
@@ -244,7 +244,8 @@ public class PreviewErrors extends ComboInstance<PreviewErrors> {
                 task.withOption("--patch-module")
                     .withOption("java.base=" + classesJavaBase.toString())
                     .withOption("--add-exports")
-                    .withOption("java.base/user=ALL-UNNAMED");
+                    .withOption("java.base/user=ALL-UNNAMED")
+                    .withOption("-XDforcePreview=true");
             }
             case REFER_TO_DECLARATION_SOURCE -> {
                 tb.writeJavaFiles(srcJavaBase, SEALED_DECLARATION);
@@ -252,7 +253,8 @@ public class PreviewErrors extends ComboInstance<PreviewErrors> {
                 task.withOption("--patch-module")
                     .withOption("java.base=" + srcJavaBase.toString())
                     .withOption("--add-exports")
-                    .withOption("java.base/user=ALL-UNNAMED");
+                    .withOption("java.base/user=ALL-UNNAMED")
+                    .withOption("-XDforcePreview=true");
             }
         }
 
@@ -289,11 +291,13 @@ public class PreviewErrors extends ComboInstance<PreviewErrors> {
                             expected = Set.of("5:41:compiler.err.preview.feature.disabled");
                         }
                         case REFER_TO_DECLARATION_CLASS -> {
-                            ok = false;
-                            expected = Set.of("-1:-1:compiler.err.preview.feature.disabled.classfile");
+                            ok = true;
+                            previewClass = false;
+                            expected = Set.of();
                         }
                         case REFER_TO_DECLARATION_SOURCE -> {
                             ok = false;
+                            previewClass = false;
                             expected = Set.of("2:8:compiler.err.preview.feature.disabled.plural");
                         }
                         case API_CLASS, API_SOURCE -> {
@@ -330,41 +334,16 @@ public class PreviewErrors extends ComboInstance<PreviewErrors> {
                             }
                         }
                         case REFER_TO_DECLARATION_CLASS -> {
-                            if (suppress == Suppress.YES) {
-                                if (lint == Lint.ENABLE_PREVIEW) {
-                                    expected = Set.of("-1:-1:compiler.warn.preview.feature.use.classfile");
-                                } else {
-                                    expected = Set.of(/*"-1:-1:compiler.note.preview.filename",
-                                                      "-1:-1:compiler.note.preview.recompile"*/);
-                                }
-                            } else if (lint == Lint.ENABLE_PREVIEW) {
-                                expected = Set.of("5:13:compiler.warn.declared.using.preview",
-                                                  "5:24:compiler.warn.declared.using.preview",
-                                                  "-1:-1:compiler.warn.preview.feature.use.classfile");
+                            previewClass = false;
+                            expected = Set.of();
+                        }
+                        case REFER_TO_DECLARATION_SOURCE -> {
+                            previewClass = false;
+                            if (lint == Lint.ENABLE_PREVIEW) {
+                                expected = Set.of("2:8:compiler.warn.preview.feature.use.plural");
                             } else {
                                 expected = Set.of("-1:-1:compiler.note.preview.filename",
                                                   "-1:-1:compiler.note.preview.recompile");
-                            }
-                        }
-                        case REFER_TO_DECLARATION_SOURCE -> {
-                            if (lint == Lint.ENABLE_PREVIEW) {
-                                if (suppress == Suppress.YES) {
-                                    expected = Set.of("2:8:compiler.warn.preview.feature.use.plural",
-                                                      "3:26:compiler.warn.declared.using.preview");
-                                } else {
-                                    expected = Set.of("5:13:compiler.warn.declared.using.preview",
-                                                      "5:24:compiler.warn.declared.using.preview",
-                                                      "2:8:compiler.warn.preview.feature.use.plural",
-                                                      "3:26:compiler.warn.declared.using.preview");
-                                }
-                            } else {
-                                if (suppress == Suppress.YES) {
-                                    expected = Set.of("-1:-1:compiler.note.preview.filename",
-                                                      "-1:-1:compiler.note.preview.recompile");
-                                } else {
-                                    expected = Set.of("-1:-1:compiler.note.preview.plural",
-                                                      "-1:-1:compiler.note.preview.recompile");
-                                }
                             }
                         }
                         case API_CLASS, API_SOURCE -> {
@@ -416,7 +395,7 @@ public class PreviewErrors extends ComboInstance<PreviewErrors> {
                     if (!result.get().iterator().hasNext()) {
                         throw new IllegalStateException("Did not succeed as expected for preview=" + preview + ", lint=" + lint + ", suppress=" + suppress + ", elementType=" + elementType + ": actual:\"" + actual + "\"");
                     }
-                    ClassFile cf;
+                    ClassModel cf;
                     try {
                         JavaFileObject testClass = null;
                         for (JavaFileObject classfile : result.get()) {
@@ -427,14 +406,16 @@ public class PreviewErrors extends ComboInstance<PreviewErrors> {
                         if (testClass == null) {
                             throw new IllegalStateException("Cannot find Test.class");
                         }
-                        cf = ClassFile.read(testClass.openInputStream());
-                    } catch (IOException | ConstantPoolException ex) {
+                        try (InputStream input = testClass.openInputStream()) {
+                            cf = ClassFile.of().parse(input.readAllBytes());
+                        }
+                    } catch (IOException ex) {
                         throw new IllegalStateException(ex);
                     }
-                    if (previewClass && cf.minor_version != 65535) {
-                        throw new IllegalStateException("Expected preview class, but got: " + cf.minor_version);
-                    } else if (!previewClass && cf.minor_version != 0) {
-                        throw new IllegalStateException("Expected minor version == 0 but got: " + cf.minor_version);
+                    if (previewClass && cf.minorVersion() != 65535) {
+                        throw new IllegalStateException("Expected preview class, but got: " + cf.minorVersion());
+                    } else if (!previewClass && cf.minorVersion() != 0) {
+                        throw new IllegalStateException("Expected minor version == 0 but got: " + cf.minorVersion());
                     }
                 } else {
                     if (result.get().iterator().hasNext()) {

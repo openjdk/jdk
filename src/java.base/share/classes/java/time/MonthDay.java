@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -444,13 +444,13 @@ public final class MonthDay
      */
     @Override
     public long getLong(TemporalField field) {
-        if (field instanceof ChronoField) {
-            switch ((ChronoField) field) {
+        if (field instanceof ChronoField chronoField) {
+            return switch (chronoField) {
                 // alignedDOW and alignedWOM not supported because they cannot be set in with()
-                case DAY_OF_MONTH: return day;
-                case MONTH_OF_YEAR: return month;
-            }
-            throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
+                case DAY_OF_MONTH -> day;
+                case MONTH_OF_YEAR -> month;
+                default -> throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
+            };
         }
         return field.getFrom(this);
     }
@@ -675,7 +675,10 @@ public final class MonthDay
      * It is "consistent with equals", as defined by {@link Comparable}.
      *
      * @param other  the other month-day to compare to, not null
-     * @return the comparator value, negative if less, positive if greater
+     * @return the comparator value, that is less than zero if this is before {@code other},
+     *          zero if they are equal, greater than zero if this is after {@code other}
+     * @see #isBefore
+     * @see #isAfter
      */
     @Override
     public int compareTo(MonthDay other) {
@@ -720,11 +723,9 @@ public final class MonthDay
         if (this == obj) {
             return true;
         }
-        if (obj instanceof MonthDay) {
-            MonthDay other = (MonthDay) obj;
-            return month == other.month && day == other.day;
-        }
-        return false;
+        return (obj instanceof MonthDay other)
+                && month == other.month
+                && day == other.day;
     }
 
     /**

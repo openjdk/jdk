@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
-#include "assembler_arm.inline.hpp"
 #include "code/relocInfo.hpp"
 #include "nativeInst_arm.hpp"
 #include "oops/compressedOops.inline.hpp"
@@ -45,7 +44,7 @@ address Relocation::pd_call_destination(address orig_addr) {
   address pc = addr();
 
   int adj = 0;
-  if (orig_addr != NULL) {
+  if (orig_addr != nullptr) {
     // We just moved this call instruction from orig_addr to addr().
     // This means that, when relative, its target will appear to have grown by addr() - orig_addr.
     adj = orig_addr - pc;
@@ -70,7 +69,7 @@ address Relocation::pd_call_destination(address orig_addr) {
     return rawNativeJump_at(pc)->jump_destination(adj);
   }
   ShouldNotReachHere();
-  return NULL;
+  return nullptr;
 }
 
 void Relocation::pd_set_call_destination(address x) {

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,30 +23,35 @@
 # questions.
 #
 
-GENDATA_FONT_CONFIG_DST := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE)
+FONTCONFIG_DATA_DIR := $(MODULE_SRC)/$(OPENJDK_TARGET_OS)/data/fontconfig
+FONTCONFIG_SRC_FILE := $(FONTCONFIG_DATA_DIR)/fontconfig.properties
 
-GENDATA_FONT_CONFIG_DATA_DIR ?= $(TOPDIR)/make/data/fontconfig
+FONTCONFIG_DEST_DIR := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE)
+FONTCONFIG_OUT_FILE := $(FONTCONFIG_DEST_DIR)/fontconfig.properties.src
+FONTCONFIG_OUT_BIN_FILE := $(FONTCONFIG_DEST_DIR)/fontconfig.bfc
 
-GENDATA_FONT_CONFIG_SRC_FILES := \
-    $(wildcard $(GENDATA_FONT_CONFIG_DATA_DIR)/$(OPENJDK_TARGET_OS).*)
+ifneq ($(findstring $(LOG_LEVEL), debug trace), )
+  FONTCONFIG_VERBOSE_FLAG := -verbose
+endif
 
+# Not all OSes have a fontconfig file
+ifneq ($(wildcard $(FONTCONFIG_SRC_FILE)), )
 
-$(GENDATA_FONT_CONFIG_DST)/%.src: \
-    $(GENDATA_FONT_CONFIG_DATA_DIR)/$(OPENJDK_TARGET_OS).%
+  # Copy properties file as-is
+  $(FONTCONFIG_OUT_FILE): $(FONTCONFIG_SRC_FILE)
+	$(call LogInfo, Copying fontconfig.properties)
 	$(call install-file)
 
-$(GENDATA_FONT_CONFIG_DST)/%.bfc: \
-    $(GENDATA_FONT_CONFIG_DATA_DIR)/$(OPENJDK_TARGET_OS).%.properties \
-    $(BUILD_TOOLS_JDK)
+  TARGETS += $(FONTCONFIG_OUT_FILE)
+
+  # Generate binary representation
+  $(FONTCONFIG_OUT_BIN_FILE): $(FONTCONFIG_SRC_FILE) $(BUILD_TOOLS_JDK)
+	$(call LogInfo, Compiling fontconfig.properties to binary)
 	$(call MakeTargetDir)
 	$(RM) $@
-	$(TOOL_COMPILEFONTCONFIG) $< $@
+	$(TOOL_COMPILEFONTCONFIG) $(FONTCONFIG_VERBOSE_FLAG) $< $@
 	$(CHMOD) 444 $@
 
+  TARGETS += $(FONTCONFIG_OUT_BIN_FILE)
 
-GENDATA_FONT_CONFIGS := $(patsubst $(GENDATA_FONT_CONFIG_DATA_DIR)/$(OPENJDK_TARGET_OS).%, \
-    $(GENDATA_FONT_CONFIG_DST)/%.src, $(GENDATA_FONT_CONFIG_SRC_FILES))
-GENDATA_BFONT_CONFIGS := $(patsubst $(GENDATA_FONT_CONFIG_DATA_DIR)/$(OPENJDK_TARGET_OS).%.properties, \
-    $(GENDATA_FONT_CONFIG_DST)/%.bfc, $(GENDATA_FONT_CONFIG_SRC_FILES))
-
-TARGETS := $(GENDATA_FONT_CONFIGS) $(GENDATA_BFONT_CONFIGS)
+endif

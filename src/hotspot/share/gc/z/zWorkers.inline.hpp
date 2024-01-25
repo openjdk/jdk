@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,28 +24,12 @@
 #ifndef SHARE_GC_Z_ZWORKERS_INLINE_HPP
 #define SHARE_GC_Z_ZWORKERS_INLINE_HPP
 
-#include "gc/shared/gc_globals.hpp"
 #include "gc/z/zWorkers.hpp"
-#include "utilities/globalDefinitions.hpp"
 
-inline uint ZWorkers::nparallel() const {
-  return _boost ? nworkers() : nparallel_no_boost();
-}
+#include "runtime/atomic.hpp"
 
-inline uint ZWorkers::nparallel_no_boost() const {
-  return ParallelGCThreads;
-}
-
-inline uint ZWorkers::nconcurrent() const {
-  return _boost ? nworkers() : nconcurrent_no_boost();
-}
-
-inline uint ZWorkers::nconcurrent_no_boost() const {
-  return ConcGCThreads;
-}
-
-inline uint ZWorkers::nworkers() const {
-  return MAX2(ParallelGCThreads, ConcGCThreads);
+inline bool ZWorkers::should_worker_resize() {
+  return Atomic::load(&_requested_nworkers) != 0;
 }
 
 #endif // SHARE_GC_Z_ZWORKERS_INLINE_HPP

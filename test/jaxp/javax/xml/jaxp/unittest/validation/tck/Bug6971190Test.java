@@ -40,7 +40,7 @@ import org.xml.sax.SAXException;
  * @test
  * @bug 6971190
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.tck.Bug6971190Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.tck.Bug6971190Test
  * @run testng/othervm validation.tck.Bug6971190Test
  * @summary Test Validation accepts UTF lexical presentation.
  */

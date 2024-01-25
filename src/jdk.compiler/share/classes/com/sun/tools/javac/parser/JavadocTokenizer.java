@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import java.util.regex.Pattern;
 /**
  * An extension to the base lexical analyzer (JavaTokenizer) that
  * captures and processes the contents of doc comments. It does
- * so by stripping the leading whitespace and comment starts from
+ * so by stripping the leading whitespace and comment stars from
  * each line of the Javadoc comment.
  *
  *  <p><b>This is NOT part of any supported API.
@@ -79,8 +79,7 @@ public class JavadocTokenizer extends JavaTokenizer {
 
     @Override
     protected Comment processComment(int pos, int endPos, CommentStyle style) {
-        char[] buf = getRawCharacters(pos, endPos);
-        return new JavadocComment(style, fac, buf, pos);
+        return new JavadocComment(style, this, pos, endPos);
     }
 
     /**
@@ -88,13 +87,6 @@ public class JavadocTokenizer extends JavaTokenizer {
      * of a Javadoc comment.
      */
     protected static class JavadocComment extends BasicComment {
-        /**
-         * Pattern used to detect a well formed @deprecated tag in a JaavDoc
-         * comment.
-         */
-        private static final Pattern DEPRECATED_PATTERN =
-            Pattern.compile("(?sm).*^\\s*@deprecated( |$).*");
-
         /**
          * The relevant portion of the comment that is of interest to Javadoc.
          * Produced by invoking scanDocComment.
@@ -104,7 +96,12 @@ public class JavadocTokenizer extends JavaTokenizer {
         /**
          * StringBuilder used to extract the relevant portion of the Javadoc comment.
          */
-        private final StringBuilder sb;
+        private StringBuilder sb;
+
+        /**
+         * Indicates if newline is required.
+         */
+        private boolean firstLine = true;
 
         /**
          * Map used to map the extracted Javadoc comment's character positions back to
@@ -112,45 +109,39 @@ public class JavadocTokenizer extends JavaTokenizer {
          */
         OffsetMap offsetMap = new OffsetMap();
 
-        JavadocComment(CommentStyle cs, ScannerFactory sf, char[] array, int offset) {
-            super( cs, sf, array, offset);
+        JavadocComment(CommentStyle cs, UnicodeReader reader, int pos, int endPos) {
+            super(cs, reader, pos, endPos);
             this.sb = new StringBuilder();
         }
 
         /**
-         * Add a character to the extraction buffer.
+         * Add current character or code point from line to the extraction buffer.
          *
-         * @param ch  character to add.
+         * @param line line reader
          */
-        protected void put(char ch) {
-            offsetMap.add(sb.length(), offsetPosition());
-            sb.append(ch);
-        }
-
-        /**
-         * Add a code point to the extraction buffer.
-         *
-         * @param codePoint  code point to add.
-         */
-        protected void putCodePoint(int codePoint) {
-            offsetMap.add(sb.length(), offsetPosition());
-            sb.appendCodePoint(codePoint);
-        }
-
-        /**
-         * Add current character or code point to the extraction buffer.
-         */
-        protected void put() {
-            if (isSurrogate()) {
-                putCodePoint(getCodepoint());
+        protected void putLine(UnicodeReader line) {
+            if (firstLine) {
+                firstLine = false;
             } else {
-                put(get());
+                sb.append('\n');
+                offsetMap.add(sb.length(), line.position());
+            }
+            while (line.isAvailable()) {
+                offsetMap.add(sb.length(), line.position());
+
+                if (line.isSurrogate()) {
+                    sb.appendCodePoint(line.getCodepoint());
+                } else {
+                    sb.append(line.get());
+                }
+
+                line.next();
             }
         }
 
         @Override
         public String getText() {
-            if (!scanned && cs == CommentStyle.JAVADOC) {
+            if (!scanned) {
                 scanDocComment();
             }
             return docComment;
@@ -171,104 +162,12 @@ public class JavadocTokenizer extends JavaTokenizer {
 
         @Override
         protected void scanDocComment() {
-             try {
-                 boolean firstLine = true;
-
-                 // Skip over /*
-                 accept("/*");
-
-                 // Consume any number of stars
-                 skip('*');
-
-                 // Is the comment in the form /**/, /***/, /****/, etc. ?
-                 if (is('/')) {
-                     docComment = "";
-                     return;
-                 }
-
-                 // Skip line terminator on the first line of the comment.
-                 if (isOneOf('\n', '\r')) {
-                     accept('\r');
-                     accept('\n');
-                     firstLine = false;
-                 }
-
-             outerLoop:
-                 // The outerLoop processes the doc comment, looping once
-                 // for each line.  For each line, it first strips off
-                 // whitespace, then it consumes any stars, then it
-                 // puts the rest of the line into the extraction buffer.
-                 while (isAvailable()) {
-                     int begin_pos = position();
-                     // Consume  whitespace from the beginning of each line.
-                     skipWhitespace();
-                     // Are there stars here?  If so, consume them all
-                     // and check for the end of comment.
-                     if (is('*')) {
-                         // skip all of the stars
-                         skip('*');
-
-                         // check for the closing slash.
-                         if (accept('/')) {
-                             // We're done with the Javadoc comment
-                             break outerLoop;
-                         }
-                     } else if (!firstLine) {
-                         // The current line does not begin with a '*' so we will
-                         // treat it as comment
-                         reset(begin_pos);
-                     }
-
-                 textLoop:
-                     // The textLoop processes the rest of the characters
-                     // on the line, adding them to the extraction buffer.
-                     while (isAvailable()) {
-                         if (accept("*/")) {
-                             // This is the end of the comment, return
-                             // the contents of the extraction buffer.
-                             break outerLoop;
-                         } else if (isOneOf('\n', '\r')) {
-                             // We've seen a newline.  Add it to our
-                             // buffer and break out of this loop,
-                             // starting fresh on a new line.
-                             put('\n');
-                             accept('\r');
-                             accept('\n');
-                             break textLoop;
-                         } else if (is('\f')){
-                             next();
-                             break textLoop; // treat as end of line
-
-                         } else {
-                             // Add the character to our buffer.
-                             put();
-                             next();
-                         }
-                     } // end textLoop
-                     firstLine = false;
-                 } // end outerLoop
-
-                 // If extraction buffer is not empty.
-                 if (sb.length() > 0) {
-                     // Remove trailing asterisks.
-                     int i = sb.length() - 1;
-                     while (i > -1 && sb.charAt(i) == '*') {
-                         i--;
-                     }
-                     sb.setLength(i + 1) ;
-
-                     // Store the text of the doc comment
-                    docComment = sb.toString();
-                 } else {
-                    docComment = "";
-                }
+            try {
+                super.scanDocComment();
             } finally {
-                scanned = true;
-
-                // Check if comment contains @deprecated comment.
-                if (docComment != null && DEPRECATED_PATTERN.matcher(docComment).matches()) {
-                    deprecatedFlag = true;
-                }
+                docComment = sb.toString();
+                sb = null;
+                offsetMap.trim();
             }
         }
     }
@@ -332,7 +231,9 @@ public class JavadocTokenizer extends JavaTokenizer {
         private int[] map;
 
         /**
-         * Logical size of map (number of valid entries.)
+         * Logical size of map.
+         * This is the number of occupied positions in {@code map},
+         * and equals {@code NOFFSETS} multiplied by the number of entries.
          */
         private int size;
 
@@ -349,25 +250,25 @@ public class JavadocTokenizer extends JavaTokenizer {
          * if there is a change in relative offset.
          *
          * @param sbOffset  comment offset member of pair.
-         * @param posOffet  input offset member of pair.
+         * @param posOffset  input offset member of pair.
          *
          * @return true if it is worthwhile adding the entry pair.
          */
-        boolean shouldAdd(int sbOffset, int posOffet) {
-            return sbOffset - lastSBOffset() != posOffet - lastPosOffset();
+        boolean shouldAdd(int sbOffset, int posOffset) {
+            return sbOffset - lastSBOffset() != posOffset - lastPosOffset();
         }
 
         /**
          * Adds entry pair if worthwhile.
          *
          * @param sbOffset  comment offset member of pair.
-         * @param posOffet  input offset member of pair.
+         * @param posOffset  input offset member of pair.
          */
-        void add(int sbOffset, int posOffet) {
-            if (size == 0 || shouldAdd(sbOffset, posOffet)) {
+        void add(int sbOffset, int posOffset) {
+            if (size == 0 || shouldAdd(sbOffset, posOffset)) {
                 ensure(NOFFSETS);
                 map[size + SB_OFFSET] = sbOffset;
-                map[size + POS_OFFSET] = posOffet;
+                map[size + POS_OFFSET] = posOffset;
                 size += NOFFSETS;
             }
         }
@@ -409,6 +310,13 @@ public class JavadocTokenizer extends JavaTokenizer {
             } else if (grow != map.length) {
                 map = Arrays.copyOf(map, grow);
             }
+        }
+
+        /**
+         * Reduce map to minimum size.
+         */
+        void trim() {
+            map = Arrays.copyOf(map, size);
         }
 
         /**

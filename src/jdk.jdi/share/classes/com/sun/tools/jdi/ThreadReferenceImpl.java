@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import com.sun.jdi.Location;
 import com.sun.jdi.MonitorInfo;
 import com.sun.jdi.NativeMethodException;
 import com.sun.jdi.ObjectReference;
+import com.sun.jdi.OpaqueFrameException;
 import com.sun.jdi.ReferenceType;
 import com.sun.jdi.StackFrame;
 import com.sun.jdi.ThreadGroupReference;
@@ -76,8 +77,12 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
      * when any thread is resumed.
      */
 
-    // This is cached for the life of the thread
+    // The ThreadGroup is cached for the life of the thread
     private ThreadGroupReference threadGroup;
+
+    // Whether a thread is a virtual thread or not is cached
+    private volatile boolean isVirtual;
+    private volatile boolean isVirtualCached;
 
     // This is cached only while this one thread is suspended.  Each time
     // the thread is resumed, we abandon the current cache object and
@@ -158,7 +163,7 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
         }
 
         /*
-         * Othewise, only one thread is being resumed:
+         * Otherwise, only one thread is being resumed:
          *   if it is us,
          *      we have already done our processThreadAction to notify our
          *      listeners when we processed the resume.
@@ -268,7 +273,18 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
             JDWP.ThreadReference.Stop.process(vm, this,
                                          (ObjectReferenceImpl)throwable);
         } catch (JDWPException exc) {
-            throw exc.toJDIException();
+            switch (exc.errorCode()) {
+            case JDWP.Error.OPAQUE_FRAME:
+                assert isVirtual(); // can only happen with virtual threads
+                throw new OpaqueFrameException();
+            case JDWP.Error.THREAD_NOT_SUSPENDED:
+                assert isVirtual(); // can only happen with virtual threads
+                throw new IllegalThreadStateException("virtual thread not suspended");
+            case JDWP.Error.INVALID_THREAD:
+                throw new IllegalThreadStateException("thread has terminated");
+            default:
+                throw exc.toJDIException();
+            }
         }
     }
 
@@ -314,9 +330,7 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
             StackFrame frame = frame(0);
             Location location = frame.location();
             List<BreakpointRequest> requests = vm.eventRequestManager().breakpointRequests();
-            Iterator<BreakpointRequest> iter = requests.iterator();
-            while (iter.hasNext()) {
-                BreakpointRequest request = iter.next();
+            for (BreakpointRequest request : requests) {
                 if (location.equals(request.location())) {
                     return true;
                 }
@@ -409,7 +423,7 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
      * Private version of frames() allows "-1" to specify all
      * remaining frames.
      */
-    synchronized private List<StackFrame> privateFrames(int start, int length)
+    private synchronized List<StackFrame> privateFrames(int start, int length)
                               throws IncompatibleThreadStateException  {
 
         // Lock must be held while creating stack frames so if that two threads
@@ -583,13 +597,14 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
         } catch (JDWPException exc) {
             switch (exc.errorCode()) {
             case JDWP.Error.OPAQUE_FRAME:
-                throw new NativeMethodException();
+                if (isVirtual() && !meth.isNative()) {
+                    throw new OpaqueFrameException();
+                } else {
+                    throw new NativeMethodException();
+                }
             case JDWP.Error.THREAD_NOT_SUSPENDED:
                 throw new IncompatibleThreadStateException(
                          "Thread not suspended");
-            case JDWP.Error.THREAD_NOT_ALIVE:
-                throw new IncompatibleThreadStateException(
-                                     "Thread has not started or has finished");
             case JDWP.Error.NO_MORE_FRAMES:
                 throw new InvalidStackFrameException(
                          "No more frames on the stack");
@@ -597,6 +612,24 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
                 throw exc.toJDIException();
             }
         }
+    }
+
+    @Override
+    public boolean isVirtual() {
+        if (isVirtualCached) {
+            return isVirtual;
+        }
+        boolean result = false;
+        if (vm.mayCreateVirtualThreads()) {
+            try {
+                result = JDWP.ThreadReference.IsVirtual.process(vm, this).isVirtual;
+            } catch (JDWPException exc) {
+                throw exc.toJDIException();
+            }
+        }
+        isVirtual = result;
+        isVirtualCached = true;
+        return result;
     }
 
     public String toString() {
@@ -611,19 +644,6 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
     void addListener(ThreadListener listener) {
         synchronized (vm.state()) {
             listeners.add(new WeakReference<>(listener));
-        }
-    }
-
-    void removeListener(ThreadListener listener) {
-        synchronized (vm.state()) {
-            Iterator<WeakReference<ThreadListener>> iter = listeners.iterator();
-            while (iter.hasNext()) {
-                WeakReference<ThreadListener> ref = iter.next();
-                if (listener.equals(ref.get())) {
-                    iter.remove();
-                    break;
-                }
-            }
         }
     }
 

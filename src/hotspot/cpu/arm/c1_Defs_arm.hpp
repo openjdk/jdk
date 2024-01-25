@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,8 +74,16 @@ enum {
   pd_float_saved_as_double = false
 };
 
+enum {
+  pd_two_operand_lir_form = false
+};
+
+// the number of stack required by ArrayCopyStub
+enum {
+  pd_arraycopystub_reserved_argument_area_size = 2
+};
+
 #define PATCHED_ADDR (204)
 #define CARDTABLEBARRIERSET_POST_BARRIER_HELPER
-#define GENERATE_ADDRESS_IS_PREFERRED
 
 #endif // CPU_ARM_C1_DEFS_ARM_HPP

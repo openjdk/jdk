@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,7 @@ final class P11KeyAgreement extends KeyAgreementSpi {
 
         private static final boolean VALUE = getValue();
 
+        @SuppressWarnings("removal")
         private static boolean getValue() {
             return AccessController.doPrivileged(
                 (PrivilegedAction<Boolean>)
@@ -90,7 +91,7 @@ final class P11KeyAgreement extends KeyAgreementSpi {
     // see JCE spec
     protected void engineInit(Key key, SecureRandom random)
             throws InvalidKeyException {
-        if (key instanceof PrivateKey == false) {
+        if (!(key instanceof PrivateKey)) {
             throw new InvalidKeyException
                         ("Key must be instance of PrivateKey");
         }
@@ -125,7 +126,7 @@ final class P11KeyAgreement extends KeyAgreementSpi {
         // NOTE that we initialize using the P11Key, which will fail if it
         // is sensitive/unextractable. However, this is not an issue in the
         // compatibility configuration, which is all we are targeting here.
-        if ((multiPartyAgreement != null) || (lastPhase == false)) {
+        if ((multiPartyAgreement != null) || (!lastPhase)) {
             if (multiPartyAgreement == null) {
                 try {
                     multiPartyAgreement = KeyAgreement.getInstance
@@ -138,14 +139,13 @@ final class P11KeyAgreement extends KeyAgreementSpi {
             }
             return multiPartyAgreement.doPhase(key, lastPhase);
         }
-        if ((key instanceof PublicKey == false)
-                || (key.getAlgorithm().equals(algorithm) == false)) {
+        if ((!(key instanceof PublicKey))
+                || (!key.getAlgorithm().equals(algorithm))) {
             throw new InvalidKeyException
                 ("Key must be a PublicKey with algorithm DH");
         }
         BigInteger p, g, y;
-        if (key instanceof DHPublicKey) {
-            DHPublicKey dhKey = (DHPublicKey)key;
+        if (key instanceof DHPublicKey dhKey) {
 
             // validate the Diffie-Hellman public key
             KeyUtil.validate(dhKey);
@@ -175,11 +175,10 @@ final class P11KeyAgreement extends KeyAgreementSpi {
         // if parameters of private key are accessible, verify that
         // they match parameters of public key
         // XXX p and g should always be readable, even if the key is sensitive
-        if (privateKey instanceof DHPrivateKey) {
-            DHPrivateKey dhKey = (DHPrivateKey)privateKey;
+        if (privateKey instanceof DHPrivateKey dhKey) {
             DHParameterSpec params = dhKey.getParams();
-            if ((p.equals(params.getP()) == false)
-                                || (g.equals(params.getG()) == false)) {
+            if ((!p.equals(params.getP()))
+                                || (!g.equals(params.getG()))) {
                 throw new InvalidKeyException
                 ("PublicKey DH parameters must match PrivateKey DH parameters");
             }

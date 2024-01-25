@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Datadog, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,25 +36,24 @@
 #include "memory/resourceArea.hpp"
 #include "oops/markWord.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/vmThread.hpp"
 
 EventEmitter::EventEmitter(const JfrTicks& start_time, const JfrTicks& end_time) :
   _start_time(start_time),
   _end_time(end_time),
   _thread(Thread::current()),
-  _jfr_thread_local(_thread->jfr_thread_local()),
-  _thread_id(_thread->jfr_thread_local()->thread_id()) {}
+  _jfr_thread_local(_thread->jfr_thread_local()) {}
 
 EventEmitter::~EventEmitter() {
   // restore / reset thread local stack trace and thread id
-  _jfr_thread_local->set_thread_id(_thread_id);
   _jfr_thread_local->clear_cached_stack_trace();
+  JfrThreadLocal::stop_impersonating(_thread);
 }
 
 void EventEmitter::emit(ObjectSampler* sampler, int64_t cutoff_ticks, bool emit_all, bool skip_bfs) {
-  assert(sampler != NULL, "invariant");
+  assert(sampler != nullptr, "invariant");
   ResourceMark rm;
   EdgeStore edge_store;
   if (cutoff_ticks <= 0) {
@@ -71,8 +71,8 @@ void EventEmitter::emit(ObjectSampler* sampler, int64_t cutoff_ticks, bool emit_
 size_t EventEmitter::write_events(ObjectSampler* object_sampler, EdgeStore* edge_store, bool emit_all) {
   assert(_thread == Thread::current(), "invariant");
   assert(_thread->jfr_thread_local() == _jfr_thread_local, "invariant");
-  assert(object_sampler != NULL, "invariant");
-  assert(edge_store != NULL, "invariant");
+  assert(object_sampler != nullptr, "invariant");
+  assert(edge_store != nullptr, "invariant");
 
   const jlong last_sweep = emit_all ? max_jlong : ObjectSampler::last_sweep();
   size_t count = 0;
@@ -80,7 +80,7 @@ size_t EventEmitter::write_events(ObjectSampler* object_sampler, EdgeStore* edge
   // First pass associates a live sample with its immediate edge
   // in preparation for writing checkpoint information.
   const ObjectSample* current = object_sampler->first();
-  while (current != NULL) {
+  while (current != nullptr) {
     ObjectSample* prev = current->prev();
     if (current->is_alive_and_older_than(last_sweep)) {
       link_sample_with_edge(current, edge_store);
@@ -96,7 +96,7 @@ size_t EventEmitter::write_events(ObjectSampler* object_sampler, EdgeStore* edge
 
     // Now we are ready to write the events
     const ObjectSample* current = object_sampler->first();
-    while (current != NULL) {
+    while (current != nullptr) {
       ObjectSample* prev = current->prev();
       if (current->is_alive_and_older_than(last_sweep)) {
         write_event(current, edge_store);
@@ -108,7 +108,7 @@ size_t EventEmitter::write_events(ObjectSampler* object_sampler, EdgeStore* edge
 }
 
 static int array_size(const oop object) {
-  assert(object != NULL, "invariant");
+  assert(object != nullptr, "invariant");
   if (object->is_array()) {
     return arrayOop(object)->length();
   }
@@ -116,11 +116,11 @@ static int array_size(const oop object) {
 }
 
 void EventEmitter::link_sample_with_edge(const ObjectSample* sample, EdgeStore* edge_store) {
-  assert(sample != NULL, "invariant");
+  assert(sample != nullptr, "invariant");
   assert(!sample->is_dead(), "invariant");
-  assert(edge_store != NULL, "invariant");
+  assert(edge_store != nullptr, "invariant");
   if (SafepointSynchronize::is_at_safepoint()) {
-    if (!sample->object()->mark().is_marked()) {
+    if (edge_store->has_leak_context(sample)) {
       // Associated with an edge (chain) already during heap traversal.
       return;
     }
@@ -132,26 +132,17 @@ void EventEmitter::link_sample_with_edge(const ObjectSample* sample, EdgeStore* 
 }
 
 void EventEmitter::write_event(const ObjectSample* sample, EdgeStore* edge_store) {
-  assert(sample != NULL, "invariant");
+  assert(sample != nullptr, "invariant");
   assert(!sample->is_dead(), "invariant");
-  assert(edge_store != NULL, "invariant");
-  assert(_jfr_thread_local != NULL, "invariant");
+  assert(edge_store != nullptr, "invariant");
+  assert(_jfr_thread_local != nullptr, "invariant");
 
-  traceid gc_root_id = 0;
-  const Edge* edge = NULL;
-  if (SafepointSynchronize::is_at_safepoint()) {
-    if (!sample->object()->mark().is_marked()) {
-      edge = (const Edge*)(sample->object())->mark().to_pointer();
-    }
-  }
-  if (edge == NULL) {
-    edge = edge_store->get(UnifiedOopRef::encode_in_native(sample->object_addr()));
-  } else {
-    gc_root_id = edge_store->gc_root_id(edge);
-  }
-  assert(edge != NULL, "invariant");
+  const StoredEdge* const edge = edge_store->get(sample);
+  assert(edge != nullptr, "invariant");
+  assert(edge->pointee() == sample->object(), "invariant");
   const traceid object_id = edge_store->get_id(edge);
   assert(object_id != 0, "invariant");
+  const traceid gc_root_id = edge->gc_root_id();
 
   Tickspan object_age = Ticks(_start_time.value()) - sample->allocation_time();
 
@@ -159,6 +150,7 @@ void EventEmitter::write_event(const ObjectSample* sample, EdgeStore* edge_store
   e.set_starttime(_start_time);
   e.set_endtime(_end_time);
   e.set_allocationTime(sample->allocation_time());
+  e.set_objectSize(sample->allocated());
   e.set_objectAge(object_age);
   e.set_lastKnownHeapUsage(sample->heap_used_at_last_gc());
   e.set_object(object_id);
@@ -173,6 +165,6 @@ void EventEmitter::write_event(const ObjectSample* sample, EdgeStore* edge_store
   // supplying information from where the actual sampling occurred.
   _jfr_thread_local->set_cached_stack_trace_id(sample->stack_trace_id());
   assert(sample->has_thread(), "invariant");
-  _jfr_thread_local->set_thread_id(sample->thread_id());
+  JfrThreadLocal::impersonate(_thread, sample->thread_id());
   e.commit();
 }

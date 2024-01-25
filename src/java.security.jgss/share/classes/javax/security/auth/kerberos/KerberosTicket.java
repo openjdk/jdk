@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import javax.security.auth.Destroyable;
 import javax.security.auth.RefreshFailedException;
 import javax.security.auth.DestroyFailedException;
 
+import sun.security.krb5.KrbException;
 import sun.security.util.HexDumpEncoder;
 
 /**
@@ -81,6 +82,7 @@ import sun.security.util.HexDumpEncoder;
 public class KerberosTicket implements Destroyable, Refreshable,
          java.io.Serializable {
 
+    @Serial
     private static final long serialVersionUID = 7395334370157380539L;
 
     // XXX Make these flag indices public
@@ -310,9 +312,7 @@ public class KerberosTicket implements Destroyable, Refreshable,
            } else {
                 this.flags = new boolean[NUM_FLAGS];
                 // Fill in whatever we have
-                for (int i = 0; i < flags.length; i++) {
-                    this.flags[i] = flags[i];
-                }
+               System.arraycopy(flags, 0, this.flags, 0, flags.length);
            }
         } else {
             this.flags = new boolean[NUM_FLAGS];
@@ -399,7 +399,7 @@ public class KerberosTicket implements Destroyable, Refreshable,
      * or destroyed.
      */
     public final boolean isForwardable() {
-        return flags == null? false: flags[FORWARDABLE_TICKET_FLAG];
+        return flags != null && flags[FORWARDABLE_TICKET_FLAG];
     }
 
     /**
@@ -411,7 +411,7 @@ public class KerberosTicket implements Destroyable, Refreshable,
      * or false otherwise or destroyed.
      */
     public final boolean isForwarded() {
-        return flags == null? false: flags[FORWARDED_TICKET_FLAG];
+        return flags != null && flags[FORWARDED_TICKET_FLAG];
     }
 
     /**
@@ -421,7 +421,7 @@ public class KerberosTicket implements Destroyable, Refreshable,
      * or destroyed.
      */
     public final boolean isProxiable() {
-        return flags == null? false: flags[PROXIABLE_TICKET_FLAG];
+        return flags != null && flags[PROXIABLE_TICKET_FLAG];
     }
 
     /**
@@ -431,7 +431,7 @@ public class KerberosTicket implements Destroyable, Refreshable,
      * a proxy-ticket or destroyed.
      */
     public final boolean isProxy() {
-        return flags == null? false: flags[PROXY_TICKET_FLAG];
+        return flags != null && flags[PROXY_TICKET_FLAG];
     }
 
 
@@ -442,7 +442,7 @@ public class KerberosTicket implements Destroyable, Refreshable,
      * or destroyed.
      */
     public final boolean isPostdated() {
-        return flags == null? false: flags[POSTDATED_TICKET_FLAG];
+        return flags != null && flags[POSTDATED_TICKET_FLAG];
     }
 
     /**
@@ -454,7 +454,7 @@ public class KerberosTicket implements Destroyable, Refreshable,
      * or destroyed.
      */
     public final boolean isRenewable() {
-        return flags == null? false: flags[RENEWABLE_TICKET_FLAG];
+        return flags != null && flags[RENEWABLE_TICKET_FLAG];
     }
 
     /**
@@ -465,7 +465,7 @@ public class KerberosTicket implements Destroyable, Refreshable,
      * protocol, or false if not issued this way or destroyed.
      */
     public final boolean isInitial() {
-        return flags == null? false: flags[INITIAL_TICKET_FLAG];
+        return flags != null && flags[INITIAL_TICKET_FLAG];
     }
 
     /**
@@ -554,7 +554,7 @@ public class KerberosTicket implements Destroyable, Refreshable,
      * or destroyed.
      */
     public boolean isCurrent() {
-        return endTime == null? false: (System.currentTimeMillis() <= endTime.getTime());
+        return endTime != null && (System.currentTimeMillis() <= endTime.getTime());
     }
 
     /**
@@ -596,7 +596,6 @@ public class KerberosTicket implements Destroyable, Refreshable,
             throw new RefreshFailedException("This ticket is past "
                                            + "its last renewal time.");
         }
-        Throwable e = null;
         sun.security.krb5.Credentials krb5Creds = null;
 
         try {
@@ -616,13 +615,7 @@ public class KerberosTicket implements Destroyable, Refreshable,
                                                     renewTill,
                                                     clientAddresses);
             krb5Creds = krb5Creds.renew();
-        } catch (sun.security.krb5.KrbException krbException) {
-            e = krbException;
-        } catch (java.io.IOException ioException) {
-            e = ioException;
-        }
-
-        if (e != null) {
+        } catch (KrbException | IOException e) {
             RefreshFailedException rfException
                 = new RefreshFailedException("Failed to renew Kerberos Ticket "
                                              + "for client " + client
@@ -723,11 +716,10 @@ public class KerberosTicket implements Destroyable, Refreshable,
     }
 
     /**
-     * Returns a hash code for this {@code KerberosTicket}.
-     *
-     * @return a hash code for this {@code KerberosTicket}.
+     * {@return a hash code for this {@code KerberosTicket}}
      * @since 1.6
      */
+    @Override
     public int hashCode() {
         int result = 17;
         if (isDestroyed()) {
@@ -775,17 +767,17 @@ public class KerberosTicket implements Destroyable, Refreshable,
      * false otherwise.
      * @since 1.6
      */
+    @Override
     public boolean equals(Object other) {
 
         if (other == this) {
             return true;
         }
 
-        if (! (other instanceof KerberosTicket)) {
+        if (! (other instanceof KerberosTicket otherTicket)) {
             return false;
         }
 
-        KerberosTicket otherTicket = ((KerberosTicket) other);
         if (isDestroyed() || otherTicket.isDestroyed()) {
             return false;
         }
@@ -800,43 +792,10 @@ public class KerberosTicket implements Destroyable, Refreshable,
             return false;
         }
 
-        // authTime may be null
-        if (authTime == null) {
-            if (otherTicket.getAuthTime() != null) {
-                return false;
-            }
-        } else {
-            if (!authTime.equals(otherTicket.getAuthTime())) {
-                return false;
-            }
-        }
-
-        // startTime may be null
-        if (startTime == null) {
-            if (otherTicket.getStartTime() != null) {
-                return false;
-            }
-        } else {
-            if (!startTime.equals(otherTicket.getStartTime())) {
-                return false;
-            }
-        }
-
-        if (renewTill == null) {
-            if (otherTicket.getRenewTill() != null) {
-                return false;
-            }
-        } else {
-            if (!renewTill.equals(otherTicket.getRenewTill())) {
-                return false;
-            }
-        }
-
-        if (!Objects.equals(proxy, otherTicket.proxy)) {
-            return false;
-        }
-
-        return true;
+        return Objects.equals(authTime, otherTicket.getAuthTime())
+                && Objects.equals(startTime, otherTicket.getStartTime())
+                && Objects.equals(renewTill, otherTicket.getRenewTill())
+                && Objects.equals(proxy, otherTicket.proxy);
     }
 
     /**
@@ -846,6 +805,7 @@ public class KerberosTicket implements Destroyable, Refreshable,
      * @throws IOException if an I/O error occurs
      * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
+    @Serial
     private void readObject(ObjectInputStream s)
             throws IOException, ClassNotFoundException {
         s.defaultReadObject();

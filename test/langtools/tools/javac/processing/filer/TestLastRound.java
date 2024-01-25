@@ -46,9 +46,9 @@ public class TestLastRound extends JavacTestingAbstractProcessor {
         if (roundEnv.processingOver()) {
             try {
                 JavaFileObject fo = filer.createSourceFile("LastRound.java");
-                Writer out = fo.openWriter();
-                out.write("class LastRound { }");
-                out.close();
+                try (Writer out = fo.openWriter()) {
+                    out.write("class LastRound { }");
+                }
             } catch (IOException e) {
             }
         }

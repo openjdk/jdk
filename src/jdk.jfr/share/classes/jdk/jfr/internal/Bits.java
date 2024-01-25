@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ package jdk.jfr.internal;
 
 import jdk.internal.misc.Unsafe;
 
-final class Bits {                            // package-private
+public final class Bits {
 
     private static final Unsafe unsafe = Unsafe.getUnsafe();
     private static final boolean unalignedAccess = unsafe.unalignedAccess();
@@ -36,14 +36,6 @@ final class Bits {                            // package-private
     private Bits() { }
 
     // -- Swapping --
-
-    private static short swap(short x) {
-        return Short.reverseBytes(x);
-    }
-
-    private static char swap(char x) {
-        return Character.reverseBytes(x);
-    }
 
     private static int swap(int x) {
         return Integer.reverseBytes(x);
@@ -69,12 +61,6 @@ final class Bits {                            // package-private
 
     // -- Primitives stored per byte
 
-    private static byte char1(char x) { return (byte)(x >> 8); }
-    private static byte char0(char x) { return (byte)(x     ); }
-
-    private static byte short1(short x) { return (byte)(x >> 8); }
-    private static byte short0(short x) { return (byte)(x     ); }
-
     private static byte int3(int x) { return (byte)(x >> 24); }
     private static byte int2(int x) { return (byte)(x >> 16); }
     private static byte int1(int x) { return (byte)(x >>  8); }
@@ -88,16 +74,6 @@ final class Bits {                            // package-private
     private static byte long2(long x) { return (byte)(x >> 16); }
     private static byte long1(long x) { return (byte)(x >>  8); }
     private static byte long0(long x) { return (byte)(x      ); }
-
-    private static void putCharBigEndianUnaligned(long a, char x) {
-        putByte_(a    , char1(x));
-        putByte_(a + 1, char0(x));
-    }
-
-    private static void putShortBigEndianUnaligned(long a, short x) {
-        putByte_(a    , short1(x));
-        putByte_(a + 1, short0(x));
-    }
 
     private static void putIntBigEndianUnaligned(long a, int x) {
         putByte_(a    , int3(x));
@@ -129,24 +105,8 @@ final class Bits {                            // package-private
         unsafe.putByte(a, b);
     }
 
-    private static void putBoolean_(long a, boolean x) {
-        unsafe.putBoolean(null, a, x);
-    }
-
-    private static void putChar_(long a, char x) {
-        unsafe.putChar(a, bigEndian ? x : swap(x));
-    }
-
-    private static void putShort_(long a, short x) {
-        unsafe.putShort(a, bigEndian ? x : swap(x));
-    }
-
     private static void putInt_(long a, int x) {
         unsafe.putInt(a, bigEndian ? x : swap(x));
-    }
-
-    private static void putLong_(long a, long x) {
-        unsafe.putLong(a, bigEndian ? x : swap(x));
     }
 
     private static void putFloat_(long a, float x) {
@@ -158,35 +118,7 @@ final class Bits {                            // package-private
     }
 
     // external api
-    static int putByte(long a, byte x) {
-        putByte_(a, x);
-        return Byte.BYTES;
-    }
-
-    static int putBoolean(long a, boolean x) {
-        putBoolean_(a, x);
-        return Byte.BYTES;
-    }
-
-    static int putChar(long a, char x) {
-        if (unalignedAccess || isAddressAligned(a, Character.BYTES)) {
-            putChar_(a, x);
-            return Character.BYTES;
-        }
-        putCharBigEndianUnaligned(a, x);
-        return Character.BYTES;
-    }
-
-    static int putShort(long a, short x) {
-        if (unalignedAccess || isAddressAligned(a, Short.BYTES)) {
-            putShort_(a, x);
-            return Short.BYTES;
-        }
-        putShortBigEndianUnaligned(a, x);
-        return Short.BYTES;
-    }
-
-    static int putInt(long a, int x) {
+    public static int putInt(long a, int x) {
         if (unalignedAccess || isAddressAligned(a, Integer.BYTES)) {
             putInt_(a, x);
             return Integer.BYTES;
@@ -195,16 +127,7 @@ final class Bits {                            // package-private
         return Integer.BYTES;
     }
 
-    static int putLong(long a, long x) {
-         if (unalignedAccess || isAddressAligned(a, Long.BYTES)) {
-            putLong_(a, x);
-            return Long.BYTES;
-        }
-        putLongBigEndianUnaligned(a, x);
-        return Long.BYTES;
-    }
-
-    static int putFloat(long a, float x) {
+    public static int putFloat(long a, float x) {
         if (unalignedAccess || isAddressAligned(a, Float.BYTES)) {
             putFloat_(a, x);
             return Float.BYTES;
@@ -213,7 +136,7 @@ final class Bits {                            // package-private
         return Float.BYTES;
     }
 
-    static int putDouble(long a, double x) {
+    public static int putDouble(long a, double x) {
         if (unalignedAccess || isAddressAligned(a, Double.BYTES)) {
             putDouble_(a, x);
             return Double.BYTES;

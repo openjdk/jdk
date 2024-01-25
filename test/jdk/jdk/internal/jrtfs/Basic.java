@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8141521 8216553 8266291 8290047
  * @summary Basic test of jrt file system provider
  * @run testng Basic
  */
@@ -244,22 +245,30 @@ public class Basic {
         }
     }
 
-    @DataProvider(name = "topLevelPkgDirs")
-    private Object[][] topLevelPkgDirs() {
+    @DataProvider(name = "topLevelNonExistingDirs")
+    private Object[][] topLevelNonExistingDirs() {
         return new Object[][] {
             { "/java/lang" },
             { "java/lang"  },
             { "/java/util" },
             { "java/util"  },
+            { "/modules/modules"  },
+            { "/modules/modules/"  },
+            { "/modules/modules/java.base"  },
+            { "/modules/modules/java.base/"  },
+            { "/modules/modules/java.base/java/lang/Object.class"  },
+            { "/modules/modules/javax.scripting"  },
+            { "/modules/modules/javax.scripting/"  },
+            { "/modules/modules/javax.scripting/javax/script/ScriptEngine.class"  },
         };
     }
 
-    @Test(dataProvider = "topLevelPkgDirs")
+    @Test(dataProvider = "topLevelNonExistingDirs")
     public void testNotExists(String path) throws Exception {
         FileSystem fs = FileSystems.getFileSystem(URI.create("jrt:/"));
         Path dir = fs.getPath(path);
 
-        // package directories should not be there at top level
+        // These directories should not be there at top level
         assertTrue(Files.notExists(dir));
     }
 
@@ -755,6 +764,30 @@ public class Basic {
         Path classFile = fs.getPath(path);
 
         assertTrue(Files.size(classFile) > 0L);
+    }
+
+    // @bug 8266291: (jrtfs) Calling Files.exists may break the JRT filesystem
+    @Test
+    public void fileExistsCallBreaksFileSystem() throws Exception {
+        Path p = FileSystems.getFileSystem(URI.create("jrt:/")).getPath("modules");
+        boolean wasDirectory = Files.isDirectory(p);
+        Path m = p.resolve("modules");
+        Files.exists(m);
+        assertTrue(wasDirectory == Files.isDirectory(p));
+    }
+
+    @DataProvider(name = "badSyntaxAndPattern")
+    private Object[][] badSyntaxAndPattern() {
+        return new Object[][] {
+            { ":glob"},
+        };
+    }
+
+    @Test(dataProvider = "badSyntaxAndPattern",
+          expectedExceptions = IllegalArgumentException.class)
+    public void badSyntaxAndPatternTest(String syntaxAndPattern) {
+        FileSystem fs = FileSystems.getFileSystem(URI.create("jrt:/"));
+        PathMatcher pm = fs.getPathMatcher(syntaxAndPattern);
     }
 }
 

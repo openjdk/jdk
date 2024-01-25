@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ public class Versions {
                         "src/java.xml.crypto/share/legal/santuario.md",
                         Pattern.compile("## Apache Santuario v(?<n>\\S+)"),
                         "java.xml.crypto/santuario.md"},
-                {"make/data/publicsuffixlist/VERSION",
+                {"src/java.base/share/data/publicsuffixlist/VERSION",
                         Pattern.compile("list/(?<n>[0-9a-f]+)/public_suffix_list.dat"),
                         "src/java.base/share/legal/public_suffix.md",
                         Pattern.compile("list/(?<n>[0-9a-f]+)/public_suffix_list.dat"),

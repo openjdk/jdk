@@ -71,7 +71,7 @@ import org.xml.sax.SAXException;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true javax.xml.transform.ptests.TransformTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow javax.xml.transform.ptests.TransformTest
  * @run testng/othervm javax.xml.transform.ptests.TransformTest
  * @summary Tests for variable combination of Transformer.transform(Source, Result)
  */

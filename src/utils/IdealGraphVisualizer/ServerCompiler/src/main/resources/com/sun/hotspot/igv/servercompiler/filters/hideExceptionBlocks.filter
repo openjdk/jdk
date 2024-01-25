@@ -1,0 +1,2 @@
+// Hide exception blocks.
+removeBlock(hasAnyNode(matches("name", "Rethrow|RethrowException")));

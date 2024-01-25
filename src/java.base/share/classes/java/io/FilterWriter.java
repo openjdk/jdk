@@ -79,7 +79,7 @@ public abstract class FilterWriter extends Writer {
      *
      * @throws  IOException  If an I/O error occurs
      */
-    public void write(char cbuf[], int off, int len) throws IOException {
+    public void write(char[] cbuf, int off, int len) throws IOException {
         out.write(cbuf, off, len);
     }
 

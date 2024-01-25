@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,12 @@ abstract class CharacterData {
     abstract boolean isUnicodeIdentifierStart(int ch);
     abstract boolean isUnicodeIdentifierPart(int ch);
     abstract boolean isIdentifierIgnorable(int ch);
+    abstract boolean isEmoji(int ch);
+    abstract boolean isEmojiPresentation(int ch);
+    abstract boolean isEmojiModifier(int ch);
+    abstract boolean isEmojiModifierBase(int ch);
+    abstract boolean isEmojiComponent(int ch);
+    abstract boolean isExtendedPictographic(int ch);
     abstract int toLowerCase(int ch);
     abstract int toUpperCase(int ch);
     abstract int toTitleCase(int ch);
@@ -72,23 +78,15 @@ abstract class CharacterData {
         if (ch >>> 8 == 0) {     // fast-path
             return CharacterDataLatin1.instance;
         } else {
-            switch(ch >>> 16) {  //plane 00-16
-            case(0):
-                return CharacterData00.instance;
-            case(1):
-                return CharacterData01.instance;
-            case(2):
-                return CharacterData02.instance;
-            case(3):
-                return CharacterData03.instance;
-            case(14):
-                return CharacterData0E.instance;
-            case(15):   // Private Use
-            case(16):   // Private Use
-                return CharacterDataPrivateUse.instance;
-            default:
-                return CharacterDataUndefined.instance;
-            }
+            return switch (ch >>> 16) {  //plane 00-16
+                case 0 -> CharacterData00.instance;
+                case 1 -> CharacterData01.instance;
+                case 2 -> CharacterData02.instance;
+                case 3 -> CharacterData03.instance;
+                case 14 -> CharacterData0E.instance;
+                case 15, 16 -> CharacterDataPrivateUse.instance; // Both cases Private Use
+                default -> CharacterDataUndefined.instance;
+            };
         }
     }
 }

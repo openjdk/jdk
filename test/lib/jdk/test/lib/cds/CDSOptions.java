@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@ public class CDSOptions {
     public ArrayList<String> prefix = new ArrayList<String>();
     public ArrayList<String> suffix = new ArrayList<String>();
     public boolean useSystemArchive = false;
+    public String appJar;
+    public String appJarDir;
 
     // classes to be archived
     public String[] classList;
@@ -53,6 +55,11 @@ public class CDSOptions {
     public CDSOptions addPrefix(String prefix[], String... extra) {
         for (String s : prefix) this.prefix.add(s);
         for (String s : extra) this.prefix.add(s);
+        return this;
+    }
+
+    public CDSOptions addSuffix(ArrayList<String> suffix) {
+        for (String s : suffix) this.suffix.add(s);
         return this;
     }
 
@@ -100,4 +107,26 @@ public class CDSOptions {
         return this;
     }
 
+    // AppCDS methods
+    public CDSOptions setAppJar(String appJar) {
+        this.appJar = appJar;
+        return this;
+    }
+
+    public CDSOptions setAppJarDir(String appJarDir) {
+        this.appJarDir = appJarDir;
+        return this;
+    }
+
+    static ArrayList<String> disabledRuntimePrefixes = new ArrayList<>();
+
+    // Do not use the command-line option s, even if it's specified in -Dtest.cds.runtime.options
+    private static void disableRuntimePrefix(String s) {
+        disabledRuntimePrefixes.add(s);
+    }
+
+    // Do not use the command-line option "-XX:+UseEpsilonGC", even if it's specified in -Dtest.cds.runtime.options
+    public static void disableRuntimePrefixForEpsilonGC() {
+        disableRuntimePrefix("-XX:+UseEpsilonGC");
+    }
 }

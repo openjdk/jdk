@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,7 +150,9 @@ class APITest {
             missing.removeAll(foundFiles);
             if (!missing.isEmpty())
                 error("the following files were not found in " + where + ": " + missing);
-            Set<String> unexpected = new TreeSet<String>(foundFiles);
+            Set<String> unexpected = foundFiles.stream()
+                    .filter(p -> !p.startsWith("legal"))
+                    .collect(Collectors.toCollection(TreeSet::new));
             unexpected.removeAll(expectFiles);
             if (!unexpected.isEmpty())
                 error("the following unexpected files were found in " + where + ": " + unexpected);
@@ -198,21 +200,7 @@ class APITest {
             "help-doc.html",
             "index-all.html",
             "index.html",
-            "script-dir/jquery-3.5.1.min.js",
-            "script-dir/jquery-ui.min.js",
-            "script-dir/jquery-ui.min.css",
-            "script-dir/jquery-ui.structure.min.css",
-            "script-dir/images/ui-bg_glass_65_dadada_1x400.png",
-            "script-dir/images/ui-icons_454545_256x240.png",
-            "script-dir/images/ui-bg_glass_95_fef1ec_1x400.png",
-            "script-dir/images/ui-bg_glass_75_dadada_1x400.png",
-            "script-dir/images/ui-bg_highlight-soft_75_cccccc_1x100.png",
-            "script-dir/images/ui-icons_888888_256x240.png",
-            "script-dir/images/ui-icons_2e83ff_256x240.png",
-            "script-dir/images/ui-icons_cd0a0a_256x240.png",
-            "script-dir/images/ui-bg_glass_55_fbf9ee_1x400.png",
-            "script-dir/images/ui-icons_222222_256x240.png",
-            "script-dir/images/ui-bg_glass_75_e6e6e6_1x400.png",
+            "search.html",
             "member-search-index.js",
             "module-search-index.js",
             "overview-tree.html",
@@ -221,23 +209,32 @@ class APITest {
             "pkg/C.html",
             "pkg/package-summary.html",
             "pkg/package-tree.html",
-            "resources/glass.png",
-            "resources/x.png",
-            "script.js",
-            "search.js",
-            "jquery-ui.overrides.css",
-            "stylesheet.css",
+            "resource-files/copy.svg",
+            "resource-files/glass.png",
+            "resource-files/jquery-ui.min.css",
+            "resource-files/link.svg",
+            "resource-files/stylesheet.css",
+            "resource-files/x.png",
+            "script-files/jquery-3.6.1.min.js",
+            "script-files/jquery-ui.min.js",
+            "script-files/script.js",
+            "script-files/search.js",
+            "script-files/search-page.js",
             "tag-search-index.js",
             "type-search-index.js"
     ));
 
     protected static Set<String> noIndexFiles = standardExpectFiles.stream()
-            .filter(s ->    !s.startsWith("script-dir")
-                         && !s.startsWith("resources")
-                         && !s.endsWith("-search-index.js")
+            .filter(s ->
+                            !s.endsWith("-search-index.js")
                          && !s.equals("index-all.html")
-                         && !s.equals("search.js")
-                         && !s.equals("jquery-ui.overrides.css")
+                         && !s.equals("resource-files/glass.png")
+                         && !s.equals("resource-files/jquery-ui.min.css")
+                         && !s.equals("resource-files/x.png")
+                         && !s.startsWith("script-files/jquery-")
+                         && !s.equals("script-files/search.js")
+                         && !s.equals("script-files/search-page.js")
+                         && !s.equals("search.html")
                          && !s.equals("allclasses-index.html")
                          && !s.equals("allpackages-index.html")
                          && !s.equals("system-properties.html"))

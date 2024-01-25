@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package java.io;
 
+
+import java.util.Objects;
 
 /**
  * Piped character-output streams.
@@ -78,11 +80,13 @@ public class PipedWriter extends Writer {
      * If {@code snk} is an unconnected piped reader and
      * {@code src} is an unconnected piped writer, they may
      * be connected by either the call:
-     * <blockquote><pre>
-     * src.connect(snk)</pre></blockquote>
+     * {@snippet lang=java :
+     *     src.connect(snk)
+     * }
      * or the call:
-     * <blockquote><pre>
-     * snk.connect(src)</pre></blockquote>
+     * {@snippet lang=java :
+     *     snk.connect(src)
+     * }
      * The two calls have the same effect.
      *
      * @param      snk   the piped reader to connect to.
@@ -147,12 +151,11 @@ public class PipedWriter extends Writer {
      *          {@link #connect(java.io.PipedReader) unconnected}, closed
      *          or an I/O error occurs.
      */
-    public void write(char cbuf[], int off, int len) throws IOException {
+    public void write(char[] cbuf, int off, int len) throws IOException {
         if (sink == null) {
             throw new IOException("Pipe not connected");
-        } else if ((off | len | (off + len) | (cbuf.length - (off + len))) < 0) {
-            throw new IndexOutOfBoundsException();
         }
+        Objects.checkFromIndexSize(off, len, cbuf.length);
         sink.receive(cbuf, off, len);
     }
 

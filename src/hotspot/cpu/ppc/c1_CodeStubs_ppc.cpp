@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,19 +39,29 @@
 #define __ ce->masm()->
 
 void C1SafepointPollStub::emit_code(LIR_Assembler* ce) {
-  ShouldNotReachHere();
-}
+  if (UseSIGTRAP) {
+    DEBUG_ONLY( __ should_not_reach_here("C1SafepointPollStub::emit_code"); )
+  } else {
+    assert(SharedRuntime::polling_page_return_handler_blob() != nullptr,
+           "polling page return stub not created yet");
+    address stub = SharedRuntime::polling_page_return_handler_blob()->entry_point();
 
-RangeCheckStub::RangeCheckStub(CodeEmitInfo* info, LIR_Opr index, LIR_Opr array)
-  : _index(index), _array(array), _throw_index_out_of_bounds_exception(false) {
-  assert(info != NULL, "must have info");
-  _info = new CodeEmitInfo(info);
-}
+    __ bind(_entry);
+    // Using pc relative address computation.
+    {
+      Label next_pc;
+      __ bl(next_pc);
+      __ bind(next_pc);
+    }
+    int current_offset = __ offset();
+    __ mflr(R12);
+    __ add_const_optimized(R12, R12, safepoint_offset() - current_offset);
+    __ std(R12, in_bytes(JavaThread::saved_exception_pc_offset()), R16_thread);
 
-RangeCheckStub::RangeCheckStub(CodeEmitInfo* info, LIR_Opr index)
-  : _index(index), _array(NULL), _throw_index_out_of_bounds_exception(true) {
-  assert(info != NULL, "must have info");
-  _info = new CodeEmitInfo(info);
+    __ add_const_optimized(R0, R29_TOC, MacroAssembler::offset_to_global_toc(stub));
+    __ mtctr(R0);
+    __ bctr();
+  }
 }
 
 void RangeCheckStub::emit_code(LIR_Assembler* ce) {
@@ -59,8 +69,6 @@ void RangeCheckStub::emit_code(LIR_Assembler* ce) {
 
   if (_info->deoptimize_on_exception()) {
     address a = Runtime1::entry_for(Runtime1::predicate_failed_trap_id);
-    // May be used by optimizations like LoopInvariantCodeMotion or RangeCheckEliminator.
-    DEBUG_ONLY( __ untested("RangeCheckStub: predicate_failed_trap_id"); )
     //__ load_const_optimized(R0, a);
     __ add_const_optimized(R0, R29_TOC, MacroAssembler::offset_to_global_toc(a));
     __ mtctr(R0);
@@ -262,13 +270,6 @@ void NewObjectArrayStub::emit_code(LIR_Assembler* ce) {
   __ b(_continuation);
 }
 
-
-// Implementation of MonitorAccessStubs
-MonitorEnterStub::MonitorEnterStub(LIR_Opr obj_reg, LIR_Opr lock_reg, CodeEmitInfo* info)
-  : MonitorAccessStub(obj_reg, lock_reg) {
-  _info = new CodeEmitInfo(info);
-}
-
 void MonitorEnterStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
   address stub = Runtime1::entry_for(ce->compilation()->has_fpu_code() ? Runtime1::monitorenter_id : Runtime1::monitorenter_nofpu_id);
@@ -335,12 +336,12 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
 
   if (_id == load_klass_id) {
     // Produce a copy of the load klass instruction for use by the being initialized case.
-    AddressLiteral addrlit((address)NULL, metadata_Relocation::spec(_index));
+    AddressLiteral addrlit((address)nullptr, metadata_Relocation::spec(_index));
     __ load_const(_obj, addrlit, R0);
     DEBUG_ONLY( compare_with_patch_site(__ code_section()->start() + being_initialized_entry, _pc_start, _bytes_to_copy); )
   } else if (_id == load_mirror_id || _id == load_appendix_id) {
     // Produce a copy of the load mirror instruction for use by the being initialized case.
-    AddressLiteral addrlit((address)NULL, oop_Relocation::spec(_index));
+    AddressLiteral addrlit((address)nullptr, oop_Relocation::spec(_index));
     __ load_const(_obj, addrlit, R0);
     DEBUG_ONLY( compare_with_patch_site(__ code_section()->start() + being_initialized_entry, _pc_start, _bytes_to_copy); )
   } else {
@@ -399,7 +400,7 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
 
   address entry = __ pc();
   NativeGeneralJump::insert_unconditional((address)_pc_start, entry);
-  address target = NULL;
+  address target = nullptr;
   relocInfo::relocType reloc_type = relocInfo::none;
   switch (_id) {
     case access_field_id:  target = Runtime1::entry_for(Runtime1::access_field_patching_id); break;
@@ -469,12 +470,14 @@ void ArrayCopyStub::emit_code(LIR_Assembler* ce) {
   ce->verify_oop_map(info());
 
 #ifndef PRODUCT
-  const address counter = (address)&Runtime1::_arraycopy_slowcase_cnt;
-  const Register tmp = R3, tmp2 = R4;
-  int simm16_offs = __ load_const_optimized(tmp, counter, tmp2, true);
-  __ lwz(tmp2, simm16_offs, tmp);
-  __ addi(tmp2, tmp2, 1);
-  __ stw(tmp2, simm16_offs, tmp);
+  if (PrintC1Statistics) {
+    const address counter = (address)&Runtime1::_arraycopy_slowcase_cnt;
+    const Register tmp = R3, tmp2 = R4;
+    int simm16_offs = __ load_const_optimized(tmp, counter, tmp2, true);
+    __ lwz(tmp2, simm16_offs, tmp);
+    __ addi(tmp2, tmp2, 1);
+    __ stw(tmp2, simm16_offs, tmp);
+  }
 #endif
 
   __ b(_continuation);

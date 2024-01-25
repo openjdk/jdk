@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,13 +30,7 @@ import java.nio.ByteBuffer;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.X509ExtendedKeyManager;
@@ -65,7 +59,7 @@ final class CertificateRequest {
         new T13CertificateRequestProducer();
 
     // TLS 1.2 and prior versions
-    private static enum ClientCertificateType {
+    private enum ClientCertificateType {
         // RFC 2246
         RSA_SIGN            ((byte)0x01, "rsa_sign", List.of("RSA"), true),
         DSS_SIGN            ((byte)0x02, "dss_sign", List.of("DSA"), true),
@@ -99,11 +93,11 @@ final class CertificateRequest {
         final List<String> keyAlgorithm;
         final boolean isAvailable;
 
-        private ClientCertificateType(byte id, String name) {
+        ClientCertificateType(byte id, String name) {
             this(id, name, null, false);
         }
 
-        private ClientCertificateType(byte id, String name,
+        ClientCertificateType(byte id, String name,
                 List<String> keyAlgorithm, boolean isAvailable) {
             this.id = id;
             this.name = name;
@@ -134,7 +128,7 @@ final class CertificateRequest {
             ArrayList<String> keyTypes = new ArrayList<>(3);
             for (byte id : ids) {
                 ClientCertificateType cct = ClientCertificateType.valueOf(id);
-                if (cct.isAvailable) {
+                if (cct != null && cct.isAvailable) {
                     cct.keyAlgorithm.forEach(key -> {
                         if (!keyTypes.contains(key)) {
                             keyTypes.add(key);
@@ -204,9 +198,12 @@ final class CertificateRequest {
             return  ClientCertificateType.getKeyTypes(types);
         }
 
+        // This method will throw IllegalArgumentException if the
+        // X500Principal cannot be parsed.
         X500Principal[] getAuthorities() {
             X500Principal[] principals = new X500Principal[authorities.size()];
             int i = 0;
+
             for (byte[] encoded : authorities) {
                 principals[i++] = new X500Principal(encoded);
             }
@@ -246,10 +243,11 @@ final class CertificateRequest {
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                    "\"CertificateRequest\": '{'\n" +
-                    "  \"certificate types\": {0}\n" +
-                    "  \"certificate authorities\": {1}\n" +
-                    "'}'",
+                    """
+                            "CertificateRequest": '{'
+                              "certificate types": {0}
+                              "certificate authorities": {1}
+                            '}'""",
                     Locale.ENGLISH);
 
             List<String> typeNames = new ArrayList<>(types.length);
@@ -259,8 +257,12 @@ final class CertificateRequest {
 
             List<String> authorityNames = new ArrayList<>(authorities.size());
             for (byte[] encoded : authorities) {
-                X500Principal principal = new X500Principal(encoded);
-                authorityNames.add(principal.toString());
+                try {
+                    X500Principal principal = new X500Principal(encoded);
+                    authorityNames.add(principal.toString());
+                } catch (IllegalArgumentException iae) {
+                    authorityNames.add("unparseable distinguished name: " + iae);
+                }
             }
             Object[] messageFields = {
                 typeNames,
@@ -333,6 +335,16 @@ final class CertificateRequest {
 
             // clean up this consumer
             chc.handshakeConsumers.remove(SSLHandshake.CERTIFICATE_REQUEST.id);
+            chc.receivedCertReq = true;
+
+            // If we're processing this message and the server's certificate
+            // message consumer has not already run then this is a state
+            // machine violation.
+            if (chc.handshakeConsumers.containsKey(
+                    SSLHandshake.CERTIFICATE.id)) {
+                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                        "Unexpected CertificateRequest handshake message");
+            }
 
             SSLConsumer certStatCons = chc.handshakeConsumers.remove(
                     SSLHandshake.CERTIFICATE_STATUS.id);
@@ -359,18 +371,29 @@ final class CertificateRequest {
             // update
             //
 
-            // An empty client Certificate handshake message may be allow.
+            // An empty client Certificate handshake message may be allowed.
             chc.handshakeProducers.put(SSLHandshake.CERTIFICATE.id,
                     SSLHandshake.CERTIFICATE);
 
             X509ExtendedKeyManager km = chc.sslContext.getX509KeyManager();
             String clientAlias = null;
-            if (chc.conContext.transport instanceof SSLSocketImpl) {
-                clientAlias = km.chooseClientAlias(crm.getKeyTypes(),
-                    crm.getAuthorities(), (SSLSocket)chc.conContext.transport);
-            } else if (chc.conContext.transport instanceof SSLEngineImpl) {
-                clientAlias = km.chooseEngineClientAlias(crm.getKeyTypes(),
-                    crm.getAuthorities(), (SSLEngine)chc.conContext.transport);
+
+            try {
+                if (chc.conContext.transport instanceof SSLSocketImpl) {
+                    clientAlias = km.chooseClientAlias(crm.getKeyTypes(),
+                        crm.getAuthorities(),
+                        (SSLSocket) chc.conContext.transport);
+                } else if (chc.conContext.transport instanceof SSLEngineImpl) {
+                    clientAlias =
+                        km.chooseEngineClientAlias(crm.getKeyTypes(),
+                            crm.getAuthorities(),
+                            (SSLEngine) chc.conContext.transport);
+                }
+            } catch (IllegalArgumentException iae) {
+                chc.conContext.fatal(Alert.DECODE_ERROR,
+                    "The distinguished names of the peer's "
+                    + "certificate authorities could not be parsed",
+                        iae);
             }
 
 
@@ -422,7 +445,7 @@ final class CertificateRequest {
             if (signatureSchemes == null || signatureSchemes.isEmpty()) {
                 throw handshakeContext.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                         "No signature algorithms specified for " +
-                        "CertificateRequest hanshake message");
+                        "CertificateRequest handshake message");
             }
             this.algorithmIds = new int[signatureSchemes.size()];
             int i = 0;
@@ -464,7 +487,7 @@ final class CertificateRequest {
             }
 
             byte[] algs = Record.getBytes16(m);
-            if (algs == null || algs.length == 0 || (algs.length & 0x01) != 0) {
+            if (algs.length == 0 || (algs.length & 0x01) != 0) {
                 throw handshakeContext.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                         "Invalid CertificateRequest handshake message: " +
                         "incomplete signature algorithms");
@@ -507,9 +530,12 @@ final class CertificateRequest {
             return ClientCertificateType.getKeyTypes(types);
         }
 
+        // This method will throw IllegalArgumentException if the
+        // X500Principal cannot be parsed.
         X500Principal[] getAuthorities() {
             X500Principal[] principals = new X500Principal[authorities.size()];
             int i = 0;
+
             for (byte[] encoded : authorities) {
                 principals[i++] = new X500Principal(encoded);
             }
@@ -554,11 +580,12 @@ final class CertificateRequest {
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                    "\"CertificateRequest\": '{'\n" +
-                    "  \"certificate types\": {0}\n" +
-                    "  \"supported signature algorithms\": {1}\n" +
-                    "  \"certificate authorities\": {2}\n" +
-                    "'}'",
+                    """
+                            "CertificateRequest": '{'
+                              "certificate types": {0}
+                              "supported signature algorithms": {1}
+                              "certificate authorities": {2}
+                            '}'""",
                     Locale.ENGLISH);
 
             List<String> typeNames = new ArrayList<>(types.length);
@@ -573,8 +600,13 @@ final class CertificateRequest {
 
             List<String> authorityNames = new ArrayList<>(authorities.size());
             for (byte[] encoded : authorities) {
-                X500Principal principal = new X500Principal(encoded);
-                authorityNames.add(principal.toString());
+                try {
+                    X500Principal principal = new X500Principal(encoded);
+                    authorityNames.add(principal.toString());
+                } catch (IllegalArgumentException iae) {
+                    authorityNames.add("unparseable distinguished name: " +
+                        iae);
+                }
             }
             Object[] messageFields = {
                 typeNames,
@@ -608,8 +640,7 @@ final class CertificateRequest {
                             shc.algorithmConstraints, shc.activeProtocols);
             }
 
-            if (shc.localSupportedSignAlgs == null ||
-                    shc.localSupportedSignAlgs.isEmpty()) {
+            if (shc.localSupportedSignAlgs.isEmpty()) {
                 throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                     "No supported signature algorithm");
             }
@@ -659,6 +690,16 @@ final class CertificateRequest {
 
             // clean up this consumer
             chc.handshakeConsumers.remove(SSLHandshake.CERTIFICATE_REQUEST.id);
+            chc.receivedCertReq = true;
+
+            // If we're processing this message and the server's certificate
+            // message consumer has not already run then this is a state
+            // machine violation.
+            if (chc.handshakeConsumers.containsKey(
+                    SSLHandshake.CERTIFICATE.id)) {
+                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                        "Unexpected CertificateRequest handshake message");
+            }
 
             SSLConsumer certStatCons = chc.handshakeConsumers.remove(
                     SSLHandshake.CERTIFICATE_STATUS.id);
@@ -685,28 +726,36 @@ final class CertificateRequest {
             // update
             //
 
-            // An empty client Certificate handshake message may be allow.
+            // An empty client Certificate handshake message may be allowed.
             chc.handshakeProducers.put(SSLHandshake.CERTIFICATE.id,
                     SSLHandshake.CERTIFICATE);
 
-            List<SignatureScheme> sss = new LinkedList<>();
-            for (int id : crm.algorithmIds) {
-                SignatureScheme ss = SignatureScheme.valueOf(id);
-                if (ss != null) {
-                    sss.add(ss);
-                }
+            List<SignatureScheme> sss =
+                    SignatureScheme.getSupportedAlgorithms(
+                            chc.sslConfig,
+                            chc.algorithmConstraints, chc.negotiatedProtocol,
+                            crm.algorithmIds);
+            if (sss.isEmpty()) {
+                throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                        "No supported signature algorithm");
             }
+
             chc.peerRequestedSignatureSchemes = sss;
             chc.peerRequestedCertSignSchemes = sss;     // use the same schemes
             chc.handshakeSession.setPeerSupportedSignatureAlgorithms(sss);
-            chc.peerSupportedAuthorities = crm.getAuthorities();
-
+            try {
+                chc.peerSupportedAuthorities = crm.getAuthorities();
+            } catch (IllegalArgumentException iae) {
+                chc.conContext.fatal(Alert.DECODE_ERROR, "The "
+                    + "distinguished names of the peer's certificate "
+                    + "authorities could not be parsed", iae);
+            }
             // For TLS 1.2, we no longer use the certificate_types field
             // from the CertificateRequest message to directly determine
             // the SSLPossession.  Instead, the choosePossession method
             // will use the accepted signature schemes in the message to
             // determine the set of acceptable certificate types to select from.
-            SSLPossession pos = choosePossession(chc);
+            SSLPossession pos = choosePossession(chc, crm);
             if (pos == null) {
                 return;
             }
@@ -716,8 +765,8 @@ final class CertificateRequest {
                     SSLHandshake.CERTIFICATE_VERIFY);
         }
 
-        private static SSLPossession choosePossession(HandshakeContext hc)
-                throws IOException {
+        private static SSLPossession choosePossession(HandshakeContext hc,
+                T12CertificateRequestMessage crm) {
             if (hc.peerRequestedCertSignSchemes == null ||
                     hc.peerRequestedCertSignSchemes.isEmpty()) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
@@ -727,58 +776,43 @@ final class CertificateRequest {
                 return null;
             }
 
-            Collection<String> checkedKeyTypes = new HashSet<>();
-            for (SignatureScheme ss : hc.peerRequestedCertSignSchemes) {
-                if (checkedKeyTypes.contains(ss.keyAlgorithm)) {
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                        SSLLogger.warning(
-                            "Unsupported authentication scheme: " + ss.name);
-                    }
-                    continue;
-                }
-
-                // Don't select a signature scheme unless we will be able to
-                // produce a CertificateVerify message later
-                if (SignatureScheme.getPreferableAlgorithm(
-                        hc.algorithmConstraints,
-                        hc.peerRequestedSignatureSchemes,
-                        ss, hc.negotiatedProtocol) == null) {
-
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                        SSLLogger.warning(
-                            "Unable to produce CertificateVerify for " +
-                            "signature scheme: " + ss.name);
-                    }
-                    checkedKeyTypes.add(ss.keyAlgorithm);
-                    continue;
-                }
-
-                SSLAuthentication ka = X509Authentication.valueOf(ss);
-                if (ka == null) {
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                        SSLLogger.warning(
-                            "Unsupported authentication scheme: " + ss.name);
-                    }
-                    checkedKeyTypes.add(ss.keyAlgorithm);
-                    continue;
-                }
-
-                SSLPossession pos = ka.createPossession(hc);
-                if (pos == null) {
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                        SSLLogger.warning(
-                            "Unavailable authentication scheme: " + ss.name);
-                    }
-                    continue;
-                }
-
-                return pos;
+            // Put the CR key type into a more friendly format for searching
+            List<String> crKeyTypes = new ArrayList<>(
+                    Arrays.asList(crm.getKeyTypes()));
+            // For TLS 1.2 only if RSA is a requested key type then we
+            // should also allow RSASSA-PSS.
+            if (crKeyTypes.contains("RSA")) {
+                crKeyTypes.add("RSASSA-PSS");
             }
 
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                SSLLogger.warning("No available authentication scheme");
+            String[] supportedKeyTypes = hc.peerRequestedCertSignSchemes
+                    .stream()
+                    .map(ss -> ss.keyAlgorithm)
+                    .distinct()
+                    .filter(ka -> SignatureScheme.getPreferableAlgorithm(   // Don't select a signature scheme unless
+                            hc.algorithmConstraints,                        //  we will be able to produce
+                            hc.peerRequestedSignatureSchemes,               //  a CertificateVerify message later
+                            ka, hc.negotiatedProtocol) != null
+                            || SSLLogger.logWarning("ssl,handshake",
+                                    "Unable to produce CertificateVerify for key algorithm: " + ka))
+                    .filter(ka -> {
+                        var xa = X509Authentication.valueOfKeyAlgorithm(ka);
+                        // Any auth object will have a set of allowed key types.
+                        // This set should share at least one common algorithm with
+                        // the CR's allowed key types.
+                        return xa != null && !Collections.disjoint(crKeyTypes, Arrays.asList(xa.keyTypes))
+                                || SSLLogger.logWarning("ssl,handshake", "Unsupported key algorithm: " + ka);
+                    })
+                    .toArray(String[]::new);
+
+            SSLPossession pos = X509Authentication
+                    .createPossession(hc, supportedKeyTypes);
+            if (pos == null) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    SSLLogger.warning("No available authentication scheme");
+                }
             }
-            return null;
+            return pos;
         }
     }
 
@@ -790,7 +824,7 @@ final class CertificateRequest {
         private final SSLExtensions extensions;
 
         T13CertificateRequestMessage(
-                HandshakeContext handshakeContext) throws IOException {
+                HandshakeContext handshakeContext) {
             super(handshakeContext);
 
             this.requestContext = new byte[0];
@@ -845,12 +879,13 @@ final class CertificateRequest {
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                "\"CertificateRequest\": '{'\n" +
-                "  \"certificate_request_context\": \"{0}\",\n" +
-                "  \"extensions\": [\n" +
-                "{1}\n" +
-                "  ]\n" +
-                "'}'",
+                    """
+                            "CertificateRequest": '{'
+                              "certificate_request_context": "{0}",
+                              "extensions": [
+                            {1}
+                              ]
+                            '}'""",
                 Locale.ENGLISH);
             Object[] messageFields = {
                 Utilities.toHexString(requestContext),
@@ -923,6 +958,15 @@ final class CertificateRequest {
 
             // clean up this consumer
             chc.handshakeConsumers.remove(SSLHandshake.CERTIFICATE_REQUEST.id);
+            chc.receivedCertReq = true;
+
+            // Ensure that the CertificateRequest has not been sent prior
+            // to EncryptedExtensions
+            if (chc.handshakeConsumers.containsKey(
+                    SSLHandshake.ENCRYPTED_EXTENSIONS.id)) {
+                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                        "Unexpected CertificateRequest handshake message");
+            }
 
             T13CertificateRequestMessage crm =
                     new T13CertificateRequestMessage(chc, message);

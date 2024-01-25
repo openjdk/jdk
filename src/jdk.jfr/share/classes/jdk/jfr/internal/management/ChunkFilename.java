@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,10 @@ package jdk.jfr.internal.management;
 import java.nio.file.Paths;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
 
 import jdk.jfr.internal.SecuritySupport;
-import jdk.jfr.internal.SecuritySupport.SafePath;
-import jdk.jfr.internal.Utils;
+import jdk.jfr.internal.util.ValueFormatter;
 import jdk.jfr.internal.consumer.FileAccess;
 
 // Allows a remote streaming client to create chunk files
@@ -64,7 +60,7 @@ public final class ChunkFilename {
    }
 
    public String next(LocalDateTime time) throws IOException {
-       String filename = Utils.formatDateTime(time);
+       String filename = ValueFormatter.formatDateTime(time);
        Path p = directory.resolve(filename + FILE_EXTENSION);
 
        // If less than one file per second (typically case)
@@ -78,7 +74,7 @@ public final class ChunkFilename {
 
        // If more than one file per second
        while (counter < MAX_CHUNK_NAMES) {
-           String extendedName = String.format("%s_%02d%s", filename, counter, FILE_EXTENSION);
+           String extendedName = makeExtendedName(filename, counter);
            p = directory.resolve(extendedName);
            counter++;
            if (!fileAcess.exists(p)) {
@@ -86,5 +82,17 @@ public final class ChunkFilename {
            }
        }
        throw new IOException("Unable to find unused filename after " + counter + " attempts");
+   }
+
+   private String makeExtendedName(String filename, int counter) {
+       StringBuilder sb = new StringBuilder();
+       sb.append(filename);
+       sb.append('_');
+       if (counter < 10) { // chronological sorted
+           sb.append('0');
+       }
+       sb.append(counter);
+       sb.append(FILE_EXTENSION);
+       return sb.toString();
    }
 }

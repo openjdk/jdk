@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,13 +132,13 @@
           range(0, 128)                                                     \
                                                                             \
   develop(bool, EliminateBlocks, true,                                      \
-          "Eliminate unneccessary basic blocks")                            \
+          "Eliminate unnecessary basic blocks")                            \
                                                                             \
   develop(bool, PrintBlockElimination, false,                               \
           "Print basic block elimination")                                  \
                                                                             \
   develop(bool, EliminateNullChecks, true,                                  \
-          "Eliminate unneccessary null checks")                             \
+          "Eliminate unnecessary null checks")                             \
                                                                             \
   develop(bool, PrintNullCheckElimination, false,                           \
           "Print null check elimination")                                   \
@@ -152,9 +152,6 @@
                                                                             \
   product(bool, InlineSynchronizedMethods, true,                            \
           "Inline synchronized methods")                                    \
-                                                                            \
-  product(bool, InlineNIOCheckIndex, true, DIAGNOSTIC,                      \
-          "Intrinsify java.nio.Buffer.checkIndex")                          \
                                                                             \
   develop(bool, CanonicalizeNodes, true,                                    \
           "Canonicalize graph nodes")                                       \
@@ -200,17 +197,11 @@
   develop(bool, CommentedAssembly, trueInDebug,                             \
           "Show extra info in PrintNMethods output")                        \
                                                                             \
-  develop(bool, LIRTracePeephole, false,                                    \
-          "Trace peephole optimizer")                                       \
-                                                                            \
   develop(bool, LIRTraceExecution, false,                                   \
           "add LIR code which logs the execution of blocks")                \
                                                                             \
   develop_pd(bool, CSEArrayLength,                                          \
           "Create separate nodes for length in array accesses")             \
-                                                                            \
-  develop_pd(bool, TwoOperandLIRForm,                                       \
-          "true if LIR requires src1 and dst to match in binary LIR ops")   \
                                                                             \
   develop(intx, TraceLinearScanLevel, 0,                                    \
           "Debug levels for the linear scan allocator")                     \
@@ -248,9 +239,6 @@
   develop(bool, UseFastNewObjectArray, true,                                \
           "Use fast inlined object array allocation")                       \
                                                                             \
-  develop(bool, UseFastLocking, true,                                       \
-          "Use fast inlined locking code")                                  \
-                                                                            \
   develop(bool, UseSlowPath, false,                                         \
           "For debugging: test slow cases by always using them")            \
                                                                             \
@@ -287,21 +275,17 @@
   develop(bool, InstallMethods, true,                                       \
           "Install methods at the end of successful compilations")          \
                                                                             \
+  /* The compiler assumes, in many places, that methods are at most 1MB. */ \
+  /* Therefore, we restrict this flag to at most 1MB.                    */ \
   develop(intx, NMethodSizeLimit, (64*K)*wordSize,                          \
           "Maximum size of a compiled method.")                             \
-          range(0, max_jint)                                                \
+          range(0, 1*M)                                                     \
                                                                             \
   develop(bool, TraceFPUStack, false,                                       \
           "Trace emulation of the FPU stack (intel only)")                  \
                                                                             \
   develop(bool, TraceFPURegisterUsage, false,                               \
           "Trace usage of FPU registers at start of blocks (intel only)")   \
-                                                                            \
-  develop(bool, OptimizeUnsafes, true,                                      \
-          "Optimize raw unsafe ops")                                        \
-                                                                            \
-  develop(bool, PrintUnsafeOptimization, false,                             \
-          "Print optimization of raw unsafe ops")                           \
                                                                             \
   develop(intx, InstructionCountCutoff, 37000,                              \
           "If GraphBuilder adds this many instructions, bails out")         \
@@ -329,7 +313,7 @@
           "Use CHA and exact type results at call sites when updating MDOs")\
                                                                             \
   product(bool, C1UpdateMethodData, true,                                   \
-          "Update MethodData*s in Tier1-generated code")                    \
+          "Update MethodData*s in Tier 3 C1 generated code")                \
                                                                             \
   develop(bool, PrintCFGToFile, false,                                      \
           "print control flow graph to a separate file during compilation")

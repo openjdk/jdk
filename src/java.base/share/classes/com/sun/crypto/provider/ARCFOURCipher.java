@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package com.sun.crypto.provider;
 
 import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
+import java.util.Arrays;
 
 import javax.crypto.*;
 
@@ -46,7 +47,8 @@ import javax.crypto.*;
  * @since   1.5
  * @author  Andreas Sterbenz
  */
-public final class ARCFOURCipher extends CipherSpi {
+public sealed class ARCFOURCipher extends CipherSpi
+        permits PKCS12PBECipherCore.PBEWithSHA1AndRC4 {
 
     // state array S, 256 entries. The entries are 8-bit, but we use an int[]
     // because int arithmetic is much faster than in Java than bytes.
@@ -178,11 +180,16 @@ public final class ARCFOURCipher extends CipherSpi {
         init(opmode, key);
     }
 
-    // init method. Check opmode and key, then call init(byte[]).
+    // init method. Check key, then call init(byte[]).
     private void init(int opmode, Key key) throws InvalidKeyException {
-        if ((opmode < Cipher.ENCRYPT_MODE) || (opmode > Cipher.UNWRAP_MODE)) {
-            throw new InvalidKeyException("Unknown opmode: " + opmode);
+
+        // Cipher.init() already checks opmode to be:
+        // ENCRYPT_MODE/DECRYPT_MODE/WRAP_MODE/UNWRAP_MODE
+
+        if (lastKey != null) {
+            Arrays.fill(lastKey, (byte)0);
         }
+
         lastKey = getEncodedKey(key);
         init(lastKey);
     }
@@ -199,6 +206,7 @@ public final class ARCFOURCipher extends CipherSpi {
         }
         byte[] encodedKey = key.getEncoded();
         if ((encodedKey.length < 5) || (encodedKey.length > 128)) {
+            Arrays.fill(encodedKey, (byte)0);
             throw new InvalidKeyException
                 ("Key length must be between 40 and 1024 bit");
         }
@@ -244,19 +252,31 @@ public final class ARCFOURCipher extends CipherSpi {
         if ((encoded == null) || (encoded.length == 0)) {
             throw new InvalidKeyException("Could not obtain encoded key");
         }
-        return engineDoFinal(encoded, 0, encoded.length);
+        try {
+            return engineDoFinal(encoded, 0, encoded.length);
+        } finally {
+            Arrays.fill(encoded, (byte)0);
+        }
     }
 
     // see JCE spec
     protected Key engineUnwrap(byte[] wrappedKey, String algorithm,
             int type) throws InvalidKeyException, NoSuchAlgorithmException {
-        byte[] encoded = engineDoFinal(wrappedKey, 0, wrappedKey.length);
-        return ConstructKeys.constructKey(encoded, algorithm, type);
+        byte[] encoded = null;
+        try {
+            encoded = engineDoFinal(wrappedKey, 0, wrappedKey.length);
+            return ConstructKeys.constructKey(encoded, algorithm, type);
+        } finally {
+            if (encoded != null) {
+                Arrays.fill(encoded, (byte) 0);
+            }
+        }
     }
 
     // see JCE spec
     protected int engineGetKeySize(Key key) throws InvalidKeyException {
         byte[] encodedKey = getEncodedKey(key);
+        Arrays.fill(encodedKey, (byte)0);
         return Math.multiplyExact(encodedKey.length, 8);
     }
 

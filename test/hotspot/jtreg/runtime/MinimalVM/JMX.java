@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test
  * @requires vm.flavor == "minimal"
+ * @requires vm.flagless
  * @library /test/lib
  * @run main/othervm JMX
  */
@@ -37,12 +38,12 @@ public class JMX {
     public static void main(String args[]) throws Exception {
         ProcessBuilder pb;
 
-        pb = ProcessTools.createJavaProcessBuilder("-minimal", "-XX:+ManagementServer", "-version");
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-minimal", "-XX:+ManagementServer", "-version");
         new OutputAnalyzer(pb.start())
                 .shouldContain("ManagementServer is not supported in this VM.")
                 .shouldHaveExitValue(1);
 
-        pb = ProcessTools.createJavaProcessBuilder("-minimal", "-Dcom.sun.management ", "-version");
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-minimal", "-Dcom.sun.management ", "-version");
         new OutputAnalyzer(pb.start())
                 .shouldContain("-Dcom.sun.management is not supported in this VM.")
                 .shouldHaveExitValue(1);

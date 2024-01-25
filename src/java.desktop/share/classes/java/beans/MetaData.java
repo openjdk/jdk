@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,13 +28,9 @@ import com.sun.beans.finder.PrimitiveWrapperMap;
 
 import java.awt.AWTKeyStroke;
 import java.awt.BorderLayout;
-import java.awt.Dimension;
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.GridBagConstraints;
 import java.awt.Insets;
-import java.awt.Point;
-import java.awt.Rectangle;
 import java.awt.event.KeyEvent;
 import java.awt.font.TextAttribute;
 
@@ -60,12 +56,12 @@ import sun.swing.PrintColorUIResource;
 import static sun.reflect.misc.ReflectUtil.isPackageAccessible;
 
 /*
- * Like the {@code Intropector}, the {@code MetaData} class
+ * Like the {@code Introspector}, the {@code MetaData} class
  * contains <em>meta</em> objects that describe the way
  * classes should express their state in terms of their
  * own public APIs.
  *
- * @see java.beans.Intropector
+ * @see java.beans.Introspector
  *
  * @author Philip Milne
  * @author Steve Langley
@@ -159,9 +155,8 @@ static final class ProxyPersistenceDelegate extends PersistenceDelegate {
         // This unappealing hack is not required but makes the
         // representation of EventHandlers much more concise.
         java.lang.reflect.InvocationHandler ih = java.lang.reflect.Proxy.getInvocationHandler(p);
-        if (ih instanceof EventHandler) {
-            EventHandler eh = (EventHandler)ih;
-            Vector<Object> args = new Vector<>();
+        if (ih instanceof EventHandler eh) {
+            ArrayList<Object> args = new ArrayList<>();
             args.add(type.getInterfaces()[0]);
             args.add(eh.getTarget());
             args.add(eh.getAction());
@@ -169,7 +164,9 @@ static final class ProxyPersistenceDelegate extends PersistenceDelegate {
                 args.add(eh.getEventPropertyName());
             }
             if (eh.getListenerMethodName() != null) {
-                args.setSize(4);
+                if (args.size() == 3) {
+                    args.add(null);
+                }
                 args.add(eh.getListenerMethodName());
             }
             return new Expression(oldInstance,
@@ -307,7 +304,7 @@ static final class java_sql_Timestamp_PersistenceDelegate extends java_util_Date
     }
 
     /**
-     * Invoke Timstamp getNanos.
+     * Invoke Timestamp.getNanos.
      */
     private static int getNanos(Object obj) {
         if (getNanosMethod == null)
@@ -340,7 +337,7 @@ static final class java_sql_Timestamp_PersistenceDelegate extends java_util_Date
 /*
 The Hashtable and AbstractMap classes have no common ancestor yet may
 be handled with a single persistence delegate: one which uses the methods
-of the Map insterface exclusively. Attatching the persistence delegates
+of the Map interface exclusively. Attaching the persistence delegates
 to the interfaces themselves is fraught however since, in the case of
 the Map, both the AbstractMap and HashMap classes are declared to
 implement the Map interface, leaving the obvious implementation prone
@@ -521,8 +518,8 @@ static class java_util_Collection_PersistenceDelegate extends DefaultPersistence
         if (newO.size() != 0) {
             invokeStatement(oldInstance, "clear", new Object[]{}, out);
         }
-        for (Iterator<?> i = oldO.iterator(); i.hasNext();) {
-            invokeStatement(oldInstance, "add", new Object[]{i.next()}, out);
+        for (Object o : oldO) {
+            invokeStatement(oldInstance, "add", new Object[]{o}, out);
         }
     }
 }
@@ -1153,7 +1150,7 @@ static final class javax_swing_border_MatteBorder_PersistenceDelegate extends Pe
     }
 }
 
-/* XXX - doens't seem to work. Debug later.
+/* XXX - doesn't seem to work. Debug later.
 static final class javax_swing_JMenu_PersistenceDelegate extends DefaultPersistenceDelegate {
     protected void initialize(Class<?> type, Object oldInstance, Object newInstance, Encoder out) {
         super.initialize(type, oldInstance, newInstance, out);
@@ -1322,6 +1319,7 @@ static final class sun_swing_PrintColorUIResource_PersistenceDelegate extends Pe
         }
     }
 
+    @SuppressWarnings("removal")
     static Object getPrivateFieldValue(Object instance, String name) {
         Field field = fields.get(name);
         if (field == null) {

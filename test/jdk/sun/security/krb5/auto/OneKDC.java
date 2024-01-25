@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,11 +72,8 @@ public class OneKDC extends KDC {
 
         String extraConfig = "";
         if (etype != null) {
-            extraConfig += "default_tkt_enctypes=" + etype
-                    + "\ndefault_tgs_enctypes=" + etype;
-            if (etype.startsWith("des")) {
-                extraConfig += "\nallow_weak_crypto = true";
-            }
+            extraConfig += "permitted_enctypes=" + etype
+                    + "\nallow_weak_crypto = true";
         }
         KDC.saveConfig(KRB5_CONF, this,
                 "forwardable = true",

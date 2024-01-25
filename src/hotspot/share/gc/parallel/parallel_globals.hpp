@@ -55,9 +55,6 @@
           "limiter (a number between 0-100)")                               \
           range(0, 100)                                                     \
                                                                             \
-  develop(uintx, GCWorkerDelayMillis, 0,                                    \
-          "Delay in scheduling GC workers (in milliseconds)")               \
-                                                                            \
   product(bool, PSChunkLargeArrays, true,                                   \
           "Process large arrays in chunks")
 

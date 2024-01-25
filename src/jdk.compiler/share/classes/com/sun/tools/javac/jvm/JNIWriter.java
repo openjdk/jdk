@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 
 import javax.tools.FileObject;
@@ -85,6 +86,12 @@ public class JNIWriter {
     private boolean checkAll;
 
     /**
+     * Mapping from output file name to class name, for all classes we've written.
+     * This is used to detect when two classes generate the same output file.
+     */
+    private final HashMap<String, String> filesWritten = new HashMap<>();
+
+    /**
      * If true, class files will be written in module-specific subdirectories
      * of the NATIVE_HEADER_OUTPUT location.
      */
@@ -137,7 +144,7 @@ public class JNIWriter {
     static boolean isNative(Symbol s) {
         return hasFlag(s, Flags.NATIVE);
     }
-    static private boolean hasFlag(Symbol m, int flag) {
+    private static boolean hasFlag(Symbol m, int flag) {
         return (m.flags() & flag) != 0;
     }
 
@@ -183,9 +190,14 @@ public class JNIWriter {
         } else {
             outLocn = StandardLocation.NATIVE_HEADER_OUTPUT;
         }
-        FileObject outFile
-            = fileManager.getFileForOutput(outLocn,
-                "", className.replaceAll("[.$]", "_") + ".h", null);
+        String fileName = className.replaceAll("[.$]", "_") + ".h";
+        String prevName = filesWritten.put(fileName, className);
+        if (prevName != null) {
+            throw new IOException(String.format(
+              "native header file collision between %s and %s (both generate %s)",
+              prevName, className, fileName));
+        }
+        FileObject outFile = fileManager.getFileForOutput(outLocn, "", fileName, null);
         PrintWriter out = new PrintWriter(outFile.openWriter());
         try {
             write(out, c);
@@ -417,7 +429,7 @@ public class JNIWriter {
         result.append(encode(msym.getSimpleName(), EncoderType.JNI));
         if (isOverloaded) {
             TypeSignature typeSig = new TypeSignature(types);
-            StringBuilder sig = typeSig.getParameterSignature(msym.type);
+            StringBuilder sig = typeSig.getParameterSignature(msym.type, true);
             result.append("__").append(encode(sig, EncoderType.JNI));
         }
         return result.toString();
@@ -542,23 +554,23 @@ public class JNIWriter {
             this.types = types;
         }
 
-        StringBuilder getParameterSignature(Type mType)
+        StringBuilder getParameterSignature(Type mType, boolean useFlatname)
                 throws SignatureException {
             StringBuilder result = new StringBuilder();
             for (Type pType : mType.getParameterTypes()) {
-                result.append(getJvmSignature(pType));
+                result.append(getJvmSignature(pType, useFlatname));
             }
             return result;
         }
 
         StringBuilder getReturnSignature(Type mType)
                 throws SignatureException {
-            return getJvmSignature(mType.getReturnType());
+            return getJvmSignature(mType.getReturnType(), false);
         }
 
         StringBuilder getSignature(Type mType) throws SignatureException {
             StringBuilder sb = new StringBuilder();
-            sb.append("(").append(getParameterSignature(mType)).append(")");
+            sb.append("(").append(getParameterSignature(mType, false)).append(")");
             sb.append(getReturnSignature(mType));
             return sb;
         }
@@ -567,6 +579,12 @@ public class JNIWriter {
          * Returns jvm internal signature.
          */
         static class JvmTypeVisitor extends JNIWriter.SimpleTypeVisitor<Type, StringBuilder> {
+            private final boolean useFlatname;
+
+            JvmTypeVisitor(boolean useFlatname) {
+                super();
+                this.useFlatname = useFlatname;
+            }
 
             @Override
             public Type visitClassType(Type.ClassType t, StringBuilder s) {
@@ -589,7 +607,8 @@ public class JNIWriter {
                 return t.accept(this, s);
             }
             private void setDeclaredType(Type t, StringBuilder s) {
-                    String classname = t.tsym.getQualifiedName().toString();
+                    String classname = useFlatname ? t.tsym.flatName().toString()
+                            : t.tsym.getQualifiedName().toString();
                     classname = classname.replace('.', '/');
                     s.append("L").append(classname).append(";");
             }
@@ -611,10 +630,10 @@ public class JNIWriter {
             }
         }
 
-        StringBuilder getJvmSignature(Type type) {
+        StringBuilder getJvmSignature(Type type, boolean useFlatname) {
             Type t = types.erasure(type);
             StringBuilder sig = new StringBuilder();
-            JvmTypeVisitor jv = new JvmTypeVisitor();
+            JvmTypeVisitor jv = new JvmTypeVisitor(useFlatname);
             jv.visitType(t, sig);
             return sig;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,7 @@ public class ClassBuilder extends Builder {
         int packageId = classdata.get(classId).packageId.ordinal();
         Clazz C = helpers[packageId];
         if (C == null) {
-            C = new Clazz(getPackageName(packageId) + "Helper", -1, ACC_PUBLIC);
+            C = new Clazz(getPackageName(packageId) + "Helper", ACC_PUBLIC, -1);
             helpers[packageId] = C;
             classes.add(C);
         }

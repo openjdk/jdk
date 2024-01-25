@@ -11,7 +11,7 @@ abstract class Neg17<T> {
 
    abstract void m();
 
-   public static void main(String[] args) {
+   void meth() {
        Collections.singletonList(new Neg17<>() { void m() {} }).get(0).m(); // good.
        Collections.singletonList(new Neg17<>() {
                  void m() {}

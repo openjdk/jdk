@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,8 +40,8 @@ import toolbox.ToolBox;
 public class TestMethodId extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestMethodId tester = new TestMethodId();
-        tester.runTests(m -> new Object[] { Path.of(m.getName()) });
+        var tester = new TestMethodId();
+        tester.runTests();
     }
 
     private ToolBox tb = new ToolBox();
@@ -72,7 +72,7 @@ public class TestMethodId extends JavadocTester {
         checkOutput("p/C.html",
                 true,
                 """
-                    <code><a href="#m(int)" class="member-name-link">m</a>&#8203;(int&nbsp;i)</code>""",
+                    <code><a href="#m(int)" class="member-name-link">m</a><wbr>(int&nbsp;i)</code>""",
                 """
                     <section class="detail" id="m(int)">
                     <h3>m</h3>""");

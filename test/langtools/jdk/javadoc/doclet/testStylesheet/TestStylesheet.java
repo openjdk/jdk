@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug      4494033 7028815 7052425 8007338 8023608 8008164 8016549 8072461 8154261 8162363 8160196 8151743 8177417
  *           8175218 8176452 8181215 8182263 8183511 8169819 8183037 8185369 8182765 8196201 8184205 8223378 8241544
- *           8253117
+ *           8253117 8263528 8289334 8292594
  * @summary  Run tests on doclet stylesheet.
  * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -49,8 +49,8 @@ import toolbox.ToolBox;
 public class TestStylesheet extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestStylesheet tester = new TestStylesheet();
-        tester.runTests(m -> new Object[] { Path.of(m.getName())});
+        var tester = new TestStylesheet();
+        tester.runTests();
     }
 
     @Test
@@ -65,73 +65,59 @@ public class TestStylesheet extends JavadocTester {
 
         // TODO: most of this test seems a bit silly, since javadoc is simply
         // copying in the stylesheet from the source directory
-        checkOutput("stylesheet.css", true,
+        checkOutput("resource-files/stylesheet.css", true,
                 """
                     body {
-                        background-color:#ffffff;
-                        color:#353833;
-                        font-family:'DejaVu Sans', Arial, Helvetica, sans-serif;
-                        font-size:14px;
+                        background-color:var(--body-background-color);
+                        color:var(--body-text-color);
+                        font-family:var(--body-font-family);
+                        font-size:var(--body-font-size);
                         margin:0;
                         padding:0;
                         height:100%;
                         width:100%;
                     }""",
                 """
-                    iframe {
-                        margin:0;
-                        padding:0;
-                        height:100%;
-                        width:100%;
-                        overflow-y:scroll;
-                        border:none;
+                    ul {
+                        list-style-type:disc;
                     }""",
-                "ul {\n"
-                + "    list-style-type:disc;\n"
-                + "}",
                 """
                     .caption {
                         position:relative;
                         text-align:left;
                         background-repeat:no-repeat;
-                        color:#253441;
-                        font-weight:bold;
+                        color:var(--selected-text-color);
                         clear:none;
                         overflow:hidden;
-                        padding:0px;
-                        padding-top:10px;
-                        padding-left:1px;
-                        margin:0px;
-                        white-space:pre;
+                        padding: 10px 0 0 1px;
+                        margin:0;
                     }""",
                 """
                     .caption span {
+                        font-weight:bold;
                         white-space:nowrap;
-                        padding-top:5px;
-                        padding-left:12px;
-                        padding-right:12px;
-                        padding-bottom:7px;
+                        padding:5px 12px 7px 12px;
                         display:inline-block;
                         float:left;
-                        background-color:#F8981D;
+                        background-color:var(--selected-background-color);
                         border: none;
                         height:16px;
                     }""",
                 """
                     div.table-tabs > button {
-                       border: none;
-                       cursor: pointer;
-                       padding: 5px 12px 7px 12px;
-                       font-weight: bold;
-                       margin-right: 3px;
+                        border: none;
+                        cursor: pointer;
+                        padding: 5px 12px 7px 12px;
+                        font-weight: bold;
+                        margin-right: 8px;
                     }
-                    div.table-tabs > button.active-table-tab {
-                       background: #F8981D;
-                       color: #253441;
+                    div.table-tabs > .active-table-tab {
+                        background: var(--selected-background-color);
+                        color: var(--selected-text-color);
                     }
                     div.table-tabs > button.table-tab {
-                       background: #4D7A97;
-                       color: #FFFFFF;
+                        background: var(--navbar-background-color);
+                        color: var(--navbar-text-color);
                     }""",
                 // Test the formatting styles for proper content display in use and constant values pages.
                 """
@@ -140,19 +126,21 @@ public class TestStylesheet extends JavadocTester {
                         overflow: auto;
                     }""",
                 """
-                    .summary-table > div {
+                    .summary-table > div, .details-table > div {
                         text-align:left;
                         padding: 8px 3px 3px 7px;
+                        overflow: auto hidden;
+                        scrollbar-width: thin;
                     }""",
-                "@import url('resources/fonts/dejavu.css');",
+                "@import url('fonts/dejavu.css');",
                 """
                     .search-tag-result:target {
-                        background-color:yellow;
+                        background-color:var(--search-tag-highlight-color);
                     }""",
                 """
-                    a[href]:hover, a[href]:focus {
+                    a[href]:hover, a[href]:active {
                         text-decoration:none;
-                        color:#bb7a2a;
+                        color:var(--link-color-active);
                     }""",
                 """
                     .col-first a:link, .col-first a:visited,
@@ -160,16 +148,13 @@ public class TestStylesheet extends JavadocTester {
                     .col-first a:link, .col-first a:visited,
                     .col-second a:link, .col-second a:visited,
                     .col-constructor-name a:link, .col-constructor-name a:visited,
-                    .col-summary-item-name a:link, .col-summary-item-name a:visited,
-                    .constant-values-container a:link, .constant-values-container a:visited,
-                    .all-classes-container a:link, .all-classes-container a:visited,
-                    .all-packages-container a:link, .all-packages-container a:visited {
+                    .col-summary-item-name a:link, .col-summary-item-name a:visited {
                         font-weight:bold;
                     }""",
                 """
-                    .deprecation-block {
-                        font-size:14px;
-                        font-family:'DejaVu Serif', Georgia, "Times New Roman", Times, serif;
+                    .deprecation-block, .preview-block, .restricted-block {
+                        font-size:1em;
+                        font-family:var(--block-font-family);
                         border-style:solid;
                         border-width:thin;
                         border-radius:10px;
@@ -179,46 +164,45 @@ public class TestStylesheet extends JavadocTester {
                         display:inline-block;
                     }""",
                 """
-                    #reset {
-                        background-color: rgb(255,255,255);
-                        background-image:url('resources/x.png');
-                        background-position:center;
+                    input#reset-search, input.reset-filter {
+                        background-color: transparent;
+                        background-image:url('x.png');
                         background-repeat:no-repeat;
-                        background-size:12px;
-                        border:0 none;
-                        width:16px;
-                        height:16px;
-                        position:relative;
-                        left:-4px;
-                        top:-4px;
-                        font-size:0px;
+                        background-size:contain;
+                        border:0;
+                        border-radius:0;
+                        width:12px;
+                        height:12px;
+                        font-size:0;
+                        display:none;
                     }""",
                 """
-                    .watermark {
-                        color:#545454;
+                    ::placeholder {
+                        color:var(--search-input-placeholder-color);
+                        opacity: 1;
                     }""");
 
         checkOutput("pkg/A.html", true,
                 // Test whether a link to the stylesheet file is inserted properly
                 // in the class documentation.
                 """
-                    <link rel="stylesheet" type="text/css" href="../stylesheet.css" title="Style">""",
+                    <link rel="stylesheet" type="text/css" href="../resource-files/stylesheet.css" title="Style">""",
                 """
                     <div class="block">Test comment for a class which has an <a name="named_anchor">anchor_with_name</a> and
                      an <a id="named_anchor1">anchor_with_id</a>.</div>""");
 
         checkOutput("pkg/package-summary.html", true,
                 """
-                    <div class="col-last even-row-color">
+                    <div class="col-last even-row-color class-summary class-summary-tab2">
                     <div class="block">Test comment for a class which has an <a name="named_anchor">anchor_with_name</a> and
                      an <a id="named_anchor1">anchor_with_id</a>.</div>
                     </div>""");
 
         checkOutput("index.html", true,
                 """
-                    <link rel="stylesheet" type="text/css" href="stylesheet.css" title="Style">""");
+                    <link rel="stylesheet" type="text/css" href="resource-files/stylesheet.css" title="Style">""");
 
-        checkOutput("stylesheet.css", false,
+        checkOutput("resource-files/stylesheet.css", false,
                 """
                     * {
                         margin:0;
@@ -280,7 +264,7 @@ public class TestStylesheet extends JavadocTester {
     Set<String> readStylesheet() {
         // scan for class selectors, skipping '{' ... '}'
         Set<String> styles = new TreeSet<>();
-        String stylesheet = readFile("stylesheet.css");
+        String stylesheet = readFile("resource-files/stylesheet.css");
         for (int i = 0; i < stylesheet.length(); i++) {
             char ch = stylesheet.charAt(i);
             switch (ch) {
@@ -357,7 +341,6 @@ public class TestStylesheet extends JavadocTester {
                 "packages",
                 "return-type",
                 // and others...
-                "help-section",     // part of the help page
                 "hierarchy",        // for the hierarchy on a tree page
                 "index"             // on the index page
         );
@@ -381,7 +364,7 @@ public class TestStylesheet extends JavadocTester {
         checking("Check CSS class names");
         CSSClassChecker c = new CSSClassChecker(out, this::readFile, styles);
         try {
-            c.checkDirectory(outputDir.toPath());
+            c.checkDirectory(outputDir);
             c.report();
             int errors = c.getErrorCount();
             if (errors == 0) {

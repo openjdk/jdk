@@ -28,7 +28,7 @@
  * @summary Ensure no failure when using Java Accessibility Utility with security manager
  * @modules java.desktop jdk.accessibility
  *
- * @run main/othervm Bug8051626
+ * @run main/othervm -Djava.security.manager=allow Bug8051626
  */
 
 import com.sun.java.accessibility.util.AWTEventMonitor;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,7 @@ void C1SafepointPollStub::emit_code(LIR_Assembler* ce) {
   __ pop(tmp2);
   __ pop(tmp1);
 #endif /* _LP64 */
-  assert(SharedRuntime::polling_page_return_handler_blob() != NULL,
+  assert(SharedRuntime::polling_page_return_handler_blob() != nullptr,
          "polling page return stub not created yet");
 
   address stub = SharedRuntime::polling_page_return_handler_blob()->entry_point();
@@ -114,18 +114,6 @@ void CounterOverflowStub::emit_code(LIR_Assembler* ce) {
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
   __ jmp(_continuation);
-}
-
-RangeCheckStub::RangeCheckStub(CodeEmitInfo* info, LIR_Opr index, LIR_Opr array)
-  : _index(index), _array(array), _throw_index_out_of_bounds_exception(false) {
-  assert(info != NULL, "must have info");
-  _info = new CodeEmitInfo(info);
-}
-
-RangeCheckStub::RangeCheckStub(CodeEmitInfo* info, LIR_Opr index)
-  : _index(index), _array(NULL), _throw_index_out_of_bounds_exception(true) {
-  assert(info != NULL, "must have info");
-  _info = new CodeEmitInfo(info);
 }
 
 void RangeCheckStub::emit_code(LIR_Assembler* ce) {
@@ -254,16 +242,6 @@ void NewObjectArrayStub::emit_code(LIR_Assembler* ce) {
   __ jmp(_continuation);
 }
 
-
-// Implementation of MonitorAccessStubs
-
-MonitorEnterStub::MonitorEnterStub(LIR_Opr obj_reg, LIR_Opr lock_reg, CodeEmitInfo* info)
-: MonitorAccessStub(obj_reg, lock_reg)
-{
-  _info = new CodeEmitInfo(info);
-}
-
-
 void MonitorEnterStub::emit_code(LIR_Assembler* ce) {
   assert(__ rsp_offset() == 0, "frame size should be fixed");
   __ bind(_entry);
@@ -340,7 +318,7 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
 #ifdef ASSERT
     address start = __ pc();
 #endif
-    Metadata* o = NULL;
+    Metadata* o = nullptr;
     __ mov_metadata(_obj, o);
 #ifdef ASSERT
     for (int i = 0; i < _bytes_to_copy; i++) {
@@ -355,7 +333,7 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
 #ifdef ASSERT
     address start = __ pc();
 #endif
-    jobject o = NULL;
+    jobject o = nullptr;
     __ movoop(_obj, o);
 #ifdef ASSERT
     for (int i = 0; i < _bytes_to_copy; i++) {
@@ -426,7 +404,7 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
 
   address entry = __ pc();
   NativeGeneralJump::insert_unconditional((address)_pc_start, entry);
-  address target = NULL;
+  address target = nullptr;
   relocInfo::relocType reloc_type = relocInfo::none;
   switch (_id) {
     case access_field_id:  target = Runtime1::entry_for(Runtime1::access_field_patching_id); break;
@@ -543,7 +521,9 @@ void ArrayCopyStub::emit_code(LIR_Assembler* ce) {
   ce->add_call_info_here(info());
 
 #ifndef PRODUCT
-  __ incrementl(ExternalAddress((address)&Runtime1::_arraycopy_slowcase_cnt));
+  if (PrintC1Statistics) {
+    __ incrementl(ExternalAddress((address)&Runtime1::_arraycopy_slowcase_cnt), rscratch1);
+  }
 #endif
 
   __ jmp(_continuation);

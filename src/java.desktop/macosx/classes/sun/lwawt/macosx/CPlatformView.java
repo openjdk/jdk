@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ public class CPlatformView extends CFRetainedResource {
 
     private LWWindowPeer peer;
     private SurfaceData surfaceData;
-    private CFRetainedResource windowLayer;
+    private CFLayer windowLayer;
     private CPlatformResponder responder;
 
     public CPlatformView() {
@@ -62,6 +62,7 @@ public class CPlatformView extends CFRetainedResource {
         initializeBase(peer, responder);
 
         this.windowLayer = CGraphicsDevice.usingMetalPipeline()? createMTLLayer() : createCGLayer();
+
         setPtr(nativeCreateView(0, 0, 0, 0, getWindowLayerPtr()));
     }
 
@@ -104,10 +105,7 @@ public class CPlatformView extends CFRetainedResource {
     // PAINTING METHODS
     // ----------------------------------------------------------------------
     public SurfaceData replaceSurfaceData() {
-        surfaceData = (CGraphicsDevice.usingMetalPipeline()) ?
-                    ((MTLLayer)windowLayer).replaceSurfaceData() :
-                    ((CGLLayer)windowLayer).replaceSurfaceData()
-        ;
+        surfaceData = windowLayer.replaceSurfaceData();
         return surfaceData;
     }
 
@@ -122,9 +120,7 @@ public class CPlatformView extends CFRetainedResource {
     }
 
     public long getWindowLayerPtr() {
-        return CGraphicsDevice.usingMetalPipeline() ?
-                ((MTLLayer)windowLayer).getPointer() :
-                ((CGLLayer)windowLayer).getPointer();
+        return windowLayer.getPointer();
     }
 
     public void setAutoResizable(boolean toResize) {
@@ -137,6 +133,10 @@ public class CPlatformView extends CFRetainedResource {
             ref.set(nativeIsViewUnderMouse(ptr));
         });
         return ref.get();
+    }
+
+    public void setWindowLayerOpaque(boolean opaque) {
+        windowLayer.setOpaque(opaque);
     }
 
     public GraphicsDevice getGraphicsDevice() {
@@ -187,7 +187,7 @@ public class CPlatformView extends CFRetainedResource {
         int absX = event.getAbsX();
         int absY = event.getAbsY();
 
-        if (event.getType() == CocoaConstants.NSScrollWheel) {
+        if (event.getType() == CocoaConstants.NSEventTypeScrollWheel) {
             responder.handleScrollEvent(x, y, absX, absY, event.getModifierFlags(),
                                         event.getScrollDeltaX(), event.getScrollDeltaY(),
                                         event.getScrollPhase());

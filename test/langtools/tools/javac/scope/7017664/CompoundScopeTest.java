@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 import java.util.Random;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.function.Predicate;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Scope.*;
@@ -137,8 +138,9 @@ public class CompoundScopeTest {
             }
         }
 
-        class OddFilter implements Filter<Symbol> {
-            public boolean accepts(Symbol s) {
+        class OddFilter implements Predicate<Symbol> {
+            @Override
+            public boolean test(Symbol s) {
                 Name numPart = s.name.subName(1, s.name.length());
                 return Integer.parseInt(numPart.toString()) % 2 != 0;
             }
@@ -177,7 +179,7 @@ public class CompoundScopeTest {
          * Check that CompoundScope.getElements() correctly visits all symbols
          * in all subscopes (in the correct order)
          */
-        void checkElems(CompoundScope cs, Filter<Symbol> sf) {
+        void checkElems(CompoundScope cs, Predicate<Symbol> sf) {
             int count = 0;
             ListBuffer<Symbol> found = new ListBuffer<>();
             List<Symbol> allSymbols = sf == null ?
@@ -199,7 +201,7 @@ public class CompoundScopeTest {
          * Check that CompoundScope.getElements() correctly visits all symbols
          * with a given name in all subscopes (in the correct order)
          */
-        void checkShadowed(CompoundScope cs, Filter<Symbol> sf) {
+        void checkShadowed(CompoundScope cs, Predicate<Symbol> sf) {
             for (Map.Entry<Name, List<Symbol>> shadowedEntry : shadowedMap.entrySet()) {
                 int count = 0;
                 List<Symbol> shadowed = sf == null ?
@@ -218,10 +220,10 @@ public class CompoundScopeTest {
             }
         }
 
-        List<Symbol> filter(List<Symbol> elems, Filter<Symbol> sf) {
+        List<Symbol> filter(List<Symbol> elems, Predicate<Symbol> sf) {
             ListBuffer<Symbol> res = new ListBuffer<>();
             for (Symbol s : elems) {
-                if (sf.accepts(s)) {
+                if (sf.test(s)) {
                     res.append(s);
                 }
             }

@@ -49,7 +49,7 @@ import org.xml.sax.helpers.XMLFilterImpl;
  * @test
  * @bug 6490921
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true transform.Bug6490921
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.Bug6490921
  * @run testng/othervm transform.Bug6490921
  * @summary Test property org.xml.sax.driver is always applied in transformer API.
  */

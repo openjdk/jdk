@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.lang.annotation.IncompleteAnnotationException;
 import java.util.List;
 import java.util.Set;
 
+import javax.lang.model.AnnotatedConstruct;
 import javax.lang.model.type.*;
 import javax.lang.model.util.*;
 
@@ -52,14 +53,11 @@ import javax.lang.model.util.*;
  * hierarchy since an implementation may choose to have a single object
  * implement multiple {@code Element} subinterfaces.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @see Elements
  * @see TypeMirror
  * @since 1.6
  */
-public interface Element extends javax.lang.model.AnnotatedConstruct {
+public interface Element extends AnnotatedConstruct {
     /**
      * {@return the type defined by this element}
      *
@@ -70,6 +68,7 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
      * @see TypeElement#asType
      * @see TypeParameterElement#asType
      * @see VariableElement#asType
+     * @see RecordComponentElement#asType
      */
     TypeMirror asType();
 
@@ -117,8 +116,9 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
 
     /**
      * Returns the modifiers of this element, excluding annotations.
-     * Implicit modifiers, such as the {@code public} and {@code static}
-     * modifiers of interface members, are included.
+     * Implicit modifiers, such as the {@code public} and {@code
+     * static} modifiers of interface members (JLS section {@jls
+     * 9.3}), are included.
      *
      * @return the modifiers of this element, or an empty set if there are none
      */
@@ -133,9 +133,10 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
      * {@code java.util.Set<E>} is {@code "Set"}.
      *
      * If this element represents an unnamed {@linkplain
-     * PackageElement#getSimpleName package} or unnamed {@linkplain
-     * ModuleElement#getSimpleName module}, an <a
-     * href=Name.html#empty_name>empty name</a> is returned.
+     * PackageElement#getSimpleName package}, an unnamed {@linkplain
+     * ModuleElement#getSimpleName module} or an unnamed {@linkplain
+     * VariableElement#getSimpleName variable}, an {@linkplain Name##empty_name empty name}
+     * is returned.
      *
      * If it represents a {@linkplain ExecutableElement#getSimpleName
      * constructor}, the name "{@code <init>}" is returned.  If it
@@ -144,8 +145,8 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
      *
      * If it represents an {@linkplain TypeElement#getSimpleName
      * anonymous class} or {@linkplain ExecutableElement#getSimpleName
-     * instance initializer}, an <a href=Name.html#empty_name>empty
-     * name</a> is returned.
+     * instance initializer}, an {@linkplain Name##empty_name empty
+     * name} is returned.
      *
      * @see PackageElement#getSimpleName
      * @see ExecutableElement#getSimpleName
@@ -153,7 +154,6 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
      * @see VariableElement#getSimpleName
      * @see ModuleElement#getSimpleName
      * @see RecordComponentElement#getSimpleName
-     * @revised 9
      */
     Name getSimpleName();
 
@@ -194,7 +194,6 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
      *
      * @return the enclosing element, or {@code null} if there is none
      * @see Elements#getPackageOf
-     * @revised 9
      */
     Element getEnclosingElement();
 
@@ -230,7 +229,7 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
      * @see Elements#getAllMembers
      * @jls 8.8.9 Default Constructor
      * @jls 8.9 Enum Classes
-     * @revised 9
+     * @jls 8.10 Record Classes
      */
     List<? extends Element> getEnclosedElements();
 
@@ -261,7 +260,7 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
     int hashCode();
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc AnnotatedConstruct}
      *
      * <p>To get inherited annotations as well, use {@link
      * Elements#getAllAnnotationMirrors(Element)
@@ -276,7 +275,7 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
     List<? extends AnnotationMirror> getAnnotationMirrors();
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc AnnotatedConstruct}
      *
      * <p>Note that any annotation returned by this method is a
      * declaration annotation.
@@ -287,12 +286,12 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
     <A extends Annotation> A getAnnotation(Class<A> annotationType);
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc AnnotatedConstruct}
      *
      * <p>Note that any annotations returned by this method are
      * declaration annotations.
      *
-     * @since 8
+     * @since 1.8
      */
     @Override
     <A extends Annotation> A[] getAnnotationsByType(Class<A> annotationType);

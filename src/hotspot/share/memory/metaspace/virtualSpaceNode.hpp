@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -52,7 +52,7 @@ class FreeChunkListVector;
 //  which may be committed or uncommitted independently from each other.
 //
 // (Both root chunk areas and commit granules have not much to do with each other - one is a way to
-//   reserve memory for the upper regions, see ChunkManager. One is a way to manage commited memory.)
+//   reserve memory for the upper regions, see ChunkManager. One is a way to manage committed memory.)
 //
 // VirtualSpaceNode:
 //  - exposes a function to allocate a new root chunk (see VirtualSpaceNode::allocate_root_chunk()).
@@ -172,7 +172,7 @@ public:
 
   //// Chunk allocation, splitting, merging /////
 
-  // Allocate a root chunk from this node. Will fail and return NULL if the node is full
+  // Allocate a root chunk from this node. Will fail and return null if the node is full
   //  - if we used up the whole address space of this node's memory region.
   //    (in case this node backs compressed class space, this is how we hit
   //     CompressedClassSpaceSize).
@@ -189,11 +189,11 @@ public:
   // Given a chunk, attempt to merge it recursively with its neighboring chunks.
   //
   // If successful (merged at least once), returns address of
-  // the merged chunk; NULL otherwise.
+  // the merged chunk; null otherwise.
   //
   // The merged chunks are removed from the freelists.
   //
-  // !!! Please note that if this method returns a non-NULL value, the
+  // !!! Please note that if this method returns a non-null value, the
   // original chunk will be invalid and should not be accessed anymore! !!!
   Metachunk* merge(Metachunk* c, FreeChunkListVector* freelists);
 
@@ -207,15 +207,6 @@ public:
   //
   // On success, true is returned, false otherwise.
   bool attempt_enlarge_chunk(Metachunk* c, FreeChunkListVector* freelists);
-
-  // Attempts to purge the node:
-  //
-  // If all chunks living in this node are free, they will all be removed from
-  //  the freelist they currently reside in. Then, the node will be deleted.
-  //
-  // Returns true if the node has been deleted, false if not.
-  // !! If this returns true, do not access the node from this point on. !!
-  bool attempt_purge(FreeChunkListVector* freelists);
 
   // Attempts to uncommit free areas according to the rules set in settings.
   // Returns number of words uncommitted.

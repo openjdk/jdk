@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,18 @@
 package jdk.tools.jlink.internal.plugins;
 
 import jdk.tools.jlink.plugin.Plugin;
+import jdk.tools.jlink.internal.JlinkTask;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassFile;
+import jdk.tools.jlink.plugin.ResourcePoolEntry;
 
 public abstract class AbstractPlugin implements Plugin {
 
@@ -61,6 +69,50 @@ public abstract class AbstractPlugin implements Plugin {
         this.name = name;
         this.pluginsBundle = bundle;
     }
+
+    private void dumpClassFile(String path, byte[] buf) {
+        try {
+            String fullPath = String.format("%d-%s%s%s",
+                 ProcessHandle.current().pid(),
+                 getName(), File.separator,
+                 path.replace('/', File.separatorChar));
+            System.err.printf("Dumping class file %s\n", fullPath);
+            new File(fullPath.substring(0, fullPath.lastIndexOf('/'))).mkdirs();
+            Files.write(Paths.get(fullPath), buf);
+        } catch (IOException ioExp) {
+            System.err.println("writing " + path + " failed");
+            ioExp.printStackTrace();
+        }
+    }
+
+    ClassModel newClassReader(String path, ResourcePoolEntry resource, ClassFile.Option... options) {
+        byte[] content = resource.contentBytes();
+        try {
+            return ClassFile.of(options).parse(content);
+        } catch (Exception e) {
+            if (JlinkTask.DEBUG) {
+                System.err.printf("Failed to parse class file: %s from resource of type %s\n", path,
+                        resource.getClass().getName());
+                e.printStackTrace();
+                dumpClassFile(path, content);
+            }
+            throw e;
+        }
+    }
+
+    protected ClassModel newClassReader(String path, byte[] buf, ClassFile.Option... options) {
+        try {
+            return ClassFile.of(options).parse(buf);
+        } catch (Exception e) {
+            if (JlinkTask.DEBUG) {
+                System.err.printf("Failed to parse class file: %s\n", path);
+                e.printStackTrace();
+                dumpClassFile(path, buf);
+            }
+            throw e;
+        }
+    }
+
     @Override
     public String getName() {
         return name;

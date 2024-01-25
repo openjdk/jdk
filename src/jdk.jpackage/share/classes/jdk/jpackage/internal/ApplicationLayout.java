@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
  * questions.
  */
 package jdk.jpackage.internal;
+
+import jdk.internal.util.OperatingSystem;
 
 import java.nio.file.Path;
 import java.util.Map;
@@ -66,7 +68,12 @@ public final class ApplicationLayout implements PathGroup.Facade<ApplicationLayo
         /**
          * Linux app launcher shared library.
          */
-        LINUX_APPLAUNCHER_LIB
+        LINUX_APPLAUNCHER_LIB,
+
+        /**
+         * Location of additional application content
+         */
+        CONTENT
     }
 
     ApplicationLayout(Map<Object, Path> paths) {
@@ -129,6 +136,13 @@ public final class ApplicationLayout implements PathGroup.Facade<ApplicationLayo
         return pathGroup().getPath(PathRole.DESKTOP);
     }
 
+    /**
+     * Path to directory with additional application content.
+     */
+    public Path contentDirectory() {
+        return pathGroup().getPath(PathRole.CONTENT);
+    }
+
     static ApplicationLayout linuxAppImage() {
         return new ApplicationLayout(Map.of(
                 PathRole.LAUNCHERS, Path.of("bin"),
@@ -137,7 +151,8 @@ public final class ApplicationLayout implements PathGroup.Facade<ApplicationLayo
                 PathRole.RUNTIME_HOME, Path.of("lib/runtime"),
                 PathRole.DESKTOP, Path.of("lib"),
                 PathRole.MODULES, Path.of("lib/app/mods"),
-                PathRole.LINUX_APPLAUNCHER_LIB, Path.of("lib/libapplauncher.so")
+                PathRole.LINUX_APPLAUNCHER_LIB, Path.of("lib/libapplauncher.so"),
+                PathRole.CONTENT, Path.of("lib")
         ));
     }
 
@@ -148,7 +163,8 @@ public final class ApplicationLayout implements PathGroup.Facade<ApplicationLayo
                 PathRole.RUNTIME, Path.of("runtime"),
                 PathRole.RUNTIME_HOME, Path.of("runtime"),
                 PathRole.DESKTOP, Path.of(""),
-                PathRole.MODULES, Path.of("app/mods")
+                PathRole.MODULES, Path.of("app/mods"),
+                PathRole.CONTENT, Path.of("")
         ));
     }
 
@@ -159,24 +175,25 @@ public final class ApplicationLayout implements PathGroup.Facade<ApplicationLayo
                 PathRole.RUNTIME, Path.of("Contents/runtime"),
                 PathRole.RUNTIME_HOME, Path.of("Contents/runtime/Contents/Home"),
                 PathRole.DESKTOP, Path.of("Contents/Resources"),
-                PathRole.MODULES, Path.of("Contents/app/mods")
+                PathRole.MODULES, Path.of("Contents/app/mods"),
+                PathRole.CONTENT, Path.of("Contents")
         ));
     }
 
     public static ApplicationLayout platformAppImage() {
-        if (Platform.isWindows()) {
+        if (OperatingSystem.isWindows()) {
             return windowsAppImage();
         }
 
-        if (Platform.isLinux()) {
+        if (OperatingSystem.isLinux()) {
             return linuxAppImage();
         }
 
-        if (Platform.isMac()) {
+        if (OperatingSystem.isMacOS()) {
             return macAppImage();
         }
 
-        throw Platform.throwUnknownPlatformError();
+        throw new IllegalArgumentException("Unknown platform: " + OperatingSystem.current());
     }
 
     public static ApplicationLayout javaRuntime() {
@@ -194,7 +211,8 @@ public final class ApplicationLayout implements PathGroup.Facade<ApplicationLayo
                 PathRole.DESKTOP, lib,
                 PathRole.MODULES, lib.resolve("app/mods"),
                 PathRole.LINUX_APPLAUNCHER_LIB, lib.resolve(
-                        "lib/libapplauncher.so")
+                        "lib/libapplauncher.so"),
+                PathRole.CONTENT, lib
         ));
     }
 

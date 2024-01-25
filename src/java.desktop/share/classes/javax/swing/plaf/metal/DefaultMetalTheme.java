@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -182,6 +182,7 @@ public class DefaultMetalTheme extends MetalTheme {
     }
 
     static {
+        @SuppressWarnings("removal")
         Object boldProperty = java.security.AccessController.doPrivileged(
             new GetPropertyAction("swing.boldMetal"));
         if (boldProperty == null || !"false".equals(boldProperty)) {
@@ -387,6 +388,7 @@ public class DefaultMetalTheme extends MetalTheme {
          * <code>Font.getFont(key)</code>, with the exception
          * that it is wrapped inside a <code>doPrivileged</code> call.
          */
+        @SuppressWarnings("removal")
         protected Font getPrivilegedFont(final int key) {
             return java.security.AccessController.doPrivileged(
                 new java.security.PrivilegedAction<Font>() {
@@ -403,21 +405,21 @@ public class DefaultMetalTheme extends MetalTheme {
      */
     private static class WindowsFontDelegate extends FontDelegate {
         private MetalFontDesktopProperty[] props;
-        private boolean[] checkedPriviledged;
+        private boolean[] checkedPrivileged;
 
         public WindowsFontDelegate() {
             props = new MetalFontDesktopProperty[6];
-            checkedPriviledged = new boolean[6];
+            checkedPrivileged = new boolean[6];
         }
 
         public FontUIResource getFont(int type) {
             if (fonts[type] != null) {
                 return fonts[type];
             }
-            if (!checkedPriviledged[type]) {
+            if (!checkedPrivileged[type]) {
                 Font f = getPrivilegedFont(type);
 
-                checkedPriviledged[type] = true;
+                checkedPrivileged[type] = true;
                 if (f != null) {
                     fonts[type] = new FontUIResource(f);
                     return fonts[type];

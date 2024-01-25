@@ -25,6 +25,7 @@
  * @test
  * @bug 6531597
  * @summary Tests encoding of arrays of primitives
+ * @run main/othervm -Djava.security.manager=allow Test6531597
  * @author Sergey Malenkov
  */
 

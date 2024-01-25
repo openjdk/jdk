@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import javadoc.tester.JavadocTester;
 public class TestHeadings extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestHeadings tester = new TestHeadings();
+        var tester = new TestHeadings();
         tester.runTests();
     }
 
@@ -92,9 +92,9 @@ public class TestHeadings extends JavadocTester {
         // Serialized Form
         checkOutput("serialized-form.html", true,
                 """
-                    <h2 title="Package">Package&nbsp;pkg1</h2>""",
+                    <h2 title="Package">Package&nbsp;<a href="pkg1/package-summary.html">pkg1</a></h2>""",
                 """
-                    <h3>Class <a href="pkg1/C1.html" title="class in pkg1">pkg1.C1</a> extends java.lang.Object implements Serializable</h3>""",
+                    <h3>Class&nbsp;<a href="pkg1/C1.html" title="class in pkg1">pkg1.C1</a></h3>""",
                 "<h4>Serialized Fields</h4>");
 
         // Overview Summary

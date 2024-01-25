@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
  * questions.
  */
 
+import jdk.internal.javac.ParticipatesInPreview;
+
 /**
  * Defines the <em>{@index jlink jlink tool}</em> tool for creating run-time
  * images, the <em>{@index jmod jmod tool}</em> tool for creating and manipulating
@@ -44,10 +46,14 @@
  * @toolGuide jmod
  *
  * @provides java.util.spi.ToolProvider
+ *     Use {@link java.util.spi.ToolProvider#findFirst ToolProvider.findFirst("jlink")}
+ *     to obtain an instance of a {@code ToolProvider} that provides the equivalent
+ *     of command-line access to the {@code jlink} tool.
  *
  * @moduleGraph
  * @since 9
  */
+@ParticipatesInPreview
 module jdk.jlink {
     requires jdk.internal.opt;
     requires jdk.jdeps;
@@ -76,6 +82,7 @@ module jdk.jlink {
         jdk.tools.jlink.internal.plugins.AddOptionsPlugin,
         jdk.tools.jlink.internal.plugins.VendorBugURLPlugin,
         jdk.tools.jlink.internal.plugins.VendorVMBugURLPlugin,
-        jdk.tools.jlink.internal.plugins.VendorVersionPlugin;
-
+        jdk.tools.jlink.internal.plugins.VendorVersionPlugin,
+        jdk.tools.jlink.internal.plugins.CDSPlugin,
+        jdk.tools.jlink.internal.plugins.SaveJlinkArgfilesPlugin;
 }

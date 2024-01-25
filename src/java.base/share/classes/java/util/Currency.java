@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,6 +108,7 @@ import sun.util.logging.PlatformLogger;
  * with {@code Currency} or monetary values as it provides better handling of floating
  * point numbers and their operations.
  *
+ * @spec http://www.iso.org/iso/home/standards/currency_codes.htm ISO - ISO 4217 - Currency codes
  * @see java.math.BigDecimal
  * @since 1.4
  */
@@ -209,6 +210,11 @@ public final class Currency implements Serializable {
     private static final int VALID_FORMAT_VERSION = 3;
 
     static {
+        initStatic();
+    }
+
+    @SuppressWarnings("removal")
+    private static void initStatic() {
         AccessController.doPrivileged(new PrivilegedAction<>() {
             @Override
             public Void run() {
@@ -275,7 +281,7 @@ public final class Currency implements Serializable {
 
     /**
      * Constructs a {@code Currency} instance. The constructor is private
-     * so that we can insure that there's never more than one instance for a
+     * so that we can ensure that there's never more than one instance for a
      * given currency.
      */
     private Currency(String currencyCode, int defaultFractionDigits, int numericCode) {
@@ -313,7 +319,8 @@ public final class Currency implements Serializable {
             // or in the list of other currencies.
             boolean found = false;
             if (currencyCode.length() != 3) {
-                throw new IllegalArgumentException();
+                throw new IllegalArgumentException("The input currency code must " +
+                        "have a length of 3 characters");
             }
             char char1 = currencyCode.charAt(0);
             char char2 = currencyCode.charAt(1);
@@ -336,7 +343,8 @@ public final class Currency implements Serializable {
             if (!found) {
                 OtherCurrencyEntry ocEntry = OtherCurrencyEntry.findEntry(currencyCode);
                 if (ocEntry == null) {
-                    throw new IllegalArgumentException();
+                    throw new IllegalArgumentException("The input currency code" +
+                            " is not a valid ISO 4217 code");
                 }
                 defaultFractionDigits = ocEntry.fraction;
                 numericCode = ocEntry.numericCode;
@@ -359,7 +367,7 @@ public final class Currency implements Serializable {
      * of the respective countries.
      * <p>
      * If the specified {@code locale} contains "cu" and/or "rg"
-     * <a href="./Locale.html#def_locale_extension">Unicode extensions</a>,
+     * {@linkplain Locale##def_locale_extension Unicode extensions},
      * the instance returned from this method reflects
      * the values specified with those extensions. If both "cu" and "rg" are
      * specified, the currency from the "cu" extension supersedes the implicit one
@@ -391,7 +399,8 @@ public final class Currency implements Serializable {
         String country = CalendarDataUtility.findRegionOverride(locale).getCountry();
 
         if (country == null || !country.matches("^[a-zA-Z]{2}$")) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("The country of the input locale" +
+                    " is not a valid ISO 3166 country code");
         }
 
         char char1 = country.charAt(0);
@@ -408,7 +417,8 @@ public final class Currency implements Serializable {
         } else {
             // special cases
             if (tableEntry == INVALID_COUNTRY_ENTRY) {
-                throw new IllegalArgumentException();
+                throw new IllegalArgumentException("The country of the input locale" +
+                        " is not a valid ISO 3166 country code");
             }
             if (tableEntry == COUNTRY_WITHOUT_CURRENCY_ENTRY) {
                 return null;
@@ -508,7 +518,7 @@ public final class Currency implements Serializable {
      * <p>
      * If the default {@link Locale.Category#DISPLAY DISPLAY} locale
      * contains "rg" (region override)
-     * <a href="./Locale.html#def_locale_extension">Unicode extension</a>,
+     * {@linkplain Locale##def_locale_extension Unicode extensions},
      * the symbol returned from this method reflects
      * the value specified with that extension.
      * <p>
@@ -530,7 +540,7 @@ public final class Currency implements Serializable {
      * symbol can be determined, the ISO 4217 currency code is returned.
      * <p>
      * If the specified {@code locale} contains "rg" (region override)
-     * <a href="./Locale.html#def_locale_extension">Unicode extension</a>,
+     * {@linkplain Locale##def_locale_extension Unicode extensions},
      * the symbol returned from this method reflects
      * the value specified with that extension.
      *
@@ -673,7 +683,8 @@ public final class Currency implements Serializable {
      */
     private static int getMainTableEntry(char char1, char char2) {
         if (char1 < 'A' || char1 > 'Z' || char2 < 'A' || char2 > 'Z') {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("The country code is not a " +
+                    "valid ISO 3166 code");
         }
         return mainTable[(char1 - 'A') * A_TO_Z + (char2 - 'A')];
     }
@@ -684,7 +695,8 @@ public final class Currency implements Serializable {
      */
     private static void setMainTableEntry(char char1, char char2, int entry) {
         if (char1 < 'A' || char1 > 'Z' || char2 < 'A' || char2 > 'Z') {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("The country code is not a " +
+                    "valid ISO 3166 code");
         }
         mainTable[(char1 - 'A') * A_TO_Z + (char2 - 'A')] = entry;
     }

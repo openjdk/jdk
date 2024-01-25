@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/relocator.hpp"
+#include "utilities/checkedCast.hpp"
 
 #define MAX_METHOD_LENGTH  65535
 
@@ -47,8 +48,6 @@ class ChangeItem : public ResourceObj {
    virtual bool handle_code_change(Relocator *r) = 0;
 
    // type info
-   virtual bool is_widen()      { return false; }
-   virtual bool is_jump_widen() { return false; }
    virtual bool is_switch_pad() { return false; }
 
    // accessors
@@ -73,8 +72,6 @@ class ChangeWiden : public ChangeItem {
   // Callback to do instruction
   bool handle_code_change(Relocator *r) { return r->handle_widen(bci(), _new_ilen, _inst_buffer); };
 
-  bool is_widen()              { return true; }
-
   void print()                 { tty->print_cr("ChangeWiden. bci: %d   New_ilen: %d", bci(), _new_ilen); }
 };
 
@@ -85,8 +82,6 @@ class ChangeJumpWiden : public ChangeItem {
 
   // Callback to do instruction
   bool handle_code_change(Relocator *r) { return r->handle_jump_widen(bci(), _delta); };
-
-  bool is_jump_widen()         { return true; }
 
   // If the bci matches, adjust the delta in the change jump request.
   bool adjust(int jump_bci, int delta) {
@@ -128,14 +123,14 @@ class ChangeSwitchPad : public ChangeItem {
 Relocator::Relocator(const methodHandle& m, RelocatorListener* listener) {
   set_method(m);
   set_code_length(method()->code_size());
-  set_code_array(NULL);
+  set_code_array(nullptr);
   // Allocate code array and copy bytecodes
   if (!expand_code_array(0)) {
     // Should have at least MAX_METHOD_LENGTH available or the verifier
     // would have failed.
     ShouldNotReachHere();
   }
-  set_compressed_line_number_table(NULL);
+  set_compressed_line_number_table(nullptr);
   set_compressed_line_number_table_size(0);
   _listener = listener;
 }
@@ -179,7 +174,7 @@ methodHandle Relocator::insert_space_at(int bci, int size, u_char inst_buffer[],
 
 
 bool Relocator::handle_code_changes() {
-  assert(_changes != NULL, "changes vector must be initialized");
+  assert(_changes != nullptr, "changes vector must be initialized");
 
   while (!_changes->is_empty()) {
     // Inv: everything is aligned.
@@ -301,7 +296,7 @@ void Relocator::change_jump(int bci, int offset, bool is_short, int break_bci, i
     if (is_short && ((new_delta > MAX_SHORT) || new_delta < MIN_SHORT)) {
       push_jump_widen(bci, delta, new_delta);
     } else if (is_short) {
-      short_at_put(offset, new_delta);
+      short_at_put(offset, checked_cast<short>(new_delta));
     } else {
       int_at_put(offset, new_delta);
     }
@@ -403,21 +398,34 @@ void Relocator::adjust_exception_table(int bci, int delta) {
   ExceptionTable table(_method());
   for (int index = 0; index < table.length(); index ++) {
     if (table.start_pc(index) > bci) {
-      table.set_start_pc(index, table.start_pc(index) + delta);
-      table.set_end_pc(index, table.end_pc(index) + delta);
+      table.set_start_pc(index, checked_cast<u2>(table.start_pc(index) + delta));
+      table.set_end_pc(index, checked_cast<u2>(table.end_pc(index) + delta));
     } else if (bci < table.end_pc(index)) {
-      table.set_end_pc(index, table.end_pc(index) + delta);
+      table.set_end_pc(index, checked_cast<u2>(table.end_pc(index) + delta));
     }
     if (table.handler_pc(index) > bci)
-      table.set_handler_pc(index, table.handler_pc(index) + delta);
+      table.set_handler_pc(index, checked_cast<u2>(table.handler_pc(index) + delta));
   }
 }
 
+static void print_linenumber_table(unsigned char* table) {
+  CompressedLineNumberReadStream stream(table);
+  tty->print_cr("-------------------------------------------------");
+  while (stream.read_pair()) {
+    tty->print_cr("   - line %d: %d", stream.line(), stream.bci());
+  }
+  tty->print_cr("-------------------------------------------------");
+}
 
 // The width of instruction at "bci" is changing by "delta".  Adjust the line number table.
 void Relocator::adjust_line_no_table(int bci, int delta) {
   if (method()->has_linenumber_table()) {
-    CompressedLineNumberReadStream  reader(method()->compressed_linenumber_table());
+    // if we already made adjustments then use the updated table
+    unsigned char *table = compressed_line_number_table();
+    if (table == nullptr) {
+      table = method()->compressed_linenumber_table();
+    }
+    CompressedLineNumberReadStream  reader(table);
     CompressedLineNumberWriteStream writer(64);  // plenty big for most line number tables
     while (reader.read_pair()) {
       int adjustment = (reader.bci() > bci) ? delta : 0;
@@ -426,6 +434,10 @@ void Relocator::adjust_line_no_table(int bci, int delta) {
     writer.write_terminator();
     set_compressed_line_number_table(writer.buffer());
     set_compressed_line_number_table_size(writer.position());
+    if (TraceRelocator) {
+      tty->print_cr("Adjusted line number table");
+      print_linenumber_table(compressed_line_number_table());
+    }
   }
 }
 
@@ -438,11 +450,11 @@ void Relocator::adjust_local_var_table(int bci, int delta) {
     for (int i = 0; i < localvariable_table_length; i++) {
       u2 current_bci = table[i].start_bci;
       if (current_bci > bci) {
-        table[i].start_bci = current_bci + delta;
+        table[i].start_bci = checked_cast<u2>(current_bci + delta);
       } else {
         u2 current_length = table[i].length;
         if (current_bci + current_length > bci) {
-          table[i].length = current_length + delta;
+          table[i].length = checked_cast<u2>(current_length + delta);
         }
       }
     }
@@ -453,7 +465,7 @@ void Relocator::adjust_local_var_table(int bci, int delta) {
 // the specified location
 static Array<u1>* insert_hole_at(ClassLoaderData* loader_data,
     size_t where, int hole_sz, Array<u1>* src) {
-  Thread* THREAD = Thread::current();
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
   Array<u1>* dst =
       MetadataFactory::new_array<u1>(loader_data, src->length() + hole_sz, 0, CHECK_NULL);
 
@@ -507,7 +519,7 @@ void Relocator::adjust_stack_map_table(int bci, int delta) {
 
           ClassLoaderData* loader_data = method()->method_holder()->class_loader_data();
           Array<u1>* new_data = insert_hole_at(loader_data, frame_offset + 1, 2, data);
-          if (new_data == NULL) {
+          if (new_data == nullptr) {
             return; // out-of-memory?
           }
           // Deallocate old data
@@ -520,10 +532,10 @@ void Relocator::adjust_stack_map_table(int bci, int delta) {
 
           // Now convert the frames in place
           if (frame->is_same_frame()) {
-            same_frame_extended::create_at(frame_addr, new_offset_delta);
+            same_frame_extended::create_at(frame_addr, checked_cast<u2>(new_offset_delta));
           } else {
             same_locals_1_stack_item_extended::create_at(
-              frame_addr, new_offset_delta, NULL);
+              frame_addr, new_offset_delta, nullptr);
             // the verification_info_type should already be at the right spot
           }
         }
@@ -538,20 +550,20 @@ void Relocator::adjust_stack_map_table(int bci, int delta) {
 
       for (int i = 0; i < number_of_types; ++i) {
         if (types->is_uninitialized() && types->bci() > bci) {
-          types->set_bci(types->bci() + delta);
+          types->set_bci(checked_cast<u2>(types->bci() + delta));
         }
         types = types->next();
       }
 
       // Full frame has stack values too
       full_frame* ff = frame->as_full_frame();
-      if (ff != NULL) {
+      if (ff != nullptr) {
         address eol = (address)types;
         number_of_types = ff->stack_slots(eol);
         types = ff->stack(eol);
         for (int i = 0; i < number_of_types; ++i) {
           if (types->is_uninitialized() && types->bci() > bci) {
-            types->set_bci(types->bci() + delta);
+            types->set_bci(checked_cast<u2>(types->bci() + delta));
           }
           types = types->next();
         }
@@ -580,7 +592,7 @@ bool Relocator::expand_code_array(int delta) {
   if (!new_code_array) return false;
 
   // Expanding current array
-  if (code_array() != NULL) {
+  if (code_array() != nullptr) {
     memcpy(new_code_array, code_array(), code_length());
   } else {
     // Initial copy. Copy directly from Method*
@@ -621,6 +633,7 @@ bool Relocator::relocate_code(int bci, int ilen, int delta) {
 
   memmove(addr_at(next_bci + delta), addr_at(next_bci), code_length() - next_bci);
   set_code_length(code_length() + delta);
+
   // Also adjust exception tables...
   adjust_exception_table(bci, delta);
   // Line number tables...
@@ -696,12 +709,12 @@ bool Relocator::handle_jump_widen(int bci, int delta) {
       if (!relocate_code(bci, 3, /*delta*/add_bci)) return false;
 
       // if bytecode points to goto_w instruction
-      short_at_put(bci + 1, ilen + goto_length);
+      short_at_put(bci + 1, checked_cast<short>(ilen + goto_length));
 
       int cbci = bci + ilen;
       // goto around
       code_at_put(cbci, Bytecodes::_goto);
-      short_at_put(cbci + 1, add_bci);
+      short_at_put(cbci + 1, checked_cast<short>(add_bci));
       // goto_w <wide delta>
       cbci = cbci + goto_length;
       code_at_put(cbci, Bytecodes::_goto_w);

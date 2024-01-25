@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,158 +23,157 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "jni.h"
 #include "jvm.h"
-#include "classfile/vmSymbols.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/jniHandles.inline.hpp"
+#include "prims/stackwalk.hpp"
+#include "runtime/deoptimization.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vframe.inline.hpp"
-#include "runtime/deoptimization.hpp"
-#include "prims/stackwalk.hpp"
 
+static bool is_in_scoped_access(JavaThread* jt, oop session) {
+  const int max_critical_stack_depth = 10;
+  int depth = 0;
+  for (vframeStream stream(jt); !stream.at_end(); stream.next()) {
+    Method* m = stream.method();
+    if (m->is_scoped()) {
+      StackValueCollection* locals = stream.asJavaVFrame()->locals();
+      for (int i = 0; i < locals->size(); i++) {
+        StackValue* var = locals->at(i);
+        if (var->type() == T_OBJECT) {
+          if (var->get_obj() == session) {
+            assert(depth < max_critical_stack_depth, "can't have more than %d critical frames", max_critical_stack_depth);
+            return true;
+          }
+        }
+      }
+      break;
+    }
+    depth++;
+#ifndef ASSERT
+    if (depth >= max_critical_stack_depth) {
+      break;
+    }
+#endif
+  }
 
-class CloseScopedMemoryFindOopClosure : public OopClosure {
-  oop _deopt;
-  bool _found;
+  return false;
+}
+
+class ScopedAsyncExceptionHandshake : public AsyncExceptionHandshake {
+  OopHandle _session;
 
 public:
-  CloseScopedMemoryFindOopClosure(jobject deopt) :
-      _deopt(JNIHandles::resolve(deopt)),
-      _found(false) {}
+  ScopedAsyncExceptionHandshake(OopHandle& session, OopHandle& error)
+    : AsyncExceptionHandshake(error),
+      _session(session) {}
 
-  template <typename T>
-  void do_oop_work(T* p) {
-    if (_found) {
-      return;
+  ~ScopedAsyncExceptionHandshake() {
+    _session.release(Universe::vm_global());
+  }
+
+  virtual void do_thread(Thread* thread) {
+    JavaThread* jt = JavaThread::cast(thread);
+    ResourceMark rm;
+    if (is_in_scoped_access(jt, _session.resolve())) {
+      // Throw exception to unwind out from the scoped access
+      AsyncExceptionHandshake::do_thread(thread);
     }
-    if (RawAccess<>::oop_load(p) == _deopt) {
-      _found = true;
-    }
-  }
-
-  virtual void do_oop(oop* p) {
-    do_oop_work(p);
-  }
-
-  virtual void do_oop(narrowOop* p) {
-    do_oop_work(p);
-  }
-
-  bool found() {
-    return _found;
   }
 };
 
 class CloseScopedMemoryClosure : public HandshakeClosure {
-  jobject _deopt;
-  jobject _exception;
+  jobject _session;
+  jobject _error;
 
 public:
-  jboolean _found;
-
-  CloseScopedMemoryClosure(jobject deopt, jobject exception)
+  CloseScopedMemoryClosure(jobject session, jobject error)
     : HandshakeClosure("CloseScopedMemory")
-    , _deopt(deopt)
-    , _exception(exception)
-    , _found(false) {}
+    , _session(session)
+    , _error(error) {}
 
   void do_thread(Thread* thread) {
-
-    JavaThread* jt = (JavaThread*)thread;
+    JavaThread* jt = JavaThread::cast(thread);
 
     if (!jt->has_last_Java_frame()) {
+      // No frames; not in a scoped memory access
       return;
     }
 
     frame last_frame = jt->last_frame();
-    RegisterMap register_map(jt, true);
+    RegisterMap register_map(jt,
+                             RegisterMap::UpdateMap::include,
+                             RegisterMap::ProcessFrames::include,
+                             RegisterMap::WalkContinuation::skip);
 
     if (last_frame.is_safepoint_blob_frame()) {
       last_frame = last_frame.sender(&register_map);
     }
 
     ResourceMark rm;
-    if (_deopt != NULL && last_frame.is_compiled_frame() && last_frame.can_be_deoptimized()) {
-      CloseScopedMemoryFindOopClosure cl(_deopt);
-      CompiledMethod* cm = last_frame.cb()->as_compiled_method();
-
-      /* FIXME: this doesn't work if reachability fences are violated by C2
-      last_frame.oops_do(&cl, NULL, &register_map);
-      if (cl.found()) {
-           //Found the deopt oop in a compiled method; deoptimize.
-           Deoptimization::deoptimize(jt, last_frame);
-      }
-      so... we unconditionally deoptimize, for now: */
+    if (last_frame.is_compiled_frame() && last_frame.can_be_deoptimized()) {
+      // FIXME: we would like to conditionally deoptimize only if the corresponding
+      // _session is reachable from the frame, but reachabilityFence doesn't currently
+      // work the way it should. Therefore we deopt unconditionally for now.
       Deoptimization::deoptimize(jt, last_frame);
     }
 
-    const int max_critical_stack_depth = 10;
-    int depth = 0;
-    for (vframeStream stream(jt); !stream.at_end(); stream.next()) {
-      Method* m = stream.method();
-      if (m->is_scoped()) {
-        StackValueCollection* locals = stream.asJavaVFrame()->locals();
-        for (int i = 0; i < locals->size(); i++) {
-          StackValue* var = locals->at(i);
-          if (var->type() == T_OBJECT) {
-            if (var->get_obj() == JNIHandles::resolve(_deopt)) {
-              assert(depth < max_critical_stack_depth, "can't have more than %d critical frames", max_critical_stack_depth);
-              _found = true;
-              return;
-            }
-          }
-        }
-        break;
-      }
-      depth++;
-#ifndef ASSERT
-      if (depth >= max_critical_stack_depth) {
-        break;
-      }
-#endif
+    if (jt->has_async_exception_condition()) {
+      // Target thread just about to throw an async exception using async handshakes,
+      // we will then unwind out from the scoped memory access.
+      return;
+    }
+
+    if (is_in_scoped_access(jt, JNIHandles::resolve(_session))) {
+      // We have found that the target thread is inside of a scoped access.
+      // An asynchronous handshake is sent to the target thread, telling it
+      // to throw an exception, which will unwind the target thread out from
+      // the scoped access.
+      OopHandle session(Universe::vm_global(), JNIHandles::resolve(_session));
+      OopHandle error(Universe::vm_global(), JNIHandles::resolve(_error));
+      jt->install_async_exception(new ScopedAsyncExceptionHandshake(session, error));
     }
   }
 };
 
 /*
- * This function issues a global handshake operation with all
- * Java threads. This is useful for implementing asymmetric
- * dekker synchronization schemes, where expensive synchronization
- * in performance sensitive common paths, may be shifted to
- * a less common slow path instead.
- * Top frames containg obj will be deoptimized.
+ * This function performs a thread-local handshake against all threads running at the time
+ * the given session (deopt) was closed. If the handshake for a given thread is processed while
+ * one or more threads is found inside a scoped method (that is, a method inside the ScopedMemoryAccess
+ * class annotated with the '@Scoped' annotation), and whose local variables mention the session being
+ * closed (deopt), this method returns false, signalling that the session cannot be closed safely.
  */
-JVM_ENTRY(jboolean, ScopedMemoryAccess_closeScope(JNIEnv *env, jobject receiver, jobject deopt, jobject exception))
-  CloseScopedMemoryClosure cl(deopt, exception);
+JVM_ENTRY(void, ScopedMemoryAccess_closeScope(JNIEnv *env, jobject receiver, jobject session, jobject error))
+  CloseScopedMemoryClosure cl(session, error);
   Handshake::execute(&cl);
-  return !cl._found;
 JVM_END
 
 /// JVM_RegisterUnsafeMethods
 
-#define PKG "Ljdk/internal/misc/"
+#define PKG_MISC "Ljdk/internal/misc/"
+#define PKG_FOREIGN "Ljdk/internal/foreign/"
 
-#define MEMACCESS "ScopedMemoryAccess"
-#define SCOPE PKG MEMACCESS "$Scope;"
-#define SCOPED_ERR PKG MEMACCESS "$Scope$ScopedAccessError;"
+#define SCOPED_SESSION PKG_FOREIGN "MemorySessionImpl;"
+#define SCOPED_ERROR PKG_MISC "ScopedMemoryAccess$ScopedAccessError;"
 
 #define CC (char*)  /*cast a literal from (const char*)*/
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &f)
 
 static JNINativeMethod jdk_internal_misc_ScopedMemoryAccess_methods[] = {
-    {CC "closeScope0",   CC "(" SCOPE SCOPED_ERR ")Z",           FN_PTR(ScopedMemoryAccess_closeScope)},
+  {CC "closeScope0", CC "(" SCOPED_SESSION SCOPED_ERROR ")V", FN_PTR(ScopedMemoryAccess_closeScope)},
 };
 
 #undef CC
 #undef FN_PTR
 
-#undef PKG
-#undef MEMACCESS
-#undef SCOPE
-#undef SCOPED_EXC
+#undef PKG_MISC
+#undef PKG_FOREIGN
+#undef SCOPED_SESSION
+#undef SCOPED_ERROR
 
 // This function is exported, used by NativeLookup.
 

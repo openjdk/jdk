@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@ package com.sun.crypto.provider;
 
 import java.security.*;
 import java.security.spec.*;
+import java.util.Arrays;
 import javax.crypto.*;
-import javax.crypto.spec.*;
 import javax.crypto.BadPaddingException;
 
 /**
@@ -51,7 +51,7 @@ public final class DESCipher extends CipherSpi {
     /*
      * internal CipherCore object which does the real work.
      */
-    private CipherCore core = null;
+    private final CipherCore core;
 
     /**
      * Creates an instance of DES cipher with default ECB mode and
@@ -369,6 +369,7 @@ public final class DESCipher extends CipherSpi {
      */
     protected int engineGetKeySize(Key key) throws InvalidKeyException {
         byte[] encoded = key.getEncoded();
+        Arrays.fill(encoded, (byte)0);
         if (encoded.length != 8) {
             throw new InvalidKeyException("Invalid key length: " +
                                           encoded.length + " bytes");

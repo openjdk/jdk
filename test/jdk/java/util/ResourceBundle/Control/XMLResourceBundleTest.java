@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ public class XMLResourceBundleTest {
                        return bundle;
                    }
                };
-        ResourceBundle rb = ResourceBundle.getBundle("XmlRB", new Locale(""), xmlControl);
+        ResourceBundle rb = ResourceBundle.getBundle("XmlRB", Locale.ROOT, xmlControl);
         String type = rb.getString("type");
         if (!type.equals("XML")) {
             throw new RuntimeException("Root Locale: type: got " + type

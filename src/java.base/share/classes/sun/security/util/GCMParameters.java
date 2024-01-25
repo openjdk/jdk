@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,6 @@ import java.security.AlgorithmParametersSpi;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
 import javax.crypto.spec.GCMParameterSpec;
-import sun.security.util.HexDumpEncoder;
-import sun.security.util.*;
 
 /**
  * This class implements the parameter set used with
@@ -60,11 +58,10 @@ public final class GCMParameters extends AlgorithmParametersSpi {
     protected void engineInit(AlgorithmParameterSpec paramSpec)
         throws InvalidParameterSpecException {
 
-        if (!(paramSpec instanceof GCMParameterSpec)) {
+        if (!(paramSpec instanceof GCMParameterSpec gps)) {
             throw new InvalidParameterSpecException
                 ("Inappropriate parameter specification");
         }
-        GCMParameterSpec gps = (GCMParameterSpec) paramSpec;
         // need to convert from bits to bytes for ASN.1 encoding
         this.tLen = gps.getTLen()/8;
         if (this.tLen < 12 || this.tLen > 16 ) {
@@ -111,7 +108,7 @@ public final class GCMParameters extends AlgorithmParametersSpi {
             T engineGetParameterSpec(Class<T> paramSpec)
         throws InvalidParameterSpecException {
 
-        if (GCMParameterSpec.class.isAssignableFrom(paramSpec)) {
+        if (paramSpec.isAssignableFrom(GCMParameterSpec.class)) {
             return paramSpec.cast(new GCMParameterSpec(tLen * 8, iv));
         } else {
             throw new InvalidParameterSpecException
@@ -143,11 +140,9 @@ public final class GCMParameters extends AlgorithmParametersSpi {
     protected String engineToString() {
         String LINE_SEP = System.lineSeparator();
         HexDumpEncoder encoder = new HexDumpEncoder();
-        StringBuilder sb
-            = new StringBuilder(LINE_SEP + "    iv:" + LINE_SEP + "["
-                + encoder.encodeBuffer(iv) + "]");
 
-        sb.append(LINE_SEP + "tLen(bits):" + LINE_SEP + tLen*8 + LINE_SEP);
-        return sb.toString();
+        return LINE_SEP + "    iv:" + LINE_SEP + "["
+                + encoder.encodeBuffer(iv) + "]" + LINE_SEP + "tLen(bits):"
+                + LINE_SEP + tLen * 8 + LINE_SEP;
     }
 }

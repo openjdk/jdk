@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,10 @@ Java_sun_nio_ch_WindowsAsynchronousServerSocketChannelImpl_initIDs(JNIEnv* env, 
     DWORD dwBytes;
 
     s = socket(AF_INET, SOCK_STREAM, 0);
+    if (s == INVALID_SOCKET && WSAGetLastError() == WSAEAFNOSUPPORT) {
+        /* IPv4 unavailable... try IPv6 instead */
+        s = socket(AF_INET6, SOCK_STREAM, 0);
+    }
     if (s == INVALID_SOCKET) {
         JNU_ThrowIOExceptionWithLastError(env, "socket failed");
         return;
@@ -127,7 +131,9 @@ Java_sun_nio_ch_WindowsAsynchronousServerSocketChannelImpl_updateAcceptContext(J
     SOCKET s1 = (SOCKET)jlong_to_ptr(listenSocket);
     SOCKET s2 = (SOCKET)jlong_to_ptr(acceptSocket);
 
-    setsockopt(s2, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT, (char *)&s1, sizeof(s1));
+    if (setsockopt(s2, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT, (char *)&s1, sizeof(s1)) == SOCKET_ERROR) {
+        JNU_ThrowIOExceptionWithLastError(env, "setsockopt failed");
+    }
 }
 
 

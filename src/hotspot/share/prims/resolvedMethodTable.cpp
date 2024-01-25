@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageSet.hpp"
@@ -53,7 +54,8 @@ static const size_t GROW_HINT = 32;
 static const size_t ResolvedMethodTableSizeLog = 10;
 
 unsigned int method_hash(const Method* method) {
-  unsigned int hash = method->klass_name()->identity_hash();
+  unsigned int hash = method->method_holder()->class_loader_data()->identity_hash();
+  hash = (hash * 31) ^ method->klass_name()->identity_hash();
   hash = (hash * 31) ^ method->name()->identity_hash();
   hash = (hash * 31) ^ method->signature()->identity_hash();
   return hash;
@@ -69,7 +71,7 @@ class ResolvedMethodTableConfig : public AllStatic {
 
   static uintx get_hash(Value const& value, bool* is_dead) {
     oop val_oop = value.peek();
-    if (val_oop == NULL) {
+    if (val_oop == nullptr) {
       *is_dead = true;
       return 0;
     }
@@ -79,18 +81,18 @@ class ResolvedMethodTableConfig : public AllStatic {
   }
 
   // We use default allocation/deallocation but counted
-  static void* allocate_node(size_t size, Value const& value) {
+  static void* allocate_node(void* context, size_t size, Value const& value) {
     ResolvedMethodTable::item_added();
     return AllocateHeap(size, mtClass);
   }
-  static void free_node(void* memory, Value const& value) {
+  static void free_node(void* context, void* memory, Value& value) {
     value.release(ResolvedMethodTable::_oop_storage);
     FreeHeap(memory);
     ResolvedMethodTable::item_removed();
   }
 };
 
-static ResolvedMethodTableHash* _local_table           = NULL;
+static ResolvedMethodTableHash* _local_table           = nullptr;
 static size_t                   _current_size          = (size_t)1 << ResolvedMethodTableSizeLog;
 
 volatile bool            ResolvedMethodTable::_has_work              = false;
@@ -102,7 +104,7 @@ void ResolvedMethodTable::create_table() {
   _local_table  = new ResolvedMethodTableHash(ResolvedMethodTableSizeLog, END_SIZE, GROW_HINT);
   log_trace(membername, table)("Start size: " SIZE_FORMAT " (" SIZE_FORMAT ")",
                                _current_size, ResolvedMethodTableSizeLog);
-  _oop_storage = OopStorageSet::create_weak("ResolvedMethodTable Weak");
+  _oop_storage = OopStorageSet::create_weak("ResolvedMethodTable Weak", mtClass);
   _oop_storage->register_num_dead_callback(&gc_notification);
 }
 
@@ -124,11 +126,9 @@ class ResolvedMethodTableLookup : StackObj {
   uintx get_hash() const {
     return _hash;
   }
-  bool equals(WeakHandle* value, bool* is_dead) {
+  bool equals(WeakHandle* value) {
     oop val_oop = value->peek();
-    if (val_oop == NULL) {
-      // dead oop, mark this hash dead for cleaning
-      *is_dead = true;
+    if (val_oop == nullptr) {
       return false;
     }
     bool equals = _method == java_lang_invoke_ResolvedMethodName::vmtarget(val_oop);
@@ -138,6 +138,10 @@ class ResolvedMethodTableLookup : StackObj {
     // Need to resolve weak handle and Handleize through possible safepoint.
     _found = Handle(_thread, value->resolve());
     return true;
+  }
+  bool is_dead(WeakHandle* value) {
+    oop val_oop = value->peek();
+    return val_oop == nullptr;
   }
 };
 
@@ -150,7 +154,7 @@ public:
   ResolvedMethodGet(Thread* thread, const Method* method) : _thread(thread), _method(method) {}
   void operator()(WeakHandle* val) {
     oop result = val->resolve();
-    assert(result != NULL, "Result should be reachable");
+    assert(result != nullptr, "Result should be reachable");
     _return = Handle(_thread, result);
     log_get();
   }
@@ -303,7 +307,7 @@ struct ResolvedMethodTableDeleteCheck : StackObj {
   bool operator()(WeakHandle* val) {
     ++_item;
     oop tmp = val->peek();
-    if (tmp == NULL) {
+    if (tmp == nullptr) {
       ++_count;
       return true;
     } else {
@@ -340,7 +344,7 @@ public:
   AdjustMethodEntries(bool* trace_name_printed) : _trace_name_printed(trace_name_printed) {};
   bool operator()(WeakHandle* entry) {
     oop mem_name = entry->peek();
-    if (mem_name == NULL) {
+    if (mem_name == nullptr) {
       // Removed
       return true;
     }
@@ -382,7 +386,7 @@ class VerifyResolvedMethod : StackObj {
  public:
   bool operator()(WeakHandle* val) {
     oop obj = val->peek();
-    if (obj != NULL) {
+    if (obj != nullptr) {
       Method* method = (Method*)java_lang_invoke_ResolvedMethodName::vmtarget(obj);
       guarantee(method->is_method(), "Must be");
       guarantee(!method->is_old(), "Must be");

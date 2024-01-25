@@ -72,7 +72,6 @@ public:
   void decrease_committed(size_t word_size)   { _cnt.decrement_by(word_size); }
 
   size_t committed_words() const              { return _cnt.get(); }
-  size_t cap() const                          { return _cap; }
 
   // Returns the global metaspace commit counter
   static CommitLimiter* globalLimiter();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,9 +53,6 @@ import javax.tools.Diagnostic;
  * general {@link javax.annotation.processing.Processor Processor}
  * contract for that method is obeyed.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @since 1.6
  */
 public abstract class AbstractProcessor implements Processor {
@@ -71,6 +68,9 @@ public abstract class AbstractProcessor implements Processor {
     protected AbstractProcessor() {}
 
     /**
+     * Returns the options recognized by this processor.
+     *
+     * @implSpec
      * If the processor class is annotated with {@link
      * SupportedOptions}, return an unmodifiable set with the same set
      * of strings as the annotation.  If the class is not so
@@ -79,6 +79,7 @@ public abstract class AbstractProcessor implements Processor {
      * @return the options recognized by this processor, or an empty
      * set if none
      */
+    @Override
     public Set<String> getSupportedOptions() {
         SupportedOptions so = this.getClass().getAnnotation(SupportedOptions.class);
         return (so == null) ?
@@ -87,6 +88,9 @@ public abstract class AbstractProcessor implements Processor {
     }
 
     /**
+     * Returns the names of the annotation interfaces supported by this processor.
+     *
+     * @implSpec
      * If the processor class is annotated with {@link
      * SupportedAnnotationTypes}, return an unmodifiable set with the
      * same set of strings as the annotation.  If the class is not so
@@ -98,9 +102,9 @@ public abstract class AbstractProcessor implements Processor {
      * then any leading {@linkplain Processor#getSupportedAnnotationTypes
      * module prefixes} are stripped from the names.
      *
-     * @return the names of the annotation interfaces supported by
-     * this processor, or an empty set if none
+     * @return {@inheritDoc Processor}
      */
+    @Override
     public Set<String> getSupportedAnnotationTypes() {
             SupportedAnnotationTypes sat = this.getClass().getAnnotation(SupportedAnnotationTypes.class);
             boolean initialized = isInitialized();
@@ -116,18 +120,22 @@ public abstract class AbstractProcessor implements Processor {
                         initialized &&
                         processingEnv.getSourceVersion().compareTo(SourceVersion.RELEASE_8) <= 0;
                 return arrayToSet(sat.value(), stripModulePrefixes,
-                                  "annotation type", "@SupportedAnnotationTypes");
+                                  "annotation interface", "@SupportedAnnotationTypes");
             }
         }
 
     /**
+     * {@inheritDoc Processor}
+     *
+     * @implSpec
      * If the processor class is annotated with {@link
      * SupportedSourceVersion}, return the source version in the
      * annotation.  If the class is not so annotated, {@link
      * SourceVersion#RELEASE_6} is returned.
      *
-     * @return the latest source version supported by this processor
+     * @return {@inheritDoc Processor}
      */
+    @Override
     public SourceVersion getSupportedSourceVersion() {
         SupportedSourceVersion ssv = this.getClass().getAnnotation(SupportedSourceVersion.class);
         SourceVersion sv = null;
@@ -145,6 +153,9 @@ public abstract class AbstractProcessor implements Processor {
 
 
     /**
+     * {@inheritDoc Processor}
+     *
+     * @implSpec
      * Initializes the processor with the processing environment by
      * setting the {@code processingEnv} field to the value of the
      * {@code processingEnv} argument.  An {@code
@@ -165,19 +176,23 @@ public abstract class AbstractProcessor implements Processor {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc Processor}
+     * @param annotations {@inheritDoc Processor}
+     * @param roundEnv {@inheritDoc Processor}
      */
+    @Override
     public abstract boolean process(Set<? extends TypeElement> annotations,
                                     RoundEnvironment roundEnv);
 
     /**
      * {@return an empty iterable of completions}
      *
-     * @param element {@inheritDoc}
-     * @param annotation {@inheritDoc}
-     * @param member {@inheritDoc}
-     * @param userText {@inheritDoc}
+     * @param element {@inheritDoc Processor}
+     * @param annotation {@inheritDoc Processor}
+     * @param member {@inheritDoc Processor}
+     * @param userText {@inheritDoc Processor}
      */
+    @Override
     public Iterable<? extends Completion> getCompletions(Element element,
                                                          AnnotationMirror annotation,
                                                          ExecutableElement member,

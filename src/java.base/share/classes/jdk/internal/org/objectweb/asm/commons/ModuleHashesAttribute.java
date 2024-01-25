@@ -56,6 +56,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package jdk.internal.org.objectweb.asm.commons;
 
 import java.util.ArrayList;
@@ -133,7 +134,7 @@ public final class ModuleHashesAttribute extends Attribute {
             currentOffset += 2;
             byte[] hash = new byte[hashLength];
             for (int j = 0; j < hashLength; ++j) {
-                hash[j] = (byte) (classReader.readByte(currentOffset) & 0xFF);
+                hash[j] = (byte) classReader.readByte(currentOffset);
                 currentOffset += 1;
             }
             hashList.add(hash);
@@ -167,3 +168,4 @@ public final class ModuleHashesAttribute extends Attribute {
         return byteVector;
     }
 }
+

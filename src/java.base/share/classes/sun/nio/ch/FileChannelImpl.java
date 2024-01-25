@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,17 @@
 
 package sun.nio.ch;
 
+import java.io.Closeable;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.Arena;
 import java.lang.ref.Cleaner.Cleanable;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.AsynchronousCloseException;
+import java.nio.channels.Channel;
 import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
@@ -46,6 +50,9 @@ import java.util.Objects;
 
 import jdk.internal.access.JavaIOFileDescriptorAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.foreign.MemorySessionImpl;
+import jdk.internal.foreign.SegmentFactories;
+import jdk.internal.misc.Blocker;
 import jdk.internal.misc.ExtendedMapMode;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
@@ -58,15 +65,12 @@ import jdk.internal.access.foreign.UnmapperProxy;
 public class FileChannelImpl
     extends FileChannel
 {
-    // Memory allocation size for mapping buffers
-    private static final long allocationGranularity;
-
     // Access to FileDescriptor internals
     private static final JavaIOFileDescriptorAccess fdAccess =
         SharedSecrets.getJavaIOFileDescriptorAccess();
 
     // Used to make native read and write calls
-    private final FileDispatcher nd;
+    private static final FileDispatcher nd = new FileDispatcherImpl();
 
     // File descriptor
     private final FileDescriptor fd;
@@ -76,7 +80,7 @@ public class FileChannelImpl
     private final boolean readable;
 
     // Required to prevent finalization of creating stream (immutable)
-    private final Object parent;
+    private final Closeable parent;
 
     // The path of the referenced file
     // (null if the parent stream is created with a file descriptor)
@@ -118,15 +122,14 @@ public class FileChannelImpl
     }
 
     private FileChannelImpl(FileDescriptor fd, String path, boolean readable,
-                            boolean writable, boolean direct, Object parent)
+                            boolean writable, boolean direct, Closeable parent)
     {
         this.fd = fd;
+        this.path = path;
         this.readable = readable;
         this.writable = writable;
-        this.parent = parent;
-        this.path = path;
         this.direct = direct;
-        this.nd = new FileDispatcherImpl();
+        this.parent = parent;
         if (direct) {
             assert path != null;
             this.alignment = nd.setDirectIO(fd, path);
@@ -142,11 +145,12 @@ public class FileChannelImpl
             CleanerFactory.cleaner().register(this, new Closer(fd));
     }
 
-    // Used by FileInputStream.getChannel(), FileOutputStream.getChannel
-    // and RandomAccessFile.getChannel()
+
+    // Used by FileInputStream::getChannel, FileOutputStream::getChannel,
+    // and RandomAccessFile::getChannel
     public static FileChannel open(FileDescriptor fd, String path,
                                    boolean readable, boolean writable,
-                                   boolean direct, Object parent)
+                                   boolean direct, Closeable parent)
     {
         return new FileChannelImpl(fd, path, readable, writable, direct, parent);
     }
@@ -190,27 +194,27 @@ public class FileChannelImpl
         threads.signalAndWait();
 
         if (parent != null) {
-
+            //
             // Close the fd via the parent stream's close method.  The parent
             // will reinvoke our close method, which is defined in the
             // superclass AbstractInterruptibleChannel, but the isOpen logic in
             // that method will prevent this method from being reinvoked.
             //
-            ((java.io.Closeable)parent).close();
-        } else if (closer != null) {
+            parent.close();
+        } else { // parent == null hence closer != null
+            //
             // Perform the cleaning action so it is not redone when
             // this channel becomes phantom reachable.
+            //
             try {
                 closer.clean();
             } catch (UncheckedIOException uioe) {
                 throw uioe.getCause();
             }
-        } else {
-            fdAccess.close(fd);
         }
-
     }
 
+    @Override
     public int read(ByteBuffer dst) throws IOException {
         ensureOpen();
         if (!readable)
@@ -226,7 +230,12 @@ public class FileChannelImpl
                 if (!isOpen())
                     return 0;
                 do {
-                    n = IOUtil.read(fd, dst, -1, direct, alignment, nd);
+                    long comp = Blocker.begin();
+                    try {
+                        n = IOUtil.read(fd, dst, -1, direct, alignment, nd);
+                    } finally {
+                        Blocker.end(comp);
+                    }
                 } while ((n == IOStatus.INTERRUPTED) && isOpen());
                 return IOStatus.normalize(n);
             } finally {
@@ -237,6 +246,7 @@ public class FileChannelImpl
         }
     }
 
+    @Override
     public long read(ByteBuffer[] dsts, int offset, int length)
         throws IOException
     {
@@ -255,8 +265,13 @@ public class FileChannelImpl
                 if (!isOpen())
                     return 0;
                 do {
-                    n = IOUtil.read(fd, dsts, offset, length,
-                            direct, alignment, nd);
+                    long comp = Blocker.begin();
+                    try {
+                        n = IOUtil.read(fd, dsts, offset, length, direct, alignment, nd);
+                    } finally {
+                        Blocker.end(comp);
+                    }
+
                 } while ((n == IOStatus.INTERRUPTED) && isOpen());
                 return IOStatus.normalize(n);
             } finally {
@@ -267,6 +282,7 @@ public class FileChannelImpl
         }
     }
 
+    @Override
     public int write(ByteBuffer src) throws IOException {
         ensureOpen();
         if (!writable)
@@ -282,7 +298,13 @@ public class FileChannelImpl
                 if (!isOpen())
                     return 0;
                 do {
-                    n = IOUtil.write(fd, src, -1, direct, alignment, nd);
+                    long comp = Blocker.begin();
+                    try {
+                        n = IOUtil.write(fd, src, -1, direct, alignment, nd);
+                    } finally {
+                        Blocker.end(comp);
+                    }
+
                 } while ((n == IOStatus.INTERRUPTED) && isOpen());
                 return IOStatus.normalize(n);
             } finally {
@@ -293,6 +315,7 @@ public class FileChannelImpl
         }
     }
 
+    @Override
     public long write(ByteBuffer[] srcs, int offset, int length)
         throws IOException
     {
@@ -311,8 +334,12 @@ public class FileChannelImpl
                 if (!isOpen())
                     return 0;
                 do {
-                    n = IOUtil.write(fd, srcs, offset, length,
-                            direct, alignment, nd);
+                    long comp = Blocker.begin();
+                    try {
+                        n = IOUtil.write(fd, srcs, offset, length, direct, alignment, nd);
+                    } finally {
+                        Blocker.end(comp);
+                    }
                 } while ((n == IOStatus.INTERRUPTED) && isOpen());
                 return IOStatus.normalize(n);
             } finally {
@@ -325,6 +352,7 @@ public class FileChannelImpl
 
     // -- Other operations --
 
+    @Override
     public long position() throws IOException {
         ensureOpen();
         synchronized (positionLock) {
@@ -337,8 +365,13 @@ public class FileChannelImpl
                     return 0;
                 boolean append = fdAccess.getAppend(fd);
                 do {
-                    // in append-mode then position is advanced to end before writing
-                    p = (append) ? nd.size(fd) : nd.seek(fd, -1);
+                    long comp = Blocker.begin();
+                    try {
+                        // in append-mode then position is advanced to end before writing
+                        p = (append) ? nd.size(fd) : nd.seek(fd, -1);
+                    } finally {
+                        Blocker.end(comp);
+                    }
                 } while ((p == IOStatus.INTERRUPTED) && isOpen());
                 return IOStatus.normalize(p);
             } finally {
@@ -349,6 +382,7 @@ public class FileChannelImpl
         }
     }
 
+    @Override
     public FileChannel position(long newPosition) throws IOException {
         ensureOpen();
         if (newPosition < 0)
@@ -362,7 +396,12 @@ public class FileChannelImpl
                 if (!isOpen())
                     return null;
                 do {
-                    p = nd.seek(fd, newPosition);
+                    long comp = Blocker.begin();
+                    try {
+                        p = nd.seek(fd, newPosition);
+                    } finally {
+                        Blocker.end(comp);
+                    }
                 } while ((p == IOStatus.INTERRUPTED) && isOpen());
                 return this;
             } finally {
@@ -373,6 +412,7 @@ public class FileChannelImpl
         }
     }
 
+    @Override
     public long size() throws IOException {
         ensureOpen();
         synchronized (positionLock) {
@@ -384,7 +424,12 @@ public class FileChannelImpl
                 if (!isOpen())
                     return -1;
                 do {
-                    s = nd.size(fd);
+                    long comp = Blocker.begin();
+                    try {
+                        s = nd.size(fd);
+                    } finally {
+                        Blocker.end(comp);
+                    }
                 } while ((s == IOStatus.INTERRUPTED) && isOpen());
                 return IOStatus.normalize(s);
             } finally {
@@ -395,6 +440,7 @@ public class FileChannelImpl
         }
     }
 
+    @Override
     public FileChannel truncate(long newSize) throws IOException {
         ensureOpen();
         if (newSize < 0)
@@ -415,14 +461,24 @@ public class FileChannelImpl
                 // get current size
                 long size;
                 do {
-                    size = nd.size(fd);
+                    long comp = Blocker.begin();
+                    try {
+                        size = nd.size(fd);
+                    } finally {
+                        Blocker.end(comp);
+                    }
                 } while ((size == IOStatus.INTERRUPTED) && isOpen());
                 if (!isOpen())
                     return null;
 
                 // get current position
                 do {
-                    p = nd.seek(fd, -1);
+                    long comp = Blocker.begin();
+                    try {
+                        p = nd.seek(fd, -1);
+                    } finally {
+                        Blocker.end(comp);
+                    }
                 } while ((p == IOStatus.INTERRUPTED) && isOpen());
                 if (!isOpen())
                     return null;
@@ -431,7 +487,12 @@ public class FileChannelImpl
                 // truncate file if given size is less than the current size
                 if (newSize < size) {
                     do {
-                        rv = nd.truncate(fd, newSize);
+                        long comp = Blocker.begin();
+                        try {
+                            rv = nd.truncate(fd, newSize);
+                        } finally {
+                            Blocker.end(comp);
+                        }
                     } while ((rv == IOStatus.INTERRUPTED) && isOpen());
                     if (!isOpen())
                         return null;
@@ -441,7 +502,12 @@ public class FileChannelImpl
                 if (p > newSize)
                     p = newSize;
                 do {
-                    rp = nd.seek(fd, p);
+                    long comp = Blocker.begin();
+                    try {
+                        rp = nd.seek(fd, p);
+                    } finally {
+                        Blocker.end(comp);
+                    }
                 } while ((rp == IOStatus.INTERRUPTED) && isOpen());
                 return this;
             } finally {
@@ -452,6 +518,7 @@ public class FileChannelImpl
         }
     }
 
+    @Override
     public void force(boolean metaData) throws IOException {
         ensureOpen();
         int rv = -1;
@@ -462,7 +529,12 @@ public class FileChannelImpl
             if (!isOpen())
                 return;
             do {
-                rv = nd.force(fd, metaData);
+                long comp = Blocker.begin();
+                try {
+                    rv = nd.force(fd, metaData);
+                } finally {
+                    Blocker.end(comp);
+                }
             } while ((rv == IOStatus.INTERRUPTED) && isOpen());
         } finally {
             threads.remove(ti);
@@ -471,125 +543,244 @@ public class FileChannelImpl
         }
     }
 
-    // Assume at first that the underlying kernel supports sendfile();
-    // set this to false if we find out later that it doesn't
+    // Assume at first that the underlying kernel supports sendfile/equivalent;
+    // set this to true if we find out later that it doesn't
     //
-    private static volatile boolean transferSupported = true;
+    private static volatile boolean transferToDirectNotSupported;
 
-    // Assume that the underlying kernel sendfile() will work if the target
-    // fd is a pipe; set this to false if we find out later that it doesn't
+    // Assume at first that the underlying kernel supports copy_file_range/equivalent;
+    // set this to true if we find out later that it doesn't
     //
-    private static volatile boolean pipeSupported = true;
+    private static volatile boolean transferFromDirectNotSupported;
 
-    // Assume that the underlying kernel sendfile() will work if the target
-    // fd is a file; set this to false if we find out later that it doesn't
-    //
-    private static volatile boolean fileSupported = true;
-
-    private long transferToDirectlyInternal(long position, int icount,
-                                            WritableByteChannel target,
-                                            FileDescriptor targetFD)
-        throws IOException
-    {
-        assert !nd.transferToDirectlyNeedsPositionLock() ||
-               Thread.holdsLock(positionLock);
-
-        long n = -1;
-        int ti = -1;
-        try {
-            beginBlocking();
-            ti = threads.add();
-            if (!isOpen())
-                return -1;
-            do {
-                n = transferTo0(fd, position, icount, targetFD);
-            } while ((n == IOStatus.INTERRUPTED) && isOpen());
-            if (n == IOStatus.UNSUPPORTED_CASE) {
-                if (target instanceof SinkChannelImpl)
-                    pipeSupported = false;
-                if (target instanceof FileChannelImpl)
-                    fileSupported = false;
-                return IOStatus.UNSUPPORTED_CASE;
-            }
-            if (n == IOStatus.UNSUPPORTED) {
-                // Don't bother trying again
-                transferSupported = false;
-                return IOStatus.UNSUPPORTED;
-            }
-            return IOStatus.normalize(n);
-        } finally {
+    /**
+     * Marks the beginning of a transfer to or from this channel.
+     * @throws ClosedChannelException if channel is closed
+     */
+    private int beforeTransfer() throws ClosedChannelException {
+        int ti = threads.add();
+        if (isOpen()) {
+            return ti;
+        } else {
             threads.remove(ti);
-            end (n > -1);
+            throw new ClosedChannelException();
         }
     }
 
-    private long transferToDirectly(long position, int icount,
-                                    WritableByteChannel target)
+    /**
+     * Marks the end of a transfer to or from this channel.
+     * @throws AsynchronousCloseException if not completed and the channel is closed
+     */
+    private void afterTransfer(boolean completed, int ti) throws AsynchronousCloseException {
+        threads.remove(ti);
+        if (!completed && !isOpen()) {
+            throw new AsynchronousCloseException();
+        }
+    }
+
+    /**
+     * Invoked when ClosedChannelException is thrown during a transfer. This method
+     * translates it to an AsynchronousCloseException or ClosedByInterruptException. In
+     * the case of ClosedByInterruptException, it ensures that this channel and the
+     * source/target channel are closed.
+     */
+    private AsynchronousCloseException transferFailed(ClosedChannelException cce, Channel other) {
+        ClosedByInterruptException cbie = null;
+        if (cce instanceof ClosedByInterruptException e) {
+            assert Thread.currentThread().isInterrupted();
+            cbie = e;
+        } else if (!uninterruptible && Thread.currentThread().isInterrupted()) {
+            cbie = new ClosedByInterruptException();
+        }
+        if (cbie != null) {
+            try {
+                this.close();
+            } catch (IOException ioe) {
+                cbie.addSuppressed(ioe);
+            }
+            try {
+                other.close();
+            } catch (IOException ioe) {
+                cbie.addSuppressed(ioe);
+            }
+            return cbie;
+
+        }
+        // one of the channels was closed during the transfer
+        if (cce instanceof AsynchronousCloseException ace) {
+            return ace;
+        } else {
+            var ace = new AsynchronousCloseException();
+            ace.addSuppressed(cce);
+            return ace;
+        }
+    }
+
+    /**
+     * Transfers bytes from this channel's file to the resource that the given file
+     * descriptor is connected to.
+     */
+    private long transferToFileDescriptor(long position, int count, FileDescriptor targetFD) {
+        long n;
+        boolean append = fdAccess.getAppend(targetFD);
+        do {
+            long comp = Blocker.begin();
+            try {
+                n = nd.transferTo(fd, position, count, targetFD, append);
+            } finally {
+                Blocker.end(comp);
+            }
+        } while ((n == IOStatus.INTERRUPTED) && isOpen());
+        return n;
+    }
+
+    /**
+     * Transfers bytes from this channel's file to the given channel's file.
+     */
+    private long transferToFileChannel(long position, int count, FileChannelImpl target)
         throws IOException
     {
-        if (!transferSupported)
-            return IOStatus.UNSUPPORTED;
-
-        FileDescriptor targetFD = null;
-        if (target instanceof FileChannelImpl) {
-            if (!fileSupported)
-                return IOStatus.UNSUPPORTED_CASE;
-            targetFD = ((FileChannelImpl)target).fd;
-        } else if (target instanceof SelChImpl) {
-            // Direct transfer to pipe causes EINVAL on some configurations
-            if ((target instanceof SinkChannelImpl) && !pipeSupported)
-                return IOStatus.UNSUPPORTED_CASE;
-
-            // Platform-specific restrictions. Now there is only one:
-            // Direct transfer to non-blocking channel could be forbidden
-            SelectableChannel sc = (SelectableChannel)target;
-            if (!nd.canTransferToDirectly(sc))
-                return IOStatus.UNSUPPORTED_CASE;
-
-            targetFD = ((SelChImpl)target).getFD();
+        final FileChannelImpl source = this;
+        boolean completed = false;
+        try {
+            beginBlocking();
+            int sourceIndex = source.beforeTransfer();
+            try {
+                int targetIndex = target.beforeTransfer();
+                try {
+                    long n = transferToFileDescriptor(position, count, target.fd);
+                    completed = (n >= 0);
+                    return IOStatus.normalize(n);
+                } finally {
+                    target.afterTransfer(completed, targetIndex);
+                }
+            } finally {
+                source.afterTransfer(completed, sourceIndex);
+            }
+        } finally {
+            endBlocking(completed);
         }
+    }
 
-        if (targetFD == null)
-            return IOStatus.UNSUPPORTED;
-        int thisFDVal = IOUtil.fdVal(fd);
-        int targetFDVal = IOUtil.fdVal(targetFD);
-        if (thisFDVal == targetFDVal) // Not supported on some configurations
-            return IOStatus.UNSUPPORTED;
+    /**
+     * Transfers bytes from this channel's file to the given channel's socket.
+     */
+    private long transferToSocketChannel(long position, int count, SocketChannelImpl target)
+        throws IOException
+    {
+        final FileChannelImpl source = this;
+        boolean completed = false;
+        try {
+            beginBlocking();
+            int sourceIndex = source.beforeTransfer();
+            try {
+                target.beforeTransferTo();
+                try {
+                    long n = transferToFileDescriptor(position, count, target.getFD());
+                    completed = (n >= 0);
+                    return IOStatus.normalize(n);
+                } finally {
+                    target.afterTransferTo(completed);
+                }
+            } finally {
+                source.afterTransfer(completed, sourceIndex);
+            }
+        } finally {
+            endBlocking(completed);
+        }
+    }
 
+    /**
+     * Transfers bytes from this channel's file from the given channel's file. This
+     * implementation uses sendfile, copy_file_range or equivalent.
+     */
+    private long transferToDirectInternal(long position, int count, WritableByteChannel target)
+        throws IOException
+    {
+        assert !nd.transferToDirectlyNeedsPositionLock() || Thread.holdsLock(positionLock);
+
+        return switch (target) {
+            case FileChannelImpl fci  -> transferToFileChannel(position, count, fci);
+            case SocketChannelImpl sci -> transferToSocketChannel(position, count, sci);
+            default -> IOStatus.UNSUPPORTED_CASE;
+        };
+    }
+
+    /**
+     * Transfers bytes from this channel's file to the given channel's file or socket.
+     * @return the number of bytes transferred, UNSUPPORTED_CASE if this transfer cannot
+     * be done directly, or UNSUPPORTED if there is no direct support
+     */
+    private long transferToDirect(long position, int count, WritableByteChannel target)
+        throws IOException
+    {
+        if (transferToDirectNotSupported)
+            return IOStatus.UNSUPPORTED;
+        if (target instanceof SelectableChannel sc && !nd.canTransferToDirectly(sc))
+            return IOStatus.UNSUPPORTED_CASE;
+
+        long n;
         if (nd.transferToDirectlyNeedsPositionLock()) {
             synchronized (positionLock) {
                 long pos = position();
                 try {
-                    return transferToDirectlyInternal(position, icount,
-                                                      target, targetFD);
+                    n = transferToDirectInternal(position, count, target);
                 } finally {
-                    position(pos);
+                    try {
+                        position(pos);
+                    } catch (ClosedChannelException ignore) {
+                        // can't reset position if channel is closed
+                    }
                 }
             }
         } else {
-            return transferToDirectlyInternal(position, icount, target, targetFD);
+            n = transferToDirectInternal(position, count, target);
         }
+        if (n == IOStatus.UNSUPPORTED) {
+            transferToDirectNotSupported = true;
+        }
+        return n;
     }
+
+    // Size threshold above which to use a mapped buffer;
+    // transferToArbitraryChannel() and transferFromArbitraryChannel()
+    // are faster for smaller transfers
+    private static final long MAPPED_TRANSFER_THRESHOLD = 16L*1024L;
 
     // Maximum size to map when using a mapped buffer
     private static final long MAPPED_TRANSFER_SIZE = 8L*1024L*1024L;
 
+    /**
+     * Transfers bytes from channel's file to the given channel. This implementation
+     * memory maps this channel's file.
+     */
     private long transferToTrustedChannel(long position, long count,
                                           WritableByteChannel target)
         throws IOException
     {
+        if (count < MAPPED_TRANSFER_THRESHOLD)
+            return IOStatus.UNSUPPORTED_CASE;
+
         boolean isSelChImpl = (target instanceof SelChImpl);
         if (!((target instanceof FileChannelImpl) || isSelChImpl))
-            return IOStatus.UNSUPPORTED;
+            return IOStatus.UNSUPPORTED_CASE;
 
-        // Trusted target: Use a mapped buffer
+        if (target == this) {
+            long posThis = position();
+            if ((posThis - count + 1 <= position)
+                    && (position - count + 1 <= posThis)
+                    && !nd.canTransferToFromOverlappedMap()) {
+                return IOStatus.UNSUPPORTED_CASE;
+            }
+        }
+
         long remaining = count;
         while (remaining > 0L) {
             long size = Math.min(remaining, MAPPED_TRANSFER_SIZE);
             try {
                 MappedByteBuffer dbb = map(MapMode.READ_ONLY, position, size);
                 try {
-                    // ## Bug: Closing this channel will not terminate the write
+                    // write may block, closing this channel will not wake it up
                     int n = target.write(dbb);
                     assert n >= 0;
                     remaining -= n;
@@ -602,16 +793,6 @@ public class FileChannelImpl
                 } finally {
                     unmap(dbb);
                 }
-            } catch (ClosedByInterruptException e) {
-                // target closed by interrupt as ClosedByInterruptException needs
-                // to be thrown after closing this channel.
-                assert !target.isOpen();
-                try {
-                    close();
-                } catch (Throwable suppressed) {
-                    e.addSuppressed(suppressed);
-                }
-                throw e;
             } catch (IOException ioe) {
                 // Only throw exception if no bytes have been written
                 if (remaining == count)
@@ -622,24 +803,26 @@ public class FileChannelImpl
         return count - remaining;
     }
 
-    private long transferToArbitraryChannel(long position, int icount,
+    /**
+     * Transfers bytes from channel's file to the given channel.
+     */
+    private long transferToArbitraryChannel(long position, long count,
                                             WritableByteChannel target)
         throws IOException
     {
         // Untrusted target: Use a newly-erased buffer
-        int c = Math.min(icount, TRANSFER_SIZE);
+        int c = (int) Math.min(count, TRANSFER_SIZE);
         ByteBuffer bb = ByteBuffer.allocate(c);
         long tw = 0;                    // Total bytes written
         long pos = position;
         try {
-            while (tw < icount) {
-                bb.limit(Math.min((int)(icount - tw), TRANSFER_SIZE));
+            while (tw < count) {
+                bb.limit((int) Math.min(count - tw, TRANSFER_SIZE));
                 int nr = read(bb, pos);
                 if (nr <= 0)
                     break;
                 bb.flip();
-                // ## Bug: Will block writing target if this channel
-                // ##      is asynchronously closed
+                // write may block, closing this channel will not wake it up
                 int nw = target.write(bb);
                 tw += nw;
                 if (nw != nr)
@@ -655,8 +838,8 @@ public class FileChannelImpl
         }
     }
 
-    public long transferTo(long position, long count,
-                           WritableByteChannel target)
+    @Override
+    public long transferTo(long position, long count, WritableByteChannel target)
         throws IOException
     {
         ensureOpen();
@@ -664,47 +847,127 @@ public class FileChannelImpl
             throw new ClosedChannelException();
         if (!readable)
             throw new NonReadableChannelException();
-        if (target instanceof FileChannelImpl &&
-            !((FileChannelImpl)target).writable)
+        if (target instanceof FileChannelImpl && !((FileChannelImpl) target).writable)
             throw new NonWritableChannelException();
         if ((position < 0) || (count < 0))
             throw new IllegalArgumentException();
-        long sz = size();
-        if (position > sz)
-            return 0;
-        int icount = (int)Math.min(count, Integer.MAX_VALUE);
-        if ((sz - position) < icount)
-            icount = (int)(sz - position);
 
-        long n;
+        try {
+            final long sz = size();
+            if (position > sz)
+                return 0;
 
-        // Attempt a direct transfer, if the kernel supports it
-        if ((n = transferToDirectly(position, icount, target)) >= 0)
-            return n;
+            // Now position <= sz so remaining >= 0 and
+            // remaining == 0 if and only if sz == 0
+            long remaining = sz - position;
 
-        // Attempt a mapped transfer, but only to trusted channel types
-        if ((n = transferToTrustedChannel(position, icount, target)) >= 0)
-            return n;
+            // Adjust count only if remaining > 0, i.e.,
+            // sz > position which means sz > 0
+            if (remaining > 0 && remaining < count)
+                count = remaining;
 
-        // Slow path for untrusted targets
-        return transferToArbitraryChannel(position, icount, target);
+            // System calls supporting fast transfers might not work on files
+            // which advertise zero size such as those in Linux /proc
+            if (sz > 0) {
+                // Attempt a direct transfer, if the kernel supports it, limiting
+                // the number of bytes according to which platform
+                int icount = (int) Math.min(count, nd.maxDirectTransferSize());
+                long n;
+                if ((n = transferToDirect(position, icount, target)) >= 0)
+                    return n;
+
+                // Attempt a mapped transfer, but only to trusted channel types
+                if ((n = transferToTrustedChannel(position, count, target)) >= 0)
+                    return n;
+            }
+
+            // fallback to read/write loop
+            return transferToArbitraryChannel(position, count, target);
+        } catch (ClosedChannelException e) {
+            // throw AsynchronousCloseException or ClosedByInterruptException
+            throw transferFailed(e, target);
+        }
     }
 
-    private long transferFromFileChannel(FileChannelImpl src,
-                                         long position, long count)
+    /**
+     * Transfers bytes into this channel's file from the resource that the given file
+     * descriptor is connected to.
+     */
+    private long transferFromFileDescriptor(FileDescriptor srcFD, long position, long count) {
+        long n;
+        boolean append = fdAccess.getAppend(fd);
+        do {
+            long comp = Blocker.begin();
+            try {
+                n = nd.transferFrom(srcFD, fd, position, count, append);
+            } finally {
+                Blocker.end(comp);
+            }
+        } while ((n == IOStatus.INTERRUPTED) && isOpen());
+        return n;
+    }
+
+    /**
+     * Transfers bytes into this channel's file from the given channel's file. This
+     * implementation uses copy_file_range or equivalent.
+     */
+    private long transferFromDirect(FileChannelImpl src, long position, long count)
         throws IOException
     {
-        if (!src.readable)
-            throw new NonReadableChannelException();
+        if (transferFromDirectNotSupported)
+            return IOStatus.UNSUPPORTED;
+
+        final FileChannelImpl target = this;
+        boolean completed = false;
+        try {
+            beginBlocking();
+            int srcIndex = src.beforeTransfer();
+            try {
+                int targetIndex = target.beforeTransfer();
+                try {
+                    long n = transferFromFileDescriptor(src.fd, position, count);
+                    if (n == IOStatus.UNSUPPORTED) {
+                        transferFromDirectNotSupported = true;
+                        return IOStatus.UNSUPPORTED;
+                    }
+                    completed = (n >= 0);
+                    return IOStatus.normalize(n);
+                } finally {
+                    target.afterTransfer(completed, targetIndex);
+                }
+            } finally {
+                src.afterTransfer(completed, srcIndex);
+            }
+        } finally {
+            endBlocking(completed);
+        }
+    }
+
+    /**
+     * Transfers bytes into this channel's file from the given channel's file. This
+     * implementation memory maps the given channel's file.
+     */
+    private long transferFromFileChannel(FileChannelImpl src, long position, long count)
+        throws IOException
+    {
+        if (count < MAPPED_TRANSFER_THRESHOLD)
+            return IOStatus.UNSUPPORTED_CASE;
+
         synchronized (src.positionLock) {
             long pos = src.position();
             long max = Math.min(count, src.size() - pos);
+
+            if (src == this
+                    && (position() - max + 1 <= pos)
+                    && (pos - max + 1 <= position())
+                    && !nd.canTransferToFromOverlappedMap()) {
+                return IOStatus.UNSUPPORTED_CASE;
+            }
 
             long remaining = max;
             long p = pos;
             while (remaining > 0L) {
                 long size = Math.min(remaining, MAPPED_TRANSFER_SIZE);
-                // ## Bug: Closing this channel will not terminate the write
                 MappedByteBuffer bb = src.map(MapMode.READ_ONLY, p, size);
                 try {
                     long n = write(bb, position);
@@ -729,20 +992,21 @@ public class FileChannelImpl
 
     private static final int TRANSFER_SIZE = 8192;
 
+    /**
+     * Transfers bytes into this channel's file from the given channel.
+     */
     private long transferFromArbitraryChannel(ReadableByteChannel src,
                                               long position, long count)
         throws IOException
     {
-        // Untrusted target: Use a newly-erased buffer
-        int c = (int)Math.min(count, TRANSFER_SIZE);
+        int c = (int) Math.min(count, TRANSFER_SIZE);
         ByteBuffer bb = ByteBuffer.allocate(c);
         long tw = 0;                    // Total bytes written
         long pos = position;
         try {
             while (tw < count) {
-                bb.limit((int)Math.min((count - tw), (long)TRANSFER_SIZE));
-                // ## Bug: Will block reading src if this channel
-                // ##      is asynchronously closed
+                bb.limit((int) Math.min((count - tw), TRANSFER_SIZE));
+                // read may block, closing this channel will not wake it up
                 int nr = src.read(bb);
                 if (nr <= 0)
                     break;
@@ -762,26 +1026,40 @@ public class FileChannelImpl
         }
     }
 
-    public long transferFrom(ReadableByteChannel src,
-                             long position, long count)
+    @Override
+    public long transferFrom(ReadableByteChannel src, long position, long count)
         throws IOException
     {
         ensureOpen();
         if (!src.isOpen())
             throw new ClosedChannelException();
+        if (src instanceof FileChannelImpl fci && !fci.readable)
+            throw new NonReadableChannelException();
         if (!writable)
             throw new NonWritableChannelException();
         if ((position < 0) || (count < 0))
             throw new IllegalArgumentException();
-        if (position > size())
-            return 0;
-        if (src instanceof FileChannelImpl)
-           return transferFromFileChannel((FileChannelImpl)src,
-                                          position, count);
 
-        return transferFromArbitraryChannel(src, position, count);
+        try {
+            // System calls supporting fast transfers might not work on files
+            // which advertise zero size such as those in Linux /proc
+            if (src instanceof FileChannelImpl fci && fci.size() > 0) {
+                long n;
+                if ((n = transferFromDirect(fci, position, count)) >= 0)
+                    return n;
+                if ((n = transferFromFileChannel(fci, position, count)) >= 0)
+                    return n;
+            }
+
+            // fallback to read/write loop
+            return transferFromArbitraryChannel(src, position, count);
+        } catch (ClosedChannelException e) {
+            // throw AsynchronousCloseException or ClosedByInterruptException
+            throw transferFailed(e, src);
+        }
     }
 
+    @Override
     public int read(ByteBuffer dst, long position) throws IOException {
         if (dst == null)
             throw new NullPointerException();
@@ -812,7 +1090,12 @@ public class FileChannelImpl
             if (!isOpen())
                 return -1;
             do {
-                n = IOUtil.read(fd, dst, position, direct, alignment, nd);
+                long comp = Blocker.begin();
+                try {
+                    n = IOUtil.read(fd, dst, position, direct, alignment, nd);
+                } finally {
+                    Blocker.end(comp);
+                }
             } while ((n == IOStatus.INTERRUPTED) && isOpen());
             return IOStatus.normalize(n);
         } finally {
@@ -822,6 +1105,7 @@ public class FileChannelImpl
         }
     }
 
+    @Override
     public int write(ByteBuffer src, long position) throws IOException {
         if (src == null)
             throw new NullPointerException();
@@ -851,7 +1135,12 @@ public class FileChannelImpl
             if (!isOpen())
                 return -1;
             do {
-                n = IOUtil.write(fd, src, position, direct, alignment, nd);
+                long comp = Blocker.begin();
+                try {
+                    n = IOUtil.write(fd, src, position, direct, alignment, nd);
+                } finally {
+                    Blocker.end(comp);
+                }
             } while ((n == IOStatus.INTERRUPTED) && isOpen());
             return IOStatus.normalize(n);
         } finally {
@@ -864,13 +1153,10 @@ public class FileChannelImpl
 
     // -- Memory-mapped buffers --
 
-    private static abstract class Unmapper
+    private abstract static sealed class Unmapper
         implements Runnable, UnmapperProxy
     {
-        // may be required to close file
-        private static final NativeDispatcher nd = new FileDispatcherImpl();
-
-        private volatile long address;
+        private final long address;
         protected final long size;
         protected final long cap;
         private final FileDescriptor fd;
@@ -902,11 +1188,12 @@ public class FileChannelImpl
             unmap();
         }
 
+        public long capacity() {
+            return cap;
+        }
+
         public void unmap() {
-            if (address == 0)
-                return;
-            unmap0(address, size);
-            address = 0;
+            nd.unmap(address, size);
 
             // if this mapping has a valid file descriptor then we close it
             if (fd.valid()) {
@@ -923,7 +1210,7 @@ public class FileChannelImpl
         protected abstract void decrementStats();
     }
 
-    private static class DefaultUnmapper extends Unmapper {
+    private static final class DefaultUnmapper extends Unmapper {
 
         // keep track of non-sync mapped buffer usage
         static volatile int count;
@@ -956,7 +1243,7 @@ public class FileChannelImpl
         }
     }
 
-    private static class SyncUnmapper extends Unmapper {
+    private static final class SyncUnmapper extends Unmapper {
 
         // keep track of mapped buffer usage
         static volatile int count;
@@ -1000,6 +1287,7 @@ public class FileChannelImpl
     private static final int MAP_RW = 1;
     private static final int MAP_PV = 2;
 
+    @Override
     public MappedByteBuffer map(MapMode mode, long position, long size) throws IOException {
         if (size > Integer.MAX_VALUE)
             throw new IllegalArgumentException("Size exceeds Integer.MAX_VALUE");
@@ -1014,22 +1302,39 @@ public class FileChannelImpl
             else
                 return Util.newMappedByteBuffer(0, 0, dummy, null, isSync);
         } else if ((!writable) || (prot == MAP_RO)) {
-            return Util.newMappedByteBufferR((int)unmapper.cap,
-                    unmapper.address + unmapper.pagePosition,
-                    unmapper.fd,
-                    unmapper, isSync);
+            return Util.newMappedByteBufferR((int)unmapper.capacity(),
+                    unmapper.address(),
+                    unmapper.fileDescriptor(),
+                    unmapper, unmapper.isSync());
         } else {
-            return Util.newMappedByteBuffer((int)unmapper.cap,
-                    unmapper.address + unmapper.pagePosition,
-                    unmapper.fd,
-                    unmapper, isSync);
+            return Util.newMappedByteBuffer((int)unmapper.capacity(),
+                    unmapper.address(),
+                    unmapper.fileDescriptor(),
+                    unmapper, unmapper.isSync());
         }
     }
 
-    public Unmapper mapInternal(MapMode mode, long position, long size) throws IOException {
-        boolean isSync = isSync(Objects.requireNonNull(mode, "Mode is null"));
+    @Override
+    public MemorySegment map(MapMode mode, long offset, long size, Arena arena)
+        throws IOException
+    {
+        Objects.requireNonNull(mode,"Mode is null");
+        Objects.requireNonNull(arena, "Arena is null");
+        MemorySessionImpl sessionImpl = MemorySessionImpl.toMemorySession(arena);
+        sessionImpl.checkValidState();
+        if (offset < 0)
+            throw new IllegalArgumentException("Requested bytes offset must be >= 0.");
+        if (size < 0)
+            throw new IllegalArgumentException("Requested bytes size must be >= 0.");
+
+        boolean isSync = isSync(mode);
         int prot = toProt(mode);
-        return mapInternal(mode, position, size, prot, isSync);
+        Unmapper unmapper = mapInternal(mode, offset, size, prot, isSync);
+        boolean readOnly = false;
+        if (mode == MapMode.READ_ONLY) {
+            readOnly = true;
+        }
+        return SegmentFactories.mapSegment(size, unmapper, readOnly, sessionImpl);
     }
 
     private Unmapper mapInternal(MapMode mode, long position, long size, int prot, boolean isSync)
@@ -1059,7 +1364,12 @@ public class FileChannelImpl
             synchronized (positionLock) {
                 long filesize;
                 do {
-                    filesize = nd.size(fd);
+                    long comp = Blocker.begin();
+                    try {
+                        filesize = nd.size(fd);
+                    } finally {
+                        Blocker.end(comp);
+                    }
                 } while ((filesize == IOStatus.INTERRUPTED) && isOpen());
                 if (!isOpen())
                     return null;
@@ -1071,7 +1381,12 @@ public class FileChannelImpl
                     }
                     int rv;
                     do {
-                        rv = nd.truncate(fd, position + size);
+                        long comp = Blocker.begin();
+                        try {
+                            rv = nd.truncate(fd, position + size);
+                        } finally {
+                            Blocker.end(comp);
+                        }
                     } while ((rv == IOStatus.INTERRUPTED) && isOpen());
                     if (!isOpen())
                         return null;
@@ -1081,12 +1396,12 @@ public class FileChannelImpl
                     return null;
                 }
 
-                pagePosition = (int)(position % allocationGranularity);
+                pagePosition = (int)(position % nd.allocationGranularity());
                 long mapPosition = position - pagePosition;
                 mapSize = size + pagePosition;
                 try {
-                    // If map0 did not throw an exception, the address is valid
-                    addr = map0(prot, mapPosition, mapSize, isSync);
+                    // If map did not throw an exception, the address is valid
+                    addr = nd.map(fd, prot, mapPosition, mapSize, isSync);
                 } catch (OutOfMemoryError x) {
                     // An OutOfMemoryError may indicate that we've exhausted
                     // memory so force gc and re-attempt map
@@ -1097,7 +1412,7 @@ public class FileChannelImpl
                         Thread.currentThread().interrupt();
                     }
                     try {
-                        addr = map0(prot, mapPosition, mapSize, isSync);
+                        addr = nd.map(fd, prot, mapPosition, mapSize, isSync);
                     } catch (OutOfMemoryError y) {
                         // After a second OOME, fail
                         throw new IOException("Map failed", y);
@@ -1111,15 +1426,15 @@ public class FileChannelImpl
             try {
                 mfd = nd.duplicateForMapping(fd);
             } catch (IOException ioe) {
-                unmap0(addr, mapSize);
+                nd.unmap(addr, mapSize);
                 throw ioe;
             }
 
             assert (IOStatus.checkAll(addr));
-            assert (addr % allocationGranularity == 0);
+            assert (addr % nd.allocationGranularity() == 0);
             Unmapper um = (isSync
-                           ? new SyncUnmapper(addr, mapSize, size, mfd, pagePosition)
-                           : new DefaultUnmapper(addr, mapSize, size, mfd, pagePosition));
+                ? new SyncUnmapper(addr, mapSize, size, mfd, pagePosition)
+                : new DefaultUnmapper(addr, mapSize, size, mfd, pagePosition));
             return um;
         } finally {
             threads.remove(ti);
@@ -1239,6 +1554,7 @@ public class FileChannelImpl
         return fileLockTable;
     }
 
+    @Override
     public FileLock lock(long position, long size, boolean shared)
         throws IOException
     {
@@ -1247,6 +1563,8 @@ public class FileChannelImpl
             throw new NonReadableChannelException();
         if (!shared && !writable)
             throw new NonWritableChannelException();
+        if (size == 0)
+            size = Long.MAX_VALUE - Math.max(0, position);
         FileLockImpl fli = new FileLockImpl(this, position, size, shared);
         FileLockTable flt = fileLockTable();
         flt.add(fli);
@@ -1259,7 +1577,12 @@ public class FileChannelImpl
                 return null;
             int n;
             do {
-                n = nd.lock(fd, true, position, size, shared);
+                long comp = Blocker.begin();
+                try {
+                    n = nd.lock(fd, true, position, size, shared);
+                } finally {
+                    Blocker.end(comp);
+                }
             } while ((n == FileDispatcher.INTERRUPTED) && isOpen());
             if (isOpen()) {
                 if (n == FileDispatcher.RET_EX_LOCK) {
@@ -1284,6 +1607,7 @@ public class FileChannelImpl
         return fli;
     }
 
+    @Override
     public FileLock tryLock(long position, long size, boolean shared)
         throws IOException
     {
@@ -1292,6 +1616,8 @@ public class FileChannelImpl
             throw new NonReadableChannelException();
         if (!shared && !writable)
             throw new NonWritableChannelException();
+        if (size == 0)
+            size = Long.MAX_VALUE - Math.max(0, position);
         FileLockImpl fli = new FileLockImpl(this, position, size, shared);
         FileLockTable flt = fileLockTable();
         flt.add(fli);
@@ -1333,26 +1659,5 @@ public class FileChannelImpl
         }
         assert fileLockTable != null;
         fileLockTable.remove(fli);
-    }
-
-    // -- Native methods --
-
-    // Creates a new mapping
-    private native long map0(int prot, long position, long length, boolean isSync)
-        throws IOException;
-
-    // Removes an existing mapping
-    private static native int unmap0(long address, long length);
-
-    // Transfers from src to dst, or returns -2 if kernel can't do that
-    private native long transferTo0(FileDescriptor src, long position,
-                                    long count, FileDescriptor dst);
-
-    // Caches fieldIDs
-    private static native long initIDs();
-
-    static {
-        IOUtil.load();
-        allocationGranularity = initIDs();
     }
 }

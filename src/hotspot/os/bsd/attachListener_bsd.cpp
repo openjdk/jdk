@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,11 @@
 
 #include "precompiled.hpp"
 #include "logging/log.hpp"
+#include "os_posix.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/os.inline.hpp"
 #include "services/attachListener.hpp"
-#include "services/dtraceAttacher.hpp"
+#include "utilities/checkedCast.hpp"
 
 #include <unistd.h>
 #include <signal.h>
@@ -82,7 +83,7 @@ class BsdAttachListener: AllStatic {
   };
 
   static void set_path(char* path) {
-    if (path == NULL) {
+    if (path == nullptr) {
       _path[0] = '\0';
       _has_path = false;
     } else {
@@ -102,7 +103,7 @@ class BsdAttachListener: AllStatic {
   static int listener()                 { return _listener; }
 
   // write the given buffer to a socket
-  static int write_fully(int s, char* buf, int len);
+  static int write_fully(int s, char* buf, size_t len);
 
   static BsdAttachOperation* dequeue();
 };
@@ -145,7 +146,7 @@ class ArgumentIterator : public StackObj {
       if (_pos < _end) {
         _pos += 1;
       }
-      return NULL;
+      return nullptr;
     }
     char* res = _pos;
     char* next_pos = strchr(_pos, '\0');
@@ -170,7 +171,7 @@ extern "C" {
     }
     if (BsdAttachListener::has_path()) {
       ::unlink(BsdAttachListener::path());
-      BsdAttachListener::set_path(NULL);
+      BsdAttachListener::set_path(nullptr);
     }
   }
 }
@@ -248,7 +249,7 @@ int BsdAttachListener::init() {
 //
 BsdAttachOperation* BsdAttachListener::read_request(int s) {
   char ver_str[8];
-  sprintf(ver_str, "%d", ATTACH_PROTOCOL_VER);
+  size_t ver_str_len = os::snprintf_checked(ver_str, sizeof(ver_str), "%d", ATTACH_PROTOCOL_VER);
 
   // The request is a sequence of strings so we first figure out the
   // expected count and the maximum possible length of the request.
@@ -257,7 +258,7 @@ BsdAttachOperation* BsdAttachListener::read_request(int s) {
   // where <ver> is the protocol version (1), <cmd> is the command
   // name ("load", "datadump", ...), and <arg> is an argument
   int expected_str_count = 2 + AttachOperation::arg_count_max;
-  const int max_len = (sizeof(ver_str) + 1) + (AttachOperation::name_length_max + 1) +
+  const size_t max_len = (sizeof(ver_str) + 1) + (AttachOperation::name_length_max + 1) +
     AttachOperation::arg_count_max*(AttachOperation::arg_length_max + 1);
 
   char buf[max_len];
@@ -266,34 +267,34 @@ BsdAttachOperation* BsdAttachListener::read_request(int s) {
   // Read until all (expected) strings have been read, the buffer is
   // full, or EOF.
 
-  int off = 0;
-  int left = max_len;
+  size_t off = 0;
+  size_t left = max_len;
 
   do {
-    int n;
+    ssize_t n;
     RESTARTABLE(read(s, buf+off, left), n);
-    assert(n <= left, "buffer was too small, impossible!");
+    assert(n <= checked_cast<ssize_t>(left), "buffer was too small, impossible!");
     buf[max_len - 1] = '\0';
     if (n == -1) {
-      return NULL;      // reset by peer or other error
+      return nullptr;      // reset by peer or other error
     }
     if (n == 0) {
       break;
     }
-    for (int i=0; i<n; i++) {
+    for (ssize_t i=0; i<n; i++) {
       if (buf[off+i] == 0) {
         // EOS found
         str_count++;
 
         // The first string is <ver> so check it now to
-        // check for protocol mis-match
+        // check for protocol mismatch
         if (str_count == 1) {
-          if ((strlen(buf) != strlen(ver_str)) ||
+          if ((strlen(buf) != ver_str_len) ||
               (atoi(buf) != ATTACH_PROTOCOL_VER)) {
             char msg[32];
-            sprintf(msg, "%d\n", ATTACH_ERROR_BADVERSION);
-            write_fully(s, msg, strlen(msg));
-            return NULL;
+            int msg_len = os::snprintf_checked(msg, sizeof(msg), "%d\n", ATTACH_ERROR_BADVERSION);
+            write_fully(s, msg, msg_len);
+            return nullptr;
           }
         }
       }
@@ -303,7 +304,7 @@ BsdAttachOperation* BsdAttachListener::read_request(int s) {
   } while (left > 0 && str_count < expected_str_count);
 
   if (str_count != expected_str_count) {
-    return NULL;        // incomplete request
+    return nullptr;        // incomplete request
   }
 
   // parse request
@@ -314,20 +315,20 @@ BsdAttachOperation* BsdAttachListener::read_request(int s) {
   char* v = args.next();
 
   char* name = args.next();
-  if (name == NULL || strlen(name) > AttachOperation::name_length_max) {
-    return NULL;
+  if (name == nullptr || strlen(name) > AttachOperation::name_length_max) {
+    return nullptr;
   }
 
   BsdAttachOperation* op = new BsdAttachOperation(name);
 
   for (int i=0; i<AttachOperation::arg_count_max; i++) {
     char* arg = args.next();
-    if (arg == NULL) {
-      op->set_arg(i, NULL);
+    if (arg == nullptr) {
+      op->set_arg(i, nullptr);
     } else {
       if (strlen(arg) > AttachOperation::arg_length_max) {
         delete op;
-        return NULL;
+        return nullptr;
       }
       op->set_arg(i, arg);
     }
@@ -352,7 +353,7 @@ BsdAttachOperation* BsdAttachListener::dequeue() {
     socklen_t len = sizeof(addr);
     RESTARTABLE(::accept(listener(), &addr, &len), s);
     if (s == -1) {
-      return NULL;      // log a warning?
+      return nullptr;      // log a warning?
     }
 
     // get the credentials of the peer and check the effective uid/guid
@@ -373,7 +374,7 @@ BsdAttachOperation* BsdAttachListener::dequeue() {
 
     // peer credential look okay so we read the request
     BsdAttachOperation* op = read_request(s);
-    if (op == NULL) {
+    if (op == nullptr) {
       ::close(s);
       continue;
     } else {
@@ -383,9 +384,9 @@ BsdAttachOperation* BsdAttachListener::dequeue() {
 }
 
 // write the given buffer to the socket
-int BsdAttachListener::write_fully(int s, char* buf, int len) {
+int BsdAttachListener::write_fully(int s, char* buf, size_t len) {
   do {
-    int n = ::write(s, buf, len);
+    ssize_t n = ::write(s, buf, len);
     if (n == -1) {
       if (errno != EINTR) return -1;
     } else {
@@ -409,14 +410,10 @@ void BsdAttachOperation::complete(jint result, bufferedStream* st) {
   JavaThread* thread = JavaThread::current();
   ThreadBlockInVM tbivm(thread);
 
-  thread->set_suspend_equivalent();
-  // cleared by handle_special_suspend_equivalent_condition() or
-  // java_suspend_self() via check_and_wait_while_suspended()
-
   // write operation result
   char msg[32];
-  sprintf(msg, "%d\n", result);
-  int rc = BsdAttachListener::write_fully(this->socket(), msg, strlen(msg));
+  int msg_len = os::snprintf_checked(msg, sizeof(msg), "%d\n", result);
+  int rc = BsdAttachListener::write_fully(this->socket(), msg, msg_len);
 
   // write any result data
   if (rc == 0) {
@@ -426,9 +423,6 @@ void BsdAttachOperation::complete(jint result, bufferedStream* st) {
 
   // done
   ::close(this->socket());
-
-  // were we externally suspended while we were waiting?
-  thread->check_and_wait_while_suspended();
 
   delete this;
 }
@@ -440,14 +434,7 @@ AttachOperation* AttachListener::dequeue() {
   JavaThread* thread = JavaThread::current();
   ThreadBlockInVM tbivm(thread);
 
-  thread->set_suspend_equivalent();
-  // cleared by handle_special_suspend_equivalent_condition() or
-  // java_suspend_self() via check_and_wait_while_suspended()
-
   AttachOperation* op = BsdAttachListener::dequeue();
-
-  // were we externally suspended while we were waiting?
-  thread->check_and_wait_while_suspended();
 
   return op;
 }
@@ -479,14 +466,7 @@ int AttachListener::pd_init() {
   JavaThread* thread = JavaThread::current();
   ThreadBlockInVM tbivm(thread);
 
-  thread->set_suspend_equivalent();
-  // cleared by handle_special_suspend_equivalent_condition() or
-  // java_suspend_self() via check_and_wait_while_suspended()
-
   int ret_code = BsdAttachListener::init();
-
-  // were we externally suspended while we were waiting?
-  thread->check_and_wait_while_suspended();
 
   return ret_code;
 }
@@ -561,15 +541,6 @@ void AttachListener::abort() {
 
 void AttachListener::pd_data_dump() {
   os::signal_notify(SIGQUIT);
-}
-
-AttachOperationFunctionInfo* AttachListener::pd_find_operation(const char* n) {
-  return NULL;
-}
-
-jint AttachListener::pd_set_flag(AttachOperation* op, outputStream* out) {
-  out->print_cr("flag '%s' cannot be changed", op->arg(0));
-  return JNI_ERR;
 }
 
 void AttachListener::pd_detachall() {

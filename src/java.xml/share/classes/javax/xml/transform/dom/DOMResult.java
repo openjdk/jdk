@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,7 +136,7 @@ public class DOMResult implements Result {
      */
     public DOMResult(Node node, Node nextSibling) {
 
-        // does the corrent parent/child relationship exist?
+        // does the correct parent/child relationship exist?
         if (nextSibling != null) {
             // cannot be a sibling of a null node
             if (node == null) {
@@ -189,7 +189,7 @@ public class DOMResult implements Result {
      */
     public DOMResult(Node node, Node nextSibling, String systemId) {
 
-        // does the corrent parent/child relationship exist?
+        // does the correct parent/child relationship exist?
         if (nextSibling != null) {
             // cannot be a sibling of a null node
             if (node == null) {
@@ -231,7 +231,7 @@ public class DOMResult implements Result {
      *   {@code nextSibling} is not {@code null}.
      */
     public void setNode(Node node) {
-        // does the corrent parent/child relationship exist?
+        // does the correct parent/child relationship exist?
         if (nextSibling != null) {
             // cannot be a sibling of a null node
             if (node == null) {
@@ -289,7 +289,7 @@ public class DOMResult implements Result {
      */
     public void setNextSibling(Node nextSibling) {
 
-        // does the corrent parent/child relationship exist?
+        // does the correct parent/child relationship exist?
         if (nextSibling != null) {
             // cannot be a sibling of a null node
             if (node == null) {

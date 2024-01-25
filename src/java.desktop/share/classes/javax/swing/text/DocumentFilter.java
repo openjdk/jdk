@@ -75,7 +75,7 @@ public class DocumentFilter {
      * @param fb FilterBypass that can be used to mutate Document
      * @param offset the offset from the beginning &gt;= 0
      * @param length the number of characters to remove &gt;= 0
-     * @exception BadLocationException  some portion of the removal range
+     * @throws BadLocationException  some portion of the removal range
      *   was not a valid part of the document.  The location in the exception
      *   is the first bad position encountered.
      */
@@ -97,7 +97,7 @@ public class DocumentFilter {
      * @param string the string to insert
      * @param attr      the attributes to associate with the inserted
      *   content.  This may be null if there are no attributes.
-     * @exception BadLocationException  the given insert position is not a
+     * @throws BadLocationException  the given insert position is not a
      *   valid position within the document
      */
     public void insertString(FilterBypass fb, int offset, String string,
@@ -117,7 +117,7 @@ public class DocumentFilter {
      * @param text Text to insert, null indicates no text to insert
      * @param attrs AttributeSet indicating attributes of inserted text,
      *              null is legal.
-     * @exception BadLocationException  the given insert position is not a
+     * @throws BadLocationException  the given insert position is not a
      *   valid position within the document
      */
     public void replace(FilterBypass fb, int offset, int length, String text,
@@ -153,7 +153,7 @@ public class DocumentFilter {
          *
          * @param offset the offset from the beginning &gt;= 0
          * @param length the number of characters to remove &gt;= 0
-         * @exception BadLocationException some portion of the removal range
+         * @throws BadLocationException some portion of the removal range
          *   was not a valid part of the document.  The location in the
          *   exception is the first bad position encountered.
          */
@@ -169,7 +169,7 @@ public class DocumentFilter {
          * @param string the string to insert
          * @param attr the attributes to associate with the inserted
          *   content.  This may be null if there are no attributes.
-         * @exception BadLocationException  the given insert position is not a
+         * @throws BadLocationException  the given insert position is not a
          *   valid position within the document
          */
         public abstract void insertString(int offset, String string,
@@ -186,7 +186,7 @@ public class DocumentFilter {
          * @param string Text to insert, null indicates no text to insert
          * @param attrs AttributeSet indicating attributes of inserted text,
          *              null is legal.
-         * @exception BadLocationException  the given insert is not a
+         * @throws BadLocationException  the given insert is not a
          *   valid position within the document
          */
         public abstract void replace(int offset, int length, String string,

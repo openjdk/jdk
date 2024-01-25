@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,14 @@ public class SleepingThread extends RecursiveMonitoringThread {
         private Object readyLock = new Object();
         private static final String[] expectedMethods = {
                 "java.lang.Thread.sleep",
+                "java.lang.Thread.sleepNanos",
+                "java.lang.Thread.sleepNanos0",
+                "java.lang.Thread.beforeSleep",
+                "java.lang.Thread.afterSleep",
+                "java.util.concurrent.TimeUnit.toNanos",
+                "jdk.internal.event.ThreadSleepEvent.<clinit>",
+                "jdk.internal.event.ThreadSleepEvent.isTurnedOn",
+                "jdk.internal.event.ThreadSleepEvent.isEnabled",
                 "nsk.monitoring.share.thread.SleepingThread.runInside"
         };
 

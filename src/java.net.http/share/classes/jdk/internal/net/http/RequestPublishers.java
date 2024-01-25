@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -195,7 +196,7 @@ public final class RequestPublishers {
         @Override
         public long contentLength() {
             if (contentLength == 0) {
-                synchronized(this) {
+                synchronized (this) {
                     if (contentLength == 0) {
                         contentLength = computeLength(content);
                     }
@@ -253,6 +254,7 @@ public final class RequestPublishers {
          */
         public static FilePublisher create(Path path)
                 throws FileNotFoundException {
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             FilePermission filePermission = null;
             boolean defaultFS = true;
@@ -289,6 +291,7 @@ public final class RequestPublishers {
 
             Permission perm = filePermission;
             assert perm == null || perm.getActions().equals("read");
+            @SuppressWarnings("removal")
             AccessControlContext acc = sm != null ?
                     AccessController.getContext() : null;
             boolean finalDefaultFS = defaultFS;
@@ -305,6 +308,7 @@ public final class RequestPublishers {
             return new FilePublisher(path, length, inputStreamSupplier);
         }
 
+        @SuppressWarnings("removal")
         private static InputStream createInputStream(Path path,
                                                      AccessControlContext acc,
                                                      Permission perm,
@@ -384,6 +388,7 @@ public final class RequestPublishers {
         volatile ByteBuffer nextBuffer;
         volatile boolean need2Read = true;
         volatile boolean haveNext;
+        final ReentrantLock stateLock = new ReentrantLock();
 
         StreamIterator(InputStream is) {
             this(is, Utils::getBuffer);
@@ -430,7 +435,16 @@ public final class RequestPublishers {
         }
 
         @Override
-        public synchronized boolean hasNext() {
+        public boolean hasNext() {
+            stateLock.lock();
+            try {
+                return hasNext0();
+            } finally {
+                stateLock.unlock();
+            }
+        }
+
+        private boolean hasNext0() {
             if (need2Read) {
                 try {
                     haveNext = read() != -1;
@@ -451,12 +465,17 @@ public final class RequestPublishers {
         }
 
         @Override
-        public synchronized ByteBuffer next() {
-            if (!hasNext()) {
-                throw new NoSuchElementException();
+        public ByteBuffer next() {
+            stateLock.lock();
+            try {
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
+                need2Read = true;
+                return nextBuffer;
+            } finally {
+                stateLock.unlock();
             }
-            need2Read = true;
-            return nextBuffer;
         }
 
     }
@@ -583,7 +602,7 @@ public final class RequestPublishers {
         AggregateSubscription(List<BodyPublisher> bodies, Flow.Subscriber<? super ByteBuffer> subscriber) {
             this.bodies = new ConcurrentLinkedQueue<>(bodies);
             this.subscriber = subscriber;
-            this.scheduler = SequentialScheduler.synchronizedScheduler(this::run);
+            this.scheduler = SequentialScheduler.lockingScheduler(this::run);
         }
 
         @Override

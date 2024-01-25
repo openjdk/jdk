@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,11 +41,9 @@ class DropShadowEffect extends ShadowEffect {
     // Effect Methods
 
     /**
-     * Get the type of this effect, one of UNDER,BLENDED,OVER. UNDER means the result of apply effect should be painted
-     * under the src image. BLENDED means the result of apply sffect contains a modified src image so just it should be
-     * painted. OVER means the result of apply effect should be painted over the src image.
+     * {@inheritDoc}
      *
-     * @return The effect type
+     * @return {@inheritDoc}
      */
     @Override
     EffectType getEffectType() {
@@ -78,7 +76,7 @@ class DropShadowEffect extends ShadowEffect {
         double trangleAngle = Math.toRadians(angle - 90);
         int offsetX = (int) (Math.sin(trangleAngle) * distance);
         int offsetY = (int) (Math.cos(trangleAngle) * distance);
-        // clac expanded size
+        // calc expanded size
         int tmpOffX = offsetX + size;
         int tmpOffY = offsetX + size;
         int tmpW = w + offsetX + size + size;

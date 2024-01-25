@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ import java.util.concurrent.ConcurrentMap;
  * @since 1.5
  */
 
-public abstract class CalendarSystem {
+public abstract sealed class CalendarSystem permits AbstractCalendar {
 
     /////////////////////// Calendar Factory Methods /////////////////////////
 
@@ -111,7 +111,9 @@ public abstract class CalendarSystem {
         }
     }
 
-    private static final Gregorian GREGORIAN_INSTANCE = new Gregorian();
+    private static final class GregorianHolder {
+        private static final Gregorian GREGORIAN_INSTANCE = new Gregorian();
+    }
 
     /**
      * Returns the singleton instance of the <code>Gregorian</code>
@@ -120,7 +122,7 @@ public abstract class CalendarSystem {
      * @return the <code>Gregorian</code> instance
      */
     public static Gregorian getGregorianCalendar() {
-        return GREGORIAN_INSTANCE;
+        return GregorianHolder.GREGORIAN_INSTANCE;
     }
 
     /**
@@ -135,7 +137,7 @@ public abstract class CalendarSystem {
      */
     public static CalendarSystem forName(String calendarName) {
         if ("gregorian".equals(calendarName)) {
-            return GREGORIAN_INSTANCE;
+            return GregorianHolder.GREGORIAN_INSTANCE;
         }
 
         if (!initialized) {
@@ -233,14 +235,6 @@ public abstract class CalendarSystem {
     public abstract int getYearLength(CalendarDate date);
 
     /**
-     * Returns the number of months of the specified year. This method
-     * does not perform the normalization with the specified
-     * <code>CalendarDate</code>. The <code>CalendarDate</code> must
-     * be normalized to get a correct value.
-     */
-    public abstract int getYearLengthInMonths(CalendarDate date);
-
-    /**
      * Returns the length in days of the month specified by the calendar
      * date. This method does not perform the normalization with the
      * specified calendar date. The <code>CalendarDate</code> must
@@ -252,13 +246,6 @@ public abstract class CalendarSystem {
      * doesn't have a valid month value in this calendar system.
      */
     public abstract int getMonthLength(CalendarDate date); // no setter
-
-    /**
-     * Returns the length in days of a week in this calendar
-     * system. If this calendar system has multiple radix weeks, this
-     * method returns only one of them.
-     */
-    public abstract int getWeekLength();
 
     /**
      * Returns the <code>Era</code> designated by the era name that
@@ -284,13 +271,6 @@ public abstract class CalendarSystem {
      * system.
      */
     public abstract Era[] getEras();
-
-    /**
-     * @throws IllegalArgumentException if the specified era name is
-     * unknown to this calendar system.
-     * @see Era
-     */
-    public abstract void setEra(CalendarDate date, String eraName);
 
     /**
      * Returns a <code>CalendarDate</code> of the n-th day of week

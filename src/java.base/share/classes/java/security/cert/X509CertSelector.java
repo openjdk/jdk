@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ import sun.security.x509.*;
  * number. Other unique combinations include the issuer, subject,
  * subjectKeyIdentifier and/or the subjectPublicKey criteria.
  * <p>
- * Please refer to <a href="http://tools.ietf.org/html/rfc5280">RFC 5280:
+ * Please refer to <a href="https://tools.ietf.org/html/rfc5280">RFC 5280:
  * Internet X.509 Public Key Infrastructure Certificate and CRL Profile</a> for
  * definitions of the X.509 certificate extensions mentioned below.
  * <p>
@@ -86,10 +86,6 @@ public class X509CertSelector implements CertSelector {
 
     private static final ObjectIdentifier ANY_EXTENDED_KEY_USAGE =
         ObjectIdentifier.of(KnownOIDs.anyExtendedKeyUsage);
-
-    static {
-        CertPathHelperImpl.initialize();
-    }
 
     private BigInteger serialNumber;
     private X500Principal issuer;
@@ -834,10 +830,9 @@ public class X509CertSelector implements CertSelector {
                 throw new IOException("name list size not 2");
             }
             Object o =  nameList.get(0);
-            if (!(o instanceof Integer)) {
+            if (!(o instanceof Integer nameType)) {
                 throw new IOException("expected an Integer");
             }
-            int nameType = ((Integer)o).intValue();
             o = nameList.get(1);
             genNames.add(makeGeneralNameInterface(nameType, o));
         }
@@ -885,34 +880,21 @@ public class X509CertSelector implements CertSelector {
                 + type + ")...");
         }
 
-        if (name instanceof String) {
+        if (name instanceof String nameAsString) {
             if (debug != null) {
                 debug.println("X509CertSelector.makeGeneralNameInterface() "
-                    + "name is String: " + name);
+                    + "name is String: " + nameAsString);
             }
-            switch (type) {
-            case NAME_RFC822:
-                result = new RFC822Name((String)name);
-                break;
-            case NAME_DNS:
-                result = new DNSName((String)name);
-                break;
-            case NAME_DIRECTORY:
-                result = new X500Name((String)name);
-                break;
-            case NAME_URI:
-                result = new URIName((String)name);
-                break;
-            case NAME_IP:
-                result = new IPAddressName((String)name);
-                break;
-            case NAME_OID:
-                result = new OIDName((String)name);
-                break;
-            default:
-                throw new IOException("unable to parse String names of type "
-                                      + type);
-            }
+            result = switch (type) {
+                case NAME_RFC822    -> new RFC822Name(nameAsString);
+                case NAME_DNS       -> new DNSName(nameAsString);
+                case NAME_DIRECTORY -> new X500Name(nameAsString);
+                case NAME_URI       -> new URIName(nameAsString);
+                case NAME_IP        -> new IPAddressName(nameAsString);
+                case NAME_OID       -> new OIDName(nameAsString);
+                default -> throw new IOException("unable to parse String names of type "
+                                                 + type);
+            };
             if (debug != null) {
                 debug.println("X509CertSelector.makeGeneralNameInterface() "
                     + "result: " + result.toString());
@@ -924,38 +906,19 @@ public class X509CertSelector implements CertSelector {
                     ("X509CertSelector.makeGeneralNameInterface() is byte[]");
             }
 
-            switch (type) {
-            case NAME_ANY:
-                result = new OtherName(val);
-                break;
-            case NAME_RFC822:
-                result = new RFC822Name(val);
-                break;
-            case NAME_DNS:
-                result = new DNSName(val);
-                break;
-            case NAME_X400:
-                result = new X400Address(val);
-                break;
-            case NAME_DIRECTORY:
-                result = new X500Name(val);
-                break;
-            case NAME_EDI:
-                result = new EDIPartyName(val);
-                break;
-            case NAME_URI:
-                result = new URIName(val);
-                break;
-            case NAME_IP:
-                result = new IPAddressName(val);
-                break;
-            case NAME_OID:
-                result = new OIDName(val);
-                break;
-            default:
-                throw new IOException("unable to parse byte array names of "
-                    + "type " + type);
-            }
+            result = switch (type) {
+                case NAME_ANY       -> new OtherName(val);
+                case NAME_RFC822    -> new RFC822Name(val);
+                case NAME_DNS       -> new DNSName(val);
+                case NAME_X400      -> new X400Address(val);
+                case NAME_DIRECTORY -> new X500Name(val);
+                case NAME_EDI       -> new EDIPartyName(val);
+                case NAME_URI       -> new URIName(val);
+                case NAME_IP        -> new IPAddressName(val);
+                case NAME_OID       -> new OIDName(val);
+                default -> throw new IOException("unable to parse byte array names of "
+                                                 + "type " + type);
+            };
             if (debug != null) {
                 debug.println("X509CertSelector.makeGeneralNameInterface() result: "
                     + result.toString());
@@ -1160,14 +1123,6 @@ public class X509CertSelector implements CertSelector {
         }
     }
 
-    // called from CertPathHelper
-    void setPathToNamesInternal(Set<GeneralNameInterface> names) {
-        // set names to non-null dummy value
-        // this breaks getPathToNames()
-        pathToNames = Collections.<List<?>>emptySet();
-        pathToGeneralNames = names;
-    }
-
     /**
      * Adds a name to the pathToNames criterion. The {@code X509Certificate}
      * must not include name constraints that would prohibit building a
@@ -1321,7 +1276,7 @@ public class X509CertSelector implements CertSelector {
      */
     @Deprecated(since="16")
     public String getIssuerAsString() {
-        return (issuer == null ? null : issuer.getName());
+        return issuer == null ? null : issuer.getName();
     }
 
     /**
@@ -1343,7 +1298,7 @@ public class X509CertSelector implements CertSelector {
      * @throws IOException if an encoding error occurs
      */
     public byte[] getIssuerAsBytes() throws IOException {
-        return (issuer == null ? null: issuer.getEncoded());
+        return issuer == null ? null : issuer.getEncoded();
     }
 
     /**
@@ -1380,7 +1335,7 @@ public class X509CertSelector implements CertSelector {
      */
     @Deprecated(since="16")
     public String getSubjectAsString() {
-        return (subject == null ? null : subject.getName());
+        return subject == null ? null : subject.getName();
     }
 
     /**
@@ -1402,7 +1357,7 @@ public class X509CertSelector implements CertSelector {
      * @throws IOException if an encoding error occurs
      */
     public byte[] getSubjectAsBytes() throws IOException {
-        return (subject == null ? null : subject.getEncoded());
+        return subject == null ? null : subject.getEncoded();
     }
 
     /**
@@ -1668,10 +1623,9 @@ public class X509CertSelector implements CertSelector {
                 throw new IOException("name list size not 2");
             }
             Object o = nameList.get(0);
-            if (!(o instanceof Integer)) {
+            if (!(o instanceof Integer nameType)) {
                 throw new IOException("expected an Integer");
             }
-            int nameType = ((Integer)o).intValue();
             if ((nameType < 0) || (nameType > 8)) {
                 throw new IOException("name type not 0-8");
             }
@@ -1797,10 +1751,10 @@ public class X509CertSelector implements CertSelector {
         StringBuilder sb = new StringBuilder();
         sb.append("X509CertSelector: [\n");
         if (x509Cert != null) {
-            sb.append("  Certificate: " + x509Cert.toString() + "\n");
+            sb.append("  Certificate: " + x509Cert + "\n");
         }
         if (serialNumber != null) {
-            sb.append("  Serial Number: " + serialNumber.toString() + "\n");
+            sb.append("  Serial Number: " + serialNumber + "\n");
         }
         if (issuer != null) {
             sb.append("  Issuer: " + getIssuerAsString() + "\n");
@@ -1809,12 +1763,10 @@ public class X509CertSelector implements CertSelector {
             sb.append("  Subject: " + getSubjectAsString() + "\n");
         }
         sb.append("  matchAllSubjectAltNames flag: "
-                  + String.valueOf(matchAllSubjectAltNames) + "\n");
+                  + matchAllSubjectAltNames + "\n");
         if (subjectAlternativeNames != null) {
             sb.append("  SubjectAlternativeNames:\n");
-            Iterator<List<?>> i = subjectAlternativeNames.iterator();
-            while (i.hasNext()) {
-                List<?> list = i.next();
+            for (List<?> list : subjectAlternativeNames) {
                 sb.append("    type " + list.get(0) +
                           ", name " + list.get(1) + "\n");
             }
@@ -1831,35 +1783,34 @@ public class X509CertSelector implements CertSelector {
         }
         if (certificateValid != null) {
             sb.append("  Certificate Valid: " +
-                      certificateValid.toString() + "\n");
+                      certificateValid + "\n");
         }
         if (privateKeyValid != null) {
             sb.append("  Private Key Valid: " +
-                      privateKeyValid.toString() + "\n");
+                      privateKeyValid + "\n");
         }
         if (subjectPublicKeyAlgID != null) {
             sb.append("  Subject Public Key AlgID: " +
-                      subjectPublicKeyAlgID.toString() + "\n");
+                      subjectPublicKeyAlgID + "\n");
         }
         if (subjectPublicKey != null) {
             sb.append("  Subject Public Key: " +
-                      subjectPublicKey.toString() + "\n");
+                      subjectPublicKey + "\n");
         }
         if (keyUsage != null) {
             sb.append("  Key Usage: " + keyUsageToString(keyUsage) + "\n");
         }
         if (keyPurposeSet != null) {
             sb.append("  Extended Key Usage: " +
-                      keyPurposeSet.toString() + "\n");
+                      keyPurposeSet + "\n");
         }
         if (policy != null) {
-            sb.append("  Policy: " + policy.toString() + "\n");
+            sb.append("  Policy: " + policy + "\n");
         }
         if (pathToGeneralNames != null) {
             sb.append("  Path to names:\n");
-            Iterator<GeneralNameInterface> i = pathToGeneralNames.iterator();
-            while (i.hasNext()) {
-                sb.append("    " + i.next() + "\n");
+            for (GeneralNameInterface pathToGeneralName : pathToGeneralNames) {
+                sb.append("    " + pathToGeneralName + "\n");
             }
         }
         sb.append("]");
@@ -1905,7 +1856,7 @@ public class X509CertSelector implements CertSelector {
 
         s += "]\n";
 
-        return (s);
+        return s;
     }
 
     /**
@@ -1929,22 +1880,15 @@ public class X509CertSelector implements CertSelector {
      */
     private static Extension getExtensionObject(X509Certificate cert, KnownOIDs extId)
             throws IOException {
-        if (cert instanceof X509CertImpl) {
-            X509CertImpl impl = (X509CertImpl) cert;
-            switch (extId) {
-                case PrivateKeyUsage:
-                    return impl.getPrivateKeyUsageExtension();
-                case SubjectAlternativeName:
-                    return impl.getSubjectAlternativeNameExtension();
-                case NameConstraints:
-                    return impl.getNameConstraintsExtension();
-                case CertificatePolicies:
-                    return impl.getCertificatePoliciesExtension();
-                case extendedKeyUsage:
-                    return impl.getExtendedKeyUsageExtension();
-                default:
-                    return null;
-            }
+        if (cert instanceof X509CertImpl impl) {
+            return switch (extId) {
+                case PrivateKeyUsage        -> impl.getPrivateKeyUsageExtension();
+                case SubjectAlternativeName -> impl.getSubjectAlternativeNameExtension();
+                case NameConstraints        -> impl.getNameConstraintsExtension();
+                case CertificatePolicies    -> impl.getCertificatePoliciesExtension();
+                case extendedKeyUsage       -> impl.getExtendedKeyUsageExtension();
+                default -> null;
+            };
         }
         byte[] rawExtVal = cert.getExtensionValue(extId.value());
         if (rawExtVal == null) {
@@ -1980,16 +1924,15 @@ public class X509CertSelector implements CertSelector {
      *         selected, {@code false} otherwise
      */
     public boolean match(Certificate cert) {
-        if (!(cert instanceof X509Certificate)) {
+        if (!(cert instanceof X509Certificate xcert)) {
             return false;
         }
-        X509Certificate xcert = (X509Certificate)cert;
 
         if (debug != null) {
-            debug.println("X509CertSelector.match(SN: "
-                + (xcert.getSerialNumber()).toString(16) + "\n  Issuer: "
-                + xcert.getIssuerX500Principal() + "\n  Subject: " + xcert.getSubjectX500Principal()
-                + ")");
+            debug.println("X509CertSelector.match(Serial number: "
+                + Debug.toString(xcert.getSerialNumber())
+                + "\n  Issuer: " + xcert.getIssuerX500Principal() + "\n  Subject: "
+                + xcert.getSubjectX500Principal() + ")");
         }
 
         /* match on X509Certificate */
@@ -2165,12 +2108,8 @@ public class X509CertSelector implements CertSelector {
         } catch (CertificateExpiredException e1) {
             if (debug != null) {
                 String time = "n/a";
-                try {
-                    Date notAfter = ext.get(PrivateKeyUsageExtension.NOT_AFTER);
-                    time = notAfter.toString();
-                } catch (CertificateException ex) {
-                    // not able to retrieve notAfter value
-                }
+                Date notAfter = ext.getNotAfter();
+                time = notAfter.toString();
                 debug.println("X509CertSelector.match: private key usage not "
                     + "within validity date; ext.NOT_After: "
                     + time + "; X509CertSelector: "
@@ -2181,16 +2120,12 @@ public class X509CertSelector implements CertSelector {
         } catch (CertificateNotYetValidException e2) {
             if (debug != null) {
                 String time = "n/a";
-                try {
-                    Date notBefore = ext.get(PrivateKeyUsageExtension.NOT_BEFORE);
-                    time = notBefore.toString();
-                } catch (CertificateException ex) {
-                    // not able to retrieve notBefore value
-                }
+                Date notBefore = ext.getNotBefore();
+                time = notBefore.toString();
                 debug.println("X509CertSelector.match: private key usage not "
                     + "within validity date; ext.NOT_BEFORE: "
                     + time + "; X509CertSelector: "
-                    + this.toString());
+                    + this);
                 e2.printStackTrace();
             }
             return false;
@@ -2198,7 +2133,7 @@ public class X509CertSelector implements CertSelector {
             if (debug != null) {
                 debug.println("X509CertSelector.match: IOException in "
                     + "private key usage check; X509CertSelector: "
-                    + this.toString());
+                    + this);
                 e4.printStackTrace();
             }
             return false;
@@ -2272,8 +2207,7 @@ public class X509CertSelector implements CertSelector {
                 (ExtendedKeyUsageExtension)getExtensionObject(xcert,
                                                 KnownOIDs.extendedKeyUsage);
             if (ext != null) {
-                Vector<ObjectIdentifier> certKeyPurposeVector =
-                    ext.get(ExtendedKeyUsageExtension.USAGES);
+                Vector<ObjectIdentifier> certKeyPurposeVector = ext.getUsages();
                 if (!certKeyPurposeVector.contains(ANY_EXTENDED_KEY_USAGE)
                         && !certKeyPurposeVector.containsAll(keyPurposeOIDSet)) {
                     if (debug != null) {
@@ -2309,8 +2243,7 @@ public class X509CertSelector implements CertSelector {
                 }
                 return false;
             }
-            GeneralNames certNames =
-                    sanExt.get(SubjectAlternativeNameExtension.SUBJECT_NAME);
+            GeneralNames certNames = sanExt.getNames();
             Iterator<GeneralNameInterface> i =
                                 subjectAlternativeGeneralNames.iterator();
             while (i.hasNext()) {
@@ -2378,7 +2311,7 @@ public class X509CertSelector implements CertSelector {
                 }
                 return false;
             }
-            List<PolicyInformation> policies = ext.get(CertificatePoliciesExtension.POLICIES);
+            List<PolicyInformation> policies = ext.getCertPolicies();
             /*
              * Convert the Vector of PolicyInformation to a Vector
              * of CertificatePolicyIds for easier comparison.
@@ -2441,24 +2374,20 @@ public class X509CertSelector implements CertSelector {
             }
             if ((debug != null) && Debug.isOn("certpath")) {
                 debug.println("X509CertSelector.match pathToNames:\n");
-                Iterator<GeneralNameInterface> i =
-                                        pathToGeneralNames.iterator();
-                while (i.hasNext()) {
-                    debug.println("    " + i.next() + "\n");
+                for (GeneralNameInterface pathToGeneralName : pathToGeneralNames) {
+                    debug.println("    " + pathToGeneralName + "\n");
                 }
             }
 
-            GeneralSubtrees permitted =
-                    ext.get(NameConstraintsExtension.PERMITTED_SUBTREES);
-            GeneralSubtrees excluded =
-                    ext.get(NameConstraintsExtension.EXCLUDED_SUBTREES);
+            GeneralSubtrees permitted = ext.getPermittedSubtrees();
+            GeneralSubtrees excluded = ext.getExcludedSubtrees();
             if (excluded != null) {
-                if (matchExcluded(excluded) == false) {
+                if (!matchExcluded(excluded)) {
                     return false;
                 }
             }
             if (permitted != null) {
-                if (matchPermitted(permitted) == false) {
+                if (!matchPermitted(permitted)) {
                     return false;
                 }
             }
@@ -2481,9 +2410,7 @@ public class X509CertSelector implements CertSelector {
         for (Iterator<GeneralSubtree> t = excluded.iterator(); t.hasNext(); ) {
             GeneralSubtree tree = t.next();
             GeneralNameInterface excludedName = tree.getName().getName();
-            Iterator<GeneralNameInterface> i = pathToGeneralNames.iterator();
-            while (i.hasNext()) {
-                GeneralNameInterface pathToName = i.next();
+            for (GeneralNameInterface pathToName : pathToGeneralNames) {
                 if (excludedName.getType() == pathToName.getType()) {
                     switch (pathToName.constrains(excludedName)) {
                     case GeneralNameInterface.NAME_WIDENS:
@@ -2510,9 +2437,7 @@ public class X509CertSelector implements CertSelector {
          * If not, return false. However, if no subtrees of a given type
          * are listed, all names of that type are permitted.
          */
-        Iterator<GeneralNameInterface> i = pathToGeneralNames.iterator();
-        while (i.hasNext()) {
-            GeneralNameInterface pathToName = i.next();
+        for (GeneralNameInterface pathToName : pathToGeneralNames) {
             Iterator<GeneralSubtree> t = permitted.iterator();
             boolean permittedNameFound = false;
             boolean nameTypeFound = false;

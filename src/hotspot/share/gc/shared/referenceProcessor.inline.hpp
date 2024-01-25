@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,18 @@
 #define SHARE_GC_SHARED_REFERENCEPROCESSOR_INLINE_HPP
 
 #include "gc/shared/referenceProcessor.hpp"
+
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.hpp"
 
 oop DiscoveredList::head() const {
   return UseCompressedOops ?  CompressedOops::decode(_compressed_head) :
     _oop_head;
+}
+
+void DiscoveredList::add_as_head(oop o) {
+  set_head(o);
+  inc_length(1);
 }
 
 void DiscoveredList::set_head(oop o) {
@@ -44,26 +50,28 @@ void DiscoveredList::set_head(oop o) {
 }
 
 bool DiscoveredList::is_empty() const {
- return head() == NULL;
+ return head() == nullptr;
 }
 
 void DiscoveredList::clear() {
-  set_head(NULL);
+  set_head(nullptr);
   set_length(0);
 }
 
 DiscoveredListIterator::DiscoveredListIterator(DiscoveredList&    refs_list,
                                                OopClosure*        keep_alive,
-                                               BoolObjectClosure* is_alive):
+                                               BoolObjectClosure* is_alive,
+                                               EnqueueDiscoveredFieldClosure* enqueue):
   _refs_list(refs_list),
   _prev_discovered_addr(refs_list.adr_head()),
-  _prev_discovered(NULL),
+  _prev_discovered(nullptr),
   _current_discovered(refs_list.head()),
-  _current_discovered_addr(NULL),
-  _next_discovered(NULL),
-  _referent(NULL),
+  _current_discovered_addr(nullptr),
+  _next_discovered(nullptr),
+  _referent(nullptr),
   _keep_alive(keep_alive),
   _is_alive(is_alive),
+  _enqueue(enqueue),
 #ifdef ASSERT
   _first_seen(refs_list.head()),
 #endif

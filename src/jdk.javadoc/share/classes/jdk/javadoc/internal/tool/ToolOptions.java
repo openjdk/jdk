@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,11 +54,6 @@ import static jdk.javadoc.internal.tool.ToolOptions.ToolOption.Kind.*;
  * or {@link #ignoreSourceErrors}. Unless otherwise stated,
  * these methods should all be taken as just accessing the value
  * of the associated option.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class ToolOptions {
     // The following are the names of options handled in the first pass of option decoding,
@@ -90,7 +85,7 @@ public class ToolOptions {
     /**
      * Argument for command-line option {@code --expand-requires}.
      */
-    private AccessKind expandRequires;
+    private AccessLevel expandRequires;
 
     /**
      * Argument for command-line option {@code --ignore-source-errors}.
@@ -111,22 +106,22 @@ public class ToolOptions {
     /**
      * Argument for command-line option {@code --show-members}.
      */
-    private AccessKind showMembersAccess;
+    private AccessLevel showMembersAccess;
 
     /**
      * Argument for command-line option {@code --show-types}.
      */
-    private AccessKind showTypesAccess;
+    private AccessLevel showTypesAccess;
 
     /**
      * Argument for command-line option {@code --show-packages}.
      */
-    private AccessKind showPackagesAccess;
+    private AccessLevel showPackagesAccess;
 
     /**
      * Argument for command-line option {@code --show-module-contents}.
      */
-    private AccessKind showModuleContents;
+    private AccessLevel showModuleContents;
 
     /**
      * Argument for command-line option {@code -quiet}.
@@ -144,7 +139,7 @@ public class ToolOptions {
     private boolean verbose;
 
     /**
-     * Argument for command-line option {@code -xclasses}.
+     * Argument for command-line option {@code -Xclasses}.
      * If true, names on the command line that would normally be
      * treated as package names are treated as class names instead.
      */
@@ -168,9 +163,9 @@ public class ToolOptions {
     private final OptionHelper compilerOptionHelper;
 
     /**
-     * The messager to be used to report diagnostics..
+     * The log to be used to report diagnostics..
      */
-    private final Messager messager;
+    private final JavadocLog log;
 
     /**
      * The helper for help and version options
@@ -181,10 +176,10 @@ public class ToolOptions {
      * Creates an object to handle tool options.
      *
      * @param context the context used to find other tool-related components
-     * @param messager the messager to be used to report diagnostics
+     * @param log the log to be used to report diagnostics
      */
-    ToolOptions(Context context, Messager messager, ShowHelper showHelper) {
-        this.messager = messager;
+    ToolOptions(Context context, JavadocLog log, ShowHelper showHelper) {
+        this.log = log;
         this.showHelper = showHelper;
         compOpts = Options.instance(context);
         fileManagerOpts = new LinkedHashMap<>();
@@ -200,7 +195,7 @@ public class ToolOptions {
         compOpts = null;
         compilerOptionHelper = null;
         fileManagerOpts = null;
-        messager = null;
+        log = null;
         showHelper = null;
     }
 
@@ -646,14 +641,14 @@ public class ToolOptions {
             return names;
         }
 
-        String getParameters(Messager messager) {
+        String getParameters(JavadocLog log) {
             return (hasArg || primaryName.endsWith(":"))
-                    ? messager.getText(getKey(primaryName, ".arg"))
+                    ? log.getText(getKey(primaryName, ".arg"))
                     : null;
         }
 
-        String getDescription(Messager messager) {
-            return messager.getText(getKey(primaryName, ".desc"));
+        String getDescription(JavadocLog log) {
+            return log.getText(getKey(primaryName, ".desc"));
         }
 
         private String getKey(String optionName, String suffix) {
@@ -722,7 +717,7 @@ public class ToolOptions {
     /**
      * Argument for command-line option {@code --expand-requires}.
      */
-    AccessKind expandRequires() {
+    AccessLevel expandRequires() {
         return expandRequires;
     }
 
@@ -751,28 +746,28 @@ public class ToolOptions {
     /**
      * Argument for command-line option {@code --show-members}.
      */
-    AccessKind showMembersAccess() {
+    AccessLevel showMembersAccess() {
         return showMembersAccess;
     }
 
     /**
      * Argument for command-line option {@code --show-types}.
      */
-    AccessKind showTypesAccess() {
+    AccessLevel showTypesAccess() {
         return showTypesAccess;
     }
 
     /**
      * Argument for command-line option {@code --show-packages}.
      */
-    AccessKind showPackagesAccess() {
+    AccessLevel showPackagesAccess() {
         return showPackagesAccess;
     }
 
     /**
      * Argument for command-line option {@code --show-module-contents}.
      */
-    AccessKind showModuleContents() {
+    AccessLevel showModuleContents() {
         return showModuleContents;
     }
 
@@ -798,7 +793,7 @@ public class ToolOptions {
     }
 
     /**
-     * Argument for command-line option {@code -xclasses}.
+     * Argument for command-line option {@code -Xclasses}.
      * If true, names on the command line that would normally be
      * treated as package names are treated as class names instead.
      */
@@ -833,7 +828,7 @@ public class ToolOptions {
      * @return the exception
      */
     private IllegalOptionValue illegalOptionValue(String arg) {
-        return new IllegalOptionValue(showHelper::usage, messager.getText("main.illegal_option_value", arg));
+        return new IllegalOptionValue(showHelper::usage, log.getText("main.illegal_option_value", arg));
     }
 
     /**
@@ -864,7 +859,7 @@ public class ToolOptions {
      * @return the helper
      */
     private OptionHelper getOptionHelper() {
-        return new OptionHelper.GrumpyHelper(messager) {
+        return new OptionHelper.GrumpyHelper(log) {
             @Override
             public String get(com.sun.tools.javac.main.Option option) {
                 return compOpts.get(option);
@@ -890,40 +885,25 @@ public class ToolOptions {
 
     private void setExpandRequires(String arg) throws OptionException {
         switch (arg) {
-            case "transitive":
-                expandRequires = AccessKind.PUBLIC;
-                break;
-            case "all":
-                expandRequires = AccessKind.PRIVATE;
-                break;
-            default:
-                throw illegalOptionValue(arg);
+            case "transitive" -> expandRequires = AccessLevel.PUBLIC;
+            case "all" -> expandRequires = AccessLevel.PRIVATE;
+            default -> throw illegalOptionValue(arg);
         }
     }
 
     private void setShowModuleContents(String arg) throws OptionException {
         switch (arg) {
-            case "api":
-                showModuleContents = AccessKind.PUBLIC;
-                break;
-            case "all":
-                showModuleContents = AccessKind.PRIVATE;
-                break;
-            default:
-                throw illegalOptionValue(arg);
+            case "api" -> showModuleContents = AccessLevel.PUBLIC;
+            case "all" -> showModuleContents = AccessLevel.PRIVATE;
+            default -> throw illegalOptionValue(arg);
         }
     }
 
     private void setShowPackageAccess(String arg) throws OptionException {
         switch (arg) {
-            case "exported":
-                showPackagesAccess = AccessKind.PUBLIC;
-                break;
-            case "all":
-                showPackagesAccess = AccessKind.PRIVATE;
-                break;
-            default:
-                throw illegalOptionValue(arg);
+            case "exported" -> showPackagesAccess = AccessLevel.PUBLIC;
+            case "all" -> showPackagesAccess = AccessLevel.PRIVATE;
+            default -> throw illegalOptionValue(arg);
         }
     }
 
@@ -953,53 +933,37 @@ public class ToolOptions {
      * -private, so on, in addition to the new ones such as
      * --show-types:public and so on.
      */
-    private AccessKind getAccessValue(String arg) throws OptionException {
+    private AccessLevel getAccessValue(String arg) throws OptionException {
         int colon = arg.indexOf(':');
-        String value = (colon > 0)
-                ? arg.substring(colon + 1)
-                : arg;
-        switch (value) {
-            case "public":
-                return AccessKind.PUBLIC;
-            case "protected":
-                return AccessKind.PROTECTED;
-            case "package":
-                return AccessKind.PACKAGE;
-            case "private":
-                return AccessKind.PRIVATE;
-            default:
-                throw illegalOptionValue(value);
-        }
+        String value = (colon > 0) ? arg.substring(colon + 1) : arg;
+        return switch (value) {
+            case "public" -> AccessLevel.PUBLIC;
+            case "protected" -> AccessLevel.PROTECTED;
+            case "package" -> AccessLevel.PACKAGE;
+            case "private" -> AccessLevel.PRIVATE;
+            default -> throw illegalOptionValue(value);
+        };
     }
 
     /*
      * Sets all access members to PROTECTED; this is the default.
      */
     private void setAccessDefault() {
-        setAccess(AccessKind.PROTECTED);
+        setAccess(AccessLevel.PROTECTED);
     }
 
     /*
-     * This sets access to all the allowed kinds in the
+     * Sets access level to all the allowed kinds in the
      * access members.
      */
-    private void setAccess(AccessKind accessValue) {
+    private void setAccess(AccessLevel accessValue) {
         for (ElementKind kind : ElementsTable.ModifierFilter.ALLOWED_KINDS) {
             switch (kind) {
-                case METHOD:
-                    showMembersAccess = accessValue;
-                    break;
-                case CLASS:
-                    showTypesAccess = accessValue;
-                    break;
-                case PACKAGE:
-                    showPackagesAccess = accessValue;
-                    break;
-                case MODULE:
-                    showModuleContents = accessValue;
-                    break;
-                default:
-                    throw new AssertionError("unknown element kind:" + kind);
+                case METHOD -> showMembersAccess = accessValue;
+                case CLASS -> showTypesAccess = accessValue;
+                case PACKAGE -> showPackagesAccess = accessValue;
+                case MODULE -> showModuleContents = accessValue;
+                default -> throw new AssertionError("unknown element kind:" + kind);
             }
         }
     }

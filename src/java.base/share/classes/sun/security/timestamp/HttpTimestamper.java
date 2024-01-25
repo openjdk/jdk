@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,14 @@
 
 package sun.security.timestamp;
 
-import java.io.BufferedInputStream;
 import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.URI;
-import java.net.URL;
 import java.net.HttpURLConnection;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import sun.security.util.Debug;
 
@@ -63,7 +63,7 @@ public class HttpTimestamper implements Timestamper {
     /*
      * HTTP URI identifying the location of the TSA
      */
-    private URI tsaURI = null;
+    private final URI tsaURI;
 
     /**
      * Creates a timestamper that connects to the specified TSA.
@@ -112,9 +112,7 @@ public class HttpTimestamper implements Timestamper {
         connection.connect(); // No HTTP authentication is performed
 
         // Send the request
-        DataOutputStream output = null;
-        try {
-            output = new DataOutputStream(connection.getOutputStream());
+        try (var output = new DataOutputStream(connection.getOutputStream())) {
             byte[] request = tsQuery.encode();
             output.write(request, 0, request.length);
             output.flush();
@@ -122,17 +120,11 @@ public class HttpTimestamper implements Timestamper {
                 debug.println("sent timestamp query (length=" +
                         request.length + ")");
             }
-        } finally {
-            if (output != null) {
-                output.close();
-            }
         }
 
         // Receive the reply
-        BufferedInputStream input = null;
-        byte[] replyBuffer = null;
-        try {
-            input = new BufferedInputStream(connection.getInputStream());
+        byte[] replyBuffer;
+        try (var input = connection.getInputStream()) {
             if (debug != null) {
                 String header = connection.getHeaderField(0);
                 debug.println(header);
@@ -156,10 +148,6 @@ public class HttpTimestamper implements Timestamper {
             if (debug != null) {
                 debug.println("received timestamp response (length=" +
                         replyBuffer.length + ")");
-            }
-        } finally {
-            if (input != null) {
-                input.close();
             }
         }
         return new TSResponse(replyBuffer);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm_io.h"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmClasses.hpp"
@@ -34,19 +33,22 @@
 #include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "interpreter/bytecodeTracer.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "interpreter/templateTable.hpp"
+#include "jvm_io.h"
 #include "logging/log.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "oops/constantPool.hpp"
+#include "oops/constantPool.inline.hpp"
 #include "oops/cpCache.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/methodData.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -55,7 +57,7 @@
 #include "prims/methodHandles.hpp"
 #include "prims/nativeLookup.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/biasedLocking.hpp"
+#include "runtime/continuation.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/frame.inline.hpp"
@@ -72,6 +74,7 @@
 #include "runtime/synchronizer.hpp"
 #include "runtime/threadCritical.hpp"
 #include "utilities/align.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/events.hpp"
 #ifdef COMPILER2
@@ -82,9 +85,9 @@
 class LastFrameAccessor : public StackObj {
   frame _last_frame;
 public:
-  LastFrameAccessor(JavaThread* thread) {
-    assert(thread == Thread::current(), "sanity");
-    _last_frame = thread->last_frame();
+  LastFrameAccessor(JavaThread* current) {
+    assert(current == Thread::current(), "sanity");
+    _last_frame = current->last_frame();
   }
   bool is_interpreted_frame() const              { return _last_frame.is_interpreted_frame(); }
   Method*   method() const                       { return _last_frame.interpreter_frame_method(); }
@@ -101,13 +104,8 @@ public:
   Bytecode  bytecode() const                     { return Bytecode(method(), bcp()); }
   int get_index_u1(Bytecodes::Code bc) const     { return bytecode().get_index_u1(bc); }
   int get_index_u2(Bytecodes::Code bc) const     { return bytecode().get_index_u2(bc); }
-  int get_index_u2_cpcache(Bytecodes::Code bc) const
-                                                 { return bytecode().get_index_u2_cpcache(bc); }
   int get_index_u4(Bytecodes::Code bc) const     { return bytecode().get_index_u4(bc); }
   int number_of_dimensions() const               { return bcp()[3]; }
-  ConstantPoolCacheEntry* cache_entry_at(int i) const
-                                                 { return method()->constants()->cache()->entry_at(i); }
-  ConstantPoolCacheEntry* cache_entry() const    { return cache_entry_at(Bytes::get_native_u2(bcp() + 1)); }
 
   oop callee_receiver(Symbol* signature) {
     return _last_frame.interpreter_callee_receiver(signature);
@@ -128,14 +126,14 @@ public:
 //------------------------------------------------------------------------------------------------------------------------
 // State accessors
 
-void InterpreterRuntime::set_bcp_and_mdp(address bcp, JavaThread *thread) {
-  LastFrameAccessor last_frame(thread);
+void InterpreterRuntime::set_bcp_and_mdp(address bcp, JavaThread* current) {
+  LastFrameAccessor last_frame(current);
   last_frame.set_bcp(bcp);
   if (ProfileInterpreter) {
     // ProfileTraps uses MDOs independently of ProfileInterpreter.
-    // That is why we must check both ProfileInterpreter and mdo != NULL.
+    // That is why we must check both ProfileInterpreter and mdo != nullptr.
     MethodData* mdo = last_frame.method()->method_data();
-    if (mdo != NULL) {
+    if (mdo != nullptr) {
       NEEDS_CLEANUP;
       last_frame.set_mdp(mdo->bci_to_dp(last_frame.bci()));
     }
@@ -146,30 +144,30 @@ void InterpreterRuntime::set_bcp_and_mdp(address bcp, JavaThread *thread) {
 // Constants
 
 
-JRT_ENTRY(void, InterpreterRuntime::ldc(JavaThread* thread, bool wide))
+JRT_ENTRY(void, InterpreterRuntime::ldc(JavaThread* current, bool wide))
   // access constant pool
-  LastFrameAccessor last_frame(thread);
+  LastFrameAccessor last_frame(current);
   ConstantPool* pool = last_frame.method()->constants();
-  int index = wide ? last_frame.get_index_u2(Bytecodes::_ldc_w) : last_frame.get_index_u1(Bytecodes::_ldc);
-  constantTag tag = pool->tag_at(index);
+  int cp_index = wide ? last_frame.get_index_u2(Bytecodes::_ldc_w) : last_frame.get_index_u1(Bytecodes::_ldc);
+  constantTag tag = pool->tag_at(cp_index);
 
   assert (tag.is_unresolved_klass() || tag.is_klass(), "wrong ldc call");
-  Klass* klass = pool->klass_at(index, CHECK);
-    oop java_class = klass->java_mirror();
-    thread->set_vm_result(java_class);
+  Klass* klass = pool->klass_at(cp_index, CHECK);
+  oop java_class = klass->java_mirror();
+  current->set_vm_result(java_class);
 JRT_END
 
-JRT_ENTRY(void, InterpreterRuntime::resolve_ldc(JavaThread* thread, Bytecodes::Code bytecode)) {
+JRT_ENTRY(void, InterpreterRuntime::resolve_ldc(JavaThread* current, Bytecodes::Code bytecode)) {
   assert(bytecode == Bytecodes::_ldc ||
          bytecode == Bytecodes::_ldc_w ||
          bytecode == Bytecodes::_ldc2_w ||
          bytecode == Bytecodes::_fast_aldc ||
          bytecode == Bytecodes::_fast_aldc_w, "wrong bc");
-  ResourceMark rm(thread);
+  ResourceMark rm(current);
   const bool is_fast_aldc = (bytecode == Bytecodes::_fast_aldc ||
                              bytecode == Bytecodes::_fast_aldc_w);
-  LastFrameAccessor last_frame(thread);
-  methodHandle m (thread, last_frame.method());
+  LastFrameAccessor last_frame(current);
+  methodHandle m (current, last_frame.method());
   Bytecode_loadconstant ldc(m, last_frame.bci());
 
   // Double-check the size.  (Condy can have any type.)
@@ -183,7 +181,7 @@ JRT_ENTRY(void, InterpreterRuntime::resolve_ldc(JavaThread* thread, Bytecodes::C
   // Resolve the constant.  This does not do unboxing.
   // But it does replace Universe::the_null_sentinel by null.
   oop result = ldc.resolve_constant(CHECK);
-  assert(result != NULL || is_fast_aldc, "null result only valid for fast_aldc");
+  assert(result != nullptr || is_fast_aldc, "null result only valid for fast_aldc");
 
 #ifdef ASSERT
   {
@@ -193,20 +191,20 @@ JRT_ENTRY(void, InterpreterRuntime::resolve_ldc(JavaThread* thread, Bytecodes::C
     if (rindex < 0)
       rindex = m->constants()->cp_to_object_index(ldc2.pool_index());
     if (rindex >= 0) {
-      oop coop = m->constants()->resolved_references()->obj_at(rindex);
-      oop roop = (result == NULL ? Universe::the_null_sentinel() : result);
+      oop coop = m->constants()->resolved_reference_at(rindex);
+      oop roop = (result == nullptr ? Universe::the_null_sentinel() : result);
       assert(roop == coop, "expected result for assembly code");
     }
   }
 #endif
-  thread->set_vm_result(result);
+  current->set_vm_result(result);
   if (!is_fast_aldc) {
     // Tell the interpreter how to unbox the primitive.
     guarantee(java_lang_boxing_object::is_instance(result, type), "");
     int offset = java_lang_boxing_object::value_offset(type);
-    intptr_t flags = ((as_TosState(type) << ConstantPoolCacheEntry::tos_state_shift)
-                      | (offset & ConstantPoolCacheEntry::field_index_mask));
-    thread->set_vm_result_2((Metadata*)flags);
+    intptr_t flags = ((as_TosState(type) << ConstantPoolCache::tos_state_shift)
+                      | (offset & ConstantPoolCache::field_index_mask));
+    current->set_vm_result_2((Metadata*)flags);
   }
 }
 JRT_END
@@ -215,7 +213,7 @@ JRT_END
 //------------------------------------------------------------------------------------------------------------------------
 // Allocation
 
-JRT_ENTRY(void, InterpreterRuntime::_new(JavaThread* thread, ConstantPool* pool, int index))
+JRT_ENTRY(void, InterpreterRuntime::_new(JavaThread* current, ConstantPool* pool, int index))
   Klass* k = pool->klass_at(index, CHECK);
   InstanceKlass* klass = InstanceKlass::cast(k);
 
@@ -240,26 +238,26 @@ JRT_ENTRY(void, InterpreterRuntime::_new(JavaThread* thread, ConstantPool* pool,
   //       If we have a breakpoint, then we don't rewrite
   //       because the _breakpoint bytecode would be lost.
   oop obj = klass->allocate_instance(CHECK);
-  thread->set_vm_result(obj);
+  current->set_vm_result(obj);
 JRT_END
 
 
-JRT_ENTRY(void, InterpreterRuntime::newarray(JavaThread* thread, BasicType type, jint size))
+JRT_ENTRY(void, InterpreterRuntime::newarray(JavaThread* current, BasicType type, jint size))
   oop obj = oopFactory::new_typeArray(type, size, CHECK);
-  thread->set_vm_result(obj);
+  current->set_vm_result(obj);
 JRT_END
 
 
-JRT_ENTRY(void, InterpreterRuntime::anewarray(JavaThread* thread, ConstantPool* pool, int index, jint size))
+JRT_ENTRY(void, InterpreterRuntime::anewarray(JavaThread* current, ConstantPool* pool, int index, jint size))
   Klass*    klass = pool->klass_at(index, CHECK);
   objArrayOop obj = oopFactory::new_objArray(klass, size, CHECK);
-  thread->set_vm_result(obj);
+  current->set_vm_result(obj);
 JRT_END
 
 
-JRT_ENTRY(void, InterpreterRuntime::multianewarray(JavaThread* thread, jint* first_size_address))
+JRT_ENTRY(void, InterpreterRuntime::multianewarray(JavaThread* current, jint* first_size_address))
   // We may want to pass in more arguments - could make this slightly faster
-  LastFrameAccessor last_frame(thread);
+  LastFrameAccessor last_frame(current);
   ConstantPool* constants = last_frame.method()->constants();
   int          i = last_frame.get_index_u2(Bytecodes::_multianewarray);
   Klass* klass   = constants->klass_at(i, CHECK);
@@ -268,7 +266,7 @@ JRT_ENTRY(void, InterpreterRuntime::multianewarray(JavaThread* thread, jint* fir
   assert(nof_dims >= 1, "multianewarray rank must be nonzero");
 
   // We must create an array of jints to pass to multi_allocate.
-  ResourceMark rm(thread);
+  ResourceMark rm(current);
   const int small_dims = 10;
   jint dim_array[small_dims];
   jint *dims = &dim_array[0];
@@ -281,11 +279,11 @@ JRT_ENTRY(void, InterpreterRuntime::multianewarray(JavaThread* thread, jint* fir
     dims[index] = first_size_address[n];
   }
   oop obj = ArrayKlass::cast(klass)->multi_allocate(nof_dims, dims, CHECK);
-  thread->set_vm_result(obj);
+  current->set_vm_result(obj);
 JRT_END
 
 
-JRT_ENTRY(void, InterpreterRuntime::register_finalizer(JavaThread* thread, oopDesc* obj))
+JRT_ENTRY(void, InterpreterRuntime::register_finalizer(JavaThread* current, oopDesc* obj))
   assert(oopDesc::is_oop(obj), "must be a valid oop");
   assert(obj->klass()->has_finalizer(), "shouldn't be here otherwise");
   InstanceKlass::register_finalizer(instanceOop(obj), CHECK);
@@ -293,9 +291,9 @@ JRT_END
 
 
 // Quicken instance-of and check-cast bytecodes
-JRT_ENTRY(void, InterpreterRuntime::quicken_io_cc(JavaThread* thread))
+JRT_ENTRY(void, InterpreterRuntime::quicken_io_cc(JavaThread* current))
   // Force resolving; quicken the bytecode
-  LastFrameAccessor last_frame(thread);
+  LastFrameAccessor last_frame(current);
   int which = last_frame.get_index_u2(Bytecodes::_checkcast);
   ConstantPool* cpool = last_frame.method()->constants();
   // We'd expect to assert that we're only here to quicken bytecodes, but in a multithreaded
@@ -303,19 +301,21 @@ JRT_ENTRY(void, InterpreterRuntime::quicken_io_cc(JavaThread* thread))
   // thread quicken the bytecode before we get here.
   // assert( cpool->tag_at(which).is_unresolved_klass(), "should only come here to quicken bytecodes" );
   Klass* klass = cpool->klass_at(which, CHECK);
-  thread->set_vm_result_2(klass);
+  current->set_vm_result_2(klass);
 JRT_END
 
 
 //------------------------------------------------------------------------------------------------------------------------
 // Exceptions
 
-void InterpreterRuntime::note_trap_inner(JavaThread* thread, int reason,
-                                         const methodHandle& trap_method, int trap_bci, TRAPS) {
+void InterpreterRuntime::note_trap_inner(JavaThread* current, int reason,
+                                         const methodHandle& trap_method, int trap_bci) {
   if (trap_method.not_null()) {
     MethodData* trap_mdo = trap_method->method_data();
-    if (trap_mdo == NULL) {
-      Method::build_interpreter_method_data(trap_method, THREAD);
+    if (trap_mdo == nullptr) {
+      ExceptionMark em(current);
+      JavaThread* THREAD = current; // For exception macros.
+      Method::build_profiling_method_data(trap_method, THREAD);
       if (HAS_PENDING_EXCEPTION) {
         // Only metaspace OOM is expected. No Java code executed.
         assert((PENDING_EXCEPTION->is_a(vmClasses::OutOfMemoryError_klass())),
@@ -325,7 +325,7 @@ void InterpreterRuntime::note_trap_inner(JavaThread* thread, int reason,
       trap_mdo = trap_method->method_data();
       // and fall through...
     }
-    if (trap_mdo != NULL) {
+    if (trap_mdo != nullptr) {
       // Update per-method count of trap events.  The interpreter
       // is updating the MDO to simulate the effect of compiler traps.
       Deoptimization::update_method_data_from_interpreter(trap_mdo, trap_bci, reason);
@@ -335,12 +335,12 @@ void InterpreterRuntime::note_trap_inner(JavaThread* thread, int reason,
 
 // Assume the compiler is (or will be) interested in this event.
 // If necessary, create an MDO to hold the information, and record it.
-void InterpreterRuntime::note_trap(JavaThread* thread, int reason, TRAPS) {
+void InterpreterRuntime::note_trap(JavaThread* current, int reason) {
   assert(ProfileTraps, "call me only if profiling");
-  LastFrameAccessor last_frame(thread);
-  methodHandle trap_method(thread, last_frame.method());
+  LastFrameAccessor last_frame(current);
+  methodHandle trap_method(current, last_frame.method());
   int trap_bci = trap_method->bci_from(last_frame.bcp());
-  note_trap_inner(thread, reason, trap_method, trap_bci, THREAD);
+  note_trap_inner(current, reason, trap_method, trap_bci);
 }
 
 static Handle get_preinitialized_exception(Klass* k, TRAPS) {
@@ -363,16 +363,19 @@ static Handle get_preinitialized_exception(Klass* k, TRAPS) {
 // space left we use the pre-allocated & pre-initialized StackOverflowError
 // klass to create an stack overflow error instance.  We do not call its
 // constructor for the same reason (it is empty, anyway).
-JRT_ENTRY(void, InterpreterRuntime::throw_StackOverflowError(JavaThread* thread))
+JRT_ENTRY(void, InterpreterRuntime::throw_StackOverflowError(JavaThread* current))
   Handle exception = get_preinitialized_exception(
                                  vmClasses::StackOverflowError_klass(),
                                  CHECK);
   // Increment counter for hs_err file reporting
   Atomic::inc(&Exceptions::_stack_overflow_errors);
+  // Remove the ScopedValue bindings in case we got a StackOverflowError
+  // while we were trying to manipulate ScopedValue bindings.
+  current->clear_scopedValueBindings();
   THROW_HANDLE(exception);
 JRT_END
 
-JRT_ENTRY(void, InterpreterRuntime::throw_delayed_StackOverflowError(JavaThread* thread))
+JRT_ENTRY(void, InterpreterRuntime::throw_delayed_StackOverflowError(JavaThread* current))
   Handle exception = get_preinitialized_exception(
                                  vmClasses::StackOverflowError_klass(),
                                  CHECK);
@@ -380,62 +383,69 @@ JRT_ENTRY(void, InterpreterRuntime::throw_delayed_StackOverflowError(JavaThread*
           Universe::delayed_stack_overflow_error_message());
   // Increment counter for hs_err file reporting
   Atomic::inc(&Exceptions::_stack_overflow_errors);
+  // Remove the ScopedValue bindings in case we got a StackOverflowError
+  // while we were trying to manipulate ScopedValue bindings.
+  current->clear_scopedValueBindings();
   THROW_HANDLE(exception);
 JRT_END
 
-JRT_ENTRY(void, InterpreterRuntime::create_exception(JavaThread* thread, char* name, char* message))
+JRT_ENTRY(void, InterpreterRuntime::create_exception(JavaThread* current, char* name, char* message))
   // lookup exception klass
   TempNewSymbol s = SymbolTable::new_symbol(name);
   if (ProfileTraps) {
     if (s == vmSymbols::java_lang_ArithmeticException()) {
-      note_trap(thread, Deoptimization::Reason_div0_check, CHECK);
+      note_trap(current, Deoptimization::Reason_div0_check);
     } else if (s == vmSymbols::java_lang_NullPointerException()) {
-      note_trap(thread, Deoptimization::Reason_null_check, CHECK);
+      note_trap(current, Deoptimization::Reason_null_check);
     }
   }
   // create exception
-  Handle exception = Exceptions::new_exception(thread, s, message);
-  thread->set_vm_result(exception());
+  Handle exception = Exceptions::new_exception(current, s, message);
+  current->set_vm_result(exception());
 JRT_END
 
 
-JRT_ENTRY(void, InterpreterRuntime::create_klass_exception(JavaThread* thread, char* name, oopDesc* obj))
+JRT_ENTRY(void, InterpreterRuntime::create_klass_exception(JavaThread* current, char* name, oopDesc* obj))
   // Produce the error message first because note_trap can safepoint
-  ResourceMark rm(thread);
+  ResourceMark rm(current);
   const char* klass_name = obj->klass()->external_name();
   // lookup exception klass
   TempNewSymbol s = SymbolTable::new_symbol(name);
   if (ProfileTraps) {
-    note_trap(thread, Deoptimization::Reason_class_check, CHECK);
+    if (s == vmSymbols::java_lang_ArrayStoreException()) {
+      note_trap(current, Deoptimization::Reason_array_check);
+    } else {
+      note_trap(current, Deoptimization::Reason_class_check);
+    }
   }
   // create exception, with klass name as detail message
-  Handle exception = Exceptions::new_exception(thread, s, klass_name);
-  thread->set_vm_result(exception());
+  Handle exception = Exceptions::new_exception(current, s, klass_name);
+  current->set_vm_result(exception());
 JRT_END
 
-JRT_ENTRY(void, InterpreterRuntime::throw_ArrayIndexOutOfBoundsException(JavaThread* thread, arrayOopDesc* a, jint index))
+JRT_ENTRY(void, InterpreterRuntime::throw_ArrayIndexOutOfBoundsException(JavaThread* current, arrayOopDesc* a, jint index))
   // Produce the error message first because note_trap can safepoint
-  ResourceMark rm(thread);
+  ResourceMark rm(current);
   stringStream ss;
   ss.print("Index %d out of bounds for length %d", index, a->length());
 
   if (ProfileTraps) {
-    note_trap(thread, Deoptimization::Reason_range_check, CHECK);
+    note_trap(current, Deoptimization::Reason_range_check);
   }
 
   THROW_MSG(vmSymbols::java_lang_ArrayIndexOutOfBoundsException(), ss.as_string());
 JRT_END
 
 JRT_ENTRY(void, InterpreterRuntime::throw_ClassCastException(
-  JavaThread* thread, oopDesc* obj))
+  JavaThread* current, oopDesc* obj))
 
   // Produce the error message first because note_trap can safepoint
-  ResourceMark rm(thread);
+  ResourceMark rm(current);
   char* message = SharedRuntime::generate_class_cast_message(
-    thread, obj->klass());
+    current, obj->klass());
 
   if (ProfileTraps) {
-    note_trap(thread, Deoptimization::Reason_class_check, CHECK);
+    note_trap(current, Deoptimization::Reason_class_check);
   }
 
   // create exception
@@ -450,29 +460,30 @@ JRT_END
 // bci where the exception happened. If the exception was propagated back
 // from a call, the expression stack contains the values for the bci at the
 // invoke w/o arguments (i.e., as if one were inside the call).
-JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThread* thread, oopDesc* exception))
+// Note that the implementation of this method assumes it's only called when an exception has actually occured
+JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThread* current, oopDesc* exception))
   // We get here after we have unwound from a callee throwing an exception
   // into the interpreter. Any deferred stack processing is notified of
   // the event via the StackWatermarkSet.
-  StackWatermarkSet::after_unwind(thread);
+  StackWatermarkSet::after_unwind(current);
 
-  LastFrameAccessor last_frame(thread);
-  Handle             h_exception(thread, exception);
-  methodHandle       h_method   (thread, last_frame.method());
-  constantPoolHandle h_constants(thread, h_method->constants());
+  LastFrameAccessor last_frame(current);
+  Handle             h_exception(current, exception);
+  methodHandle       h_method   (current, last_frame.method());
+  constantPoolHandle h_constants(current, h_method->constants());
   bool               should_repeat;
   int                handler_bci;
   int                current_bci = last_frame.bci();
 
-  if (thread->frames_to_pop_failed_realloc() > 0) {
+  if (current->frames_to_pop_failed_realloc() > 0) {
     // Allocation of scalar replaced object used in this frame
     // failed. Unconditionally pop the frame.
-    thread->dec_frames_to_pop_failed_realloc();
-    thread->set_vm_result(h_exception());
+    current->dec_frames_to_pop_failed_realloc();
+    current->set_vm_result(h_exception());
     // If the method is synchronized we already unlocked the monitor
     // during deoptimization so the interpreter needs to skip it when
     // the frame is popped.
-    thread->set_do_not_unlock_if_synchronized(true);
+    current->set_do_not_unlock_if_synchronized(true);
     return Interpreter::remove_activation_entry();
   }
 
@@ -480,10 +491,10 @@ JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
   // is set, we don't want to trigger any classloading which may make calls
   // into java, or surprisingly find a matching exception handler for bci 0
   // since at this moment the method hasn't been "officially" entered yet.
-  if (thread->do_not_unlock_if_synchronized()) {
+  if (current->do_not_unlock_if_synchronized()) {
     ResourceMark rm;
     assert(current_bci == 0,  "bci isn't zero for do_not_unlock_if_synchronized");
-    thread->set_vm_result(exception);
+    current->set_vm_result(exception);
     return Interpreter::remove_activation_entry();
   }
 
@@ -491,18 +502,18 @@ JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
     should_repeat = false;
 
     // assertions
-    assert(h_exception.not_null(), "NULL exceptions should be handled by athrow");
+    assert(h_exception.not_null(), "null exceptions should be handled by athrow");
     // Check that exception is a subclass of Throwable.
     assert(h_exception->is_a(vmClasses::Throwable_klass()),
            "Exception not subclass of Throwable");
 
     // tracing
     if (log_is_enabled(Info, exceptions)) {
-      ResourceMark rm(thread);
+      ResourceMark rm(current);
       stringStream tempst;
       tempst.print("interpreter method <%s>\n"
                    " at bci %d for thread " INTPTR_FORMAT " (%s)",
-                   h_method->print_value_string(), current_bci, p2i(thread), thread->name());
+                   h_method->print_value_string(), current_bci, p2i(current), current->name());
       Exceptions::log_exception(h_exception, tempst.as_string());
     }
 // Don't go paging in something which won't be used.
@@ -534,10 +545,10 @@ JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
   } while (should_repeat == true);
 
 #if INCLUDE_JVMCI
-  if (EnableJVMCI && h_method->method_data() != NULL) {
-    ResourceMark rm(thread);
-    ProfileData* pdata = h_method->method_data()->allocate_bci_to_data(current_bci, NULL);
-    if (pdata != NULL && pdata->is_BitData()) {
+  if (EnableJVMCI && h_method->method_data() != nullptr) {
+    ResourceMark rm(current);
+    ProfileData* pdata = h_method->method_data()->allocate_bci_to_data(current_bci, nullptr);
+    if (pdata != nullptr && pdata->is_BitData()) {
       BitData* bit_data = (BitData*) pdata;
       bit_data->set_exception_seen();
     }
@@ -547,12 +558,12 @@ JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
   // notify JVMTI of an exception throw; JVMTI will detect if this is a first
   // time throw or a stack unwinding throw and accordingly notify the debugger
   if (JvmtiExport::can_post_on_exceptions()) {
-    JvmtiExport::post_exception_throw(thread, h_method(), last_frame.bcp(), h_exception());
+    JvmtiExport::post_exception_throw(current, h_method(), last_frame.bcp(), h_exception());
   }
 
-  address continuation = NULL;
-  address handler_pc = NULL;
-  if (handler_bci < 0 || !thread->stack_overflow_state()->reguard_stack((address) &continuation)) {
+  address continuation = nullptr;
+  address handler_pc = nullptr;
+  if (handler_bci < 0 || !current->stack_overflow_state()->reguard_stack((address) &continuation)) {
     // Forward exception to callee (leaving bci/bcp untouched) because (a) no
     // handler in this method, or (b) after a stack overflow there is not yet
     // enough stack space available to reprotect the stack.
@@ -564,8 +575,9 @@ JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
   } else {
     // handler in this method => change bci/bcp to handler bci/bcp and continue there
     handler_pc = h_method->code_base() + handler_bci;
+    h_method->set_exception_handler_entered(handler_bci); // profiling
 #ifndef ZERO
-    set_bcp_and_mdp(handler_pc, thread);
+    set_bcp_and_mdp(handler_pc, current);
     continuation = Interpreter::dispatch_table(vtos)[*handler_pc];
 #else
     continuation = (address)(intptr_t) handler_bci;
@@ -575,21 +587,21 @@ JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
   // notify debugger of an exception catch
   // (this is good for exceptions caught in native methods as well)
   if (JvmtiExport::can_post_on_exceptions()) {
-    JvmtiExport::notice_unwind_due_to_exception(thread, h_method(), handler_pc, h_exception(), (handler_pc != NULL));
+    JvmtiExport::notice_unwind_due_to_exception(current, h_method(), handler_pc, h_exception(), (handler_pc != nullptr));
   }
 
-  thread->set_vm_result(h_exception());
+  current->set_vm_result(h_exception());
   return continuation;
 JRT_END
 
 
-JRT_ENTRY(void, InterpreterRuntime::throw_pending_exception(JavaThread* thread))
-  assert(thread->has_pending_exception(), "must only ne called if there's an exception pending");
+JRT_ENTRY(void, InterpreterRuntime::throw_pending_exception(JavaThread* current))
+  assert(current->has_pending_exception(), "must only be called if there's an exception pending");
   // nothing to do - eventually we should remove this code entirely (see comments @ call sites)
 JRT_END
 
 
-JRT_ENTRY(void, InterpreterRuntime::throw_AbstractMethodError(JavaThread* thread))
+JRT_ENTRY(void, InterpreterRuntime::throw_AbstractMethodError(JavaThread* current))
   THROW(vmSymbols::java_lang_AbstractMethodError());
 JRT_END
 
@@ -599,41 +611,41 @@ JRT_END
 // on some platforms the receiver still resides in a register...). Thus,
 // we have no choice but print an error message not containing the receiver
 // type.
-JRT_ENTRY(void, InterpreterRuntime::throw_AbstractMethodErrorWithMethod(JavaThread* thread,
+JRT_ENTRY(void, InterpreterRuntime::throw_AbstractMethodErrorWithMethod(JavaThread* current,
                                                                         Method* missingMethod))
-  ResourceMark rm(thread);
-  assert(missingMethod != NULL, "sanity");
-  methodHandle m(thread, missingMethod);
+  ResourceMark rm(current);
+  assert(missingMethod != nullptr, "sanity");
+  methodHandle m(current, missingMethod);
   LinkResolver::throw_abstract_method_error(m, THREAD);
 JRT_END
 
-JRT_ENTRY(void, InterpreterRuntime::throw_AbstractMethodErrorVerbose(JavaThread* thread,
+JRT_ENTRY(void, InterpreterRuntime::throw_AbstractMethodErrorVerbose(JavaThread* current,
                                                                      Klass* recvKlass,
                                                                      Method* missingMethod))
-  ResourceMark rm(thread);
-  methodHandle mh = methodHandle(thread, missingMethod);
+  ResourceMark rm(current);
+  methodHandle mh = methodHandle(current, missingMethod);
   LinkResolver::throw_abstract_method_error(mh, recvKlass, THREAD);
 JRT_END
 
 
-JRT_ENTRY(void, InterpreterRuntime::throw_IncompatibleClassChangeError(JavaThread* thread))
+JRT_ENTRY(void, InterpreterRuntime::throw_IncompatibleClassChangeError(JavaThread* current))
   THROW(vmSymbols::java_lang_IncompatibleClassChangeError());
 JRT_END
 
-JRT_ENTRY(void, InterpreterRuntime::throw_IncompatibleClassChangeErrorVerbose(JavaThread* thread,
+JRT_ENTRY(void, InterpreterRuntime::throw_IncompatibleClassChangeErrorVerbose(JavaThread* current,
                                                                               Klass* recvKlass,
                                                                               Klass* interfaceKlass))
-  ResourceMark rm(thread);
+  ResourceMark rm(current);
   char buf[1000];
   buf[0] = '\0';
   jio_snprintf(buf, sizeof(buf),
                "Class %s does not implement the requested interface %s",
-               recvKlass ? recvKlass->external_name() : "NULL",
-               interfaceKlass ? interfaceKlass->external_name() : "NULL");
+               recvKlass ? recvKlass->external_name() : "nullptr",
+               interfaceKlass ? interfaceKlass->external_name() : "nullptr");
   THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
 JRT_END
 
-JRT_ENTRY(void, InterpreterRuntime::throw_NullPointerException(JavaThread* thread))
+JRT_ENTRY(void, InterpreterRuntime::throw_NullPointerException(JavaThread* current))
   THROW(vmSymbols::java_lang_NullPointerException());
 JRT_END
 
@@ -641,26 +653,27 @@ JRT_END
 // Fields
 //
 
-void InterpreterRuntime::resolve_get_put(JavaThread* thread, Bytecodes::Code bytecode) {
-  Thread* THREAD = thread;
+void InterpreterRuntime::resolve_get_put(JavaThread* current, Bytecodes::Code bytecode) {
   // resolve field
   fieldDescriptor info;
-  LastFrameAccessor last_frame(thread);
-  constantPoolHandle pool(thread, last_frame.method()->constants());
-  methodHandle m(thread, last_frame.method());
+  LastFrameAccessor last_frame(current);
+  constantPoolHandle pool(current, last_frame.method()->constants());
+  methodHandle m(current, last_frame.method());
   bool is_put    = (bytecode == Bytecodes::_putfield  || bytecode == Bytecodes::_nofast_putfield ||
                     bytecode == Bytecodes::_putstatic);
   bool is_static = (bytecode == Bytecodes::_getstatic || bytecode == Bytecodes::_putstatic);
 
+  int field_index = last_frame.get_index_u2(bytecode);
   {
-    JvmtiHideSingleStepping jhss(thread);
-    LinkResolver::resolve_field_access(info, pool, last_frame.get_index_u2_cpcache(bytecode),
+    JvmtiHideSingleStepping jhss(current);
+    JavaThread* THREAD = current; // For exception macros.
+    LinkResolver::resolve_field_access(info, pool, field_index,
                                        m, bytecode, CHECK);
   } // end JvmtiHideSingleStepping
 
   // check if link resolution caused cpCache to be updated
-  ConstantPoolCacheEntry* cp_cache_entry = last_frame.cache_entry();
-  if (cp_cache_entry->is_resolved(bytecode)) return;
+  if (pool->resolved_field_entry_at(field_index)->is_resolved(bytecode)) return;
+
 
   // compute auxiliary field attributes
   TosState state  = as_TosState(info.field_type());
@@ -700,16 +713,11 @@ void InterpreterRuntime::resolve_get_put(JavaThread* thread, Bytecodes::Code byt
     }
   }
 
-  cp_cache_entry->set_field(
-    get_code,
-    put_code,
-    info.field_holder(),
-    info.index(),
-    info.offset(),
-    state,
-    info.access_flags().is_final(),
-    info.access_flags().is_volatile()
-  );
+  ResolvedFieldEntry* entry = pool->resolved_field_entry_at(field_index);
+  entry->set_flags(info.access_flags().is_final(), info.access_flags().is_volatile());
+  entry->fill_in(info.field_holder(), info.offset(),
+                 checked_cast<u2>(info.index()), checked_cast<u1>(state),
+                 static_cast<u1>(get_code), static_cast<u1>(put_code));
 }
 
 
@@ -721,24 +729,38 @@ void InterpreterRuntime::resolve_get_put(JavaThread* thread, Bytecodes::Code byt
 //%note synchronization_3
 
 //%note monitor_1
-JRT_ENTRY_NO_ASYNC(void, InterpreterRuntime::monitorenter(JavaThread* thread, BasicObjectLock* elem))
+JRT_ENTRY_NO_ASYNC(void, InterpreterRuntime::monitorenter(JavaThread* current, BasicObjectLock* elem))
+  assert(LockingMode != LM_LIGHTWEIGHT, "Should call monitorenter_obj() when using the new lightweight locking");
 #ifdef ASSERT
-  thread->last_frame().interpreter_frame_verify_monitor(elem);
+  current->last_frame().interpreter_frame_verify_monitor(elem);
 #endif
-  if (PrintBiasedLockingStatistics) {
-    Atomic::inc(BiasedLocking::slow_path_entry_count_addr());
-  }
-  Handle h_obj(thread, elem->obj());
+  Handle h_obj(current, elem->obj());
   assert(Universe::heap()->is_in_or_null(h_obj()),
-         "must be NULL or an object");
-  ObjectSynchronizer::enter(h_obj, elem->lock(), thread);
+         "must be null or an object");
+  ObjectSynchronizer::enter(h_obj, elem->lock(), current);
   assert(Universe::heap()->is_in_or_null(elem->obj()),
-         "must be NULL or an object");
+         "must be null or an object");
 #ifdef ASSERT
-  thread->last_frame().interpreter_frame_verify_monitor(elem);
+  current->last_frame().interpreter_frame_verify_monitor(elem);
 #endif
 JRT_END
 
+// NOTE: We provide a separate implementation for the new lightweight locking to workaround a limitation
+// of registers in x86_32. This entry point accepts an oop instead of a BasicObjectLock*.
+// The problem is that we would need to preserve the register that holds the BasicObjectLock,
+// but we are using that register to hold the thread. We don't have enough registers to
+// also keep the BasicObjectLock, but we don't really need it anyway, we only need
+// the object. See also InterpreterMacroAssembler::lock_object().
+// As soon as legacy stack-locking goes away we could remove the other monitorenter() entry
+// point, and only use oop-accepting entries (same for monitorexit() below).
+JRT_ENTRY_NO_ASYNC(void, InterpreterRuntime::monitorenter_obj(JavaThread* current, oopDesc* obj))
+  assert(LockingMode == LM_LIGHTWEIGHT, "Should call monitorenter() when not using the new lightweight locking");
+  Handle h_obj(current, cast_to_oop(obj));
+  assert(Universe::heap()->is_in_or_null(h_obj()),
+         "must be null or an object");
+  ObjectSynchronizer::enter(h_obj, nullptr, current);
+  return;
+JRT_END
 
 JRT_LEAF(void, InterpreterRuntime::monitorexit(BasicObjectLock* elem))
   oop obj = elem->obj();
@@ -754,61 +776,56 @@ JRT_LEAF(void, InterpreterRuntime::monitorexit(BasicObjectLock* elem))
   ObjectSynchronizer::exit(obj, elem->lock(), JavaThread::current());
   // Free entry. If it is not cleared, the exception handling code will try to unlock the monitor
   // again at method exit or in the case of an exception.
-  elem->set_obj(NULL);
+  elem->set_obj(nullptr);
 JRT_END
 
 
-JRT_ENTRY(void, InterpreterRuntime::throw_illegal_monitor_state_exception(JavaThread* thread))
+JRT_ENTRY(void, InterpreterRuntime::throw_illegal_monitor_state_exception(JavaThread* current))
   THROW(vmSymbols::java_lang_IllegalMonitorStateException());
 JRT_END
 
 
-JRT_ENTRY(void, InterpreterRuntime::new_illegal_monitor_state_exception(JavaThread* thread))
+JRT_ENTRY(void, InterpreterRuntime::new_illegal_monitor_state_exception(JavaThread* current))
   // Returns an illegal exception to install into the current thread. The
   // pending_exception flag is cleared so normal exception handling does not
   // trigger. Any current installed exception will be overwritten. This
   // method will be called during an exception unwind.
 
   assert(!HAS_PENDING_EXCEPTION, "no pending exception");
-  Handle exception(thread, thread->vm_result());
-  assert(exception() != NULL, "vm result should be set");
-  thread->set_vm_result(NULL); // clear vm result before continuing (may cause memory leaks and assert failures)
-  if (!exception->is_a(vmClasses::ThreadDeath_klass())) {
-    exception = get_preinitialized_exception(
-                       vmClasses::IllegalMonitorStateException_klass(),
-                       CATCH);
-  }
-  thread->set_vm_result(exception());
+  Handle exception(current, current->vm_result());
+  assert(exception() != nullptr, "vm result should be set");
+  current->set_vm_result(nullptr); // clear vm result before continuing (may cause memory leaks and assert failures)
+  exception = get_preinitialized_exception(vmClasses::IllegalMonitorStateException_klass(), CATCH);
+  current->set_vm_result(exception());
 JRT_END
 
 
 //------------------------------------------------------------------------------------------------------------------------
 // Invokes
 
-JRT_ENTRY(Bytecodes::Code, InterpreterRuntime::get_original_bytecode_at(JavaThread* thread, Method* method, address bcp))
+JRT_ENTRY(Bytecodes::Code, InterpreterRuntime::get_original_bytecode_at(JavaThread* current, Method* method, address bcp))
   return method->orig_bytecode_at(method->bci_from(bcp));
 JRT_END
 
-JRT_ENTRY(void, InterpreterRuntime::set_original_bytecode_at(JavaThread* thread, Method* method, address bcp, Bytecodes::Code new_code))
+JRT_ENTRY(void, InterpreterRuntime::set_original_bytecode_at(JavaThread* current, Method* method, address bcp, Bytecodes::Code new_code))
   method->set_orig_bytecode_at(method->bci_from(bcp), new_code);
 JRT_END
 
-JRT_ENTRY(void, InterpreterRuntime::_breakpoint(JavaThread* thread, Method* method, address bcp))
-  JvmtiExport::post_raw_breakpoint(thread, method, bcp);
+JRT_ENTRY(void, InterpreterRuntime::_breakpoint(JavaThread* current, Method* method, address bcp))
+  JvmtiExport::post_raw_breakpoint(current, method, bcp);
 JRT_END
 
-void InterpreterRuntime::resolve_invoke(JavaThread* thread, Bytecodes::Code bytecode) {
-  Thread* THREAD = thread;
-  LastFrameAccessor last_frame(thread);
+void InterpreterRuntime::resolve_invoke(JavaThread* current, Bytecodes::Code bytecode) {
+  LastFrameAccessor last_frame(current);
   // extract receiver from the outgoing argument list if necessary
-  Handle receiver(thread, NULL);
+  Handle receiver(current, nullptr);
   if (bytecode == Bytecodes::_invokevirtual || bytecode == Bytecodes::_invokeinterface ||
       bytecode == Bytecodes::_invokespecial) {
-    ResourceMark rm(thread);
-    methodHandle m (thread, last_frame.method());
+    ResourceMark rm(current);
+    methodHandle m (current, last_frame.method());
     Bytecode_invoke call(m, last_frame.bci());
     Symbol* signature = call.signature();
-    receiver = Handle(thread, last_frame.callee_receiver(signature));
+    receiver = Handle(current, last_frame.callee_receiver(signature));
 
     assert(Universe::heap()->is_in_or_null(receiver()),
            "sanity check");
@@ -819,25 +836,38 @@ void InterpreterRuntime::resolve_invoke(JavaThread* thread, Bytecodes::Code byte
 
   // resolve method
   CallInfo info;
-  constantPoolHandle pool(thread, last_frame.method()->constants());
+  constantPoolHandle pool(current, last_frame.method()->constants());
+  ConstantPoolCache* cache = pool->cache();
 
   methodHandle resolved_method;
 
+  int method_index = last_frame.get_index_u2(bytecode);
   {
-    JvmtiHideSingleStepping jhss(thread);
+    JvmtiHideSingleStepping jhss(current);
+    JavaThread* THREAD = current; // For exception macros.
     LinkResolver::resolve_invoke(info, receiver, pool,
-                                 last_frame.get_index_u2_cpcache(bytecode), bytecode,
-                                 CHECK);
+                                 method_index, bytecode,
+                                 THREAD);
+
+    if (HAS_PENDING_EXCEPTION) {
+      if (ProfileTraps && PENDING_EXCEPTION->klass()->name() == vmSymbols::java_lang_NullPointerException()) {
+        // Preserve the original exception across the call to note_trap()
+        PreserveExceptionMark pm(current);
+        // Recording the trap will help the compiler to potentially recognize this exception as "hot"
+        note_trap(current, Deoptimization::Reason_null_check);
+      }
+      return;
+    }
+
     if (JvmtiExport::can_hotswap_or_post_breakpoint() && info.resolved_method()->is_old()) {
-      resolved_method = methodHandle(THREAD, info.resolved_method()->get_new_method());
+      resolved_method = methodHandle(current, info.resolved_method()->get_new_method());
     } else {
-      resolved_method = methodHandle(THREAD, info.resolved_method());
+      resolved_method = methodHandle(current, info.resolved_method());
     }
   } // end JvmtiHideSingleStepping
 
   // check if link resolution caused cpCache to be updated
-  ConstantPoolCacheEntry* cp_cache_entry = last_frame.cache_entry();
-  if (cp_cache_entry->is_resolved(bytecode)) return;
+  if (cache->resolved_method_entry_at(method_index)->is_resolved(bytecode)) return;
 
 #ifdef ASSERT
   if (bytecode == Bytecodes::_invokeinterface) {
@@ -864,28 +894,22 @@ void InterpreterRuntime::resolve_invoke(JavaThread* thread, Bytecodes::Code byte
            info.call_kind() == CallInfo::vtable_call, "");
   }
 #endif
-  // Get sender or sender's unsafe_anonymous_host, and only set cpCache entry to resolved if
-  // it is not an interface.  The receiver for invokespecial calls within interface
+  // Get sender and only set cpCache entry to resolved if it is not an
+  // interface.  The receiver for invokespecial calls within interface
   // methods must be checked for every call.
   InstanceKlass* sender = pool->pool_holder();
-  sender = sender->is_unsafe_anonymous() ? sender->unsafe_anonymous_host() : sender;
 
   switch (info.call_kind()) {
   case CallInfo::direct_call:
-    cp_cache_entry->set_direct_call(
-      bytecode,
-      resolved_method,
-      sender->is_interface());
+    cache->set_direct_call(bytecode, method_index, resolved_method, sender->is_interface());
     break;
   case CallInfo::vtable_call:
-    cp_cache_entry->set_vtable_call(
-      bytecode,
-      resolved_method,
-      info.vtable_index());
+    cache->set_vtable_call(bytecode, method_index, resolved_method, info.vtable_index());
     break;
   case CallInfo::itable_call:
-    cp_cache_entry->set_itable_call(
+    cache->set_itable_call(
       bytecode,
+      method_index,
       info.resolved_klass(),
       resolved_method,
       info.itable_index());
@@ -896,67 +920,66 @@ void InterpreterRuntime::resolve_invoke(JavaThread* thread, Bytecodes::Code byte
 
 
 // First time execution:  Resolve symbols, create a permanent MethodType object.
-void InterpreterRuntime::resolve_invokehandle(JavaThread* thread) {
-  Thread* THREAD = thread;
+void InterpreterRuntime::resolve_invokehandle(JavaThread* current) {
   const Bytecodes::Code bytecode = Bytecodes::_invokehandle;
-  LastFrameAccessor last_frame(thread);
+  LastFrameAccessor last_frame(current);
 
   // resolve method
   CallInfo info;
-  constantPoolHandle pool(thread, last_frame.method()->constants());
+  constantPoolHandle pool(current, last_frame.method()->constants());
+  int method_index = last_frame.get_index_u2(bytecode);
   {
-    JvmtiHideSingleStepping jhss(thread);
+    JvmtiHideSingleStepping jhss(current);
+    JavaThread* THREAD = current; // For exception macros.
     LinkResolver::resolve_invoke(info, Handle(), pool,
-                                 last_frame.get_index_u2_cpcache(bytecode), bytecode,
+                                 method_index, bytecode,
                                  CHECK);
   } // end JvmtiHideSingleStepping
 
-  ConstantPoolCacheEntry* cp_cache_entry = last_frame.cache_entry();
-  cp_cache_entry->set_method_handle(pool, info);
+  pool->cache()->set_method_handle(method_index, info);
 }
 
 // First time execution:  Resolve symbols, create a permanent CallSite object.
-void InterpreterRuntime::resolve_invokedynamic(JavaThread* thread) {
-  Thread* THREAD = thread;
-  LastFrameAccessor last_frame(thread);
+void InterpreterRuntime::resolve_invokedynamic(JavaThread* current) {
+  LastFrameAccessor last_frame(current);
   const Bytecodes::Code bytecode = Bytecodes::_invokedynamic;
 
   // resolve method
   CallInfo info;
-  constantPoolHandle pool(thread, last_frame.method()->constants());
+  constantPoolHandle pool(current, last_frame.method()->constants());
   int index = last_frame.get_index_u4(bytecode);
   {
-    JvmtiHideSingleStepping jhss(thread);
+    JvmtiHideSingleStepping jhss(current);
+    JavaThread* THREAD = current; // For exception macros.
     LinkResolver::resolve_invoke(info, Handle(), pool,
                                  index, bytecode, CHECK);
   } // end JvmtiHideSingleStepping
 
-  ConstantPoolCacheEntry* cp_cache_entry = pool->invokedynamic_cp_cache_entry_at(index);
-  cp_cache_entry->set_dynamic_call(pool, info);
+  pool->cache()->set_dynamic_call(info, pool->decode_invokedynamic_index(index));
 }
 
 // This function is the interface to the assembly code. It returns the resolved
 // cpCache entry.  This doesn't safepoint, but the helper routines safepoint.
 // This function will check for redefinition!
-JRT_ENTRY(void, InterpreterRuntime::resolve_from_cache(JavaThread* thread, Bytecodes::Code bytecode)) {
+JRT_ENTRY(void, InterpreterRuntime::resolve_from_cache(JavaThread* current, Bytecodes::Code bytecode)) {
   switch (bytecode) {
   case Bytecodes::_getstatic:
   case Bytecodes::_putstatic:
   case Bytecodes::_getfield:
   case Bytecodes::_putfield:
-    resolve_get_put(thread, bytecode);
+    resolve_get_put(current, bytecode);
     break;
   case Bytecodes::_invokevirtual:
   case Bytecodes::_invokespecial:
   case Bytecodes::_invokestatic:
   case Bytecodes::_invokeinterface:
-    resolve_invoke(thread, bytecode);
+    resolve_invoke(current, bytecode);
     break;
   case Bytecodes::_invokehandle:
-    resolve_invokehandle(thread);
+    resolve_invokehandle(current);
     break;
   case Bytecodes::_invokedynamic:
-    resolve_invokedynamic(thread);
+    resolve_invokedynamic(current);
     break;
   default:
     fatal("unexpected bytecode: %s", Bytecodes::name(bytecode));
@@ -969,39 +992,42 @@ JRT_END
 // Miscellaneous
 
 
-nmethod* InterpreterRuntime::frequency_counter_overflow(JavaThread* thread, address branch_bcp) {
+nmethod* InterpreterRuntime::frequency_counter_overflow(JavaThread* current, address branch_bcp) {
+  // Enable WXWrite: the function is called directly by interpreter.
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, current));
+
   // frequency_counter_overflow_inner can throw async exception.
-  nmethod* nm = frequency_counter_overflow_inner(thread, branch_bcp);
-  assert(branch_bcp != NULL || nm == NULL, "always returns null for non OSR requests");
-  if (branch_bcp != NULL && nm != NULL) {
+  nmethod* nm = frequency_counter_overflow_inner(current, branch_bcp);
+  assert(branch_bcp != nullptr || nm == nullptr, "always returns null for non OSR requests");
+  if (branch_bcp != nullptr && nm != nullptr) {
     // This was a successful request for an OSR nmethod.  Because
     // frequency_counter_overflow_inner ends with a safepoint check,
     // nm could have been unloaded so look it up again.  It's unsafe
     // to examine nm directly since it might have been freed and used
     // for something else.
-    LastFrameAccessor last_frame(thread);
+    LastFrameAccessor last_frame(current);
     Method* method =  last_frame.method();
     int bci = method->bci_from(last_frame.bcp());
     nm = method->lookup_osr_nmethod_for(bci, CompLevel_none, false);
     BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-    if (nm != NULL && bs_nm != NULL) {
+    if (nm != nullptr && bs_nm != nullptr) {
       // in case the transition passed a safepoint we need to barrier this again
       if (!bs_nm->nmethod_osr_entry_barrier(nm)) {
-        nm = NULL;
+        nm = nullptr;
       }
     }
   }
-  if (nm != NULL && thread->is_interp_only_mode()) {
+  if (nm != nullptr && current->is_interp_only_mode()) {
     // Normally we never get an nm if is_interp_only_mode() is true, because
     // policy()->event has a check for this and won't compile the method when
     // true. However, it's possible for is_interp_only_mode() to become true
     // during the compilation. We don't want to return the nm in that case
     // because we want to continue to execute interpreted.
-    nm = NULL;
+    nm = nullptr;
   }
 #ifndef PRODUCT
   if (TraceOnStackReplacement) {
-    if (nm != NULL) {
+    if (nm != nullptr) {
       tty->print("OSR entry @ pc: " INTPTR_FORMAT ": ", p2i(nm->osr_entry()));
       nm->print();
     }
@@ -1011,44 +1037,23 @@ nmethod* InterpreterRuntime::frequency_counter_overflow(JavaThread* thread, addr
 }
 
 JRT_ENTRY(nmethod*,
-          InterpreterRuntime::frequency_counter_overflow_inner(JavaThread* thread, address branch_bcp))
+          InterpreterRuntime::frequency_counter_overflow_inner(JavaThread* current, address branch_bcp))
   // use UnlockFlagSaver to clear and restore the _do_not_unlock_if_synchronized
   // flag, in case this method triggers classloading which will call into Java.
-  UnlockFlagSaver fs(thread);
+  UnlockFlagSaver fs(current);
 
-  LastFrameAccessor last_frame(thread);
+  LastFrameAccessor last_frame(current);
   assert(last_frame.is_interpreted_frame(), "must come from interpreter");
-  methodHandle method(thread, last_frame.method());
-  const int branch_bci = branch_bcp != NULL ? method->bci_from(branch_bcp) : InvocationEntryBci;
-  const int bci = branch_bcp != NULL ? method->bci_from(last_frame.bcp()) : InvocationEntryBci;
+  methodHandle method(current, last_frame.method());
+  const int branch_bci = branch_bcp != nullptr ? method->bci_from(branch_bcp) : InvocationEntryBci;
+  const int bci = branch_bcp != nullptr ? method->bci_from(last_frame.bcp()) : InvocationEntryBci;
 
-  nmethod* osr_nm = CompilationPolicy::event(method, method, branch_bci, bci, CompLevel_none, NULL, THREAD);
+  nmethod* osr_nm = CompilationPolicy::event(method, method, branch_bci, bci, CompLevel_none, nullptr, CHECK_NULL);
 
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (osr_nm != NULL && bs_nm != NULL) {
+  if (osr_nm != nullptr && bs_nm != nullptr) {
     if (!bs_nm->nmethod_osr_entry_barrier(osr_nm)) {
-      osr_nm = NULL;
-    }
-  }
-
-  if (osr_nm != NULL) {
-    // We may need to do on-stack replacement which requires that no
-    // monitors in the activation are biased because their
-    // BasicObjectLocks will need to migrate during OSR. Force
-    // unbiasing of all monitors in the activation now (even though
-    // the OSR nmethod might be invalidated) because we don't have a
-    // safepoint opportunity later once the migration begins.
-    if (UseBiasedLocking) {
-      ResourceMark rm;
-      GrowableArray<Handle>* objects_to_revoke = new GrowableArray<Handle>();
-      for( BasicObjectLock *kptr = last_frame.monitor_end();
-           kptr < last_frame.monitor_begin();
-           kptr = last_frame.next_monitor(kptr) ) {
-        if( kptr->obj() != NULL ) {
-          objects_to_revoke->append(Handle(THREAD, kptr->obj()));
-        }
-      }
-      BiasedLocking::revoke(objects_to_revoke, thread);
+      osr_nm = nullptr;
     }
   }
   return osr_nm;
@@ -1058,7 +1063,7 @@ JRT_LEAF(jint, InterpreterRuntime::bcp_to_di(Method* method, address cur_bcp))
   assert(ProfileInterpreter, "must be profiling interpreter");
   int bci = method->bci_from(cur_bcp);
   MethodData* mdo = method->method_data();
-  if (mdo == NULL)  return 0;
+  if (mdo == nullptr)  return 0;
   return mdo->bci_to_di(bci);
 JRT_END
 
@@ -1067,7 +1072,7 @@ JRT_LEAF(void, InterpreterRuntime::verify_mdp(Method* method, address bcp, addre
   assert(ProfileInterpreter, "must be profiling interpreter");
 
   MethodData* mdo = method->method_data();
-  assert(mdo != NULL, "must not be null");
+  assert(mdo != nullptr, "must not be null");
 
   int bci = method->bci_from(bcp);
 
@@ -1091,10 +1096,10 @@ JRT_LEAF(void, InterpreterRuntime::verify_mdp(Method* method, address bcp, addre
 JRT_END
 #endif // ASSERT
 
-JRT_ENTRY(void, InterpreterRuntime::update_mdp_for_ret(JavaThread* thread, int return_bci))
+JRT_ENTRY(void, InterpreterRuntime::update_mdp_for_ret(JavaThread* current, int return_bci))
   assert(ProfileInterpreter, "must be profiling interpreter");
-  ResourceMark rm(thread);
-  LastFrameAccessor last_frame(thread);
+  ResourceMark rm(current);
+  LastFrameAccessor last_frame(current);
   assert(last_frame.is_interpreted_frame(), "must come from interpreter");
   MethodData* h_mdo = last_frame.method()->method_data();
 
@@ -1105,25 +1110,19 @@ JRT_ENTRY(void, InterpreterRuntime::update_mdp_for_ret(JavaThread* thread, int r
   // ProfileData is essentially a wrapper around a derived oop, so we
   // need to take the lock before making any ProfileData structures.
   ProfileData* data = h_mdo->data_at(h_mdo->dp_to_di(last_frame.mdp()));
-  guarantee(data != NULL, "profile data must be valid");
+  guarantee(data != nullptr, "profile data must be valid");
   RetData* rdata = data->as_RetData();
   address new_mdp = rdata->fixup_ret(return_bci, h_mdo);
   last_frame.set_mdp(new_mdp);
 JRT_END
 
-JRT_ENTRY(MethodCounters*, InterpreterRuntime::build_method_counters(JavaThread* thread, Method* m))
-  MethodCounters* mcs = Method::build_method_counters(m, thread);
-  if (HAS_PENDING_EXCEPTION) {
-    // Only metaspace OOM is expected. No Java code executed.
-    assert((PENDING_EXCEPTION->is_a(vmClasses::OutOfMemoryError_klass())), "we expect only an OOM error here");
-    CLEAR_PENDING_EXCEPTION;
-  }
-  return mcs;
+JRT_ENTRY(MethodCounters*, InterpreterRuntime::build_method_counters(JavaThread* current, Method* m))
+  return Method::build_method_counters(current, m);
 JRT_END
 
 
-JRT_ENTRY(void, InterpreterRuntime::at_safepoint(JavaThread* thread))
-  // We used to need an explict preserve_arguments here for invoke bytecodes. However,
+JRT_ENTRY(void, InterpreterRuntime::at_safepoint(JavaThread* current))
+  // We used to need an explicit preserve_arguments here for invoke bytecodes. However,
   // stack traversal automatically takes care of preserving arguments for invoke, so
   // this is no longer needed.
 
@@ -1134,17 +1133,18 @@ JRT_ENTRY(void, InterpreterRuntime::at_safepoint(JavaThread* thread))
     // This function is called by the interpreter when single stepping. Such single
     // stepping could unwind a frame. Then, it is important that we process any frames
     // that we might return into.
-    StackWatermarkSet::before_unwind(thread);
+    StackWatermarkSet::before_unwind(current);
 
     // We are called during regular safepoints and when the VM is
     // single stepping. If any thread is marked for single stepping,
     // then we may have JVMTI work to do.
-    LastFrameAccessor last_frame(thread);
-    JvmtiExport::at_single_stepping_point(thread, last_frame.method(), last_frame.bcp());
+    LastFrameAccessor last_frame(current);
+    JvmtiExport::at_single_stepping_point(current, last_frame.method(), last_frame.bcp());
   }
 JRT_END
 
-JRT_LEAF(void, InterpreterRuntime::at_unwind(JavaThread* thread))
+JRT_LEAF(void, InterpreterRuntime::at_unwind(JavaThread* current))
+  assert(current == JavaThread::current(), "pre-condition");
   // This function is called by the interpreter when the return poll found a reason
   // to call the VM. The reason could be that we are returning into a not yet safe
   // to access frame. We handle that below.
@@ -1152,46 +1152,45 @@ JRT_LEAF(void, InterpreterRuntime::at_unwind(JavaThread* thread))
   // to single step when unwinding frames for an exception being thrown. Instead,
   // such single stepping code will use the safepoint table, which will use the
   // InterpreterRuntime::at_safepoint callback.
-  StackWatermarkSet::before_unwind(thread);
+  StackWatermarkSet::before_unwind(current);
 JRT_END
 
-JRT_ENTRY(void, InterpreterRuntime::post_field_access(JavaThread *thread, oopDesc* obj,
-ConstantPoolCacheEntry *cp_entry))
+JRT_ENTRY(void, InterpreterRuntime::post_field_access(JavaThread* current, oopDesc* obj,
+                                                      ResolvedFieldEntry *entry))
 
   // check the access_flags for the field in the klass
 
-  InstanceKlass* ik = InstanceKlass::cast(cp_entry->f1_as_klass());
-  int index = cp_entry->field_index();
-  if ((ik->field_access_flags(index) & JVM_ACC_FIELD_ACCESS_WATCHED) == 0) return;
+  InstanceKlass* ik = entry->field_holder();
+  int index = entry->field_index();
+  if (!ik->field_status(index).is_access_watched()) return;
 
-  bool is_static = (obj == NULL);
-  HandleMark hm(thread);
+  bool is_static = (obj == nullptr);
+  HandleMark hm(current);
 
   Handle h_obj;
   if (!is_static) {
     // non-static field accessors have an object, but we need a handle
-    h_obj = Handle(thread, obj);
+    h_obj = Handle(current, obj);
   }
-  InstanceKlass* cp_entry_f1 = InstanceKlass::cast(cp_entry->f1_as_klass());
-  jfieldID fid = jfieldIDWorkaround::to_jfieldID(cp_entry_f1, cp_entry->f2_as_index(), is_static);
-  LastFrameAccessor last_frame(thread);
-  JvmtiExport::post_field_access(thread, last_frame.method(), last_frame.bcp(), cp_entry_f1, h_obj, fid);
+  InstanceKlass* field_holder = entry->field_holder(); // HERE
+  jfieldID fid = jfieldIDWorkaround::to_jfieldID(field_holder, entry->field_offset(), is_static);
+  LastFrameAccessor last_frame(current);
+  JvmtiExport::post_field_access(current, last_frame.method(), last_frame.bcp(), field_holder, h_obj, fid);
 JRT_END
 
-JRT_ENTRY(void, InterpreterRuntime::post_field_modification(JavaThread *thread,
-  oopDesc* obj, ConstantPoolCacheEntry *cp_entry, jvalue *value))
+JRT_ENTRY(void, InterpreterRuntime::post_field_modification(JavaThread* current, oopDesc* obj,
+                                                            ResolvedFieldEntry *entry, jvalue *value))
 
-  Klass* k = cp_entry->f1_as_klass();
+  InstanceKlass* ik = entry->field_holder();
 
   // check the access_flags for the field in the klass
-  InstanceKlass* ik = InstanceKlass::cast(k);
-  int index = cp_entry->field_index();
+  int index = entry->field_index();
   // bail out if field modifications are not watched
-  if ((ik->field_access_flags(index) & JVM_ACC_FIELD_MODIFICATION_WATCHED) == 0) return;
+  if (!ik->field_status(index).is_modification_watched()) return;
 
   char sig_type = '\0';
 
-  switch(cp_entry->flag_state()) {
+  switch((TosState)entry->tos_state()) {
     case btos: sig_type = JVM_SIGNATURE_BYTE;    break;
     case ztos: sig_type = JVM_SIGNATURE_BOOLEAN; break;
     case ctos: sig_type = JVM_SIGNATURE_CHAR;    break;
@@ -1203,10 +1202,10 @@ JRT_ENTRY(void, InterpreterRuntime::post_field_modification(JavaThread *thread,
     case dtos: sig_type = JVM_SIGNATURE_DOUBLE;  break;
     default:  ShouldNotReachHere(); return;
   }
-  bool is_static = (obj == NULL);
+  bool is_static = (obj == nullptr);
 
-  HandleMark hm(thread);
-  jfieldID fid = jfieldIDWorkaround::to_jfieldID(ik, cp_entry->f2_as_index(), is_static);
+  HandleMark hm(current);
+  jfieldID fid = jfieldIDWorkaround::to_jfieldID(ik, entry->field_offset(), is_static);
   jvalue fvalue;
 #ifdef _LP64
   fvalue = *value;
@@ -1227,31 +1226,31 @@ JRT_ENTRY(void, InterpreterRuntime::post_field_modification(JavaThread *thread,
   Handle h_obj;
   if (!is_static) {
     // non-static field accessors have an object, but we need a handle
-    h_obj = Handle(thread, obj);
+    h_obj = Handle(current, obj);
   }
 
-  LastFrameAccessor last_frame(thread);
-  JvmtiExport::post_raw_field_modification(thread, last_frame.method(), last_frame.bcp(), ik, h_obj,
+  LastFrameAccessor last_frame(current);
+  JvmtiExport::post_raw_field_modification(current, last_frame.method(), last_frame.bcp(), ik, h_obj,
                                            fid, sig_type, &fvalue);
 JRT_END
 
-JRT_ENTRY(void, InterpreterRuntime::post_method_entry(JavaThread *thread))
-  LastFrameAccessor last_frame(thread);
-  JvmtiExport::post_method_entry(thread, last_frame.method(), last_frame.get_frame());
+JRT_ENTRY(void, InterpreterRuntime::post_method_entry(JavaThread* current))
+  LastFrameAccessor last_frame(current);
+  JvmtiExport::post_method_entry(current, last_frame.method(), last_frame.get_frame());
 JRT_END
 
 
 // This is a JRT_BLOCK_ENTRY because we have to stash away the return oop
 // before transitioning to VM, and restore it after transitioning back
 // to Java. The return oop at the top-of-stack, is not walked by the GC.
-JRT_BLOCK_ENTRY(void, InterpreterRuntime::post_method_exit(JavaThread *thread))
-  LastFrameAccessor last_frame(thread);
-  JvmtiExport::post_method_exit(thread, last_frame.method(), last_frame.get_frame());
+JRT_BLOCK_ENTRY(void, InterpreterRuntime::post_method_exit(JavaThread* current))
+  LastFrameAccessor last_frame(current);
+  JvmtiExport::post_method_exit(current, last_frame.method(), last_frame.get_frame());
 JRT_END
 
 JRT_LEAF(int, InterpreterRuntime::interpreter_contains(address pc))
 {
-  return (Interpreter::contains(pc) ? 1 : 0);
+  return (Interpreter::contains(Continuation::get_top_return_pc_post_barrier(JavaThread::current(), pc)) ? 1 : 0);
 }
 JRT_END
 
@@ -1260,7 +1259,7 @@ JRT_END
 
 #ifndef SHARING_FAST_NATIVE_FINGERPRINTS
 // Dummy definition (else normalization method is defined in CPU
-// dependant code)
+// dependent code)
 uint64_t InterpreterRuntime::normalize_fast_native_fingerprint(uint64_t fingerprint) {
   return fingerprint;
 }
@@ -1268,8 +1267,8 @@ uint64_t InterpreterRuntime::normalize_fast_native_fingerprint(uint64_t fingerpr
 
 address SignatureHandlerLibrary::set_handler_blob() {
   BufferBlob* handler_blob = BufferBlob::create("native signature handlers", blob_size);
-  if (handler_blob == NULL) {
-    return NULL;
+  if (handler_blob == nullptr) {
+    return nullptr;
   }
   address handler = handler_blob->code_begin();
   _handler_blob = handler_blob;
@@ -1278,10 +1277,10 @@ address SignatureHandlerLibrary::set_handler_blob() {
 }
 
 void SignatureHandlerLibrary::initialize() {
-  if (_fingerprints != NULL) {
+  if (_fingerprints != nullptr) {
     return;
   }
-  if (set_handler_blob() == NULL) {
+  if (set_handler_blob() == nullptr) {
     vm_exit_out_of_memory(blob_size, OOM_MALLOC_ERROR, "native signature handlers");
   }
 
@@ -1289,8 +1288,8 @@ void SignatureHandlerLibrary::initialize() {
                                       SignatureHandlerLibrary::buffer_size);
   _buffer = bb->code_begin();
 
-  _fingerprints = new(ResourceObj::C_HEAP, mtCode)GrowableArray<uint64_t>(32, mtCode);
-  _handlers     = new(ResourceObj::C_HEAP, mtCode)GrowableArray<address>(32, mtCode);
+  _fingerprints = new (mtCode) GrowableArray<uint64_t>(32, mtCode);
+  _handlers     = new (mtCode) GrowableArray<address>(32, mtCode);
 }
 
 address SignatureHandlerLibrary::set_handler(CodeBuffer* buffer) {
@@ -1300,7 +1299,7 @@ address SignatureHandlerLibrary::set_handler(CodeBuffer* buffer) {
     // get a new handler blob
     handler = set_handler_blob();
   }
-  if (handler != NULL) {
+  if (handler != nullptr) {
     memcpy(handler, buffer->insts_begin(), insts_size);
     pd_set_handler(handler);
     ICache::invalidate_range(handler, insts_size);
@@ -1310,7 +1309,7 @@ address SignatureHandlerLibrary::set_handler(CodeBuffer* buffer) {
 }
 
 void SignatureHandlerLibrary::add(const methodHandle& method) {
-  if (method->signature_handler() == NULL) {
+  if (method->signature_handler() == nullptr) {
     // use slow signature handler if we can't do better
     int handler_index = -1;
     // check if we can use customized (fast) signature handler
@@ -1321,7 +1320,7 @@ void SignatureHandlerLibrary::add(const methodHandle& method) {
       initialize();
       // lookup method signature's fingerprint
       uint64_t fingerprint = Fingerprinter(method).fingerprint();
-      // allow CPU dependant code to optimize the fingerprints for the fast handler
+      // allow CPU dependent code to optimize the fingerprints for the fast handler
       fingerprint = InterpreterRuntime::normalize_fast_native_fingerprint(fingerprint);
       handler_index = _fingerprints->find(fingerprint);
       // create handler if necessary
@@ -1329,14 +1328,14 @@ void SignatureHandlerLibrary::add(const methodHandle& method) {
         ResourceMark rm;
         ptrdiff_t align_offset = align_up(_buffer, CodeEntryAlignment) - (address)_buffer;
         CodeBuffer buffer((address)(_buffer + align_offset),
-                          SignatureHandlerLibrary::buffer_size - align_offset);
+                          checked_cast<int>(SignatureHandlerLibrary::buffer_size - align_offset));
         InterpreterRuntime::SignatureHandlerGenerator(method, &buffer).generate(fingerprint);
         // copy into code heap
         address handler = set_handler(&buffer);
-        if (handler == NULL) {
+        if (handler == nullptr) {
           // use slow signature handler (without memorizing it in the fingerprints)
         } else {
-          // debugging suppport
+          // debugging support
           if (PrintSignatureHandlers && (handler != Interpreter::slow_signature_handler())) {
             ttyLocker ttyl;
             tty->cr();
@@ -1347,7 +1346,8 @@ void SignatureHandlerLibrary::add(const methodHandle& method) {
                           fingerprint,
                           buffer.insts_size());
             if (buffer.insts_size() > 0) {
-              Disassembler::decode(handler, handler + buffer.insts_size());
+              Disassembler::decode(handler, handler + buffer.insts_size(), tty
+                                   NOT_PRODUCT(COMMA &buffer.asm_remarks()));
             }
 #ifndef PRODUCT
             address rh_begin = Interpreter::result_handler(method()->result_type());
@@ -1381,7 +1381,7 @@ void SignatureHandlerLibrary::add(const methodHandle& method) {
         method->set_signature_handler(_handlers->at(handler_index));
       }
     } else {
-      DEBUG_ONLY(Thread::current()->check_possible_safepoint());
+      DEBUG_ONLY(JavaThread::current()->check_possible_safepoint());
       // use generic signature handler
       method->set_signature_handler(Interpreter::slow_signature_handler());
     }
@@ -1395,7 +1395,7 @@ void SignatureHandlerLibrary::add(const methodHandle& method) {
     // thread which may change the arrays in the above, mutex protected block, we
     // have to protect this read access here with the same mutex as well!
     MutexLocker mu(SignatureHandlerLibrary_lock);
-    if (_handlers != NULL) {
+    if (_handlers != nullptr) {
       handler_index = _handlers->find(method->signature_handler());
       uint64_t fingerprint = Fingerprinter(method).fingerprint();
       fingerprint = InterpreterRuntime::normalize_fast_native_fingerprint(fingerprint);
@@ -1439,15 +1439,15 @@ void SignatureHandlerLibrary::add(uint64_t fingerprint, address handler) {
 }
 
 
-BufferBlob*              SignatureHandlerLibrary::_handler_blob = NULL;
-address                  SignatureHandlerLibrary::_handler      = NULL;
-GrowableArray<uint64_t>* SignatureHandlerLibrary::_fingerprints = NULL;
-GrowableArray<address>*  SignatureHandlerLibrary::_handlers     = NULL;
-address                  SignatureHandlerLibrary::_buffer       = NULL;
+BufferBlob*              SignatureHandlerLibrary::_handler_blob = nullptr;
+address                  SignatureHandlerLibrary::_handler      = nullptr;
+GrowableArray<uint64_t>* SignatureHandlerLibrary::_fingerprints = nullptr;
+GrowableArray<address>*  SignatureHandlerLibrary::_handlers     = nullptr;
+address                  SignatureHandlerLibrary::_buffer       = nullptr;
 
 
-JRT_ENTRY(void, InterpreterRuntime::prepare_native_call(JavaThread* thread, Method* method))
-  methodHandle m(thread, method);
+JRT_ENTRY(void, InterpreterRuntime::prepare_native_call(JavaThread* current, Method* method))
+  methodHandle m(current, method);
   assert(m->is_native(), "sanity check");
   // lookup native function entry point if it doesn't exist
   if (!m->has_native_function()) {
@@ -1462,15 +1462,16 @@ JRT_ENTRY(void, InterpreterRuntime::prepare_native_call(JavaThread* thread, Meth
 JRT_END
 
 #if defined(IA32) || defined(AMD64) || defined(ARM)
-JRT_LEAF(void, InterpreterRuntime::popframe_move_outgoing_args(JavaThread* thread, void* src_address, void* dest_address))
+JRT_LEAF(void, InterpreterRuntime::popframe_move_outgoing_args(JavaThread* current, void* src_address, void* dest_address))
+  assert(current == JavaThread::current(), "pre-condition");
   if (src_address == dest_address) {
     return;
   }
   ResourceMark rm;
-  LastFrameAccessor last_frame(thread);
+  LastFrameAccessor last_frame(current);
   assert(last_frame.is_interpreted_frame(), "");
   jint bci = last_frame.bci();
-  methodHandle mh(thread, last_frame.method());
+  methodHandle mh(current, last_frame.method());
   Bytecode_invoke invoke(mh, bci);
   ArgumentSizeComputer asc(invoke.signature());
   int size_of_arguments = (asc.size() + (invoke.has_receiver() ? 1 : 0)); // receiver
@@ -1486,26 +1487,26 @@ JRT_END
 // The member_name argument is a saved reference (in local#0) to the member_name.
 // For backward compatibility with some JDK versions (7, 8) it can also be a direct method handle.
 // FIXME: remove DMH case after j.l.i.InvokerBytecodeGenerator code shape is updated.
-JRT_ENTRY(void, InterpreterRuntime::member_name_arg_or_null(JavaThread* thread, address member_name,
+JRT_ENTRY(void, InterpreterRuntime::member_name_arg_or_null(JavaThread* current, address member_name,
                                                             Method* method, address bcp))
   Bytecodes::Code code = Bytecodes::code_at(method, bcp);
   if (code != Bytecodes::_invokestatic) {
     return;
   }
   ConstantPool* cpool = method->constants();
-  int cp_index = Bytes::get_native_u2(bcp + 1) + ConstantPool::CPCACHE_INDEX_TAG;
-  Symbol* cname = cpool->klass_name_at(cpool->klass_ref_index_at(cp_index));
-  Symbol* mname = cpool->name_ref_at(cp_index);
+  int cp_index = Bytes::get_native_u2(bcp + 1);
+  Symbol* cname = cpool->klass_name_at(cpool->klass_ref_index_at(cp_index, code));
+  Symbol* mname = cpool->name_ref_at(cp_index, code);
 
   if (MethodHandles::has_member_arg(cname, mname)) {
-    oop member_name_oop = (oop) member_name;
+    oop member_name_oop = cast_to_oop(member_name);
     if (java_lang_invoke_DirectMethodHandle::is_instance(member_name_oop)) {
       // FIXME: remove after j.l.i.InvokerBytecodeGenerator code shape is updated.
       member_name_oop = java_lang_invoke_DirectMethodHandle::member(member_name_oop);
     }
-    thread->set_vm_result(member_name_oop);
+    current->set_vm_result(member_name_oop);
   } else {
-    thread->set_vm_result(NULL);
+    current->set_vm_result(nullptr);
   }
 JRT_END
 #endif // INCLUDE_JVMTI
@@ -1515,11 +1516,12 @@ JRT_END
 // call this, which changes rsp and makes the interpreter's expression stack not walkable.
 // The generated code still uses call_VM because that will set up the frame pointer for
 // bcp and method.
-JRT_LEAF(intptr_t, InterpreterRuntime::trace_bytecode(JavaThread* thread, intptr_t preserve_this_value, intptr_t tos, intptr_t tos2))
-  LastFrameAccessor last_frame(thread);
+JRT_LEAF(intptr_t, InterpreterRuntime::trace_bytecode(JavaThread* current, intptr_t preserve_this_value, intptr_t tos, intptr_t tos2))
+  assert(current == JavaThread::current(), "pre-condition");
+  LastFrameAccessor last_frame(current);
   assert(last_frame.is_interpreted_frame(), "must be an interpreted frame");
-  methodHandle mh(thread, last_frame.method());
-  BytecodeTracer::trace(mh, last_frame.bcp(), tos, tos2);
+  methodHandle mh(current, last_frame.method());
+  BytecodeTracer::trace_interpreter(mh, last_frame.bcp(), tos, tos2);
   return preserve_this_value;
 JRT_END
 #endif // !PRODUCT

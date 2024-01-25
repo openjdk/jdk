@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,18 +121,13 @@ class PerfMemory : AllStatic {
     static char*  _top;
     static size_t _capacity;
     static PerfDataPrologue*  _prologue;
-    static int    _initialized;
-    static bool   _destroyed;
+    static volatile int _initialized;
+    static volatile bool _destroyed;
 
     static void create_memory_region(size_t sizep);
     static void delete_memory_region();
 
   public:
-    enum PerfMemoryMode {
-      PERF_MODE_RO = 0,
-      PERF_MODE_RW = 1
-    };
-
     static char* alloc(size_t size);
     static char* start() { return _start; }
     static char* end() { return _end; }
@@ -142,15 +137,14 @@ class PerfMemory : AllStatic {
     static bool is_destroyed() { return _destroyed; }
     static bool is_usable() { return is_initialized() && !is_destroyed(); }
     static bool contains(char* addr) {
-      return ((_start != NULL) && (addr >= _start) && (addr < _end));
+      return ((_start != nullptr) && (addr >= _start) && (addr < _end));
     }
     static void mark_updated();
 
     // methods for attaching to and detaching from the PerfData
     // memory segment of another JVM process on the same system.
-    static void attach(const char* user, int vmid, PerfMemoryMode mode,
-                       char** addrp, size_t* size, TRAPS);
-    static void detach(char* addr, size_t bytes, TRAPS);
+    static void attach(int vmid, char** addrp, size_t* size, TRAPS);
+    static void detach(char* addr, size_t bytes);
 
     static void initialize();
     static void destroy();

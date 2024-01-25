@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -188,15 +188,15 @@ public class InlineView extends LabelView {
         AttributeSet a = getAttributes();
         Object decor = a.getAttribute(CSS.Attribute.TEXT_DECORATION);
         boolean u = (decor != null) ?
-          (decor.toString().indexOf("underline") >= 0) : false;
+          (decor.toString().contains("underline")) : false;
         setUnderline(u);
         boolean s = (decor != null) ?
-          (decor.toString().indexOf("line-through") >= 0) : false;
+          (decor.toString().contains("line-through")) : false;
         setStrikeThrough(s);
         Object vAlign = a.getAttribute(CSS.Attribute.VERTICAL_ALIGN);
-        s = (vAlign != null) ? (vAlign.toString().indexOf("sup") >= 0) : false;
+        s = (vAlign != null) ? (vAlign.toString().contains("sup")) : false;
         setSuperscript(s);
-        s = (vAlign != null) ? (vAlign.toString().indexOf("sub") >= 0) : false;
+        s = (vAlign != null) ? (vAlign.toString().contains("sub")) : false;
         setSubscript(s);
 
         Object whitespace = a.getAttribute(CSS.Attribute.WHITE_SPACE);

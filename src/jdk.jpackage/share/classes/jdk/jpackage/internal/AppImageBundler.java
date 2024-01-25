@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package jdk.jpackage.internal;
 
+import jdk.internal.util.OperatingSystem;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -41,22 +43,22 @@ import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 class AppImageBundler extends AbstractBundler {
 
     @Override
-    final public String getName() {
+    public final String getName() {
         return I18N.getString("app.bundler.name");
     }
 
     @Override
-    final public String getID() {
+    public final String getID() {
         return "app";
     }
 
     @Override
-    final public String getBundleType() {
+    public final String getBundleType() {
         return "IMAGE";
     }
 
     @Override
-    final public boolean validate(Map<String, ? super Object> params)
+    public final boolean validate(Map<String, ? super Object> params)
             throws ConfigException {
         try {
             Objects.requireNonNull(params);
@@ -81,7 +83,7 @@ class AppImageBundler extends AbstractBundler {
     }
 
     @Override
-    final public Path execute(Map<String, ? super Object> params,
+    public final Path execute(Map<String, ? super Object> params,
             Path outputParentDir) throws PackagerException {
         if (StandardBundlerParam.isRuntimeInstaller(params)) {
             return PREDEFINED_RUNTIME_IMAGE.fetchFrom(params);
@@ -98,18 +100,22 @@ class AppImageBundler extends AbstractBundler {
     }
 
     @Override
-    final public boolean supported(boolean runtimeInstaller) {
+    public final boolean supported(boolean runtimeInstaller) {
         return true;
     }
 
     @Override
-    final public boolean isDefault() {
+    public final boolean isDefault() {
         return false;
     }
 
     final AppImageBundler setDependentTask(boolean v) {
         dependentTask = v;
         return this;
+    }
+
+    final boolean isDependentTask() {
+        return dependentTask;
     }
 
     final AppImageBundler setAppImageSupplier(
@@ -134,7 +140,7 @@ class AppImageBundler extends AbstractBundler {
         IOUtils.writableOutputDir(outputDirectory);
 
         String imageName = APP_NAME.fetchFrom(params);
-        if (Platform.isMac()) {
+        if (OperatingSystem.isMacOS()) {
             imageName = imageName + ".app";
         }
 
@@ -160,16 +166,28 @@ class AppImageBundler extends AbstractBundler {
             Path outputDirectory) throws PackagerException, IOException,
             ConfigException {
 
-        Path rootDirectory = createRoot(params, outputDirectory);
+        boolean hasAppImage =
+                PREDEFINED_APP_IMAGE.fetchFrom(params) != null;
+        boolean hasRuntimeImage =
+                PREDEFINED_RUNTIME_IMAGE.fetchFrom(params) != null;
+
+        Path rootDirectory = hasAppImage ?
+                PREDEFINED_APP_IMAGE.fetchFrom(params) :
+                createRoot(params, outputDirectory);
+
         AbstractAppImageBuilder appBuilder = appImageSupplier.apply(rootDirectory);
-        if (PREDEFINED_RUNTIME_IMAGE.fetchFrom(params) == null ) {
-            JLinkBundlerHelper.execute(params,
-                    appBuilder.getAppLayout().runtimeHomeDirectory());
-        } else {
-            StandardBundlerParam.copyPredefinedRuntimeImage(
-                    params, appBuilder.getAppLayout());
+        if (!hasAppImage) {
+            if (!hasRuntimeImage) {
+                JLinkBundlerHelper.execute(params,
+                        appBuilder.getAppLayout().runtimeHomeDirectory());
+            } else {
+                StandardBundlerParam.copyPredefinedRuntimeImage(
+                        params, appBuilder.getAppLayout());
+            }
         }
+
         appBuilder.prepareApplicationFiles(params);
+
         return rootDirectory;
     }
 

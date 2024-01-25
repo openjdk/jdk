@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ static char *strip_ext(char *fname);       // Strip off name extension
 static char *base_plus_suffix(const char* base, const char *suffix);// New concatenated string
 static int get_legal_text(FileBuff &fbuf, char **legal_text); // Get pointer to legal text
 
-ArchDesc* globalAD = NULL;      // global reference to Architecture Description object
+ArchDesc* globalAD = nullptr;      // global reference to Architecture Description object
 
 const char* get_basename(const char* filename) {
   const char *basename = filename;
@@ -118,7 +118,7 @@ int main(int argc, char *argv[])
             char* flag = s;
             s += strlen(s);
             char* def = strchr(flag, '=');
-            if (def == NULL)  def = (char*)"1";
+            if (def == nullptr)  def = (char*)"1";
             else              *def++ = '\0';
             AD.set_preproc_def(flag, def);
           }
@@ -127,7 +127,7 @@ int main(int argc, char *argv[])
           {
             char* flag = s;
             s += strlen(s);
-            AD.set_preproc_def(flag, NULL);
+            AD.set_preproc_def(flag, nullptr);
           }
           break;
         default:                // Unknown option
@@ -229,7 +229,6 @@ int main(int argc, char *argv[])
   AD.addInclude(AD._CPP_file, "opto/regalloc.hpp");
   AD.addInclude(AD._CPP_file, "opto/regmask.hpp");
   AD.addInclude(AD._CPP_file, "opto/runtime.hpp");
-  AD.addInclude(AD._CPP_file, "runtime/biasedLocking.hpp");
   AD.addInclude(AD._CPP_file, "runtime/safepointMechanism.hpp");
   AD.addInclude(AD._CPP_file, "runtime/sharedRuntime.hpp");
   AD.addInclude(AD._CPP_file, "runtime/stubRoutines.hpp");
@@ -251,6 +250,7 @@ int main(int argc, char *argv[])
   AD.addInclude(AD._CPP_EXPAND_file, "oops/compressedOops.hpp");
   AD.addInclude(AD._CPP_FORMAT_file, "precompiled.hpp");
   AD.addInclude(AD._CPP_FORMAT_file, "adfiles", get_basename(AD._HPP_file._name));
+  AD.addInclude(AD._CPP_FORMAT_file, "compiler/oopMap.hpp");
   AD.addInclude(AD._CPP_GEN_file, "precompiled.hpp");
   AD.addInclude(AD._CPP_GEN_file, "adfiles", get_basename(AD._HPP_file._name));
   AD.addInclude(AD._CPP_GEN_file, "opto/cfgnode.hpp");
@@ -271,6 +271,7 @@ int main(int argc, char *argv[])
   AD.addInclude(AD._DFA_file, "opto/narrowptrnode.hpp");
   AD.addInclude(AD._DFA_file, "opto/opcodes.hpp");
   AD.addInclude(AD._DFA_file, "opto/convertnode.hpp");
+  AD.addInclude(AD._DFA_file, "opto/superword.hpp");
   AD.addInclude(AD._DFA_file, "utilities/powerOfTwo.hpp");
 
   // Make sure each .cpp file starts with include lines:
@@ -304,7 +305,7 @@ int main(int argc, char *argv[])
   AD.buildInstructMatchCheck(AD._CPP_file._fp);  // .cpp
   // define methods for machine dependent frame management
   AD.buildFrameMethods(AD._CPP_file._fp);         // .cpp
-  AD.generate_needs_clone_jvms(AD._CPP_file._fp);
+  AD.generate_needs_deep_clone_jvms(AD._CPP_file._fp);
 
   // do this last:
   AD.addPreprocessorChecks(AD._CPP_file._fp);     // .cpp
@@ -347,7 +348,7 @@ static void usage(ArchDesc& AD)
   printf("Usage: adlc [-doqwTs] [-#]* [-D<FLAG>[=<DEF>]] [-U<FLAG>] [-c<CPP_FILE_NAME>] [-h<HPP_FILE_NAME>] [-a<DFA_FILE_NAME>] [-v<GLOBALS_FILE_NAME>] <ADL_FILE_NAME>\n");
   printf(" d  produce DFA debugging info\n");
   printf(" o  no output produced, syntax and semantic checking only\n");
-  printf(" q  quiet mode, supresses all non-essential messages\n");
+  printf(" q  quiet mode, suppresses all non-essential messages\n");
   printf(" w  suppress warning messages\n");
   printf(" T  make DFA as many subroutine calls\n");
   printf(" s  output which instructions are cisc-spillable\n");
@@ -365,7 +366,7 @@ static void usage(ArchDesc& AD)
 int ArchDesc::open_file(bool required, ADLFILE & ADF, const char *action)
 {
   if (required &&
-      (ADF._fp = fopen(ADF._name, action)) == NULL) {
+      (ADF._fp = fopen(ADF._name, action)) == nullptr) {
     printf("ERROR: Cannot open file for %s: %s\n", action, ADF._name);
     close_files(1);
     return 0;
@@ -376,7 +377,7 @@ int ArchDesc::open_file(bool required, ADLFILE & ADF, const char *action)
 //------------------------------open_files-------------------------------------
 int ArchDesc::open_files(void)
 {
-  if (_ADL_file._name == NULL)
+  if (_ADL_file._name == nullptr)
   { printf("ERROR: No ADL input file specified\n"); return 0; }
 
   if (!open_file(true       , _ADL_file, "r"))          { return 0; }
@@ -466,7 +467,7 @@ static char *base_plus_suffix(const char* base, const char *suffix)
   int len = (int)strlen(base) + (int)strlen(suffix) + 1;
 
   char* fname = new char[len];
-  sprintf(fname,"%s%s",base,suffix);
+  snprintf_checked(fname,len,"%s%s",base,suffix);
   return fname;
 }
 
@@ -488,8 +489,7 @@ int get_legal_text(FileBuff &fbuf, char **legal_text)
   return (int) (legal_end - legal_start);
 }
 
-// VS2005 has its own definition, identical to this one.
-#if !defined(_WIN32) || defined(_WIN64) || _MSC_VER < 1400
+#if !defined(_WIN32) || defined(_WIN64)
 void *operator new( size_t size, int, const char *, int ) throw() {
   return ::operator new( size );
 }

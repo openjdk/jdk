@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -245,14 +245,17 @@ public final class ExcludeVMPlugin extends AbstractPlugin {
     }
 
     private static String[] jvmlibs(ResourcePoolModule module) {
-        Platform platform = Platform.getTargetPlatform(module);
-        switch (platform) {
-            case WINDOWS:
-                return new String[] { "jvm.dll" };
-            case MACOS:
-                return new String[] { "libjvm.dylib", "libjvm.a" };
-            default:
-                return new String[] { "libjvm.so", "libjvm.a" };
+        try {
+            String targetPlatform = module.targetPlatform();
+            Platform platform = Platform.parsePlatform(targetPlatform);
+            return switch (platform.os()) {
+                case WINDOWS -> new String[]{"jvm.dll"};
+                case MACOS   -> new String[]{"libjvm.dylib", "libjvm.a"};
+                default      -> new String[]{"libjvm.so", "libjvm.a"};
+            };
+        } catch (IllegalArgumentException iae) {
+            // For unknown or malformed targetPlatform
+            return new String[]{"libjvm.so", "libjvm.a"};
         }
     }
 }

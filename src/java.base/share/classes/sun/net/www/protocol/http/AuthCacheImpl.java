@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,13 @@
 
 package sun.net.www.protocol.http;
 
+import java.net.Authenticator;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 /**
  * @author Michael McMahon
@@ -77,11 +81,10 @@ public class AuthCacheImpl implements AuthCache {
         }
         if (skey == null) {
             // list should contain only one element
-            return (AuthenticationInfo)list.get (0);
+            return list.get(0);
         }
-        ListIterator<AuthCacheValue> iter = list.listIterator();
-        while (iter.hasNext()) {
-            AuthenticationInfo inf = (AuthenticationInfo)iter.next();
+        for (AuthCacheValue authCacheValue : list) {
+            AuthenticationInfo inf = (AuthenticationInfo) authCacheValue;
             if (skey.startsWith (inf.path)) {
                 return inf;
             }
@@ -105,5 +108,24 @@ public class AuthCacheImpl implements AuthCache {
                 iter.remove ();
             }
         }
+    }
+
+    private static final Map<Authenticator,AuthCacheImpl> caches =
+        Collections.synchronizedMap(new WeakHashMap<>());
+
+    /**
+     * The default cache is stored under null key which is never garbage
+     * collected.
+     */
+    public static AuthCacheImpl getDefault() {
+        return getAuthCacheFor(null);
+    }
+
+    /**
+     * Atomically check if a cache exists for given Authenticator and return it
+     * or create one and return it
+     */
+    public static AuthCacheImpl getAuthCacheFor(Authenticator auth) {
+        return caches.computeIfAbsent(auth, (k) -> new AuthCacheImpl());
     }
 }

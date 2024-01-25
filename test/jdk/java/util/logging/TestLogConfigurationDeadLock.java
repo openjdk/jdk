@@ -40,7 +40,7 @@ import java.util.logging.Logger;
  *       drainLoggerRefQueueBounded / readConfiguration
  * @modules java.logging
  *          java.management
- * @run main/othervm TestLogConfigurationDeadLock
+ * @run main/othervm -Djava.security.manager=allow TestLogConfigurationDeadLock
  * @author danielfuchs
  */
 // This test is a best effort to try & detect issues. The test itself will run

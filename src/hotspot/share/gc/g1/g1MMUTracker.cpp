@@ -56,9 +56,9 @@ void G1MMUTracker::remove_expired_entries(double current_time) {
   guarantee(_no_entries == 0, "should have no entries in the array");
 }
 
-double G1MMUTracker::calculate_gc_time(double current_time) {
+double G1MMUTracker::calculate_gc_time(double current_timestamp) {
   double gc_time = 0.0;
-  double limit = current_time - _time_slice;
+  double limit = current_timestamp - _time_slice;
   for (int i = 0; i < _no_entries; ++i) {
     int index = trim_index(_tail_index + i);
     G1MMUTrackerElem *elem = &_array[index];
@@ -111,34 +111,61 @@ void G1MMUTracker::add_pause(double start, double end) {
   }
 }
 
-double G1MMUTracker::when_sec(double current_time, double pause_time) {
-  // if the pause is over the maximum, just assume that it's the maximum
-  double adjusted_pause_time =
-    (pause_time > max_gc_time()) ? max_gc_time() : pause_time;
-  double earliest_end = current_time + adjusted_pause_time;
-  double limit = earliest_end - _time_slice;
-  double gc_time = calculate_gc_time(earliest_end);
-  double diff = gc_time + adjusted_pause_time - max_gc_time();
-  if (is_double_leq_0(diff))
-    return 0.0;
+//                                                current_timestamp
+//                       GC events               /  pause_time
+//                 /     |     \     \          | /  /
+// -------------[----]-[---]--[--]---[---]------|[--]-----> Time
+//              |         |                         |
+//              |         |                         |
+//              |<- limit |                         |
+//              |         |<- balance_timestamp     |
+//              |         ^                         |
+//              |                                   |
+//              |<--------  _time_slice   --------->|
+//
+// The MMU constraint requires that we can spend up to `max_gc_time()` on GC
+// pauses inside a window of `_time_slice` length. Therefore, we have a GC
+// budget of `max_gc_time() - pause_time`, which is to be accounted for by past
+// GC events.
+//
+// Focusing on GC events that are inside [limit, current_timestamp], we iterate
+// over them from the newest to the oldest (right-to-left in the diagram) and
+// try to locate the timestamp annotated with ^, so that the accumulated GC
+// time inside [balance_timestamp, current_timestamp] is equal to the budget.
+// Next, return `balance_timestamp - limit`.
+//
+// When there are not enough GC events, i.e. we have a surplus budget, a new GC
+// pause can start right away, so return 0.
+double G1MMUTracker::when_sec(double current_timestamp, double pause_time) const {
+  assert(pause_time > 0.0, "precondition");
 
-  if (adjusted_pause_time == max_gc_time()) {
-    G1MMUTrackerElem *elem = &_array[_head_index];
-    return elem->end_time() - limit;
-  }
+  // If the pause is over the maximum, just assume that it's the maximum.
+  pause_time = MIN2(pause_time, max_gc_time());
 
-  int index = _tail_index;
-  while ( 1 ) {
-    G1MMUTrackerElem *elem = &_array[index];
-    if (elem->end_time() > limit) {
-      if (elem->start_time() > limit)
-        diff -= elem->duration();
-      else
-        diff -= elem->end_time() - limit;
-      if (is_double_leq_0(diff))
-        return elem->end_time() + diff - limit;
+  double gc_budget = max_gc_time() - pause_time;
+
+  double limit = current_timestamp + pause_time - _time_slice;
+  // Iterate from newest to oldest.
+  for (int i = 0; i < _no_entries; ++i) {
+    int index = trim_index(_head_index - i);
+    const G1MMUTrackerElem *elem = &_array[index];
+    // Outside the window.
+    if (elem->end_time() <= limit) {
+      break;
     }
-    index = trim_index(index+1);
-    guarantee(index != trim_index(_head_index + 1), "should not go past head");
+
+    double duration = (elem->end_time() - MAX2(elem->start_time(), limit));
+    // This duration would exceed (strictly greater than) the budget.
+    if (duration > gc_budget) {
+      // This timestamp captures the instant the budget is balanced (or used up).
+      double balance_timestamp = elem->end_time() - gc_budget;
+      assert(balance_timestamp >= limit, "inv");
+      return balance_timestamp - limit;
+    }
+
+    gc_budget -= duration;
   }
+
+  // Not enough gc time spent inside the window, we have a budget surplus.
+  return 0;
 }

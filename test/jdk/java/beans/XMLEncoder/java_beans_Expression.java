@@ -25,6 +25,7 @@
  * @test
  * @bug 6402062 6487891
  * @summary Tests Expression encoding
+ * @run main/othervm -Djava.security.manager=allow java_beans_Expression
  * @author Sergey Malenkov
  */
 

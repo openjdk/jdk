@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -58,7 +58,7 @@ inline address Assembler::emit_addr(const address addr) {
 
 #if !defined(ABI_ELFv2)
 // Emit a function descriptor with the specified entry point, TOC, and
-// ENV. If the entry point is NULL, the descriptor will point just
+// ENV. If the entry point is null, the descriptor will point just
 // past the descriptor.
 inline address Assembler::emit_fd(address entry, address toc, address env) {
   FunctionDescriptor* fd = (FunctionDescriptor*)pc();
@@ -69,7 +69,7 @@ inline address Assembler::emit_fd(address entry, address toc, address env) {
   (void)emit_addr();
   (void)emit_addr();
 
-  fd->set_entry(entry == NULL ? pc() : entry);
+  fd->set_entry(entry == nullptr ? pc() : entry);
   fd->set_toc(toc);
   fd->set_env(env);
 
@@ -79,7 +79,7 @@ inline address Assembler::emit_fd(address entry, address toc, address env) {
 
 // Issue an illegal instruction. 0 is guaranteed to be an illegal instruction.
 inline void Assembler::illtrap() { Assembler::emit_int32(0); }
-inline bool Assembler::is_illtrap(int x) { return x == 0; }
+inline bool Assembler::is_illtrap(address instr_addr) { return *(uint32_t*)instr_addr == 0u; }
 
 // PPC 1, section 3.3.8, Fixed-Point Arithmetic Instructions
 inline void Assembler::addi(   Register d, Register a, int si16)   { assert(a != R0, "r0 not allowed"); addi_r0ok( d, a, si16); }
@@ -128,8 +128,26 @@ inline void Assembler::divd(   Register d, Register a, Register b) { emit_int32(
 inline void Assembler::divd_(  Register d, Register a, Register b) { emit_int32(DIVD_OPCODE   | rt(d) | ra(a) | rb(b) | oe(0) | rc(1)); }
 inline void Assembler::divw(   Register d, Register a, Register b) { emit_int32(DIVW_OPCODE   | rt(d) | ra(a) | rb(b) | oe(0) | rc(0)); }
 inline void Assembler::divw_(  Register d, Register a, Register b) { emit_int32(DIVW_OPCODE   | rt(d) | ra(a) | rb(b) | oe(0) | rc(1)); }
+inline void Assembler::divdu(  Register d, Register a, Register b) { emit_int32(DIVDU_OPCODE  | rt(d) | ra(a) | rb(b) | oe(0) | rc(0)); }
+inline void Assembler::divdu_( Register d, Register a, Register b) { emit_int32(DIVDU_OPCODE  | rt(d) | ra(a) | rb(b) | oe(0) | rc(1)); }
 inline void Assembler::divwu(  Register d, Register a, Register b) { emit_int32(DIVWU_OPCODE  | rt(d) | ra(a) | rb(b) | oe(0) | rc(0)); }
 inline void Assembler::divwu_( Register d, Register a, Register b) { emit_int32(DIVWU_OPCODE  | rt(d) | ra(a) | rb(b) | oe(0) | rc(1)); }
+
+// Prefixed instructions, introduced by POWER10
+inline void Assembler::paddi(Register d, Register a, long si34, bool r = false) {
+  assert(a != R0 || r, "r0 not allowed, unless R is set (CIA relative)");
+  paddi_r0ok( d, a, si34, r);
+}
+
+inline void Assembler::paddi_r0ok(Register d, Register a, long si34, bool r = false) {
+  emit_int32(PADDI_PREFIX_OPCODE | r_eo(r) | d0_eo(si34));
+  emit_int32(PADDI_SUFFIX_OPCODE | rt(d)   | ra(a)   | d1_eo(si34));
+}
+
+inline void Assembler::xxpermx( VectorSRegister d, VectorSRegister a, VectorSRegister b, VectorSRegister c, int ui3) {
+  emit_int32(XXPERMX_PREFIX_OPCODE | uimm(ui3, 3));
+  emit_int32(XXPERMX_SUFFIX_OPCODE | vsrt(d) | vsra(a) | vsrb(b) | vsrc(c));
+}
 
 // Fixed-Point Arithmetic Instructions with Overflow detection
 inline void Assembler::addo(    Register d, Register a, Register b) { emit_int32(ADD_OPCODE    | rt(d) | ra(a) | rb(b) | oe(1) | rc(0)); }
@@ -168,6 +186,9 @@ inline void Assembler::li(   Register d, int si16)             { Assembler::addi
 inline void Assembler::lis(  Register d, int si16)             { Assembler::addis_r0ok(d, R0, si16); }
 inline void Assembler::addir(Register d, int si16, Register a) { Assembler::addi(d, a, si16); }
 inline void Assembler::subi( Register d, Register a, int si16) { Assembler::addi(d, a, -si16); }
+
+// Prefixed instructions, introduced by POWER10
+inline void Assembler::pli(Register d, long si34) { Assembler::paddi_r0ok( d, R0, si34, false); }
 
 // PPC 1, section 3.3.9, Fixed-Point Compare Instructions
 inline void Assembler::cmpi(  ConditionRegister f, int l, Register a, int si16)   { emit_int32( CMPI_OPCODE  | bf(f) | l10(l) | ra(a) | simm(si16,16)); }
@@ -340,6 +361,7 @@ inline void Assembler::lbz(  Register d, int si16,    Register s1) { emit_int32(
 inline void Assembler::lbzu( Register d, int si16,    Register s1) { assert(d != s1, "according to ibm manual"); emit_int32(LBZU_OPCODE | rt(d) | d1(si16) | rta0mem(s1));}
 
 inline void Assembler::ld(   Register d, int si16,    Register s1) { emit_int32(LD_OPCODE  | rt(d) | ds(si16)   | ra0mem(s1));}
+inline void Assembler::ld(   Register d, ByteSize si16, Register s1) { assert(in_bytes(si16) < 0x7fff, "overflow"); ld(d, in_bytes(si16), s1); }
 inline void Assembler::ldx(  Register d, Register s1, Register s2) { emit_int32(LDX_OPCODE | rt(d) | ra0mem(s1) | rb(s2));}
 inline void Assembler::ldu(  Register d, int si16,    Register s1) { assert(d != s1, "according to ibm manual"); emit_int32(LDU_OPCODE | rt(d) | ds(si16) | rta0mem(s1));}
 inline void Assembler::ldbrx( Register d, Register s1, Register s2) { emit_int32(LDBRX_OPCODE | rt(d) | ra0mem(s1) | rb(s2));}
@@ -411,13 +433,7 @@ inline void Assembler::mftb(Register d )          { emit_int32(MFTB_OPCODE  | rt
 // Data Stream Control Register
 inline void Assembler::mtdscr(Register s1)        { emit_int32(MTDSCR_OPCODE | rs(s1)); }
 inline void Assembler::mfdscr(Register d )        { emit_int32(MFDSCR_OPCODE | rt(d)); }
-// Transactional Memory Registers
-inline void Assembler::mftfhar(Register d )       { emit_int32(MFTFHAR_OPCODE   | rt(d)); }
-inline void Assembler::mftfiar(Register d )       { emit_int32(MFTFIAR_OPCODE   | rt(d)); }
-inline void Assembler::mftexasr(Register d )      { emit_int32(MFTEXASR_OPCODE  | rt(d)); }
-inline void Assembler::mftexasru(Register d )     { emit_int32(MFTEXASRU_OPCODE | rt(d)); }
 
-// SAP JVM 2006-02-13 PPC branch instruction.
 // PPC 1, section 2.4.1 Branch Instructions
 inline void Assembler::b( address a, relocInfo::relocType rt) { emit_data(BXX_OPCODE| li(disp( intptr_t(a), intptr_t(pc()))) |aa(0)|lk(0), rt); }
 inline void Assembler::b( Label& L)                           { b( target(L)); }
@@ -834,6 +850,7 @@ inline void Assembler::xvmsubadp( VectorSRegister d, VectorSRegister a, VectorSR
 inline void Assembler::xvnmsubasp(VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVNMSUBASP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
 inline void Assembler::xvnmsubadp(VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVNMSUBADP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
 inline void Assembler::xvrdpi(    VectorSRegister d, VectorSRegister b)                  { emit_int32( XVRDPI_OPCODE  | vsrt(d) | vsrb(b)); }
+inline void Assembler::xvrdpic(   VectorSRegister d, VectorSRegister b)                  { emit_int32( XVRDPIC_OPCODE | vsrt(d) | vsrb(b)); }
 inline void Assembler::xvrdpim(   VectorSRegister d, VectorSRegister b)                  { emit_int32( XVRDPIM_OPCODE | vsrt(d) | vsrb(b)); }
 inline void Assembler::xvrdpip(   VectorSRegister d, VectorSRegister b)                  { emit_int32( XVRDPIP_OPCODE | vsrt(d) | vsrb(b)); }
 
@@ -998,7 +1015,10 @@ inline void Assembler::vsrh(    VectorRegister d, VectorRegister a, VectorRegist
 inline void Assembler::vsrab(   VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VSRAB_OPCODE    | vrt(d) | vra(a) | vrb(b)); }
 inline void Assembler::vsraw(   VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VSRAW_OPCODE    | vrt(d) | vra(a) | vrb(b)); }
 inline void Assembler::vsrah(   VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VSRAH_OPCODE    | vrt(d) | vra(a) | vrb(b)); }
+inline void Assembler::vpopcntb(VectorRegister d, VectorRegister b)                   { emit_int32( VPOPCNTB_OPCODE | vrt(d) | vrb(b)); }
+inline void Assembler::vpopcnth(VectorRegister d, VectorRegister b)                   { emit_int32( VPOPCNTH_OPCODE | vrt(d) | vrb(b)); }
 inline void Assembler::vpopcntw(VectorRegister d, VectorRegister b)                   { emit_int32( VPOPCNTW_OPCODE | vrt(d) | vrb(b)); }
+inline void Assembler::vpopcntd(VectorRegister d, VectorRegister b)                   { emit_int32( VPOPCNTD_OPCODE | vrt(d) | vrb(b)); }
 inline void Assembler::mtvscr(  VectorRegister b)                                     { emit_int32( MTVSCR_OPCODE   | vrb(b)); }
 inline void Assembler::mfvscr(  VectorRegister d)                                     { emit_int32( MFVSCR_OPCODE   | vrt(d)); }
 
@@ -1022,21 +1042,6 @@ inline void Assembler::vpmsumw(  VectorRegister d, VectorRegister a, VectorRegis
 // Vector Permute and Xor (introduced with Power 8)
 inline void Assembler::vpermxor( VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c) { emit_int32( VPERMXOR_OPCODE | vrt(d) | vra(a) | vrb(b) | vrc(c)); }
 
-// Transactional Memory instructions (introduced with Power 8)
-inline void Assembler::tbegin_()                                { emit_int32( TBEGIN_OPCODE | rc(1)); }
-inline void Assembler::tbeginrot_()                             { emit_int32( TBEGIN_OPCODE | /*R=1*/ 1u << (31-10) | rc(1)); }
-inline void Assembler::tend_()                                  { emit_int32( TEND_OPCODE | rc(1)); }
-inline void Assembler::tendall_()                               { emit_int32( TEND_OPCODE | /*A=1*/ 1u << (31-6) | rc(1)); }
-inline void Assembler::tabort_()                                { emit_int32( TABORT_OPCODE | rc(1)); }
-inline void Assembler::tabort_(Register a)                      { assert(a != R0, "r0 not allowed"); emit_int32( TABORT_OPCODE | ra(a) | rc(1)); }
-inline void Assembler::tabortwc_(int t, Register a, Register b) { emit_int32( TABORTWC_OPCODE | to(t) | ra(a) | rb(b) | rc(1)); }
-inline void Assembler::tabortwci_(int t, Register a, int si)    { emit_int32( TABORTWCI_OPCODE | to(t) | ra(a) | sh1620(si) | rc(1)); }
-inline void Assembler::tabortdc_(int t, Register a, Register b) { emit_int32( TABORTDC_OPCODE | to(t) | ra(a) | rb(b) | rc(1)); }
-inline void Assembler::tabortdci_(int t, Register a, int si)    { emit_int32( TABORTDCI_OPCODE | to(t) | ra(a) | sh1620(si) | rc(1)); }
-inline void Assembler::tsuspend_()                              { emit_int32( TSR_OPCODE | rc(1)); }
-inline void Assembler::tresume_()                               { emit_int32( TSR_OPCODE | /*L=1*/ 1u << (31-10) | rc(1)); }
-inline void Assembler::tcheck(int f)                            { emit_int32( TCHECK_OPCODE | bf(f)); }
-
 // Deliver A Random Number (introduced with POWER9)
 inline void Assembler::darn(Register d, int l /* =1 */) { emit_int32( DARN_OPCODE | rt(d) | l14(l)); }
 
@@ -1054,6 +1059,7 @@ inline void Assembler::lhbrx(Register d, Register s2) { emit_int32( LHBRX_OPCODE
 inline void Assembler::lbzx( Register d, Register s2) { emit_int32( LBZX_OPCODE | rt(d) | rb(s2));}
 inline void Assembler::lbz(  Register d, int si16   ) { emit_int32( LBZ_OPCODE  | rt(d) | d1(si16));}
 inline void Assembler::ld(   Register d, int si16   ) { emit_int32( LD_OPCODE   | rt(d) | ds(si16));}
+inline void Assembler::ld(   Register d, ByteSize si16) { assert(in_bytes(si16) < 0x7fff, "overflow"); ld(d, in_bytes(si16)); }
 inline void Assembler::ldx(  Register d, Register s2) { emit_int32( LDX_OPCODE  | rt(d) | rb(s2));}
 inline void Assembler::ldbrx(Register d, Register s2) { emit_int32( LDBRX_OPCODE| rt(d) | rb(s2));}
 inline void Assembler::stwx( Register d, Register s2) { emit_int32( STWX_OPCODE | rs(d) | rb(s2));}

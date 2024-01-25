@@ -105,8 +105,8 @@ public class NavigationFilter {
      * @param biasRet Used to return resulting Bias of next position
      * @return the location within the model that best represents the next
      *  location visual position
-     * @exception BadLocationException for a bad location within a document model
-     * @exception IllegalArgumentException if <code>direction</code>
+     * @throws BadLocationException for a bad location within a document model
+     * @throws IllegalArgumentException if <code>direction</code>
      *          doesn't have one of the legal values above
      */
     public int getNextVisualPositionFrom(JTextComponent text, int pos,

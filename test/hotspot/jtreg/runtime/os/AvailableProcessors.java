@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 6515172 8148766
  * @summary Check that availableProcessors reports the correct value when running in a cpuset on linux
  * @requires os.family == "linux"
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @run driver AvailableProcessors
@@ -68,8 +69,8 @@ public class AvailableProcessors {
             // Get the java command we want to execute
             // Enable logging for easier failure diagnosis
             ProcessBuilder master =
-                    ProcessTools.createJavaProcessBuilder("-Xlog:os=trace",
-                                                          "AvailableProcessors");
+                    ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:os=trace",
+                                                                     "AvailableProcessors");
 
             int[] expected = new int[] { 1, available/2, available-1, available };
 
@@ -87,6 +88,7 @@ public class AvailableProcessors {
                 System.out.println("Final command line: " +
                                    ProcessTools.getCommandLine(pb));
                 OutputAnalyzer output = ProcessTools.executeProcess(pb);
+                output.shouldHaveExitValue(0);
                 output.shouldContain(SUCCESS_STRING);
             }
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887 6873621 6979526 7006126 7020517
+ * @bug 4313887 6873621 6979526 7006126 7020517 8264400
  * @summary Unit test for java.nio.file.FileStore
  * @key intermittent
  * @library .. /test/lib
@@ -36,8 +36,8 @@ import java.nio.file.attribute.*;
 import java.io.File;
 import java.io.IOException;
 
+import jdk.test.lib.Platform;
 import jdk.test.lib.util.FileUtils;
-
 
 public class Basic {
 
@@ -57,10 +57,14 @@ public class Basic {
             throw new RuntimeException("Assertion failed");
     }
 
-    static void checkWithin1GB(long value1, long value2) {
-        long diff = Math.abs(value1 - value2);
-        if (diff > G)
-            throw new RuntimeException("values differ by more than 1GB");
+    static void checkWithin1GB(String space, long expected, long actual) {
+        long diff = Math.abs(actual - expected);
+        if (diff > G) {
+            String msg = String.format("%s: |actual %d - expected %d| = %d (%f G)",
+                                       space, actual, expected, diff,
+                                       (float)diff/G);
+            throw new RuntimeException(msg);
+        }
     }
 
     static void doTests(Path dir) throws IOException {
@@ -80,6 +84,15 @@ public class Basic {
         assertTrue(store2.equals(store1));
         assertTrue(store1.hashCode() == store2.hashCode());
 
+        if (Platform.isWindows()) {
+            /**
+             * Test: FileStore.equals() should not be case sensitive
+             */
+            FileStore upper = Files.getFileStore(Path.of("C:\\"));
+            FileStore lower = Files.getFileStore(Path.of("c:\\"));
+            assertTrue(lower.equals(upper));
+        }
+
         /**
          * Test: File and FileStore attributes
          */
@@ -98,19 +111,19 @@ public class Basic {
          * Test: Space atributes
          */
         File f = file1.toFile();
-        long total = f.getTotalSpace();
-        long free = f.getFreeSpace();
-        long usable = f.getUsableSpace();
 
         // check values are "close"
-        checkWithin1GB(total,  store1.getTotalSpace());
-        checkWithin1GB(free,   store1.getUnallocatedSpace());
-        checkWithin1GB(usable, store1.getUsableSpace());
+        checkWithin1GB("total",  f.getTotalSpace(),  store1.getTotalSpace());
+        checkWithin1GB("free",   f.getFreeSpace(),   store1.getUnallocatedSpace());
+        checkWithin1GB("usable", f.getUsableSpace(), store1.getUsableSpace());
 
         // get values by name
-        checkWithin1GB(total,  (Long)store1.getAttribute("totalSpace"));
-        checkWithin1GB(free,   (Long)store1.getAttribute("unallocatedSpace"));
-        checkWithin1GB(usable, (Long)store1.getAttribute("usableSpace"));
+        checkWithin1GB("total",  f.getTotalSpace(),
+                       (Long)store1.getAttribute("totalSpace"));
+        checkWithin1GB("free",   f.getFreeSpace(),
+                       (Long)store1.getAttribute("unallocatedSpace"));
+        checkWithin1GB("usable", f.getUsableSpace(),
+                       (Long)store1.getAttribute("usableSpace"));
 
         /**
          * Test: Enumerate all FileStores
@@ -136,6 +149,16 @@ public class Basic {
                     // reflect whether the space attributes would be accessible
                     // were access to be permitted
                     System.err.format("%s is inaccessible\n", store);
+                } catch (FileSystemException fse) {
+                    // On Linux, ignore the FSE if the path is one of the
+                    // /run/user/$UID mounts created by pam_systemd(8) as it
+                    // might be mounted as a fuse.portal filesystem and
+                    // its access attempt might fail with EPERM
+                    if (!Platform.isLinux() || store.toString().indexOf("/run/user") == -1) {
+                        throw new RuntimeException(fse);
+                    } else {
+                        System.err.format("%s error: %s\n", store, fse);
+                    }
                 }
 
                 // two distinct FileStores should not be equal

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -331,12 +331,25 @@ public class EventFilters
     }
 
     public static boolean filtered(Event event) {
-        if (event.toString().contains("VM JFR Buffer Thread"))
-            return true;
-
-        if (event.toString().contains("JFR request timer"))
-            return true;
-
+        if (event instanceof ThreadStartEvent) {
+            ThreadStartEvent tse = (ThreadStartEvent)event;
+            String tname = tse.thread().name();
+            String knownThreads[] = {
+                "VM JFR Buffer Thread",
+                "JFR request timer",
+                "Reference Handler",
+                "VirtualThread-unparker",
+                "Cleaner-",
+                "Common-Cleaner",
+                "FinalizerThread",
+                "ForkJoinPool"
+            };
+            for (String s : knownThreads) {
+                if (tname.startsWith(s)) {
+                    return true;
+                }
+            }
+        }
         return false;
     }
 

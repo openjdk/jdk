@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,6 @@ import java.util.Set;
 import java.util.Vector;
 import sun.font.CompositeFontDescriptor;
 import sun.font.SunFontManager;
-import sun.font.FontManagerFactory;
 import sun.font.FontUtilities;
 import sun.util.logging.PlatformLogger;
 
@@ -157,6 +156,7 @@ public abstract class FontConfiguration {
         short fontNameID = compFontNameIDs[0][0][0];
         short fileNameID = getComponentFileID(fontNameID);
         final String fileName = mapFileName(getComponentFileName(fileNameID));
+        @SuppressWarnings("removal")
         Boolean exists = java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Boolean>() {
                  public Boolean run() {
@@ -203,14 +203,12 @@ public abstract class FontConfiguration {
         getInstalledFallbackFonts(javaLib);
 
         if (f != null) {
-            try {
-                FileInputStream in = new FileInputStream(f.getPath());
+            try (FileInputStream in = new FileInputStream(f.getPath())) {
                 if (isProperties) {
                     loadProperties(in);
                 } else {
                     loadBinary(in);
                 }
-                in.close();
                 if (FontUtilities.debugFonts()) {
                     logger.config("Read logical font configuration from " + f);
                 }
@@ -849,14 +847,9 @@ public abstract class FontConfiguration {
             start = end + 1;
         }
         if (sequence.length() > start) {
-            parts.add(sequence.substring(start, sequence.length()));
+            parts.add(sequence.substring(start));
         }
         return parts;
-    }
-
-    protected String[] split(String sequence) {
-        Vector<String> v = splitSequence(sequence);
-        return v.toArray(new String[0]);
     }
 
     ////////////////////////////////////////////////////////////////////////
@@ -962,9 +955,12 @@ public abstract class FontConfiguration {
             return fc.newEncoder();
         }
 
-        if (!charsetName.startsWith("sun.awt.") && !charsetName.equals("default")) {
+        if (!charsetName.startsWith("sun.awt.") &&
+            !charsetName.equals("default") &&
+            !charsetName.startsWith("sun.font.")) {
             fc = Charset.forName(charsetName);
         } else {
+            @SuppressWarnings("removal")
             Class<?> fcc = AccessController.doPrivileged(new PrivilegedAction<Class<?>>() {
                     public Class<?> run() {
                         try {
@@ -1248,15 +1244,24 @@ public abstract class FontConfiguration {
         return filenamesMap.get(platformName);
     }
 
+    private static final String fontconfigErrorMessage =
+            "Fontconfig head is null, check your fonts or fonts configuration";
+
     /**
      * Returns a configuration specific path to be appended to the font
      * search path.
      */
     public String getExtraFontPath() {
+        if (head == null) {
+            throw new RuntimeException(fontconfigErrorMessage);
+        }
         return getString(head[INDEX_appendedfontpath]);
     }
 
     public String getVersion() {
+        if (head == null) {
+            throw new RuntimeException(fontconfigErrorMessage);
+        }
         return getString(head[INDEX_version]);
     }
 
@@ -1371,22 +1376,13 @@ public abstract class FontConfiguration {
     private static void sanityCheck() {
         int errors = 0;
 
-        //This method will only be called during build time, do we
-        //need do PrivilegedAction?
-        String osName = java.security.AccessController.doPrivileged(
-                            new java.security.PrivilegedAction<String>() {
-            public String run() {
-                return System.getProperty("os.name");
-            }
-        });
-
         //componentFontNameID starts from "1"
         for (int ii = 1; ii < table_filenames.length; ii++) {
             if (table_filenames[ii] == -1) {
                 // The corresponding finename entry for a component
                 // font name is mandatory on Windows, but it's
                 // optional on Solaris and Linux.
-                if (osName.contains("Windows")) {
+                if (OSInfo.getOSType() == OSInfo.OSType.WINDOWS) {
                     System.err.println("\n Error: <filename."
                                        + getString(table_componentFontNameIDs[ii])
                                        + "> entry is missing!!!");
@@ -1557,7 +1553,7 @@ public abstract class FontConfiguration {
         }
     }
 
-    /* Same as getCompoentFontID() except this method returns the fontID define by
+    /* Same as getComponentFontID() except this method returns the fontID defined by
      * "xxxx.motif" entry.
      */
     protected static short getComponentFontIDMotif(short scriptID, int fontIndex, int styleIndex) {

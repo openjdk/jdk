@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 6785424
  * @summary Test no SecurityException searching for a font.
- * @run main FontAccess
+ * @run main/othervm -Djava.security.manager=allow FontAccess
  *
  * This can only test the specific bug if run on something like
  * Windows Citrix Server where SystemDirectory and WindowsDirectory

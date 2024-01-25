@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,48 +24,49 @@
  */
 package jdk.tools.jlink.internal;
 
-import jdk.tools.jlink.plugin.ResourcePoolModule;
+import jdk.internal.util.Architecture;
+import jdk.internal.util.OperatingSystem;
 
 import java.util.Locale;
 
 /**
- * Supported platforms
+ * Supported OperatingSystem and Architecture.
  */
-public enum Platform {
-    WINDOWS,
-    LINUX,
-    MACOS,
-    AIX,
-    UNKNOWN;
+public record Platform(OperatingSystem os, Architecture arch) {
 
-    /**
-     * Returns the {@code Platform} derived from the target platform
-     * in the {@code ModuleTarget} attribute.
+    /*
+     * Returns the {@code Platform} based on the platformString of the form <operating system>-<arch>.
+     * @throws IllegalArgumentException if the delimiter is missing or either OS or
+     * architecture is not known
      */
-    public static Platform toPlatform(String targetPlatform) {
+    public static Platform parsePlatform(String platformString) {
         String osName;
-        int index = targetPlatform.indexOf("-");
+        String archName;
+        int index = platformString.indexOf("-");
         if (index < 0) {
-            osName = targetPlatform;
-        } else {
-            osName = targetPlatform.substring(0, index);
+            throw new IllegalArgumentException("platformString missing delimiter: " + platformString);
         }
-        try {
-            return Platform.valueOf(osName.toUpperCase(Locale.ENGLISH));
-        } catch (IllegalArgumentException e) {
-            return Platform.UNKNOWN;
-        }
+        osName = platformString.substring(0, index);
+        OperatingSystem os = OperatingSystem.valueOf(osName.toUpperCase(Locale.ROOT));
+
+        archName = platformString.substring(index + 1);
+        Architecture arch = Architecture.lookupByName(archName);
+
+        return new Platform(os, arch);
     }
 
     /**
-     * Returns the {@code Platform} to which the given module is target to.
+     * {@return the runtime {@code Platform}}
      */
-    public static Platform getTargetPlatform(ResourcePoolModule module) {
-        String targetPlatform = module.targetPlatform();
-        if (targetPlatform != null) {
-            return toPlatform(targetPlatform);
-        } else {
-            return Platform.UNKNOWN;
-        }
+    public static Platform runtime() {
+        return new Platform(OperatingSystem.current(), Architecture.current());
+    }
+
+    /**
+     * Returns a {@code String} representation of a {@code Platform} in the format of <os>-<arch>
+     */
+    @Override
+    public String toString() {
+        return os.toString().toLowerCase(Locale.ROOT) + "-" + arch.toString().toLowerCase(Locale.ROOT);
     }
 }

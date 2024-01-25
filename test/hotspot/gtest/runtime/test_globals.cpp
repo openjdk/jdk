@@ -25,8 +25,10 @@
 #include "compiler/compiler_globals.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/flags/jvmFlag.hpp"
+#include "runtime/flags/jvmFlagAccess.hpp"
 #include "unittest.hpp"
 
 #define TEST_FLAG(f, type, value)                                \
@@ -48,10 +50,6 @@ TEST_VM(FlagGuard, int_flag) {
   TEST_FLAG(ParGCArrayScanChunk, int, 1337);
 }
 
-TEST_VM(FlagGuard, intx_flag) {
-  TEST_FLAG(RefDiscoveryPolicy, intx, 1337);
-}
-
 TEST_VM(FlagGuard, uint_flag) {
   TEST_FLAG(ConcGCThreads, uint, 1337);
 }
@@ -70,4 +68,48 @@ TEST_VM(FlagGuard, double_flag) {
 
 TEST_VM(FlagGuard, ccstr_flag) {
   TEST_FLAG(PerfDataSaveFile, ccstr, "/a/random/path");
+}
+
+
+// SharedArchiveConfigFile is used only during "java -Xshare:dump", so
+// it's safe to modify its value in gtest
+
+TEST_VM(FlagAccess, ccstr_flag) {
+  FLAG_SET_CMDLINE(SharedArchiveConfigFile, "");
+  ASSERT_EQ(FLAG_IS_CMDLINE(SharedArchiveConfigFile), true);
+  EXPECT_STREQ(SharedArchiveConfigFile, "");
+
+  FLAG_SET_ERGO(SharedArchiveConfigFile, "foobar");
+  ASSERT_EQ(FLAG_IS_ERGO(SharedArchiveConfigFile), true);
+  EXPECT_STREQ(SharedArchiveConfigFile, "foobar");
+
+  FLAG_SET_ERGO(SharedArchiveConfigFile, nullptr);
+  ASSERT_EQ(FLAG_IS_ERGO(SharedArchiveConfigFile), true);
+  ASSERT_EQ(SharedArchiveConfigFile, nullptr);
+
+  FLAG_SET_ERGO(SharedArchiveConfigFile, "xyz");
+  ASSERT_EQ(FLAG_IS_ERGO(SharedArchiveConfigFile), true);
+  EXPECT_STREQ(SharedArchiveConfigFile, "xyz");
+}
+
+template <typename T, int type_enum>
+static JVMFlag::Error get_flag(const char* name) {
+  JVMFlag* flag = (name == NULL) ? NULL : JVMFlag::find_flag(name);
+
+  T val;
+  return JVMFlagAccess::get<T, type_enum>(flag, &val);
+}
+
+TEST_VM(FlagAccess, wrong_format) {
+  ASSERT_EQ((get_flag<JVM_FLAG_TYPE(int)>(NULL)), JVMFlag::INVALID_FLAG);
+
+  // MaxRAMPercentage is a double flag
+  ASSERT_EQ((get_flag<JVM_FLAG_TYPE(bool)>    ("MaxRAMPercentage")), JVMFlag::WRONG_FORMAT);
+  ASSERT_EQ((get_flag<JVM_FLAG_TYPE(int)>     ("MaxRAMPercentage")), JVMFlag::WRONG_FORMAT);
+  ASSERT_EQ((get_flag<JVM_FLAG_TYPE(uint)>    ("MaxRAMPercentage")), JVMFlag::WRONG_FORMAT);
+  ASSERT_EQ((get_flag<JVM_FLAG_TYPE(intx)>    ("MaxRAMPercentage")), JVMFlag::WRONG_FORMAT);
+  ASSERT_EQ((get_flag<JVM_FLAG_TYPE(uintx)>   ("MaxRAMPercentage")), JVMFlag::WRONG_FORMAT);
+  ASSERT_EQ((get_flag<JVM_FLAG_TYPE(uint64_t)>("MaxRAMPercentage")), JVMFlag::WRONG_FORMAT);
+  ASSERT_EQ((get_flag<JVM_FLAG_TYPE(size_t)>  ("MaxRAMPercentage")), JVMFlag::WRONG_FORMAT);
+  ASSERT_EQ((get_flag<JVM_FLAG_TYPE(double)>  ("MaxRAMPercentage")), JVMFlag::SUCCESS);
 }

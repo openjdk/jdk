@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,16 +119,8 @@ public class DescriptorSupport
     private static final ObjectStreamField[] serialPersistentFields;
     private static final String serialForm;
     static {
-        String form = null;
-        boolean compat = false;
-        try {
-            GetPropertyAction act = new GetPropertyAction("jmx.serial.form");
-            form = AccessController.doPrivileged(act);
-            compat = "1.0".equals(form);  // form may be null
-        } catch (Exception e) {
-            // OK: No compat with 1.0
-        }
-        serialForm = form;
+        serialForm = getForm();
+        boolean compat = "1.0".equals(serialForm);  // serialForm may be null
         if (compat) {
             serialPersistentFields = oldSerialPersistentFields;
             serialVersionUID = oldSerialVersionUID;
@@ -137,6 +129,19 @@ public class DescriptorSupport
             serialVersionUID = newSerialVersionUID;
         }
     }
+
+    @SuppressWarnings("removal")
+    private static String getForm() {
+        String form = null;
+        try {
+            GetPropertyAction act = new GetPropertyAction("jmx.serial.form");
+            return  AccessController.doPrivileged(act);
+        } catch (Exception e) {
+            // OK: No compat with 1.0
+            return null;
+        }
+    }
+
     //
     // END Serialization compatibility stuff
 
@@ -488,8 +493,7 @@ public class DescriptorSupport
     }
 
     private void init(Map<String, ?> initMap) {
-        descriptorMap =
-                new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
+        descriptorMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         if (initMap != null)
             descriptorMap.putAll(initMap);
     }
@@ -1057,7 +1061,7 @@ public class DescriptorSupport
         "\f&#12;",
     };
     private static final Map<String,Character> entityToCharMap =
-        new HashMap<String,Character>();
+        new HashMap<>();
     private static final String[] charToEntityMap;
 
     static {
@@ -1230,14 +1234,13 @@ public class DescriptorSupport
             MODELMBEAN_LOGGER.log(Level.TRACE, "Entry");
         }
 
-        String respStr = "";
         String[] fields = getFields();
 
         if ((fields == null) || (fields.length == 0)) {
             if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
                 MODELMBEAN_LOGGER.log(Level.TRACE, "Empty Descriptor");
             }
-            return respStr;
+            return "";
         }
 
         if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
@@ -1245,13 +1248,7 @@ public class DescriptorSupport
                     "Printing " + fields.length + " fields");
         }
 
-        for (int i=0; i < fields.length; i++) {
-            if (i == (fields.length - 1)) {
-                respStr = respStr.concat(fields[i]);
-            } else {
-                respStr = respStr.concat(fields[i] + ", ");
-            }
-        }
+        String respStr = String.join(", ", fields);
 
         if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
             MODELMBEAN_LOGGER.log(Level.TRACE, "Exit returning " + respStr);
@@ -1314,18 +1311,18 @@ public class DescriptorSupport
          */
         SortedMap<String, Object> startMap = descriptorMap;
         if (startMap.containsKey("targetObject")) {
-            startMap = new TreeMap<String, Object>(descriptorMap);
+            startMap = new TreeMap<>(descriptorMap);
             startMap.remove("targetObject");
         }
 
         final HashMap<String, Object> descriptor;
         if (compat || "1.2.0".equals(serialForm) ||
                 "1.2.1".equals(serialForm)) {
-            descriptor = new HashMap<String, Object>();
+            descriptor = new HashMap<>();
             for (Map.Entry<String, Object> entry : startMap.entrySet())
                 descriptor.put(entry.getKey().toLowerCase(), entry.getValue());
         } else
-            descriptor = new HashMap<String, Object>(startMap);
+            descriptor = new HashMap<>(startMap);
 
         fields.put("descriptor", descriptor);
         out.writeFields();

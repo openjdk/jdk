@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ to compute so needs to be cached.
 So long as that data may be being used it cannot be invalidated.
 Yet we also need to limit the amount of native memory and number of
 strike objects in use.
-For scaleability and ease of use, a key goal is multi-threaded read
+For scalability and ease of use, a key goal is multi-threaded read
 access to a strike, so that it may be shared by multiple client objects,
 potentially executing on different threads, with no special reference
 counting or "check-out/check-in" requirements which would pass on the
@@ -134,6 +134,11 @@ public final class StrikeCache {
     static native void getGlyphCacheDescription(long[] infoArray);
 
     static {
+        initStatic();
+    }
+
+    @SuppressWarnings("removal")
+    private static void initStatic() {
 
         long[] nativeInfo = new long[13];
         getGlyphCacheDescription(nativeInfo);

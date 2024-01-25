@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -325,7 +325,7 @@ public class TestMemoryOptions {
         }
 
         public String getTestString() {
-            String optionString = "-XX:FlightRecorderOptions=";
+            String optionString = "-XX:FlightRecorderOptions:";
             for (Option o : optionList) {
                 String optionParamString = o.getOptionParamString();
                 if (optionParamString == null) {
@@ -334,7 +334,7 @@ public class TestMemoryOptions {
                 optionString = optionString.concat(optionParamString);
                 optionString = optionString.concat(",");
             }
-            if (optionString.equals("-XX:FlightRecorderOptions=")) {
+            if (optionString.equals("-XX:FlightRecorderOptions:")) {
                 return null;
             }
             // strip last ","
@@ -483,19 +483,19 @@ public class TestMemoryOptions {
             final String flightRecorderOptions = tc.getTestString();
             ProcessBuilder pb;
             if (flightRecorderOptions != null) {
-                pb = ProcessTools.createTestJvm("--add-exports=jdk.jfr/jdk.jfr.internal=ALL-UNNAMED",
-                                                "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
-                                                flightRecorderOptions,
-                                                "-XX:StartFlightRecording",
-                                                SUT.class.getName(),
-                                                tc.getTestName());
+                pb = ProcessTools.createTestJavaProcessBuilder("--add-exports=jdk.jfr/jdk.jfr.internal=ALL-UNNAMED",
+                                                               "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
+                                                               flightRecorderOptions,
+                                                               "-XX:StartFlightRecording",
+                                                               SUT.class.getName(),
+                                                               tc.getTestName());
             } else {
                 // default, no FlightRecorderOptions passed
-                pb = ProcessTools.createTestJvm("--add-exports=jdk.jfr/jdk.jfr.internal=ALL-UNNAMED",
-                                                "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
-                                                "-XX:StartFlightRecording",
-                                                SUT.class.getName(),
-                                                tc.getTestName());
+                pb = ProcessTools.createTestJavaProcessBuilder("--add-exports=jdk.jfr/jdk.jfr.internal=ALL-UNNAMED",
+                                                               "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
+                                                               "-XX:StartFlightRecording",
+                                                               SUT.class.getName(),
+                                                               tc.getTestName());
             }
 
             System.out.println("Driver launching SUT with string: " + flightRecorderOptions != null ? flightRecorderOptions : "default");
@@ -637,6 +637,11 @@ public class TestMemoryOptions {
         tc = new TestCase("GlobalBufferSizeTimesGlobalBufferCountEqualToMinMemorySizePositive", false);
         tc.setGlobalBufferSizeTestParam(64, 'k');
         tc.setGlobalBufferCountTestParam(16, 'b');
+        testCases.add(tc);
+
+        // threadbuffersize exceeds default memorysize
+        tc = new TestCase("ThreadBufferSizeExceedMemorySize", false);
+        tc.setThreadBufferSizeTestParam(30, 'm');
         testCases.add(tc);
     }
 

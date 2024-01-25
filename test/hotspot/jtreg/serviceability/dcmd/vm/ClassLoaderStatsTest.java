@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,18 @@
  * @run testng/othervm --add-exports=java.base/jdk.internal.misc=ALL-UNNAMED --add-exports=jdk.internal.jvmstat/sun.jvmstat.monitor=ALL-UNNAMED ClassLoaderStatsTest
  */
 
+/*
+ * @test
+ * @summary Test of diagnostic command VM.classloader_stats (-UseCCP)
+ * @library /test/lib
+ * @requires vm.bits != "32"
+ * @modules java.base/jdk.internal.misc
+ *          java.compiler
+ *          java.management
+ *          jdk.internal.jvmstat/sun.jvmstat.monitor
+ * @run testng/othervm -XX:-UseCompressedClassPointers --add-exports=java.base/jdk.internal.misc=ALL-UNNAMED --add-exports=jdk.internal.jvmstat/sun.jvmstat.monitor=ALL-UNNAMED ClassLoaderStatsTest
+ */
+
 import org.testng.annotations.Test;
 import org.testng.Assert;
 
@@ -54,17 +66,14 @@ import java.util.Iterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jdk.internal.misc.Unsafe;
-
 public class ClassLoaderStatsTest {
 
   // Expected output from VM.classloader_stats:
     // ClassLoader         Parent              CLD*               Classes   ChunkSz   BlockSz  Type
     // 0x0000000800bd3830  0x000000080037f468  0x00007f001c2ea170       1     10240      4672  ClassLoaderStatsTest$DummyClassLoader
-    //                                                                  2      2048      1088   + hidden classes
+    //                                                                  1       256       131   + hidden classes
     // 0x0000000000000000  0x0000000000000000  0x00007f00e852d190    1607   4628480   3931216  <boot class loader>
     //                                                                 38    124928     85856   + hidden classes
-    // 0x00000008003b5508  0x0000000000000000  0x00007f001c2d4760       1      6144      4040  jdk.internal.reflect.DelegatingClassLoader
     // 0x000000080037f468  0x000000080037ee80  0x00007f00e868e3f0     228   1368064   1286672  jdk.internal.loader.ClassLoaders$AppClassLoader
     // ...
 
@@ -83,6 +92,7 @@ public class ClassLoaderStatsTest {
         }
 
         OutputAnalyzer output = executor.execute("VM.classloader_stats");
+        output.reportDiagnosticSummary();
         Iterator<String> lines = output.asLines().iterator();
         while (lines.hasNext()) {
             String line = lines.next();
@@ -94,8 +104,20 @@ public class ClassLoaderStatsTest {
                     if (!m.group(1).equals("1")) {
                         Assert.fail("Should have loaded 1 class: " + line);
                     }
-                    checkPositiveInt(m.group(2));
-                    checkPositiveInt(m.group(3));
+
+                    long capacityBytes = Long.parseLong(m.group(2)); // aka "Chunksz"
+                    long usedBytes = Long.parseLong(m.group(3)); // aka "Blocksz"
+
+                    // Minimum expected sizes: initial capacity is governed by the chunk size of the first chunk, which
+                    // depends on the arena growth policy. Since this is a normal class loader, we expect as initial chunk
+                    // size at least 4k (if UseCompressedClassPointers is off).
+                    // Minimum used size is difficult to guess but should be at least 1k.
+                    // Maximum expected sizes: We just assume a reasonable maximum. We only loaded one class, so
+                    // we should not see values > 64k.
+                    long K = 1024;
+                    if (capacityBytes < (K * 4) || usedBytes < K || capacityBytes > (64 * K) || usedBytes > (64 * K)) {
+                        throw new RuntimeException("Sizes seem off. Chunksz: " + capacityBytes + ", Blocksz: " + usedBytes);
+                    }
 
                     String next = lines.next();
                     System.out.println("DummyClassLoader next: " + next);
@@ -104,9 +126,8 @@ public class ClassLoaderStatsTest {
                     }
                     Matcher m2 = hiddenLine.matcher(next);
                     m2.matches();
-                    if (!m2.group(1).equals("2")) {
-                        // anonymous classes are included in the hidden classes count.
-                        Assert.fail("Should have loaded 2 hidden classes, but found : " + m2.group(1));
+                    if (!m2.group(1).equals("1")) {
+                        Assert.fail("Should have loaded 1 hidden class, but found : " + m2.group(1));
                     }
                     checkPositiveInt(m2.group(2));
                     checkPositiveInt(m2.group(3));
@@ -122,8 +143,6 @@ public class ClassLoaderStatsTest {
     }
 
     public static class DummyClassLoader extends ClassLoader {
-
-        public static final String CLASS_NAME = "TestClass";
 
         static ByteBuffer readClassFile(String name)
         {
@@ -177,14 +196,13 @@ class HiddenClass { }
 class TestClass {
     private static final String HCName = "HiddenClass.class";
     private static final String DIR = System.getProperty("test.classes");
-    static Unsafe unsafe = Unsafe.getUnsafe();
+    public static final Class<?> hc;
 
     static {
         try {
-            // Create a hidden non-strong class and an anonymous class.
+            // Create a hidden non-strong class, keep reference in the case if GC happens
             byte[] klassBuf = readClassFile(DIR + File.separator + HCName);
-            Class<?> hc = defineHiddenClass(klassBuf);
-            Class ac = unsafe.defineAnonymousClass(TestClass.class, klassBuf, new Object[0]);
+            hc = defineHiddenClass(klassBuf);
         } catch (Throwable e) {
             throw new RuntimeException("Unexpected exception in TestClass: " + e.getMessage());
         }

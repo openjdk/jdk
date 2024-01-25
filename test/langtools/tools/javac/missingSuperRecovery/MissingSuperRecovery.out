@@ -1,5 +1,2 @@
-MissingSuperRecovery.java:15: cannot access base
-public class MissingSuperRecovery extends impl {
-       ^
-  class file for base not found
+MissingSuperRecovery.java:15:43: compiler.err.cant.access: base, (compiler.misc.class.file.not.found: base)
 1 error

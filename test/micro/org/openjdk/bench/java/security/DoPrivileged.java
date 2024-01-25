@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,14 @@ package org.openjdk.bench.java.security;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Warmup;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -40,6 +43,9 @@ import java.util.concurrent.TimeUnit;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
+@Warmup(iterations = 5, time = 1)
+@Measurement(iterations = 5, time = 1)
+@Fork(value = 3)
 public class DoPrivileged {
 
     private PrivilegedAction<Integer> privilegedAction;
@@ -49,11 +55,13 @@ public class DoPrivileged {
         privilegedAction = () -> 42;
     }
 
+    @SuppressWarnings("removal")
     @Benchmark
     public int test() {
         return AccessController.doPrivileged(privilegedAction);
     }
 
+    @SuppressWarnings("removal")
     @Benchmark
     public int testInline() {
         return AccessController.doPrivileged((PrivilegedAction<Integer>) () -> 42);

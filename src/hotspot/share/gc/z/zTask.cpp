@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,25 +23,27 @@
 
 #include "precompiled.hpp"
 #include "gc/z/zTask.hpp"
-#include "gc/z/zThread.hpp"
 
-ZTask::GangTask::GangTask(ZTask* ztask, const char* name) :
-    AbstractGangTask(name),
-    _ztask(ztask) {}
+ZTask::Task::Task(ZTask* task, const char* name)
+  : WorkerTask(name),
+    _task(task) {}
 
-void ZTask::GangTask::work(uint worker_id) {
-  ZThread::set_worker_id(worker_id);
-  _ztask->work();
-  ZThread::clear_worker_id();
+void ZTask::Task::work(uint worker_id) {
+  _task->work();
 }
 
-ZTask::ZTask(const char* name) :
-    _gang_task(this, name) {}
+ZTask::ZTask(const char* name)
+  : _worker_task(this, name) {}
 
 const char* ZTask::name() const {
-  return _gang_task.name();
+  return _worker_task.name();
 }
 
-AbstractGangTask* ZTask::gang_task() {
-  return &_gang_task;
+WorkerTask* ZTask::worker_task() {
+  return &_worker_task;
 }
+
+ZRestartableTask::ZRestartableTask(const char* name)
+  : ZTask(name) {}
+
+void ZRestartableTask::resize_workers(uint nworkers) {}

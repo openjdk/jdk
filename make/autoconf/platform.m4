@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -72,6 +72,12 @@ AC_DEFUN([PLATFORM_EXTRACT_VARS_FROM_CPU],
       VAR_CPU_BITS=64
       VAR_CPU_ENDIAN=little
       ;;
+    loongarch64)
+      VAR_CPU=loongarch64
+      VAR_CPU_ARCH=loongarch
+      VAR_CPU_BITS=64
+      VAR_CPU_ENDIAN=little
+      ;;
     m68k)
       VAR_CPU=m68k
       VAR_CPU_ARCH=m68k
@@ -118,6 +124,12 @@ AC_DEFUN([PLATFORM_EXTRACT_VARS_FROM_CPU],
       VAR_CPU=ppc64le
       VAR_CPU_ARCH=ppc
       VAR_CPU_BITS=64
+      VAR_CPU_ENDIAN=little
+      ;;
+    riscv32)
+      VAR_CPU=riscv32
+      VAR_CPU_ARCH=riscv
+      VAR_CPU_BITS=32
       VAR_CPU_ENDIAN=little
       ;;
     riscv64)
@@ -206,7 +218,7 @@ AC_DEFUN([PLATFORM_EXTRACT_VARS_FROM_OS],
       VAR_OS=windows
       VAR_OS_ENV=windows.wsl
       ;;
-    *msys*)
+    *msys* | *mingw*)
       VAR_OS=windows
       VAR_OS_ENV=windows.msys2
       ;;
@@ -372,7 +384,7 @@ AC_DEFUN([PLATFORM_EXTRACT_TARGET_AND_BUILD],
   fi
 ])
 
-# Check if a reduced build (32-bit on 64-bit platforms) is requested, and modify behaviour
+# Check if a reduced build (32-bit on 64-bit platforms) is requested, and modify behavior
 # accordingly. Must be done after setting up build and target system, but before
 # doing anything else with these values.
 AC_DEFUN([PLATFORM_SETUP_TARGET_CPU_BITS],
@@ -480,9 +492,11 @@ AC_DEFUN([PLATFORM_SETUP_LEGACY_VARS_HELPER],
   fi
 
   # The new version string in JDK 9 also defined new naming of OS and ARCH for bundles
-  # Macosx is osx and x86_64 is x64
+  # The macOS bundle name was revised in JDK 17
+  #
+  # macosx is macos and x86_64 is x64
   if test "x$OPENJDK_$1_OS" = xmacosx; then
-    OPENJDK_$1_OS_BUNDLE="osx"
+    OPENJDK_$1_OS_BUNDLE="macos"
   else
     OPENJDK_$1_OS_BUNDLE="$OPENJDK_TARGET_OS"
   fi
@@ -553,18 +567,22 @@ AC_DEFUN([PLATFORM_SETUP_LEGACY_VARS_HELPER],
     HOTSPOT_$1_CPU_DEFINE=PPC64
   elif test "x$OPENJDK_$1_CPU" = xppc64le; then
     HOTSPOT_$1_CPU_DEFINE=PPC64
+  elif test "x$OPENJDK_$1_CPU" = xriscv64; then
+    HOTSPOT_$1_CPU_DEFINE=RISCV64
 
   # The cpu defines below are for zero, we don't support them directly.
   elif test "x$OPENJDK_$1_CPU" = xsparc; then
     HOTSPOT_$1_CPU_DEFINE=SPARC
   elif test "x$OPENJDK_$1_CPU" = xppc; then
     HOTSPOT_$1_CPU_DEFINE=PPC32
+  elif test "x$OPENJDK_$1_CPU" = xriscv32; then
+    HOTSPOT_$1_CPU_DEFINE=RISCV32
   elif test "x$OPENJDK_$1_CPU" = xs390; then
     HOTSPOT_$1_CPU_DEFINE=S390
   elif test "x$OPENJDK_$1_CPU" = xs390x; then
     HOTSPOT_$1_CPU_DEFINE=S390
-  elif test "x$OPENJDK_$1_CPU" = xriscv64; then
-    HOTSPOT_$1_CPU_DEFINE=RISCV
+  elif test "x$OPENJDK_$1_CPU" = xloongarch64; then
+    HOTSPOT_$1_CPU_DEFINE=LOONGARCH64
   elif test "x$OPENJDK_$1_CPU" != x; then
     HOTSPOT_$1_CPU_DEFINE=$(echo $OPENJDK_$1_CPU | tr a-z A-Z)
   fi
@@ -624,6 +642,7 @@ AC_DEFUN([PLATFORM_SET_MODULE_TARGET_OS_VALUES],
 ])
 
 #%%% Build and target systems %%%
+# Make sure to only use tools set up in BASIC_SETUP_FUNDAMENTAL_TOOLS.
 AC_DEFUN_ONCE([PLATFORM_SETUP_OPENJDK_BUILD_AND_TARGET],
 [
   # Figure out the build and target systems. # Note that in autoconf terminology, "build" is obvious, but "target"
@@ -640,9 +659,21 @@ AC_DEFUN_ONCE([PLATFORM_SETUP_OPENJDK_BUILD_AND_TARGET],
   PLATFORM_SET_MODULE_TARGET_OS_VALUES
   PLATFORM_SET_RELEASE_FILE_OS_VALUES
   PLATFORM_SETUP_LEGACY_VARS
+  PLATFORM_CHECK_DEPRECATION
+])
 
-  # Deprecated in JDK 15
-  UTIL_DEPRECATED_ARG_ENABLE(deprecated-ports)
+AC_DEFUN([PLATFORM_CHECK_DEPRECATION],
+[
+  AC_ARG_ENABLE(deprecated-ports, [AS_HELP_STRING([--enable-deprecated-ports@<:@=yes/no@:>@],
+       [Suppress the error when configuring for a deprecated port @<:@no@:>@])])
+  if test "x$OPENJDK_TARGET_OS" = xwindows && test "x$OPENJDK_TARGET_CPU" = xx86; then
+    if test "x$enable_deprecated_ports" = "xyes"; then
+      AC_MSG_WARN([The Windows 32-bit x86 port is deprecated and may be removed in a future release.])
+    else
+      AC_MSG_ERROR(m4_normalize([The Windows 32-bit x86 port is deprecated and may be removed in a future release.
+        Use --enable-deprecated-ports=yes to suppress this error.]))
+    fi
+  fi
 ])
 
 AC_DEFUN_ONCE([PLATFORM_SETUP_OPENJDK_BUILD_OS_VERSION],
@@ -710,7 +741,7 @@ AC_DEFUN_ONCE([PLATFORM_SETUP_OPENJDK_TARGET_ENDIANNESS],
 [
   ###############################################################################
   #
-  # Is the target little of big endian?
+  # Is the target little or big endian?
   #
   AC_C_BIGENDIAN([ENDIAN="big"],[ENDIAN="little"],[ENDIAN="unknown"],[ENDIAN="universal_endianness"])
 

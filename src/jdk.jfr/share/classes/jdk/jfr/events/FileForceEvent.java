@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import jdk.jfr.internal.Type;
 public final class FileForceEvent extends AbstractJDKEvent {
 
     // The order of these fields must be the same as the parameters in
-    // EventHandler::write(..., String, boolean)
+    // commit(..., String, boolean)
 
     @Label("Path")
     @Description("Full path of the file")
@@ -47,4 +47,8 @@ public final class FileForceEvent extends AbstractJDKEvent {
     @Label("Update Metadata")
     @Description("Whether the file metadata is updated")
     public boolean metaData;
+
+    public static void commit(long start, long duration, String path, boolean metaData) {
+        // Generated
+    }
 }

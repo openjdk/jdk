@@ -35,7 +35,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 6394074
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.XMLStreamWriterTest.UnprefixedNameTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLStreamWriterTest.UnprefixedNameTest
  * @run testng/othervm stream.XMLStreamWriterTest.UnprefixedNameTest
  * @summary Test XMLStreamWriter namespace prefix with writeDefaultNamespace.
  */

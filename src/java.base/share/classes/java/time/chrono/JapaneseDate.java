@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -444,20 +444,19 @@ public final class JapaneseDate
 
     @Override
     public ValueRange range(TemporalField field) {
-        if (field instanceof ChronoField) {
+        if (field instanceof ChronoField chronoField) {
             if (isSupported(field)) {
-                ChronoField f = (ChronoField) field;
-                switch (f) {
-                    case DAY_OF_MONTH: return ValueRange.of(1, lengthOfMonth());
-                    case DAY_OF_YEAR: return ValueRange.of(1, lengthOfYear());
-                    case YEAR_OF_ERA: {
+                return switch (chronoField) {
+                    case DAY_OF_MONTH -> ValueRange.of(1, lengthOfMonth());
+                    case DAY_OF_YEAR -> ValueRange.of(1, lengthOfYear());
+                    case YEAR_OF_ERA -> {
                         Calendar jcal = Calendar.getInstance(JapaneseChronology.LOCALE);
                         jcal.set(Calendar.ERA, era.getValue() + JapaneseEra.ERA_OFFSET);
                         jcal.set(yearOfEra, isoDate.getMonthValue() - 1, isoDate.getDayOfMonth());
-                        return ValueRange.of(1, jcal.getActualMaximum(Calendar.YEAR));
+                        yield ValueRange.of(1, jcal.getActualMaximum(Calendar.YEAR));
                     }
-                }
-                return getChronology().range(f);
+                    default -> getChronology().range(chronoField);
+                };
             }
             throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
         }
@@ -466,13 +465,13 @@ public final class JapaneseDate
 
     @Override
     public long getLong(TemporalField field) {
-        if (field instanceof ChronoField) {
+        if (field instanceof ChronoField cf) {
             // same as ISO:
             // DAY_OF_WEEK, DAY_OF_MONTH, EPOCH_DAY, MONTH_OF_YEAR, PROLEPTIC_MONTH, YEAR
             //
             // calendar specific fields
             // DAY_OF_YEAR, YEAR_OF_ERA, ERA
-            switch ((ChronoField) field) {
+            switch (cf) {
                 case ALIGNED_DAY_OF_WEEK_IN_MONTH:
                 case ALIGNED_DAY_OF_WEEK_IN_YEAR:
                 case ALIGNED_WEEK_OF_MONTH:
@@ -514,17 +513,16 @@ public final class JapaneseDate
     //-----------------------------------------------------------------------
     @Override
     public JapaneseDate with(TemporalField field, long newValue) {
-        if (field instanceof ChronoField) {
-            ChronoField f = (ChronoField) field;
-            if (getLong(f) == newValue) {  // getLong() validates for supported fields
+        if (field instanceof ChronoField chronoField) {
+            if (getLong(chronoField) == newValue) {  // getLong() validates for supported fields
                 return this;
             }
-            switch (f) {
+            switch (chronoField) {
                 case YEAR_OF_ERA:
                 case YEAR:
                 case ERA: {
-                    int nvalue = getChronology().range(f).checkValidIntValue(newValue, f);
-                    switch (f) {
+                    int nvalue = getChronology().range(chronoField).checkValidIntValue(newValue, chronoField);
+                    switch (chronoField) {
                         case YEAR_OF_ERA:
                             return this.withYear(nvalue);
                         case YEAR:
@@ -634,8 +632,8 @@ public final class JapaneseDate
     }
 
     @Override
-    public JapaneseDate minus(long amountToAdd, TemporalUnit unit) {
-        return super.minus(amountToAdd, unit);
+    public JapaneseDate minus(long amountToSubtract, TemporalUnit unit) {
+        return super.minus(amountToSubtract, unit);
     }
 
     @Override
@@ -697,11 +695,8 @@ public final class JapaneseDate
         if (this == obj) {
             return true;
         }
-        if (obj instanceof JapaneseDate) {
-            JapaneseDate otherDate = (JapaneseDate) obj;
-            return this.isoDate.equals(otherDate.isoDate);
-        }
-        return false;
+        return (obj instanceof JapaneseDate otherDate)
+            && this.isoDate.equals(otherDate.isoDate);
     }
 
     /**

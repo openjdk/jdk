@@ -45,7 +45,7 @@ import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
  */
 final class P11TlsRsaPremasterSecretGenerator extends KeyGeneratorSpi {
 
-    private final static String MSG = "TlsRsaPremasterSecretGenerator must be "
+    private static final String MSG = "TlsRsaPremasterSecretGenerator must be "
         + "initialized using a TlsRsaPremasterSecretParameterSpec";
 
     // token instance
@@ -55,7 +55,7 @@ final class P11TlsRsaPremasterSecretGenerator extends KeyGeneratorSpi {
     private final String algorithm;
 
     // mechanism id
-    private long mechanism;
+    private final long mechanism;
 
     @SuppressWarnings("deprecation")
     private TlsRsaPremasterSecretParameterSpec spec;
@@ -83,12 +83,10 @@ final class P11TlsRsaPremasterSecretGenerator extends KeyGeneratorSpi {
     @SuppressWarnings("deprecation")
     protected void engineInit(AlgorithmParameterSpec params,
             SecureRandom random) throws InvalidAlgorithmParameterException {
-        if (!(params instanceof TlsRsaPremasterSecretParameterSpec)) {
+        if (!(params instanceof TlsRsaPremasterSecretParameterSpec spec)) {
             throw new InvalidAlgorithmParameterException(MSG);
         }
 
-        TlsRsaPremasterSecretParameterSpec spec =
-            (TlsRsaPremasterSecretParameterSpec) params;
         int tlsVersion = (spec.getMajorVersion() << 8) | spec.getMinorVersion();
 
         if ((tlsVersion == 0x0300 && !supportSSLv3) ||

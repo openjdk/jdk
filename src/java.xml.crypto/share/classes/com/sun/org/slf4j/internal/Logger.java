@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,13 +38,11 @@ public class Logger {
      * public debug()/warn()/error()/trace() methods in this class --
      * to find the caller.
      */
-    private static final StackWalker WALKER;
-    static {
-        final PrivilegedAction<StackWalker> action =
-                () -> StackWalker.getInstance(StackWalker.Option
-                        .RETAIN_CLASS_REFERENCE);
-        WALKER = AccessController.doPrivileged(action);
-    }
+    @SuppressWarnings("removal")
+    private static final StackWalker WALKER = AccessController.doPrivileged(
+            (PrivilegedAction<StackWalker>)
+            () -> StackWalker.getInstance(
+                    StackWalker.Option.RETAIN_CLASS_REFERENCE));
 
     private final java.util.logging.Logger impl;
 

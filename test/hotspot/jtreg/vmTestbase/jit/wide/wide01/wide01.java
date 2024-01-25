@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import nsk.share.TestFailure;
 
 /*
      Check for intermediate results that are too wide.
-     The wide.java test will fail if the the result of the
+     The wide.java test will fail if the result of the
      expression (f0+f24) is maintained in greater-than-double precision
      or if the result of the expression (d0+d53) is maintained in
      greater-than-double precision.

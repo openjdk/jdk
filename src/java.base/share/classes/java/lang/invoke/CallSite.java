@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,9 +40,9 @@ import jdk.internal.vm.annotation.Stable;
  * In any case, it may be invoked through an associated method handle
  * called its {@linkplain #dynamicInvoker dynamic invoker}.
  * <p>
- * {@code CallSite} is an abstract class which does not allow
+ * {@code CallSite} is an abstract sealed class which does not allow
  * direct subclassing by users.  It has three immediate,
- * concrete subclasses that may be either instantiated or subclassed.
+ * concrete non-sealed subclasses that may be either instantiated or subclassed.
  * <ul>
  * <li>If a mutable target is not required, an {@code invokedynamic} instruction
  * may be permanently bound by means of a {@linkplain ConstantCallSite constant call site}.
@@ -83,9 +83,10 @@ private static CallSite bootstrapDynamic(MethodHandles.Lookup caller, String nam
 }</pre></blockquote>
  * @author John Rose, JSR 292 EG
  * @since 1.7
+ * @sealedGraph
  */
-abstract
-public class CallSite {
+public
+abstract sealed class CallSite permits ConstantCallSite, MutableCallSite, VolatileCallSite {
 
     // The actual payload of this call site.
     // Can be modified using {@link MethodHandleNatives#setCallSiteTargetNormal} or {@link MethodHandleNatives#setCallSiteTargetVolatile}.
@@ -314,8 +315,8 @@ public class CallSite {
         try {
             Object binding = BootstrapMethodInvoker.invoke(
                     CallSite.class, bootstrapMethod, name, type, info, callerClass);
-            if (binding instanceof CallSite) {
-                site = (CallSite) binding;
+            if (binding instanceof CallSite cs) {
+                site = cs;
             } else {
                 // See the "Linking Exceptions" section for the invokedynamic
                 // instruction in JVMS 6.5.
@@ -335,7 +336,7 @@ public class CallSite {
         } catch (Error e) {
             // Pass through an Error, including BootstrapMethodError, any other
             // form of linkage error, such as IllegalAccessError if the bootstrap
-            // method is inaccessible, or say ThreadDeath/OutOfMemoryError
+            // method is inaccessible, or say OutOfMemoryError
             // See the "Linking Exceptions" section for the invokedynamic
             // instruction in JVMS 6.5.
             throw e;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,6 +132,7 @@ public class SSLContext {
         if (context == null) {
             throw new NullPointerException();
         }
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new SSLPermission("setDefaultSSLContext"));
@@ -158,7 +159,7 @@ public class SSLContext {
      * {@code jdk.security.provider.preferred}
      * {@link Security#getProperty(String) Security} property to determine
      * the preferred provider order for the specified algorithm. This
-     * may be different than the order of providers returned by
+     * may be different from the order of providers returned by
      * {@link Security#getProviders() Security.getProviders()}.
      *
      * @param protocol the standard name of the requested protocol.
@@ -371,12 +372,9 @@ public class SSLContext {
         try {
             return contextSpi.engineCreateSSLEngine();
         } catch (AbstractMethodError e) {
-            UnsupportedOperationException unsup =
-                new UnsupportedOperationException(
-                    "Provider: " + getProvider() +
-                    " doesn't support this operation");
-            unsup.initCause(e);
-            throw unsup;
+            throw new UnsupportedOperationException(
+                "Provider: " + getProvider() +
+                " doesn't support this operation", e);
         }
     }
 
@@ -411,12 +409,9 @@ public class SSLContext {
         try {
             return contextSpi.engineCreateSSLEngine(peerHost, peerPort);
         } catch (AbstractMethodError e) {
-            UnsupportedOperationException unsup =
-                new UnsupportedOperationException(
-                    "Provider: " + getProvider() +
-                    " does not support this operation");
-            unsup.initCause(e);
-            throw unsup;
+            throw new UnsupportedOperationException(
+                "Provider: " + getProvider() +
+                " does not support this operation", e);
         }
     }
 

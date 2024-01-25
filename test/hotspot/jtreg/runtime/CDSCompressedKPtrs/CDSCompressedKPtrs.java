@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @requires vm.cds
  * @requires vm.bits == 64
+ * @requires vm.flagless
  * @bug 8003424
  * @summary Testing UseCompressedClassPointers with CDS
  * @library /test/lib
@@ -41,7 +42,7 @@ import jtreg.SkippedException;
 public class CDSCompressedKPtrs {
   public static void main(String[] args) throws Exception {
     ProcessBuilder pb;
-    pb = ProcessTools.createJavaProcessBuilder(
+    pb = ProcessTools.createLimitedTestJavaProcessBuilder(
       "-XX:+UseCompressedClassPointers", "-XX:+UseCompressedOops",
       "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=./CDSCompressedKPtrs.jsa", "-Xshare:dump", "-Xlog:cds");
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
@@ -49,7 +50,7 @@ public class CDSCompressedKPtrs {
       output.shouldContain("Loading classes to share");
       output.shouldHaveExitValue(0);
 
-      pb = ProcessTools.createJavaProcessBuilder(
+      pb = ProcessTools.createLimitedTestJavaProcessBuilder(
         "-XX:+UseCompressedClassPointers", "-XX:+UseCompressedOops",
         "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=./CDSCompressedKPtrs.jsa", "-Xshare:on", "-version");
       output = new OutputAnalyzer(pb.start());

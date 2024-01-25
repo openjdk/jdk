@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,10 +28,15 @@
 
  private:
   void pd_initialize() {}
+  bool pd_finalize_stubs() {
+    Unimplemented();
+    return true;
+  }
 
  public:
   void flush_bundle(bool start_new_bundle) {}
 
   void getCpuData(const CodeBuffer * const cb) {}
+  static constexpr bool supports_shared_stubs() { return false; }
 
 #endif // CPU_S390_CODEBUFFER_S390_HPP

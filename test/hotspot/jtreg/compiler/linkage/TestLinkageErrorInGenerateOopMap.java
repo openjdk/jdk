@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,7 @@
  * @bug 8190797
  * @summary Test OSR compilation with bad operand stack.
  * @library /test/lib /
- * @modules java.base/jdk.internal.misc
- *          java.management
+ * @requires vm.flagless
  * @compile OSRWithBadOperandStack.jasm
  * @run driver compiler.linkage.TestLinkageErrorInGenerateOopMap
  */
@@ -42,7 +41,7 @@ public class TestLinkageErrorInGenerateOopMap {
     public static void main(String args[]) throws Exception {
         if (args.length == 0) {
             // Spawn new VM instance to execute test
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                     "-XX:+UnlockDiagnosticVMOptions",
                     "-XX:-BytecodeVerificationRemote",
                     "-XX:-BytecodeVerificationLocal",
@@ -50,7 +49,7 @@ public class TestLinkageErrorInGenerateOopMap {
                     "-XX:CompileCommand=dontinline,compiler/linkage/OSRWithBadOperandStack.m*",
                     "-XX:-CreateCoredumpOnCrash",
                     "-Xmx64m",
-                    "compiler.linkage.TestLinkageErrorInGenerateOopMap",
+                    TestLinkageErrorInGenerateOopMap.class.getName(),
                     "run");
             OutputAnalyzer out = new OutputAnalyzer(pb.start());
             if (out.getExitValue() != 0) {

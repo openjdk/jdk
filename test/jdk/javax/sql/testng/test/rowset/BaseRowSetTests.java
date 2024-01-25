@@ -355,7 +355,7 @@ public class BaseRowSetTests extends CommonRowSetTests {
         Blob aBlob = new SerialBlob(new StubBlob());
         Clob aClob = new SerialClob(new StubClob());
         Reader rdr = new StringReader(query);
-        InputStream is = new StringBufferInputStream(query);;
+        InputStream is = new StringBufferInputStream(query);
         brs = new StubBaseRowSet();
         brs.setBytes(1, bytes);
         brs.setAsciiStream(2, is, query.length());

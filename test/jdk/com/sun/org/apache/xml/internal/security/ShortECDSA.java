@@ -25,9 +25,12 @@
  * @test
  * @bug 8259535
  * @summary ECDSA SignatureValue do not always have the specified length
- * @modules java.xml.crypto
+ * @modules java.xml.crypto/com.sun.org.apache.xml.internal.security
+ *          java.xml.crypto/com.sun.org.apache.xml.internal.security.signature
  */
 
+import com.sun.org.apache.xml.internal.security.Init;
+import com.sun.org.apache.xml.internal.security.signature.XMLSignature;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
@@ -86,6 +89,18 @@ public class ShortECDSA {
         NodeList nodeList = signedDocument.getElementsByTagName("SignatureValue");
         byte[] sig = Base64.getMimeDecoder().decode(
                 nodeList.item(0).getFirstChild().getNodeValue());
+        if (sig.length != 64) {
+            System.out.println("Length: " + sig.length);
+            System.out.println(HexFormat.ofDelimiter(":").formatHex(sig));
+            throw new RuntimeException("Failed");
+        }
+
+        // Internal way
+        Init.init();
+        XMLSignature signature = new XMLSignature(document, null,
+                SignatureMethod.ECDSA_SHA256, CanonicalizationMethod.INCLUSIVE);
+        signature.sign(privateKey);
+        sig = signature.getSignatureValue();
         if (sig.length != 64) {
             System.out.println("Length: " + sig.length);
             System.out.println(HexFormat.ofDelimiter(":").formatHex(sig));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,6 +116,7 @@ public class MethodInvokeWithTraceOnTest extends TestScaffold {
         LocalVariable threadVar = frame.visibleVariableByName("thread");
         ThreadReference threadObj = (ThreadReference) frame.getValue(threadVar);
         StringReference stringObj = vm().mirrorOf("test string");
+        stringObj.disableCollection();
         int invokeOptions = getMethodInvokeOptions(be);
 
         testInstanceMethod1(thread, thisObj, stringObj, threadObj, invokeOptions);

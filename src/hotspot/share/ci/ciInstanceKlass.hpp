@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ class ciInstanceKlass : public ciKlass {
   friend class ciExceptionHandler;
   friend class ciMethod;
   friend class ciField;
+  friend class ciReplay;
 
 private:
   enum SubklassValue { subklass_unknown, subklass_false, subklass_true };
@@ -56,13 +57,11 @@ private:
   SubklassValue          _has_subklass;
   bool                   _has_nonstatic_fields;
   bool                   _has_nonstatic_concrete_methods;
-  bool                   _is_unsafe_anonymous;
   bool                   _is_hidden;
   bool                   _is_record;
+  bool                   _has_trusted_loader;
 
   ciFlags                _flags;
-  jint                   _nonstatic_field_size;
-  jint                   _nonstatic_oop_map_size;
 
   // Lazy fields get filled in only upon request.
   ciInstanceKlass*       _super;
@@ -73,13 +72,15 @@ private:
   int                    _has_injected_fields; // any non static injected fields? lazily initialized.
 
   // The possible values of the _implementor fall into following three cases:
-  //   NULL: no implementor.
+  //   null: no implementor.
   //   A ciInstanceKlass that's not itself: one implementor.
   //   Itself: more than one implementor.
   ciInstanceKlass*       _implementor;
+  GrowableArray<ciInstanceKlass*>* _transitive_interfaces;
 
   void compute_injected_fields();
   bool compute_injected_fields_helper();
+  void compute_transitive_interfaces();
 
 protected:
   ciInstanceKlass(Klass* k);
@@ -109,6 +110,7 @@ protected:
   bool compute_shared_has_subklass();
   int  compute_nonstatic_fields();
   GrowableArray<ciField*>* compute_nonstatic_fields_impl(GrowableArray<ciField*>* super_fields);
+  bool compute_has_trusted_loader();
 
   // Update the init_state for shared klasses
   void update_if_shared(InstanceKlass::ClassState expected) {
@@ -153,35 +155,35 @@ public:
     return _has_finalizer; }
   bool                   has_subklass()   {
     assert(is_loaded(), "must be loaded");
-    if (_has_subklass == subklass_unknown ||
-        (_is_shared && _has_subklass == subklass_false)) {
-      if (flags().is_final()) {
-        return false;
-      } else {
-        return compute_shared_has_subklass();
-      }
+    // Ignore cached subklass_false case.
+    // It could be invalidated by concurrent class loading and
+    // can result in type paradoxes during compilation when
+    // a subclass is observed, but has_subklass() returns false.
+    if (_has_subklass == subklass_true) {
+      return true;
     }
-    return _has_subklass == subklass_true;
+    if (flags().is_final()) {
+      return false;
+    }
+    return compute_shared_has_subklass();
+  }
+
+  jint                   layout_helper_size_in_bytes()  {
+    return Klass::layout_helper_size_in_bytes(layout_helper());
   }
   jint                   size_helper()  {
     return (Klass::layout_helper_size_in_bytes(layout_helper())
             >> LogHeapWordSize);
   }
-  jint                   nonstatic_field_size()  {
-    assert(is_loaded(), "must be loaded");
-    return _nonstatic_field_size; }
   jint                   has_nonstatic_fields()  {
     assert(is_loaded(), "must be loaded");
     return _has_nonstatic_fields; }
-  jint                   nonstatic_oop_map_size()  {
-    assert(is_loaded(), "must be loaded");
-    return _nonstatic_oop_map_size; }
   ciInstanceKlass*       super();
   jint                   nof_implementors() {
     ciInstanceKlass* impl;
     assert(is_loaded(), "must be loaded");
     impl = implementor();
-    if (impl == NULL) {
+    if (impl == nullptr) {
       return 0;
     } else if (impl != this) {
       return 1;
@@ -192,10 +194,6 @@ public:
   bool has_nonstatic_concrete_methods()  {
     assert(is_loaded(), "must be loaded");
     return _has_nonstatic_concrete_methods;
-  }
-
-  bool is_unsafe_anonymous() const {
-    return _is_unsafe_anonymous;
   }
 
   bool is_hidden() const {
@@ -212,7 +210,7 @@ public:
 
   // total number of nonstatic fields (including inherited):
   int nof_nonstatic_fields() {
-    if (_nonstatic_fields == NULL)
+    if (_nonstatic_fields == nullptr)
       return compute_nonstatic_fields();
     else
       return _nonstatic_fields->length();
@@ -229,7 +227,7 @@ public:
 
   // nth nonstatic field (presented by ascending address)
   ciField* nonstatic_field_at(int i) {
-    assert(_nonstatic_fields != NULL, "");
+    assert(_nonstatic_fields != nullptr, "");
     return _nonstatic_fields->at(i);
   }
 
@@ -260,7 +258,7 @@ public:
   ciInstanceKlass* unique_implementor() {
     assert(is_loaded(), "must be loaded");
     ciInstanceKlass* impl = implementor();
-    return (impl != this ? impl : NULL);
+    return (impl != this ? impl : nullptr);
   }
 
   // Is the defining class loader of this class the default loader?
@@ -280,24 +278,34 @@ public:
 
   // What kind of ciObject is this?
   bool is_instance_klass() const { return true; }
-  bool is_java_klass() const     { return true; }
 
   virtual ciKlass* exact_klass() {
     if (is_loaded() && is_final() && !is_interface()) {
       return this;
     }
-    return NULL;
+    return nullptr;
   }
-
-  ciInstanceKlass* unsafe_anonymous_host();
 
   bool can_be_instantiated() {
     assert(is_loaded(), "must be loaded");
     return !is_interface() && !is_abstract();
   }
 
+  bool has_trusted_loader() const {
+    return _has_trusted_loader;
+  }
+  GrowableArray<ciInstanceKlass*>* transitive_interfaces() const;
+
+  // Replay support
+
   // Dump the current state of this klass for compilation replay.
   virtual void dump_replay_data(outputStream* out);
+
+  static void dump_replay_instanceKlass(outputStream* out, InstanceKlass* ik);
+
+
+  // Return stable class name suitable for replay file.
+  const char *replay_name() const;
 
 #ifdef ASSERT
   bool debug_final_field_at(int offset);

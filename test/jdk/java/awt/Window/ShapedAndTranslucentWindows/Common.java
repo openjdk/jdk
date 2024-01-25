@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ public abstract class Common {
     static final int STATIC_BLOCKS = 30;
     static final Color BG_COLOR = Color.BLUE;
     static final Color FG_COLOR = Color.RED;
-    static final int delay = 55000;
+    static final int delay = 1000;
     static final SecureRandom random = new SecureRandom();
     static final int dl = 100;
     static final Class[] WINDOWS_TO_TEST = { Window.class, Frame.class, Dialog.class };

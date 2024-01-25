@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2017, 2020 SAP SE. All rights reserved.
+// Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2017, 2022 SAP SE. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@
 //    On more recent models (from z9 on), I-fetch is done on a Octoword
 //    (32 bytes at a time) basis. To avoid I-fetching unnecessary
 //    instructions, branch targets should be 32-byte aligend. If this
-//    exact alingment cannot be achieved, having the branch target in
+//    exact alignment cannot be achieved, having the branch target in
 //    the first doubleword still provides some benefit.
 //  - Avoid branch targets at the end of cache lines (> 64 bytes distance).
 //    Sequential instruction prefetching after the branch target starts
@@ -47,7 +47,7 @@
 //    branch target. When I-fetching crosses a cache line, there may be
 //    a small stall. The worst case: the branch target (at the end of
 //    a cache line) is a L1 I-cache miss and the next line as well.
-//    Then, the entire target line must be filled first (to contine at the
+//    Then, the entire target line must be filled first (to continue at the
 //    branch target). Only then can the next sequential line be filled.
 //  - Avoid multiple poorly predicted branches in a row.
 //
@@ -639,11 +639,6 @@ int MachCallRuntimeNode::ret_addr_offset() {
   return 12 + MacroAssembler::call_far_patchable_ret_addr_offset();
 }
 
-int MachCallNativeNode::ret_addr_offset() {
-  Unimplemented();
-  return -1;
-}
-
 // Compute padding required for nodes which need alignment
 //
 // The addresses of the call instructions needs to be 4-byte aligned to
@@ -669,12 +664,6 @@ int CallLeafDirectNode::compute_padding(int current_offset) const {
 
 int CallLeafNoFPDirectNode::compute_padding(int current_offset) const {
   return (12 - current_offset) & 2;
-}
-
-// Indicate if the safepoint node needs the polling page as an input.
-// Since z/Architecture does not have absolute addressing, it does.
-bool SafePointNode::needs_polling_address_input() {
-  return true;
 }
 
 void emit_nop(CodeBuffer &cbuf) {
@@ -703,27 +692,18 @@ uint MachBreakpointNode::size(PhaseRegAlloc *ra_) const {
 }
 
 static inline void z_emit16(CodeBuffer &cbuf, long value) {
-  // 32bit instructions may become sign extended.
-  assert(value >= 0, "unintended sign extension (int->long)");
-  assert(value < (1L << 16), "instruction too large");
-  *((unsigned short*)(cbuf.insts_end())) = (unsigned short)value;
-  cbuf.set_insts_end(cbuf.insts_end() + sizeof(unsigned short));
+  C2_MacroAssembler _masm(&cbuf);
+  __ emit_instruction((unsigned long)value, 2);
 }
 
 static inline void z_emit32(CodeBuffer &cbuf, long value) {
-  // 32bit instructions may become sign extended.
-  assert(value < (1L << 32), "instruction too large");
-  *((unsigned int*)(cbuf.insts_end())) = (unsigned int)value;
-  cbuf.set_insts_end(cbuf.insts_end() + sizeof(unsigned int));
+  C2_MacroAssembler _masm(&cbuf);
+  __ emit_instruction((unsigned long)value, 4);
 }
 
 static inline void z_emit48(CodeBuffer &cbuf, long value) {
-  // 32bit instructions may become sign extended.
-  assert(value >= 0, "unintended sign extension (int->long)");
-  assert(value < (1L << 48), "instruction too large");
-  value = value<<16;
-  memcpy(cbuf.insts_end(), (unsigned char*)&value, 6);
-  cbuf.set_insts_end(cbuf.insts_end() + 6);
+  C2_MacroAssembler _masm(&cbuf);
+  __ emit_instruction((unsigned long)value, 6);
 }
 
 static inline unsigned int z_emit_inst(CodeBuffer &cbuf, long value) {
@@ -732,19 +712,9 @@ static inline unsigned int z_emit_inst(CodeBuffer &cbuf, long value) {
     value = (long)((unsigned long)((unsigned int)value));
   }
 
-  if (value < (1L << 16)) { // 2-byte instruction
-    z_emit16(cbuf, value);
-    return 2;
-  }
-
-  if (value < (1L << 32)) { // 4-byte instruction, might be unaligned store
-    z_emit32(cbuf, value);
-    return 4;
-  }
-
-  // 6-byte instruction, probably unaligned store.
-  z_emit48(cbuf, value);
-  return 6;
+  C2_MacroAssembler _masm(&cbuf);
+  int len = __ emit_instruction((unsigned long)value, 0);
+  return len;
 }
 
 // Check effective address (at runtime) for required alignment.
@@ -840,6 +810,8 @@ void MachConstantBaseNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
 
 //=============================================================================
 
+#include "gc/shared/barrierSetAssembler.hpp"
+
 #if !defined(PRODUCT)
 void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   Compile* C = ra_->C;
@@ -847,11 +819,6 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   st->print("\t");
   for (int i = 0; i < OptoPrologueNops; i++) {
     st->print_cr("NOP"); st->print("\t");
-  }
-
-  if (VerifyThread) {
-    st->print_cr("Verify_Thread");
-    st->print("\t");
   }
 
   long framesize = C->output()->frame_size_in_bytes();
@@ -867,14 +834,16 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   }
   st->print_cr("push_frame %d", (int)-framesize);
   st->print("\t");
+
+  if (C->stub_function() == NULL) {
+    st->print("nmethod entry barrier\n\t");
+  }
 }
 #endif
 
 void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   Compile* C = ra_->C;
   C2_MacroAssembler _masm(&cbuf);
-
-  __ verify_thread();
 
   size_t framesize = C->output()->frame_size_in_bytes();
   size_t bangsize  = C->output()->bang_size_in_bytes();
@@ -920,6 +889,13 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     ConstantTable& constant_table = C->output()->constant_table();
     constant_table.set_table_base_offset(constant_table.calculate_table_base_offset());
   }
+
+  if (C->stub_function() == NULL) {
+    BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+    bs->nmethod_entry_barrier(&_masm);
+  }
+
+  C->output()->set_frame_complete(cbuf.insts_size());
 }
 
 uint MachPrologNode::size(PhaseRegAlloc *ra_) const {
@@ -948,7 +924,6 @@ void MachEpilogNode::format(PhaseRegAlloc *ra_, outputStream *os) const {
 void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   C2_MacroAssembler _masm(&cbuf);
   Compile* C = ra_->C;
-  __ verify_thread();
 
   // If this does safepoint polling, then do it here.
   bool need_polling = do_polling() && C->is_method_compilation();
@@ -963,7 +938,7 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
   // Touch the polling page.
   if (need_polling) {
-    __ z_lg(Z_R1_scratch, Address(Z_thread, Thread::polling_page_offset()));
+    __ z_lg(Z_R1_scratch, Address(Z_thread, JavaThread::polling_page_offset()));
     // We need to mark the code position where the load from the safepoint
     // polling page was emitted as relocInfo::poll_return_type here.
     __ relocate(relocInfo::poll_return_type);
@@ -1517,7 +1492,7 @@ static Register reg_to_register_object(int register_encoding) {
   return as_Register(register_encoding);
 }
 
-const bool Matcher::match_rule_supported(int opcode) {
+bool Matcher::match_rule_supported(int opcode) {
   if (!has_match_rule(opcode)) {
     return false; // no match rule present
   }
@@ -1530,73 +1505,81 @@ const bool Matcher::match_rule_supported(int opcode) {
     case Op_PopCountL:
       // PopCount supported by H/W from z/Architecture G5 (z196) on.
       return (UsePopCountInstruction && VM_Version::has_PopCount());
+    case Op_FmaF:
+    case Op_FmaD:
+      return UseFMA;
   }
 
   return true; // Per default match rules are supported.
 }
 
-const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
+bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
+  return match_rule_supported_vector(opcode, vlen, bt);
+}
+
+bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
   if (!match_rule_supported(opcode) || !vector_size_supported(bt, vlen)) {
     return false;
   }
   return true; // Per default match rules are supported.
 }
 
-const bool Matcher::has_predicated_vectors(void) {
+bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt) {
   return false;
 }
 
-bool Matcher::supports_vector_variable_shifts(void) {
-  return false; // not supported
+bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
+  return false;
 }
 
-bool Matcher::supports_vector_variable_rotates(void) {
-  return false; // not supported
+const RegMask* Matcher::predicate_reg_mask(void) {
+  return NULL;
 }
 
-const int Matcher::float_pressure(int default_pressure_threshold) {
-  return default_pressure_threshold;
+const TypeVectMask* Matcher::predicate_reg_type(const Type* elemTy, int length) {
+  return NULL;
 }
 
-const bool Matcher::convL2FSupported(void) {
-  return true; // False means that conversion is done by runtime call.
+// Vector calling convention not yet implemented.
+bool Matcher::supports_vector_calling_convention(void) {
+  return false;
+}
+
+OptoRegPair Matcher::vector_return_value(uint ideal_reg) {
+  Unimplemented();
+  return OptoRegPair(0, 0);
 }
 
 //----------SUPERWORD HELPERS----------------------------------------
 
 // Vector width in bytes.
-const int Matcher::vector_width_in_bytes(BasicType bt) {
+int Matcher::vector_width_in_bytes(BasicType bt) {
   assert(MaxVectorSize == 8, "");
   return 8;
 }
 
 // Vector ideal reg.
-const uint Matcher::vector_ideal_reg(int size) {
+uint Matcher::vector_ideal_reg(int size) {
   assert(MaxVectorSize == 8 && size == 8, "");
   return Op_RegL;
 }
 
 // Limits on vector size (number of elements) loaded into vector.
-const int Matcher::max_vector_size(const BasicType bt) {
+int Matcher::max_vector_size(const BasicType bt) {
   assert(is_java_primitive(bt), "only primitive type vectors");
   return vector_width_in_bytes(bt)/type2aelembytes(bt);
 }
 
-const int Matcher::min_vector_size(const BasicType bt) {
+int Matcher::min_vector_size(const BasicType bt) {
   return max_vector_size(bt); // Same as max.
 }
 
-const bool Matcher::supports_scalable_vector() {
-  return false;
+int Matcher::superword_max_vector_size(const BasicType bt) {
+  return Matcher::max_vector_size(bt);
 }
 
-const int Matcher::scalable_vector_reg_size(const BasicType bt) {
+int Matcher::scalable_vector_reg_size(const BasicType bt) {
   return -1;
-}
-
-// z/Architecture does support misaligned store/load at minimal extra cost.
-const bool Matcher::misaligned_vectors_ok() {
-  return true;
 }
 
 // RETURNS: whether this branch offset is short enough that a short
@@ -1617,38 +1600,12 @@ bool Matcher::is_short_branch_offset(int rule, int br_size, int offset) {
   return Assembler::is_within_range_of_RelAddr16((address)((long)offset), (address)0);
 }
 
-const bool Matcher::isSimpleConstant64(jlong value) {
-  // Probably always true, even if a temp register is required.
-  return true;
-}
-
-// Should correspond to setting above
-const bool Matcher::init_array_count_is_in_bytes = false;
-
-// Suppress CMOVL. Conditional move available on z/Architecture only from z196 onwards. Not exploited yet.
-const int Matcher::long_cmove_cost() { return ConditionalMoveLimit; }
-
-// Suppress CMOVF. Conditional move available on z/Architecture only from z196 onwards. Not exploited yet.
-const int Matcher::float_cmove_cost() { return ConditionalMoveLimit; }
-
-// Does the CPU require postalloc expand (see block.cpp for description of postalloc expand)?
-const bool Matcher::require_postalloc_expand = false;
-
-// Do we need to mask the count passed to shift instructions or does
-// the cpu only look at the lower 5/6 bits anyway?
-// 32bit shifts mask in emitter, 64bit shifts need no mask.
-// Constant shift counts are handled in Ideal phase.
-const bool Matcher::need_masked_shift_count = false;
-
-// No support for generic vector operands.
-const bool Matcher::supports_generic_vector_operands  = false;
-
 MachOper* Matcher::pd_specialize_generic_vector_operand(MachOper* original_opnd, uint ideal_reg, bool is_temp) {
   ShouldNotReachHere(); // generic vector operands not supported
   return NULL;
 }
 
-bool Matcher::is_generic_reg2reg_move(MachNode* m) {
+bool Matcher::is_reg2reg_move(MachNode* m) {
   ShouldNotReachHere();  // generic vector operands not supported
   return false;
 }
@@ -1657,56 +1614,6 @@ bool Matcher::is_generic_vector(MachOper* opnd)  {
   ShouldNotReachHere();  // generic vector operands not supported
   return false;
 }
-
-// Set this as clone_shift_expressions.
-bool Matcher::narrow_oop_use_complex_address() {
-  if (CompressedOops::base() == NULL && CompressedOops::shift() == 0) return true;
-  return false;
-}
-
-bool Matcher::narrow_klass_use_complex_address() {
-  NOT_LP64(ShouldNotCallThis());
-  assert(UseCompressedClassPointers, "only for compressed klass code");
-  // TODO HS25: z port if (MatchDecodeNodes) return true;
-  return false;
-}
-
-bool Matcher::const_oop_prefer_decode() {
-  // Prefer ConN+DecodeN over ConP in simple compressed oops mode.
-  return CompressedOops::base() == NULL;
-}
-
-bool Matcher::const_klass_prefer_decode() {
-  // Prefer ConNKlass+DecodeNKlass over ConP in simple compressed klass mode.
-  return CompressedKlassPointers::base() == NULL;
-}
-
-// Is it better to copy float constants, or load them directly from memory?
-// Most RISCs will have to materialize an address into a
-// register first, so they would do better to copy the constant from stack.
-const bool Matcher::rematerialize_float_constants = false;
-
-// If CPU can load and store mis-aligned doubles directly then no fixup is
-// needed. Else we split the double into 2 integer pieces and move it
-// piece-by-piece. Only happens when passing doubles into C code as the
-// Java calling convention forces doubles to be aligned.
-const bool Matcher::misaligned_doubles_ok = true;
-
-// Advertise here if the CPU requires explicit rounding operations to implement strictfp mode.
-const bool Matcher::strict_fp_requires_explicit_rounding = false;
-
-// Do floats take an entire double register or just half?
-//
-// A float in resides in a zarch double register. When storing it by
-// z_std, it cannot be restored in C-code by reloading it as a double
-// and casting it into a float afterwards.
-bool Matcher::float_in_double() { return false; }
-
-// Do ints take an entire long register or just half?
-// The relevant question is how the int is callee-saved:
-// the whole long is written but de-opt'ing will have to extract
-// the relevant 32 bits.
-const bool Matcher::int_in_long = true;
 
 // Constants for c2c and c calling conventions.
 
@@ -1754,6 +1661,17 @@ bool Matcher::is_spillable_arg(int reg) {
   return can_be_java_arg(reg);
 }
 
+uint Matcher::int_pressure_limit()
+{
+  // Medium size register set, 6 special purpose regs, 3 SOE regs.
+  return (INTPRESSURE == -1) ? 10 : INTPRESSURE;
+}
+
+uint Matcher::float_pressure_limit()
+{
+  return (FLOATPRESSURE == -1) ? 15 : FLOATPRESSURE;
+}
+
 bool Matcher::use_asm_for_ldiv_by_con(jlong divisor) {
   return false;
 }
@@ -1783,8 +1701,6 @@ const RegMask Matcher::method_handle_invoke_SP_save_mask() {
   return RegMask();
 }
 
-const bool Matcher::convi2l_type_required = true;
-
 // Should the matcher clone input 'm' of node 'n'?
 bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
   return false;
@@ -1795,9 +1711,6 @@ bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
 // into registers?
 bool Matcher::pd_clone_address_expressions(AddPNode* m, Matcher::MStack& mstack, VectorSet& address_visited) {
   return clone_base_plus_offset_address(m, mstack, address_visited);
-}
-
-void Compile::reshape_address(AddPNode* addp) {
 }
 
 %} // source
@@ -2277,7 +2190,7 @@ encode %{
       __ load_klass(Z_method, Z_R2);
 
       int entry_offset = in_bytes(Klass::vtable_start_offset()) + vtable_index * vtableEntry::size_in_bytes();
-      int v_off        = entry_offset + vtableEntry::method_offset_in_bytes();
+      int v_off        = entry_offset + in_bytes(vtableEntry::method_offset());
 
       if (Displacement::is_validDisp(v_off) ) {
         // Can use load instruction with large offset.
@@ -3765,7 +3678,7 @@ operand cmpOp() %{
 //----------OPERAND CLASSES----------------------------------------------------
 // Operand Classes are groups of operands that are used to simplify
 // instruction definitions by not requiring the AD writer to specify
-// seperate instructions for every form of operand when the
+// separate instructions for every form of operand when the
 // instruction accepts multiple operand types with the same basic
 // encoding and format.  The classic case of this is memory operands.
 // Indirect is not included since its use is limited to Compare & Swap
@@ -5142,6 +5055,7 @@ instruct membar_CPUOrder() %{
 
 instruct membar_storestore() %{
   match(MemBarStoreStore);
+  match(StoreStoreFence);
   ins_cost(0);
   size(0);
   format %{ "MEMBAR-storestore (empty)" %}
@@ -5364,51 +5278,27 @@ instruct castLL(iRegL dst) %{
   ins_pipe(pipe_class_dummy);
 %}
 
-//----------Conditional_store--------------------------------------------------
-// Conditional-store of the updated heap-top.
-// Used during allocation of the shared heap.
-// Sets flags (EQ) on success.
-
-// Implement LoadPLocked. Must be ordered against changes of the memory location
-// by storePConditional.
-// Don't know whether this is ever used.
-instruct loadPLocked(iRegP dst, memory mem) %{
-  match(Set dst (LoadPLocked mem));
-  ins_cost(MEMORY_REF_COST);
-  size(Z_DISP3_SIZE);
-  format %{ "LG      $dst,$mem\t # LoadPLocked" %}
-  opcode(LG_ZOPC, LG_ZOPC);
-  ins_encode(z_form_rt_mem_opt(dst, mem));
+instruct castFF(regF dst) %{
+  match(Set dst (CastFF dst));
+  size(0);
+  format %{ "# castFF of $dst" %}
+  ins_encode(/*empty*/);
   ins_pipe(pipe_class_dummy);
 %}
 
-// As compareAndSwapP, but return flag register instead of boolean value in
-// int register.
-// This instruction is matched if UseTLAB is off. Needed to pass
-// option tests.  Mem_ptr must be a memory operand, else this node
-// does not get Flag_needs_anti_dependence_check set by adlc. If this
-// is not set this node can be rematerialized which leads to errors.
-instruct storePConditional(indirect mem_ptr, rarg5RegP oldval, iRegP_N2P newval, flagsReg cr) %{
-  match(Set cr (StorePConditional mem_ptr (Binary oldval newval)));
-  effect(KILL oldval);
-  // TODO: s390 port size(FIXED_SIZE);
-  format %{ "storePConditional $oldval,$newval,$mem_ptr" %}
-  ins_encode(z_enc_casL(oldval, newval, mem_ptr));
+instruct castDD(regD dst) %{
+  match(Set dst (CastDD dst));
+  size(0);
+  format %{ "# castDD of $dst" %}
+  ins_encode(/*empty*/);
   ins_pipe(pipe_class_dummy);
 %}
 
-// As compareAndSwapL, but return flag register instead of boolean value in
-// int register.
-// Used by sun/misc/AtomicLongCSImpl.java. Mem_ptr must be a memory
-// operand, else this node does not get
-// Flag_needs_anti_dependence_check set by adlc. If this is not set
-// this node can be rematerialized which leads to errors.
-instruct storeLConditional(indirect mem_ptr, rarg5RegL oldval, iRegL newval, flagsReg cr) %{
-  match(Set cr (StoreLConditional mem_ptr (Binary oldval newval)));
-  effect(KILL oldval);
-  // TODO: s390 port size(FIXED_SIZE);
-  format %{ "storePConditional $oldval,$newval,$mem_ptr" %}
-  ins_encode(z_enc_casL(oldval, newval, mem_ptr));
+instruct castVV(iRegL dst) %{
+  match(Set dst (CastVV dst));
+  size(0);
+  format %{ "# castVV of $dst" %}
+  ins_encode(/*empty*/);
   ins_pipe(pipe_class_dummy);
 %}
 
@@ -7273,6 +7163,7 @@ instruct maddF_reg_reg(regF dst, regF src1, regF src2) %{
   size(4);
   format %{ "MAEBR    $dst, $src1, $src2" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ z_maebr($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_class_dummy);
@@ -7286,6 +7177,7 @@ instruct maddD_reg_reg(regD dst, regD src1, regD src2) %{
   size(4);
   format %{ "MADBR    $dst, $src1, $src2" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ z_madbr($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_class_dummy);
@@ -7299,6 +7191,7 @@ instruct msubF_reg_reg(regF dst, regF src1, regF src2) %{
   size(4);
   format %{ "MSEBR    $dst, $src1, $src2" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ z_msebr($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_class_dummy);
@@ -7312,6 +7205,7 @@ instruct msubD_reg_reg(regD dst, regD src1, regD src2) %{
   size(4);
   format %{ "MSDBR    $dst, $src1, $src2" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ z_msdbr($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_class_dummy);
@@ -7325,6 +7219,7 @@ instruct maddF_reg_mem(regF dst, regF src1, memoryRX src2) %{
   size(6);
   format %{ "MAEB     $dst, $src1, $src2" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ z_maeb($dst$$FloatRegister, $src1$$FloatRegister,
               Address(reg_to_register_object($src2$$base), $src2$$index$$Register, $src2$$disp));
   %}
@@ -7339,6 +7234,7 @@ instruct maddD_reg_mem(regD dst, regD src1, memoryRX src2) %{
   size(6);
   format %{ "MADB     $dst, $src1, $src2" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ z_madb($dst$$FloatRegister, $src1$$FloatRegister,
               Address(reg_to_register_object($src2$$base), $src2$$index$$Register, $src2$$disp));
   %}
@@ -7353,6 +7249,7 @@ instruct msubF_reg_mem(regF dst, regF src1, memoryRX src2) %{
   size(6);
   format %{ "MSEB     $dst, $src1, $src2" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ z_mseb($dst$$FloatRegister, $src1$$FloatRegister,
               Address(reg_to_register_object($src2$$base), $src2$$index$$Register, $src2$$disp));
   %}
@@ -7367,6 +7264,7 @@ instruct msubD_reg_mem(regD dst, regD src1, memoryRX src2) %{
   size(6);
   format %{ "MSDB    $dst, $src1, $src2" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ z_msdb($dst$$FloatRegister, $src1$$FloatRegister,
               Address(reg_to_register_object($src2$$base), $src2$$index$$Register, $src2$$disp));
   %}
@@ -7381,6 +7279,7 @@ instruct maddF_mem_reg(regF dst, memoryRX src1, regF src2) %{
   size(6);
   format %{ "MAEB     $dst, $src1, $src2" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ z_maeb($dst$$FloatRegister, $src2$$FloatRegister,
               Address(reg_to_register_object($src1$$base), $src1$$index$$Register, $src1$$disp));
   %}
@@ -7395,6 +7294,7 @@ instruct maddD_mem_reg(regD dst, memoryRX src1, regD src2) %{
   size(6);
   format %{ "MADB     $dst, $src1, $src2" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ z_madb($dst$$FloatRegister, $src2$$FloatRegister,
               Address(reg_to_register_object($src1$$base), $src1$$index$$Register, $src1$$disp));
   %}
@@ -7409,6 +7309,7 @@ instruct msubF_mem_reg(regF dst, memoryRX src1, regF src2) %{
   size(6);
   format %{ "MSEB     $dst, $src1, $src2" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ z_mseb($dst$$FloatRegister, $src2$$FloatRegister,
               Address(reg_to_register_object($src1$$base), $src1$$index$$Register, $src1$$disp));
   %}
@@ -7423,6 +7324,7 @@ instruct msubD_mem_reg(regD dst, memoryRX src1, regD src2) %{
   size(6);
   format %{ "MSDB    $dst, $src1, $src2" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ z_msdb($dst$$FloatRegister, $src2$$FloatRegister,
               Address(reg_to_register_object($src1$$base), $src1$$index$$Register, $src1$$disp));
   %}
@@ -9879,8 +9781,7 @@ instruct cmpFastLock(flagsReg pcc, iRegP_N2P oop, iRegP_N2P box, iRegP tmp1, iRe
   ins_cost(100);
   // TODO: s390 port size(VARIABLE_SIZE); // Uses load_const_optimized.
   format %{ "FASTLOCK  $oop, $box; KILL Z_ARG4, Z_ARG5" %}
-  ins_encode %{ __ compiler_fast_lock_object($oop$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register,
-                                             UseBiasedLocking && !UseOptoBiasInlining); %}
+  ins_encode %{ __ compiler_fast_lock_object($oop$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register); %}
   ins_pipe(pipe_class_dummy);
 %}
 
@@ -9888,10 +9789,9 @@ instruct cmpFastUnlock(flagsReg pcc, iRegP_N2P oop, iRegP_N2P box, iRegP tmp1, i
   match(Set pcc (FastUnlock oop box));
   effect(TEMP tmp1, TEMP tmp2);
   ins_cost(100);
-  // TODO: s390 port size(FIXED_SIZE);  // emitted code depends on UseBiasedLocking being on/off.
+  // TODO: s390 port size(FIXED_SIZE);
   format %{ "FASTUNLOCK  $oop, $box; KILL Z_ARG4, Z_ARG5" %}
-  ins_encode %{ __ compiler_fast_unlock_object($oop$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register,
-                                               UseBiasedLocking && !UseOptoBiasInlining); %}
+  ins_encode %{ __ compiler_fast_unlock_object($oop$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register); %}
   ins_pipe(pipe_class_dummy);
 %}
 
@@ -10290,7 +10190,7 @@ instruct string_compress(iRegP src, iRegP dst, iRegI result, iRegI len, iRegI tm
   format %{ "String Compress $src->$dst($len) -> $result" %}
   ins_encode %{
     __ string_compress($result$$Register, $src$$Register, $dst$$Register, $len$$Register,
-                       $tmp$$Register, false);
+                       $tmp$$Register, true, false);
   %}
   ins_pipe(pipe_class_dummy);
 %}
@@ -10333,27 +10233,41 @@ instruct string_inflate_const(Universe dummy, iRegP src, iRegP dst, iRegI tmp, i
 %}
 
 // StringCoding.java intrinsics
-instruct has_negatives(rarg5RegP ary1, iRegI len, iRegI result, roddRegI oddReg, revenRegI evenReg, iRegI tmp, flagsReg cr) %{
-  match(Set result (HasNegatives ary1 len));
-  effect(TEMP_DEF result, USE_KILL ary1, TEMP oddReg, TEMP evenReg, TEMP tmp, KILL cr); // R0, R1 are killed, too.
+instruct count_positives(iRegP ary1, iRegI len, iRegI result, iRegI tmp, flagsReg cr) %{
+  match(Set result (CountPositives ary1 len));
+  effect(TEMP_DEF result, TEMP tmp, KILL cr); // R0, R1 are killed, too.
   ins_cost(300);
-  format %{ "has negatives byte[] $ary1($len) -> $result" %}
+  format %{ "count positives byte[] $ary1($len) -> $result" %}
   ins_encode %{
-    __ has_negatives($result$$Register, $ary1$$Register, $len$$Register,
-                     $oddReg$$Register, $evenReg$$Register, $tmp$$Register);
+    __ count_positives($result$$Register, $ary1$$Register, $len$$Register, $tmp$$Register);
   %}
   ins_pipe(pipe_class_dummy);
 %}
 
 // encode char[] to byte[] in ISO_8859_1
 instruct encode_iso_array(iRegP src, iRegP dst, iRegI result, iRegI len, iRegI tmp, flagsReg cr) %{
+  predicate(!((EncodeISOArrayNode*)n)->is_ascii());
   match(Set result (EncodeISOArray src (Binary dst len)));
   effect(TEMP_DEF result, TEMP tmp, KILL cr); // R0, R1 are killed, too.
   ins_cost(300);
-  format %{ "Encode array $src->$dst($len) -> $result" %}
+  format %{ "Encode iso array $src->$dst($len) -> $result" %}
   ins_encode %{
     __ string_compress($result$$Register, $src$$Register, $dst$$Register, $len$$Register,
-                       $tmp$$Register, true);
+                       $tmp$$Register, true, false);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+// encode char[] to byte[] in ASCII
+instruct encode_ascii_array(iRegP src, iRegP dst, iRegI result, iRegI len, iRegI tmp, flagsReg cr) %{
+  predicate(((EncodeISOArrayNode*)n)->is_ascii());
+  match(Set result (EncodeISOArray src (Binary dst len)));
+  effect(TEMP_DEF result, TEMP tmp, KILL cr); // R0, R1 are killed, too.
+  ins_cost(300);
+  format %{ "Encode ascii array $src->$dst($len) -> $result" %}
+  ins_encode %{
+    __ string_compress($result$$Register, $src$$Register, $dst$$Register, $len$$Register,
+                       $tmp$$Register, true, true);
   %}
   ins_pipe(pipe_class_dummy);
 %}
@@ -10404,7 +10318,7 @@ instruct encode_iso_array(iRegP src, iRegP dst, iRegI result, iRegI len, iRegI t
 //
 // // Change (inc mov) to lea
 // peephole %{
-//   // increment preceeded by register-register move
+//   // increment preceded by register-register move
 //   peepmatch (incI_eReg movI);
 //   // require that the destination register of the increment
 //   // match the destination register of the move
@@ -10532,9 +10446,9 @@ instruct expand_Repl2I_reg(iRegL dst, iRegL src) %{
 // Exploit rotate_then_insert, if available
 // Replicate scalar byte to packed byte values (8 Bytes).
 instruct Repl8B_reg_risbg(iRegL dst, iRegI src, flagsReg cr) %{
-  match(Set dst (ReplicateB src));
+  match(Set dst (Replicate src));
   effect(KILL cr);
-  predicate((n->as_Vector()->length() == 8));
+  predicate(n->as_Vector()->length() == 8 && Matcher::vector_element_basic_type(n) == T_BYTE);
   format %{ "REPLIC8B $dst,$src\t # pack8B" %}
   ins_encode %{
     if ($dst$$Register != $src$$Register) {
@@ -10549,8 +10463,8 @@ instruct Repl8B_reg_risbg(iRegL dst, iRegI src, flagsReg cr) %{
 
 // Replicate scalar byte to packed byte values (8 Bytes).
 instruct Repl8B_imm(iRegL dst, immB_n0m1 src) %{
-  match(Set dst (ReplicateB src));
-  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 8 && Matcher::vector_element_basic_type(n) == T_BYTE);
   ins_should_rematerialize(true);
   format %{ "REPLIC8B $dst,$src\t # pack8B imm" %}
   ins_encode %{
@@ -10567,8 +10481,8 @@ instruct Repl8B_imm(iRegL dst, immB_n0m1 src) %{
 
 // Replicate scalar byte to packed byte values (8 Bytes).
 instruct Repl8B_imm0(iRegL dst, immI_0 src) %{
-  match(Set dst (ReplicateB src));
-  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 8 && Matcher::vector_element_basic_type(n) == T_BYTE);
   ins_should_rematerialize(true);
   format %{ "REPLIC8B $dst,$src\t # pack8B imm0" %}
   ins_encode %{ __ z_laz($dst$$Register, 0, Z_R0); %}
@@ -10577,8 +10491,8 @@ instruct Repl8B_imm0(iRegL dst, immI_0 src) %{
 
 // Replicate scalar byte to packed byte values (8 Bytes).
 instruct Repl8B_immm1(iRegL dst, immB_minus1 src) %{
-  match(Set dst (ReplicateB src));
-  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 8 && Matcher::vector_element_basic_type(n) == T_BYTE);
   ins_should_rematerialize(true);
   format %{ "REPLIC8B $dst,$src\t # pack8B immm1" %}
   ins_encode %{ __ z_lghi($dst$$Register, -1); %}
@@ -10588,9 +10502,9 @@ instruct Repl8B_immm1(iRegL dst, immB_minus1 src) %{
 // Exploit rotate_then_insert, if available
 // Replicate scalar short to packed short values (8 Bytes).
 instruct Repl4S_reg_risbg(iRegL dst, iRegI src, flagsReg cr) %{
-  match(Set dst (ReplicateS src));
+  match(Set dst (Replicate src));
   effect(KILL cr);
-  predicate((n->as_Vector()->length() == 4));
+  predicate((n->as_Vector()->length() == 4) && Matcher::vector_element_basic_type(n) == T_SHORT);
   format %{ "REPLIC4S $dst,$src\t # pack4S" %}
   ins_encode %{
     if ($dst$$Register != $src$$Register) {
@@ -10604,8 +10518,8 @@ instruct Repl4S_reg_risbg(iRegL dst, iRegI src, flagsReg cr) %{
 
 // Replicate scalar short to packed short values (8 Bytes).
 instruct Repl4S_imm(iRegL dst, immS_n0m1 src) %{
-  match(Set dst (ReplicateS src));
-  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 4 && Matcher::vector_element_basic_type(n) == T_SHORT);
   ins_should_rematerialize(true);
   format %{ "REPLIC4S $dst,$src\t # pack4S imm" %}
   ins_encode %{
@@ -10622,8 +10536,8 @@ instruct Repl4S_imm(iRegL dst, immS_n0m1 src) %{
 
 // Replicate scalar short to packed short values (8 Bytes).
 instruct Repl4S_imm0(iRegL dst, immI_0 src) %{
-  match(Set dst (ReplicateS src));
-  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 4 && Matcher::vector_element_basic_type(n) == T_SHORT);
   ins_should_rematerialize(true);
   format %{ "REPLIC4S $dst,$src\t # pack4S imm0" %}
   ins_encode %{ __ z_laz($dst$$Register, 0, Z_R0); %}
@@ -10632,8 +10546,8 @@ instruct Repl4S_imm0(iRegL dst, immI_0 src) %{
 
 // Replicate scalar short to packed short values (8 Bytes).
 instruct Repl4S_immm1(iRegL dst, immS_minus1 src) %{
-  match(Set dst (ReplicateS src));
-  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 4 && Matcher::vector_element_basic_type(n) == T_SHORT);
   ins_should_rematerialize(true);
   format %{ "REPLIC4S $dst,$src\t # pack4S immm1" %}
   ins_encode %{ __ z_lghi($dst$$Register, -1); %}
@@ -10643,9 +10557,9 @@ instruct Repl4S_immm1(iRegL dst, immS_minus1 src) %{
 // Exploit rotate_then_insert, if available.
 // Replicate scalar int to packed int values (8 Bytes).
 instruct Repl2I_reg_risbg(iRegL dst, iRegI src, flagsReg cr) %{
-  match(Set dst (ReplicateI src));
+  match(Set dst (Replicate src));
   effect(KILL cr);
-  predicate((n->as_Vector()->length() == 2));
+  predicate((n->as_Vector()->length() == 2) && Matcher::vector_element_basic_type(n) == T_INT);
   format %{ "REPLIC2I $dst,$src\t # pack2I" %}
   ins_encode %{
     if ($dst$$Register != $src$$Register) {
@@ -10658,8 +10572,8 @@ instruct Repl2I_reg_risbg(iRegL dst, iRegI src, flagsReg cr) %{
 
 // Replicate scalar int to packed int values (8 Bytes).
 instruct Repl2I_imm(iRegL dst, immI_n0m1 src) %{
-  match(Set dst (ReplicateI src));
-  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 2 && Matcher::vector_element_basic_type(n) == T_INT);
   ins_should_rematerialize(true);
   format %{ "REPLIC2I $dst,$src\t # pack2I imm" %}
   ins_encode %{
@@ -10674,8 +10588,8 @@ instruct Repl2I_imm(iRegL dst, immI_n0m1 src) %{
 
 // Replicate scalar int to packed int values (8 Bytes).
 instruct Repl2I_imm0(iRegL dst, immI_0 src) %{
-  match(Set dst (ReplicateI src));
-  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 2 && Matcher::vector_element_basic_type(n) == T_INT);
   ins_should_rematerialize(true);
   format %{ "REPLIC2I $dst,$src\t # pack2I imm0" %}
   ins_encode %{ __ z_laz($dst$$Register, 0, Z_R0); %}
@@ -10684,8 +10598,8 @@ instruct Repl2I_imm0(iRegL dst, immI_0 src) %{
 
 // Replicate scalar int to packed int values (8 Bytes).
 instruct Repl2I_immm1(iRegL dst, immI_minus1 src) %{
-  match(Set dst (ReplicateI src));
-  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 2 && Matcher::vector_element_basic_type(n) == T_INT);
   ins_should_rematerialize(true);
   format %{ "REPLIC2I $dst,$src\t # pack2I immm1" %}
   ins_encode %{ __ z_lghi($dst$$Register, -1); %}
@@ -10695,9 +10609,10 @@ instruct Repl2I_immm1(iRegL dst, immI_minus1 src) %{
 //
 
 instruct Repl2F_reg_indirect(iRegL dst, regF src, flagsReg cr) %{
-  match(Set dst (ReplicateF src));
+  match(Set dst (Replicate src));
   effect(KILL cr);
-  predicate(!VM_Version::has_FPSupportEnhancements() && n->as_Vector()->length() == 2);
+  predicate(!VM_Version::has_FPSupportEnhancements() && n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_FLOAT);
   format %{ "REPLIC2F $dst,$src\t # pack2F indirect" %}
   expand %{
     stackSlotF tmp;
@@ -10710,9 +10625,10 @@ instruct Repl2F_reg_indirect(iRegL dst, regF src, flagsReg cr) %{
 
 // Replicate scalar float to packed float values in GREG (8 Bytes).
 instruct Repl2F_reg_direct(iRegL dst, regF src, flagsReg cr) %{
-  match(Set dst (ReplicateF src));
+  match(Set dst (Replicate src));
   effect(KILL cr);
-  predicate(VM_Version::has_FPSupportEnhancements() && n->as_Vector()->length() == 2);
+  predicate(VM_Version::has_FPSupportEnhancements() && n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_FLOAT);
   format %{ "REPLIC2F $dst,$src\t # pack2F direct" %}
   ins_encode %{
     assert(VM_Version::has_FPSupportEnhancements(), "encoder should never be called on old H/W");
@@ -10727,8 +10643,8 @@ instruct Repl2F_reg_direct(iRegL dst, regF src, flagsReg cr) %{
 
 // Replicate scalar float immediate to packed float values in GREG (8 Bytes).
 instruct Repl2F_imm(iRegL dst, immF src) %{
-  match(Set dst (ReplicateF src));
-  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 2 && Matcher::vector_element_basic_type(n) == T_FLOAT);
   ins_should_rematerialize(true);
   format %{ "REPLIC2F $dst,$src\t # pack2F imm" %}
   ins_encode %{
@@ -10746,8 +10662,8 @@ instruct Repl2F_imm(iRegL dst, immF src) %{
 // Replicate scalar float immediate zeroes to packed float values in GREG (8 Bytes).
 // Do this only for 'real' zeroes, especially don't loose sign of negative zeroes.
 instruct Repl2F_imm0(iRegL dst, immFp0 src) %{
-  match(Set dst (ReplicateF src));
-  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 2 && Matcher::vector_element_basic_type(n) == T_FLOAT);
   ins_should_rematerialize(true);
   format %{ "REPLIC2F $dst,$src\t # pack2F imm0" %}
   ins_encode %{ __ z_laz($dst$$Register, 0, Z_R0); %}
@@ -10820,7 +10736,7 @@ instruct bytes_reverse_long(iRegL dst, iRegL src) %{
 // returns the bit position of the leftmost 1 in the 64bit source register.
 // As the bits are numbered from left to right (0..63), the returned
 // position index is equivalent to the number of leading zeroes.
-// If no 1-bit is found (i.e. the regsiter contains zero), the instruction
+// If no 1-bit is found (i.e. the register contains zero), the instruction
 // returns position 64. That's exactly what we need.
 
 instruct countLeadingZerosI(revenRegI dst, iRegI src, roddRegI tmp, flagsReg cr) %{

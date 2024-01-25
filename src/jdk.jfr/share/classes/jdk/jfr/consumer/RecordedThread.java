@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,9 +53,12 @@ public final class RecordedThread extends RecordedObject {
     /**
      * Returns the thread ID used by the operating system.
      *
-     * @return The Java thread ID, or {@code -1} if doesn't exist
+     * @return the OS thread ID, or {@code -1} if doesn't exist
      */
     public long getOSThreadId() {
+        if (isVirtual()) {
+            return -1L;
+        }
         Long l = getTyped("osThreadId", Long.class, -1L);
         return l.longValue();
     }
@@ -85,10 +88,13 @@ public final class RecordedThread extends RecordedObject {
      * Returns the Java thread ID, or {@code -1} if it's not a Java thread.
      *
      * @return the Java thread ID, or {@code -1} if it's not a Java thread
+     *
+     * @see java.lang.Thread#threadId()
      */
     public long getJavaThreadId() {
         Long l = getTyped("javaThreadId", Long.class, -1L);
-        return l.longValue();
+        long id = l.longValue();
+        return id == 0 ? -1L : id;
     }
 
     /**
@@ -96,11 +102,24 @@ public final class RecordedThread extends RecordedObject {
      * reused within the lifespan of the JVM.
      * <p>
      * See {@link #getJavaThreadId()} for the ID that is returned by
-     * {@code java.lang.Thread.getId()}
+     * {@code java.lang.Thread.threadId()}.
+     * <p>
+     * See {@link #getOSThreadId()} for the ID that is returned by
+     * the operating system.
      *
      * @return a unique ID for the thread
      */
     public long getId() {
         return uniqueId;
     }
+
+    /**
+     * {@return {@code true} if this is a virtual Thread, {@code false} otherwise}
+     *
+     * @since 21
+     */
+    public boolean isVirtual() {
+        return getTyped("virtual", Boolean.class, Boolean.FALSE);
+    }
+
 }

@@ -1,5 +1,5 @@
  /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,7 +176,7 @@ public class ProfileOptionTest {
                             new DiagnosticCollector<JavaFileObject>();
                     List<String> opts = (p == Profile.DEFAULT)
                             ? Collections.<String>emptyList()
-                            : Arrays.asList("--release", "8", "-profile", p.name);
+                        : Arrays.asList("--release", "8", "-profile", p.name, "-Xlint:-options");
                     JavacTask task = (JavacTask) javac.getTask(null, fm, dl, opts, null,
                             Arrays.asList(fo));
                     task.analyze();

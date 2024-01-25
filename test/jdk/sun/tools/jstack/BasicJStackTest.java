@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import jdk.test.lib.JDKToolLauncher;
 
 /*
  * @test
+ * @bug 8273187
  * @summary Unit test for jstack utility
  * @library /test/lib
  * @run main BasicJStackTest
@@ -74,6 +75,7 @@ public class BasicJStackTest {
         launcher.addVMArgs(Utils.getFilteredTestJavaOpts("-XX:+UsePerfData"));
         launcher.addVMArg("-XX:+UsePerfData");
         launcher.addVMArg("-Dfile.encoding=" + cs);
+        launcher.addVMArg("-Dsun.stdout.encoding=" + cs);
         if (toolArgs != null) {
             for (String toolArg : toolArgs) {
                 launcher.addToolArg(toolArg);

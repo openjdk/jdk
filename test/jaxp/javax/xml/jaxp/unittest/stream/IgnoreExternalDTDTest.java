@@ -36,7 +36,7 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.IgnoreExternalDTDTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.IgnoreExternalDTDTest
  * @run testng/othervm stream.IgnoreExternalDTDTest
  * @summary Test feature ignore-external-dtd.
  */

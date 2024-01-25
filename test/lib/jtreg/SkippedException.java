@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ package jtreg;
  * of skipped status.
  */
 public final class SkippedException extends RuntimeException {
+    private static final long serialVersionUID = 1347132660681446077L;
+
     public SkippedException(String s, Throwable t) {
         super(s, t);
     }

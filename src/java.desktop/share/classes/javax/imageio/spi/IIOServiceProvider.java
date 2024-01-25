@@ -65,9 +65,9 @@ public abstract class IIOServiceProvider implements RegisterableService {
      * @param vendorName the vendor name.
      * @param version a version identifier.
      *
-     * @exception IllegalArgumentException if {@code vendorName}
+     * @throws IllegalArgumentException if {@code vendorName}
      * is {@code null}.
-     * @exception IllegalArgumentException if {@code version}
+     * @throws IllegalArgumentException if {@code version}
      * is {@code null}.
      */
     public IIOServiceProvider(String vendorName,

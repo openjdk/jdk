@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_CLASSFILE_STACKMAPTABLEFORMAT_HPP
 
 #include "classfile/verificationType.hpp"
+#include "utilities/checkedCast.hpp"
 
 // These classes represent the stack-map substructures described in the JVMS
 // (hence the non-conforming naming scheme).
@@ -41,11 +42,11 @@ class verification_type_info {
   address tag_addr() const { return (address)this; }
   address cpool_index_addr() const { return tag_addr() + sizeof(u1); }
   address bci_addr() const { return cpool_index_addr(); }
+  NONCOPYABLE(verification_type_info);
 
  protected:
   // No constructors  - should be 'private', but GCC issues a warning if it is
   verification_type_info() {}
-  verification_type_info(const verification_type_info&) {}
 
  public:
 
@@ -169,12 +170,13 @@ FOR_EACH_STACKMAP_FRAME_TYPE(SM_FORWARD_DECL, x, x)
 #undef SM_FORWARD_DECL
 
 class stack_map_frame {
+  NONCOPYABLE(stack_map_frame);
+
  protected:
   address frame_type_addr() const { return (address)this; }
 
   // No constructors  - should be 'private', but GCC issues a warning if it is
   stack_map_frame() {}
-  stack_map_frame(const stack_map_frame&) {}
 
  public:
 
@@ -209,7 +211,7 @@ class stack_map_frame {
 #define FRAME_TYPE_DECL(stackmap_frame_type, arg1, arg2) \
   inline stackmap_frame_type* as_##stackmap_frame_type() const; \
   bool is_##stackmap_frame_type() { \
-    return as_##stackmap_frame_type() != NULL; \
+    return as_##stackmap_frame_type() != nullptr; \
   }
 
   FOR_EACH_STACKMAP_FRAME_TYPE(FRAME_TYPE_DECL, x, x)
@@ -221,7 +223,7 @@ class same_frame : public stack_map_frame {
   static int frame_type_to_offset_delta(u1 frame_type) {
       return frame_type + 1; }
   static u1 offset_delta_to_frame_type(int offset_delta) {
-      return (u1)(offset_delta - 1); }
+      return checked_cast<u1>(offset_delta - 1); }
 
  public:
 
@@ -251,7 +253,7 @@ class same_frame : public stack_map_frame {
   }
 
   int number_of_types() const { return 0; }
-  verification_type_info* types() const { return NULL; }
+  verification_type_info* types() const { return nullptr; }
 
   bool is_valid_offset(int offset_delta) const {
     return is_frame_type(offset_delta_to_frame_type(offset_delta));
@@ -300,11 +302,11 @@ class same_frame_extended : public stack_map_frame {
   }
 
   void set_offset_delta(int offset_delta) {
-    Bytes::put_Java_u2(offset_delta_addr(), offset_delta - 1);
+    Bytes::put_Java_u2(offset_delta_addr(), checked_cast<u2>(offset_delta - 1));
   }
 
   int number_of_types() const { return 0; }
-  verification_type_info* types() const { return NULL; }
+  verification_type_info* types() const { return nullptr; }
   bool is_valid_offset(int offset) const { return true; }
 
   bool verify_subtype(address start, address end) const {
@@ -343,7 +345,7 @@ class same_locals_1_stack_item_frame : public stack_map_frame {
       address addr, int offset_delta, verification_type_info* vti) {
     same_locals_1_stack_item_frame* sm = (same_locals_1_stack_item_frame*)addr;
     sm->set_offset_delta(offset_delta);
-    if (vti != NULL) {
+    if (vti != nullptr) {
       sm->set_type(vti);
     }
     return sm;
@@ -420,7 +422,7 @@ class same_locals_1_stack_item_extended : public stack_map_frame {
        (same_locals_1_stack_item_extended*)addr;
     sm->set_frame_type(_frame_id);
     sm->set_offset_delta(offset_delta);
-    if (vti != NULL) {
+    if (vti != nullptr) {
       sm->set_type(vti);
     }
     return sm;
@@ -436,7 +438,7 @@ class same_locals_1_stack_item_extended : public stack_map_frame {
   }
 
   void set_offset_delta(int offset_delta) {
-    Bytes::put_Java_u2(offset_delta_addr(), offset_delta - 1);
+    Bytes::put_Java_u2(offset_delta_addr(), checked_cast<u2>(offset_delta - 1));
   }
 
   void set_type(verification_type_info* vti) {
@@ -477,7 +479,7 @@ class chop_frame : public stack_map_frame {
   }
 
   static u1 chops_to_frame_type(int chop) {
-    return 251 - chop;
+    return checked_cast<u1>(251 - chop);
   }
 
  public:
@@ -506,7 +508,7 @@ class chop_frame : public stack_map_frame {
     return Bytes::get_Java_u2(offset_delta_addr()) + 1;
   }
   void set_offset_delta(int offset_delta) {
-    Bytes::put_Java_u2(offset_delta_addr(), offset_delta - 1);
+    Bytes::put_Java_u2(offset_delta_addr(), checked_cast<u2>(offset_delta - 1));
   }
 
   int chops() const {
@@ -520,7 +522,7 @@ class chop_frame : public stack_map_frame {
   }
 
   int number_of_types() const { return 0; }
-  verification_type_info* types() const { return NULL; }
+  verification_type_info* types() const { return nullptr; }
   bool is_valid_offset(int offset) { return true; }
 
   bool verify_subtype(address start, address end) const {
@@ -548,7 +550,7 @@ class append_frame : public stack_map_frame {
 
   static u1 appends_to_frame_type(int appends) {
     assert(appends > 0 && appends < 4, "Invalid append amount");
-    return 251 + appends;
+    return checked_cast<u1>(251 + appends);
   }
 
  public:
@@ -567,7 +569,7 @@ class append_frame : public stack_map_frame {
     append_frame* sm = (append_frame*)addr;
     sm->set_appends(appends);
     sm->set_offset_delta(offset_delta);
-    if (types != NULL) {
+    if (types != nullptr) {
       verification_type_info* cur = sm->types();
       for (int i = 0; i < appends; ++i) {
         cur->copy_from(types);
@@ -597,7 +599,7 @@ class append_frame : public stack_map_frame {
   }
 
   void set_offset_delta(int offset_delta) {
-    Bytes::put_Java_u2(offset_delta_addr(), offset_delta - 1);
+    Bytes::put_Java_u2(offset_delta_addr(), checked_cast<u2>(offset_delta - 1));
   }
 
   void set_appends(int appends) {
@@ -679,7 +681,7 @@ class full_frame : public stack_map_frame {
     sm->set_frame_type(_frame_id);
     sm->set_offset_delta(offset_delta);
     sm->set_num_locals(num_locals);
-    if (locals != NULL) {
+    if (locals != nullptr) {
       verification_type_info* cur = sm->locals();
       for (int i = 0; i < num_locals; ++i) {
         cur->copy_from(locals);
@@ -747,13 +749,13 @@ class full_frame : public stack_map_frame {
   }
 
   void set_offset_delta(int offset_delta) {
-    Bytes::put_Java_u2(offset_delta_addr(), offset_delta - 1);
+    Bytes::put_Java_u2(offset_delta_addr(), checked_cast<u2>(offset_delta - 1));
   }
   void set_num_locals(int num_locals) {
-    Bytes::put_Java_u2(num_locals_addr(), num_locals);
+    Bytes::put_Java_u2(num_locals_addr(), checked_cast<u2>(num_locals));
   }
   void set_stack_slots(address end_of_locals, int stack_slots) {
-    Bytes::put_Java_u2(stack_slots_addr(end_of_locals), stack_slots);
+    Bytes::put_Java_u2(stack_slots_addr(end_of_locals), checked_cast<u2>(stack_slots));
   }
 
   // These return only the locals.  Extra processing is required for stack
@@ -821,13 +823,13 @@ class full_frame : public stack_map_frame {
 
 #define VIRTUAL_DISPATCH(stack_frame_type, func_name, args) \
   stack_frame_type* item_##stack_frame_type = as_##stack_frame_type(); \
-  if (item_##stack_frame_type != NULL) { \
+  if (item_##stack_frame_type != nullptr) { \
     return item_##stack_frame_type->func_name args;  \
   }
 
 #define VOID_VIRTUAL_DISPATCH(stack_frame_type, func_name, args) \
   stack_frame_type* item_##stack_frame_type = as_##stack_frame_type(); \
-  if (item_##stack_frame_type != NULL) { \
+  if (item_##stack_frame_type != nullptr) { \
     item_##stack_frame_type->func_name args;  \
     return; \
   }
@@ -854,7 +856,7 @@ int stack_map_frame::number_of_types() const {
 
 verification_type_info* stack_map_frame::types() const {
   FOR_EACH_STACKMAP_FRAME_TYPE(VIRTUAL_DISPATCH, types, ());
-  return NULL;
+  return nullptr;
 }
 
 bool stack_map_frame::is_valid_offset(int offset) const {
@@ -886,7 +888,7 @@ stack_frame_type* stack_map_frame::as_##stack_frame_type() const { \
   if (stack_frame_type::is_frame_type(frame_type())) { \
     return (stack_frame_type*)this; \
   } else { \
-    return NULL; \
+    return nullptr; \
   } \
 }
 
@@ -901,11 +903,11 @@ class stack_map_table {
   address entries_addr() const {
     return number_of_entries_addr() + sizeof(u2);
   }
+  NONCOPYABLE(stack_map_table);
 
  protected:
   // No constructors  - should be 'private', but GCC issues a warning if it is
   stack_map_table() {}
-  stack_map_table(const stack_map_table&) {}
 
  public:
 
@@ -933,11 +935,11 @@ class stack_map_table_attribute {
       return name_index_addr() + sizeof(u2); }
   address stack_map_table_addr() const {
       return attribute_length_addr() + sizeof(u4); }
+  NONCOPYABLE(stack_map_table_attribute);
 
  protected:
   // No constructors  - should be 'private', but GCC issues a warning if it is
   stack_map_table_attribute() {}
-  stack_map_table_attribute(const stack_map_table_attribute&) {}
 
  public:
 

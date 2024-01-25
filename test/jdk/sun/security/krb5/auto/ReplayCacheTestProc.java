@@ -25,7 +25,7 @@
  * @test
  * @bug 7152176 8168518 8172017 8014628 8194486
  * @summary More krb5 tests
- * @library ../../../../java/security/testlibrary/ /test/lib
+ * @library /test/lib
  * @build jdk.test.lib.Platform
  * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
  * @run main/othervm/timeout=300 -Djdk.net.hosts.file=TestHosts
@@ -49,6 +49,7 @@ import java.util.regex.Pattern;
 
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Platform;
+import jdk.test.lib.process.Proc;
 import sun.security.jgss.GSSUtil;
 import sun.security.krb5.internal.rcache.AuthTime;
 

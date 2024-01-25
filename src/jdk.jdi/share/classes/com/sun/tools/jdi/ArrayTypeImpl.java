@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,42 +81,8 @@ public class ArrayTypeImpl extends ReferenceTypeImpl
         return new ArrayList<>(0);   // arrays don't have methods
     }
 
-    /*
-     * Find the type object, if any, of a component type of this array.
-     * The component type does not have to be immediate; e.g. this method
-     * can be used to find the component Foo of Foo[][]. This method takes
-     * advantage of the property that an array and its component must have
-     * the same class loader. Since array set operations don't have an
-     * implicit enclosing type like field and variable set operations,
-     * this method is sometimes needed for proper type checking.
-     */
-    Type findComponentType(String signature) throws ClassNotLoadedException {
-
-        JNITypeParser sig = new JNITypeParser(signature);
-        if (sig.isReference()) {
-            // It's a reference type
-            JNITypeParser parser = new JNITypeParser(componentSignature());
-            List<ReferenceType> list = vm.classesByName(parser.typeName());
-            Iterator<ReferenceType> iter = list.iterator();
-            while (iter.hasNext()) {
-                ReferenceType type = iter.next();
-                ClassLoaderReference cl = type.classLoader();
-                if ((cl == null)?
-                         (classLoader() == null) :
-                         (cl.equals(classLoader()))) {
-                    return type;
-                }
-            }
-            // Component class has not yet been loaded
-            throw new ClassNotLoadedException(componentTypeName());
-        } else {
-            // It's a primitive type
-            return vm.primitiveTypeMirror(sig.jdwpTag());
-        }
-    }
-
     public Type componentType() throws ClassNotLoadedException {
-        return findComponentType(componentSignature());
+        return findType(componentSignature());
     }
 
     static boolean isComponentAssignable(Type destination, Type source) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,17 +30,17 @@
 void* GuardedMemory::wrap_copy(const void* ptr, const size_t len, const void* tag) {
   size_t total_sz = GuardedMemory::get_total_size(len);
   void* outerp = os::malloc(total_sz, mtInternal);
-  if (outerp != NULL) {
+  if (outerp != nullptr) {
     GuardedMemory guarded(outerp, len, tag);
     void* innerp = guarded.get_user_ptr();
     memcpy(innerp, ptr, len);
     return innerp;
   }
-  return NULL; // OOM
+  return nullptr; // OOM
 }
 
 bool GuardedMemory::free_copy(void* p) {
-  if (p == NULL) {
+  if (p == nullptr) {
     return true;
   }
   GuardedMemory guarded((u_char*)p);
@@ -53,7 +53,7 @@ bool GuardedMemory::free_copy(void* p) {
 }
 
 void GuardedMemory::print_on(outputStream* st) const {
-  if (_base_addr == NULL) {
+  if (_base_addr == nullptr) {
     st->print_cr("GuardedMemory(" PTR_FORMAT ") not associated to any memory", p2i(this));
     return;
   }

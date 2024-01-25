@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
@@ -70,6 +71,9 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
 
     @Override
     public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
+        String type;
+        String prefix;
+
         switch (qName) {
         //
         // Generic information
@@ -193,7 +197,7 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
             break;
         case "field":
             {
-                String type = attributes.getValue("type");
+                type = attributes.getValue("type");
                 switch (type) {
                 case "era":
                 case "year":
@@ -217,7 +221,7 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
             {
                 // for FormatData
                 // need to keep stand-alone and format, to allow for inheritance in CLDR
-                String type = attributes.getValue("type");
+                type = attributes.getValue("type");
                 if ("stand-alone".equals(type) || "format".equals(type)) {
                     currentContext = type;
                     pushKeyContainer(qName, attributes, type);
@@ -235,7 +239,7 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                     pushIgnoredContainer(qName);
                     break;
                 }
-                String prefix = (currentCalendarType == null) ? "" : currentCalendarType.keyElementName();
+                prefix = (currentCalendarType == null) ? "" : currentCalendarType.keyElementName();
                 currentWidth = attributes.getValue("type");
                 switch (currentWidth) {
                 case "wide":
@@ -262,7 +266,7 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
             {
                 // for FormatData
                 // need to keep stand-alone and format, to allow for multiple inheritance in CLDR
-                String type = attributes.getValue("type");
+                type = attributes.getValue("type");
                 if ("stand-alone".equals(type) || "format".equals(type)) {
                     currentContext = type;
                     pushKeyContainer(qName, attributes, type);
@@ -276,7 +280,7 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                 // for FormatData
                 // create string array for the two types that the JRE knows
                 // keep info about the context type so we can sort out inheritance later
-                String prefix = (currentCalendarType == null) ? "" : currentCalendarType.keyElementName();
+                prefix = (currentCalendarType == null) ? "" : currentCalendarType.keyElementName();
                 currentWidth = attributes.getValue("type");
                 switch (currentWidth) {
                 case "wide":
@@ -303,7 +307,7 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
             // for FormatData
             // need to keep stand-alone and format, to allow for multiple inheritance in CLDR
             {
-                String type = attributes.getValue("type");
+                type = attributes.getValue("type");
                 if ("stand-alone".equals(type) || "format".equals(type)) {
                     currentContext = type;
                     pushKeyContainer(qName, attributes, type);
@@ -437,7 +441,7 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
             {
                 // for FormatData
                 // need to keep stand-alone and format, to allow for inheritance in CLDR
-                String type = attributes.getValue("type");
+                type = attributes.getValue("type");
                 if ("stand-alone".equals(type) || "format".equals(type)) {
                     currentContext = type;
                     pushKeyContainer(qName, attributes, type);
@@ -450,7 +454,7 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
             {
                 // for FormatData
                 // keep info about the context type so we can sort out inheritance later
-                String prefix = (currentCalendarType == null) ? "" : currentCalendarType.keyElementName();
+                prefix = (currentCalendarType == null) ? "" : currentCalendarType.keyElementName();
                 currentWidth = attributes.getValue("type");
                 switch (currentWidth) {
                 case "wide":
@@ -491,7 +495,7 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
             break;
         case "regionFormat":
             {
-                String type = attributes.getValue("type");
+                type = attributes.getValue("type");
                 pushStringEntry(qName, attributes, "timezone.regionFormat" +
                     (type == null ? "" : "." + type));
             }
@@ -533,7 +537,7 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
         // Number format information
         //
         case "decimalFormatLength":
-            String type = attributes.getValue("type");
+            type = attributes.getValue("type");
             if (null == type) {
                 // format data for decimal number format
                 pushStringEntry(qName, attributes,
@@ -584,15 +588,20 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                     // for FormatData
                     // copy string for later assembly into NumberPatterns
                     if (currentContainer instanceof KeyContainer) {
-                        String fStyle = ((KeyContainer)currentContainer).getKey();
-                        if (fStyle.equals("standard")) {
-                            pushStringEntry(qName, attributes,
-                                    currentNumberingSystem + "NumberPatterns/" + containerName.replaceFirst("Format", ""));
-                        } else if (fStyle.equals("accounting") && containerName.equals("currencyFormat")) {
-                            pushStringEntry(qName, attributes,
-                                    currentNumberingSystem + "NumberPatterns/accounting");
-                        } else {
+                        if (attributes.getValue("alt") != null) {
+                            // ignore "alphaNextToNumber", "noCurrency" for currency for now.
                             pushIgnoredContainer(qName);
+                        } else {
+                            String fStyle = ((KeyContainer)currentContainer).getKey();
+                            if (fStyle.equals("standard")) {
+                                pushStringEntry(qName, attributes,
+                                        currentNumberingSystem + "NumberPatterns/" + containerName.replaceFirst("Format", ""));
+                            } else if (fStyle.equals("accounting") && containerName.equals("currencyFormat")) {
+                                pushStringEntry(qName, attributes,
+                                        currentNumberingSystem + "NumberPatterns/accounting");
+                            } else {
+                                pushIgnoredContainer(qName);
+                            }
                         }
                     } else {
                         pushIgnoredContainer(qName);
@@ -617,6 +626,28 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                         }
                     }
                     break;
+
+                case "dateFormat":
+                case "timeFormat":
+                case "dateTimeFormat":
+                    // for FormatData
+                    // copy string for later assembly into DateTimePatterns
+                    if (currentContainer instanceof KeyContainer kc && !"standard".equals(kc.getKey())) {
+                        // only take the standard value for now, ignoring specialized one,
+                        // such as "atTime" for "dateTimeFormat"
+                        pushIgnoredContainer(qName);
+                    } else {
+                        prefix = (currentCalendarType == null) ? "" : currentCalendarType.keyElementName();
+                        pushStringEntry(qName, attributes, prefix + "DateTimePatterns/" + currentStyle +
+                            switch (containerName) {
+                                case "dateFormat" -> "-date";
+                                case "timeFormat" -> "-time";
+                                case "dateTimeFormat" -> "-dateTime";
+                                default -> throw new InternalError();
+                            });
+                    }
+                    break;
+
                 default:
                     pushContainer(qName, attributes);
                     break;
@@ -732,35 +763,45 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
             // copy string for later assembly into NumberElements
             pushStringEntry(qName, attributes, currentNumberingSystem + "NumberElements/nan");
             break;
-        case "timeFormatLength":
-            {
-                // for FormatData
-                // copy string for later assembly into DateTimePatterns
-                String prefix = (currentCalendarType == null) ? "" : currentCalendarType.keyElementName();
-                pushStringEntry(qName, attributes, prefix + "DateTimePatterns/" + attributes.getValue("type") + "-time");
-            }
-            break;
+
         case "dateFormatLength":
-            {
-                // for FormatData
-                // copy string for later assembly into DateTimePatterns
-                String prefix = (currentCalendarType == null) ? "" : currentCalendarType.keyElementName();
-                pushStringEntry(qName, attributes, prefix + "DateTimePatterns/" + attributes.getValue("type") + "-date");
-            }
-            break;
+        case "timeFormatLength":
         case "dateTimeFormatLength":
+            currentStyle = attributes.getValue("type");
+            pushContainer(qName, attributes);
+            break;
+
+        case "dateFormats":
+        case "timeFormats":
+        case "dateTimeFormats":
+            pushContainer(qName, attributes);
+            break;
+
+        case "dateFormat":
+        case "timeFormat":
+        case "dateTimeFormat":
+            pushKeyContainer(qName, attributes, attributes.getValue("type"));
+            break;
+
+        case "dateFormatItem":
             {
                 // for FormatData
-                // copy string for later assembly into DateTimePatterns
-                String prefix = (currentCalendarType == null) ? "" : currentCalendarType.keyElementName();
-                pushStringEntry(qName, attributes, prefix + "DateTimePatterns/" + attributes.getValue("type") + "-dateTime");
+                if (currentCalendarType != null) {
+                    var skeleton = attributes.getValue("id");
+                    CLDRConverter.availableSkeletons.add(skeleton);
+                    pushStringEntry(qName, attributes,
+                            currentCalendarType.keyElementName() + Bundle.DATEFORMATITEM_KEY_PREFIX + skeleton);
+                } else {
+                    pushIgnoredContainer(qName);
+                }
             }
             break;
+
         case "localizedPatternChars":
             {
                 // for FormatData
                 // copy string for later adaptation to JRE use
-                String prefix = (currentCalendarType == null) ? "" : currentCalendarType.keyElementName();
+                prefix = (currentCalendarType == null) ? "" : currentCalendarType.keyElementName();
                 pushStringEntry(qName, attributes, prefix + "DateTimePatternChars");
             }
             break;
@@ -772,12 +813,35 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                         && ((currentContainer.getqName().equals("decimalFormatLength"))
                         || (currentContainer.getqName().equals("currencyFormat"))
                         || (currentContainer.getqName().equals("percentFormat"))
+                        || (currentContainer.getqName().equals("listPattern"))
                         || (currentCalendarType != null && !currentCalendarType.lname().startsWith("islamic-")))) { // ignore islamic variants
                     pushAliasEntry(qName, attributes, attributes.getValue("path"));
                 } else {
                     pushIgnoredContainer(qName);
                 }
             }
+            break;
+
+        // ListPatterns
+        case "listPattern":
+            currentStyle = Optional.ofNullable(attributes.getValue("type")).orElse("standard");
+            pushStringArrayEntry(qName, attributes, "ListPatterns_" + currentStyle, 5);
+            break;
+        case "listPatternPart":
+            type = attributes.getValue("type");
+            pushStringArrayElement(qName, attributes,
+                switch (type) {
+                    case "start" -> 0;
+                    case "middle" -> 1;
+                    case "end" -> 2;
+                    case "2" -> 3;
+                    case "3" -> 4;
+                    default -> throw new IllegalArgumentException(
+                        """
+                        The "type" attribute value for "listPatternPart" element is not recognized: %s
+                        """.formatted(type)
+                    );
+                });
             break;
 
         default:
@@ -933,6 +997,9 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                     "NumberPatterns/" +
                     (type.equals("standard") ? containerqName.replaceFirst("Format", "") : type);
             break;
+        case "listPattern":
+            keyName = type;
+            break;
         default:
             keyName = "";
             break;
@@ -992,6 +1059,19 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
         start = path.indexOf(typeKey);
         if (start != -1) {
             String style = path.substring(start + typeKey.length(), path.indexOf("']", start));
+            return toJDKKey(qName, "", style);
+        }
+
+        // listPattern
+        if (path.indexOf("../listPattern") != -1) {
+            typeKey = "[@type='";
+            start = path.indexOf(typeKey);
+            String style;
+            if (start != -1) {
+                style = "ListPatterns_" + path.substring(start + typeKey.length(), path.indexOf("']", start));
+            } else {
+                style = "ListPatterns_standard";
+            }
             return toJDKKey(qName, "", style);
         }
 
@@ -1062,6 +1142,15 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
             currentNumberingSystem = "";
             putIfEntry();
             break;
+        case "dateFormatLength":
+        case "dateTimeFormatLength":
+        case "timeFormatLength":
+            currentStyle = "";
+            break;
+        case "listPattern":
+            currentStyle = "";
+            putIfEntry();
+            break;
         default:
             putIfEntry();
         }
@@ -1081,6 +1170,12 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                 KeyContainer kc = (KeyContainer)entry.getParent();
                 CLDRConverter.aliases.put(
                         toJDKKey(containerqName, "", kc.getKey()),
+                        getTarget(entry.getKey(), "", "", "")
+                );
+            } else if (containerqName.equals("listPattern")) {
+                var sae = (StringArrayEntry)entry.getParent();
+                CLDRConverter.aliases.put(
+                        toJDKKey(containerqName, "", sae.getKey()),
                         getTarget(entry.getKey(), "", "", "")
                 );
             } else {
@@ -1113,7 +1208,7 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                 if (id.equals("root") && key.startsWith("MonthNames")) {
                     value = new DateFormatSymbols(Locale.US).getShortMonths();
                 }
-                return put(entry.getKey(), value);
+                return put(key, value);
             }
         }
         return null;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,33 +24,46 @@
 #ifndef SHARE_GC_Z_ZWORKERS_HPP
 #define SHARE_GC_Z_ZWORKERS_HPP
 
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
+#include "gc/z/zGenerationId.hpp"
+#include "gc/z/zLock.hpp"
+#include "gc/z/zStat.hpp"
 
 class ThreadClosure;
+class ZRestartableTask;
+class ZStatCycle;
+class ZStatWorkers;
 class ZTask;
 
 class ZWorkers {
 private:
-  bool     _boost;
-  WorkGang _workers;
-
-  void run(ZTask* task, uint nworkers);
+  WorkerThreads       _workers;
+  const char* const   _generation_name;
+  ZLock               _resize_lock;
+  volatile uint       _requested_nworkers;
+  bool                _is_active;
+  ZStatWorkers* const _stats;
 
 public:
-  ZWorkers();
+  ZWorkers(ZGenerationId id, ZStatWorkers* stats);
 
-  uint nparallel() const;
-  uint nparallel_no_boost() const;
-  uint nconcurrent() const;
-  uint nconcurrent_no_boost() const;
-  uint nworkers() const;
+  bool is_active() const;
+  uint active_workers() const;
+  void set_active_workers(uint nworkers);
+  void set_active();
+  void set_inactive();
 
-  void set_boost(bool boost);
-
-  void run_parallel(ZTask* task);
-  void run_concurrent(ZTask* task);
+  void run(ZTask* task);
+  void run(ZRestartableTask* task);
+  void run_all(ZTask* task);
 
   void threads_do(ThreadClosure* tc) const;
+
+  // Worker resizing
+  ZLock* resizing_lock();
+  void request_resize_workers(uint nworkers);
+
+  bool should_worker_resize();
 };
 
 #endif // SHARE_GC_Z_ZWORKERS_HPP

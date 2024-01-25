@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,17 @@
 
 /*
  * @test
- * @bug 4074599
+ * @bug 4074599 8301205
+ * @key randomness
+ * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
+ * @build Tests
+ * @build FdlibmTranslit
+ * @build Log10Tests
+ * @run main Log10Tests
  * @summary Tests for StrictMath.log10
- * @author Joseph D. Darcy
  */
-
+import jdk.test.lib.RandomFactory;
 
 /**
  * The tests in ../Math/Log10Tests.java test properties that should
@@ -43,9 +49,22 @@
 public class Log10Tests {
     private Log10Tests(){}
 
+    public static void main(String... args) {
+        int failures = 0;
+
+        failures += testLog10();
+        failures += testAgainstTranslit();
+
+        if (failures > 0) {
+            System.err.println("Testing log10 incurred "
+                               + failures + " failures.");
+            throw new RuntimeException();
+        }
+    }
+
     static int testLog10Case(double input, double expected) {
         return Tests.test("StrictMath.log10(double)", input,
-                          StrictMath.log10(input), expected);
+                          StrictMath::log10, expected);
     }
 
     static int testLog10() {
@@ -710,15 +729,47 @@ public class Log10Tests {
         return failures;
     }
 
-    public static void main(String [] argv) {
+    // Initialize shared random number generator
+    private static java.util.Random random = RandomFactory.getRandom();
+
+    /**
+     * Test StrictMath.log10 against transliteration port of log10.
+     */
+    private static int testAgainstTranslit() {
         int failures = 0;
+        double x;
 
-        failures += testLog10();
+        // Test just above subnormal threshold...
+        x = Double.MIN_NORMAL;
+        failures += testRange(x, Math.ulp(x), 1000);
 
-        if (failures > 0) {
-            System.err.println("Testing log10 incurred "
-                               + failures + " failures.");
-            throw new RuntimeException();
+        // ... and just below subnormal threshold ...
+         x =  Math.nextDown(Double.MIN_NORMAL);
+         failures += testRange(x, -Math.ulp(x), 1000);
+
+        // ... and near 1.0 ...
+         x = 1.0;
+         failures += testRange(x, Math.ulp(x), 1000);
+         x = Math.nextDown(1.0);
+         failures += testRange(x, -Math.ulp(x), 1000);
+
+         x = Tests.createRandomDouble(random);
+
+         // Make the increment twice the ulp value in case the random
+         // value is near an exponent threshold. Don't worry about test
+         // elements overflowing to infinity if the starting value is
+         // near Double.MAX_VALUE.
+         failures += testRange(x, 2.0 * Math.ulp(x), 1000);
+
+         return failures;
+    }
+
+    private static int testRange(double start, double increment, int count) {
+        int failures = 0;
+        double x = start;
+        for (int i = 0; i < count; i++, x += increment) {
+            failures += testLog10Case(x, FdlibmTranslit.log10(x));
         }
+        return failures;
     }
 }

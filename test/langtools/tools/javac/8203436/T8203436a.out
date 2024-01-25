@@ -1,2 +1,2 @@
-- compiler.err.cannot.generate.class: compiler.misc.anonymous.class: T8203436a$1, (compiler.misc.illegal.signature: compiler.misc.anonymous.class: T8203436a$1, compiler.misc.type.captureof: 1, ?)
+T8203436a.java:12:7: compiler.err.enclosing.class.type.non.denotable: T8203436a<compiler.misc.type.captureof: 1, ?>
 1 error

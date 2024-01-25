@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -138,7 +138,10 @@ ifeq ($(HAS_SPEC),)
     # The spec files depend on the autoconf source code. This check makes sure
     # the configuration is up to date after changes to configure.
     $(SPECS): $(wildcard $(topdir)/make/autoconf/*) \
-            $(if $(CUSTOM_CONFIG_DIR), $(wildcard $(CUSTOM_CONFIG_DIR)/*))
+            $(if $(CUSTOM_CONFIG_DIR), $(wildcard $(CUSTOM_CONFIG_DIR)/*)) \
+            $(addprefix $(topdir)/make/conf/, version-numbers.conf branding.conf) \
+            $(if $(CUSTOM_CONF_DIR), $(wildcard $(addprefix $(CUSTOM_CONF_DIR)/, \
+                version-numbers.conf branding.conf)))
         ifeq ($(CONF_CHECK), fail)
 	  @echo Error: The configuration is not up to date for \
 	      "'$(lastword $(subst /, , $(dir $@)))'."
@@ -277,15 +280,20 @@ else # HAS_SPEC=true
 	  $(ECHO) $(CONFIGURE_COMMAND_LINE)
 
   reconfigure:
-        ifneq ($(CONFIGURE_COMMAND_LINE), )
+        ifneq ($(REAL_CONFIGURE_COMMAND_EXEC_FULL), )
+	  $(ECHO) "Re-running configure using original command line '$(REAL_CONFIGURE_COMMAND_EXEC_SHORT) $(REAL_CONFIGURE_COMMAND_LINE)'"
+	  $(eval RECONFIGURE_COMMAND := $(REAL_CONFIGURE_COMMAND_EXEC_FULL) $(REAL_CONFIGURE_COMMAND_LINE))
+        else ifneq ($(CONFIGURE_COMMAND_LINE), )
 	  $(ECHO) "Re-running configure using arguments '$(CONFIGURE_COMMAND_LINE)'"
+	  $(eval RECONFIGURE_COMMAND := $(BASH) $(TOPDIR)/configure $(CONFIGURE_COMMAND_LINE))
         else
 	  $(ECHO) "Re-running configure using default settings"
+	  $(eval RECONFIGURE_COMMAND := $(BASH) $(TOPDIR)/configure)
         endif
 	( cd $(CONFIGURE_START_DIR) && PATH="$(ORIGINAL_PATH)" AUTOCONF="$(AUTOCONF)" \
 	    CUSTOM_ROOT="$(CUSTOM_ROOT)" \
 	    CUSTOM_CONFIG_DIR="$(CUSTOM_CONFIG_DIR)" \
-	    $(BASH) $(TOPDIR)/configure $(CONFIGURE_COMMAND_LINE) )
+	    $(RECONFIGURE_COMMAND) )
 
   ##############################################################################
   # The main target, for delegating into Main.gmk
@@ -319,7 +327,7 @@ else # HAS_SPEC=true
           ifneq ($(PARALLEL_TARGETS), )
 	    $(call PrepareFailureLogs)
 	    $(call StartGlobalTimer)
-	    $(call PrepareSmartJavac)
+	    $(call PrepareJavacServer)
             # JOBS will only be empty for a bootcycle-images recursive call
             # or if specified via a make argument directly. In those cases
             # treat it as NOT using jobs at all.
@@ -334,7 +342,7 @@ else # HAS_SPEC=true
 	        cd $(TOPDIR) && $(MAKE) $(MAKE_ARGS) -j 1 -f make/Init.gmk \
 	            HAS_SPEC=true on-failure ; \
 	        exit $$exitcode ) )
-	    $(call CleanupSmartJavac)
+	    $(call CleanupJavacServer)
 	    $(call StopGlobalTimer)
 	    $(call ReportBuildTimes)
           endif
@@ -346,24 +354,24 @@ else # HAS_SPEC=true
         endif
 
     on-failure:
-	$(call CleanupSmartJavac)
+	$(call CleanupJavacServer)
 	$(call StopGlobalTimer)
 	$(call ReportBuildTimes)
 	$(call PrintFailureReports)
 	$(call PrintBuildLogFailures)
 	$(call ReportProfileTimes)
-	$(PRINTF) "Hint: See doc/building.html#troubleshooting for assistance.\n\n"
+	$(PRINTF) "HELP: Run 'make doctor' to diagnose build problems.\n\n"
         ifneq ($(COMPARE_BUILD), )
 	  $(call CleanupCompareBuild)
         endif
 
     # Support targets for COMPARE_BUILD, used for makefile development
     pre-compare-build:
-	$(call WaitForSmartJavacFinish)
+	$(call WaitForJavacServerFinish)
 	$(call PrepareCompareBuild)
 
     post-compare-build:
-	$(call WaitForSmartJavacFinish)
+	$(call WaitForJavacServerFinish)
 	$(call CleanupCompareBuild)
 	$(call CompareBuildDoComparison)
 

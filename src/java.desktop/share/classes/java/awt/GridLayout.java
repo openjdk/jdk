@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,7 +186,7 @@ public class GridLayout implements LayoutManager, java.io.Serializable {
      *                   any number of columns
      * @param     hgap   the horizontal gap
      * @param     vgap   the vertical gap
-     * @exception   IllegalArgumentException  if the value of both
+     * @throws   IllegalArgumentException  if the value of both
      *                  {@code rows} and {@code cols} is
      *                  set to zero
      */
@@ -212,7 +212,7 @@ public class GridLayout implements LayoutManager, java.io.Serializable {
     /**
      * Sets the number of rows in this layout to the specified value.
      * @param        rows   the number of rows in this layout
-     * @exception    IllegalArgumentException  if the value of both
+     * @throws    IllegalArgumentException  if the value of both
      *               {@code rows} and {@code cols} is set to zero
      * @since        1.1
      */
@@ -234,13 +234,13 @@ public class GridLayout implements LayoutManager, java.io.Serializable {
 
     /**
      * Sets the number of columns in this layout to the specified value.
-     * Setting the number of columns has no affect on the layout
+     * Setting the number of columns has no effect on the layout
      * if the number of rows specified by a constructor or by
      * the {@code setRows} method is non-zero. In that case, the number
      * of columns displayed in the layout is determined by the total
      * number of components and the number of rows specified.
      * @param        cols   the number of columns in this layout
-     * @exception    IllegalArgumentException  if the value of both
+     * @throws    IllegalArgumentException  if the value of both
      *               {@code rows} and {@code cols} is set to zero
      * @since        1.1
      */
@@ -435,10 +435,10 @@ public class GridLayout implements LayoutManager, java.io.Serializable {
             nrows = (ncomponents + ncols - 1) / ncols;
         }
         // 4370316. To position components in the center we should:
-        // 1. get an amount of extra space within Container
+        // 1. get the amount of extra space within Container
         // 2. incorporate half of that value to the left/top position
-        // Note that we use trancating division for widthOnComponent
-        // The reminder goes to extraWidthAvailable
+        // Note that we use truncating division for widthOnComponent
+        // The remainder goes to extraWidthAvailable
         int totalGapsWidth = (ncols - 1) * hgap;
         int widthWOInsets = parent.width - (insets.left + insets.right);
         int widthOnComponent = (widthWOInsets - totalGapsWidth) / ncols;

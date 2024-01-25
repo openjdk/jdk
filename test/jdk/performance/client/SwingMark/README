@@ -1,0 +1,112 @@
+A Basic Performance Benchmark for Swing components.
+==================================================
+
+Introduction
+------------
+SwingMark is a small suite of automated benchmark tests created to test
+the speed of the Swing components. It is designed to be extensible so that
+it is easy to add new tests. Each test can be run inside the SwingMarkPanel
+test harness, or as a stand alone application.
+
+Getting Started
+---------------
+
+To build and run, add make, java and javac to your PATH and just type
+% make run
+
+This will build if needed, then execute
+
+% java -jar dist/SwingMark.jar -q
+
+Results will be output to the console.
+The "-q" causes SwingMark to exit when it is finished.
+
+If you run directly as below without -q you can click on the close item of the SwingMark window.
+
+% java -jar dist/SwingMark.jar
+
+In addition the tests can be run individually.
+For example, you could type the following:
+
+% java -cp SwingMark.jar SliderTest
+
+This will run the SliderTest as a stand alone application.
+
+Command Line Options
+====================
+
+There are several command line options you can use to control the harness.
+These include:
+
+* Repeat (-r)
+-------------
+The repeat option can be used to run the test suite multiple times inside the
+same VM invocation. For example:
+
+% java -jar SwingMark.jar -r 5
+
+will run the suite 5 times in succession.
+
+* LookAndFeel (-lf)
+-----------------
+
+You can use the -lf option to choose the Swing L&F with which to run the test.
+For example:
+
+% java SwingMark -lf com.sun.java.swing.plaf.motif.MotifLookAndFeel
+
+will run the suite using the Motif L&F.
+
+Quit (-q)
+------------
+
+The -q option will cause the suite to automatically exit when the run is completed.
+
+Version (-version)
+------------------
+
+The -version option will cause a string to be printed to the console
+which indicates the version of the suite you are running.
+
+Generate Report File (-f)
+-------------------------
+
+The -f option will cause a text file to be generate containing information
+about the time it took to execute each test.
+This is a simple XML file which contains run times for each test.
+For example:
+% java -jar SwingMark.jar -f TestTimes.txt
+
+Generate Memory Report (-m)
+--------------------------
+
+The -m option will cause a text file to be generate containing information
+the amount of memory used during the test.
+For example:
+% java -jar SwingMark.jar -m MemoryData.txt
+
+Note that all these options can be combined in any order desired.
+For example:
+% java SwingMark -q -r 4 -lf com.me.MyLookAndFeel -f Test.txt
+
+Test Selection
+==============
+
+A file called TestList.txt in the CWD can be used to over-ride which sets of tests are run.
+A default file is built-in to SwingMark as a resource.
+
+The default file content looks like this :-
+JMTest_04
+TextAreaTest
+SliderTest
+ListTest
+TableRowTest
+TreeTest
+
+Creating New Tests
+==================
+
+To create a new test, you'll need to extend AbstractSwingTest.
+See the JavaDoc for details on what each method does.
+Then add the name of your class to the "TestList.txt" file.
+This makes it easy to run arbitrary combinations of tests.

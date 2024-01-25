@@ -38,7 +38,7 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true javax.xml.transform.ptests.othervm.TFCErrorTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow javax.xml.transform.ptests.othervm.TFCErrorTest
  * @run testng/othervm javax.xml.transform.ptests.othervm.TFCErrorTest
  */
 @Listeners({jaxp.library.BasePolicy.class})

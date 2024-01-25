@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,6 @@ package gc.arguments;
 
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
-
 
 // Range of NewSizeThreadIncrease is 0 ~ max_uintx.
 // Total of 5 threads will be created (1 GCTest thread and 4 TestThread).
@@ -67,14 +65,13 @@ public class TestNewSizeThreadIncrease {
   }
 
   static void runNewSizeThreadIncreaseTest(String expectedValue, boolean isNewsizeChanged) throws Exception {
-    ProcessBuilder pb = GCArguments.createJavaProcessBuilder("-XX:+UseSerialGC",
-                                                             "-Xms96M",
-                                                             "-Xmx128M",
-                                                             "-XX:NewRatio=2",
-                                                             "-Xlog:gc+heap+ergo=debug",
-                                                             "-XX:NewSizeThreadIncrease="+expectedValue,
-                                                             GCTest.class.getName());
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
+    OutputAnalyzer output = GCArguments.executeLimitedTestJava("-XX:+UseSerialGC",
+                                                               "-Xms96M",
+                                                               "-Xmx128M",
+                                                               "-XX:NewRatio=2",
+                                                               "-Xlog:gc+heap+ergo=debug",
+                                                               "-XX:NewSizeThreadIncrease="+expectedValue,
+                                                               GCTest.class.getName());
 
     output.shouldHaveExitValue(0);
 

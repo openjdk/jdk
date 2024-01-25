@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,7 +25,6 @@
 
 #include "precompiled.hpp"
 #include "asm/assembler.hpp"
-#include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/zero/bytecodeInterpreter.hpp"
@@ -51,12 +50,12 @@
 #include "stack_zero.inline.hpp"
 
 void ZeroInterpreter::initialize_stub() {
-  if (_code != NULL) return;
+  if (_code != nullptr) return;
 
   // generate interpreter
   int code_size = InterpreterCodeSize;
   NOT_PRODUCT(code_size *= 4;)  // debug uses extra interpreter code space
-  _code = new StubQueue(new InterpreterCodeletInterface, code_size, NULL,
+  _code = new StubQueue(new InterpreterCodeletInterface, code_size, nullptr,
                          "Interpreter");
 }
 
@@ -66,16 +65,8 @@ void ZeroInterpreter::initialize_code() {
   // generate interpreter
   { ResourceMark rm;
     TraceTime timer("Interpreter generation", TRACETIME_LOG(Info, startuptime));
-    ZeroInterpreterGenerator g(_code);
+    ZeroInterpreterGenerator g;
     if (PrintInterpreter) print();
-  }
-
-  // Allow c++ interpreter to do one initialization now that switches are set, etc.
-  BytecodeInterpreter start_msg(BytecodeInterpreter::initialize);
-  if (JvmtiExport::can_post_interpreter_events()) {
-    BytecodeInterpreter::run<true>(&start_msg);
-  } else {
-    BytecodeInterpreter::run<false>(&start_msg);
   }
 }
 
@@ -109,7 +100,7 @@ InterpreterCodelet* ZeroInterpreter::codelet_containing(address pc) {
   fixup_after_potential_safepoint()
 
 int ZeroInterpreter::normal_entry(Method* method, intptr_t UNUSED, TRAPS) {
-  JavaThread *thread = THREAD->as_Java_thread();
+  JavaThread *thread = THREAD;
 
   // Allocate and initialize our frame.
   InterpreterFrame *frame = InterpreterFrame::build(method, CHECK_0);
@@ -123,14 +114,14 @@ int ZeroInterpreter::normal_entry(Method* method, intptr_t UNUSED, TRAPS) {
 }
 
 int ZeroInterpreter::Reference_get_entry(Method* method, intptr_t UNUSED, TRAPS) {
-  JavaThread* thread = THREAD->as_Java_thread();
+  JavaThread* thread = THREAD;
   ZeroStack* stack = thread->zero_stack();
   intptr_t* topOfStack = stack->sp();
 
   oop ref = STACK_OBJECT(0);
 
-  // Shortcut if reference is known NULL
-  if (ref == NULL) {
+  // Shortcut if reference is known null
+  if (ref == nullptr) {
     return normal_entry(method, 0, THREAD);
   }
 
@@ -171,7 +162,7 @@ intptr_t narrow(BasicType type, intptr_t result) {
 
 
 void ZeroInterpreter::main_loop(int recurse, TRAPS) {
-  JavaThread *thread = THREAD->as_Java_thread();
+  JavaThread *thread = THREAD;
   ZeroStack *stack = thread->zero_stack();
 
   // If we are entering from a deopt we may need to call
@@ -183,7 +174,7 @@ void ZeroInterpreter::main_loop(int recurse, TRAPS) {
   interpreterState istate = frame->interpreter_state();
   Method* method = istate->method();
 
-  intptr_t *result = NULL;
+  intptr_t *result = nullptr;
   int result_slots = 0;
 
   while (true) {
@@ -195,11 +186,31 @@ void ZeroInterpreter::main_loop(int recurse, TRAPS) {
 
     // Call the interpreter
     if (JvmtiExport::can_post_interpreter_events()) {
-      BytecodeInterpreter::run<true>(istate);
+      if (RewriteBytecodes) {
+        BytecodeInterpreter::run<true, true>(istate);
+      } else {
+        BytecodeInterpreter::run<true, false>(istate);
+      }
     } else {
-      BytecodeInterpreter::run<false>(istate);
+      if (RewriteBytecodes) {
+        BytecodeInterpreter::run<false, true>(istate);
+      } else {
+        BytecodeInterpreter::run<false, false>(istate);
+      }
     }
     fixup_after_potential_safepoint();
+
+    // If we are unwinding, notify the stack watermarks machinery.
+    // Should do this before resetting the frame anchor.
+    if (istate->msg() == BytecodeInterpreter::return_from_method ||
+        istate->msg() == BytecodeInterpreter::do_osr) {
+      stack_watermark_unwind_check(thread);
+    } else {
+      assert(istate->msg() == BytecodeInterpreter::call_method ||
+             istate->msg() == BytecodeInterpreter::more_monitors ||
+             istate->msg() == BytecodeInterpreter::throwing_exception,
+             "Should be one of these otherwise");
+    }
 
     // Clear the frame anchor
     thread->reset_last_Java_frame();
@@ -243,7 +254,7 @@ void ZeroInterpreter::main_loop(int recurse, TRAPS) {
       istate->set_stack_base(istate->stack_base() - monitor_words);
 
       // Zero the new monitor so the interpreter can find it.
-      ((BasicObjectLock *) istate->stack_base())->set_obj(NULL);
+      ((BasicObjectLock *) istate->stack_base())->set_obj(nullptr);
 
       // Resume the interpreter
       istate->set_msg(BytecodeInterpreter::got_monitors);
@@ -305,7 +316,7 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
   // Make sure method is native and not abstract
   assert(method->is_native() && !method->is_abstract(), "should be");
 
-  JavaThread *thread = THREAD->as_Java_thread();
+  JavaThread *thread = THREAD;
   ZeroStack *stack = thread->zero_stack();
 
   // Allocate and initialize our frame
@@ -316,39 +327,44 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
 
   // Lock if necessary
   BasicObjectLock *monitor;
-  monitor = NULL;
+  monitor = nullptr;
   if (method->is_synchronized()) {
     monitor = (BasicObjectLock*) istate->stack_base();
     oop lockee = monitor->obj();
     markWord disp = lockee->mark().set_unlocked();
-
     monitor->lock()->set_displaced_header(disp);
-    if (lockee->cas_set_mark(markWord::from_pointer(monitor), disp) != disp) {
-      if (thread->is_lock_owned((address) disp.clear_lock_bits().to_pointer())) {
-        monitor->lock()->set_displaced_header(markWord::from_pointer(NULL));
-      }
-      else {
+    bool call_vm = (LockingMode == LM_MONITOR);
+    bool inc_monitor_count = true;
+    if (call_vm || lockee->cas_set_mark(markWord::from_pointer(monitor), disp) != disp) {
+      // Is it simple recursive case?
+      if (!call_vm && thread->is_lock_owned((address) disp.clear_lock_bits().to_pointer())) {
+        monitor->lock()->set_displaced_header(markWord::from_pointer(nullptr));
+      } else {
+        inc_monitor_count = false;
         CALL_VM_NOCHECK(InterpreterRuntime::monitorenter(thread, monitor));
         if (HAS_PENDING_EXCEPTION)
           goto unwind_and_return;
       }
+    }
+    if (inc_monitor_count) {
+      THREAD->inc_held_monitor_count();
     }
   }
 
   // Get the signature handler
   InterpreterRuntime::SignatureHandler *handler; {
     address handlerAddr = method->signature_handler();
-    if (handlerAddr == NULL) {
+    if (handlerAddr == nullptr) {
       CALL_VM_NOCHECK(InterpreterRuntime::prepare_native_call(thread, method));
       if (HAS_PENDING_EXCEPTION)
         goto unlock_unwind_and_return;
 
       handlerAddr = method->signature_handler();
-      assert(handlerAddr != NULL, "eh?");
+      assert(handlerAddr != nullptr, "eh?");
     }
     if (handlerAddr == (address) InterpreterRuntime::slow_signature_handler) {
       CALL_VM_NOCHECK(handlerAddr =
-        InterpreterRuntime::slow_signature_handler(thread, method, NULL,NULL));
+        InterpreterRuntime::slow_signature_handler(thread, method, nullptr,nullptr));
       if (HAS_PENDING_EXCEPTION)
         goto unlock_unwind_and_return;
     }
@@ -359,7 +375,7 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
   // Get the native function entry point
   address function;
   function = method->native_function();
-  assert(function != NULL, "should be set if signature handler is");
+  assert(function != nullptr, "should be set if signature handler is");
 
   // Build the argument list
   stack->overflow_check(handler->argument_count() * 2, THREAD);
@@ -437,6 +453,10 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
   thread->set_thread_state(_thread_in_Java);
   fixup_after_potential_safepoint();
 
+  // Notify the stack watermarks machinery that we are unwinding.
+  // Should do this before resetting the frame anchor.
+  stack_watermark_unwind_check(thread);
+
   // Clear the frame anchor
   thread->reset_last_Java_frame();
 
@@ -445,7 +465,7 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
   // we release the handle it might be protected by.
   if (handler->result_type() == &ffi_type_pointer) {
     if (result[0] == 0) {
-      istate->set_oop_temp(NULL);
+      istate->set_oop_temp(nullptr);
     } else {
       jobject handle = reinterpret_cast<jobject>(result[0]);
       istate->set_oop_temp(JNIHandles::resolve(handle));
@@ -462,14 +482,19 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
     BasicLock *lock = monitor->lock();
     markWord header = lock->displaced_header();
     oop rcvr = monitor->obj();
-    monitor->set_obj(NULL);
+    monitor->set_obj(nullptr);
 
-    if (header.to_pointer() != NULL) {
+    bool dec_monitor_count = true;
+    if (header.to_pointer() != nullptr) {
       markWord old_header = markWord::encode(lock);
       if (rcvr->cas_set_mark(header, old_header) != old_header) {
         monitor->set_obj(rcvr);
+        dec_monitor_count = false;
         InterpreterRuntime::monitorexit(monitor);
       }
+    }
+    if (dec_monitor_count) {
+      THREAD->dec_held_monitor_count();
     }
   }
 
@@ -547,13 +572,20 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
     }
   }
 
+  // Already did every pending exception check here.
+  // If HAS_PENDING_EXCEPTION is true, the interpreter would handle the rest.
+  if (CheckJNICalls) {
+    THREAD->clear_pending_jni_exception_check();
+  }
+
   // No deoptimized frames on the stack
   return 0;
 }
 
 int ZeroInterpreter::getter_entry(Method* method, intptr_t UNUSED, TRAPS) {
+  JavaThread* thread = THREAD;
   // Drop into the slow path if we need a safepoint check
-  if (SafepointMechanism::should_process(THREAD)) {
+  if (SafepointMechanism::should_process(thread)) {
     return normal_entry(method, 0, THREAD);
   }
 
@@ -573,40 +605,41 @@ int ZeroInterpreter::getter_entry(Method* method, intptr_t UNUSED, TRAPS) {
   // Get the entry from the constant pool cache, and drop into
   // the slow path if it has not been resolved
   ConstantPoolCache* cache = method->constants()->cache();
-  ConstantPoolCacheEntry* entry = cache->entry_at(index);
+  ResolvedFieldEntry* entry = cache->resolved_field_entry_at(index);
   if (!entry->is_resolved(Bytecodes::_getfield)) {
     return normal_entry(method, 0, THREAD);
   }
 
-  JavaThread* thread = THREAD->as_Java_thread();
   ZeroStack* stack = thread->zero_stack();
   intptr_t* topOfStack = stack->sp();
 
   // Load the object pointer and drop into the slow path
   // if we have a NullPointerException
   oop object = STACK_OBJECT(0);
-  if (object == NULL) {
+  if (object == nullptr) {
     return normal_entry(method, 0, THREAD);
   }
 
   // If needed, allocate additional slot on stack: we already have one
   // for receiver, and double/long need another one.
-  switch (entry->flag_state()) {
+  switch (entry->tos_state()) {
     case ltos:
     case dtos:
       stack->overflow_check(1, CHECK_0);
       stack->alloc(wordSize);
       topOfStack = stack->sp();
       break;
+    default:
+      ;
   }
 
   // Read the field to stack(0)
-  int offset = entry->f2_as_index();
+  int offset = entry->field_offset();
   if (entry->is_volatile()) {
     if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
       OrderAccess::fence();
     }
-    switch (entry->flag_state()) {
+    switch (entry->tos_state()) {
       case btos:
       case ztos: SET_STACK_INT(object->byte_field_acquire(offset),      0); break;
       case ctos: SET_STACK_INT(object->char_field_acquire(offset),      0); break;
@@ -620,7 +653,7 @@ int ZeroInterpreter::getter_entry(Method* method, intptr_t UNUSED, TRAPS) {
         ShouldNotReachHere();
     }
   } else {
-    switch (entry->flag_state()) {
+    switch (entry->tos_state()) {
       case btos:
       case ztos: SET_STACK_INT(object->byte_field(offset),      0); break;
       case ctos: SET_STACK_INT(object->char_field(offset),      0); break;
@@ -640,8 +673,9 @@ int ZeroInterpreter::getter_entry(Method* method, intptr_t UNUSED, TRAPS) {
 }
 
 int ZeroInterpreter::setter_entry(Method* method, intptr_t UNUSED, TRAPS) {
+  JavaThread* thread = THREAD;
   // Drop into the slow path if we need a safepoint check
-  if (SafepointMechanism::should_process(THREAD)) {
+  if (SafepointMechanism::should_process(thread)) {
     return normal_entry(method, 0, THREAD);
   }
 
@@ -662,19 +696,18 @@ int ZeroInterpreter::setter_entry(Method* method, intptr_t UNUSED, TRAPS) {
   // Get the entry from the constant pool cache, and drop into
   // the slow path if it has not been resolved
   ConstantPoolCache* cache = method->constants()->cache();
-  ConstantPoolCacheEntry* entry = cache->entry_at(index);
+  ResolvedFieldEntry* entry = cache->resolved_field_entry_at(index);
   if (!entry->is_resolved(Bytecodes::_putfield)) {
     return normal_entry(method, 0, THREAD);
   }
 
-  JavaThread* thread = THREAD->as_Java_thread();
   ZeroStack* stack = thread->zero_stack();
   intptr_t* topOfStack = stack->sp();
 
   // Figure out where the receiver is. If there is a long/double
   // operand on stack top, then receiver is two slots down.
-  oop object = NULL;
-  switch (entry->flag_state()) {
+  oop object = nullptr;
+  switch (entry->tos_state()) {
     case ltos:
     case dtos:
       object = STACK_OBJECT(-2);
@@ -686,14 +719,14 @@ int ZeroInterpreter::setter_entry(Method* method, intptr_t UNUSED, TRAPS) {
 
   // Load the receiver pointer and drop into the slow path
   // if we have a NullPointerException
-  if (object == NULL) {
+  if (object == nullptr) {
     return normal_entry(method, 0, THREAD);
   }
 
   // Store the stack(0) to field
-  int offset = entry->f2_as_index();
+  int offset = entry->field_offset();
   if (entry->is_volatile()) {
-    switch (entry->flag_state()) {
+    switch (entry->tos_state()) {
       case btos: object->release_byte_field_put(offset,   STACK_INT(0));     break;
       case ztos: object->release_byte_field_put(offset,   STACK_INT(0) & 1); break; // only store LSB
       case ctos: object->release_char_field_put(offset,   STACK_INT(0));     break;
@@ -708,7 +741,7 @@ int ZeroInterpreter::setter_entry(Method* method, intptr_t UNUSED, TRAPS) {
     }
     OrderAccess::storeload();
   } else {
-    switch (entry->flag_state()) {
+    switch (entry->tos_state()) {
       case btos: object->byte_field_put(offset,   STACK_INT(0));     break;
       case ztos: object->byte_field_put(offset,   STACK_INT(0) & 1); break; // only store LSB
       case ctos: object->char_field_put(offset,   STACK_INT(0));     break;
@@ -731,11 +764,11 @@ int ZeroInterpreter::setter_entry(Method* method, intptr_t UNUSED, TRAPS) {
 }
 
 int ZeroInterpreter::empty_entry(Method* method, intptr_t UNUSED, TRAPS) {
-  JavaThread *thread = THREAD->as_Java_thread();
+  JavaThread *thread = THREAD;
   ZeroStack *stack = thread->zero_stack();
 
   // Drop into the slow path if we need a safepoint check
-  if (SafepointMechanism::should_process(THREAD)) {
+  if (SafepointMechanism::should_process(thread)) {
     return normal_entry(method, 0, THREAD);
   }
 
@@ -747,7 +780,7 @@ int ZeroInterpreter::empty_entry(Method* method, intptr_t UNUSED, TRAPS) {
 }
 
 InterpreterFrame *InterpreterFrame::build(Method* const method, TRAPS) {
-  JavaThread *thread = THREAD->as_Java_thread();
+  JavaThread *thread = THREAD;
   ZeroStack *stack = thread->zero_stack();
 
   // Calculate the size of the frame we'll build, including
@@ -766,7 +799,7 @@ InterpreterFrame *InterpreterFrame::build(Method* const method, TRAPS) {
   stack->overflow_check(
     extra_locals + header_words + monitor_words + stack_words, CHECK_NULL);
 
-  // Adjust the caller's stack frame to accomodate any additional
+  // Adjust the caller's stack frame to accommodate any additional
   // local variables we have contiguously with our parameters.
   for (int i = 0; i < extra_locals; i++)
     stack->push(0);
@@ -792,13 +825,13 @@ InterpreterFrame *InterpreterFrame::build(Method* const method, TRAPS) {
   istate->set_method(method);
   istate->set_mirror(method->method_holder()->java_mirror());
   istate->set_self_link(istate);
-  istate->set_prev_link(NULL);
+  istate->set_prev_link(nullptr);
   istate->set_thread(thread);
-  istate->set_bcp(method->is_native() ? NULL : method->code_base());
+  istate->set_bcp(method->is_native() ? nullptr : method->code_base());
   istate->set_constants(method->constants()->cache());
   istate->set_msg(BytecodeInterpreter::method_entry);
-  istate->set_oop_temp(NULL);
-  istate->set_callee(NULL);
+  istate->set_oop_temp(nullptr);
+  istate->set_callee(nullptr);
 
   istate->set_monitor_base((BasicObjectLock *) stack->sp());
   if (method->is_synchronized()) {
@@ -808,7 +841,7 @@ InterpreterFrame *InterpreterFrame::build(Method* const method, TRAPS) {
     if (method->is_static())
       object = method->constants()->pool_holder()->java_mirror();
     else
-      object = (oop) (void*)locals[0];
+      object = cast_to_oop((void*)locals[0]);
     monitor->set_obj(object);
   }
 
@@ -822,7 +855,7 @@ InterpreterFrame *InterpreterFrame::build(Method* const method, TRAPS) {
 }
 
 InterpreterFrame *InterpreterFrame::build(int size, TRAPS) {
-  ZeroStack *stack = THREAD->as_Java_thread()->zero_stack();
+  ZeroStack *stack = THREAD->zero_stack();
 
   int size_in_words = size >> LogBytesPerWord;
   assert(size_in_words * wordSize == size, "unaligned");
@@ -839,7 +872,7 @@ InterpreterFrame *InterpreterFrame::build(int size, TRAPS) {
   interpreterState istate =
     (interpreterState) stack->alloc(sizeof(BytecodeInterpreter));
   assert(fp - stack->sp() == istate_off, "should be");
-  istate->set_self_link(NULL); // mark invalid
+  istate->set_self_link(nullptr); // mark invalid
 
   stack->alloc((size_in_words - header_words) * wordSize);
 
@@ -848,11 +881,11 @@ InterpreterFrame *InterpreterFrame::build(int size, TRAPS) {
 
 address ZeroInterpreter::return_entry(TosState state, int length, Bytecodes::Code code) {
   ShouldNotCallThis();
-  return NULL;
+  return nullptr;
 }
 
 address ZeroInterpreter::deopt_entry(TosState state, int length) {
-  return NULL;
+  return nullptr;
 }
 
 address ZeroInterpreter::remove_activation_preserving_args_entry() {
@@ -862,11 +895,21 @@ address ZeroInterpreter::remove_activation_preserving_args_entry() {
 }
 
 address ZeroInterpreter::remove_activation_early_entry(TosState state) {
-  return NULL;
+  return nullptr;
 }
 
 // Helper for figuring out if frames are interpreter frames
 
 bool ZeroInterpreter::contains(address pc) {
   return false; // make frame::print_value_on work
+}
+
+void ZeroInterpreter::stack_watermark_unwind_check(JavaThread* thread) {
+  // If frame pointer is in the danger zone, notify the runtime that
+  // it needs to act before continuing the unwinding.
+  uintptr_t fp = (uintptr_t)thread->last_Java_fp();
+  uintptr_t watermark = thread->poll_data()->get_polling_word();
+  if (fp > watermark) {
+    InterpreterRuntime::at_unwind(thread);
+  }
 }

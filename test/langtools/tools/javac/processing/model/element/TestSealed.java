@@ -30,8 +30,7 @@
  *     jdk.compiler/com.sun.tools.javac.api
  *     jdk.compiler/com.sun.tools.javac.main
  * @build toolbox.ToolBox toolbox.JavacTask JavacTestingAbstractProcessor
- * @compile --enable-preview -source ${jdk.version} TestSealed.java
- * @run main/othervm --enable-preview TestSealed
+ * @run main TestSealed
  */
 
 import java.io.*;
@@ -46,8 +45,6 @@ import javax.lang.model.element.*;
 import javax.lang.model.type.*;
 import javax.lang.model.util.*;
 import java.time.*;
-
-import javax.tools.Diagnostic.Kind;
 
 import toolbox.JavacTask;
 import toolbox.Task;
@@ -130,16 +127,12 @@ public class TestSealed extends TestRunner {
                 "- compiler.note.proc.messager: visiting: NonSealedClass2 Modifiers: [non-sealed]",
                 "- compiler.note.proc.messager:     this class has: 0, permitted subclasses",
                 "- compiler.note.proc.messager: visiting: ClassOutOfSealedHierarchy Modifiers: []",
-                "- compiler.note.proc.messager:     this class has: 0, permitted subclasses",
-                "- compiler.note.preview.filename: SealedInterface.java, DEFAULT",
-                "- compiler.note.preview.recompile"
+                "- compiler.note.proc.messager:     this class has: 0, permitted subclasses"
         );
 
         for (Mode mode : new Mode[] {Mode.API}) {
             List<String> log = new JavacTask(tb, mode)
                     .options("-processor", SealedClassesProcessor.class.getName(),
-                            "--enable-preview",
-                            "-source", Integer.toString(Runtime.version().feature()),
                             "-XDrawDiagnostics")
                     .files(findJavaFiles(src))
                     .outdir(classes)
@@ -190,11 +183,11 @@ public class TestSealed extends TestRunner {
 
             @Override
             public Void visitType(TypeElement element, Void p) {
-                messager.printMessage(Kind.NOTE, "visiting: " + element.getSimpleName() + " Modifiers: " + element.getModifiers());
+                messager.printNote("visiting: " + element.getSimpleName() + " Modifiers: " + element.getModifiers());
                 List<? extends TypeMirror> permittedSubclasses = element.getPermittedSubclasses();
-                messager.printMessage(Kind.NOTE, String.format("    this class has: %d, permitted subclasses", permittedSubclasses.size()));
+                messager.printNote(String.format("    this class has: %d, permitted subclasses", permittedSubclasses.size()));
                 for (TypeMirror tm: permittedSubclasses) {
-                    messager.printMessage(Kind.NOTE, String.format("    permitted subclass: %s", ((DeclaredType)tm).asElement().getSimpleName()));
+                    messager.printNote(String.format("    permitted subclass: %s", ((DeclaredType)tm).asElement().getSimpleName()));
                 }
                 return super.visitType(element, p);
             }

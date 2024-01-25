@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,17 +41,16 @@ import java.util.LinkedList;
 
 public class TestG1TraceEagerReclaimHumongousObjects {
   public static void main(String[] args) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
-                                               "-Xms128M",
-                                               "-Xmx128M",
-                                               "-Xmn16M",
-                                               "-XX:G1HeapRegionSize=1M",
-                                               "-Xlog:gc+phases=trace,gc+humongous=trace",
-                                               "-XX:+UnlockExperimentalVMOptions",
-                                               GCWithHumongousObjectTest.class.getName());
+    OutputAnalyzer output = ProcessTools.executeLimitedTestJava("-XX:+UseG1GC",
+                                                                "-Xms128M",
+                                                                "-Xmx128M",
+                                                                "-Xmn16M",
+                                                                "-XX:G1HeapRegionSize=1M",
+                                                                "-Xlog:gc+phases=trace,gc+humongous=trace",
+                                                                "-XX:+UnlockExperimentalVMOptions",
+                                                                GCWithHumongousObjectTest.class.getName());
 
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
-
+    System.out.println(output.getStdout());
     // As G1ReclaimDeadHumongousObjectsAtYoungGC is set(default), below logs should be displayed.
     output.shouldContain("Humongous Reclaim");
     output.shouldContain("Humongous Total");
@@ -60,8 +59,8 @@ public class TestG1TraceEagerReclaimHumongousObjects {
 
     // As G1TraceReclaimDeadHumongousObjectsAtYoungGC is set and GCWithHumongousObjectTest has humongous objects,
     // these logs should be displayed.
-    output.shouldContain("Live humongous");
-    output.shouldContain("Dead humongous region");
+    output.shouldContain("Humongous region");
+    output.shouldContain("Reclaimed humongous region");
     output.shouldHaveExitValue(0);
   }
 

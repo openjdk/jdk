@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,8 +44,8 @@ public class TestEnumConstructor extends JavadocTester {
     final ToolBox tb;
 
     public static void main(String... args) throws Exception {
-        TestEnumConstructor tester = new TestEnumConstructor();
-        tester.runTests(m -> new Object[]{Paths.get(m.getName())});
+        var tester = new TestEnumConstructor();
+        tester.runTests();
     }
 
     TestEnumConstructor() {
@@ -68,7 +68,7 @@ public class TestEnumConstructor extends JavadocTester {
                 "Constructor Summary",
                 "Modifier", "Constructor",
                 "private", """
-                    <a href="#%3Cinit%3E(int)" class="member-name-link">TestEnum</a>&#8203;(int&nbsp;val)""");
+                    <a href="#%3Cinit%3E(int)" class="member-name-link">TestEnum</a><wbr>(int&nbsp;val)""");
         checkOutput("index-all.html", true,
                 """
                     <a href="pkg/TestEnum.html#%3Cinit%3E(int)" class="member-name-link">TestEnum(int)</a>""");

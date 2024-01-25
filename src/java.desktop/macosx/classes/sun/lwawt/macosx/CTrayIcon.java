@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,8 @@ public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
     // events between MOUSE_PRESSED and MOUSE_RELEASED for particular button
     private static int mouseClickButtons = 0;
 
-    private final static boolean useTemplateImages = AccessController.doPrivileged((PrivilegedAction<Boolean>)
+    @SuppressWarnings("removal")
+    private static final boolean useTemplateImages = AccessController.doPrivileged((PrivilegedAction<Boolean>)
         () -> Boolean.getBoolean("apple.awt.enableTemplateImages")
     );
 
@@ -311,7 +312,7 @@ public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
      *
      * @param icon        icon to scale
      * @param scaleFactor scale factor to use
-     * @return scaled icon as BuffedredImage
+     * @return scaled icon as BufferedImage
      */
     private static BufferedImage scaleIcon(Icon icon, double scaleFactor) {
         if (icon == null) {

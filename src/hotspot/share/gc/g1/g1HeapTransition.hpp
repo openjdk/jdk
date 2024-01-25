@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,18 +26,20 @@
 #define SHARE_GC_G1_G1HEAPTRANSITION_HPP
 
 #include "gc/shared/plab.hpp"
-#include "memory/metaspace/metaspaceSizesSnapshot.hpp"
+#include "memory/metaspaceStats.hpp"
 
 class G1CollectedHeap;
 
 class G1HeapTransition {
+  struct DetailedUsage;
+  class DetailedUsageClosure;
+
   struct Data {
     size_t _eden_length;
     size_t _survivor_length;
     size_t _old_length;
-    size_t _archive_length;
     size_t _humongous_length;
-    const metaspace::MetaspaceSizesSnapshot _meta_sizes;
+    const MetaspaceCombinedStats _meta_sizes;
 
     // Only includes current eden regions.
     uint* _eden_length_per_node;

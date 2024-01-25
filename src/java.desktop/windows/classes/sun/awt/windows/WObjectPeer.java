@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ abstract class WObjectPeer {
     private volatile boolean disposed;
 
     // set from JNI if any errors in creating the peer occur
-    volatile Error createError = null;
+    volatile Error createError;
 
     // used to synchronize the state of this peer
     private final Object stateLock = new Object();

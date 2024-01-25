@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,15 @@
  */
 package java.util.zip;
 
-import java.lang.ref.Reference;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 import jdk.internal.misc.Unsafe;
+import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import sun.nio.ch.DirectBuffer;
+
+import static java.util.zip.ZipUtils.NIO_ACCESS;
 
 /**
  * A class that can be used to compute the CRC-32C of a data stream.
@@ -45,6 +47,8 @@ import sun.nio.ch.DirectBuffer;
  * {@link NullPointerException} to be thrown.
  * </p>
  *
+ * @spec https://www.rfc-editor.org/info/rfc3720
+ *      RFC 3720: Internet Small Computer Systems Interface (iSCSI)
  * @since 9
  */
 public final class CRC32C implements Checksum {
@@ -148,9 +152,7 @@ public final class CRC32C implements Checksum {
         if (b == null) {
             throw new NullPointerException();
         }
-        if (off < 0 || len < 0 || off > b.length - len) {
-            throw new ArrayIndexOutOfBoundsException();
-        }
+        Preconditions.checkFromIndexSize(off, len, b.length, Preconditions.AIOOBE_FORMATTER);
         crc = updateBytes(crc, b, off, (off + len));
     }
 
@@ -172,11 +174,12 @@ public final class CRC32C implements Checksum {
         }
 
         if (buffer.isDirect()) {
+            NIO_ACCESS.acquireSession(buffer);
             try {
-                crc = updateDirectByteBuffer(crc, ((DirectBuffer) buffer).address(),
+                crc = updateDirectByteBuffer(crc, ((DirectBuffer)buffer).address(),
                         pos, limit);
             } finally {
-                Reference.reachabilityFence(buffer);
+                NIO_ACCESS.releaseSession(buffer);
             }
         } else if (buffer.hasArray()) {
             crc = updateBytes(crc, buffer.array(), pos + buffer.arrayOffset(),
@@ -215,7 +218,7 @@ public final class CRC32C implements Checksum {
     private static int updateBytes(int crc, byte[] b, int off, int end) {
 
         // Do only byte reads for arrays so short they can't be aligned
-        // or if bytes are stored with a larger witdh than one byte.,%
+        // or if bytes are stored with a larger width than one byte.,%
         if (end - off >= 8 && Unsafe.ARRAY_BYTE_INDEX_SCALE == 1) {
 
             // align on 8 bytes

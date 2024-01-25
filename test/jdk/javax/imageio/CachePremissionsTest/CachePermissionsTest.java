@@ -50,9 +50,9 @@
  *           -Djava.security.debug=access can be used to verify file permissions.
  *
  * @run     main CachePermissionsTest true
- * @run     main/othervm CachePermissionsTest false w.policy
- * @run     main/othervm CachePermissionsTest false rw.policy
- * @run     main/othervm CachePermissionsTest true rwd.policy
+ * @run     main/othervm -Djava.security.manager=allow CachePermissionsTest false w.policy
+ * @run     main/othervm -Djava.security.manager=allow CachePermissionsTest false rw.policy
+ * @run     main/othervm -Djava.security.manager=allow CachePermissionsTest true rwd.policy
  */
 
 import java.io.File;

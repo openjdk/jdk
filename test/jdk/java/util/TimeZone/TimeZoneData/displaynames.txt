@@ -1,0 +1,175 @@
+Africa/Abidjan GMT
+Africa/Algiers CET
+Africa/Bissau GMT
+Africa/Cairo EET EEST
+Africa/Ceuta CET CEST
+Africa/Johannesburg SAST
+Africa/Juba CAT
+Africa/Khartoum CAT
+Africa/Lagos WAT
+Africa/Maputo CAT
+Africa/Monrovia GMT
+Africa/Nairobi EAT
+Africa/Ndjamena WAT
+Africa/Sao_Tome GMT
+Africa/Tripoli EET
+Africa/Tunis CET CEST
+Africa/Windhoek CAT WAT
+America/Adak HST HDT
+America/Anchorage AKST AKDT
+America/Bahia_Banderas CST CDT
+America/Barbados AST ADT
+America/Belize CST CDT
+America/Boise MST MDT
+America/Cambridge_Bay MST MDT
+America/Cancun EST
+America/Chicago CST CDT
+America/Chihuahua CST
+America/Ciudad_Juarez MST MDT
+America/Costa_Rica CST CDT
+America/Danmarkshavn GMT
+America/Dawson MST
+America/Dawson_Creek MST
+America/Denver MST MDT
+America/Detroit EST EDT
+America/Edmonton MST MDT
+America/El_Salvador CST CDT
+America/Fort_Nelson MST
+America/Glace_Bay AST ADT
+America/Goose_Bay AST ADT
+America/Grand_Turk EST EDT
+America/Guatemala CST CDT
+America/Halifax AST ADT
+America/Havana CST CDT
+America/Hermosillo MST
+America/Indiana/Indianapolis EST EDT
+America/Indiana/Knox CST CDT
+America/Indiana/Marengo EST EDT
+America/Indiana/Petersburg EST EDT
+America/Indiana/Tell_City CST CDT
+America/Indiana/Vevay EST EDT
+America/Indiana/Vincennes EST EDT
+America/Indiana/Winamac EST EDT
+America/Inuvik MST MDT
+America/Iqaluit EST EDT
+America/Jamaica EST
+America/Juneau AKST AKDT
+America/Kentucky/Louisville EST EDT
+America/Kentucky/Monticello EST EDT
+America/Los_Angeles PST PDT
+America/Managua CST CDT
+America/Martinique AST
+America/Matamoros CST CDT
+America/Mazatlan MST MDT
+America/Menominee CST CDT
+America/Merida CST CDT
+America/Metlakatla AKST AKDT
+America/Mexico_City CST CDT
+America/Moncton AST ADT
+America/Monterrey CST CDT
+America/New_York EST EDT
+America/Nome AKST AKDT
+America/North_Dakota/Beulah CST CDT
+America/North_Dakota/Center CST CDT
+America/North_Dakota/New_Salem CST CDT
+America/Ojinaga CST CDT
+America/Panama EST
+America/Phoenix MST
+America/Port-au-Prince EST EDT
+America/Puerto_Rico AST
+America/Rankin_Inlet CST CDT
+America/Regina CST
+America/Resolute CST CDT
+America/Santo_Domingo AST
+America/Sitka AKST AKDT
+America/St_Johns NST NDT
+America/Swift_Current CST
+America/Tegucigalpa CST CDT
+America/Thule AST ADT
+America/Tijuana PST PDT
+America/Toronto EST EDT
+America/Vancouver PST PDT
+America/Whitehorse MST
+America/Winnipeg CST CDT
+America/Yakutat AKST AKDT
+Antarctica/Macquarie AEST AEDT
+Asia/Beirut EET EEST
+Asia/Famagusta EET EEST
+Asia/Gaza EET EEST
+Asia/Hebron EET EEST
+Asia/Hong_Kong HKT HKST
+Asia/Jakarta WIB
+Asia/Jayapura WIT
+Asia/Jerusalem IST IDT
+Asia/Karachi PKT PKST
+Asia/Kolkata IST
+Asia/Macau CST CDT
+Asia/Makassar WITA
+Asia/Manila PST PDT
+Asia/Nicosia EET EEST
+Asia/Pontianak WIB
+Asia/Pyongyang KST
+Asia/Seoul KST KDT
+Asia/Shanghai CST CDT
+Asia/Taipei CST CDT
+Asia/Tokyo JST JDT
+Atlantic/Bermuda AST ADT
+Atlantic/Canary WET WEST
+Atlantic/Faroe WET WEST
+Atlantic/Madeira WET WEST
+Australia/Adelaide ACST ACDT
+Australia/Brisbane AEST AEDT
+Australia/Broken_Hill ACST ACDT
+Australia/Darwin ACST ACDT
+Australia/Hobart AEST AEDT
+Australia/Lindeman AEST AEDT
+Australia/Melbourne AEST AEDT
+Australia/Perth AWST AWDT
+Australia/Sydney AEST AEDT
+CET CET CEST
+CST6CDT CST CDT
+EET EET EEST
+EST EST
+EST5EDT EST EDT
+Europe/Andorra CET CEST
+Europe/Athens EET EEST
+Europe/Belgrade CET CEST
+Europe/Berlin CET CEST
+Europe/Brussels CET CEST
+Europe/Bucharest EET EEST
+Europe/Budapest CET CEST
+Europe/Chisinau EET EEST
+Europe/Dublin IST/GMT IST/GMT
+Europe/Gibraltar CET CEST
+Europe/Helsinki EET EEST
+Europe/Kaliningrad EET
+Europe/Kirov MSK
+Europe/Kyiv EET EEST
+Europe/Lisbon WET WEST
+Europe/London GMT/BST GMT/BST
+Europe/Madrid CET CEST
+Europe/Malta CET CEST
+Europe/Moscow MSK
+Europe/Paris CET CEST
+Europe/Prague CET CEST
+Europe/Riga EET EEST
+Europe/Rome CET CEST
+Europe/Simferopol MSK
+Europe/Sofia EET EEST
+Europe/Tallinn EET EEST
+Europe/Tirane CET CEST
+Europe/Vienna CET CEST
+Europe/Vilnius EET EEST
+Europe/Volgograd MSK
+Europe/Warsaw CET CEST
+Europe/Zurich CET CEST
+HST HST
+MET MET MEST
+MST MST
+MST7MDT MST MDT
+PST8PDT PST PDT
+Pacific/Auckland NZST NZDT
+Pacific/Guam ChST
+Pacific/Honolulu HST
+Pacific/Pago_Pago SST
+WET WET WEST

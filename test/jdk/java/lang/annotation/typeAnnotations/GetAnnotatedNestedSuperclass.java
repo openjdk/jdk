@@ -64,31 +64,31 @@ public class GetAnnotatedNestedSuperclass {
 
     public static void main(String[] args) throws Exception {
         AnnotatedType x = Y.class.getAnnotatedSuperclass();
-        assertEquals(Arrays.toString(x.getAnnotations()), "[@GetAnnotatedNestedSuperclass$A()]");
+        assertEquals(Arrays.toString(x.getAnnotations()), "[@GetAnnotatedNestedSuperclass.A()]");
         AnnotatedParameterizedType xpt = (AnnotatedParameterizedType) x;
         {
             AnnotatedType arg = xpt.getAnnotatedActualTypeArguments()[0];
             assertEquals(
-                    Arrays.toString(arg.getAnnotations()), "[@GetAnnotatedNestedSuperclass$B()]");
+                    Arrays.toString(arg.getAnnotations()), "[@GetAnnotatedNestedSuperclass.B()]");
         }
         {
             AnnotatedType arg = xpt.getAnnotatedActualTypeArguments()[1];
             assertEquals(
-                    Arrays.toString(arg.getAnnotations()), "[@GetAnnotatedNestedSuperclass$C()]");
+                    Arrays.toString(arg.getAnnotations()), "[@GetAnnotatedNestedSuperclass.C()]");
         }
         {
             AnnotatedType arg = xpt.getAnnotatedActualTypeArguments()[2];
             assertEquals(
-                    Arrays.toString(arg.getAnnotations()), "[@GetAnnotatedNestedSuperclass$D()]");
+                    Arrays.toString(arg.getAnnotations()), "[@GetAnnotatedNestedSuperclass.D()]");
             AnnotatedType nestedArg =
                     ((AnnotatedParameterizedType) arg).getAnnotatedActualTypeArguments()[0];
             assertEquals(
                     Arrays.toString(nestedArg.getAnnotations()),
-                    "[@GetAnnotatedNestedSuperclass$E()]");
+                    "[@GetAnnotatedNestedSuperclass.E()]");
         }
     }
 
-    private static void assertEquals(Object expected, Object actual) {
+    private static void assertEquals(Object actual, Object expected) {
         if (!Objects.equals(expected, actual)) {
             throw new AssertionError("expected: " + expected + "; actual=" + actual);
         }

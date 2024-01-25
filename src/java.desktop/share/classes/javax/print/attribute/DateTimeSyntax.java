@@ -115,9 +115,8 @@ public abstract class DateTimeSyntax implements Serializable, Cloneable {
      *         attribute, {@code false} otherwise
      */
     public boolean equals(Object object) {
-        return (object != null &&
-                object instanceof DateTimeSyntax &&
-                value.equals(((DateTimeSyntax) object).value));
+        return object instanceof DateTimeSyntax other &&
+                value.equals(other.value);
     }
 
     /**

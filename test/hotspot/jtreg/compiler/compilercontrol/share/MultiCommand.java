@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,7 @@ public class MultiCommand extends AbstractTestBase {
         List<CompileCommand> testCases = new ArrayList<>();
 
         for (Command cmd : commands) {
+            boolean isValid = true;
             String argument = null;
 
             if (validOnly && cmd == Command.NONEXISTENT) {
@@ -67,21 +68,25 @@ public class MultiCommand extends AbstractTestBase {
                     argument = Utils.getRandomElement(VALID_INTRINSIC_SAMPLES);
                 } else {
                     argument = Utils.getRandomElement(INVALID_INTRINSIC_SAMPLES);
+                    isValid = false;
                 }
             }
 
             Executable exec = Utils.getRandomElement(METHODS).first;
             MethodDescriptor md;
-            if (validOnly) {
+
+            // Command.quiet discards the method descriptor - can never fail on the method descriptor
+            if (validOnly || cmd == Command.QUIET) {
                 md = AbstractTestBase.getValidMethodDescriptor(exec);
             } else {
                 md = AbstractTestBase.METHOD_GEN.generateRandomDescriptor(exec);
+                isValid &= md.isValid();
             }
             CompileCommand cc;
             if (cmd == Command.INTRINSIC) {
-                cc = cmdGen.generateCompileCommand(cmd, md, null, argument);
+                cc = cmdGen.generateCompileCommand(cmd, isValid, md, null, argument);
             } else {
-                cc = cmdGen.generateCompileCommand(cmd, md, null);
+                cc = cmdGen.generateCompileCommand(cmd, isValid, md, null);
             }
             testCases.add(cc);
         }

@@ -35,8 +35,8 @@ BUILD_INFO_PROPERTIES := $(TEST_IMAGE_DIR)/build-info.properties
 $(BUILD_INFO_PROPERTIES):
 	$(call MakeTargetDir)
 	$(ECHO) "# Build info properties for JDK tests" > $@
-	$(ECHO) "build.workspace.root=$(call FixPath, $(WORKSPACE_ROOT))" >> $@
-	$(ECHO) "build.output.root=$(call FixPath, $(OUTPUTDIR))" >> $@
+	$(ECHO) 'build.workspace.root=$(call FixPath, $(WORKSPACE_ROOT))' >> $@
+	$(ECHO) 'build.output.root=$(call FixPath, $(OUTPUTDIR))' >> $@
 
 README := $(TEST_IMAGE_DIR)/Readme.txt
 

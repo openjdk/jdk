@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,10 @@ import com.sun.jdi.InvalidStackFrameException;
 import com.sun.jdi.InvalidTypeException;
 import com.sun.jdi.LocalVariable;
 import com.sun.jdi.Location;
+import com.sun.jdi.Method;
+import com.sun.jdi.NativeMethodException;
 import com.sun.jdi.ObjectReference;
+import com.sun.jdi.OpaqueFrameException;
 import com.sun.jdi.StackFrame;
 import com.sun.jdi.ThreadReference;
 import com.sun.jdi.Value;
@@ -111,8 +114,7 @@ public class StackFrameImpl extends MirrorImpl
     }
 
     public boolean equals(Object obj) {
-        if ((obj != null) && (obj instanceof StackFrameImpl)) {
-            StackFrameImpl other = (StackFrameImpl)obj;
+        if (obj instanceof StackFrameImpl other) {
             return (id == other.id) &&
                    (thread().equals(other.thread())) &&
                    (location().equals(other.location())) &&
@@ -392,6 +394,30 @@ public class StackFrameImpl extends MirrorImpl
             JDWP.StackFrame.PopFrames.waitForReply(vm, stream);
         } catch (JDWPException exc) {
             switch (exc.errorCode()) {
+            case JDWP.Error.OPAQUE_FRAME:
+                if (thread.isVirtual()) {
+                    // We first need to find out if the current frame is native, or if the
+                    // previous frame is native, in which case we throw NativeMethodException
+                    for (int i = 0; i < 2; i++) {
+                        StackFrameImpl sf;
+                        try {
+                            sf = (StackFrameImpl)thread.frame(i);
+                        } catch (IndexOutOfBoundsException e) {
+                            // This should never happen, but we need to check for it.
+                            break;
+                        }
+                        sf.validateStackFrame();
+                        MethodImpl meth = (MethodImpl)sf.location().method();
+                        if (meth.isNative()) {
+                            throw new NativeMethodException();
+                        }
+                    }
+                    // No native frames involved. Must have been due to thread
+                    // not being mounted.
+                    throw new OpaqueFrameException();
+                } else {
+                    throw new NativeMethodException();
+                }
             case JDWP.Error.THREAD_NOT_SUSPENDED:
                 throw new IncompatibleThreadStateException(
                          "Thread not current or suspended");

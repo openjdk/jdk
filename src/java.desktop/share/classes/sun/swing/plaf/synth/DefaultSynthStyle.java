@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ public class DefaultSynthStyle extends SynthStyle implements Cloneable {
 
     /**
      * Creates a new DefaultSynthStyle that is a copy of the passed in
-     * style. Any StateInfo's of the passed in style are clonsed as well.
+     * style. Any StateInfo's of the passed in style are cloned as well.
      *
      * @param style Style to duplicate
      */
@@ -470,7 +470,7 @@ public class DefaultSynthStyle extends SynthStyle implements Cloneable {
 
     /**
      * Merges the contents of this Style with that of the passed in Style,
-     * returning the resulting merged syle. Properties of this
+     * returning the resulting merged style. Properties of this
      * <code>DefaultSynthStyle</code> will take precedence over those of the
      * passed in <code>DefaultSynthStyle</code>. For example, if this
      * style specifics a non-null font, the returned style will have its
@@ -887,7 +887,7 @@ public class DefaultSynthStyle extends SynthStyle implements Cloneable {
 
             sb.append(super.toString()).append(',');
 
-            sb.append("state=").append(Integer.toString(state)).append(',');
+            sb.append("state=").append(state).append(',');
 
             sb.append("font=").append(font).append(',');
 

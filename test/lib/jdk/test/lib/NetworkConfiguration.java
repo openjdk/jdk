@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -92,6 +93,38 @@ public class NetworkConfiguration {
         return Inet6Address.class.isInstance(a) && a.isLinkLocalAddress();
     }
 
+    /**
+     * Returns true if the two interfaces point to the same network interface.
+     *
+     * @implNote
+     * This method first looks at whether the two interfaces are
+     * {@linkplain NetworkInterface#equals(Object) equals}, and if so it returns
+     * true. Otherwise, it looks at whether the two interfaces have the same
+     * {@linkplain NetworkInterface#getName() name} and
+     * {@linkplain NetworkInterface#getIndex() index}, and if so returns true.
+     * Otherwise, it returns false.
+     *
+     * @apiNote
+     * This method ignores differences in the addresses to which the network
+     * interfaces are bound, to cater for possible reconfiguration that might
+     * have happened between the time at which each interface configuration
+     * was looked up.
+     *
+     * @param ni1 A network interface, may be {@code null}
+     * @param ni2 An other network interface, may be {@code null}
+     * @return {@code true} if the two network interfaces have the same name
+     *         and index, {@code false} otherwise.
+     */
+    public static boolean isSameInterface(NetworkInterface ni1, NetworkInterface ni2) {
+        if (Objects.equals(ni1, ni2)) return true;
+        // Objects equals has taken care of the case where
+        // ni1 == ni2 so either they are both non-null or only
+        // one of them is null - in which case they can't be equal.
+        if (ni1 == null || ni2 == null) return false;
+        if (ni1.getIndex() != ni2.getIndex()) return false;
+        return Objects.equals(ni1.getName(), ni2.getName());
+    }
+
     public static boolean isTestable(NetworkInterface nif) {
         if (Platform.isOSX()) {
             if (nif.getName().contains("awdl")) {
@@ -140,17 +173,6 @@ public class NetworkConfiguration {
     private boolean supportsIp4Multicast(NetworkInterface nif) {
         try {
             if (!nif.supportsMulticast()) {
-                return false;
-            }
-
-            // On AIX there is a bug:
-            // When IPv6 is enabled on the system, the JDK opens sockets as AF_INET6.
-            // If there's an interface configured with IPv4 addresses only, it should
-            // be able to become the network interface for a multicast socket (that
-            // could be in both, IPv4 or IPv6 space). But both possible setsockopt
-            // calls for either IPV6_MULTICAST_IF or IP_MULTICAST_IF return
-            // EADDRNOTAVAIL. So we must skip such interfaces here.
-            if (Platform.isAix() && isIPv6Available() && !hasIp6Addresses(nif)) {
                 return false;
             }
 
@@ -418,6 +440,7 @@ public class NetworkConfiguration {
     }
 
     /** Prints all the system interface information to the give stream. */
+    @SuppressWarnings("removal")
     public static void printSystemConfiguration(PrintStream out) {
         PrivilegedAction<Void> pa = () -> {
         try {

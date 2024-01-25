@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,7 @@ final class JSSecurityManager {
     }
 
     static void checkRecordPermission() throws SecurityException {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new AudioPermission("record"));
@@ -73,6 +74,7 @@ final class JSSecurityManager {
      * @param  properties the properties bundle to store the values of the
      *         properties file
      */
+    @SuppressWarnings("removal")
     static void loadProperties(final Properties properties) {
         final String customFile = AccessController.doPrivileged(
                 (PrivilegedAction<String>) () -> System.getProperty(
@@ -110,7 +112,6 @@ final class JSSecurityManager {
                                final boolean isDaemon, final int priority,
                                final boolean doStart)
     {
-        String name = (threadName != null) ? threadName : "JSSM Thread";
         Thread thread = new Thread(null, runnable, threadName, 0, false);
 
         thread.setDaemon(isDaemon);
@@ -123,6 +124,7 @@ final class JSSecurityManager {
         return thread;
     }
 
+    @SuppressWarnings("removal")
     static synchronized <T> List<T> getProviders(final Class<T> providerClass) {
         List<T> p = new ArrayList<>(7);
         // ServiceLoader creates "lazy" iterator instance, but it ensures that

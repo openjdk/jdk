@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,9 @@
 #include "jfr/recorder/service/jfrPostBox.hpp"
 #include "jfr/utilities/jfrTryLock.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/handles.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.hpp"
 
 #define MSG_IS_SYNCHRONOUS ( (MSGBIT(MSG_ROTATE)) |          \
                              (MSGBIT(MSG_STOP))   |          \
@@ -36,22 +38,22 @@
                              (MSGBIT(MSG_FLUSHPOINT))        \
                            )
 
-static JfrPostBox* _instance = NULL;
+static JfrPostBox* _instance = nullptr;
 
 JfrPostBox& JfrPostBox::instance() {
   return *_instance;
 }
 
 JfrPostBox* JfrPostBox::create() {
-  assert(_instance == NULL, "invariant");
+  assert(_instance == nullptr, "invariant");
   _instance = new JfrPostBox();
   return _instance;
 }
 
 void JfrPostBox::destroy() {
-  assert(_instance != NULL, "invariant");
+  assert(_instance != nullptr, "invariant");
   delete _instance;
-  _instance = NULL;
+  _instance = nullptr;
 }
 
 JfrPostBox::JfrPostBox() :
@@ -62,7 +64,7 @@ JfrPostBox::JfrPostBox() :
 
 static bool is_thread_lock_aversive() {
   Thread* const thread = Thread::current();
-  return (thread->is_Java_thread() && thread->as_Java_thread()->thread_state() != _thread_in_vm) || thread->is_VM_thread();
+  return (thread->is_Java_thread() && JavaThread::cast(thread)->thread_state() != _thread_in_vm) || thread->is_VM_thread();
 }
 
 static bool is_synchronous(int messages) {
@@ -101,7 +103,7 @@ void JfrPostBox::deposit(int new_messages) {
 void JfrPostBox::asynchronous_post(int msg) {
   assert(!is_synchronous(msg), "invariant");
   deposit(msg);
-  JfrMonitorTryLock try_msg_lock(JfrMsg_lock);
+  JfrMutexTryLock try_msg_lock(JfrMsg_lock);
   if (try_msg_lock.acquired()) {
     JfrMsg_lock->notify_all();
   }
@@ -110,7 +112,8 @@ void JfrPostBox::asynchronous_post(int msg) {
 void JfrPostBox::synchronous_post(int msg) {
   assert(is_synchronous(msg), "invariant");
   assert(!JfrMsg_lock->owned_by_self(), "should not hold JfrMsg_lock here!");
-  MonitorLocker msg_lock(JfrMsg_lock);
+  ThreadBlockInVM transition(JavaThread::current());
+  MonitorLocker msg_lock(JfrMsg_lock, Mutex::_no_safepoint_check_flag);
   deposit(msg);
   // serial_id is used to check when what we send in has been processed.
   // _msg_read_serial is read under JfrMsg_lock protection.
@@ -168,6 +171,6 @@ void JfrPostBox::notify_waiters() {
 
 // safeguard to ensure no threads are left waiting
 void JfrPostBox::notify_collection_stop() {
-  MutexLocker msg_lock(JfrMsg_lock);
+  assert(JfrMsg_lock->owned_by_self(), "invariant");
   JfrMsg_lock->notify_all();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ package gc.arguments;
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 
 public class TestSelectDefaultGC {
     public static void assertVMOption(OutputAnalyzer output, String option, boolean value) {
@@ -45,12 +44,11 @@ public class TestSelectDefaultGC {
 
     public static void testDefaultGC(boolean actAsServer) throws Exception {
         // Start VM without specifying GC
-        ProcessBuilder pb = GCArguments.createJavaProcessBuilder(
+        OutputAnalyzer output = GCArguments.executeLimitedTestJava(
             "-XX:" + (actAsServer ? "+" : "-") + "AlwaysActAsServerClassMachine",
             "-XX:" + (actAsServer ? "-" : "+") + "NeverActAsServerClassMachine",
             "-XX:+PrintFlagsFinal",
             "-version");
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
 
         final boolean isServer = actAsServer;

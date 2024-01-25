@@ -23,6 +23,8 @@
  * questions.
  */
 
+import jdk.internal.javac.ParticipatesInPreview;
+
 /**
  * Defines tools for analysing dependencies in Java libraries and programs,
  * including the <em>{@index jdeps jdeps tool}</em>,
@@ -49,10 +51,15 @@
  * @toolGuide jdeps
  *
  * @provides java.util.spi.ToolProvider
+ *     Use {@link java.util.spi.ToolProvider#findFirst ToolProvider.findFirst("javap")}
+ *     or {@link java.util.spi.ToolProvider#findFirst ToolProvider.findFirst("jdeps")}
+ *     to obtain an instance of a {@code ToolProvider} that provides the equivalent
+ *     of command-line access to the {@code javap} or {@code jdeps} tool.
  *
  * @moduleGraph
  * @since 9
  */
+@ParticipatesInPreview
 module jdk.jdeps {
     requires java.compiler;
     requires jdk.compiler;

@@ -102,7 +102,7 @@ public class AbstractUndoableEdit implements UndoableEdit, Serializable {
      * operation represented by this edit. Override should begin with
      * a call to super.
      *
-     * @exception CannotUndoException if <code>canUndo</code>
+     * @throws CannotUndoException if <code>canUndo</code>
      *    returns <code>false</code>
      * @see     #canUndo
      */
@@ -134,7 +134,7 @@ public class AbstractUndoableEdit implements UndoableEdit, Serializable {
      * Subclasses should override to redo the operation represented by
      * this edit. Override should begin with a call to super.
      *
-     * @exception CannotRedoException if <code>canRedo</code>
+     * @throws CannotRedoException if <code>canRedo</code>
      *     returns <code>false</code>
      * @see     #canRedo
      */
@@ -211,7 +211,7 @@ public class AbstractUndoableEdit implements UndoableEdit, Serializable {
     }
 
     /**
-     * Retreives the value from the defaults table with key
+     * Retrieves the value from the defaults table with key
      * <code>AbstractUndoableEdit.undoText</code> and returns
      * that value followed by a space, followed by
      * <code>getPresentationName</code>.
@@ -238,7 +238,7 @@ public class AbstractUndoableEdit implements UndoableEdit, Serializable {
     }
 
     /**
-     * Retreives the value from the defaults table with key
+     * Retrieves the value from the defaults table with key
      * <code>AbstractUndoableEdit.redoText</code> and returns
      * that value followed by a space, followed by
      * <code>getPresentationName</code>.

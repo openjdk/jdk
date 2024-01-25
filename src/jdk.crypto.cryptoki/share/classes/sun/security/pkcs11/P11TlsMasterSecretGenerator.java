@@ -44,7 +44,7 @@ import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
  */
 public final class P11TlsMasterSecretGenerator extends KeyGeneratorSpi {
 
-    private final static String MSG = "TlsMasterSecretGenerator must be "
+    private static final String MSG = "TlsMasterSecretGenerator must be "
         + "initialized using a TlsMasterSecretParameterSpec";
 
     // token instance
@@ -87,7 +87,7 @@ public final class P11TlsMasterSecretGenerator extends KeyGeneratorSpi {
     @SuppressWarnings("deprecation")
     protected void engineInit(AlgorithmParameterSpec params,
             SecureRandom random) throws InvalidAlgorithmParameterException {
-        if (params instanceof TlsMasterSecretParameterSpec == false) {
+        if (!(params instanceof TlsMasterSecretParameterSpec)) {
             throw new InvalidAlgorithmParameterException(MSG);
         }
 

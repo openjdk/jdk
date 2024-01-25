@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package com.sun.crypto.provider;
 import java.security.*;
 import java.security.spec.*;
 import javax.crypto.*;
-import javax.crypto.spec.*;
 
 /**
  * This class represents password-based encryption as defined by the PKCS #5
@@ -44,7 +43,7 @@ import javax.crypto.spec.*;
 public final class PBEWithMD5AndDESCipher extends CipherSpi {
 
     // the encapsulated DES cipher
-    private PBES1Core core;
+    private final PBES1Core core;
 
     /**
      * Creates an instance of this cipher, and initializes its mode (CBC) and
@@ -183,10 +182,7 @@ public final class PBEWithMD5AndDESCipher extends CipherSpi {
         try {
             engineInit(opmode, key, (AlgorithmParameterSpec) null, random);
         } catch (InvalidAlgorithmParameterException ie) {
-            InvalidKeyException ike =
-                new InvalidKeyException("requires PBE parameters");
-            ike.initCause(ie);
-            throw ike;
+            throw new InvalidKeyException("requires PBE parameters", ie);
         }
     }
 

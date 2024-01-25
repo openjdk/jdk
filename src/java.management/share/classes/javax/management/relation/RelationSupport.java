@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ package javax.management.relation;
 import java.lang.System.Logger.Level;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.List;
 
@@ -108,7 +107,7 @@ public class RelationSupport
     //   via Relation Service setRole() and setRoles() methods
     // - if the relation is internal to the Relation Service, via
     //   setRoleInt() and setRolesInt() methods.
-    private final Map<String,Role> myRoleName2ValueMap = new HashMap<String,Role>();
+    private final Map<String,Role> myRoleName2ValueMap = new HashMap<>();
 
     // Flag to indicate if the object has been added in the Relation Service
     private final AtomicBoolean myInRelServFlg = new AtomicBoolean();
@@ -366,7 +365,7 @@ public class RelationSupport
         RoleList result;
         synchronized(myRoleName2ValueMap) {
             result =
-                new RoleList(new ArrayList<Role>(myRoleName2ValueMap.values()));
+                new RoleList(new ArrayList<>(myRoleName2ValueMap.values()));
         }
 
         RELATION_LOGGER.log(Level.TRACE, "RETURN");
@@ -581,8 +580,7 @@ public class RelationSupport
 
         RELATION_LOGGER.log(Level.TRACE, "ENTRY");
 
-        Map<ObjectName,List<String>> refMBeanMap =
-            new HashMap<ObjectName,List<String>>();
+        Map<ObjectName,List<String>> refMBeanMap = new HashMap<>();
 
         synchronized(myRoleName2ValueMap) {
 
@@ -602,7 +600,7 @@ public class RelationSupport
                     boolean newRefFlg = false;
                     if (mbeanRoleNameList == null) {
                         newRefFlg = true;
-                        mbeanRoleNameList = new ArrayList<String>();
+                        mbeanRoleNameList = new ArrayList<>();
                     }
                     mbeanRoleNameList.add(currRoleName);
                     if (newRefFlg) {
@@ -803,7 +801,7 @@ public class RelationSupport
                 signature[0] = "java.lang.String";
                 signature[1] = "java.lang.String";
                 // Can throw InstanceNotFoundException if the Relation
-                // Service is not registered (to be catched in any case and
+                // Service is not registered (to be caught in any case and
                 // transformed into RelationServiceNotRegisteredException).
                 //
                 // Shall not throw a MBeanException, or a ReflectionException
@@ -837,7 +835,7 @@ public class RelationSupport
                 // Note: no need to test if role value (list) not null before
                 //       cloning, null value not allowed, empty list if
                 //       nothing.
-                result = new ArrayList<ObjectName>(role.getRoleValue());
+                result = new ArrayList<>(role.getRoleValue());
 
             } else {
                 // Role retrieved during multi-role retrieval: returns the
@@ -975,8 +973,7 @@ public class RelationSupport
 
         List<String> roleNameList;
         synchronized(myRoleName2ValueMap) {
-            roleNameList =
-                new ArrayList<String>(myRoleName2ValueMap.keySet());
+            roleNameList = new ArrayList<>(myRoleName2ValueMap.keySet());
         }
         String[] roleNames = new String[roleNameList.size()];
         roleNameList.toArray(roleNames);
@@ -1083,7 +1080,7 @@ public class RelationSupport
 
         if (role == null) {
             initFlg = true;
-            oldRoleValue = new ArrayList<ObjectName>();
+            oldRoleValue = new ArrayList<>();
 
         } else {
             initFlg = false;
@@ -1147,14 +1144,11 @@ public class RelationSupport
                 throw new RuntimeException(wrappedExc.getMessage());
             }
 
-        } catch (ReflectionException exc3) {
+        } catch (ReflectionException | RelationTypeNotFoundException exc3) {
             throw new RuntimeException(exc3.getMessage());
 
-        } catch (RelationTypeNotFoundException exc4) {
-            throw new RuntimeException(exc4.getMessage());
-
-        } catch (InstanceNotFoundException exc5) {
-            throw new RelationServiceNotRegisteredException(exc5.getMessage());
+        } catch (InstanceNotFoundException exc4) {
+            throw new RelationServiceNotRegisteredException(exc4.getMessage());
         }
 
         Object result = null;
@@ -1687,7 +1681,7 @@ public class RelationSupport
 
         // Note: no need to test if list not null before cloning, null value
         //       not allowed for role value.
-        List<ObjectName> newRoleValue = new ArrayList<ObjectName>(currRoleValue);
+        List<ObjectName> newRoleValue = new ArrayList<>(currRoleValue);
         newRoleValue.remove(objectName);
         Role newRole = new Role(roleName, newRoleValue);
 

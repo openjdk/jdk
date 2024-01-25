@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 
 import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleAction;
 import javax.accessibility.AccessibleContext;
 import javax.accessibility.AccessibleRole;
 import javax.accessibility.AccessibleState;
@@ -360,7 +361,7 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
 
 
     /**
-     * We pass Change events along to the listeners with the
+     * We pass Change events along to the listeners with
      * the slider (instead of the model itself) as the event source.
      */
     private class ModelListener implements ChangeListener, Serializable {
@@ -919,7 +920,7 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
      * @return a new {@code Hashtable} of labels
      * @see #setLabelTable
      * @see #setPaintLabels
-     * @exception IllegalArgumentException if {@code start} is
+     * @throws IllegalArgumentException if {@code start} is
      *          out of range, or if {@code increment} is less than or equal
      *          to zero
      */
@@ -929,7 +930,7 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
         }
 
         if ( increment <= 0 ) {
-            throw new IllegalArgumentException( "Label incremement must be > 0" );
+            throw new IllegalArgumentException( "Label increment must be > 0" );
         }
 
         class SmartHashtable extends Hashtable<Integer, JComponent> implements PropertyChangeListener {
@@ -1017,8 +1018,8 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
         @SuppressWarnings("rawtypes")
         Dictionary labelTable = getLabelTable();
 
-        if (labelTable != null && (labelTable instanceof PropertyChangeListener)) {
-            removePropertyChangeListener((PropertyChangeListener) labelTable);
+        if (labelTable instanceof PropertyChangeListener listener) {
+            removePropertyChangeListener(listener);
         }
 
         addPropertyChangeListener( table );
@@ -1421,7 +1422,7 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
      */
     @SuppressWarnings("serial") // Same-version serialization only
     protected class AccessibleJSlider extends AccessibleJComponent
-    implements AccessibleValue, ChangeListener {
+    implements AccessibleValue, ChangeListener, AccessibleAction {
 
 
         private int oldModelValue;
@@ -1536,5 +1537,71 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
             BoundedRangeModel model = JSlider.this.getModel();
             return Integer.valueOf(model.getMaximum() - model.getExtent());
         }
+
+        /**
+         * Gets the AccessibleAction associated with this object that supports
+         * one or more actions.
+         *
+         * @return AccessibleAction if supported by object; else return null
+         * @see AccessibleAction
+         */
+        public AccessibleAction getAccessibleAction() {
+            return this;
+        }
+
+        /* ===== Begin AccessibleAction impl ===== */
+
+        /**
+         * Returns the number of accessible actions available in this object
+         * If there are more than one, the first one is considered the "default"
+         * action of the object.
+         *
+         * Two actions are supported: AccessibleAction.INCREMENT which
+         * increments the slider value and AccessibleAction.DECREMENT
+         * which decrements the slider value
+         *
+         * @return the zero-based number of Actions in this object
+         */
+        public int getAccessibleActionCount() {
+            return 2;
+        }
+
+        /**
+         * Returns a description of the specified action of the object.
+         *
+         * @param i zero-based index of the actions
+         * @return a String description of the action
+         * @see #getAccessibleActionCount
+         */
+        public String getAccessibleActionDescription(int i) {
+            if (i == 0) {
+                return AccessibleAction.INCREMENT;
+            } else if (i == 1) {
+                return AccessibleAction.DECREMENT;
+            }
+            return null;
+        }
+
+        /**
+         * Performs the specified Action on the object
+         *
+         * @param i zero-based index of actions. The first action
+         * (index 0) is AccessibleAction.INCREMENT and the second
+         * action (index 1) is AccessibleAction.DECREMENT.
+         * @return true if the action was performed, otherwise false
+         * @see #getAccessibleActionCount
+         */
+        public boolean doAccessibleAction(int i) {
+            if (i < 0 || i > 1) {
+                return false;
+            }
+            //0 is increment, 1 is decrement
+            int delta = ((i > 0) ? -1 : 1);
+            JSlider.this.setValue(oldModelValue + delta);
+            return true;
+        }
+
+        /* ===== End AccessibleAction impl ===== */
+
     } // AccessibleJSlider
 }

@@ -230,7 +230,40 @@ Java_MyPackage_ASGCTBaseTest_checkAsyncGetCallTraceCall(JNIEnv* env, jclass cls)
     return false;
   }
 
-  return strcmp(name.get(), "checkAsyncGetCallTraceCall") == 0;
+  if (strcmp(name.get(), "checkAsyncGetCallTraceCall") != 0) {
+    fprintf(stderr, "Name is not checkAsyncGetCallTraceCall: %s\n", name.get());
+    return false;
+  }
+
+  // AsyncGetCallTrace and GetStackTrace should return comparable frames
+  // so we obtain the frames using GetStackTrace and compare them.
+
+  jthread thread;
+  jvmti->GetCurrentThread(&thread);
+  jvmtiFrameInfo gstFrames[MAX_DEPTH];
+  jint gstCount = 0;
+
+  jvmti->GetStackTrace(thread, 0, MAX_DEPTH, gstFrames, &gstCount);
+
+  if (gstCount != trace.num_frames) {
+    fprintf(stderr, "GetStackTrace and AsyncGetCallTrace return different number of frames: %d vs %d)", gstCount, trace.num_frames);
+    return false;
+  }
+
+  for (int i = 0; i < trace.num_frames; ++i) {
+    if (trace.frames[i].lineno == -3) {
+      if (gstFrames[i].location != -1) {
+        fprintf(stderr, "%d: ASGCT found native frame but GST did not\n", i);
+        return false;
+      }
+    } else {
+      if (gstFrames[i].method != trace.frames[i].method_id) {
+        fprintf(stderr, "%d: method_id mismatch: %p vs %p\n", i, gstFrames[i].method, trace.frames[i].method_id);
+        return false;
+      }
+    }
+  }
+  return true;
 }
 
 }

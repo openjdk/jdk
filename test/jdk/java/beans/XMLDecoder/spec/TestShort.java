@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary Tests <short> element
+ * @run main/othervm -Djava.security.manager=allow TestShort
  * @author Sergey Malenkov
  */
 

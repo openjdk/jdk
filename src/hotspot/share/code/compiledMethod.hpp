@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,7 @@ class PcDescCache {
   typedef PcDesc* PcDescPtr;
   volatile PcDescPtr _pc_descs[cache_size]; // last cache_size pc_descs found
  public:
-  PcDescCache() { debug_only(_pc_descs[0] = NULL); }
+  PcDescCache() { debug_only(_pc_descs[0] = nullptr); }
   void    reset_to(PcDesc* initial_pc_desc);
   PcDesc* find_pc_desc(int pc_offset, bool approximate);
   void    add_pc_desc(PcDesc* pc_desc);
@@ -130,7 +130,7 @@ public:
   PcDesc* find_pc_desc(address pc, bool approximate, const PcDescSearch& search) {
     address base_address = search.code_begin();
     PcDesc* desc = _pc_desc_cache.last_pc_desc();
-    if (desc != NULL && desc->pc_offset() == pc - base_address) {
+    if (desc != nullptr && desc->pc_offset() == pc - base_address) {
       return desc;
     }
     return find_pc_desc_internal(pc, approximate, search);
@@ -140,25 +140,25 @@ public:
 
 class CompiledMethod : public CodeBlob {
   friend class VMStructs;
-  friend class NMethodSweeper;
-
+  friend class DeoptimizationScope;
   void init_defaults();
 protected:
-  enum MarkForDeoptimizationStatus {
+  enum DeoptimizationStatus : u1 {
     not_marked,
     deoptimize,
-    deoptimize_noupdate
+    deoptimize_noupdate,
+    deoptimize_done
   };
 
-  MarkForDeoptimizationStatus _mark_for_deoptimization_status; // Used for stack deoptimization
-
-  bool _is_far_code; // Code is far from CodeCache.
-                     // Have to use far call instructions to call it from code in CodeCache.
+  volatile DeoptimizationStatus _deoptimization_status; // Used for stack deoptimization
+  // Used to track in which deoptimize handshake this method will be deoptimized.
+  uint64_t                      _deoptimization_generation;
 
   // set during construction
   unsigned int _has_unsafe_access:1;         // May fault due to unsafe access.
   unsigned int _has_method_handle_invokes:1; // Has this method MethodHandle invokes?
   unsigned int _has_wide_vectors:1;          // Preserve wide vectors at safepoints
+  unsigned int _has_monitors:1;              // Fastpath monitor detection for continuations
 
   Method*   _method;
   address _scopes_data_begin;
@@ -174,16 +174,20 @@ protected:
 
   void* _gc_data;
 
-  virtual void flush() = 0;
+  virtual void purge(bool free_code_cache_data, bool unregister_nmethod) = 0;
+
+private:
+  DeoptimizationStatus deoptimization_status() const {
+    return Atomic::load(&_deoptimization_status);
+  }
+
 protected:
-  CompiledMethod(Method* method, const char* name, CompilerType type, const CodeBlobLayout& layout, int frame_complete_offset, int frame_size, ImmutableOopMapSet* oop_maps, bool caller_must_gc_arguments);
-  CompiledMethod(Method* method, const char* name, CompilerType type, int size, int header_size, CodeBuffer* cb, int frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments);
+  CompiledMethod(Method* method, const char* name, CompilerType type, const CodeBlobLayout& layout, int frame_complete_offset, int frame_size, ImmutableOopMapSet* oop_maps, bool caller_must_gc_arguments, bool compiled);
+  CompiledMethod(Method* method, const char* name, CompilerType type, int size, int header_size, CodeBuffer* cb, int frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments, bool compiled);
 
 public:
   // Only used by unit test.
   CompiledMethod() {}
-
-  virtual bool is_compiled() const                { return true; }
 
   template<typename T>
   T* gc_data() const                              { return reinterpret_cast<T*>(_gc_data); }
@@ -193,21 +197,20 @@ public:
   bool  has_unsafe_access() const                 { return _has_unsafe_access; }
   void  set_has_unsafe_access(bool z)             { _has_unsafe_access = z; }
 
+  bool  has_monitors() const                      { return _has_monitors; }
+  void  set_has_monitors(bool z)                  { _has_monitors = z; }
+
   bool  has_method_handle_invokes() const         { return _has_method_handle_invokes; }
   void  set_has_method_handle_invokes(bool z)     { _has_method_handle_invokes = z; }
 
   bool  has_wide_vectors() const                  { return _has_wide_vectors; }
   void  set_has_wide_vectors(bool z)              { _has_wide_vectors = z; }
 
-  enum { not_installed = -1, // in construction, only the owner doing the construction is
-                             // allowed to advance state
-         in_use        = 0,  // executable nmethod
-         not_used      = 1,  // not entrant, but revivable
-         not_entrant   = 2,  // marked for deoptimization but activations may still exist,
-                             // will be transformed to zombie when all activations are gone
-         unloaded      = 3,  // there should be no activations, should not be called, will be
-                             // transformed to zombie by the sweeper, when not "locked in vm".
-         zombie        = 4   // no activations exist, nmethod is ready for purge
+  enum : signed char { not_installed = -1, // in construction, only the owner doing the construction is
+                                           // allowed to advance state
+                       in_use        = 0,  // executable nmethod
+                       not_used      = 1,  // not entrant, but revivable
+                       not_entrant   = 2,  // marked for deoptimization but activations may still exist
   };
 
   virtual bool  is_in_use() const = 0;
@@ -221,13 +224,12 @@ public:
   virtual bool make_not_entrant() = 0;
   virtual bool make_entrant() = 0;
   virtual address entry_point() const = 0;
-  virtual bool make_zombie() = 0;
   virtual bool is_osr_method() const = 0;
   virtual int osr_entry_bci() const = 0;
   Method* method() const                          { return _method; }
-  virtual void print_pcs() = 0;
-  bool is_native_method() const { return _method != NULL && _method->is_native(); }
-  bool is_java_method() const { return _method != NULL && !_method->is_native(); }
+  virtual void print_pcs_on(outputStream* st) = 0;
+  bool is_native_method() const { return _method != nullptr && _method->is_native(); }
+  bool is_java_method() const { return _method != nullptr && !_method->is_native(); }
 
   // ScopeDesc retrieval operation
   PcDesc* pc_desc_at(address pc)   { return find_pc_desc(pc, false); }
@@ -241,14 +243,18 @@ public:
   bool is_at_poll_return(address pc);
   bool is_at_poll_or_poll_return(address pc);
 
-  bool  is_marked_for_deoptimization() const { return _mark_for_deoptimization_status != not_marked; }
-  void  mark_for_deoptimization(bool inc_recompile_counts = true);
+  bool  is_marked_for_deoptimization() const { return deoptimization_status() != not_marked; }
+  bool  has_been_deoptimized() const { return deoptimization_status() == deoptimize_done; }
+  void  set_deoptimized_done();
+
+  virtual void  make_deoptimized() { assert(false, "not supported"); };
 
   bool update_recompile_counts() const {
     // Update recompile counts when either the update is explicitly requested (deoptimize)
     // or the nmethod is not marked for deoptimization at all (not_marked).
     // The latter happens during uncommon traps when deoptimized nmethod is made not entrant.
-    return _mark_for_deoptimization_status != deoptimize_noupdate;
+    DeoptimizationStatus status = deoptimization_status();
+    return status != deoptimize_noupdate && status != deoptimize_done;
   }
 
   // tells whether frames described by this nmethod can be deoptimized
@@ -260,11 +266,11 @@ public:
 
   address scopes_data_begin() const { return _scopes_data_begin; }
   virtual address scopes_data_end() const = 0;
-  int scopes_data_size() const { return scopes_data_end() - scopes_data_begin(); }
+  int scopes_data_size() const { return int(scopes_data_end() - scopes_data_begin()); }
 
   virtual PcDesc* scopes_pcs_begin() const = 0;
   virtual PcDesc* scopes_pcs_end() const = 0;
-  int scopes_pcs_size() const { return (intptr_t) scopes_pcs_end() - (intptr_t) scopes_pcs_begin(); }
+  int scopes_pcs_size() const { return int((intptr_t) scopes_pcs_end() - (intptr_t) scopes_pcs_begin()); }
 
   address insts_begin() const { return code_begin(); }
   address insts_end() const { return stub_begin(); }
@@ -273,33 +279,34 @@ public:
   bool insts_contains(address addr) const { return insts_begin() <= addr && addr < insts_end(); }
   bool insts_contains_inclusive(address addr) const { return insts_begin() <= addr && addr <= insts_end(); }
 
-  int insts_size() const { return insts_end() - insts_begin(); }
+  int insts_size() const { return int(insts_end() - insts_begin()); }
 
   virtual address consts_begin() const = 0;
   virtual address consts_end() const = 0;
   bool consts_contains(address addr) const { return consts_begin() <= addr && addr < consts_end(); }
-  int consts_size() const { return consts_end() - consts_begin(); }
+  int consts_size() const { return int(consts_end() - consts_begin()); }
+
+  virtual int skipped_instructions_size() const = 0;
 
   virtual address stub_begin() const = 0;
   virtual address stub_end() const = 0;
   bool stub_contains(address addr) const { return stub_begin() <= addr && addr < stub_end(); }
-  int stub_size() const { return stub_end() - stub_begin(); }
+  int stub_size() const { return int(stub_end() - stub_begin()); }
 
   virtual address handler_table_begin() const = 0;
   virtual address handler_table_end() const = 0;
   bool handler_table_contains(address addr) const { return handler_table_begin() <= addr && addr < handler_table_end(); }
-  int handler_table_size() const { return handler_table_end() - handler_table_begin(); }
+  int handler_table_size() const { return int(handler_table_end() - handler_table_begin()); }
 
   virtual address exception_begin() const = 0;
 
   virtual address nul_chk_table_begin() const = 0;
   virtual address nul_chk_table_end() const = 0;
   bool nul_chk_table_contains(address addr) const { return nul_chk_table_begin() <= addr && addr < nul_chk_table_end(); }
-  int nul_chk_table_size() const { return nul_chk_table_end() - nul_chk_table_begin(); }
+  int nul_chk_table_size() const { return int(nul_chk_table_end() - nul_chk_table_begin()); }
 
   virtual oop* oop_addr_at(int index) const = 0;
   virtual Metadata** metadata_addr_at(int index) const = 0;
-  virtual void    set_original_pc(const frame* fr, address pc) = 0;
 
 protected:
   // Exception cache support
@@ -321,20 +328,27 @@ public:
   address deopt_mh_handler_begin() const  { return _deopt_mh_handler_begin; }
 
   address deopt_handler_begin() const { return _deopt_handler_begin; }
-  virtual address get_original_pc(const frame* fr) = 0;
+  address* deopt_handler_begin_addr() { return &_deopt_handler_begin; }
   // Deopt
   // Return true is the PC is one would expect if the frame is being deopted.
   inline bool is_deopt_pc(address pc);
   inline bool is_deopt_mh_entry(address pc);
   inline bool is_deopt_entry(address pc);
 
-  virtual bool can_convert_to_zombie() = 0;
+  // Accessor/mutator for the original pc of a frame before a frame was deopted.
+  address get_original_pc(const frame* fr) { return *orig_pc_addr(fr); }
+  void    set_original_pc(const frame* fr, address pc) { *orig_pc_addr(fr) = pc; }
+
+  virtual int orig_pc_offset() = 0;
+
+private:
+  address* orig_pc_addr(const frame* fr);
+
+public:
   virtual const char* compile_kind() const = 0;
   virtual int get_state() const = 0;
 
   const char* state() const;
-
-  bool is_far_code() const { return _is_far_code; }
 
   bool inlinecache_check_contains(address addr) const {
     return (addr >= code_begin() && addr < verified_entry_point());
@@ -355,8 +369,8 @@ public:
   address continuation_for_implicit_exception(address pc, bool for_div0_check);
 
  public:
-  // Serial version used by sweeper and whitebox test
-  void cleanup_inline_caches(bool clean_all);
+  // Serial version used by whitebox test
+  void cleanup_inline_caches_whitebox();
 
   virtual void clear_inline_caches();
   void clear_ic_callsites();

@@ -55,7 +55,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 6631268
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.EventsTest.Issue41Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.EventsTest.Issue41Test
  * @run testng/othervm stream.EventsTest.Issue41Test
  * @summary Test XMLEvent.writeAsEncodedUnicode can output the event content.
  */

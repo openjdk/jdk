@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.util.*;
 import java.security.*;
 import java.security.spec.*;
 
-import javax.crypto.BadPaddingException;
 import javax.crypto.spec.PSource;
 import javax.crypto.spec.OAEPParameterSpec;
 
@@ -52,7 +51,7 @@ import sun.security.jca.JCAUtil;
  *   0x00 | BT | PS...PS | 0x00 | data...data
  *
  * where BT is the blocktype (1 or 2). The length of the entire string
- * must be the same as the size of the modulus (i.e. 128 byte for a 1024 bit
+ * must be the same as the size of the modulus (i.e. 128 byte for a 1024-bit
  * key). Per spec, the padding string must be at least 8 bytes long. That
  * leaves up to (length of key in bytes) - 11 bytes for the data.
  *
@@ -68,7 +67,7 @@ import sun.security.jca.JCAUtil;
  * The algorithms (representations) are forwards-compatible: that is,
  * the algorithm described in previous releases are in later releases.
  * However, additional comments/checks/clarifications were added to the
- * later versions based on real-world experience (e.g. stricter v1.5
+ * latter versions based on real-world experience (e.g. stricter v1.5
  * format checking.)
  *
  * Note: RSA keys should be at least 512 bits long
@@ -101,9 +100,6 @@ public final class RSAPadding {
 
     // maximum size of the data
     private final int maxDataSize;
-
-    // OAEP: main message digest
-    private MessageDigest md;
 
     // OAEP: MGF1
     private MGF1 mgf;
@@ -151,6 +147,8 @@ public final class RSAPadding {
             // sanity check, already verified in RSASignature/RSACipher
             throw new InvalidKeyException("Padded size must be at least 64");
         }
+        // OAEP: main message digest
+        MessageDigest md;
         switch (type) {
         case PAD_BLOCKTYPE_1:
         case PAD_BLOCKTYPE_2:
@@ -202,7 +200,7 @@ public final class RSAPadding {
 
     // cache of hashes of zero length data
     private static final Map<String,byte[]> emptyHashes =
-        Collections.synchronizedMap(new HashMap<String,byte[]>());
+        Collections.synchronizedMap(new HashMap<>());
 
     /**
      * Return the value of the digest using the specified message digest
@@ -236,24 +234,22 @@ public final class RSAPadding {
     }
 
     /**
-     * Pad the data and return the padded block.
+     * Pad the data and return the result or null if error occurred.
      */
-    public byte[] pad(byte[] data) throws BadPaddingException {
+    public byte[] pad(byte[] data) {
         return pad(data, 0, data.length);
     }
 
     /**
-     * Pad the data and return the padded block.
+     * Pad the data and return the result or null if error occurred.
      */
-    public byte[] pad(byte[] data, int ofs, int len)
-            throws BadPaddingException {
+    public byte[] pad(byte[] data, int ofs, int len) {
         if (len > maxDataSize) {
-            throw new BadPaddingException("Data must be shorter than "
-                + (maxDataSize + 1) + " bytes but received "
-                + len + " bytes.");
+            return null;
         }
         switch (type) {
         case PAD_NONE:
+            // assert len == paddedSize and data.length - ofs > len?
             return RSACore.convert(data, ofs, len);
         case PAD_BLOCKTYPE_1:
         case PAD_BLOCKTYPE_2:
@@ -266,31 +262,25 @@ public final class RSAPadding {
     }
 
     /**
-     * Unpad the padded block and return the data.
+     * Unpad the padded block and return the result or null if error occurred.
      */
-    public byte[] unpad(byte[] padded) throws BadPaddingException {
-        if (padded.length != paddedSize) {
-            throw new BadPaddingException("Decryption error." +
-                "The padded array length (" + padded.length +
-                ") is not the specified padded size (" + paddedSize + ")");
-        }
-        switch (type) {
-        case PAD_NONE:
-            return padded;
-        case PAD_BLOCKTYPE_1:
-        case PAD_BLOCKTYPE_2:
-            return unpadV15(padded);
-        case PAD_OAEP_MGF1:
-            return unpadOAEP(padded);
-        default:
-            throw new AssertionError();
+    public byte[] unpad(byte[] padded) {
+        if (padded.length == paddedSize) {
+            return switch(type) {
+                case PAD_NONE -> padded;
+                case PAD_BLOCKTYPE_1, PAD_BLOCKTYPE_2 -> unpadV15(padded);
+                case PAD_OAEP_MGF1 -> unpadOAEP(padded);
+                default -> throw new AssertionError();
+            };
+        } else {
+            return null;
         }
     }
 
     /**
      * PKCS#1 v1.5 padding (blocktype 1 and 2).
      */
-    private byte[] padV15(byte[] data, int ofs, int len) throws BadPaddingException {
+    private byte[] padV15(byte[] data, int ofs, int len) {
         byte[] padded = new byte[paddedSize];
         System.arraycopy(data, ofs, padded, paddedSize - len, len);
         int psSize = paddedSize - 3 - len;
@@ -327,10 +317,10 @@ public final class RSAPadding {
 
     /**
      * PKCS#1 v1.5 unpadding (blocktype 1 (signature) and 2 (encryption)).
-     *
+     * Return the result or null if error occurred.
      * Note that we want to make it a constant-time operation
      */
-    private byte[] unpadV15(byte[] padded) throws BadPaddingException {
+    private byte[] unpadV15(byte[] padded) {
         int k = 0;
         boolean bp = false;
 
@@ -366,10 +356,8 @@ public final class RSAPadding {
         byte[] data = new byte[n];
         System.arraycopy(padded, p, data, 0, n);
 
-        BadPaddingException bpe = new BadPaddingException("Decryption error");
-
         if (bp) {
-            throw bpe;
+            return null;
         } else {
             return data;
         }
@@ -378,8 +366,9 @@ public final class RSAPadding {
     /**
      * PKCS#1 v2.0 OAEP padding (MGF1).
      * Paragraph references refer to PKCS#1 v2.1 (June 14, 2002)
+     * Return the result or null if error occurred.
      */
-    private byte[] padOAEP(byte[] M, int ofs, int len) throws BadPaddingException {
+    private byte[] padOAEP(byte[] M, int ofs, int len) {
         if (random == null) {
             random = JCAUtil.getSecureRandom();
         }
@@ -428,8 +417,9 @@ public final class RSAPadding {
 
     /**
      * PKCS#1 v2.1 OAEP unpadding (MGF1).
+     * Return the result or null if error occurred.
      */
-    private byte[] unpadOAEP(byte[] padded) throws BadPaddingException {
+    private byte[] unpadOAEP(byte[] padded) {
         byte[] EM = padded;
         boolean bp = false;
         int hLen = lHash.length;
@@ -485,12 +475,6 @@ public final class RSAPadding {
         byte [] m = new byte[EM.length - mStart];
         System.arraycopy(EM, mStart, m, 0, m.length);
 
-        BadPaddingException bpe = new BadPaddingException("Decryption error");
-
-        if (bp) {
-            throw bpe;
-        } else {
-            return m;
-        }
+        return (bp? null : m);
     }
 }

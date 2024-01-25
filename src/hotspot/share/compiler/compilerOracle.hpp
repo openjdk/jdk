@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_COMPILER_COMPILERORACLE_HPP
 #define SHARE_COMPILER_COMPILERORACLE_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
 
 class methodHandle;
@@ -51,12 +51,16 @@ class methodHandle;
   option(Print, "print", Bool) \
   option(Inline,  "inline", Bool) \
   option(DontInline,  "dontinline", Bool) \
+  option(Blackhole,  "blackhole", Bool) \
   option(CompileOnly, "compileonly", Bool)\
   option(Exclude, "exclude", Bool) \
   option(Break, "break", Bool) \
   option(BreakAtExecute, "BreakAtExecute", Bool) \
   option(BreakAtCompile, "BreakAtCompile", Bool) \
+  option(MemLimit, "MemLimit", Intx) \
+  option(MemStat, "MemStat", Uintx) \
   option(PrintAssembly, "PrintAssembly", Bool) \
+  option(PrintCompilation, "PrintCompilation", Bool) \
   option(PrintInlining, "PrintInlining", Bool) \
   option(PrintIntrinsics, "PrintIntrinsics", Bool) \
   option(PrintNMethods, "PrintNMethods", Bool)   \
@@ -78,8 +82,10 @@ class methodHandle;
   option(TraceOptoPipelining, "TraceOptoPipelining", Bool) \
   option(TraceOptoOutput, "TraceOptoOutput", Bool) \
   option(TraceSpilling, "TraceSpilling", Bool) \
-  option(PrintIdeal, "PrintIdeal", Bool) \
-  option(IGVPrintLevel, "IGVPrintLevel", Intx) \
+NOT_PRODUCT(option(TraceEscapeAnalysis, "TraceEscapeAnalysis", Bool)) \
+NOT_PRODUCT(option(PrintIdeal, "PrintIdeal", Bool))  \
+NOT_PRODUCT(option(PrintIdealPhase, "PrintIdealPhase", Ccstrlist)) \
+NOT_PRODUCT(option(IGVPrintLevel, "IGVPrintLevel", Intx)) \
   option(Vectorize, "Vectorize", Bool) \
   option(VectorizeDebug, "VectorizeDebug", Uintx) \
   option(CloneMapDebug, "CloneMapDebug", Bool) \
@@ -109,6 +115,10 @@ enum class OptionType {
     Unknown
 };
 
+enum class MemStatAction {
+  collect = 1, print = 2
+};
+
 class CompilerOracle : AllStatic {
  private:
   static bool _quiet;
@@ -120,7 +130,7 @@ class CompilerOracle : AllStatic {
   static bool has_command_file();
 
   // Reads from file and adds to lists
-  static void parse_from_file();
+  static bool parse_from_file();
 
   // Tells whether we to exclude compilation of method
   static bool should_exclude(const methodHandle& method);
@@ -131,6 +141,9 @@ class CompilerOracle : AllStatic {
 
   // Tells whether we want to disallow inlining of this method
   static bool should_not_inline(const methodHandle& method);
+
+  // Tells whether this method changes Thread.currentThread()
+  static bool changes_current_thread(const methodHandle& method);
 
   // Tells whether we should print the assembly for this method
   static bool should_print(const methodHandle& method);
@@ -143,6 +156,13 @@ class CompilerOracle : AllStatic {
 
   // Tells whether there are any methods to print for print_method_statistics()
   static bool should_print_methods();
+
+  // Tells whether there are any methods to (collect|collect+print) memory statistics for
+  static bool should_collect_memstat();
+  static bool should_print_final_memstat_report();
+
+  // Tags the method as blackhole candidate, if possible.
+  static void tag_blackhole_if_possible(const methodHandle& method);
 
   // A wrapper for checking bool options
   static bool has_option(const methodHandle& method, enum CompileCommand option);
@@ -157,9 +177,9 @@ class CompilerOracle : AllStatic {
   static bool option_matches_type(enum CompileCommand option, T& value);
 
   // Reads from string instead of file
-  static void parse_from_string(const char* option_string, void (*parser)(char*));
-  static void parse_from_line(char* line);
-  static void parse_compile_only(char* line);
+  static bool parse_from_string(const char* option_string, bool (*parser)(char*));
+  static bool parse_from_line(char* line);
+  static bool parse_compile_only(char* line);
 
   // Fast check if there is any option set that compile control needs to know about
   static bool has_any_command_set();

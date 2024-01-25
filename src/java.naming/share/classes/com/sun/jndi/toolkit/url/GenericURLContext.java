@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@ import javax.naming.spi.NamingManager;
 import java.util.Hashtable;
 import java.net.MalformedURLException;
 
+import com.sun.jndi.toolkit.url.Uri.ParseMode;
+
 /**
  * This abstract class is a generic URL context that accepts as the
  * name argument either a string URL or a Name whose first component
@@ -48,6 +50,7 @@ import java.net.MalformedURLException;
  * @author Rosanna Lee
  */
 public abstract class GenericURLContext implements Context {
+
     protected Hashtable<String, Object> myEnv = null;
 
     @SuppressWarnings("unchecked") // Expect Hashtable<String, Object>
@@ -161,8 +164,18 @@ public abstract class GenericURLContext implements Context {
         if (url.startsWith("//", start)) {
             start += 2;  // skip double slash
 
-            // find last slash
-            int posn = url.indexOf('/', start);
+            // find where the authority component ends
+            // and the rest of the URL starts
+            int slash = url.indexOf('/', start);
+            int qmark = url.indexOf('?', start);
+            int fmark = url.indexOf('#', start);
+            if (fmark > -1 && qmark > fmark) qmark = -1;
+            if (fmark > -1 && slash > fmark) slash = -1;
+            if (qmark > -1 && slash > qmark) slash = -1;
+            int posn = slash > -1 ? slash
+                    : (qmark > -1 ? qmark
+                    : (fmark > -1 ? fmark
+                    : url.length()));
             if (posn >= 0) {
                 start = posn;
             } else {

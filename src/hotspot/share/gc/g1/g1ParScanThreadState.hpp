@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,24 +25,30 @@
 #ifndef SHARE_GC_G1_G1PARSCANTHREADSTATE_HPP
 #define SHARE_GC_G1_G1PARSCANTHREADSTATE_HPP
 
-#include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1RedirtyCardsQueue.hpp"
 #include "gc/g1/g1OopClosures.hpp"
-#include "gc/g1/g1RemSet.hpp"
-#include "gc/g1/heapRegionRemSet.hpp"
+#include "gc/g1/g1YoungGCAllocationFailureInjector.hpp"
+#include "gc/g1/g1_globals.hpp"
 #include "gc/shared/ageTable.hpp"
+#include "gc/shared/copyFailedInfo.hpp"
 #include "gc/shared/partialArrayTaskStepper.hpp"
+#include "gc/shared/preservedMarks.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "memory/allocation.hpp"
 #include "oops/oop.hpp"
 #include "utilities/ticks.hpp"
 
+class G1CardTable;
+class G1CollectionSet;
+class G1EvacFailureRegions;
+class G1EvacuationRootClosures;
 class G1OopStarChunkedList;
 class G1PLABAllocator;
-class G1EvacuationRootClosures;
 class HeapRegion;
-class Klass;
+class PreservedMarks;
+class PreservedMarksSet;
 class outputStream;
 
 class G1ParScanThreadState : public CHeapObj<mtGC> {
@@ -55,10 +61,9 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   G1PLABAllocator* _plab_allocator;
 
   AgeTable _age_table;
-  G1HeapRegionAttr _dest[G1HeapRegionAttr::Num];
   // Local tenuring threshold.
   uint _tenuring_threshold;
-  G1ScanEvacuatedObjClosure  _scanner;
+  G1ScanEvacuatedObjClosure _scanner;
 
   uint _worker_id;
 
@@ -84,36 +89,47 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   // Size (in elements) of a partial objArray task chunk.
   int _partial_objarray_chunk_size;
   PartialArrayTaskStepper _partial_array_stepper;
-  // Used to check whether string dedup should be applied to an object.
-  Klass* _string_klass_or_null;
+  StringDedup::Requests _string_dedup_requests;
 
   G1CardTable* ct() { return _ct; }
 
-  G1HeapRegionAttr dest(G1HeapRegionAttr original) const {
-    assert(original.is_valid(),
-           "Original region attr invalid: %s", original.get_type_str());
-    assert(_dest[original.type()].is_valid_gen(),
-           "Dest region attr is invalid: %s", _dest[original.type()].get_type_str());
-    return _dest[original.type()];
-  }
-
-  size_t _num_optional_regions;
+  // Maximum number of optional regions at start of gc.
+  size_t _max_num_optional_regions;
   G1OopStarChunkedList* _oops_into_optional_regions;
 
   G1NUMA* _numa;
-
   // Records how many object allocations happened at each node during copy to survivor.
   // Only starts recording when log of gc+heap+numa is enabled and its data is
   // transferred when flushed.
   size_t* _obj_alloc_stat;
 
+  // Per-thread evacuation failure data structures.
+  ALLOCATION_FAILURE_INJECTOR_ONLY(size_t _allocation_failure_inject_counter;)
+
+  PreservedMarks* _preserved_marks;
+  EvacuationFailedInfo _evacuation_failed_info;
+  G1EvacFailureRegions* _evac_failure_regions;
+  // Number of additional cards into evacuation failed regions enqueued into
+  // the local DCQS. This is an approximation, as cards that would be added later
+  // outside of evacuation failure will not be subtracted again.
+  size_t _evac_failure_enqueued_cards;
+
+  // Enqueue the card if not already in the set; this is a best-effort attempt on
+  // detecting duplicates.
+  template <class T> bool enqueue_if_new(T* p);
+  // Enqueue the card of p into the (evacuation failed) region.
+  template <class T> void enqueue_card_into_evac_fail_region(T* p, oop obj);
+
+  bool inject_allocation_failure(uint region_idx) ALLOCATION_FAILURE_INJECTOR_RETURN_( return false; );
+
 public:
   G1ParScanThreadState(G1CollectedHeap* g1h,
                        G1RedirtyCardsQueueSet* rdcqs,
+                       PreservedMarks* preserved_marks,
                        uint worker_id,
-                       uint n_workers,
-                       size_t young_cset_length,
-                       size_t optional_cset_length);
+                       uint num_workers,
+                       G1CollectionSet* collection_set,
+                       G1EvacFailureRegions* evac_failure_regions);
   virtual ~G1ParScanThreadState();
 
   void set_ref_discoverer(ReferenceDiscoverer* rd) { _scanner.set_ref_discoverer(rd); }
@@ -129,28 +145,16 @@ public:
 
   void push_on_queue(ScannerTask task);
 
-  template <class T> void enqueue_card_if_tracked(G1HeapRegionAttr region_attr, T* p, oop o) {
-    assert(!HeapRegion::is_in_same_region(p, o), "Should have filtered out cross-region references already.");
-    assert(!_g1h->heap_region_containing(p)->is_young(), "Should have filtered out from-young references already.");
+  // Apply the post barrier to the given reference field. Enqueues the card of p
+  // if the barrier does not filter out the reference for some reason (e.g.
+  // p and q are in the same region, p is in survivor, p is in collection set)
+  // To be called during GC if nothing particular about p and obj are known.
+  template <class T> void write_ref_field_post(T* p, oop obj);
 
-#ifdef ASSERT
-    HeapRegion* const hr_obj = _g1h->heap_region_containing(o);
-    assert(region_attr.needs_remset_update() == hr_obj->rem_set()->is_tracked(),
-           "State flag indicating remset tracking disagrees (%s) with actual remembered set (%s) for region %u",
-           BOOL_TO_STR(region_attr.needs_remset_update()),
-           BOOL_TO_STR(hr_obj->rem_set()->is_tracked()),
-           hr_obj->hrm_index());
-#endif
-    if (!region_attr.needs_remset_update()) {
-      return;
-    }
-    size_t card_index = ct()->index_for(p);
-    // If the card hasn't been added to the buffer, do it.
-    if (_last_enqueued_card != card_index) {
-      _rdc_local_qset.enqueue(ct()->byte_for_index(card_index));
-      _last_enqueued_card = card_index;
-    }
-  }
+  // Enqueue the card if the reference's target region's remembered set is tracked.
+  // Assumes that a significant amount of pre-filtering (like done by
+  // write_ref_field_post() above) has already been performed.
+  template <class T> void enqueue_card_if_tracked(G1HeapRegionAttr region_attr, T* p, oop o);
 
   G1EvacuationRootClosures* closures() { return _closures; }
   uint worker_id() { return _worker_id; }
@@ -158,9 +162,11 @@ public:
   size_t lab_waste_words() const;
   size_t lab_undo_waste_words() const;
 
+  size_t evac_failure_enqueued_cards() const;
+
   // Pass locally gathered statistics to global state. Returns the total number of
   // HeapWords copied.
-  size_t flush(size_t* surviving_young_words);
+  size_t flush_stats(size_t* surviving_young_words, uint num_workers);
 
 private:
   void do_partial_array(PartialArrayScanTask task);
@@ -177,6 +183,8 @@ private:
                        size_t word_sz,
                        uint node_index);
 
+  void update_bot_after_copying(oop obj, size_t word_sz);
+
   oop do_copy_to_survivor_space(G1HeapRegionAttr region_attr,
                                 oop obj,
                                 markWord old_mark);
@@ -189,7 +197,7 @@ private:
   // Tries to allocate word_sz in the PLAB of the next "generation" after trying to
   // allocate into dest. Previous_plab_refill_failed indicates whether previous
   // PLAB refill for the original (source) object failed.
-  // Returns a non-NULL pointer if successful, and updates dest if required.
+  // Returns a non-null pointer if successful, and updates dest if required.
   // Also determines whether we should continue to try to allocate into the various
   // generations or just end trying to allocate.
   HeapWord* allocate_in_next_plab(G1HeapRegionAttr* dest,
@@ -223,7 +231,7 @@ public:
   void reset_trim_ticks();
 
   // An attempt to evacuate "obj" has failed; take necessary steps.
-  oop handle_evacuation_failure_par(oop obj, markWord m);
+  oop handle_evacuation_failure_par(oop obj, markWord m, size_t word_sz, bool cause_pinned);
 
   template <typename T>
   inline void remember_root_into_optional_region(T* p);
@@ -235,23 +243,26 @@ public:
 
 class G1ParScanThreadStateSet : public StackObj {
   G1CollectedHeap* _g1h;
-  G1RedirtyCardsQueueSet* _rdcqs;
+  G1CollectionSet* _collection_set;
+  G1RedirtyCardsQueueSet _rdcqs;
+  PreservedMarksSet _preserved_marks_set;
   G1ParScanThreadState** _states;
   size_t* _surviving_young_words_total;
-  size_t _young_cset_length;
-  size_t _optional_cset_length;
-  uint _n_workers;
+  uint _num_workers;
   bool _flushed;
+  G1EvacFailureRegions* _evac_failure_regions;
 
  public:
   G1ParScanThreadStateSet(G1CollectedHeap* g1h,
-                          G1RedirtyCardsQueueSet* rdcqs,
-                          uint n_workers,
-                          size_t young_cset_length,
-                          size_t optional_cset_length);
+                          uint num_workers,
+                          G1CollectionSet* collection_set,
+                          G1EvacFailureRegions* evac_failure_regions);
   ~G1ParScanThreadStateSet();
 
-  void flush();
+  G1RedirtyCardsQueueSet* rdcqs() { return &_rdcqs; }
+  PreservedMarksSet* preserved_marks_set() { return &_preserved_marks_set; }
+
+  void flush_stats();
   void record_unused_optional_region(HeapRegion* hr);
 
   G1ParScanThreadState* state_for_worker(uint worker_id);

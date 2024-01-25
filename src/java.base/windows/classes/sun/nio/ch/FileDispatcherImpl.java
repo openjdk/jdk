@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,21 +25,28 @@
 
 package sun.nio.ch;
 
+import java.io.File;
 import java.io.FileDescriptor;
 import java.io.IOException;
-import jdk.internal.access.SharedSecrets;
-import jdk.internal.access.JavaIOFileDescriptorAccess;
-import sun.security.action.GetPropertyAction;
-import java.io.File;
 import java.nio.CharBuffer;
+import jdk.internal.access.JavaIOFileDescriptorAccess;
+import jdk.internal.access.SharedSecrets;
+import sun.security.action.GetPropertyAction;
 
 class FileDispatcherImpl extends FileDispatcher {
+    private static final int MAP_INVALID = -1;
+    private static final int MAP_RO = 0;
+    private static final int MAP_RW = 1;
+    private static final int MAP_PV = 2;
+
+    private static final long ALLOCATION_GRANULARITY;
+    private static final int  MAX_DIRECT_TRANSFER_SIZE;
+
+    // set to true if fast file transmission (TransmitFile) is enabled
+    private static final boolean FAST_FILE_TRANSFER;
 
     private static final JavaIOFileDescriptorAccess fdAccess =
         SharedSecrets.getJavaIOFileDescriptorAccess();
-
-    // set to true if fast file transmission (TransmitFile) is enabled
-    private static final boolean fastFileTransfer;
 
     FileDispatcherImpl() { }
 
@@ -118,11 +125,45 @@ class FileDispatcherImpl extends FileDispatcher {
     }
 
     boolean canTransferToDirectly(java.nio.channels.SelectableChannel sc) {
-        return fastFileTransfer && sc.isBlocking();
+        return FAST_FILE_TRANSFER && sc.isBlocking();
     }
 
     boolean transferToDirectlyNeedsPositionLock() {
         return true;
+    }
+
+    boolean canTransferToFromOverlappedMap() {
+        return true;
+    }
+
+
+    long allocationGranularity() {
+        return ALLOCATION_GRANULARITY;
+    }
+
+    long map(FileDescriptor fd, int prot, long position, long length,
+             boolean isSync)
+        throws IOException
+    {
+        return map0(fd, prot, position, length, isSync);
+    }
+
+    int unmap(long address, long length) {
+        return unmap0(address, length);
+    }
+
+    int maxDirectTransferSize() {
+        return MAX_DIRECT_TRANSFER_SIZE;
+    }
+
+    long transferTo(FileDescriptor src, long position, long count,
+                    FileDescriptor dst, boolean append) {
+        return transferTo0(src, position, count, dst, append);
+    }
+
+    long transferFrom(FileDescriptor src, FileDescriptor dst,
+                      long position, long count, boolean append) {
+        return IOStatus.UNSUPPORTED;
     }
 
     int setDirectIO(FileDescriptor fd, String path) {
@@ -147,7 +188,9 @@ class FileDispatcherImpl extends FileDispatcher {
 
     static {
         IOUtil.load();
-        fastFileTransfer = isFastFileTransferRequested();
+        FAST_FILE_TRANSFER       = isFastFileTransferRequested();
+        ALLOCATION_GRANULARITY   = allocationGranularity0();
+        MAX_DIRECT_TRANSFER_SIZE = maxDirectTransferSize0();
     }
 
     //-- Native methods
@@ -189,6 +232,20 @@ class FileDispatcherImpl extends FileDispatcher {
     static native void close0(FileDescriptor fd) throws IOException;
 
     static native long duplicateHandle(long fd) throws IOException;
+
+    static native long allocationGranularity0();
+
+    static native long map0(FileDescriptor fd, int prot, long position,
+                            long length, boolean isSync)
+        throws IOException;
+
+    static native int unmap0(long address, long length);
+
+    static native int maxDirectTransferSize0();
+
+    static native long transferTo0(FileDescriptor src, long position,
+                                   long count, FileDescriptor dst,
+                                   boolean append);
 
     static native int setDirect0(FileDescriptor fd, CharBuffer buffer) throws IOException;
 }

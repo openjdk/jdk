@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -317,7 +317,7 @@ handleFramePopEvent(JNIEnv *env, EventInfo *evinfo,
              *    native frame is popped (you can't get frame pop
              *    notifications on native frames). If the native caller
              *    calls another Java method before returning,
-             *    stepping will be diabled again and another frame pop
+             *    stepping will be disabled again and another frame pop
              *    will be awaited.
              *
              *    If it turns out that this is not case (2) with native
@@ -463,14 +463,18 @@ handleMethodEnterEvent(JNIEnv *env, EventInfo *evinfo,
          */
         JDI_ASSERT(step->depth == JDWP_STEP_DEPTH(INTO));
 
-        if (    (!eventFilter_predictFiltering(step->stepHandlerNode,
-                                               clazz, classname))
-             && (   step->granularity != JDWP_STEP_SIZE(LINE)
-                 || hasLineNumbers(method) ) ) {
+        /*
+         * We need to figure out if we are entering a method that we want to resume
+         * single stepping in. If the class of this method is being filtered out, then
+         * we don't resume. Otherwise, if we are not line stepping then we resume, and
+         * if we are line stepping we don't resume unless the method has LineNumbers.
+         */
+        jboolean filteredOut = eventFilter_predictFiltering(step->stepHandlerNode, clazz, classname);
+        jboolean isStepLine = step->granularity == JDWP_STEP_SIZE(LINE);
+        if (!filteredOut && (!isStepLine || hasLineNumbers(method))) {
             /*
-             * We've found a suitable method in which to stop. Step
-             * until we reach the next safe location to complete the step->,
-             * and we can get rid of the method entry handler.
+             * We've found a suitable method in which to resume stepping.
+             * We can also get rid of the method entry handler now.
              */
             enableStepping(thread);
             if ( step->methodEnterHandlerNode != NULL ) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,6 +92,7 @@ public class DummyWebSocketServer implements Closeable {
     private volatile InetSocketAddress address;
     private ByteBuffer read = ByteBuffer.allocate(16384);
     private final CountDownLatch readReady = new CountDownLatch(1);
+    private volatile int receiveBufferSize;
 
     private static class Credentials {
         private final String name;
@@ -149,7 +150,7 @@ public class DummyWebSocketServer implements Closeable {
                         err.println("Error in connection: " + channel + ", " + e);
                     } finally {
                         err.println("Closed: " + channel);
-                        close(channel);
+                        closeChannel(channel);
                         readReady.countDown();
                     }
                 }
@@ -181,6 +182,10 @@ public class DummyWebSocketServer implements Closeable {
             read.put(b);
             b.clear();
         }
+    }
+
+    protected void closeChannel(SocketChannel channel) {
+        close(channel);
     }
 
     protected void write(SocketChannel ch) throws IOException { }
@@ -217,6 +222,11 @@ public class DummyWebSocketServer implements Closeable {
         return read.duplicate().asReadOnlyBuffer().flip();
     }
 
+    public void setReceiveBufferSize(int bufsize) {
+        assert ssc == null : "Must configure before calling open()";
+        this.receiveBufferSize = bufsize;
+    }
+
     public void open() throws IOException {
         err.println("Starting");
         if (!started.compareAndSet(false, true)) {
@@ -225,6 +235,15 @@ public class DummyWebSocketServer implements Closeable {
         ssc = ServerSocketChannel.open();
         try {
             ssc.configureBlocking(true);
+            var bufsize = receiveBufferSize;
+            if (bufsize > 0) {
+                err.printf("Configuring receive buffer size to %d%n", bufsize);
+                try {
+                    ssc.setOption(StandardSocketOptions.SO_RCVBUF, bufsize);
+                } catch (IOException x) {
+                    err.printf("Failed to configure receive buffer size to %d%n", bufsize);
+                }
+            }
             ssc.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
             address = (InetSocketAddress) ssc.getLocalAddress();
             thread.start();

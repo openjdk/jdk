@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package sun.security.provider;
 import java.util.Arrays;
 import java.util.Objects;
 
+import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import static sun.security.provider.ByteArrayAccess.*;
 
@@ -47,6 +48,7 @@ import static sun.security.provider.ByteArrayAccess.*;
 abstract class SHA2 extends DigestBase {
 
     private static final int ITERATION = 64;
+    private static final int BLOCKSIZE = 64;
     // Constants for each round
     private static final int[] ROUND_CONSTS = {
         0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
@@ -80,7 +82,7 @@ abstract class SHA2 extends DigestBase {
      * Creates a new SHA object.
      */
     SHA2(String name, int digestLength, int[] initialHashes) {
-        super(name, digestLength, 64);
+        super(name, digestLength, BLOCKSIZE);
         this.initialHashes = initialHashes;
         state = new int[8];
         resetHashes();
@@ -114,6 +116,17 @@ abstract class SHA2 extends DigestBase {
         i2bBig(state, 0, out, ofs, engineGetDigestLength());
     }
 
+
+    protected void implDigestFixedLengthPreprocessed(
+            byte[] input, int inLen, byte[] output, int outOffset, int outLen) {
+        implReset();
+
+        for (int ofs = 0; ofs < inLen; ofs += BLOCKSIZE) {
+            implCompress0(input, ofs);
+        }
+        i2bBig(state, 0, output, outOffset, outLen);
+    }
+
     /**
      * Process the current block to update the state variable state.
      */
@@ -128,9 +141,7 @@ abstract class SHA2 extends DigestBase {
         // Checks similar to those performed by the method 'b2iBig64'
         // are sufficient for the case when the method 'implCompress0' is
         // replaced with a compiler intrinsic.
-        if (ofs < 0 || (buf.length - ofs) < 64) {
-            throw new ArrayIndexOutOfBoundsException();
-        }
+        Preconditions.checkFromIndexSize(ofs, BLOCKSIZE, buf.length, Preconditions.AIOOBE_FORMATTER);
     }
 
     // The method 'implCompressImpl' seems not to use its parameters.
@@ -157,14 +168,14 @@ abstract class SHA2 extends DigestBase {
 
             // delta0(x) = S(x, 7) ^ S(x, 18) ^ R(x, 3)
             int delta0_W_t15 =
-                    ((W_t15 >>>  7) | (W_t15 << 25)) ^
-                    ((W_t15 >>> 18) | (W_t15 << 14)) ^
+                    Integer.rotateRight(W_t15, 7) ^
+                    Integer.rotateRight(W_t15, 18) ^
                      (W_t15 >>>  3);
 
             // delta1(x) = S(x, 17) ^ S(x, 19) ^ R(x, 10)
             int delta1_W_t2 =
-                    ((W_t2 >>> 17) | (W_t2 << 15)) ^
-                    ((W_t2 >>> 19) | (W_t2 << 13)) ^
+                    Integer.rotateRight(W_t2, 17) ^
+                    Integer.rotateRight(W_t2, 19) ^
                      (W_t2 >>> 10);
 
             W[t] = delta0_W_t15 + delta1_W_t2 + W[t-7] + W[t-16];
@@ -185,21 +196,23 @@ abstract class SHA2 extends DigestBase {
 
             // sigma0(x) = S(x,2) xor S(x,13) xor S(x,22)
             int sigma0_a =
-                    ((a >>>  2) | (a << 30)) ^
-                    ((a >>> 13) | (a << 19)) ^
-                    ((a >>> 22) | (a << 10));
+                    Integer.rotateRight(a, 2) ^
+                    Integer.rotateRight(a, 13) ^
+                    Integer.rotateRight(a, 22);
 
             // sigma1(x) = S(x,6) xor S(x,11) xor S(x,25)
             int sigma1_e =
-                    ((e >>>  6) | (e << 26)) ^
-                    ((e >>> 11) | (e << 21)) ^
-                    ((e >>> 25) | (e <<  7));
+                    Integer.rotateRight(e, 6) ^
+                    Integer.rotateRight(e, 11) ^
+                    Integer.rotateRight(e, 25);
 
             // ch(x,y,z) = (x and y) xor ((complement x) and z)
-            int ch_efg = (e & f) ^ ((~e) & g);
+            //           = z xor (x and (y xor z));
+            int ch_efg = g ^ (e & (f ^ g));
 
             // maj(x,y,z) = (x and y) xor (x and z) xor (y and z)
-            int maj_abc = (a & b) ^ (a & c) ^ (b & c);
+            //            = (x and y) xor ((x xor y) and z)
+            int maj_abc = (a & b) ^ ((a ^ b) & c);
 
             int T1 = h + sigma1_e + ch_efg + ROUND_CONSTS[i] + W[i];
             int T2 = sigma0_a + maj_abc;

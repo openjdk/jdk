@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.MulticastSocket;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.net.SocketException;
 import java.net.SocketPermission;
@@ -48,8 +49,7 @@ import static org.testng.Assert.assertThrows;
  * @bug 8243408
  * @summary Check that MulticastSocket throws expected
  *          Exception when sending a DatagramPacket with port 0
- * @run testng SendPortZero
- * @run testng/othervm -Djdk.net.usePlainDatagramSocketImpl SendPortZero
+ * @run testng/othervm -Djava.security.manager=allow SendPortZero
  */
 
 public class SendPortZero {
@@ -69,7 +69,7 @@ public class SendPortZero {
 
         // Addresses
         loopbackAddr = InetAddress.getLoopbackAddress();
-        //wildcardAddr = new InetSocketAddress(0).getAddress();
+        wildcardAddr = new InetSocketAddress(0).getAddress();
 
         // Packets
         // loopback w/port 0
@@ -77,28 +77,25 @@ public class SendPortZero {
         loopbackZeroPkt.setAddress(loopbackAddr);
         loopbackZeroPkt.setPort(0);
 
-        /*
-        //Commented until JDK-8236852 is fixed
-
         // wildcard w/port 0
         wildcardZeroPkt = new DatagramPacket(buf, 0, buf.length);
         wildcardZeroPkt.setAddress(wildcardAddr);
         wildcardZeroPkt.setPort(0);
 
-        //Commented until JDK-8236807 is fixed
-
         // wildcard addr w/valid port
+        // Not currently tested. See JDK-8236807
         wildcardValidPkt = new DatagramPacket(buf, 0, buf.length);
-        var addr = socket.getAddress();
-        wildcardValidPkt.setAddress(addr);
-        wildcardValidPkt.setPort(socket.getLocalPort());
-      */
+        wildcardValidPkt.setAddress(wildcardAddr);
+        wildcardValidPkt.setPort(multicastSocket.getLocalPort());
     }
 
     @DataProvider(name = "data")
     public Object[][] variants() {
         return new Object[][]{
-                { multicastSocket,       loopbackZeroPkt }
+                { multicastSocket,       loopbackZeroPkt },
+                { multicastSocket,       wildcardZeroPkt },
+                // Not currently tested. See JDK-8236807
+                //{ multicastSocket,       wildcardValidPkt }
         };
     }
 

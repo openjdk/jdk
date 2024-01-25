@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,6 +135,13 @@ public class Modules {
     }
 
     /**
+     * Adds native access to all unnamed modules.
+     */
+    public static void addEnableNativeAccessToAllUnnamed() {
+        JLA.addEnableNativeAccessToAllUnnamed();
+    }
+
+    /**
      * Updates module m to use a service.
      * Same as m2.addUses(service) but without a caller check.
      */
@@ -149,6 +156,7 @@ public class Modules {
         ModuleLayer layer = m.getLayer();
 
         PrivilegedAction<ClassLoader> pa = m::getClassLoader;
+        @SuppressWarnings("removal")
         ClassLoader loader = AccessController.doPrivileged(pa);
 
         ClassLoader platformClassLoader = ClassLoaders.platformClassLoader();

@@ -93,7 +93,7 @@ public abstract class InputMethodAdapter implements InputMethod {
     /**
      * Starts reconvertion. An implementing host adapter has to override
      * this method if it can support reconvert().
-     * @exception UnsupportedOperationException when the adapter does not override
+     * @throws UnsupportedOperationException when the adapter does not override
      * the method.
      */
     public void reconvert() {

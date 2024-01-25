@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,9 @@ enum EventDestination {UNKNOWN_EVENT, INTERNAL_EVENT, CLIENT_EVENT};
  */
 public class EventSetImpl extends ArrayList<Event> implements EventSet {
     private static final long serialVersionUID = -4857338819787924570L;
+    @SuppressWarnings("serial") // Type of field is not Serializable
     private VirtualMachineImpl vm; // we implement Mirror
+    @SuppressWarnings("serial") // Type of field is not Serializable
     private Packet pkt;
     private byte suspendPolicy;
     private EventSetImpl internalEventSet;

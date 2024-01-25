@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -227,6 +227,7 @@ public abstract class InfoWindow extends Window {
                             textLabel.setText(tooltipString);
                         }
 
+                        @SuppressWarnings("removal")
                         Point pointer = AccessController.doPrivileged(
                             new PrivilegedAction<Point>() {
                                 public Point run() {
@@ -266,7 +267,7 @@ public abstract class InfoWindow extends Window {
     public static class Balloon extends InfoWindow {
 
         public interface LiveArguments extends InfoWindow.LiveArguments {
-            /** The action to be performed upon clicking the baloon. */
+            /** The action to be performed upon clicking the balloon. */
             String getActionCommand();
         }
 
@@ -388,7 +389,7 @@ public abstract class InfoWindow extends Window {
                     if (nLines == BALLOON_WORD_LINE_MAX_COUNT) {
                         if (end != BreakIterator.DONE) {
                             lineLabels[nLines - 1].setText(
-                                new String(lineLabels[nLines - 1].getText() + " ..."));
+                                lineLabels[nLines - 1].getText() + " ...");
                         }
                         break;
                     }

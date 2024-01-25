@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -196,21 +196,21 @@ public class MethodBuilder {
         if (type != null) {
             switch (type) {
                 case ABSTRACT:
-                    // Excerpt from JVMS8 4.6 "Methods [Modified]:
+                    // Excerpt from JVMS-4.6 "Methods [Modified]:
                     //   If a specific method of a class or interface has its ACC_ABSTRACT flag set,
-                    // it must not have any of its ACC_FINAL, ACC_NATIVE, ACC_PRIVATE, ACC_STATIC, ACC_STRICT, or
+                    // it must not have any of its ACC_FINAL, ACC_NATIVE, ACC_PRIVATE, ACC_STATIC, or
                     // ACC_SYNCHRONIZED flags set (8.4.3.1, 8.4.3.3, 8.4.3.4).
-                    lFlags |= (builder.accFlags & ~(ACC_NATIVE | ACC_PRIVATE | ACC_STATIC | ACC_STRICT | ACC_SYNCHRONIZED));
+                    lFlags |= (builder.accFlags & ~(ACC_NATIVE | ACC_PRIVATE | ACC_STATIC | ACC_SYNCHRONIZED));
                     return new AbstractMethod(lFlags, name, desc, sig);
                 case CONCRETE:
                     lFlags |= builder.accFlags;
                     return new ConcreteMethod(lFlags, name, desc, sig, body);
                 case DEFAULT:
-                    // Excerpt from JVMS8 4.6 "Methods [Modified]:
+                    // Excerpt from JVMS-4.6 "Methods [Modified]:
                     // Methods of interfaces may set any of the flags in Table 4.5 except ACC_PROTECTED, ACC_FINAL,
                     // ACC_NATIVE, and ACC_SYNCHRONIZED (9.4); they must have exactly one of the ACC_PUBLIC or
                     // ACC_PRIVATE flags set.
-                    lFlags |= (builder.accFlags & ~(ACC_NATIVE | ACC_PRIVATE | ACC_STATIC | ACC_STRICT | ACC_SYNCHRONIZED));
+                    lFlags |= (builder.accFlags & ~(ACC_NATIVE | ACC_PRIVATE | ACC_STATIC | ACC_SYNCHRONIZED));
                     return new DefaultMethod(lFlags, name, desc, sig, body);
                 default:
                     throw new IllegalStateException();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ public class HongKong {
     public static void main(String[] args) {
         Locale reservedLocale = Locale.getDefault();
         try {
-            Locale.setDefault(new Locale("zh", "HK"));
+            Locale.setDefault(Locale.of("zh", "HK"));
             checkCountry(Locale.GERMANY, "\u5fb7\u570b");
             checkCountry(Locale.FRANCE, "\u6cd5\u570b");
             checkCountry(Locale.ITALY, "\u7fa9\u5927\u5229");

@@ -65,7 +65,7 @@ public class LZWCompressor {
      * @param out destination for compressed data
      * @param codeSize the initial code size for the LZW compressor
      * @param TIFF flag indicating that TIFF lzw fudge needs to be applied
-     * @exception IOException if underlying output stream error
+     * @throws IOException if underlying output stream error
      **/
     public LZWCompressor(ImageOutputStream out, int codeSize, boolean TIFF)
         throws IOException
@@ -90,7 +90,7 @@ public class LZWCompressor {
 
     /**
      * @param buf data to be compressed to output stream
-     * @exception IOException if underlying output stream error
+     * @throws IOException if underlying output stream error
      **/
     public void compress(byte[] buf, int offset, int length)
         throws IOException
@@ -129,7 +129,7 @@ public class LZWCompressor {
      * Indicate to compressor that no more data to go so write out
      * any remaining buffered data.
      *
-     * @exception IOException if underlying output stream error
+     * @throws IOException if underlying output stream error
      */
     public void flush() throws IOException {
         if (prefix != -1) {

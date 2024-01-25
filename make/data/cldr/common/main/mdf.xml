@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2023 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-DFS-2016
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="mdf"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="de" draft="unconfirmed">Саксонь кяль</language>
+			<language type="en" draft="unconfirmed">Англань кяль</language>
+			<language type="es" draft="unconfirmed">Испаниянь кяль</language>
+			<language type="fr" draft="unconfirmed">Кранциянь кяль</language>
+			<language type="it" draft="unconfirmed">Италиянь кяль</language>
+			<language type="ja" draft="unconfirmed">Япононь кяль</language>
+			<language type="mdf">мокшень кяль</language>
+			<language type="pl" draft="unconfirmed">Поляконь кяль</language>
+			<language type="pt" draft="unconfirmed">Португалонь кяль</language>
+			<language type="ru" draft="unconfirmed">Рузонь кяль</language>
+			<language type="tr" draft="unconfirmed">Туркань кяль</language>
+		</languages>
+		<scripts>
+			<script type="Cyrl" draft="unconfirmed">Кириллица</script>
+			<script type="Latn" draft="unconfirmed">Латиница</script>
+		</scripts>
+		<territories>
+			<territory type="001" draft="unconfirmed">масторланга</territory>
+			<territory type="002" draft="unconfirmed">Африкась</territory>
+			<territory type="003" draft="unconfirmed">Кельмеширень Америкась</territory>
+			<territory type="005" draft="unconfirmed">Лямбеширень Америкась</territory>
+			<territory type="013" draft="unconfirmed">Кучкань Америкась</territory>
+			<territory type="017" draft="unconfirmed">Кучкань Африкась</territory>
+			<territory type="019" draft="unconfirmed">Америкась</territory>
+			<territory type="142" draft="unconfirmed">Азиясь</territory>
+			<territory type="150" draft="unconfirmed">Европась</territory>
+			<territory type="AR" draft="unconfirmed">Аргентина</territory>
+			<territory type="BM" draft="unconfirmed">Бермуда</territory>
+			<territory type="BO" draft="unconfirmed">Боливия</territory>
+			<territory type="BR" draft="unconfirmed">Бразилия</territory>
+			<territory type="CA" draft="unconfirmed">Канада</territory>
+			<territory type="CL" draft="unconfirmed">Чили</territory>
+			<territory type="CO" draft="unconfirmed">Колумбия</territory>
+			<territory type="CU" draft="unconfirmed">Куба</territory>
+			<territory type="DZ" draft="unconfirmed">Алжир</territory>
+			<territory type="EG" draft="unconfirmed">Египет</territory>
+			<territory type="EU" draft="unconfirmed">Эуропонь соткс</territory>
+			<territory type="GD" draft="unconfirmed">Гренада</territory>
+			<territory type="GL" draft="unconfirmed">Гренландия</territory>
+			<territory type="MX" draft="unconfirmed">Мексика</territory>
+			<territory type="NI" draft="unconfirmed">Никарагуа</territory>
+			<territory type="PA" draft="unconfirmed">Панама</territory>
+			<territory type="PE" draft="unconfirmed">Перу</territory>
+		</territories>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[а б в г д её ж з и й к л м н о п р с т у ф х ц ч ш щ ъ ы ь э ю я]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[ӓ ә є җ ѕ і ԕ ҥ ԗ ў ѡ џ ѣ ԙ ѳ ѵѷ]</exemplarCharacters>
+		<exemplarCharacters type="index">[А Б В Г Д ЕЁ Ж З И Й К Л М Н О П Р С Т У Ф Х Ц Ч Ш Щ Ъ Ы Ь Э Ю Я]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[  , % ‰ + − 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[, ; ! ? .]</exemplarCharacters>
+	</characters>
+	<dates>
+		<fields>
+			<field type="year">
+				<displayName draft="unconfirmed">киза</displayName>
+				<relative type="-1" draft="unconfirmed">меля</relative>
+				<relative type="0" draft="unconfirmed">тядде</relative>
+				<relative type="1" draft="unconfirmed">сай кизоня</relative>
+			</field>
+			<field type="month">
+				<displayName draft="unconfirmed">ков</displayName>
+				<relative type="-1" draft="unconfirmed">ётай ковть</relative>
+				<relative type="0" draft="unconfirmed">тя ковть</relative>
+				<relative type="1" draft="unconfirmed">сай ковть</relative>
+			</field>
+			<field type="week">
+				<displayName draft="unconfirmed">недяля</displayName>
+				<relative type="-1" draft="unconfirmed">ётай недялять</relative>
+				<relative type="0" draft="unconfirmed">тя недялять</relative>
+				<relative type="1" draft="unconfirmed">сай недялять</relative>
+			</field>
+			<field type="day">
+				<displayName draft="unconfirmed">ши</displayName>
+				<relative type="-1" draft="unconfirmed">исяк</relative>
+				<relative type="0" draft="unconfirmed">тячи</relative>
+				<relative type="1" draft="unconfirmed">ванды</relative>
+			</field>
+			<field type="hour">
+				<displayName draft="unconfirmed">част</displayName>
+			</field>
+			<field type="minute">
+				<displayName draft="unconfirmed">минута</displayName>
+			</field>
+			<field type="second">
+				<displayName draft="unconfirmed">секунда</displayName>
+			</field>
+		</fields>
+	</dates>
+	<numbers>
+		<currencies>
+			<currency type="RUB">
+				<symbol>₽</symbol>
+			</currency>
+		</currencies>
+	</numbers>
+</ldml>

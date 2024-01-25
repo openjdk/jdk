@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,6 @@ $(eval $(call SetupTarget, buildtools-modules, \
 
 $(eval $(call SetupTarget, buildtools-hotspot, \
     MAKEFILE := CompileToolsHotspot, \
-    DEPS := interim-langtools, \
 ))
 
 ################################################################################
@@ -234,6 +233,7 @@ ALL_TARGETS += $(LAUNCHER_TARGETS)
 HOTSPOT_VARIANT_TARGETS := $(addprefix hotspot-, $(JVM_VARIANTS))
 HOTSPOT_VARIANT_GENSRC_TARGETS := $(addsuffix -gensrc, $(HOTSPOT_VARIANT_TARGETS))
 HOTSPOT_VARIANT_LIBS_TARGETS := $(addsuffix -libs, $(HOTSPOT_VARIANT_TARGETS))
+HOTSPOT_VARIANT_STATIC_LIBS_TARGETS := $(addsuffix -static-libs, $(HOTSPOT_VARIANT_TARGETS))
 
 define DeclareHotspotGensrcRecipe
   hotspot-$1-gensrc:
@@ -252,14 +252,69 @@ endef
 
 $(foreach v, $(JVM_VARIANTS), $(eval $(call DeclareHotspotLibsRecipe,$v)))
 
+define DeclareHotspotStaticLibsRecipe
+  hotspot-$1-static-libs:
+	+($(CD) $(TOPDIR)/make/hotspot && $(MAKE) $(MAKE_ARGS) -f lib/CompileLibraries.gmk \
+	    JVM_VARIANT=$1 STATIC_LIBS=true)
+endef
+
+$(foreach v, $(JVM_VARIANTS), $(eval $(call DeclareHotspotStaticLibsRecipe,$v)))
+
 $(eval $(call SetupTarget, hotspot-ide-project, \
     MAKEFILE := ide/visualstudio/hotspot/CreateVSProject, \
     DEPS := hotspot exploded-image, \
     ARGS := -I$(TOPDIR)/make/hotspot, \
 ))
 
+$(eval $(call SetupTarget, eclipse-java-env, \
+    MAKEFILE := ide/eclipse/CreateWorkspace, \
+    ARGS := --always-make WORKSPACE=java SHARED=false, \
+))
+
+$(eval $(call SetupTarget, eclipse-hotspot-env, \
+    MAKEFILE := ide/eclipse/CreateWorkspace, \
+    ARGS := --always-make WORKSPACE=hotspot SHARED=false, \
+))
+
+$(eval $(call SetupTarget, eclipse-native-env, \
+    MAKEFILE := ide/eclipse/CreateWorkspace, \
+    ARGS := --always-make WORKSPACE=native SHARED=false, \
+))
+
+$(eval $(call SetupTarget, eclipse-mixed-env, \
+    MAKEFILE := ide/eclipse/CreateWorkspace, \
+    ARGS := --always-make SHARED=false, \
+))
+
+$(eval $(call SetupTarget, eclipse-shared-java-env, \
+    MAKEFILE := ide/eclipse/CreateWorkspace, \
+    ARGS := --always-make WORKSPACE=java SHARED=true, \
+))
+
+$(eval $(call SetupTarget, eclipse-shared-hotspot-env, \
+    MAKEFILE := ide/eclipse/CreateWorkspace, \
+    ARGS := --always-make WORKSPACE=hotspot SHARED=true, \
+))
+
+$(eval $(call SetupTarget, eclipse-shared-native-env, \
+    MAKEFILE := ide/eclipse/CreateWorkspace, \
+    ARGS := --always-make WORKSPACE=native SHARED=true, \
+))
+
+$(eval $(call SetupTarget, eclipse-shared-mixed-env, \
+    MAKEFILE := ide/eclipse/CreateWorkspace, \
+    ARGS := --always-make SHARED=true, \
+))
+
 ALL_TARGETS += $(HOTSPOT_VARIANT_TARGETS) $(HOTSPOT_VARIANT_GENSRC_TARGETS) \
-    $(HOTSPOT_VARIANT_LIBS_TARGETS)
+    $(HOTSPOT_VARIANT_LIBS_TARGETS) $(HOTSPOT_VARIANT_STATIC_LIBS_TARGETS)
+
+################################################################################
+# Help and user support
+
+$(eval $(call SetupTarget, doctor, \
+    MAKEFILE := Doctor, \
+))
 
 ################################################################################
 # Generate libs and launcher targets for creating compile_commands.json fragments
@@ -325,7 +380,7 @@ $(eval $(call SetupTarget, vscode-project-ccls, \
 # aren't built until after libjava and libjvm are available to link to.
 $(eval $(call SetupTarget, demos-jdk, \
     MAKEFILE := CompileDemos, \
-    DEPS := java.base-libs exploded-image, \
+    DEPS := java.base-libs exploded-image buildtools-jdk, \
 ))
 
 $(eval $(call SetupTarget, test-image-demos-jdk, \
@@ -350,8 +405,9 @@ JMOD_TARGETS := $(addsuffix -jmod, $(JMOD_MODULES))
 
 define DeclareJmodRecipe
   $1-jmod:
-	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CreateJmods.gmk \
-	    MODULE=$1)
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) \
+	    $(patsubst %,-I%/modules/$1,$(PHASE_MAKEDIRS)) \
+	    -f CreateJmods.gmk MODULE=$1)
 endef
 
 $(foreach m, $(JMOD_MODULES), $(eval $(call DeclareJmodRecipe,$m)))
@@ -384,12 +440,12 @@ bootcycle-images:
 
 $(eval $(call SetupTarget, zip-security, \
     MAKEFILE := ZipSecurity, \
-    DEPS := java.base-java java.security.jgss-java java.security.jgss-libs, \
+    DEPS := buildtools-jdk java.base-java java.security.jgss-java java.security.jgss-libs, \
 ))
 
 $(eval $(call SetupTarget, zip-source, \
     MAKEFILE := ZipSource, \
-    DEPS := gensrc, \
+    DEPS := buildtools-jdk gensrc, \
 ))
 
 $(eval $(call SetupTarget, jrtfs-jar, \
@@ -416,6 +472,12 @@ $(eval $(call SetupTarget, symbols-image, \
 
 $(eval $(call SetupTarget, static-libs-image, \
     MAKEFILE := StaticLibsImage, \
+    TARGET := static-libs-image, \
+))
+
+$(eval $(call SetupTarget, static-libs-graal-image, \
+    MAKEFILE := StaticLibsImage, \
+    TARGET := static-libs-graal-image, \
 ))
 
 $(eval $(call SetupTarget, mac-jdk-bundle, \
@@ -443,7 +505,7 @@ $(eval $(call SetupTarget, exploded-image-optimize, \
 
 $(eval $(call SetupTarget, graal-builder-image, \
     MAKEFILE := GraalBuilderImage, \
-    DEPS := jdk-image static-libs-image, \
+    DEPS := jdk-image static-libs-graal-image, \
 ))
 
 ifeq ($(JCOV_ENABLED), true)
@@ -460,15 +522,15 @@ ALL_TARGETS += bootcycle-images
 # Docs targets
 
 # If building full docs, to complete docs-*-api we need both the javadoc and
-# modulegraph targets.
+# graphs targets.
 $(eval $(call SetupTarget, docs-jdk-api-javadoc, \
     MAKEFILE := Docs, \
     TARGET := docs-jdk-api-javadoc, \
 ))
 
-$(eval $(call SetupTarget, docs-jdk-api-modulegraph, \
+$(eval $(call SetupTarget, docs-jdk-api-graphs, \
     MAKEFILE := Docs, \
-    TARGET := docs-jdk-api-modulegraph, \
+    TARGET := docs-jdk-api-graphs, \
     DEPS := buildtools-modules runnable-buildjdk, \
 ))
 
@@ -477,9 +539,9 @@ $(eval $(call SetupTarget, docs-javase-api-javadoc, \
     TARGET := docs-javase-api-javadoc, \
 ))
 
-$(eval $(call SetupTarget, docs-javase-api-modulegraph, \
+$(eval $(call SetupTarget, docs-javase-api-graphs, \
     MAKEFILE := Docs, \
-    TARGET := docs-javase-api-modulegraph, \
+    TARGET := docs-javase-api-graphs, \
     DEPS := buildtools-modules runnable-buildjdk, \
 ))
 
@@ -488,9 +550,9 @@ $(eval $(call SetupTarget, docs-reference-api-javadoc, \
     TARGET := docs-reference-api-javadoc, \
 ))
 
-$(eval $(call SetupTarget, docs-reference-api-modulegraph, \
+$(eval $(call SetupTarget, docs-reference-api-graphs, \
     MAKEFILE := Docs, \
-    TARGET := docs-reference-api-modulegraph, \
+    TARGET := docs-reference-api-graphs, \
     DEPS := buildtools-modules runnable-buildjdk, \
 ))
 
@@ -509,13 +571,13 @@ $(eval $(call SetupTarget, docs-jdk-index, \
 $(eval $(call SetupTarget, docs-zip, \
     MAKEFILE := Docs, \
     TARGET := docs-zip, \
-    DEPS :=  docs-jdk, \
+    DEPS :=  docs-jdk buildtools-jdk, \
 ))
 
 $(eval $(call SetupTarget, docs-specs-zip, \
     MAKEFILE := Docs, \
     TARGET := docs-specs-zip, \
-    DEPS := docs-jdk-specs, \
+    DEPS := docs-jdk-specs buildtools-jdk, \
 ))
 
 $(eval $(call SetupTarget, update-build-docs, \
@@ -527,17 +589,30 @@ $(eval $(call SetupTarget, update-x11wrappers, \
     DEPS := java.base-copy buildtools-jdk, \
 ))
 
+ifneq ($(HSDIS_BACKEND), none)
+  $(eval $(call SetupTarget, build-hsdis, \
+      MAKEFILE := Hsdis, \
+      TARGET := build, \
+  ))
+
+  $(eval $(call SetupTarget, install-hsdis, \
+      MAKEFILE := Hsdis, \
+      TARGET := install, \
+      DEPS := jdk-image, \
+  ))
+endif
+
 ################################################################################
 # Cross compilation support
 
 ifeq ($(CREATING_BUILDJDK), true)
   # This target is only called by the recursive call below.
   create-buildjdk-interim-image-helper: interim-image jdk.jlink-launchers \
-      java.base-copy jdk.jdeps-launchers
+      java.base-copy jdk.jdeps-launchers jdk.compiler-launchers
 endif
 
-BUILDJDK_MODULES := $(sort $(foreach m, jdk.jlink $(INTERIM_IMAGE_MODULES), \
-    $(call FindTransitiveDepsForModule, $m) $m))
+BUILDJDK_MODULES := $(sort $(foreach m, jdk.jlink jdk.compiler \
+    $(INTERIM_IMAGE_MODULES), $(call FindTransitiveDepsForModule, $m) $m))
 
 $(eval $(call SetupTarget, create-buildjdk-interim-image, \
     MAKEFILE := Main, \
@@ -660,18 +735,6 @@ $(eval $(call SetupTarget, test-image-libtest-jtreg-native, \
     DEPS := build-test-libtest-jtreg-native, \
 ))
 
-$(eval $(call SetupTarget, build-test-hotspot-jtreg-graal, \
-    MAKEFILE := test/JtregGraalUnit, \
-    TARGET := build-test-hotspot-jtreg-graal, \
-    DEPS := exploded-image, \
-))
-
-$(eval $(call SetupTarget, test-image-hotspot-jtreg-graal, \
-    MAKEFILE := test/JtregGraalUnit, \
-    TARGET := test-image-hotspot-jtreg-graal, \
-    DEPS := build-test-hotspot-jtreg-graal, \
-))
-
 ifneq ($(GTEST_FRAMEWORK_SRC), )
   $(eval $(call SetupTarget, test-image-hotspot-gtest, \
       MAKEFILE := hotspot/test/GtestImage, \
@@ -681,7 +744,14 @@ endif
 
 $(eval $(call SetupTarget, build-test-lib, \
     MAKEFILE := test/BuildTestLib, \
+    TARGET := build-test-lib, \
     DEPS := exploded-image, \
+))
+
+$(eval $(call SetupTarget, test-image-lib, \
+    MAKEFILE := test/BuildTestLib, \
+    TARGET := test-image-lib, \
+    DEPS := build-test-lib, \
 ))
 
 ifeq ($(BUILD_FAILURE_HANDLER), true)
@@ -700,9 +770,25 @@ ifeq ($(BUILD_FAILURE_HANDLER), true)
   ))
 endif
 
+ifeq ($(BUILD_JTREG_TEST_THREAD_FACTORY), true)
+  # Builds the test thread factory jtreg extension
+  $(eval $(call SetupTarget, build-test-test-thread-factory, \
+      MAKEFILE := test/BuildJtregTestThreadFactory, \
+      TARGET := build, \
+      DEPS := interim-langtools exploded-image, \
+  ))
+
+  # Copies the jtreg test thread factory into the test image
+  $(eval $(call SetupTarget, test-image-test-thread-factory, \
+      MAKEFILE := test/BuildJtregTestThreadFactory, \
+      TARGET := images, \
+      DEPS := build-test-test-thread-factory, \
+  ))
+endif
+
 $(eval $(call SetupTarget, build-microbenchmark, \
     MAKEFILE := test/BuildMicrobenchmark, \
-    DEPS := interim-langtools exploded-image, \
+    DEPS := interim-langtools exploded-image build-test-lib, \
 ))
 
 ################################################################################
@@ -773,6 +859,12 @@ $(eval $(call SetupTarget, static-libs-bundles, \
     DEPS := static-libs-image, \
 ))
 
+$(eval $(call SetupTarget, static-libs-graal-bundles, \
+    MAKEFILE := Bundles, \
+    TARGET := static-libs-graal-bundles, \
+    DEPS := static-libs-graal-image, \
+))
+
 ifeq ($(JCOV_ENABLED), true)
   $(eval $(call SetupTarget, jcov-bundles, \
       MAKEFILE := Bundles, \
@@ -780,14 +872,6 @@ ifeq ($(JCOV_ENABLED), true)
       DEPS := jcov-image, \
   ))
 endif
-
-################################################################################
-# Install targets
-
-$(eval $(call SetupTarget, install, \
-    MAKEFILE := Install, \
-    DEPS := product-images, \
-))
 
 ################################################################################
 #
@@ -826,6 +910,7 @@ else
   $(foreach v, $(JVM_VARIANTS), \
       $(eval hotspot-$v-gensrc: java.base-copy buildtools-hotspot) \
       $(eval hotspot-$v-libs: hotspot-$v-gensrc java.base-copy) \
+      $(eval hotspot-$v-static-libs: hotspot-$v-gensrc java.base-copy) \
   )
 
   # If not already set, set the JVM variant target so that the JVM will be built.
@@ -862,6 +947,10 @@ else
   $(foreach t, $(filter-out java.base-libs, $(LIBS_TARGETS)), \
       $(eval $t: java.base-libs))
 
+  ifeq ($(ENABLE_HSDIS_BUNDLING), true)
+    java.base-copy: build-hsdis
+  endif
+
   # jdk.accessibility depends on java.desktop
   jdk.accessibility-libs: java.desktop-libs
 
@@ -870,34 +959,50 @@ else
   # virtual target.
   jdk.jdwp.agent-libs: jdk.jdwp.agent-gensrc
 
+  # jdk.jfr-gendata uses TOOL_JFR_GEN from buildtools-hotspot
+  jdk.jfr-gendata: buildtools-hotspot
+
   # The swing beans need to have java base properly generated to avoid errors
   # in javadoc. The X11 wrappers need the java.base include files to have been
   # copied and processed.
   java.desktop-gensrc-src: java.base-gensrc java.base-copy
 
-  # The annotation processing for jdk.internal.vm.compiler
-  # and jdk.internal.vm.compiler.management needs classes from the current JDK.
-  jdk.internal.vm.compiler-gensrc-src: $(addsuffix -java, \
-      $(call FindTransitiveDepsForModule, jdk.internal.vm.compiler))
-  jdk.internal.vm.compiler.management-gensrc-src: $(addsuffix -java, \
-      $(call FindTransitiveDepsForModule, jdk.internal.vm.compiler.management))
-
-  # For these modules, the gensrc step is generating a module-info.java.extra
-  # file to be processed by the gensrc-moduleinfo target.
-  jdk.internal.vm.compiler-gensrc-moduleinfo: jdk.internal.vm.compiler-gensrc-src
-  jdk.internal.vm.compiler.management-gensrc-moduleinfo: jdk.internal.vm.compiler.management-gensrc-src
-
   jdk.jdeps-gendata: java
 
-  # The ct.sym generation uses all the moduleinfos as input
-  jdk.compiler-gendata: $(GENSRC_MODULEINFO_TARGETS)
+  # jdk.compiler gendata generates ct.sym, which requires all generated
+  # java source and compiled classes present.
+  jdk.compiler-gendata: $(JAVA_TARGETS)
+
+  # jdk.javadoc gendata generates element-list, which requires all java sources
+  # but not compiled classes.
+  jdk.javadoc-gendata: $(GENSRC_TARGETS)
+
+  # ct.sym and element-list generation also needs the BUILD_JDK. If the
+  # BUILD_JDK was supplied externally, no extra prerequisites are needed.
+  ifeq ($(CREATE_BUILDJDK), true)
+    ifneq ($(CREATING_BUILDJDK), true)
+      # When cross compiling and an external BUILD_JDK wasn't supplied, it's
+      # produced by the create-buildjdk target.
+      jdk.compiler-gendata: create-buildjdk
+      jdk.javadoc-gendata: create-buildjdk
+    endif
+  else ifeq ($(EXTERNAL_BUILDJDK), false)
+    # When not cross compiling, the BUILD_JDK is the interim jdk image, and
+    # the javac launcher is needed.
+    jdk.compiler-gendata: jdk.compiler-launchers
+    jdk.javadoc-gendata: jdk.compiler-launchers
+  endif
 
   # Declare dependencies between jmod targets.
-  # java.base jmod needs jrt-fs.jar and access to the other jmods to be built.
+  # java.base jmod needs jrt-fs.jar and access to the jmods for all non
+  # upgradeable modules and their transitive dependencies.
   # When creating the BUILDJDK, we don't need to add hashes to java.base, thus
   # we don't need to depend on all other jmods
   ifneq ($(CREATING_BUILDJDK), true)
-    java.base-jmod: jrtfs-jar $(filter-out java.base-jmod, $(JMOD_TARGETS))
+    java.base-jmod: jrtfs-jar $(addsuffix -jmod, $(filter-out java.base, $(sort \
+        $(foreach m, $(filter-out $(call FindAllUpgradeableModules), $(JMOD_MODULES)), \
+          $m $(call FindTransitiveDepsForModules, $m) \
+        ))))
   endif
 
   # If not already set, set the JVM target so that the JVM will be built.
@@ -969,6 +1074,9 @@ else
   # All modules include the main license files from java.base.
   $(JMOD_TARGETS): java.base-copy
 
+  # jdk.javadoc uses an internal copy of the main license files from java.base.
+  jdk.javadoc-copy: java.base-copy
+
   zip-security: $(filter jdk.crypto%, $(JAVA_TARGETS))
 
   ifeq ($(ENABLE_GENERATE_CLASSLIST), true)
@@ -989,7 +1097,9 @@ else
 
   symbols-image: $(LIBS_TARGETS) $(LAUNCHER_TARGETS)
 
-  static-libs-image: $(STATIC_LIBS_TARGETS)
+  static-libs-image: hotspot-static-libs $(STATIC_LIBS_TARGETS)
+
+  static-libs-graal-image: $(STATIC_LIBS_TARGETS)
 
   bootcycle-images: jdk-image
 
@@ -1039,6 +1149,7 @@ hotspot: $(HOTSPOT_VARIANT_TARGETS)
 $(foreach v, $(JVM_VARIANTS), \
   $(eval hotspot-libs: hotspot-$v-libs) \
   $(eval hotspot-gensrc: hotspot-$v-gensrc) \
+  $(eval hotspot-static-libs: hotspot-$v-static-libs) \
 )
 
 gensrc: $(GENSRC_TARGETS)
@@ -1105,9 +1216,14 @@ docs-reference-api: docs-reference-api-javadoc
 # If we're building full docs, we must also generate the module graphs to
 # get non-broken api documentation.
 ifeq ($(ENABLE_FULL_DOCS), true)
-  docs-jdk-api: docs-jdk-api-modulegraph
-  docs-javase-api: docs-javase-api-modulegraph
-  docs-reference-api: docs-reference-api-modulegraph
+  docs-jdk-api: docs-jdk-api-graphs
+  docs-javase-api: docs-javase-api-graphs
+  docs-reference-api: docs-reference-api-graphs
+
+  # We must generate javadoc first so we know what graphs are needed
+  docs-jdk-api-graphs: docs-jdk-api-javadoc
+  docs-javase-api-graphs: docs-javase-api-javadoc
+  docs-reference-api-graphs: docs-reference-api-javadoc
 endif
 
 docs-jdk: docs-jdk-api docs-jdk-specs docs-jdk-index
@@ -1163,7 +1279,7 @@ all-docs-bundles: docs-jdk-bundles docs-javase-bundles docs-reference-bundles
 # This target builds the test image
 test-image: prepare-test-image test-image-jdk-jtreg-native \
     test-image-demos-jdk test-image-libtest-jtreg-native \
-    test-image-lib-native
+    test-image-lib test-image-lib-native
 
 ifneq ($(JVM_TEST_IMAGE_TARGETS), )
   # If JVM_TEST_IMAGE_TARGETS is externally defined, use it instead of the
@@ -1174,14 +1290,14 @@ else
   ifneq ($(GTEST_FRAMEWORK_SRC), )
     test-image: test-image-hotspot-gtest
   endif
-
-  ifeq ($(INCLUDE_GRAAL), true)
-    test-image: test-image-hotspot-jtreg-graal
-  endif
 endif
 
 ifeq ($(BUILD_FAILURE_HANDLER), true)
   test-image: test-image-failure-handler
+endif
+
+ifeq ($(BUILD_JTREG_TEST_THREAD_FACTORY), true)
+  test-image: test-image-test-thread-factory
 endif
 
 ifneq ($(JMH_CORE_JAR), )
@@ -1196,7 +1312,8 @@ all-images: product-images test-image all-docs-images
 # all-bundles packages all our deliverables as tar.gz bundles.
 all-bundles: product-bundles test-bundles docs-bundles static-libs-bundles
 
-ALL_TARGETS += buildtools hotspot hotspot-libs hotspot-gensrc gensrc gendata \
+ALL_TARGETS += buildtools hotspot hotspot-libs hotspot-static-libs \
+    hotspot-gensrc gensrc gendata \
     copy java libs static-libs launchers jmods \
     jdk.jdwp.agent-gensrc $(ALL_MODULES) demos \
     exploded-image-base exploded-image runnable-buildjdk \
@@ -1338,13 +1455,13 @@ ALL_TARGETS += $(addsuffix -only, $(filter-out dist-clean clean%, $(ALL_TARGETS)
 # are internal only, to support Init.gmk.
 
 print-targets:
-	  @$(ECHO) $(sort $(ALL_TARGETS))
+	$(info $(subst $(SPACE),$(NEWLINE),$(sort $(ALL_TARGETS))))
 
 print-modules:
-	  @$(ECHO) $(sort $(ALL_MODULES))
+	$(info $(subst $(SPACE),$(NEWLINE),$(sort $(ALL_MODULES))))
 
 print-tests:
-	  @$(ECHO) $(sort $(ALL_NAMED_TESTS))
+	$(info $(subst $(SPACE),$(NEWLINE),$(sort $(ALL_NAMED_TESTS))))
 
 create-main-targets-include:
 	  $(call LogInfo, Generating main target list)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,9 @@ public class UnmappableCharacterException
     @java.io.Serial
     private static final long serialVersionUID = -7026962371537706123L;
 
+    /**
+     * The length of the input character (or byte) sequence.
+     */
     private int inputLength;
 
     /**

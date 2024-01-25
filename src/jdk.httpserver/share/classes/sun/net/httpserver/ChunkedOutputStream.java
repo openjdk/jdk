@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ package sun.net.httpserver;
 
 import java.io.*;
 import java.net.*;
+import java.util.Objects;
+
 import com.sun.net.httpserver.*;
 import com.sun.net.httpserver.spi.*;
 
@@ -51,9 +53,9 @@ class ChunkedOutputStream extends FilterOutputStream
 {
     private boolean closed = false;
     /* max. amount of user data per chunk */
-    final static int CHUNK_SIZE = 4096;
+    static final int CHUNK_SIZE = 4096;
     /* allow 4 bytes for chunk-size plus 4 for CRLFs */
-    final static int OFFSET = 6; /* initial <=4 bytes for len + CRLF */
+    static final int OFFSET = 6; /* initial <=4 bytes for len + CRLF */
     private int pos = OFFSET;
     private int count = 0;
     private byte[] buf = new byte [CHUNK_SIZE+OFFSET+2];
@@ -77,6 +79,10 @@ class ChunkedOutputStream extends FilterOutputStream
     }
 
     public void write (byte[]b, int off, int len) throws IOException {
+        Objects.checkFromIndexSize(off, len, b.length);
+        if (len == 0) {
+            return;
+        }
         if (closed) {
             throw new StreamClosedException ();
         }

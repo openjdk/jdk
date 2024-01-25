@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_SHARED_SPACEDECORATOR_HPP
 #define SHARE_GC_SHARED_SPACEDECORATOR_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "memory/memRegion.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -65,7 +65,7 @@ class SpaceDecorator: public AllStatic {
 // area and provides the methods for doing the piece meal mangling.
 // Methods for doing spaces and full checking of the mangling are
 // included.  The full checking is done if DEBUG_MANGLING is defined.
-//   GenSpaceMangler is used with the GenCollectedHeap collectors and
+//   GenSpaceMangler is used with the SerialHeap collectors and
 // MutableSpaceMangler is used with the ParallelScavengeHeap collectors.
 // These subclasses abstract the differences in the types of spaces used
 // by each heap.
@@ -83,12 +83,12 @@ class SpaceMangler: public CHeapObj<mtGC> {
 
  public:
 
-  // Setting _top_for_allocations to NULL at initialization
+  // Setting _top_for_allocations to null at initialization
   // makes it always below top so that mangling done as part
   // of the initialize() call of a space does nothing (as it
   // should since the mangling is done as part of the constructor
   // for the space.
-  SpaceMangler() : _top_for_allocations(NULL) {}
+  SpaceMangler() : _top_for_allocations(nullptr) {}
 
   // Methods for top and end that delegate to the specific
   // space type.
@@ -98,7 +98,7 @@ class SpaceMangler: public CHeapObj<mtGC> {
   // Return true if q matches the mangled pattern.
   static bool is_mangled(HeapWord* q) PRODUCT_RETURN0;
 
-  // Used to save the an address in a space for later use during mangling.
+  // Used to save the address in a space for later use during mangling.
   void set_top_for_allocations(HeapWord* v);
 
   // Overwrites the unused portion of this space.
@@ -122,7 +122,7 @@ class SpaceMangler: public CHeapObj<mtGC> {
 class ContiguousSpace;
 class MutableSpace;
 
-// For use with GenCollectedHeap's
+// For use with SerialHeap's
 class GenSpaceMangler: public SpaceMangler {
   ContiguousSpace* _sp;
 

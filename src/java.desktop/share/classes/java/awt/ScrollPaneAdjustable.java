@@ -40,7 +40,7 @@ import sun.awt.AWTAccessor;
  *
  * @since       1.4
  */
-public class ScrollPaneAdjustable implements Adjustable, Serializable {
+public final class ScrollPaneAdjustable implements Adjustable, Serializable {
 
     /**
      * The {@code ScrollPane} this object is a scrollbar of.

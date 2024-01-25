@@ -155,7 +155,7 @@ public abstract class DocumentBuilder {
      * Parse the content of the given URI as an XML document
      * and return a new DOM {@link Document} object.
      * An <code>IllegalArgumentException</code> is thrown if the
-     * URI is <code>null</code> null.
+     * URI is <code>null</code>.
      *
      * @param uri The location of the content to be parsed.
      *
@@ -182,7 +182,7 @@ public abstract class DocumentBuilder {
      * Parse the content of the given file as an XML document
      * and return a new DOM {@link Document} object.
      * An <code>IllegalArgumentException</code> is thrown if the
-     * <code>File</code> is <code>null</code> null.
+     * <code>File</code> is <code>null</code>.
      *
      * @param f The file containing the XML to parse.
      *
@@ -210,7 +210,7 @@ public abstract class DocumentBuilder {
      * Parse the content of the given input source as an XML document
      * and return a new DOM {@link Document} object.
      * An <code>IllegalArgumentException</code> is thrown if the
-     * <code>InputSource</code> is <code>null</code> null.
+     * <code>InputSource</code> is <code>null</code>.
      *
      * @param is InputSource containing the content to be parsed.
      *
@@ -298,7 +298,7 @@ public abstract class DocumentBuilder {
     }
     */
 
-    /** <p>Get a reference to the the {@link Schema} being used by
+    /** <p>Get a reference to the {@link Schema} being used by
      * the XML processor.</p>
      *
      * <p>If no schema is being used, <code>null</code> is returned.</p>

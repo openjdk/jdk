@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,7 @@ public abstract class DebuggerBase implements Debugger {
   protected int  narrowKlassShift; // shift to decode compressed klass ptrs.
   // Should be initialized if desired by calling initCache()
   private PageCache cache;
+  private long pageSize;
 
   // State for faster accessors that don't allocate memory on each read
   private boolean useFastAccessors;
@@ -177,6 +178,7 @@ public abstract class DebuggerBase implements Debugger {
       cache but may not be overridden */
   protected final void initCache(long pageSize, long maxNumPages) {
     cache = new PageCache(pageSize, maxNumPages, new Fetcher());
+    this.pageSize = pageSize;
     if (machDesc != null) {
       bigEndian = machDesc.isBigEndian();
     }
@@ -232,13 +234,17 @@ public abstract class DebuggerBase implements Debugger {
     }
   }
 
-  /** May be called by subclasses directly but may not be overridden */
-  protected final void writeBytes(long address, long numBytes, byte[] data)
-    throws UnmappedAddressException, DebuggerException {
-    if (cache != null) {
-      cache.clear(address, numBytes);
+  /** If an address for a 64-bit value starts on the last 32-bit word of a
+      page, then we can't use the page cache to read it because it will cause
+      an ArrayIndexOutOfBoundsException when reading past the end of the page. */
+  private boolean canUsePageCacheFor64bitRead(long address) {
+    long pageMask = ~(pageSize - 1);
+    if ((address & pageMask) != ((address + 4) & pageMask)) {
+      // This address starts on the last 32-bit word of the page.
+      // Cannot use the page cache in that case.
+      return false;
     }
-    writeBytesToProcess(address, numBytes, data);
+    return true;
   }
 
   public boolean readJBoolean(long address)
@@ -265,8 +271,6 @@ public abstract class DebuggerBase implements Debugger {
     }
   }
 
-  // NOTE: assumes value does not span pages (may be bad assumption on
-  // Solaris/x86; see unalignedAccessesOkay in DbxDebugger hierarchy)
   public char readJChar(long address)
     throws UnmappedAddressException, UnalignedAddressException {
     checkJavaConfigured();
@@ -279,13 +283,11 @@ public abstract class DebuggerBase implements Debugger {
     }
   }
 
-  // NOTE: assumes value does not span pages (may be bad assumption on
-  // Solaris/x86; see unalignedAccessesOkay in DbxDebugger hierarchy)
   public double readJDouble(long address)
     throws UnmappedAddressException, UnalignedAddressException {
     checkJavaConfigured();
     utils.checkAlignment(address, jdoubleSize);
-    if (useFastAccessors) {
+    if (useFastAccessors && canUsePageCacheFor64bitRead(address)) {
       return cache.getDouble(address, bigEndian);
     } else {
       byte[] data = readBytes(address, jdoubleSize);
@@ -293,8 +295,6 @@ public abstract class DebuggerBase implements Debugger {
     }
   }
 
-  // NOTE: assumes value does not span pages (may be bad assumption on
-  // Solaris/x86; see unalignedAccessesOkay in DbxDebugger hierarchy)
   public float readJFloat(long address)
     throws UnmappedAddressException, UnalignedAddressException {
     checkJavaConfigured();
@@ -307,8 +307,6 @@ public abstract class DebuggerBase implements Debugger {
     }
   }
 
-  // NOTE: assumes value does not span pages (may be bad assumption on
-  // Solaris/x86; see unalignedAccessesOkay in DbxDebugger hierarchy)
   public int readJInt(long address)
     throws UnmappedAddressException, UnalignedAddressException {
     checkJavaConfigured();
@@ -321,13 +319,11 @@ public abstract class DebuggerBase implements Debugger {
     }
   }
 
-  // NOTE: assumes value does not span pages (may be bad assumption on
-  // Solaris/x86; see unalignedAccessesOkay in DbxDebugger hierarchy)
   public long readJLong(long address)
     throws UnmappedAddressException, UnalignedAddressException {
     checkJavaConfigured();
     utils.checkAlignment(address, jlongSize);
-    if (useFastAccessors) {
+    if (useFastAccessors && canUsePageCacheFor64bitRead(address)) {
       return cache.getLong(address, bigEndian);
     } else {
       byte[] data = readBytes(address, jlongSize);
@@ -335,8 +331,6 @@ public abstract class DebuggerBase implements Debugger {
     }
   }
 
-  // NOTE: assumes value does not span pages (may be bad assumption on
-  // Solaris/x86; see unalignedAccessesOkay in DbxDebugger hierarchy)
   public short readJShort(long address)
     throws UnmappedAddressException, UnalignedAddressException {
     checkJavaConfigured();
@@ -349,13 +343,11 @@ public abstract class DebuggerBase implements Debugger {
     }
   }
 
-  // NOTE: assumes value does not span pages (may be bad assumption on
-  // Solaris/x86; see unalignedAccessesOkay in DbxDebugger hierarchy)
   public long readCInteger(long address, long numBytes, boolean isUnsigned)
     throws UnmappedAddressException, UnalignedAddressException {
     checkConfigured();
     utils.checkAlignment(address, numBytes);
-    if (useFastAccessors) {
+    if (useFastAccessors && (numBytes != 8 || canUsePageCacheFor64bitRead(address))) {
       if (isUnsigned) {
         switch((int) numBytes) {
         case 1: return cache.getByte(address) & 0xFF;
@@ -385,78 +377,6 @@ public abstract class DebuggerBase implements Debugger {
     }
   }
 
-  public void writeJBoolean(long address, boolean value)
-    throws UnmappedAddressException, UnalignedAddressException {
-    checkJavaConfigured();
-    utils.checkAlignment(address, jbooleanSize);
-    byte[] data = utils.jbooleanToData(value);
-    writeBytes(address, jbooleanSize, data);
-  }
-
-  public void writeJByte(long address, byte value)
-    throws UnmappedAddressException, UnalignedAddressException {
-    checkJavaConfigured();
-    utils.checkAlignment(address, jbyteSize);
-    byte[] data = utils.jbyteToData(value);
-    writeBytes(address, jbyteSize, data);
-  }
-
-  public void writeJChar(long address, char value)
-    throws UnmappedAddressException, UnalignedAddressException {
-    checkJavaConfigured();
-    utils.checkAlignment(address, jcharSize);
-    byte[] data = utils.jcharToData(value);
-    writeBytes(address, jcharSize, data);
-  }
-
-  public void writeJDouble(long address, double value)
-    throws UnmappedAddressException, UnalignedAddressException {
-    checkJavaConfigured();
-    utils.checkAlignment(address, jdoubleSize);
-    byte[] data = utils.jdoubleToData(value);
-    writeBytes(address, jdoubleSize, data);
-  }
-
-  public void writeJFloat(long address, float value)
-    throws UnmappedAddressException, UnalignedAddressException {
-    checkJavaConfigured();
-    utils.checkAlignment(address, jfloatSize);
-    byte[] data = utils.jfloatToData(value);
-    writeBytes(address, jfloatSize, data);
-  }
-
-  public void writeJInt(long address, int value)
-    throws UnmappedAddressException, UnalignedAddressException {
-    checkJavaConfigured();
-    utils.checkAlignment(address, jintSize);
-    byte[] data = utils.jintToData(value);
-    writeBytes(address, jintSize, data);
-  }
-
-  public void writeJLong(long address, long value)
-    throws UnmappedAddressException, UnalignedAddressException {
-    checkJavaConfigured();
-    utils.checkAlignment(address, jlongSize);
-    byte[] data = utils.jlongToData(value);
-    writeBytes(address, jlongSize, data);
-  }
-
-  public void writeJShort(long address, short value)
-    throws UnmappedAddressException, UnalignedAddressException {
-    checkJavaConfigured();
-    utils.checkAlignment(address, jshortSize);
-    byte[] data = utils.jshortToData(value);
-    writeBytes(address, jshortSize, data);
-  }
-
-  public void writeCInteger(long address, long numBytes, long value)
-    throws UnmappedAddressException, UnalignedAddressException {
-    checkConfigured();
-    utils.checkAlignment(address, numBytes);
-    byte[] data = utils.cIntegerToData(numBytes, value);
-    writeBytes(address, numBytes, data);
-  }
-
   protected long readAddressValue(long address)
     throws UnmappedAddressException, UnalignedAddressException {
     return readCInteger(address, machDesc.getAddressSize(), true);
@@ -479,11 +399,6 @@ public abstract class DebuggerBase implements Debugger {
       value = (long)(narrowKlassBase + (long)(value << narrowKlassShift));
     }
     return value;
-  }
-
-  protected void writeAddressValue(long address, long value)
-    throws UnmappedAddressException, UnalignedAddressException {
-    writeCInteger(address, machDesc.getAddressSize(), value);
   }
 
   /** Can be called by subclasses but can not be overridden */
@@ -524,6 +439,34 @@ public abstract class DebuggerBase implements Debugger {
       Address interface */
   protected void invalidatePageCache(long startAddress, long numBytes) {
     cache.clear(startAddress, numBytes);
+  }
+
+  @Override
+  public String findSymbol(String symbol) {
+    Address addr = lookup(null, symbol);
+    if (addr == null && getOS().equals("win32")) {
+      // On win32 symbols are prefixed with the dll name. Do the user
+      // a favor and see if this is a symbol in jvm.dll or java.dll.
+      addr = lookup(null, "jvm!" + symbol);
+      if (addr == null) {
+        addr = lookup(null, "java!" + symbol);
+      }
+    }
+    if (addr == null) {
+      return null;
+    }
+    var builder = new StringBuilder(addr.toString());
+    var cdbg = getCDebugger();
+    var loadObject = cdbg.loadObjectContainingPC(addr);
+    // Print the shared library path and the offset of the symbol
+    if (loadObject != null) {
+      builder.append(": ").append(loadObject.getName());
+      long diff = addr.minus(loadObject.getBase());
+      if (diff != 0L) {
+        builder.append(" + 0x").append(Long.toHexString(diff));
+      }
+    }
+    return builder.toString();
   }
 
   public long getJBooleanSize() {

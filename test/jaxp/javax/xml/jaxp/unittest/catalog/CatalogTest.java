@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ import org.xml.sax.ext.DefaultHandler2;
  * @test
  * @bug 8081248 8144966 8146606 8146237 8150969 8151162 8152527 8154220 8163232
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true catalog.CatalogTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow catalog.CatalogTest
  * @run testng/othervm catalog.CatalogTest
  * @summary Tests basic Catalog functions.
  */
@@ -506,7 +506,7 @@ public class CatalogTest extends CatalogSupportBase {
     */
     @Test(expectedExceptions = NullPointerException.class)
     public void testFeatureNull() {
-        CatalogResolver resolver = CatalogManager.catalogResolver(null, null);
+        CatalogResolver resolver = CatalogManager.catalogResolver((CatalogFeatures)null, (URI)null);
 
     }
 

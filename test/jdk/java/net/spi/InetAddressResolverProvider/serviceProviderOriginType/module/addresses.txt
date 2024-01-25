@@ -1,0 +1,7 @@
+# Test data file for tests in modularTests directory
+# Format: <IP address> <Host Name>
+# If multiple IP addresses are required for host:
+#    multiple lines could be added
+
+1.2.3.4    modular-provider-test.org
+[ca:fe:ba:be::1] modular-provider-test.org

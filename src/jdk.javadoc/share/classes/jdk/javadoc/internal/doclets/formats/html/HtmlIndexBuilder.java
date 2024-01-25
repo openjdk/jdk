@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
@@ -43,24 +42,16 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
-import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
  * Extensions to {@code IndexBuilder} to fill in remaining fields
  * in index items: {@code containingModule}, {@code containingPackage},
  * {@code containingClass}, and {@code url}, and to write out the
  * JavaScript files.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class HtmlIndexBuilder extends IndexBuilder {
-    private final HtmlConfiguration configuration;
 
     private final Resources resources;
-    private final Utils utils;
     private final HtmlIds htmlIds;
 
     /**
@@ -69,11 +60,9 @@ public class HtmlIndexBuilder extends IndexBuilder {
      * @param configuration the current configuration of the doclet
      */
     HtmlIndexBuilder(HtmlConfiguration configuration) {
-        super(configuration, configuration.getOptions().noDeprecated());
-        this.configuration = configuration;
-        resources = configuration.docResources;
-        utils = configuration.utils;
-        htmlIds = configuration.htmlIds;
+        super(configuration);
+        this.resources = configuration.docResources;
+        this.htmlIds = configuration.htmlIds;
     }
 
     /**
@@ -82,18 +71,15 @@ public class HtmlIndexBuilder extends IndexBuilder {
      * After the initial work to add the element items, the remaining fields in
      * the items are also initialized.
      */
+    @Override
     public void addElements() {
         super.addElements();
-        if (classesOnly) {
-            return;
-        }
-
 
         Map<String,Integer> duplicateLabelCheck = new HashMap<>();
         for (Character ch : getFirstCharacters()) {
             for (IndexItem item : getItems(ch)) {
                 duplicateLabelCheck.compute(item.getFullyQualifiedLabel(utils),
-                                            (k, v) -> v == null ? 1 : v + 1);
+                        (k, v) -> v == null ? 1 : v + 1);
             }
         }
 
@@ -136,7 +122,7 @@ public class HtmlIndexBuilder extends IndexBuilder {
             case FIELD:
             case ENUM_CONSTANT:
                 TypeElement containingType = item.getContainingTypeElement();
-                item.setContainingPackage(utils.getPackageName(utils.containingPackage(element)));
+                item.setContainingPackage(utils.getPackageName(utils.containingPackage(containingType)));
                 item.setContainingClass(utils.getSimpleName(containingType));
                 if (configuration.showModules && addModuleInfo) {
                     item.setContainingModule(utils.getFullyQualifiedName(utils.containingModule(element)));
@@ -154,7 +140,6 @@ public class HtmlIndexBuilder extends IndexBuilder {
         }
     }
 
-
     /**
      * Generates the set of index files used by interactive search.
      *
@@ -169,7 +154,7 @@ public class HtmlIndexBuilder extends IndexBuilder {
             add(item);
         }
         IndexItem item = IndexItem.of(IndexItem.Category.TYPES,
-                resources.getText("doclet.All_Classes"),
+                resources.getText("doclet.All_Classes_And_Interfaces"),
                 DocPaths.ALLCLASSES_INDEX);
         add(item);
 

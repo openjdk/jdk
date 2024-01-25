@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ import jdk.dynalink.DynamicLinkerFactory;
  * security manager is present, to ensure that only trusted runtimes can
  * automatically export their linkers into other runtimes.
  * @see DynamicLinkerFactory#setClassLoader(ClassLoader)
+ * @since 9
  */
 public abstract class GuardingDynamicLinkerExporter implements Supplier<List<GuardingDynamicLinker>> {
     /**
@@ -66,6 +67,7 @@ public abstract class GuardingDynamicLinkerExporter implements Supplier<List<Gua
      * granted.
      */
     protected GuardingDynamicLinkerExporter() {
+        @SuppressWarnings("removal")
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(AUTOLOAD_PERMISSION);

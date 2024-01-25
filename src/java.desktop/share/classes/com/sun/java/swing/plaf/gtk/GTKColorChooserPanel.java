@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,6 +104,20 @@ class GTKColorChooserPanel extends AbstractColorChooserPanel implements
         component.requestFocus();
     }
 
+    @Override
+    public void setEnabled(boolean enabled) {
+        super.setEnabled(enabled);
+        setEnabled(this, enabled);
+    }
+
+    private static void setEnabled(Container container, boolean enabled) {
+        for (Component component : container.getComponents()) {
+            component.setEnabled(enabled);
+            if (component instanceof Container) {
+                setEnabled((Container) component, enabled);
+            }
+        }
+    }
 
     /**
      * Returns a user presentable description of this GTKColorChooserPane.
@@ -674,6 +688,11 @@ class GTKColorChooserPanel extends AbstractColorChooserPanel implements
         }
 
         protected void processEvent(AWTEvent e) {
+
+            if (!(getGTKColorChooserPanel().isEnabled())) {
+                return;
+            }
+
             if (e.getID() == MouseEvent.MOUSE_PRESSED ||
                    ((isSet(FLAGS_DRAGGING) ||isSet(FLAGS_DRAGGING_TRIANGLE)) &&
                    e.getID() == MouseEvent.MOUSE_DRAGGED)) {
@@ -684,7 +703,7 @@ class GTKColorChooserPanel extends AbstractColorChooserPanel implements
                 int y = ((MouseEvent)e).getY() - size;
 
                 if (!hasFocus()) {
-                    requestFocus();
+                    requestFocus(FocusEvent.Cause.MOUSE_EVENT);
                 }
                 if (!isSet(FLAGS_DRAGGING_TRIANGLE) &&
                       adjustHue(x, y, e.getID() == MouseEvent.MOUSE_PRESSED)) {
@@ -1298,7 +1317,7 @@ class GTKColorChooserPanel extends AbstractColorChooserPanel implements
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    private class OpaqueLabel extends JLabel {
+    private static class OpaqueLabel extends JLabel {
         public boolean isOpaque() {
             return true;
         }

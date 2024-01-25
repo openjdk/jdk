@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,9 @@
 
 package jdk.jfr.internal.tool;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
-import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -37,6 +35,10 @@ import java.util.List;
 import java.util.function.Predicate;
 
 import jdk.jfr.EventType;
+import jdk.jfr.internal.util.UserDataException;
+import jdk.jfr.internal.util.UserSyntaxException;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 final class Print extends Command {
     @Override
@@ -101,8 +103,8 @@ final class Print extends Command {
     @Override
     public void execute(Deque<String> options) throws UserSyntaxException, UserDataException {
         Path file = getJFRInputFile(options);
-        PrintWriter pw = new PrintWriter(System.out, false, Charset.forName("UTF-8"));
-        Predicate<EventType> eventFilter = null;
+        PrintWriter pw = new PrintWriter(System.out, false, UTF_8);
+        List<Predicate<EventType>> eventFilters = new ArrayList<>();
         int stackDepth = 5;
         EventPrintWriter eventWriter = null;
         int optionCount = options.size();
@@ -116,7 +118,7 @@ final class Print extends Command {
                 foundEventFilter = true;
                 String filter = options.remove();
                 warnForWildcardExpansion("--events", filter);
-                eventFilter = addEventFilter(filter, eventFilter);
+                eventFilters.add(Filters.createEventTypeFilter(filter, List.of()));
             }
             if (acceptFilterOption(options, "--categories")) {
                 if (foundCategoryFilter) {
@@ -125,7 +127,7 @@ final class Print extends Command {
                 foundCategoryFilter = true;
                 String filter = options.remove();
                 warnForWildcardExpansion("--categories", filter);
-                eventFilter = addCategoryFilter(filter, eventFilter);
+                eventFilters.add(Filters.createCategoryFilter(filter, List.of()));
             }
             if (acceptOption(options, "--stack-depth")) {
                 String value = options.pop();
@@ -156,9 +158,8 @@ final class Print extends Command {
             eventWriter = new PrettyWriter(pw); // default to pretty printer
         }
         eventWriter.setStackDepth(stackDepth);
-        if (eventFilter != null) {
-            eventFilter = addCache(eventFilter, eventType -> eventType.getId());
-            eventWriter.setEventFilter(eventFilter);
+        if (!eventFilters.isEmpty()) {
+            eventWriter.setEventFilter(Filters.matchAny(eventFilters));
         }
         try {
             eventWriter.print(file);

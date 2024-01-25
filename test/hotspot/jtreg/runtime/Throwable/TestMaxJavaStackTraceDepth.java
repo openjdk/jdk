@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 7179701
  * @summary MaxJavaStackTraceDepth of zero is not handled correctly/consistently in the VM
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc:open
  * @modules java.base/java.lang:open
  * @library /test/lib
@@ -78,11 +79,11 @@ public class TestMaxJavaStackTraceDepth {
       int[] depths = {0, 20, 1024};
       for (int d : depths) {
         System.out.println("running test with -XX:MaxJavaStackTraceDepth=" + d);
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:stacktrace=info",
-                                                                  "-XX:MaxJavaStackTraceDepth=" + d,
-                                                                  "--add-opens",
-                                                                  "java.base/java.lang=ALL-UNNAMED",
-                                                                  "TestMaxJavaStackTraceDepth");
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:stacktrace=info",
+                                                                             "-XX:MaxJavaStackTraceDepth=" + d,
+                                                                             "--add-opens",
+                                                                             "java.base/java.lang=ALL-UNNAMED",
+                                                                             "TestMaxJavaStackTraceDepth");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         if (d == 0) {
           // Should get all the elements in stack trace

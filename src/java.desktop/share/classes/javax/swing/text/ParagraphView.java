@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
  */
 package javax.swing.text;
 
-import java.util.Arrays;
 import java.awt.*;
 import java.awt.font.TextAttribute;
 import java.awt.geom.Rectangle2D;
@@ -88,7 +87,7 @@ public class ParagraphView extends FlowView implements TabExpander {
     /**
      * Sets the line spacing.
      *
-     * @param ls the value is a factor of the line hight
+     * @param ls the value is a factor of the line height
      */
     protected void setLineSpacing(float ls) {
         lineSpacing = ls;
@@ -304,7 +303,7 @@ public class ParagraphView extends FlowView implements TabExpander {
     /**
      * Determines in which direction the next view lays.
      * Consider the <code>View</code> at index n.
-     * Typically the <code>View</code>s are layed out
+     * Typically the <code>View</code>s are laid out
      * from left to right, so that the <code>View</code>
      * to the EAST will be at index n + 1, and the
      * <code>View</code> to the WEST will be at index n - 1.
@@ -314,15 +313,15 @@ public class ParagraphView extends FlowView implements TabExpander {
      * or that the <code>View</code> to the WEST is not at
      * index n - 1, but index n + 1.  In this case this method
      * would return true, indicating the <code>View</code>s are
-     * layed out in descending order.
+     * laid out in descending order.
      * <p>
-     * This will return true if the text is layed out right
+     * This will return true if the text is laid out right
      * to left at position, otherwise false.
      *
      * @param position position into the model
      * @param bias either <code>Position.Bias.Forward</code> or
      *          <code>Position.Bias.Backward</code>
-     * @return true if the text is layed out right to left at
+     * @return true if the text is laid out right to left at
      *         position, otherwise false.
      */
     protected boolean flipEastAndWestAtEnds(int position,
@@ -876,7 +875,7 @@ public class ParagraphView extends FlowView implements TabExpander {
          * @param pos the position to convert
          * @param a the allocated region to render into
          * @return the bounding box of the given position
-         * @exception BadLocationException  if the given position does not represent a
+         * @throws BadLocationException  if the given position does not represent a
          *   valid location in the associated document
          * @see View#modelToView
          */
@@ -931,7 +930,7 @@ public class ParagraphView extends FlowView implements TabExpander {
          *
          * @param targetSpan the total span given to the view, which
          *  would be used to layout the children.
-         * @param axis the axis being layed out.
+         * @param axis the axis being laid out.
          * @param offsets the offsets from the origin of the view for
          *  each of the child views.  This is a return value and is
          *  filled in by the implementation of this method.
@@ -1046,7 +1045,6 @@ public class ParagraphView extends FlowView implements TabExpander {
             int rowStartOffset = getStartOffset();
             int rowEndOffset = getEndOffset();
             int[] spaceMap = new int[rowEndOffset - rowStartOffset];
-            Arrays.fill(spaceMap, 0);
             for (int i = getViewCount() - 1; i >= 0 ; i--) {
                 View view = getView(i);
                 if (view instanceof GlyphView) {
@@ -1137,7 +1135,7 @@ public class ParagraphView extends FlowView implements TabExpander {
          *   -1 if no view represents that position
          */
         protected int getViewIndexAtPosition(int pos) {
-            // This is expensive, but are views are not necessarily layed
+            // This is expensive, but are views are not necessarily laid
             // out in model order.
             if(pos < getStartOffset() || pos >= getEndOffset())
                 return -1;

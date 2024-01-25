@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,15 +61,15 @@ public class TestToString {
             recording.stop();
             List<RecordedEvent> events = Events.fromRecording(recording);
             Events.hasEvents(events);
-            RecordedEvent e = events.get(0);
+            RecordedEvent e = events.getFirst();
             String toString = e.toString();
             System.out.println(toString);
-            Asserts.assertTrue(toString.contains("hello, world"), "Missing String field value in RecordedEvent#toSting()");
-            Asserts.assertTrue(toString.contains("4711"), "Missing integer fields value in RecordedEvent#toSting()");
-            Asserts.assertTrue(toString.contains("313"), "Missing double value in RecordedEvent#toSting()");
-            Asserts.assertTrue(toString.contains("HashMap"), "Missing class value in RecordedEvent#toSting()");
-            Asserts.assertTrue(toString.contains("1234567890"), "Missing long value in RecordedEvent#toSting()");
-            Asserts.assertTrue(toString.contains("&"), "Missing char value in RecordedEvent#toSting()");
+            Asserts.assertTrue(toString.contains("hello, world"), "Missing String field value in RecordedEvent#toString()");
+            Asserts.assertTrue(toString.contains("4711"), "Missing integer fields value in RecordedEvent#toString()");
+            Asserts.assertTrue(toString.contains("313"), "Missing double value in RecordedEvent#toString()");
+            Asserts.assertTrue(toString.contains("HashMap"), "Missing class value in RecordedEvent#toString()");
+            Asserts.assertTrue(toString.contains("1234567890"), "Missing long value in RecordedEvent#toString()");
+            Asserts.assertTrue(toString.contains("&"), "Missing char value in RecordedEvent#toString()");
             Asserts.assertTrue(toString.contains("123"), "Missing byte value in RecordedEvent#toString()");
             Asserts.assertTrue(toString.contains("64"), "Missing short value in RecordedEvent#toString()");
             Asserts.assertTrue(toString.contains("false"), "Missing boolean value in RecordedEvent#toString()");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,17 @@
  */
 
 #include "precompiled.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
 #include "gc/shared/cardTable.hpp"
-#include "gc/shared/cardTableBarrierSetAssembler.hpp"
 #include "gc/shared/cardTableBarrierSet.inline.hpp"
+#include "gc/shared/cardTableBarrierSetAssembler.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/virtualspace.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/thread.hpp"
-#include "services/memTracker.hpp"
+#include "runtime/javaThread.hpp"
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 #ifdef COMPILER1
@@ -96,7 +97,7 @@ void CardTableBarrierSet::print_on(outputStream* st) const {
 // to a newly allocated object along the fast-path. We
 // compensate for such elided card-marks as follows:
 // (a) Generational, non-concurrent collectors, such as
-//     GenCollectedHeap(DefNew,Tenured) and
+//     SerialHeap(DefNew,Tenured) and
 //     ParallelScavengeHeap(ParallelGC, ParallelOldGC)
 //     need the card-mark if and only if the region is
 //     in the old gen, and do not care if the card-mark
@@ -164,14 +165,14 @@ void CardTableBarrierSet::flush_deferred_card_mark_barrier(JavaThread* thread) {
     assert(_defer_initial_card_mark, "Otherwise should be empty");
     {
       // Verify that the storage points to a parsable object in heap
-      DEBUG_ONLY(oop old_obj = oop(deferred.start());)
+      DEBUG_ONLY(oop old_obj = cast_to_oop(deferred.start());)
       assert(!_card_table->is_in_young(old_obj),
              "Else should have been filtered in on_slowpath_allocation_exit()");
       assert(oopDesc::is_oop(old_obj, true), "Not an oop");
-      assert(deferred.word_size() == (size_t)(old_obj->size()),
+      assert(deferred.word_size() == old_obj->size(),
              "Mismatch: multiple objects?");
     }
-    write_region(deferred);
+    write_region(thread, deferred);
     // "Clear" the deferred_card_mark field
     thread->set_deferred_card_mark(MemRegion());
   }
@@ -187,7 +188,7 @@ void CardTableBarrierSet::on_thread_detach(Thread* thread) {
   // card-table (or other remembered set structure) before GC starts
   // processing the card-table (or other remembered set).
   if (thread->is_Java_thread()) { // Only relevant for Java threads.
-    flush_deferred_card_mark_barrier(thread->as_Java_thread());
+    flush_deferred_card_mark_barrier(JavaThread::cast(thread));
   }
 }
 

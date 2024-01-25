@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@
  * @summary test the ability to archive array classes and load them from the archive
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run driver ArrayTest
  */
 
@@ -50,7 +50,7 @@ public class ArrayTest {
         JarBuilder.build("arrayTestHelper", "ArrayTestHelper");
 
         String appJar = TestCommon.getTestJar("arrayTestHelper.jar");
-        JarBuilder.build(true, "WhiteBox", "sun/hotspot/WhiteBox");
+        JarBuilder.build(true, "WhiteBox", "jdk/test/whitebox/WhiteBox");
         String whiteBoxJar = TestCommon.getTestJar("WhiteBox.jar");
         String bootClassPath = "-Xbootclasspath/a:" + whiteBoxJar;
 

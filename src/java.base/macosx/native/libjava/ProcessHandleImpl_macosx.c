@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,13 +47,21 @@
 void os_initNative(JNIEnv *env, jclass clazz) {}
 
 /*
- * Returns the children of the requested pid and optionally each parent.
- *
- * Use sysctl to accumulate any process whose parent pid is zero or matches.
- * The resulting pids are stored into the array of longs.
+ * Return pids of active processes, and optionally parent pids and
+ * start times for each process.
+ * For a specific non-zero pid jpid, only the direct children are returned.
+ * If the pid jpid is zero, all active processes are returned.
+ * Uses sysctl to accumulates any process following the rules above.
+ * The resulting pids are stored into an array of longs named jarray.
  * The number of pids is returned if they all fit.
- * If the parentArray is non-null, store the parent pid.
- * If the array is too short, excess pids are not stored and
+ * If the parentArray is non-null, store also the parent pid.
+ * In this case the parentArray must have the same length as the result pid array.
+ * Of course in the case of a given non-zero pid all entries in the parentArray
+ * will contain this pid, so this array does only make sense in the case of a given
+ * zero pid.
+ * If the jstimesArray is non-null, store also the start time of the pid.
+ * In this case the jstimesArray must have the same length as the result pid array.
+ * If the array(s) (is|are) too short, excess pids are not stored and
  * the desired length is returned.
  */
 jint os_getChildren(JNIEnv *env, jlong jpid, jlongArray jarray,
@@ -237,9 +245,9 @@ static uid_t getUID(pid_t pid) {
  * into the Info object.
  */
 void os_getCmdlineAndUserInfo(JNIEnv *env, jobject jinfo, pid_t pid) {
-    int mib[3], maxargs, nargs, i;
+    int mib[3], maxargs, nargs;
     size_t size;
-    char *args, *cp, *sp, *np;
+    char *args, *cp;
 
     // Get the UID first. This is done here because it is cheap to do it here
     // on other platforms like Linux/Solaris/AIX where the uid comes from the
@@ -272,7 +280,8 @@ void os_getCmdlineAndUserInfo(JNIEnv *env, jobject jinfo, pid_t pid) {
         mib[2] = pid;
         size = (size_t) maxargs;
         if (sysctl(mib, 3, args, &size, NULL, 0) == -1) {
-            if (errno != EINVAL) {
+            if (errno != EINVAL && errno != EIO) {
+                // If the pid is invalid, the information returned is empty and no exception
                 JNU_ThrowByNameWithLastError(env,
                     "java/lang/RuntimeException", "sysctl failed");
             }
@@ -300,4 +309,3 @@ void os_getCmdlineAndUserInfo(JNIEnv *env, jobject jinfo, pid_t pid) {
     // Free the arg buffer
     free(args);
 }
-

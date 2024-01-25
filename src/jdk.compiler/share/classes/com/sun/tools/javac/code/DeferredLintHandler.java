@@ -52,6 +52,7 @@ public class DeferredLintHandler {
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     protected DeferredLintHandler(Context context) {
         context.put(deferredLintHandlerKey, this);
         this.currentPos = IMMEDIATE_POSITION;

@@ -27,8 +27,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
-import java.net.URISyntaxException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
@@ -205,6 +205,7 @@ public class ResolverDirectHTTP extends ResourceResolverSpi {
      * @param context
      * @return true if can be resolved
      */
+    @Override
     public boolean engineCanResolveURI(ResourceResolverContext context) {
         if (context.uriToResolve == null) {
             LOG.debug("quick fail, uri == null");
@@ -219,7 +220,8 @@ public class ResolverDirectHTTP extends ResourceResolverSpi {
         LOG.debug("I was asked whether I can resolve {}", context.uriToResolve);
 
         if (context.uriToResolve.startsWith("http:") ||
-            context.baseUri != null && context.baseUri.startsWith("http:")) {
+            context.uriToResolve.startsWith("https:") ||
+            context.baseUri != null && (context.baseUri.startsWith("http:") || context.baseUri.startsWith("https:"))) {
             LOG.debug("I state that I can resolve {}", context.uriToResolve);
             return true;
         }
@@ -231,7 +233,7 @@ public class ResolverDirectHTTP extends ResourceResolverSpi {
 
     private static URI getNewURI(String uri, String baseURI) throws URISyntaxException {
         URI newUri = null;
-        if (baseURI == null || "".equals(baseURI)) {
+        if (baseURI == null || baseURI.length() == 0) {
             newUri = new URI(uri);
         } else {
             newUri = new URI(baseURI).resolve(uri);

@@ -29,7 +29,9 @@
 #include <dlfcn.h>
 #include <errno.h>
 #include <linux/limits.h>
+#include <sys/wait.h>
 #include <unistd.h>
+#include <stddef.h>
 #include <libgen.h>
 #include "JvmLauncher.h"
 #include "LinuxPackage.h"
@@ -43,7 +45,7 @@ static int appArgc;
 static char **appArgv;
 
 
-static JvmlLauncherData* initJvmlLauncherData(void) {
+static JvmlLauncherData* initJvmlLauncherData(int* size) {
     char* launcherLibPath = 0;
     void* jvmLauncherLibHandle = 0;
     JvmlLauncherAPI_GetAPIFunc getApi = 0;
@@ -86,7 +88,7 @@ static JvmlLauncherData* initJvmlLauncherData(void) {
         goto cleanup;
     }
 
-    result = jvmLauncherCreateJvmlLauncherData(api, jvmLauncherHandle);
+    result = jvmLauncherCreateJvmlLauncherData(api, jvmLauncherHandle, size);
     /* Handle released in jvmLauncherCreateJvmlLauncherData() */
     jvmLauncherHandle = 0;
 
@@ -131,18 +133,129 @@ cleanup:
 }
 
 
+static void closePipeEnd(int* pipefd, int idx) {
+    if (pipefd[idx] >= 0) {
+        close(pipefd[idx]);
+        pipefd[idx] = -1;
+    }
+}
+
+
+static void initJvmlLauncherDataPointers(void* baseAddress,
+                                        JvmlLauncherData* jvmLauncherData) {
+    ptrdiff_t offset = (char*)jvmLauncherData - (char*)baseAddress;
+    int i;
+
+    jvmLauncherData->jliLibPath += offset;
+    jvmLauncherData->jliLaunchArgv =
+            (char**)((char*)jvmLauncherData->jliLaunchArgv + offset);
+    jvmLauncherData->envVarNames =
+            (char**)((char*)jvmLauncherData->envVarNames + offset);
+    jvmLauncherData->envVarValues =
+            (char**)((char*)jvmLauncherData->envVarValues + offset);
+
+    for (i = 0; i != jvmLauncherData->jliLaunchArgc; i++) {
+        jvmLauncherData->jliLaunchArgv[i] += offset;
+    }
+
+    for (i = 0; i != jvmLauncherData->envVarCount; i++) {
+        jvmLauncherData->envVarNames[i] += offset;
+        jvmLauncherData->envVarValues[i] += offset;
+    }
+}
+
+
 int main(int argc, char *argv[]) {
+    int pipefd[2];
+    pid_t cpid;
     int exitCode = STATUS_FAILURE;
-    JvmlLauncherData* jvmLauncherData;
+    JvmlLauncherData* jvmLauncherData = 0;
+    int jvmLauncherDataBufferSize = 0;
 
     appArgc = argc;
     appArgv = argv;
 
-    jvmLauncherData = initJvmlLauncherData();
-    if (jvmLauncherData) {
-        exitCode = launchJvm(jvmLauncherData);
-        free(jvmLauncherData);
+    if (pipe(pipefd) == -1) {
+        JP_LOG_ERRNO;
+        return exitCode;
     }
 
+    cpid = fork();
+    if (cpid == -1) {
+        JP_LOG_ERRNO;
+    } else if (cpid == 0) /* Child process */ {
+        /* Close unused read end */
+        closePipeEnd(pipefd, 0);
+
+        jvmLauncherData = initJvmlLauncherData(&jvmLauncherDataBufferSize);
+        if (jvmLauncherData) {
+            /* Buffer size */
+            if (write(pipefd[1], &jvmLauncherDataBufferSize,
+                                    sizeof(jvmLauncherDataBufferSize)) == -1) {
+                JP_LOG_ERRNO;
+                goto cleanup;
+            }
+            if (jvmLauncherDataBufferSize) {
+                /* Buffer address */
+                if (write(pipefd[1], &jvmLauncherData,
+                                            sizeof(jvmLauncherData)) == -1) {
+                    JP_LOG_ERRNO;
+                    goto cleanup;
+                }
+                /* Buffer data */
+                if (write(pipefd[1], jvmLauncherData,
+                                            jvmLauncherDataBufferSize) == -1) {
+                    JP_LOG_ERRNO;
+                    goto cleanup;
+                }
+            }
+        }
+
+        exitCode = 0;
+    } else if (cpid > 0) {
+        void* baseAddress = 0;
+
+        /* Close unused write end */
+        closePipeEnd(pipefd, 1);
+
+        if (read(pipefd[0], &jvmLauncherDataBufferSize,
+                                sizeof(jvmLauncherDataBufferSize)) == -1) {
+            JP_LOG_ERRNO;
+            goto cleanup;
+        }
+
+        if (jvmLauncherDataBufferSize == 0) {
+            JP_LOG_ERRNO;
+            goto cleanup;
+        }
+
+        if (read(pipefd[0], &baseAddress, sizeof(baseAddress)) == -1) {
+            JP_LOG_ERRNO;
+            goto cleanup;
+        }
+
+        jvmLauncherData = malloc(jvmLauncherDataBufferSize);
+        if (!jvmLauncherData) {
+            JP_LOG_ERRNO;
+            goto cleanup;
+        }
+
+        if (read(pipefd[0], jvmLauncherData,
+                                        jvmLauncherDataBufferSize) == -1) {
+            JP_LOG_ERRNO;
+            goto cleanup;
+        }
+
+        closePipeEnd(pipefd, 0);
+        wait(NULL); /* Wait child process to terminate */
+
+        initJvmlLauncherDataPointers(baseAddress, jvmLauncherData);
+        exitCode = launchJvm(jvmLauncherData);
+    }
+
+cleanup:
+    closePipeEnd(pipefd, 0);
+    closePipeEnd(pipefd, 1);
+    free(jvmLauncherData);
     return exitCode;
 }

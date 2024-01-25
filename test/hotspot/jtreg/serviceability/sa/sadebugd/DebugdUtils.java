@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,16 +30,35 @@ import jdk.test.lib.Utils;
 
 
 public class DebugdUtils {
-
     private static final String GOLDEN = "Debugger attached";
-
-    private final String id;
-
+    private String serverID;
+    private int registryPort;
+    private boolean disableRegistry;
+    private String serverName;
     private Process debugdProcess;
 
-    public DebugdUtils(String id) {
-        this.id = id;
+    public DebugdUtils() {
+        this.serverID = null;
+        this.registryPort = 0;
+        this.disableRegistry = false;
+        this.serverName = null;
         debugdProcess = null;
+    }
+
+    public void setRegistryPort(int registryPort) {
+        this.registryPort = registryPort;
+    }
+
+    public void setDisableRegistry(boolean disableRegistry) {
+        this.disableRegistry = disableRegistry;
+    }
+
+    public void setServerID(String serverID) {
+        this.serverID = serverID;
+    }
+
+    public void setServerName(String serverName) {
+        this.serverName = serverName;
     }
 
     public void attach(long pid) throws IOException {
@@ -48,9 +67,20 @@ public class DebugdUtils {
         jhsdbLauncher.addToolArg("debugd");
         jhsdbLauncher.addToolArg("--pid");
         jhsdbLauncher.addToolArg(Long.toString(pid));
-        if (id != null) {
+        if (serverID != null) {
             jhsdbLauncher.addToolArg("--serverid");
-            jhsdbLauncher.addToolArg(id);
+            jhsdbLauncher.addToolArg(serverID);
+        }
+        if (registryPort != 0) {
+            jhsdbLauncher.addToolArg("--registryport");
+            jhsdbLauncher.addToolArg(Integer.toString(registryPort));
+        }
+        if (disableRegistry) {
+            jhsdbLauncher.addToolArg("--disable-registry");
+        }
+        if (serverName != null) {
+            jhsdbLauncher.addToolArg("--servername");
+            jhsdbLauncher.addToolArg(serverName);
         }
         debugdProcess = (new ProcessBuilder(jhsdbLauncher.getCommand())).start();
 

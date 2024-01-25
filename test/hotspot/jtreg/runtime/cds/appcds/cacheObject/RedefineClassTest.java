@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,9 @@
  * @test
  * @summary Redefine shared class. GC should not cause crash with cached resolved_references.
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes /test/hotspot/jtreg/runtime/cds/appcds/jvmti
- * @requires vm.cds.archived.java.heap
+ * @requires vm.cds.write.archived.java.heap
  * @requires vm.jvmti
- * @build sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
  *        RedefineClassApp
  *        InstrumentationClassFileTransformer
  *        InstrumentationRegisterClassFileTransformer
@@ -49,7 +49,7 @@ public class RedefineClassTest {
     public static String bootClasses[] = {
         "RedefineClassApp$Intf",
         "RedefineClassApp$Bar",
-        "sun.hotspot.WhiteBox",
+        "jdk.test.whitebox.WhiteBox",
     };
     public static String appClasses[] = {
         "RedefineClassApp",

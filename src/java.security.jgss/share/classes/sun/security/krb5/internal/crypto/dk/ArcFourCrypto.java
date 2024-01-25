@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.security.*;
 import javax.crypto.*;
 import javax.crypto.spec.*;
 import java.util.*;
-import sun.security.krb5.EncryptedData;
 import sun.security.krb5.KrbCryptoException;
 import sun.security.krb5.Confounder;
 import sun.security.krb5.internal.crypto.KeyUsage;
@@ -159,10 +158,7 @@ public class ArcFourCrypto extends DkCrypto {
            System.arraycopy(ss, 0, new_ss, 0, ss.length);
            Ksign = getHmac(baseKey, new_ss);
         } catch (Exception e) {
-            GeneralSecurityException gse =
-                new GeneralSecurityException("Calculate Checkum Failed!");
-            gse.initCause(e);
-            throw gse;
+            throw new GeneralSecurityException("Calculate Checksum Failed!", e);
         }
 
         // get the salt using key usage
@@ -173,10 +169,7 @@ public class ArcFourCrypto extends DkCrypto {
         try {
             messageDigest = MessageDigest.getInstance("MD5");
         } catch (NoSuchAlgorithmException e) {
-            GeneralSecurityException gse =
-                new GeneralSecurityException("Calculate Checkum Failed!");
-            gse.initCause(e);
-            throw gse;
+            throw new GeneralSecurityException("Calculate Checksum Failed!", e);
         }
         messageDigest.update(salt);
         messageDigest.update(input, start, len);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 8198393
  * @summary Instrumentation.retransformClasses(new Class[0]) should be NOP
  * @requires vm.jvmti
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.instrument
  * @compile RetransformClassesZeroLength.java
@@ -55,7 +56,7 @@ public class RetransformClassesZeroLength {
     public static void main(String args[]) throws Throwable {
         String agentJar = buildAgent();
         ProcessTools.executeProcess(
-                ProcessTools.createJavaProcessBuilder(
+                ProcessTools.createLimitedTestJavaProcessBuilder(
                         "-javaagent:" + agentJar,
                         "-version")
         ).shouldHaveExitValue(0);

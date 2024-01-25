@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2020 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -155,7 +155,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="GT" draft="unconfirmed">གྷོ་ཊེ་མ་ལ།</territory>
 			<territory type="GW" draft="unconfirmed">གྷི་ནི་ཡ་བིས྄་སོ།</territory>
 			<territory type="GY" draft="unconfirmed">གྷུ་ཡཱ་ན།</territory>
-			<territory type="HK" alt="short" draft="unconfirmed">ཧོང་ཀོང༌།</territory>
+			<territory type="HK" draft="unconfirmed">ཧོང་ཀོང༌།</territory>
 			<territory type="HN" draft="unconfirmed">ཧོན་དུ་རས྄།</territory>
 			<territory type="HR" draft="unconfirmed">ཀུརོ་ཤི་ཡ།</territory>
 			<territory type="HT" draft="unconfirmed">ཧེ་ཏི།</territory>
@@ -198,7 +198,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ML" draft="unconfirmed">མ་ལི།</territory>
 			<territory type="MM" draft="unconfirmed">འབར་མ།</territory>
 			<territory type="MN" draft="unconfirmed">སོག་ཡུལ།</territory>
-			<territory type="MO" alt="short" draft="unconfirmed">མེ་ཀའོ།</territory>
+			<territory type="MO" draft="unconfirmed">མེ་ཀའོ།</territory>
 			<territory type="MR" draft="unconfirmed">མཽ་རི་ཏ་ནི་ཡ།</territory>
 			<territory type="MT" draft="unconfirmed">མལ་ཊ།</territory>
 			<territory type="MU" draft="unconfirmed">མཽ་རིཤས྄།</territory>
@@ -276,11 +276,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</measurementSystemNames>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[\u0F7E ཿ ཀ {ཀ\u0FB5} \u0F90 {\u0F90\u0FB5} ཁ \u0F91 ག {ག\u0FB7} \u0F92 {\u0F92\u0FB7} ང \u0F94 ཅ \u0F95 ཆ \u0F96 ཇ \u0F97 ཉ \u0F99 ཊ \u0F9A ཋ \u0F9B ཌ {ཌ\u0FB7} \u0F9C {\u0F9C\u0FB7} ཎ \u0F9E ཏ \u0F9F ཐ \u0FA0 ད {ད\u0FB7} \u0FA1 {\u0FA1\u0FB7} ན \u0FA3 པ \u0FA4 ཕ \u0FA5 བ {བ\u0FB7} \u0FA6 {\u0FA6\u0FB7} མ \u0FA8 ཙ \u0FA9 ཚ \u0FAA ཛ {ཛ\u0FB7} \u0FAB {\u0FAB\u0FB7} ཝ \u0FAD \u0FBA ཞ \u0FAE ཟ \u0FAF འ \u0FB0 ཡ \u0FB1 \u0FBB ར ཪ \u0FB2 \u0FBC ལ \u0FB3 ཤ \u0FB4 ཥ \u0FB5 ས \u0FB6 ཧ \u0FB7 ཨ \u0FB8 \u0F72 {\u0F71\u0F72} \u0F80 {\u0F71\u0F80} \u0F74 {\u0F71\u0F74} {\u0FB2\u0F80} \u0F77 {\u0FB3\u0F80} \u0F79 \u0F7A \u0F7B \u0F7C \u0F7D \u0F84]</exemplarCharacters>
+		<exemplarCharacters>[྄ཿ ཀ {ཀྵ} ཁ ག {གྷ} ང ཅ ཆ ཇ ཉ ཏ ཊ ཐ ཋ ད {དྷ} ཌ {ཌྷ} ན ཎ པ ཕ བ {བྷ} མ ཾ ཙ ཚ ཛ {ཛྷ} ཝ ཞ ཟ འ ཡ རཪ ལ ཤ ཥ ས ཧ ཨ ི {ཱི} ྀ {ཱྀ} ུ {ཱུ} ེ ཻ ོ ཽ ྐ {ྐྵ} ྑ ྒ {ྒྷ} ྔ ྕ ྖ ྗ ྙ ྟ ྚ ྠ ྛ ྡ {ྡྷ} ྜ {ྜྷ} ྣ ྞ ྤ ྥ ྦ {ྦྷ} ྨ ྩ ྪ ྫ {ྫྷ} ྭ ྺ ྮ ྯ ྰ ྱ ྻ ྲ ྼ ླ ྴ ྵ ྶ ྷ ྸ {ྲྀ} ཷ {ླྀ} ཹ]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[ༀ]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="contributed">[ཀ ཁ ག ང ཅ ཆ ཇ ཉ ཏ ཐ ད ན པ ཕ བ མ ཙ ཚ ཛ ཝ ཞ ཟ འ ཡ ར ལ ཤ ས ཧ ཨ]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0༠ 1༡ 2༢ 3༣ 4༤ 5༥ 6༦ 7༧ 8༨ 9༩]</exemplarCharacters>
-		<exemplarCharacters type="punctuation" draft="unconfirmed">[\: ་ །]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="unconfirmed">[\: ། ་]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>
@@ -365,15 +365,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="fri">པ་སངས་</day>
 							<day type="sat">སྤེན་པ་</day>
 						</dayWidth>
-						<dayWidth type="narrow">
-							<day type="sun">ཉི</day>
-							<day type="mon">ཟླ</day>
-							<day type="tue">མིག</day>
-							<day type="wed">ལྷག</day>
-							<day type="thu">ཕུར</day>
-							<day type="fri">སངས</day>
-							<day type="sat">སྤེན</day>
-						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun">གཟའ་ཉི་མ་</day>
 							<day type="mon">གཟའ་ཟླ་བ་</day>
@@ -385,15 +376,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
-						<dayWidth type="abbreviated">
-							<day type="sun">ཉི་མ་</day>
-							<day type="mon">ཟླ་བ་</day>
-							<day type="tue">མིག་དམར་</day>
-							<day type="wed">ལྷག་པ་</day>
-							<day type="thu">ཕུར་བུ་</day>
-							<day type="fri">པ་སངས་</day>
-							<day type="sat">སྤེན་པ་</day>
-						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun">ཉི</day>
 							<day type="mon">ཟླ</day>
@@ -403,39 +385,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="fri">སངས</day>
 							<day type="sat">སྤེན</day>
 						</dayWidth>
-						<dayWidth type="wide">
-							<day type="sun">གཟའ་ཉི་མ་</day>
-							<day type="mon">གཟའ་ཟླ་བ་</day>
-							<day type="tue">གཟའ་མིག་དམར་</day>
-							<day type="wed">གཟའ་ལྷག་པ་</day>
-							<day type="thu">གཟའ་ཕུར་བུ་</day>
-							<day type="fri">གཟའ་པ་སངས་</day>
-							<day type="sat">གཟའ་སྤེན་པ་</day>
-						</dayWidth>
 					</dayContext>
 				</days>
 				<quarters>
 					<quarterContext type="format">
-						<quarterWidth type="abbreviated">
-							<quarter type="1">དུས་ཚིགས་དང་པོ།</quarter>
-							<quarter type="2">དུས་ཚིགས་གཉིས་པ།</quarter>
-							<quarter type="3">དུས་ཚིགས་གསུམ་པ།</quarter>
-							<quarter type="4">དུས་ཚིགས་བཞི་པ།</quarter>
-						</quarterWidth>
-						<quarterWidth type="wide">
-							<quarter type="1">དུས་ཚིགས་དང་པོ།</quarter>
-							<quarter type="2">དུས་ཚིགས་གཉིས་པ།</quarter>
-							<quarter type="3">དུས་ཚིགས་གསུམ་པ།</quarter>
-							<quarter type="4">དུས་ཚིགས་བཞི་པ།</quarter>
-						</quarterWidth>
-					</quarterContext>
-					<quarterContext type="stand-alone">
-						<quarterWidth type="abbreviated">
-							<quarter type="1">དུས་ཚིགས་དང་པོ།</quarter>
-							<quarter type="2">དུས་ཚིགས་གཉིས་པ།</quarter>
-							<quarter type="3">དུས་ཚིགས་གསུམ་པ།</quarter>
-							<quarter type="4">དུས་ཚིགས་བཞི་པ།</quarter>
-						</quarterWidth>
 						<quarterWidth type="wide">
 							<quarter type="1">དུས་ཚིགས་དང་པོ།</quarter>
 							<quarter type="2">དུས་ཚིགས་གཉིས་པ།</quarter>
@@ -447,10 +400,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dayPeriods>
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am">སྔ་དྲོ་</dayPeriod>
-							<dayPeriod type="pm">ཕྱི་དྲོ་</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
 							<dayPeriod type="am">སྔ་དྲོ་</dayPeriod>
 							<dayPeriod type="pm">ཕྱི་དྲོ་</dayPeriod>
 						</dayPeriodWidth>
@@ -487,22 +436,26 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<timeFormats>
 					<timeFormatLength type="full">
 						<timeFormat>
-							<pattern>h:mm:ss a zzzz</pattern>
+							<pattern>HH:mm:ss zzzz</pattern>
+							<datetimeSkeleton>ahmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
-							<pattern>h:mm:ss a z</pattern>
+							<pattern>HH:mm:ss z</pattern>
+							<datetimeSkeleton>ahmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
-							<pattern>h:mm:ss a</pattern>
+							<pattern>HH:mm:ss</pattern>
+							<datetimeSkeleton>ahmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
-							<pattern>h:mm a</pattern>
+							<pattern>HH:mm</pattern>
+							<datetimeSkeleton>ahmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
@@ -566,55 +519,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<defaultNumberingSystem>latn</defaultNumberingSystem>
 		<otherNumberingSystems>
 			<native>tibt</native>
 		</otherNumberingSystems>
-		<symbols numberSystem="latn">
-			<decimal draft="provisional">.</decimal>
-			<group draft="contributed">,</group>
-			<nan>NaN</nan>
-		</symbols>
 		<symbols numberSystem="tibt">
 			<nan>ཨང་མེན་</nan>
 		</symbols>
-		<decimalFormats numberSystem="latn">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="unconfirmed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<percentFormats numberSystem="latn">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="contributed">#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-		<currencyFormats numberSystem="latn">
-			<currencyFormatLength>
-				<currencyFormat type="standard">
-					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
-				</currencyFormat>
-			</currencyFormatLength>
-			<currencyFormatLength type="short">
-				<currencyFormat type="standard">
-					<pattern type="1000" count="other" draft="provisional">¤ 0K</pattern>
-					<pattern type="10000" count="other" draft="provisional">¤ 00K</pattern>
-					<pattern type="100000" count="other" draft="provisional">¤ 000K</pattern>
-					<pattern type="1000000" count="other" draft="provisional">¤ 0M</pattern>
-					<pattern type="10000000" count="other" draft="provisional">¤ 00M</pattern>
-					<pattern type="100000000" count="other" draft="provisional">¤ 000M</pattern>
-					<pattern type="1000000000" count="other" draft="provisional">¤ 0G</pattern>
-					<pattern type="10000000000" count="other" draft="provisional">¤ 00G</pattern>
-					<pattern type="100000000000" count="other" draft="provisional">¤ 000G</pattern>
-					<pattern type="1000000000000" count="other" draft="provisional">¤ 0T</pattern>
-					<pattern type="10000000000000" count="other" draft="provisional">¤ 00T</pattern>
-					<pattern type="100000000000000" count="other" draft="provisional">¤ 000T</pattern>
-				</currencyFormat>
-			</currencyFormatLength>
-		</currencyFormats>
 		<currencies>
 			<currency type="CNY">
 				<displayName>ཡུ་ཨན་</displayName>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2019, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -70,7 +70,10 @@ public class AARCH64Frame extends Frame {
   // Native frames
   private static final int NATIVE_FRAME_INITIAL_PARAM_OFFSET =  2;
 
-  private static VMReg fp = new VMReg(29);
+  private static CIntegerField ropProtectionField;
+  private static CIntegerField pacMaskField;
+
+  private static VMReg fp = new VMReg(29 << 1);
 
   static {
     VM.registerVMInitializedObserver(new Observer() {
@@ -90,8 +93,11 @@ public class AARCH64Frame extends Frame {
     INTERPRETER_FRAME_INITIAL_SP_OFFSET           = INTERPRETER_FRAME_BCX_OFFSET - 1;
     INTERPRETER_FRAME_MONITOR_BLOCK_TOP_OFFSET    = INTERPRETER_FRAME_INITIAL_SP_OFFSET;
     INTERPRETER_FRAME_MONITOR_BLOCK_BOTTOM_OFFSET = INTERPRETER_FRAME_INITIAL_SP_OFFSET;
-  }
 
+    Type vmVersion = db.lookupType("VM_Version");
+    ropProtectionField = vmVersion.getCIntegerField("_rop_protection");
+    pacMaskField = vmVersion.getCIntegerField("_pac_mask");
+  }
 
   // an additional field beyond sp and pc:
   Address raw_fp; // frame pointer
@@ -324,26 +330,17 @@ public class AARCH64Frame extends Frame {
   //------------------------------------------------------------------------------
   // frame::adjust_unextended_sp
   private void adjustUnextendedSP() {
-    // If we are returning to a compiled MethodHandle call site, the
-    // saved_fp will in fact be a saved value of the unextended SP.  The
-    // simplest way to tell whether we are returning to such a call site
-    // is as follows:
+    // Sites calling method handle intrinsics and lambda forms are
+    // treated as any other call site. Therefore, no special action is
+    // needed when we are returning to any of these call sites.
 
     CodeBlob cb = cb();
     NMethod senderNm = (cb == null) ? null : cb.asNMethodOrNull();
     if (senderNm != null) {
-      // If the sender PC is a deoptimization point, get the original
-      // PC.  For MethodHandle call site the unextended_sp is stored in
-      // saved_fp.
-      if (senderNm.isDeoptMhEntry(getPC())) {
-        // DEBUG_ONLY(verifyDeoptMhOriginalPc(senderNm, getFP()));
-        raw_unextendedSP = getFP();
-      }
-      else if (senderNm.isDeoptEntry(getPC())) {
-        // DEBUG_ONLY(verifyDeoptOriginalPc(senderNm, raw_unextendedSp));
-      }
-      else if (senderNm.isMethodHandleReturn(getPC())) {
-        raw_unextendedSP = getFP();
+      // If the sender PC is a deoptimization point, get the original PC.
+      if (senderNm.isDeoptEntry(getPC()) ||
+          senderNm.isDeoptMhEntry(getPC())) {
+        // DEBUG_ONLY(verifyDeoptriginalPc(senderNm, raw_unextendedSp));
       }
     }
   }
@@ -386,12 +383,12 @@ public class AARCH64Frame extends Frame {
 
     // frame owned by optimizing compiler
     if (Assert.ASSERTS_ENABLED) {
-        Assert.that(cb.getFrameSize() >= 0, "must have non-zero frame size");
+        Assert.that(cb.getFrameSize() > 0, "must have non-zero frame size");
     }
     Address senderSP = getUnextendedSP().addOffsetTo(cb.getFrameSize());
 
     // The return_address is always the word on the stack
-    Address senderPC = senderSP.getAddressAt(-1 * VM.getVM().getAddressSize());
+    Address senderPC = stripPAC(senderSP.getAddressAt(-1 * VM.getVM().getAddressSize()));
 
     // This is the saved value of FP which may or may not really be an FP.
     // It is only an FP if the sender is an interpreter frame.
@@ -445,7 +442,19 @@ public class AARCH64Frame extends Frame {
 
   // Return address:
   public Address getSenderPCAddr() { return addressOfStackSlot(RETURN_ADDR_OFFSET); }
-  public Address getSenderPC()     { return getSenderPCAddr().getAddressAt(0);      }
+  public Address getSenderPC()     { return stripPAC(getSenderPCAddr().getAddressAt(0)); }
+
+  // Remove any embedded pointer authentication code from an address.
+  private Address stripPAC(Address addr) {
+    // Really we should use the XPACI instruction to do this but we
+    // can't access that from Java so rely on the mask of PAC bits
+    // calculated by vm_version_aarch64.cpp on startup.
+    if (ropProtectionField.getValue() != 0) {
+      return addr.andWithMask(pacMaskField.getValue());
+    } else {
+      return addr;
+    }
+  }
 
   // return address of param, zero origin index.
   public Address getNativeParamAddr(int idx) {
@@ -455,7 +464,8 @@ public class AARCH64Frame extends Frame {
   public Address getSenderSP()     { return addressOfStackSlot(SENDER_SP_OFFSET); }
 
   public Address addressOfInterpreterFrameLocals() {
-    return addressOfStackSlot(INTERPRETER_FRAME_LOCALS_OFFSET);
+    long n = addressOfStackSlot(INTERPRETER_FRAME_LOCALS_OFFSET).getCIntegerAt(0, VM.getVM().getAddressSize(), false);
+    return getFP().addOffsetTo(n * VM.getVM().getAddressSize());
   }
 
   private Address addressOfInterpreterFrameBCX() {
@@ -514,7 +524,8 @@ public class AARCH64Frame extends Frame {
   }
 
   public BasicObjectLock interpreterFrameMonitorEnd() {
-    Address result = addressOfStackSlot(INTERPRETER_FRAME_MONITOR_BLOCK_TOP_OFFSET).getAddressAt(0);
+    long n = addressOfStackSlot(INTERPRETER_FRAME_MONITOR_BLOCK_TOP_OFFSET).getCIntegerAt(0, VM.getVM().getAddressSize(), false);
+    Address result = getFP().addOffsetTo(n * VM.getVM().getAddressSize());
     if (Assert.ASSERTS_ENABLED) {
       // make sure the pointer points inside the frame
       Assert.that(AddressOps.gt(getFP(), result), "result must <  than frame pointer");

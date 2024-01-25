@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,13 +29,11 @@ import java.io.*;
 import java.net.*;
 import java.security.*;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateFactory;
 import java.security.cert.CertificateException;
 import java.util.*;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import sun.security.pkcs.EncryptedPrivateKeyInfo;
 import sun.security.util.PolicyUtil;
 
 /**
@@ -236,6 +234,28 @@ abstract class DomainKeyStore extends KeyStoreSpi {
         return date;
     }
 
+    @Override
+    public Set<KeyStore.Entry.Attribute> engineGetAttributes(String alias) {
+
+        AbstractMap.SimpleEntry<String, Collection<KeyStore>> pair =
+                getKeystoresForReading(alias);
+        Set<KeyStore.Entry.Attribute> result = Collections.emptySet();
+
+        try {
+            String entryAlias = pair.getKey();
+            for (KeyStore keystore : pair.getValue()) {
+                result = keystore.getAttributes(entryAlias);
+                if (result != null) {
+                    break;
+                }
+            }
+        } catch (KeyStoreException e) {
+            throw new IllegalStateException(e);
+        }
+
+        return result;
+    }
+
     /**
      * Assigns the given private key to the given alias, protecting
      * it with the given password as defined in PKCS8.
@@ -376,8 +396,7 @@ abstract class DomainKeyStore extends KeyStoreSpi {
         final Iterator<Map.Entry<String, KeyStore>> iterator =
             keystores.entrySet().iterator();
 
-        return new Enumeration<String>() {
-            private int index = 0;
+        return new Enumeration<>() {
             private Map.Entry<String, KeyStore> keystoresEntry = null;
             private String prefix = null;
             private Enumeration<String> aliases = null;
@@ -397,20 +416,22 @@ abstract class DomainKeyStore extends KeyStoreSpi {
                     if (aliases.hasMoreElements()) {
                         return true;
                     } else {
-                        if (iterator.hasNext()) {
+                        while (iterator.hasNext()) {
                             keystoresEntry = iterator.next();
                             prefix = keystoresEntry.getKey() +
-                                entryNameSeparator;
+                                    entryNameSeparator;
                             aliases = keystoresEntry.getValue().aliases();
-                        } else {
-                            return false;
+                            if (aliases.hasMoreElements()) {
+                                return true;
+                            } else {
+                                continue;
+                            }
                         }
+                        return false;
                     }
                 } catch (KeyStoreException e) {
                     return false;
                 }
-
-                return aliases.hasMoreElements();
             }
 
             public String nextElement() {
@@ -533,14 +554,13 @@ abstract class DomainKeyStore extends KeyStoreSpi {
             KeyStore keystore = keystores.get(splits[0]);
             if (keystore != null) {
                 return new AbstractMap.SimpleEntry<>(splits[1],
-                    (Collection<KeyStore>) Collections.singleton(keystore));
+                        Collections.singleton(keystore));
             }
         } else if (splits.length == 1) { // unprefixed alias
             // Check all keystores for the first occurrence of the alias
             return new AbstractMap.SimpleEntry<>(alias, keystores.values());
         }
-        return new AbstractMap.SimpleEntry<>("",
-            (Collection<KeyStore>) Collections.<KeyStore>emptyList());
+        return new AbstractMap.SimpleEntry<>("", Collections.emptyList());
     }
 
     /*
@@ -630,9 +650,7 @@ abstract class DomainKeyStore extends KeyStoreSpi {
     public void engineStore(KeyStore.LoadStoreParameter param)
         throws IOException, NoSuchAlgorithmException, CertificateException
     {
-        if (param instanceof DomainLoadStoreParameter) {
-            DomainLoadStoreParameter domainParameter =
-                (DomainLoadStoreParameter) param;
+        if (param instanceof DomainLoadStoreParameter domainParameter) {
             List<KeyStoreBuilderComponents> builders = getBuilders(
                 domainParameter.getConfiguration(),
                     domainParameter.getProtectionParams());
@@ -692,7 +710,7 @@ abstract class DomainKeyStore extends KeyStoreSpi {
     {
         // Support loading from a stream only for a JKS or default type keystore
         try {
-            KeyStore keystore = null;
+            KeyStore keystore;
 
             try {
                 keystore = KeyStore.getInstance("JKS");
@@ -721,9 +739,7 @@ abstract class DomainKeyStore extends KeyStoreSpi {
     public void engineLoad(KeyStore.LoadStoreParameter param)
         throws IOException, NoSuchAlgorithmException, CertificateException
     {
-        if (param instanceof DomainLoadStoreParameter) {
-            DomainLoadStoreParameter domainParameter =
-                (DomainLoadStoreParameter) param;
+        if (param instanceof DomainLoadStoreParameter domainParameter) {
             List<KeyStoreBuilderComponents> builders = getBuilders(
                 domainParameter.getConfiguration(),
                     domainParameter.getProtectionParams());
@@ -764,7 +780,7 @@ abstract class DomainKeyStore extends KeyStoreSpi {
             throws IOException {
 
         PolicyParser parser = new PolicyParser(true); // expand properties
-        Collection<PolicyParser.DomainEntry> domains = null;
+        Collection<PolicyParser.DomainEntry> domains;
         List<KeyStoreBuilderComponents> builders = new ArrayList<>();
         String uriDomain = configuration.getFragment();
 
@@ -774,11 +790,8 @@ abstract class DomainKeyStore extends KeyStoreSpi {
             parser.read(configurationReader);
             domains = parser.getDomainEntries();
 
-        } catch (MalformedURLException mue) {
-            throw new IOException(mue);
-
-        } catch (PolicyParser.ParsingException pe) {
-            throw new IOException(pe);
+        } catch (MalformedURLException | PolicyParser.ParsingException e) {
+            throw new IOException(e);
         }
 
         for (PolicyParser.DomainEntry domain : domains) {
@@ -793,7 +806,7 @@ abstract class DomainKeyStore extends KeyStoreSpi {
                 this.entryNameSeparator =
                     domainProperties.get(ENTRY_NAME_SEPARATOR);
                 // escape any regex meta characters
-                char ch = 0;
+                char ch;
                 StringBuilder s = new StringBuilder();
                 for (int i = 0; i < this.entryNameSeparator.length(); i++) {
                     ch = this.entryNameSeparator.charAt(i);
@@ -848,7 +861,7 @@ abstract class DomainKeyStore extends KeyStoreSpi {
                     }
                 }
 
-                KeyStore.ProtectionParameter keystoreProtection = null;
+                KeyStore.ProtectionParameter keystoreProtection;
                 if (passwords.containsKey(keystoreName)) {
                     keystoreProtection = passwords.get(keystoreName);
 
@@ -884,7 +897,7 @@ abstract class DomainKeyStore extends KeyStoreSpi {
 /*
  * Utility class that holds the components used to construct a KeyStore.Builder
  */
-class KeyStoreBuilderComponents {
+static class KeyStoreBuilderComponents {
     String name;
     String type;
     Provider provider;

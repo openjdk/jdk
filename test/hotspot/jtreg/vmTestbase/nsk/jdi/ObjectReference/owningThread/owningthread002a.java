@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 package nsk.jdi.ObjectReference.owningThread;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 //    THIS TEST IS LINE NUMBER SENSITIVE
@@ -71,7 +70,7 @@ public class owningthread002a {
 //    static Object waitnotifyObj = new Object();
     static final int threadCount = 5;
     static final String threadNamePrefix = "MyThread-";
-    static owningthread002aThread[] threads = new owningthread002aThread[threadCount];
+    static Thread[] threads = new Thread[threadCount];
 
     //------------------------------------------------------ mutable common method
 
@@ -93,7 +92,7 @@ public class owningthread002a {
                     methodForCommunication();
 
                     for (int i = 0; i < threadCount; i++) {
-                        threads[i] = new owningthread002aThread(threadNamePrefix + i);
+                        threads[i] = JDIThreadFactory.newThread(new owningthread002aThread(threadNamePrefix + i));
                         threads[i].start();
 /*
                         try {
@@ -143,7 +142,7 @@ class owningthread002aLock {
     }
 }
 
-class owningthread002aThread extends Thread {
+class owningthread002aThread extends NamedTask {
     public owningthread002aThread(String threadName) {
         super(threadName);
     }

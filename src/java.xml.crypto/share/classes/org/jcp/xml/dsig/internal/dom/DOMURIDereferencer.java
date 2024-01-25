@@ -21,22 +21,28 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 package org.jcp.xml.dsig.internal.dom;
 
+import javax.xml.crypto.Data;
+import javax.xml.crypto.URIDereferencer;
+import javax.xml.crypto.URIReference;
+import javax.xml.crypto.URIReferenceException;
+import javax.xml.crypto.XMLCryptoContext;
+import javax.xml.crypto.dom.DOMCryptoContext;
+import javax.xml.crypto.dom.DOMURIReference;
+
+import com.sun.org.apache.xml.internal.security.Init;
+import com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput;
+import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
+import com.sun.org.apache.xml.internal.security.utils.resolver.ResourceResolver;
+import com.sun.org.apache.xml.internal.security.utils.resolver.ResourceResolverContext;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
-import com.sun.org.apache.xml.internal.security.Init;
-import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
-import com.sun.org.apache.xml.internal.security.utils.resolver.ResourceResolver;
-import com.sun.org.apache.xml.internal.security.utils.resolver.ResourceResolverContext;
-import com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput;
-
-import javax.xml.crypto.*;
-import javax.xml.crypto.dom.*;
+import java.net.URI;
 
 /**
  * DOM-based implementation of URIDereferencer.
@@ -52,6 +58,7 @@ public final class DOMURIDereferencer implements URIDereferencer {
         Init.init();
     }
 
+    @Override
     public Data dereference(URIReference uriRef, XMLCryptoContext context)
         throws URIReferenceException {
 
@@ -70,9 +77,27 @@ public final class DOMURIDereferencer implements URIDereferencer {
 
         boolean secVal = Utils.secureValidation(context);
 
-        if (secVal && Policy.restrictReferenceUriScheme(uri)) {
-            throw new URIReferenceException(
-                "Uri " + uri + " is forbidden when secure validation is enabled");
+        if (secVal) {
+            try {
+                if (Policy.restrictReferenceUriScheme(uri)) {
+                    throw new URIReferenceException(
+                            "URI " + uri + " is forbidden when secure validation is enabled");
+                }
+
+                if (uri != null && !uri.isEmpty() && uri.charAt(0) != '#' && URI.create(uri).getScheme() == null) {
+                    // beseURI will be used to dereference a relative uri
+                    try {
+                        if (Policy.restrictReferenceUriScheme(baseURI)) {
+                            throw new URIReferenceException(
+                                    "Base URI " + baseURI + " is forbidden when secure validation is enabled");
+                        }
+                    } catch (IllegalArgumentException e) { // thrown by Policy.restrictReferenceUriScheme
+                        throw new URIReferenceException("Invalid base URI " + baseURI);
+                    }
+                }
+            } catch (IllegalArgumentException e) { // thrown by Policy.restrictReferenceUriScheme or URI.create
+                throw new URIReferenceException("Invalid URI " + uri);
+            }
         }
 
         // Check if same-document URI and already registered on the context
@@ -82,7 +107,9 @@ public final class DOMURIDereferencer implements URIDereferencer {
             if (id.startsWith("xpointer(id(")) {
                 int i1 = id.indexOf('\'');
                 int i2 = id.indexOf('\'', i1+1);
-                id = id.substring(i1+1, i2);
+                if (i1 >= 0 && i2 >= 0) {
+                    id = id.substring(i1 + 1, i2);
+                }
             }
 
             // check if element is registered by Id
@@ -119,7 +146,7 @@ public final class DOMURIDereferencer implements URIDereferencer {
         }
 
         try {
-            ResourceResolverContext resContext = new ResourceResolverContext(uriAttr, baseURI, false);
+            ResourceResolverContext resContext = new ResourceResolverContext(uriAttr, baseURI, secVal);
             XMLSignatureInput in = ResourceResolver.resolve(resContext);
             if (in.isOctetStream()) {
                 return new ApacheOctetStreamData(in);

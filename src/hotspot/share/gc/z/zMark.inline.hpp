@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,21 +24,67 @@
 #ifndef SHARE_GC_Z_ZMARK_INLINE_HPP
 #define SHARE_GC_Z_ZMARK_INLINE_HPP
 
-#include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zMark.hpp"
+
+#include "gc/z/zAddress.inline.hpp"
+#include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zMarkStack.inline.hpp"
+#include "gc/z/zMarkTerminate.inline.hpp"
+#include "gc/z/zPage.inline.hpp"
+#include "gc/z/zPageTable.inline.hpp"
 #include "gc/z/zThreadLocalData.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 #include "utilities/debug.hpp"
 
-template <bool follow, bool finalizable, bool publish>
-inline void ZMark::mark_object(uintptr_t addr) {
-  assert(ZAddress::is_marked(addr), "Should be marked");
-  ZMarkThreadLocalStacks* const stacks = ZThreadLocalData::stacks(Thread::current());
-  ZMarkStripe* const stripe = _stripes.stripe_for_addr(addr);
-  ZMarkStackEntry entry(addr, follow, finalizable);
+// Marking before pushing helps reduce mark stack memory usage. However,
+// we only mark before pushing in GC threads to avoid burdening Java threads
+// with writing to, and potentially first having to clear, mark bitmaps.
+//
+// It's also worth noting that while marking an object can be done at any
+// time in the marking phase, following an object can only be done after
+// root processing has called ClassLoaderDataGraph::clear_claimed_marks(),
+// since it otherwise would interact badly with claiming of CLDs.
 
-  stacks->push(&_allocator, &_stripes, stripe, entry, publish);
+template <bool resurrect, bool gc_thread, bool follow, bool finalizable>
+inline void ZMark::mark_object(zaddress addr) {
+  assert(!ZVerifyOops || oopDesc::is_oop(to_oop(addr)), "Should be oop");
+
+  ZPage* const page = _page_table->get(addr);
+  if (page->is_allocating()) {
+    // Already implicitly marked
+    return;
+  }
+
+  const bool mark_before_push = gc_thread;
+  bool inc_live = false;
+
+  if (mark_before_push) {
+    // Try mark object
+    if (!page->mark_object(addr, finalizable, inc_live)) {
+      // Already marked
+      return;
+    }
+  } else {
+    // Don't push if already marked
+    if (page->is_object_marked(addr, finalizable)) {
+      // Already marked
+      return;
+    }
+  }
+
+  if (resurrect) {
+    _terminate.set_resurrected(true);
+  }
+
+  // Push
+  ZMarkThreadLocalStacks* const stacks = ZThreadLocalData::mark_stacks(Thread::current(), _generation->id());
+  ZMarkStripe* const stripe = _stripes.stripe_for_addr(untype(addr));
+  ZMarkStackEntry entry(untype(ZAddress::offset(addr)), !mark_before_push, inc_live, follow, finalizable);
+
+  assert(ZHeap::heap()->is_young(addr) == _generation->is_young(), "Phase/object mismatch");
+
+  const bool publish = !gc_thread;
+  stacks->push(&_allocator, &_stripes, stripe, &_terminate, entry, publish);
 }
 
 #endif // SHARE_GC_Z_ZMARK_INLINE_HPP

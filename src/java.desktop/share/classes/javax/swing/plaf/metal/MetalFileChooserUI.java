@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.*;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import javax.accessibility.*;
 
 import sun.awt.shell.ShellFolder;
@@ -958,7 +956,7 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
     }
 
     static final int space = 10;
-    class IndentIcon implements Icon {
+    static class IndentIcon implements Icon {
 
         Icon icon = null;
         int depth = 0;
@@ -1050,9 +1048,9 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
                 File sf = useShellFolder ? ShellFolder.getShellFolder(canonical)
                                          : canonical;
                 File f = sf;
-                Vector<File> path = new Vector<File>(10);
+                ArrayList<File> path = new ArrayList<File>(10);
                 do {
-                    path.addElement(f);
+                    path.add(f);
                 } while ((f = f.getParentFile()) != null);
 
                 int pathCount = path.size();
@@ -1144,8 +1142,8 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
 
             super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
 
-            if (value != null && value instanceof FileFilter) {
-                setText(((FileFilter)value).getDescription());
+            if (value instanceof FileFilter fileFilter) {
+                setText(fileFilter.getDescription());
             }
 
             return this;
@@ -1199,9 +1197,9 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
 
         public Object getSelectedItem() {
             // Ensure that the current filter is in the list.
-            // NOTE: we shouldnt' have to do this, since JFileChooser adds
+            // NOTE: we shouldn't have to do this, since JFileChooser adds
             // the filter to the choosable filters list when the filter
-            // is set. Lets be paranoid just in case someone overrides
+            // is set. Let's be paranoid just in case someone overrides
             // setFileFilter in JFileChooser.
             FileFilter currentFilter = getFileChooser().getFileFilter();
             boolean found = false;
@@ -1268,9 +1266,7 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
         public void actionPerformed(ActionEvent e) {
             directoryComboBox.hidePopup();
             File f = (File)directoryComboBox.getSelectedItem();
-            if (!getFileChooser().getCurrentDirectory().equals(f)) {
-                getFileChooser().setCurrentDirectory(f);
-            }
+            getFileChooser().setCurrentDirectory(f);
         }
     }
 
@@ -1361,7 +1357,7 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    private class AlignedLabel extends JLabel {
+    private static class AlignedLabel extends JLabel {
         private AlignedLabel[] group;
         private int maxWidth = 0;
 

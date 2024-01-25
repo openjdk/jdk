@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package com.sun.source.util;
 import java.io.IOException;
 import java.text.BreakIterator;
 import java.util.List;
-
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.PackageElement;
@@ -88,6 +87,11 @@ public abstract class DocTrees extends Trees {
     /**
      * Returns the doc comment tree, if any, for the Tree node identified by a given TreePath.
      * Returns {@code null} if no doc comment was found.
+     *
+     * @implNote The default implementation of this method returns the same
+     * {@code DocCommentTree} instance for repeated invocations
+     * with the same argument.
+     *
      * @param path the path for the tree node
      * @return the doc comment tree
      */
@@ -96,6 +100,11 @@ public abstract class DocTrees extends Trees {
     /**
      * Returns the doc comment tree of the given element.
      * Returns {@code null} if no doc comment was found.
+     *
+     * @implNote The default implementation of this method returns the same
+     * {@code DocCommentTree} instance for repeated invocations
+     * with the same argument.
+     *
      * @param e an element whose documentation is required
      * @return the doc comment tree
      *
@@ -110,6 +119,9 @@ public abstract class DocTrees extends Trees {
      * Returns {@code null} if no doc comment was found.
      * Future releases may support additional file types.
      *
+     * @implNote The default implementation of this method returns a
+     * new {@code DocCommentTree} instance for each invocation.
+     *
      * @param fileObject the content container
      * @return the doc comment tree
      * @since 9
@@ -123,6 +135,9 @@ public abstract class DocTrees extends Trees {
      * of the &lt;body&gt; tag, and any enclosing tags are ignored.
      * Returns {@code null} if no doc comment was found.
      * Future releases may support additional file types.
+     *
+     * @implNote The default implementation of this method returns a
+     * new {@code DocCommentTree} instance for each invocation.
      *
      * @param e an element whose path is used as a reference
      * @param relativePath the relative path from the Element
@@ -195,7 +210,7 @@ public abstract class DocTrees extends Trees {
 
     /**
      * Prints a message of the specified kind at the location of the
-     * tree within the provided compilation unit
+     * tree within the provided compilation unit.
      *
      * @param kind the kind of message
      * @param msg  the message, or an empty string if none
@@ -234,6 +249,7 @@ public abstract class DocTrees extends Trees {
      *
      * @param tree the tree containing the entity
      * @return a string containing the characters
+     * @spec https://www.w3.org/TR/html52 HTML Standard
      */
     public abstract String getCharacters(EntityTree tree);
 }

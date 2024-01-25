@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ class CollectedHeap;
 class DeferredObjAllocEvent;
 class OopStorage;
 class ReservedHeapSpace;
+class SerializeClosure;
 
 // A helper class for caching a Method* when the user of the cache
 // only cares about the latest version of the Method*.  This cache safely
@@ -56,8 +57,8 @@ class LatestMethodCache : public CHeapObj<mtClass> {
   int                   _method_idnum;
 
  public:
-  LatestMethodCache()   { _klass = NULL; _method_idnum = -1; }
-  ~LatestMethodCache()  { _klass = NULL; _method_idnum = -1; }
+  LatestMethodCache()   { _klass = nullptr; _method_idnum = -1; }
+  ~LatestMethodCache()  { _klass = nullptr; _method_idnum = -1; }
 
   void   init(Klass* k, Method* m);
   Klass* klass() const           { return _klass; }
@@ -67,9 +68,7 @@ class LatestMethodCache : public CHeapObj<mtClass> {
 
   // CDS support.  Replace the klass in this with the archive version
   // could use this for Enhanced Class Redefinition also.
-  void serialize(SerializeClosure* f) {
-    f->do_ptr((void**)&_klass);
-  }
+  void serialize(SerializeClosure* f);
   void metaspace_pointers_do(MetaspaceClosure* it);
 };
 
@@ -95,6 +94,9 @@ class Universe: AllStatic {
   // Known classes in the VM
   static Klass* _typeArrayKlassObjs[T_LONG+1];
   static Klass* _objectArrayKlassObj;
+  // Special int-Array that represents filler objects that are used by GC to overwrite
+  // dead objects. References to them are generally an error.
+  static Klass* _fillerArrayKlassObj;
 
   // Known objects in the VM
   static OopHandle    _main_thread_group;             // Reference to the main thread group object
@@ -108,6 +110,7 @@ class Universe: AllStatic {
 
   // preallocated error objects (no backtrace)
   static OopHandle    _out_of_memory_errors;
+  static OopHandle    _class_init_stack_overflow_error;
 
   // preallocated cause message for delayed StackOverflowError
   static OopHandle    _delayed_stack_overflow_error_message;
@@ -131,6 +134,10 @@ class Universe: AllStatic {
 
   // number of preallocated error objects available for use
   static volatile jint _preallocated_out_of_memory_error_avail_count;
+
+  // preallocated message detail strings for error objects
+  static OopHandle _msg_metaspace;
+  static OopHandle _msg_class_metaspace;
 
   static OopHandle    _null_ptr_exception_instance;   // preallocated exception object
   static OopHandle    _arithmetic_exception_instance; // preallocated exception object
@@ -172,31 +179,36 @@ class Universe: AllStatic {
   static void initialize_basic_type_mirrors(TRAPS);
   static void fixup_mirrors(TRAPS);
 
-  static void reinitialize_vtable_of(Klass* k, TRAPS);
-  static void reinitialize_vtables(TRAPS);
-  static void reinitialize_itables(TRAPS);
   static void compute_base_vtable_size();             // compute vtable size of class Object
 
   static void genesis(TRAPS);                         // Create the initial world
 
   // Mirrors for primitive classes (created eagerly)
   static oop check_mirror(oop m) {
-    assert(m != NULL, "mirror not initialized");
+    assert(m != nullptr, "mirror not initialized");
     return m;
   }
 
   // Debugging
   static int _verify_count;                           // number of verifies done
-
-  // True during call to verify().  Should only be set/cleared in verify().
-  static bool _verify_in_progress;
   static long verify_flags;
 
   static uintptr_t _verify_oop_mask;
   static uintptr_t _verify_oop_bits;
 
+  // Table of primitive type mirrors, excluding T_OBJECT and T_ARRAY
+  // but including T_VOID, hence the index including T_VOID
+  static OopHandle _basic_type_mirrors[T_VOID+1];
+
+#if INCLUDE_CDS_JAVA_HEAP
+  // Each slot i stores an index that can be used to restore _basic_type_mirrors[i]
+  // from the archive heap using HeapShared::get_root(int)
+  static int _archived_basic_type_mirror_indices[T_VOID+1];
+#endif
+
  public:
   static void calculate_verify_data(HeapWord* low_boundary, HeapWord* high_boundary) PRODUCT_RETURN;
+  static void set_verify_data(uintptr_t mask, uintptr_t bits) PRODUCT_RETURN;
 
   // Known classes in the VM
   static Klass* boolArrayKlassObj()                 { return typeArrayKlassObj(T_BOOLEAN); }
@@ -210,10 +222,12 @@ class Universe: AllStatic {
 
   static Klass* objectArrayKlassObj()               { return _objectArrayKlassObj; }
 
+  static Klass* fillerArrayKlassObj()               { return _fillerArrayKlassObj; }
+
   static Klass* typeArrayKlassObj(BasicType t) {
     assert((uint)t >= T_BOOLEAN, "range check for type: %s", type2name(t));
     assert((uint)t < T_LONG+1,   "range check for type: %s", type2name(t));
-    assert(_typeArrayKlassObjs[t] != NULL, "domain check");
+    assert(_typeArrayKlassObjs[t] != nullptr, "domain check");
     return _typeArrayKlassObjs[t];
   }
 
@@ -228,12 +242,12 @@ class Universe: AllStatic {
   static oop short_mirror();
   static oop void_mirror();
 
-  // Table of primitive type mirrors, excluding T_OBJECT and T_ARRAY
-  // but including T_VOID, hence the index including T_VOID
-  static OopHandle _mirrors[T_VOID+1];
-
   static oop java_mirror(BasicType t);
-  static void replace_mirror(BasicType t, oop obj);
+
+#if INCLUDE_CDS_JAVA_HEAP
+  static void set_archived_basic_type_mirror_index(BasicType t, int index);
+  static void update_archived_basic_type_mirrors();
+#endif
 
   static oop      main_thread_group();
   static void set_main_thread_group(oop group);
@@ -300,12 +314,21 @@ class Universe: AllStatic {
   static oop out_of_memory_error_retry();
   static oop delayed_stack_overflow_error_message();
 
+  // Saved StackOverflowError and OutOfMemoryError for use when
+  // class initialization can't create ExceptionInInitializerError.
+  static oop class_init_stack_overflow_error();
+  static oop class_init_out_of_memory_error();
+
+  // If it's a certain type of OOME object
+  static bool is_out_of_memory_error_metaspace(oop ex_obj);
+  static bool is_out_of_memory_error_class_metaspace(oop ex_obj);
+
   // The particular choice of collected heap.
   static CollectedHeap* heap() { return _collectedHeap; }
 
   DEBUG_ONLY(static bool is_gc_active();)
   DEBUG_ONLY(static bool is_in_heap(const void* p);)
-  DEBUG_ONLY(static bool is_in_heap_or_null(const void* p) { return p == NULL || is_in_heap(p); })
+  DEBUG_ONLY(static bool is_in_heap_or_null(const void* p) { return p == nullptr || is_in_heap(p); })
 
   // Reserve Java heap and determine CompressedOops mode
   static ReservedHeapSpace reserve_heap(size_t heap_size, size_t alignment);
@@ -327,9 +350,8 @@ class Universe: AllStatic {
   // CDS support
   static void serialize(SerializeClosure* f);
 
-  // Apply "f" to all klasses for basic types (classes not present in
+  // Apply the closure to all klasses for basic types (classes not present in
   // SystemDictionary).
-  static void basic_type_classes_do(void f(Klass*));
   static void basic_type_classes_do(KlassClosure* closure);
   static void metaspace_pointers_do(MetaspaceClosure* it);
 
@@ -346,14 +368,14 @@ class Universe: AllStatic {
     Verify_JNIHandles = 256,
     Verify_CodeCacheOops = 512,
     Verify_ResolvedMethodTable = 1024,
+    Verify_StringDedup = 2048,
     Verify_All = -1
   };
   static void initialize_verify_flags();
   static bool should_verify_subset(uint subset);
-  static bool verify_in_progress() { return _verify_in_progress; }
   static void verify(VerifyOption option, const char* prefix);
   static void verify(const char* prefix) {
-    verify(VerifyOption_Default, prefix);
+    verify(VerifyOption::Default, prefix);
   }
   static void verify() {
     verify("");
@@ -367,7 +389,8 @@ class Universe: AllStatic {
   // array; this should trigger relocation in a sliding compaction collector.
   debug_only(static bool release_fullgc_alot_dummy();)
   // The non-oop pattern (see compiledIC.hpp, etc)
-  static void*   non_oop_word();
+  static void*         non_oop_word();
+  static bool contains_non_oop_word(void* p);
 
   // Oop verification (see MacroAssembler::verify_oop)
   static uintptr_t verify_oop_mask()          PRODUCT_RETURN0;

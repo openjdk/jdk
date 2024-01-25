@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -53,13 +52,13 @@ import jdk.internal.access.JavaNioAccess;
  *
  * <p>
  * When the root spliterator is first split a mapped byte buffer will be created
- * over the file for it's size that was observed when the stream was created.
+ * over the file for its size that was observed when the stream was created.
  * Thus a mapped byte buffer is only required for parallel stream execution.
  * Sub-spliterators will share that mapped byte buffer.  Splitting will use the
  * mapped byte buffer to find the closest line feed characters(s) to the left or
  * right of the mid-point of covered range of bytes of the file.  If a line feed
  * is found then the spliterator is split with returned spliterator containing
- * the identified line feed characters(s) at the end of it's covered range of
+ * the identified line feed characters(s) at the end of its covered range of
  * bytes.
  *
  * <p>
@@ -70,13 +69,11 @@ import jdk.internal.access.JavaNioAccess;
  */
 final class FileChannelLinesSpliterator implements Spliterator<String> {
 
-    static final Set<String> SUPPORTED_CHARSET_NAMES;
-    static {
-        SUPPORTED_CHARSET_NAMES = new HashSet<>();
-        SUPPORTED_CHARSET_NAMES.add(UTF_8.INSTANCE.name());
-        SUPPORTED_CHARSET_NAMES.add(ISO_8859_1.INSTANCE.name());
-        SUPPORTED_CHARSET_NAMES.add(US_ASCII.INSTANCE.name());
-    }
+    static final Set<Charset> SUPPORTED_CHARSETS = Set.of(
+        UTF_8.INSTANCE,
+        ISO_8859_1.INSTANCE,
+        US_ASCII.INSTANCE
+    );
 
     private final FileChannel fc;
     private final Charset cs;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -219,24 +219,16 @@ public class StartTlsRequest implements ExtendedRequest {
     /*
      * Acquire the class loader associated with this thread.
      */
+    @SuppressWarnings("removal")
     private final ClassLoader getContextClassLoader() {
-        return AccessController.doPrivileged(
-            new PrivilegedAction<ClassLoader>() {
-                public ClassLoader run() {
-                    return Thread.currentThread().getContextClassLoader();
-                }
-            }
-        );
+        PrivilegedAction<ClassLoader> pa = Thread.currentThread()::getContextClassLoader;
+        return AccessController.doPrivileged(pa);
     }
 
+    @SuppressWarnings("removal")
     private static final boolean privilegedHasNext(final Iterator<StartTlsResponse> iter) {
-        Boolean answer = AccessController.doPrivileged(
-            new PrivilegedAction<Boolean>() {
-            public Boolean run() {
-                return Boolean.valueOf(iter.hasNext());
-            }
-        });
-        return answer.booleanValue();
+        PrivilegedAction<Boolean> pa = iter::hasNext;
+        return AccessController.doPrivileged(pa);
     }
 
     private static final long serialVersionUID = 4441679576360753397L;

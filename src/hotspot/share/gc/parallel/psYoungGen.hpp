@@ -90,7 +90,7 @@ class PSYoungGen : public CHeapObj<mtGC> {
   MemRegion reserved() const { return _reserved; }
 
   bool is_in(const void* p) const {
-    return _virtual_space->contains((void *)p);
+    return _virtual_space->is_in_committed(p);
   }
 
   bool is_in_reserved(const void* p) const {
@@ -133,11 +133,7 @@ class PSYoungGen : public CHeapObj<mtGC> {
     return result;
   }
 
-  HeapWord* volatile* top_addr() const   { return eden_space()->top_addr(); }
-  HeapWord** end_addr() const   { return eden_space()->end_addr(); }
-
   // Iteration.
-  void oop_iterate(OopIterateClosure* cl);
   void object_iterate(ObjectClosure* cl);
 
   void reset_survivors_after_shrink();

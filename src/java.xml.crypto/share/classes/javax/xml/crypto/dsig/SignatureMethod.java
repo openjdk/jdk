@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import java.security.spec.AlgorithmParameterSpec;
 
 /**
  * A representation of the XML <code>SignatureMethod</code> element
- * as defined in the <a href="http://www.w3.org/TR/xmldsig-core/">
+ * as defined in the <a href="https://www.w3.org/TR/xmldsig-core/">
  * W3C Recommendation for XML-Signature Syntax and Processing</a>.
  * The XML Schema Definition is defined as:
  * <pre>
@@ -52,6 +52,12 @@ import java.security.spec.AlgorithmParameterSpec;
  * A <code>SignatureMethod</code> instance may be created by invoking the
  * {@link XMLSignatureFactory#newSignatureMethod newSignatureMethod} method
  * of the {@link XMLSignatureFactory} class.
+ * <p>
+ * The signature method algorithm URIs defined in this class are specified
+ * in the <a href="https://www.w3.org/TR/xmldsig-core/">
+ * W3C Recommendation for XML-Signature Syntax and Processing</a>
+ * and <a href="https://www.rfc-editor.org/info/rfc9231">
+ * RFC 9231: Additional XML Security Uniform Resource Identifiers (URIs)</a>
  *
  * @author Sean Mullan
  * @author JSR 105 Expert Group
@@ -59,8 +65,6 @@ import java.security.spec.AlgorithmParameterSpec;
  * @see XMLSignatureFactory#newSignatureMethod(String, SignatureMethodParameterSpec)
  */
 public interface SignatureMethod extends XMLStructure, AlgorithmMethod {
-
-    // All methods can be found in RFC 6931.
 
     /**
      * The <a href="http://www.w3.org/2000/09/xmldsig#dsa-sha1">DSA-SHA1</a>
@@ -234,6 +238,79 @@ public interface SignatureMethod extends XMLStructure, AlgorithmMethod {
      * @since 11
      */
     String HMAC_SHA512 = "http://www.w3.org/2001/04/xmldsig-more#hmac-sha512";
+
+
+    /**
+     * The <a href="http://www.w3.org/2007/05/xmldsig-more#rsa-pss">
+     * RSASSA-PSS</a> signature method algorithm URI.
+     * <p>
+     * Calling {@link XMLSignatureFactory#newSignatureMethod
+     * XMLSignatureFactory.newSignatureMethod(RSA_PSS, null)} returns a
+     * {@code SignatureMethod} object that uses the default parameter as defined in
+     * <a href="https://tools.ietf.org/html/rfc6931#section-2.3.9">RFC 6931 Section 2.3.9</a>,
+     * which uses SHA-256 as the {@code DigestMethod}, MGF1 with SHA-256 as the
+     * {@code MaskGenerationFunction}, 32 as {@code SaltLength}, and 1 as
+     * {@code TrailerField}. This default parameter is represented as an
+     * {@link javax.xml.crypto.dsig.spec.RSAPSSParameterSpec RSAPSSParameterSpec}
+     * type and returned by the {@link #getParameterSpec()} method
+     * of the {@code SignatureMethod} object.
+     *
+     * @since 17
+     */
+    String RSA_PSS = "http://www.w3.org/2007/05/xmldsig-more#rsa-pss";
+
+    /**
+     * The <a href="http://www.w3.org/2021/04/xmldsig-more#eddsa-ed25519">
+     * ED25519</a> signature method algorithm URI.
+     *
+     * @since 21
+     */
+    String ED25519 = "http://www.w3.org/2021/04/xmldsig-more#eddsa-ed25519";
+
+    /**
+     * The <a href="http://www.w3.org/2021/04/xmldsig-more#eddsa-ed448">
+     * ED448</a> signature method algorithm URI.
+     *
+     * @since 21
+     */
+    String ED448 = "http://www.w3.org/2021/04/xmldsig-more#eddsa-ed448";
+
+    /**
+     * The <a href="http://www.w3.org/2007/05/xmldsig-more#sha3-224-rsa-MGF1">
+     * SHA3-224-RSA-MGF1</a> (PKCS #1) signature method algorithm URI.
+     *
+     * @since 22
+     */
+    String SHA3_224_RSA_MGF1 =
+            "http://www.w3.org/2007/05/xmldsig-more#sha3-224-rsa-MGF1";
+
+    /**
+     * The <a href="http://www.w3.org/2007/05/xmldsig-more#sha3-256-rsa-MGF1">
+     * SHA3-256-RSA-MGF1</a> (PKCS #1) signature method algorithm URI.
+     *
+     * @since 22
+     */
+    String SHA3_256_RSA_MGF1 =
+            "http://www.w3.org/2007/05/xmldsig-more#sha3-256-rsa-MGF1";
+
+    /**
+     * The <a href="http://www.w3.org/2007/05/xmldsig-more#sha3-384-rsa-MGF1">
+     * SHA3-384-RSA-MGF1</a> (PKCS #1) signature method algorithm URI.
+     *
+     * @since 22
+     */
+    String SHA3_384_RSA_MGF1 =
+            "http://www.w3.org/2007/05/xmldsig-more#sha3-384-rsa-MGF1";
+
+    /**
+     * The <a href="http://www.w3.org/2007/05/xmldsig-more#sha3-512-rsa-MGF1">
+     * SHA3-512-RSA-MGF1</a> (PKCS #1) signature method algorithm URI.
+     *
+     * @since 22
+     */
+    String SHA3_512_RSA_MGF1 =
+            "http://www.w3.org/2007/05/xmldsig-more#sha3-512-rsa-MGF1";
+
 
     /**
      * Returns the algorithm-specific input parameters of this

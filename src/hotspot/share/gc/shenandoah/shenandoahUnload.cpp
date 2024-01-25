@@ -30,6 +30,7 @@
 #include "code/codeCache.hpp"
 #include "code/dependencyContext.hpp"
 #include "gc/shared/gcBehaviours.hpp"
+#include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shenandoah/shenandoahNMethod.inline.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
@@ -76,7 +77,7 @@ public:
 
 class ShenandoahIsUnloadingBehaviour : public IsUnloadingBehaviour {
 public:
-  virtual bool is_unloading(CompiledMethod* method) const {
+  virtual bool has_dead_oop(CompiledMethod* method) const {
     nmethod* const nm = method->as_nmethod();
     assert(ShenandoahHeap::heap()->is_concurrent_weak_root_in_progress(), "Only for this phase");
     ShenandoahNMethod* data = ShenandoahNMethod::gc_data(nm);
@@ -92,7 +93,7 @@ public:
   virtual bool lock(CompiledMethod* method) {
     nmethod* const nm = method->as_nmethod();
     ShenandoahReentrantLock* const lock = ShenandoahNMethod::lock_for_nmethod(nm);
-    assert(lock != NULL, "Not yet registered?");
+    assert(lock != nullptr, "Not yet registered?");
     lock->lock();
     return true;
   }
@@ -100,7 +101,7 @@ public:
   virtual void unlock(CompiledMethod* method) {
     nmethod* const nm = method->as_nmethod();
     ShenandoahReentrantLock* const lock = ShenandoahNMethod::lock_for_nmethod(nm);
-    assert(lock != NULL, "Not yet registered?");
+    assert(lock != nullptr, "Not yet registered?");
     lock->unlock();
   }
 
@@ -111,7 +112,7 @@ public:
 
     nmethod* const nm = method->as_nmethod();
     ShenandoahReentrantLock* const lock = ShenandoahNMethod::lock_for_nmethod(nm);
-    assert(lock != NULL, "Not yet registered?");
+    assert(lock != nullptr, "Not yet registered?");
     return lock->owned_by_self();
   }
 };
@@ -133,16 +134,14 @@ void ShenandoahUnload::prepare() {
   DependencyContext::cleaning_start();
 }
 
-class ShenandoahRendezvousClosure : public HandshakeClosure {
-public:
-  inline ShenandoahRendezvousClosure() : HandshakeClosure("ShenandoahRendezvous") {}
-  inline void do_thread(Thread* thread) {}
-};
-
 void ShenandoahUnload::unload() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   assert(ClassUnloading, "Filtered by caller");
   assert(heap->is_concurrent_weak_root_in_progress(), "Filtered by caller");
+
+  ClassUnloadingContext ctx(heap->workers()->active_workers(),
+                            true /* unregister_nmethods_during_purge */,
+                            true /* lock_codeblob_free_separately */);
 
   // Unlink stale metadata and nmethods
   {
@@ -172,8 +171,7 @@ void ShenandoahUnload::unload() {
   // Make sure stale metadata and nmethods are no longer observable
   {
     ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_class_unload_rendezvous);
-    ShenandoahRendezvousClosure cl;
-    Handshake::execute(&cl);
+    heap->rendezvous_threads();
   }
 
   // Purge stale metadata and nmethods that were unlinked
@@ -183,12 +181,12 @@ void ShenandoahUnload::unload() {
     {
       ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_class_unload_purge_coderoots);
       SuspendibleThreadSetJoiner sts;
-      ShenandoahCodeRoots::purge(heap->workers());
+      ShenandoahCodeRoots::purge();
     }
 
     {
       ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_class_unload_purge_cldg);
-      ClassLoaderDataGraph::purge(/*at_safepoint*/false);
+      ClassLoaderDataGraph::purge(false /* at_safepoint */);
     }
 
     {

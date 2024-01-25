@@ -42,13 +42,13 @@
  *      dst       Pointer to an dst image.
  *      src       Pointer to an src image.
  *      dx_l      Number of columns on the left side of the
- *                image to be copyed.
+ *                image to be copied.
  *      dx_r      Number of columns on the right side of the
- *                image to be copyed.
+ *                image to be copied.
  *      dy_t      Number of rows on the top edge of the
- *                image to be copyed.
+ *                image to be copied.
  *      dy_b      Number of rows on the top edge of the
- *                image to be copyed.
+ *                image to be copied.
  *      cmask     Channel mask to indicate the channels to be convolved.
  *                Each bit of which represents a channel in the image. The
  *                channels corresponded to 1 bits are those to be processed.

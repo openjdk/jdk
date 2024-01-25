@@ -35,7 +35,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 /**
- * This class implements a buffered output stream. It provides methods to write a chunck of
+ * This class implements a buffered output stream. It provides methods to write a chunk of
  * bytes to underlying data stream.
  *
  * @author Yanni Zhang

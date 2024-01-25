@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Stack;
 import java.util.TreeMap;
 import java.util.function.Function;
@@ -53,7 +54,7 @@ import toolbox.ToolBox;
 
 public class TestSingletonLists extends JavadocTester {
     public static void main(String... args) throws Exception {
-        TestSingletonLists tester = new TestSingletonLists();
+        var tester = new TestSingletonLists();
         tester.runTests();
     }
 
@@ -206,7 +207,7 @@ public class TestSingletonLists extends JavadocTester {
         checking("Check lists");
         ListChecker c = new ListChecker(out, this::readFile);
         try {
-            c.checkDirectory(outputDir.toPath());
+            c.checkDirectory(outputDir);
             c.report();
             int errors = c.getErrorCount();
             if (errors == 0) {
@@ -224,14 +225,16 @@ public class TestSingletonLists extends JavadocTester {
      */
     public class ListChecker extends HtmlChecker {
         private int listErrors;
-
-        private boolean inBody;
-        private boolean inNoScript;
+        // Ignore "Constant Field Values" @see items for final fields created by javadoc
+        private int inSeeOrTocList = 0;
         private Stack<Map<String,Integer>> counts = new Stack<>();
-        private int regionErrors;
         private String fileName;
-        private boolean inheritanceClass;
-        private List<String> excludeFiles = List.of("overview-tree.html","package-tree.html","module-summary.html");
+        private List<String> excludeFiles = List.of(
+                "overview-tree.html",
+                "package-summary.html",
+                "package-tree.html",
+                "module-summary.html",
+                "help-doc.html");
 
         ListChecker(PrintStream out, Function<Path,String> fileReader) {
             super(out, fileReader);
@@ -247,12 +250,6 @@ public class TestSingletonLists extends JavadocTester {
                 out.println("All lists OK");
             } else {
                 out.println(listErrors + " list errors");
-            }
-
-            if (regionErrors == 0) {
-                out.println("All regions OK");
-            } else {
-                out.println(regionErrors + " errors in regions");
             }
         }
 
@@ -272,9 +269,12 @@ public class TestSingletonLists extends JavadocTester {
         @Override
         public void startElement(String name, Map<String,String> attrs, boolean selfClosing) {
             switch (name) {
-
                 case "ul": case "ol": case "dl":
                     counts.push(new TreeMap<>());
+                    String classAttr = attrs.get("class");
+                    if (classAttr != null && Set.of("tag-list", "toc-list", "sub-nav-list").contains(classAttr)) {
+                        inSeeOrTocList++;
+                    }
                     break;
 
                 case "li": case "dd": case "dt": {
@@ -290,10 +290,15 @@ public class TestSingletonLists extends JavadocTester {
             switch (name) {
                 case "ul": case "ol": {
                     Map<String,Integer> c = counts.pop();
-                    if (c.get("li") == 0) {
+                    if (inSeeOrTocList > 0) {
+                        // Ignore "Constant Field Values" @see items for final fields created by javadoc
+                        inSeeOrTocList--;
+                    } else if (!c.containsKey("li")) {
                         error(currFile, getLineNumber(), "empty list");
+                        listErrors++;
                     } else if (c.get("li") == 1 && fileName != null && !excludeFiles.contains(fileName)) {
                         error(currFile, getLineNumber(), "singleton list");
+                        listErrors++;
                     }
                     break;
                 }
@@ -302,9 +307,11 @@ public class TestSingletonLists extends JavadocTester {
                     Map<String, Integer> c = counts.pop();
                     if (c.get("dd") == 0 || c.get("dt") == 0) {
                         error(currFile, getLineNumber(), "empty list");
+                        listErrors++;
                     }
                     /*if (c.get("dd") == 1 || c.get("dt") == 1) {
                         error(currFile, getLineNumber(), "singleton list");
+                        listErrors++;
                     }*/
                     break;
                 }

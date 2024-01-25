@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,10 +147,6 @@ static void (*fp_gtk_paint_arrow)(GtkStyle* style, GdkWindow* window,
         GdkRectangle* area, GtkWidget* widget, const gchar* detail,
         GtkArrowType arrow_type, gboolean fill, gint x, gint y,
         gint width, gint height);
-static void (*fp_gtk_paint_diamond)(GtkStyle* style, GdkWindow* window,
-        GtkStateType state_type, GtkShadowType shadow_type,
-        GdkRectangle* area, GtkWidget* widget, const gchar* detail,
-        gint x, gint y, gint width, gint height);
 static void (*fp_gtk_paint_box)(GtkStyle* style, GdkWindow* window,
         GtkStateType state_type, GtkShadowType shadow_type,
         GdkRectangle* area, GtkWidget* widget, const gchar* detail,
@@ -595,7 +591,6 @@ GtkApi* gtk2_load(JNIEnv *env, const char* lib_name)
         fp_gtk_paint_vline = dl_symbol("gtk_paint_vline");
         fp_gtk_paint_shadow = dl_symbol("gtk_paint_shadow");
         fp_gtk_paint_arrow = dl_symbol("gtk_paint_arrow");
-        fp_gtk_paint_diamond = dl_symbol("gtk_paint_diamond");
         fp_gtk_paint_box = dl_symbol("gtk_paint_box");
         fp_gtk_paint_flat_box = dl_symbol("gtk_paint_flat_box");
         fp_gtk_paint_check = dl_symbol("gtk_paint_check");
@@ -1097,8 +1092,8 @@ static void init_toggle_widget(WidgetType widget_type, gint synth_state)
         ((GtkObject*)gtk2_widget)->flags &= ~GTK_HAS_FOCUS;
     }
 
-    if ((synth_state & MOUSE_OVER) != 0 && (synth_state & PRESSED) == 0 ||
-           (synth_state & FOCUSED) != 0 && (synth_state & PRESSED) != 0) {
+    if ((((synth_state & MOUSE_OVER) != 0) && ((synth_state & PRESSED) == 0)) ||
+           (((synth_state & FOCUSED) != 0) && ((synth_state & PRESSED) != 0))) {
         gtk2_widget->state = GTK_STATE_PRELIGHT;
     } else if ((synth_state & DISABLED) != 0) {
         gtk2_widget->state = GTK_STATE_INSENSITIVE;
@@ -1470,7 +1465,7 @@ static GtkWidget *gtk2_get_widget(WidgetType widget_type)
             if (init_result = (NULL == gtk2_widgets[_GTK_NOTEBOOK_TYPE]))
             {
                 gtk2_widgets[_GTK_NOTEBOOK_TYPE] =
-                    (*fp_gtk_notebook_new)(NULL);
+                    (*fp_gtk_notebook_new)();
             }
             result = gtk2_widgets[_GTK_NOTEBOOK_TYPE];
             break;
@@ -1478,7 +1473,7 @@ static GtkWidget *gtk2_get_widget(WidgetType widget_type)
             if (init_result = (NULL == gtk2_widgets[_GTK_TOGGLE_BUTTON_TYPE]))
             {
                 gtk2_widgets[_GTK_TOGGLE_BUTTON_TYPE] =
-                    (*fp_gtk_toggle_button_new)(NULL);
+                    (*fp_gtk_toggle_button_new)();
             }
             result = gtk2_widgets[_GTK_TOGGLE_BUTTON_TYPE];
             break;
@@ -1487,7 +1482,7 @@ static GtkWidget *gtk2_get_widget(WidgetType widget_type)
             if (init_result = (NULL == gtk2_widgets[_GTK_TOOLBAR_TYPE]))
             {
                 gtk2_widgets[_GTK_TOOLBAR_TYPE] =
-                    (*fp_gtk_toolbar_new)(NULL);
+                    (*fp_gtk_toolbar_new)();
             }
             result = gtk2_widgets[_GTK_TOOLBAR_TYPE];
             break;
@@ -1846,19 +1841,6 @@ static void gtk2_paint_check(WidgetType widget_type, gint synth_state,
             shadow_type, NULL, gtk2_widget, detail,
             x, y, width, height);
     (*fp_gtk_paint_check)(gtk2_widget->style, gtk2_black_pixmap, state_type,
-            shadow_type, NULL, gtk2_widget, detail,
-            x, y, width, height);
-}
-
-static void gtk2_paint_diamond(WidgetType widget_type, GtkStateType state_type,
-        GtkShadowType shadow_type, const gchar *detail,
-        gint x, gint y, gint width, gint height)
-{
-    gtk2_widget = gtk2_get_widget(widget_type);
-    (*fp_gtk_paint_diamond)(gtk2_widget->style, gtk2_white_pixmap, state_type,
-            shadow_type, NULL, gtk2_widget, detail,
-            x, y, width, height);
-    (*fp_gtk_paint_diamond)(gtk2_widget->style, gtk2_black_pixmap, state_type,
             shadow_type, NULL, gtk2_widget, detail,
             x, y, width, height);
 }
@@ -2489,7 +2471,7 @@ static jobject gtk2_get_setting(JNIEnv *env, Setting property)
 }
 
 static gboolean gtk2_get_drawable_data(JNIEnv *env, jintArray pixelArray, jint x,
-     jint y, jint width, jint height, jint jwidth, int dx, int dy, jint scale) {
+     jint y, jint width, jint height, jint jwidth, int dx, int dy) {
     GdkPixbuf *pixbuf;
     jint *ary;
 
@@ -2497,19 +2479,6 @@ static gboolean gtk2_get_drawable_data(JNIEnv *env, jintArray pixelArray, jint x
 
     pixbuf = (*fp_gdk_pixbuf_get_from_drawable)(NULL, root, NULL, x, y,
                                                     0, 0, width, height);
-    if (pixbuf && scale != 1) {
-        GdkPixbuf *scaledPixbuf;
-        x /= scale;
-        y /= scale;
-        width /= scale;
-        height /= scale;
-        dx /= scale;
-        dy /= scale;
-        scaledPixbuf = (*fp_gdk_pixbuf_scale_simple)(pixbuf, width, height,
-                                                     GDK_INTERP_BILINEAR);
-        (*fp_g_object_unref)(pixbuf);
-        pixbuf = scaledPixbuf;
-    }
 
     if (pixbuf) {
         int nchan = (*fp_gdk_pixbuf_get_n_channels)(pixbuf);

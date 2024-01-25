@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ public class CalendarNameProviderTest {
     }
 
     void test() {
-        Locale kids = new Locale("ja", "JP", "kids"); // test provider's supported locale
+        Locale kids = Locale.of("ja", "JP", "kids"); // test provider's supported locale
         Calendar kcal = Calendar.getInstance(kids);
         Calendar jcal = Calendar.getInstance(Locale.JAPAN);
 

@@ -38,7 +38,7 @@ import util.DraconianErrorHandler;
  * @test
  * @bug 4972882
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.Bug4972882
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Bug4972882
  * @run testng/othervm validation.Bug4972882
  * @summary Test Validator throws Exception when two identity-constraints are defined with the same {name} and {target namespace}.
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -165,9 +165,9 @@ public abstract class IIOMetadata {
      * indicating the class names of any additional formats supported by
      * this object, or {@code null} if there are none.
      *
-     * @exception IllegalArgumentException if
+     * @throws IllegalArgumentException if
      * {@code extraMetadataFormatNames} has length 0.
-     * @exception IllegalArgumentException if
+     * @throws IllegalArgumentException if
      * {@code extraMetadataFormatNames} and
      * {@code extraMetadataFormatClassNames} are neither both
      * {@code null}, nor of the same length.
@@ -368,10 +368,10 @@ public abstract class IIOMetadata {
      *
      * @return an {@code IIOMetadataFormat} object.
      *
-     * @exception IllegalArgumentException if {@code formatName}
+     * @throws IllegalArgumentException if {@code formatName}
      * is {@code null} or is not one of the names recognized by
      * the plug-in.
-     * @exception IllegalStateException if the class corresponding to
+     * @throws IllegalStateException if the class corresponding to
      * the format name cannot be loaded.
      */
     public IIOMetadataFormat getMetadataFormat(String formatName) {
@@ -402,14 +402,12 @@ public abstract class IIOMetadata {
             // Try to load from the module of the IIOMetadata implementation
             // for this plugin since the IIOMetadataImpl is part of the plugin
             PrivilegedAction<Class<?>> pa = () -> { return getMetadataFormatClass(className); };
+            @SuppressWarnings("removal")
             Class<?> cls = AccessController.doPrivileged(pa);
             Method meth = cls.getMethod("getInstance");
             return (IIOMetadataFormat) meth.invoke(null);
         } catch (Exception e) {
-            RuntimeException ex =
-                new IllegalStateException ("Can't obtain format");
-            ex.initCause(e);
-            throw ex;
+            throw new IllegalStateException("Can't obtain format", e);
         }
     }
 
@@ -454,7 +452,7 @@ public abstract class IIOMetadata {
      * @return an XML DOM {@code Node} object forming the
      * root of a tree.
      *
-     * @exception IllegalArgumentException if {@code formatName}
+     * @throws IllegalArgumentException if {@code formatName}
      * is {@code null} or is not one of the names returned by
      * {@code getMetadataFormatNames}.
      *
@@ -483,13 +481,13 @@ public abstract class IIOMetadata {
      * @param root an XML DOM {@code Node} object forming the
      * root of a tree.
      *
-     * @exception IllegalStateException if this object is read-only.
-     * @exception IllegalArgumentException if {@code formatName}
+     * @throws IllegalStateException if this object is read-only.
+     * @throws IllegalArgumentException if {@code formatName}
      * is {@code null} or is not one of the names returned by
      * {@code getMetadataFormatNames}.
-     * @exception IllegalArgumentException if {@code root} is
+     * @throws IllegalArgumentException if {@code root} is
      * {@code null}.
-     * @exception IIOInvalidTreeException if the tree cannot be parsed
+     * @throws IIOInvalidTreeException if the tree cannot be parsed
      * successfully using the rules of the given format.
      *
      * @see #getMetadataFormatNames
@@ -733,13 +731,13 @@ public abstract class IIOMetadata {
      * @param root an XML DOM {@code Node} object forming the
      * root of a tree.
      *
-     * @exception IllegalStateException if this object is read-only.
-     * @exception IllegalArgumentException if {@code formatName}
+     * @throws IllegalStateException if this object is read-only.
+     * @throws IllegalArgumentException if {@code formatName}
      * is {@code null} or is not one of the names returned by
      * {@code getMetadataFormatNames}.
-     * @exception IllegalArgumentException if {@code root} is
+     * @throws IllegalArgumentException if {@code root} is
      * {@code null}.
-     * @exception IIOInvalidTreeException if the tree cannot be parsed
+     * @throws IIOInvalidTreeException if the tree cannot be parsed
      * successfully using the rules of the given format.
      *
      * @see #getMetadataFormatNames
@@ -759,7 +757,7 @@ public abstract class IIOMetadata {
      * Note that there are many possible default values, depending on
      * how the object was created.
      *
-     * @exception IllegalStateException if this object is read-only.
+     * @throws IllegalStateException if this object is read-only.
      *
      * @see javax.imageio.ImageReader#getStreamMetadata
      * @see javax.imageio.ImageReader#getImageMetadata
@@ -875,7 +873,7 @@ public abstract class IIOMetadata {
      *
      * @return {@code true} if the controller completed normally.
      *
-     * @exception IllegalStateException if there is no controller
+     * @throws IllegalStateException if there is no controller
      * currently installed.
      *
      * @see IIOMetadataController

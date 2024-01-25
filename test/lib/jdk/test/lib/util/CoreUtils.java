@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,12 +107,17 @@ public class CoreUtils {
         // Find the core file
         String coreFileLocation = parseCoreFileLocationFromOutput(crashOutputString);
         if (coreFileLocation != null) {
-            System.out.println("Found core file: " + coreFileLocation);
-            Asserts.assertGT(new File(coreFileLocation).length(), 0L, "Unexpected core size");
+            long coreFileSize = new File(coreFileLocation).length();
+            System.out.println("Found core file " + coreFileLocation +
+                               ", size = " + coreFileSize / 1024 / 1024 + "mb");
+            Asserts.assertGT(coreFileSize, 0L, "Unexpected core size");
 
             // Make sure the core file is moved into the cwd if not already there.
+            // Core/minidump usually created in current directory (Linux and Windows).
             Path corePath = Paths.get(coreFileLocation);
-            if (corePath.getParent() != null) {
+            File parent = new File(coreFileLocation).getParentFile();
+            File cwdParent = new File(".").getAbsoluteFile().getParentFile();
+            if (parent != null && !parent.equals(cwdParent)) {
                 Path coreFileName = corePath.getFileName();
                 System.out.println("Moving core file to cwd: " +  coreFileName);
                 long startTime = System.currentTimeMillis();
@@ -122,6 +127,8 @@ public class CoreUtils {
             }
 
             return coreFileLocation; // success!
+        } else {
+            System.out.println("Core file not found. Trying to find a reason why...");
         }
 
         // See if we can figure out the likely reason the core file was not found. Recover from
@@ -136,12 +143,17 @@ public class CoreUtils {
             if (!coresDir.canWrite()) {
                 throw new SkippedException("Directory \"" + coresDir + "\" is not writable");
             }
-            if (Platform.isSignedOSX()) {
+            if (Platform.isHardenedOSX()) {
                 if (Platform.getOsVersionMajor() > 10 ||
                     (Platform.getOsVersionMajor() == 10 && Platform.getOsVersionMinor() >= 15))
                 {
-                    // We can't generate cores files with signed binaries on OSX 10.15 and later.
-                    throw new SkippedException("Cannot produce core file with signed binary on OSX 10.15 and later");
+                    // We can't generate cores files with hardened binaries on OSX 10.15 and later.
+                    throw new SkippedException("Cannot produce core file with hardened binary on OSX 10.15 and later");
+                }
+            } else {
+                // codesign has to add entitlements using the plist. If this is not present we might not generate a core file.
+                if (!Platform.hasOSXPlistEntries()) {
+                    throw new SkippedException("Cannot produce core file with binary having no plist entitlement entries");
                 }
             }
         } else if (Platform.isLinux()) {
@@ -255,6 +267,16 @@ public class CoreUtils {
             } catch (IOException e) {
                 throw new SkippedException("Not able to unzip file: " + gzCore.getAbsolutePath(), e);
             }
+        }
+    }
+
+    public static String getAlwaysPretouchArg(boolean withCore) {
+        // macosx-aarch64 has an issue where sometimes the java heap will not be dumped to the
+        // core file. Using -XX:+AlwaysPreTouch fixes the problem.
+        if (withCore && Platform.isOSX() && Platform.isAArch64()) {
+            return "-XX:+AlwaysPreTouch";
+        } else {
+            return "-XX:-AlwaysPreTouch";
         }
     }
 

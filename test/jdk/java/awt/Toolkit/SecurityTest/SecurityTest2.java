@@ -28,7 +28,7 @@
  * @summary tests that a simple GUI application runs without any
  *          exceptions thrown
  * @author Artem.Ananiev area=awt.Toolkit
- * @run main SecurityTest2
+ * @run main/othervm -Djava.security.manager=allow SecurityTest2
  */
 
 import java.awt.*;

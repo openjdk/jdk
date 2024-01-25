@@ -26,10 +26,19 @@
 #define SHARE_GC_G1_G1EVACSTATS_INLINE_HPP
 
 #include "gc/g1/g1EvacStats.hpp"
+
 #include "runtime/atomic.hpp"
 
 inline void G1EvacStats::add_direct_allocated(size_t value) {
   Atomic::add(&_direct_allocated, value);
+}
+
+inline void G1EvacStats::add_num_plab_filled(size_t value) {
+  Atomic::add(&_num_plab_filled, value);
+}
+
+inline void G1EvacStats::add_num_direct_allocated(size_t value) {
+  Atomic::add(&_num_direct_allocated, value);
 }
 
 inline void G1EvacStats::add_region_end_waste(size_t value) {

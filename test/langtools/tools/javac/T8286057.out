@@ -1,0 +1,4 @@
+T8286057.java:10:17: compiler.err.enum.cant.be.generic
+T8286057.java:11:18: compiler.err.enum.cant.be.generic
+T8286057.java:12:18: compiler.err.enum.cant.be.generic
+3 errors

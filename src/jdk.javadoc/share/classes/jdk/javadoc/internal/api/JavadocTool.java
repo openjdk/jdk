@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,11 +55,6 @@ import jdk.javadoc.internal.tool.ToolOptions;
 /**
  * Provides access to functionality specific to the JDK documentation tool,
  * javadoc.
- *
- * <p><b>This is NOT part of any supported API.
- * If you write code that depends on this, you do so at your own
- * risk.  This code and its internal interfaces are subject to change
- * or deletion without notice.</b></p>
  */
 public class JavadocTool implements DocumentationTool {
 
@@ -113,15 +108,15 @@ public class JavadocTool implements DocumentationTool {
 
             if (out == null)
                 context.put(Log.errKey, new PrintWriter(System.err, true));
-            else if (out instanceof PrintWriter)
-                context.put(Log.errKey, ((PrintWriter) out));
+            else if (out instanceof PrintWriter pout)
+                context.put(Log.errKey, pout);
             else
                 context.put(Log.errKey, new PrintWriter(out, true));
 
             if (fileManager == null) {
                 fileManager = getStandardFileManager(diagnosticListener, null, null);
-                if (fileManager instanceof BaseFileManager) {
-                    ((BaseFileManager) fileManager).autoClose = true;
+                if (fileManager instanceof BaseFileManager bfm) {
+                    bfm.autoClose = true;
                 }
             }
             fileManager = ccw.wrap(fileManager);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@
  * @run main/othervm PlatformLoggerTest
  */
 
+import java.lang.ref.Reference;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.logging.*;
@@ -122,7 +123,7 @@ public class PlatformLoggerTest {
     }
 
     private static void checkLogger(String name, Level level) {
-        Logger logger = LogManager.getLogManager().getLogger(name);
+        final Logger logger = LogManager.getLogManager().getLogger(name);
         if (logger == null) {
             throw new RuntimeException("Logger " + name +
                 " does not exist");
@@ -132,6 +133,7 @@ public class PlatformLoggerTest {
             throw new RuntimeException("Invalid level for logger " +
                 logger.getName() + " " + logger.getLevel());
         }
+        Reference.reachabilityFence(logger);
     }
 
     private static void testLogMethods(PlatformLogger logger) {
@@ -170,10 +172,11 @@ public class PlatformLoggerTest {
             }
         }
 
-        Logger javaLogger = Logger.getLogger("foo.bar.baz");
+        final Logger javaLogger = Logger.getLogger("foo.bar.baz");
         for (Level level : levels) {
             checkJavaLoggerLevel(javaLogger, level);
         }
+        Reference.reachabilityFence(javaLogger);
     }
 
     private static void checkLoggerLevel(PlatformLogger logger, Level level) {
@@ -185,12 +188,13 @@ public class PlatformLoggerTest {
         }
 
         // check the level set in java.util.logging.Logger
-        Logger javaLogger = LogManager.getLogManager().getLogger(logger.getName());
+        final Logger javaLogger = LogManager.getLogManager().getLogger(logger.getName());
         Level javaLevel = javaLogger.getLevel();
         if (javaLogger.getLevel() != level) {
             throw new RuntimeException("Retrieved backing java.util.logging.Logger level "
                     + javaLevel + " is not the expected " + level);
         }
+        Reference.reachabilityFence(javaLogger);
     }
 
     private static void checkJavaLoggerLevel(Logger logger, Level level) {
@@ -200,7 +204,7 @@ public class PlatformLoggerTest {
         System.out.println("Testing Java Level with: " + level.getName());
 
         // create a brand new java logger
-        Logger javaLogger = sun.util.logging.internal.LoggingProviderImpl.getLogManagerAccess()
+        final Logger javaLogger = sun.util.logging.internal.LoggingProviderImpl.getLogManagerAccess()
                      .demandLoggerFor(LogManager.getLogManager(),
                           logger.getName()+"."+level.getName(), Thread.class.getModule());
 
@@ -237,6 +241,7 @@ public class PlatformLoggerTest {
                     + plogger.level() + " is not the expected " + expected);
 
         }
+        Reference.reachabilityFence(javaLogger);
     }
 
     private static void checkPlatformLoggerLevelMapping(Level level) {

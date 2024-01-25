@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,6 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.Array;
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.*;
-
-import jdk.internal.misc.Unsafe;
 
 public class TestClasses {
 
@@ -87,15 +85,12 @@ class TestClass {
         r.run();
     }
 
-    public static void createNonFindableClasses(byte[] klassbuf) throws Throwable {
+    public static Class<?>[] createNonFindableClasses(byte[] klassbuf) throws Throwable {
         // Create a hidden class and an array of hidden classes.
         Lookup lookup = MethodHandles.lookup();
-        Class<?> clh = lookup.defineHiddenClass(klassbuf, false, NESTMATE).lookupClass();
-        Class<?> arrayOfHidden = Array.newInstance(clh, 10).getClass(); // HAS ISSUES?
-
-        // Create an Unsafe anonymous class and an array of unsafe anonymous classes.
-        Unsafe unsafe = Unsafe.getUnsafe();
-        Class<?> clu = unsafe.defineAnonymousClass(TestClass.class, klassbuf, new Object[0]);
-        final Class<?> arrayOfUAC = Array.newInstance(clu, 15).getClass();
+        Class<?>[] classes = new Class[2];
+        classes[0] = lookup.defineHiddenClass(klassbuf, false, NESTMATE).lookupClass();
+        classes[1] = Array.newInstance(classes[0], 10).getClass(); // HAS ISSUES?
+        return classes;
     }
 }

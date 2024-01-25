@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,13 +26,13 @@
 #ifndef CPU_AARCH64_REGISTERMAP_AARCH64_HPP
 #define CPU_AARCH64_REGISTERMAP_AARCH64_HPP
 
-// machine-dependent implemention for register maps
+// machine-dependent implementation for register maps
   friend class frame;
 
  private:
   // This is the hook for finding a register in an "well-known" location,
   // such as a register block of a predetermined format.
-  address pd_location(VMReg reg) const { return NULL; }
+  address pd_location(VMReg reg) const { return nullptr; }
   address pd_location(VMReg base_reg, int slot_idx) const;
 
   // no PD state to clear or copy:

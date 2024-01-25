@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,20 +37,22 @@ import javadoc.tester.JavadocTester;
 public class TestSuperClassInSerialForm extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestSuperClassInSerialForm tester = new TestSuperClassInSerialForm();
+        var tester = new TestSuperClassInSerialForm();
         tester.runTests();
     }
 
     @Test
     public void test() {
         javadoc("-d", "out",
+                "--no-platform-links",
                 "-sourcepath", testSrc,
                 "pkg");
         checkExit(Exit.OK);
 
         checkOutput("serialized-form.html", true,
                 """
-                    <a href="pkg/SubClass.html" title="class in pkg">pkg.SubClass</a> extends <a hre\
-                    f="pkg/SuperClass.html" title="class in pkg">SuperClass</a>""");
+                    <h3>Class&nbsp;<a href="pkg/SubClass.html" title="class in pkg">pkg.SubClass</a></h3>
+                    <div class="type-signature">class SubClass extends <a href="pkg/SuperClass.html" tit\
+                    le="class in pkg">SuperClass</a> implements java.io.Serializable</div>""");
     }
 }

@@ -215,13 +215,13 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
         return (BasicConfiguration)super.getConfiguration();
     }
 
-    static public class BasicConfiguration extends SimpleConfiguration {
+    public static class BasicConfiguration extends SimpleConfiguration {
 
         protected Map<DiagnosticPart, Integer> indentationLevels;
         protected Map<BasicFormatKind, String> availableFormats;
         protected SourcePosition sourcePosition;
 
-        @SuppressWarnings("fallthrough")
+        @SuppressWarnings({ "fallthrough", "this-escape" })
         public BasicConfiguration(Options options) {
             super(options, EnumSet.of(DiagnosticPart.SUMMARY,
                             DiagnosticPart.DETAILS,
@@ -272,6 +272,7 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
             }
         }
 
+        @SuppressWarnings("this-escape")
         public BasicConfiguration() {
             super(EnumSet.of(DiagnosticPart.SUMMARY,
                   DiagnosticPart.DETAILS,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -32,19 +32,19 @@
 namespace metaspace {
 
 // Returns reference to the one global chunk header pool.
-ChunkHeaderPool* ChunkHeaderPool::_chunkHeaderPool = NULL;
+ChunkHeaderPool* ChunkHeaderPool::_chunkHeaderPool = nullptr;
 
 ChunkHeaderPool::ChunkHeaderPool() :
   _num_slabs(),
-  _first_slab(NULL),
-  _current_slab(NULL)
+  _first_slab(nullptr),
+  _current_slab(nullptr)
 {}
 
 // Note: the global chunk header pool gets never deleted; so this destructor only
 // exists for the sake of tests.
 ChunkHeaderPool::~ChunkHeaderPool() {
   Slab* s = _first_slab;
-  while (s != NULL) {
+  while (s != nullptr) {
     Slab* next_slab = s->_next;
     os::free(s);
      s = next_slab;
@@ -53,11 +53,11 @@ ChunkHeaderPool::~ChunkHeaderPool() {
 
 void ChunkHeaderPool::allocate_new_slab() {
   Slab* slab = new Slab();
-  if (_current_slab != NULL) {
+  if (_current_slab != nullptr) {
     _current_slab->_next = slab;
   }
   _current_slab = slab;
-  if (_first_slab == NULL) {
+  if (_first_slab == nullptr) {
     _first_slab = slab;
   }
   _num_slabs.increment();
@@ -69,7 +69,7 @@ size_t ChunkHeaderPool::memory_footprint_words() const {
 }
 
 void ChunkHeaderPool::initialize() {
-  assert(_chunkHeaderPool == NULL, "only once");
+  assert(_chunkHeaderPool == nullptr, "only once");
   _chunkHeaderPool = new ChunkHeaderPool();
 }
 
@@ -77,7 +77,7 @@ void ChunkHeaderPool::initialize() {
 void ChunkHeaderPool::verify() const {
   const Slab* s = _first_slab;
   int num = 0;
-  while (s != NULL) {
+  while (s != nullptr) {
     assert(s->_top >= 0 && s->_top <= SlabCapacity,
            "invalid slab at " PTR_FORMAT ", top: %d, slab cap: %d",
            p2i(s), s->_top, SlabCapacity );

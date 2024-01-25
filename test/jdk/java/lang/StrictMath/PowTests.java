@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
  * @test
  * @bug 8136874
  * @summary Tests for StrictMath.pow
- * @author Joseph D. Darcy
  */
 
 /**
@@ -295,7 +294,7 @@ public class PowTests {
     private static int testPowCase(double input1, double input2, double expected) {
         int failures = 0;
         failures += Tests.test("StrictMath.pow(double)", input1, input2,
-                               StrictMath.pow(input1, input2), expected);
+                               StrictMath::pow, expected);
         return failures;
     }
 }

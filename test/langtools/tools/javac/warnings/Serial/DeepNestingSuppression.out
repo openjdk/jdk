@@ -1,0 +1,2 @@
+DeepNestingSuppression.java:29:42: compiler.warn.long.SVUID: DeepNestingSuppression.Outer.Intermediate.Inner
+1 warning

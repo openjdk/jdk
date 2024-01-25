@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,20 +40,21 @@ import java.util.*;
 
 abstract class AbstractPoller implements Runnable {
 
-    // list of requests pending to the poller thread
-    private final LinkedList<Request> requestList;
+    // requests pending to the poller thread
+    private final ArrayDeque<Request> requests;
 
     // set to true when shutdown
     private boolean shutdown;
 
     protected AbstractPoller() {
-        this.requestList = new LinkedList<>();
+        this.requests = new ArrayDeque<>();
         this.shutdown = false;
     }
 
     /**
      * Starts the poller thread
      */
+    @SuppressWarnings("removal")
     public void start() {
         final Runnable thisRunnable = this;
         AccessController.doPrivileged(new PrivilegedAction<>() {
@@ -104,7 +105,7 @@ abstract class AbstractPoller implements Runnable {
         // validate arguments before request to poller
         if (dir == null)
             throw new NullPointerException();
-        Set<WatchEvent.Kind<?>> eventSet = new HashSet<>(events.length);
+        Set<WatchEvent.Kind<?>> eventSet = HashSet.newHashSet(events.length);
         for (WatchEvent.Kind<?> event: events) {
             // standard events
             if (event == StandardWatchEventKinds.ENTRY_CREATE ||
@@ -215,11 +216,11 @@ abstract class AbstractPoller implements Runnable {
     private Object invoke(RequestType type, Object... params) throws IOException {
         // submit request
         Request req = new Request(type, params);
-        synchronized (requestList) {
+        synchronized (requests) {
             if (shutdown) {
                 throw new ClosedWatchServiceException();
             }
-            requestList.add(req);
+            requests.add(req);
 
             // wakeup thread
             wakeup();
@@ -242,9 +243,9 @@ abstract class AbstractPoller implements Runnable {
      */
     @SuppressWarnings("unchecked")
     boolean processRequests() {
-        synchronized (requestList) {
+        synchronized (requests) {
             Request req;
-            while ((req = requestList.poll()) != null) {
+            while ((req = requests.poll()) != null) {
                 // if in process of shutdown then reject request
                 if (shutdown) {
                     req.release(new ClosedWatchServiceException());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,7 @@
 package sun.security.x509;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.math.BigInteger;
-import java.util.Enumeration;
 
 import sun.security.util.*;
 
@@ -43,25 +41,19 @@ import sun.security.util.*;
  *
  * @author Hemma Prafullchandra
  * @see Extension
- * @see CertAttrSet
  */
-public class CRLNumberExtension extends Extension
-implements CertAttrSet<String> {
+public class CRLNumberExtension extends Extension {
 
-    /**
-     * Attribute name.
-     */
     public static final String NAME = "CRLNumber";
-    public static final String NUMBER = "value";
 
     private static final String LABEL = "CRL Number";
 
-    private BigInteger crlNumber = null;
-    private String extensionName;
-    private String extensionLabel;
+    private BigInteger crlNumber;
+    private final String extensionName;
+    private final String extensionLabel;
 
     // Encode this extension value
-    private void encodeThis() throws IOException {
+    private void encodeThis() {
         if (crlNumber == null) {
             this.extensionValue = null;
             return;
@@ -77,7 +69,7 @@ implements CertAttrSet<String> {
      *
      * @param crlNum the value to be set for the extension.
      */
-    public CRLNumberExtension(int crlNum) throws IOException {
+    public CRLNumberExtension(int crlNum) {
         this(PKIXExtensions.CRLNumber_Id, false, BigInteger.valueOf(crlNum),
         NAME, LABEL);
     }
@@ -86,9 +78,9 @@ implements CertAttrSet<String> {
      * Create a CRLNumberExtension with the BigInteger value .
      * The criticality is set to false.
      *
-     * @param crlNum the value to be set for the extension.
+     * @param crlNum the value to be set for the extension, cannot be null
      */
-    public CRLNumberExtension(BigInteger crlNum) throws IOException {
+    public CRLNumberExtension(BigInteger crlNum) {
         this(PKIXExtensions.CRLNumber_Id, false, crlNum, NAME, LABEL);
     }
 
@@ -96,9 +88,12 @@ implements CertAttrSet<String> {
      * Creates the extension (also called by the subclass).
      */
     protected CRLNumberExtension(ObjectIdentifier extensionId,
-        boolean isCritical, BigInteger crlNum, String extensionName,
-        String extensionLabel) throws IOException {
+            boolean isCritical, BigInteger crlNum, String extensionName,
+            String extensionLabel) {
 
+        if (crlNum == null) {
+            throw new IllegalArgumentException("CRL number cannot be null");
+        }
         this.extensionId = extensionId;
         this.critical = isCritical;
         this.crlNumber = crlNum;
@@ -137,45 +132,12 @@ implements CertAttrSet<String> {
     }
 
     /**
-     * Set the attribute value.
+     * Get the crlNumber value.
      */
-    public void set(String name, Object obj) throws IOException {
-        if (name.equalsIgnoreCase(NUMBER)) {
-            if (!(obj instanceof BigInteger)) {
-                throw new IOException("Attribute must be of type BigInteger.");
-            }
-            crlNumber = (BigInteger)obj;
-        } else {
-            throw new IOException("Attribute name not recognized by" +
-                                  " CertAttrSet:" + extensionName + '.');
-        }
-        encodeThis();
+    public BigInteger getCrlNumber() {
+        return crlNumber;
     }
 
-    /**
-     * Get the attribute value.
-     */
-    public BigInteger get(String name) throws IOException {
-        if (name.equalsIgnoreCase(NUMBER)) {
-            return crlNumber;
-        } else {
-            throw new IOException("Attribute name not recognized by" +
-                                  " CertAttrSet:" + extensionName + '.');
-        }
-    }
-
-    /**
-     * Delete the attribute value.
-     */
-    public void delete(String name) throws IOException {
-        if (name.equalsIgnoreCase(NUMBER)) {
-            crlNumber = null;
-        } else {
-            throw new IOException("Attribute name not recognized by" +
-                                  " CertAttrSet:" + extensionName + '.');
-        }
-        encodeThis();
-    }
 
     /**
      * Returns a printable representation of the CRLNumberExtension.
@@ -196,10 +158,9 @@ implements CertAttrSet<String> {
      * Write the extension to the DerOutputStream.
      *
      * @param out the DerOutputStream to write the extension to.
-     * @exception IOException on encoding errors.
      */
-    public void encode(OutputStream out) throws IOException {
-        DerOutputStream tmp = new DerOutputStream();
+    @Override
+    public void encode(DerOutputStream out) {
         encode(out, PKIXExtensions.CRLNumber_Id, true);
     }
 
@@ -207,34 +168,23 @@ implements CertAttrSet<String> {
      * Write the extension to the DerOutputStream.
      * (Also called by the subclass)
      */
-    protected void encode(OutputStream out, ObjectIdentifier extensionId,
-        boolean isCritical) throws IOException {
-
-       DerOutputStream  tmp = new DerOutputStream();
+    protected void encode(DerOutputStream out, ObjectIdentifier extensionId,
+            boolean isCritical) {
 
        if (this.extensionValue == null) {
            this.extensionId = extensionId;
            this.critical = isCritical;
            encodeThis();
        }
-       super.encode(tmp);
-       out.write(tmp.toByteArray());
+       super.encode(out);
     }
 
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(NUMBER);
-        return (elements.elements());
-    }
 
     /**
-     * Return the name of this attribute.
+     * Return the name of this extension.
      */
+    @Override
     public String getName() {
-        return (extensionName);
+        return extensionName;
     }
 }

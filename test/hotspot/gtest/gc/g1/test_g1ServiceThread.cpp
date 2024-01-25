@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,6 @@ TEST_VM(G1ServiceThread, test_add_while_waiting) {
   // Make sure default tasks use long intervals so that the service thread
   // is doing a long wait for the next execution.
   AutoModifyRestore<uintx> f1(G1PeriodicGCInterval, 100000);
-  AutoModifyRestore<uintx> f2(G1ConcRefinementServiceIntervalMillis, 100000);
 
   // Create thread and let it start.
   G1ServiceThread* st = new G1ServiceThread();
@@ -142,8 +141,9 @@ TEST_VM(G1ServiceTaskQueue, add_ordered) {
   for (jlong now = 0; now < 1000000; now++) {
     // Random multiplier is at least 1 to ensure progress.
     int multiplier = 1 + os::random() % 10;
-    while (queue.peek()->time() < now) {
-      TestTask* task = (TestTask*) queue.pop();
+    while (queue.front()->time() < now) {
+      TestTask* task = (TestTask*) queue.front();
+      queue.remove_front();
       // Update delay multiplier.
       task->execute();
       task->update_time(now, multiplier);
@@ -153,22 +153,23 @@ TEST_VM(G1ServiceTaskQueue, add_ordered) {
   }
 
   while (!queue.is_empty()) {
-    G1ServiceTask* task = queue.pop();
+    G1ServiceTask* task = queue.front();
+    queue.remove_front();
     delete task;
   }
 }
 
 #ifdef ASSERT
-TEST_VM_ASSERT_MSG(G1ServiceTaskQueue, pop_empty,
+TEST_VM_ASSERT_MSG(G1ServiceTaskQueue, remove_from_empty,
     ".*Should never try to verify empty queue") {
   G1ServiceTaskQueue queue;
-  queue.pop();
+  queue.remove_front();
 }
 
-TEST_VM_ASSERT_MSG(G1ServiceTaskQueue, peek_empty,
+TEST_VM_ASSERT_MSG(G1ServiceTaskQueue, get_from_empty,
     ".*Should never try to verify empty queue") {
   G1ServiceTaskQueue queue;
-  queue.peek();
+  queue.front();
 }
 
 TEST_VM_ASSERT_MSG(G1ServiceTaskQueue, set_time_in_queue,

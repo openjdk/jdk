@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
  * @test
  * @bug 4068067
  * @library /java/text/testlib
- * @build DFSSerialization IntlTest HexDumpReader
- * @run main DFSSerialization
+ * @build DFSSerialization HexDumpReader
+ * @run junit DFSSerialization
  * @summary Three different tests are done.
  *    1. read from the object created using jdk1.4.2
  *    2. create a valid DecimalFormatSymbols object with current JDK, then read the object
@@ -43,10 +43,11 @@ import java.io.ObjectOutputStream;
 import java.text.DecimalFormatSymbols;
 import java.util.Locale;
 
-public class DFSSerialization extends IntlTest{
-    public static void main(String[] args) throws Exception {
-        new DFSSerialization().run(args);
-    }
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.fail;
+
+public class DFSSerialization{
     public void TestDFSSerialization(){
         /*
          * 1. read from the object created using jdk1.4.2
@@ -56,9 +57,9 @@ public class DFSSerialization extends IntlTest{
         if (dfs142 != null){
             if (dfs142.getExponentSeparator().equals("E") && dfs142.getCurrencySymbol().equals("*SpecialCurrencySymbol*")){
                 System.out.println("\n  Deserialization of JDK1.4.2 Object from the current JDK: Passed.");
-                logln(" Deserialization of JDK1.4.2 Object from the current JDK: Passed.");
+                System.out.println(" Deserialization of JDK1.4.2 Object from the current JDK: Passed.");
             } else {
-                errln(" Deserialization of JDK1.4.2 Object from the current JDK was Failed:"
+                fail(" Deserialization of JDK1.4.2 Object from the current JDK was Failed:"
                       +dfs142.getCurrencySymbol()+" "+dfs142.getExponentSeparator());
                 /*
                  * logically should not throw this exception as errln throws exception
@@ -79,9 +80,9 @@ public class DFSSerialization extends IntlTest{
             if (dfsValid.getExponentSeparator().equals("*SpecialExponentSeparator*") &&
                 dfsValid.getCurrencySymbol().equals("*SpecialCurrencySymbol*")){
                 System.out.println("  Deserialization of current JDK Object from the current JDK: Passed.");
-                logln(" Deserialization of current JDK Object from the current JDK: Passed.");
+                System.out.println(" Deserialization of current JDK Object from the current JDK: Passed.");
             } else {
-                errln(" Deserialization of current JDK Object from the current JDK was Failed:"
+                fail(" Deserialization of current JDK Object from the current JDK was Failed:"
                       +dfsValid.getCurrencySymbol()+" "+dfsValid.getExponentSeparator());
                 /*
                  * logically should not throw this exception as errln throws exception
@@ -102,11 +103,11 @@ public class DFSSerialization extends IntlTest{
         } catch (NullPointerException npe){
             npePassed = true;
             System.out.println("  Trying to set exponent separator with null: Passed.");
-            logln(" Trying to set exponent separator with null: Passed.");
+            System.out.println(" Trying to set exponent separator with null: Passed.");
         }
         if (!npePassed){
             System.out.println(" Trying to set exponent separator with null:Failed.");
-            errln("  Trying to set exponent separator with null:Failed.");
+            fail("  Trying to set exponent separator with null:Failed.");
             /*
              * logically should not throw this exception as errln throws exception
              * if not thrown yet - but in case errln got changed
@@ -124,7 +125,7 @@ public class DFSSerialization extends IntlTest{
             DecimalFormatSymbols dfs = (DecimalFormatSymbols)p.readObject();
             return dfs;
         } catch (Exception e) {
-            errln("Test Malfunction in DFSSerialization: Exception while reading the object");
+            fail("Test Malfunction in DFSSerialization: Exception while reading the object");
             /*
              * logically should not throw this exception as errln throws exception
              * if not thrown yet - but in case errln got changed
@@ -137,8 +138,8 @@ public class DFSSerialization extends IntlTest{
         DecimalFormatSymbols dfs= new DecimalFormatSymbols();
         dfs.setExponentSeparator(expString);
         dfs.setCurrencySymbol("*SpecialCurrencySymbol*");
-        logln(" The special exponent separator is set : "  + dfs.getExponentSeparator());
-        logln(" The special currency symbol is set : "  + dfs.getCurrencySymbol());
+        System.out.println(" The special exponent separator is set : "  + dfs.getExponentSeparator());
+        System.out.println(" The special currency symbol is set : "  + dfs.getCurrencySymbol());
 
         // 6345659: create a test object in the test.class dir where test user has a write permission.
         File file = new File(System.getProperty("test.class", "."), objectName);
@@ -148,7 +149,7 @@ public class DFSSerialization extends IntlTest{
             //System.out.println(" The special currency symbol is set : "  + dfs.getCurrencySymbol());
             return file;
         } catch (Exception e){
-            errln("Test Malfunction in DFSSerialization: Exception while creating an object");
+            fail("Test Malfunction in DFSSerialization: Exception while creating an object");
             /*
              * logically should not throw this exception as errln throws exception
              * if not thrown yet - but in case errln got changed

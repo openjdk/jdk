@@ -260,6 +260,7 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
      * This method must be called under Toolkit.getDefaultToolkit() lock
      * and followed by setToolkitAWTEventListener()
      */
+    @SuppressWarnings("removal")
     protected final AWTEventListener getToolkitAWTEventListener() {
         return AccessController.doPrivileged(new PrivilegedAction<AWTEventListener>() {
             public AWTEventListener run() {
@@ -275,6 +276,7 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
         });
     }
 
+    @SuppressWarnings("removal")
     protected final void setToolkitAWTEventListener(final AWTEventListener listener) {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             public Void run() {

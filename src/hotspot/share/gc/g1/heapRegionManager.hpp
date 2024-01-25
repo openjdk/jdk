@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,11 +36,11 @@ class HeapRegion;
 class HeapRegionClosure;
 class HeapRegionClaimer;
 class FreeRegionList;
-class WorkGang;
+class WorkerThreads;
 
 class G1HeapRegionTable : public G1BiasedMappedArray<HeapRegion*> {
  protected:
-  virtual HeapRegion* default_value() const { return NULL; }
+  virtual HeapRegion* default_value() const { return nullptr; }
 };
 
 // This class keeps track of the actual heap memory, auxiliary data
@@ -76,7 +76,6 @@ class HeapRegionManager: public CHeapObj<mtGC> {
 
   G1RegionToSpaceMapper* _bot_mapper;
   G1RegionToSpaceMapper* _cardtable_mapper;
-  G1RegionToSpaceMapper* _card_counts_mapper;
 
   // Keeps track of the currently committed regions in the heap. The committed regions
   // can either be active (ready for use) or inactive (ready for uncommit).
@@ -89,7 +88,7 @@ class HeapRegionManager: public CHeapObj<mtGC> {
   HeapWord* heap_end() const {return _regions.end_address_mapped(); }
 
   // Pass down commit calls to the VirtualSpace.
-  void commit_regions(uint index, size_t num_regions = 1, WorkGang* pretouch_gang = NULL);
+  void commit_regions(uint index, size_t num_regions = 1, WorkerThreads* pretouch_workers = nullptr);
 
   // Initialize the HeapRegions in the range and put them on the free list.
   void initialize_regions(uint start, uint num_regions);
@@ -107,7 +106,7 @@ class HeapRegionManager: public CHeapObj<mtGC> {
 
   void assert_contiguous_range(uint start, uint num_regions) NOT_DEBUG_RETURN;
 
-  // Finds the next sequence of empty regions starting from start_idx, going backwards in
+  // Finds the next sequence of empty regions starting from start_idx (exclusive), going backwards in
   // the heap. Returns the length of the sequence found. If this value is zero, no
   // sequence could be found, otherwise res_idx contains the start index of this range.
   uint find_empty_from_idx_reverse(uint start_idx, uint* res_idx) const;
@@ -123,11 +122,10 @@ class HeapRegionManager: public CHeapObj<mtGC> {
 
   G1HeapRegionTable _regions;
   G1RegionToSpaceMapper* _heap_mapper;
-  G1RegionToSpaceMapper* _prev_bitmap_mapper;
-  G1RegionToSpaceMapper* _next_bitmap_mapper;
+  G1RegionToSpaceMapper* _bitmap_mapper;
   FreeRegionList _free_list;
 
-  void expand(uint index, uint num_regions, WorkGang* pretouch_gang = NULL);
+  void expand(uint index, uint num_regions, WorkerThreads* pretouch_workers = nullptr);
 
   // G1RegionCommittedMap helpers. These functions do the work that comes with
   // the state changes tracked by G1CommittedRegionMap. To make sure this is
@@ -147,11 +145,11 @@ class HeapRegionManager: public CHeapObj<mtGC> {
   HeapRegion* allocate_humongous_allow_expand(uint num_regions);
 
   // Expand helper for cases when the regions to expand are well defined.
-  void expand_exact(uint start, uint num_regions, WorkGang* pretouch_workers);
+  void expand_exact(uint start, uint num_regions, WorkerThreads* pretouch_workers);
   // Expand helper activating inactive regions rather than committing new ones.
   uint expand_inactive(uint num_regions);
   // Expand helper finding new regions to commit.
-  uint expand_any(uint num_regions, WorkGang* pretouch_workers);
+  uint expand_any(uint num_regions, WorkerThreads* pretouch_workers);
 
 #ifdef ASSERT
 public:
@@ -162,11 +160,9 @@ public:
   HeapRegionManager();
 
   void initialize(G1RegionToSpaceMapper* heap_storage,
-                  G1RegionToSpaceMapper* prev_bitmap,
-                  G1RegionToSpaceMapper* next_bitmap,
+                  G1RegionToSpaceMapper* bitmap,
                   G1RegionToSpaceMapper* bot,
-                  G1RegionToSpaceMapper* cardtable,
-                  G1RegionToSpaceMapper* card_counts);
+                  G1RegionToSpaceMapper* cardtable);
 
   // Return the "dummy" region used for G1AllocRegion. This is currently a hardwired
   // new HeapRegion that owns HeapRegion at index 0. Since at the moment we commit
@@ -178,7 +174,7 @@ public:
   // is valid.
   inline HeapRegion* at(uint index) const;
 
-  // Return the HeapRegion at the given index, NULL if the index
+  // Return the HeapRegion at the given index, null if the index
   // is for an unavailable region.
   inline HeapRegion* at_or_null(uint index) const;
 
@@ -190,14 +186,14 @@ public:
   inline HeapRegion* next_region_in_humongous(HeapRegion* hr) const;
 
   // If addr is within the committed space return its corresponding
-  // HeapRegion, otherwise return NULL.
+  // HeapRegion, otherwise return null.
   inline HeapRegion* addr_to_region(HeapWord* addr) const;
 
   // Insert the given region into the free region list.
   inline void insert_into_free_list(HeapRegion* hr);
 
   // Rebuild the free region list from scratch.
-  void rebuild_free_list(WorkGang* workers);
+  void rebuild_free_list(WorkerThreads* workers);
 
   // Insert the given region list into the global free region list.
   void insert_list_into_free_list(FreeRegionList* list) {
@@ -253,7 +249,7 @@ public:
   // HeapRegions, or re-use existing ones. Returns the number of regions the
   // sequence was expanded by. If a HeapRegion allocation fails, the resulting
   // number of regions might be smaller than what's desired.
-  uint expand_by(uint num_regions, WorkGang* pretouch_workers);
+  uint expand_by(uint num_regions, WorkerThreads* pretouch_workers);
 
   // Try to expand on the given node index, returning the index of the new region.
   uint expand_on_preferred_node(uint node_index);
@@ -268,11 +264,12 @@ public:
   // Allocate the regions that contain the address range specified, committing the
   // regions if necessary. Return false if any of the regions is already committed
   // and not free, and return the number of regions newly committed in commit_count.
-  bool allocate_containing_regions(MemRegion range, size_t* commit_count, WorkGang* pretouch_workers);
+  bool allocate_containing_regions(MemRegion range, size_t* commit_count, WorkerThreads* pretouch_workers);
 
   // Apply blk->do_heap_region() on all committed regions in address order,
   // terminating the iteration early if do_heap_region() returns true.
   void iterate(HeapRegionClosure* blk) const;
+  void iterate(HeapRegionIndexClosure* blk) const;
 
   void par_iterate(HeapRegionClosure* blk, HeapRegionClaimer* hrclaimer, const uint start_index) const;
 
@@ -315,6 +312,11 @@ class HeapRegionClaimer : public StackObj {
     return _n_regions;
   }
 
+  void set_n_workers(uint n_workers) {
+    assert(_n_workers == 0, "already set");
+    assert(n_workers > 0, "must be");
+    _n_workers = n_workers;
+  }
   // Return a start offset given a worker id.
   uint offset_for_worker(uint worker_id) const;
 

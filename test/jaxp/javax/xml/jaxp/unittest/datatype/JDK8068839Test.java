@@ -34,7 +34,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8068839
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true datatype.JDK8068839Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow datatype.JDK8068839Test
  * @run testng/othervm datatype.JDK8068839Test
  * @summary Verifies that Duration's edge cases
  */

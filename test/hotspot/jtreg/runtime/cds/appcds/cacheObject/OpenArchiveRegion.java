@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 /*
  * @test
  * @summary Test open archive heap regions
- * @requires vm.cds.archived.java.heap
+ * @requires vm.cds.write.archived.java.heap
  * @comment This test explicitly chooses the type of GC to be used by sub-processes. It may conflict with the GC type set
  * via the -vmoptions command line option of JTREG. vm.gc==null will help the test case to discard the explicitly passed
  * vm options.
@@ -45,8 +45,8 @@ public class OpenArchiveRegion {
 
         // Dump with open archive heap region, requires G1 GC
         OutputAnalyzer output = TestCommon.dump(appJar, appClasses, "-Xlog:cds=debug");
-        TestCommon.checkDump(output, "oa0 space:");
-        output.shouldNotContain("oa0 space:         0 [");
+        TestCommon.checkDump(output, "hp space:");
+        output.shouldNotContain("hp space:         0 [");
         output = TestCommon.exec(appJar, "Hello");
         TestCommon.checkExec(output, "Hello World");
         output = TestCommon.exec(appJar, "-XX:+UseSerialGC", "Hello");
@@ -55,7 +55,7 @@ public class OpenArchiveRegion {
         // Dump with open archive heap region disabled when G1 GC is not in use
         output = TestCommon.dump(appJar, appClasses, "-XX:+UseParallelGC");
         TestCommon.checkDump(output);
-        output.shouldNotContain("oa0 space:");
+        output.shouldNotContain("hp space:");
         output = TestCommon.exec(appJar, "Hello");
         TestCommon.checkExec(output, "Hello World");
     }

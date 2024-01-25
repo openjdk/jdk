@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import jdk.test.lib.process.ProcessTools;
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @build GetObjectSizeClassAgent
  * @run driver jdk.test.lib.helpers.ClassFileInstaller GetObjectSizeClassAgent
- * @run main GetObjectSizeClass
+ * @run driver GetObjectSizeClass
  */
 public class GetObjectSizeClass {
     public static void main(String[] args) throws Exception  {
@@ -51,8 +51,9 @@ public class GetObjectSizeClass {
         pb.command(new String[] { JDKToolFinder.getJDKTool("jar"), "cmf", "MANIFEST.MF", "agent.jar", "GetObjectSizeClassAgent.class"});
         pb.start().waitFor();
 
-        ProcessBuilder pt = ProcessTools.createTestJvm("-javaagent:agent.jar",  "GetObjectSizeClassAgent");
+        ProcessBuilder pt = ProcessTools.createTestJavaProcessBuilder("-javaagent:agent.jar",  "GetObjectSizeClassAgent");
         OutputAnalyzer output = new OutputAnalyzer(pt.start());
+        output.shouldHaveExitValue(0);
 
         output.stdoutShouldContain("GetObjectSizeClass passed");
     }

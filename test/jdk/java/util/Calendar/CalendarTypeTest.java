@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,9 +38,9 @@ public class CalendarTypeTest {
     static Locale[] locales = new Locale[] {
         Locale.US,
         Locale.forLanguageTag("th-TH-u-ca-gregory"),
-        new Locale("th", "TH"),
+        Locale.of("th", "TH"),
         Locale.forLanguageTag("en-US-u-ca-buddhist"),
-        new Locale("ja", "JP", "JP"),
+        Locale.of("ja", "JP", "JP"),
         Locale.forLanguageTag("en-US-u-ca-japanese")};
     static final String[] TYPES = new String[] {
         "gregory",

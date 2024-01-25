@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ import java.security.AccessController;
 // Suppreess unchecked conversion warning at line 34.
 //@SuppressWarnings("unchecked")
 public class PerfDataBuffer extends AbstractPerfDataBuffer {
+    @SuppressWarnings("removal")
     private static final Perf perf = AccessController.doPrivileged(new Perf.GetPerfAction());
 
     /**
@@ -60,34 +61,9 @@ public class PerfDataBuffer extends AbstractPerfDataBuffer {
      */
     public PerfDataBuffer(VmIdentifier vmid) throws MonitorException {
         try {
-            // Try 1.4.2 and later first
-            ByteBuffer bb = perf.attach(vmid.getLocalVmId(), vmid.getMode());
+            ByteBuffer bb = perf.attach(vmid.getLocalVmId());
             createPerfDataBuffer(bb, vmid.getLocalVmId());
-
-        } catch (IllegalArgumentException e) {
-            // now try 1.4.1 by attempting to directly map the files.
-            try {
-                String filename = PerfDataFile.getTempDirectory()
-                                  + PerfDataFile.dirNamePrefix
-                                  + Integer.toString(vmid.getLocalVmId());
-
-                File f = new File(filename);
-
-                FileChannel fc = new RandomAccessFile(f, "r").getChannel();
-                ByteBuffer bb = fc.map(FileChannel.MapMode.READ_ONLY, 0L,
-                                       (int)fc.size());
-                fc.close();
-                createPerfDataBuffer(bb, vmid.getLocalVmId());
-
-            } catch (FileNotFoundException e2) {
-                // re-throw the exception from the 1.4.2 attach method
-                throw new MonitorException(vmid.getLocalVmId() + " not found",
-                                           e);
-            } catch (IOException e2) {
-                throw new MonitorException("Could not map 1.4.1 file for "
-                                           + vmid.getLocalVmId(), e2);
-            }
-        } catch (IOException e) {
+        } catch (IOException | IllegalArgumentException e) {
             throw new MonitorException("Could not attach to "
                                        + vmid.getLocalVmId(), e);
         }

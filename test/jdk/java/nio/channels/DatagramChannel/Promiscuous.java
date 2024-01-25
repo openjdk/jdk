@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import java.util.stream.Collectors;
 
 import jdk.test.lib.NetworkConfiguration;
 import jdk.test.lib.net.IPSupport;
+import jdk.test.lib.Platform;
 
 public class Promiscuous {
 
@@ -78,13 +79,13 @@ public class Promiscuous {
     }
 
     /**
-     * Wait (with timeout) for datagram. The {@code datagramExepcted}
+     * Wait (with timeout) for datagram. The {@code datagramExpected}
      * parameter indicates whether a datagram is expected, and if
      * {@true} then {@code id} is the identifier in the payload.
      */
     static void receiveDatagram(DatagramChannel dc,
                                 String name,
-                                boolean datagramExepcted,
+                                boolean datagramExpected,
                                 int id)
         throws IOException
     {
@@ -103,7 +104,7 @@ public class Promiscuous {
 
                 // no datagram received
                 if (sa == null) {
-                    if (datagramExepcted) {
+                    if (datagramExpected) {
                         throw new RuntimeException("Expected message not received");
                     }
                     System.out.println("No message received (correct)");
@@ -126,7 +127,7 @@ public class Promiscuous {
                     System.out.format("Received message from %s (msg=%s)\n", sender, s);
                 }
 
-                if (!datagramExepcted) {
+                if (!datagramExpected) {
                     if (receivedId == id)
                         throw new RuntimeException("Message not expected");
                     System.out.println("Message ignored (has wrong id)");
@@ -192,23 +193,15 @@ public class Promiscuous {
         }
     }
 
+    /*
+     * returns true if platform allows an IPv6 socket join an IPv4 multicast group
+     */
+    private static boolean supportedByPlatform() {
+        return Platform.isOSX() || Platform.isWindows() || Platform.isLinux();
+    }
+
     public static void main(String[] args) throws IOException {
         IPSupport.throwSkippedExceptionIfNonOperational();
-
-        String os = System.getProperty("os.name");
-
-        // Requires IP_MULTICAST_ALL on Linux (new since 2.6.31) so skip
-        // on older kernels. Note that we skip on <= version 3 to keep the
-        // parsing simple
-        if (os.equals("Linux")) {
-            String osversion = System.getProperty("os.version");
-            String[] vers = osversion.split("\\.", 0);
-            int major = Integer.parseInt(vers[0]);
-            if (major < 3) {
-                System.out.format("Kernel version is %s, test skipped%n", osversion);
-                return;
-            }
-        }
 
         // get local network configuration to use
         NetworkConfiguration config = NetworkConfiguration.probe();
@@ -222,8 +215,8 @@ public class Promiscuous {
             InetAddress source = config.ip4Addresses(nif).iterator().next();
             test(INET, nif, ip4Group1, ip4Group2);
 
-            // Solaris and Linux allow IPv6 sockets join IPv4 multicast groups
-            if (os.equals("Linux"))
+            // test IPv6 sockets joining IPv4 multicast groups
+            if (supportedByPlatform())
                 test(UNSPEC, nif, ip4Group1, ip4Group2);
         }
     }

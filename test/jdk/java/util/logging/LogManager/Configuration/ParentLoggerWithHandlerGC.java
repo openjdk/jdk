@@ -57,7 +57,7 @@ import java.util.logging.LoggingPermission;
  * @summary tests that FileHandlers configured on abstract nodes in logging.properties
  *          will be closed by reset().
  * @run main/othervm ParentLoggerWithHandlerGC UNSECURE
- * @run main/othervm ParentLoggerWithHandlerGC SECURE
+ * @run main/othervm -Djava.security.manager=allow ParentLoggerWithHandlerGC SECURE
  * @author danielfuchs
  * @key randomness
  */

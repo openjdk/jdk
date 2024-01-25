@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,7 @@ public final class CDragSourceContextPeer extends SunDragSourceContextPeer {
     private static double fMaxImageSize = 128.0;
 
     static {
+        @SuppressWarnings("removal")
         String propValue = java.security.AccessController.doPrivileged(new sun.security.action.GetPropertyAction("apple.awt.dnd.defaultDragImageSize"));
         if (propValue != null) {
             try {
@@ -313,7 +314,7 @@ public final class CDragSourceContextPeer extends SunDragSourceContextPeer {
     private void setDefaultDragImage(JList<?> component) {
         Rectangle selectedOutline = null;
 
-        // This code actually works, even under the (non-existant) multiple-selections, because we only draw a union outline
+        // This code actually works, even under the (non-existent) multiple-selections, because we only draw a union outline
         int[] selectedIndices = component.getSelectedIndices();
         if (selectedIndices.length > 0)
             selectedOutline = component.getCellBounds(selectedIndices[0], selectedIndices[selectedIndices.length-1]);

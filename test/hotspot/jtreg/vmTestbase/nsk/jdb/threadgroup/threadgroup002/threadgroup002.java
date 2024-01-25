@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,15 @@
  * VM Testbase keywords: [jpda, jdb]
  * VM Testbase readme:
  * DECSRIPTION
- *  This is a test for jdb 'threadgroup <threadgroup_name>' command.
+ *  This is a test for jdb 'threadgroup <threadgroup_name>' command and
+ *  also for the 'threadgroup' command with no argument.
  *  The main thread creates 3 threadgroups of 5 threads each.
  *  All threads are locked in their 'run' method on a lock that the main
- *  thread holds. The test passes if jdb correctly switches between
- *  three user-defined threadgroups using 'threadgroup' command.
+ *  thread holds. The test then makes sure jdb correctly switches between
+ *  the three user-defined threadgroups using 'threadgroup' command. It then
+ *  resets the current threadgroup back to the default top level threadgroup
+ *  by using the 'threadgroup' command with no argument. It then tests that
+ *  all 3 created threadgroups can be found in the 'threads' output.
  * COMMENTS
  *  This test functionally equals to nsk/jdb/threadgroup/threadgroup001
  *  test and replaces it.
@@ -45,6 +49,7 @@
  *      nsk.jdb.threadgroup.threadgroup002.threadgroup002
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
+ *      -verbose
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
  *      -jdb=${test.jdk}/bin/jdb
@@ -98,6 +103,15 @@ public class threadgroup002 extends JdbTest {
             if (count > 0) {
                 failure("jdb cannot switch to valid threadgroup: " + threadgroup002a.THREADGROUP_NAME + i);
             }
+        }
+
+        // Test switching back to the default top level group.
+        reply = jdb.receiveReplyFor(JdbCommand.threadgroup);
+        reply = jdb.receiveReplyFor(JdbCommand.threads);
+        grep = new Paragrep(reply);
+        count = grep.find(threadgroup002a.THREADGROUP_NAME);
+        if (count != threadgroup002a.numThreadGroups) {
+            failure("jdb cannot switch to default top level threadgroup");
         }
 
         jdb.contToExit(1);

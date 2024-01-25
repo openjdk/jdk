@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ import java.io.IOException;
  * directory. The {@link #getRootDirectories getRootDirectories} method may be
  * used to iterate over the root directories in the file system. A file system
  * is typically composed of one or more underlying {@link FileStore file-stores}
- * that provide the storage for the files. Theses file stores can also vary in
+ * that provide the storage for the files. These file stores can also vary in
  * the features they support, and the file attributes or <em>meta-data</em> that
  * they associate with files.
  *
@@ -178,7 +178,8 @@ public abstract class FileSystem
      * hierarchies may change during the lifetime of the Java virtual machine.
      * For example, in some implementations, the insertion of removable media
      * may result in the creation of a new file hierarchy with its own
-     * top-level directory.
+     * top-level directory. There is no guarantee that a root directory
+     * can be accessed.
      *
      * <p> When a security manager is installed, it is invoked to check access
      * to the each root directory. If denied, the root directory is not returned
@@ -212,14 +213,14 @@ public abstract class FileSystem
      *
      * <p> <b>Usage Example:</b>
      * Suppose we want to print the space usage for all file stores:
-     * <pre>
+     * {@snippet lang=java :
      *     for (FileStore store: FileSystems.getDefault().getFileStores()) {
      *         long total = store.getTotalSpace() / 1024;
      *         long used = (store.getTotalSpace() - store.getUnallocatedSpace()) / 1024;
      *         long avail = store.getUsableSpace() / 1024;
      *         System.out.format("%-20s %12d %12d %12d%n", store, total, used, avail);
      *     }
-     * </pre>
+     * }
      *
      * @return  An object to iterate over the backing file stores
      */
@@ -304,7 +305,8 @@ public abstract class FileSystem
      * <blockquote><pre>
      * <i>syntax</i><b>:</b><i>pattern</i>
      * </pre></blockquote>
-     * where {@code ':'} stands for itself.
+     * where <i>syntax</i> is the non-empty name of the syntax, <i>pattern</i>
+     * is a possibly-empty pattern string, and {@code ':'} stands for itself.
      *
      * <p> A {@code FileSystem} implementation supports the "{@code glob}" and
      * "{@code regex}" syntaxes, and may support others. The value of the syntax
@@ -443,10 +445,10 @@ public abstract class FileSystem
      *
      * <p> <b>Usage Example:</b>
      * Suppose we want to make "joe" the owner of a file:
-     * <pre>
+     * {@snippet lang=java :
      *     UserPrincipalLookupService lookupService = FileSystems.getDefault().getUserPrincipalLookupService();
      *     Files.setOwner(path, lookupService.lookupPrincipalByName("joe"));
-     * </pre>
+     * }
      *
      * @throws  UnsupportedOperationException
      *          If this {@code FileSystem} does not does have a lookup service

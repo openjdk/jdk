@@ -98,10 +98,12 @@ public class DOMTransform extends DOMStructure implements Transform {
         }
     }
 
+    @Override
     public final AlgorithmParameterSpec getParameterSpec() {
         return spi.getParameterSpec();
     }
 
+    @Override
     public final String getAlgorithm() {
         return spi.getAlgorithm();
     }
@@ -116,7 +118,7 @@ public class DOMTransform extends DOMStructure implements Transform {
         Document ownerDoc = DOMUtils.getOwnerDocument(parent);
 
         Element transformElem = null;
-        if (parent.getLocalName().equals("Transforms")) {
+        if ("Transforms".equals(parent.getLocalName())) {
             transformElem = DOMUtils.createElement(ownerDoc, "Transform",
                                                    XMLSignature.XMLNS,
                                                    dsPrefix);
@@ -145,6 +147,7 @@ public class DOMTransform extends DOMStructure implements Transform {
      * @throws XMLSignatureException if an unexpected error occurs while
      *    executing the transform
      */
+    @Override
     public Data transform(Data data, XMLCryptoContext xc)
         throws TransformException
     {
@@ -164,6 +167,7 @@ public class DOMTransform extends DOMStructure implements Transform {
      * @throws XMLSignatureException if an unexpected error occurs while
      *    executing the transform
      */
+    @Override
     public Data transform(Data data, XMLCryptoContext xc, OutputStream os)
         throws TransformException
     {

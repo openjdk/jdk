@@ -5,11 +5,19 @@
   <meta name="generator" content="pandoc" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>IDE support in the JDK</title>
-  <style type="text/css">
-      code{white-space: pre-wrap;}
-      span.smallcaps{font-variant: small-caps;}
-      span.underline{text-decoration: underline;}
-      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
   </style>
   <link rel="stylesheet" href="../make/data/docs-resources/resources/jdk-default.css" />
   <!--[if lt IE 9]>
@@ -20,35 +28,144 @@
 <header id="title-block-header">
 <h1 class="title">IDE support in the JDK</h1>
 </header>
-<nav id="TOC">
+<nav id="TOC" role="doc-toc">
 <ul>
-<li><a href="#introduction">Introduction</a><ul>
-<li><a href="#ide-support-for-native-code">IDE support for native code</a></li>
-<li><a href="#ide-support-for-java-code">IDE support for Java code</a></li>
+<li><a href="#introduction" id="toc-introduction">Introduction</a>
+<ul>
+<li><a href="#ide-support-for-native-code"
+id="toc-ide-support-for-native-code">IDE support for native
+code</a></li>
+<li><a href="#ide-support-for-java-code"
+id="toc-ide-support-for-java-code">IDE support for Java code</a></li>
 </ul></li>
 </ul>
 </nav>
 <h2 id="introduction">Introduction</h2>
-<p>When you are familiar with building and testing the JDK, you may want to configure an IDE to work with the source code. The instructions differ a bit depending on whether you are interested in working with the native (C/C++) or the Java code.</p>
+<p>When you are familiar with building and testing the JDK, you may want
+to configure an IDE to work with the source code. The instructions
+differ a bit depending on whether you are interested in working with the
+native (C/C++) or the Java code.</p>
 <h3 id="ide-support-for-native-code">IDE support for native code</h3>
-<p>There are a few ways to generate IDE configuration for the native sources, depending on which IDE to use.</p>
+<p>There are a few ways to generate IDE configuration for the native
+sources, depending on which IDE to use.</p>
 <h4 id="visual-studio-code">Visual Studio Code</h4>
-<p>The make system can generate a <a href="https://code.visualstudio.com">Visual Studio Code</a> workspace that has C/C++ source indexing configured correctly, as well as launcher targets for tests and the Java launcher. After configuring, a workspace for the configuration can be generated using:</p>
+<p>The make system can generate a <a
+href="https://code.visualstudio.com">Visual Studio Code</a> workspace
+that has C/C++ source indexing configured correctly, as well as launcher
+targets for tests and the Java launcher. After configuring, a workspace
+for the configuration can be generated using:</p>
 <pre class="shell"><code>make vscode-project</code></pre>
-<p>This creates a file called <code>jdk.code-workspace</code> in the build output folder. The full location will be printed after the workspace has been generated. To use it, choose <code>File -&gt; Open Workspace...</code> in Visual Studio Code.</p>
+<p>This creates a file called <code>jdk.code-workspace</code> in the
+build output folder. The full location will be printed after the
+workspace has been generated. To use it, choose
+<code>File -&gt; Open Workspace...</code> in Visual Studio Code.</p>
 <h5 id="alternative-indexers">Alternative indexers</h5>
-<p>The main <code>vscode-project</code> target configures the default C++ support in Visual Studio Code. There are also other source indexers that can be installed, that may provide additional features. It's currently possible to generate configuration for two such indexers, <a href="https://clang.llvm.org/extra/clangd/">clangd</a> and <a href="https://github.com/Andersbakken/rtags">rtags</a>. These can be configured by appending the name of the indexer to the make target, such as:</p>
+<p>The main <code>vscode-project</code> target configures the default
+C++ support in Visual Studio Code. There are also other source indexers
+that can be installed, that may provide additional features. It's
+currently possible to generate configuration for two such indexers, <a
+href="https://clang.llvm.org/extra/clangd/">clangd</a> and <a
+href="https://github.com/Andersbakken/rtags">rtags</a>. These can be
+configured by appending the name of the indexer to the make target, such
+as:</p>
 <pre class="shell"><code>make vscode-project-clangd</code></pre>
-<p>Additional instructions for configuring the given indexer will be displayed after the workspace has been generated.</p>
+<p>Additional instructions for configuring the given indexer will be
+displayed after the workspace has been generated.</p>
 <h4 id="visual-studio">Visual Studio</h4>
-<p>This section is a work in progress.</p>
-<pre class="shell"><code>make ide-project</code></pre>
+<p>The make system can generate a Visual Studio project for the Hotspot
+native source. After configuring, the project is generated using:</p>
+<pre class="shell"><code>make hotspot-ide-project</code></pre>
+<p>This creates a file named <code>jvm.vcxproj</code> in
+<code>ide\hotspot-visualstudio</code> subfolder of the build output
+folder. The file can be opened in Visual Studio via
+<code>File -&gt; Open -&gt; Project/Solution</code>.</p>
+<h4 id="eclipse-cdt">Eclipse CDT</h4>
+<p>The make system can generate an Eclipse CDT Workspace that enables
+Eclipse indexing for the C and C++ sources throughout the entire
+codebase, as well as registering all common make targets to be runnable
+from the Eclipse explorer. This can be done after configuring by
+running:</p>
+<pre><code>make eclipse-native-env</code></pre>
+<p>After this is run, simply open and import the workspace in Eclipse
+through
+<code>File -&gt; Import -&gt; Projects from Folder or Archive</code> and
+at <code>Import source</code> click on the directory
+<code>ide\eclipse</code>, which can be found in the build output
+folder.</p>
+<p>If this doesn't work, you can also try
+<code>File -&gt; Import -&gt; Existing Projects into Workspace</code>
+instead.</p>
+<p>Setting up an Eclipse Workspace is relatively lightweight compared to
+other supported IDEs, but requires that your CDT installation has Cross
+GCC support enabled at the moment, even if you aren't cross compiling.
+The Visual C++ compiler is, at present, not supported as an indexer.</p>
+<p>If desired, you can instead request make to only include indexing
+support for just the Java Virtual Machine instead of the entire native
+codebase, by running:</p>
+<pre><code>make eclipse-hotspot-env</code></pre>
+<p>If you think your particular Eclipse installation can handle the
+strain, the make system also supports generating a combined Java and
+C/C++ Workspace for Eclipse which can then conveniently switch between
+Java and C/C++ natures during development by running:</p>
+<pre><code>make eclipse-mixed-env</code></pre>
+<p>Do note that this generates all features that come with both Java and
+C/C++ natures.</p>
+<p>By default, the Eclipse Workspace is located in the ide subdirectory
+in the build output. To share the JDK's source directory with the
+Eclipse Workspace, you can instead run:</p>
+<pre><code>make eclipse-shared-&lt;ENV&gt;-env</code></pre>
+<p>Eclipse support in the JDK is relatively new, so do keep in mind that
+not everything may work at the moment. As such, the resulting Workspace
+also has compilation database parsing support enabled, so you can pass
+Eclipse the compile commands file (see below) if all else fails.</p>
 <h4 id="compilation-database">Compilation Database</h4>
-<p>The make system can generate generic native code indexing support in the form of a <a href="https://clang.llvm.org/docs/JSONCompilationDatabase.html">Compilation Database</a> that can be used by many different IDEs and source code indexers.</p>
+<p>The make system can generate generic native code indexing support in
+the form of a <a
+href="https://clang.llvm.org/docs/JSONCompilationDatabase.html">Compilation
+Database</a> that can be used by many different IDEs and source code
+indexers.</p>
 <pre class="shell"><code>make compile-commands</code></pre>
-<p>It's also possible to generate the Compilation Database for the HotSpot source code only, which is a bit faster as it includes less information.</p>
+<p>It's also possible to generate the Compilation Database for the
+HotSpot source code only, which is a bit faster as it includes less
+information.</p>
 <pre class="shell"><code>make compile-commands-hotspot</code></pre>
 <h3 id="ide-support-for-java-code">IDE support for Java code</h3>
-<p>This section is a work in progress.</p>
+<h4 id="intellij-idea">IntelliJ IDEA</h4>
+<p>The JDK project has a script that can be used for indexing the
+project with IntelliJ. After configuring and building the JDK, an
+IntelliJ workspace can be generated by running the following command in
+the top-level folder of the cloned repository:</p>
+<pre class="shell"><code>bash bin/idea.sh</code></pre>
+<p>To use it, choose <code>File -&gt; Open...</code> in IntelliJ and
+select the folder where you ran the above script.</p>
+<p>Next, configure the project SDK in IntelliJ. Open
+<code>File -&gt; Project Structure -&gt; Project</code> and select
+<code>build/&lt;config&gt;/images/jdk</code> as the SDK to use.</p>
+<p>In order to run the tests from the IDE, you can use the JTReg plugin.
+Instructions for building and using the plugin can be found <a
+href="https://github.com/openjdk/jtreg/tree/master/plugins/idea">here</a>.</p>
+<h4 id="eclipse">Eclipse</h4>
+<p>Eclipse JDT is a widely used Java IDE and has been for a very long
+time, being a popular choice alongside IntelliJ IDEA for Java
+development. Likewise, the JDK now includes support for developing its
+Java sources with Eclipse, which can be achieved by setting up a Java
+Workspace by running:</p>
+<pre><code>make eclipse-java-env</code></pre>
+<p>After the workspace has been generated you can import it in the same
+way as you would with Eclipse CDT:</p>
+<p>Follow
+<code>File -&gt; Import -&gt; Projects from Folder or Archive</code> and
+select the <code>ide\eclipse</code> directory in the build output folder
+to import the newly created Java Workspace.</p>
+<p>If doing so results in an error, you can also import the JDK via
+<code>File -&gt; Import -&gt; Existing Projects into Workspace</code> as
+a last resort.</p>
+<p>Alternatively, if you want a Java Workspace inside the JDK's source
+directory, you can instead run:</p>
+<pre><code>make eclipse-shared-java-env</code></pre>
+<p>As mentioned above for Eclipse CDT, you can create a combined Java
+and C/C++ Workspace which can conveniently switch between Java and C/C++
+natures during development by running:</p>
+<pre><code>make eclipse-mixed-env</code></pre>
 </body>
 </html>

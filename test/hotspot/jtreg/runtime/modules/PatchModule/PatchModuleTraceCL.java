@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 8069469
  * @summary Make sure -Xlog:class+load=info works properly with "modules" jimage,
             --patch-module, and with -Xbootclasspath/a
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @compile PatchModuleMain.java
@@ -52,10 +53,11 @@ public class PatchModuleTraceCL {
              InMemoryJavaCompiler.compile("javax.naming.spi.NamingManager", source, "--patch-module=java.naming"),
              "mods/java.naming");
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("--patch-module=java.naming=mods/java.naming",
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("--patch-module=java.naming=mods/java.naming",
              "-Xlog:class+load=info", "PatchModuleMain", "javax.naming.spi.NamingManager");
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldHaveExitValue(0);
         // "modules" jimage case.
         output.shouldContain("[class,load] java.lang.Thread source: jrt:/java.base");
         // --patch-module case.
@@ -75,7 +77,7 @@ public class PatchModuleTraceCL {
              InMemoryJavaCompiler.compile("PatchModuleTraceCL_pkg.ItIsI", source),
              "xbcp");
 
-        pb = ProcessTools.createJavaProcessBuilder("-Xbootclasspath/a:xbcp",
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xbootclasspath/a:xbcp",
              "-Xlog:class+load=info", "PatchModuleMain", "PatchModuleTraceCL_pkg.ItIsI");
         output = new OutputAnalyzer(pb.start());
         // -Xbootclasspath/a case.

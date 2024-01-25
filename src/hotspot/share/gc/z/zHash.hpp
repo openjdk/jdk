@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 #ifndef SHARE_GC_Z_ZHASH_HPP
 #define SHARE_GC_Z_ZHASH_HPP
 
+#include "gc/z/zAddress.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -31,6 +32,7 @@ class ZHash : public AllStatic {
 public:
   static uint32_t uint32_to_uint32(uint32_t key);
   static uint32_t address_to_uint32(uintptr_t key);
+  static uint32_t offset_to_uint32(zoffset key);
 };
 
 #endif // SHARE_GC_Z_ZHASH_HPP

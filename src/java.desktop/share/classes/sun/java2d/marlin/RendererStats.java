@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,6 +101,8 @@ public final class RendererStats implements MarlinConst {
         = new StatLong("renderer.crossings.bsearch");
     final StatLong stat_rdr_crossings_msorts
         = new StatLong("renderer.crossings.msorts");
+    final StatLong stat_rdr_crossings_dpqs
+        = new StatLong("renderer.crossings.dpqs");
     final StatLong stat_str_polystack_curves
         = new StatLong("stroker.polystack.curves");
     final StatLong stat_str_polystack_types
@@ -196,6 +198,7 @@ public final class RendererStats implements MarlinConst {
         stat_rdr_crossings_sorts,
         stat_rdr_crossings_bsearch,
         stat_rdr_crossings_msorts,
+        stat_rdr_crossings_dpqs,
         stat_str_polystack_types,
         stat_str_polystack_curves,
         stat_cpd_polystack_curves,
@@ -334,7 +337,7 @@ public final class RendererStats implements MarlinConst {
     static final class RendererStatsHolder {
 
         // singleton
-        private static volatile RendererStatsHolder SINGLETON = null;
+        private static volatile RendererStatsHolder SINGLETON;
 
         static synchronized RendererStatsHolder getInstance() {
             if (SINGLETON == null) {
@@ -352,8 +355,9 @@ public final class RendererStats implements MarlinConst {
         /* RendererStats collection as hard references
            (only used for debugging purposes) */
         private final ConcurrentLinkedQueue<RendererStats> allStats
-            = new ConcurrentLinkedQueue<RendererStats>();
+            = new ConcurrentLinkedQueue<>();
 
+        @SuppressWarnings("removal")
         private RendererStatsHolder() {
             AccessController.doPrivileged(
                 (PrivilegedAction<Void>) () -> {

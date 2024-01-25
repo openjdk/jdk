@@ -12,7 +12,7 @@ public class Nested {
         int save = getVersion();
 
         class nestnested {
-            int save = getVersion();;
+            int save = getVersion();
         }
     }
 }

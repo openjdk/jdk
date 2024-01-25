@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZCPU_INLINE_HPP
 
 #include "gc/z/zCPU.hpp"
+
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 
@@ -33,7 +34,7 @@ inline uint32_t ZCPU::count() {
 }
 
 inline uint32_t ZCPU::id() {
-  assert(_affinity != NULL, "Not initialized");
+  assert(_affinity != nullptr, "Not initialized");
 
   // Fast path
   if (_affinity[_cpu]._thread == _self) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import java.util.Optional;
 /**
  * Represents a type which is <em>constable</em>.  A constable type is one whose
  * values are constants that can be represented in the constant pool of a Java
- * classfile as described in JVMS 4.4, and whose instances can describe themselves
+ * classfile as described in JVMS {@jvms 4.4}, and whose instances can describe themselves
  * nominally as a {@link ConstantDesc}.
  *
  * <p>Some constable types have a native representation in the constant pool:
@@ -48,7 +48,7 @@ import java.util.Optional;
  * Platform API are types that support Java language features such as {@link Enum},
  * and runtime support classes such as {@link VarHandle}.  These are typically
  * described with a {@link DynamicConstantDesc}, which describes dynamically
- * generated constants (JVMS 4.4.10).
+ * generated constants (JVMS {@jvms 4.4.10}).
  *
  * <p>The nominal form of an instance of a constable type is obtained via
  * {@link #describeConstable()}. A {@linkplain Constable} need

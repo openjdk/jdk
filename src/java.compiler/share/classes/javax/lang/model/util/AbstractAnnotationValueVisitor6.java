@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,10 +60,6 @@ import javax.annotation.processing.SupportedSourceVersion;
  * @param <R> the return type of this visitor's methods
  * @param <P> the type of the additional parameter to this visitor's methods.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
- *
  * @see AbstractAnnotationValueVisitor7
  * @see AbstractAnnotationValueVisitor8
  * @see AbstractAnnotationValueVisitor9
@@ -86,9 +82,9 @@ public abstract class AbstractAnnotationValueVisitor6<R, P>
      * Visits any annotation value as if by passing itself to that
      * value's {@link AnnotationValue#accept accept}.  The invocation
      * {@code v.visit(av, p)} is equivalent to {@code av.accept(v, p)}.
-     * @param av {@inheritDoc}
-     * @param p  {@inheritDoc}
-     * @return   {@inheritDoc}
+     * @param av {@inheritDoc AnnotationValueVisitor}
+     * @param p  {@inheritDoc AnnotationValueVisitor}
+     * @return   {@inheritDoc AnnotationValueVisitor}
      */
     public final R visit(AnnotationValue av, P p) {
         return av.accept(this, p);
@@ -100,24 +96,25 @@ public abstract class AbstractAnnotationValueVisitor6<R, P>
      * {@code null} for the additional parameter.  The invocation
      * {@code v.visit(av)} is equivalent to {@code av.accept(v,
      * null)}.
-     * @param av {@inheritDoc}
-     * @return   {@inheritDoc}
+     * @param av {@inheritDoc AnnotationValueVisitor}
+     * @return   {@inheritDoc AnnotationValueVisitor}
      */
     public final R visit(AnnotationValue av) {
         return av.accept(this, null);
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc AnnotationValueVisitor}
      *
      * @implSpec The default implementation of this method in {@code
      * AbstractAnnotationValueVisitor6} will always throw {@code
      * new UnknownAnnotationValueException(av, p)}.  This behavior is not
      * required of a subclass.
      *
-     * @param av {@inheritDoc}
-     * @param p  {@inheritDoc}
-     * @return   {@inheritDoc}
+     * @param av {@inheritDoc AnnotationValueVisitor}
+     * @param p  {@inheritDoc AnnotationValueVisitor}
+     * @return   {@inheritDoc AnnotationValueVisitor}
+     * @throws UnknownAnnotationValueException {@inheritDoc AnnotationValueVisitor}
      */
     @Override
     public R visitUnknown(AnnotationValue av, P p) {

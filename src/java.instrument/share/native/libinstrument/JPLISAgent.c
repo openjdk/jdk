@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,9 @@ allocateJPLISAgent(jvmtiEnv *       jvmtiEnv);
 JPLISInitializationError
 initializeJPLISAgent(   JPLISAgent *    agent,
                         JavaVM *        vm,
-                        jvmtiEnv *      jvmtienv);
+                        jvmtiEnv *      jvmtienv,
+                        const char *    jarfile,
+                        jboolean        printWarning);
 /* De-allocates a JPLIS agent data structure. Only used in partial-failure cases at startup;
  * in normal usage the JPLIS agent lives forever
  */
@@ -202,7 +204,7 @@ getJPLISEnvironment(jvmtiEnv * jvmtienv) {
  *  or NULL if an error has occurred.
  */
 JPLISInitializationError
-createNewJPLISAgent(JavaVM * vm, JPLISAgent **agent_ptr) {
+createNewJPLISAgent(JavaVM * vm, JPLISAgent **agent_ptr, const char * jarfile, jboolean printWarning) {
     JPLISInitializationError initerror       = JPLIS_INIT_ERROR_NONE;
     jvmtiEnv *               jvmtienv        = NULL;
     jint                     jnierror        = JNI_OK;
@@ -220,7 +222,9 @@ createNewJPLISAgent(JavaVM * vm, JPLISAgent **agent_ptr) {
         } else {
             initerror = initializeJPLISAgent(  agent,
                                                vm,
-                                               jvmtienv);
+                                               jvmtienv,
+                                               jarfile,
+                                               printWarning);
             if ( initerror == JPLIS_INIT_ERROR_NONE ) {
                 *agent_ptr = agent;
             } else {
@@ -251,7 +255,9 @@ allocateJPLISAgent(jvmtiEnv * jvmtienv) {
 JPLISInitializationError
 initializeJPLISAgent(   JPLISAgent *    agent,
                         JavaVM *        vm,
-                        jvmtiEnv *      jvmtienv) {
+                        jvmtiEnv *      jvmtienv,
+                        const char *    jarfile,
+                        jboolean        printWarning) {
     jvmtiError      jvmtierror = JVMTI_ERROR_NONE;
     jvmtiPhase      phase;
 
@@ -272,7 +278,8 @@ initializeJPLISAgent(   JPLISAgent *    agent,
     agent->mNativeMethodPrefixAdded                  = JNI_FALSE;
     agent->mAgentClassName                           = NULL;
     agent->mOptionsString                            = NULL;
-    agent->mJarfile                                  = NULL;
+    agent->mJarfile                                  = jarfile;
+    agent->mPrintWarning                             = printWarning;
 
     /* make sure we can recover either handle in either direction.
      * the agent has a ref to the jvmti; make it mutual
@@ -448,6 +455,7 @@ startJavaAgent( JPLISAgent *    agent,
                                                optionsString,
                                                &classNameObject,
                                                &optionsStringObject);
+    jplis_assert_msg(success, "commandStringIntoJavaStrings failed");
 
     if (success) {
         success = invokeJavaAgentMainMethod(   jnienv,
@@ -455,6 +463,7 @@ startJavaAgent( JPLISAgent *    agent,
                                                agentMainMethod,
                                                classNameObject,
                                                optionsStringObject);
+        jplis_assert_msg(success, "invokeJavaAgentMainMethod failed");
     }
 
     return success;
@@ -510,7 +519,8 @@ createInstrumentationImpl( JNIEnv *        jnienv,
                                                 constructorID,
                                                 peerReferenceAsScalar,
                                                 agent->mRedefineAdded,
-                                                agent->mNativeMethodPrefixAdded);
+                                                agent->mNativeMethodPrefixAdded,
+                                                agent->mPrintWarning);
         errorOutstanding = checkForAndClearThrowable(jnienv);
         errorOutstanding = errorOutstanding || (localReference == NULL);
         jplis_assert_msg(!errorOutstanding, "call constructor on InstrumentationImpl failed");
@@ -614,6 +624,7 @@ invokeJavaAgentMainMethod( JNIEnv *    jnienv,
         errorOutstanding = checkForThrowable(jnienv);
         if ( errorOutstanding ) {
             logThrowable(jnienv);
+            jplis_assert_msg(!errorOutstanding, "Outstanding error when calling method in invokeJavaAgentMainMethod");
         }
         checkForAndClearThrowable(jnienv);
     }
@@ -1483,7 +1494,7 @@ appendToClassLoaderSearch(JNIEnv * jnienv, JPLISAgent * agent, jstring jarFile, 
              * JVMTI spec'ed to use modified UTF8. At this time this is not implemented
              * the platform encoding is used.
              */
-            platformLen = convertUft8ToPlatformString((char*)utf8Chars, utf8Len, platformChars, MAXPATHLEN);
+            platformLen = convertUtf8ToPlatformString((char*)utf8Chars, utf8Len, platformChars, MAXPATHLEN);
             if (platformLen < 0) {
                 createAndThrowInternalError(jnienv);
                 (*jnienv)->ReleaseStringUTFChars(jnienv, jarFile, utf8Chars);
@@ -1601,4 +1612,9 @@ setNativeMethodPrefixes(JNIEnv * jnienv, JPLISAgent * agent, jobjectArray prefix
         deallocate(jvmtienv, (void*)prefixes);
         deallocate(jvmtienv, (void*)originForRelease);
     }
+}
+
+jstring
+jarFile(JNIEnv * jnienv, JPLISAgent * agent) {
+    return (*jnienv)->NewStringUTF(jnienv, agent->mJarfile);
 }

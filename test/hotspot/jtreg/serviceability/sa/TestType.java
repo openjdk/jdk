@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import jtreg.SkippedException;
  * @bug 8190307
  * @requires vm.hasSA
  * @library /test/lib
- * @build jdk.test.lib.apps.*
  * @run main/othervm TestType
  */
 
@@ -62,7 +61,6 @@ public class TestType {
                 "type ConstantPoolCache MetaspaceObj",
                 "type ConstantPool Metadata",
                 "type CompilerThread JavaThread",
-                "type CardGeneration Generation",
                 "type ArrayKlass Klass",
                 "type InstanceKlass Klass"));
             // String to check for in the output of "type InstanceKlass"

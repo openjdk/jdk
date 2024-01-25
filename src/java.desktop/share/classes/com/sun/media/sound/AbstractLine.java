@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,11 +159,9 @@ abstract class AbstractLine implements Line {
         boolean sendEvents = false;
         long position = getLongFramePosition();
 
-        synchronized (this) {
-            if (this.open != open) {
-                this.open = open;
-                sendEvents = true;
-            }
+        if (this.open != open) {
+            this.open = open;
+            sendEvents = true;
         }
 
         if (sendEvents) {

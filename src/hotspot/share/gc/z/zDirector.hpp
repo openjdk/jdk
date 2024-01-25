@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,32 +24,27 @@
 #ifndef SHARE_GC_Z_ZDIRECTOR_HPP
 #define SHARE_GC_Z_ZDIRECTOR_HPP
 
-#include "gc/shared/concurrentGCThread.hpp"
-#include "gc/shared/gcCause.hpp"
-#include "gc/z/zMetronome.hpp"
+#include "gc/z/zLock.hpp"
+#include "gc/z/zThread.hpp"
 
-class ZDirector : public ConcurrentGCThread {
+class ZDirector : public ZThread {
 private:
-  static const double one_in_1000;
+  static const uint64_t decision_hz = 100;
+  static ZDirector* _director;
 
-  const size_t _relocation_headroom;
-  ZMetronome   _metronome;
+  ZConditionLock _monitor;
+  bool           _stopped;
 
-  void sample_allocation_rate() const;
-
-  bool rule_timer() const;
-  bool rule_warmup() const;
-  bool rule_allocation_rate() const;
-  bool rule_proactive() const;
-  bool rule_high_usage() const;
-  GCCause::Cause make_gc_decision() const;
+  bool wait_for_tick();
 
 protected:
-  virtual void run_service();
-  virtual void stop_service();
+  virtual void run_thread();
+  virtual void terminate();
 
 public:
   ZDirector();
+
+  static void evaluate_rules();
 };
 
 #endif // SHARE_GC_Z_ZDIRECTOR_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,10 @@
 
 #include "precompiled.hpp"
 #include "logging/log.hpp"
+#include "nmt/memTracker.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepointMechanism.hpp"
-#include "services/memTracker.hpp"
 #include <sys/mman.h>
 
 void SafepointMechanism::pd_initialize() {
@@ -94,9 +94,9 @@ void SafepointMechanism::pd_initialize() {
     }
   }
   if (map_address == (char*)MAP_FAILED) {
-    map_address = (char*) ::mmap(NULL, map_size, prot, flags, -1, 0);
+    map_address = (char*) ::mmap(nullptr, map_size, prot, flags, -1, 0);
   }
-  guarantee(map_address != (char*)MAP_FAILED && map_address != NULL,
+  guarantee(map_address != (char*)MAP_FAILED && map_address != nullptr,
             "SafepointMechanism::pd_initialize: failed to allocate polling page");
   log_info(os)("SafePoint Polling address: " INTPTR_FORMAT, p2i(map_address));
   _polling_page = (address)(map_address);
@@ -110,6 +110,6 @@ void SafepointMechanism::pd_initialize() {
   }
   uintptr_t bad_page_val  = reinterpret_cast<uintptr_t>(map_address),
             good_page_val = bad_page_val + os::vm_page_size();
-  _poll_page_armed_value    = bad_page_val  + poll_bit();
+  _poll_page_armed_value    = bad_page_val;
   _poll_page_disarmed_value = good_page_val;
 }

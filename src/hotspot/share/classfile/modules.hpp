@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_CLASSFILE_MODULES_HPP
 #define SHARE_CLASSFILE_MODULES_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "runtime/handles.hpp"
 
 class ModuleEntryTable;
@@ -53,8 +53,18 @@ public:
   static void define_module(Handle module, jboolean is_open, jstring version,
                             jstring location, jobjectArray packages, TRAPS);
 
+  static bool check_archived_module_oop(oop orig_module_obj) NOT_CDS_JAVA_HEAP_RETURN_(false);
+  static void update_oops_in_archived_module(oop orig_module_obj, int archived_module_root_index)
+                                             NOT_CDS_JAVA_HEAP_RETURN;
   static void define_archived_modules(Handle h_platform_loader, Handle h_system_loader,
                                       TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
+  static void verify_archived_modules() NOT_CDS_JAVA_HEAP_RETURN;
+  static void dump_main_module_name() NOT_CDS_JAVA_HEAP_RETURN;
+  static void serialize(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
+
+#if INCLUDE_CDS_JAVA_HEAP
+  static char* _archived_main_module_name;
+#endif
 
   // Provides the java.lang.Module for the unnamed module defined
   // to the boot loader.
@@ -101,12 +111,10 @@ public:
   static jobject get_module(jclass clazz, TRAPS);
 
   // Return the java.lang.Module object for this class loader and package.
-  // Returns NULL if the class loader has not loaded any classes in the package.
+  // Returns null if the package name is empty, if the resulting package
+  // entry is null, if the module is not found or is unnamed.
   // The package should contain /'s, not .'s, as in java/lang, not java.lang.
-  // NullPointerException is thrown if package is null.
-  // IllegalArgumentException is thrown if loader is neither null nor a subtype of
-  // java/lang/ClassLoader.
-  static jobject get_named_module(Handle h_loader, const char* package, TRAPS);
+  static oop get_named_module(Handle h_loader, const char* package);
 
   // Marks the specified package as exported to all unnamed modules.
   // If either module or package is null then NullPointerException is thrown.
@@ -115,7 +123,7 @@ public:
   static void add_module_exports_to_all_unnamed(Handle module, jstring package, TRAPS);
 
   // Return TRUE iff package is defined by loader
-  static bool is_package_defined(Symbol* package_name, Handle h_loader, TRAPS);
+  static bool is_package_defined(Symbol* package_name, Handle h_loader);
   static ModuleEntryTable* get_module_entry_table(Handle h_loader);
 };
 

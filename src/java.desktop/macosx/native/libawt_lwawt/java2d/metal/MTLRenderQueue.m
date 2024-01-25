@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,10 +46,6 @@ static BMTLSDOps *dstOps = NULL;
 jint mtlPreviousOp = MTL_OP_INIT;
 
 
-/**
- * The following methods are implemented in the windowing system (i.e. GLX
- * and WGL) source files.
- */
 extern void MTLGC_DestroyMTLGraphicsConfig(jlong pConfigInfo);
 
 void MTLRenderQueue_CheckPreviousOp(jint op) {
@@ -84,7 +80,9 @@ void MTLRenderQueue_CheckPreviousOp(jint op) {
     if (mtlc != NULL) {
         [mtlc.encoderManager endEncoder];
 
-        if (op == MTL_OP_RESET_PAINT || op == MTL_OP_SYNC || op == MTL_OP_SHAPE_CLIP_SPANS) {
+        if (op == MTL_OP_RESET_PAINT || op == MTL_OP_SYNC || op == MTL_OP_SHAPE_CLIP_SPANS ||
+            mtlPreviousOp == MTL_OP_MASK_OP)
+        {
             MTLCommandBufferWrapper *cbwrapper = [mtlc pullCommandBufferWrapper];
             id <MTLCommandBuffer> commandbuf = [cbwrapper getCommandBuffer];
             [commandbuf addCompletedHandler:^(id <MTLCommandBuffer> commandbuf) {
@@ -667,26 +665,7 @@ Java_sun_java2d_metal_MTLRenderQueue_flushBuffer
                  //   dstOps = NULL;
                     break;
                 }
-                case sun_java2d_pipe_BufferedOpCodes_INVALIDATE_CONTEXT:
-                {
-                    CHECK_PREVIOUS_OP(MTL_OP_OTHER);
-                    // invalidate the references to the current context and
-                    // destination surface that are maintained at the native level
-                    if (mtlc != NULL) {
-                        commitEncodedCommands();
-                        RESET_PREVIOUS_OP();
-                        [mtlc reset];
-                    }
 
-                    MTLTR_FreeGlyphCaches();
-                    if (dstOps != NULL) {
-                        MTLSD_Delete(env, dstOps);
-                    }
-
-                    mtlc = NULL;
-                    dstOps = NULL;
-                    break;
-                }
                 case sun_java2d_pipe_BufferedOpCodes_SYNC:
                 {
                     CHECK_PREVIOUS_OP(MTL_OP_SYNC);
@@ -940,7 +919,7 @@ MTLRenderQueue_GetCurrentDestination()
 }
 
 /**
- * commit earlier encoded commmands
+ * commit earlier encoded commands
  * these would be rendered to the back-buffer - which is read in shader while rendering in XOR mode
  */
 void commitEncodedCommands() {

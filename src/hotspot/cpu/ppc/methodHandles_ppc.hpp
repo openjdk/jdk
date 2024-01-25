@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -59,3 +59,6 @@ public:
                                   Register recv, Register method_temp,
                                   Register temp2, Register temp3,
                                   bool for_compiler_entry);
+
+  static void jump_to_native_invoker(MacroAssembler* _masm,
+                                     Register nep_reg, Register temp);

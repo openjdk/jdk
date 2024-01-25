@@ -30,7 +30,18 @@
 
 #include <jni.h>
 #include <netinet/tcp.h>
+
+#define __APPLE_USE_RFC_3542
 #include <netinet/in.h>
+
+#ifndef IP_DONTFRAG
+#define IP_DONTFRAG             28
+#endif
+
+#ifndef IPV6_DONTFRAG
+#define IPV6_DONTFRAG           62
+#endif
+
 #include "jni_util.h"
 
 /*
@@ -41,9 +52,15 @@ DEF_STATIC_JNI_OnLoad
 static jint socketOptionSupported(jint sockopt) {
     jint one = 1;
     jint rv, s;
-    s = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+    /* First try IPv6; fall back to IPv4. */
+    s = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
     if (s < 0) {
-        return 0;
+        if (errno == EPFNOSUPPORT || errno == EAFNOSUPPORT) {
+            s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+        }
+        if (s < 0) {
+            return 0;
+        }
     }
     rv = setsockopt(s, IPPROTO_TCP, sockopt, (void *) &one, sizeof (one));
     if (rv != 0 && errno == ENOPROTOOPT) {
@@ -79,10 +96,10 @@ JNIEXPORT jboolean JNICALL Java_jdk_net_MacOSXSocketOptions_keepAliveOptionsSupp
 
 /*
  * Class:     jdk_net_MacOSXSocketOptions
- * Method:    setTcpkeepAliveProbes0
+ * Method:    setTcpKeepAliveProbes0
  * Signature: (II)V
  */
-JNIEXPORT void JNICALL Java_jdk_net_MacOSXSocketOptions_setTcpkeepAliveProbes0
+JNIEXPORT void JNICALL Java_jdk_net_MacOSXSocketOptions_setTcpKeepAliveProbes0
 (JNIEnv *env, jobject unused, jint fd, jint optval) {
     jint rv = setsockopt(fd, IPPROTO_TCP, TCP_KEEPCNT, &optval, sizeof (optval));
     handleError(env, rv, "set option TCP_KEEPCNT failed");
@@ -112,10 +129,10 @@ JNIEXPORT void JNICALL Java_jdk_net_MacOSXSocketOptions_setTcpKeepAliveIntvl0
 
 /*
  * Class:     jdk_net_MacOSXSocketOptions
- * Method:    getTcpkeepAliveProbes0
+ * Method:    getTcpKeepAliveProbes0
  * Signature: (I)I;
  */
-JNIEXPORT jint JNICALL Java_jdk_net_MacOSXSocketOptions_getTcpkeepAliveProbes0
+JNIEXPORT jint JNICALL Java_jdk_net_MacOSXSocketOptions_getTcpKeepAliveProbes0
 (JNIEnv *env, jobject unused, jint fd) {
     jint optval, rv;
     socklen_t sz = sizeof (optval);
@@ -168,5 +185,70 @@ JNIEXPORT jint JNICALL Java_jdk_net_MacOSXSocketOptions_getTcpKeepAliveIntvl0
     socklen_t sz = sizeof (optval);
     rv = getsockopt(fd, IPPROTO_TCP, TCP_KEEPINTVL, &optval, &sz);
     handleError(env, rv, "get option TCP_KEEPINTVL failed");
+    return optval;
+}
+
+/*
+ * Class:     jdk_net_MacOSXSocketOptions
+ * Method:    ipDontFragmentSupported0
+ * Signature: ()Z;
+ */
+JNIEXPORT jboolean JNICALL Java_jdk_net_MacOSXSocketOptions_ipDontFragmentSupported0
+(JNIEnv *env, jobject unused) {
+    jint rv, fd, value;
+    fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (fd != -1) {
+        value = 1;
+        rv = setsockopt(fd, IPPROTO_IP, IP_DONTFRAG, &value, sizeof(value));
+        close(fd);
+        if (rv == -1) {
+            return JNI_FALSE;
+        }
+    }
+    fd = socket(AF_INET6, SOCK_DGRAM, 0);
+    if (fd != -1) {
+        value = 1;
+        rv = setsockopt(fd, IPPROTO_IPV6, IPV6_DONTFRAG, &value, sizeof(value));
+        close(fd);
+        if (rv == -1) {
+            return JNI_FALSE;
+        }
+    }
+    return JNI_TRUE;
+}
+
+/*
+ * Class:     jdk_net_MacOSXSocketOptions
+ * Method:    setIpDontFragment0
+ * Signature: (IZZ)V
+ */
+JNIEXPORT void JNICALL Java_jdk_net_MacOSXSocketOptions_setIpDontFragment0
+(JNIEnv *env, jobject unused, jint fd, jboolean optval, jboolean isIPv6) {
+    jint rv;
+    jint value = optval ? 1 : 0;
+
+    if (!isIPv6) {
+        rv = setsockopt(fd, IPPROTO_IP, IP_DONTFRAG, &value, sizeof(value));
+    } else {
+        rv = setsockopt(fd, IPPROTO_IPV6, IPV6_DONTFRAG, &value, sizeof(value));
+    }
+    handleError(env, rv, "set option IP_DONTFRAGMENT failed");
+}
+
+/*
+ * Class:     jdk_net_MacOSXSocketOptions
+ * Method:    getIpDontFragment0
+ * Signature: (IZ)Z;
+ */
+JNIEXPORT jboolean JNICALL Java_jdk_net_MacOSXSocketOptions_getIpDontFragment0
+(JNIEnv *env, jobject unused, jint fd, jboolean isIPv6) {
+    jint optval, rv;
+    socklen_t sz = sizeof (optval);
+    if (!isIPv6) {
+        rv = getsockopt(fd, IPPROTO_IP, IP_DONTFRAG, &optval, &sz);
+    } else {
+        rv = getsockopt(fd, IPPROTO_IPV6, IPV6_DONTFRAG, &optval, &sz);
+    }
+    handleError(env, rv, "get option IP_DONTFRAGMENT failed");
     return optval;
 }

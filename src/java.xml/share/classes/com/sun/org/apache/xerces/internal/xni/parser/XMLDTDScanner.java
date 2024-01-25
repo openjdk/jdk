@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,9 +20,9 @@
 
 package com.sun.org.apache.xerces.internal.xni.parser;
 
-import com.sun.org.apache.xerces.internal.utils.XMLLimitAnalyzer;
-import java.io.IOException;
 import com.sun.org.apache.xerces.internal.xni.XNIException;
+import java.io.IOException;
+import jdk.xml.internal.XMLLimitAnalyzer;
 
 /**
  * This interface defines a generic DTD scanner. This interface
@@ -39,6 +38,7 @@ import com.sun.org.apache.xerces.internal.xni.XNIException;
  * </blockquote>
  *
  * @author Andy Clark, IBM
+ * @LastModified: July 2023
  *
  */
 public interface XMLDTDScanner

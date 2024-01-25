@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,12 +79,9 @@ public class SocketIOPipe extends Log.Logger implements Finalizable {
 
     protected volatile boolean shouldStop;
 
-    protected Process connectingProcess;
-
     protected ServerSocket serverSocket;
 
     protected String name;
-
     /**
      * Make general <code>IOPipe</code> object with specified parameters.
      */
@@ -95,6 +92,8 @@ public class SocketIOPipe extends Log.Logger implements Finalizable {
         this.timeout = timeout;
         this.listening = listening;
         this.name = name;
+
+        registerCleanup();
     }
 
     /**
@@ -106,6 +105,8 @@ public class SocketIOPipe extends Log.Logger implements Finalizable {
         this.port = port;
         this.timeout = timeout;
         this.listening = listening;
+
+        registerCleanup();
     }
 
     /**
@@ -160,10 +161,6 @@ public class SocketIOPipe extends Log.Logger implements Finalizable {
         return port;
     }
 
-    protected void setConnectingProcess(Process connectingProcess) {
-        this.connectingProcess = connectingProcess;
-    }
-
     protected void setServerSocket(ServerSocket serverSocket) {
         this.serverSocket = serverSocket;
         if (serverSocket != null)
@@ -207,6 +204,63 @@ public class SocketIOPipe extends Log.Logger implements Finalizable {
         }
     }
 
+    protected class ListenerThread extends Thread {
+        private SocketConnection connection;
+        private RuntimeException error;
+
+        ListenerThread() {
+            super("PipeIO Listener Thread");
+            setDaemon(true);
+
+            connection = new SocketConnection(SocketIOPipe.this, getName());
+
+            if (serverSocket == null) {
+                connection.bind(port, timeout);
+            } else {
+                connection.setServerSocket(serverSocket);
+            }
+        }
+
+        @Override
+        public void run() {
+            synchronized (this) {
+                try {
+                    connection.accept(timeout);
+                } catch (Throwable th) {
+                    error = th instanceof RuntimeException
+                            ? (RuntimeException)th
+                            : new RuntimeException(th);
+                }
+                notifyAll();
+            }
+        }
+
+        public SocketConnection getConnection() {
+            synchronized (this) {
+                while (!connection.isConnected() && error == null) {
+                    try {
+                        wait();
+                    } catch (InterruptedException e) {
+                    }
+                }
+                if (error != null) {
+                    throw error;
+                }
+                return connection;
+            }
+        }
+    }
+
+    private ListenerThread listenerThread;
+
+    protected void startListening() {
+        if (listenerThread != null) {
+            throw new TestBug("already listening");
+        }
+        listenerThread = new ListenerThread();
+        listenerThread.start();
+    }
+
     /**
      * Establish <code>IOPipe</code> connection by attaching or accepting
      * connection appropriately.
@@ -219,23 +273,17 @@ public class SocketIOPipe extends Log.Logger implements Finalizable {
         if (shouldStop)
             return;
 
-        connection = new SocketConnection(this, getName());
-
         if (listening) {
-            connection.setConnectingProcess(connectingProcess);
-            if (serverSocket == null) {
-                connection.bind(port, timeout);
-            } else {
-                connection.setServerSocket(serverSocket);
+            // listenerThread == null means the test is not updated yet
+            // to start IOPipe listening before launching debuggee.
+            if (listenerThread == null) {
+                // start listening and accept connection on the current thread
+                listenerThread = new ListenerThread();
+                listenerThread.run();
             }
-
-            if (shouldStop)
-                return;
-
-            // wait for connection from remote host
-            connection.accept(timeout);
-
+            connection = listenerThread.getConnection();
         } else {
+            connection = new SocketConnection(this, getName());
             // attach from the debuggee's side
             connection.continueAttach(host, port, timeout);
         }
@@ -263,18 +311,15 @@ public class SocketIOPipe extends Log.Logger implements Finalizable {
 
     /**
      * Perform finalization of the object by invoking close().
+     *
+     * This is replacement of finalize() method and is called
+     * when this instance becomes unreachable.
+     *
      */
-    protected void finalize() throws Throwable {
+    public void cleanup() {
         close();
-        super.finalize();
     }
 
-    /**
-     * Perform finalization of the object at exit by invoking finalize().
-     */
-    public void finalizeAtExit() throws Throwable {
-        finalize();
-    }
 
     /**
      * Field 'pipeCounter' and method 'getNextPipeNumber' are used to construct unique names for SocketIOPipes

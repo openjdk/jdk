@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,9 @@ package com.sun.crypto.provider;
 
 import java.security.*;
 import java.security.spec.*;
-import sun.security.util.*;
+import java.util.Arrays;
+
 import javax.crypto.*;
-import javax.crypto.spec.*;
 import javax.crypto.BadPaddingException;
 
 /**
@@ -55,7 +55,7 @@ public final class BlowfishCipher extends CipherSpi {
     /*
      * internal CipherCore object which does the real work.
      */
-    private CipherCore core = null;
+    private final CipherCore core;
 
     /**
      * Creates an instance of Blowfish cipher with default ECB mode and
@@ -373,7 +373,9 @@ public final class BlowfishCipher extends CipherSpi {
      * @exception InvalidKeyException if <code>key</code> is invalid.
      */
     protected int engineGetKeySize(Key key) throws InvalidKeyException {
-        return Math.multiplyExact(key.getEncoded().length, 8);
+        byte[] encodedKey = key.getEncoded();
+        Arrays.fill(encodedKey, (byte)0);
+        return Math.multiplyExact(encodedKey.length, 8);
     }
 
     /**

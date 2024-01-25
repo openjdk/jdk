@@ -52,7 +52,7 @@ public class DivideTests {
              * decimal expansion.  Putting aside overflow and
              * underflow considerations, the existance of an exact
              * result only depends on the ratio of the intVal's of the
-             * dividend (i.e. this) and and divisor since the scales
+             * dividend (i.e. this) and divisor since the scales
              * of the argument just affect where the decimal point
              * lies.
              *

@@ -36,7 +36,7 @@ import java.io.InputStream;
 import java.io.IOException;
 
 /**
- * This class implements a buffered input stream. It provides methods to read a chunck
+ * This class implements a buffered input stream. It provides methods to read a chunk
  * of data from underlying data stream.
  *
  * @author Yanni Zhang
@@ -64,7 +64,7 @@ public class KrbDataInputStream extends BufferedInputStream{
      * @throws IOException if there are not enough bytes or it represents
      * a negative value
      */
-    final public int readLength4() throws IOException {
+    public final int readLength4() throws IOException {
         int len = read(4);
         if (len < 0) {
             throw new IOException("Invalid encoding");

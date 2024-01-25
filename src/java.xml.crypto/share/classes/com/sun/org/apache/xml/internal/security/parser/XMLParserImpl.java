@@ -45,15 +45,16 @@ import org.xml.sax.SAXException;
  */
 public class XMLParserImpl implements XMLParser {
 
+    @SuppressWarnings("removal")
     private static int parserPoolSize =
             AccessController.doPrivileged(
                     (PrivilegedAction<Integer>) () -> Integer.getInteger("com.sun.org.apache.xml.internal.security.parser.pool-size", 20));
 
     private static final Map<ClassLoader, Queue<DocumentBuilder>> DOCUMENT_BUILDERS =
-            Collections.synchronizedMap(new WeakHashMap<ClassLoader, Queue<DocumentBuilder>>());
+            Collections.synchronizedMap(new WeakHashMap<>());
 
     private static final Map<ClassLoader, Queue<DocumentBuilder>> DOCUMENT_BUILDERS_DISALLOW_DOCTYPE =
-            Collections.synchronizedMap(new WeakHashMap<ClassLoader, Queue<DocumentBuilder>>());
+            Collections.synchronizedMap(new WeakHashMap<>());
 
     @Override
     public Document parse(InputStream inputStream, boolean disallowDocTypeDeclarations) throws XMLParserException {
@@ -113,10 +114,12 @@ public class XMLParserImpl implements XMLParser {
         }
     }
 
+    @SuppressWarnings("removal")
     private static ClassLoader getContextClassLoader() {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             return AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
+                @Override
                 public ClassLoader run() {
                     return Thread.currentThread().getContextClassLoader();
                 }
@@ -125,10 +128,12 @@ public class XMLParserImpl implements XMLParser {
         return Thread.currentThread().getContextClassLoader();
     }
 
+    @SuppressWarnings("removal")
     private static ClassLoader getClassLoader(final Class<?> clazz) {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             return AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
+                @Override
                 public ClassLoader run() {
                     return clazz.getClassLoader();
                 }

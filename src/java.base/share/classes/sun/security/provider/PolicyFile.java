@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import jdk.internal.access.JavaSecurityAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.StaticProperty;
+import sun.nio.fs.DefaultFileSystemProvider;
 import sun.security.util.*;
 import sun.net.www.ParseUtil;
 
@@ -238,6 +239,7 @@ import static jdk.internal.access.JavaSecurityAccess.ProtectionDomainCache;
  * @see java.security.Permissions
  * @see java.security.ProtectionDomain
  */
+@SuppressWarnings("removal")
 public class PolicyFile extends java.security.Policy {
 
     private static final Debug debug = Debug.getInstance("policy");
@@ -274,6 +276,13 @@ public class PolicyFile extends java.security.Policy {
      */
     private static Set<URL> badPolicyURLs =
         Collections.newSetFromMap(new ConcurrentHashMap<URL,Boolean>());
+
+    /**
+     * Use the platform's default file system to avoid recursive initialization
+     * issues when the VM is configured to use a custom file system provider.
+     */
+    private static final java.nio.file.FileSystem builtInFS =
+        DefaultFileSystemProvider.theFileSystem();
 
     /**
      * Initializes the Policy object and reads the default policy
@@ -405,7 +414,7 @@ public class PolicyFile extends java.security.Policy {
                                 policyURL = ParseUtil.fileToEncodedURL
                                     (new File(policyFile.getCanonicalPath()));
                             } else {
-                                policyURL = new URL(extra_policy);
+                                policyURL = newURL(extra_policy);
                             }
                             if (debug != null) {
                                 debug.println("reading "+policyURL);
@@ -474,7 +483,7 @@ public class PolicyFile extends java.security.Policy {
     }
 
     private void initDefaultPolicy(PolicyInfo newInfo) {
-        Path defaultPolicy = Path.of(StaticProperty.javaHome(),
+        Path defaultPolicy = builtInFS.getPath(StaticProperty.javaHome(),
                                      "lib",
                                      "security",
                                      "default.policy");
@@ -606,6 +615,9 @@ public class PolicyFile extends java.security.Policy {
                                 ("java.specification.version",
                                     SecurityConstants.PROPERTY_READ_ACTION));
                 pe.add(new PropertyPermission
+                                ("java.specification.maintenance.version",
+                                    SecurityConstants.PROPERTY_READ_ACTION));
+                pe.add(new PropertyPermission
                                 ("java.specification.vendor",
                                     SecurityConstants.PROPERTY_READ_ACTION));
                 pe.add(new PropertyPermission
@@ -627,7 +639,7 @@ public class PolicyFile extends java.security.Policy {
                 pe.add(new PropertyPermission("java.vm.name",
                     SecurityConstants.PROPERTY_READ_ACTION));
 
-                // No need to sync because noone has access to newInfo yet
+                // No need to sync because no one has access to newInfo yet
                 newInfo.policyEntries.add(pe);
 
                 return null;
@@ -660,7 +672,7 @@ public class PolicyFile extends java.security.Policy {
         URL location;
 
         if (ge.codeBase != null)
-            location = new URL(ge.codeBase);
+            location = newURL(ge.codeBase);
         else
             location = null;
 
@@ -714,7 +726,7 @@ public class PolicyFile extends java.security.Policy {
                                 + SELF;
                     }
                     // check for self
-                    if (pe.name != null && pe.name.indexOf(SELF) != -1) {
+                    if (pe.name != null && pe.name.contains(SELF)) {
                         // Create a "SelfPermission" , it could be an
                         // an unresolved permission which will be resolved
                         // when implies is called
@@ -765,7 +777,7 @@ public class PolicyFile extends java.security.Policy {
                     }
                 } catch (java.lang.reflect.InvocationTargetException ite) {
                     Object[] source = {pe.permission,
-                                       ite.getTargetException().toString()};
+                                       ite.getCause().toString()};
                     System.err.println(
                         LocalizedMessage.getNonlocalized(
                             POLICY + ".error.adding.Permission.perm.message",
@@ -780,7 +792,7 @@ public class PolicyFile extends java.security.Policy {
                 }
             }
 
-            // No need to sync because noone has access to newInfo yet
+            // No need to sync because no one has access to newInfo yet
             newInfo.policyEntries.add(entry);
         } catch (Exception e) {
             Object[] source = {e.toString()};
@@ -1595,7 +1607,7 @@ public class PolicyFile extends java.security.Policy {
                 int separator = spec.indexOf("!/");
                 if (separator != -1) {
                     try {
-                        u = new URL(spec.substring(0, separator));
+                        u = newURL(spec.substring(0, separator));
                     } catch (MalformedURLException e) {
                         // Fail silently. In this case, url stays what
                         // it was above
@@ -1807,7 +1819,7 @@ public class PolicyFile extends java.security.Policy {
             return null;
         }
 
-        if (cert == null || !(cert instanceof X509Certificate)) {
+        if (!(cert instanceof X509Certificate x509Cert)) {
             if (debug != null) {
                 debug.println("  -- No certificate for '" +
                                 alias +
@@ -1815,8 +1827,6 @@ public class PolicyFile extends java.security.Policy {
             }
             return null;
         } else {
-            X509Certificate x509Cert = (X509Certificate)cert;
-
             // 4702543:  X500 names with an EmailAddress
             // were encoded incorrectly.  create new
             // X500Principal name with correct encoding
@@ -2088,8 +2098,17 @@ public class PolicyFile extends java.security.Policy {
                 this.actions.equals(that.actions)))
                 return false;
 
-            if (this.certs.length != that.certs.length)
+            if ((this.certs == null) && (that.certs == null)) {
+                return true;
+            }
+
+            if ((this.certs == null) || (that.certs == null)) {
                 return false;
+            }
+
+            if (this.certs.length != that.certs.length) {
+                return false;
+            }
 
             int i,j;
             boolean match;
@@ -2119,17 +2138,11 @@ public class PolicyFile extends java.security.Policy {
         }
 
         /**
-         * Returns the hash code value for this object.
-         *
-         * @return a hash code value for this object.
+         * {@return the hash code value for this object}
          */
         @Override public int hashCode() {
-            int hash = type.hashCode();
-            if (name != null)
-                hash ^= name.hashCode();
-            if (actions != null)
-                hash ^= actions.hashCode();
-            return hash;
+            return type.hashCode() ^ Objects.hashCode(name)
+                    ^ Objects.hashCode(actions);
         }
 
         /**
@@ -2159,7 +2172,7 @@ public class PolicyFile extends java.security.Policy {
         }
 
         public Certificate[] getCerts() {
-            return certs;
+            return (certs == null ? null : certs.clone());
         }
 
         /**
@@ -2171,6 +2184,22 @@ public class PolicyFile extends java.security.Policy {
          */
         @Override public String toString() {
             return "(SelfPermission " + type + " " + name + " " + actions + ")";
+        }
+
+        /**
+         * Restores the state of this object from the stream.
+         *
+         * @param  stream the {@code ObjectInputStream} from which data is read
+         * @throws IOException if an I/O error occurs
+         * @throws ClassNotFoundException if a serialized class cannot be loaded
+         */
+        @java.io.Serial
+        private void readObject(ObjectInputStream stream)
+                throws IOException, ClassNotFoundException {
+            stream.defaultReadObject();
+            if (certs != null) {
+                this.certs = certs.clone();
+            }
         }
     }
 
@@ -2212,5 +2241,10 @@ public class PolicyFile extends java.security.Policy {
                 return pdMapping[i];
             }
         }
+    }
+
+    @SuppressWarnings("deprecation")
+    private static URL newURL(String spec) throws MalformedURLException {
+        return new URL(spec);
     }
 }

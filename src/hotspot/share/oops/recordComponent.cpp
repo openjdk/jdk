@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,10 +43,10 @@ RecordComponent* RecordComponent::allocate(ClassLoaderData* loader_data,
 }
 
 void RecordComponent::deallocate_contents(ClassLoaderData* loader_data) {
-  if (annotations() != NULL) {
+  if (annotations() != nullptr) {
     MetadataFactory::free_array<u1>(loader_data, annotations());
   }
-  if (type_annotations() != NULL) {
+  if (type_annotations() != nullptr) {
     MetadataFactory::free_array<u1>(loader_data, type_annotations());
   }
 }
@@ -58,7 +58,7 @@ void RecordComponent::metaspace_pointers_do(MetaspaceClosure* it) {
 }
 
 void RecordComponent::print_value_on(outputStream* st) const {
-  st->print("RecordComponent(" INTPTR_FORMAT ")", p2i(this));
+  st->print("RecordComponent(" PTR_FORMAT ")", p2i(this));
 }
 
 #ifndef PRODUCT
@@ -70,11 +70,11 @@ void RecordComponent::print_on(outputStream* st) const {
     st->print(" - generic_signature_index: %d", _generic_signature_index);
   }
   st->cr();
-  if (_annotations != NULL) {
+  if (_annotations != nullptr) {
     st->print_cr("record component annotations");
     _annotations->print_value_on(st);
   }
-  if (_type_annotations != NULL) {
+  if (_type_annotations != nullptr) {
     st->print_cr("record component type annotations");
     _type_annotations->print_value_on(st);
   }

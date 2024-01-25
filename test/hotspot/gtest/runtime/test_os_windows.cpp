@@ -25,9 +25,10 @@
 
 #ifdef _WINDOWS
 
-#include "runtime/os.hpp"
+#include "logging/log.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/globals_extension.hpp"
+#include "runtime/os.hpp"
 #include "concurrentTestRunner.inline.hpp"
 #include "unittest.hpp"
 
@@ -38,7 +39,9 @@ namespace {
    public:
     MemoryReleaser(char* ptr, size_t size) : _ptr(ptr), _size(size) { }
     ~MemoryReleaser() {
-      os::release_memory_special(_ptr, _size);
+      if (_ptr != NULL) {
+        os::release_memory_special(_ptr, _size);
+      }
     }
   };
 }
@@ -64,26 +67,33 @@ void TestReserveMemorySpecial_test() {
   FLAG_SET_CMDLINE(UseNUMAInterleaving, false);
 
   const size_t large_allocation_size = os::large_page_size() * 4;
-  char* result = os::reserve_memory_special(large_allocation_size, os::large_page_size(), NULL, false);
-  if (result != NULL) {
+  char* result = os::reserve_memory_special(large_allocation_size, os::large_page_size(), os::large_page_size(), NULL, false);
+  if (result == NULL) {
       // failed to allocate memory, skipping the test
       return;
   }
-  MemoryReleaser mr(result, large_allocation_size);
+  MemoryReleaser m1(result, large_allocation_size);
 
-  // allocate another page within the recently allocated memory area which seems to be a good location. At least
-  // we managed to get it once.
+  // Reserve another page within the recently allocated memory area. This should fail
   const size_t expected_allocation_size = os::large_page_size();
   char* expected_location = result + os::large_page_size();
-  char* actual_location = os::reserve_memory_special(expected_allocation_size, os::large_page_size(), expected_location, false);
-  if (actual_location != NULL) {
-      // failed to allocate memory, skipping the test
-      return;
-  }
-  MemoryReleaser mr2(actual_location, expected_allocation_size);
+  char* actual_location = os::reserve_memory_special(expected_allocation_size, os::large_page_size(), os::large_page_size(), expected_location, false);
+  EXPECT_TRUE(actual_location == NULL) << "Should not be allowed to reserve within present reservation";
 
-  EXPECT_EQ(expected_location, actual_location)
-        << "Failed to allocate memory at requested location " << expected_location << " of size " << expected_allocation_size;
+  // Instead try reserving after the first reservation.
+  expected_location = result + large_allocation_size;
+  actual_location = os::reserve_memory_special(expected_allocation_size, os::large_page_size(), os::large_page_size(), expected_location, false);
+  EXPECT_TRUE(actual_location != NULL) << "Unexpected reservation failure, can’t verify correct location";
+  EXPECT_TRUE(actual_location == expected_location) << "Reservation must be at requested location";
+  MemoryReleaser m2(actual_location, os::large_page_size());
+
+  // Now try to do a reservation with a larger alignment.
+  const size_t alignment = os::large_page_size() * 2;
+  const size_t new_large_size = alignment * 4;
+  char* aligned_request = os::reserve_memory_special(new_large_size, alignment, os::large_page_size(), NULL, false);
+  EXPECT_TRUE(aligned_request != NULL) << "Unexpected reservation failure, can’t verify correct alignment";
+  EXPECT_TRUE(is_aligned(aligned_request, alignment)) << "Returned address must be aligned";
+  MemoryReleaser m3(aligned_request, new_large_size);
 }
 
 // The types of path modifications we randomly apply to a path. They should not change the file designated by the path.
@@ -167,7 +177,7 @@ static void delete_rel_file_w(const wchar_t* path) {
   EXPECT_TRUE(result) << "Failed to delete file \"" << path << "\": " << GetLastError();
 }
 
-static bool convert_to_cstring(char* c_str, size_t size, wchar_t* w_str) {
+static bool convert_to_cstring(char* c_str, size_t size, const wchar_t* w_str) {
   size_t converted;
   errno_t err = wcstombs_s(&converted, c_str, size, w_str, size - 1);
   EXPECT_EQ(err, ERROR_SUCCESS) << "Could not convert \"" << w_str << "\" to c-string";
@@ -297,7 +307,7 @@ static void check_file_impl(wchar_t* path) {
   }
 }
 
-static void check_file_not_present_impl(wchar_t* path) {
+static void check_file_not_present_impl(const wchar_t* path) {
   char buf[JVM_MAXPATHLEN];
 
   if (convert_to_cstring(buf, JVM_MAXPATHLEN, path)) {
@@ -351,7 +361,7 @@ static void check_file(wchar_t* path) {
   }
 }
 
-static void check_file_not_present(wchar_t* path) {
+static void check_file_not_present(const wchar_t* path) {
   check_file_not_present_impl(path);
 
   for (int i = 0; mods_filter != Allow_None && i < mods_per_path; ++i) {
@@ -445,7 +455,7 @@ static void bench_path(wchar_t* path) {
   }
 }
 
-static void print_attr_result_for_path(wchar_t* path) {
+static void print_attr_result_for_path(const wchar_t* path) {
   WIN32_FILE_ATTRIBUTE_DATA file_data;
   struct stat st;
   char buf[JVM_MAXPATHLEN];
@@ -466,7 +476,7 @@ static void print_attr_result_for_path(wchar_t* path) {
   }
 }
 
-static void print_attr_result(wchar_t* format, ...) {
+static void print_attr_result(const wchar_t* format, ...) {
   va_list argptr;
   wchar_t buf[JVM_MAXPATHLEN];
 
@@ -503,10 +513,10 @@ TEST_VM(os_windows, handle_long_paths) {
   static wchar_t root_dir_path[JVM_MAXPATHLEN];
   static wchar_t root_rel_dir_path[JVM_MAXPATHLEN];
 
-  wchar_t* dir_prefix = L"os_windows_long_paths_dir_";
-  wchar_t* empty_dir_name = L"empty_directory_with_long_path";
-  wchar_t* not_empty_dir_name = L"not_empty_directory_with_long_path";
-  wchar_t* file_name = L"file";
+  const wchar_t* dir_prefix = L"os_windows_long_paths_dir_";
+  const wchar_t* empty_dir_name = L"empty_directory_with_long_path";
+  const wchar_t* not_empty_dir_name = L"not_empty_directory_with_long_path";
+  const wchar_t* file_name = L"file";
   wchar_t dir_letter;
   WIN32_FILE_ATTRIBUTE_DATA file_data;
   bool can_test_unc = false;
@@ -673,7 +683,7 @@ TEST_VM(os_windows, handle_long_paths) {
     // The other drive letter should not overwrite the original one.
     if (dir_letter) {
       static wchar_t tmp[JVM_MAXPATHLEN];
-      wchar_t* other_letter = dir_letter == L'D' ? L"C" : L"D";
+      const wchar_t* other_letter = dir_letter == L'D' ? L"C" : L"D";
       wsprintfW(tmp, L"%2ls\\..\\%ls:%ls", nearly_long_file_path, other_letter, nearly_long_file_path + 2);
       check_file_not_present(tmp);
       wsprintfW(tmp, L"%2ls\\..\\%ls:%ls", file_path, other_letter, file_path + 2);

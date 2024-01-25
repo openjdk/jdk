@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,8 @@ import sun.security.util.SecurityConstants;
  * href="http://www.ietf.org/rfc/rfc2616.txt"><i>RFC&nbsp;2616: Hypertext
  * Transfer Protocol -- HTTP/1.1</i></a>
  *
+ * @spec https://www.rfc-editor.org/info/rfc2616
+ *      RFC 2616: Hypertext Transfer Protocol -- HTTP/1.1
  * @author Yingxian Wang
  * @since 1.5
  */
@@ -86,6 +88,7 @@ public abstract class ResponseCache {
      * @since 1.5
      */
     public static synchronized ResponseCache getDefault() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(SecurityConstants.GET_RESPONSECACHE_PERMISSION);
@@ -109,6 +112,7 @@ public abstract class ResponseCache {
      * @since 1.5
      */
     public static synchronized void setDefault(ResponseCache responseCache) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(SecurityConstants.SET_RESPONSECACHE_PERMISSION);
@@ -127,7 +131,7 @@ public abstract class ResponseCache {
      *            network resource
      * @param rqstMethod a {@code String} representing the request
      *            method
-     * @param rqstHeaders - a Map from request header
+     * @param rqstHeaders a Map from request header
      *            field names to lists of field values representing
      *            the current request headers
      * @return a {@code CacheResponse} instance if available
@@ -155,7 +159,7 @@ public abstract class ResponseCache {
      *
      * @param uri a {@code URI} used to reference the requested
      *            network resource
-     * @param conn - a URLConnection instance that is used to fetch
+     * @param conn a URLConnection instance that is used to fetch
      *            the response to be cached
      * @return a {@code CacheRequest} for recording the
      *            response to be cached. Null return indicates that

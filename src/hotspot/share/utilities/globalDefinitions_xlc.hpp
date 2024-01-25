@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,12 +32,22 @@
 // globally used constants & types, class (forward)
 // declarations and a few frequently used utility functions.
 
+#include <alloca.h>
 #include <ctype.h>
 #include <string.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+// In stdlib.h on AIX malloc is defined as a macro causing
+// compiler errors when resolving them in different depths as it
+// happens in the log tags. This avoids the macro.
+#if (defined(__VEC__) || defined(__AIXVEC)) && defined(AIX) \
+    && defined(__open_xl_version__) && __open_xl_version__ >= 17
+  #undef malloc
+  extern void *malloc(size_t) asm("vec_malloc");
+#endif
+
 #include <wchar.h>
 
 #include <math.h>
@@ -56,12 +66,21 @@
   #if __ibmxl_version__ < 16
   #error "xlc < 16 not supported"
   #endif
+#elif defined(__open_xl_version__)
+  #if __open_xl_version__ < 17
+  #error "open xlc < 17 not supported"
+  #endif
 #else
-  #error "xlc < 16 not supported, macro __ibmxl_version__ not found"
+  #error "xlc version not supported, macro __ibmxl_version__ or __open_xl_version__ not found"
 #endif
 
 #ifndef _AIX
 #error "missing AIX-specific definition _AIX"
+#endif
+
+// Shortcut for the new xlc 17 compiler
+#if defined(AIX) && defined(__open_xl_version__) && __open_xl_version__ >= 17
+#define AIX_XLC_GE_17
 #endif
 
 // Use XLC compiler builtins instead of inline assembler
@@ -91,16 +110,6 @@
   #endif
 #endif
 
-// Compiler-specific primitive types
-// All defs of int (uint16_6 etc) are defined in AIX' /usr/include/stdint.h
-
-// Additional Java basic types
-
-typedef uint8_t  jubyte;
-typedef uint16_t jushort;
-typedef uint32_t juint;
-typedef uint64_t julong;
-
 // checking for nanness
 inline int g_isnan(float  f) { return isnan(f); }
 inline int g_isnan(double f) { return isnan(f); }
@@ -108,10 +117,6 @@ inline int g_isnan(double f) { return isnan(f); }
 // Checking for finiteness
 inline int g_isfinite(jfloat  f)                 { return finite(f); }
 inline int g_isfinite(jdouble f)                 { return finite(f); }
-
-// Wide characters
-inline int wcslen(const jchar* x) { return wcslen((const wchar_t*)x); }
-
 
 // Formatting.
 #ifdef _LP64
@@ -136,7 +141,7 @@ inline int wcslen(const jchar* x) { return wcslen((const wchar_t*)x); }
 //
 //   void* operator new(size_t size) throw() NOINLINE;
 //
-// For function/method defintions, the more common placement BEFORE the
+// For function/method definitions, the more common placement BEFORE the
 // function/method declarator seems to be supported as well:
 //
 //   NOINLINE void* CHeapObj<F>::operator new(size_t size) throw() {...}

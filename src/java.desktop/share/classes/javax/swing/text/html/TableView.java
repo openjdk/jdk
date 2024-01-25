@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -384,7 +384,7 @@ import javax.swing.text.*;
      * give axis.  Table cells that span multiple columns are excluded
      * from the first pass.  A second pass is made to determine if
      * the cells that span multiple columns are satisfied.  If the
-     * column requirements are not satisified, the needs of the
+     * column requirements are not satisfied, the needs of the
      * multi-column cell is mixed into the existing column requirements.
      * The calculation of the multi-column distribution is based upon
      * the proportions of the existing column requirements and taking
@@ -633,7 +633,7 @@ import javax.swing.text.*;
      *
      * @param targetSpan the total span given to the view, which
      *  would be used to layout the children
-     * @param axis the axis being layed out
+     * @param axis the axis being laid out
      * @param offsets the offsets from the origin of the view for
      *  each of the child views.  This is a return value and is
      *  filled in by the implementation of this method
@@ -676,7 +676,7 @@ import javax.swing.text.*;
      *
      * @param targetSpan the total span given to the view, which
      *  would be used to layout the children
-     * @param axis the axis being layed out
+     * @param axis the axis being laid out
      * @param offsets the offsets from the origin of the view for
      *  each of the child views; this is a return value and is
      *  filled in by the implementation of this method
@@ -1013,9 +1013,6 @@ import javax.swing.text.*;
          */
         private void updatePercentagesAndAdjustmentWeights(int span) {
             adjustmentWeights = new int[columnRequirements.length];
-            for (int i = 0; i < columnRequirements.length; i++) {
-                adjustmentWeights[i] = 0;
-            }
             if (relativeCells) {
                 percentages = new int[columnRequirements.length];
             } else {
@@ -1524,7 +1521,7 @@ import javax.swing.text.*;
          *
          * @param targetSpan the total span given to the view, which
          *  would be used to layout the children
-         * @param axis the axis being layed out
+         * @param axis the axis being laid out
          * @param offsets the offsets from the origin of the view for
          *  each of the child views; this is a return value and is
          *  filled in by the implementation of this method
@@ -1575,7 +1572,7 @@ import javax.swing.text.*;
          *
          * @param targetSpan the total span given to the view, which
          *  would be used to layout the children
-         * @param axis the axis being layed out
+         * @param axis the axis being laid out
          * @param offsets the offsets from the origin of the view for
          *  each of the child views; this is a return value and is
          *  filled in by the implementation of this method
@@ -1611,7 +1608,7 @@ import javax.swing.text.*;
          *
          * @param axis may be either View.X_AXIS or View.Y_AXIS
          * @return the resize weight
-         * @exception IllegalArgumentException for an invalid axis
+         * @throws IllegalArgumentException for an invalid axis
          */
         public int getResizeWeight(int axis) {
             return 1;
@@ -1691,7 +1688,7 @@ import javax.swing.text.*;
      * Default view of an html table cell.  This needs to be moved
      * somewhere else.
      */
-    class CellView extends BlockView {
+    static class CellView extends BlockView {
 
         /**
          * Constructs a TableCell for the given element.
@@ -1717,7 +1714,7 @@ import javax.swing.text.*;
          *
          * @param targetSpan the total span given to the view, which
          *  would be used to layout the children
-         * @param axis the axis being layed out
+         * @param axis the axis being laid out
          * @param offsets the offsets from the origin of the view for
          *  each of the child views; this is a return value and is
          *  filled in by the implementation of this method
@@ -1770,7 +1767,7 @@ import javax.swing.text.*;
          * indicate the maximum size is very large (i.e. the cell
          * is willing to expend to occupy the full height of the row).
          *
-         * @param axis the axis being layed out.
+         * @param axis the axis being laid out.
          * @param r the requirements to fill in.  If null, a new one
          *  should be allocated.
          */

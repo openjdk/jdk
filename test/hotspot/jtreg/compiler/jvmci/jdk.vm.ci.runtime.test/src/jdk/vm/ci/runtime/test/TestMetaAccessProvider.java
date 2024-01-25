@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,17 @@
 
 package jdk.vm.ci.runtime.test;
 
+import static jdk.vm.ci.meta.MetaUtil.toInternalName;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+
+import org.junit.Test;
+
 import jdk.vm.ci.meta.DeoptimizationAction;
 import jdk.vm.ci.meta.DeoptimizationReason;
 import jdk.vm.ci.meta.JavaConstant;
@@ -42,16 +53,6 @@ import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Signature;
-import org.junit.Test;
-
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-
-import static jdk.vm.ci.meta.MetaUtil.toInternalName;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Tests for {@link MetaAccessProvider}.
@@ -83,16 +84,12 @@ public class TestMetaAccessProvider extends TypeUniverse {
         return false;
     }
 
-    private static boolean isUnsafeAnonymous(ResolvedJavaType type) {
-        return type.getHostClass() != null;
-    }
-
     @Test
     public void lookupJavaTypeTest() {
         for (Class<?> c : classes) {
             ResolvedJavaType type = metaAccess.lookupJavaType(c);
             assertNotNull(c.toString(), type);
-            if (!isHiddenClass(c) && !isUnsafeAnonymous(type)) {
+            if (!isHiddenClass(c)) {
                 assertEquals(c.toString(), type.getName(), toInternalName(c.getName()));
                 assertEquals(c.toString(), type.getName(), toInternalName(type.toJavaName()));
                 assertEquals(c.toString(), c.getName(), type.toClassName());
@@ -113,11 +110,11 @@ public class TestMetaAccessProvider extends TypeUniverse {
         ResolvedJavaType[] result = metaAccess.lookupJavaTypes(classes.toArray(new Class<?>[classes.size()]));
         int counter = 0;
         for (Class<?> aClass : classes) {
-            if (!isHiddenClass(aClass) && !isUnsafeAnonymous(result[counter])) {
+            if (!isHiddenClass(aClass)) {
                 assertEquals("Unexpected javaType: " + result[counter] + " while expecting of class: " + aClass, result[counter].toClassName(), aClass.getName());
             }
             counter++;
-         }
+        }
     }
 
     @Test(expected = NullPointerException.class)
@@ -187,6 +184,9 @@ public class TestMetaAccessProvider extends TypeUniverse {
     public void getMemorySizeTest() {
         for (ConstantValue cv : constants()) {
             JavaConstant c = cv.value;
+            if (c.getJavaKind() == JavaKind.Illegal) {
+                continue;
+            }
             long memSize = metaAccess.getMemorySize(c);
             if (c.isNull()) {
                 assertEquals("Expected size = 0 for null", memSize, 0L);

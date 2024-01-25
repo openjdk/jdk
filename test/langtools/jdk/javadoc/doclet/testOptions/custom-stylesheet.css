@@ -609,7 +609,7 @@ h1.hidden {
     margin:3px 10px 2px 0px;
     color:#474747;
 }
-.deprecatedLabel, .descfrmTypeLabel, .memberNameLabel, .memberNameLink,
+.deprecatedLabel, .descriptionFromTypeLabel, .memberNameLabel, .memberNameLink,
 .overrideSpecifyLabel, .packageHierarchyLabel, .paramLabel, .returnLabel,
 .seeLabel, .simpleTagLabel, .throwsLabel, .typeNameLabel, .typeNameLink, .searchTagLink {
     font-weight:bold;

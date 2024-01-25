@@ -45,4 +45,9 @@ abstract class MethodAccessorImpl extends MagicAccessorImpl
     /** Matches specification in {@link java.lang.reflect.Method} */
     public abstract Object invoke(Object obj, Object[] args)
         throws IllegalArgumentException, InvocationTargetException;
+
+    public Object invoke(Object obj, Object[] args, Class<?> caller)
+            throws IllegalArgumentException, InvocationTargetException {
+        return invoke(obj, args);
+    }
 }

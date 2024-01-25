@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,12 @@ if test "x$BASH" = x; then
   echo "Error: This script must be run using bash." 1>&2
   exit 1
 fi
+
+if [[ "$TOPDIR" =~ .*[[:space:]]+.* ]]; then
+  echo "Error: Build path containing space character is not supported" 1>&2
+  exit 1
+fi
+
 # Force autoconf to use bash. This also means we must disable autoconf re-exec.
 export CONFIG_SHELL=$BASH
 export _as_can_reexec=no
@@ -274,11 +280,11 @@ do
   # Check for certain autoconf options that require extra action
   case $conf_option in
     -build | --build | --buil | --bui | --bu |-build=* | --build=* | --buil=* | --bui=* | --bu=*)
-      conf_legacy_crosscompile="$conf_legacy_crosscompile $conf_option" ;;
+      conf_build_set=true ;;
     -target | --target | --targe | --targ | --tar | --ta | --t | -target=* | --target=* | --targe=* | --targ=* | --tar=* | --ta=* | --t=*)
-      conf_legacy_crosscompile="$conf_legacy_crosscompile $conf_option" ;;
+      conf_incompatible_crosscompile="$conf_incompatible_crosscompile $conf_option" ;;
     -host | --host | --hos | --ho | -host=* | --host=* | --hos=* | --ho=*)
-      conf_legacy_crosscompile="$conf_legacy_crosscompile $conf_option" ;;
+      conf_incompatible_crosscompile="$conf_incompatible_crosscompile $conf_option" ;;
     -help | --help | --hel | --he | -h)
       conf_print_help=true ;;
   esac
@@ -287,23 +293,30 @@ done
 # Save the quoted command line
 CONFIGURE_COMMAND_LINE="${conf_quoted_arguments[@]}"
 
-if test "x$conf_legacy_crosscompile" != "x"; then
+if test "x$conf_incompatible_crosscompile" != "x"; then
   if test "x$conf_openjdk_target" != "x"; then
-    echo "Error: Specifying --openjdk-target together with autoconf"
-    echo "legacy cross-compilation flags is not supported."
-    echo "You specified: --openjdk-target=$conf_openjdk_target and $conf_legacy_crosscompile."
-    echo "The recommended use is just --openjdk-target."
+    echo "Error: --openjdk-target was specified together with"
+    echo "incompatible autoconf cross-compilation flags."
+    echo "You specified: --openjdk-target=$conf_openjdk_target and $conf_incompatible_crosscompile."
+    echo "It is recommended that you only use --openjdk-target."
     exit 1
   else
-    echo "Warning: You are using legacy autoconf cross-compilation flags."
-    echo "It is recommended that you use --openjdk-target instead."
+    echo "Warning: You are using misleading autoconf cross-compilation flag(s)."
+    echo "This is not encouraged as use of such flags during building can"
+    echo "quickly become confusing."
+    echo "It is highly recommended that you use --openjdk-target instead."
     echo ""
   fi
 fi
 
 if test "x$conf_openjdk_target" != "x"; then
-  conf_build_platform=`sh $conf_script_dir/build-aux/config.guess`
-  conf_processed_arguments=("--build=$conf_build_platform" "--host=$conf_openjdk_target" "--target=$conf_openjdk_target" "${conf_processed_arguments[@]}")
+  conf_processed_arguments=("--host=$conf_openjdk_target" "--target=$conf_openjdk_target" "${conf_processed_arguments[@]}")
+
+  # If --build has been explicitly set don't override that flag with our own
+  if test "x$conf_build_set" != xtrue; then
+    conf_build_platform=`sh $conf_script_dir/build-aux/config.guess`
+    conf_processed_arguments=("--build=$conf_build_platform" "${conf_processed_arguments[@]}")
+  fi
 fi
 
 # Make configure exit with error on invalid options as default.
@@ -341,7 +354,9 @@ Additional (non-autoconf) OpenJDK Options:
   --openjdk-target=TARGET cross-compile with TARGET as target platform
                           (i.e. the one you will run the resulting binary on).
                           Equivalent to --host=TARGET --target=TARGET
-                          --build=<current platform>
+                          --build=<current platform>, or the platform you
+                          have provided if you have explicitly passed
+                          --build to configure
   --debug-configure       Run the configure script with additional debug
                           logging enabled.
 

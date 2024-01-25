@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@
 #include "gc/shared/referenceProcessor.hpp"
 #include "oops/markWord.hpp"
 #include "runtime/task.hpp"
+#include "utilities/vmError.hpp"
 
 //----------------------------------------------------------------------
 // Build flagLimitTable[]
@@ -65,26 +66,26 @@ struct DummyLimit {
 template <typename T>
 class LimitGetter {
 public:
-  // These functions return NULL for develop flags in a PRODUCT build
+  // These functions return null for develop flags in a PRODUCT build
   static constexpr const JVMFlagLimit* no_limit(...) {
-    return NULL;
+    return nullptr;
   }
 
   // This is for flags that have neither range no constraint. We don't need the JVMFlagLimit struct.
   static constexpr const JVMFlagLimit* get_limit(const JVMTypedFlagLimit<T>* p, int dummy) {
-    return NULL;
+    return nullptr;
   }
 
   static constexpr const JVMFlagLimit* get_limit(const JVMTypedFlagLimit<T>* p, int dummy, T min, T max) {
     return p;
   }
-  static constexpr const JVMFlagLimit* get_limit(const JVMTypedFlagLimit<T>* p, int dummy, ConstraintMarker dummy2, short func, int phase) {
+  static constexpr const JVMFlagLimit* get_limit(const JVMTypedFlagLimit<T>* p, int dummy, ConstraintMarker dummy2, short func, JVMFlagConstraintPhase phase) {
     return p;
   }
-  static constexpr const JVMFlagLimit* get_limit(const JVMTypedFlagLimit<T>* p, int dummy, T min, T max, ConstraintMarker dummy2, short func, int phase) {
+  static constexpr const JVMFlagLimit* get_limit(const JVMTypedFlagLimit<T>* p, int dummy, T min, T max, ConstraintMarker dummy2, short func, JVMFlagConstraintPhase phase) {
     return p;
   }
-  static constexpr const JVMFlagLimit* get_limit(const JVMTypedFlagLimit<T>* p, int dummy, ConstraintMarker dummy2, short func, int phase, T min, T max) {
+  static constexpr const JVMFlagLimit* get_limit(const JVMTypedFlagLimit<T>* p, int dummy, ConstraintMarker dummy2, short func, JVMFlagConstraintPhase phase, T min, T max) {
     return p;
   }
 };
@@ -97,7 +98,7 @@ public:
 #define FLAG_LIMIT_PTR(         type, name, ...)       ), LimitGetter<type>::get_limit(&limit_##name, 0
 #define FLAG_LIMIT_PTR_NONE(    type, name, ...)       ), LimitGetter<type>::no_limit(0
 #define APPLY_FLAG_RANGE(...)                          , __VA_ARGS__
-#define APPLY_FLAG_CONSTRAINT(func, phase)             , next_two_args_are_constraint, (short)CONSTRAINT_ENUM(func), int(JVMFlagConstraintPhase::phase)
+#define APPLY_FLAG_CONSTRAINT(func, phase)             , next_two_args_are_constraint, (short)CONSTRAINT_ENUM(func), JVMFlagConstraintPhase::phase
 
 constexpr JVMTypedFlagLimit<int> limit_dummy
 (
@@ -122,7 +123,7 @@ constexpr JVMTypedFlagLimit<int> limit_dummy
 
 static constexpr const JVMFlagLimit* const flagLimitTable[1 + NUM_JVMFlagsEnum] = {
   // Because FLAG_LIMIT_PTR must start with an "),", we have to place a dummy element here.
-  LimitGetter<int>::get_limit(NULL, 0
+  LimitGetter<int>::get_limit(nullptr, 0
 
 #ifdef PRODUCT
   ALL_FLAGS(FLAG_LIMIT_PTR_NONE,
@@ -153,7 +154,7 @@ const JVMFlag* JVMFlagLimit::last_checked_flag() {
   if (_last_checked != INVALID_JVMFlagsEnum) {
     return JVMFlag::flag_from_enum(_last_checked);
   } else {
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -161,7 +162,7 @@ bool JVMFlagLimit::check_all_ranges() {
   bool status = true;
   for (int i = 0; i < NUM_JVMFlagsEnum; i++) {
     JVMFlagsEnum flag_enum = static_cast<JVMFlagsEnum>(i);
-    if (get_range_at(flag_enum) != NULL &&
+    if (get_range_at(flag_enum) != nullptr &&
         JVMFlagAccess::check_range(JVMFlag::flag_from_enum(flag_enum), true) != JVMFlag::SUCCESS) {
       status = false;
     }
@@ -178,7 +179,7 @@ bool JVMFlagLimit::check_all_constraints(JVMFlagConstraintPhase phase) {
   for (int i = 0; i < NUM_JVMFlagsEnum; i++) {
     JVMFlagsEnum flag_enum = static_cast<JVMFlagsEnum>(i);
     const JVMFlagLimit* constraint = get_constraint_at(flag_enum);
-    if (constraint != NULL && constraint->phase() == static_cast<int>(phase) &&
+    if (constraint != nullptr && constraint->phase() == phase &&
         JVMFlagAccess::check_constraint(JVMFlag::flag_from_enum(flag_enum),
                                         constraint->constraint_func(), true) != JVMFlag::SUCCESS) {
       status = false;

@@ -676,7 +676,7 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
     }
 
     /**
-     * Nulls out slots starting at array index i, upto index end.
+     * Nulls out slots starting at array index i, up to index end.
      * Condition i == end means "full" - the entire array is cleared.
      */
     private static void circularClear(Object[] items, int i, int end) {

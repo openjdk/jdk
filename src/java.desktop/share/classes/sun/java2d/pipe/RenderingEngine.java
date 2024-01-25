@@ -122,6 +122,7 @@ public abstract class RenderingEngine {
          */
         GetPropertyAction gpa =
             new GetPropertyAction("sun.java2d.renderer");
+        @SuppressWarnings("removal")
         String reClass = AccessController.doPrivileged(gpa);
         if (reClass != null) {
             try {
@@ -144,12 +145,14 @@ public abstract class RenderingEngine {
         }
 
         gpa = new GetPropertyAction("sun.java2d.renderer.verbose");
+        @SuppressWarnings("removal")
         String verbose = AccessController.doPrivileged(gpa);
         if (verbose != null && verbose.startsWith("t")) {
             System.out.println("RenderingEngine = "+reImpl);
         }
 
         gpa = new GetPropertyAction("sun.java2d.renderer.trace");
+        @SuppressWarnings("removal")
         String reTrace = AccessController.doPrivileged(gpa);
         if (reTrace != null) {
             reImpl = new Tracer(reImpl);

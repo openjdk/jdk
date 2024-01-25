@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package java.util.zip;
 import java.io.FilterInputStream;
 import java.io.InputStream;
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * Implements an input stream filter for compressing data in the "deflate"
@@ -74,7 +75,7 @@ public class DeflaterInputStream extends FilterInputStream {
      * @throws NullPointerException if {@code in} is null
      */
     public DeflaterInputStream(InputStream in) {
-        this(in, new Deflater());
+        this(in, in != null ? new Deflater() : null);
         usesDefaultDeflater = true;
     }
 
@@ -172,9 +173,9 @@ public class DeflaterInputStream extends FilterInputStream {
         ensureOpen();
         if (b == null) {
             throw new NullPointerException("Null buffer for read");
-        } else if (off < 0 || len < 0 || len > b.length - off) {
-            throw new IndexOutOfBoundsException();
-        } else if (len == 0) {
+        }
+        Objects.checkFromIndexSize(off, len, b.length);
+        if (len == 0) {
             return 0;
         }
 

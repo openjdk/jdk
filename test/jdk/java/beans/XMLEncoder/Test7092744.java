@@ -25,6 +25,7 @@
  * @test
  * @bug 7092744
  * @summary Tests for ambiguous methods
+ * @run main/othervm -Djava.security.manager=allow Test7092744
  * @author Sergey Malenkov
  */
 

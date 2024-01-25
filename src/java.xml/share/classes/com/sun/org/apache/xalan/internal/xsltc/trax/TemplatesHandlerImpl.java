@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,7 +20,6 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.trax;
 
-import com.sun.org.apache.xalan.internal.XalanConstants;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.CompilerException;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.Parser;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.SourceLoader;
@@ -36,6 +35,7 @@ import javax.xml.transform.Templates;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.URIResolver;
 import javax.xml.transform.sax.TemplatesHandler;
+import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.JdkXmlFeatures;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
@@ -47,7 +47,7 @@ import org.xml.sax.SAXException;
  * Implementation of a JAXP1.1 TemplatesHandler
  * @author Morten Jorgensen
  * @author Santiago Pericas-Geertsen
- * @LastModified: July 2019
+ * @LastModified: May 2021
  */
 public class TemplatesHandlerImpl
     implements ContentHandler, TemplatesHandler, SourceLoader
@@ -107,8 +107,8 @@ public class TemplatesHandlerImpl
                 (String)tfactory.getAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET));
         xsltc.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD,
                 (String)tfactory.getAttribute(XMLConstants.ACCESS_EXTERNAL_DTD));
-        xsltc.setProperty(XalanConstants.SECURITY_MANAGER,
-                tfactory.getAttribute(XalanConstants.SECURITY_MANAGER));
+        xsltc.setProperty(JdkConstants.SECURITY_MANAGER,
+                tfactory.getAttribute(JdkConstants.SECURITY_MANAGER));
 
 
         if ("true".equals(tfactory.getAttribute(TransformerFactoryImpl.ENABLE_INLINING)))

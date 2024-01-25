@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,6 +88,10 @@ class UnixUriUtils {
                     throw new IllegalArgumentException("Bad escape");
                 b = (byte)c;
             }
+            if (b == '/' && rlen > 0 && result[rlen-1] == '/') {
+                // skip redundant slashes
+                continue;
+            }
             result[rlen++] = b;
         }
         if (rlen != result.length)
@@ -118,10 +122,11 @@ class UnixUriUtils {
         if (sb.charAt(sb.length()-1) != '/') {
             try {
                 up.checkRead();
-                int mode = UnixNativeDispatcher.stat(up);
-                if ((mode & UnixConstants.S_IFMT) == UnixConstants.S_IFDIR)
+                UnixFileAttributes attrs = UnixFileAttributes.getIfExists(up);
+                if (attrs != null
+                        && ((attrs.mode() & UnixConstants.S_IFMT) == UnixConstants.S_IFDIR))
                     sb.append('/');
-            } catch (SecurityException ignore) { }
+            } catch (UnixException | SecurityException ignore) { }
         }
 
         try {
@@ -161,8 +166,8 @@ class UnixUriUtils {
     // between first and last, inclusive
     private static long lowMask(char first, char last) {
         long m = 0;
-        int f = Math.max(Math.min(first, 63), 0);
-        int l = Math.max(Math.min(last, 63), 0);
+        int f = Math.clamp(first, 0, 63);
+        int l = Math.clamp(last, 0, 63);
         for (int i = f; i <= l; i++)
             m |= 1L << i;
         return m;
@@ -172,8 +177,8 @@ class UnixUriUtils {
     // between first and last, inclusive
     private static long highMask(char first, char last) {
         long m = 0;
-        int f = Math.max(Math.min(first, 127), 64) - 64;
-        int l = Math.max(Math.min(last, 127), 64) - 64;
+        int f = Math.clamp(first, 64, 127) - 64;
+        int l = Math.clamp(last, 64, 127) - 64;
         for (int i = f; i <= l; i++)
             m |= 1L << i;
         return m;

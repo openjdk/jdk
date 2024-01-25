@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ public class GenerateOopMap {
   // Used for debugging this code
   private static final boolean DEBUG = false;
 
-  // These two should be removed. But requires som code to be cleaned up
+  // These two should be removed. But requires some code to be cleaned up
   private static final int MAXARGSIZE     =   256;      // This should be enough
   private static final int MAX_LOCAL_VARS = 65536;      // 16-bit entry
   private static final boolean TraceMonitorMismatch = true;
@@ -163,7 +163,7 @@ public class GenerateOopMap {
     }
   }
 
-  /** Contains maping between jsr targets and there return addresses.
+  /** Contains mapping between jsr targets and their return addresses.
       One-to-many mapping. */
   static class RetTableEntry {
     private static int _init_nof_jsrs; // Default size of jsrs list
@@ -310,10 +310,10 @@ public class GenerateOopMap {
   int      _max_stack;      // Cached value of max. stack depth
   int      _max_monitors;   // Cached value of max. monitor stack depth
   boolean  _has_exceptions; // True, if exceptions exist for method
-  boolean  _got_error;      // True, if an error occured during interpretation.
+  boolean  _got_error;      // True, if an error occurred during interpretation.
   String   _error_msg;      // Error message. Set if _got_error is true.
   //  bool     _did_rewriting;  // was bytecodes rewritten
-  //  bool     _did_relocation; // was relocation neccessary
+  //  bool     _did_relocation; // was relocation necessary
   boolean  _monitor_safe;   // The monitors in this method have been determined
                             // to be safe.
 
@@ -529,7 +529,6 @@ public class GenerateOopMap {
                                               CellTypeState replace) {
     int i;
     int len = _max_locals + _stack_top;
-    boolean change = false;
 
     for (i = len - 1; i >= 0; i--) {
       if (match.equal(_state.get(i))) {
@@ -825,7 +824,7 @@ public class GenerateOopMap {
         if (Assert.ASSERTS_ENABLED) {
           Assert.that(!fall_through, "cannot be set if ret instruction");
         }
-        // Automatically handles 'wide' ret indicies
+        // Automatically handles 'wide' ret indices
         retJumpTargetsDo(itr, new JumpClosure() {
             public void process(GenerateOopMap c, int bcpDelta, int[] data) {
               c.mergeState(bcpDelta, data);
@@ -1028,7 +1027,7 @@ public class GenerateOopMap {
 
         bbNo++;
       }
-      // Remember prevous bci.
+      // Remember previous bci.
       prev_bci = bci;
     }
     // Set
@@ -1375,16 +1374,16 @@ public class GenerateOopMap {
     case Bytecodes._jsr:               doJsr(itr.dest());          break;
     case Bytecodes._jsr_w:             doJsr(itr.dest_w());        break;
 
-    case Bytecodes._getstatic:         doField(true,  true,  itr.getIndexU2Cpcache(), itr.bci()); break;
-    case Bytecodes._putstatic:         doField(false, true,  itr.getIndexU2Cpcache(), itr.bci()); break;
-    case Bytecodes._getfield:          doField(true,  false, itr.getIndexU2Cpcache(), itr.bci()); break;
-    case Bytecodes._putfield:          doField(false, false, itr.getIndexU2Cpcache(), itr.bci()); break;
+    case Bytecodes._getstatic:         doField(true,  true,  itr.getIndexU2Cpcache(), itr.bci(), itr.code()); break;
+    case Bytecodes._putstatic:         doField(false, true,  itr.getIndexU2Cpcache(), itr.bci(), itr.code()); break;
+    case Bytecodes._getfield:          doField(true,  false, itr.getIndexU2Cpcache(), itr.bci(), itr.code()); break;
+    case Bytecodes._putfield:          doField(false, false, itr.getIndexU2Cpcache(), itr.bci(), itr.code()); break;
 
     case Bytecodes._invokevirtual:
-    case Bytecodes._invokespecial:     doMethod(false, false, itr.getIndexU2Cpcache(), itr.bci()); break;
-    case Bytecodes._invokestatic:      doMethod(true,  false, itr.getIndexU2Cpcache(), itr.bci()); break;
-    case Bytecodes._invokedynamic:     doMethod(true,  false, itr.getIndexU4(),        itr.bci()); break;
-    case Bytecodes._invokeinterface:   doMethod(false,  true, itr.getIndexU2Cpcache(), itr.bci()); break;
+    case Bytecodes._invokespecial:     doMethod(false, false, itr.getIndexU2Cpcache(), itr.bci(), itr.code()); break;
+    case Bytecodes._invokestatic:      doMethod(true,  false, itr.getIndexU2Cpcache(), itr.bci(), itr.code()); break;
+    case Bytecodes._invokedynamic:     doMethod(true,  false, itr.getIndexU4(),        itr.bci(), itr.code()); break;
+    case Bytecodes._invokeinterface:   doMethod(false,  true, itr.getIndexU2Cpcache(), itr.bci(), itr.code()); break;
     case Bytecodes._newarray:
     case Bytecodes._anewarray:         ppNewRef(vCTS, itr.bci()); break;
     case Bytecodes._checkcast:         doCheckcast(); break;
@@ -1689,10 +1688,10 @@ public class GenerateOopMap {
     push(CellTypeState.makeAddr(targBCI));
   }
 
-  void  doField                             (boolean is_get, boolean is_static, int idx, int bci) {
+  void  doField                             (boolean is_get, boolean is_static, int idx, int bci, int bc) {
     // Dig up signature for field in constant pool
     ConstantPool cp        = method().getConstants();
-    int nameAndTypeIdx     = cp.getNameAndTypeRefIndexAt(idx);
+    int nameAndTypeIdx     = cp.getNameAndTypeRefIndexAt(idx, bc);
     int signatureIdx       = cp.getSignatureRefIndexAt(nameAndTypeIdx);
     Symbol signature       = cp.getSymbolAt(signatureIdx);
 
@@ -1701,7 +1700,7 @@ public class GenerateOopMap {
                          ", nameAndTypeIdx = " + nameAndTypeIdx + ", signatureIdx = " + signatureIdx + ", bci = " + bci);
     }
 
-    // Parse signature (espcially simple for fields)
+    // Parse signature (especially simple for fields)
     // The signature is UFT8 encoded, but the first char is always ASCII for signatures.
     char sigch = (char) signature.getByteAt(0);
     CellTypeState[] temp = new CellTypeState[4];
@@ -1725,10 +1724,10 @@ public class GenerateOopMap {
     pp(in, out);
   }
 
-  void  doMethod                            (boolean is_static, boolean is_interface, int idx, int bci) {
+  void  doMethod                            (boolean is_static, boolean is_interface, int idx, int bci, int bc) {
     // Dig up signature for field in constant pool
     ConstantPool cp       = _method.getConstants();
-    Symbol signature      = cp.getSignatureRefAt(idx);
+    Symbol signature      = cp.getSignatureRefAt(idx, bc);
 
     // Parse method signature
     CellTypeStateList out = new CellTypeStateList(4);
@@ -1894,7 +1893,7 @@ public class GenerateOopMap {
 
   // Create result set
   boolean  _report_result;
-  boolean  _report_result_for_send;         // Unfortunatly, stackmaps for sends are special, so we need some extra
+  boolean  _report_result_for_send;         // Unfortunately, stackmaps for sends are special, so we need some extra
   BytecodeStream _itr_send;                 // variables to handle them properly.
 
   void  reportResult                        () {
@@ -1947,7 +1946,7 @@ public class GenerateOopMap {
   }
 
   // Conflicts rewrite logic
-  boolean   _conflict;                      // True, if a conflict occured during interpretation
+  boolean   _conflict;                      // True, if a conflict occurred during interpretation
   int       _nof_refval_conflicts;          // No. of conflicts that require rewrites
   int[]     _new_var_map;
 
@@ -2007,7 +2006,7 @@ public class GenerateOopMap {
     return new String(_state_vec_buf, 0, len);
   }
 
-  // Helper method. Can be used in subclasses to fx. calculate gc_points. If the current instuction
+  // Helper method. Can be used in subclasses to fx. calculate gc_points. If the current instruction
   // is a control transfer, then calls the jmpFct all possible destinations.
   void  retJumpTargetsDo                    (BytecodeStream bcs, JumpClosure closure, int varNo, int[] data) {
     CellTypeState ra = vars().get(varNo);
@@ -2131,7 +2130,7 @@ public class GenerateOopMap {
   // Public routines for GenerateOopMap
   //
   public GenerateOopMap(Method method) {
-    // We have to initialize all variables here, that can be queried direcly
+    // We have to initialize all variables here, that can be queried directly
     _method = method;
     _max_locals=0;
     _init_vars = null;
@@ -2204,7 +2203,7 @@ public class GenerateOopMap {
 
     if (_got_error) {
       // We could expand this code to throw somekind of exception (e.g., VerifyException). However,
-      // an exception thrown in this part of the code is likly to mean that we are executing some
+      // an exception thrown in this part of the code is likely to mean that we are executing some
       // illegal bytecodes (that the verifier should have caught if turned on), so we will just exit
       // with a fatal.
       throw new RuntimeException("Illegal bytecode sequence encountered while generating interpreter pointer maps - method should be rejected by verifier.");
@@ -2293,7 +2292,7 @@ public class GenerateOopMap {
   //   in order (0...code_length-1)
   // - fillStackmapEpilog is called after all results has been
   //   reported. Note: Since the algorithm does not report stackmaps for
-  //   deadcode, fewer gc_points might have been encounted than assumed
+  //   deadcode, fewer gc_points might have been encountered than assumed
   //   during the epilog. It is the responsibility of the subclass to
   //   count the correct number.
   // - fillInitVars are called once with the result of the init_vars

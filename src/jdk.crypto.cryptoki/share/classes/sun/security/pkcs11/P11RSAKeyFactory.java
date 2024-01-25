@@ -54,8 +54,7 @@ final class P11RSAKeyFactory extends P11KeyFactory {
 
     PublicKey implTranslatePublicKey(PublicKey key) throws InvalidKeyException {
         try {
-            if (key instanceof RSAPublicKey) {
-                RSAPublicKey rsaKey = (RSAPublicKey)key;
+            if (key instanceof RSAPublicKey rsaKey) {
                 return generatePublic(
                     rsaKey.getModulus(),
                     rsaKey.getPublicExponent()
@@ -74,8 +73,7 @@ final class P11RSAKeyFactory extends P11KeyFactory {
     PrivateKey implTranslatePrivateKey(PrivateKey key)
             throws InvalidKeyException {
         try {
-            if (key instanceof RSAPrivateCrtKey) {
-                RSAPrivateCrtKey rsaKey = (RSAPrivateCrtKey)key;
+            if (key instanceof RSAPrivateCrtKey rsaKey) {
                 return generatePrivate(
                     rsaKey.getModulus(),
                     rsaKey.getPublicExponent(),
@@ -86,8 +84,7 @@ final class P11RSAKeyFactory extends P11KeyFactory {
                     rsaKey.getPrimeExponentQ(),
                     rsaKey.getCrtCoefficient()
                 );
-            } else if (key instanceof RSAPrivateKey) {
-                RSAPrivateKey rsaKey = (RSAPrivateKey)key;
+            } else if (key instanceof RSAPrivateKey rsaKey) {
                 return generatePrivate(
                     rsaKey.getModulus(),
                     rsaKey.getPrivateExponent()
@@ -117,7 +114,7 @@ final class P11RSAKeyFactory extends P11KeyFactory {
                         ("Could not create RSA public key", e);
             }
         }
-        if (keySpec instanceof RSAPublicKeySpec == false) {
+        if (!(keySpec instanceof RSAPublicKeySpec)) {
             throw new InvalidKeySpecException("Only RSAPublicKeySpec and "
                 + "X509EncodedKeySpec supported for RSA public keys");
         }
@@ -277,54 +274,49 @@ final class P11RSAKeyFactory extends P11KeyFactory {
 
     <T extends KeySpec> T implGetPrivateKeySpec(P11Key key, Class<T> keySpec,
             Session[] session) throws PKCS11Exception, InvalidKeySpecException {
+        if (key.sensitive || !key.extractable) {
+            throw new InvalidKeySpecException("Key is sensitive or not extractable");
+        }
+        // If the key is both extractable and not sensitive, then when it was converted into a P11Key
+        // it was also converted into subclass of RSAPrivateKey which encapsulates all of the logic
+        // necessary to retrieve the attributes we need. This sub-class will also cache these attributes
+        // so that we do not need to query them more than once.
+        // Rather than rewrite this logic and make possibly slow calls to the token, we'll just use
+        // that existing logic.
         if (keySpec.isAssignableFrom(RSAPrivateCrtKeySpec.class)) {
-            session[0] = token.getObjSession();
-            CK_ATTRIBUTE[] attributes = new CK_ATTRIBUTE[] {
-                new CK_ATTRIBUTE(CKA_MODULUS),
-                new CK_ATTRIBUTE(CKA_PUBLIC_EXPONENT),
-                new CK_ATTRIBUTE(CKA_PRIVATE_EXPONENT),
-                new CK_ATTRIBUTE(CKA_PRIME_1),
-                new CK_ATTRIBUTE(CKA_PRIME_2),
-                new CK_ATTRIBUTE(CKA_EXPONENT_1),
-                new CK_ATTRIBUTE(CKA_EXPONENT_2),
-                new CK_ATTRIBUTE(CKA_COEFFICIENT),
-            };
-            long keyID = key.getKeyID();
-            try {
-                token.p11.C_GetAttributeValue(session[0].id(), keyID, attributes);
-            } finally {
-                key.releaseKeyID();
-            }
+            // All supported keyspecs (other than PKCS8EncodedKeySpec) descend from RSAPrivateCrtKeySpec
+            if (key instanceof RSAPrivateCrtKey crtKey) {
+                return keySpec.cast(new RSAPrivateCrtKeySpec(
+                    crtKey.getModulus(),
+                    crtKey.getPublicExponent(),
+                    crtKey.getPrivateExponent(),
+                    crtKey.getPrimeP(),
+                    crtKey.getPrimeQ(),
+                    crtKey.getPrimeExponentP(),
+                    crtKey.getPrimeExponentQ(),
+                    crtKey.getCrtCoefficient(),
+                    crtKey.getParams()
+                ));
+            } else { // RSAPrivateKey (non-CRT)
+                if (!keySpec.isAssignableFrom(RSAPrivateKeySpec.class)) {
+                    throw new InvalidKeySpecException
+                        ("RSAPrivateCrtKeySpec can only be used with CRT keys");
+                }
 
-            KeySpec spec = new RSAPrivateCrtKeySpec(
-                attributes[0].getBigInteger(),
-                attributes[1].getBigInteger(),
-                attributes[2].getBigInteger(),
-                attributes[3].getBigInteger(),
-                attributes[4].getBigInteger(),
-                attributes[5].getBigInteger(),
-                attributes[6].getBigInteger(),
-                attributes[7].getBigInteger()
-            );
-            return keySpec.cast(spec);
-        } else if (keySpec.isAssignableFrom(RSAPrivateKeySpec.class)) {
-            session[0] = token.getObjSession();
-            CK_ATTRIBUTE[] attributes = new CK_ATTRIBUTE[] {
-                new CK_ATTRIBUTE(CKA_MODULUS),
-                new CK_ATTRIBUTE(CKA_PRIVATE_EXPONENT),
-            };
-            long keyID = key.getKeyID();
-            try {
-                token.p11.C_GetAttributeValue(session[0].id(), keyID, attributes);
-            } finally {
-                key.releaseKeyID();
-            }
+                if (!(key instanceof RSAPrivateKey rsaKey)) {
+                    // We should never reach here as P11Key.privateKey() should always produce an instance
+                    // of RSAPrivateKey when the RSA key is both extractable and non-sensitive.
+                    throw new InvalidKeySpecException
+                    ("Key must be an instance of RSAPrivateKeySpec. Was " + key.getClass());
+                }
 
-            KeySpec spec = new RSAPrivateKeySpec(
-                attributes[0].getBigInteger(),
-                attributes[1].getBigInteger()
-            );
-            return keySpec.cast(spec);
+                // fall through to RSAPrivateKey (non-CRT)
+                return keySpec.cast(new RSAPrivateKeySpec(
+                    rsaKey.getModulus(),
+                    rsaKey.getPrivateExponent(),
+                    rsaKey.getParams()
+                ));
+            }
         } else { // PKCS#8 handled in superclass
             throw new InvalidKeySpecException("Only RSAPrivate(Crt)KeySpec "
                 + "and PKCS8EncodedKeySpec supported for RSA private keys");

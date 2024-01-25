@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,13 +50,13 @@ class ClassFileParser;
 class InstanceRefKlass: public InstanceKlass {
   friend class InstanceKlass;
  public:
-  static const KlassID ID = InstanceRefKlassID;
+  static const KlassKind Kind = InstanceRefKlassKind;
 
  private:
-  InstanceRefKlass(const ClassFileParser& parser) : InstanceKlass(parser, InstanceKlass::_kind_reference, ID) {}
+  InstanceRefKlass(const ClassFileParser& parser);
 
  public:
-  InstanceRefKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
+  InstanceRefKlass();
 
   // Oop fields (and metadata) iterators
   //
@@ -96,9 +96,6 @@ class InstanceRefKlass: public InstanceKlass {
   // Building blocks for specialized handling.
   template <typename T, class OopClosureType, class Contains>
   static void do_referent(oop obj, OopClosureType* closure, Contains& contains);
-
-  template <typename T, class OopClosureType, class Contains>
-  static void do_next(oop obj, OopClosureType* closure, Contains& contains);
 
   template <typename T, class OopClosureType, class Contains>
   static void do_discovered(oop obj, OopClosureType* closure, Contains& contains);

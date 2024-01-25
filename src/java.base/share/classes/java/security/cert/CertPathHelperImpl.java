@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,9 @@
 
 package java.security.cert;
 
-import java.util.*;
+import java.util.Date;
 
 import sun.security.provider.certpath.CertPathHelper;
-
-import sun.security.x509.GeneralNameInterface;
 
 /**
  * Helper class that allows the Sun CertPath provider to access
@@ -55,12 +53,11 @@ class CertPathHelperImpl extends CertPathHelper {
         }
     }
 
-    protected void implSetPathToNames(X509CertSelector sel,
-            Set<GeneralNameInterface> names) {
-        sel.setPathToNamesInternal(names);
-    }
-
     protected void implSetDateAndTime(X509CRLSelector sel, Date date, long skew) {
         sel.setDateAndTime(date, skew);
+    }
+
+    protected boolean implIsJdkCA(TrustAnchor anchor) {
+        return anchor.isJdkCA();
     }
 }

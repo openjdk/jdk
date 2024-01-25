@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,6 +103,7 @@ class WindowsFileSystem
 
         // iterate over roots, ignoring those that the security manager denies
         ArrayList<Path> result = new ArrayList<>();
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         for (int i = 0; i <= 25; i++) {  // 0->A, 1->B, 2->C...
             if ((drives & (1 << i)) != 0) {
@@ -185,6 +186,7 @@ class WindowsFileSystem
 
     @Override
     public Iterable<FileStore> getFileStores() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             try {
@@ -201,8 +203,7 @@ class WindowsFileSystem
     }
 
     // supported views
-    private static final Set<String> supportedFileAttributeViews = Collections
-        .unmodifiableSet(new HashSet<String>(Arrays.asList("basic", "dos", "acl", "owner", "user")));
+    private static final Set<String> supportedFileAttributeViews = Set.of("basic", "dos", "acl", "owner", "user");
 
     @Override
     public Set<String> supportedFileAttributeViews() {
@@ -259,7 +260,7 @@ class WindowsFileSystem
     @Override
     public PathMatcher getPathMatcher(String syntaxAndInput) {
         int pos = syntaxAndInput.indexOf(':');
-        if (pos <= 0 || pos == syntaxAndInput.length())
+        if (pos <= 0)
             throw new IllegalArgumentException();
         String syntax = syntaxAndInput.substring(0, pos);
         String input = syntaxAndInput.substring(pos+1);

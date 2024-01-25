@@ -45,7 +45,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * @test
  * @bug 4969042
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.Bug4969042
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Bug4969042
  * @run testng/othervm validation.Bug4969042
  * @summary Test ValidationHandler shall invoke ignorableWhitespace() of the
  * user-defined ContentHandler once the validator detects any ignorable whitespaces.

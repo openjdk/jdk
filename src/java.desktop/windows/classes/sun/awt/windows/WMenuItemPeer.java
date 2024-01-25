@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import sun.util.logging.PlatformLogger;
 
+@SuppressWarnings("removal")
 class WMenuItemPeer extends WObjectPeer implements MenuItemPeer {
     private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.WMenuItemPeer");
 
@@ -74,9 +75,9 @@ class WMenuItemPeer extends WObjectPeer implements MenuItemPeer {
     public void setLabel(String label) {
         //Fix for 6288578: PIT. Windows: Shortcuts displayed for the menuitems in a popup menu
         readShortcutLabel();
-        _setLabel(label);
+        _setLabel();
     }
-    public native void _setLabel(String label);
+    public native void _setLabel();
 
     // Toolkit & peer internals
 

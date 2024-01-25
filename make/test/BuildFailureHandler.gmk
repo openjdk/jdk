@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ $(eval $(call SetupJavaCompilation, BUILD_FAILURE_HANDLER, \
     TARGET_RELEASE := $(TARGET_RELEASE_BOOTJDK), \
     SRC := $(FH_BASEDIR)/src/share/classes $(FH_BASEDIR)/src/share/conf, \
     BIN := $(FH_SUPPORT)/classes, \
-    DISABLED_WARNINGS := options serial try, \
+    DISABLED_WARNINGS := options serial try this-escape, \
     COPY := .properties, \
     CLASSPATH := $(JTREG_JAR) $(TOOLS_JAR), \
     JAR := $(FH_JAR), \
@@ -59,24 +59,6 @@ $(eval $(call SetupJavaCompilation, BUILD_FAILURE_HANDLER, \
 ))
 
 TARGETS += $(BUILD_FAILURE_HANDLER)
-
-################################################################################
-
-ifeq ($(call isTargetOs, windows), true)
-
-  $(eval $(call SetupNativeCompilation, BUILD_LIBTIMEOUT_HANDLER, \
-        NAME := timeoutHandler, \
-        SRC := $(FH_BASEDIR)/src/windows/native/libtimeoutHandler, \
-        OBJECT_DIR := $(FH_SUPPORT)/libtimeoutHandler, \
-        OUTPUT_DIR := $(FH_SUPPORT), \
-        CFLAGS := $(CFLAGS_JDKLIB), \
-        LDFLAGS := $(LDFLAGS_JDKLIB), \
-        OPTIMIZATION := LOW, \
-  ))
-
-  TARGETS += $(BUILD_LIBTIMEOUT_HANDLER)
-
-endif
 
 ################################################################################
 # Targets for building test-image.
@@ -99,10 +81,6 @@ IMAGES_TARGETS += $(COPY_FH)
 # Use JTREG_TESTS for jtreg tests parameter
 #
 RUN_DIR := $(FH_SUPPORT)/test
-# Add the dir of the dll to the path on windows
-ifeq ($(call isTargetOs, windows), true)
-  export PATH := $(PATH);$(FH_SUPPORT)
-endif
 
 test:
 	$(RM) -r $(RUN_DIR)

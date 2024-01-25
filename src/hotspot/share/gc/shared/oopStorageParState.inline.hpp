@@ -25,10 +25,12 @@
 #ifndef SHARE_GC_SHARED_OOPSTORAGEPARSTATE_INLINE_HPP
 #define SHARE_GC_SHARED_OOPSTORAGEPARSTATE_INLINE_HPP
 
-#include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageParState.hpp"
-#include "metaprogramming/conditional.hpp"
+
+#include "gc/shared/oopStorage.inline.hpp"
 #include "utilities/macros.hpp"
+
+#include <type_traits>
 
 template<typename F>
 class OopStorage::BasicParState::AlwaysTrueFn {
@@ -55,7 +57,7 @@ inline void OopStorage::BasicParState::iterate(F f) {
   while (claim_next_segment(&data)) {
     assert(data._segment_start < data._segment_end, "invariant");
     assert(data._segment_end <= _block_count, "invariant");
-    typedef typename Conditional<is_const, const Block*, Block*>::type BlockPtr;
+    using BlockPtr = std::conditional_t<is_const, const Block*, Block*>;
     size_t i = data._segment_start;
     do {
       BlockPtr block = _active_array->at(i);

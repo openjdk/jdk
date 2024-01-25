@@ -1,6 +1,6 @@
 <!DOCTYPE HTML>
 <!--
- Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ If there is no special note, a property value is checked every time it is used.<
 	(e.g. 192.168.1.1). This property can be set to <B>true</B> to
 	change that preference and use IPv6 addresses over IPv4 ones where
 	possible, or <B>system</B> to preserve the order of the addresses as
-    returned by the operating system.</P>
+    returned by the system-wide {@linkplain java.net.spi.InetAddressResolver resolver}.</P>
 </UL>
 <P>Both of these properties are checked only once, at startup.</P>
 <a id="Proxies"></a>
@@ -176,6 +176,16 @@ of proxies.</P>
 	If HTTP keepalive is enabled (see above) this value determines the
 	maximum number of idle connections that will be simultaneously kept
 	alive, per destination.</P>
+	<LI><P><B>{@systemProperty http.keepAlive.time.server}</B> and
+        <B>{@systemProperty http.keepAlive.time.proxy}</B> </P>
+	<P>These properties modify the behavior of the HTTP keepalive cache in the case
+        where the server (or proxy) has not specified a keepalive time. If the
+        property is set in this case, then idle connections will be closed after the 
+        specified number of seconds. If the property is set, and the server does
+        specify a keepalive time in a "Keep-Alive" response header, then the time specified 
+        by the server is used. If the property is not set and also the server
+        does not specify a keepalive time, then connections are kept alive for an
+        implementation defined time, assuming {@code http.keepAlive} is {@code true}.</P>
 	<LI><P><B>{@systemProperty http.maxRedirects}</B> (default: {@code 20})<BR>
 	This integer value determines the maximum number, for a given request,
 	of HTTP redirects that will be automatically followed by the
@@ -214,6 +224,30 @@ of proxies.</P>
 	      property is defined, then its value will be used as the domain
 	      name.</P>
 	</OL>
+	<LI><P><B>{@systemProperty http.auth.digest.reEnabledAlgorithms}</B> (default: &lt;none&gt;)<BR>
+        By default, certain message digest algorithms are disabled for use in HTTP Digest
+        authentication due to their proven security limitations. This only applies to proxy
+        authentication and plain-text HTTP server authentication. Disabled algorithms are still
+        usable for HTTPS server authentication. The default list of disabled algorithms is specified
+        in the {@code java.security} properties file and currently comprises {@code MD5} and
+        {@code SHA-1}. If it is still required to use one of these algorithms, then they can be
+        re-enabled by setting this property to a comma separated list of the algorithm names.</P>
+	<LI><P><B>{@systemProperty jdk.https.negotiate.cbt}</B> (default: &lt;never&gt;)<BR>
+	This controls the generation and sending of TLS channel binding tokens (CBT) when Kerberos 
+        or the Negotiate authentication scheme using Kerberos are employed over HTTPS with
+        {@code HttpsURLConnection}. There are three possible settings:</P>
+        <OL>
+          <LI><P>"never". This is also the default value if the property is not set. In this case,
+              CBTs are never sent.</P>
+          <LI><P>"always". CBTs are sent for all Kerberos authentication attempts over HTTPS.</P>
+          <LI><P>"domain:&lt;comma separated domain list&gt;" Each domain in the list specifies destination
+          host or hosts for which a CBT is sent. Domains can be single hosts like foo, or foo.com,
+          or literal IP addresses as specified in RFC 2732, or wildcards like *.foo.com which matches 
+          all hosts under foo.com and its sub-domains. CBTs are not sent to any destinations 
+          that don't match one of the list entries</P>
+	</OL>
+	<P>The channel binding tokens generated are of the type "tls-server-end-point" as defined in
+           RFC 5929.</P>
 </UL>
 <P>All these properties are checked only once at startup.</P>
 <a id="AddressCache"></a>
@@ -233,13 +267,22 @@ tuning on how the cache is operating.</P>
 	policy, while a value of 0 (zero) means no caching. The default value
 	is -1 (forever) if a security manager is installed, and implementation-specific
 	when no security manager is installed.</P>
+	<LI><P><B>{@systemProperty networkaddress.cache.stale.ttl}</B> (default: see below)<BR>
+	Value is an integer corresponding to the number of seconds that stale names
+	will be kept in the cache. A name is considered stale if the TTL has expired
+	and an attempt to lookup the host name again was not successful. This
+	property is useful if it is preferable to use a stale name rather than
+	fail due to an unsuccessful lookup.
+	A value of 0 (zero) or if the property is not set means do not use stale
+	names. Negative values are ignored.
+	The default value is implementation-specific.</P>
 	<LI><P><B>{@systemProperty networkaddress.cache.negative.ttl}</B> (default: {@code 10})<BR>
 	Value is an integer corresponding to the number of seconds an
 	unsuccessful name lookup will be kept in the cache. A value of -1,
 	or any negative value, means &ldquo;cache forever&rdquo;, while a
 	value of 0 (zero) means no caching.</P>
 </UL>
-<P>Since these 2 properties are part of the security policy, they are
+<P>Since these 3 properties are part of the security policy, they are
 not set by either the -D option or the {@code System.setProperty()} API,
 instead they are set as security properties.</P>
 <a id="Unixdomain"></a>

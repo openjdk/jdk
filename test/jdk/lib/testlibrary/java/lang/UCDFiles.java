@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,15 @@
 
 /**
  * Holds the file paths to the Unicode Character Database source files.
- * Paths to the source files in the "make" directory are relative, and
- * subject to change due to future repository structure re-org.
+ * Paths to the source files in the "data" directory are relative.
  */
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class UCDFiles {
-    public static Path UCD_DIR = Paths.get(
-        System.getProperty("test.root"), "..", "..", "make", "data", "unicodedata");
+    public static Path UCD_DIR = Paths.get(System.getProperty("test.root"),
+        "../../src/java.base/share/data/unicodedata");
 
     public static Path BLOCKS =
         UCD_DIR.resolve("Blocks.txt");

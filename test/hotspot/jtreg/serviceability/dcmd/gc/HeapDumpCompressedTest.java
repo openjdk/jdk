@@ -35,7 +35,7 @@ import jdk.test.lib.dcmd.PidJcmdExecutor;
 import jdk.test.lib.process.OutputAnalyzer;
 
 /*
- * @test
+ * @test id=Serial
  * @requires vm.gc.Serial
  * @summary Test of diagnostic command GC.heap_dump with gzipped output (Serial GC)
  * @library /test/lib
@@ -47,7 +47,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  */
 
 /*
- * @test
+ * @test id=Parallel
  * @requires vm.gc.Parallel
  * @summary Test of diagnostic command GC.heap_dump with gzipped output (Parallel GC)
  * @library /test/lib
@@ -59,7 +59,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  */
 
 /*
- * @test
+ * @test id=G1
  * @requires vm.gc.G1
  * @summary Test of diagnostic command GC.heap_dump with gzipped output (G1 GC)
  * @library /test/lib
@@ -71,19 +71,31 @@ import jdk.test.lib.process.OutputAnalyzer;
  */
 
 /*
- * @test
- * @requires vm.gc.Z
+ * @test id=ZSinglegen
+ * @requires vm.gc.ZSinglegen
  * @summary Test of diagnostic command GC.heap_dump with gzipped output (Z GC)
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run main/othervm -XX:+UseZGC HeapDumpCompressedTest
+ * @run main/othervm -XX:+UseZGC -XX:-ZGenerational HeapDumpCompressedTest
  */
 
 /*
- * @test
+ * @test id=ZGenerational
+ * @requires vm.gc.ZGenerational
+ * @summary Test of diagnostic command GC.heap_dump with gzipped output (Z GC)
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.compiler
+ *          java.management
+ *          jdk.internal.jvmstat/sun.jvmstat.monitor
+ * @run main/othervm -XX:+UseZGC -XX:+ZGenerational HeapDumpCompressedTest
+ */
+
+/*
+ * @test id=Shenandoah
  * @requires vm.gc.Shenandoah
  * @summary Test of diagnostic command GC.heap_dump with gzipped output (Shenandoah GC)
  * @library /test/lib
@@ -95,7 +107,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  */
 
 /*
- * @test
+ * @test id=Epsilon
  * @requires vm.gc.Epsilon
  * @summary Test of diagnostic command GC.heap_dump with gzipped output (Epsilon GC)
  * @library /test/lib
@@ -131,32 +143,7 @@ public class HeapDumpCompressedTest {
         output = executor.execute("GC.heap_dump -gz=1 " + dump.getAbsolutePath());
         output.shouldContain("Unable to create ");
 
-        verifyHeapDump(dump);
+        HprofParser.parseAndVerify(dump);
         dump.delete();
     }
-
-    private static void verifyHeapDump(File dump) throws Exception {
-
-        Asserts.assertTrue(dump.exists() && dump.isFile(),
-                           "Could not create dump file " + dump.getAbsolutePath());
-
-        try {
-            File out = HprofParser.parse(dump);
-
-            Asserts.assertTrue(out != null && out.exists() && out.isFile(),
-                               "Could not find hprof parser output file");
-            List<String> lines = Files.readAllLines(out.toPath());
-            Asserts.assertTrue(lines.size() > 0, "hprof parser output file is empty");
-            for (String line : lines) {
-                Asserts.assertFalse(line.matches(".*WARNING(?!.*Failed to resolve " +
-                                                 "object.*constantPoolOop.*).*"));
-            }
-
-            out.delete();
-        } catch (Exception e) {
-            e.printStackTrace();
-            Asserts.fail("Could not parse dump file " + dump.getAbsolutePath());
-        }
-    }
 }
-

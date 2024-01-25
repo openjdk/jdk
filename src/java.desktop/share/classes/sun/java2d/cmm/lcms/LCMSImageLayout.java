@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,54 +22,59 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package sun.java2d.cmm.lcms;
 
+import java.awt.color.CMMException;
 import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
 import java.awt.image.ComponentColorModel;
 import java.awt.image.ComponentSampleModel;
-import java.awt.image.ColorModel;
 import java.awt.image.Raster;
-import java.awt.image.SampleModel;
+import java.lang.annotation.Native;
+import java.nio.ByteOrder;
+
 import sun.awt.image.ByteComponentRaster;
-import sun.awt.image.ShortComponentRaster;
 import sun.awt.image.IntegerComponentRaster;
+import sun.awt.image.ShortComponentRaster;
 
-class LCMSImageLayout {
+import static java.nio.ByteOrder.LITTLE_ENDIAN;
 
-    public static int BYTES_SH(int x) {
+final class LCMSImageLayout {
+
+    private static int BYTES_SH(int x) {
         return x;
     }
 
-    public static int EXTRA_SH(int x) {
+    private static int EXTRA_SH(int x) {
         return x << 7;
     }
 
-    public static int CHANNELS_SH(int x) {
+    private static int CHANNELS_SH(int x) {
         return x << 3;
     }
-    public static final int SWAPFIRST = 1 << 14;
-    public static final int DOSWAP = 1 << 10;
-    public static final int PT_RGB_8 =
-            CHANNELS_SH(3) | BYTES_SH(1);
-    public static final int PT_GRAY_8 =
-            CHANNELS_SH(1) | BYTES_SH(1);
-    public static final int PT_GRAY_16 =
-            CHANNELS_SH(1) | BYTES_SH(2);
-    public static final int PT_RGBA_8 =
-            EXTRA_SH(1) | CHANNELS_SH(3) | BYTES_SH(1);
-    public static final int PT_ARGB_8 =
-            EXTRA_SH(1) | CHANNELS_SH(3) | BYTES_SH(1) | SWAPFIRST;
-    public static final int PT_BGR_8 =
-            DOSWAP | CHANNELS_SH(3) | BYTES_SH(1);
-    public static final int PT_ABGR_8 =
-            DOSWAP | EXTRA_SH(1) | CHANNELS_SH(3) | BYTES_SH(1);
-    public static final int PT_BGRA_8 = EXTRA_SH(1) | CHANNELS_SH(3)
-            | BYTES_SH(1) | DOSWAP | SWAPFIRST;
-    public static final int DT_BYTE = 0;
-    public static final int DT_SHORT = 1;
-    public static final int DT_INT = 2;
-    public static final int DT_DOUBLE = 3;
-    boolean isIntPacked = false;
+
+    private static final int PREMUL     = 1 << 23;
+    private static final int SWAPFIRST  = 1 << 14;
+    private static final int DOSWAP     = 1 << 10;
+    private static final int PT_GRAY_8        = CHANNELS_SH(1) | BYTES_SH(1);
+    private static final int PT_GRAY_16       = CHANNELS_SH(1) | BYTES_SH(2);
+    private static final int PT_RGB_8         = CHANNELS_SH(3) | BYTES_SH(1);
+    private static final int PT_RGBA_8        = PT_RGB_8  | EXTRA_SH(1);
+    private static final int PT_ARGB_8        = PT_RGBA_8 | SWAPFIRST;
+    private static final int PT_ARGB_8_PREMUL = PT_ARGB_8 | PREMUL;
+    private static final int PT_BGR_8         = PT_RGB_8  | DOSWAP;
+    private static final int PT_ABGR_8        = PT_BGR_8  | EXTRA_SH(1);
+    private static final int PT_ABGR_8_PREMUL = PT_ABGR_8 | PREMUL;
+//  private static final int PT_BGRA_8        = PT_ABGR_8 | SWAPFIRST;
+    private static final int SWAP_ENDIAN =
+            ByteOrder.nativeOrder() == LITTLE_ENDIAN ? DOSWAP : 0;
+    @Native
+    private static final int DT_BYTE = 0;
+    @Native
+    private static final int DT_SHORT = 1;
+    @Native
+    private static final int DT_INT = 2;
     int pixelType;
     int dataType;
     int width;
@@ -78,81 +83,37 @@ class LCMSImageLayout {
     private int nextPixelOffset;
     int offset;
 
-    /* This flag indicates whether the image can be processed
-     * at once by doTransfrom() native call. Otherwise, the
-     * image is processed scan by scan.
-     */
-    private boolean imageAtOnce = false;
     Object dataArray;
 
     private int dataArrayLength; /* in bytes */
 
-    private LCMSImageLayout(int np, int pixelType, int pixelSize)
-            throws ImageLayoutException
-    {
-        this.pixelType = pixelType;
-        width = np;
+    /**
+     * Creates a layout object for given parameters.
+     *
+     * @param  data the storage of pixels: {@code byte[], short[] or int[]}
+     * @param  length the length of the data array
+     * @param  nc the number of color components
+     * @param  dt the type of data array: DT_BYTE, DT_SHORT or DT_INT
+     * @param  size the size of one color component in bytes
+     */
+    private LCMSImageLayout(Object data, int length, int nc, int dt, int size) {
+        dataArray = data;
+        dataType = dt;
+        dataArrayLength = length * size;
+        pixelType = CHANNELS_SH(nc) | BYTES_SH(size);
+        width = length / nc;
         height = 1;
-        nextPixelOffset = pixelSize;
-        nextRowOffset = safeMult(pixelSize, np);
-        offset = 0;
-    }
-
-    private LCMSImageLayout(int width, int height, int pixelType,
-                            int pixelSize)
-            throws ImageLayoutException
-    {
-        this.pixelType = pixelType;
-        this.width = width;
-        this.height = height;
-        nextPixelOffset = pixelSize;
-        nextRowOffset = safeMult(pixelSize, width);
-        offset = 0;
-    }
-
-
-    public LCMSImageLayout(byte[] data, int np, int pixelType, int pixelSize)
-            throws ImageLayoutException
-    {
-        this(np, pixelType, pixelSize);
-        dataType = DT_BYTE;
-        dataArray = data;
-        dataArrayLength = data.length;
-
+        nextPixelOffset = nc * size;
+        nextRowOffset = dataArrayLength; // outside of data since height is 1
         verify();
     }
 
-    public LCMSImageLayout(short[] data, int np, int pixelType, int pixelSize)
-            throws ImageLayoutException
-    {
-        this(np, pixelType, pixelSize);
-        dataType = DT_SHORT;
-        dataArray = data;
-        dataArrayLength = 2 * data.length;
-
-        verify();
+    LCMSImageLayout(byte[] data, int nc) {
+        this(data, data.length, nc, DT_BYTE, Byte.BYTES);
     }
 
-    public LCMSImageLayout(int[] data, int np, int pixelType, int pixelSize)
-            throws ImageLayoutException
-    {
-        this(np, pixelType, pixelSize);
-        dataType = DT_INT;
-        dataArray = data;
-        dataArrayLength = 4 * data.length;
-
-        verify();
-    }
-
-    public LCMSImageLayout(double[] data, int np, int pixelType, int pixelSize)
-            throws ImageLayoutException
-    {
-        this(np, pixelType, pixelSize);
-        dataType = DT_DOUBLE;
-        dataArray = data;
-        dataArrayLength = 8 * data.length;
-
-        verify();
+    LCMSImageLayout(short[] data, int nc) {
+        this(data, data.length, nc, DT_SHORT, Short.BYTES);
     }
 
     private LCMSImageLayout() {
@@ -161,27 +122,27 @@ class LCMSImageLayout {
     /* This method creates a layout object for given image.
      * Returns null if the image is not supported by current implementation.
      */
-    public static LCMSImageLayout createImageLayout(BufferedImage image) throws ImageLayoutException {
+    static LCMSImageLayout createImageLayout(BufferedImage image) {
         LCMSImageLayout l = new LCMSImageLayout();
 
         switch (image.getType()) {
-            case BufferedImage.TYPE_INT_RGB:
-                l.pixelType = PT_ARGB_8;
-                l.isIntPacked = true;
+            case BufferedImage.TYPE_INT_RGB, BufferedImage.TYPE_INT_ARGB:
+                l.pixelType = PT_ARGB_8 ^ SWAP_ENDIAN;
                 break;
-            case BufferedImage.TYPE_INT_ARGB:
-                l.pixelType = PT_ARGB_8;
-                l.isIntPacked = true;
+            case BufferedImage.TYPE_INT_ARGB_PRE:
+                l.pixelType = PT_ARGB_8_PREMUL ^ SWAP_ENDIAN;
                 break;
             case BufferedImage.TYPE_INT_BGR:
-                l.pixelType = PT_ABGR_8;
-                l.isIntPacked = true;
+                l.pixelType = PT_ABGR_8 ^ SWAP_ENDIAN;
                 break;
             case BufferedImage.TYPE_3BYTE_BGR:
                 l.pixelType = PT_BGR_8;
                 break;
             case BufferedImage.TYPE_4BYTE_ABGR:
                 l.pixelType = PT_ABGR_8;
+                break;
+            case BufferedImage.TYPE_4BYTE_ABGR_PRE:
+                l.pixelType = PT_ABGR_8_PREMUL;
                 break;
             case BufferedImage.TYPE_BYTE_GRAY:
                 l.pixelType = PT_GRAY_8;
@@ -195,9 +156,7 @@ class LCMSImageLayout {
                  * has to be supported.
                  */
                 ColorModel cm = image.getColorModel();
-                if (cm instanceof ComponentColorModel) {
-                    ComponentColorModel ccm = (ComponentColorModel) cm;
-
+                if (cm instanceof ComponentColorModel ccm) {
                     // verify whether the component size is fine
                     int[] cs = ccm.getComponentSize();
                     for (int s : cs) {
@@ -205,9 +164,7 @@ class LCMSImageLayout {
                             return null;
                         }
                     }
-
-                    return createImageLayout(image.getRaster());
-
+                    return createImageLayout(image.getRaster(), cm);
                 }
                 return null;
         }
@@ -216,93 +173,54 @@ class LCMSImageLayout {
         l.height = image.getHeight();
 
         switch (image.getType()) {
-            case BufferedImage.TYPE_INT_RGB:
-            case BufferedImage.TYPE_INT_ARGB:
-            case BufferedImage.TYPE_INT_BGR:
-                do {
-                    IntegerComponentRaster intRaster = (IntegerComponentRaster)
-                            image.getRaster();
-                    l.nextRowOffset = safeMult(4, intRaster.getScanlineStride());
-                    l.nextPixelOffset = safeMult(4, intRaster.getPixelStride());
-                    l.offset = safeMult(4, intRaster.getDataOffset(0));
-                    l.dataArray = intRaster.getDataStorage();
-                    l.dataArrayLength = 4 * intRaster.getDataStorage().length;
-                    l.dataType = DT_INT;
-
-                    if (l.nextRowOffset == l.width * 4 * intRaster.getPixelStride()) {
-                        l.imageAtOnce = true;
-                    }
-                } while (false);
-                break;
-
-            case BufferedImage.TYPE_3BYTE_BGR:
-            case BufferedImage.TYPE_4BYTE_ABGR:
-                do {
-                    ByteComponentRaster byteRaster = (ByteComponentRaster)
-                            image.getRaster();
-                    l.nextRowOffset = byteRaster.getScanlineStride();
-                    l.nextPixelOffset = byteRaster.getPixelStride();
-
-                    int firstBand = image.getSampleModel().getNumBands() - 1;
-                    l.offset = byteRaster.getDataOffset(firstBand);
-                    l.dataArray = byteRaster.getDataStorage();
-                    l.dataArrayLength = byteRaster.getDataStorage().length;
-                    l.dataType = DT_BYTE;
-                    if (l.nextRowOffset == l.width * byteRaster.getPixelStride()) {
-                        l.imageAtOnce = true;
-                    }
-                } while (false);
-                break;
-
-            case BufferedImage.TYPE_BYTE_GRAY:
-                do {
-                    ByteComponentRaster byteRaster = (ByteComponentRaster)
-                            image.getRaster();
-                    l.nextRowOffset = byteRaster.getScanlineStride();
-                    l.nextPixelOffset = byteRaster.getPixelStride();
-
-                    l.dataArrayLength = byteRaster.getDataStorage().length;
-                    l.offset = byteRaster.getDataOffset(0);
-                    l.dataArray = byteRaster.getDataStorage();
-                    l.dataType = DT_BYTE;
-
-                    if (l.nextRowOffset == l.width * byteRaster.getPixelStride()) {
-                        l.imageAtOnce = true;
-                    }
-                } while (false);
-                break;
-
-            case BufferedImage.TYPE_USHORT_GRAY:
-                do {
-                    ShortComponentRaster shortRaster = (ShortComponentRaster)
-                            image.getRaster();
-                    l.nextRowOffset = safeMult(2, shortRaster.getScanlineStride());
-                    l.nextPixelOffset = safeMult(2, shortRaster.getPixelStride());
-
-                    l.offset = safeMult(2, shortRaster.getDataOffset(0));
-                    l.dataArray = shortRaster.getDataStorage();
-                    l.dataArrayLength = 2 * shortRaster.getDataStorage().length;
-                    l.dataType = DT_SHORT;
-
-                    if (l.nextRowOffset == l.width * 2 * shortRaster.getPixelStride()) {
-                        l.imageAtOnce = true;
-                    }
-                } while (false);
-                break;
-            default:
+            case BufferedImage.TYPE_INT_RGB, BufferedImage.TYPE_INT_ARGB,
+                 BufferedImage.TYPE_INT_ARGB_PRE, BufferedImage.TYPE_INT_BGR ->
+            {
+                var intRaster = (IntegerComponentRaster) image.getRaster();
+                l.nextRowOffset = safeMult(4, intRaster.getScanlineStride());
+                l.nextPixelOffset = safeMult(4, intRaster.getPixelStride());
+                l.offset = safeMult(4, intRaster.getDataOffset(0));
+                l.dataArray = intRaster.getDataStorage();
+                l.dataArrayLength = 4 * intRaster.getDataStorage().length;
+                l.dataType = DT_INT;
+            }
+            case BufferedImage.TYPE_BYTE_GRAY, BufferedImage.TYPE_3BYTE_BGR,
+                 BufferedImage.TYPE_4BYTE_ABGR,
+                 BufferedImage.TYPE_4BYTE_ABGR_PRE ->
+            {
+                var byteRaster = (ByteComponentRaster) image.getRaster();
+                l.nextRowOffset = byteRaster.getScanlineStride();
+                l.nextPixelOffset = byteRaster.getPixelStride();
+                int firstBand = byteRaster.getSampleModel().getNumBands() - 1;
+                l.offset = byteRaster.getDataOffset(firstBand);
+                l.dataArray = byteRaster.getDataStorage();
+                l.dataArrayLength = byteRaster.getDataStorage().length;
+                l.dataType = DT_BYTE;
+            }
+            case BufferedImage.TYPE_USHORT_GRAY -> {
+                var shortRaster = (ShortComponentRaster) image.getRaster();
+                l.nextRowOffset = safeMult(2, shortRaster.getScanlineStride());
+                l.nextPixelOffset = safeMult(2, shortRaster.getPixelStride());
+                l.offset = safeMult(2, shortRaster.getDataOffset(0));
+                l.dataArray = shortRaster.getDataStorage();
+                l.dataArrayLength = 2 * shortRaster.getDataStorage().length;
+                l.dataType = DT_SHORT;
+            }
+            default -> {
                 return null;
+            }
         }
         l.verify();
         return l;
     }
 
-    private static enum BandOrder {
+    private enum BandOrder {
         DIRECT,
         INVERTED,
         ARBITRARY,
         UNKNOWN;
 
-        public static BandOrder getBandOrder(int[] bandOffsets) {
+        static BandOrder getBandOrder(int[] bandOffsets) {
             BandOrder order = UNKNOWN;
 
             int numBands = bandOffsets.length;
@@ -334,62 +252,43 @@ class LCMSImageLayout {
         }
     }
 
-    private void verify() throws ImageLayoutException {
-
-        if (offset < 0 || offset >= dataArrayLength) {
-            throw new ImageLayoutException("Invalid image layout");
-        }
-
+    private void verify() {
+        checkIndex(offset, dataArrayLength);
         if (nextPixelOffset != getBytesPerPixel(pixelType)) {
-            throw new ImageLayoutException("Invalid image layout");
+            throw new CMMException("Invalid image layout");
         }
 
         int lastScanOffset = safeMult(nextRowOffset, (height - 1));
-
         int lastPixelOffset = safeMult(nextPixelOffset, (width -1 ));
+        long off = (long) offset + lastPixelOffset + lastScanOffset;
 
-        lastPixelOffset = safeAdd(lastPixelOffset, lastScanOffset);
-
-        int off = safeAdd(offset, lastPixelOffset);
-
-        if (off < 0 || off >= dataArrayLength) {
-            throw new ImageLayoutException("Invalid image layout");
-        }
+        checkIndex(off, dataArrayLength);
     }
 
-    static int safeAdd(int a, int b) throws ImageLayoutException {
-        long res = a;
-        res += b;
-        if (res < Integer.MIN_VALUE || res > Integer.MAX_VALUE) {
-            throw new ImageLayoutException("Invalid image layout");
+    private static int checkIndex(long index, int length) {
+        if (index < 0 || index >= length) {
+            throw new CMMException("Invalid image layout");
         }
-        return (int)res;
+        return (int) index;
     }
 
-    static int safeMult(int a, int b) throws ImageLayoutException {
-        long res = a;
-        res *= b;
-        if (res < Integer.MIN_VALUE || res > Integer.MAX_VALUE) {
-            throw new ImageLayoutException("Invalid image layout");
-        }
-        return (int)res;
+    private static int safeMult(int a, int b) {
+        long res = (long) a * b;
+        return checkIndex(res, Integer.MAX_VALUE);
     }
 
-    @SuppressWarnings("serial") // JDK-implementation class
-    public static class ImageLayoutException extends Exception {
-        public ImageLayoutException(String message) {
-            super(message);
-        }
-    }
-    public static LCMSImageLayout createImageLayout(Raster r) {
+    static LCMSImageLayout createImageLayout(Raster r, ColorModel cm) {
         LCMSImageLayout l = new LCMSImageLayout();
-        if (r instanceof ByteComponentRaster &&
-                r.getSampleModel() instanceof ComponentSampleModel) {
-            ByteComponentRaster br = (ByteComponentRaster)r;
-
-            ComponentSampleModel csm = (ComponentSampleModel)r.getSampleModel();
-
-            l.pixelType = CHANNELS_SH(br.getNumBands()) | BYTES_SH(1);
+        if (r instanceof ByteComponentRaster br &&
+                r.getSampleModel() instanceof ComponentSampleModel csm)
+        {
+            int numBands = br.getNumBands();
+            boolean hasAlpha = cm != null && cm.hasAlpha();
+            l.pixelType = (hasAlpha ? CHANNELS_SH(numBands - 1) | EXTRA_SH(1)
+                                    : CHANNELS_SH(numBands)) | BYTES_SH(1);
+            if (hasAlpha && cm.isAlphaPremultiplied()) {
+                l.pixelType |= PREMUL;
+            }
 
             int[] bandOffsets = csm.getBandOffsets();
             BandOrder order = BandOrder.getBandOrder(bandOffsets);
@@ -398,7 +297,7 @@ class LCMSImageLayout {
             switch (order) {
                 case INVERTED:
                     l.pixelType |= DOSWAP;
-                    firstBand  = csm.getNumBands() - 1;
+                    firstBand  = numBands - 1;
                     break;
                 case DIRECT:
                     // do nothing
@@ -412,15 +311,14 @@ class LCMSImageLayout {
             l.nextPixelOffset = br.getPixelStride();
 
             l.offset = br.getDataOffset(firstBand);
-            l.dataArray = br.getDataStorage();
             l.dataType = DT_BYTE;
+            byte[] data = br.getDataStorage();
+            l.dataArray = data;
+            l.dataArrayLength = data.length;
 
             l.width = br.getWidth();
             l.height = br.getHeight();
-
-            if (l.nextRowOffset == l.width * br.getPixelStride()) {
-                l.imageAtOnce = true;
-            }
+            l.verify();
             return l;
         }
         return null;

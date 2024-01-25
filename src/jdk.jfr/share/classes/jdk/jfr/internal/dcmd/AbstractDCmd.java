@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,53 +25,114 @@
 package jdk.jfr.internal.dcmd;
 
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
 import jdk.jfr.FlightRecorder;
 import jdk.jfr.Recording;
 import jdk.jfr.internal.JVM;
+import jdk.jfr.internal.util.Output.LinePrinter;
+import jdk.jfr.internal.util.Output;
+import jdk.jfr.internal.JVMSupport;
+import jdk.jfr.internal.LogLevel;
+import jdk.jfr.internal.LogTag;
+import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.SecuritySupport;
 import jdk.jfr.internal.SecuritySupport.SafePath;
-import jdk.jfr.internal.Utils;
+import jdk.jfr.internal.util.ValueFormatter;
 
 /**
  * Base class for JFR diagnostic commands
  *
  */
 abstract class AbstractDCmd {
+    private final LinePrinter output = new LinePrinter();
+    private String source;
 
-    private final StringWriter result;
-    private final PrintWriter log;
+    // Called by native
+    public abstract String[] printHelp();
 
-    protected AbstractDCmd() {
-        result = new StringWriter();
-        log = new PrintWriter(result);
+    // Called by native. The number of arguments for each command is
+    // reported to the DCmdFramework as a hardcoded number in native.
+    // This is to avoid an upcall as part of DcmdFramework enumerating existing commands.
+    // Remember to keep the two sides in synch.
+    public abstract Argument[] getArgumentInfos();
+
+    protected abstract void execute(ArgumentParser parser) throws DCmdException;
+
+
+    // Called by native
+    public final String[] execute(String source, String arg, char delimiter) throws DCmdException {
+        this.source = source;
+        if (isInteractive()) {
+            JVM.exclude(Thread.currentThread());
+        }
+        try {
+            boolean log = Logger.shouldLog(LogTag.JFR_DCMD, LogLevel.DEBUG);
+            if (log) {
+                Logger.log(LogTag.JFR_DCMD, LogLevel.DEBUG, "Executing " + this.getClass().getSimpleName() + ": " + arg);
+            }
+            ArgumentParser parser = new ArgumentParser(getArgumentInfos(), arg, delimiter);
+            parser.parse();
+            if (log) {
+                Logger.log(LogTag.JFR_DCMD, LogLevel.DEBUG, "DCMD options: " + parser.getOptions());
+                if (parser.hasExtendedOptions()) {
+                    Logger.log(LogTag.JFR_DCMD, LogLevel.DEBUG, "JFC options: " + parser.getExtendedOptions());
+                }
+            }
+            execute(parser);
+            return getResult();
+       }
+       catch (IllegalArgumentException iae) {
+            DCmdException e = new DCmdException(iae.getMessage());
+            e.addSuppressed(iae);
+            throw e;
+       } finally {
+           if (isInteractive()) {
+               JVM.include(Thread.currentThread());
+           }
+       }
+    }
+
+    // Diagnostic commands that are meant to be used interactively
+    // should turn off events to avoid noise in the output.
+    protected boolean isInteractive() {
+        return false;
+    }
+
+    protected final Output getOutput() {
+        return output;
     }
 
     protected final FlightRecorder getFlightRecorder() {
         return FlightRecorder.getFlightRecorder();
     }
 
-    public final String getResult() {
-        return result.toString();
+    protected final String[] getResult() {
+        return output.getLines().toArray(new String[0]);
+    }
+
+    protected void logWarning(String message) {
+        if (source.equals("internal")) { // -XX:StartFlightRecording
+            Logger.log(LogTag.JFR_START, LogLevel.WARN, message);
+        } else { // DiagnosticMXBean or JCMD
+            println("Warning! " + message);
+        }
     }
 
     public String getPid() {
         // Invoking ProcessHandle.current().pid() would require loading more
-        // classes during startup so instead JVM.getJVM().getPid() is used.
+        // classes during startup so instead JVM.getPid() is used.
         // The pid will not be exposed to running Java application, only when starting
         // JFR from command line (-XX:StartFlightRecording) or jcmd (JFR.start and JFR.check)
-        return JVM.getJVM().getPid();
+        return JVM.getPid();
     }
 
     protected final SafePath resolvePath(Recording recording, String filename) throws InvalidPathException {
@@ -86,7 +147,7 @@ abstract class AbstractDCmd {
     }
 
     private SafePath makeGenerated(Recording recording, Path directory) {
-        return new SafePath(directory.toAbsolutePath().resolve(Utils.makeFilename(recording)).normalize());
+        return new SafePath(directory.toAbsolutePath().resolve(JVMSupport.makeFilename(recording)).normalize());
     }
 
     protected final Recording findRecording(String name) throws DCmdException {
@@ -123,7 +184,7 @@ abstract class AbstractDCmd {
 
     protected final List<Recording> getRecordings() {
         List<Recording> list = new ArrayList<>(getFlightRecorder().getRecordings());
-        Collections.sort(list, Comparator.comparing(Recording::getId));
+        list.sort(Comparator.comparingLong(Recording::getId));
         return list;
     }
 
@@ -136,28 +197,27 @@ abstract class AbstractDCmd {
     }
 
     protected final void println() {
-        log.println();
+        output.println();
     }
 
     protected final void print(String s) {
-        log.print(s);
+        output.print(s);
     }
 
     protected final void print(String s, Object... args) {
-        log.printf(s, args);
+        output.print(s, args);
     }
 
     protected final void println(String s, Object... args) {
-        print(s, args);
-        println();
+        output.println(s, args);
     }
 
     protected final void printBytes(long bytes) {
-        print(Utils.formatBytes(bytes));
+        print(ValueFormatter.formatBytes(bytes));
     }
 
     protected final void printTimespan(Duration timespan, String separator) {
-        print(Utils.formatTimespan(timespan, separator));
+        print(ValueFormatter.formatTimespan(timespan, separator));
     }
 
     protected final void printPath(SafePath path) {
@@ -169,6 +229,12 @@ abstract class AbstractDCmd {
             printPath(SecuritySupport.getAbsolutePath(path).toPath());
         } catch (IOException ioe) {
             printPath(path.toPath());
+        }
+    }
+
+    protected final void printHelpText() {
+        for (String line : printHelp()) {
+            println(line);
         }
     }
 
@@ -197,5 +263,66 @@ abstract class AbstractDCmd {
             }
         }
         throw new DCmdException("Could not find %s.\n\nUse JFR.check without options to see list of all available recordings.", name);
+    }
+
+    protected final String exampleRepository() {
+        if ("\r\n".equals(System.lineSeparator())) {
+            return "C:\\Repositories";
+        } else {
+            return "/Repositories";
+        }
+    }
+
+    protected final String exampleFilename() {
+        if ("\r\n".equals(System.lineSeparator())) {
+            return "C:\\Users\\user\\recording.jfr";
+        } else {
+            return "/recordings/recording.jfr";
+        }
+    }
+
+    protected final String exampleDirectory() {
+        if ("\r\n".equals(System.lineSeparator())) {
+            return "C:\\Directory\\recordings";
+        } else {
+            return "/directory/recordings";
+        }
+    }
+
+    static String expandFilename(String filename) {
+        if (filename == null || filename.indexOf('%') == -1) {
+            return filename;
+        }
+
+        String pid = null;
+        String time = null;
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < filename.length(); i++) {
+            char c = filename.charAt(i);
+            if (c == '%' && i < filename.length() - 1) {
+                char nc = filename.charAt(i + 1);
+                if (nc == '%') { // %% ==> %
+                    sb.append('%');
+                    i++;
+                } else if (nc == 'p') {
+                    if (pid == null) {
+                        pid = JVM.getPid();
+                    }
+                    sb.append(pid);
+                    i++;
+                } else if (nc == 't') {
+                    if (time == null) {
+                        time = ValueFormatter.formatDateTime(LocalDateTime.now());
+                    }
+                    sb.append(time);
+                    i++;
+                } else {
+                    sb.append('%');
+                }
+            } else {
+                sb.append(c);
+            }
+        }
+        return sb.toString();
     }
 }

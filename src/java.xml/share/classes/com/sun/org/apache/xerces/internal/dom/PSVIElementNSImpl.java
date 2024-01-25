@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -60,9 +60,11 @@ public class PSVIElementNSImpl extends ElementNSImpl implements ElementPSVI {
     }
 
     /** element declaration */
+    @SuppressWarnings("serial") // Type of field is not Serializable
     protected XSElementDeclaration fDeclaration = null;
 
     /** type of element, could be xsi:type */
+    @SuppressWarnings("serial") // Type of field is not Serializable
     protected XSTypeDefinition fTypeDecl = null;
 
     /** true if clause 3.2 of Element Locally Valid (Element) (3.3.4)
@@ -75,9 +77,11 @@ public class PSVIElementNSImpl extends ElementNSImpl implements ElementPSVI {
     protected boolean fSpecified = true;
 
     /** Schema value */
+    @SuppressWarnings("serial") // Type of field is not Serializable
     protected ValidatedInfo fValue = new ValidatedInfo();
 
     /** http://www.w3.org/TR/xmlschema-1/#e-notation*/
+    @SuppressWarnings("serial") // Type of field is not Serializable
     protected XSNotationDeclaration fNotation = null;
 
     /** validation attempted: none, partial, full */
@@ -87,15 +91,18 @@ public class PSVIElementNSImpl extends ElementNSImpl implements ElementPSVI {
     protected short fValidity = ElementPSVI.VALIDITY_NOTKNOWN;
 
     /** error codes */
+    @SuppressWarnings("serial") // Type of field is not Serializable
     protected StringList fErrorCodes = null;
 
     /** error messages */
+    @SuppressWarnings("serial") // Type of field is not Serializable
     protected StringList fErrorMessages = null;
 
     /** validation context: could be QName or XPath expression*/
     protected String fValidationContext = null;
 
     /** the schema information property */
+    @SuppressWarnings("serial") // Type of field is not Serializable
     protected XSModel fSchemaInformation = null;
 
     //

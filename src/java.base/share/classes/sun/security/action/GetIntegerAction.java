@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,9 +67,9 @@ import java.security.AccessController;
 
 public class GetIntegerAction
         implements java.security.PrivilegedAction<Integer> {
-    private String theProp;
-    private int defaultVal;
-    private boolean defaultSet;
+    private final String theProp;
+    private final int defaultVal;
+    private final boolean defaultSet;
 
     /**
      * Constructor that takes the name of the system property whose integer
@@ -79,6 +79,8 @@ public class GetIntegerAction
      */
     public GetIntegerAction(String theProp) {
         this.theProp = theProp;
+        this.defaultVal = 0;
+        this.defaultSet = false;
     }
 
     /**
@@ -125,6 +127,7 @@ public class GetIntegerAction
      *
      * @param theProp the name of the system property.
      */
+    @SuppressWarnings("removal")
     public static Integer privilegedGetProperty(String theProp) {
         if (System.getSecurityManager() == null) {
             return Integer.getInteger(theProp);
@@ -147,6 +150,7 @@ public class GetIntegerAction
      * @param theProp the name of the system property.
      * @param defaultVal the default value.
      */
+    @SuppressWarnings("removal")
     public static Integer privilegedGetProperty(String theProp,
             int defaultVal) {
         Integer value;

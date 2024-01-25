@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,18 @@
 
 package sun.security.jgss.wrapper;
 
+import org.ietf.jgss.GSSCredential;
+import org.ietf.jgss.GSSException;
+import org.ietf.jgss.Oid;
+import sun.security.jgss.GSSCaller;
+import sun.security.jgss.GSSUtil;
+import sun.security.jgss.spi.GSSContextSpi;
+import sun.security.jgss.spi.GSSCredentialSpi;
+import sun.security.jgss.spi.GSSNameSpi;
+import sun.security.jgss.spi.MechanismFactory;
+
 import java.security.Provider;
 import java.util.Vector;
-import org.ietf.jgss.*;
-import sun.security.jgss.GSSUtil;
-import sun.security.jgss.GSSCaller;
-import sun.security.jgss.GSSExceptionImpl;
-import sun.security.jgss.spi.*;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -72,7 +77,7 @@ public final class NativeGSSFactory implements MechanismFactory {
     public NativeGSSFactory(GSSCaller caller) {
         this.caller = caller;
         // Have to call setMech(Oid) explicitly before calling other
-        // methods. Otherwise, NPE may be thrown unexpectantly
+        // methods. Otherwise, NPE may be thrown unexpectedly
     }
 
     public void setMech(Oid mech) throws GSSException {
@@ -96,14 +101,14 @@ public final class NativeGSSFactory implements MechanismFactory {
                                                  int acceptLifetime,
                                                  int usage)
         throws GSSException {
-        GSSNameElement nname = null;
+        GSSNameElement nname;
         if (name != null && !(name instanceof GSSNameElement)) {
             nname = (GSSNameElement)
                 getNameElement(name.toString(), name.getStringNameType());
         } else nname = (GSSNameElement) name;
 
         if (usage == GSSCredential.INITIATE_AND_ACCEPT) {
-            // Force separate acqusition of cred element since
+            // Force separate acquisition of cred element since
             // MIT's impl does not correctly report NO_CRED error.
             usage = GSSCredential.INITIATE_ONLY;
         }
@@ -137,8 +142,7 @@ public final class NativeGSSFactory implements MechanismFactory {
         if (peer == null) {
             throw new GSSException(GSSException.BAD_NAME);
         } else if (!(peer instanceof GSSNameElement)) {
-            peer = (GSSNameElement)
-                getNameElement(peer.toString(), peer.getStringNameType());
+            peer = getNameElement(peer.toString(), peer.getStringNameType());
         }
         if (myCred == null) {
             myCred = getCredFromSubject(null, true);
@@ -165,7 +169,7 @@ public final class NativeGSSFactory implements MechanismFactory {
         return cStub.importContext(exportedContext);
     }
 
-    public final Oid getMechanismOid() {
+    public Oid getMechanismOid() {
         return cStub.getMech();
     }
 

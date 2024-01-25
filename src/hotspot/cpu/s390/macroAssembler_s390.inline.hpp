@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 #include "asm/macroAssembler.hpp"
 #include "asm/codeBuffer.hpp"
 #include "code/codeCache.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 
 // Simplified shift operations for single register operands, constant shift amount.
 inline void MacroAssembler::lshift(Register r, int places, bool is_DW) {
@@ -75,7 +75,7 @@ inline void MacroAssembler::load_address(Register d, const Address &a) {
   } else if (Displacement::is_validDisp(a.disp())) {
     z_lay(d, a.disp(), a.indexOrR0(), a.baseOrR0());
   } else {
-    guarantee(false, "displacement = " SIZE_FORMAT_HEX ", out of range for LA/LAY", a.disp());
+    guarantee(false, "displacement = " SIZE_FORMAT_X ", out of range for LA/LAY", a.disp());
   }
 }
 
@@ -250,11 +250,11 @@ inline bool MacroAssembler::is_load_addr_pcrel(address a) {
 // Save the return pc in the register that should be stored as the return pc
 // in the current frame (default is R14).
 inline void MacroAssembler::save_return_pc(Register pc) {
-  z_stg(pc, _z_abi16(return_pc), Z_SP);
+  z_stg(pc, _z_common_abi(return_pc), Z_SP);
 }
 
 inline void MacroAssembler::restore_return_pc() {
-  z_lg(Z_R14, _z_abi16(return_pc), Z_SP);
+  z_lg(Z_R14, _z_common_abi(return_pc), Z_SP);
 }
 
 // Call a function with given entry.

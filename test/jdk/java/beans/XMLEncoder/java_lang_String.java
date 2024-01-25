@@ -25,6 +25,7 @@
  * @test
  * @bug 6256805
  * @summary Tests invalid XML string encoding
+ * @run main/othervm -Djava.security.manager=allow java_lang_String
  * @author Sergey Malenkov
  */
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
  * @test
  * @bug 8062280
  * @summary C2: inlining failure due to access checks being too strict
+ *
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  *
@@ -45,12 +47,12 @@ import static jdk.test.lib.Asserts.assertEquals;
 
 public class MHInlineTest {
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-XX:+IgnoreUnrecognizedVMOptions", "-showversion",
                 "-XX:-TieredCompilation", "-Xbatch",
                 "-XX:+PrintCompilation", "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintInlining",
                 "-XX:CompileCommand=dontinline,compiler.jsr292.MHInlineTest::test*",
-                    Launcher.class.getName());
+                 Launcher.class.getName());
 
         OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
 

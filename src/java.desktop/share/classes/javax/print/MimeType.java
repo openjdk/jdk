@@ -29,17 +29,17 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.Vector;
 
 /**
  * Class {@code MimeType} encapsulates a Multipurpose Internet Mail Extensions
  * (MIME) media type as defined in
- * <a href="http://www.ietf.org/rfc/rfc2045.txt">RFC 2045</a> and
- * <a href="http://www.ietf.org/rfc/rfc2046.txt">RFC 2046</a>. A MIME type
+ * <a href="https://www.rfc-editor.org/info/rfc2045">RFC 2045</a> and
+ * <a href="https://www.rfc-editor.org/info/rfc2046">RFC 2046</a>. A MIME type
  * object is part of a {@link DocFlavor DocFlavor} object and specifies the
  * format of the print data.
  * <p>
@@ -74,6 +74,10 @@ import java.util.Vector;
  * </ul>
  *
  * @author Alan Kaminsky
+ * @spec https://www.rfc-editor.org/info/rfc2045
+ *      RFC 2045: Multipurpose Internet Mail Extensions (MIME) Part One: Format of Internet Message Bodies
+ * @spec https://www.rfc-editor.org/info/rfc2046
+ *      RFC 2046: Multipurpose Internet Mail Extensions (MIME) Part Two: Media Types
  */
 class MimeType implements Serializable, Cloneable {
 
@@ -141,10 +145,9 @@ class MimeType implements Serializable, Cloneable {
             throw new UnsupportedOperationException();
         }
         public boolean equals(Object o) {
-            return (o != null &&
-                    o instanceof Map.Entry &&
-                    getKey().equals (((Map.Entry) o).getKey()) &&
-                    getValue().equals(((Map.Entry) o).getValue()));
+            return o instanceof Map.Entry<?, ?> entry &&
+                    getKey().equals(entry.getKey()) &&
+                    getValue().equals(entry.getValue());
         }
         public int hashCode() {
             return getKey().hashCode() ^ getValue().hashCode();
@@ -290,9 +293,8 @@ class MimeType implements Serializable, Cloneable {
      *         {@code false} otherwise
      */
     public boolean equals (Object obj) {
-        return(obj != null &&
-               obj instanceof MimeType &&
-               getStringValue().equals(((MimeType) obj).getStringValue()));
+        return obj instanceof MimeType mimeType &&
+                getStringValue().equals(mimeType.getStringValue());
     }
 
     /**
@@ -571,8 +573,7 @@ class MimeType implements Serializable, Cloneable {
             throw new NullPointerException();
         }
         LexicalAnalyzer theLexer = new LexicalAnalyzer (s);
-        int theLexemeType;
-        Vector<String> thePieces = new Vector<>();
+        ArrayList<String> thePieces = new ArrayList<>();
         boolean mediaTypeIsText = false;
         boolean parameterNameIsCharset = false;
 

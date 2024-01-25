@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8242068
+ * @bug 8242068 8267319
  * @summary test the properties
  * @library /test/lib
  * @modules java.base/sun.security.tools.keytool
@@ -49,6 +49,9 @@ import java.util.jar.JarInputStream;
 import java.util.zip.ZipFile;
 
 public class Properties {
+
+    private static final String DEF_DIGEST_STR =
+            JarSigner.Builder.getDefaultDigestAlgorithm() + "-Digest-Manifest:";
 
     public static void main(String[] args) throws Exception {
 
@@ -82,12 +85,12 @@ public class Properties {
         // Has a hash for the whole manifest
         byte[] s0 = sign(jsb.setProperty("sectionsonly", "false"));
         sf = new String(DerUtils.innerDerValue(s0, "10210").getOctetString());
-        Asserts.assertTrue(sf.contains("SHA-256-Digest-Manifest:"));
+        Asserts.assertTrue(sf.contains(DEF_DIGEST_STR));
 
         // Has no hash for the whole manifest
         byte[] s1 = sign(jsb.setProperty("sectionsonly", "true"));
         sf = new String(DerUtils.innerDerValue(s1, "10210").getOctetString());
-        Asserts.assertFalse(sf.contains("SHA-256-Digest-Manifest:"));
+        Asserts.assertFalse(sf.contains(DEF_DIGEST_STR));
     }
 
     // Sign and returns the content of the PKCS7 signature block inside

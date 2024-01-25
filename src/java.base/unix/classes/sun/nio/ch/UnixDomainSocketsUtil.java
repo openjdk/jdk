@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@ class UnixDomainSocketsUtil {
      * 2. ${jdk.net.unixdomain.tmpdir} if set as net property
      * 3. ${java.io.tmpdir} system property
      */
+    @SuppressWarnings("removal")
     static String getTempDir() {
         PrivilegedAction<String> action = () -> {
             String s = NetProperties.get("jdk.net.unixdomain.tmpdir");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,55 +194,18 @@ public final class Collectors {
      * @param <T> the type of elements to be collected
      * @param <R> the type of the result
      */
-    static class CollectorImpl<T, A, R> implements Collector<T, A, R> {
-        private final Supplier<A> supplier;
-        private final BiConsumer<A, T> accumulator;
-        private final BinaryOperator<A> combiner;
-        private final Function<A, R> finisher;
-        private final Set<Characteristics> characteristics;
-
-        CollectorImpl(Supplier<A> supplier,
-                      BiConsumer<A, T> accumulator,
-                      BinaryOperator<A> combiner,
-                      Function<A,R> finisher,
-                      Set<Characteristics> characteristics) {
-            this.supplier = supplier;
-            this.accumulator = accumulator;
-            this.combiner = combiner;
-            this.finisher = finisher;
-            this.characteristics = characteristics;
-        }
+    record CollectorImpl<T, A, R>(Supplier<A> supplier,
+                                  BiConsumer<A, T> accumulator,
+                                  BinaryOperator<A> combiner,
+                                  Function<A, R> finisher,
+                                  Set<Characteristics> characteristics
+            ) implements Collector<T, A, R> {
 
         CollectorImpl(Supplier<A> supplier,
                       BiConsumer<A, T> accumulator,
                       BinaryOperator<A> combiner,
                       Set<Characteristics> characteristics) {
             this(supplier, accumulator, combiner, castingIdentity(), characteristics);
-        }
-
-        @Override
-        public BiConsumer<A, T> accumulator() {
-            return accumulator;
-        }
-
-        @Override
-        public Supplier<A> supplier() {
-            return supplier;
-        }
-
-        @Override
-        public BinaryOperator<A> combiner() {
-            return combiner;
-        }
-
-        @Override
-        public Function<A, R> finisher() {
-            return finisher;
-        }
-
-        @Override
-        public Set<Characteristics> characteristics() {
-            return characteristics;
         }
     }
 
@@ -260,7 +223,7 @@ public final class Collectors {
      */
     public static <T, C extends Collection<T>>
     Collector<T, ?, C> toCollection(Supplier<C> collectionFactory) {
-        return new CollectorImpl<>(collectionFactory, Collection<T>::add,
+        return new CollectorImpl<>(collectionFactory, Collection::add,
                                    (r1, r2) -> { r1.addAll(r2); return r1; },
                                    CH_ID);
     }
@@ -373,9 +336,12 @@ public final class Collectors {
      * {@code String}, in encounter order
      */
     public static Collector<CharSequence, ?, String> joining() {
-        return new CollectorImpl<CharSequence, StringBuilder, String>(
+        return new CollectorImpl<>(
                 StringBuilder::new, StringBuilder::append,
-                (r1, r2) -> { r1.append(r2); return r1; },
+                (r1, r2) -> {
+                    r1.append(r2);
+                    return r1;
+                },
                 StringBuilder::toString, CH_NOID);
     }
 
@@ -666,7 +632,7 @@ public final class Collectors {
     }
 
     /**
-     * Returns a {@code Collector} that produces the sum of a integer-valued
+     * Returns a {@code Collector} that produces the sum of an integer-valued
      * function applied to the input elements.  If no elements are present,
      * the result is 0.
      *
@@ -734,7 +700,8 @@ public final class Collectors {
                             a[2] += val;},
                 (a, b) -> { sumWithCompensation(a, b[0]);
                             a[2] += b[2];
-                            return sumWithCompensation(a, b[1]); },
+                            // Subtract compensation bits
+                            return sumWithCompensation(a, -b[1]); },
                 a -> computeFinalSum(a),
                 CH_NOID);
     }
@@ -765,8 +732,8 @@ public final class Collectors {
      * correctly-signed infinity stored in the simple sum.
      */
     static double computeFinalSum(double[] summands) {
-        // Better error bounds to add both terms as the final sum
-        double tmp = summands[0] + summands[1];
+        // Final sum with better error bounds subtract second summand as it is negated
+        double tmp = summands[0] - summands[1];
         double simpleSum = summands[summands.length - 1];
         if (Double.isNaN(tmp) && Double.isInfinite(simpleSum))
             return simpleSum;
@@ -840,13 +807,19 @@ public final class Collectors {
         /*
          * In the arrays allocated for the collect operation, index 0
          * holds the high-order bits of the running sum, index 1 holds
-         * the low-order bits of the sum computed via compensated
+         * the negated low-order bits of the sum computed via compensated
          * summation, and index 2 holds the number of values seen.
          */
         return new CollectorImpl<>(
                 () -> new double[4],
                 (a, t) -> { double val = mapper.applyAsDouble(t); sumWithCompensation(a, val); a[2]++; a[3]+= val;},
-                (a, b) -> { sumWithCompensation(a, b[0]); sumWithCompensation(a, b[1]); a[2] += b[2]; a[3] += b[3]; return a; },
+                (a, b) -> {
+                    sumWithCompensation(a, b[0]);
+                    // Subtract compensation bits
+                    sumWithCompensation(a, -b[1]);
+                    a[2] += b[2]; a[3] += b[3];
+                    return a;
+                    },
                 a -> (a[2] == 0) ? 0.0d : (computeFinalSum(a) / a[2]),
                 CH_NOID);
     }
@@ -932,9 +905,12 @@ public final class Collectors {
             }
         }
 
-        return new CollectorImpl<T, OptionalBox, Optional<T>>(
+        return new CollectorImpl<>(
                 OptionalBox::new, OptionalBox::accept,
-                (a, b) -> { if (b.present) a.accept(b.value); return a; },
+                (a, b) -> {
+                    if (b.present) a.accept(b.value);
+                    return a;
+                },
                 a -> Optional.ofNullable(a.value), CH_NOID);
     }
 
@@ -1136,7 +1112,7 @@ public final class Collectors {
             A container = m.computeIfAbsent(key, k -> downstreamSupplier.get());
             downstreamAccumulator.accept(container, t);
         };
-        BinaryOperator<Map<K, A>> merger = Collectors.<K, A, Map<K, A>>mapMerger(downstream.combiner());
+        BinaryOperator<Map<K, A>> merger = Collectors.mapMerger(downstream.combiner());
         @SuppressWarnings("unchecked")
         Supplier<Map<K, A>> mangledFactory = (Supplier<Map<K, A>>) mapFactory;
 
@@ -1289,7 +1265,7 @@ public final class Collectors {
                                             Collector<? super T, A, D> downstream) {
         Supplier<A> downstreamSupplier = downstream.supplier();
         BiConsumer<A, ? super T> downstreamAccumulator = downstream.accumulator();
-        BinaryOperator<ConcurrentMap<K, A>> merger = Collectors.<K, A, ConcurrentMap<K, A>>mapMerger(downstream.combiner());
+        BinaryOperator<ConcurrentMap<K, A>> merger = Collectors.mapMerger(downstream.combiner());
         @SuppressWarnings("unchecked")
         Supplier<ConcurrentMap<K, A>> mangledFactory = (Supplier<ConcurrentMap<K, A>>) mapFactory;
         BiConsumer<ConcurrentMap<K, A>, T> accumulator;
@@ -1846,10 +1822,13 @@ public final class Collectors {
      */
     public static <T>
     Collector<T, ?, IntSummaryStatistics> summarizingInt(ToIntFunction<? super T> mapper) {
-        return new CollectorImpl<T, IntSummaryStatistics, IntSummaryStatistics>(
+        return new CollectorImpl<>(
                 IntSummaryStatistics::new,
                 (r, t) -> r.accept(mapper.applyAsInt(t)),
-                (l, r) -> { l.combine(r); return l; }, CH_ID);
+                (l, r) -> {
+                    l.combine(r);
+                    return l;
+                }, CH_ID);
     }
 
     /**
@@ -1866,10 +1845,13 @@ public final class Collectors {
      */
     public static <T>
     Collector<T, ?, LongSummaryStatistics> summarizingLong(ToLongFunction<? super T> mapper) {
-        return new CollectorImpl<T, LongSummaryStatistics, LongSummaryStatistics>(
+        return new CollectorImpl<>(
                 LongSummaryStatistics::new,
                 (r, t) -> r.accept(mapper.applyAsLong(t)),
-                (l, r) -> { l.combine(r); return l; }, CH_ID);
+                (l, r) -> {
+                    l.combine(r);
+                    return l;
+                }, CH_ID);
     }
 
     /**
@@ -1886,10 +1868,13 @@ public final class Collectors {
      */
     public static <T>
     Collector<T, ?, DoubleSummaryStatistics> summarizingDouble(ToDoubleFunction<? super T> mapper) {
-        return new CollectorImpl<T, DoubleSummaryStatistics, DoubleSummaryStatistics>(
+        return new CollectorImpl<>(
                 DoubleSummaryStatistics::new,
                 (r, t) -> r.accept(mapper.applyAsDouble(t)),
-                (l, r) -> { l.combine(r); return l; }, CH_ID);
+                (l, r) -> {
+                    l.combine(r);
+                    return l;
+                }, CH_ID);
     }
 
     /**
@@ -2000,6 +1985,35 @@ public final class Collectors {
         Partition(T forTrue, T forFalse) {
             this.forTrue = forTrue;
             this.forFalse = forFalse;
+        }
+
+        @Override
+        public int size() {
+            return 2;
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return false;
+        }
+
+        @Override
+        public T get(Object key) {
+            if (key instanceof Boolean b) {
+                return b ? forTrue : forFalse;
+            } else {
+                return null;
+            }
+        }
+
+        @Override
+        public boolean containsKey(Object key) {
+            return key instanceof Boolean;
+        }
+
+        @Override
+        public boolean containsValue(Object value) {
+            return Objects.equals(value, forTrue) || Objects.equals(value, forFalse);
         }
 
         @Override

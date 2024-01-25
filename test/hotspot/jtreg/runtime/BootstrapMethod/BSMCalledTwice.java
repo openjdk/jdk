@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,16 @@
  * @modules java.base/jdk.internal.org.objectweb.asm
  * @compile -XDignore.symbol.file BSMCalledTwice.java
  * @run main BSMCalledTwice
+ */
+
+/*
+ * @test
+ * @bug 8262134
+ * @library /test/lib
+ * @requires vm.debug
+ * @modules java.base/jdk.internal.org.objectweb.asm
+ * @compile -XDignore.symbol.file BSMCalledTwice.java
+ * @run main/othervm -Xcomp -XX:CompileCommand=compileonly,TestC::* -XX:+DeoptimizeALot -XX:+VerifyStack BSMCalledTwice
  */
 
 import java.io.File;
@@ -97,7 +107,7 @@ public class BSMCalledTwice implements Opcodes {
         };
 
         cl.loadClass(classTestCName);
-        ProcessBuilder pb = ProcessTools.createTestJvm("-cp", ".",  classTestCName);
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder("-cp", ".",  classTestCName);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         String test_output = output.getOutput();
         if (test_output == null) {

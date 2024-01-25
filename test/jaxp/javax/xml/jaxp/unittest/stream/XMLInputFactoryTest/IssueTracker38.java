@@ -37,7 +37,7 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.XMLInputFactoryTest.IssueTracker38
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLInputFactoryTest.IssueTracker38
  * @run testng/othervm stream.XMLInputFactoryTest.IssueTracker38
  * @summary Test createXMLEventReader from DOM or SAX source is unsupported.
  */

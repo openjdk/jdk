@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
 package java.lang;
 
 import java.text.BreakIterator;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Locale;
 import sun.text.Normalizer;
@@ -89,7 +89,7 @@ final class ConditionalSpecialCasing {
     };
 
     // A hash table that contains the above entries
-    static Hashtable<Integer, HashSet<Entry>> entryTable = new Hashtable<>();
+    private static final HashMap<Integer, HashSet<Entry>> entryTable = new HashMap<>();
     static {
         // create hashtable from the entry
         for (Entry cur : entry) {
@@ -170,25 +170,14 @@ final class ConditionalSpecialCasing {
     }
 
     private static boolean isConditionMet(String src, int index, Locale locale, int condition) {
-        switch (condition) {
-        case FINAL_CASED:
-            return isFinalCased(src, index, locale);
-
-        case AFTER_SOFT_DOTTED:
-            return isAfterSoftDotted(src, index);
-
-        case MORE_ABOVE:
-            return isMoreAbove(src, index);
-
-        case AFTER_I:
-            return isAfterI(src, index);
-
-        case NOT_BEFORE_DOT:
-            return !isBeforeDot(src, index);
-
-        default:
-            return true;
-        }
+        return switch (condition) {
+            case FINAL_CASED       -> isFinalCased(src, index, locale);
+            case AFTER_SOFT_DOTTED -> isAfterSoftDotted(src, index);
+            case MORE_ABOVE        -> isMoreAbove(src, index);
+            case AFTER_I           -> isAfterI(src, index);
+            case NOT_BEFORE_DOT    -> !isBeforeDot(src, index);
+            default -> true;
+        };
     }
 
     /**

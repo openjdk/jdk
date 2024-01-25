@@ -37,7 +37,7 @@ import com.sun.media.sound.*;
 public class NewModelIdentifierStringStringInt {
 
     public static void main(String[] args) throws Exception {
-        ModelIdentifier id = new ModelIdentifier("test","a",1);;
+        ModelIdentifier id = new ModelIdentifier("test","a",1);
         if(!id.getObject().equals("test"))
             throw new RuntimeException("id.getObject() doesn't return \"test\"!");
         if(!id.getVariable().equals("a"))

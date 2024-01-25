@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,6 +151,7 @@ public class ASN1Formatter implements HexPrinter.Formatter {
      * @param prefix a string to prefix each line of output, used for indentation
      * @throws IOException if an I/O error occurs
      */
+    @SuppressWarnings("fallthrough")
     private int annotate(DataInputStream in, Appendable out, int available, String prefix) throws IOException {
         int origAvailable = available;
         while (available != 0 || origAvailable < 0) {
@@ -302,7 +303,7 @@ public class ASN1Formatter implements HexPrinter.Formatter {
                 case TAG_BitString:
                     out.append(String.format("%s [%d]", tagName(tag), len));
                     do {
-                        var skipped = in.skip(len);
+                        var skipped = (int) in.skip(len);
                         len -= skipped;
                         available -= skipped;
                     } while (len > 0);
@@ -625,6 +626,7 @@ public class ASN1Formatter implements HexPrinter.Formatter {
      * @return the InputStream or the wrapped decoder of Base64Mime.
      * @throws IOException if an I/O error occurs
      */
+    @SuppressWarnings("deprecation")
     private static InputStream wrapIfBase64Mime(BufferedInputStream bis) throws IOException {
         bis.mark(256);
         DataInputStream dis = new DataInputStream(bis);

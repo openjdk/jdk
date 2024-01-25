@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ import java.io.PrintStream;
 
 import nsk.share.*;
 import nsk.share.jvmti.*;
+
+import java.util.concurrent.locks.LockSupport;
 
 public class stopthrd007 extends DebugeeClass {
 
@@ -65,6 +67,11 @@ public class stopthrd007 extends DebugeeClass {
         argHandler = new ArgumentHandler(argv);
         log = new Log(out, argHandler);
         timeout = argHandler.getWaitTime() * 60 * 1000;
+
+        // Unpark virtual threads to load jdk.internal.misc.VirtualThreads
+        // and avoid NoClassDefFoundError if ThreadDeath is happen during unlock.
+        Thread vt = Thread.startVirtualThread(LockSupport::park);
+        LockSupport.unpark(vt);
 
         log.display("Debugee started");
 
@@ -170,8 +177,8 @@ class stopthrd007ThreadRunning extends Thread {
     }
 
     public void run() {
-        stopthrd007.startingBarrier.unlock();
         try {
+            stopthrd007.startingBarrier.unlock();
             int i = 0;
             int n = 1000;
             while (flag) {
@@ -216,8 +223,8 @@ class stopthrd007ThreadWaiting extends Thread {
     }
 
     public synchronized void run() {
-        stopthrd007.startingBarrier.unlock();
         try {
+            stopthrd007.startingBarrier.unlock();
             wait(timeout);
             status = 1;
         } catch (ThreadDeath t) {
@@ -249,8 +256,8 @@ class stopthrd007ThreadSleeping extends Thread {
     }
 
     public void run() {
-        stopthrd007.startingBarrier.unlock();
         try {
+            stopthrd007.startingBarrier.unlock();
             sleep(timeout);
             status = 1;
         } catch (ThreadDeath t) {

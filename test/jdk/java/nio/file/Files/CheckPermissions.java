@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,11 @@
  */
 
 /* @test
- * @bug 6866804 7006126 8028270 8065109
+ * @bug 6866804 7006126 8028270 8065109 8289984
  * @summary Unit test for java.nio.file.Files
  * @library ..
  * @build CheckPermissions
- * @run main/othervm CheckPermissions
+ * @run main/othervm -Djava.security.manager=allow CheckPermissions
  */
 
 import java.nio.ByteBuffer;
@@ -217,6 +217,14 @@ public class CheckPermissions {
 
             prepare();
             exists(file);
+            assertCheckRead(file);
+
+            prepare();
+            isDirectory(file);
+            assertCheckRead(file);
+
+            prepare();
+            isRegularFile(file);
             assertCheckRead(file);
 
             prepare();

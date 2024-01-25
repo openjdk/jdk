@@ -123,6 +123,7 @@ public class Reference extends SignatureElementProxy {
      * will be added if necessary when generating the signature. See section
      * 3.1.1 of http://www.w3.org/2007/xmlsec/Drafts/xmldsig-core/ for more info.
      */
+    @SuppressWarnings("removal")
     private static boolean useC14N11 =
         AccessController.doPrivileged((PrivilegedAction<Boolean>)
             () -> Boolean.getBoolean("com.sun.org.apache.xml.internal.security.useC14N11"));
@@ -192,10 +193,12 @@ public class Reference extends SignatureElementProxy {
 
         // Create DigestMethod Element without actually instantiating a MessageDigest Object
         Algorithm digestAlgorithm = new Algorithm(getDocument(), messageDigestAlgorithm) {
+            @Override
             public String getBaseNamespace() {
                 return Constants.SignatureSpecNS;
             }
 
+            @Override
             public String getBaseLocalName() {
                 return Constants._TAG_DIGESTMETHOD;
             }
@@ -611,6 +614,7 @@ public class Reference extends SignatureElementProxy {
             try {
                 final Set<Node> s = input.getNodeSet();
                 referenceData = new ReferenceNodeSetData() {
+                    @Override
                     public Iterator<Node> iterator() {
                         return new Iterator<Node>() {
 
@@ -807,6 +811,7 @@ public class Reference extends SignatureElementProxy {
      * Method getBaseLocalName
      * {@inheritDoc}
      */
+    @Override
     public String getBaseLocalName() {
         return Constants._TAG_REFERENCE;
     }

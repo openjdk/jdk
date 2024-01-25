@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,20 +28,33 @@
 #include "awt_Component.h"
 #include <winuser.h>
 
-static int signum(int i) {
-  // special version of signum which returns 1 when value is 0
-  return i >= 0 ? 1 : -1;
-}
-
 static void MouseMove(jint x, jint y)
 {
     INPUT mouseInput = {0};
     mouseInput.type = INPUT_MOUSE;
     mouseInput.mi.time = 0;
-    mouseInput.mi.dwFlags = MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE;
-    mouseInput.mi.dx = (x * 65536 /::GetSystemMetrics(SM_CXSCREEN)) + signum(x);
-    mouseInput.mi.dy = (y * 65536 /::GetSystemMetrics(SM_CYSCREEN)) + signum(y);
+
+    // The following calculations take into account a multi-monitor setup using
+    // a virtual screen for all monitors combined.
+    // More details from Microsoft are here --
+    // https://docs.microsoft.com/en-us/windows/win32/gdi/the-virtual-screen
+
+    x -= ::GetSystemMetrics(SM_XVIRTUALSCREEN);
+    y -= ::GetSystemMetrics(SM_YVIRTUALSCREEN);
+
+    mouseInput.mi.dwFlags = MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE |
+                            MOUSEEVENTF_VIRTUALDESK;
+
+    int scW = ::GetSystemMetrics(SM_CXVIRTUALSCREEN);
+    int scH = ::GetSystemMetrics(SM_CYVIRTUALSCREEN);
+
+    // The following calculation to deduce mouse coordinates is based on
+    // empirical data
+    mouseInput.mi.dx = (x * 65536 + scW - 1) / scW;
+    mouseInput.mi.dy = (y * 65536 + scH - 1) / scH;
+
     ::SendInput(1, &mouseInput, sizeof(mouseInput));
+
 }
 
 static void MousePress(jint buttonMask)
@@ -157,6 +170,8 @@ static void GetRGBPixels(jint x, jint y, jint width, jint height, jintArray pixe
     // create an offscreen bitmap
     hbitmap = ::CreateCompatibleBitmap(hdcScreen, width, height);
     if (hbitmap == NULL) {
+        ::DeleteDC(hdcMem);
+        ::DeleteDC(hdcScreen);
         throw std::bad_alloc();
     }
     hOldBitmap = (HBITMAP)::SelectObject(hdcMem, hbitmap);
@@ -176,9 +191,21 @@ static void GetRGBPixels(jint x, jint y, jint width, jint height, jintArray pixe
     static const int BITS_PER_PIXEL = 32;
     static const int BYTES_PER_PIXEL = BITS_PER_PIXEL/8;
 
-    if (!IS_SAFE_SIZE_MUL(width, height)) throw std::bad_alloc();
+    if (!IS_SAFE_SIZE_MUL(width, height)) {
+        ::DeleteObject(hbitmap);
+        ::DeleteDC(hdcMem);
+        ::DeleteDC(hdcScreen);
+        throw std::bad_alloc();
+    }
+
     int numPixels = width*height;
-    if (!IS_SAFE_SIZE_MUL(BYTES_PER_PIXEL, numPixels)) throw std::bad_alloc();
+    if (!IS_SAFE_SIZE_MUL(BYTES_PER_PIXEL, numPixels)) {
+        ::DeleteObject(hbitmap);
+        ::DeleteDC(hdcMem);
+        ::DeleteDC(hdcScreen);
+        throw std::bad_alloc();
+    }
+
     int pixelDataSize = BYTES_PER_PIXEL*numPixels;
     DASSERT(pixelDataSize > 0 && pixelDataSize % 4 == 0);
     // allocate memory for BITMAPINFO + pixel data
@@ -189,6 +216,9 @@ static void GetRGBPixels(jint x, jint y, jint width, jint height, jintArray pixe
     // See MSDN docs for BITMAPINFOHEADER -bchristi
 
     if (!IS_SAFE_SIZE_ADD(sizeof(BITMAPINFOHEADER) + 3 * sizeof(RGBQUAD), pixelDataSize)) {
+        ::DeleteObject(hbitmap);
+        ::DeleteDC(hdcMem);
+        ::DeleteDC(hdcScreen);
         throw std::bad_alloc();
     }
     BITMAPINFO * pinfo = (BITMAPINFO *)(new BYTE[sizeof(BITMAPINFOHEADER) + 3 * sizeof(RGBQUAD) + pixelDataSize]);

@@ -39,7 +39,7 @@ import util.DraconianErrorHandler;
  * @test
  * @bug 4934208
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true parsers.Bug4934208
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow parsers.Bug4934208
  * @run testng/othervm parsers.Bug4934208
  * @summary Test SAXParser can parse keyref constraint with a selector that is a union xpath expression selecting a node and its child.
  */

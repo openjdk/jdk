@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -206,7 +206,7 @@ public class LogManagerAppContextDeadlock {
 
         // If we don't initialize LogManager here, there will be
         // a deadlock.
-        // See <https://bugs.openjdk.java.net/browse/JDK-8065709?focusedCommentId=13582038&page=com.atlassian.jira.plugin.system.issuetabpanels:comment-tabpanel#comment-13582038>
+        // See <https://bugs.openjdk.org/browse/JDK-8065709?focusedCommentId=13582038&page=com.atlassian.jira.plugin.system.issuetabpanels:comment-tabpanel#comment-13582038>
         // for more details.
         Logger.getLogger("main").info("starting...");
         try {

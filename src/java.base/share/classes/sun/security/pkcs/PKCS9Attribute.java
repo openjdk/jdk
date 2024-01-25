@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,8 @@
 package sun.security.pkcs;
 
 import java.io.IOException;
-import java.io.OutputStream;
-import java.security.cert.CertificateException;
 import java.util.Date;
+
 import sun.security.x509.CertificateExtensions;
 import sun.security.util.*;
 
@@ -378,6 +377,12 @@ public class PKCS9Attribute implements DerEncoder {
         this.oid = oid;
         index = indexOf(oid, PKCS9_OIDS, 1);
         Class<?> clazz = index == -1 ? BYTE_ARRAY_CLASS: VALUE_CLASSES[index];
+        if (clazz == null) {
+            throw new IllegalArgumentException(
+                    "No value class supported " +
+                            " for attribute " + oid +
+                            " constructing PKCS9Attribute");
+        }
         if (!clazz.isInstance(value)) {
                 throw new IllegalArgumentException(
                            "Wrong value class " +
@@ -458,8 +463,7 @@ public class PKCS9Attribute implements DerEncoder {
         case 5:     // signing time
             byte elemTag = elems[0].getTag();
             DerInputStream dis = new DerInputStream(elems[0].toByteArray());
-            value = (elemTag == DerValue.tag_GeneralizedTime) ?
-                    dis.getGeneralizedTime() : dis.getUTCTime();
+            value = dis.getTime();
             break;
 
         case 6:     // countersignature
@@ -481,12 +485,12 @@ public class PKCS9Attribute implements DerEncoder {
                                   "attribute not supported.");
             // break unnecessary
         case 10:    // issuerAndserialNumber attribute -- not supported
-            throw new IOException("PKCS9 IssuerAndSerialNumber" +
+            throw new IOException("PKCS9 IssuerAndSerialNumber " +
                                   "attribute not supported.");
             // break unnecessary
         case 11:    // RSA DSI proprietary
         case 12:    // RSA DSI proprietary
-            throw new IOException("PKCS9 RSA DSI attributes" +
+            throw new IOException("PKCS9 RSA DSI attributes " +
                                   "11 and 12, not supported.");
             // break unnecessary
         case 13:    // S/MIME unused attribute
@@ -507,10 +511,7 @@ public class PKCS9Attribute implements DerEncoder {
             break;
 
         case 17:     // SignatureTimestampToken attribute
-            value = elems[0].toByteArray();
-            break;
-
-        case 18:    // CMSAlgorithmProtection
+        case 18:     // CMSAlgorithmProtection
             value = elems[0].toByteArray();
             break;
 
@@ -527,12 +528,12 @@ public class PKCS9Attribute implements DerEncoder {
      * should be encoded as <code>T61String</code>s.
      */
     @Override
-    public void derEncode(OutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         DerOutputStream temp = new DerOutputStream();
         temp.putOID(oid);
         switch (index) {
         case -1:    // Unknown
-            temp.write((byte[])value);
+            temp.writeBytes((byte[])value);
             break;
         case 1:     // email address
         case 2:     // unstructured name
@@ -568,7 +569,7 @@ public class PKCS9Attribute implements DerEncoder {
         case 5:     // signing time
             {
                 DerOutputStream temp2 = new DerOutputStream();
-                temp2.putUTCTime((Date) value);
+                temp2.putTime((Date) value);
                 temp.write(DerValue.tag_Set, temp2.toByteArray());
             }
             break;
@@ -600,47 +601,43 @@ public class PKCS9Attribute implements DerEncoder {
             break;
 
         case 9:     // extended-certificate attribute -- not supported
-            throw new IOException("PKCS9 extended-certificate " +
+            throw new IllegalArgumentException("PKCS9 extended-certificate " +
                                   "attribute not supported.");
             // break unnecessary
         case 10:    // issuerAndserialNumber attribute -- not supported
-            throw new IOException("PKCS9 IssuerAndSerialNumber" +
+            throw new IllegalArgumentException("PKCS9 IssuerAndSerialNumber " +
                                   "attribute not supported.");
             // break unnecessary
         case 11:    // RSA DSI proprietary
         case 12:    // RSA DSI proprietary
-            throw new IOException("PKCS9 RSA DSI attributes" +
+            throw new IllegalArgumentException("PKCS9 RSA DSI attributes " +
                                   "11 and 12, not supported.");
             // break unnecessary
         case 13:    // S/MIME unused attribute
-            throw new IOException("PKCS9 attribute #13 not supported.");
+            throw new IllegalArgumentException("PKCS9 attribute #13 not supported.");
             // break unnecessary
 
         case 14:     // ExtensionRequest
             {
                 DerOutputStream temp2 = new DerOutputStream();
                 CertificateExtensions exts = (CertificateExtensions)value;
-                try {
-                    exts.encode(temp2, true);
-                } catch (CertificateException ex) {
-                    throw new IOException(ex.toString());
-                }
+                exts.encode(temp2, true);
                 temp.write(DerValue.tag_Set, temp2.toByteArray());
             }
             break;
         case 15:    // SMIMECapability
-            throw new IOException("PKCS9 attribute #15 not supported.");
+            throw new IllegalArgumentException("PKCS9 attribute #15 not supported.");
             // break unnecessary
 
         case 16:    // SigningCertificate
-            throw new IOException(
-                "PKCS9 SigningCertificate attribute not supported.");
-            // break unnecessary
-
-        case 17:    // SignatureTimestampToken
-            temp.write(DerValue.tag_Set, (byte[])value);
+            {
+                DerOutputStream temp2 = new DerOutputStream();
+                SigningCertificateInfo info = (SigningCertificateInfo)value;
+                temp2.writeBytes(info.toByteArray());
+                temp.write(DerValue.tag_Set, temp2.toByteArray());
+            }
             break;
-
+        case 17:    // SignatureTimestampToken
         case 18:    // CMSAlgorithmProtection
             temp.write(DerValue.tag_Set, (byte[])value);
             break;
@@ -648,11 +645,7 @@ public class PKCS9Attribute implements DerEncoder {
         default: // can't happen
         }
 
-        DerOutputStream derOut = new DerOutputStream();
-        derOut.write(DerValue.tag_Sequence, temp.toByteArray());
-
-        out.write(derOut.toByteArray());
-
+        out.write(DerValue.tag_Sequence, temp.toByteArray());
     }
 
     /**
@@ -697,7 +690,7 @@ public class PKCS9Attribute implements DerEncoder {
     public String getName() {
         String n = oid.toString();
         KnownOIDs os = KnownOIDs.findMatch(n);
-        return (os == null? n : os.stdName());
+        return os == null ? n : os.stdName();
     }
 
     /**
@@ -745,7 +738,6 @@ public class PKCS9Attribute implements DerEncoder {
                 sb.append(value.toString());
             }
             sb.append("]");
-            return sb.toString();
         } else { // multi-valued
             boolean first = true;
             Object[] values = (Object[]) value;
@@ -757,8 +749,8 @@ public class PKCS9Attribute implements DerEncoder {
                     sb.append(", ");
                 sb.append(curVal.toString());
             }
-            return sb.toString();
         }
+        return sb.toString();
     }
 
     /**

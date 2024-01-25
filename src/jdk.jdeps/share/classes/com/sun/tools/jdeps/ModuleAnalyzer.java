@@ -174,16 +174,14 @@ public class ModuleAnalyzer {
         private Graph<Module> buildReducedGraph() {
             ModuleGraphBuilder rpBuilder = new ModuleGraphBuilder(configuration);
             rpBuilder.addModule(root);
-            requiresTransitive.stream()
-                          .forEach(m -> rpBuilder.addEdge(root, m));
+            requiresTransitive.forEach(m -> rpBuilder.addEdge(root, m));
 
             // requires transitive graph
             Graph<Module> rbg = rpBuilder.build().reduce();
 
             ModuleGraphBuilder gb = new ModuleGraphBuilder(configuration);
             gb.addModule(root);
-            requires.stream()
-                    .forEach(m -> gb.addEdge(root, m));
+            requires.forEach(m -> gb.addEdge(root, m));
 
             // transitive reduction
             Graph<Module> newGraph = gb.buildGraph().reduce(rbg);
@@ -310,7 +308,7 @@ public class ModuleAnalyzer {
             dependencyFinder.parse(mods.stream());
 
             // adds to the qualified exports map if a module references it
-            mods.stream().forEach(m ->
+            mods.forEach(m ->
                 m.getDependencies()
                     .map(Dependency.Location::getPackageName)
                     .filter(qualifiedExports::containsKey)

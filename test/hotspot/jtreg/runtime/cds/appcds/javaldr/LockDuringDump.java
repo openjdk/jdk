@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,24 +59,22 @@ public class LockDuringDump {
 
         for (int i = 0; i < 3; i++) {
             // i = 0 -- dump without agent
-            // i = 1 -- dump with agent = disable BiasedLocking
-            // i = 2 -- dump with agent = enable BiasedLocking
+            // i = 1 -- dump with agent
 
             String agentArg   = (i == 0) ? "-showversion" : "-javaagent:" + agentJar;
             String agentArg2  = (i == 0) ? "-showversion" : "-XX:+AllowArchivingWithJavaAgent";
-            String biasedLock = (i != 2) ? "-showversion" : "-XX:+UseBiasedLocking";
 
             OutputAnalyzer out =
                 TestCommon.testDump(appJar, TestCommon.list(LockDuringDumpApp.class.getName()),
                                     "-XX:+UnlockDiagnosticVMOptions",
-                                    agentArg, agentArg2, biasedLock);
-            if (i != 0) {
+                                    agentArg, agentArg2);
+            if (i != 0 && !out.getStdout().contains("LockDuringDumpAgent timeout")) {
                 out.shouldContain("Let's hold the lock on the literal string");
             }
 
             TestCommon.run(
                 "-cp", appJar,
-                "-XX:+UnlockDiagnosticVMOptions", agentArg2, biasedLock,
+                "-XX:+UnlockDiagnosticVMOptions", agentArg2,
                 LockDuringDumpApp.class.getName())
               .assertNormalExit("I am able to lock the literal string");
         }

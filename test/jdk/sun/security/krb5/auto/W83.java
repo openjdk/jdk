@@ -50,7 +50,8 @@ public class W83 {
         kdc.addPrincipal(OneKDC.USER, OneKDC.PASS);
         kdc.addPrincipalRandKey("krbtgt/" + OneKDC.REALM);
         KDC.saveConfig(OneKDC.KRB5_CONF, kdc,
-                "allow_weak_crypto = true");
+                "allow_weak_crypto = true",
+                "permitted_enctypes = aes256-cts arcfour-hmac");
         System.setProperty("java.security.krb5.conf", OneKDC.KRB5_CONF);
         Config.refresh();
 

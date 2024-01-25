@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import sun.nio.fs.BasicFileAttributesHolder;
  * Walks a file tree, generating a sequence of events corresponding to the files
  * in the tree.
  *
- * <pre>{@code
+ * {@snippet lang=java :
  *     Path top = ...
  *     Set<FileVisitOption> options = ...
  *     int maxDepth = ...
@@ -49,7 +49,7 @@ import sun.nio.fs.BasicFileAttributesHolder;
  *             ev = walker.next();
  *         } while (ev != null);
  *     }
- * }</pre>
+ * }
  *
  * @see Files#walkFileTree
  */
@@ -198,6 +198,7 @@ class FileTreeWalker implements Closeable {
      * the walk is following sym links is not. The {@code canUseCached}
      * argument determines whether this method can use cached attributes.
      */
+    @SuppressWarnings("removal")
     private BasicFileAttributes getAttributes(Path file, boolean canUseCached)
         throws IOException
     {

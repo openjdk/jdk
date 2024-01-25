@@ -44,7 +44,7 @@ import org.w3c.dom.NodeList;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true org.w3c.dom.ptests.DocumentTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow org.w3c.dom.ptests.DocumentTest
  * @run testng/othervm org.w3c.dom.ptests.DocumentTest
  * @summary Test createAttributeNS, getElementsByTagNameNS and createElementNS method of Document
  */

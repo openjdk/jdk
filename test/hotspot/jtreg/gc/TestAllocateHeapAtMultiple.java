@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ package gc;
  * @run driver/timeout=360 gc.TestAllocateHeapAtMultiple
  */
 
-import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import java.util.ArrayList;
@@ -61,8 +60,7 @@ public class TestAllocateHeapAtMultiple {
                                               "-Xlog:gc+heap=info",
                                               "-version"});
 
-      ProcessBuilder pb = ProcessTools.createTestJvm(flags);
-      OutputAnalyzer output = new OutputAnalyzer(pb.start());
+      OutputAnalyzer output = ProcessTools.executeTestJava(flags);
 
       System.out.println("Output:\n" + output.getOutput());
 

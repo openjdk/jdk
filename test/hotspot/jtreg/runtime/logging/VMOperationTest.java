@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 8143157
  * @summary vmoperation=debug should have logging output
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -37,10 +38,10 @@ import jdk.test.lib.process.ProcessTools;
 
 public class VMOperationTest {
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:vmoperation=debug",
-                                                                  "-Xmx128m",
-                                                                  "-Xms128m",
-                                                                  InternalClass.class.getName());
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:vmoperation=debug",
+                                                                             "-Xmx128m",
+                                                                             "-Xms128m",
+                                                                             InternalClass.class.getName());
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("VM_Operation (");
         output.shouldHaveExitValue(0);

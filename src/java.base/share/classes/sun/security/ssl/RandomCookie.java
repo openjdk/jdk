@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,10 @@
 
 package sun.security.ssl;
 
-import java.io.*;
 import java.nio.ByteBuffer;
+import java.security.MessageDigest;
 import java.security.SecureRandom;
-import java.util.Arrays;
+import sun.security.util.ByteArrays;
 
 /*
  * RandomCookie ... SSL hands standard format random cookies (nonces)
@@ -97,7 +97,7 @@ final class RandomCookie {
         }
     }
 
-    RandomCookie(ByteBuffer m) throws IOException {
+    RandomCookie(ByteBuffer m) {
         m.get(randomBytes);
     }
 
@@ -111,7 +111,7 @@ final class RandomCookie {
     }
 
     boolean isHelloRetryRequest() {
-        return Arrays.equals(hrrRandomBytes, randomBytes);
+        return MessageDigest.isEqual(hrrRandomBytes, randomBytes);
     }
 
     // Used for client random validation of version downgrade protection.
@@ -130,10 +130,10 @@ final class RandomCookie {
     }
 
     private boolean isT12Downgrade() {
-        return Arrays.equals(randomBytes, 24, 32, t12Protection, 0, 8);
+        return ByteArrays.isEqual(randomBytes, 24, 32, t12Protection, 0, 8);
     }
 
     private boolean isT11Downgrade() {
-        return Arrays.equals(randomBytes, 24, 32, t11Protection, 0, 8);
+        return ByteArrays.isEqual(randomBytes, 24, 32, t11Protection, 0, 8);
     }
 }

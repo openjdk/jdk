@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,10 +35,14 @@ import java.util.Set;
 
 import jdk.jfr.SettingControl;
 import jdk.jfr.internal.settings.JDKSettingControl;
+import jdk.jfr.internal.settings.PeriodSetting;
+import jdk.jfr.internal.settings.StackTraceSetting;
+import jdk.jfr.internal.settings.ThresholdSetting;
 
-public final class Control {
+final class Control {
+    @SuppressWarnings("removal")
     private final AccessControlContext context;
-    private final static int CACHE_SIZE = 5;
+    private static final int CACHE_SIZE = 5;
     private final Set<?>[] cachedUnions = new HashSet<?>[CACHE_SIZE];
     private final String[] cachedValues = new String[CACHE_SIZE];
     private final SettingControl delegate;
@@ -70,10 +74,11 @@ public final class Control {
         apply(defaultValue);
     }
 
+    @SuppressWarnings("removal")
     public String getValue() {
         if (context == null) {
             // VM events requires no access control context
-            return getValue();
+            return delegate.getValue();
         } else {
             return AccessController.doPrivileged(new PrivilegedAction<String>() {
                 @Override
@@ -97,6 +102,7 @@ public final class Control {
         setValue(value);
     }
 
+    @SuppressWarnings("removal")
     public void setValue(String value) {
         if (context == null) {
             // VM events requires no access control context
@@ -123,6 +129,7 @@ public final class Control {
     }
 
 
+    @SuppressWarnings("removal")
     public String combine(Set<String> values) {
         if (context == null) {
             // VM events requires no access control context
@@ -167,5 +174,22 @@ public final class Control {
 
     final String getLastValue() {
         return lastValue;
+    }
+
+    final SettingControl getSettingControl() {
+        return delegate;
+    }
+
+    boolean isVisible(boolean hasEventHook) {
+        if (isType(ThresholdSetting.class)) {
+            return !hasEventHook;
+        }
+        if (isType(PeriodSetting.class)) {
+            return hasEventHook;
+        }
+        if (isType(StackTraceSetting.class)) {
+            return !hasEventHook;
+        }
+        return true;
     }
 }

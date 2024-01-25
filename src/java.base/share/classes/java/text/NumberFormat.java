@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,28 +71,28 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * To format a number for the current Locale, use one of the factory
  * class methods:
  * <blockquote>
- * <pre>{@code
+ * {@snippet lang=java :
  * myString = NumberFormat.getInstance().format(myNumber);
- * }</pre>
+ * }
  * </blockquote>
  * If you are formatting multiple numbers, it is
  * more efficient to get the format and use it multiple times so that
  * the system doesn't have to fetch the information about the local
  * language and country conventions multiple times.
  * <blockquote>
- * <pre>{@code
+ * {@snippet lang=java :
  * NumberFormat nf = NumberFormat.getInstance();
- * for (int i = 0; i < myNumber.length; ++i) {
- *     output.println(nf.format(myNumber[i]) + "; ");
+ * for (var myNumber : numbers) {
+ *     output.println(nf.format(myNumber) + "; ");
  * }
- * }</pre>
+ * }
  * </blockquote>
  * To format a number for a different Locale, specify it in the
  * call to {@code getInstance}.
  * <blockquote>
- * <pre>{@code
+ * {@snippet lang=java :
  * NumberFormat nf = NumberFormat.getInstance(Locale.FRENCH);
- * }</pre>
+ * }
  * </blockquote>
  *
  * <p>If the locale contains "nu" (numbers) and/or "rg" (region override)
@@ -103,9 +103,9 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  *
  * <p>You can also use a {@code NumberFormat} to parse numbers:
  * <blockquote>
- * <pre>{@code
+ * {@snippet lang=java :
  * myNumber = nf.parse(myString);
- * }</pre>
+ * }
  * </blockquote>
  * Use {@code getInstance} or {@code getNumberInstance} to get the
  * normal number format. Use {@code getIntegerInstance} to get an
@@ -586,6 +586,8 @@ public abstract class NumberFormat extends Format  {
      *
      * @param inLocale the desired locale
      * @return the {@code NumberFormat} instance for currency formatting
+     *
+     * @spec https://www.unicode.org/reports/tr35 Unicode Locale Data Markup Language (LDML)
      */
     public static NumberFormat getCurrencyInstance(Locale inLocale) {
         return getInstance(inLocale, null, CURRENCYSTYLE);
@@ -682,8 +684,9 @@ public abstract class NumberFormat extends Format  {
      * The returned array represents the union of locales supported by the Java
      * runtime and by installed
      * {@link java.text.spi.NumberFormatProvider NumberFormatProvider} implementations.
-     * It must contain at least a {@code Locale} instance equal to
-     * {@link java.util.Locale#US Locale.US}.
+     * At a minimum, the returned array must contain a {@code Locale} instance equal to
+     * {@link Locale#ROOT Locale.ROOT} and a {@code Locale} instance equal to
+     * {@link Locale#US Locale.US}.
      *
      * @return An array of locales for which localized
      *         {@code NumberFormat} instances are available.
@@ -695,7 +698,11 @@ public abstract class NumberFormat extends Format  {
     }
 
     /**
-     * Overrides hashCode.
+     * {@return the hash code for this {@code NumberFormat}}
+     *
+     * @implSpec This method calculates the hash code value using the values returned by
+     * {@link #getMaximumIntegerDigits()} and {@link #getMaximumFractionDigits()}.
+     * @see Object#hashCode()
      */
     @Override
     public int hashCode() {
@@ -704,17 +711,24 @@ public abstract class NumberFormat extends Format  {
     }
 
     /**
-     * Overrides equals.
+     * Compares the specified object with this {@code NumberFormat} for equality.
+     * Returns true if the object is also a {@code NumberFormat} and the
+     * two formats would format any value the same.
+     *
+     * @implSpec This method performs an equality check with a notion of class
+     * identity based on {@code getClass()}, rather than {@code instanceof}.
+     * Therefore, in the equals methods in subclasses, no instance of this class
+     * should compare as equal to an instance of a subclass.
+     * @param  obj object to be compared for equality
+     * @return {@code true} if the specified object is equal to this {@code NumberFormat}
+     * @see Object#equals(Object)
      */
     @Override
     public boolean equals(Object obj) {
-        if (obj == null) {
-            return false;
-        }
         if (this == obj) {
             return true;
         }
-        if (getClass() != obj.getClass()) {
+        if (obj == null || getClass() != obj.getClass()) {
             return false;
         }
         NumberFormat other = (NumberFormat) obj;
@@ -883,16 +897,16 @@ public abstract class NumberFormat extends Format  {
     /**
      * Gets the currency used by this number format when formatting
      * currency values. The initial value is derived in a locale dependent
-     * way. The returned value may be null if no valid
+     * way. The returned value may be {@code null} if no valid
      * currency could be determined and no currency has been set using
-     * {@link #setCurrency(java.util.Currency) setCurrency}.
-     * <p>
-     * The default implementation throws
-     * {@code UnsupportedOperationException}.
+     * {@link #setCurrency(Currency)}.
      *
+     * @implSpec The default implementation always throws {@code
+     * UnsupportedOperationException}. Subclasses should override this method
+     * if currency formatting is desired.
      * @return the currency used by this number format, or {@code null}
-     * @throws    UnsupportedOperationException if the number format class
-     * doesn't implement currency formatting
+     * @throws    UnsupportedOperationException if the implementation of this
+     *            method does not support this operation
      * @since 1.4
      */
     public Currency getCurrency() {
@@ -903,14 +917,14 @@ public abstract class NumberFormat extends Format  {
      * Sets the currency used by this number format when formatting
      * currency values. This does not update the minimum or maximum
      * number of fraction digits used by the number format.
-     * <p>
-     * The default implementation throws
-     * {@code UnsupportedOperationException}.
      *
+     * @implSpec The default implementation always throws {@code
+     * UnsupportedOperationException}. Subclasses should override this method
+     * if currency formatting is desired.
      * @param currency the new currency to be used by this number format
-     * @throws    UnsupportedOperationException if the number format class
-     * doesn't implement currency formatting
-     * @throws    NullPointerException if {@code currency} is null
+     * @throws    NullPointerException if {@code currency} is {@code null}
+     * @throws    UnsupportedOperationException if the implementation of this
+     *            method does not support this operation
      * @since 1.4
      */
     public void setCurrency(Currency currency) {
@@ -919,14 +933,13 @@ public abstract class NumberFormat extends Format  {
 
     /**
      * Gets the {@link java.math.RoundingMode} used in this NumberFormat.
-     * The default implementation of this method in NumberFormat
-     * always throws {@link java.lang.UnsupportedOperationException}.
-     * Subclasses which handle different rounding modes should override
-     * this method.
      *
-     * @throws    UnsupportedOperationException The default implementation
-     *     always throws this exception
+     * @implSpec The default implementation always throws {@code
+     * UnsupportedOperationException}. Subclasses which handle different
+     * rounding modes should override this method.
      * @return The {@code RoundingMode} used for this NumberFormat.
+     * @throws    UnsupportedOperationException if the implementation of this
+     *            method does not support this operation
      * @see #setRoundingMode(RoundingMode)
      * @since 1.6
      */
@@ -936,14 +949,13 @@ public abstract class NumberFormat extends Format  {
 
     /**
      * Sets the {@link java.math.RoundingMode} used in this NumberFormat.
-     * The default implementation of this method in NumberFormat always
-     * throws {@link java.lang.UnsupportedOperationException}.
-     * Subclasses which handle different rounding modes should override
-     * this method.
      *
-     * @throws    UnsupportedOperationException The default implementation
-     *     always throws this exception
-     * @throws    NullPointerException if {@code roundingMode} is null
+     * @implSpec The default implementation always throws {@code
+     * UnsupportedOperationException}. Subclasses which handle different
+     * rounding modes should override this method.
+     * @throws    NullPointerException if {@code roundingMode} is {@code null}
+     * @throws    UnsupportedOperationException if the implementation of this
+     *            method does not support this operation
      * @param roundingMode The {@code RoundingMode} to be used
      * @see #getRoundingMode()
      * @since 1.6
@@ -972,25 +984,14 @@ public abstract class NumberFormat extends Format  {
                                             Locale locale, Style formatStyle,
                                             int choice) {
         NumberFormatProvider provider = adapter.getNumberFormatProvider();
-        NumberFormat numberFormat = null;
-        switch (choice) {
-        case NUMBERSTYLE:
-            numberFormat = provider.getNumberInstance(locale);
-            break;
-        case PERCENTSTYLE:
-            numberFormat = provider.getPercentInstance(locale);
-            break;
-        case CURRENCYSTYLE:
-            numberFormat = provider.getCurrencyInstance(locale);
-            break;
-        case INTEGERSTYLE:
-            numberFormat = provider.getIntegerInstance(locale);
-            break;
-        case COMPACTSTYLE:
-            numberFormat = provider.getCompactNumberInstance(locale, formatStyle);
-            break;
-        }
-        return numberFormat;
+        return switch (choice) {
+            case NUMBERSTYLE   -> provider.getNumberInstance(locale);
+            case PERCENTSTYLE  -> provider.getPercentInstance(locale);
+            case CURRENCYSTYLE -> provider.getCurrencyInstance(locale);
+            case INTEGERSTYLE  -> provider.getIntegerInstance(locale);
+            case COMPACTSTYLE  -> provider.getCompactNumberInstance(locale, formatStyle);
+            default            -> null;
+        };
     }
 
     /**

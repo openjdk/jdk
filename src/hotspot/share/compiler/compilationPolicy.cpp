@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "code/scopeDesc.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/methodData.hpp"
@@ -40,17 +41,14 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/safepointVerifiers.hpp"
-
-#if INCLUDE_JVMCI
-#include "jvmci/jvmci.hpp"
-#endif
-
 #ifdef COMPILER1
 #include "c1/c1_Compiler.hpp"
 #endif
-
 #ifdef COMPILER2
 #include "opto/c2compiler.hpp"
+#endif
+#if INCLUDE_JVMCI
+#include "jvmci/jvmci.hpp"
 #endif
 
 jlong CompilationPolicy::_start_time = 0;
@@ -82,7 +80,7 @@ bool CompilationPolicy::must_be_compiled(const methodHandle& m, int comp_level) 
   if (!can_be_compiled(m, comp_level)) return false;
 
   return !UseInterpreter ||                                              // must compile all methods
-         (UseCompiler && AlwaysCompileLoopMethods && m->has_loops() && CompileBroker::should_compile_new_jobs()); // eagerly compile loop methods
+         (AlwaysCompileLoopMethods && m->has_loops() && CompileBroker::should_compile_new_jobs()); // eagerly compile loop methods
 }
 
 void CompilationPolicy::compile_if_required(const methodHandle& m, TRAPS) {
@@ -112,7 +110,7 @@ void CompilationPolicy::compile_if_required(const methodHandle& m, TRAPS) {
 }
 
 static inline CompLevel adjust_level_for_compilability_query(CompLevel comp_level) {
-  if (comp_level == CompLevel_all) {
+  if (comp_level == CompLevel_any) {
      if (CompilerConfig::is_c1_only()) {
        comp_level = CompLevel_simple;
      } else if (CompilerConfig::is_c2_or_jvmci_compiler_only()) {
@@ -125,7 +123,7 @@ static inline CompLevel adjust_level_for_compilability_query(CompLevel comp_leve
 // Returns true if m is allowed to be compiled
 bool CompilationPolicy::can_be_compiled(const methodHandle& m, int comp_level) {
   // allow any levels for WhiteBox
-  assert(WhiteBoxAPI || comp_level == CompLevel_all || is_compile(comp_level), "illegal compilation level");
+  assert(WhiteBoxAPI || comp_level == CompLevel_any || is_compile(comp_level), "illegal compilation level");
 
   if (m->is_abstract()) return false;
   if (DontCompileHugeMethods && m->code_size() > HugeMethodLimit) return false;
@@ -140,7 +138,7 @@ bool CompilationPolicy::can_be_compiled(const methodHandle& m, int comp_level) {
     return false;
   }
   comp_level = adjust_level_for_compilability_query((CompLevel) comp_level);
-  if (comp_level == CompLevel_all || is_compile(comp_level)) {
+  if (comp_level == CompLevel_any || is_compile(comp_level)) {
     return !m->is_not_compilable(comp_level);
   }
   return false;
@@ -150,7 +148,7 @@ bool CompilationPolicy::can_be_compiled(const methodHandle& m, int comp_level) {
 bool CompilationPolicy::can_be_osr_compiled(const methodHandle& m, int comp_level) {
   bool result = false;
   comp_level = adjust_level_for_compilability_query((CompLevel) comp_level);
-  if (comp_level == CompLevel_all || is_compile(comp_level)) {
+  if (comp_level == CompLevel_any || is_compile(comp_level)) {
     result = !m->is_not_osr_compilable(comp_level);
   }
   return (result && can_be_compiled(m, comp_level));
@@ -163,7 +161,7 @@ bool CompilationPolicy::is_compilation_enabled() {
 
 CompileTask* CompilationPolicy::select_task_helper(CompileQueue* compile_queue) {
   // Remove unloaded methods from the queue
-  for (CompileTask* task = compile_queue->first(); task != NULL; ) {
+  for (CompileTask* task = compile_queue->first(); task != nullptr; ) {
     CompileTask* next = task->next();
     if (task->is_unloaded()) {
       compile_queue->remove_and_mark_stale(task);
@@ -179,7 +177,7 @@ CompileTask* CompilationPolicy::select_task_helper(CompileQueue* compile_queue) 
      * to service non-compiler related compilations sooner and reduce the
      * chance of such compilations timing out.
      */
-    for (CompileTask* task = compile_queue->first(); task != NULL; task = task->next()) {
+    for (CompileTask* task = compile_queue->first(); task != nullptr; task = task->next()) {
       if (task->is_blocking()) {
         return task;
       }
@@ -191,7 +189,7 @@ CompileTask* CompilationPolicy::select_task_helper(CompileQueue* compile_queue) 
 
 // Simple methods are as good being compiled with C1 as C2.
 // Determine if a given method is such a case.
-bool CompilationPolicy::is_trivial(Method* method) {
+bool CompilationPolicy::is_trivial(const methodHandle& method) {
   if (method->is_accessor() ||
       method->is_constant_getter()) {
     return true;
@@ -204,7 +202,7 @@ bool CompilationPolicy::force_comp_at_level_simple(const methodHandle& method) {
 #if INCLUDE_JVMCI
     if (UseJVMCICompiler) {
       AbstractCompiler* comp = CompileBroker::compiler(CompLevel_full_optimization);
-      if (comp != NULL && comp->is_jvmci() && ((JVMCICompiler*) comp)->force_comp_at_level_simple(method)) {
+      if (comp != nullptr && comp->is_jvmci() && ((JVMCICompiler*) comp)->force_comp_at_level_simple(method)) {
         return true;
       }
     }
@@ -215,7 +213,7 @@ bool CompilationPolicy::force_comp_at_level_simple(const methodHandle& method) {
 
 CompLevel CompilationPolicy::comp_level(Method* method) {
   CompiledMethod *nm = method->code();
-  if (nm != NULL && nm->is_in_use()) {
+  if (nm != nullptr && nm->is_in_use()) {
     return (CompLevel)nm->comp_level();
   }
   return CompLevel_none;
@@ -235,8 +233,6 @@ public:
       scale *= threshold_scaling;
     }
     switch(cur_level) {
-    case CompLevel_aot:
-      return b >= Tier3AOTBackEdgeThreshold * scale;
     case CompLevel_none:
     case CompLevel_limited_profile:
       return b >= Tier3BackEdgeThreshold * scale;
@@ -247,13 +243,9 @@ public:
     }
   }
 
-  static bool apply(int i, int b, CompLevel cur_level, const methodHandle& method) {
+  static bool apply(const methodHandle& method, CompLevel cur_level, int i, int b) {
     double k = 1;
     switch(cur_level) {
-    case CompLevel_aot: {
-      k = CompilationModeFlag::disable_intermediate() ? 1 : CompilationPolicy::threshold_scale(CompLevel_full_profile, Tier3LoadFeedback);
-      break;
-    }
     case CompLevel_none:
     // Fall through
     case CompLevel_limited_profile: {
@@ -279,9 +271,6 @@ public:
       scale *= threshold_scaling;
     }
     switch(cur_level) {
-    case CompLevel_aot:
-      return (i >= Tier3AOTInvocationThreshold * scale) ||
-             (i >= Tier3AOTMinInvocationThreshold * scale && i + b >= Tier3AOTCompileThreshold * scale);
     case CompLevel_none:
     case CompLevel_limited_profile:
       return (i >= Tier3InvocationThreshold * scale) ||
@@ -294,13 +283,9 @@ public:
     }
   }
 
-  static bool apply(int i, int b, CompLevel cur_level, const methodHandle& method) {
+  static bool apply(const methodHandle& method, CompLevel cur_level, int i, int b) {
     double k = 1;
     switch(cur_level) {
-    case CompLevel_aot: {
-      k = CompilationModeFlag::disable_intermediate() ? 1 : CompilationPolicy::threshold_scale(CompLevel_full_profile, Tier3LoadFeedback);
-      break;
-    }
     case CompLevel_none:
     case CompLevel_limited_profile: {
       k = CompilationPolicy::threshold_scale(CompLevel_full_profile, Tier3LoadFeedback);
@@ -321,14 +306,14 @@ double CompilationPolicy::threshold_scale(CompLevel level, int feedback_k) {
   int comp_count = compiler_count(level);
   if (comp_count > 0) {
     double queue_size = CompileBroker::queue_size(level);
-    double k = queue_size / (feedback_k * comp_count) + 1;
+    double k = (double)queue_size / ((double)feedback_k * (double)comp_count) + 1;
 
     // Increase C1 compile threshold when the code cache is filled more
     // than specified by IncreaseFirstTierCompileThresholdAt percentage.
     // The main intention is to keep enough free space for C2 compiled code
     // to achieve peak performance if the code cache is under stress.
     if (CompilerConfig::is_tiered() && !CompilationModeFlag::disable_intermediate() && is_c1_compile(level))  {
-      double current_reverse_free_ratio = CodeCache::reverse_free_ratio(CodeCache::get_code_blob_type(level));
+      double current_reverse_free_ratio = CodeCache::reverse_free_ratio();
       if (current_reverse_free_ratio > _increase_threshold_at_ratio) {
         k *= exp(current_reverse_free_ratio - _increase_threshold_at_ratio);
       }
@@ -344,7 +329,7 @@ void CompilationPolicy::print_counters(const char* prefix, const Method* m) {
   MethodData* mdh = m->method_data();
   int mdo_invocations = 0, mdo_backedges = 0;
   int mdo_invocations_start = 0, mdo_backedges_start = 0;
-  if (mdh != NULL) {
+  if (mdh != nullptr) {
     mdo_invocations = mdh->invocation_count();
     mdo_backedges = mdh->backedge_count();
     mdo_invocations_start = mdh->invocation_count_start();
@@ -497,8 +482,18 @@ void CompilationPolicy::initialize() {
     } else if (c2_only) {
       set_c2_count(count);
     } else {
-      set_c1_count(MAX2(count / 3, 1));
-      set_c2_count(MAX2(count - c1_count(), 1));
+#if INCLUDE_JVMCI
+      if (UseJVMCICompiler && UseJVMCINativeLibrary) {
+        int libjvmci_count = MAX2((int) (count * JVMCINativeLibraryThreadFraction), 1);
+        int c1_count = MAX2(count - libjvmci_count, 1);
+        set_c2_count(libjvmci_count);
+        set_c1_count(c1_count);
+      } else
+#endif
+      {
+        set_c1_count(MAX2(count / 3, 1));
+        set_c2_count(MAX2(count - c1_count(), 1));
+      }
     }
     assert(count == c1_count() + c2_count(), "inconsistent compiler thread count");
     set_increase_threshold_at_ratio();
@@ -520,8 +515,8 @@ bool CompilationPolicy::verify_level(CompLevel level) {
     return false;
   }
 
-  // AOT and interpreter levels are always valid.
-  if (level == CompLevel_aot || level == CompLevel_none) {
+  // Interpreter level is always valid.
+  if (level == CompLevel_none) {
     return true;
   }
   if (CompilationModeFlag::normal()) {
@@ -540,7 +535,7 @@ bool CompilationPolicy::verify_level(CompLevel level) {
 
 CompLevel CompilationPolicy::highest_compile_level() {
   CompLevel level = CompLevel_none;
-  // Setup the maximum level availible for the current compiler configuration.
+  // Setup the maximum level available for the current compiler configuration.
   if (!CompilerConfig::is_interpreter_only()) {
     if (CompilerConfig::is_c2_or_jvmci_compiler_enabled()) {
       level = CompLevel_full_optimization;
@@ -609,14 +604,14 @@ CompLevel CompilationPolicy::initial_compile_level(const methodHandle& method) {
 }
 
 // Set carry flags on the counters if necessary
-void CompilationPolicy::handle_counter_overflow(Method* method) {
+void CompilationPolicy::handle_counter_overflow(const methodHandle& method) {
   MethodCounters *mcs = method->method_counters();
-  if (mcs != NULL) {
+  if (mcs != nullptr) {
     mcs->invocation_counter()->set_carry_on_overflow();
     mcs->backedge_counter()->set_carry_on_overflow();
   }
   MethodData* mdo = method->method_data();
-  if (mdo != NULL) {
+  if (mdo != nullptr) {
     mdo->invocation_counter()->set_carry_on_overflow();
     mdo->backedge_counter()->set_carry_on_overflow();
   }
@@ -624,37 +619,41 @@ void CompilationPolicy::handle_counter_overflow(Method* method) {
 
 // Called with the queue locked and with at least one element
 CompileTask* CompilationPolicy::select_task(CompileQueue* compile_queue) {
-  CompileTask *max_blocking_task = NULL;
-  CompileTask *max_task = NULL;
-  Method* max_method = NULL;
+  CompileTask *max_blocking_task = nullptr;
+  CompileTask *max_task = nullptr;
+  Method* max_method = nullptr;
 
   jlong t = nanos_to_millis(os::javaTimeNanos());
   // Iterate through the queue and find a method with a maximum rate.
-  for (CompileTask* task = compile_queue->first(); task != NULL;) {
+  for (CompileTask* task = compile_queue->first(); task != nullptr;) {
     CompileTask* next_task = task->next();
-    Method* method = task->method();
     // If a method was unloaded or has been stale for some time, remove it from the queue.
     // Blocking tasks and tasks submitted from whitebox API don't become stale
-    if (task->is_unloaded() || (task->can_become_stale() && is_stale(t, TieredCompileTaskTimeout, method) && !is_old(method))) {
-      if (!task->is_unloaded()) {
-        if (PrintTieredEvents) {
-          print_event(REMOVE_FROM_QUEUE, method, method, task->osr_bci(), (CompLevel) task->comp_level());
-        }
-        method->clear_queued_for_compilation();
-      }
+    if (task->is_unloaded()) {
       compile_queue->remove_and_mark_stale(task);
       task = next_task;
       continue;
     }
-    update_rate(t, method);
-    if (max_task == NULL || compare_methods(method, max_method)) {
+    Method* method = task->method();
+    methodHandle mh(Thread::current(), method);
+    if (task->can_become_stale() && is_stale(t, TieredCompileTaskTimeout, mh) && !is_old(mh)) {
+      if (PrintTieredEvents) {
+        print_event(REMOVE_FROM_QUEUE, method, method, task->osr_bci(), (CompLevel) task->comp_level());
+      }
+      method->clear_queued_for_compilation();
+      compile_queue->remove_and_mark_stale(task);
+      task = next_task;
+      continue;
+    }
+    update_rate(t, mh);
+    if (max_task == nullptr || compare_methods(method, max_method)) {
       // Select a method with the highest rate
       max_task = task;
       max_method = method;
     }
 
     if (task->is_blocking()) {
-      if (max_blocking_task == NULL || compare_methods(method, max_blocking_task->method())) {
+      if (max_blocking_task == nullptr || compare_methods(method, max_blocking_task->method())) {
         max_blocking_task = task;
       }
     }
@@ -662,7 +661,7 @@ CompileTask* CompilationPolicy::select_task(CompileQueue* compile_queue) {
     task = next_task;
   }
 
-  if (max_blocking_task != NULL) {
+  if (max_blocking_task != nullptr) {
     // In blocking compilation mode, the CompileBroker will make
     // compilations submitted by a JVMCI compiler thread non-blocking. These
     // compilations should be scheduled after all blocking compilations
@@ -674,8 +673,8 @@ CompileTask* CompilationPolicy::select_task(CompileQueue* compile_queue) {
 
   methodHandle max_method_h(Thread::current(), max_method);
 
-  if (max_task != NULL && max_task->comp_level() == CompLevel_full_profile && TieredStopAtLevel > CompLevel_full_profile &&
-      max_method != NULL && is_method_profiled(max_method_h) && !Arguments::is_compiler_only()) {
+  if (max_task != nullptr && max_task->comp_level() == CompLevel_full_profile && TieredStopAtLevel > CompLevel_full_profile &&
+      max_method != nullptr && is_method_profiled(max_method_h) && !Arguments::is_compiler_only()) {
     max_task->set_comp_level(CompLevel_limited_profile);
 
     if (CompileBroker::compilation_is_complete(max_method_h, max_task->osr_bci(), CompLevel_limited_profile)) {
@@ -684,7 +683,7 @@ CompileTask* CompilationPolicy::select_task(CompileQueue* compile_queue) {
       }
       compile_queue->remove_and_mark_stale(max_task);
       max_method->clear_queued_for_compilation();
-      return NULL;
+      return nullptr;
     }
 
     if (PrintTieredEvents) {
@@ -701,7 +700,7 @@ void CompilationPolicy::reprofile(ScopeDesc* trap_scope, bool is_osr) {
       print_event(REPROFILE, sd->method(), sd->method(), InvocationEntryBci, CompLevel_none);
     }
     MethodData* mdo = sd->method()->method_data();
-    if (mdo != NULL) {
+    if (mdo != nullptr) {
       mdo->reset_start_counters();
     }
     if (sd->is_top()) break;
@@ -716,17 +715,17 @@ nmethod* CompilationPolicy::event(const methodHandle& method, const methodHandle
 
   if (comp_level == CompLevel_none &&
       JvmtiExport::can_post_interpreter_events() &&
-      THREAD->as_Java_thread()->is_interp_only_mode()) {
-    return NULL;
+      THREAD->is_interp_only_mode()) {
+    return nullptr;
   }
   if (ReplayCompiles) {
     // Don't trigger other compiles in testing mode
-    return NULL;
+    return nullptr;
   }
 
-  handle_counter_overflow(method());
+  handle_counter_overflow(method);
   if (method() != inlinee()) {
-    handle_counter_overflow(inlinee());
+    handle_counter_overflow(inlinee);
   }
 
   if (bci == InvocationEntryBci) {
@@ -737,20 +736,20 @@ nmethod* CompilationPolicy::event(const methodHandle& method, const methodHandle
     // Check if event led to a higher level OSR compilation
     CompLevel expected_comp_level = MIN2(CompLevel_full_optimization, static_cast<CompLevel>(comp_level + 1));
     if (!CompilationModeFlag::disable_intermediate() && inlinee->is_not_osr_compilable(expected_comp_level)) {
-      // It's not possble to reach the expected level so fall back to simple.
+      // It's not possible to reach the expected level so fall back to simple.
       expected_comp_level = CompLevel_simple;
     }
     CompLevel max_osr_level = static_cast<CompLevel>(inlinee->highest_osr_comp_level());
     if (max_osr_level >= expected_comp_level) { // fast check to avoid locking in a typical scenario
       nmethod* osr_nm = inlinee->lookup_osr_nmethod_for(bci, expected_comp_level, false);
-      assert(osr_nm == NULL || osr_nm->comp_level() >= expected_comp_level, "lookup_osr_nmethod_for is broken");
-      if (osr_nm != NULL && osr_nm->comp_level() != comp_level) {
+      assert(osr_nm == nullptr || osr_nm->comp_level() >= expected_comp_level, "lookup_osr_nmethod_for is broken");
+      if (osr_nm != nullptr && osr_nm->comp_level() != comp_level) {
         // Perform OSR with new nmethod
         return osr_nm;
       }
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 // Check if the method can be compiled, change level if necessary
@@ -759,35 +758,20 @@ void CompilationPolicy::compile(const methodHandle& mh, int bci, CompLevel level
 
   if (level == CompLevel_none) {
     if (mh->has_compiled_code()) {
-      // Happens when we switch from AOT to interpreter to profile.
+      // Happens when we switch to interpreter to profile.
       MutexLocker ml(Compile_lock);
       NoSafepointVerifier nsv;
       if (mh->has_compiled_code()) {
         mh->code()->make_not_used();
       }
       // Deoptimize immediately (we don't have to wait for a compile).
-      JavaThread* jt = THREAD->as_Java_thread();
-      RegisterMap map(jt, false);
+      JavaThread* jt = THREAD;
+      RegisterMap map(jt,
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
       frame fr = jt->last_frame().sender(&map);
       Deoptimization::deoptimize_frame(jt, fr.id());
-    }
-    return;
-  }
-  if (level == CompLevel_aot) {
-    if (mh->has_aot_code()) {
-      if (PrintTieredEvents) {
-        print_event(COMPILE, mh(), mh(), bci, level);
-      }
-      MutexLocker ml(Compile_lock);
-      NoSafepointVerifier nsv;
-      if (mh->has_aot_code() && mh->code() != mh->aot_code()) {
-        mh->aot_code()->make_entrant();
-        if (mh->has_compiled_code()) {
-          mh->code()->make_not_entrant();
-        }
-        MutexLocker pl(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
-        Method::set_code(mh, mh->aot_code());
-      }
     }
     return;
   }
@@ -806,7 +790,7 @@ void CompilationPolicy::compile(const methodHandle& mh, int bci, CompLevel level
     if ((bci != InvocationEntryBci && !can_be_osr_compiled(mh, level))) {
       if (level == CompLevel_full_optimization && can_be_osr_compiled(mh, CompLevel_simple)) {
         nmethod* osr_nm = mh->lookup_osr_nmethod_for(bci, CompLevel_simple, false);
-        if (osr_nm != NULL && osr_nm->comp_level() > CompLevel_simple) {
+        if (osr_nm != nullptr && osr_nm->comp_level() > CompLevel_simple) {
           // Invalidate the existing OSR nmethod so that a compile at CompLevel_simple is permitted.
           osr_nm->make_not_entrant();
         }
@@ -823,43 +807,43 @@ void CompilationPolicy::compile(const methodHandle& mh, int bci, CompLevel level
       print_event(COMPILE, mh(), mh(), bci, level);
     }
     int hot_count = (bci == InvocationEntryBci) ? mh->invocation_count() : mh->backedge_count();
-    update_rate(nanos_to_millis(os::javaTimeNanos()), mh());
+    update_rate(nanos_to_millis(os::javaTimeNanos()), mh);
     CompileBroker::compile_method(mh, bci, level, mh, hot_count, CompileTask::Reason_Tiered, THREAD);
   }
 }
 
 // update_rate() is called from select_task() while holding a compile queue lock.
-void CompilationPolicy::update_rate(jlong t, Method* m) {
+void CompilationPolicy::update_rate(jlong t, const methodHandle& method) {
   // Skip update if counters are absent.
   // Can't allocate them since we are holding compile queue lock.
-  if (m->method_counters() == NULL)  return;
+  if (method->method_counters() == nullptr)  return;
 
-  if (is_old(m)) {
+  if (is_old(method)) {
     // We don't remove old methods from the queue,
     // so we can just zero the rate.
-    m->set_rate(0);
+    method->set_rate(0);
     return;
   }
 
   // We don't update the rate if we've just came out of a safepoint.
   // delta_s is the time since last safepoint in milliseconds.
   jlong delta_s = t - SafepointTracing::end_of_last_safepoint_ms();
-  jlong delta_t = t - (m->prev_time() != 0 ? m->prev_time() : start_time()); // milliseconds since the last measurement
+  jlong delta_t = t - (method->prev_time() != 0 ? method->prev_time() : start_time()); // milliseconds since the last measurement
   // How many events were there since the last time?
-  int event_count = m->invocation_count() + m->backedge_count();
-  int delta_e = event_count - m->prev_event_count();
+  int event_count = method->invocation_count() + method->backedge_count();
+  int delta_e = event_count - method->prev_event_count();
 
   // We should be running for at least 1ms.
   if (delta_s >= TieredRateUpdateMinTime) {
     // And we must've taken the previous point at least 1ms before.
     if (delta_t >= TieredRateUpdateMinTime && delta_e > 0) {
-      m->set_prev_time(t);
-      m->set_prev_event_count(event_count);
-      m->set_rate((float)delta_e / (float)delta_t); // Rate is events per millisecond
+      method->set_prev_time(t);
+      method->set_prev_event_count(event_count);
+      method->set_rate((float)delta_e / (float)delta_t); // Rate is events per millisecond
     } else {
       if (delta_t > TieredRateUpdateMaxTime && delta_e == 0) {
         // If nothing happened for 25ms, zero the rate. Don't modify prev values.
-        m->set_rate(0);
+        method->set_rate(0);
       }
     }
   }
@@ -867,12 +851,12 @@ void CompilationPolicy::update_rate(jlong t, Method* m) {
 
 // Check if this method has been stale for a given number of milliseconds.
 // See select_task().
-bool CompilationPolicy::is_stale(jlong t, jlong timeout, Method* m) {
+bool CompilationPolicy::is_stale(jlong t, jlong timeout, const methodHandle& method) {
   jlong delta_s = t - SafepointTracing::end_of_last_safepoint_ms();
-  jlong delta_t = t - m->prev_time();
+  jlong delta_t = t - method->prev_time();
   if (delta_t > timeout && delta_s > timeout) {
-    int event_count = m->invocation_count() + m->backedge_count();
-    int delta_e = event_count - m->prev_event_count();
+    int event_count = method->invocation_count() + method->backedge_count();
+    int delta_e = event_count - method->prev_event_count();
     // Return true if there were no events.
     return delta_e == 0;
   }
@@ -881,13 +865,16 @@ bool CompilationPolicy::is_stale(jlong t, jlong timeout, Method* m) {
 
 // We don't remove old methods from the compile queue even if they have
 // very low activity. See select_task().
-bool CompilationPolicy::is_old(Method* method) {
-  return method->invocation_count() > 50000 || method->backedge_count() > 500000;
+bool CompilationPolicy::is_old(const methodHandle& method) {
+  int i = method->invocation_count();
+  int b = method->backedge_count();
+  double k = TieredOldPercentage / 100.0;
+
+  return CallPredicate::apply_scaled(method, CompLevel_none, i, b, k) || LoopPredicate::apply_scaled(method, CompLevel_none, i, b, k);
 }
 
 double CompilationPolicy::weight(Method* method) {
-  return (double)(method->rate() + 1) *
-    (method->invocation_count() + 1) * (method->backedge_count() + 1);
+  return (double)(method->rate() + 1) * (method->invocation_count() + 1) * (method->backedge_count() + 1);
 }
 
 // Apply heuristics and return true if x should be compiled before y
@@ -907,7 +894,7 @@ bool CompilationPolicy::compare_methods(Method* x, Method* y) {
 // Is method profiled enough?
 bool CompilationPolicy::is_method_profiled(const methodHandle& method) {
   MethodData* mdo = method->method_data();
-  if (mdo != NULL) {
+  if (mdo != nullptr) {
     int i = mdo->invocation_count_delta();
     int b = mdo->backedge_count_delta();
     return CallPredicate::apply_scaled(method, CompLevel_full_profile, i, b, 1);
@@ -918,9 +905,13 @@ bool CompilationPolicy::is_method_profiled(const methodHandle& method) {
 
 // Determine is a method is mature.
 bool CompilationPolicy::is_mature(Method* method) {
+  if (Arguments::is_compiler_only()) {
+    // Always report profiles as immature with -Xcomp
+    return false;
+  }
   methodHandle mh(Thread::current(), method);
   MethodData* mdo = method->method_data();
-  if (mdo != NULL) {
+  if (mdo != nullptr) {
     int i = mdo->invocation_count();
     int b = mdo->backedge_count();
     double k = ProfileMaturityPercentage / 100.0;
@@ -936,13 +927,16 @@ bool CompilationPolicy::should_create_mdo(const methodHandle& method, CompLevel 
   if (cur_level != CompLevel_none || force_comp_at_level_simple(method) || CompilationModeFlag::quick_only() || !ProfileInterpreter) {
     return false;
   }
+  if (is_old(method)) {
+    return true;
+  }
   int i = method->invocation_count();
   int b = method->backedge_count();
   double k = Tier0ProfilingStartPercentage / 100.0;
 
   // If the top level compiler is not keeping up, delay profiling.
   if (CompileBroker::queue_size(CompLevel_full_optimization) <= Tier0Delay * compiler_count(CompLevel_full_optimization)) {
-    return CallPredicate::apply_scaled(method, CompLevel_full_profile, i, b, k) || LoopPredicate::apply_scaled(method, CompLevel_full_profile, i, b, k);
+    return CallPredicate::apply_scaled(method, CompLevel_none, i, b, k) || LoopPredicate::apply_scaled(method, CompLevel_none, i, b, k);
   }
   return false;
 }
@@ -959,21 +953,20 @@ bool CompilationPolicy::should_not_inline(ciEnv* env, ciMethod* callee) {
 }
 
 // Create MDO if necessary.
-void CompilationPolicy::create_mdo(const methodHandle& mh, Thread* THREAD) {
+void CompilationPolicy::create_mdo(const methodHandle& mh, JavaThread* THREAD) {
   if (mh->is_native() ||
       mh->is_abstract() ||
       mh->is_accessor() ||
       mh->is_constant_getter()) {
     return;
   }
-  if (mh->method_data() == NULL) {
-    Method::build_interpreter_method_data(mh, CHECK_AND_CLEAR);
+  if (mh->method_data() == nullptr) {
+    Method::build_profiling_method_data(mh, CHECK_AND_CLEAR);
   }
   if (ProfileInterpreter) {
     MethodData* mdo = mh->method_data();
-    if (mdo != NULL) {
-      JavaThread* jt = THREAD->as_Java_thread();
-      frame last_frame = jt->last_frame();
+    if (mdo != nullptr) {
+      frame last_frame = THREAD->last_frame();
       if (last_frame.is_interpreted_frame() && mh == last_frame.interpreter_frame_method()) {
         int bci = last_frame.interpreter_frame_bci();
         address dp = mdo->bci_to_dp(bci);
@@ -1033,26 +1026,16 @@ CompLevel CompilationPolicy::common(const methodHandle& method, CompLevel cur_le
   if (force_comp_at_level_simple(method)) {
     next_level = CompLevel_simple;
   } else {
-    if (is_trivial(method())) {
+    if (is_trivial(method)) {
       next_level = CompilationModeFlag::disable_intermediate() ? CompLevel_full_optimization : CompLevel_simple;
     } else {
       switch(cur_level) {
       default: break;
-      case CompLevel_aot:
-        // If we were at full profile level, would we switch to full opt?
-        if (common<Predicate>(method, CompLevel_full_profile, disable_feedback) == CompLevel_full_optimization) {
-          next_level = CompLevel_full_optimization;
-        } else if (disable_feedback || (CompileBroker::queue_size(CompLevel_full_optimization) <=
-                                        Tier3DelayOff * compiler_count(CompLevel_full_optimization) &&
-                                       Predicate::apply(i, b, cur_level, method))) {
-            next_level = CompilationModeFlag::disable_intermediate() ? CompLevel_none : CompLevel_full_profile;
-        }
-        break;
       case CompLevel_none:
         // If we were at full profile level, would we switch to full opt?
         if (common<Predicate>(method, CompLevel_full_profile, disable_feedback) == CompLevel_full_optimization) {
           next_level = CompLevel_full_optimization;
-        } else if (!CompilationModeFlag::disable_intermediate() && Predicate::apply(i, b, cur_level, method)) {
+        } else if (!CompilationModeFlag::disable_intermediate() && Predicate::apply(method, cur_level, i, b)) {
           // C1-generated fully profiled code is about 30% slower than the limited profile
           // code that has only invocation and backedge counters. The observation is that
           // if C2 queue is large enough we can spend too much time in the fully profiled code
@@ -1074,11 +1057,11 @@ CompLevel CompilationPolicy::common(const methodHandle& method, CompLevel cur_le
           next_level = CompLevel_full_optimization;
         } else {
           MethodData* mdo = method->method_data();
-          if (mdo != NULL) {
+          if (mdo != nullptr) {
             if (mdo->would_profile()) {
               if (disable_feedback || (CompileBroker::queue_size(CompLevel_full_optimization) <=
                                        Tier3DelayOff * compiler_count(CompLevel_full_optimization) &&
-                                       Predicate::apply(i, b, cur_level, method))) {
+                                       Predicate::apply(method, cur_level, i, b))) {
                 next_level = CompLevel_full_profile;
               }
             } else {
@@ -1088,7 +1071,7 @@ CompLevel CompilationPolicy::common(const methodHandle& method, CompLevel cur_le
             // If there is no MDO we need to profile
             if (disable_feedback || (CompileBroker::queue_size(CompLevel_full_optimization) <=
                                      Tier3DelayOff * compiler_count(CompLevel_full_optimization) &&
-                                     Predicate::apply(i, b, cur_level, method))) {
+                                     Predicate::apply(method, cur_level, i, b))) {
               next_level = CompLevel_full_profile;
             }
           }
@@ -1097,11 +1080,11 @@ CompLevel CompilationPolicy::common(const methodHandle& method, CompLevel cur_le
       case CompLevel_full_profile:
         {
           MethodData* mdo = method->method_data();
-          if (mdo != NULL) {
+          if (mdo != nullptr) {
             if (mdo->would_profile() || CompilationModeFlag::disable_intermediate()) {
               int mdo_i = mdo->invocation_count_delta();
               int mdo_b = mdo->backedge_count_delta();
-              if (Predicate::apply(mdo_i, mdo_b, cur_level, method)) {
+              if (Predicate::apply(method, cur_level, mdo_i, mdo_b)) {
                 next_level = CompLevel_full_optimization;
               }
             } else {
@@ -1121,14 +1104,14 @@ CompLevel CompilationPolicy::common(const methodHandle& method, CompLevel cur_le
 // Determine if a method should be compiled with a normal entry point at a different level.
 CompLevel CompilationPolicy::call_event(const methodHandle& method, CompLevel cur_level, Thread* thread) {
   CompLevel osr_level = MIN2((CompLevel) method->highest_osr_comp_level(), common<LoopPredicate>(method, cur_level, true));
-  CompLevel next_level = common<CallPredicate>(method, cur_level);
+  CompLevel next_level = common<CallPredicate>(method, cur_level, is_old(method));
 
   // If OSR method level is greater than the regular method level, the levels should be
   // equalized by raising the regular method level in order to avoid OSRs during each
   // invocation of the method.
   if (osr_level == CompLevel_full_optimization && cur_level == CompLevel_full_profile) {
     MethodData* mdo = method->method_data();
-    guarantee(mdo != NULL, "MDO should not be NULL");
+    guarantee(mdo != nullptr, "MDO should not be nullptr");
     if (mdo->invocation_count() >= 1) {
       next_level = CompLevel_full_optimization;
     }
@@ -1152,26 +1135,6 @@ CompLevel CompilationPolicy::loop_event(const methodHandle& method, CompLevel cu
   return next_level;
 }
 
-bool CompilationPolicy::maybe_switch_to_aot(const methodHandle& mh, CompLevel cur_level, CompLevel next_level, Thread* thread) {
-  if (UseAOT) {
-    if (cur_level == CompLevel_full_profile || cur_level == CompLevel_none) {
-      // If the current level is full profile or interpreter and we're switching to any other level,
-      // activate the AOT code back first so that we won't waste time overprofiling.
-      compile(mh, InvocationEntryBci, CompLevel_aot, thread);
-      // Fall through for JIT compilation.
-    }
-    if (next_level == CompLevel_limited_profile && cur_level != CompLevel_aot && mh->has_aot_code()) {
-      // If the next level is limited profile, use the aot code (if there is any),
-      // since it's essentially the same thing.
-      compile(mh, InvocationEntryBci, CompLevel_aot, thread);
-      // Not need to JIT, we're done.
-      return true;
-    }
-  }
-  return false;
-}
-
-
 // Handle the invocation event.
 void CompilationPolicy::method_invocation_event(const methodHandle& mh, const methodHandle& imh,
                                                       CompLevel level, CompiledMethod* nm, TRAPS) {
@@ -1180,10 +1143,6 @@ void CompilationPolicy::method_invocation_event(const methodHandle& mh, const me
   }
   CompLevel next_level = call_event(mh, level, THREAD);
   if (next_level != level) {
-    if (maybe_switch_to_aot(mh, level, next_level, THREAD)) {
-      // No JITting necessary
-      return;
-    }
     if (is_compilation_enabled() && !CompileBroker::compilation_is_in_queue(mh)) {
       compile(mh, InvocationEntryBci, next_level, THREAD);
     }
@@ -1214,15 +1173,8 @@ void CompilationPolicy::method_back_branch_event(const methodHandle& mh, const m
     // enough calls.
     CompLevel cur_level, next_level;
     if (mh() != imh()) { // If there is an enclosing method
-      if (level == CompLevel_aot) {
-        // Recompile the enclosing method to prevent infinite OSRs. Stay at AOT level while it's compiling.
-        if (max_osr_level != CompLevel_none && !CompileBroker::compilation_is_in_queue(mh)) {
-          CompLevel enclosing_level = limit_level(CompLevel_full_profile);
-          compile(mh, InvocationEntryBci, enclosing_level, THREAD);
-        }
-      } else {
-        // Current loop event level is not AOT
-        guarantee(nm != NULL, "Should have nmethod here");
+      {
+        guarantee(nm != nullptr, "Should have nmethod here");
         cur_level = comp_level(mh());
         next_level = call_event(mh, cur_level, THREAD);
 
@@ -1253,7 +1205,7 @@ void CompilationPolicy::method_back_branch_event(const methodHandle& mh, const m
           next_level = CompLevel_full_profile;
         }
         if (cur_level != next_level) {
-          if (!maybe_switch_to_aot(mh, cur_level, next_level, THREAD) && !CompileBroker::compilation_is_in_queue(mh)) {
+          if (!CompileBroker::compilation_is_in_queue(mh)) {
             compile(mh, InvocationEntryBci, next_level, THREAD);
           }
         }
@@ -1262,7 +1214,7 @@ void CompilationPolicy::method_back_branch_event(const methodHandle& mh, const m
       cur_level = comp_level(mh());
       next_level = call_event(mh, cur_level, THREAD);
       if (next_level != cur_level) {
-        if (!maybe_switch_to_aot(mh, cur_level, next_level, THREAD) && !CompileBroker::compilation_is_in_queue(mh)) {
+        if (!CompileBroker::compilation_is_in_queue(mh)) {
           compile(mh, InvocationEntryBci, next_level, THREAD);
         }
       }

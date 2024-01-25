@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import javadoc.tester.JavadocTester;
 public class TestWarnBadParamNames extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestWarnBadParamNames tester = new TestWarnBadParamNames();
+        var tester = new TestWarnBadParamNames();
         tester.runTests();
     }
 
@@ -50,10 +50,10 @@ public class TestWarnBadParamNames extends JavadocTester {
 
         checkOutput(Output.OUT, true,
                 """
-                    warning - @param argument "int" is not a parameter name.""",
+                    warning: @param argument "int" is not a parameter name.""",
                 """
-                    warning - @param argument "IDontExist" is not a parameter name.""",
+                    warning: @param argument "IDontExist" is not a parameter name.""",
                 """
-                    warning - Parameter "arg" is documented more than once.""");
+                    warning: Parameter "arg" is documented more than once.""");
     }
 }

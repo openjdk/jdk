@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,10 @@
 #include "gc/parallel/parMarkBitMap.inline.hpp"
 #include "gc/parallel/psCompactionManager.inline.hpp"
 #include "gc/parallel/psParallelCompact.inline.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 
@@ -47,17 +47,17 @@ ParMarkBitMap::initialize(MemRegion covered_region)
   const size_t granularity = os::vm_allocation_granularity();
   _reserved_byte_size = align_up(raw_bytes, MAX2(page_sz, granularity));
 
-  const size_t rs_align = page_sz == (size_t) os::vm_page_size() ? 0 :
+  const size_t rs_align = page_sz == os::vm_page_size() ? 0 :
     MAX2(page_sz, granularity);
-  ReservedSpace rs(_reserved_byte_size, rs_align, rs_align > 0);
-  const size_t used_page_sz = ReservedSpace::actual_reserved_page_size(rs);
-  os::trace_page_sizes("Mark Bitmap", raw_bytes, raw_bytes, used_page_sz,
-                       rs.base(), rs.size());
+  ReservedSpace rs(_reserved_byte_size, rs_align, page_sz);
+  const size_t used_page_sz = rs.page_size();
+  os::trace_page_sizes("Mark Bitmap", raw_bytes, raw_bytes,
+                       rs.base(), rs.size(), used_page_sz);
 
   MemTracker::record_virtual_memory_type((address)rs.base(), mtGC);
 
   _virtual_space = new PSVirtualSpace(rs, page_sz);
-  if (_virtual_space != NULL && _virtual_space->expand_by(_reserved_byte_size)) {
+  if (_virtual_space != nullptr && _virtual_space->expand_by(_reserved_byte_size)) {
     _region_start = covered_region.start();
     _region_size = covered_region.word_size();
     BitMap::bm_word_t* map = (BitMap::bm_word_t*)_virtual_space->reserved_low_addr();
@@ -68,19 +68,14 @@ ParMarkBitMap::initialize(MemRegion covered_region)
 
   _region_start = 0;
   _region_size = 0;
-  if (_virtual_space != NULL) {
+  if (_virtual_space != nullptr) {
     delete _virtual_space;
-    _virtual_space = NULL;
+    _virtual_space = nullptr;
     // Release memory reserved in the space.
     rs.release();
   }
   return false;
 }
-
-#ifdef ASSERT
-extern size_t mark_bitmap_count;
-extern size_t mark_bitmap_size;
-#endif  // #ifdef ASSERT
 
 bool
 ParMarkBitMap::mark_obj(HeapWord* addr, size_t size)
@@ -90,8 +85,6 @@ ParMarkBitMap::mark_obj(HeapWord* addr, size_t size)
     const idx_t end_bit = addr_to_bit(addr + size - 1);
     bool end_bit_ok = _end_bits.par_set_bit(end_bit);
     assert(end_bit_ok, "concurrency problem");
-    DEBUG_ONLY(Atomic::inc(&mark_bitmap_count));
-    DEBUG_ONLY(Atomic::add(&mark_bitmap_size, size));
     return true;
   }
   return false;
@@ -146,14 +139,14 @@ ParMarkBitMap::live_words_in_range_use_cache(ParCompactionManager* cm, HeapWord*
     // The cached value is for an object that is to the left (lower address) of the current
     // end_obj. Calculate back from that cached value.
     if (pointer_delta(end_obj, beg_addr) > pointer_delta(last_obj, end_obj)) {
-      last_ret = last_ret - live_words_in_range_helper(end_obj, (oop)last_obj);
+      last_ret = last_ret - live_words_in_range_helper(end_obj, cast_to_oop(last_obj));
     } else {
       last_ret = live_words_in_range_helper(beg_addr, end_oop);
     }
     last_obj = end_obj;
   }
 
-  update_live_words_in_range_cache(cm, last_beg, (oop)last_obj, last_ret);
+  update_live_words_in_range_cache(cm, last_beg, cast_to_oop(last_obj), last_ret);
   return last_ret;
 }
 

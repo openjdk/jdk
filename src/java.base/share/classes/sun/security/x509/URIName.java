@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ import sun.security.util.*;
  * case-sensitive, but other components of the scheme-specific-part may
  * be case-sensitive. When comparing URIs, conforming implementations
  * MUST compare the scheme and host without regard to case, but assume
- * the remainder of the scheme-specific-part is case sensitive.
+ * the remainder of the scheme-specific-part is case-sensitive.
  * <p>
  * [RFC1738] In general, URLs are written as follows:
  * <pre>
@@ -68,7 +68,7 @@ import sun.security.util.*;
  * [RFC2732] specifies that an IPv6 address contained inside a URL
  * must be enclosed in square brackets (to allow distinguishing the
  * colons that separate IPv6 components from the colons that separate
- * scheme-specific data.
+ * scheme-specific data).
  *
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
@@ -81,8 +81,8 @@ import sun.security.util.*;
 public class URIName implements GeneralNameInterface {
 
     // private attributes
-    private URI uri;
-    private String host;
+    private final URI uri;
+    private final String host;
     private DNSName hostDNS;
     private IPAddressName hostIP;
 
@@ -147,7 +147,7 @@ public class URIName implements GeneralNameInterface {
 
     /**
      * Create the URIName object with the specified name constraint. URI
-     * name constraints syntax is different than SubjectAltNames, etc. See
+     * name constraints syntax is different from SubjectAltNames, etc. See
      * 4.2.1.10 of RFC 5280.
      *
      * @param value the URI name constraint
@@ -197,9 +197,9 @@ public class URIName implements GeneralNameInterface {
      * Encode the URI name into the DerOutputStream.
      *
      * @param out the DER stream to encode the URIName to.
-     * @exception IOException on encoding errors.
      */
-    public void encode(DerOutputStream out) throws IOException {
+    @Override
+    public void encode(DerOutputStream out) {
         out.putIA5String(uri.toASCIIString());
     }
 
@@ -215,16 +215,15 @@ public class URIName implements GeneralNameInterface {
      *
      * @return true iff the names are equivalent according to RFC 5280.
      */
+    @Override
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;
         }
 
-        if (!(obj instanceof URIName)) {
+        if (!(obj instanceof URIName other)) {
             return false;
         }
-
-        URIName other = (URIName) obj;
 
         return uri.equals(other.getURI());
     }
@@ -277,10 +276,9 @@ public class URIName implements GeneralNameInterface {
     }
 
     /**
-     * Returns the hash code value for this object.
-     *
-     * @return a hash code value for this object.
+     * {@return the hash code value for this object}
      */
+    @Override
     public int hashCode() {
         return uri.hashCode();
     }
@@ -335,14 +333,13 @@ public class URIName implements GeneralNameInterface {
                 Object otherHostObject = ((URIName)inputName).getHostObject();
 
                 if ((hostDNS == null) ||
-                    !(otherHostObject instanceof DNSName)) {
+                    !(otherHostObject instanceof DNSName otherDNS)) {
                     // If one (or both) is an IP address, only same type
                     constraintType = NAME_SAME_TYPE;
                 } else {
                     // Both host portions are DNSNames. Are they domains?
                     boolean thisDomain = (host.charAt(0) == '.');
                     boolean otherDomain = (otherHost.charAt(0) == '.');
-                    DNSName otherDNS = (DNSName) otherHostObject;
 
                     // Run DNSName.constrains.
                     constraintType = hostDNS.constrains(otherDNS);
@@ -381,7 +378,7 @@ public class URIName implements GeneralNameInterface {
      * @throws UnsupportedOperationException if not supported for this name type
      */
     public int subtreeDepth() throws UnsupportedOperationException {
-        DNSName dnsName = null;
+        DNSName dnsName;
         try {
             dnsName = new DNSName(host);
         } catch (IOException ioe) {

@@ -29,7 +29,7 @@
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TestKeyGenerator
- * @run main/othervm TestKeyGenerator sm
+ * @run main/othervm -Djava.security.manager=allow TestKeyGenerator sm
  */
 
 import java.security.InvalidParameterException;

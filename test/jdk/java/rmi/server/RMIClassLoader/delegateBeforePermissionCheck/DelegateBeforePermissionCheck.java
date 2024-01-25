@@ -38,7 +38,7 @@
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
  * @build TestLibrary Foo
- * @run main/othervm DelegateBeforePermissionCheck
+ * @run main/othervm -Djava.security.manager=allow DelegateBeforePermissionCheck
  */
 
 import java.net.*;

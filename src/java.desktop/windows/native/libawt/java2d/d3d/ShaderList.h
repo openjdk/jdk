@@ -79,7 +79,7 @@ jlong ShaderList_FindProgram(ShaderList *programList,
 void ShaderList_Dispose(ShaderList *programList);
 
 #ifdef __cplusplus
-};
+}
 #endif
 
 #endif /* ShaderList_h_Included */

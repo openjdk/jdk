@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.net.URLConnection;
+import java.nio.file.Paths;
 import java.security.AccessController;
 import java.security.CodeSource;
 import java.security.PrivilegedAction;
@@ -81,6 +83,7 @@ public class SecuritySupport {
      * @param propName the name of the property
      * @return the value of the property
      */
+    @SuppressWarnings("removal")
     public static String getSystemProperty(final String propName) {
         return
         AccessController.doPrivileged(
@@ -116,9 +119,9 @@ public class SecuritySupport {
         if (value == null) {
             value = defValue;
         }
-        if (Integer.class.isAssignableFrom(type)) {
+        if (Integer.class == type) {
             return type.cast(Integer.parseInt(value));
-        } else if (Boolean.class.isAssignableFrom(type)) {
+        } else if (Boolean.class == type) {
             return type.cast(Boolean.parseBoolean(value));
         }
         return type.cast(value);
@@ -158,47 +161,87 @@ public class SecuritySupport {
     public static String getJAXPSystemProperty(String propName) {
         String value = getSystemProperty(propName);
         if (value == null) {
-            value = readJAXPProperty(propName);
+            value = readConfig(propName);
         }
         return value;
     }
 
     /**
-     * Reads the specified property from $java.home/conf/jaxp.properties
+     * Returns the value of the specified property from the Configuration file.
+     * The method reads the System Property "java.xml.config.file" for a custom
+     * configuration file, if doesn't exist, falls back to the JDK default that
+     * is typically located at $java.home/conf/jaxp.properties.
      *
-     * @param propName the name of the property
-     * @return the value of the property
+     * @param propName the specified property
+     * @return the value of the specified property, null if the property is not
+     * found
      */
-    public static String readJAXPProperty(String propName) {
-        String value = null;
-        InputStream is = null;
-        try {
-            if (firstTime) {
-                synchronized (cacheProps) {
-                    if (firstTime) {
-                        String configFile = getSystemProperty("java.home") + File.separator
-                                + "conf" + File.separator + "jaxp.properties";
-                        File f = new File(configFile);
-                        if (isFileExists(f)) {
-                            is = getFileInputStream(f);
-                            cacheProps.load(is);
-                        }
-                        firstTime = false;
-                    }
-                }
-            }
-            value = cacheProps.getProperty(propName);
+    public static String readConfig(String propName) {
+        return readConfig(propName, false);
+    }
 
-        } catch (IOException ex) {
-        } finally {
-            if (is != null) {
-                try {
-                    is.close();
-                } catch (IOException ex) {}
+    /**
+     * Returns the value of the specified property from the Configuration file.
+     * The method reads the JDK default configuration that is typically located
+     * at $java.home/conf/jaxp.properties. On top of the default, if the System
+     * Property "java.xml.config.file" exists, the configuration file it points
+     * to will also be read. Any settings in it will then override those in the
+     * default.
+     *
+     * @param propName the specified property
+     * @param stax a flag indicating whether to read stax.properties
+     * @return the value of the specified property, null if the property is not
+     * found
+     */
+    public static String readConfig(String propName, boolean stax) {
+        // always load the default configuration file
+        if (firstTime) {
+            synchronized (cacheProps) {
+                if (firstTime) {
+                    boolean found = loadProperties(
+                            Paths.get(SecuritySupport.getSystemProperty("java.home"),
+                                "conf", "jaxp.properties")
+                                .toAbsolutePath().normalize().toString());
+
+                    // attempts to find stax.properties only if jaxp.properties is not available
+                    if (stax && !found) {
+                        found = loadProperties(
+                            Paths.get(SecuritySupport.getSystemProperty("java.home"),
+                                    "conf", "stax.properties")
+                                    .toAbsolutePath().normalize().toString()
+                        );
+                    }
+
+                    // load the custom configure on top of the default if any
+                    String configFile = SecuritySupport.getSystemProperty(JdkConstants.CONFIG_FILE_PROPNAME);
+                    if (configFile != null) {
+                        loadProperties(configFile);
+                    }
+
+                    firstTime = false;
+                }
             }
         }
 
-        return value;
+        return cacheProps.getProperty(propName);
+    }
+
+    /**
+     * Loads the properties from the specified file into the cache.
+     * @param file the specified file
+     * @return true if success, false otherwise
+     */
+    private static boolean loadProperties(String file) {
+        File f = new File(file);
+        if (SecuritySupport.doesFileExist(f)) {
+            try (final InputStream in = SecuritySupport.getFileInputStream(f)) {
+                cacheProps.load(in);
+                return true;
+            } catch (IOException e) {
+                // shouldn't happen, but required by method getFileInputStream
+            }
+        }
+        return false;
     }
 
     /**
@@ -206,6 +249,7 @@ public class SecuritySupport {
      * @param f the file to be tested
      * @return true if it is a directory, false otherwise
      */
+    @SuppressWarnings("removal")
     public static boolean isDirectory(final File f) {
         return (AccessController.doPrivileged((PrivilegedAction<Boolean>) ()
                 -> f.isDirectory()));
@@ -217,9 +261,22 @@ public class SecuritySupport {
      * @param f the file to be tested
      * @return true if the file exists, false otherwise
      */
+    @SuppressWarnings("removal")
     public static boolean isFileExists(final File f) {
         return (AccessController.doPrivileged((PrivilegedAction<Boolean>) ()
                 -> f.exists()));
+    }
+
+    /**
+     * Tests whether the input is file.
+     *
+     * @param f the file to be tested
+     * @return true if the input is file, false otherwise
+     */
+    @SuppressWarnings("removal")
+    public static boolean isFile(final File f) {
+        return (AccessController.doPrivileged((PrivilegedAction<Boolean>) ()
+                -> f.isFile()));
     }
 
     /**
@@ -228,6 +285,7 @@ public class SecuritySupport {
      * @return the FileInputStream
      * @throws FileNotFoundException if the file is not found
      */
+    @SuppressWarnings("removal")
     public static FileInputStream getFileInputStream(final File file)
             throws FileNotFoundException {
         try {
@@ -239,13 +297,42 @@ public class SecuritySupport {
     }
 
     /**
+     * Returns an InputStream from a URLConnection.
+     * @param uc the URLConnection
+     * @return the InputStream
+     * @throws IOException if an I/O error occurs while creating the input stream
+     */
+    @SuppressWarnings("removal")
+    public static InputStream getInputStream(final URLConnection uc)
+            throws IOException {
+        try {
+            return AccessController.doPrivileged((PrivilegedExceptionAction<InputStream>) ()
+                    -> uc.getInputStream());
+        } catch (PrivilegedActionException e) {
+            throw (IOException) e.getException();
+        }
+    }
+
+    /**
      * Returns the resource as a stream.
      * @param name the resource name
      * @return the resource stream
      */
+    @SuppressWarnings("removal")
     public static InputStream getResourceAsStream(final String name) {
         return AccessController.doPrivileged((PrivilegedAction<InputStream>) () ->
                 SecuritySupport.class.getResourceAsStream("/"+name));
+    }
+
+    /**
+     * Returns the resource by the name.
+     * @param name the resource name
+     * @return the resource
+     */
+    @SuppressWarnings("removal")
+    public static URL getResource(final String name) {
+        return AccessController.doPrivileged((PrivilegedAction<URL>) () ->
+                SecuritySupport.class.getResource(name));
     }
 
     /**
@@ -263,13 +350,14 @@ public class SecuritySupport {
      * @param locale the locale for which a resource bundle is desired
      * @return a resource bundle for the given base name and locale
      */
+    @SuppressWarnings("removal")
     public static ResourceBundle getResourceBundle(final String bundle, final Locale locale) {
         return AccessController.doPrivileged((PrivilegedAction<ResourceBundle>) () -> {
             try {
                 return ResourceBundle.getBundle(bundle, locale);
             } catch (MissingResourceException e) {
                 try {
-                    return ResourceBundle.getBundle(bundle, new Locale("en", "US"));
+                    return ResourceBundle.getBundle(bundle, Locale.US);
                 } catch (MissingResourceException e2) {
                     throw new MissingResourceException(
                             "Could not load any resource bundle by " + bundle, bundle, "");
@@ -283,6 +371,7 @@ public class SecuritySupport {
      * @param f the specified file
      * @return true if the file exists, false otherwise
      */
+    @SuppressWarnings("removal")
     public static boolean doesFileExist(final File f) {
         return (AccessController.doPrivileged((PrivilegedAction<Boolean>) () -> f.exists()));
     }
@@ -292,6 +381,7 @@ public class SecuritySupport {
      * @param f the specified file
      * @return the LastModified attribute
      */
+    @SuppressWarnings("removal")
     static long getLastModified(final File f) {
         return (AccessController.doPrivileged((PrivilegedAction<Long>) () -> f.lastModified()));
     }
@@ -332,6 +422,7 @@ public class SecuritySupport {
         if (!systemId.contains(":")) {
             protocol = "file";
         } else {
+            @SuppressWarnings("deprecation")
             URL url = new URL(systemId);
             protocol = url.getProtocol();
             if (protocol.equalsIgnoreCase("jar")) {
@@ -373,6 +464,7 @@ public class SecuritySupport {
          return false;
      }
 
+    @SuppressWarnings("removal")
     public static ClassLoader getContextClassLoader() {
         return AccessController.doPrivileged((PrivilegedAction<ClassLoader>) () -> {
             ClassLoader cl = Thread.currentThread().getContextClassLoader();
@@ -383,6 +475,7 @@ public class SecuritySupport {
     }
 
 
+    @SuppressWarnings("removal")
     public static ClassLoader getSystemClassLoader() {
         return AccessController.doPrivileged((PrivilegedAction<ClassLoader>) () -> {
             ClassLoader cl = null;
@@ -394,6 +487,7 @@ public class SecuritySupport {
         });
     }
 
+    @SuppressWarnings("removal")
     public static ClassLoader getParentClassLoader(final ClassLoader cl) {
         return AccessController.doPrivileged((PrivilegedAction<ClassLoader>) () -> {
             ClassLoader parent = null;
@@ -410,6 +504,7 @@ public class SecuritySupport {
 
 
     // Used for debugging purposes
+    @SuppressWarnings("removal")
     public static String getClassSource(Class<?> cls) {
         return AccessController.doPrivileged((PrivilegedAction<String>) () -> {
             CodeSource cs = cls.getProtectionDomain().getCodeSource();
@@ -429,6 +524,7 @@ public class SecuritySupport {
      * @return the current thread's context class loader, or the system class loader
      * @throws SecurityException
      */
+    @SuppressWarnings("removal")
     public static ClassLoader getClassLoader() throws SecurityException{
         return AccessController.doPrivileged((PrivilegedAction<ClassLoader>)() -> {
             ClassLoader cl = Thread.currentThread().getContextClassLoader();
@@ -440,6 +536,7 @@ public class SecuritySupport {
         });
     }
 
+    @SuppressWarnings("removal")
     public static InputStream getResourceAsStream(final ClassLoader cl, final String name)
     {
         return AccessController.doPrivileged((PrivilegedAction<InputStream>) () -> {

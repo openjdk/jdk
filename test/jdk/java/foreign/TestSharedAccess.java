@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,10 @@
 
 /*
  * @test
- * @run testng/othervm -Dforeign.restricted=permit TestSharedAccess
+ * @run testng/othervm --enable-native-access=ALL-UNNAMED TestSharedAccess
  */
 
-import jdk.incubator.foreign.*;
-import org.testng.annotations.*;
-
+import java.lang.foreign.*;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -38,50 +36,26 @@ import java.util.Spliterator;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
+
+import org.testng.annotations.*;
 
 import static org.testng.Assert.*;
 
 public class TestSharedAccess {
 
-    static final VarHandle intHandle = MemoryLayouts.JAVA_INT.varHandle(int.class);
-
-    @Test
-    public void testConfined() throws Throwable {
-        Thread owner = Thread.currentThread();
-        MemorySegment s = MemorySegment.allocateNative(4);
-        AtomicReference<MemorySegment> confined = new AtomicReference<>(s);
-        setInt(s, 42);
-        assertEquals(getInt(s), 42);
-        List<Thread> threads = new ArrayList<>();
-        for (int i = 0 ; i < 1000 ; i++) {
-            threads.add(new Thread(() -> {
-                assertEquals(getInt(confined.get()), 42);
-                confined.set(confined.get().handoff(owner));
-            }));
-        }
-        threads.forEach(t -> {
-            confined.set(confined.get().handoff(t));
-            t.start();
-            try {
-                t.join();
-            } catch (Throwable e) {
-                throw new IllegalStateException(e);
-            }
-        });
-        confined.get().close();
-    }
+    static final VarHandle intHandle = ValueLayout.JAVA_INT.varHandle();
 
     @Test
     public void testShared() throws Throwable {
-        SequenceLayout layout = MemoryLayout.ofSequence(1024, MemoryLayouts.JAVA_INT);
-        try (MemorySegment s = MemorySegment.allocateNative(layout).share()) {
-            for (int i = 0 ; i < layout.elementCount().getAsLong() ; i++) {
+        SequenceLayout layout = MemoryLayout.sequenceLayout(1024, ValueLayout.JAVA_INT);
+        try (Arena arena = Arena.ofShared()) {
+            MemorySegment s = arena.allocate(layout);;
+            for (int i = 0 ; i < layout.elementCount() ; i++) {
                 setInt(s.asSlice(i * 4), 42);
             }
             List<Thread> threads = new ArrayList<>();
             List<Spliterator<MemorySegment>> spliterators = new ArrayList<>();
-            spliterators.add(s.spliterator(layout));
+            spliterators.add(s.spliterator(layout.elementLayout()));
             while (true) {
                 boolean progress = false;
                 List<Spliterator<MemorySegment>> newSpliterators = new ArrayList<>();
@@ -119,14 +93,14 @@ public class TestSharedAccess {
 
     @Test
     public void testSharedUnsafe() throws Throwable {
-        try (MemorySegment s = MemorySegment.allocateNative(4)) {
+        try (Arena arena = Arena.ofShared()) {
+            MemorySegment s = arena.allocate(4, 1);;
             setInt(s, 42);
             assertEquals(getInt(s), 42);
             List<Thread> threads = new ArrayList<>();
-            MemorySegment sharedSegment = s.address().asSegmentRestricted(s.byteSize()).share();
             for (int i = 0 ; i < 1000 ; i++) {
                 threads.add(new Thread(() -> {
-                    assertEquals(getInt(sharedSegment), 42);
+                    assertEquals(getInt(s), 42);
                 }));
             }
             threads.forEach(Thread::start);
@@ -141,44 +115,18 @@ public class TestSharedAccess {
     }
 
     @Test
-    public void testHandoffToSelf() {
-        MemorySegment s1 = MemorySegment.ofArray(new int[4]);
-        MemorySegment s2 = s1.handoff(Thread.currentThread());
-        assertFalse(s1.isAlive());
-        assertTrue(s2.isAlive());
-    }
-
-    @Test
-    public void testShareTwice() {
-        MemorySegment s1 = MemorySegment.ofArray(new int[4]).share();
-        MemorySegment s2 = s1.share();
-        assertFalse(s1.isAlive());
-        assertTrue(s2.isAlive());
-    }
-
-    @Test(expectedExceptions=UnsupportedOperationException.class)
-    public void testBadHandoffNoAccess() {
-        MemorySegment.ofArray(new int[4])
-            .withAccessModes(MemorySegment.CLOSE).handoff(new Thread());
-    }
-
-    @Test(expectedExceptions=UnsupportedOperationException.class)
-    public void testBadShareNoAccess() {
-        MemorySegment.ofArray(new int[4])
-                .withAccessModes(MemorySegment.CLOSE).share();
-    }
-
-    @Test
     public void testOutsideConfinementThread() throws Throwable {
         CountDownLatch a = new CountDownLatch(1);
         CountDownLatch b = new CountDownLatch(1);
         CompletableFuture<?> r;
-        try (MemorySegment s1 = MemorySegment.allocateNative(MemoryLayout.ofSequence(2, MemoryLayouts.JAVA_INT))) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemoryLayout layout = MemoryLayout.sequenceLayout(2, ValueLayout.JAVA_INT);
+            MemorySegment s1 = arena.allocate(layout);;
             r = CompletableFuture.runAsync(() -> {
                 try {
                     ByteBuffer bb = s1.asByteBuffer();
 
-                    MemorySegment s2 = MemorySegment.ofByteBuffer(bb);
+                    MemorySegment s2 = MemorySegment.ofBuffer(bb);
                     a.countDown();
 
                     try {
@@ -188,7 +136,7 @@ public class TestSharedAccess {
 
                     setInt(s2.asSlice(4), -42);
                     fail();
-                } catch (IllegalStateException ex) {
+                } catch (WrongThreadException ex) {
                     assertTrue(ex.getMessage().contains("owning thread"));
                 }
             });
@@ -202,10 +150,10 @@ public class TestSharedAccess {
     }
 
     static int getInt(MemorySegment base) {
-        return (int)intHandle.getVolatile(base);
+        return (int)intHandle.getVolatile(base, 0L);
     }
 
     static void setInt(MemorySegment base, int value) {
-        intHandle.setVolatile(base, value);
+        intHandle.setVolatile(base, 0L, value);
     }
 }

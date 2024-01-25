@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,11 +52,11 @@ public:
 // doubled in size; the total amount of EXTRA times all hash functions are
 // computed for the doubling is no more than the current size - thus the
 // doubling in size costs no more than a constant factor in speed.
-Dict::Dict(CmpKey initcmp, Hash inithash) : _hash(inithash), _cmp(initcmp), _arena(NULL) {
+Dict::Dict(CmpKey initcmp, Hash inithash) : _hash(inithash), _cmp(initcmp), _arena(nullptr) {
   init();
 }
 
-Dict::Dict(CmpKey initcmp, Hash inithash, Arena *arena) : _hash(inithash), _cmp(initcmp), _arena(arena) {
+Dict::Dict(CmpKey initcmp, Hash inithash, AdlArena *arena) : _hash(inithash), _cmp(initcmp), _arena(arena) {
   init();
 }
 
@@ -74,7 +74,7 @@ void Dict::init() {
 
   _size = 16;                   // Size is a power of 2
   _cnt = 0;                     // Dictionary is empty
-  _bin = (bucket*)_arena->Amalloc_4(sizeof(bucket) * _size);
+  _bin = (bucket*)_arena->AmallocWords(sizeof(bucket) * _size);
   memset(_bin, 0, sizeof(bucket) * _size);
 }
 
@@ -115,7 +115,7 @@ void Dict::doubhash(void) {
     if( !j ) j = 1;             // Handle zero-sized buckets
     nb->_max = j<<1;
     // Allocate worst case space for key-value pairs
-    nb->_keyvals = (const void**)_arena->Amalloc_4( sizeof(void *)*nb->_max*2 );
+    nb->_keyvals = (const void**)_arena->AmallocWords( sizeof(void *)*nb->_max*2 );
     int nbcnt = 0;
 
     for( j=0; j<b->_cnt; j++ ) {  // Rehash all keys in this bucket
@@ -138,11 +138,11 @@ void Dict::doubhash(void) {
 //------------------------------Dict-----------------------------------------
 // Deep copy a dictionary.
 Dict::Dict( const Dict &d ) : _size(d._size), _cnt(d._cnt), _hash(d._hash),_cmp(d._cmp), _arena(d._arena) {
-  _bin = (bucket*)_arena->Amalloc_4(sizeof(bucket)*_size);
+  _bin = (bucket*)_arena->AmallocWords(sizeof(bucket)*_size);
   memcpy( _bin, d._bin, sizeof(bucket)*_size );
   for( int i=0; i<_size; i++ ) {
     if( !_bin[i]._keyvals ) continue;
-    _bin[i]._keyvals=(const void**)_arena->Amalloc_4( sizeof(void *)*_bin[i]._max*2);
+    _bin[i]._keyvals=(const void**)_arena->AmallocWords( sizeof(void *)*_bin[i]._max*2);
     memcpy( _bin[i]._keyvals, d._bin[i]._keyvals,_bin[i]._cnt*2*sizeof(void*));
   }
 }
@@ -172,7 +172,7 @@ Dict &Dict::operator =( const Dict &d ) {
 //------------------------------Insert---------------------------------------
 // Insert or replace a key/value pair in the given dictionary.  If the
 // dictionary is too full, it's size is doubled.  The prior value being
-// replaced is returned (NULL if this is a 1st insertion of that key).  If
+// replaced is returned (null if this is a 1st insertion of that key).  If
 // an old value is found, it's swapped with the prior key-value pair on the
 // list.  This moves a commonly searched-for value towards the list head.
 const void *Dict::Insert(const void *key, const void *val) {
@@ -195,7 +195,7 @@ const void *Dict::Insert(const void *key, const void *val) {
   if( b->_cnt == b->_max ) {    // Must grow bucket?
     if( !b->_keyvals ) {
       b->_max = 2;              // Initial bucket size
-      b->_keyvals = (const void**)_arena->Amalloc_4( sizeof(void *)*b->_max*2 );
+      b->_keyvals = (const void**)_arena->AmallocWords( sizeof(void *)*b->_max*2 );
     } else {
       b->_keyvals = (const void**)_arena->Arealloc( b->_keyvals, sizeof(void *)*b->_max*2, sizeof(void *)*b->_max*4 );
       b->_max <<= 1;            // Double bucket
@@ -204,7 +204,7 @@ const void *Dict::Insert(const void *key, const void *val) {
   b->_keyvals[b->_cnt+b->_cnt  ] = key;
   b->_keyvals[b->_cnt+b->_cnt+1] = val;
   b->_cnt++;
-  return NULL;                  // Nothing found prior
+  return nullptr;               // Nothing found prior
 }
 
 //------------------------------Delete---------------------------------------
@@ -221,11 +221,11 @@ const void *Dict::Delete(void *key) {
       _cnt--;                   // One less thing in table
       return prior;
     }
-  return NULL;
+  return nullptr;
 }
 
 //------------------------------FindDict-------------------------------------
-// Find a key-value pair in the given dictionary.  If not found, return NULL.
+// Find a key-value pair in the given dictionary.  If not found, return null.
 // If found, move key-value pair towards head of list.
 const void *Dict::operator [](const void *key) const {
   int i = _hash( key ) & (_size-1);     // Get hash key, corrected for size
@@ -233,7 +233,7 @@ const void *Dict::operator [](const void *key) const {
   for( int j=0; j<b->_cnt; j++ )
     if( !_cmp(key,b->_keyvals[j+j]) )
       return b->_keyvals[j+j+1];
-  return NULL;
+  return nullptr;
 }
 
 //------------------------------CmpDict--------------------------------------
@@ -335,7 +335,7 @@ void DictI::reset( const Dict *dict ) {
 }
 
 //------------------------------next-------------------------------------------
-// Find the next key-value pair in the dictionary, or return a NULL key and
+// Find the next key-value pair in the dictionary, or return a null key and
 // value.
 void DictI::operator ++(void) {
   if( _j-- ) {                  // Still working in current bin?
@@ -352,5 +352,5 @@ void DictI::operator ++(void) {
     _value = _d->_bin[_i]._keyvals[_j+_j+1];
     return;
   }
-  _key = _value = NULL;
+  _key = _value = nullptr;
 }

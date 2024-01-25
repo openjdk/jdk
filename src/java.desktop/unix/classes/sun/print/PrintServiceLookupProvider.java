@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,9 @@
 package sun.print;
 
 import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Vector;
 import java.security.AccessController;
@@ -54,6 +53,9 @@ import java.io.FileReader;
 import java.net.URL;
 import java.nio.file.Files;
 
+import sun.awt.OSInfo;
+import sun.awt.util.ThreadGroupUtils;
+
 /*
  * Remind: This class uses solaris commands. We also need a linux
  * version
@@ -75,9 +77,6 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
     private static final int DEFAULT_MINREFRESH = 120;  // 2 minutes
     private static int minRefreshTime = DEFAULT_MINREFRESH;
 
-
-    static String osname;
-
     // List of commands used to deal with the printer queues on AIX
     String[] lpNameComAix = {
       "/usr/bin/lsallq",
@@ -96,6 +95,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
          * can be used to force the printing code to poll or not poll
          * for PrintServices.
          */
+        @SuppressWarnings("removal")
         String pollStr = java.security.AccessController.doPrivileged(
             new sun.security.action.GetPropertyAction("sun.java2d.print.polling"));
 
@@ -111,13 +111,14 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
          * can be used to specify minimum refresh time (in seconds)
          * for polling PrintServices.  The default is 120.
          */
+        @SuppressWarnings("removal")
         String refreshTimeStr = java.security.AccessController.doPrivileged(
             new sun.security.action.GetPropertyAction(
                 "sun.java2d.print.minRefreshTime"));
 
         if (refreshTimeStr != null) {
             try {
-                minRefreshTime = (Integer.valueOf(refreshTimeStr)).intValue();
+                minRefreshTime = Integer.parseInt(refreshTimeStr);
             } catch (NumberFormatException e) {
             }
             if (minRefreshTime < DEFAULT_MINREFRESH) {
@@ -125,15 +126,13 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
             }
         }
 
-        osname = java.security.AccessController.doPrivileged(
-            new sun.security.action.GetPropertyAction("os.name"));
-
         /* The system property "sun.java2d.print.aix.lpstat"
          * can be used to force the usage of 'lpstat -p' to enumerate all
          * printer queues. By default we use 'lsallq', because 'lpstat -p' can
          * take lots of time if thousands of printers are attached to a server.
          */
         if (isAIX()) {
+            @SuppressWarnings("removal")
             String aixPrinterEnumerator = java.security.AccessController.doPrivileged(
                 new sun.security.action.GetPropertyAction("sun.java2d.print.aix.lpstat"));
 
@@ -148,20 +147,20 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
     }
 
     static boolean isMac() {
-        return osname.startsWith("Mac");
+        return OSInfo.getOSType() == OSInfo.OSType.MACOSX;
     }
 
     static boolean isLinux() {
-        return (osname.equals("Linux"));
+        return OSInfo.getOSType() == OSInfo.OSType.LINUX;
     }
 
     static boolean isBSD() {
-        return (osname.equals("Linux") ||
-                osname.contains("OS X"));
+        return (OSInfo.getOSType() == OSInfo.OSType.LINUX ||
+                OSInfo.getOSType() == OSInfo.OSType.MACOSX);
     }
 
     static boolean isAIX() {
-        return osname.equals("AIX");
+        return OSInfo.getOSType() == OSInfo.OSType.AIX;
     }
 
     static final int UNINITIALIZED = -1;
@@ -203,14 +202,18 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
         return BSD_LPD;
     }
 
-
+    @SuppressWarnings("removal")
     public PrintServiceLookupProvider() {
         // start the printer listener thread
         if (pollServices) {
-            Thread thr = new Thread(null, new PrinterChangeListener(),
-                                    "PrinterListener", 0, false);
-            thr.setDaemon(true);
-            thr.start();
+            AccessController.doPrivileged((PrivilegedAction<Thread>) () -> {
+                Thread thr = new Thread(ThreadGroupUtils.getRootThreadGroup(),
+                                        new PrinterChangeListener(),
+                                        "PrinterListener", 0, false);
+                thr.setContextClassLoader(null);
+                thr.setDaemon(true);
+                return thr;
+            }).start();
             IPPPrintService.debug_println(debugPrefix+"polling turned on");
         }
     }
@@ -221,6 +224,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
      * lead people to assume its guaranteed.
      */
     public synchronized PrintService[] getPrintServices() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkPrintJobAccess();
@@ -469,7 +473,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
         if (CUPSPrinter.isCupsRunning()) {
             try {
                 return new IPPPrintService(name,
-                                           new URL("http://"+
+                                           newURL("http://"+
                                                    CUPSPrinter.getServer()+":"+
                                                    CUPSPrinter.getPort()+"/"+
                                                    name));
@@ -503,13 +507,13 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
          * Directly retrieve that service and confirm
          * that it meets the other requirements.
          * If printer name isn't mentioned then go a slow path checking
-         * all printers if they meet the reqiremements.
+         * all printers if they meet the requirements.
          */
         PrintService[] services;
         PrinterName name = (PrinterName)serviceSet.get(PrinterName.class);
         PrintService defService;
         if (name != null && (defService = getDefaultPrintService()) != null) {
-            /* To avoid execing a unix command  see if the client is asking
+            /* To avoid executing a unix command, see if the client is asking
              * for the default printer by name, since we already have that
              * initialised.
              */
@@ -538,7 +542,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
             }
         } else {
             /* specified service attributes don't include a name.*/
-            Vector<PrintService> matchedServices = new Vector<>();
+            ArrayList<PrintService> matchedServices = new ArrayList<>();
             services = getPrintServices();
             for (int i = 0; i< services.length; i++) {
                 if (matchesAttributes(services[i], serviceSet)) {
@@ -547,7 +551,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
             }
             services = new PrintService[matchedServices.size()];
             for (int i = 0; i< services.length; i++) {
-                services[i] = matchedServices.elementAt(i);
+                services[i] = matchedServices.get(i);
             }
             return services;
         }
@@ -559,6 +563,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
      */
     public PrintService[] getPrintServices(DocFlavor flavor,
                                            AttributeSet attributes) {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
           security.checkPrintJobAccess();
@@ -622,6 +627,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
     public MultiDocPrintService[]
         getMultiDocPrintServices(DocFlavor[] flavors,
                                  AttributeSet attributes) {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
           security.checkPrintJobAccess();
@@ -631,6 +637,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
 
 
     public synchronized PrintService getDefaultPrintService() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
           security.checkPrintJobAccess();
@@ -678,7 +685,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
                                                         psuri, true);
                     } else {
                         defaultPS = new IPPPrintService(defaultPrinter,
-                                            new URL("http://"+
+                                            newURL("http://"+
                                                     CUPSPrinter.getServer()+":"+
                                                     CUPSPrinter.getPort()+"/"+
                                                     defaultPrinter));
@@ -864,6 +871,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
         return printerNames.toArray(new String[printerNames.size()]);
     }
 
+    @SuppressWarnings("removal")
     static String[] execCmd(final String command) {
         ArrayList<String> results = null;
         try {
@@ -958,5 +966,10 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
                 }
             }
         }
+    }
+
+    @SuppressWarnings("deprecation")
+    private static URL newURL(String spec) throws MalformedURLException {
+        return new URL(spec);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,10 +43,9 @@ import javax.crypto.spec.*;
 final class PBES1Core {
 
     // the encapsulated DES cipher
-    private CipherCore cipher;
-    private MessageDigest md;
-    private int blkSize;
-    private String algo = null;
+    private final CipherCore cipher;
+    private final MessageDigest md;
+    private final String algo;
     private byte[] salt = null;
     private int iCount = 10;
 
@@ -537,9 +536,14 @@ final class PBES1Core {
                String wrappedKeyAlgorithm,
                int wrappedKeyType)
         throws InvalidKeyException, NoSuchAlgorithmException {
-        byte[] encodedKey;
         try {
-            encodedKey = doFinal(wrappedKey, 0, wrappedKey.length);
+            byte[] encodedKey = doFinal(wrappedKey, 0, wrappedKey.length);
+            try {
+                return ConstructKeys.constructKey(encodedKey, wrappedKeyAlgorithm,
+                        wrappedKeyType);
+            } finally {
+                Arrays.fill(encodedKey, (byte)0);
+            }
         } catch (BadPaddingException ePadding) {
             throw new InvalidKeyException("The wrapped key is not padded " +
                                           "correctly");
@@ -547,7 +551,5 @@ final class PBES1Core {
             throw new InvalidKeyException("The wrapped key does not have " +
                                           "the correct length");
         }
-        return ConstructKeys.constructKey(encodedKey, wrappedKeyAlgorithm,
-                                          wrappedKeyType);
     }
 }

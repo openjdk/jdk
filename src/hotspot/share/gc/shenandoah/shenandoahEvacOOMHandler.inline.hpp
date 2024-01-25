@@ -26,23 +26,30 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHEVACOOMHANDLER_INLINE_HPP
 
 #include "gc/shenandoah/shenandoahEvacOOMHandler.hpp"
+
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "runtime/atomic.hpp"
 
-void ShenandoahEvacOOMHandler::enter_evacuation(Thread* thr) {
-  jint threads_in_evac = Atomic::load_acquire(&_threads_in_evac);
+jint ShenandoahEvacOOMCounter::load_acquire() {
+  return Atomic::load_acquire(&_bits);
+}
 
+jint ShenandoahEvacOOMCounter::unmasked_count() {
+  return Atomic::load_acquire(&_bits) & ~OOM_MARKER_MASK;
+}
+
+void ShenandoahEvacOOMHandler::enter_evacuation(Thread* thr) {
   uint8_t level = ShenandoahThreadLocalData::push_evac_oom_scope(thr);
  if (level == 0) {
    // Entering top level scope, register this thread.
    register_thread(thr);
  } else if (!ShenandoahThreadLocalData::is_oom_during_evac(thr)) {
-   jint threads_in_evac = Atomic::load_acquire(&_threads_in_evac);
+   ShenandoahEvacOOMCounter* counter = counter_for_thread(thr);
+   jint threads_in_evac = counter->load_acquire();
    // If OOM is in progress, handle it.
-   if ((threads_in_evac & OOM_MARKER_MASK) != 0) {
-     assert((threads_in_evac & ~OOM_MARKER_MASK) > 0, "sanity");
-     Atomic::dec(&_threads_in_evac);
+   if ((threads_in_evac & ShenandoahEvacOOMCounter::OOM_MARKER_MASK) != 0) {
+     counter->decrement();
      wait_for_no_evac_threads();
    }
  }

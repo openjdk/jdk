@@ -38,7 +38,7 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.XMLStreamWriterTest.NamespaceTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLStreamWriterTest.NamespaceTest
  * @run testng/othervm stream.XMLStreamWriterTest.NamespaceTest
  * @summary Test the writing of Namespaces.
  */

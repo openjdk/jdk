@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 8167636 8167639 8168972
  * @summary Testing built-in editor.
  * @modules java.desktop/java.awt

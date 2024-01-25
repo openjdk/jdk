@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,16 @@
  * @test
  * @bug 8003967
  * @summary detect and remove all mutable implicit static enum fields in langtools
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  *          jdk.compiler/com.sun.tools.javac.util
  * @run main DetectMutableStaticFields
  */
 
+import java.lang.classfile.*;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -49,17 +52,9 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ConstantPoolException;
-import com.sun.tools.classfile.Descriptor;
-import com.sun.tools.classfile.Descriptor.InvalidDescriptor;
-import com.sun.tools.classfile.Field;
 
 import static javax.tools.JavaFileObject.Kind.CLASS;
 
-import static com.sun.tools.classfile.AccessFlags.ACC_ENUM;
-import static com.sun.tools.classfile.AccessFlags.ACC_FINAL;
-import static com.sun.tools.classfile.AccessFlags.ACC_STATIC;
 
 public class DetectMutableStaticFields {
 
@@ -73,12 +68,14 @@ public class DetectMutableStaticFields {
     private final String[] packagesToSeekFor = new String[] {
         "javax.tools",
         "javax.lang.model",
-        "com.sun.javadoc",
         "com.sun.source",
-        "com.sun.tools.classfile",
-        "com.sun.tools.doclets",
+        "jdk.internal.classfile",
+        "jdk.internal.classfile.attribute",
+        "jdk.internal.classfile.constantpool",
+        "jdk.internal.classfile.instruction",
+        "jdk.internal.classfile.components",
+        "jdk.internal.classfile.impl",
         "com.sun.tools.javac",
-        "com.sun.tools.javadoc",
         "com.sun.tools.javah",
         "com.sun.tools.javap",
         "jdk.javadoc"
@@ -91,9 +88,7 @@ public class DetectMutableStaticFields {
 
     static {
         ignore("javax/tools/ToolProvider", "instance");
-        ignore("jdk/javadoc/internal/tool/Start", "versionRB");
         ignore("com/sun/tools/javah/JavahTask", "versionRB");
-        ignore("com/sun/tools/classfile/Dependencies$DefaultFilter", "instance");
         ignore("com/sun/tools/javap/JavapTask", "versionRB");
         ignore("com/sun/tools/doclets/formats/html/HtmlDoclet", "docletToStart");
         ignore("com/sun/tools/javac/util/JCDiagnostic", "fragmentFormatter");
@@ -135,12 +130,7 @@ public class DetectMutableStaticFields {
         }
     }
 
-    private void run()
-        throws
-            IOException,
-            ConstantPoolException,
-            InvalidDescriptor,
-            URISyntaxException {
+    private void run() throws IOException {
 
         JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
         try (StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null)) {
@@ -167,11 +157,7 @@ public class DetectMutableStaticFields {
         return false;
     }
 
-    void analyzeModule(StandardJavaFileManager fm, String moduleName)
-        throws
-            IOException,
-            ConstantPoolException,
-            InvalidDescriptor {
+    void analyzeModule(StandardJavaFileManager fm, String moduleName) throws IOException {
         JavaFileManager.Location location =
                 fm.getLocationForModule(StandardLocation.SYSTEM_MODULES, moduleName);
         if (location == null)
@@ -182,7 +168,11 @@ public class DetectMutableStaticFields {
             int index = className.lastIndexOf('.');
             String pckName = index == -1 ? "" : className.substring(0, index);
             if (shouldAnalyzePackage(pckName)) {
-                analyzeClassFile(ClassFile.read(file.openInputStream()));
+                ClassModel classFile;
+                try (InputStream input = file.openInputStream()) {
+                    classFile = ClassFile.of().parse(input.readAllBytes());
+                }
+                analyzeClassFile(classFile);
             }
         }
     }
@@ -200,33 +190,29 @@ public class DetectMutableStaticFields {
         return false;
     }
 
-    void analyzeClassFile(ClassFile classFileToCheck)
-        throws
-            IOException,
-            ConstantPoolException,
-            Descriptor.InvalidDescriptor {
+    void analyzeClassFile(ClassModel classFileToCheck) {
         boolean enumClass =
-                (classFileToCheck.access_flags.flags & ACC_ENUM) != 0;
+                (classFileToCheck.flags().flagsMask() & ClassFile.ACC_ENUM) != 0;
         boolean nonFinalStaticEnumField;
         boolean nonFinalStaticField;
 
         currentFieldsToIgnore =
-                classFieldsToIgnoreMap.get(classFileToCheck.getName());
+                classFieldsToIgnoreMap.get(classFileToCheck.thisClass().asInternalName());
 
-        for (Field field : classFileToCheck.fields) {
-            if (ignoreField(field.getName(classFileToCheck.constant_pool))) {
+        for (FieldModel field : classFileToCheck.fields()) {
+            if (ignoreField(field.fieldName().stringValue())) {
                 continue;
             }
             nonFinalStaticEnumField =
-                    (field.access_flags.flags & (ACC_ENUM | ACC_FINAL)) == 0;
+                    (field.flags().flagsMask() & (ClassFile.ACC_ENUM | ClassFile.ACC_FINAL)) == 0;
             nonFinalStaticField =
-                    (field.access_flags.flags & ACC_STATIC) != 0 &&
-                    (field.access_flags.flags & ACC_FINAL) == 0;
+                    (field.flags().flagsMask() & ClassFile.ACC_STATIC) != 0 &&
+                    (field.flags().flagsMask() & ClassFile.ACC_FINAL) == 0;
             if (enumClass ? nonFinalStaticEnumField : nonFinalStaticField) {
                 errors.add("There is a mutable field named " +
-                        field.getName(classFileToCheck.constant_pool) +
+                        field.fieldName().stringValue() +
                         ", at class " +
-                        classFileToCheck.getName());
+                        classFileToCheck.thisClass().asInternalName());
             }
         }
     }

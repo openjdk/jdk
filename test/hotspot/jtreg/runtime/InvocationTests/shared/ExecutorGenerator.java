@@ -49,7 +49,7 @@ public class ExecutorGenerator {
     }
 
     public byte[] generateExecutor(String[] callSites) {
-        ClassWriter cw = new ClassWriter(COMPUTE_MAXS);
+        ClassWriter cw = new ClassWriter(COMPUTE_FRAMES | COMPUTE_MAXS);
 
         cw.visit(Utils.version, ACC_PUBLIC | (Utils.isACC_SUPER ? ACC_SUPER : 0), className, null, "java/lang/Object", null);
 

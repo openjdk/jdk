@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1438,7 +1438,11 @@ public abstract class TIFFDecompressor {
      *
      * @param byteCount the number of bytes of compressed data.
      */
-    public void setByteCount(int byteCount) {
+    public void setByteCount(int byteCount) throws IOException{
+        if (byteCount < 0) {
+            throw new IIOException("Strip byte count can't be"
+                + " negative: " + byteCount);
+        }
         this.byteCount = byteCount;
     }
 
@@ -1918,7 +1922,7 @@ public abstract class TIFFDecompressor {
 
                 dstOffset += scanlineStride;
             }
-        } else { // ByteOrder.LITLE_ENDIAN
+        } else { // ByteOrder.LITTLE_ENDIAN
             for (int j = 0; j < srcHeight; j++) {
                 for (int i = 0; i < shortsPerRow; i++) {
                     short loVal = b[bOffset++];
@@ -1978,7 +1982,7 @@ public abstract class TIFFDecompressor {
 
                 dstOffset += scanlineStride;
             }
-        } else { // ByteOrder.LITLE_ENDIAN
+        } else { // ByteOrder.LITTLE_ENDIAN
             for (int j = 0; j < srcHeight; j++) {
                 for (int k = 0; k < intsPerRow; k++) {
                     int v3 = b[bOffset++] & 0xff;
@@ -2041,7 +2045,7 @@ public abstract class TIFFDecompressor {
 
                 dstOffset += scanlineStride;
             }
-        } else { // ByteOrder.LITLE_ENDIAN
+        } else { // ByteOrder.LITTLE_ENDIAN
             for (int j = 0; j < srcHeight; j++) {
                 for (int i = 0; i < floatsPerRow; i++) {
                     int v3 = b[bOffset++] & 0xff;
@@ -2111,7 +2115,7 @@ public abstract class TIFFDecompressor {
 
                 dstOffset += scanlineStride;
             }
-        } else { // ByteOrder.LITLE_ENDIAN
+        } else { // ByteOrder.LITTLE_ENDIAN
             for (int j = 0; j < srcHeight; j++) {
                 for (int i = 0; i < doublesPerRow; i++) {
                     long v7 = b[bOffset++] & 0xff;
@@ -2369,7 +2373,7 @@ public abstract class TIFFDecompressor {
      * and instead override the {@code decodeRaw} and/or
      * {@code getRawImageType} methods.
      *
-     * @exception IOException if an error occurs in
+     * @throws IOException if an error occurs in
      * {@code decodeRaw}.
      */
     public void decode() throws IOException {
@@ -2528,7 +2532,7 @@ public abstract class TIFFDecompressor {
             SampleModel sm = ras.getSampleModel();
 
             // Branch based on whether data are bit-contiguous, i.e.,
-            // data are packaed as tightly as possible leaving no unused
+            // data are packed as tightly as possible leaving no unused
             // bits except at the end of a row.
             if(isDataBufferBitContiguous(sm, bitsPerSample)) {
                 // Use byte or float data directly.

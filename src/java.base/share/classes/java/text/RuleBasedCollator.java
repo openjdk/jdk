@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -358,6 +358,10 @@ public class RuleBasedCollator extends Collator{
             throw new NullPointerException();
         }
 
+        if (source.equals(target)) {
+            return Collator.EQUAL;
+        }
+
         // The basic algorithm here is that we use CollationElementIterators
         // to step through both the source and target strings.  We compare each
         // collation element in the source string against the corresponding one
@@ -605,9 +609,9 @@ public class RuleBasedCollator extends Collator{
             return null;
 
         if (primResult == null) {
-            primResult = new StringBuffer();
-            secResult = new StringBuffer();
-            terResult = new StringBuffer();
+            primResult = new StringBuilder();
+            secResult = new StringBuilder();
+            terResult = new StringBuilder();
         } else {
             primResult.setLength(0);
             secResult.setLength(0);
@@ -681,8 +685,8 @@ public class RuleBasedCollator extends Collator{
         }
         primResult.append((char)0);
         secResult.append((char)0);
-        secResult.append(terResult.toString());
-        primResult.append(secResult.toString());
+        secResult.append(terResult);
+        primResult.append(secResult);
 
         if (getStrength() == IDENTICAL) {
             primResult.append((char)0);
@@ -725,9 +729,9 @@ public class RuleBasedCollator extends Collator{
      * @return true if the current table-based collation object is the same
      * as the table-based collation object obj; false otherwise.
      */
+    @Override
     public boolean equals(Object obj) {
-        if (obj == null) return false;
-        if (!super.equals(obj)) return false;  // super does class check
+        if (!super.equals(obj)) return false;  // super does null and class checks
         RuleBasedCollator other = (RuleBasedCollator) obj;
         // all other non-transient information is also contained in rules.
         return (getRules().equals(other.getRules()));
@@ -736,6 +740,7 @@ public class RuleBasedCollator extends Collator{
     /**
      * Generates the hash code for the table-based collation object
      */
+    @Override
     public int hashCode() {
         return getRules().hashCode();
     }
@@ -762,9 +767,9 @@ public class RuleBasedCollator extends Collator{
 
     // Internal objects that are cached across calls so that they don't have to
     // be created/destroyed on every call to compare() and getCollationKey()
-    private StringBuffer primResult = null;
-    private StringBuffer secResult = null;
-    private StringBuffer terResult = null;
+    private StringBuilder primResult = null;
+    private StringBuilder secResult = null;
+    private StringBuilder terResult = null;
     private CollationElementIterator sourceCursor = null;
     private CollationElementIterator targetCursor = null;
 }

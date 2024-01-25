@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,21 +62,17 @@ public class DefNewGeneration extends Generation {
     super(addr);
   }
 
-  public Generation.Name kind() {
-    return Generation.Name.DEF_NEW;
-  }
-
   // Accessing spaces
   public ContiguousSpace eden() {
-    return (ContiguousSpace) VMObjectFactory.newObject(ContiguousSpace.class, edenSpaceField.getValue(addr));
+    return VMObjectFactory.newObject(ContiguousSpace.class, edenSpaceField.getValue(addr));
   }
 
   public ContiguousSpace from() {
-    return (ContiguousSpace) VMObjectFactory.newObject(ContiguousSpace.class, fromSpaceField.getValue(addr));
+    return VMObjectFactory.newObject(ContiguousSpace.class, fromSpaceField.getValue(addr));
   }
 
   public ContiguousSpace to() {
-    return (ContiguousSpace) VMObjectFactory.newObject(ContiguousSpace.class, toSpaceField.getValue(addr));
+    return VMObjectFactory.newObject(ContiguousSpace.class, toSpaceField.getValue(addr));
   }
 
   public long capacity()            { return eden().capacity() + from().capacity(); /* to() is only used during scavenge */ }

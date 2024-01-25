@@ -577,13 +577,15 @@ public class ConvenientAccessErrorsTest extends ModuleTestBase {
         Path src_m2 = src.resolve("m2x");
         tb.writeJavaFiles(src_m2,
                           "module m2x { requires m1x; }",
-                          "package test;\n" +
-                          "import api.Sub;\n" +
-                          "import api.Base;\n" +
-                          "public class Test {\n" +
-                          "    Sub a2;\n" +
-                          "    Base a;\n" +
-                          "}\n");
+                          """
+                              package test;
+                              import api.Sub;
+                              import api.Base;
+                              public class Test {
+                                  Sub a2;
+                                  Base a;
+                              }
+                              """);
         Path m2xClasses = classes.resolve("m2x");
         tb.createDirectories(m2xClasses);
         List<String> log = new JavacTask(tb)

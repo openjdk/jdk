@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import java.io.File;
 import java.security.CodeSigner;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 public class RedefineClassApp {
     static WhiteBox wb = WhiteBox.getWhiteBox();
@@ -55,7 +55,7 @@ public class RedefineClassApp {
     static Instrumentation instrumentation;
 
     public static void main(String args[]) throws Throwable {
-        if (wb.areSharedStringsIgnored()) {
+        if (!wb.areSharedStringsMapped()) {
           System.out.println("Shared strings are ignored.");
           return;
         }
@@ -91,7 +91,7 @@ public class RedefineClassApp {
 
     static void checkArchivedMirrorObject(Class klass) {
         if (wb.areOpenArchiveHeapObjectsMapped()) {
-            if (!wb.isShared(klass)) {
+            if (!wb.isSharedClass(klass)) {
                 failed ++;
                 System.out.println("FAILED. " + klass + " mirror object is not archived");
                 return;
@@ -117,14 +117,10 @@ public class RedefineClassApp {
         // Call get() before redefine. All strings in archived classes are shared.
         String res = object.get();
         System.out.println("get() returns " + res);
-        if (res.equals("buzz") && wb.isShared(res)) {
-            System.out.println("get() returns " + res + ", string is shared");
+        if (res.equals("buzz")) {
+            System.out.println("get() returns " + res);
         } else {
-            if (!res.equals("buzz")) {
-                System.out.println("FAILED. buzz is expected but got " + res);
-            } else {
-                System.out.println("FAILED. " + res + " is not shared");
-            }
+            System.out.println("FAILED. buzz is expected but got " + res);
             failed ++;
             return;
         }

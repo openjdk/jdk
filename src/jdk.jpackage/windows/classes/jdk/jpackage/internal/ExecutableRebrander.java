@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.ResourceBundle;
+import java.util.function.Supplier;
 import static jdk.jpackage.internal.OverridableResource.createResource;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.COPYRIGHT;
@@ -45,6 +46,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.DESCRIPTION;
 import static jdk.jpackage.internal.StandardBundlerParam.TEMP_ROOT;
 import static jdk.jpackage.internal.StandardBundlerParam.VENDOR;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
+import static jdk.jpackage.internal.WindowsAppImageBuilder.ICON_ICO;
 
 
 final class ExecutableRebrander {
@@ -63,36 +65,40 @@ final class ExecutableRebrander {
 
     void rebrandInstaller(Map<String, ? super Object> params, Path target)
             throws IOException {
-        if (!target.isAbsolute()) {
-            rebrandInstaller(params, target.toAbsolutePath());
-            return;
-        }
-        rebrandExecutable(params, target, (resourceLock) -> {
-            rebrandProperties(resourceLock, createResource(
-                    INSTALLER_PROPERTIES_TEMPLATE, params).setPublicName(
-                            INSTALLER_PROPERTIES_RESOURE_DIR_ID),
-                    createSubstituteData(params), target);
-        });
+        Path icon = ICON_ICO.fetchFrom(params);
+        rebrandExecutable(params, icon, () -> {
+            return createResource(INSTALLER_PROPERTIES_TEMPLATE, params).setPublicName(
+                    INSTALLER_PROPERTIES_RESOURE_DIR_ID);
+        }, target);
     }
 
     void rebrandLauncher(Map<String, ? super Object> params, Path icon,
             Path target) throws IOException {
+        rebrandExecutable(params, icon, () -> {
+            return createResource(
+                    LAUNCHER_PROPERTIES_TEMPLATE, params).setPublicName(
+                            APP_NAME.fetchFrom(params) + ".properties");
+        }, target);
+    }
+
+    private void rebrandExecutable(Map<String, ? super Object> params, Path icon,
+            Supplier<OverridableResource> resourceSupplier, Path target) throws
+            IOException {
         if (!target.isAbsolute() || (icon != null && !icon.isAbsolute())) {
             Path absIcon = null;
             if (icon != null) {
                 absIcon = icon.toAbsolutePath();
             }
-            rebrandLauncher(params, absIcon, target.toAbsolutePath());
+            rebrandExecutable(params, absIcon, resourceSupplier,
+                    target.toAbsolutePath());
             return;
         }
         rebrandExecutable(params, target, (resourceLock) -> {
-            rebrandProperties(resourceLock, createResource(
-                    LAUNCHER_PROPERTIES_TEMPLATE, params).setPublicName(
-                            APP_NAME.fetchFrom(params) + ".properties"),
-                    createSubstituteData(params), target);
-
+            rebrandProperties(resourceLock, resourceSupplier.get(),
+                    createSubstituteData(
+                            params), target);
             if (icon != null) {
-                iconSwap(resourceLock, icon.toString());
+                iconSwapWrapper(resourceLock, icon.toString());
             }
         });
     }
@@ -125,17 +131,25 @@ final class ExecutableRebrander {
                     I18N.getString("error.lock-resource"), target));
             }
 
+            final boolean resourceUnlockedSuccess;
             try {
                 action.editResource(resourceLock);
                 if (extraActions != null) {
-                    for (UpdateResourceAction extraAction: extraActions) {
+                    for (UpdateResourceAction extraAction : extraActions) {
                         extraAction.editResource(resourceLock);
                     }
                 }
             } finally {
-                if (resourceLock != 0) {
-                    unlockResource(resourceLock);
+                if (resourceLock == 0) {
+                    resourceUnlockedSuccess = true;
+                } else {
+                    resourceUnlockedSuccess = unlockResource(resourceLock);
                 }
+            }
+
+            if (!resourceUnlockedSuccess) {
+                throw new RuntimeException(MessageFormat.format(I18N.getString(
+                        "error.unlock-resource"), target));
             }
         } finally {
             target.toFile().setReadOnly();
@@ -202,10 +216,8 @@ final class ExecutableRebrander {
             });
         }
 
-        if (versionSwap(resourceLock, propList.toArray(String[]::new)) != 0) {
-            throw new RuntimeException(MessageFormat.format(
-                    I18N.getString("error.version-swap"), target));
-        }
+        versionSwapWrapper(resourceLock, propList.toArray(String[]::new),
+                target.toString());
     }
 
     private static void validateValueAndPut(
@@ -222,6 +234,22 @@ final class ExecutableRebrander {
         data.put(key, value);
     }
 
+    private static void iconSwapWrapper(long resourceLock,
+            String iconTarget) {
+        if (iconSwap(resourceLock, iconTarget) != 0) {
+            throw new RuntimeException(MessageFormat.format(I18N.getString(
+                    "error.icon-swap"), iconTarget));
+        }
+    }
+
+    private static void versionSwapWrapper(long resourceLock,
+            String[] executableProperties, String target) {
+        if (versionSwap(resourceLock, executableProperties) != 0) {
+            throw new RuntimeException(MessageFormat.format(I18N.getString(
+                    "error.version-swap"), target));
+        }
+    }
+
     private List<UpdateResourceAction> extraActions;
 
     static {
@@ -230,7 +258,7 @@ final class ExecutableRebrander {
 
     private static native long lockResource(String executable);
 
-    private static native void unlockResource(long resourceLock);
+    private static native boolean unlockResource(long resourceLock);
 
     private static native int iconSwap(long resourceLock, String iconTarget);
 

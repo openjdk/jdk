@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,12 @@
 #ifndef SHARE_GC_SHARED_OOPSTORAGESETPARSTATE_INLINE_HPP
 #define SHARE_GC_SHARED_OOPSTORAGESETPARSTATE_INLINE_HPP
 
+#include "gc/shared/oopStorageSetParState.hpp"
+
 #include "gc/shared/oopStorageParState.inline.hpp"
 #include "gc/shared/oopStorageSet.hpp"
-#include "gc/shared/oopStorageSetParState.hpp"
 #include "memory/iterator.hpp"
+#include "oops/access.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 
@@ -53,8 +55,8 @@ public:
 
   virtual void do_oop(oop* p) {
     _cl->do_oop(p);
-    if (Atomic::load(p) == NULL) {
-      _num_dead++;              // Count both already NULL and cleared by closure.
+    if (NativeAccess<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE>::oop_load(p) == nullptr) {
+      _num_dead++;              // Count both already null and cleared by closure.
     }
   }
 

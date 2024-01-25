@@ -26,10 +26,11 @@
 #include "net_util.h"
 
 #include "java_net_InetAddress.h"
+#include "java_net_spi_InetAddressResolver_LookupPolicy.h"
 
 int IPv4_supported();
 int IPv6_supported();
-int reuseport_supported();
+int reuseport_supported(int ipv6_available);
 
 static int IPv4_available;
 static int IPv6_available;
@@ -79,8 +80,7 @@ DEF_JNI_OnLoad(JavaVM *vm, void *reserved)
     IPv6_available = IPv6_supported() & (!preferIPv4Stack);
 
     /* check if SO_REUSEPORT is supported on this platform */
-    REUSEPORT_available = reuseport_supported();
-    platformInit();
+    REUSEPORT_available = reuseport_supported(IPv6_available);
 
     return JNI_VERSION_1_2;
 }
@@ -331,4 +331,24 @@ in_cksum(unsigned short *addr, int len) {
     sum += (sum >> 16);
     answer = ~sum;
     return (answer);
+}
+
+int lookupCharacteristicsToAddressFamily(int characteristics) {
+    int ipv4 = characteristics & java_net_spi_InetAddressResolver_LookupPolicy_IPV4;
+    int ipv6 = characteristics & java_net_spi_InetAddressResolver_LookupPolicy_IPV6;
+
+    if (ipv4 != 0 && ipv6 == 0) {
+        return AF_INET;
+    }
+
+    if (ipv4 == 0 && ipv6 != 0) {
+        return AF_INET6;
+    }
+    return AF_UNSPEC;
+}
+
+int addressesInSystemOrder(int characteristics) {
+    return (characteristics &
+           (java_net_spi_InetAddressResolver_LookupPolicy_IPV4_FIRST |
+            java_net_spi_InetAddressResolver_LookupPolicy_IPV6_FIRST)) == 0;
 }

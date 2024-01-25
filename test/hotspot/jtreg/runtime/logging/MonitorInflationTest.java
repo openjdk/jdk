@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 8133885
  * @summary monitorinflation=trace should have logging from each of the statements in the code
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -50,12 +51,12 @@ public class MonitorInflationTest {
     }
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:monitorinflation=trace",
-                                                                  InnerClass.class.getName());
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:monitorinflation=trace",
+                                                                             InnerClass.class.getName());
         analyzeOutputOn(pb);
 
-        pb = ProcessTools.createJavaProcessBuilder("-Xlog:monitorinflation=off",
-                                                   InnerClass.class.getName());
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:monitorinflation=off",
+                                                              InnerClass.class.getName());
         analyzeOutputOff(pb);
     }
 

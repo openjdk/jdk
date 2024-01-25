@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,10 @@
 
 package jdk.jpackage.internal;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintStream;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -49,9 +51,14 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
+import jdk.internal.util.OperatingSystem;
+import jdk.internal.util.OSVersion;
 import static jdk.jpackage.internal.MacAppBundler.BUNDLE_ID_SIGNING_PREFIX;
 import static jdk.jpackage.internal.MacAppBundler.DEVELOPER_ID_APP_SIGNING_KEY;
+import static jdk.jpackage.internal.MacAppBundler.APP_IMAGE_SIGN_IDENTITY;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEYCHAIN;
+import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEY_USER;
+import static jdk.jpackage.internal.MacBaseInstallerBundler.INSTALLER_SIGN_IDENTITY;
 import static jdk.jpackage.internal.OverridableResource.createResource;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.CONFIG_ROOT;
@@ -66,13 +73,17 @@ import static jdk.jpackage.internal.StandardBundlerParam.MAIN_CLASS;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 import static jdk.jpackage.internal.StandardBundlerParam.ADD_LAUNCHERS;
+import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
+import static jdk.jpackage.internal.StandardBundlerParam.APP_STORE;
+import static jdk.jpackage.internal.StandardBundlerParam.getPredefinedAppImage;
+import static jdk.jpackage.internal.StandardBundlerParam.hasPredefinedAppImage;
 
 public class MacAppImageBuilder extends AbstractAppImageBuilder {
 
     private static final ResourceBundle I18N = ResourceBundle.getBundle(
             "jdk.jpackage.internal.resources.MacResources");
 
-    private static final String TEMPLATE_BUNDLE_ICON = "java.icns";
+    private static final String TEMPLATE_BUNDLE_ICON = "JavaApp.icns";
     private static final String OS_TYPE_CODE = "APPL";
     private static final String TEMPLATE_INFO_PLIST_LITE =
             "Info-lite.plist.template";
@@ -85,6 +96,8 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
     private final Path macOSDir;
     private final Path runtimeDir;
     private final Path runtimeRoot;
+
+    private final boolean withPackageFile;
 
     private static List<String> keyChains;
 
@@ -100,6 +113,13 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                     Arguments.CLIOptions.MAC_BUNDLE_NAME.getId(),
                     String.class,
                     params -> null,
+                    (s, p) -> s);
+
+    public static final BundlerParamInfo<String> APP_CATEGORY =
+            new StandardBundlerParam<>(
+                    Arguments.CLIOptions.MAC_CATEGORY.getId(),
+                    String.class,
+                    params -> "utilities",
                     (s, p) -> s);
 
     public static final BundlerParamInfo<String> MAC_CF_BUNDLE_IDENTIFIER =
@@ -136,14 +156,26 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
             },
             (s, p) -> Path.of(s));
 
-    public static final StandardBundlerParam<Boolean> SIGN_BUNDLE  =
+    public static final BundlerParamInfo<Path> ENTITLEMENTS =
             new StandardBundlerParam<>(
-            Arguments.CLIOptions.MAC_SIGN.getId(),
-            Boolean.class,
-            params -> false,
-            // valueOf(null) is false, we actually do want null in some cases
-            (s, p) -> (s == null || "null".equalsIgnoreCase(s)) ?
-                    null : Boolean.valueOf(s)
+            Arguments.CLIOptions.MAC_ENTITLEMENTS.getId(),
+            Path.class,
+            params -> {
+                try {
+                    Path path = CONFIG_ROOT.fetchFrom(params).resolve(
+                        getLauncherName(params) + ".entitlements");
+                    String defPath = (APP_STORE.fetchFrom(params) ?
+                        "sandbox.plist" : "entitlements.plist");
+                    createResource(defPath, params)
+                        .setCategory(I18N.getString("resource.entitlements"))
+                        .saveToFile(path);
+                    return path;
+                } catch (IOException ioe) {
+                   Log.verbose(ioe);
+                }
+                return null;
+            },
+            (s, p) -> Path.of(s)
         );
 
     private static final StandardBundlerParam<String> FA_MAC_CFBUNDLETYPEROLE =
@@ -220,10 +252,11 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                      (s, p) -> Arrays.asList(s.split("(,|\\s)+"))
              );
 
-    public MacAppImageBuilder(Path imageOutDir) {
+    public MacAppImageBuilder(Path imageOutDir, boolean withPackageFile) {
         super(imageOutDir);
 
         this.root = imageOutDir;
+        this.withPackageFile = withPackageFile;
         this.contentsDir = root.resolve("Contents");
         this.resourcesDir = appLayout.destktopIntegrationDirectory();
         this.macOSDir = appLayout.launchersDirectory();
@@ -239,6 +272,32 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
     @Override
     public void prepareApplicationFiles(Map<String, ? super Object> params)
             throws IOException {
+        // If predefined app image is provided, then just sign it and return.
+        Path predefinedAppImage = PREDEFINED_APP_IMAGE.fetchFrom(params);
+        if (predefinedAppImage != null) {
+            // Mark app image as signed, before we signing it.
+            AppImageFile appImageFile =
+                AppImageFile.load(predefinedAppImage);
+            if (!appImageFile.isSigned()) {
+                appImageFile.copyAsSigned().save(predefinedAppImage);
+            } else {
+                appImageFile = null;
+            }
+
+            try {
+                doSigning(params);
+            } catch (Exception ex) {
+                // Restore original app image file if signing failed
+                if (appImageFile != null) {
+                    appImageFile.save(predefinedAppImage);
+                }
+
+                throw ex;
+            }
+
+            return;
+        }
+
         Files.createDirectories(macOSDir);
 
         Map<String, ? super Object> originalParams = new HashMap<>(params);
@@ -280,6 +339,11 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         // Copy class path entries to Java folder
         copyApplication(params);
 
+        if (withPackageFile) {
+            new PackageFile(APP_NAME.fetchFrom(params)).save(
+                    ApplicationLayout.macAppImage().resolveAt(root));
+        }
+
         /*********** Take care of "config" files *******/
 
         createResource(TEMPLATE_BUNDLE_ICON, params)
@@ -299,7 +363,8 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         }
 
         copyRuntimeFiles(params);
-        sign(params);
+
+        doSigning(params);
     }
 
     private void copyRuntimeFiles(Map<String, ? super Object> params)
@@ -325,7 +390,9 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         }
     }
 
-    private void sign(Map<String, ? super Object> params) throws IOException {
+    private void doSigning(Map<String, ? super Object> params)
+            throws IOException {
+
         if (Optional.ofNullable(
                 SIGN_BUNDLE.fetchFrom(params)).orElse(Boolean.TRUE)) {
             try {
@@ -333,28 +400,34 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
             } catch (InterruptedException e) {
                 Log.error(e.getMessage());
             }
-            String signingIdentity =
-                    DEVELOPER_ID_APP_SIGNING_KEY.fetchFrom(params);
+            String signingIdentity = null;
+            // Try --mac-app-image-sign-identity first if set
+            if (!APP_IMAGE_SIGN_IDENTITY.getIsDefaultValue(params)) {
+                signingIdentity = APP_IMAGE_SIGN_IDENTITY.fetchFrom(params);
+            } else {
+                // Check if INSTALLER_SIGN_IDENTITY is set and if it is set
+                // then do not sign app image, otherwise use --mac-signing-key-user-name
+                if (INSTALLER_SIGN_IDENTITY.getIsDefaultValue(params)) {
+                    // --mac-sign and/or --mac-signing-key-user-name case
+                    signingIdentity = DEVELOPER_ID_APP_SIGNING_KEY.fetchFrom(params);
+                }
+            }
             if (signingIdentity != null) {
-                prepareEntitlements(params);
                 signAppBundle(params, root, signingIdentity,
                         BUNDLE_ID_SIGNING_PREFIX.fetchFrom(params),
-                        getConfig_Entitlements(params));
+                        ENTITLEMENTS.fetchFrom(params));
+            } else {
+                // Case when user requested to sign installer only
+                signAppBundle(params, root, "-", null, null);
             }
             restoreKeychainList(params);
+        } else if (OperatingSystem.isMacOS()) {
+            signAppBundle(params, root, "-", null, null);
+        } else {
+            // Calling signAppBundle() without signingIdentity will result in
+            // unsigning app bundle
+            signAppBundle(params, root, null, null, null);
         }
-    }
-
-    static Path getConfig_Entitlements(Map<String, ? super Object> params) {
-        return CONFIG_ROOT.fetchFrom(params).resolve(
-                getLauncherName(params) + ".entitlements");
-    }
-
-    static void prepareEntitlements(Map<String, ? super Object> params)
-            throws IOException {
-        createResource("entitlements.plist", params)
-                .setCategory(I18N.getString("resource.entitlements"))
-                .saveToFile(getConfig_Entitlements(params));
     }
 
     private static String getLauncherName(Map<String, ? super Object> params) {
@@ -391,8 +464,17 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         String name = StandardBundlerParam.isRuntimeInstaller(params) ?
                 getBundleName(params): "Java Runtime Image";
         data.put("CF_BUNDLE_NAME", name);
-        data.put("CF_BUNDLE_VERSION", VERSION.fetchFrom(params));
-        data.put("CF_BUNDLE_SHORT_VERSION_STRING", VERSION.fetchFrom(params));
+        String ver = VERSION.fetchFrom(params);
+        String sver = ver;
+        int index = ver.indexOf(".");
+        if (index > 0 && ((index + 1) < ver.length())) {
+            index = ver.indexOf(".", index + 1);
+            if (index > 0 ) {
+                sver = ver.substring(0, index);
+            }
+        }
+        data.put("CF_BUNDLE_VERSION", ver);
+        data.put("CF_BUNDLE_SHORT_VERSION_STRING", sver);
 
         createResource(TEMPLATE_RUNTIME_INFO_PLIST, params)
                 .setPublicName("Runtime-Info.plist")
@@ -443,6 +525,8 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         data.put("DEPLOY_LAUNCHER_NAME", getLauncherName(params));
         data.put("DEPLOY_BUNDLE_SHORT_VERSION", VERSION.fetchFrom(params));
         data.put("DEPLOY_BUNDLE_CFBUNDLE_VERSION", VERSION.fetchFrom(params));
+        data.put("DEPLOY_APP_CATEGORY", "public.app-category." +
+                APP_CATEGORY.fetchFrom(params));
 
         StringBuilder bundleDocumentTypes = new StringBuilder();
         StringBuilder exportedTypes = new StringBuilder();
@@ -544,9 +628,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
 
     public static void addNewKeychain(Map<String, ? super Object> params)
                                     throws IOException, InterruptedException {
-        if (Platform.getMajorVersion() < 10 ||
-                (Platform.getMajorVersion() == 10 &&
-                Platform.getMinorVersion() < 12)) {
+        if (OSVersion.current().compareTo(new OSVersion(10, 12)) < 0) {
             // we need this for OS X 10.12+
             return;
         }
@@ -565,7 +647,6 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
             Log.error(I18N.getString("message.keychain.error"));
             return;
         }
-
         boolean contains = keychainList.stream().anyMatch(
                     str -> str.trim().equals("\""+keyChainPath.trim()+"\""));
         if (contains) {
@@ -580,7 +661,9 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
             if (path.startsWith("\"") && path.endsWith("\"")) {
                 path = path.substring(1, path.length()-1);
             }
-            keyChains.add(path);
+            if (!keyChains.contains(path)) {
+                keyChains.add(path);
+            }
         });
 
         List<String> args = new ArrayList<>();
@@ -597,9 +680,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
 
     public static void restoreKeychainList(Map<String, ? super Object> params)
             throws IOException{
-        if (Platform.getMajorVersion() < 10 ||
-                (Platform.getMajorVersion() == 10 &&
-                Platform.getMinorVersion() < 12)) {
+        if (OSVersion.current().compareTo(new OSVersion(10, 12)) < 0) {
             // we need this for OS X 10.12+
             return;
         }
@@ -619,6 +700,58 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         IOUtils.exec(pb);
     }
 
+    private static List<String> getCodesignArgs(
+            boolean force, Path path, String signingIdentity,
+            String identifierPrefix, Path entitlements, String keyChain) {
+        List<String> args = new ArrayList<>();
+        args.addAll(Arrays.asList("/usr/bin/codesign",
+                    "-s", signingIdentity,
+                    "-vvvv"));
+
+        if (!signingIdentity.equals("-")) {
+            args.addAll(Arrays.asList("--timestamp",
+                    "--options", "runtime",
+                    "--prefix", identifierPrefix));
+            if (keyChain != null && !keyChain.isEmpty()) {
+                args.add("--keychain");
+                args.add(keyChain);
+            }
+            if (Files.isExecutable(path)) {
+                if (entitlements != null) {
+                    args.add("--entitlements");
+                    args.add(entitlements.toString());
+                }
+            }
+        }
+
+        if (force) {
+            args.add("--force");
+        }
+
+        args.add(path.toString());
+
+        return args;
+    }
+
+    private static void runCodesign(ProcessBuilder pb, boolean quiet)
+                                                            throws IOException {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+             PrintStream ps = new PrintStream(baos)) {
+            try {
+            IOUtils.exec(pb, false, ps, false,
+                         Executor.INFINITE_TIMEOUT, quiet);
+            } catch (IOException ioe) {
+                // Log output of "codesign" in case of
+                // error. It should help user to diagnose
+                // issue when using --mac-app-image-sign-identity
+                Log.info(MessageFormat.format(I18N.getString(
+                         "error.tool.failed.with.output"), "codesign"));
+                Log.info(baos.toString().strip());
+                throw ioe;
+            }
+        }
+    }
+
     static void signAppBundle(
             Map<String, ? super Object> params, Path appLocation,
             String signingIdentity, String identifierPrefix, Path entitlements)
@@ -631,8 +764,8 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         try (Stream<Path> stream = Files.walk(appLocation)) {
             stream.peek(path -> { // fix permissions
                 try {
-                    Set<PosixFilePermission> pfp =
-                            Files.getPosixFilePermissions(path);
+                    Set<PosixFilePermission> pfp
+                            = Files.getPosixFilePermissions(path);
                     if (!pfp.contains(PosixFilePermission.OWNER_WRITE)) {
                         pfp = EnumSet.copyOf(pfp);
                         pfp.add(PosixFilePermission.OWNER_WRITE);
@@ -641,57 +774,55 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                 } catch (IOException e) {
                     Log.verbose(e);
                 }
-            }).filter(p -> Files.isRegularFile(p) &&
-                      (Files.isExecutable(p) || p.toString().endsWith(".dylib"))
-                      && !(p.toString().endsWith(appExecutable)
-                      || p.toString().contains("/Contents/runtime")
-                      || p.toString().contains("/Contents/Frameworks"))
-                     ).forEach(p -> {
+            }).filter(p -> Files.isRegularFile(p)
+                    && (Files.isExecutable(p) || p.toString().endsWith(".dylib"))
+                    && !(p.toString().contains("dylib.dSYM/Contents"))
+                    && !(p.toString().endsWith(appExecutable))
+            ).forEach(p -> {
                 // noinspection ThrowableResultOfMethodCallIgnored
-                if (toThrow.get() != null) return;
+                if (toThrow.get() != null) {
+                    return;
+                }
 
                 // If p is a symlink then skip the signing process.
                 if (Files.isSymbolicLink(p)) {
                     Log.verbose(MessageFormat.format(I18N.getString(
                             "message.ignoring.symlink"), p.toString()));
-                } else if (isFileSigned(p)) {
-                    // executable or lib already signed
-                    Log.verbose(MessageFormat.format(I18N.getString(
-                            "message.already.signed"), p.toString()));
                 } else {
+                    // unsign everything before signing
                     List<String> args = new ArrayList<>();
                     args.addAll(Arrays.asList("/usr/bin/codesign",
-                            "--timestamp",
-                            "--options", "runtime",
-                            "-s", signingIdentity,
-                            "--prefix", identifierPrefix,
-                            "-vvvv"));
-                    if (keyChain != null && !keyChain.isEmpty()) {
-                        args.add("--keychain");
-                        args.add(keyChain);
-                    }
-
-                    if (Files.isExecutable(p)) {
-                        if (entitlements != null) {
-                            args.add("--entitlements");
-                            args.add(entitlements.toString());
-                        }
-                    }
-
-                    args.add(p.toString());
-
+                            "--remove-signature", p.toString()));
                     try {
                         Set<PosixFilePermission> oldPermissions =
                                 Files.getPosixFilePermissions(p);
                         p.toFile().setWritable(true, true);
-
                         ProcessBuilder pb = new ProcessBuilder(args);
-
-                        IOUtils.exec(pb);
-
+                        // run quietly
+                        IOUtils.exec(pb, false, null, false,
+                                Executor.INFINITE_TIMEOUT, true);
                         Files.setPosixFilePermissions(p, oldPermissions);
                     } catch (IOException ioe) {
+                        Log.verbose(ioe);
                         toThrow.set(ioe);
+                        return;
+                    }
+
+                    // Sign only if we have identity
+                    if (signingIdentity != null) {
+                        args = getCodesignArgs(false, p, signingIdentity,
+                                identifierPrefix, entitlements, keyChain);
+                        try {
+                            Set<PosixFilePermission> oldPermissions
+                                    = Files.getPosixFilePermissions(p);
+                            p.toFile().setWritable(true, true);
+                            ProcessBuilder pb = new ProcessBuilder(args);
+                            // run quietly
+                            runCodesign(pb, true);
+                            Files.setPosixFilePermissions(p, oldPermissions);
+                        } catch (IOException ioe) {
+                            toThrow.set(ioe);
+                        }
                     }
                 }
             });
@@ -701,30 +832,21 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
             throw ioe;
         }
 
+        // We cannot continue signing without identity
+        if (signingIdentity == null) {
+            return;
+        }
+
         // sign all runtime and frameworks
         Consumer<? super Path> signIdentifiedByPList = path -> {
             //noinspection ThrowableResultOfMethodCallIgnored
             if (toThrow.get() != null) return;
 
             try {
-                List<String> args = new ArrayList<>();
-                args.addAll(Arrays.asList("/usr/bin/codesign",
-                        "--timestamp",
-                        "--options", "runtime",
-                        "--force",
-                        "-s", signingIdentity, // sign with this key
-                        "--prefix", identifierPrefix,
-                        // use the identifier as a prefix
-                        "-vvvv"));
-
-                if (keyChain != null && !keyChain.isEmpty()) {
-                    args.add("--keychain");
-                    args.add(keyChain);
-                }
-                args.add(path.toString());
+                List<String> args = getCodesignArgs(true, path, signingIdentity,
+                            identifierPrefix, entitlements, keyChain);
                 ProcessBuilder pb = new ProcessBuilder(args);
-
-                IOUtils.exec(pb);
+                runCodesign(pb, false);
             } catch (IOException e) {
                 toThrow.set(e);
             }
@@ -752,44 +874,10 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         }
 
         // sign the app itself
-        List<String> args = new ArrayList<>();
-        args.addAll(Arrays.asList("/usr/bin/codesign",
-                "--timestamp",
-                "--options", "runtime",
-                "--force",
-                "-s", signingIdentity,
-                "-vvvv"));
-
-        if (keyChain != null && !keyChain.isEmpty()) {
-            args.add("--keychain");
-            args.add(keyChain);
-        }
-
-        if (entitlements != null) {
-            args.add("--entitlements");
-            args.add(entitlements.toString());
-        }
-
-        args.add(appLocation.toString());
-
-        ProcessBuilder pb =
-                new ProcessBuilder(args.toArray(new String[args.size()]));
-
-        IOUtils.exec(pb);
-    }
-
-    private static boolean isFileSigned(Path file) {
-        ProcessBuilder pb =
-                new ProcessBuilder("/usr/bin/codesign",
-                        "--verify", file.toString());
-
-        try {
-            IOUtils.exec(pb);
-        } catch (IOException ex) {
-            return false;
-        }
-
-        return true;
+        List<String> args = getCodesignArgs(true, appLocation, signingIdentity,
+                identifierPrefix, entitlements, keyChain);
+        ProcessBuilder pb = new ProcessBuilder(args);
+        runCodesign(pb, false);
     }
 
     private static String extractBundleIdentifier(Map<String, Object> params) {
@@ -824,5 +912,4 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
 
         return null;
     }
-
 }

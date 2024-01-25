@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2018, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,6 +28,7 @@
 #include "code/compiledIC.hpp"
 #include "code/icBuffer.hpp"
 #include "code/nmethod.hpp"
+#include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
@@ -44,7 +45,7 @@ address CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf, address mark) 
   // mov rmethod, 0
   // jmp -4 # to self
 
-  if (mark == NULL) {
+  if (mark == nullptr) {
     mark = cbuf.insts_mark();  // Get mark within main instrs section.
   }
 
@@ -54,21 +55,12 @@ address CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf, address mark) 
 
   address base = __ start_a_stub(to_interp_stub_size());
   int offset = __ offset();
-  if (base == NULL) {
-    return NULL;  // CodeBuffer::expand failed
+  if (base == nullptr) {
+    return nullptr;  // CodeBuffer::expand failed
   }
   // static stub relocation stores the instruction address of the call
   __ relocate(static_stub_Relocation::spec(mark));
 
-#if INCLUDE_AOT
-  // Don't create a Metadata reloc if we're generating immutable PIC.
-  if (cbuf.immutable_PIC()) {
-    __ movptr(rmethod, 0);
-    __ movptr(rscratch1, 0);
-    __ br(rscratch1);
-
-  } else
-#endif
   {
     __ emit_static_call_stub();
   }
@@ -80,15 +72,14 @@ address CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf, address mark) 
 #undef __
 
 int CompiledStaticCall::to_interp_stub_size() {
-  // isb; movk; movz; movz; movk; movz; movz; br
-  return 8 * NativeInstruction::instruction_size;
+  return MacroAssembler::static_call_stub_size();
 }
 
 int CompiledStaticCall::to_trampoline_stub_size() {
   // Somewhat pessimistically, we count 3 instructions here (although
   // there are only two) because we sometimes emit an alignment nop.
   // Trampoline stubs are always word aligned.
-  return 3 * NativeInstruction::instruction_size + wordSize;
+  return MacroAssembler::max_trampoline_stub_size();
 }
 
 // Relocation entries for call stub, compiled java to interpreter.
@@ -96,68 +87,13 @@ int CompiledStaticCall::reloc_to_interp_stub() {
   return 4; // 3 in emit_to_interp_stub + 1 in emit_call
 }
 
-#if INCLUDE_AOT
-#define __ _masm.
-void CompiledStaticCall::emit_to_aot_stub(CodeBuffer &cbuf, address mark) {
-  if (!UseAOT) {
-    return;
-  }
-  // Stub is fixed up when the corresponding call is converted from
-  // calling compiled code to calling aot code.
-  // mov r, imm64_aot_code_address
-  // jmp r
-
-  if (mark == NULL) {
-    mark = cbuf.insts_mark();  // Get mark within main instrs section.
-  }
-
-  // Note that the code buffer's insts_mark is always relative to insts.
-  // That's why we must use the macroassembler to generate a stub.
-  MacroAssembler _masm(&cbuf);
-
-  address base =
-  __ start_a_stub(to_aot_stub_size());
-  guarantee(base != NULL, "out of space");
-
-  // Static stub relocation stores the instruction address of the call.
-  __ relocate(static_stub_Relocation::spec(mark, true /* is_aot */));
-  // Load destination AOT code address.
-  __ movptr(rscratch1, 0);  // address is zapped till fixup time.
-  // This is recognized as unresolved by relocs/nativeinst/ic code.
-  __ br(rscratch1);
-
-  assert(__ pc() - base <= to_aot_stub_size(), "wrong stub size");
-
-  // Update current stubs pointer and restore insts_end.
-  __ end_a_stub();
-}
-#undef __
-
-int CompiledStaticCall::to_aot_stub_size() {
-  if (UseAOT) {
-    return 5 * 4;  // movz; movk; movk; movk; br
-  } else {
-    return 0;
-  }
-}
-
-// Relocation entries for call stub, compiled java to aot.
-int CompiledStaticCall::reloc_to_aot_stub() {
-  if (UseAOT) {
-    return 5 * 4;  // movz; movk; movk; movk; br
-  } else {
-    return 0;
-  }
-}
-#endif // INCLUDE_AOT
-
 void CompiledDirectStaticCall::set_to_interpreted(const methodHandle& callee, address entry) {
-  address stub = find_stub(false /* is_aot */);
-  guarantee(stub != NULL, "stub not found");
+  address stub = find_stub();
+  guarantee(stub != nullptr, "stub not found");
 
-  if (TraceICs) {
+  {
     ResourceMark rm;
-    tty->print_cr("CompiledDirectStaticCall@" INTPTR_FORMAT ": set_to_interpreted %s",
+    log_trace(inlinecache)("CompiledDirectStaticCall@" INTPTR_FORMAT ": set_to_interpreted %s",
                   p2i(instruction_address()),
                   callee->name_and_sig_as_C_string());
   }
@@ -182,16 +118,14 @@ void CompiledDirectStaticCall::set_to_interpreted(const methodHandle& callee, ad
 void CompiledDirectStaticCall::set_stub_to_clean(static_stub_Relocation* static_stub) {
   // Reset stub.
   address stub = static_stub->addr();
-  assert(stub != NULL, "stub not found");
+  assert(stub != nullptr, "stub not found");
   assert(CompiledICLocker::is_safe(stub), "mt unsafe call");
   // Creation also verifies the object.
   NativeMovConstReg* method_holder
     = nativeMovConstReg_at(stub + NativeInstruction::instruction_size);
   method_holder->set_data(0);
-  if (!static_stub->is_aot()) {
-    NativeJump* jump = nativeJump_at(method_holder->next_instruction_address());
-    jump->set_jump_destination((address)-1);
-  }
+  NativeJump* jump = nativeJump_at(method_holder->next_instruction_address());
+  jump->set_jump_destination((address)-1);
 }
 
 //-----------------------------------------------------------------------------
@@ -204,8 +138,8 @@ void CompiledDirectStaticCall::verify() {
   _call->verify_alignment();
 
   // Verify stub.
-  address stub = find_stub(false /* is_aot */);
-  assert(stub != NULL, "no stub found for static call");
+  address stub = find_stub();
+  assert(stub != nullptr, "no stub found for static call");
   // Creation also verifies the object.
   NativeMovConstReg* method_holder
     = nativeMovConstReg_at(stub + NativeInstruction::instruction_size);

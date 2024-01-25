@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,44 +49,70 @@
             " move the pointer between B to C.",
  */
 
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.BorderLayout;
+import java.awt.Button;
+import java.awt.Component;
+import java.awt.EventQueue;
+import java.awt.Frame;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.Window;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.lang.reflect.InvocationTargetException;
+
 import test.java.awt.regtesthelpers.Util;
-import javax.swing.*;
+
+import javax.swing.JButton;
+import javax.swing.JFrame;
 
 public class SpuriousExitEnter_3 {
-    static JFrame frame = new JFrame("SpuriousExitEnter_3_LW");
-    static JButton jbutton = new JButton("jbutton");
-    static Frame frame1 = new Frame("SpuriousExitEnter_3_HW");
-    static Button button1 = new Button("button");
+    static JFrame frame;
+    static JButton jbutton;
 
-    static EnterExitAdapter frameAdapter;
-    static EnterExitAdapter buttonAdapter;
-    static Robot r = Util.createRobot();
+    static Frame frame1;
+    static Button button1;
 
-    public static void testCase(Window w, Component comp) {
-        frameAdapter = new EnterExitAdapter(w);
-        buttonAdapter = new EnterExitAdapter(comp);
+    static final Robot r = Util.createRobot();
 
-        w.addMouseListener(frameAdapter);
-        comp.addMouseListener(buttonAdapter);
+    static volatile EnterExitAdapter frameAdapter;
+    static volatile EnterExitAdapter buttonAdapter;
+    static volatile Point centerA;
+    static volatile Point centerB;
+    static volatile Point centerC_1 ;
+    static volatile Point centerC_2;
 
-        w.setSize(200, 200);
-        w.add(comp, BorderLayout.NORTH);
-        w.setLocationRelativeTo(null);
-        w.setVisible(true);
+    public static void testCase(Window w, Component comp) throws InterruptedException, InvocationTargetException {
+        EventQueue.invokeAndWait(()-> {
+            frameAdapter = new EnterExitAdapter(w);
+            buttonAdapter = new EnterExitAdapter(comp);
 
-        Point centerA = new Point(comp.getLocationOnScreen().x + comp.getWidth() / 2,
-                                  comp.getLocationOnScreen().y + comp.getHeight() / 2);
-        Point centerB = new Point(w.getLocationOnScreen().x + w.getWidth() / 2,
-                                  w.getLocationOnScreen().y + w.getHeight() / 2);
-        //for moving from A outside: don't cross the A area. Move straight to the right.
-        Point centerC_1 = new Point(w.getLocationOnScreen().x + w.getWidth() + 20,  //go right off the border
-                                    comp.getLocationOnScreen().y + comp.getHeight() / 2); //don't cross the A area!
+            w.addMouseListener(frameAdapter);
+            comp.addMouseListener(buttonAdapter);
 
-        //for moving from B outside: don't cross the B area. Move straight to the bottom.
-        Point centerC_2 = new Point(w.getLocationOnScreen().x + w.getWidth() / 2,
-                                    w.getLocationOnScreen().y + w.getHeight() + 20); //go below the bottom border
+            w.setSize(200, 200);
+            w.add(comp, BorderLayout.NORTH);
+            w.setLocationRelativeTo(null);
+            w.setVisible(true);
+        });
+
+        r.waitForIdle();
+        r.delay(1000);
+
+        EventQueue.invokeAndWait(()-> {
+            centerA = new Point(comp.getLocationOnScreen().x + comp.getWidth() / 2,
+                    comp.getLocationOnScreen().y + comp.getHeight() / 2);
+            centerB = new Point(w.getLocationOnScreen().x + w.getWidth() / 2,
+                    w.getLocationOnScreen().y + w.getHeight() / 2);
+            //for moving from A outside: don't cross the A area. Move straight to the right.
+            centerC_1 = new Point(w.getLocationOnScreen().x + w.getWidth() + 20,  //go right off the border
+                    comp.getLocationOnScreen().y + comp.getHeight() / 2); //don't cross the A area!
+
+            //for moving from B outside: don't cross the B area. Move straight to the bottom.
+            centerC_2 = new Point(w.getLocationOnScreen().x + w.getWidth() / 2,
+                    w.getLocationOnScreen().y + w.getHeight() + 20); //go below the bottom border
+        });
+
         //A and B areas
         Util.pointOnComp(comp, r);
         Util.waitForIdle(r);
@@ -118,12 +144,23 @@ public class SpuriousExitEnter_3 {
         Util.waitForIdle(r);
     }
 
-    public static void main(String []s)
-    {
-        //LW case:
-        testCase(frame, jbutton);
-        //HW case
-        testCase(frame1, button1);
+
+    public static void main(String []s) throws InterruptedException, InvocationTargetException {
+        EventQueue.invokeAndWait(() -> {
+            frame = new JFrame("SpuriousExitEnter_3_LW");
+            jbutton = new JButton("jbutton");
+
+            frame1 = new Frame("SpuriousExitEnter_3_HW");
+            button1  = new Button("button");
+        });
+
+        try {
+            testCase(frame,  jbutton); //LW case
+            testCase(frame1, button1); //HW case
+        } finally {
+            EventQueue.invokeLater(frame::dispose);
+            EventQueue.invokeLater(frame1::dispose);
+        }
     }
 
     private static void moveBetween(Robot r, Point first, Point second) {
@@ -150,9 +187,9 @@ public class SpuriousExitEnter_3 {
 
 
 class EnterExitAdapter extends MouseAdapter {
-    private Component target;
-    private int enteredEventCount = 0;
-    private int exitedEventCount = 0;
+    private final Component target;
+    private volatile int enteredEventCount = 0;
+    private volatile int exitedEventCount = 0;
 
     public EnterExitAdapter(Component target) {
         this.target = target;
@@ -170,7 +207,7 @@ class EnterExitAdapter extends MouseAdapter {
     }
 
     public void zeroCounters(){
-        System.out.println("Zeroeing on " +target.getClass().getName());
+        System.out.println("Zeroing on " +target.getClass().getName());
         enteredEventCount = 0;
         exitedEventCount = 0;
     }

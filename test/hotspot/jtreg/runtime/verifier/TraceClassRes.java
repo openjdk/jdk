@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 8076318
  * @summary split verifier needs to add class resolution tracing
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @run driver TraceClassRes
@@ -37,7 +38,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class TraceClassRes {
   public static void main(String[] args) throws Exception {
 
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+    ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
         "-Xlog:class+resolve=debug", "-verify", "-Xshare:off", "-version");
 
     OutputAnalyzer output = new OutputAnalyzer(pb.start());

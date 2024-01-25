@@ -22,7 +22,7 @@
  */
 
 /*
- * @test TestClone
+ * @test id=default
  * @summary Test clone barriers work correctly
  * @requires vm.gc.Shenandoah
  *
@@ -48,7 +48,7 @@
  */
 
 /*
- * @test TestClone
+ * @test id=default-verify
  * @summary Test clone barriers work correctly
  * @requires vm.gc.Shenandoah
  *
@@ -79,7 +79,7 @@
  */
 
 /*
- * @test TestClone
+ * @test id=aggressive
  * @summary Test clone barriers work correctly
  * @requires vm.gc.Shenandoah
  *
@@ -105,39 +105,7 @@
  */
 
 /*
- * @test TestClone
- * @summary Test clone barriers work correctly
- * @requires vm.gc.Shenandoah
- * @requires vm.bits == "64"
- *
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
- *                   -XX:-UseCompressedOops
- *                   -XX:+UseShenandoahGC
- *                   TestClone
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
- *                   -XX:-UseCompressedOops
- *                   -XX:+UseShenandoahGC
- *                   -Xint
- *                   TestClone
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
- *                   -XX:-UseCompressedOops
- *                   -XX:+UseShenandoahGC
- *                   -XX:-TieredCompilation
- *                   TestClone
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
- *                   -XX:-UseCompressedOops
- *                   -XX:+UseShenandoahGC
- *                   -XX:TieredStopAtLevel=1
- *                   TestClone
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
- *                   -XX:-UseCompressedOops
- *                   -XX:+UseShenandoahGC
- *                   -XX:TieredStopAtLevel=4
- *                   TestClone
- */
-
-/*
- * @test TestClone
+ * @test id=no-coops
  * @summary Test clone barriers work correctly
  * @requires vm.gc.Shenandoah
  * @requires vm.bits == "64"
@@ -145,6 +113,38 @@
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
  *                   -XX:-UseCompressedOops
  *                   -XX:+UseShenandoahGC
+ *                   TestClone
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+ *                   -XX:-UseCompressedOops
+ *                   -XX:+UseShenandoahGC
+ *                   -Xint
+ *                   TestClone
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+ *                   -XX:-UseCompressedOops
+ *                   -XX:+UseShenandoahGC
+ *                   -XX:-TieredCompilation
+ *                   TestClone
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+ *                   -XX:-UseCompressedOops
+ *                   -XX:+UseShenandoahGC
+ *                   -XX:TieredStopAtLevel=1
+ *                   TestClone
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+ *                   -XX:-UseCompressedOops
+ *                   -XX:+UseShenandoahGC
+ *                   -XX:TieredStopAtLevel=4
+ *                   TestClone
+ */
+
+/*
+ * @test id=no-coops-verify
+ * @summary Test clone barriers work correctly
+ * @requires vm.gc.Shenandoah
+ * @requires vm.bits == "64"
+ *
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+ *                   -XX:-UseCompressedOops
+ *                   -XX:+UseShenandoahGC
  *                   -XX:+ShenandoahVerify
  *                   TestClone
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
@@ -174,7 +174,7 @@
  */
 
 /*
- * @test TestClone
+ * @test id=no-coops-aggressive
  * @summary Test clone barriers work correctly
  * @requires vm.gc.Shenandoah
  * @requires vm.bits == "64"

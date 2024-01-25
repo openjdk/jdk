@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -22,6 +22,7 @@ package com.sun.org.apache.xerces.internal.jaxp;
 
 import com.sun.org.apache.xerces.internal.parsers.DOMParser;
 import com.sun.org.apache.xerces.internal.util.SAXMessageFormatter;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import java.util.HashMap;
 import java.util.Map;
 import javax.xml.XMLConstants;
@@ -29,6 +30,8 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.validation.Schema;
+import jdk.xml.internal.JdkProperty;
+import jdk.xml.internal.XMLSecurityManager;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
@@ -36,6 +39,7 @@ import org.xml.sax.SAXNotSupportedException;
 /**
  * @author Rajiv Mordani
  * @author Edwin Goei
+ * @LastModified: July 2023
  */
 public class DocumentBuilderFactoryImpl extends DocumentBuilderFactory {
     /** These are DocumentBuilderFactory attributes not DOM attributes */
@@ -48,6 +52,10 @@ public class DocumentBuilderFactoryImpl extends DocumentBuilderFactory {
      * State of the secure processing feature, initially <code>false</code>
      */
     private boolean fSecureProcess = true;
+
+    // used to verify attributes
+    XMLSecurityManager fSecurityManager = new XMLSecurityManager(true);
+    XMLSecurityPropertyManager fSecurityPropertyMgr = new XMLSecurityPropertyManager();
 
     /**
      * Creates a new instance of a {@link javax.xml.parsers.DocumentBuilder}
@@ -71,6 +79,8 @@ public class DocumentBuilderFactoryImpl extends DocumentBuilderFactory {
         }
 
         try {
+            // read system properties for compatibility
+            fSecurityManager.readSystemProperties();
             return new DocumentBuilderImpl(this, attributes, features, fSecureProcess);
         } catch (SAXException se) {
             // Handles both SAXNotSupportedException, SAXNotRecognizedException
@@ -104,6 +114,20 @@ public class DocumentBuilderFactoryImpl extends DocumentBuilderFactory {
             attributes = new HashMap<>();
         }
 
+        //check if the property is managed by security manager
+        String pName;
+        if ((pName = fSecurityManager.find(name)) != null) {
+            // as the qName is deprecated, let the manager decide whether the
+            // value shall be changed
+            fSecurityManager.setLimit(name, JdkProperty.State.APIPROPERTY, value);
+            attributes.put(pName, fSecurityManager.getLimitAsString(pName));
+            // no need to create a DocumentBuilderImpl
+            return;
+        } else if ((pName = fSecurityPropertyMgr.find(name)) != null) {
+            attributes.put(pName, value);
+            return;
+        }
+
         attributes.put(name, value);
 
         // Test the attribute name by possibly throwing an exception
@@ -122,6 +146,15 @@ public class DocumentBuilderFactoryImpl extends DocumentBuilderFactory {
     public Object getAttribute(String name)
         throws IllegalArgumentException
     {
+
+        //check if the property is managed by security manager
+        String pName;
+        if ((pName = fSecurityManager.find(name)) != null) {
+            return fSecurityManager.getLimitAsString(pName);
+        } else if ((pName = fSecurityPropertyMgr.find(name)) != null) {
+            return attributes.get(pName);
+        }
+
         // See if it's in the attributes Map
         if (attributes != null) {
             Object val = attributes.get(name);
@@ -187,6 +220,7 @@ public class DocumentBuilderFactoryImpl extends DocumentBuilderFactory {
         }
     }
 
+    @SuppressWarnings("removal")
     public void setFeature(String name, boolean value)
         throws ParserConfigurationException {
         if (features == null) {
@@ -200,6 +234,7 @@ public class DocumentBuilderFactoryImpl extends DocumentBuilderFactory {
                         "jaxp-secureprocessing-feature", null));
             }
             fSecureProcess = value;
+            fSecurityManager.setSecureProcessing(fSecureProcess);
             features.put(name, value ? Boolean.TRUE : Boolean.FALSE);
             return;
         }

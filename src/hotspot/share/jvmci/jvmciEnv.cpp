@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,13 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm_io.h"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
+#include "compiler/compilerOracle.hpp"
 #include "compiler/compileTask.hpp"
+#include "jvm_io.h"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -36,8 +37,11 @@
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/deoptimization.hpp"
+#include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/thread.inline.hpp"
+#include "runtime/os.hpp"
 #include "jvmci/jniAccessMark.inline.hpp"
 #include "jvmci/jvmciCompiler.hpp"
 #include "jvmci/jvmciRuntime.hpp"
@@ -46,7 +50,7 @@ JVMCICompileState::JVMCICompileState(CompileTask* task, JVMCICompiler* compiler)
   _task(task),
   _compiler(compiler),
   _retryable(true),
-  _failure_reason(NULL),
+  _failure_reason(nullptr),
   _failure_reason_on_C_heap(false) {
   // Get Jvmti capabilities under lock to get consistent values.
   MutexLocker mu(JvmtiThreadState_lock);
@@ -55,10 +59,25 @@ JVMCICompileState::JVMCICompileState(CompileTask* task, JVMCICompiler* compiler)
   _jvmti_can_access_local_variables     = JvmtiExport::can_access_local_variables() ? 1 : 0;
   _jvmti_can_post_on_exceptions         = JvmtiExport::can_post_on_exceptions() ? 1 : 0;
   _jvmti_can_pop_frame                  = JvmtiExport::can_pop_frame() ? 1 : 0;
-  _target_method_is_old                 = _task != NULL && _task->method()->is_old();
+  _target_method_is_old                 = _task != nullptr && _task->method()->is_old();
   if (task->is_blocking()) {
     task->set_blocking_jvmci_compile_state(this);
   }
+}
+
+void JVMCICompileState::set_failure(bool retryable, const char* reason, bool reason_on_C_heap) {
+  if (_failure_reason != nullptr && _failure_reason_on_C_heap) {
+      os::free((void*) _failure_reason);
+  }
+  _failure_reason = reason;
+  _failure_reason_on_C_heap = reason_on_C_heap;
+  _retryable = retryable;
+}
+
+void JVMCICompileState::notify_libjvmci_oome() {
+  const char* msg = "Out of memory initializing libjvmci or attaching it to the current thread";
+  set_failure(true, msg);
+  _compiler->on_upcall(msg);
 }
 
 // Update global JVMCI compilation ticks after 512 thread-local JVMCI compilation ticks.
@@ -96,67 +115,9 @@ bool JVMCICompileState::jvmti_state_changed() const {
   return false;
 }
 
-void JVMCIEnv::copy_saved_properties() {
-  assert(!is_hotspot(), "can only copy saved properties from HotSpot to native image");
-
-  JavaThread* THREAD = JavaThread::current();
-
-  Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::jdk_vm_ci_services_Services(), Handle(), Handle(), true, THREAD);
-  if (HAS_PENDING_EXCEPTION) {
-    JVMCIRuntime::fatal_exception(NULL, "Error initializing jdk.vm.ci.services.Services");
-  }
-  InstanceKlass* ik = InstanceKlass::cast(k);
-  if (ik->should_be_initialized()) {
-    ik->initialize(THREAD);
-    if (HAS_PENDING_EXCEPTION) {
-      JVMCIRuntime::fatal_exception(NULL, "Error initializing jdk.vm.ci.services.Services");
-    }
-  }
-
-  // Get the serialized saved properties from HotSpot
-  TempNewSymbol serializeSavedProperties = SymbolTable::new_symbol("serializeSavedProperties");
-  JavaValue result(T_OBJECT);
-  JavaCallArguments args;
-  JavaCalls::call_static(&result, ik, serializeSavedProperties, vmSymbols::serializePropertiesToByteArray_signature(), &args, THREAD);
-  if (HAS_PENDING_EXCEPTION) {
-    JVMCIRuntime::fatal_exception(NULL, "Error calling jdk.vm.ci.services.Services.serializeSavedProperties");
-  }
-  oop res = result.get_oop();
-  assert(res->is_typeArray(), "must be");
-  assert(TypeArrayKlass::cast(res->klass())->element_type() == T_BYTE, "must be");
-  typeArrayOop ba = typeArrayOop(res);
-  int serialized_properties_len = ba->length();
-
-  // Copy serialized saved properties from HotSpot object into native buffer
-  jbyte* serialized_properties = NEW_RESOURCE_ARRAY(jbyte, serialized_properties_len);
-  memcpy(serialized_properties, ba->byte_at_addr(0), serialized_properties_len);
-
-  // Copy native buffer into shared library object
-  JVMCIPrimitiveArray buf = new_byteArray(serialized_properties_len, this);
-  if (has_pending_exception()) {
-    describe_pending_exception(true);
-    fatal("Error in copy_saved_properties");
-  }
-  copy_bytes_from(serialized_properties, buf, 0, serialized_properties_len);
-  if (has_pending_exception()) {
-    describe_pending_exception(true);
-    fatal("Error in copy_saved_properties");
-  }
-
-  // Initialize saved properties in shared library
-  jclass servicesClass = JNIJVMCI::Services::clazz();
-  jmethodID initializeSavedProperties = JNIJVMCI::Services::initializeSavedProperties_method();
-  JNIAccessMark jni(this, THREAD);
-  jni()->CallStaticVoidMethod(servicesClass, initializeSavedProperties, buf.as_jobject());
-  if (jni()->ExceptionCheck()) {
-    jni()->ExceptionDescribe();
-    fatal("Error calling jdk.vm.ci.services.Services.initializeSavedProperties");
-  }
-}
-
 void JVMCIEnv::init_env_mode_runtime(JavaThread* thread, JNIEnv* parent_env) {
-  assert(thread != NULL, "npe");
-  _env = NULL;
+  assert(thread != nullptr, "npe");
+  _env = nullptr;
   _pop_frame_on_close = false;
   _detach_on_close = false;
   if (!UseJVMCINativeLibrary) {
@@ -166,7 +127,7 @@ void JVMCIEnv::init_env_mode_runtime(JavaThread* thread, JNIEnv* parent_env) {
     return;
   }
 
-  if (parent_env != NULL) {
+  if (parent_env != nullptr) {
     // If the parent JNI environment is non-null then figure out whether it
     // is a HotSpot or shared library JNIEnv and set the state appropriately.
     _is_hotspot = thread->jni_environment() == parent_env;
@@ -175,8 +136,8 @@ void JVMCIEnv::init_env_mode_runtime(JavaThread* thread, JNIEnv* parent_env) {
       _runtime = JVMCI::java_runtime();
       return;
     }
-    _runtime = JVMCI::compiler_runtime();
-    assert(_runtime != NULL, "npe");
+    _runtime = thread->libjvmci_runtime();
+    assert(_runtime != nullptr, "npe");
     _env = parent_env;
     return;
   }
@@ -185,15 +146,19 @@ void JVMCIEnv::init_env_mode_runtime(JavaThread* thread, JNIEnv* parent_env) {
   // is loaded and initialized and get a shared library JNIEnv
   _is_hotspot = false;
 
-  _runtime = JVMCI::compiler_runtime();
-  _env = _runtime->init_shared_library_javavm();
-
-  if (_env != NULL) {
+  _runtime = JVMCI::compiler_runtime(thread);
+  _env = _runtime->init_shared_library_javavm(&_init_error, &_init_error_msg);
+  if (_env != nullptr) {
     // Creating the JVMCI shared library VM also attaches the current thread
     _detach_on_close = true;
+  } else if (_init_error != JNI_OK) {
+    // Caller creating this JVMCIEnv must handle the error.
+    JVMCI_event_1("[%s:%d] Error creating libjvmci (err: %d, %s)", _file, _line,
+                  _init_error, _init_error_msg == nullptr ? "unknown" : _init_error_msg);
+    return;
   } else {
     _runtime->GetEnv(thread, (void**)&parent_env, JNI_VERSION_1_2);
-    if (parent_env != NULL) {
+    if (parent_env != nullptr) {
       // Even though there's a parent JNI env, there's no guarantee
       // it was opened by a JVMCIEnv scope and thus may not have
       // pushed a local JNI frame. As such, we use a new JNI local
@@ -204,120 +169,444 @@ void JVMCIEnv::init_env_mode_runtime(JavaThread* thread, JNIEnv* parent_env) {
       ResourceMark rm; // Thread name is resource allocated
       JavaVMAttachArgs attach_args;
       attach_args.version = JNI_VERSION_1_2;
-      attach_args.name = thread->name();
-      attach_args.group = NULL;
-      if (_runtime->AttachCurrentThread(thread, (void**) &_env, &attach_args) != JNI_OK) {
-        fatal("Error attaching current thread (%s) to JVMCI shared library JNI interface", attach_args.name);
+      attach_args.name = const_cast<char*>(thread->name());
+      attach_args.group = nullptr;
+      _init_error = _runtime->AttachCurrentThread(thread, (void**) &_env, &attach_args);
+      if (_init_error == JNI_OK) {
+        _detach_on_close = true;
+      } else {
+        // Caller creating this JVMCIEnv must handle the error.
+        _env = nullptr;
+        JVMCI_event_1("[%s:%d] Error attaching to libjvmci (err: %d)", _file, _line, _init_error);
+        return;
       }
-      _detach_on_close = true;
     }
   }
 
-  assert(_env != NULL, "missing env");
+  assert(_env != nullptr, "missing env");
   assert(_throw_to_caller == false, "must be");
 
   JNIAccessMark jni(this, thread);
   jint result = _env->PushLocalFrame(32);
   if (result != JNI_OK) {
-    char message[256];
-    jio_snprintf(message, 256, "Uncaught exception pushing local frame for JVMCIEnv scope entered at %s:%d", _file, _line);
-    JVMCIRuntime::fatal_exception(this, message);
+    JVMCI_event_1("[%s:%d] Error pushing local JNI frame (err: %d)", _file, _line, result);
+    return;
   }
   _pop_frame_on_close = true;
 }
 
 JVMCIEnv::JVMCIEnv(JavaThread* thread, JVMCICompileState* compile_state, const char* file, int line):
-    _throw_to_caller(false), _file(file), _line(line), _compile_state(compile_state) {
-  init_env_mode_runtime(thread, NULL);
+    _throw_to_caller(false), _file(file), _line(line), _init_error(JNI_OK), _init_error_msg(nullptr), _compile_state(compile_state) {
+  init_env_mode_runtime(thread, nullptr);
 }
 
 JVMCIEnv::JVMCIEnv(JavaThread* thread, const char* file, int line):
-    _throw_to_caller(false), _file(file), _line(line), _compile_state(NULL) {
-  init_env_mode_runtime(thread, NULL);
+    _throw_to_caller(false), _file(file), _line(line), _init_error(JNI_OK), _init_error_msg(nullptr), _compile_state(nullptr) {
+  init_env_mode_runtime(thread, nullptr);
 }
 
 JVMCIEnv::JVMCIEnv(JavaThread* thread, JNIEnv* parent_env, const char* file, int line):
-    _throw_to_caller(true), _file(file), _line(line), _compile_state(NULL) {
+    _throw_to_caller(true), _file(file), _line(line), _init_error(JNI_OK), _init_error_msg(nullptr), _compile_state(nullptr) {
+  assert(parent_env != nullptr, "npe");
   init_env_mode_runtime(thread, parent_env);
-  assert(_env == NULL || parent_env == _env, "mismatched JNIEnvironment");
+  assert(_env == nullptr || parent_env == _env, "mismatched JNIEnvironment");
+  assert(_init_error == JNI_OK, "err: %d", _init_error);
 }
 
 void JVMCIEnv::init(JavaThread* thread, bool is_hotspot, const char* file, int line) {
-  _compile_state = NULL;
+  _compile_state = nullptr;
   _throw_to_caller = false;
   _file = file;
   _line = line;
+  _init_error = JNI_OK;
+  _init_error_msg = nullptr;
   if (is_hotspot) {
-    _env = NULL;
+    _env = nullptr;
     _pop_frame_on_close = false;
     _detach_on_close = false;
     _is_hotspot = true;
     _runtime = JVMCI::java_runtime();
   } else {
-    init_env_mode_runtime(thread, NULL);
+    init_env_mode_runtime(thread, nullptr);
   }
 }
 
-// Prints a pending exception (if any) and its stack trace.
-void JVMCIEnv::describe_pending_exception(bool clear) {
-  JavaThread* THREAD = JavaThread::current();
+void JVMCIEnv::check_init(JVMCI_TRAPS) {
+  guarantee(JVMCIENV != this, "must be");
+  if (_init_error == JNI_OK) {
+    return;
+  }
+  if (_init_error == JNI_ENOMEM) {
+    JVMCI_THROW_MSG(OutOfMemoryError, "JNI_ENOMEM creating or attaching to libjvmci");
+  }
+  JVMCI_THROW_MSG(InternalError, err_msg("Error creating or attaching to libjvmci (err: %d, description: %s)",
+                  _init_error, _init_error_msg == nullptr ? "unknown" : _init_error_msg));
+}
+
+void JVMCIEnv::check_init(TRAPS) {
+  if (_init_error == JNI_OK) {
+    return;
+  }
+  if (_init_error == JNI_ENOMEM) {
+    THROW_MSG(vmSymbols::java_lang_OutOfMemoryError(), "JNI_ENOMEM creating or attaching to libjvmci");
+  }
+  THROW_MSG(vmSymbols::java_lang_OutOfMemoryError(), err_msg("Error creating or attaching to libjvmci (err: %d, description: %s)",
+            _init_error, _init_error_msg == nullptr ? "unknown" : _init_error_msg));
+}
+
+// Prints a pending exception (if any) and its stack trace to st.
+// Also partially logs the stack trace to the JVMCI event log.
+void JVMCIEnv::describe_pending_exception(outputStream* st) {
+  ResourceMark rm;
+  char* stack_trace = nullptr;
+  if (pending_exception_as_string(nullptr, (const char**) &stack_trace)) {
+    st->print_raw_cr(stack_trace);
+
+    // Use up to half the lines of the JVMCI event log to
+    // show the stack trace.
+    char* cursor = stack_trace;
+    int line = 0;
+    const int max_lines = LogEventsBufferEntries / 2;
+    char* last_line = nullptr;
+    while (*cursor != '\0') {
+      char* eol = strchr(cursor, '\n');
+      if (eol == nullptr) {
+        if (line == max_lines - 1) {
+          last_line = cursor;
+        } else if (line < max_lines) {
+          JVMCI_event_1("%s", cursor);
+        }
+        cursor = cursor + strlen(cursor);
+      } else {
+        *eol = '\0';
+        if (line == max_lines - 1) {
+          last_line = cursor;
+        } else if (line < max_lines) {
+          JVMCI_event_1("%s", cursor);
+        }
+        cursor = eol + 1;
+      }
+      line++;
+    }
+    if (last_line != nullptr) {
+      if (line > max_lines) {
+        JVMCI_event_1("%s [elided %d more stack trace lines]", last_line, line - max_lines);
+      } else {
+        JVMCI_event_1("%s", last_line);
+      }
+    }
+  }
+}
+
+bool JVMCIEnv::pending_exception_as_string(const char** to_string, const char** stack_trace) {
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
+  JVMCIObject to_string_obj;
+  JVMCIObject stack_trace_obj;
+  bool had_nested_exception = false;
   if (!is_hotspot()) {
     JNIAccessMark jni(this, THREAD);
-    if (jni()->ExceptionCheck()) {
-      jthrowable ex = !clear ? jni()->ExceptionOccurred() : NULL;
-      jni()->ExceptionDescribe();
-      if (ex != NULL) {
-        jni()->Throw(ex);
+    jthrowable ex = jni()->ExceptionOccurred();
+    if (ex != nullptr) {
+      jni()->ExceptionClear();
+      jobjectArray pair = (jobjectArray) jni()->CallStaticObjectMethod(
+        JNIJVMCI::HotSpotJVMCIRuntime::clazz(),
+        JNIJVMCI::HotSpotJVMCIRuntime::exceptionToString_method(),
+        ex, to_string != nullptr, stack_trace != nullptr);
+      if (jni()->ExceptionCheck()) {
+        // As last resort, dump nested exception
+        jni()->ExceptionDescribe();
+        had_nested_exception = true;
+      } else {
+        guarantee(pair != nullptr, "pair is null");
+        int len = jni()->GetArrayLength(pair);
+        guarantee(len == 2, "bad len is %d", len);
+        if (to_string != nullptr) {
+          to_string_obj = JVMCIObject::create(jni()->GetObjectArrayElement(pair, 0), false);
+        }
+        if (stack_trace != nullptr) {
+          stack_trace_obj = JVMCIObject::create(jni()->GetObjectArrayElement(pair, 1), false);
+        }
       }
+    } else {
+      return false;
     }
   } else {
     if (HAS_PENDING_EXCEPTION) {
-      JVMCIRuntime::describe_pending_hotspot_exception(THREAD, clear);
+      Handle exception(THREAD, PENDING_EXCEPTION);
+      CLEAR_PENDING_EXCEPTION;
+      JavaCallArguments jargs;
+      jargs.push_oop(exception);
+      jargs.push_int(to_string != nullptr);
+      jargs.push_int(stack_trace != nullptr);
+      JavaValue result(T_OBJECT);
+      JavaCalls::call_static(&result,
+                              HotSpotJVMCI::HotSpotJVMCIRuntime::klass(),
+                              vmSymbols::exceptionToString_name(),
+                              vmSymbols::exceptionToString_signature(), &jargs, THREAD);
+      if (HAS_PENDING_EXCEPTION) {
+        Handle nested_exception(THREAD, PENDING_EXCEPTION);
+        CLEAR_PENDING_EXCEPTION;
+        java_lang_Throwable::print_stack_trace(nested_exception, tty);
+        // Clear and ignore any exceptions raised during printing
+        CLEAR_PENDING_EXCEPTION;
+        had_nested_exception = true;
+      } else {
+        oop pair = result.get_oop();
+        guarantee(pair->is_objArray(), "must be");
+        objArrayOop pair_arr = objArrayOop(pair);
+        int len = pair_arr->length();
+        guarantee(len == 2, "bad len is %d", len);
+        if (to_string != nullptr) {
+          to_string_obj = HotSpotJVMCI::wrap(pair_arr->obj_at(0));
+        }
+        if (stack_trace != nullptr) {
+          stack_trace_obj = HotSpotJVMCI::wrap(pair_arr->obj_at(1));
+        }
+      }
+    } else {
+      return false;
     }
   }
+  if (had_nested_exception) {
+    if (to_string != nullptr) {
+      *to_string = "nested exception occurred converting exception to string";
+    }
+    if (stack_trace != nullptr) {
+      *stack_trace = "nested exception occurred converting exception stack to string";
+    }
+  } else {
+    if (to_string_obj.is_non_null()) {
+      *to_string = as_utf8_string(to_string_obj);
+    }
+    if (stack_trace_obj.is_non_null()) {
+      *stack_trace = as_utf8_string(stack_trace_obj);
+    }
+  }
+  return true;
 }
 
-void JVMCIEnv::translate_hotspot_exception_to_jni_exception(JavaThread* THREAD, const Handle& throwable) {
-  assert(!is_hotspot(), "must_be");
-  // Resolve HotSpotJVMCIRuntime class explicitly as HotSpotJVMCI::compute_offsets
-  // may not have been called.
-  Klass* runtimeKlass = SystemDictionary::resolve_or_fail(vmSymbols::jdk_vm_ci_hotspot_HotSpotJVMCIRuntime(), true, CHECK);
-  JavaCallArguments jargs;
-  jargs.push_oop(throwable);
-  JavaValue result(T_OBJECT);
-  JavaCalls::call_static(&result,
-                          runtimeKlass,
-                          vmSymbols::encodeThrowable_name(),
-                          vmSymbols::encodeThrowable_signature(), &jargs, THREAD);
-  if (HAS_PENDING_EXCEPTION) {
-    JVMCIRuntime::fatal_exception(this, "HotSpotJVMCIRuntime.encodeThrowable should not throw an exception");
+
+// Shared code for translating an exception from HotSpot to libjvmci or vice versa.
+class ExceptionTranslation: public StackObj {
+ protected:
+  enum DecodeFormat {
+    _encoded_ok        = 0, // exception was successfully encoded into buffer
+    _buffer_alloc_fail = 1, // native memory for buffer could not be allocated
+    _encode_oome_fail  = 2, // OutOfMemoryError thrown during encoding
+    _encode_fail       = 3  // some other problem occured during encoding. If buffer != 0,
+                            // buffer contains a `struct { u4 len; char[len] desc}`
+                            // describing the problem
+  };
+
+  JVMCIEnv*  _from_env; // Source of translation. Can be null.
+  JVMCIEnv*  _to_env;   // Destination of translation. Never null.
+
+  ExceptionTranslation(JVMCIEnv* from_env, JVMCIEnv* to_env) : _from_env(from_env), _to_env(to_env) {}
+
+  // Encodes the exception in `_from_env` into `buffer`.
+  // Where N is the number of bytes needed for the encoding, returns N if N <= `buffer_size`
+  // and the encoding was written to `buffer` otherwise returns -N.
+  virtual int encode(JavaThread* THREAD, jlong buffer, int buffer_size) = 0;
+
+  // Decodes the exception in `buffer` in `_to_env` and throws it.
+  virtual void decode(JavaThread* THREAD, DecodeFormat format, jlong buffer) = 0;
+
+ public:
+  void doit(JavaThread* THREAD) {
+    int buffer_size = 2048;
+    while (true) {
+      ResourceMark rm;
+      jlong buffer = (jlong) NEW_RESOURCE_ARRAY_IN_THREAD_RETURN_NULL(THREAD, jbyte, buffer_size);
+      if (buffer == 0L) {
+        JVMCI_event_1("error translating exception: translation buffer allocation failed");
+        decode(THREAD, _buffer_alloc_fail, 0L);
+        return;
+      }
+      int res = encode(THREAD, buffer, buffer_size);
+      if (_to_env->has_pending_exception()) {
+        // Propagate pending exception
+        return;
+      }
+      if (res < 0) {
+        int required_buffer_size = -res;
+        if (required_buffer_size > buffer_size) {
+          buffer_size = required_buffer_size;
+        }
+      } else {
+        decode(THREAD, _encoded_ok, buffer);
+        if (!_to_env->has_pending_exception()) {
+          _to_env->throw_InternalError("decodeAndThrowThrowable should have thrown an exception");
+        }
+        return;
+      }
+    }
+  }
+};
+
+// Translates an exception on the HotSpot heap to an exception on the shared library heap.
+class HotSpotToSharedLibraryExceptionTranslation : public ExceptionTranslation {
+ private:
+  const Handle& _throwable;
+
+  char* print_throwable_to_buffer(Handle throwable, jlong buffer, int buffer_size) {
+    char* char_buffer = (char*) buffer + 4;
+    stringStream st(char_buffer, (size_t) buffer_size - 4);
+    java_lang_Throwable::print_stack_trace(throwable, &st);
+    u4 len = (u4) st.size();
+    *((u4*) buffer) = len;
+    return char_buffer;
   }
 
-  oop encoded_throwable_string = result.get_oop();
+  bool handle_pending_exception(JavaThread* THREAD, jlong buffer, int buffer_size) {
+    if (HAS_PENDING_EXCEPTION) {
+      Handle throwable = Handle(THREAD, PENDING_EXCEPTION);
+      Symbol *ex_name = throwable->klass()->name();
+      CLEAR_PENDING_EXCEPTION;
+      if (ex_name == vmSymbols::java_lang_OutOfMemoryError()) {
+        JVMCI_event_1("error translating exception: OutOfMemoryError");
+        decode(THREAD, _encode_oome_fail, 0L);
+      } else {
+        char* char_buffer = print_throwable_to_buffer(throwable, buffer, buffer_size);
+        JVMCI_event_1("error translating exception: %s", char_buffer);
+        decode(THREAD, _encode_fail, buffer);
+      }
+      return true;
+    }
+    return false;
+  }
 
-  ResourceMark rm;
-  const char* encoded_throwable_chars = java_lang_String::as_utf8_string(encoded_throwable_string);
+  int encode(JavaThread* THREAD, jlong buffer, int buffer_size) {
+    if (!THREAD->can_call_java()) {
+      char* char_buffer = print_throwable_to_buffer(_throwable, buffer, buffer_size);
+      const char* detail = log_is_enabled(Info, exceptions) ? "" : " (-Xlog:exceptions may give more detail)";
+      JVMCI_event_1("cannot call Java to translate exception%s: %s", detail, char_buffer);
+      decode(THREAD, _encode_fail, buffer);
+      return 0;
+    }
+    Klass* vmSupport = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_vm_VMSupport(), true, THREAD);
+    if (handle_pending_exception(THREAD, buffer, buffer_size)) {
+      return 0;
+    }
+    JavaCallArguments jargs;
+    jargs.push_oop(_throwable);
+    jargs.push_long(buffer);
+    jargs.push_int(buffer_size);
+    JavaValue result(T_INT);
+    JavaCalls::call_static(&result,
+                            vmSupport,
+                            vmSymbols::encodeThrowable_name(),
+                            vmSymbols::encodeThrowable_signature(), &jargs, THREAD);
+    if (handle_pending_exception(THREAD, buffer, buffer_size)) {
+      return 0;
+    }
+    return result.get_jint();
+  }
 
-  JNIAccessMark jni(this, THREAD);
-  jobject jni_encoded_throwable_string = jni()->NewStringUTF(encoded_throwable_chars);
-  jthrowable jni_throwable = (jthrowable) jni()->CallStaticObjectMethod(JNIJVMCI::HotSpotJVMCIRuntime::clazz(),
-                                JNIJVMCI::HotSpotJVMCIRuntime::decodeThrowable_method(),
-                                jni_encoded_throwable_string);
-  jni()->Throw(jni_throwable);
+  void decode(JavaThread* THREAD, DecodeFormat format, jlong buffer) {
+    JNIAccessMark jni(_to_env, THREAD);
+    jni()->CallStaticVoidMethod(JNIJVMCI::VMSupport::clazz(),
+                                JNIJVMCI::VMSupport::decodeAndThrowThrowable_method(),
+                                format, buffer, false);
+  }
+ public:
+  HotSpotToSharedLibraryExceptionTranslation(JVMCIEnv* hotspot_env, JVMCIEnv* jni_env, const Handle& throwable) :
+    ExceptionTranslation(hotspot_env, jni_env), _throwable(throwable) {}
+};
+
+// Translates an exception on the shared library heap to an exception on the HotSpot heap.
+class SharedLibraryToHotSpotExceptionTranslation : public ExceptionTranslation {
+ private:
+  jthrowable _throwable;
+
+  int encode(JavaThread* THREAD, jlong buffer, int buffer_size) {
+    JNIAccessMark jni(_from_env, THREAD);
+    int res = jni()->CallStaticIntMethod(JNIJVMCI::VMSupport::clazz(),
+                                      JNIJVMCI::VMSupport::encodeThrowable_method(),
+                                      _throwable, buffer, buffer_size);
+    if (jni()->ExceptionCheck()) {
+      // Cannot get name of exception thrown as that can raise another exception.
+      jni()->ExceptionClear();
+      JVMCI_event_1("error translating exception: unknown error");
+      decode(THREAD, _encode_fail, 0L);
+      return 0;
+    }
+    return res;
+  }
+
+  void decode(JavaThread* THREAD, DecodeFormat format, jlong buffer) {
+    Klass* vmSupport = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_vm_VMSupport(), true, CHECK);
+    JavaCallArguments jargs;
+    jargs.push_int(format);
+    jargs.push_long(buffer);
+    jargs.push_int(true);
+    JavaValue result(T_VOID);
+    JavaCalls::call_static(&result,
+                            vmSupport,
+                            vmSymbols::decodeAndThrowThrowable_name(),
+                            vmSymbols::decodeAndThrowThrowable_signature(), &jargs, THREAD);
+  }
+ public:
+  SharedLibraryToHotSpotExceptionTranslation(JVMCIEnv* hotspot_env, JVMCIEnv* jni_env, jthrowable throwable) :
+    ExceptionTranslation(jni_env, hotspot_env), _throwable(throwable) {}
+};
+
+void JVMCIEnv::translate_to_jni_exception(JavaThread* THREAD, const Handle& throwable, JVMCIEnv* hotspot_env, JVMCIEnv* jni_env) {
+  HotSpotToSharedLibraryExceptionTranslation(hotspot_env, jni_env, throwable).doit(THREAD);
+}
+
+void JVMCIEnv::translate_from_jni_exception(JavaThread* THREAD, jthrowable throwable, JVMCIEnv* hotspot_env, JVMCIEnv* jni_env) {
+  SharedLibraryToHotSpotExceptionTranslation(hotspot_env, jni_env, throwable).doit(THREAD);
+}
+
+jboolean JVMCIEnv::transfer_pending_exception_to_jni(JavaThread* THREAD, JVMCIEnv* hotspot_env, JVMCIEnv* jni_env) {
+  if (HAS_PENDING_EXCEPTION) {
+    Handle throwable = Handle(THREAD, PENDING_EXCEPTION);
+    CLEAR_PENDING_EXCEPTION;
+    translate_to_jni_exception(THREAD, throwable, hotspot_env, jni_env);
+    return true;
+  }
+  return false;
+}
+
+jboolean JVMCIEnv::transfer_pending_exception(JavaThread* THREAD, JVMCIEnv* peer_env) {
+  if (is_hotspot()) {
+    return transfer_pending_exception_to_jni(THREAD, this, peer_env);
+  }
+  jthrowable ex = nullptr;
+  {
+    JNIAccessMark jni(this, THREAD);
+    ex = jni()->ExceptionOccurred();
+    if (ex != nullptr) {
+      jni()->ExceptionClear();
+    }
+  }
+  if (ex != nullptr) {
+    translate_from_jni_exception(THREAD, ex, peer_env, this);
+    return true;
+  }
+  return false;
 }
 
 JVMCIEnv::~JVMCIEnv() {
+  if (_init_error_msg != nullptr) {
+    // The memory allocated in libjvmci was not allocated with os::malloc
+    // so must not be freed with os::free.
+    ALLOW_C_FUNCTION(::free((void*) _init_error_msg));
+  }
+  if (_init_error != JNI_OK) {
+    return;
+  }
   if (_throw_to_caller) {
     if (is_hotspot()) {
       // Nothing to do
     } else {
       Thread* thread = Thread::current();
       if (thread->is_Java_thread()) {
-        JavaThread* THREAD = thread->as_Java_thread();
+        JavaThread* THREAD = JavaThread::cast(thread); // For exception macros.
         if (HAS_PENDING_EXCEPTION) {
           Handle throwable = Handle(THREAD, PENDING_EXCEPTION);
           CLEAR_PENDING_EXCEPTION;
-          translate_hotspot_exception_to_jni_exception(THREAD, throwable);
+          translate_to_jni_exception(THREAD, throwable, nullptr, this);
         }
       }
     }
@@ -325,12 +614,13 @@ JVMCIEnv::~JVMCIEnv() {
     if (_pop_frame_on_close) {
       // Pop the JNI local frame that was pushed when entering this JVMCIEnv scope.
       JNIAccessMark jni(this);
-      jni()->PopLocalFrame(NULL);
+      jni()->PopLocalFrame(nullptr);
     }
 
     if (has_pending_exception()) {
       char message[256];
-      jio_snprintf(message, 256, "Uncaught exception exiting JVMCIEnv scope entered at %s:%d", _file, _line);
+      jio_snprintf(message, 256, "Uncaught exception exiting %s JVMCIEnv scope entered at %s:%d",
+          is_hotspot() ? "HotSpot" : "libjvmci", _file, _line);
       JVMCIRuntime::fatal_exception(this, message);
     }
 
@@ -342,7 +632,7 @@ JVMCIEnv::~JVMCIEnv() {
 
 jboolean JVMCIEnv::has_pending_exception() {
   if (is_hotspot()) {
-    Thread* THREAD = Thread::current();
+    JavaThread* THREAD = JavaThread::current(); // For exception macros.
     return HAS_PENDING_EXCEPTION;
   } else {
     JNIAccessMark jni(this);
@@ -352,7 +642,7 @@ jboolean JVMCIEnv::has_pending_exception() {
 
 void JVMCIEnv::clear_pending_exception() {
   if (is_hotspot()) {
-    Thread* THREAD = Thread::current();
+    JavaThread* THREAD = JavaThread::current(); // For exception macros.
     CLEAR_PENDING_EXCEPTION;
   } else {
     JNIAccessMark jni(this);
@@ -446,7 +736,7 @@ void JVMCIEnv::put_int_at(JVMCIPrimitiveArray array, int index, jint value) {
   }
 }
 
-long JVMCIEnv::get_long_at(JVMCIPrimitiveArray array, int index) {
+jlong JVMCIEnv::get_long_at(JVMCIPrimitiveArray array, int index) {
   if (is_hotspot()) {
     return HotSpotJVMCI::resolve(array)->long_at(index);
   } else {
@@ -570,14 +860,14 @@ JVMCIObject JVMCIEnv::create_box(BasicType type, jvalue* value, JVMCI_TRAPS) {
     default:
       JVMCI_THROW_MSG_(IllegalArgumentException, "Only boxes for primitive values can be created", JVMCIObject());
   }
-  JavaThread* THREAD = JavaThread::current();
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
   if (is_hotspot()) {
     oop box = java_lang_boxing_object::create(type, value, CHECK_(JVMCIObject()));
     return HotSpotJVMCI::wrap(box);
   } else {
     JNIAccessMark jni(this, THREAD);
     jobject box = jni()->NewObjectA(JNIJVMCI::box_class(type), JNIJVMCI::box_constructor(type), value);
-    assert(box != NULL, "");
+    assert(box != nullptr, "");
     return wrap(box);
   }
 }
@@ -587,10 +877,11 @@ const char* JVMCIEnv::as_utf8_string(JVMCIObject str) {
     return java_lang_String::as_utf8_string(HotSpotJVMCI::resolve(str));
   } else {
     JNIAccessMark jni(this);
-    int length = jni()->GetStringLength(str.as_jstring());
-    int utf8_length = jni()->GetStringUTFLength(str.as_jstring());
+    jstring jstr = str.as_jstring();
+    int length = jni()->GetStringLength(jstr);
+    int utf8_length = jni()->GetStringUTFLength(jstr);
     char* result = NEW_RESOURCE_ARRAY(char, utf8_length + 1);
-    jni()->GetStringUTFRegion(str.as_jstring(), 0, length, result);
+    jni()->GetStringUTFRegion(jstr, 0, length, result);
     return result;
   }
 }
@@ -614,7 +905,8 @@ DO_THROW(IllegalArgumentException)
 DO_THROW(InvalidInstalledCodeException)
 DO_THROW(UnsatisfiedLinkError)
 DO_THROW(UnsupportedOperationException)
-DO_THROW(ClassNotFoundException)
+DO_THROW(OutOfMemoryError)
+DO_THROW(NoClassDefFoundError)
 
 #undef DO_THROW
 
@@ -623,8 +915,7 @@ void JVMCIEnv::fthrow_error(const char* file, int line, const char* format, ...)
   va_list ap;
   va_start(ap, format);
   char msg[max_msg_size];
-  vsnprintf(msg, max_msg_size, format, ap);
-  msg[max_msg_size-1] = '\0';
+  os::vsnprintf(msg, max_msg_size, format, ap);
   va_end(ap);
   JavaThread* THREAD = JavaThread::current();
   if (is_hotspot()) {
@@ -638,7 +929,7 @@ void JVMCIEnv::fthrow_error(const char* file, int line, const char* format, ...)
 }
 
 jboolean JVMCIEnv::call_HotSpotJVMCIRuntime_isGCSupported (JVMCIObject runtime, jint gcIdentifier) {
-  JavaThread* THREAD = JavaThread::current();
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
   if (is_hotspot()) {
     JavaCallArguments jargs;
     jargs.push_oop(Handle(THREAD, HotSpotJVMCI::resolve(runtime)));
@@ -664,7 +955,7 @@ jboolean JVMCIEnv::call_HotSpotJVMCIRuntime_isGCSupported (JVMCIObject runtime, 
 
 JVMCIObject JVMCIEnv::call_HotSpotJVMCIRuntime_compileMethod (JVMCIObject runtime, JVMCIObject method, int entry_bci,
                                                               jlong compile_state, int id) {
-  JavaThread* THREAD = JVMCI::compilation_tick(JavaThread::current());
+  JavaThread* THREAD = JVMCI::compilation_tick(JavaThread::current()); // For exception macros.
   if (is_hotspot()) {
     JavaCallArguments jargs;
     jargs.push_oop(Handle(THREAD, HotSpotJVMCI::resolve(runtime)));
@@ -692,7 +983,7 @@ JVMCIObject JVMCIEnv::call_HotSpotJVMCIRuntime_compileMethod (JVMCIObject runtim
 }
 
 void JVMCIEnv::call_HotSpotJVMCIRuntime_bootstrapFinished (JVMCIObject runtime, JVMCIEnv* JVMCIENV) {
-  JavaThread* THREAD = JVMCI::compilation_tick(JavaThread::current());
+  JavaThread* THREAD = JVMCI::compilation_tick(JavaThread::current()); // For exception macros.
   if (is_hotspot()) {
     JavaCallArguments jargs;
     jargs.push_oop(Handle(THREAD, HotSpotJVMCI::resolve(runtime)));
@@ -706,7 +997,7 @@ void JVMCIEnv::call_HotSpotJVMCIRuntime_bootstrapFinished (JVMCIObject runtime, 
 }
 
 void JVMCIEnv::call_HotSpotJVMCIRuntime_shutdown (JVMCIObject runtime) {
-  JavaThread* THREAD = JavaThread::current();
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
   HandleMark hm(THREAD);
   if (is_hotspot()) {
     JavaCallArguments jargs;
@@ -720,12 +1011,12 @@ void JVMCIEnv::call_HotSpotJVMCIRuntime_shutdown (JVMCIObject runtime) {
   if (has_pending_exception()) {
     // This should never happen as HotSpotJVMCIRuntime.shutdown() should
     // handle all exceptions.
-    describe_pending_exception(true);
+    describe_pending_exception(tty);
   }
 }
 
 JVMCIObject JVMCIEnv::call_HotSpotJVMCIRuntime_runtime (JVMCIEnv* JVMCIENV) {
-  JavaThread* THREAD = JVMCI::compilation_tick(JavaThread::current());
+  JavaThread* THREAD = JVMCI::compilation_tick(JavaThread::current()); // For exception macros.
   if (is_hotspot()) {
     JavaCallArguments jargs;
     JavaValue result(T_OBJECT);
@@ -742,7 +1033,7 @@ JVMCIObject JVMCIEnv::call_HotSpotJVMCIRuntime_runtime (JVMCIEnv* JVMCIENV) {
 }
 
 JVMCIObject JVMCIEnv::call_JVMCI_getRuntime (JVMCIEnv* JVMCIENV) {
-  JavaThread* THREAD = JVMCI::compilation_tick(JavaThread::current());
+  JavaThread* THREAD = JVMCI::compilation_tick(JavaThread::current()); // For exception macros.
   if (is_hotspot()) {
     JavaCallArguments jargs;
     JavaValue result(T_OBJECT);
@@ -759,7 +1050,7 @@ JVMCIObject JVMCIEnv::call_JVMCI_getRuntime (JVMCIEnv* JVMCIENV) {
 }
 
 JVMCIObject JVMCIEnv::call_HotSpotJVMCIRuntime_getCompiler (JVMCIObject runtime, JVMCIEnv* JVMCIENV) {
-  JavaThread* THREAD = JVMCI::compilation_tick(JavaThread::current());
+  JavaThread* THREAD = JVMCI::compilation_tick(JavaThread::current()); // For exception macros.
   if (is_hotspot()) {
     JavaCallArguments jargs;
     jargs.push_oop(Handle(THREAD, HotSpotJVMCI::resolve(runtime)));
@@ -776,94 +1067,41 @@ JVMCIObject JVMCIEnv::call_HotSpotJVMCIRuntime_getCompiler (JVMCIObject runtime,
   }
 }
 
-
-JVMCIObject JVMCIEnv::call_HotSpotJVMCIRuntime_callToString(JVMCIObject object, JVMCIEnv* JVMCIENV) {
-  JavaThread* THREAD = JVMCI::compilation_tick(JavaThread::current());
+void JVMCIEnv::call_HotSpotJVMCIRuntime_postTranslation(JVMCIObject object, JVMCIEnv* JVMCIENV) {
+  JavaThread* THREAD = JVMCI::compilation_tick(JavaThread::current()); // For exception macros.
   if (is_hotspot()) {
     JavaCallArguments jargs;
     jargs.push_oop(Handle(THREAD, HotSpotJVMCI::resolve(object)));
-    JavaValue result(T_OBJECT);
+    JavaValue result(T_VOID);
     JavaCalls::call_static(&result,
                            HotSpotJVMCI::HotSpotJVMCIRuntime::klass(),
-                           vmSymbols::callToString_name(),
-                           vmSymbols::callToString_signature(), &jargs, CHECK_(JVMCIObject()));
-    return wrap(result.get_oop());
+                           vmSymbols::postTranslation_name(),
+                           vmSymbols::object_void_signature(), &jargs, CHECK);
   } else {
     JNIAccessMark jni(this, THREAD);
-    jobject result = (jstring) jni()->CallStaticObjectMethod(JNIJVMCI::HotSpotJVMCIRuntime::clazz(),
-                                                     JNIJVMCI::HotSpotJVMCIRuntime::callToString_method(),
-                                                     object.as_jobject());
-    if (jni()->ExceptionCheck()) {
-      return JVMCIObject();
-    }
-    return wrap(result);
+    jni()->CallStaticVoidMethod(JNIJVMCI::HotSpotJVMCIRuntime::clazz(),
+                                JNIJVMCI::HotSpotJVMCIRuntime::postTranslation_method(),
+                                object.as_jobject());
   }
 }
 
-
-JVMCIObject JVMCIEnv::call_PrimitiveConstant_forTypeChar(jchar kind, jlong value, JVMCI_TRAPS) {
-  JavaThread* THREAD = JVMCI::compilation_tick(JavaThread::current());
+JVMCIObject JVMCIEnv::call_JavaConstant_forPrimitive(jchar type_char, jlong value, JVMCI_TRAPS) {
+  JavaThread* THREAD = JVMCI::compilation_tick(JavaThread::current()); // For exception macros.
   if (is_hotspot()) {
     JavaCallArguments jargs;
-    jargs.push_int(kind);
+    jargs.push_int(type_char);
     jargs.push_long(value);
     JavaValue result(T_OBJECT);
     JavaCalls::call_static(&result,
-                           HotSpotJVMCI::PrimitiveConstant::klass(),
-                           vmSymbols::forTypeChar_name(),
-                           vmSymbols::forTypeChar_signature(), &jargs, CHECK_(JVMCIObject()));
-    return wrap(result.get_oop());
-  } else {
-    JNIAccessMark jni(this, THREAD);
-    jobject result = (jstring) jni()->CallStaticObjectMethod(JNIJVMCI::PrimitiveConstant::clazz(),
-                                                     JNIJVMCI::PrimitiveConstant::forTypeChar_method(),
-                                                     kind, value);
-    if (jni()->ExceptionCheck()) {
-      return JVMCIObject();
-    }
-    return wrap(result);
-  }
-}
-
-JVMCIObject JVMCIEnv::call_JavaConstant_forFloat(float value, JVMCI_TRAPS) {
-  JavaThread* THREAD = JVMCI::compilation_tick(JavaThread::current());
-  if (is_hotspot()) {
-    JavaCallArguments jargs;
-    jargs.push_float(value);
-    JavaValue result(T_OBJECT);
-    JavaCalls::call_static(&result,
                            HotSpotJVMCI::JavaConstant::klass(),
-                           vmSymbols::forFloat_name(),
-                           vmSymbols::forFloat_signature(), &jargs, CHECK_(JVMCIObject()));
+                           vmSymbols::forPrimitive_name(),
+                           vmSymbols::forPrimitive_signature(), &jargs, CHECK_(JVMCIObject()));
     return wrap(result.get_oop());
   } else {
     JNIAccessMark jni(this, THREAD);
     jobject result = (jstring) jni()->CallStaticObjectMethod(JNIJVMCI::JavaConstant::clazz(),
-                                                     JNIJVMCI::JavaConstant::forFloat_method(),
-                                                     value);
-    if (jni()->ExceptionCheck()) {
-      return JVMCIObject();
-    }
-    return wrap(result);
-  }
-}
-
-JVMCIObject JVMCIEnv::call_JavaConstant_forDouble(double value, JVMCI_TRAPS) {
-  JavaThread* THREAD = JVMCI::compilation_tick(JavaThread::current());
-  if (is_hotspot()) {
-    JavaCallArguments jargs;
-    jargs.push_double(value);
-    JavaValue result(T_OBJECT);
-    JavaCalls::call_static(&result,
-                           HotSpotJVMCI::JavaConstant::klass(),
-                           vmSymbols::forDouble_name(),
-                           vmSymbols::forDouble_signature(), &jargs, CHECK_(JVMCIObject()));
-    return wrap(result.get_oop());
-  } else {
-    JNIAccessMark jni(this, THREAD);
-    jobject result = (jstring) jni()->CallStaticObjectMethod(JNIJVMCI::JavaConstant::clazz(),
-                                                     JNIJVMCI::JavaConstant::forDouble_method(),
-                                                     value);
+                                                             JNIJVMCI::JavaConstant::forPrimitive_method(),
+                                                             type_char, value);
     if (jni()->ExceptionCheck()) {
       return JVMCIObject();
     }
@@ -878,7 +1116,7 @@ JVMCIObject JVMCIEnv::get_jvmci_primitive_type(BasicType type) {
 }
 
 JVMCIObject JVMCIEnv::new_StackTraceElement(const methodHandle& method, int bci, JVMCI_TRAPS) {
-  JavaThread* THREAD = JavaThread::current();
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
   Symbol* file_name_sym;
   int line_number;
   java_lang_StackTraceElement::decode(method, bci, file_name_sym, line_number, CHECK_(JVMCIObject()));
@@ -898,7 +1136,7 @@ JVMCIObject JVMCIEnv::new_StackTraceElement(const methodHandle& method, int bci,
     oop method_name = StringTable::intern(method_name_sym, CHECK_(JVMCIObject()));
     HotSpotJVMCI::StackTraceElement::set_methodName(this, obj(), method_name);
 
-    if (file_name_sym != NULL) {
+    if (file_name_sym != nullptr) {
       oop file_name = StringTable::intern(file_name_sym, CHECK_(JVMCIObject()));
       HotSpotJVMCI::StackTraceElement::set_fileName(this, obj(), file_name);
     }
@@ -914,8 +1152,8 @@ JVMCIObject JVMCIEnv::new_StackTraceElement(const methodHandle& method, int bci,
     if (jni()->ExceptionCheck()) {
       return JVMCIObject();
     }
-    jobject file_name = NULL;
-    if (file_name_sym != NULL) {
+    jobject file_name = nullptr;
+    if (file_name_sym != nullptr) {
       file_name = jni()->NewStringUTF(file_name_sym->as_C_string());
       if (jni()->ExceptionCheck()) {
         return JVMCIObject();
@@ -930,7 +1168,7 @@ JVMCIObject JVMCIEnv::new_StackTraceElement(const methodHandle& method, int bci,
 }
 
 JVMCIObject JVMCIEnv::new_HotSpotNmethod(const methodHandle& method, const char* name, jboolean isDefault, jlong compileId, JVMCI_TRAPS) {
-  JavaThread* THREAD = JVMCI::compilation_tick(JavaThread::current());
+  JavaThread* THREAD = JVMCI::compilation_tick(JavaThread::current()); // For exception macros.
 
   JVMCIObject methodObject = get_jvmci_method(method, JVMCI_CHECK_(JVMCIObject()));
 
@@ -958,7 +1196,7 @@ JVMCIObject JVMCIEnv::new_HotSpotNmethod(const methodHandle& method, const char*
     return wrap(obj_h());
   } else {
     JNIAccessMark jni(this, THREAD);
-    jobject nameStr = name == NULL ? NULL : jni()->NewStringUTF(name);
+    jobject nameStr = name == nullptr ? nullptr : jni()->NewStringUTF(name);
     if (jni()->ExceptionCheck()) {
       return JVMCIObject();
     }
@@ -1029,17 +1267,22 @@ const char* JVMCIEnv::klass_name(JVMCIObject object) {
 
 JVMCIObject JVMCIEnv::get_jvmci_method(const methodHandle& method, JVMCI_TRAPS) {
   JVMCIObject method_object;
-  if (method() == NULL) {
+  if (method() == nullptr) {
     return method_object;
   }
+  JavaThread* THREAD = JVMCI::compilation_tick(JavaThread::current()); // For exception macros.
+  JVMCIKlassHandle holder_klass(THREAD, method->method_holder());
+  JVMCIObject holder = get_jvmci_type(holder_klass, JVMCI_CHECK_(JVMCIObject()));
 
-  JavaThread* THREAD = JVMCI::compilation_tick(JavaThread::current());
+  CompilerOracle::tag_blackhole_if_possible(method);
+
   jmetadata handle = _runtime->allocate_handle(method);
   jboolean exception = false;
   if (is_hotspot()) {
     JavaValue result(T_OBJECT);
     JavaCallArguments args;
     args.push_long((jlong) handle);
+    args.push_oop(Handle(THREAD, HotSpotJVMCI::resolve(holder)));
     JavaCalls::call_static(&result, HotSpotJVMCI::HotSpotResolvedJavaMethodImpl::klass(),
                            vmSymbols::fromMetaspace_name(),
                            vmSymbols::method_fromMetaspace_signature(), &args, THREAD);
@@ -1052,7 +1295,7 @@ JVMCIObject JVMCIEnv::get_jvmci_method(const methodHandle& method, JVMCI_TRAPS) 
     JNIAccessMark jni(this, THREAD);
     method_object = JNIJVMCI::wrap(jni()->CallStaticObjectMethod(JNIJVMCI::HotSpotResolvedJavaMethodImpl::clazz(),
                                                                   JNIJVMCI::HotSpotResolvedJavaMethodImpl_fromMetaspace_method(),
-                                                                  (jlong) handle));
+                                                                 (jlong) handle, holder.as_jobject()));
     exception = jni()->ExceptionCheck();
   }
 
@@ -1062,7 +1305,7 @@ JVMCIObject JVMCIEnv::get_jvmci_method(const methodHandle& method, JVMCI_TRAPS) 
   }
 
   assert(asMethod(method_object) == method(), "must be");
-  if (get_HotSpotResolvedJavaMethodImpl_metadataHandle(method_object) != (jlong) handle) {
+  if (get_HotSpotResolvedJavaMethodImpl_methodHandle(method_object) != (jlong) handle) {
     _runtime->release_handle(handle);
   }
   assert(!method_object.is_null(), "must be");
@@ -1075,15 +1318,17 @@ JVMCIObject JVMCIEnv::get_jvmci_type(const JVMCIKlassHandle& klass, JVMCI_TRAPS)
     return type;
   }
 
+  guarantee(klass->is_klass(), "must be valid klass");
+  guarantee(klass->is_loader_alive(), "klass must be alive");
+
   jlong pointer = (jlong) klass();
-  JavaThread* THREAD = JVMCI::compilation_tick(JavaThread::current());
-  JVMCIObject signature = create_string(klass->signature_name(), JVMCI_CHECK_(JVMCIObject()));
+  JavaThread* THREAD = JVMCI::compilation_tick(JavaThread::current()); // For exception macros.
   jboolean exception = false;
   if (is_hotspot()) {
+    CompilerThreadCanCallJava ccj(THREAD, true);
     JavaValue result(T_OBJECT);
     JavaCallArguments args;
     args.push_long(pointer);
-    args.push_oop(Handle(THREAD, HotSpotJVMCI::resolve(signature)));
     JavaCalls::call_static(&result,
                            HotSpotJVMCI::HotSpotResolvedObjectTypeImpl::klass(),
                            vmSymbols::fromMetaspace_name(),
@@ -1100,7 +1345,7 @@ JVMCIObject JVMCIEnv::get_jvmci_type(const JVMCIKlassHandle& klass, JVMCI_TRAPS)
     HandleMark hm(THREAD);
     type = JNIJVMCI::wrap(jni()->CallStaticObjectMethod(JNIJVMCI::HotSpotResolvedObjectTypeImpl::clazz(),
                                                         JNIJVMCI::HotSpotResolvedObjectTypeImpl_fromMetaspace_method(),
-                                                        pointer, signature.as_jstring()));
+                                                        pointer));
     exception = jni()->ExceptionCheck();
   }
   if (exception) {
@@ -1115,7 +1360,7 @@ JVMCIObject JVMCIEnv::get_jvmci_constant_pool(const constantPoolHandle& cp, JVMC
   JVMCIObject cp_object;
   jmetadata handle = _runtime->allocate_handle(cp);
   jboolean exception = false;
-  JavaThread* THREAD = JVMCI::compilation_tick(JavaThread::current());
+  JavaThread* THREAD = JVMCI::compilation_tick(JavaThread::current()); // For exception macros.
   if (is_hotspot()) {
     JavaValue result(T_OBJECT);
     JavaCallArguments args;
@@ -1144,12 +1389,12 @@ JVMCIObject JVMCIEnv::get_jvmci_constant_pool(const constantPoolHandle& cp, JVMC
 
   assert(!cp_object.is_null(), "must be");
   // Constant pools aren't cached so this is always a newly created object using the handle
-  assert(get_HotSpotConstantPool_metadataHandle(cp_object) == (jlong) handle, "must use same handle");
+  assert(get_HotSpotConstantPool_constantPoolHandle(cp_object) == (jlong) handle, "must use same handle");
   return cp_object;
 }
 
 JVMCIPrimitiveArray JVMCIEnv::new_booleanArray(int length, JVMCI_TRAPS) {
-  JavaThread* THREAD = JavaThread::current();
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
   if (is_hotspot()) {
     typeArrayOop result = oopFactory::new_boolArray(length, CHECK_(JVMCIObject()));
     return wrap(result);
@@ -1161,7 +1406,7 @@ JVMCIPrimitiveArray JVMCIEnv::new_booleanArray(int length, JVMCI_TRAPS) {
 }
 
 JVMCIPrimitiveArray JVMCIEnv::new_byteArray(int length, JVMCI_TRAPS) {
-  JavaThread* THREAD = JavaThread::current();
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
   if (is_hotspot()) {
     typeArrayOop result = oopFactory::new_byteArray(length, CHECK_(JVMCIObject()));
     return wrap(result);
@@ -1173,20 +1418,20 @@ JVMCIPrimitiveArray JVMCIEnv::new_byteArray(int length, JVMCI_TRAPS) {
 }
 
 JVMCIObjectArray JVMCIEnv::new_byte_array_array(int length, JVMCI_TRAPS) {
-  JavaThread* THREAD = JavaThread::current();
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
   if (is_hotspot()) {
     Klass* byteArrayArrayKlass = TypeArrayKlass::cast(Universe::byteArrayKlassObj  ())->array_klass(CHECK_(JVMCIObject()));
     objArrayOop result = ObjArrayKlass::cast(byteArrayArrayKlass) ->allocate(length, CHECK_(JVMCIObject()));
     return wrap(result);
   } else {
     JNIAccessMark jni(this, THREAD);
-    jobjectArray result = jni()->NewObjectArray(length, JNIJVMCI::byte_array(), NULL);
+    jobjectArray result = jni()->NewObjectArray(length, JNIJVMCI::byte_array(), nullptr);
     return wrap(result);
   }
 }
 
 JVMCIPrimitiveArray JVMCIEnv::new_intArray(int length, JVMCI_TRAPS) {
-  JavaThread* THREAD = JavaThread::current();
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
   if (is_hotspot()) {
     typeArrayOop result = oopFactory::new_intArray(length, CHECK_(JVMCIObject()));
     return wrap(result);
@@ -1198,7 +1443,7 @@ JVMCIPrimitiveArray JVMCIEnv::new_intArray(int length, JVMCI_TRAPS) {
 }
 
 JVMCIPrimitiveArray JVMCIEnv::new_longArray(int length, JVMCI_TRAPS) {
-  JavaThread* THREAD = JavaThread::current();
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
   if (is_hotspot()) {
     typeArrayOop result = oopFactory::new_longArray(length, CHECK_(JVMCIObject()));
     return wrap(result);
@@ -1210,7 +1455,7 @@ JVMCIPrimitiveArray JVMCIEnv::new_longArray(int length, JVMCI_TRAPS) {
 }
 
 JVMCIObject JVMCIEnv::new_VMField(JVMCIObject name, JVMCIObject type, jlong offset, jlong address, JVMCIObject value, JVMCI_TRAPS) {
-  JavaThread* THREAD = JavaThread::current();
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
   if (is_hotspot()) {
     HotSpotJVMCI::VMField::klass()->initialize(CHECK_(JVMCIObject()));
     oop obj = HotSpotJVMCI::VMField::klass()->allocate_instance(CHECK_(JVMCIObject()));
@@ -1230,7 +1475,7 @@ JVMCIObject JVMCIEnv::new_VMField(JVMCIObject name, JVMCIObject type, jlong offs
 }
 
 JVMCIObject JVMCIEnv::new_VMFlag(JVMCIObject name, JVMCIObject type, JVMCIObject value, JVMCI_TRAPS) {
-  JavaThread* THREAD = JavaThread::current();
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
   if (is_hotspot()) {
     HotSpotJVMCI::VMFlag::klass()->initialize(CHECK_(JVMCIObject()));
     oop obj = HotSpotJVMCI::VMFlag::klass()->allocate_instance(CHECK_(JVMCIObject()));
@@ -1247,8 +1492,8 @@ JVMCIObject JVMCIEnv::new_VMFlag(JVMCIObject name, JVMCIObject type, JVMCIObject
   }
 }
 
-JVMCIObject JVMCIEnv::new_VMIntrinsicMethod(JVMCIObject declaringClass, JVMCIObject name, JVMCIObject descriptor, int id, JVMCI_TRAPS) {
-  JavaThread* THREAD = JavaThread::current();
+JVMCIObject JVMCIEnv::new_VMIntrinsicMethod(JVMCIObject declaringClass, JVMCIObject name, JVMCIObject descriptor, int id, jboolean isAvailable, jboolean c1Supported, jboolean c2Supported, JVMCI_TRAPS) {
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
   if (is_hotspot()) {
     HotSpotJVMCI::VMIntrinsicMethod::klass()->initialize(CHECK_(JVMCIObject()));
     oop obj = HotSpotJVMCI::VMIntrinsicMethod::klass()->allocate_instance(CHECK_(JVMCIObject()));
@@ -1256,19 +1501,22 @@ JVMCIObject JVMCIEnv::new_VMIntrinsicMethod(JVMCIObject declaringClass, JVMCIObj
     HotSpotJVMCI::VMIntrinsicMethod::set_name(this, obj, HotSpotJVMCI::resolve(name));
     HotSpotJVMCI::VMIntrinsicMethod::set_descriptor(this, obj, HotSpotJVMCI::resolve(descriptor));
     HotSpotJVMCI::VMIntrinsicMethod::set_id(this, obj, id);
+    HotSpotJVMCI::VMIntrinsicMethod::set_isAvailable(this, obj, isAvailable);
+    HotSpotJVMCI::VMIntrinsicMethod::set_c1Supported(this, obj, c1Supported);
+    HotSpotJVMCI::VMIntrinsicMethod::set_c2Supported(this, obj, c2Supported);
     return wrap(obj);
   } else {
     JNIAccessMark jni(this, THREAD);
     jobject result = jni()->NewObject(JNIJVMCI::VMIntrinsicMethod::clazz(),
                                     JNIJVMCI::VMIntrinsicMethod::constructor(),
-                                    get_jobject(declaringClass), get_jobject(name), get_jobject(descriptor), id);
+                                    get_jobject(declaringClass), get_jobject(name), get_jobject(descriptor), id, isAvailable, c1Supported, c2Supported);
     return wrap(result);
   }
 }
 
 JVMCIObject JVMCIEnv::new_HotSpotStackFrameReference(JVMCI_TRAPS) {
   if (is_hotspot()) {
-    JavaThread* THREAD = JavaThread::current();
+    JavaThread* THREAD = JavaThread::current(); // For exception macros.
     HotSpotJVMCI::HotSpotStackFrameReference::klass()->initialize(CHECK_(JVMCIObject()));
     oop obj = HotSpotJVMCI::HotSpotStackFrameReference::klass()->allocate_instance(CHECK_(JVMCIObject()));
     return wrap(obj);
@@ -1279,7 +1527,7 @@ JVMCIObject JVMCIEnv::new_HotSpotStackFrameReference(JVMCI_TRAPS) {
 }
 JVMCIObject JVMCIEnv::new_JVMCIError(JVMCI_TRAPS) {
   if (is_hotspot()) {
-    JavaThread* THREAD = JavaThread::current();
+    JavaThread* THREAD = JavaThread::current(); // For exception macros.
     HotSpotJVMCI::JVMCIError::klass()->initialize(CHECK_(JVMCIObject()));
     oop obj = HotSpotJVMCI::JVMCIError::klass()->allocate_instance(CHECK_(JVMCIObject()));
     return wrap(obj);
@@ -1289,9 +1537,36 @@ JVMCIObject JVMCIEnv::new_JVMCIError(JVMCI_TRAPS) {
   }
 }
 
+JVMCIObject JVMCIEnv::new_FieldInfo(FieldInfo* fieldinfo, JVMCI_TRAPS) {
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
+  if (is_hotspot()) {
+    HotSpotJVMCI::FieldInfo::klass()->initialize(CHECK_(JVMCIObject()));
+    oop obj = HotSpotJVMCI::FieldInfo::klass()->allocate_instance(CHECK_(JVMCIObject()));
+    Handle obj_h(THREAD, obj);
+    HotSpotJVMCI::FieldInfo::set_nameIndex(JVMCIENV, obj_h(), (jint)fieldinfo->name_index());
+    HotSpotJVMCI::FieldInfo::set_signatureIndex(JVMCIENV, obj_h(), (jint)fieldinfo->signature_index());
+    HotSpotJVMCI::FieldInfo::set_offset(JVMCIENV, obj_h(), (jint)fieldinfo->offset());
+    HotSpotJVMCI::FieldInfo::set_classfileFlags(JVMCIENV, obj_h(), (jint)fieldinfo->access_flags().as_int());
+    HotSpotJVMCI::FieldInfo::set_internalFlags(JVMCIENV, obj_h(), (jint)fieldinfo->field_flags().as_uint());
+    HotSpotJVMCI::FieldInfo::set_initializerIndex(JVMCIENV, obj_h(), (jint)fieldinfo->initializer_index());
+    return wrap(obj_h());
+  } else {
+    JNIAccessMark jni(this, THREAD);
+    jobject result = jni()->NewObject(JNIJVMCI::FieldInfo::clazz(),
+                                      JNIJVMCI::FieldInfo::constructor(),
+                                      (jint)fieldinfo->name_index(),
+                                      (jint)fieldinfo->signature_index(),
+                                      (jint)fieldinfo->offset(),
+                                      (jint)fieldinfo->access_flags().as_int(),
+                                      (jint)fieldinfo->field_flags().as_uint(),
+                                      (jint)fieldinfo->initializer_index());
+
+    return wrap(result);
+  }
+}
 
 JVMCIObject JVMCIEnv::get_object_constant(oop objOop, bool compressed, bool dont_register) {
-  JavaThread* THREAD = JavaThread::current();
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
   Handle obj = Handle(THREAD, objOop);
   if (obj.is_null()) {
     return JVMCIObject();
@@ -1303,7 +1578,7 @@ JVMCIObject JVMCIEnv::get_object_constant(oop objOop, bool compressed, bool dont
     HotSpotJVMCI::HotSpotObjectConstantImpl::set_compressed(this, constant, compressed);
     return wrap(constant);
   } else {
-    jlong handle = make_handle(obj);
+    jlong handle = make_oop_handle(obj);
     JNIAccessMark jni(this, THREAD);
     jobject result = jni()->NewObject(JNIJVMCI::IndirectHotSpotObjectConstantImpl::clazz(),
                                       JNIJVMCI::IndirectHotSpotObjectConstantImpl::constructor(),
@@ -1317,7 +1592,7 @@ Handle JVMCIEnv::asConstant(JVMCIObject constant, JVMCI_TRAPS) {
   if (constant.is_null()) {
     return Handle();
   }
-  JavaThread* THREAD = JavaThread::current();
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
   if (is_hotspot()) {
     assert(HotSpotJVMCI::DirectHotSpotObjectConstantImpl::is_instance(this, constant), "wrong type");
     oop obj = HotSpotJVMCI::DirectHotSpotObjectConstantImpl::object(this, HotSpotJVMCI::resolve(constant));
@@ -1327,9 +1602,9 @@ Handle JVMCIEnv::asConstant(JVMCIObject constant, JVMCI_TRAPS) {
     if (object_handle == 0L) {
       JVMCI_THROW_MSG_(NullPointerException, "Foreign object reference has been cleared", Handle());
     }
-    oop result = resolve_handle(object_handle);
-    if (result == NULL) {
-      JVMCI_THROW_MSG_(InternalError, "Constant was unexpectedly NULL", Handle());
+    oop result = resolve_oop_handle(object_handle);
+    if (result == nullptr) {
+      JVMCI_THROW_MSG_(InternalError, "Constant was unexpectedly null", Handle());
     }
     return Handle(THREAD, result);
   } else {
@@ -1341,23 +1616,22 @@ JVMCIObject JVMCIEnv::wrap(jobject object) {
   return JVMCIObject::create(object, is_hotspot());
 }
 
-jlong JVMCIEnv::make_handle(const Handle& obj) {
-  assert(!obj.is_null(), "should only create handle for non-NULL oops");
-  jobject handle = _runtime->make_global(obj);
-  return (jlong) handle;
+jlong JVMCIEnv::make_oop_handle(const Handle& obj) {
+  assert(!obj.is_null(), "should only create handle for non-null oops");
+  return _runtime->make_oop_handle(obj);
 }
 
-oop JVMCIEnv::resolve_handle(jlong objectHandle) {
-  assert(objectHandle != 0, "should be a valid handle");
-  oop obj = *((oopDesc**)objectHandle);
-  if (obj != NULL) {
-    oopDesc::verify(obj);
+oop JVMCIEnv::resolve_oop_handle(jlong oopHandle) {
+  assert(oopHandle != 0, "should be a valid handle");
+  oop obj = NativeAccess<>::oop_load(reinterpret_cast<oop*>(oopHandle));
+  if (obj != nullptr) {
+    guarantee(oopDesc::is_oop_or_null(obj), "invalid oop: " INTPTR_FORMAT, p2i((oopDesc*) obj));
   }
   return obj;
 }
 
 JVMCIObject JVMCIEnv::create_string(const char* str, JVMCI_TRAPS) {
-  JavaThread* THREAD = JavaThread::current();
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
   if (is_hotspot()) {
     Handle result = java_lang_String::create_from_str(str, CHECK_(JVMCIObject()));
     return HotSpotJVMCI::wrap(result());
@@ -1382,11 +1656,7 @@ bool JVMCIEnv::equals(JVMCIObject a, JVMCIObject b) {
   }
 }
 
-BasicType JVMCIEnv::kindToBasicType(JVMCIObject kind, JVMCI_TRAPS) {
-  if (kind.is_null()) {
-    JVMCI_THROW_(NullPointerException, T_ILLEGAL);
-  }
-  jchar ch = get_JavaKind_typeChar(kind);
+BasicType JVMCIEnv::typeCharToBasicType(jchar ch, JVMCI_TRAPS) {
   switch(ch) {
     case 'Z': return T_BOOLEAN;
     case 'B': return T_BYTE;
@@ -1399,8 +1669,17 @@ BasicType JVMCIEnv::kindToBasicType(JVMCIObject kind, JVMCI_TRAPS) {
     case 'A': return T_OBJECT;
     case '-': return T_ILLEGAL;
     default:
-      JVMCI_ERROR_(T_ILLEGAL, "unexpected Kind: %c", ch);
+      JVMCI_ERROR_(T_ILLEGAL, "unexpected type char: %c", ch);
   }
+}
+
+BasicType JVMCIEnv::kindToBasicType(JVMCIObject kind, JVMCI_TRAPS) {
+  if (kind.is_null()) {
+    JVMCI_THROW_(NullPointerException, T_ILLEGAL);
+  }
+  jchar ch = get_JavaKind_typeChar(kind);
+  BasicType bt = typeCharToBasicType(ch, JVMCI_CHECK_(T_ILLEGAL));
+  return bt;
 }
 
 void JVMCIEnv::initialize_installed_code(JVMCIObject installed_code, CodeBlob* cb, JVMCI_TRAPS) {
@@ -1415,9 +1694,6 @@ void JVMCIEnv::initialize_installed_code(JVMCIObject installed_code, CodeBlob* c
   // Ignore the version which can stay at 0
   if (cb->is_nmethod()) {
     nmethod* nm = cb->as_nmethod_or_null();
-    if (!nm->is_alive()) {
-      JVMCI_THROW_MSG(InternalError, "nmethod has been reclaimed");
-    }
     if (nm->is_in_use()) {
       set_InstalledCode_entryPoint(installed_code, (jlong) nm->verified_entry_point());
     }
@@ -1431,110 +1707,105 @@ void JVMCIEnv::initialize_installed_code(JVMCIObject installed_code, CodeBlob* c
 }
 
 
-void JVMCIEnv::invalidate_nmethod_mirror(JVMCIObject mirror, JVMCI_TRAPS) {
+void JVMCIEnv::invalidate_nmethod_mirror(JVMCIObject mirror, bool deoptimize, JVMCI_TRAPS) {
   if (mirror.is_null()) {
     JVMCI_THROW(NullPointerException);
   }
 
-  nmethodLocker locker;
-  nmethod* nm = JVMCIENV->get_nmethod(mirror, locker);
-  if (nm == NULL) {
+  nmethod* nm = JVMCIENV->get_nmethod(mirror);
+  if (nm == nullptr) {
     // Nothing to do
     return;
   }
 
-  Thread* THREAD = Thread::current();
-  if (!mirror.is_hotspot() && !THREAD->is_Java_thread()) {
+  Thread* current = Thread::current();
+  if (!mirror.is_hotspot() && !current->is_Java_thread()) {
     // Calling back into native might cause the execution to block, so only allow this when calling
     // from a JavaThread, which is the normal case anyway.
     JVMCI_THROW_MSG(IllegalArgumentException,
                     "Cannot invalidate HotSpotNmethod object in shared library VM heap from non-JavaThread");
   }
 
-  nmethodLocker nml(nm);
-  if (nm->is_alive()) {
-    // Invalidating the HotSpotNmethod means we want the nmethod to be deoptimized.
-    Deoptimization::deoptimize_all_marked(nm);
-  }
+  if (!deoptimize) {
+    // Prevent future executions of the nmethod but let current executions complete.
+    nm->make_not_entrant();
 
-  // A HotSpotNmethod instance can only reference a single nmethod
-  // during its lifetime so simply clear it here.
-  set_InstalledCode_address(mirror, 0);
+    // Do not clear the address field here as the Java code may still
+    // want to later call this method with deoptimize == true. That requires
+    // the address field to still be pointing at the nmethod.
+   } else {
+    // Deoptimize the nmethod immediately.
+    DeoptimizationScope deopt_scope;
+    deopt_scope.mark(nm);
+    nm->make_not_entrant();
+    nm->make_deoptimized();
+    deopt_scope.deoptimize_marked();
+
+    // A HotSpotNmethod instance can only reference a single nmethod
+    // during its lifetime so simply clear it here.
+    set_InstalledCode_address(mirror, 0);
+  }
 }
 
 Klass* JVMCIEnv::asKlass(JVMCIObject obj) {
-  return (Klass*) get_HotSpotResolvedObjectTypeImpl_metadataPointer(obj);
+  return (Klass*) get_HotSpotResolvedObjectTypeImpl_klassPointer(obj);
 }
 
 Method* JVMCIEnv::asMethod(JVMCIObject obj) {
-  Method** metadataHandle = (Method**) get_HotSpotResolvedJavaMethodImpl_metadataHandle(obj);
-  return *metadataHandle;
+  Method** methodHandle = (Method**) get_HotSpotResolvedJavaMethodImpl_methodHandle(obj);
+  return *methodHandle;
 }
 
 ConstantPool* JVMCIEnv::asConstantPool(JVMCIObject obj) {
-  ConstantPool** metadataHandle = (ConstantPool**) get_HotSpotConstantPool_metadataHandle(obj);
-  return *metadataHandle;
+  ConstantPool** constantPoolHandle = (ConstantPool**) get_HotSpotConstantPool_constantPoolHandle(obj);
+  return *constantPoolHandle;
 }
 
-CodeBlob* JVMCIEnv::get_code_blob(JVMCIObject obj, nmethodLocker& locker) {
+MethodData* JVMCIEnv::asMethodData(JVMCIObject obj) {
+  return (MethodData*) get_HotSpotMethodData_methodDataPointer(obj);
+}
+
+// Lookup an nmethod with a matching base and compile id
+nmethod* JVMCIEnv::lookup_nmethod(address code, jlong compile_id_snapshot) {
+  if (code == nullptr) {
+    return nullptr;
+  }
+
+  CodeBlob* cb = CodeCache::find_blob(code);
+  if (cb == (CodeBlob*) code) {
+    nmethod* nm = cb->as_nmethod_or_null();
+    if (nm != nullptr && (compile_id_snapshot == 0 || nm->compile_id() == compile_id_snapshot)) {
+      return nm;
+    }
+  }
+  return nullptr;
+}
+
+
+CodeBlob* JVMCIEnv::get_code_blob(JVMCIObject obj) {
   address code = (address) get_InstalledCode_address(obj);
-  if (code == NULL) {
-    return NULL;
+  if (code == nullptr) {
+    return nullptr;
   }
   if (isa_HotSpotNmethod(obj)) {
-    nmethod* nm = NULL;
-    {
-      // Lookup the CodeBlob while holding the CodeCache_lock to ensure the nmethod can't be freed
-      // by nmethod::flush while we're interrogating it.
-      MutexLocker cm_lock(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-      CodeBlob* cb = CodeCache::find_blob_unsafe(code);
-      if (cb == (CodeBlob*) code) {
-        nmethod* the_nm = cb->as_nmethod_or_null();
-        if (the_nm != NULL && the_nm->is_alive()) {
-          // Lock the nmethod to stop any further transitions by the sweeper.  It's still possible
-          // for this code to execute in the middle of the sweeping of the nmethod but that will be
-          // handled below.
-          locker.set_code(nm, true);
-          nm = the_nm;
-        }
-      }
-    }
-
-    if (nm != NULL) {
-      // We found the nmethod but it could be in the process of being freed.  Check the state of the
-      // nmethod while holding the CompiledMethod_lock.  This ensures that any transitions by other
-      // threads have seen the is_locked_by_vm() update above.
-      MutexLocker cm_lock(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
-      if (!nm->is_alive()) {
-        //  It was alive when we looked it up but it's no longer alive so release it.
-        locker.set_code(NULL);
-        nm = NULL;
-      }
-    }
-
     jlong compile_id_snapshot = get_HotSpotNmethod_compileIdSnapshot(obj);
-    if (compile_id_snapshot != 0L) {
-      // Found a live nmethod with the same address, make sure it's the same nmethod
-      if (nm == (nmethod*) code && nm->compile_id() == compile_id_snapshot && nm->is_alive()) {
-        if (nm->is_not_entrant()) {
-          // Zero the entry point so that the nmethod
-          // cannot be invoked by the mirror but can
-          // still be deoptimized.
-          set_InstalledCode_entryPoint(obj, 0);
-        }
-        return nm;
-      }
-      // The HotSpotNmethod no longer refers to a valid nmethod so clear the state
-      locker.set_code(NULL);
-      nm = NULL;
+    nmethod* nm = lookup_nmethod(code, compile_id_snapshot);
+    if (nm != nullptr && compile_id_snapshot != 0L && nm->is_not_entrant()) {
+      // Zero the entry point so that the nmethod
+      // cannot be invoked by the mirror but can
+      // still be deoptimized.
+      set_InstalledCode_entryPoint(obj, 0);
+      // Refetch the nmethod since the previous call will be a safepoint in libjvmci
+      nm = lookup_nmethod(code, compile_id_snapshot);
     }
 
-    if (nm == NULL) {
+    if (nm == nullptr) {
       // The HotSpotNmethod was pointing at some nmethod but the nmethod is no longer valid, so
       // clear the InstalledCode fields of this HotSpotNmethod so that it no longer refers to a
       // nmethod in the code cache.
       set_InstalledCode_address(obj, 0);
       set_InstalledCode_entryPoint(obj, 0);
+      set_HotSpotInstalledCode_codeStart(obj, 0);
     }
     return nm;
   }
@@ -1544,12 +1815,12 @@ CodeBlob* JVMCIEnv::get_code_blob(JVMCIObject obj, nmethodLocker& locker) {
   return cb;
 }
 
-nmethod* JVMCIEnv::get_nmethod(JVMCIObject obj, nmethodLocker& locker) {
-  CodeBlob* cb = get_code_blob(obj, locker);
-  if (cb != NULL) {
+nmethod* JVMCIEnv::get_nmethod(JVMCIObject obj) {
+  CodeBlob* cb = get_code_blob(obj);
+  if (cb != nullptr) {
     return cb->as_nmethod_or_null();
   }
-  return NULL;
+  return nullptr;
 }
 
 // Generate implementations for the initialize, new, isa, get and set methods for all the types and
@@ -1565,12 +1836,12 @@ nmethod* JVMCIEnv::get_nmethod(JVMCIObject obj, nmethodLocker& locker) {
   }                                                                                                                  \
   JVMCIObjectArray JVMCIEnv::new_##className##_array(int length, JVMCI_TRAPS) {                                      \
     if (is_hotspot()) {                                                                                              \
-      Thread* THREAD = Thread::current();                                                                            \
+      JavaThread* THREAD = JavaThread::current(); /* For exception macros. */ \
       objArrayOop array = oopFactory::new_objArray(HotSpotJVMCI::className::klass(), length, CHECK_(JVMCIObject())); \
       return (JVMCIObjectArray) wrap(array);                                                                         \
     } else {                                                                                                         \
       JNIAccessMark jni(this);                                                                                       \
-      jobjectArray result = jni()->NewObjectArray(length, JNIJVMCI::className::clazz(), NULL);                       \
+      jobjectArray result = jni()->NewObjectArray(length, JNIJVMCI::className::clazz(), nullptr);                    \
       return wrap(result);                                                                                           \
     }                                                                                                                \
   }                                                                                                                  \
@@ -1663,7 +1934,7 @@ nmethod* JVMCIEnv::get_nmethod(JVMCIObject obj, nmethodLocker& locker) {
   }
 #define STATIC_INT_FIELD(className, name) STATIC_PRIMITIVE_FIELD(className, name, jint, Int, EMPTY_CAST)
 #define STATIC_BOOLEAN_FIELD(className, name) STATIC_PRIMITIVE_FIELD(className, name, jboolean, Boolean, EMPTY_CAST)
-#define METHOD(jniCallType, jniGetMethod, hsCallType, returnType, className, methodName, signatureSymbolName, args)
+#define METHOD(jniCallType, jniGetMethod, hsCallType, returnType, className, methodName, signatureSymbolName)
 #define CONSTRUCTOR(className, signature)
 
 JVMCI_CLASSES_DO(START_CLASS, END_CLASS, CHAR_FIELD, INT_FIELD, BOOLEAN_FIELD, LONG_FIELD, FLOAT_FIELD, OBJECT_FIELD, PRIMARRAY_FIELD, OBJECTARRAY_FIELD, STATIC_OBJECT_FIELD, STATIC_OBJECTARRAY_FIELD, STATIC_INT_FIELD, STATIC_BOOLEAN_FIELD, METHOD, CONSTRUCTOR)

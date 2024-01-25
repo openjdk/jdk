@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,48 +25,32 @@
 #ifndef SHARE_GC_SHARED_STRINGDEDUP_STRINGDEDUPTHREAD_HPP
 #define SHARE_GC_SHARED_STRINGDEDUP_STRINGDEDUPTHREAD_HPP
 
-#include "gc/shared/concurrentGCThread.hpp"
-#include "gc/shared/stringdedup/stringDedupStat.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
+#include "runtime/javaThread.hpp"
+#include "utilities/exceptions.hpp"
+#include "utilities/macros.hpp"
 
+// Thread class for string deduplication.  There is only one instance of this
+// class.  This class provides thread management.  It uses the Processor
+// to perform most of the work.
 //
-// The deduplication thread is where the actual deduplication occurs. It waits for
-// deduplication candidates to appear on the deduplication queue, removes them from
-// the queue and tries to deduplicate them. It uses the deduplication hashtable to
-// find identical, already existing, character arrays on the heap. The thread runs
-// concurrently with the Java application but participates in safepoints to allow
-// the GC to adjust and unlink oops from the deduplication queue and table.
-//
-class StringDedupThread: public ConcurrentGCThread {
-protected:
-  static StringDedupThread* _thread;
+// Unlike most of the classes in the stringdedup implementation, this class is
+// not an inner class of StringDedup.  This is because we need a simple public
+// identifier for use by VMStructs.
+class StringDedupThread : public JavaThread {
+  friend class VMStructs;
 
   StringDedupThread();
-  ~StringDedupThread();
+  ~StringDedupThread() = default;
 
-  void print_start(const StringDedupStat* last_stat);
-  void print_end(const StringDedupStat* last_stat, const StringDedupStat* total_stat);
+  NONCOPYABLE(StringDedupThread);
 
-  void run_service() { this->do_deduplication(); }
-  void stop_service();
-
-  void deduplicate_shared_strings(StringDedupStat* stat);
-protected:
-  virtual void do_deduplication() = 0;
+  static void thread_entry(JavaThread* thread, TRAPS);
 
 public:
-  static StringDedupThread* thread();
-};
+  static void initialize();
 
-template <typename S>
-class StringDedupThreadImpl : public StringDedupThread {
-private:
-  StringDedupThreadImpl() { }
-
-protected:
-  void do_deduplication();
-
-public:
-  static void create();
+  bool is_hidden_from_external_view() const override;
 };
 
 #endif // SHARE_GC_SHARED_STRINGDEDUP_STRINGDEDUPTHREAD_HPP

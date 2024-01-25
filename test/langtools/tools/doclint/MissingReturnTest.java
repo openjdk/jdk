@@ -19,6 +19,6 @@ public class MissingReturnTest {
     /** no return required */
     Void return_Void() { }
 
-    /** */
+    /** . */
     int missingReturn() { }
 }

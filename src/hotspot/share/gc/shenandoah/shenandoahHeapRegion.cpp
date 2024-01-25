@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2013, 2019, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -59,7 +60,7 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
   _index(index),
   _bottom(start),
   _end(start + RegionSizeWords),
-  _new_top(NULL),
+  _new_top(nullptr),
   _empty_time(os::elapsedTime()),
   _state(committed ? _empty_committed : _empty_uncommitted),
   _top(start),
@@ -77,11 +78,10 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
 }
 
 void ShenandoahHeapRegion::report_illegal_transition(const char *method) {
-  ResourceMark rm;
   stringStream ss;
   ss.print("Illegal region state transition from \"%s\", at %s\n  ", region_state_to_string(_state), method);
   print_on(&ss);
-  fatal("%s", ss.as_string());
+  fatal("%s", ss.freeze());
 }
 
 void ShenandoahHeapRegion::make_regular_allocation() {
@@ -351,7 +351,7 @@ void ShenandoahHeapRegion::print_on(outputStream* st) const {
       st->print("|CS ");
       break;
     case _trash:
-      st->print("|T  ");
+      st->print("|TR ");
       break;
     case _pinned:
       st->print("|P  ");
@@ -362,11 +362,14 @@ void ShenandoahHeapRegion::print_on(outputStream* st) const {
     default:
       ShouldNotReachHere();
   }
-  st->print("|BTE " INTPTR_FORMAT_W(12) ", " INTPTR_FORMAT_W(12) ", " INTPTR_FORMAT_W(12),
+
+#define SHR_PTR_FORMAT "%12" PRIxPTR
+
+  st->print("|BTE " SHR_PTR_FORMAT  ", " SHR_PTR_FORMAT ", " SHR_PTR_FORMAT,
             p2i(bottom()), p2i(top()), p2i(end()));
-  st->print("|TAMS " INTPTR_FORMAT_W(12),
+  st->print("|TAMS " SHR_PTR_FORMAT,
             p2i(ShenandoahHeap::heap()->marking_context()->top_at_mark_start(const_cast<ShenandoahHeapRegion*>(this))));
-  st->print("|UWM " INTPTR_FORMAT_W(12),
+  st->print("|UWM " SHR_PTR_FORMAT,
             p2i(_update_watermark));
   st->print("|U " SIZE_FORMAT_W(5) "%1s", byte_size_in_proper_unit(used()),                proper_unit_for_byte_size(used()));
   st->print("|T " SIZE_FORMAT_W(5) "%1s", byte_size_in_proper_unit(get_tlab_allocs()),     proper_unit_for_byte_size(get_tlab_allocs()));
@@ -375,6 +378,8 @@ void ShenandoahHeapRegion::print_on(outputStream* st) const {
   st->print("|L " SIZE_FORMAT_W(5) "%1s", byte_size_in_proper_unit(get_live_data_bytes()), proper_unit_for_byte_size(get_live_data_bytes()));
   st->print("|CP " SIZE_FORMAT_W(3), pin_count());
   st->cr();
+
+#undef SHR_PTR_FORMAT
 }
 
 void ShenandoahHeapRegion::oop_iterate(OopIterateClosure* blk) {
@@ -392,7 +397,7 @@ void ShenandoahHeapRegion::oop_iterate_objects(OopIterateClosure* blk) {
   HeapWord* t = top();
   // Could call objects iterate, but this is easier.
   while (obj_addr < t) {
-    oop obj = oop(obj_addr);
+    oop obj = cast_to_oop(obj_addr);
     obj_addr += obj->oop_iterate_size(blk);
   }
 }
@@ -402,7 +407,7 @@ void ShenandoahHeapRegion::oop_iterate_humongous(OopIterateClosure* blk) {
   // Find head.
   ShenandoahHeapRegion* r = humongous_start_region();
   assert(r->is_humongous_start(), "need humongous head here");
-  oop obj = oop(r->bottom());
+  oop obj = cast_to_oop(r->bottom());
   obj->oop_iterate(blk, MemRegion(bottom(), top()));
 }
 
@@ -448,9 +453,9 @@ HeapWord* ShenandoahHeapRegion::block_start(const void* p) const {
     HeapWord* cur = last;
     while (cur <= p) {
       last = cur;
-      cur += oop(cur)->size();
+      cur += cast_to_oop(cur)->size();
     }
-    shenandoah_assert_correct(NULL, oop(last));
+    shenandoah_assert_correct(nullptr, cast_to_oop(last));
     return last;
   }
 }
@@ -460,14 +465,14 @@ size_t ShenandoahHeapRegion::block_size(const HeapWord* p) const {
          "p (" PTR_FORMAT ") not in space [" PTR_FORMAT ", " PTR_FORMAT ")",
          p2i(p), p2i(bottom()), p2i(end()));
   if (p < top()) {
-    return oop(p)->size();
+    return cast_to_oop(p)->size();
   } else {
     assert(p == top(), "just checking");
     return pointer_delta(end(), (HeapWord*) p);
   }
 }
 
-void ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
+size_t ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
   // Absolute minimums we should not ever break.
   static const size_t MIN_REGION_SIZE = 256*K;
 
@@ -542,13 +547,28 @@ void ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
     region_size = ShenandoahRegionSize;
   }
 
-  // Make sure region size is at least one large page, if enabled.
-  // Otherwise, uncommitting one region may falsely uncommit the adjacent
-  // regions too.
-  // Also see shenandoahArguments.cpp, where it handles UseLargePages.
-  if (UseLargePages && ShenandoahUncommit) {
-    region_size = MAX2(region_size, os::large_page_size());
+  // Make sure region size and heap size are page aligned.
+  // If large pages are used, we ensure that region size is aligned to large page size if
+  // heap size is large enough to accommodate minimal number of regions. Otherwise, we align
+  // region size to regular page size.
+
+  // Figure out page size to use, and aligns up heap to page size
+  size_t page_size = os::vm_page_size();
+  if (UseLargePages) {
+    size_t large_page_size = os::large_page_size();
+    max_heap_size = align_up(max_heap_size, large_page_size);
+    if ((max_heap_size / align_up(region_size, large_page_size)) >= MIN_NUM_REGIONS) {
+      page_size = large_page_size;
+    } else {
+      // Should have been checked during argument initialization
+      assert(!ShenandoahUncommit, "Uncommit requires region size aligns to large page size");
+    }
+  } else {
+    max_heap_size = align_up(max_heap_size, page_size);
   }
+
+  // Align region size to page size
+  region_size = align_up(region_size, page_size);
 
   int region_size_log = log2i(region_size);
   // Recalculate the region size to make sure it's a power of
@@ -575,7 +595,7 @@ void ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
   RegionSizeBytesMask = RegionSizeBytes - 1;
 
   guarantee(RegionCount == 0, "we should only set it once");
-  RegionCount = max_heap_size / RegionSizeBytes;
+  RegionCount = align_up(max_heap_size, RegionSizeBytes) / RegionSizeBytes;
   guarantee(RegionCount >= MIN_NUM_REGIONS, "Should have at least minimum regions");
 
   guarantee(HumongousThresholdWords == 0, "we should only set it once");
@@ -587,31 +607,15 @@ void ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
   HumongousThresholdBytes = HumongousThresholdWords * HeapWordSize;
   assert (HumongousThresholdBytes <= RegionSizeBytes, "sanity");
 
-  // The rationale for trimming the TLAB sizes has to do with the raciness in
-  // TLAB allocation machinery. It may happen that TLAB sizing policy polls Shenandoah
-  // about next free size, gets the answer for region #N, goes away for a while, then
-  // tries to allocate in region #N, and fail because some other thread have claimed part
-  // of the region #N, and then the freeset allocation code has to retire the region #N,
-  // before moving the allocation to region #N+1.
-  //
-  // The worst case realizes when "answer" is "region size", which means it could
-  // prematurely retire an entire region. Having smaller TLABs does not fix that
-  // completely, but reduces the probability of too wasteful region retirement.
-  // With current divisor, we will waste no more than 1/8 of region size in the worst
-  // case. This also has a secondary effect on collection set selection: even under
-  // the race, the regions would be at least 7/8 used, which allows relying on
-  // "used" - "live" for cset selection. Otherwise, we can get the fragmented region
-  // below the garbage threshold that would never be considered for collection.
-  //
-  // The whole thing is mitigated if Elastic TLABs are enabled.
-  //
   guarantee(MaxTLABSizeWords == 0, "we should only set it once");
-  MaxTLABSizeWords = MIN2(ShenandoahElasticTLAB ? RegionSizeWords : (RegionSizeWords / 8), HumongousThresholdWords);
+  MaxTLABSizeWords = MIN2(RegionSizeWords, HumongousThresholdWords);
   MaxTLABSizeWords = align_down(MaxTLABSizeWords, MinObjAlignment);
 
   guarantee(MaxTLABSizeBytes == 0, "we should only set it once");
   MaxTLABSizeBytes = MaxTLABSizeWords * HeapWordSize;
   assert (MaxTLABSizeBytes > MinTLABSize, "should be larger");
+
+  return max_heap_size;
 }
 
 void ShenandoahHeapRegion::do_commit() {

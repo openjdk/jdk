@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,42 +25,42 @@
 #include "precompiled.hpp"
 #include "gc/g1/g1BlockOffsetTable.hpp"
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "memory/virtualspace.hpp"
-#include "gc/shared/workgroup.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 #include "unittest.hpp"
 
 class G1MapperWorkers : AllStatic {
-  static WorkGang* _work_gang;
-  static WorkGang* work_gang() {
-    if (_work_gang == NULL) {
-      _work_gang = new WorkGang("G1 Small Workers", MaxWorkers, false, false);
-      _work_gang->initialize_workers();
-      _work_gang->update_active_workers(MaxWorkers);
+  static WorkerThreads* _workers;
+  static WorkerThreads* workers() {
+    if (_workers == NULL) {
+      _workers = new WorkerThreads("G1 Small Workers", MaxWorkers);
+      _workers->initialize_workers();
+      _workers->set_active_workers(MaxWorkers);
     }
-    return _work_gang;
+    return _workers;
   }
 
 public:
   static const uint MaxWorkers = 4;
-  static void run_task(AbstractGangTask* task) {
-    work_gang()->run_task(task);
+  static void run_task(WorkerTask* task) {
+    workers()->run_task(task);
   }
 };
-WorkGang* G1MapperWorkers::_work_gang = NULL;
+WorkerThreads* G1MapperWorkers::_workers = NULL;
 
-class G1TestCommitUncommit : public AbstractGangTask {
+class G1TestCommitUncommit : public WorkerTask {
   G1RegionToSpaceMapper* _mapper;
   uint _claim_id;
 public:
   G1TestCommitUncommit(G1RegionToSpaceMapper* mapper) :
-      AbstractGangTask("Stress mapper"),
+      WorkerTask("Stress mapper"),
       _mapper(mapper),
       _claim_id(0) { }
 
   void work(uint worker_id) {
-    uint index = Atomic::fetch_and_add(&_claim_id, 1u);
+    uint index = Atomic::fetch_then_add(&_claim_id, 1u);
 
     for (int i = 0; i < 100000; i++) {
       // Stress commit and uncommit of a single region. The same

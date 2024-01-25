@@ -49,7 +49,7 @@ import jaxp.library.JAXPTestUtilities;
  * @bug 6551600
  * @requires os.family == "windows"
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true transform.CR6551600Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.CR6551600Test
  * @run testng/othervm transform.CR6551600Test
  * @summary Test using UNC path as StreamResult.
  */

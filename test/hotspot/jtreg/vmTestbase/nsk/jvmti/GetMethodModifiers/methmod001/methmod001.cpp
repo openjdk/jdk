@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,6 @@ extern "C" {
 #define ACC_SYNCHRONIZED  0x020
 #define ACC_NATIVE        0x100
 #define ACC_ABSTRACT      0x400
-#define ACC_STRICT        0x800
 
 static jvmtiEnv *jvmti = NULL;
 static jvmtiEventCallbacks callbacks;
@@ -57,7 +56,6 @@ void printModifiers(jint mod) {
     if (mod & ACC_SYNCHRONIZED) printf(" SYNCHRONIZED");
     if (mod & ACC_NATIVE) printf(" NATIVE");
     if (mod & ACC_ABSTRACT) printf(" ABSTRACT");
-    if (mod & ACC_STRICT) printf(" STRICT");
     printf(" (0x%0x)\n", mod);
 }
 
@@ -171,7 +169,6 @@ JNIEXPORT jint JNICALL Java_nsk_jvmti_GetMethodModifiers_methmod001_check(JNIEnv
 
     checkMeth(jvmti, env, cls, "<init>", "()V", 0,  ACC_PUBLIC);
     checkMeth(jvmti, env, cls, "meth_1", "(C)C", 0,  ACC_PRIVATE);
-    checkMeth(jvmti, env, cls, "meth_2", "(FF)F", 0,  ACC_STRICT);
     checkMeth(jvmti, env, cls, "check", "()I", 1,  ACC_NATIVE |  ACC_STATIC);
     clsId = env->FindClass("nsk/jvmti/GetMethodModifiers/methmod001a");
     checkMeth(jvmti, env, clsId, "meth_new", "()Lnsk/jvmti/GetMethodModifiers/methmod001;", 0,  ACC_SYNCHRONIZED);

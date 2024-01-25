@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 #include "logging/log.hpp"
 #include "memory/universe.hpp"
 #include "runtime/globals_extension.hpp"
-#include "runtime/os.inline.hpp"
+#include "runtime/os.hpp"
 #include "runtime/vm_version.hpp"
 
 uint WorkerPolicy::_parallel_worker_threads = 0;
@@ -73,11 +73,7 @@ uint WorkerPolicy::calc_parallel_worker_threads() {
 
 uint WorkerPolicy::parallel_worker_threads() {
   if (!_parallel_worker_threads_initialized) {
-    if (FLAG_IS_DEFAULT(ParallelGCThreads)) {
-      _parallel_worker_threads = WorkerPolicy::calc_parallel_worker_threads();
-    } else {
-      _parallel_worker_threads = ParallelGCThreads;
-    }
+    _parallel_worker_threads = WorkerPolicy::calc_parallel_worker_threads();
     _parallel_worker_threads_initialized = true;
   }
   return _parallel_worker_threads;

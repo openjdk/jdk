@@ -46,7 +46,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 6457662
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.Bug6457662
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Bug6457662
  * @run testng/othervm validation.Bug6457662
  * @summary Test a Validator checks sequence maxOccurs correctly when it validates document repeatedly.
  */

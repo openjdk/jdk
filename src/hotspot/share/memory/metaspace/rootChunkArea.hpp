@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -82,11 +82,11 @@ public:
   // Given a chunk, attempt to merge it recursively with its neighboring chunks.
   //
   // If successful (merged at least once), returns address of
-  // the merged chunk; NULL otherwise.
+  // the merged chunk; null otherwise.
   //
   // The merged chunks are removed from the freelists.
   //
-  // !!! Please note that if this method returns a non-NULL value, the
+  // !!! Please note that if this method returns a non-null value, the
   // original chunk will be invalid and should not be accessed anymore! !!!
   Metachunk* merge(Metachunk* c, FreeChunkListVector* freelists);
 
@@ -106,10 +106,6 @@ public:
   const MetaWord* base() const  { return _base; }
   size_t word_size() const      { return chunklevel::MAX_CHUNK_WORD_SIZE; }
   const MetaWord* end() const   { return _base + word_size(); }
-
-  // Direct access to the first chunk (use with care)
-  Metachunk* first_chunk()              { return _first_chunk; }
-  const Metachunk* first_chunk() const  { return _first_chunk; }
 
   // Returns true if this root chunk area is completely free:
   //  In that case, it should only contain one chunk (maximally merged, so a root chunk)
@@ -182,19 +178,11 @@ public:
     return _arr + idx;
   }
 
-  // Access area by its index
-  int number_of_areas() const                               { return _num; }
-  RootChunkArea* get_area_by_index(int index)               { assert(index >= 0 && index < _num, "oob"); return _arr + index; }
-  const RootChunkArea* get_area_by_index(int index) const   { assert(index >= 0 && index < _num, "oob"); return _arr + index; }
-
   /// range ///
 
   const MetaWord* base() const  { return _base; }
   size_t word_size() const      { return _num * chunklevel::MAX_CHUNK_WORD_SIZE; }
   const MetaWord* end() const   { return _base + word_size(); }
-
-  // Returns true if all areas in this area table are free (only contain free chunks).
-  bool is_free() const;
 
   DEBUG_ONLY(void verify() const;)
 

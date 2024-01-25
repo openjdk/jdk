@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,14 +28,9 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/sharedRuntimeMath.hpp"
 
-// This file contains copies of the fdlibm routines used by
-// StrictMath. It turns out that it is almost always required to use
-// these runtime routines; the Intel CPU doesn't meet the Java
-// specification for sin/cos outside a certain limited argument range,
-// and the SPARC CPU doesn't appear to have sin/cos instructions. It
-// also turns out that avoiding the indirect call through function
-// pointer out to libjava.so in SharedRuntime speeds these routines up
-// by roughly 15% on both Win32/x86 and Solaris/SPARC.
+// This file contains copies of the C fdlibm routines originally used
+// by StrictMath. The StrictMath sin, cos, and tan methods now use a
+// Java port of the algorithm in java.lang.Fdlibm.java.
 
 /*
  * __kernel_rem_pio2(x,y,e0,nx,prec,ipio2)
@@ -68,7 +63,7 @@
  *                      z    = (z-x[i])*2**24
  *
  *
- *      y[]     ouput result in an array of double precision numbers.
+ *      y[]     output result in an array of double precision numbers.
  *              The dimension of y[] is:
  *                      24-bit  precision       1
  *                      53-bit  precision       2
@@ -87,7 +82,7 @@
  *
  *      nx      dimension of x[]
  *
- *      prec    an interger indicating the precision:
+ *      prec    an integer indicating the precision:
  *                      0       24  bits (single)
  *                      1       53  bits (double)
  *                      2       64  bits (extended)
@@ -192,7 +187,8 @@ static int __kernel_rem_pio2(double *x, double *y, int e0, int nx, int prec, con
 
   /* compute q[0],q[1],...q[jk] */
   for (i=0;i<=jk;i++) {
-    for(j=0,fw=0.0;j<=jx;j++) fw += x[j]*f[jx+i-j]; q[i] = fw;
+    for(j=0,fw=0.0;j<=jx;j++) fw += x[j]*f[jx+i-j];
+    q[i] = fw;
   }
 
   jz = jk;

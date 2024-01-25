@@ -25,66 +25,60 @@ import java.io.DataInput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-
-import com.sun.org.apache.bcel.internal.Const;
+import java.util.stream.Stream;
 
 /**
- * represents one annotation in the annotation table
+ * Represents one annotation in the annotation table
  *
  * @since 6.0
  */
 public class AnnotationEntry implements Node {
 
-    private final int type_index;
-    private final ConstantPool constant_pool;
-    private final boolean isRuntimeVisible;
+    public static final AnnotationEntry[] EMPTY_ARRAY = {};
 
-    private List<ElementValuePair> element_value_pairs;
+    public static AnnotationEntry[] createAnnotationEntries(final Attribute[] attrs) {
+        // Find attributes that contain annotation data
+        return Stream.of(attrs).filter(Annotations.class::isInstance).flatMap(e -> Stream.of(((Annotations) e).getAnnotationEntries()))
+            .toArray(AnnotationEntry[]::new);
+    }
 
-    /*
+    /**
      * Factory method to create an AnnotionEntry from a DataInput
      *
      * @param input
-     * @param constant_pool
+     * @param constantPool
      * @param isRuntimeVisible
      * @return the entry
-     * @throws IOException
+     * @throws IOException if an I/O error occurs.
      */
-    public static AnnotationEntry read(final DataInput input, final ConstantPool constant_pool, final boolean isRuntimeVisible) throws IOException {
-
-        final AnnotationEntry annotationEntry = new AnnotationEntry(input.readUnsignedShort(), constant_pool, isRuntimeVisible);
-        final int num_element_value_pairs = input.readUnsignedShort();
-        annotationEntry.element_value_pairs = new ArrayList<>();
-        for (int i = 0; i < num_element_value_pairs; i++) {
-            annotationEntry.element_value_pairs.add(
-                    new ElementValuePair(input.readUnsignedShort(), ElementValue.readElementValue(input, constant_pool),
-                    constant_pool));
+    public static AnnotationEntry read(final DataInput input, final ConstantPool constantPool, final boolean isRuntimeVisible) throws IOException {
+        final AnnotationEntry annotationEntry = new AnnotationEntry(input.readUnsignedShort(), constantPool, isRuntimeVisible);
+        final int numElementValuePairs = input.readUnsignedShort();
+        annotationEntry.elementValuePairs = new ArrayList<>();
+        for (int i = 0; i < numElementValuePairs; i++) {
+            annotationEntry.elementValuePairs
+                .add(new ElementValuePair(input.readUnsignedShort(), ElementValue.readElementValue(input, constantPool), constantPool));
         }
         return annotationEntry;
     }
 
-    public AnnotationEntry(final int type_index, final ConstantPool constant_pool, final boolean isRuntimeVisible) {
-        this.type_index = type_index;
-        this.constant_pool = constant_pool;
+    private final int typeIndex;
+
+    private final ConstantPool constantPool;
+
+    private final boolean isRuntimeVisible;
+
+    private List<ElementValuePair> elementValuePairs;
+
+    public AnnotationEntry(final int typeIndex, final ConstantPool constantPool, final boolean isRuntimeVisible) {
+        this.typeIndex = typeIndex;
+        this.constantPool = constantPool;
         this.isRuntimeVisible = isRuntimeVisible;
     }
 
-    public int getTypeIndex() {
-        return type_index;
-    }
-
-    public ConstantPool getConstantPool() {
-        return constant_pool;
-    }
-
-    public boolean isRuntimeVisible() {
-        return isRuntimeVisible;
-    }
-
     /**
-     * Called by objects that are traversing the nodes of the tree implicitely defined by the contents of a Java class.
+     * Called by objects that are traversing the nodes of the tree implicitly defined by the contents of a Java class.
      * I.e., the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
      *
      * @param v Visitor object
@@ -94,26 +88,35 @@ public class AnnotationEntry implements Node {
         v.visitAnnotationEntry(this);
     }
 
+    public void addElementNameValuePair(final ElementValuePair elementNameValuePair) {
+        elementValuePairs.add(elementNameValuePair);
+    }
+
+    public void dump(final DataOutputStream dos) throws IOException {
+        dos.writeShort(typeIndex); // u2 index of type name in cpool
+        dos.writeShort(elementValuePairs.size()); // u2 element_value pair
+        // count
+        for (final ElementValuePair envp : elementValuePairs) {
+            envp.dump(dos);
+        }
+    }
+
     /**
      * @return the annotation type name
      */
     public String getAnnotationType() {
-        final ConstantUtf8 c = (ConstantUtf8) constant_pool.getConstant(type_index, Const.CONSTANT_Utf8);
-        return c.getBytes();
+        return constantPool.getConstantUtf8(typeIndex).getBytes();
     }
 
     /**
      * @return the annotation type index
      */
     public int getAnnotationTypeIndex() {
-        return type_index;
+        return typeIndex;
     }
 
-    /**
-     * @return the number of element value pairs in this annotation entry
-     */
-    public final int getNumElementValuePairs() {
-        return element_value_pairs.size();
+    public ConstantPool getConstantPool() {
+        return constantPool;
     }
 
     /**
@@ -121,20 +124,22 @@ public class AnnotationEntry implements Node {
      */
     public ElementValuePair[] getElementValuePairs() {
         // TODO return List
-        return element_value_pairs.toArray(new ElementValuePair[element_value_pairs.size()]);
+        return elementValuePairs.toArray(ElementValuePair.EMPTY_ARRAY);
     }
 
-    public void dump(final DataOutputStream dos) throws IOException {
-        dos.writeShort(type_index); // u2 index of type name in cpool
-        dos.writeShort(element_value_pairs.size()); // u2 element_value pair
-        // count
-        for (final ElementValuePair envp : element_value_pairs) {
-            envp.dump(dos);
-        }
+    /**
+     * @return the number of element value pairs in this annotation entry
+     */
+    public final int getNumElementValuePairs() {
+        return elementValuePairs.size();
     }
 
-    public void addElementNameValuePair(final ElementValuePair elementNameValuePair) {
-        element_value_pairs.add(elementNameValuePair);
+    public int getTypeIndex() {
+        return typeIndex;
+    }
+
+    public boolean isRuntimeVisible() {
+        return isRuntimeVisible;
     }
 
     public String toShortString() {
@@ -146,7 +151,10 @@ public class AnnotationEntry implements Node {
             result.append("(");
             for (final ElementValuePair element : evPairs) {
                 result.append(element.toShortString());
+                result.append(", ");
             }
+            // remove last ", "
+            result.setLength(result.length() - 2);
             result.append(")");
         }
         return result.toString();
@@ -155,17 +163,5 @@ public class AnnotationEntry implements Node {
     @Override
     public String toString() {
         return toShortString();
-    }
-
-    public static AnnotationEntry[] createAnnotationEntries(final Attribute[] attrs) {
-        // Find attributes that contain annotation data
-        final List<AnnotationEntry> accumulatedAnnotations = new ArrayList<>(attrs.length);
-        for (final Attribute attribute : attrs) {
-            if (attribute instanceof Annotations) {
-                final Annotations runtimeAnnotations = (Annotations) attribute;
-                Collections.addAll(accumulatedAnnotations, runtimeAnnotations.getAnnotationEntries());
-            }
-        }
-        return accumulatedAnnotations.toArray(new AnnotationEntry[accumulatedAnnotations.size()]);
     }
 }

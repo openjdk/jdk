@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,10 +50,6 @@
 
 package nsk.stress.strace;
 
-import nsk.share.ArgumentParser;
-import nsk.share.Log;
-
-import java.io.PrintStream;
 import java.util.Map;
 
 /**
@@ -62,45 +58,21 @@ import java.util.Map;
  * defined depth <code>DEPTH</code> of recursion, the test calls
  * <code>java.lang.Thread.getStackTrace()</code> and
  * <code>java.lang.Thread.getAllStackTraces()</code> methods and checks their results.
- * <p>
- * It is expected that these methods return the same stack traces. Each stack frame
- * for both stack traces must be corresponded to invocation of one of the methods
- * defined by the <code>EXPECTED_METHODS</code> array.</p>
  */
-public class strace009 {
+public class strace009 extends StraceBase {
 
     static final int DEPTH = 200;
     static final int THRD_COUNT = 100;
     static final String NATIVE_LIB = "strace009";
     static final int SLEEP_TIME = 50;
-    static final String[] EXPECTED_METHODS = {
-            "java.lang.Thread.sleep",
-            "nsk.stress.strace.strace009Thread.run",
-            "nsk.stress.strace.strace009Thread.recursiveMethod1",
-            "nsk.stress.strace.strace009Thread.recursiveMethod2"
-    };
-
-
-    static long waitTime = 2;
 
     static Object doSnapshot = new Object();
     static volatile boolean isSnapshotDone = false;
     static volatile int achivedCount = 0;
-    static PrintStream out;
-    static Log log;
 
     static strace009Thread[] threads;
 
     public static void main(String[] args) {
-        out = System.out;
-        int exitCode = run(args);
-        System.exit(exitCode + 95);
-    }
-
-    public static int run(String[] args) {
-        ArgumentParser argHandler = new ArgumentParser(args);
-        log = new Log(out, argHandler);
-        waitTime = argHandler.getWaitTime() * 60000;
 
         boolean res = true;
 
@@ -111,12 +83,10 @@ public class strace009 {
         finishThreads();
 
         if (!res) {
-            complain("***>>>Test failed<<<***");
-            return 2;
+            new RuntimeException("***>>>Test failed<<<***");
         }
 
         display(">>>Test passed<<<");
-        return 0;
     }
 
     static void startThreads() {
@@ -146,8 +116,8 @@ public class strace009 {
     static boolean makeSnapshot() {
 
         display("making all threads snapshots...");
-        Map traces = Thread.getAllStackTraces();
-        int count = ((StackTraceElement[]) traces.get(threads[0])).length;
+        Map<Thread, StackTraceElement[]> traces = Thread.getAllStackTraces();
+        int count = traces.get(threads[0]).length;
 
         display("making snapshots of each thread...");
         StackTraceElement[][] elements = new StackTraceElement[THRD_COUNT][];
@@ -158,7 +128,7 @@ public class strace009 {
         display("checking lengths of stack traces...");
         StackTraceElement[] all;
         for (int i = 1; i < THRD_COUNT; i++) {
-            all = (StackTraceElement[]) traces.get(threads[i]);
+            all = traces.get(threads[i]);
             int k = all.length;
             if (count - k > 2) {
                 complain("wrong lengths of stack traces:\n\t"
@@ -172,7 +142,7 @@ public class strace009 {
         display("checking stack traces...");
         boolean res = true;
         for (int i = 0; i < THRD_COUNT; i++) {
-            all = (StackTraceElement[]) traces.get(threads[i]);
+            all = traces.get(threads[i]);
             if (!checkTraces(threads[i].getName(), elements[i], all)) {
                 res = false;
             }
@@ -205,15 +175,6 @@ public class strace009 {
         return res;
     }
 
-    static boolean checkElement(StackTraceElement element) {
-        String name = element.getClassName() + "." + element.getMethodName();
-        for (int i = 0; i < EXPECTED_METHODS.length; i++) {
-            if (EXPECTED_METHODS[i].compareTo(name) == 0)
-                return true;
-        }
-        return false;
-    }
-
     static void finishThreads() {
         isSnapshotDone = true;
         try {
@@ -227,14 +188,6 @@ public class strace009 {
             complain("" + e);
         }
         isSnapshotDone = false;
-    }
-
-    static void display(String message) {
-        log.display(message);
-    }
-
-    static void complain(String message) {
-        log.complain(message);
     }
 
 }

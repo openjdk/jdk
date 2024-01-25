@@ -40,7 +40,7 @@ import java.util.*;
     /********** target program **********/
 
 class GenericsTarg {
-    static Gen1<String> genField = new Gen1<String>();;
+    static Gen1<String> genField = new Gen1<String>();
     static Sub1 sub1Field = new Sub1();
 
     String[] strArray = null;

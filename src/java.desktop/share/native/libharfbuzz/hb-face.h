@@ -24,7 +24,7 @@
  * Red Hat Author(s): Behdad Esfahbod
  */
 
-#ifndef HB_H_IN
+#if !defined(HB_H_IN) && !defined(HB_NO_SINGLE_HEADER_ERROR)
 #error "Include <hb.h> instead."
 #endif
 
@@ -33,6 +33,7 @@
 
 #include "hb-common.h"
 #include "hb-blob.h"
+#include "hb-map.h"
 #include "hb-set.h"
 
 HB_BEGIN_DECLS
@@ -46,11 +47,30 @@ hb_face_count (hb_blob_t *blob);
  * hb_face_t
  */
 
+/**
+ * hb_face_t:
+ *
+ * Data type for holding font faces.
+ *
+ **/
 typedef struct hb_face_t hb_face_t;
 
 HB_EXTERN hb_face_t *
 hb_face_create (hb_blob_t    *blob,
                 unsigned int  index);
+
+/**
+ * hb_reference_table_func_t:
+ * @face: an #hb_face_t to reference table for
+ * @tag: the tag of the table to reference
+ * @user_data: User data pointer passed by the caller
+ *
+ * Callback function for hb_face_create_for_tables().
+ *
+ * Return value: (transfer full): A pointer to the @tag table within @face
+ *
+ * Since: 0.9.2
+ */
 
 typedef hb_blob_t * (*hb_reference_table_func_t)  (hb_face_t *face, hb_tag_t tag, void *user_data);
 
@@ -131,6 +151,11 @@ hb_face_collect_unicodes (hb_face_t *face,
                           hb_set_t  *out);
 
 HB_EXTERN void
+hb_face_collect_nominal_glyph_mapping (hb_face_t *face,
+                                       hb_map_t  *mapping,
+                                       hb_set_t  *unicodes);
+
+HB_EXTERN void
 hb_face_collect_variation_selectors (hb_face_t *face,
                                      hb_set_t  *out);
 
@@ -151,6 +176,10 @@ HB_EXTERN hb_bool_t
 hb_face_builder_add_table (hb_face_t *face,
                            hb_tag_t   tag,
                            hb_blob_t *blob);
+
+HB_EXTERN void
+hb_face_builder_sort_tables (hb_face_t *face,
+                             const hb_tag_t  *tags);
 
 
 HB_END_DECLS

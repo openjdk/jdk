@@ -43,7 +43,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 6216226
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true transform.Bug6216226Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.Bug6216226Test
  * @run testng/othervm transform.Bug6216226Test
  * @summary Test StreamResult(File) is closed after transform().
  */

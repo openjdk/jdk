@@ -25,8 +25,9 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_INLINE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_INLINE_HPP
 
-#include "gc/shared/taskqueue.inline.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
+
+#include "gc/shared/taskqueue.inline.hpp"
 #include "utilities/stack.inline.hpp"
 
 template <class E, MEMFLAGS F, unsigned int N>

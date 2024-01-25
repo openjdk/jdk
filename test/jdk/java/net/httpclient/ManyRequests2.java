@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,10 +33,18 @@
  * @compile ../../../com/sun/net/httpserver/EchoHandler.java
  * @compile ../../../com/sun/net/httpserver/FileServerHandler.java
  * @build ManyRequests ManyRequests2
- * @run main/othervm/timeout=40 -Dtest.XFixed=true ManyRequests2
- * @run main/othervm/timeout=40 -Dtest.XFixed=true -Dtest.insertDelay=true ManyRequests2
- * @run main/othervm/timeout=40 -Dtest.XFixed=true -Dtest.chunkSize=64 ManyRequests2
- * @run main/othervm/timeout=40 -Djdk.internal.httpclient.debug=true
+ * @run main/othervm/timeout=40 -Dtest.XFixed=true
+ *                              -Djdk.tracePinnedThreads=full
+ *                              -Djdk.httpclient.HttpClient.log=channel ManyRequests2
+ * @run main/othervm/timeout=40 -Dtest.XFixed=true -Dtest.insertDelay=true
+ *                              -Djdk.tracePinnedThreads=full
+ *                              -Djdk.httpclient.HttpClient.log=channel ManyRequests2
+ * @run main/othervm/timeout=40 -Dtest.XFixed=true -Dtest.chunkSize=64
+ *                              -Djdk.tracePinnedThreads=full
+ *                              -Djdk.httpclient.HttpClient.log=channel ManyRequests2
+ * @run main/othervm/timeout=400 -Djdk.internal.httpclient.debug=true
+ *                              -Djdk.tracePinnedThreads=full
+ *                              -Djdk.httpclient.HttpClient.log=channel
  *                              -Dtest.XFixed=true -Dtest.insertDelay=true
  *                              -Dtest.chunkSize=64 ManyRequests2
  * @summary Send a large number of requests asynchronously.

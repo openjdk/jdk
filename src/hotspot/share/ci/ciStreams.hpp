@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,16 +84,16 @@ public:
   }
 
   ciBytecodeStream() {
-    reset_to_method(NULL);
+    reset_to_method(nullptr);
   }
 
   ciMethod* method() const { return _method; }
 
   void reset_to_method(ciMethod* m) {
     _method = m;
-    if (m == NULL) {
-      _holder = NULL;
-      reset(NULL, 0);
+    if (m == nullptr) {
+      _holder = nullptr;
+      reset(nullptr, 0);
     } else {
       _holder = m->holder();
       reset(m->code(), m->code_size());
@@ -110,9 +110,9 @@ public:
   }
 
   address cur_bcp() const       { return _bc_start; }  // Returns bcp to current instruction
-  int next_bci() const          { return _pc - _start; }
-  int cur_bci() const           { return _bc_start - _start; }
-  int instruction_size() const  { return _pc - _bc_start; }
+  int next_bci() const          { return pointer_delta_as_int(_pc, _start); }
+  int cur_bci() const           { return pointer_delta_as_int(_bc_start, _start); }
+  int instruction_size() const  { return pointer_delta_as_int(_pc, _bc_start); }
 
   Bytecodes::Code cur_bc() const{ return check_java(_bc); }
   Bytecodes::Code cur_bc_raw() const { return check_defined(_raw_bc); }
@@ -140,7 +140,7 @@ public:
 
   bool is_wide() const { return ( _pc == _was_wide ); }
 
-  // Does this instruction contain an index which refes into the CP cache?
+  // Does this instruction contain an index which refers into the CP cache?
   bool has_cache_index() const { return Bytecodes::uses_cp_cache(cur_bc_raw()); }
 
   int get_index_u1() const {
@@ -159,11 +159,6 @@ public:
   // Get 2-byte index (byte swapping depending on which bytecode)
   int get_index_u2(bool is_wide = false) const {
     return bytecode().get_index_u2(cur_bc_raw(), is_wide);
-  }
-
-  // Get 2-byte index in native byte order.  (Rewriter::rewrite makes these.)
-  int get_index_u2_cpcache() const {
-    return bytecode().get_index_u2_cpcache(cur_bc_raw());
   }
 
   // Get 4-byte index, for invokedynamic.
@@ -203,11 +198,13 @@ public:
   }
 
   // For a lookup or switch table, return target destination
-  int get_int_table( int index ) const {
-    return Bytes::get_Java_u4((address)&_table_base[index]); }
+  jint get_int_table( int index ) const {
+    return (jint)Bytes::get_Java_u4((address)&_table_base[index]);
+  }
 
   int get_dest_table( int index ) const {
-    return cur_bci() + get_int_table(index); }
+    return cur_bci() + get_int_table(index);
+  }
 
   // --- Constant pool access ---
   int get_constant_raw_index() const;
@@ -217,6 +214,7 @@ public:
 
   // If this bytecode is a new, newarray, multianewarray, instanceof,
   // or checkcast, get the referenced klass.
+  ciKlass* get_klass();
   ciKlass* get_klass(bool& will_link);
   int get_klass_index() const;
 
@@ -224,18 +222,53 @@ public:
   // constant.  Do not attempt to resolve it, since that would require
   // execution of Java code.  If it is not resolved, return an unloaded
   // object (ciConstant.as_object()->is_loaded() == false).
-  ciConstant get_constant();
+  ciConstant  get_constant();
   constantTag get_constant_pool_tag(int index) const;
+  BasicType   get_basic_type_for_constant_at(int cp_index) const;
 
-  // True if the klass-using bytecode points to an unresolved klass
+  constantTag get_raw_pool_tag_at(int index) const;
+
+  constantTag get_raw_pool_tag() const {
+    int index = get_constant_pool_index();
+    return get_raw_pool_tag_at(index);
+  }
+
+    // True if the klass-using bytecode points to an unresolved klass
   bool is_unresolved_klass() const {
     constantTag tag = get_constant_pool_tag(get_klass_index());
     return tag.is_unresolved_klass();
   }
 
-  bool is_unresolved_klass_in_error() const {
-    constantTag tag = get_constant_pool_tag(get_klass_index());
-    return tag.is_unresolved_klass_in_error();
+  bool is_dynamic_constant() const {
+    assert(cur_bc() == Bytecodes::_ldc    ||
+           cur_bc() == Bytecodes::_ldc_w  ||
+           cur_bc() == Bytecodes::_ldc2_w, "not supported: %s", Bytecodes::name(cur_bc()));
+
+    constantTag tag = get_raw_pool_tag();
+    return tag.is_dynamic_constant() ||
+           tag.is_dynamic_constant_in_error();
+  }
+
+  bool is_string_constant() const {
+    assert(cur_bc() == Bytecodes::_ldc    ||
+           cur_bc() == Bytecodes::_ldc_w  ||
+           cur_bc() == Bytecodes::_ldc2_w, "not supported: %s", Bytecodes::name(cur_bc()));
+
+    constantTag tag = get_raw_pool_tag();
+    return tag.is_string();
+  }
+
+  bool is_in_error() const {
+    assert(cur_bc() == Bytecodes::_ldc    ||
+           cur_bc() == Bytecodes::_ldc_w  ||
+           cur_bc() == Bytecodes::_ldc2_w, "not supported: %s", Bytecodes::name(cur_bc()));
+
+    int index = get_constant_pool_index();
+    constantTag tag = get_constant_pool_tag(index);
+    return tag.is_unresolved_klass_in_error() ||
+           tag.is_method_handle_in_error()    ||
+           tag.is_method_type_in_error()      ||
+           tag.is_dynamic_constant_in_error();
   }
 
   // If this bytecode is one of get_field, get_static, put_field,
@@ -266,7 +299,7 @@ private:
   // holder is a method's holder
   ciKlass*     _holder;
 public:
-  ciSignatureStream(ciSignature* signature, ciKlass* holder = NULL) {
+  ciSignatureStream(ciSignature* signature, ciKlass* holder = nullptr) {
     _sig = signature;
     _pos = 0;
     _holder = holder;
@@ -293,9 +326,9 @@ public:
   // next klass in the signature
   ciKlass* next_klass() {
     ciKlass* sig_k;
-    if (_holder != NULL) {
+    if (_holder != nullptr) {
       sig_k = _holder;
-      _holder = NULL;
+      _holder = nullptr;
     } else {
       while (!type()->is_klass()) {
         next();
@@ -335,13 +368,13 @@ public:
 
     _pos = 0;
     _end = _method->_handler_count;
-    _exception_klass = NULL;
+    _exception_klass = nullptr;
     _bci    = -1;
     _is_exact = false;
   }
 
   ciExceptionHandlerStream(ciMethod* method, int bci,
-                           ciInstanceKlass* exception_klass = NULL,
+                           ciInstanceKlass* exception_klass = nullptr,
                            bool is_exact = false) {
     _method = method;
 
@@ -350,9 +383,9 @@ public:
 
     _pos = -1;
     _end = _method->_handler_count + 1; // include the rethrow handler
-    _exception_klass = (exception_klass != NULL && exception_klass->is_loaded()
+    _exception_klass = (exception_klass != nullptr && exception_klass->is_loaded()
                           ? exception_klass
-                          : NULL);
+                          : nullptr);
     _bci = bci;
     assert(_bci >= 0, "bci out of range");
     _is_exact = is_exact;
@@ -386,7 +419,7 @@ public:
             // Found final active catch block.
             _end = _pos+1;
             return;
-          } else if (_exception_klass == NULL || !handler->catch_klass()->is_loaded()) {
+          } else if (_exception_klass == nullptr || !handler->catch_klass()->is_loaded()) {
             // We cannot do any type analysis here.  Must conservatively assume
             // catch block is reachable.
             return;
@@ -419,7 +452,7 @@ public:
 
 
 // Implementation for declarations in bytecode.hpp
-Bytecode::Bytecode(const ciBytecodeStream* stream, address bcp): _bcp(bcp != NULL ? bcp : stream->cur_bcp()), _code(Bytecodes::code_at(NULL, addr_at(0))) {}
+Bytecode::Bytecode(const ciBytecodeStream* stream, address bcp): _bcp(bcp != nullptr ? bcp : stream->cur_bcp()), _code(Bytecodes::code_at(nullptr, addr_at(0))) {}
 Bytecode_lookupswitch::Bytecode_lookupswitch(const ciBytecodeStream* stream): Bytecode(stream) { verify(); }
 Bytecode_tableswitch::Bytecode_tableswitch(const ciBytecodeStream* stream): Bytecode(stream) { verify(); }
 

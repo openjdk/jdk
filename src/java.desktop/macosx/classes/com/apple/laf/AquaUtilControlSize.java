@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package com.apple.laf;
 
 import java.awt.*;
 import java.beans.*;
+import java.security.AccessController;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -38,8 +39,6 @@ import apple.laf.JRSUIConstants.*;
 import com.apple.laf.AquaUtils.RecyclableSingleton;
 import com.apple.laf.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 import sun.security.action.GetPropertyAction;
-
-import static java.security.AccessController.*;
 
 public class AquaUtilControlSize {
     protected static final String CLIENT_PROPERTY_KEY = "JComponent.sizeVariant";
@@ -73,7 +72,9 @@ public class AquaUtilControlSize {
     }
 
     private static Size getDefaultSize() {
-        final String sizeProperty = doPrivileged(new GetPropertyAction(SYSTEM_PROPERTY_KEY));
+        @SuppressWarnings("removal")
+        final String sizeProperty = AccessController.doPrivileged(
+                new GetPropertyAction(SYSTEM_PROPERTY_KEY));
         final JRSUIConstants.Size size = getSizeFromString(sizeProperty);
         if (size != null) return size;
         return JRSUIConstants.Size.REGULAR;

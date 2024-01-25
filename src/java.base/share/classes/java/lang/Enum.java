@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,8 @@ import java.lang.constant.DynamicConstantDesc;
 import java.lang.invoke.MethodHandles;
 import java.util.Optional;
 
+import jdk.internal.vm.annotation.Stable;
+
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -51,8 +53,9 @@ import static java.util.Objects.requireNonNull;
  * by the serialization mechanism. The serialized representation used
  * for enum constants cannot be customized. Declarations of methods
  * and fields that would otherwise interact with serialization are
- * ignored, including {@code serialVersionUID}; see the <cite>Java
- * Object Serialization Specification</cite> for details.
+ * ignored, including {@code serialVersionUID}; see the
+ * <a href="{@docRoot}/../specs/serialization/index.html"><cite>Java
+ * Object Serialization Specification</cite></a> for details.
  *
  * <p> Note that when using an enumeration type as the type of a set
  * or as the type of the keys in a map, specialized and efficient
@@ -60,6 +63,8 @@ import static java.util.Objects.requireNonNull;
  * java.util.EnumMap map} implementations are available.
  *
  * @param <E> The type of the enum subclass
+ *
+ * @spec serialization/index.html Java Object Serialization Specification
  * @serial exclude
  * @author  Josh Bloch
  * @author  Neal Gafter
@@ -128,9 +133,9 @@ public abstract class Enum<E extends Enum<E>>
      * It is for use by code emitted by the compiler in response to
      * enum class declarations.
      *
-     * @param name - The name of this enum constant, which is the identifier
+     * @param name The name of this enum constant, which is the identifier
      *               used to declare it.
-     * @param ordinal - The ordinal of this enumeration constant (its position
+     * @param ordinal The ordinal of this enumeration constant (its position
      *         in the enum declaration, where the initial constant is assigned
      *         an ordinal of zero).
      */
@@ -164,12 +169,27 @@ public abstract class Enum<E extends Enum<E>>
     }
 
     /**
+     * The hash code of this enumeration constant.
+     */
+    @Stable
+    private int hash;
+
+    /**
      * Returns a hash code for this enum constant.
      *
      * @return a hash code for this enum constant.
      */
     public final int hashCode() {
-        return super.hashCode();
+        // Once initialized, the hash field value does not change.
+        // HotSpot's identity hash code generation also never returns zero
+        // as the identity hash code. This makes zero a convenient marker
+        // for the un-initialized value for both @Stable and the lazy
+        // initialization code below.
+        int hc = hash;
+        if (hc == 0) {
+            hc = hash = System.identityHashCode(this);
+        }
+        return hc;
     }
 
     /**
@@ -193,7 +213,7 @@ public abstract class Enum<E extends Enum<E>>
      * method is the order in which the constants are declared.
      */
     public final int compareTo(E o) {
-        Enum<?> other = (Enum<?>)o;
+        Enum<?> other = o;
         Enum<E> self = this;
         if (self.getClass() != other.getClass() && // optimization
             self.getDeclaringClass() != other.getDeclaringClass())
@@ -275,8 +295,13 @@ public abstract class Enum<E extends Enum<E>>
 
     /**
      * enum classes cannot have finalize methods.
+     *
+     * @deprecated Finalization has been deprecated for removal.  See
+     * {@link java.lang.Object#finalize} for background information and details
+     * about migration options.
      */
-    @SuppressWarnings("deprecation")
+    @Deprecated(since="18", forRemoval=true)
+    @SuppressWarnings("removal")
     protected final void finalize() { }
 
     /**

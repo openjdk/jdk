@@ -162,7 +162,7 @@ final class PropertyElementHandler extends AccessorElementHandler {
      * @param name   the name of the property
      * @param index  the index of the indexed property
      * @return the value of the property
-     * @throws IllegalAccessException    if the property is not accesible
+     * @throws IllegalAccessException    if the property is not accessible
      * @throws IntrospectionException    if the bean introspection is failed
      * @throws InvocationTargetException if the getter cannot be invoked
      * @throws NoSuchMethodException     if the getter is not found
@@ -187,7 +187,7 @@ final class PropertyElementHandler extends AccessorElementHandler {
      * @param name   the name of the property
      * @param index  the index of the indexed property
      * @param value  the new value for the property
-     * @throws IllegalAccessException    if the property is not accesible
+     * @throws IllegalAccessException    if the property is not accessible
      * @throws IntrospectionException    if the bean introspection is failed
      * @throws InvocationTargetException if the setter cannot be invoked
      * @throws NoSuchMethodException     if the setter is not found

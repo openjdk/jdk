@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 4432868
+ * @library /test/lib
  * @summary A client-hello message may not always be read correctly
  * @modules java.base/sun.net.www
  * @run main/othervm ClientHelloRead
@@ -32,12 +33,22 @@
  *     system properties in samevm/agentvm mode.
  */
 
-import java.io.*;
-import java.net.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.ServerSocket;
+import java.net.URL;
 import java.security.KeyStore;
-import javax.net.*;
-import javax.net.ssl.*;
-import java.security.cert.*;
+
+import javax.net.ServerSocketFactory;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ssl.SSLSession;
 
 /*
  * ClientHelloRead.java -- includes a simple server that can serve
@@ -135,10 +146,9 @@ public class ClientHelloRead {
 
             ctx = SSLContext.getInstance("TLS");
             kmf = KeyManagerFactory.getInstance("SunX509");
-            ks = KeyStore.getInstance("JKS");
+            ks = KeyStore.getInstance(new File(System.getProperty(
+                            "javax.net.ssl.keyStore")), passphrase);
 
-            ks.load(new FileInputStream(System.getProperty(
-                        "javax.net.ssl.keyStore")), passphrase);
             kmf.init(ks, passphrase);
             ctx.init(kmf.getKeyManagers(), null, null);
 

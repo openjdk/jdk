@@ -28,14 +28,22 @@
  * ===========================================================================
  */
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 package org.jcp.xml.dsig.internal.dom;
 
-import java.util.*;
-import java.security.*;
+import java.security.AccessController;
+import java.security.InvalidParameterException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivilegedAction;
+import java.security.Provider;
+import java.security.ProviderException;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
-import javax.xml.crypto.dsig.*;
+import javax.xml.crypto.dsig.CanonicalizationMethod;
+import javax.xml.crypto.dsig.Transform;
 
 /**
  * The XMLDSig RI Provider.
@@ -55,6 +63,7 @@ public final class XMLDSigRI extends Provider {
         "C14N 1.0, C14N 1.1, Exclusive C14N, Base64, Enveloped, XPath, " +
         "XPath2, XSLT TransformServices)";
 
+    @SuppressWarnings("removal")
     private static final String VER =
         AccessController.doPrivileged(new PrivilegedAction<>() {
             public String run() {
@@ -130,9 +139,10 @@ public final class XMLDSigRI extends Provider {
         }
     }
 
+    @SuppressWarnings("removal")
     public XMLDSigRI() {
         // This is the JDK XMLDSig provider, synced from
-        // Apache Santuario XML Security for Java, version 2.2.1
+        // Apache Santuario XML Security for Java, version 3.0.3
         super("XMLDSig", VER, INFO);
 
         final Provider p = this;

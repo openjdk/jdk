@@ -129,4 +129,4 @@ private:
     static int              ClipRound(double value);
 };
 
-#endif AWT_WIN32GRAPHICSDEVICE_H
+#endif // AWT_WIN32GRAPHICSDEVICE_H

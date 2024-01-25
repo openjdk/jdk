@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,45 +23,47 @@
 
 package common;
 
-import org.testng.annotations.Listeners;
-import org.testng.annotations.Test;
-import org.testng.Assert;
 import java.net.URL;
 import java.net.URLClassLoader;
 
 import javax.xml.parsers.SAXParserFactory;
 
+import org.testng.Assert;
+import org.testng.annotations.Listeners;
+import org.testng.annotations.Test;
+
 /*
  * @test
  * @bug 6723276
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true common.Bug6723276Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow common.Bug6723276Test
  * @run testng/othervm common.Bug6723276Test
  * @summary Test JAXP class can be loaded by bootstrap classloader.
  */
 @Listeners({jaxp.library.BasePolicy.class})
 public class Bug6723276Test {
+    private static final String ERR_MSG = "org.apache.xerces.jaxp.SAXParserFactoryImpl not found";
 
     @Test
-    public void test1() {
+    public void testWithDefaultContextClassLoader() {
         try {
             SAXParserFactory.newInstance();
         } catch (Exception e) {
-            if (e.getMessage().indexOf("org.apache.xerces.jaxp.SAXParserFactoryImpl not found") > 0) {
+            if (e.getMessage().contains(ERR_MSG)) {
                 Assert.fail(e.getMessage());
             }
         }
     }
 
     @Test
-    public void test2() {
+    public void testWithGivenURLContextClassLoader() {
         try {
             System.out.println(Thread.currentThread().getContextClassLoader());
             System.out.println(ClassLoader.getSystemClassLoader().getParent());
             Thread.currentThread().setContextClassLoader(new URLClassLoader(new URL[0], ClassLoader.getSystemClassLoader().getParent()));
             SAXParserFactory.newInstance();
         } catch (Exception e) {
-            if (e.getMessage().indexOf("org.apache.xerces.jaxp.SAXParserFactoryImpl not found") > 0) {
+            if (e.getMessage().contains(ERR_MSG)) {
                 Assert.fail(e.getMessage());
             }
         }

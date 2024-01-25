@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,8 @@
 
 /*
  * @test
- * @modules jdk.incubator.foreign java.base/jdk.internal.vm.annotation java.base/jdk.internal.misc
+ * @requires vm.flavor != "zero"
+ * @modules java.base/jdk.internal.vm.annotation java.base/jdk.internal.misc
  * @key randomness
  * @run testng/othervm TestHandshake
  * @run testng/othervm -Xint TestHandshake
@@ -31,9 +32,9 @@
  * @run testng/othervm -XX:-TieredCompilation TestHandshake
  */
 
-import jdk.incubator.foreign.MemoryAccess;
-import jdk.incubator.foreign.MemorySegment;
-
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
@@ -42,10 +43,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+
+import static java.lang.foreign.ValueLayout.JAVA_BYTE;
+import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static org.testng.Assert.*;
 
 public class TestHandshake {
@@ -53,36 +58,40 @@ public class TestHandshake {
     static final int ITERATIONS = 5;
     static final int SEGMENT_SIZE = 1_000_000;
     static final int MAX_DELAY_MILLIS = 500;
-    static final int MAX_EXECUTOR_WAIT_SECONDS = 10;
+    static final int MAX_EXECUTOR_WAIT_SECONDS = 20;
     static final int MAX_THREAD_SPIN_WAIT_MILLIS = 200;
 
     static final int NUM_ACCESSORS = Math.min(10, Runtime.getRuntime().availableProcessors());
 
     static final AtomicLong start = new AtomicLong();
+    static final AtomicBoolean started = new AtomicBoolean();
 
     @Test(dataProvider = "accessors")
     public void testHandshake(String testName, AccessorFactory accessorFactory) throws InterruptedException {
         for (int it = 0 ; it < ITERATIONS ; it++) {
-            MemorySegment segment = MemorySegment.allocateNative(SEGMENT_SIZE).share();
+            Arena arena = Arena.ofShared();
+            MemorySegment segment = arena.allocate(SEGMENT_SIZE, 1);
             System.out.println("ITERATION " + it);
             ExecutorService accessExecutor = Executors.newCachedThreadPool();
             start.set(System.currentTimeMillis());
+            started.set(false);
             for (int i = 0; i < NUM_ACCESSORS ; i++) {
-                accessExecutor.execute(accessorFactory.make(i, segment));
+                accessExecutor.execute(accessorFactory.make(i, segment, arena));
             }
             int delay = ThreadLocalRandom.current().nextInt(MAX_DELAY_MILLIS);
             System.out.println("Starting handshaker with delay set to " + delay + " millis");
             Thread.sleep(delay);
-            accessExecutor.execute(new Handshaker(segment));
+            accessExecutor.execute(new Handshaker(arena));
             accessExecutor.shutdown();
             assertTrue(accessExecutor.awaitTermination(MAX_EXECUTOR_WAIT_SECONDS, TimeUnit.SECONDS));
-            assertTrue(!segment.isAlive());
+            assertTrue(!segment.scope().isAlive());
         }
     }
 
     static abstract class AbstractSegmentAccessor implements Runnable {
         final MemorySegment segment;
         final int id;
+        final AtomicBoolean failed = new AtomicBoolean();
 
         AbstractSegmentAccessor(int id, MemorySegment segment) {
             this.id = id;
@@ -91,26 +100,27 @@ public class TestHandshake {
 
         @Override
         public final void run() {
-            outer: while (segment.isAlive()) {
+            start("\"Accessor #\" + id");
+            while (segment.scope().isAlive()) {
                 try {
                     doAccess();
                 } catch (IllegalStateException ex) {
-                    long delay = System.currentTimeMillis() - start.get();
-                    System.out.println("Accessor #" + id + " suspending - delay (ms): " + delay);
-                    backoff();
-                    delay = System.currentTimeMillis() - start.get();
-                    System.out.println("Accessor #" + id + " resuming - delay (ms): " + delay);
-                    continue outer;
+                    if (!failed.get()) {
+                        // ignore - this means segment was alive, but was closed while we were accessing it
+                        // next isAlive test should fail
+                        assertFalse(segment.scope().isAlive());
+                        failed.set(true);
+                    } else {
+                        // rethrow!
+                        throw ex;
+                    }
                 }
             }
             long delay = System.currentTimeMillis() - start.get();
-            System.out.println("Accessor #" + id + " terminated - delay (ms): " + delay);
-            cleanup();
+            System.out.println("Accessor #" + id + " terminated - elapsed (ms): " + delay);
         }
 
         abstract void doAccess();
-
-        void cleanup() {}
 
         private void backoff() {
             try {
@@ -121,10 +131,17 @@ public class TestHandshake {
         }
     }
 
+    static void start(String name) {
+        if (started.compareAndSet(false, true)) {
+            long delay = System.currentTimeMillis() - start.get();
+            System.out.println("Started first thread: " + name + " ; elapsed (ms): " + delay);
+        }
+    }
+
     static abstract class AbstractBufferAccessor extends AbstractSegmentAccessor {
         final ByteBuffer bb;
 
-        AbstractBufferAccessor(int id, MemorySegment segment) {
+        AbstractBufferAccessor(int id, MemorySegment segment, Arena _unused) {
             super(id, segment);
             this.bb = segment.asByteBuffer();
         }
@@ -132,7 +149,7 @@ public class TestHandshake {
 
     static class SegmentAccessor extends AbstractSegmentAccessor {
 
-        SegmentAccessor(int id, MemorySegment segment) {
+        SegmentAccessor(int id, MemorySegment segment, Arena _unused) {
             super(id, segment);
         }
 
@@ -140,7 +157,7 @@ public class TestHandshake {
         void doAccess() {
             int sum = 0;
             for (int i = 0; i < segment.byteSize(); i++) {
-                sum += MemoryAccess.getByteAtOffset(segment, i);
+                sum += segment.get(JAVA_BYTE, i);
             }
         }
     }
@@ -150,7 +167,7 @@ public class TestHandshake {
         MemorySegment first, second;
 
 
-        SegmentCopyAccessor(int id, MemorySegment segment) {
+        SegmentCopyAccessor(int id, MemorySegment segment, Arena _unused) {
             super(id, segment);
             long split = segment.byteSize() / 2;
             first = segment.asSlice(0, split);
@@ -163,9 +180,33 @@ public class TestHandshake {
         }
     }
 
+    static class SegmentSwappyCopyAccessor extends AbstractSegmentAccessor {
+
+        MemorySegment first, second;
+        ValueLayout sourceLayout, destLayout;
+        long count;
+
+
+        SegmentSwappyCopyAccessor(int id, MemorySegment segment, Arena _unused) {
+            super(id, segment);
+            long split = segment.byteSize() / 2;
+            first = segment.asSlice(0, split);
+            sourceLayout = JAVA_INT.withOrder(ByteOrder.LITTLE_ENDIAN);
+            second = segment.asSlice(split);
+            destLayout = JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN);
+            count = Math.min(first.byteSize() / sourceLayout.byteSize(),
+                second.byteSize() / destLayout.byteSize());
+        }
+
+        @Override
+        public void doAccess() {
+            MemorySegment.copy(first, sourceLayout, 0L, second, destLayout, 0L, count);
+        }
+    }
+
     static class SegmentFillAccessor extends AbstractSegmentAccessor {
 
-        SegmentFillAccessor(int id, MemorySegment segment) {
+        SegmentFillAccessor(int id, MemorySegment segment, Arena _unused) {
             super(id, segment);
         }
 
@@ -179,28 +220,23 @@ public class TestHandshake {
 
         final MemorySegment copy;
 
-        SegmentMismatchAccessor(int id, MemorySegment segment) {
+        SegmentMismatchAccessor(int id, MemorySegment segment, Arena arena) {
             super(id, segment);
-            this.copy = MemorySegment.allocateNative(SEGMENT_SIZE).share();
+            this.copy = arena.allocate(SEGMENT_SIZE, 1);
             copy.copyFrom(segment);
-            MemoryAccess.setByteAtOffset(copy, ThreadLocalRandom.current().nextInt(SEGMENT_SIZE), (byte)42);
+            copy.set(JAVA_BYTE, ThreadLocalRandom.current().nextInt(SEGMENT_SIZE), (byte)42);
         }
 
         @Override
         public void doAccess() {
             segment.mismatch(copy);
         }
-
-        @Override
-        void cleanup() {
-            copy.close();
-        }
     }
 
     static class BufferAccessor extends AbstractBufferAccessor {
 
-        BufferAccessor(int id, MemorySegment segment) {
-            super(id, segment);
+        BufferAccessor(int id, MemorySegment segment, Arena _unused) {
+            super(id, segment, null);
         }
 
         @Override
@@ -216,8 +252,8 @@ public class TestHandshake {
 
         static VarHandle handle = MethodHandles.byteBufferViewVarHandle(short[].class, ByteOrder.nativeOrder());
 
-        public BufferHandleAccessor(int id, MemorySegment segment) {
-            super(id, segment);
+        public BufferHandleAccessor(int id, MemorySegment segment, Arena _unused) {
+            super(id, segment, null);
         }
 
         @Override
@@ -231,29 +267,23 @@ public class TestHandshake {
 
     static class Handshaker implements Runnable {
 
-        final MemorySegment segment;
+        final Arena arena;
 
-        Handshaker(MemorySegment segment) {
-            this.segment = segment;
+        Handshaker(Arena arena) {
+            this.arena = arena;
         }
 
         @Override
         public void run() {
-            while (true) {
-                try {
-                    segment.close();
-                    break;
-                } catch (IllegalStateException ex) {
-                    Thread.onSpinWait();
-                }
-            }
+            start("Handshaker");
+            arena.close(); // This should NOT throw
             long delay = System.currentTimeMillis() - start.get();
-            System.out.println("Segment closed - delay (ms): " + delay);
+            System.out.println("Segment closed - elapsed (ms): " + delay);
         }
     }
 
     interface AccessorFactory {
-        AbstractSegmentAccessor make(int id, MemorySegment segment);
+        AbstractSegmentAccessor make(int id, MemorySegment segment, Arena arena);
     }
 
     @DataProvider
@@ -261,6 +291,7 @@ public class TestHandshake {
         return new Object[][] {
                 { "SegmentAccessor", (AccessorFactory)SegmentAccessor::new },
                 { "SegmentCopyAccessor", (AccessorFactory)SegmentCopyAccessor::new },
+                { "SegmentSwappyCopyAccessor", (AccessorFactory)SegmentSwappyCopyAccessor::new },
                 { "SegmentMismatchAccessor", (AccessorFactory)SegmentMismatchAccessor::new },
                 { "SegmentFillAccessor", (AccessorFactory)SegmentFillAccessor::new },
                 { "BufferAccessor", (AccessorFactory)BufferAccessor::new },

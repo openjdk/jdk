@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,8 @@
  * @author Brad Wetmore
  */
 
-import java.io.*;
-import java.net.*;
+import java.net.SocketException;
+import java.util.concurrent.CountDownLatch;
 import javax.net.ssl.*;
 
 public class SSLSocketImplThrowsWrongExceptions {
@@ -64,7 +64,7 @@ public class SSLSocketImplThrowsWrongExceptions {
     /*
      * Is the server ready to serve?
      */
-    volatile static boolean serverReady = false;
+    private CountDownLatch serverReadyLatch = new CountDownLatch(1);
 
     /*
      * Turn on SSL debugging?
@@ -87,7 +87,7 @@ public class SSLSocketImplThrowsWrongExceptions {
         /*
          * Signal Client, we're ready for his connect.
          */
-        serverReady = true;
+        serverReadyLatch.countDown();
 
         try {
             System.out.println("Server socket accepting...");
@@ -95,12 +95,12 @@ public class SSLSocketImplThrowsWrongExceptions {
             System.out.println("Server starting handshake");
             sslSocket.startHandshake();
             throw new Exception("Handshake was successful");
-        } catch (SSLException e) {
+        } catch (SSLException | SocketException se){
             /*
-             * Caught the right Exeption.  Swallow it.
+             * Caught the right Exception.  Swallow it.
              */
             System.out.println("Server reported the right exception");
-            System.out.println(e.toString());
+            System.out.println(se);
         } catch (Exception e) {
             /*
              * Caught the wrong exception.  Rethrow it.
@@ -121,9 +121,7 @@ public class SSLSocketImplThrowsWrongExceptions {
         /*
          * Wait for server to get started.
          */
-        while (!serverReady) {
-            Thread.sleep(50);
-        }
+        serverReadyLatch.await();
 
         SSLSocketFactory sslsf =
             (SSLSocketFactory) SSLSocketFactory.getDefault();
@@ -271,7 +269,7 @@ public class SSLSocketImplThrowsWrongExceptions {
                          * Release the client, if not active already...
                          */
                         System.err.println("Server died...");
-                        serverReady = true;
+                        serverReadyLatch.countDown();
                         serverException = e;
                     }
                 }
@@ -283,7 +281,7 @@ public class SSLSocketImplThrowsWrongExceptions {
             } catch (Exception e) {
                 serverException = e;
             } finally {
-                serverReady = true;
+                serverReadyLatch.countDown();
             }
         }
     }

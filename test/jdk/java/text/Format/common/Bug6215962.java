@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,25 +55,25 @@ public class Bug6215962 {
         mf2 = new MessageFormat("{0}", Locale.JAPAN);
         check(mf1, mf2, false);
 
-        mf1 = new MessageFormat("{0}", new Locale("ja", "JP"));
+        mf1 = new MessageFormat("{0}", Locale.of("ja", "JP"));
         check(mf1, mf2, true);
 
         mf1.setLocale(null);
         check(mf1, mf2, false);
 
-        mf1 = new MessageFormat("{0}", new Locale("ja", "JP", "FOO"));
+        mf1 = new MessageFormat("{0}", Locale.of("ja", "JP", "FOO"));
         check(mf1, mf2, false);
 
-        mf2 = new MessageFormat("{1}", new Locale("ja", "JP", "FOO"));
+        mf2 = new MessageFormat("{1}", Locale.of("ja", "JP", "FOO"));
         check(mf1, mf2, false);
 
-        mf1 = new MessageFormat("{1}", new Locale("ja", "JP", "FOO"));
+        mf1 = new MessageFormat("{1}", Locale.of("ja", "JP", "FOO"));
         check(mf1, mf2, true);
 
-        mf1 = new MessageFormat("{1, date}", new Locale("ja", "JP", "FOO"));
+        mf1 = new MessageFormat("{1, date}", Locale.of("ja", "JP", "FOO"));
         check(mf1, mf2, false);
 
-        mf2 = new MessageFormat("{1, date}", new Locale("ja", "JP", "FOO"));
+        mf2 = new MessageFormat("{1, date}", Locale.of("ja", "JP", "FOO"));
         check(mf1, mf2, true);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,9 +49,9 @@ public class AttrContext {
      */
     int staticLevel = 0;
 
-    /** Is this an environment for a this(...) or super(...) call?
+    /** Are we in the 'prologue' part of a constructor, prior to an explicit this()/super()?
      */
-    boolean isSelfCall = false;
+    boolean ctorPrologue = false;
 
     /** Are we evaluating the selector of a `super' or type name?
      */
@@ -87,6 +87,10 @@ public class AttrContext {
     /** Indicate if the type being visited is a service implementation
      */
     boolean visitingServiceImplementation = false;
+
+    /** Indicate protected access should be unconditionally allowed.
+     */
+    boolean allowProtectedAccess = false;
 
     /** Are arguments to current function applications boxed into an array for varargs?
      */
@@ -128,7 +132,7 @@ public class AttrContext {
         AttrContext info = new AttrContext();
         info.scope = scope;
         info.staticLevel = staticLevel;
-        info.isSelfCall = isSelfCall;
+        info.ctorPrologue = ctorPrologue;
         info.selectSuper = selectSuper;
         info.pendingResolutionPhase = pendingResolutionPhase;
         info.lint = lint;
@@ -144,6 +148,7 @@ public class AttrContext {
         info.isNewClass = isNewClass;
         info.preferredTreeForDiagnostics = preferredTreeForDiagnostics;
         info.visitingServiceImplementation = visitingServiceImplementation;
+        info.allowProtectedAccess = allowProtectedAccess;
         return info;
     }
 

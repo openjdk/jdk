@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,54 +45,73 @@ class PlatformPCSC {
 
     static final Debug debug = Debug.getInstance("pcsc");
 
-    static final Throwable initException;
+    private static final String PROP_NAME = "sun.security.smartcardio.library";
 
-    private final static String PROP_NAME = "sun.security.smartcardio.library";
-
-    private final static String LIB1 = "/usr/$LIBISA/libpcsclite.so";
-    private final static String LIB2 = "/usr/local/$LIBISA/libpcsclite.so";
-    private final static String PCSC_FRAMEWORK = "/System/Library/Frameworks/PCSC.framework/Versions/Current/PCSC";
+    // The architecture templates are for Debian-based systems: https://wiki.debian.org/Multiarch/Tuples
+    // 32-bit arm differs from the pattern of the rest and has to be specified explicitly
+    private static final String[] LIB_TEMPLATES = { "/usr/$LIBISA/libpcsclite.so",
+                                                    "/usr/local/$LIBISA/libpcsclite.so",
+                                                    "/usr/lib/$ARCH-linux-gnu/libpcsclite.so",
+                                                    "/usr/lib/arm-linux-gnueabi/libpcsclite.so",
+                                                    "/usr/lib/arm-linux-gnueabihf/libpcsclite.so" };
+    private static final String[] LIB_SUFFIXES = { ".1", ".0", "" };
+    private static final String PCSC_FRAMEWORK = "/System/Library/Frameworks/PCSC.framework/Versions/Current/PCSC";
 
     PlatformPCSC() {
         // empty
     }
 
-    static {
-        initException = AccessController.doPrivileged(new PrivilegedAction<Throwable>() {
-            public Throwable run() {
-                try {
-                    System.loadLibrary("j2pcsc");
-                    String library = getLibraryName();
-                    if (debug != null) {
-                        debug.println("Using PC/SC library: " + library);
-                    }
-                    initialize(library);
-                    return null;
-                } catch (Throwable e) {
-                    return e;
+    @SuppressWarnings("removal")
+    static final Throwable initException
+            = AccessController.doPrivileged(new PrivilegedAction<Throwable>() {
+        public Throwable run() {
+            try {
+                System.loadLibrary("j2pcsc");
+                String library = getLibraryName();
+                if (debug != null) {
+                    debug.println("Using PC/SC library: " + library);
                 }
+                initialize(library);
+                return null;
+            } catch (Throwable e) {
+                return e;
             }
-        });
-    }
+        }
+    });
 
     // expand $LIBISA to the system specific directory name for libraries
+    // expand $ARCH to the Debian system architecture in use
     private static String expand(String lib) {
         int k = lib.indexOf("$LIBISA");
-        if (k == -1) {
-            return lib;
+        if (k != -1) {
+            String libDir;
+            if ("64".equals(System.getProperty("sun.arch.data.model"))) {
+                // assume Linux convention
+                libDir = "lib64";
+            } else {
+                // must be 32-bit
+                libDir = "lib";
+            }
+            lib = lib.replace("$LIBISA", libDir);
         }
-        String s1 = lib.substring(0, k);
-        String s2 = lib.substring(k + 7);
-        String libDir;
-        if ("64".equals(System.getProperty("sun.arch.data.model"))) {
-            // assume Linux convention
-            libDir = "lib64";
-        } else {
-            // must be 32-bit
-            libDir = "lib";
+
+        k = lib.indexOf("$ARCH");
+        if (k != -1) {
+            String arch = System.getProperty("os.arch");
+            lib = lib.replace("$ARCH", getDebianArchitecture(arch));
         }
-        String s = s1 + libDir + s2;
-        return s;
+
+        return lib;
+    }
+
+    private static String getDebianArchitecture(String jdkArch) {
+        return switch (jdkArch) {
+            case "amd64" -> "x86_64";
+            case "ppc" -> "powerpc";
+            case "ppc64" -> "powerpc64";
+            case "ppc64le" -> "powerpc64le";
+            default -> jdkArch;
+        };
     }
 
     private static String getLibraryName() throws IOException {
@@ -100,15 +120,18 @@ class PlatformPCSC {
         if (lib.length() != 0) {
             return lib;
         }
-        lib = expand(LIB1);
-        if (new File(lib).isFile()) {
-            // if LIB1 exists, use that
-            return lib;
-        }
-        lib = expand(LIB2);
-        if (new File(lib).isFile()) {
-            // if LIB2 exists, use that
-            return lib;
+
+        for (String template : LIB_TEMPLATES) {
+            for (String suffix : LIB_SUFFIXES) {
+                lib = expand(template) + suffix;
+                if (debug != null) {
+                    debug.println("Looking for " + lib);
+                }
+                if (new File(lib).isFile()) {
+                    // if library exists, use that
+                    return lib;
+                }
+            }
         }
 
         // As of macos 11, framework libraries have been removed from the file
@@ -140,16 +163,16 @@ class PlatformPCSC {
 
     // PCSC constants defined differently under Windows and MUSCLE
     // MUSCLE version
-    final static int SCARD_PROTOCOL_T0     =  0x0001;
-    final static int SCARD_PROTOCOL_T1     =  0x0002;
-    final static int SCARD_PROTOCOL_RAW    =  0x0004;
+    static final int SCARD_PROTOCOL_T0     =  0x0001;
+    static final int SCARD_PROTOCOL_T1     =  0x0002;
+    static final int SCARD_PROTOCOL_RAW    =  0x0004;
 
-    final static int SCARD_UNKNOWN         =  0x0001;
-    final static int SCARD_ABSENT          =  0x0002;
-    final static int SCARD_PRESENT         =  0x0004;
-    final static int SCARD_SWALLOWED       =  0x0008;
-    final static int SCARD_POWERED         =  0x0010;
-    final static int SCARD_NEGOTIABLE      =  0x0020;
-    final static int SCARD_SPECIFIC        =  0x0040;
+    static final int SCARD_UNKNOWN         =  0x0001;
+    static final int SCARD_ABSENT          =  0x0002;
+    static final int SCARD_PRESENT         =  0x0004;
+    static final int SCARD_SWALLOWED       =  0x0008;
+    static final int SCARD_POWERED         =  0x0010;
+    static final int SCARD_NEGOTIABLE      =  0x0020;
+    static final int SCARD_SPECIFIC        =  0x0040;
 
 }

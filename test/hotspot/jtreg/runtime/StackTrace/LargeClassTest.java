@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.misc
- * @compile LargeClassTest.java
- * @run main LargeClassTest
+ * @run driver LargeClassTest
  */
 
 import java.io.File;
@@ -46,7 +45,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class LargeClassTest implements Opcodes {
     public static void main(String... args) throws Exception {
         writeClassFile();
-        ProcessBuilder pb = ProcessTools.createTestJvm("-cp", ".",  "Large");
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder("-cp", ".",  "Large");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
     }

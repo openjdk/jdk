@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,6 @@
 
 package netscape.javascript;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.util.Iterator;
-import java.util.ServiceLoader;
-
 /**
  * <p>
  * Allows Java code to manipulate JavaScript objects.
@@ -48,9 +43,8 @@ import java.util.ServiceLoader;
  * converted to Java data types. Certain data passed to the JavaScript
  * engine is converted to JavaScript data types.
  * </p>
- *
+ * @since 1.5
  */
-@SuppressWarnings("deprecation")
 public abstract class JSObject {
     /**
      * Constructs a new JSObject. Users should neither call this method nor
@@ -88,7 +82,7 @@ public abstract class JSObject {
      * "this.name" in JavaScript.
      *
      * @param name The name of the JavaScript property to be accessed.
-     * @return The value of the propery.
+     * @return The value of the property.
      * @throws JSException when an error is reported from the browser or
      * JavaScript engine.
      */
@@ -99,7 +93,7 @@ public abstract class JSObject {
      * "this.name = value" in JavaScript.
      *
      * @param name The name of the JavaScript property to be accessed.
-     * @param value The value of the propery.
+     * @param value The value of the property.
      * @throws JSException when an error is reported from the browser or
      * JavaScript engine.
      */

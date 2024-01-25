@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -47,14 +47,20 @@ void InlineCacheBuffer::assemble_ic_buffer_code(address code_begin, void* cached
   // because
   // (1) the value is old (i.e., doesn't matter for scavenges)
   // (2) these ICStubs are removed *before* a GC happens, so the roots disappear
-  // assert(cached_value == NULL || cached_oop->is_perm(), "must be perm oop");
+  // assert(cached_value == nullptr || cached_oop->is_perm(), "must be perm oop");
 
   address start = __ pc();
   Label l;
   __ ldr(rscratch2, l);
-  __ far_jump(ExternalAddress(entry_point));
-  __ align(wordSize);
+  int jump_code_size = __ far_jump(ExternalAddress(entry_point));
+  // IC stub code size is not expected to vary depending on target address.
+  // We use NOPs to make the [ldr + far_jump + nops + int64] stub size equal to ic_stub_code_size.
+  for (int size = NativeInstruction::instruction_size + jump_code_size + 8;
+           size < ic_stub_code_size(); size += NativeInstruction::instruction_size) {
+    __ nop();
+  }
   __ bind(l);
+  assert((uintptr_t)__ pc() % wordSize == 0, "");
   __ emit_int64((int64_t)cached_value);
   // Only need to invalidate the 1st two instructions - not the whole ic stub
   ICache::invalidate_range(code_begin, InlineCacheBuffer::ic_stub_code_size());

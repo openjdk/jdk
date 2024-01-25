@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,8 +20,6 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.trax;
 
-import com.sun.org.apache.xalan.internal.XalanConstants;
-import com.sun.org.apache.xalan.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.XSLTC;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ErrorMsg;
 import java.io.InputStream;
@@ -37,12 +35,12 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stax.StAXSource;
 import javax.xml.transform.stream.StreamSource;
+import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.JdkXmlFeatures;
 import jdk.xml.internal.JdkXmlUtils;
-import jdk.xml.internal.SecuritySupport;
+import jdk.xml.internal.XMLSecurityManager;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.XMLReader;
@@ -51,6 +49,8 @@ import org.xml.sax.XMLReader;
  * @author Santiago Pericas-Geertsen
  *
  * Added Catalog Support for URI resolution
+ *
+ * @LastModified: July 2023
  */
 @SuppressWarnings("deprecation") //org.xml.sax.helpers.XMLReaderFactory
 public final class Util {
@@ -90,8 +90,12 @@ public final class Util {
                     if (reader == null) {
                         boolean overrideDefaultParser = xsltc.getFeature(
                                 JdkXmlFeatures.XmlFeature.JDK_OVERRIDE_PARSER);
-                        reader = JdkXmlUtils.getXMLReader(overrideDefaultParser,
-                                xsltc.isSecureProcessing());
+                        reader = JdkXmlUtils.getXMLReader(
+                                (XMLSecurityManager)xsltc.getProperty(JdkConstants.SECURITY_MANAGER),
+                                overrideDefaultParser,
+                                xsltc.isSecureProcessing(),
+                                xsltc.getFeature(JdkXmlFeatures.XmlFeature.USE_CATALOG),
+                                (CatalogFeatures)xsltc.getProperty(JdkXmlFeatures.CATALOG_FEATURES));
                     } else {
                         // compatibility for legacy applications
                         reader.setFeature
@@ -103,27 +107,8 @@ public final class Util {
                     JdkXmlUtils.setXMLReaderPropertyIfSupport(reader, XMLConstants.ACCESS_EXTERNAL_DTD,
                             xsltc.getProperty(XMLConstants.ACCESS_EXTERNAL_DTD), true);
 
-                    JdkXmlUtils.setXMLReaderPropertyIfSupport(reader, JdkXmlUtils.CDATA_CHUNK_SIZE,
-                            xsltc.getProperty(JdkXmlUtils.CDATA_CHUNK_SIZE), false);
-
-                    String lastProperty = "";
-                    try {
-                        XMLSecurityManager securityManager =
-                                (XMLSecurityManager)xsltc.getProperty(XalanConstants.SECURITY_MANAGER);
-                        if (securityManager != null) {
-                            for (XMLSecurityManager.Limit limit : XMLSecurityManager.Limit.values()) {
-                                lastProperty = limit.apiProperty();
-                                reader.setProperty(lastProperty,
-                                        securityManager.getLimitValueAsString(limit));
-                            }
-                            if (securityManager.printEntityCountInfo()) {
-                                lastProperty = XalanConstants.JDK_ENTITY_COUNT_INFO;
-                                reader.setProperty(XalanConstants.JDK_ENTITY_COUNT_INFO, XalanConstants.JDK_YES);
-                            }
-                        }
-                    } catch (SAXException se) {
-                        XMLSecurityManager.printWarning(reader.getClass().getName(), lastProperty, se);
-                    }
+                    JdkXmlUtils.setXMLReaderPropertyIfSupport(reader, JdkConstants.CDATA_CHUNK_SIZE,
+                            xsltc.getProperty(JdkConstants.CDATA_CHUNK_SIZE), false);
 
                     boolean supportCatalog = true;
                     boolean useCatalog = xsltc.getFeature(JdkXmlFeatures.XmlFeature.USE_CATALOG);

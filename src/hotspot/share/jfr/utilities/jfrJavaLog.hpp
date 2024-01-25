@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_JFR_UTILITIES_JFRJAVALOG_HPP
 #define SHARE_JFR_UTILITIES_JFRJAVALOG_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "utilities/exceptions.hpp"
 
 /*
@@ -43,6 +43,7 @@ class JfrJavaLog : public AllStatic {
  public:
   static void subscribe_log_level(jobject log_tag, jint id, TRAPS);
   static void log(jint tag_set, jint level, jstring message, TRAPS);
+  static void log_event(JNIEnv* env, jint level, jobjectArray lines, bool system, TRAPS);
 };
 
 #endif // SHARE_JFR_UTILITIES_JFRJAVALOG_HPP

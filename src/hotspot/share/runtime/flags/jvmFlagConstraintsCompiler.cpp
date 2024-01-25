@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "code/relocInfo.hpp"
-#include "compiler/compilerDefinitions.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "oops/metadata.hpp"
 #include "runtime/os.hpp"
@@ -35,18 +35,6 @@
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "utilities/powerOfTwo.hpp"
-
-JVMFlag::Error AliasLevelConstraintFunc(intx value, bool verbose) {
-  if ((value <= 1) && (Arguments::mode() == Arguments::_comp || Arguments::mode() == Arguments::_mixed)) {
-    JVMFlag::printError(verbose,
-                        "AliasLevel (" INTX_FORMAT ") is not "
-                        "compatible with -Xcomp or -Xmixed\n",
-                        value);
-    return JVMFlag::VIOLATES_CONSTRAINT;
-  } else {
-    return JVMFlag::SUCCESS;
-  }
-}
 
 /**
  * Validate the minimum number of compiler threads needed to run the JVM.
@@ -77,18 +65,6 @@ JVMFlag::Error CICompilerCountConstraintFunc(intx value, bool verbose) {
   } else {
     return JVMFlag::SUCCESS;
   }
-}
-
-JVMFlag::Error AllocatePrefetchDistanceConstraintFunc(intx value, bool verbose) {
-  if (value < 0 || value > 512) {
-    JVMFlag::printError(verbose,
-                        "AllocatePrefetchDistance (" INTX_FORMAT ") must be "
-                        "between 0 and %d\n",
-                        AllocatePrefetchDistance, 512);
-    return JVMFlag::VIOLATES_CONSTRAINT;
-  }
-
-  return JVMFlag::SUCCESS;
 }
 
 JVMFlag::Error AllocatePrefetchStepSizeConstraintFunc(intx value, bool verbose) {
@@ -228,6 +204,15 @@ JVMFlag::Error CodeEntryAlignmentConstraintFunc(intx value, bool verbose) {
       return JVMFlag::VIOLATES_CONSTRAINT;
   }
 
+  if ((uintx)CodeEntryAlignment > CodeCacheSegmentSize) {
+    JVMFlag::printError(verbose,
+                        "CodeEntryAlignment (" INTX_FORMAT ") must be "
+                        "less than or equal to CodeCacheSegmentSize (" UINTX_FORMAT ") "
+                        "to align entry points\n",
+                        CodeEntryAlignment, CodeCacheSegmentSize);
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+
   return JVMFlag::SUCCESS;
 }
 
@@ -247,6 +232,14 @@ JVMFlag::Error OptoLoopAlignmentConstraintFunc(intx value, bool verbose) {
                         "OptoLoopAlignment (" INTX_FORMAT ") must be "
                         "multiple of NOP size (%d)\n",
                         value, relocInfo::addr_unit());
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+
+  if (OptoLoopAlignment > CodeEntryAlignment) {
+    JVMFlag::printError(verbose,
+                        "OptoLoopAlignment (" INTX_FORMAT ") must be "
+                        "less or equal to CodeEntryAlignment (" INTX_FORMAT ")\n",
+                        value, CodeEntryAlignment);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
 
@@ -286,17 +279,43 @@ JVMFlag::Error ArraycopySrcPrefetchDistanceConstraintFunc(uintx value, bool verb
   return JVMFlag::SUCCESS;
 }
 
-JVMFlag::Error TypeProfileLevelConstraintFunc(uintx value, bool verbose) {
+JVMFlag::Error TypeProfileLevelConstraintFunc(uint value, bool verbose) {
+  uint original_value = value;
   for (int i = 0; i < 3; i++) {
     if (value % 10 > 2) {
       JVMFlag::printError(verbose,
-                          "Invalid value (" UINTX_FORMAT ") "
+                          "Invalid value (" UINT32_FORMAT ") "
                           "in TypeProfileLevel at position %d\n", value, i);
       return JVMFlag::VIOLATES_CONSTRAINT;
     }
     value = value / 10;
   }
+  if (value != 0) {
+    JVMFlag::printError(verbose,
+                        "Invalid value (" UINT32_FORMAT ") "
+                        "for TypeProfileLevel: maximal 3 digits\n", original_value);
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+  return JVMFlag::SUCCESS;
+}
 
+JVMFlag::Error VerifyIterativeGVNConstraintFunc(uint value, bool verbose) {
+  uint original_value = value;
+  for (int i = 0; i < 2; i++) {
+    if (value % 10 > 1) {
+      JVMFlag::printError(verbose,
+                          "Invalid value (" UINT32_FORMAT ") "
+                          "in VerifyIterativeGVN at position %d\n", value, i);
+      return JVMFlag::VIOLATES_CONSTRAINT;
+    }
+    value = value / 10;
+  }
+  if (value != 0) {
+    JVMFlag::printError(verbose,
+                        "Invalid value (" UINT32_FORMAT ") "
+                        "for VerifyIterativeGVN: maximal 2 digits\n", original_value);
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
   return JVMFlag::SUCCESS;
 }
 

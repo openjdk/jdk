@@ -134,7 +134,7 @@ public abstract class AbstractListModel<E> implements ListModel<E>, Serializable
      * <code>AbstractListModel</code> subclasses must call this method
      * <b>after</b>
      * one or more elements are added to the model.  The new elements
-     * are specified by a closed interval index0, index1 -- the enpoints
+     * are specified by a closed interval index0, index1 -- the endpoints
      * are included.  Note that
      * index0 need not be less than or equal to index1.
      *
@@ -218,7 +218,7 @@ public abstract class AbstractListModel<E> implements ListModel<E>, Serializable
      *          on this model,
      *          or an empty array if no such
      *          listeners have been added
-     * @exception ClassCastException if <code>listenerType</code> doesn't
+     * @throws ClassCastException if <code>listenerType</code> doesn't
      *          specify a class or interface that implements
      *          <code>java.util.EventListener</code>
      *

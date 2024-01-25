@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ public class DummyDebugger extends DebuggerBase {
 
   public long getAddressValue(Address addr) {
     if (addr == null) return 0;
-    return ((DummyAddress) addr).getValue();
+    return addr.asLongValue();
   }
 
   public String getOS() {
@@ -126,23 +126,18 @@ public class DummyDebugger extends DebuggerBase {
     throw new DebuggerException("Unimplemented");
   }
 
-  public void writeBytesToProcess(long a, long b, byte[] buf)
-                               throws DebuggerException {
-    throw new DebuggerException("Unimplemented");
-  }
-
   //----------------------------------------------------------------------
   // Package-internal routines
   //
 
   String addressToString(DummyAddress addr) {
-    StringBuffer buf = new StringBuffer();
+    StringBuilder buf = new StringBuilder();
     buf.append("0x");
     String val;
     if (addr == null) {
       val = "0";
     } else {
-      val = Long.toHexString(addr.getValue());
+      val = Long.toHexString(addr.asLongValue());
     }
     for (int i = 0; i < ((2 * machDesc.getAddressSize()) - val.length()); i++) {
       buf.append('0');

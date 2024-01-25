@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -40,8 +40,7 @@ namespace metaspace {
 class Metachunk;
 class FreeChunkListVector;
 
-// VirtualSpaceList manages a single (if its non-expandable) or
-//  a series of (if its expandable) virtual memory regions used
+// VirtualSpaceList manages a series of virtual memory regions used
 //  for metaspace.
 //
 // Internally it holds a list of nodes (VirtualSpaceNode) each
@@ -49,17 +48,24 @@ class FreeChunkListVector;
 //  this list is the current node and used for allocation of new
 //  root chunks.
 //
-// Beyond access to those nodes and the ability to grow new nodes
-//  (if expandable) it allows for purging: purging this list means
-//  removing and unmapping all memory regions which are unused.
+// The list will only ever grow, never shrink. It will be immortal,
+//  never to be destroyed.
+//
+// The list will only be modified under lock protection, but may be
+//  read concurrently without lock.
+//
+// The list may be prevented from expanding beyond a single node -
+//  in that case it degenerates to a one-node-list (used for
+//  class space).
+//
 
 class VirtualSpaceList : public CHeapObj<mtClass> {
 
   // Name
   const char* const _name;
 
-  // Head of the list.
-  VirtualSpaceNode* _first_node;
+  // Head of the list (last added).
+  VirtualSpaceNode* volatile _first_node;
 
   // Number of nodes (kept for statistics only).
   IntCounter _nodes_counter;
@@ -97,14 +103,9 @@ public:
   // Allocate a root chunk from this list.
   // Note: this just returns a chunk whose memory is reserved; no memory is committed yet.
   // Hence, before using this chunk, it must be committed.
-  // May return NULL if vslist would need to be expanded to hold the new root node but
+  // May return null if vslist would need to be expanded to hold the new root node but
   // the list cannot be expanded (in practice this means we reached CompressedClassSpaceSize).
   Metachunk* allocate_root_chunk();
-
-  // Attempts to purge nodes. This will remove and delete nodes which only contain free chunks.
-  // The free chunks are removed from the freelists before the nodes are deleted.
-  // Return number of purged nodes.
-  int purge(FreeChunkListVector* freelists);
 
   //// Statistics ////
 
@@ -127,10 +128,6 @@ public:
   // Returns true if this pointer is contained in one of our nodes.
   bool contains(const MetaWord* p) const;
 
-  // Returns true if the list is not expandable and no more root chunks
-  // can be allocated.
-  bool is_full() const;
-
   // Convenience methods to return the global class-space vslist
   //  and non-class vslist, respectively.
   static VirtualSpaceList* vslist_class();
@@ -139,8 +136,8 @@ public:
   // These exist purely to print limits of the compressed class space;
   // if we ever change the ccs to not use a degenerated-list-of-one-node this
   // will go away.
-  MetaWord* base_of_first_node() const { return _first_node != NULL ? _first_node->base() : NULL; }
-  size_t word_size_of_first_node() const { return _first_node != NULL ? _first_node->word_size() : 0; }
+  MetaWord* base_of_first_node() const { return _first_node != nullptr ? _first_node->base() : nullptr; }
+  size_t word_size_of_first_node() const { return _first_node != nullptr ? _first_node->word_size() : 0; }
 
 };
 

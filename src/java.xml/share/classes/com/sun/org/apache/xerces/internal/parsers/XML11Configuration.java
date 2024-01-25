@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -46,6 +46,7 @@ import com.sun.org.apache.xerces.internal.util.FeatureState;
 import com.sun.org.apache.xerces.internal.util.ParserConfigurationSettings;
 import com.sun.org.apache.xerces.internal.util.PropertyState;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.xni.XMLDTDContentModelHandler;
 import com.sun.org.apache.xerces.internal.xni.XMLDTDHandler;
 import com.sun.org.apache.xerces.internal.xni.XMLDocumentHandler;
@@ -68,7 +69,9 @@ import java.util.List;
 import java.util.Locale;
 import javax.xml.XMLConstants;
 import javax.xml.catalog.CatalogFeatures;
+import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.JdkXmlUtils;
+import jdk.xml.internal.XMLSecurityManager;
 
 /**
  * This class is the configuration used to parse XML 1.0 and XML 1.1 documents.
@@ -77,7 +80,7 @@ import jdk.xml.internal.JdkXmlUtils;
  * @author Neil Graham, IBM
  * @author Michael Glavassevich, IBM
  *
- * @LastModified: Oct 2017
+ * @LastModified: Nov 2023
  */
 public class XML11Configuration extends ParserConfigurationSettings
     implements XMLPullParserConfiguration, XML11Configurable {
@@ -295,7 +298,7 @@ public class XML11Configuration extends ParserConfigurationSettings
 
     /** Property identifier: Security property manager. */
     private static final String XML_SECURITY_PROPERTY_MANAGER =
-            Constants.XML_SECURITY_PROPERTY_MANAGER;
+            JdkConstants.XML_SECURITY_PROPERTY_MANAGER;
 
     /** Property identifier: Security manager. */
     private static final String SECURITY_MANAGER = Constants.SECURITY_MANAGER;
@@ -431,7 +434,7 @@ public class XML11Configuration extends ParserConfigurationSettings
 
     /** Default constructor. */
     public XML11Configuration() {
-        this(null, null, null);
+        this(null, null, null, null, null);
     } // <init>()
 
     /**
@@ -440,7 +443,7 @@ public class XML11Configuration extends ParserConfigurationSettings
      * @param symbolTable The symbol table to use.
      */
     public XML11Configuration(SymbolTable symbolTable) {
-        this(symbolTable, null, null);
+        this(symbolTable, null, null, null, null);
     } // <init>(SymbolTable)
 
     /**
@@ -455,7 +458,7 @@ public class XML11Configuration extends ParserConfigurationSettings
      * @param grammarPool The grammar pool to use.
      */
     public XML11Configuration(SymbolTable symbolTable, XMLGrammarPool grammarPool) {
-        this(symbolTable, grammarPool, null);
+        this(symbolTable, grammarPool, null, null, null);
     } // <init>(SymbolTable,XMLGrammarPool)
 
     /**
@@ -470,10 +473,14 @@ public class XML11Configuration extends ParserConfigurationSettings
      * @param grammarPool    The grammar pool to use.
      * @param parentSettings The parent settings.
      */
-    public XML11Configuration(
-        SymbolTable symbolTable,
-        XMLGrammarPool grammarPool,
-        XMLComponentManager parentSettings) {
+    public XML11Configuration(SymbolTable symbolTable, XMLGrammarPool grammarPool,
+            XMLComponentManager parentSettings) {
+        this(symbolTable, grammarPool, parentSettings, null, null);
+    }
+
+    public XML11Configuration(SymbolTable symbolTable, XMLGrammarPool grammarPool,
+            XMLComponentManager parentSettings, XMLSecurityPropertyManager securityPropertyMgr,
+            XMLSecurityManager securityManager) {
 
         super(parentSettings);
 
@@ -508,8 +515,8 @@ public class XML11Configuration extends ParserConfigurationSettings
             PARSER_SETTINGS,
             XMLConstants.FEATURE_SECURE_PROCESSING,
             XMLConstants.USE_CATALOG,
-            JdkXmlUtils.RESET_SYMBOL_TABLE,
-            JdkXmlUtils.OVERRIDE_PARSER
+            JdkConstants.RESET_SYMBOL_TABLE,
+            JdkConstants.OVERRIDE_PARSER
         };
         addRecognizedFeatures(recognizedFeatures);
         // set state for default features
@@ -535,8 +542,8 @@ public class XML11Configuration extends ParserConfigurationSettings
         fFeatures.put(PARSER_SETTINGS, Boolean.TRUE);
         fFeatures.put(XMLConstants.FEATURE_SECURE_PROCESSING, Boolean.TRUE);
         fFeatures.put(XMLConstants.USE_CATALOG, JdkXmlUtils.USE_CATALOG_DEFAULT);
-        fFeatures.put(JdkXmlUtils.RESET_SYMBOL_TABLE, JdkXmlUtils.RESET_SYMBOL_TABLE_DEFAULT);
-        fFeatures.put(JdkXmlUtils.OVERRIDE_PARSER, JdkXmlUtils.OVERRIDE_PARSER_DEFAULT);
+        fFeatures.put(JdkConstants.RESET_SYMBOL_TABLE, JdkConstants.RESET_SYMBOL_TABLE_DEFAULT);
+        fFeatures.put(JdkConstants.OVERRIDE_PARSER, JdkConstants.OVERRIDE_PARSER_DEFAULT);
 
         // add default recognized properties
         final String[] recognizedProperties =
@@ -573,7 +580,7 @@ public class XML11Configuration extends ParserConfigurationSettings
             JdkXmlUtils.CATALOG_FILES,
             JdkXmlUtils.CATALOG_PREFER,
             JdkXmlUtils.CATALOG_RESOLVE,
-            JdkXmlUtils.CDATA_CHUNK_SIZE
+            JdkConstants.CDATA_CHUNK_SIZE
         };
         addRecognizedProperties(recognizedProperties);
 
@@ -591,7 +598,7 @@ public class XML11Configuration extends ParserConfigurationSettings
             fProperties.put(XMLGRAMMAR_POOL, fGrammarPool);
         }
 
-        fEntityManager = new XMLEntityManager();
+        fEntityManager = new XMLEntityManager(securityPropertyMgr, securityManager);
         fProperties.put(ENTITY_MANAGER, fEntityManager);
         addCommonComponent(fEntityManager);
 
@@ -639,12 +646,7 @@ public class XML11Configuration extends ParserConfigurationSettings
             // REVISIT: What is the right thing to do? -Ac
         }
 
-        // Initialize Catalog features
-        for( CatalogFeatures.Feature f : CatalogFeatures.Feature.values()) {
-            fProperties.put(f.getPropertyName(), null);
-        }
-
-        setProperty(JdkXmlUtils.CDATA_CHUNK_SIZE, JdkXmlUtils.CDATA_CHUNK_SIZE_DEFAULT);
+        setProperty(JdkConstants.CDATA_CHUNK_SIZE, JdkConstants.CDATA_CHUNK_SIZE_DEFAULT);
 
         fConfigUpdated = false;
     } // <init>(SymbolTable,XMLGrammarPool)
@@ -1582,7 +1584,7 @@ public class XML11Configuration extends ParserConfigurationSettings
      * and RESET_SYMBOL_TABLE feature is set to true
      */
     private void resetSymbolTable() {
-        if (fFeatures.get(JdkXmlUtils.RESET_SYMBOL_TABLE) && !fSymbolTableProvided) {
+        if (fFeatures.get(JdkConstants.RESET_SYMBOL_TABLE) && !fSymbolTableProvided) {
             if (fSymbolTableJustInitialized) {
                 // Skip symbol table reallocation for the first parsing process
                 fSymbolTableJustInitialized = false;

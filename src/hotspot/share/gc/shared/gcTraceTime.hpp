@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,13 +32,16 @@
 #include "memory/allocation.hpp"
 #include "utilities/ticks.hpp"
 
+class GCTracer;
+
 class GCTraceCPUTime : public StackObj {
   bool _active;                 // true if times will be measured and printed
   double _starting_user_time;   // user time at start of measurement
   double _starting_system_time; // system time at start of measurement
   double _starting_real_time;   // real time at start of measurement
- public:
-  GCTraceCPUTime();
+  GCTracer* _tracer;
+public:
+  GCTraceCPUTime(GCTracer* tracer);
   ~GCTraceCPUTime();
 };
 
@@ -72,9 +75,9 @@ class GCTraceTimeDriver : public StackObj {
   void at_end(TimespanCallback* cb, Ticks end);
 
  public:
-  GCTraceTimeDriver(TimespanCallback* cb0 = NULL,
-                    TimespanCallback* cb1 = NULL,
-                    TimespanCallback* cb2 = NULL);
+  GCTraceTimeDriver(TimespanCallback* cb0 = nullptr,
+                    TimespanCallback* cb1 = nullptr,
+                    TimespanCallback* cb2 = nullptr);
   ~GCTraceTimeDriver();
 };
 

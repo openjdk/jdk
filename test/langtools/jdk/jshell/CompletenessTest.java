@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8149524 8131024 8165211 8080071 8130454 8167343 8129559 8114842 8182268 8223782 8235474 8246774
+ * @bug 8149524 8131024 8165211 8080071 8130454 8167343 8129559 8114842 8182268 8223782 8235474 8246774 8276149
  * @summary Test SourceCodeAnalysis
  * @build KullaTesting TestingInputStream
  * @run testng CompletenessTest
@@ -89,7 +89,8 @@ public class CompletenessTest extends KullaTesting {
         "record.any",
         "record()",
         "record(1)",
-        "record.length()"
+        "record.length()",
+        "\"\\{0}\""
     };
 
     static final String[] complete_with_semi = new String[] {
@@ -223,10 +224,21 @@ public class CompletenessTest extends KullaTesting {
         "static record D(String i, String j)",
         "static record D(String i) {",
         "static record D(String i, String j) {",
+        //JDK-8276149:
+        "void t(int i) { int v = switch (i) { case 0 -> ",
+        "void t(int i) { int v = switch (i) { case 0 -> {",
+        "void t(int i) { int v = switch (i) { case 0 -> a = b;",
+        "void t(int i) { int v = switch (i) { case 0 -> System.err.println(1);",
+        "void t(int i) { int v = switch (i) { case 0 -> throw new IllegalStateException();",
     };
 
     static final String[] unknown = new String[] {
-        "new ;"
+        "new ;",
+        "\"",
+        "\"\\",
+        "\"\\{",
+        "\"\\{0",
+        "\"\\{0}",
     };
 
     static final Map<Completeness, String[]> statusToCases = new HashMap<>();
@@ -363,6 +375,7 @@ public class CompletenessTest extends KullaTesting {
     public void testTextBlocks() {
         assertStatus("\"\"\"", DEFINITELY_INCOMPLETE, null);
         assertStatus("\"\"\"broken", DEFINITELY_INCOMPLETE, null);
+        assertStatus("\"\"\"\n", DEFINITELY_INCOMPLETE, null);
         assertStatus("\"\"\"\ntext", DEFINITELY_INCOMPLETE, null);
         assertStatus("\"\"\"\ntext\"\"", DEFINITELY_INCOMPLETE, "\"\"\"\ntext\"\"\"");
         assertStatus("\"\"\"\ntext\"\"\"", COMPLETE, "\"\"\"\ntext\"\"\"");
@@ -370,6 +383,10 @@ public class CompletenessTest extends KullaTesting {
         assertStatus("\"\"\"\ntext\\\"\"\"", DEFINITELY_INCOMPLETE, null);
         assertStatus("\"\"\"\ntext\\\"\"\"\\\"\"\"", DEFINITELY_INCOMPLETE, null);
         assertStatus("\"\"\"\ntext\\\"\"\"\\\"\"\"\"\"\"", COMPLETE, "\"\"\"\ntext\\\"\"\"\\\"\"\"\"\"\"");
+        assertStatus("\"\"\"\n\\", DEFINITELY_INCOMPLETE, null);
+        assertStatus("\"\"\"\n\\{", DEFINITELY_INCOMPLETE, null);
+        assertStatus("\"\"\"\n\\{0", DEFINITELY_INCOMPLETE, null);
+        assertStatus("\"\"\"\n\\{0}", DEFINITELY_INCOMPLETE, null);
     }
 
     public void testMiscSource() {

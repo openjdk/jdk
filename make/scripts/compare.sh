@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ if [ "$OPENJDK_TARGET_OS" = "macosx" ]; then
     LDD_CMD="$OTOOL -L"
     DIS_CMD="$OTOOL -v -V -t"
     STAT_PRINT_SIZE="-f %z"
+    STRIP="$STRIP -no_code_signature_warning"
 elif [ "$OPENJDK_TARGET_OS" = "windows" ]; then
     FULLDUMP_CMD="$DUMPBIN -all"
     LDD_CMD="$DUMPBIN -dependents"
@@ -324,7 +325,7 @@ compare_general_files() {
         ! -name "*.cpl" ! -name "*.pdb" ! -name "*.exp" ! -name "*.ilk" \
         ! -name "*.lib" ! -name "*.jmod" ! -name "*.exe" \
         ! -name "*.obj" ! -name "*.o" ! -name "jspawnhelper" ! -name "*.a" \
-        ! -name "*.tar.gz" ! -name "*.jsa" ! -name "gtestLauncher" \
+        ! -name "*.tar.gz" ! -name "gtestLauncher" \
         ! -name "*.map" \
         | $GREP -v "./bin/"  | $SORT | $FILTER)
 
@@ -356,8 +357,8 @@ compare_general_files() {
                     "
                 $CAT $OTHER_DIR/$f | eval "$SVG_FILTER" > $OTHER_FILE
                 $CAT $THIS_DIR/$f | eval "$SVG_FILTER" > $THIS_FILE
-            elif [[ "$f" = *"/lib/classlist" ]] || [ "$SUFFIX" = "jar_contents" ]; then
-                # The classlist files may have some lines in random order
+            elif [ "$SUFFIX" = "jar_contents" ]; then
+                # The jar_contents files may have some lines in random order
                 OTHER_FILE=$WORK_DIR/$f.other
                 THIS_FILE=$WORK_DIR/$f.this
                 $MKDIR -p $(dirname $OTHER_FILE) $(dirname $THIS_FILE)
@@ -674,14 +675,22 @@ compare_bin_file() {
     ORIG_THIS_FILE="$THIS_FILE"
     ORIG_OTHER_FILE="$OTHER_FILE"
 
-    if [ "$STRIP_ALL" = "true" ] || [[ "$STRIP_BEFORE_COMPARE" = *"$BIN_FILE"* ]]; then
+    if [ "$STRIP_ALL" = "true" ] || [[ "$STRIP_BEFORE_COMPARE" = *"$BIN_FILE"* ]] \
+           || [ "$OPENJDK_TARGET_OS" = "macosx" ]; then
         THIS_STRIPPED_FILE=$FILE_WORK_DIR/this/$NAME
         OTHER_STRIPPED_FILE=$FILE_WORK_DIR/other/$NAME
         $MKDIR -p $FILE_WORK_DIR/this $FILE_WORK_DIR/other
         $CP $THIS_FILE $THIS_STRIPPED_FILE
         $CP $OTHER_FILE $OTHER_STRIPPED_FILE
-        $STRIP $THIS_STRIPPED_FILE
-        $STRIP $OTHER_STRIPPED_FILE
+        if [ "$STRIP_ALL" = "true" ] || [[ "$STRIP_BEFORE_COMPARE" = *"$BIN_FILE"* ]]; then
+            $STRIP $THIS_STRIPPED_FILE
+            $STRIP $OTHER_STRIPPED_FILE
+        fi
+        # On macosx, always remove any signature before comparing
+        if [ "$OPENJDK_TARGET_OS" = "macosx" ]; then
+            $CODESIGN --remove-signature $THIS_STRIPPED_FILE
+            $CODESIGN --remove-signature $OTHER_STRIPPED_FILE
+        fi
         THIS_FILE="$THIS_STRIPPED_FILE"
         OTHER_FILE="$OTHER_STRIPPED_FILE"
     fi
@@ -1122,7 +1131,7 @@ if [ -z "$1" ] || [ "$1" = "-h" ] || [ "$1" = "-?" ] || [ "$1" = "/h" ] || [ "$1
     echo "-names              Compare the file names and directory structure"
     echo "-perms              Compare the permission bits on all files and directories"
     echo "-types              Compare the output of the file command on all files"
-    echo "-general            Compare the files not convered by the specialized comparisons"
+    echo "-general            Compare the files not covered by the specialized comparisons"
     echo "-zips               Compare the contents of all zip files and files in them"
     echo "-zips-names         Compare the file names inside all zip files"
     echo "-jars               Compare the contents of all jar files"

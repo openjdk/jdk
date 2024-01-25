@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @bug 8175219
- * @summary test --ignore-errors works correctly
+ * @bug 8175219 8268582
+ * @summary test --ignore-source-errors works correctly
  * @modules
  *      jdk.javadoc/jdk.javadoc.internal.api
  *      jdk.javadoc/jdk.javadoc.internal.tool
@@ -73,6 +73,12 @@ public class IgnoreSourceErrors  extends TestRunner {
         if (!out.contains("modifier static not allowed here")) {
             throw new Exception("expected string not found \'modifier static not allowed here\'");
         }
+        if (!out.contains("package invalid.example does not exist")) {
+            throw new Exception("expected string not found \'package invalid.example does not exist\'");
+        }
+        if (!out.contains("cannot find symbol")) {
+            throw new Exception("expected string not found \'cannot find symbol\'");
+        }
     }
 
     @Test
@@ -84,12 +90,19 @@ public class IgnoreSourceErrors  extends TestRunner {
         if (!out.contains("modifier static not allowed here")) {
             throw new Exception("expected string not found \'modifier static not allowed here\'");
         }
+        if (!out.contains("package invalid.example does not exist")) {
+            throw new Exception("expected string not found \'package invalid.example does not exist\'");
+        }
+        if (!out.contains("cannot find symbol")) {
+            throw new Exception("expected string not found \'cannot find symbol\'");
+        }
     }
 
     void emitSample(Path file) throws IOException {
         String[] contents = {
             "/** A java file with errors */",
-            "public static class Foo {}"
+            "import invalid.example.OtherClass;",
+            "public static class Foo<T> extends OtherClass<T> {}"
         };
         Files.write(file, Arrays.asList(contents), StandardOpenOption.CREATE);
     }

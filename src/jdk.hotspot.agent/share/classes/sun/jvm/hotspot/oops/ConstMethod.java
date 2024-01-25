@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,20 +62,21 @@ public class ConstMethod extends Metadata {
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     Type type                  = db.lookupType("ConstMethod");
     constants                  = new MetadataField(type.getAddressField("_constants"), 0);
+    stackMapData               = type.getAddressField("_stackmap_data");
     constMethodSize            = new CIntField(type.getCIntegerField("_constMethod_size"), 0);
-    flags                      = new CIntField(type.getCIntegerField("_flags"), 0);
+    flags                      = new CIntField(type.getCIntegerField("_flags._flags"), 0);
 
     // enum constants for flags
-    HAS_LINENUMBER_TABLE      = db.lookupIntConstant("ConstMethod::_has_linenumber_table").intValue();
-    HAS_CHECKED_EXCEPTIONS     = db.lookupIntConstant("ConstMethod::_has_checked_exceptions").intValue();
-    HAS_LOCALVARIABLE_TABLE   = db.lookupIntConstant("ConstMethod::_has_localvariable_table").intValue();
-    HAS_EXCEPTION_TABLE       = db.lookupIntConstant("ConstMethod::_has_exception_table").intValue();
-    HAS_GENERIC_SIGNATURE     = db.lookupIntConstant("ConstMethod::_has_generic_signature").intValue();
-    HAS_METHOD_ANNOTATIONS    = db.lookupIntConstant("ConstMethod::_has_method_annotations").intValue();
-    HAS_PARAMETER_ANNOTATIONS = db.lookupIntConstant("ConstMethod::_has_parameter_annotations").intValue();
-    HAS_METHOD_PARAMETERS = db.lookupIntConstant("ConstMethod::_has_method_parameters").intValue();
-    HAS_DEFAULT_ANNOTATIONS   = db.lookupIntConstant("ConstMethod::_has_default_annotations").intValue();
-    HAS_TYPE_ANNOTATIONS      = db.lookupIntConstant("ConstMethod::_has_type_annotations").intValue();
+    HAS_LINENUMBER_TABLE      = db.lookupIntConstant("ConstMethodFlags::_misc_has_linenumber_table").intValue();
+    HAS_CHECKED_EXCEPTIONS    = db.lookupIntConstant("ConstMethodFlags::_misc_has_checked_exceptions").intValue();
+    HAS_LOCALVARIABLE_TABLE   = db.lookupIntConstant("ConstMethodFlags::_misc_has_localvariable_table").intValue();
+    HAS_EXCEPTION_TABLE       = db.lookupIntConstant("ConstMethodFlags::_misc_has_exception_table").intValue();
+    HAS_GENERIC_SIGNATURE     = db.lookupIntConstant("ConstMethodFlags::_misc_has_generic_signature").intValue();
+    HAS_METHOD_ANNOTATIONS    = db.lookupIntConstant("ConstMethodFlags::_misc_has_method_annotations").intValue();
+    HAS_PARAMETER_ANNOTATIONS = db.lookupIntConstant("ConstMethodFlags::_misc_has_parameter_annotations").intValue();
+    HAS_METHOD_PARAMETERS     = db.lookupIntConstant("ConstMethodFlags::_misc_has_method_parameters").intValue();
+    HAS_DEFAULT_ANNOTATIONS   = db.lookupIntConstant("ConstMethodFlags::_misc_has_default_annotations").intValue();
+    HAS_TYPE_ANNOTATIONS      = db.lookupIntConstant("ConstMethodFlags::_misc_has_type_annotations").intValue();
 
     // Size of Java bytecodes allocated immediately after ConstMethod*.
     codeSize                   = new CIntField(type.getCIntegerField("_code_size"), 0);
@@ -108,6 +109,7 @@ public class ConstMethod extends Metadata {
 
   // Fields
   private static MetadataField constants;
+  private static AddressField stackMapData; // Raw stackmap data for the method (#entries + entries)
   private static CIntField constMethodSize;
   private static CIntField flags;
   private static CIntField codeSize;
@@ -126,7 +128,7 @@ public class ConstMethod extends Metadata {
   private static long exceptionTableElementSize;
 
   public Method getMethod() {
-    InstanceKlass ik = (InstanceKlass)getConstants().getPoolHolder();
+    InstanceKlass ik = getConstants().getPoolHolder();
     MethodArray methods = ik.getMethods();
     return methods.at((int)getIdNum());
   }
@@ -134,6 +136,15 @@ public class ConstMethod extends Metadata {
   // Accessors for declared fields
   public ConstantPool getConstants() {
     return (ConstantPool) constants.getValue(this);
+  }
+
+  public boolean hasStackMapTable() {
+    return stackMapData.getValue(getAddress()) != null;
+  }
+
+  public U1Array getStackMapData() {
+    Address addr = stackMapData.getValue(getAddress());
+    return VMObjectFactory.newObject(U1Array.class, addr);
   }
 
   public long getConstMethodSize() {
@@ -406,30 +417,41 @@ public class ConstMethod extends Metadata {
     return ret;
   }
 
-  private boolean hasMethodParameters() {
-    return (getFlags() & HAS_METHOD_PARAMETERS) != 0;
+  public U1Array getMethodAnnotations() {
+    if (hasMethodAnnotations()) {
+      Address addr = getAddressAtOffset(getSize() - getMethodAnnotationsOffset());
+      return VMObjectFactory.newObject(U1Array.class, addr);
+    } else {
+      return null;
+    }
   }
 
-  private boolean hasGenericSignature() {
-    return (getFlags() & HAS_GENERIC_SIGNATURE) != 0;
+  public U1Array getParameterAnnotations() {
+    if (hasParameterAnnotations()) {
+      Address addr = getAddressAtOffset(getSize() - getParameterAnnotationsOffset());
+      return VMObjectFactory.newObject(U1Array.class, addr);
+    } else {
+      return null;
+    }
   }
 
-  private boolean hasMethodAnnotations() {
-    return (getFlags() & HAS_METHOD_ANNOTATIONS) != 0;
+  public U1Array getTypeAnnotations() {
+    if (hasTypeAnnotations()) {
+      Address addr = getAddressAtOffset(getSize() - getTypeAnnotationsOffset());
+      return VMObjectFactory.newObject(U1Array.class, addr);
+    } else {
+      return null;
+    }
   }
 
-  private boolean hasParameterAnnotations() {
-    return (getFlags() & HAS_PARAMETER_ANNOTATIONS) != 0;
+  public U1Array getDefaultAnnotations() {
+    if (hasDefaultAnnotations()) {
+      Address addr = getAddressAtOffset(getSize() - getDefaultAnnotationsOffset());
+      return VMObjectFactory.newObject(U1Array.class, addr);
+    } else {
+      return null;
+    }
   }
-
-  private boolean hasDefaultAnnotations() {
-    return (getFlags() & HAS_DEFAULT_ANNOTATIONS) != 0;
-  }
-
-  private boolean hasTypeAnnotations() {
-    return (getFlags() & HAS_TYPE_ANNOTATIONS) != 0;
-  }
-
 
   //---------------------------------------------------------------------------
   // Internals only below this point
@@ -597,6 +619,72 @@ public class ConstMethod extends Metadata {
     }
     offset -= length * exceptionTableElementSize;
     return offset;
+  }
+
+  private boolean hasMethodParameters() {
+    return (getFlags() & HAS_METHOD_PARAMETERS) != 0;
+  }
+
+  private boolean hasGenericSignature() {
+    return (getFlags() & HAS_GENERIC_SIGNATURE) != 0;
+  }
+
+  private Address getAddressAtOffset(long offsetInWords) {
+    return getAddress().getAddressAt(offsetInWords * VM.getVM().getAddressSize());
+  }
+
+  // Pointers to annotations are stored towards the end of the ConstMethod in following format.
+  // Each of the pointer may or may not be present.
+  //
+  //            |<-------------- getSize() -----------------|
+  //   start of ConstMethod                          end of ConstMethod
+  //            |                                           |
+  //            V                                           V
+  //            | ... | default | type | parameter | method |
+  //
+  // These methods return the offset of the pointer to the requested annotation from the end of ConstMethod.
+  private int getMethodAnnotationsOffset() {
+    return 1;
+  }
+
+  private int getParameterAnnotationsOffset() {
+    int offset = 1;
+    if (hasMethodAnnotations()) {
+      offset += getMethodAnnotationsOffset();
+    }
+    return offset;
+  }
+
+  private int getTypeAnnotationsOffset() {
+    int offset = 1;
+    if (hasParameterAnnotations()) {
+      offset += getParameterAnnotationsOffset();
+    }
+    return offset;
+  }
+
+  private int getDefaultAnnotationsOffset() {
+    int offset = 1;
+    if (hasTypeAnnotations()) {
+      offset += getTypeAnnotationsOffset();
+    }
+    return offset;
+  }
+
+  private boolean hasMethodAnnotations() {
+    return (getFlags() & HAS_METHOD_ANNOTATIONS) != 0;
+  }
+
+  private boolean hasParameterAnnotations() {
+    return (getFlags() & HAS_PARAMETER_ANNOTATIONS) != 0;
+  }
+
+  private boolean hasTypeAnnotations() {
+    return (getFlags() & HAS_TYPE_ANNOTATIONS) != 0;
+  }
+
+  private boolean hasDefaultAnnotations() {
+    return (getFlags() & HAS_DEFAULT_ANNOTATIONS) != 0;
   }
 
 }

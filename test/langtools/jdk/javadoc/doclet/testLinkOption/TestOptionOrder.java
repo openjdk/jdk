@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,8 +52,8 @@ public class TestOptionOrder extends JavadocTester {
     final ToolBox tb;
 
     public static void main(String... args) throws Exception {
-        TestOptionOrder tester = new TestOptionOrder();
-        tester.runTests(m -> new Object[] { Path.of(m.getName())} );
+        var tester = new TestOptionOrder();
+        tester.runTests();
     }
 
     TestOptionOrder() throws Exception {
@@ -116,7 +116,7 @@ public class TestOptionOrder extends JavadocTester {
 
          checkOrder("app/App.html",
                 // Instance in See Also
-                "<dd><a href=\"http://example.com/" + first + "/lib/LibClass.html",
+                "<li><a href=\"http://example.com/" + first + "/lib/LibClass.html",
                 // Instance in Field declaration
                 """
                     <div class="col-first even-row-color"><code><a href="http://example.com/""" + first + "/lib/LibClass.html"

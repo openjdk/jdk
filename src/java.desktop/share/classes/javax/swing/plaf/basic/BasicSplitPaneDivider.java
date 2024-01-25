@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -219,10 +219,14 @@ public class BasicSplitPaneDivider extends Container
      * Sets the size of the divider to {@code newSize}. That is
      * the width if the splitpane is {@code HORIZONTAL_SPLIT}, or
      * the height of {@code VERTICAL_SPLIT}.
+     * Divider sizes {@code newSize < 0} are ignored.
      *
      * @param newSize a new size
      */
     public void setDividerSize(int newSize) {
+        if (newSize < 0) {
+            return;
+        }
         dividerSize = newSize;
     }
 
@@ -299,11 +303,19 @@ public class BasicSplitPaneDivider extends Container
     }
 
     /**
-     * Returns dividerSize x dividerSize
+     * Returns the preferred size of the divider.
+     * @implNote In current implementation,
+     * if the splitpane is HORIZONTAL_SPLIT, the preferred size is obtained from
+     * width of {@code getDividerSize} pixels and height of 1 pixel
+     * If the splitpane is VERTICAL_SPLIT, the preferred size is obtained from
+     * height of {@code getDividerSize} pixels and width of 1 pixel
+     *
+     * @return a {@code Dimension} object containing the preferred size of
+     *         {@code BasicSplitPaneDivider}
      */
     public Dimension getPreferredSize() {
         // Ideally this would return the size from the layout manager,
-        // but that could result in the layed out size being different from
+        // but that could result in the laid out size being different from
         // the dividerSize, which may break developers as well as
         // BasicSplitPaneUI.
         if (orientation == JSplitPane.HORIZONTAL_SPLIT) {
@@ -313,7 +325,15 @@ public class BasicSplitPaneDivider extends Container
     }
 
     /**
-     * Returns dividerSize x dividerSize
+     * Returns the minimum size of the divider.
+     * @implNote In current implementation,
+     * if the splitpane is HORIZONTAL_SPLIT, the minimum size is obtained from
+     * width of {@code getDividerSize} pixels and height of 1 pixel
+     * If the splitpane is VERTICAL_SPLIT, the minimum size is obtained from
+     * height of {@code getDividerSize} pixels and width of 1 pixel
+     *
+     * @return a {@code Dimension} object containing the minimum size of
+     *         {@code BasicSplitPaneDivider}
      */
     public Dimension getMinimumSize() {
         return getPreferredSize();
@@ -360,9 +380,10 @@ public class BasicSplitPaneDivider extends Container
 
     /**
      * Messaged when the oneTouchExpandable value of the JSplitPane the
-     * receiver is contained in changes. Will create the
-     * <code>leftButton</code> and <code>rightButton</code> if they
-     * are null. invalidates the receiver as well.
+     * divider is contained in changes. Will create the
+     * <code>leftButton</code> and <code>rightButton</code> if they are null
+     * and corresponding JSplitPane supports oneTouchExpandable property.
+     * Invalidates the corresponding JSplitPane as well.
      */
     protected void oneTouchExpandableChanged() {
         if (!DefaultLookup.getBoolean(splitPane, splitPaneUI,
@@ -949,7 +970,7 @@ public class BasicSplitPaneDivider extends Container
             newY = Math.min(maxX, Math.max(minX, newY - offset));
             return newY;
         }
-    } // End of BasicSplitPaneDividier.VerticalDragController
+    } // End of BasicSplitPaneDivider.VerticalDragController
 
 
     /**
@@ -1097,7 +1118,7 @@ public class BasicSplitPaneDivider extends Container
             int     newLoc;
 
             // We use the location from the UI directly, as the location the
-            // JSplitPane itself maintains is not necessarly correct.
+            // JSplitPane itself maintains is not necessarily correct.
             if (toMinimum) {
                 if (orientation == JSplitPane.VERTICAL_SPLIT) {
                     if (currentLoc >= (splitPane.getHeight() -

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,7 +123,7 @@ public class ToolProviderTest extends TestRunner {
         String out = swOut.toString();
         String err = swErr.toString();
 
-        if (!out.contains("Loading")) {
+        if (!err.contains("Loading")) {
             error("stdout: unexpected output");
         }
         if (!err.contains("illegal character")) {

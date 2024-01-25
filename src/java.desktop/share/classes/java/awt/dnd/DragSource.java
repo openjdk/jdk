@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -217,7 +217,7 @@ public class DragSource implements Serializable {
      * the underlying platform.
      *
      * @return the platform DragSource
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      *            returns true
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
@@ -230,14 +230,12 @@ public class DragSource implements Serializable {
     }
 
     /**
-     * Reports
-     * whether or not drag
-     * {@code Image} support
-     * is available on the underlying platform.
+     * Reports whether or not drag {@code Image} support is available on the
+     * underlying platform.
      *
-     * @return if the Drag Image support is available on this platform
+     * @return {@code true} if the Drag Image support is available on this
+     *         platform, otherwise {@code false}
      */
-
     public static boolean isDragImageSupported() {
         Toolkit t = Toolkit.getDefaultToolkit();
 
@@ -255,7 +253,7 @@ public class DragSource implements Serializable {
     /**
      * Creates a new {@code DragSource}.
      *
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      *            returns true
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
@@ -682,7 +680,7 @@ public class DragSource implements Serializable {
      *          <code><em>Foo</em>Listener</code>s on this
      *          {@code DragSource}, or an empty array if no such listeners
      *          have been added
-     * @exception ClassCastException if {@code listenerType}
+     * @throws ClassCastException if {@code listenerType}
      *          doesn't specify a class or interface that implements
      *          {@code java.util.EventListener}
      *
@@ -909,6 +907,7 @@ public class DragSource implements Serializable {
      * @since 1.5
      */
     public static int getDragThreshold() {
+        @SuppressWarnings("removal")
         int ts = AccessController.doPrivileged(
                 new GetIntegerAction("awt.dnd.drag.threshold", 0)).intValue();
         if (ts > 0) {

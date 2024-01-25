@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,16 +35,14 @@ package gc.arguments;
  * @run driver gc.arguments.TestUseNUMAInterleaving
  */
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 
 public class TestUseNUMAInterleaving {
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = GCArguments.createTestJvm(
+        OutputAnalyzer output = GCArguments.executeTestJava(
             "-XX:+UseNUMA",
             "-XX:+PrintFlagsFinal",
             "-version");
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
         boolean isNUMAEnabled
                 = Boolean.parseBoolean(output.firstMatch(NUMA_FLAG_PATTERN, 1));

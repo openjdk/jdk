@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,20 +29,14 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.Objects;
 
-import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
+import jdk.javadoc.internal.doclets.formats.html.Content;
 
 /**
  * Class for generating a comment for HTML pages of javadoc output.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class Comment extends Content {
 
-    private String commentText;
+    private final String commentText;
 
     /**
      * Constructor to construct a Comment object.
@@ -59,12 +53,14 @@ public class Comment extends Content {
     }
 
     @Override
-    public boolean write(Writer out, boolean atNewline) throws IOException {
-        if (!atNewline)
-            out.write(DocletConstants.NL);
+    public boolean write(Writer out, String newline, boolean atNewline) throws IOException {
+        if (!atNewline) {
+            out.write(newline);
+        }
         out.write("<!-- ");
-        out.write(commentText);
-        out.write(" -->" + DocletConstants.NL);
+        out.write(commentText.replace("\n", newline));
+        out.write(" -->");
+        out.write(newline);
         return true;
     }
 }

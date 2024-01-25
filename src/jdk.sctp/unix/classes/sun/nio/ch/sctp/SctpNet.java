@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,9 +41,6 @@ import com.sun.nio.sctp.SctpSocketOption;
 import static com.sun.nio.sctp.SctpStandardSocketOptions.*;
 
 public class SctpNet {
-    private static final String osName = AccessController.doPrivileged(
-        (PrivilegedAction<String>) () -> System.getProperty("os.name"));
-
     /* -- Miscellaneous SCTP utilities -- */
 
     private static boolean IPv4MappedAddresses() {
@@ -103,6 +100,7 @@ public class SctpNet {
     private static Set<SocketAddress> getRevealedLocalAddressSet(
             SocketAddress[] saa)
     {
+         @SuppressWarnings("removal")
          SecurityManager sm = System.getSecurityManager();
          Set<SocketAddress> set = new HashSet<>(saa.length);
          for (SocketAddress sa : saa) {
@@ -112,7 +110,7 @@ public class SctpNet {
     }
 
     private static SocketAddress getRevealedLocalAddress(SocketAddress sa,
-                                                         SecurityManager sm)
+                                                         @SuppressWarnings("removal") SecurityManager sm)
     {
         if (sm == null || sa == null)
             return sa;
@@ -130,11 +128,11 @@ public class SctpNet {
 
     static Set<SocketAddress> getRemoteAddresses(int fd, int assocId)
             throws IOException {
-        HashSet<SocketAddress> set = null;
+        Set<SocketAddress> set = null;
         SocketAddress[] saa = getRemoteAddresses0(fd, assocId);
 
         if (saa != null) {
-            set = new HashSet<SocketAddress>(saa.length);
+            set = new HashSet<>(saa.length);
             for (SocketAddress sa : saa)
                 set.add(sa);
         }
@@ -158,8 +156,6 @@ public class SctpNet {
                    name.equals(SCTP_SET_PEER_PRIMARY_ADDR)) {
 
             SocketAddress addr  = (SocketAddress) value;
-            if (addr == null)
-                throw new IllegalArgumentException("Invalid option value");
 
             Net.checkAddress(addr);
             InetSocketAddress netAddr = (InetSocketAddress)addr;
@@ -255,7 +251,7 @@ public class SctpNet {
             arg = (b) ? 1 : 0;
         }
 
-        setIntOption0(fd, ((SctpStdSocketOption)name).constValue(), arg);
+        setIntOption0(fd, ((SctpStdSocketOption<?>)name).constValue(), arg);
     }
 
     static Object getIntOption(int fd, SctpSocketOption<?> name)
@@ -265,11 +261,10 @@ public class SctpNet {
         if (type != Integer.class && type != Boolean.class)
             throw new AssertionError("Should not reach here");
 
-        if (!(name instanceof SctpStdSocketOption))
+        if (!(name instanceof SctpStdSocketOption<?> option))
             throw new AssertionError("Should not reach here");
 
-        int value = getIntOption0(fd,
-                ((SctpStdSocketOption)name).constValue());
+        int value = getIntOption0(fd, option.constValue());
 
         if (type == Integer.class) {
             return Integer.valueOf(value);
@@ -335,6 +330,11 @@ public class SctpNet {
     static native void init();
 
     static {
+        loadSctpLibrary();
+    }
+
+    @SuppressWarnings("removal")
+    private static void loadSctpLibrary() {
         IOUtil.load();   // loads nio & net native libraries
         java.security.AccessController.doPrivileged(
                 new java.security.PrivilegedAction<Void>() {
@@ -346,4 +346,3 @@ public class SctpNet {
         init();
     }
 }
-

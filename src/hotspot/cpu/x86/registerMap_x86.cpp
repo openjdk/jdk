@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,19 +29,19 @@
 address RegisterMap::pd_location(VMReg reg) const {
   if (reg->is_XMMRegister()) {
     int reg_base = reg->value() - ConcreteRegisterImpl::max_fpr;
-    int base_reg_enc = (reg_base / XMMRegisterImpl::max_slots_per_register);
-    assert(base_reg_enc >= 0 && base_reg_enc < XMMRegisterImpl::number_of_registers, "invalid XMMRegister: %d", base_reg_enc);
+    int base_reg_enc = (reg_base / XMMRegister::max_slots_per_register);
+    assert(base_reg_enc >= 0 && base_reg_enc < XMMRegister::number_of_registers, "invalid XMMRegister: %d", base_reg_enc);
     VMReg base_reg = as_XMMRegister(base_reg_enc)->as_VMReg();
     intptr_t offset_in_bytes = (reg->value() - base_reg->value()) * VMRegImpl::stack_slot_size;
     if (base_reg_enc > 15) {
       if (offset_in_bytes == 0) {
-        return NULL; // ZMM16-31 are stored in full.
+        return nullptr; // ZMM16-31 are stored in full.
       }
     } else {
       if (offset_in_bytes == 0 || offset_in_bytes == 16 || offset_in_bytes == 32) {
         // Reads of the low and high 16 byte parts should be handled by location itself because
         // they have separate callee saved entries (see RegisterSaver::save_live_registers()).
-        return NULL;
+        return nullptr;
       }
       // The upper part of YMM0-15 and ZMM0-15 registers are saved separately in the frame.
       if (offset_in_bytes > 32) {
@@ -54,14 +54,14 @@ address RegisterMap::pd_location(VMReg reg) const {
         // XMM0-15 case (0 < offset_in_bytes < 16). No need to adjust base register (or offset).
       }
     }
-    address base_location = location(base_reg);
-    if (base_location != NULL) {
+    address base_location = location(base_reg, nullptr);
+    if (base_location != nullptr) {
       return base_location + offset_in_bytes;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 address RegisterMap::pd_location(VMReg base_reg, int slot_idx) const {
-  return location(base_reg->next(slot_idx));
+  return location(base_reg->next(slot_idx), nullptr);
 }

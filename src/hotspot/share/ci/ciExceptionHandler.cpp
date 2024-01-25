@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@
 ciInstanceKlass* ciExceptionHandler::catch_klass() {
   VM_ENTRY_MARK;
   assert(!is_catch_all(), "bad index");
-  if (_catch_klass == NULL) {
+  if (_catch_klass == nullptr) {
     bool will_link;
     assert(_loading_klass->get_instanceKlass()->is_linked(), "must be linked before accessing constant pool");
     constantPoolHandle cpool(THREAD, _loading_klass->get_instanceKlass()->constants());
@@ -62,7 +62,7 @@ void ciExceptionHandler::print() {
   tty->print("<ciExceptionHandler start=%d limit=%d"
              " handler_bci=%d ex_klass_index=%d",
              start(), limit(), handler_bci(), catch_klass_index());
-  if (_catch_klass != NULL) {
+  if (_catch_klass != nullptr) {
     tty->print(" ex_klass=");
     _catch_klass->print();
   }

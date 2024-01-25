@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,6 +79,7 @@ public class PropertyEditorManager {
      * @see SecurityManager#checkPropertiesAccess
      */
     public static void registerEditor(Class<?> targetType, Class<?> editorClass) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPropertiesAccess();
@@ -117,12 +118,13 @@ public class PropertyEditorManager {
      * method is called. This could result in a SecurityException.
      *
      * @param path  Array of package names.
-     * @exception  SecurityException  if a security manager exists and its
+     * @throws  SecurityException  if a security manager exists and its
      *             {@code checkPropertiesAccess} method doesn't allow setting
      *              of system properties.
      * @see SecurityManager#checkPropertiesAccess
      */
     public static void setEditorSearchPath(String[] path) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPropertiesAccess();

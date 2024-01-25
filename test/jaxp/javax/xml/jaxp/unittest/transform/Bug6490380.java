@@ -39,7 +39,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 6490380
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true transform.Bug6490380
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.Bug6490380
  * @run testng/othervm transform.Bug6490380
  * @summary Test only a single DOCTYPE declaration is generated through transforming.
  */

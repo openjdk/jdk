@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 8228485
  * @summary Correctly handle initialization error for Condy BSM.
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @compile Example.jasm
@@ -37,7 +38,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class TestInitException {
     public static void main(java.lang.String[] unused) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("Example");
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("Example");
         OutputAnalyzer oa = new OutputAnalyzer(pb.start());
         // First call stack trace
         // shouldMatch is used to workaround CODETOOLS-7902686

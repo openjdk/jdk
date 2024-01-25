@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2016 Azul Systems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,9 +27,11 @@
  * @summary (x86 only) checks that java.lang.Thread.onSpinWait is intrinsified
  * @bug 8147844
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
+ *
+ * @requires vm.flagless
  * @requires os.arch=="x86" | os.arch=="amd64" | os.arch=="x86_64"
  * @requires vm.compiler1.enabled
+ *
  * @run driver compiler.onSpinWait.TestOnSpinWaitC1
  */
 
@@ -43,7 +45,7 @@ public class TestOnSpinWaitC1 {
     public static void main(String[] args) throws Exception {
 
         // Test C1 compiler
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
           "-XX:+IgnoreUnrecognizedVMOptions", "-showversion",
           "-XX:+TieredCompilation", "-XX:TieredStopAtLevel=1", "-Xbatch",
           "-XX:+PrintCompilation", "-XX:+UnlockDiagnosticVMOptions",

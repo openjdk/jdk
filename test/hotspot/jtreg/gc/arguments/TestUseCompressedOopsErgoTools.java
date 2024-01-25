@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import jdk.test.lib.Asserts;
-import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import java.lang.management.ManagementFactory;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 class DetermineMaxHeapForCompressedOops {
   public static void main(String[] args) throws Exception {
@@ -94,8 +93,7 @@ class TestUseCompressedOopsErgoTools {
     finalargs.add(classname);
     finalargs.addAll(Arrays.asList(arguments));
 
-    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(finalargs);
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
+    OutputAnalyzer output = GCArguments.executeLimitedTestJava(finalargs);
     output.shouldHaveExitValue(0);
     return output;
   }
@@ -158,8 +156,7 @@ class TestUseCompressedOopsErgoTools {
   }
 
   private static String expect(String[] flags, boolean hasWarning, boolean hasError, int errorcode) throws Exception {
-    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(flags);
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
+    OutputAnalyzer output = GCArguments.executeLimitedTestJava(flags);
     output.shouldHaveExitValue(errorcode);
     return output.getStdout();
   }

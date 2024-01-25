@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -204,7 +204,7 @@ public class DefaultTreeModel implements Serializable, TreeModel {
     /**
      * Returns whether the specified node is a leaf node.
      * The way the test is performed depends on the
-     * <code>askAllowsChildren</code> setting.
+     * <code>asksAllowsChildren</code> setting.
      *
      * @param node the node to check
      * @return true if the node is a leaf node
@@ -266,7 +266,7 @@ public class DefaultTreeModel implements Serializable, TreeModel {
      * preferred way to remove a node as it handles the event creation
      * for you.
      *
-     * @param node the node to be removed from it's parrent
+     * @param node the node to be removed from its parent
      */
     public void removeNodeFromParent(MutableTreeNode node) {
         MutableTreeNode         parent = (MutableTreeNode)node.getParent();
@@ -348,8 +348,8 @@ public class DefaultTreeModel implements Serializable, TreeModel {
       * must be sorted in ascending order. And removedChildren should be
       * the array of the children objects that were removed.
       *
-      * @param node             parent node which childred were removed
-      * @param childIndices     indexes of removed childs
+      * @param node             parent node from which children were removed
+      * @param childIndices     indexes of removed children
       * @param removedChildren  array of the children objects that were removed
       */
     public void nodesWereRemoved(TreeNode node, int[] childIndices,
@@ -362,7 +362,7 @@ public class DefaultTreeModel implements Serializable, TreeModel {
 
     /**
       * Invoke this method after you've changed how the children identified by
-      * childIndicies are to be represented in the tree.
+      * childIndices are to be represented in the tree.
       *
       * @param node         changed node
       * @param childIndices indexes of changed children
@@ -672,7 +672,7 @@ public class DefaultTreeModel implements Serializable, TreeModel {
      *          <code><em>Foo</em>Listener</code>s on this component,
      *          or an empty array if no such
      *          listeners have been added
-     * @exception ClassCastException if <code>listenerType</code>
+     * @throws ClassCastException if <code>listenerType</code>
      *          doesn't specify a class or interface that implements
      *          <code>java.util.EventListener</code>
      *
@@ -690,8 +690,8 @@ public class DefaultTreeModel implements Serializable, TreeModel {
         Vector<Object> values = new Vector<Object>();
 
         s.defaultWriteObject();
-        // Save the root, if its Serializable.
-        if(root != null && root instanceof Serializable) {
+        // Save the root, if it's Serializable.
+        if (root instanceof Serializable) {
             values.addElement("root");
             values.addElement(root);
         }

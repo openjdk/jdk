@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,11 +30,7 @@
 #include "logging/logTagSet.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/os.inline.hpp"
-
-LogOutput::~LogOutput() {
-  os::free(_config_string);
-}
+#include "runtime/os.hpp"
 
 void LogOutput::describe(outputStream *out) {
   out->print("%s ", name());
@@ -56,39 +52,21 @@ void LogOutput::describe(outputStream *out) {
 }
 
 void LogOutput::set_config_string(const char* string) {
-  os::free(_config_string);
-  _config_string = os::strdup(string, mtLogging);
-  _config_string_buffer_size = strlen(_config_string) + 1;
+  _config_string.reset();
+  _config_string.print_raw(string);
 }
 
 void LogOutput::add_to_config_string(const LogSelection& selection) {
-  if (_config_string_buffer_size < InitialConfigBufferSize) {
-    _config_string_buffer_size = InitialConfigBufferSize;
-    _config_string = REALLOC_C_HEAP_ARRAY(char, _config_string, _config_string_buffer_size, mtLogging);
-  }
-
-  size_t offset = strlen(_config_string);
-  if (offset > 0) {
+  if (_config_string.size() > 0) {
     // Add commas in-between tag and level combinations in the config string
-    _config_string[offset++] = ',';
+    _config_string.print_raw(",");
   }
-
-  for (;;) {
-    int ret = selection.describe(_config_string + offset,
-                                 _config_string_buffer_size - offset);
-    if (ret == -1) {
-      // Double the buffer size and retry
-      _config_string_buffer_size *= 2;
-      _config_string = REALLOC_C_HEAP_ARRAY(char, _config_string, _config_string_buffer_size, mtLogging);
-      continue;
-    }
-    break;
-  };
+  selection.describe_on(&_config_string);
 }
 
 
-static int tag_cmp(const void *a, const void *b) {
-  return static_cast<const LogTagType*>(a) - static_cast<const LogTagType*>(b);
+static int tag_cmp(const LogTagType *a, const LogTagType *b) {
+  return primitive_compare(a, b);
 }
 
 static void sort_tags(LogTagType tags[LogTag::MaxTags]) {
@@ -96,7 +74,7 @@ static void sort_tags(LogTagType tags[LogTag::MaxTags]) {
   while (tags[ntags] != LogTag::__NO_TAG) {
     ntags++;
   }
-  qsort(tags, ntags, sizeof(*tags), tag_cmp);
+  qsort(tags, ntags, sizeof(*tags), (_sort_Fn)tag_cmp);
 }
 
 static const size_t MaxSubsets = 1 << LogTag::MaxTags;
@@ -107,13 +85,13 @@ static const size_t MaxSubsets = 1 << LogTag::MaxTags;
 static void generate_all_subsets_of(LogTagType result[MaxSubsets][LogTag::MaxTags],
                                     size_t* result_size,
                                     const LogTagType tags[LogTag::MaxTags],
-                                    LogTagType subset[LogTag::MaxTags] = NULL,
+                                    LogTagType subset[LogTag::MaxTags] = nullptr,
                                     const size_t subset_size = 0,
                                     const size_t depth = 0) {
   assert(subset_size <= LogTag::MaxTags, "subset must never have more than MaxTags tags");
   assert(depth <= LogTag::MaxTags, "recursion depth overflow");
 
-  if (subset == NULL) {
+  if (subset == nullptr) {
     assert(*result_size == 0, "outer (non-recursive) call expects result_size to be 0");
     // Make subset the first element in the result array initially
     subset = result[0];
@@ -183,7 +161,7 @@ static void add_selections(LogSelection** selections,
     // Check if the two selections match any tag sets
     bool wildcard_match = false;
     bool exact_match = false;
-    for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
+    for (LogTagSet* ts = LogTagSet::first(); ts != nullptr; ts = ts->next()) {
       if (!wildcard_selection.selects(*ts)) {
         continue;
       }
@@ -249,7 +227,7 @@ void LogOutput::update_config_string(const size_t on_level[LogLevel::Count]) {
   const LogTagSet** deviates = NEW_C_HEAP_ARRAY(const LogTagSet*, deviating_tagsets, mtLogging);
 
   // Generate all possible selections involving the deviating tag sets
-  for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
+  for (LogTagSet* ts = LogTagSet::first(); ts != nullptr; ts = ts->next()) {
     LogLevelType level = ts->level_for(this);
     if (level == mcl) {
       continue;
@@ -281,7 +259,7 @@ void LogOutput::update_config_string(const size_t on_level[LogLevel::Count]) {
       }
 
       // Subtract from the score the number of tag sets it selects with an incorrect level
-      for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
+      for (LogTagSet* ts = LogTagSet::first(); ts != nullptr; ts = ts->next()) {
         if (selections[i].selects(*ts) && ts->level_for(this) != selections[i].level()) {
           score--;
         }
@@ -307,7 +285,7 @@ void LogOutput::update_config_string(const size_t on_level[LogLevel::Count]) {
     }
 
     // Add back any new deviates that this selection added (no array growth since removed > added)
-    for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
+    for (LogTagSet* ts = LogTagSet::first(); ts != nullptr; ts = ts->next()) {
       if (ts->level_for(this) == best_selection->level() || !best_selection->selects(*ts)) {
         continue;
       }
@@ -334,8 +312,51 @@ void LogOutput::update_config_string(const size_t on_level[LogLevel::Count]) {
 
     assert(n_deviates < deviating_tagsets, "deviating tag set array overflow");
     assert(prev_deviates > n_deviates, "number of deviating tag sets must never grow");
+
+    if (n_deviates == 1 && n_selections == 0) {
+      // we're done as we couldn't reduce things any further
+      break;
+    }
   }
   FREE_C_HEAP_ARRAY(LogTagSet*, deviates);
   FREE_C_HEAP_ARRAY(Selection, selections);
 }
 
+bool LogOutput::parse_options(const char* options, outputStream* errstream) {
+  if (options == nullptr || strlen(options) == 0) {
+    return true;
+  }
+  bool success = true;
+  char* opts = os::strdup_check_oom(options, mtLogging);
+
+  char* comma_pos;
+  char* pos = opts;
+  do {
+    comma_pos = strchr(pos, ',');
+    if (comma_pos != nullptr) {
+      *comma_pos = '\0';
+    }
+    char* equals_pos = strchr(pos, '=');
+    if (equals_pos == nullptr) {
+      errstream->print_cr("Invalid option '%s' for log output (%s).", pos, name());
+      success = false;
+      break;
+    }
+
+    char* key = pos;
+    char* value_str = equals_pos + 1;
+    *equals_pos = '\0';
+    julong errstream_count_before = errstream->count();
+    success = set_option(key, value_str, errstream);
+    if (!success) {
+      if (errstream->count() == errstream_count_before) {
+        errstream->print_cr("Invalid option '%s' for log output (%s).", key, name());
+      }
+      break;
+    }
+    pos = comma_pos + 1;
+  } while (comma_pos != nullptr);
+
+  os::free(opts);
+  return success;
+}

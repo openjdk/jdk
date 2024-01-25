@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,18 +32,17 @@
 import javax.net.ssl.*;
 import javax.security.auth.x500.X500Principal;
 import java.io.*;
-import java.net.InetAddress;
 import java.net.Socket;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.Arrays;
+import java.util.concurrent.CyclicBarrier;
 
 /**
  * Check if the connection can be established if the client or server trusts
  * more CAs such that it exceeds the size limit of the certificate_authorities
  * extension (2^16).
  */
-public class TooManyCAs implements SSLContextTemplate {
+public class TooManyCAs extends SSLSocketTemplate {
 
     private static final String[][][] protocols = {
             {{"TLSv1.3"}, {"TLSv1.3"}},
@@ -55,44 +54,54 @@ public class TooManyCAs implements SSLContextTemplate {
     private final String[] serverProtocols;
     private final boolean needClientAuth;
 
+    /*
+     * Used to synchronize client and server; there were intermittent
+     * failures on Windows due to the connection being killed.
+     */
+    private final CyclicBarrier barrier = new CyclicBarrier(2);
+
     TooManyCAs(int index, boolean needClientAuth) {
         this.clientProtocols = protocols[index][0];
         this.serverProtocols = protocols[index][1];
         this.needClientAuth = needClientAuth;
+
+        System.out.printf("Testing%n\tclient protocols: %s%n\t" +
+                "server protocols: %s%n\tneed client auth: %s%n",
+                String.join(", ", clientProtocols),
+                String.join(", ", serverProtocols),
+                needClientAuth);
     }
 
-    // Servers are configured before clients, increment test case after.
-    void configureClientSocket(SSLSocket clientSocket) {
-        System.err.print("Setting client protocol(s): ");
-        Arrays.stream(clientProtocols).forEachOrdered(System.err::print);
-        System.err.println();
+    @Override
+    protected void configureClientSocket(SSLSocket clientSocket) {
+        System.out.println("Setting client protocol(s): "
+                + String.join(",", clientProtocols));
 
         clientSocket.setEnabledProtocols(clientProtocols);
     }
 
-    void configureServerSocket(SSLServerSocket serverSocket) {
-        System.err.print("Setting server protocol(s): ");
-        Arrays.stream(serverProtocols).forEachOrdered(System.err::print);
-        System.err.println();
+    @Override
+    protected void configureServerSocket(SSLServerSocket serverSocket) {
+        serverSocket.setNeedClientAuth(needClientAuth);
+        serverSocket.setEnableSessionCreation(true);
+        serverSocket.setUseClientMode(false);
+
+        System.out.println("Setting server protocol(s): "
+                + String.join(",", serverProtocols));
 
         serverSocket.setEnabledProtocols(serverProtocols);
-        if (needClientAuth) {
-            serverSocket.setNeedClientAuth(true);
-        }
     }
 
     @Override
-    public TrustManager createClientTrustManager() throws Exception {
-        TrustManager trustManager =
-                SSLContextTemplate.super.createClientTrustManager();
+    protected TrustManager createClientTrustManager() throws Exception {
+        TrustManager trustManager = super.createClientTrustManager();
         return new BogusX509TrustManager(
                 (X509TrustManager)trustManager);
     }
 
     @Override
-    public TrustManager createServerTrustManager() throws Exception {
-        TrustManager trustManager =
-                SSLContextTemplate.super.createServerTrustManager();
+    protected TrustManager createServerTrustManager() throws Exception {
+        TrustManager trustManager = super.createServerTrustManager();
         return new BogusX509TrustManager(
                 (X509TrustManager)trustManager);
     }
@@ -107,104 +116,42 @@ public class TooManyCAs implements SSLContextTemplate {
         }
     }
 
-    private void run() throws Exception {
-        SSLServerSocket listenSocket = null;
-        SSLSocket serverSocket = null;
-        ClientSocket clientSocket = null;
+    @Override
+    protected void runServerApplication(SSLSocket socket) throws Exception {
         try {
-            SSLServerSocketFactory serversocketfactory =
-                    createServerSSLContext().getServerSocketFactory();
-            listenSocket =
-                    (SSLServerSocket)serversocketfactory.createServerSocket(0);
-            listenSocket.setNeedClientAuth(false);
-            listenSocket.setEnableSessionCreation(true);
-            listenSocket.setUseClientMode(false);
-            configureServerSocket(listenSocket);
-
-            System.err.println("Starting client");
-            clientSocket = new ClientSocket(listenSocket.getLocalPort());
-            clientSocket.start();
-
-            System.err.println("Accepting client requests");
-            serverSocket = (SSLSocket)listenSocket.accept();
-
-            if (!clientSocket.isDone) {
-                System.err.println("Waiting 3 seconds for client ");
-                Thread.sleep(3000);
-            }
-
-            System.err.println("Sending data to client ...");
+            System.out.println("Sending data to client ...");
             String serverData = "Hi, I am server";
             BufferedWriter os = new BufferedWriter(
-                    new OutputStreamWriter(serverSocket.getOutputStream()));
+                    new OutputStreamWriter(socket.getOutputStream()));
             os.write(serverData, 0, serverData.length());
             os.newLine();
             os.flush();
         } finally {
-            if (listenSocket != null) {
-                listenSocket.close();
-            }
-
-            if (serverSocket != null) {
-                serverSocket.close();
-            }
-        }
-
-        if (clientSocket != null && clientSocket.clientException != null) {
-            throw clientSocket.clientException;
+            barrier.await();
+            System.out.println("Server done");
         }
     }
 
-    private class ClientSocket extends Thread{
-        boolean isDone = false;
-        int serverPort = 0;
-        Exception clientException;
-
-        public ClientSocket(int serverPort) {
-            this.serverPort = serverPort;
-        }
-
-        @Override
-        public void run() {
-            SSLSocket clientSocket = null;
+    @Override
+    protected void runClientApplication(SSLSocket socket) throws Exception {
+        try {
             String clientData = "Hi, I am client";
-            try {
-                System.err.println(
-                        "Connecting to server at port " + serverPort);
-                SSLSocketFactory sslSocketFactory =
-                        createClientSSLContext().getSocketFactory();
-                clientSocket = (SSLSocket)sslSocketFactory.createSocket(
-                        InetAddress.getLocalHost(), serverPort);
-                configureClientSocket(clientSocket);
+            System.out.println("Sending data to server ...");
 
-                System.err.println("Sending data to server ...");
+            BufferedWriter os = new BufferedWriter(
+                    new OutputStreamWriter(socket.getOutputStream()));
+            os.write(clientData, 0, clientData.length());
+            os.newLine();
+            os.flush();
 
-                BufferedWriter os = new BufferedWriter(
-                        new OutputStreamWriter(clientSocket.getOutputStream()));
-                os.write(clientData, 0, clientData.length());
-                os.newLine();
-                os.flush();
-
-                System.err.println("Reading data from server");
-                BufferedReader is = new BufferedReader(
-                        new InputStreamReader(clientSocket.getInputStream()));
-                String data = is.readLine();
-                System.err.println("Received Data from server: " + data);
-            } catch (Exception e) {
-                clientException = e;
-                System.err.println("unexpected client exception: " + e);
-            } finally {
-                if (clientSocket != null) {
-                    try {
-                        clientSocket.close();
-                        System.err.println("client socket closed");
-                    } catch (IOException ioe) {
-                        clientException = ioe;
-                    }
-                }
-
-                isDone = true;
-            }
+            System.out.println("Reading data from server");
+            BufferedReader is = new BufferedReader(
+                    new InputStreamReader(socket.getInputStream()));
+            String data = is.readLine();
+            System.out.println("Received Data from server: " + data);
+        } finally {
+            barrier.await();
+            System.out.println("client done.");
         }
     }
 
@@ -273,7 +220,7 @@ public class TooManyCAs implements SSLContextTemplate {
             for (int i = 0; i < duplicated; i++) {
                 System.arraycopy(trustedCerts, 0,
                     returnedCAs,
-                    i * trustedCerts.length + 0, trustedCerts.length);
+                    i * trustedCerts.length, trustedCerts.length);
             }
 
             return returnedCAs;

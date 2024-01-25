@@ -635,7 +635,7 @@ public class Scan {
                      .filter(path -> path.toString().endsWith(".class"))
                      .filter(path -> !path.toString().endsWith("package-info.class"))
                      .filter(path -> !path.toString().endsWith("module-info.class"))
-                     .collect(Collectors.toList());
+                     .toList();
 
             out.println(Messages.get("scan.head.dir", dirname));
 

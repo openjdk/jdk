@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,17 +26,12 @@
 #define SHARE_OOPS_CONSTANTPOOL_INLINE_HPP
 
 #include "oops/constantPool.hpp"
-#include "oops/cpCache.inline.hpp"
-#include "runtime/atomic.hpp"
 
-inline CPSlot ConstantPool::slot_at(int which) const {
-  assert(is_within_bounds(which), "index out of bounds");
-  assert(!tag_at(which).is_unresolved_klass() && !tag_at(which).is_unresolved_klass_in_error(), "Corrupted constant pool");
-  // Uses volatile because the klass slot changes without a lock.
-  intptr_t adr = Atomic::load_acquire(obj_at_addr(which));
-  assert(adr != 0 || which == 0, "cp entry for klass should not be zero");
-  return CPSlot(adr);
-}
+#include "oops/cpCache.inline.hpp"
+#include "oops/resolvedFieldEntry.hpp"
+#include "oops/resolvedIndyEntry.hpp"
+#include "oops/resolvedMethodEntry.hpp"
+#include "runtime/atomic.hpp"
 
 inline Klass* ConstantPool::resolved_klass_at(int which) const {  // Used by Compiler
   guarantee(tag_at(which).is_klass(), "Corrupted constant pool");
@@ -49,22 +44,47 @@ inline Klass* ConstantPool::resolved_klass_at(int which) const {  // Used by Com
   return Atomic::load_acquire(adr);
 }
 
-inline bool ConstantPool::is_pseudo_string_at(int which) {
-  assert(tag_at(which).is_string(), "Corrupted constant pool");
-  return slot_at(which).is_pseudo_string();
+inline ResolvedFieldEntry* ConstantPool::resolved_field_entry_at(int field_index) {
+    return cache()->resolved_field_entry_at(field_index);
 }
 
-inline oop ConstantPool::pseudo_string_at(int which, int obj_index) {
-  assert(is_pseudo_string_at(which), "must be a pseudo-string");
-  oop s = resolved_references()->obj_at(obj_index);
-  return s;
+inline int ConstantPool::resolved_field_entries_length() const {
+    return cache()->resolved_field_entries_length();
 }
 
-inline oop ConstantPool::pseudo_string_at(int which) {
-  assert(is_pseudo_string_at(which), "must be a pseudo-string");
-  int obj_index = cp_to_object_index(which);
-  oop s = resolved_references()->obj_at(obj_index);
-  return s;
+inline ResolvedMethodEntry* ConstantPool::resolved_method_entry_at(int method_index) {
+    return cache()->resolved_method_entry_at(method_index);
 }
 
+inline int ConstantPool::resolved_method_entries_length() const {
+    return cache()->resolved_method_entries_length();
+}
+
+inline oop ConstantPool::appendix_if_resolved(int method_index) const {
+  ResolvedMethodEntry* entry = cache()->resolved_method_entry_at(method_index);
+  if (!entry->has_appendix())
+    return nullptr;
+  const int ref_index = entry->resolved_references_index();
+  return resolved_reference_at(ref_index);
+}
+
+inline u2 ConstantPool::invokedynamic_bootstrap_ref_index_at(int indy_index) const {
+  return cache()->resolved_indy_entry_at(decode_invokedynamic_index(indy_index))->constant_pool_index();
+}
+
+inline ResolvedIndyEntry* ConstantPool::resolved_indy_entry_at(int index) {
+  return cache()->resolved_indy_entry_at(index);
+}
+
+inline int ConstantPool::resolved_indy_entries_length() const {
+  return cache()->resolved_indy_entries_length();
+}
+
+inline oop ConstantPool::resolved_reference_from_indy(int index) const {
+  return resolved_references()->obj_at(cache()->resolved_indy_entry_at(index)->resolved_references_index());
+}
+
+inline oop ConstantPool::resolved_reference_from_method(int index) const {
+  return resolved_references()->obj_at(cache()->resolved_method_entry_at(index)->resolved_references_index());
+}
 #endif // SHARE_OOPS_CONSTANTPOOL_INLINE_HPP

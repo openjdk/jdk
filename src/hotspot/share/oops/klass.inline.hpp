@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,15 @@
 #ifndef SHARE_OOPS_KLASS_INLINE_HPP
 #define SHARE_OOPS_KLASS_INLINE_HPP
 
-#include "classfile/classLoaderData.inline.hpp"
 #include "oops/klass.hpp"
+
+#include "classfile/classLoaderData.inline.hpp"
+#include "oops/klassVtable.hpp"
 #include "oops/markWord.hpp"
 
-// This loads the klass's holder as a phantom. This is useful when a weak Klass
-// pointer has been "peeked" and then must be kept alive before it may
-// be used safely.  All uses of klass_holder need to apply the appropriate barriers,
-// except during GC.
+// This loads and keeps the klass's loader alive.
 inline oop Klass::klass_holder() const {
-  return class_loader_data()->holder_phantom();
+  return class_loader_data()->holder();
 }
 
 inline bool Klass::is_non_strong_hidden() const {
@@ -42,20 +41,23 @@ inline bool Klass::is_non_strong_hidden() const {
          class_loader_data()->has_class_mirror_holder();
 }
 
-// Iff the class loader (or mirror for unsafe anonymous classes) is alive the
+// Iff the class loader (or mirror for non-strong hidden classes) is alive the
 // Klass is considered alive. This is safe to call before the CLD is marked as
 // unloading, and hence during concurrent class unloading.
+// This returns false if the Klass is unloaded, or about to be unloaded because the holder of
+// the CLD is no longer strongly reachable.
+// The return value of this function may change from true to false after a safepoint. So the caller
+// of this function must ensure that a safepoint doesn't happen while interpreting the return value.
 inline bool Klass::is_loader_alive() const {
   return class_loader_data()->is_alive();
 }
 
-inline void Klass::set_prototype_header(markWord header) {
-  assert(!header.has_bias_pattern() || is_instance_klass(), "biased locking currently only supported for Java instances");
-  _prototype_header = header;
-}
-
 inline oop Klass::java_mirror() const {
   return _java_mirror.resolve();
+}
+
+inline oop Klass::java_mirror_no_keepalive() const {
+  return _java_mirror.peek();
 }
 
 inline klassVtable Klass::vtable() const {

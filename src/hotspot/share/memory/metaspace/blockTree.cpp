@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,8 +101,7 @@ void BlockTree::verify() const {
   // Traverse the tree and test that all nodes are in the correct order.
 
   MemRangeCounter counter;
-  int longest_edge = 0;
-  if (_root != NULL) {
+  if (_root != nullptr) {
 
     ResourceMark rm;
     GrowableArray<walkinfo> stack;
@@ -127,9 +126,9 @@ void BlockTree::verify() const {
       counter.add(n->_word_size);
 
       if (n == _root) {
-        tree_assert_invalid_node(n->_parent == NULL, n);
+        tree_assert_invalid_node(n->_parent == nullptr, n);
       } else {
-        tree_assert_invalid_node(n->_parent != NULL, n);
+        tree_assert_invalid_node(n->_parent != nullptr, n);
       }
 
       // check size and ordering
@@ -139,7 +138,7 @@ void BlockTree::verify() const {
       tree_assert_invalid_node(n->_word_size < info.lim2, n);
 
       // Check children
-      if (n->_left != NULL) {
+      if (n->_left != nullptr) {
         tree_assert_invalid_node(n->_left != n, n);
         tree_assert_invalid_node(n->_left->_parent == n, n);
 
@@ -151,7 +150,7 @@ void BlockTree::verify() const {
         stack.push(info2);
       }
 
-      if (n->_right != NULL) {
+      if (n->_right != nullptr) {
         tree_assert_invalid_node(n->_right != n, n);
         tree_assert_invalid_node(n->_right->_parent == n, n);
 
@@ -165,7 +164,7 @@ void BlockTree::verify() const {
 
       // If node has same-sized siblings check those too.
       const Node* n2 = n->_next;
-      while (n2 != NULL) {
+      while (n2 != nullptr) {
         verify_node_pointer(n2);
         tree_assert_invalid_node(n2 != n, n2); // catch simple circles
         tree_assert_invalid_node(n2->_word_size == n->_word_size, n2);
@@ -193,7 +192,7 @@ void BlockTree::print_tree(outputStream* st) const {
   //  as a quasi list is much clearer to the eye.
   // We print the tree depth-first, with stacked nodes below normal ones
   //  (normal "real" nodes are marked with a leading '+')
-  if (_root != NULL) {
+  if (_root != nullptr) {
 
     ResourceMark rm;
     GrowableArray<walkinfo> stack;
@@ -217,7 +216,7 @@ void BlockTree::print_tree(outputStream* st) const {
       }
 
       // Print same-sized-nodes stacked under this node
-      for (Node* n2 = n->_next; n2 != NULL; n2 = n2->_next) {
+      for (Node* n2 = n->_next; n2 != nullptr; n2 = n2->_next) {
         st->print_raw("       ");
         if (os::is_readable_pointer(n2)) {
           st->print_cr(NODE_FORMAT, NODE_FORMAT_ARGS(n2));
@@ -228,13 +227,13 @@ void BlockTree::print_tree(outputStream* st) const {
       }
 
       // Handle children.
-      if (n->_right != NULL) {
+      if (n->_right != nullptr) {
         walkinfo info2;
         info2.n = n->_right;
         info2.depth = info.depth + 1;
         stack.push(info2);
       }
-      if (n->_left != NULL) {
+      if (n->_left != nullptr) {
         walkinfo info2;
         info2.n = n->_left;
         info2.depth = info.depth + 1;

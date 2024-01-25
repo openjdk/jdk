@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,8 @@
  */
 
 // key: compiler.misc.feature.sealed.classes
-// key: compiler.warn.preview.feature.use.plural
-// key: compiler.warn.declared.using.preview
-// options: --enable-preview -source ${jdk.version} -Xlint:preview
+// key: compiler.err.feature.not.supported.in.source.plural
+// options: --release 16
 
 sealed class Sealed {}
 

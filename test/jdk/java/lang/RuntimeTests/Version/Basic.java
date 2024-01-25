@@ -249,7 +249,7 @@ public class Basic {
         }
 
         Optional<String> javaVerPre
-            = (ver.length == 2)
+            = (ver.length >= 2)
             ? Optional.ofNullable(ver[1])
             : Optional.empty();
         if (!javaVerPre.equals(current.pre())) {

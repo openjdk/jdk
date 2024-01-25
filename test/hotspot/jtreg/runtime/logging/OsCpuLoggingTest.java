@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 8151939
  * @summary os+cpu output should contain some os,cpu information
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -51,14 +52,14 @@ public class OsCpuLoggingTest {
 
     public static void main(String[] args) throws Exception {
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:os+cpu", "-version");
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:os+cpu", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         analyzeOutputForOsCpuLog(output);
 
         // PPC64 only uses polling pages when UseSIGTRAP is off.
         pb = (Platform.isPPC() && Platform.is64bit())
-             ? ProcessTools.createJavaProcessBuilder("-Xlog:os", "-XX:-UseSIGTRAP", "-version")
-             : ProcessTools.createJavaProcessBuilder("-Xlog:os", "-version");
+             ? ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:os", "-XX:-UseSIGTRAP", "-version")
+             : ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:os", "-version");
         output = new OutputAnalyzer(pb.start());
         analyzeOutputForOsLog(output);
     }

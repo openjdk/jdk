@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,8 @@ import org.xml.sax.XMLReader;
  */
 final class CatalogResolverImpl implements CatalogResolver {
     Catalog catalog;
+    // resolution action type
+    NotFoundAction resolveType;
 
     /**
      * Construct an instance of the CatalogResolver from a Catalog.
@@ -58,9 +60,25 @@ final class CatalogResolverImpl implements CatalogResolver {
      * @param catalog A Catalog.
      */
     public CatalogResolverImpl(Catalog catalog) {
-        this.catalog = catalog;
+        this(catalog, null);
     }
 
+    /**
+     * Construct an instance of the CatalogResolver from a Catalog and the
+     * {@link CatalogResolver.NotFoundAction action} type.
+     *
+     * @param catalog a Catalog object
+     * @param action the action type
+     */
+    public CatalogResolverImpl(Catalog catalog, NotFoundAction action) {
+        this.catalog = catalog;
+        // Note: can only happen in this impl
+        if (action == null) {
+            resolveType = ((CatalogImpl) catalog).getResolve();
+        } else {
+            resolveType = action;
+        }
+    }
     /*
        Implements the EntityResolver interface
     */
@@ -91,7 +109,6 @@ final class CatalogResolverImpl implements CatalogResolver {
             return new InputSource(resolvedSystemId);
         }
 
-        GroupEntry.ResolveType resolveType = ((CatalogImpl) catalog).getResolve();
         switch (resolveType) {
             case IGNORE:
                 return new InputSource(new StringReader(""));
@@ -145,7 +162,6 @@ final class CatalogResolverImpl implements CatalogResolver {
 
         //Report error or return the URI as is when no match is found
         if (result == null) {
-            GroupEntry.ResolveType resolveType = c.getResolve();
             switch (resolveType) {
                 case IGNORE:
                     return new SAXSource(new InputSource(new StringReader("")));
@@ -154,14 +170,15 @@ final class CatalogResolverImpl implements CatalogResolver {
                             new Object[]{href, base});
             }
             try {
-                URL url = null;
-
                 if (base == null) {
-                    url = new URL(uri);
+                    @SuppressWarnings("deprecation")
+                    URL url = new URL(uri);
                     result = url.toString();
                 } else {
+                    @SuppressWarnings("deprecation")
                     URL baseURL = new URL(base);
-                    url = (href.length() == 0 ? baseURL : new URL(baseURL, uri));
+                    @SuppressWarnings("deprecation")
+                    URL url = (href.length() == 0 ? baseURL : new URL(baseURL, uri));
                     result = url.toString();
                 }
             } catch (java.net.MalformedURLException mue) {
@@ -219,14 +236,15 @@ final class CatalogResolverImpl implements CatalogResolver {
         if (is != null && !is.isEmpty()) {
 
             try {
-                return new URL(is.getSystemId()).openStream();
+                @SuppressWarnings("deprecation")
+                InputStream result = new URL(is.getSystemId()).openStream();
+                return result;
             } catch (IOException ex) {
                 //considered as no mapping.
             }
 
         }
 
-        GroupEntry.ResolveType resolveType = ((CatalogImpl) catalog).getResolve();
         switch (resolveType) {
             case IGNORE:
                 return null;
@@ -247,7 +265,6 @@ final class CatalogResolverImpl implements CatalogResolver {
             return new LSInputImpl(is.getSystemId());
         }
 
-        GroupEntry.ResolveType resolveType = ((CatalogImpl) catalog).getResolve();
         switch (resolveType) {
             case IGNORE:
                 return null;

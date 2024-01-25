@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,7 @@
 
   bool is_literal_address(LIR_Address* addr);
 
-  // When we need to use something other than rscratch1 use this
-  // method.
+  // When we need to use something other than rscratch1 use this method.
   Address as_Address(LIR_Address* addr, Register tmp);
 
   // Record the type of the receiver in ReceiverTypeData
@@ -48,7 +47,6 @@
 
   enum {
     _call_stub_size = NOT_LP64(15) LP64_ONLY(28),
-    _call_aot_stub_size = NOT_LP64(7) LP64_ONLY(12),
     _exception_handler_size = DEBUG_ONLY(1*K) NOT_DEBUG(175),
     _deopt_handler_size = NOT_LP64(10) LP64_ONLY(17)
   };

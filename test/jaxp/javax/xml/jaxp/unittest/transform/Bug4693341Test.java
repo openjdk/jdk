@@ -48,7 +48,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * @test
  * @bug 4693341
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true transform.Bug4693341Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.Bug4693341Test
  * @run testng/othervm transform.Bug4693341Test
  * @summary Test transform with external dtd.
  */

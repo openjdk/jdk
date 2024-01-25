@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,8 @@ import java.util.stream.StreamSupport;
 import java.util.stream.$Streamtype$Stream;
 #end[streamableType]
 
+import java.lang.foreign.MemorySegment;
 import java.util.Objects;
-import jdk.internal.access.foreign.MemorySegmentProxy;
 import jdk.internal.util.ArraysSupport;
 
 /**
@@ -55,12 +55,12 @@ import jdk.internal.util.ArraysSupport;
  *
  *   <li><p> Absolute and relative {@link #get($type$[]) <i>bulk get</i>}
  *   methods that transfer contiguous sequences of $type$s from this buffer
- *   into an array; {#if[!byte]?and}</p></li>
+ *   into an array;</p></li>
  *
  *   <li><p> Absolute and relative {@link #put($type$[]) <i>bulk put</i>}
  *   methods that transfer contiguous sequences of $type$s from $a$
- *   $type$ array{#if[char]?,&#32;a&#32;string,} or some other $type$
- *   buffer into this buffer;{#if[!byte]?&#32;and} </p></li>
+ *   $type$ array{#if[char]?, a string,} or some other $type$
+ *   buffer into this buffer;</p></li>
  *
 #if[byte]
  *
@@ -86,12 +86,12 @@ import jdk.internal.util.ArraysSupport;
 #if[byte]
  *
  * content, or by {@link #wrap($type$[]) <i>wrapping</i>} an
- * existing $type$ array {#if[char]?or&#32;string} into a buffer.
+ * existing $type$ array into a buffer.
  *
 #else[byte]
  *
  * content, by {@link #wrap($type$[]) <i>wrapping</i>} an existing
- * $type$ array {#if[char]?or&#32;string} into a buffer, or by creating a
+ * $type$ array {#if[char]?or string} into a buffer, or by creating a
  * <a href="ByteBuffer.html#views"><i>view</i></a> of an existing byte buffer.
  *
 #end[byte]
@@ -149,11 +149,16 @@ import jdk.internal.util.ArraysSupport;
  * <i>get</i> and <i>put</i> methods for each type.  For 32-bit floating-point
  * values, for example, this class defines:
  *
- * <blockquote><pre>
- * float  {@link #getFloat()}
- * float  {@link #getFloat(int) getFloat(int index)}
- *  void  {@link #putFloat(float) putFloat(float f)}
- *  void  {@link #putFloat(int,float) putFloat(int index, float f)}</pre></blockquote>
+ * {@snippet lang=java :
+ *     // @link substring="getFloat()" target="#getFloat" :
+ *     float      getFloat()
+ *     // @link substring="getFloat(int index)" target="#getFloat(int)" :
+ *     float      getFloat(int index)
+ *     // @link substring="putFloat(float f)" target="#putFloat(float)" :
+ *     ByteBuffer putFloat(float f)
+ *     // @link substring="putFloat(int index, float f)" target="#putFloat(int,float)" :
+ *     ByteBuffer putFloat(int index, float f)
+ * }
  *
  * <p> Corresponding methods are defined for the types {@code char,
  * short, int, long}, and {@code double}.  The index
@@ -230,44 +235,72 @@ import jdk.internal.util.ArraysSupport;
  *
  * The sequence of statements
  *
- * <blockquote><pre>
- * bb.putInt(0xCAFEBABE);
- * bb.putShort(3);
- * bb.putShort(45);</pre></blockquote>
+ * {@snippet lang=java :
+ *     bb.putInt(0xCAFEBABE);
+ *     bb.putShort(3);
+ *     bb.putShort(45);
+ * }
  *
  * can, for example, be replaced by the single statement
  *
- * <blockquote><pre>
- * bb.putInt(0xCAFEBABE).putShort(3).putShort(45);</pre></blockquote>
+ * {@snippet lang=java :
+ *     bb.putInt(0xCAFEBABE).putShort(3).putShort(45);
+ * }
  *
 #end[byte]
 #if[char]
  *
  * The sequence of statements
  *
- * <blockquote><pre>
- * cb.put("text/");
- * cb.put(subtype);
- * cb.put("; charset=");
- * cb.put(enc);</pre></blockquote>
+ * {@snippet lang=java :
+ *     cb.put("text/");
+ *     cb.put(subtype);
+ *     cb.put("; charset=");
+ *     cb.put(enc);
+ * }
  *
  * can, for example, be replaced by the single statement
  *
- * <blockquote><pre>
- * cb.put("text/").put(subtype).put("; charset=").put(enc);</pre></blockquote>
+ * {@snippet lang=java :
+ *     cb.put("text/").put(subtype).put("; charset=").put(enc);
+ * }
  *
 #end[char]
+ * <h2> Optional operations </h2>
+ * Methods specified as
+ * <i>{@linkplain Buffer##read-only-buffers-heading optional
+ * operations}</i> throw a {@linkplain ReadOnlyBufferException} when invoked
+ * on a {@linkplain java.nio.Buffer#isReadOnly read-only} $Type$Buffer. The
+ * methods {@linkplain #array array} and {@linkplain #arrayOffset arrayOffset}
+ * throw an {@linkplain UnsupportedOperationException} if the $Type$Buffer is
+ * not backed by an {@linkplain Buffer#hasArray accessible $type$ array}
+ * (irrespective of whether the $Type$Buffer is read-only).
  *
  *
  * @author Mark Reinhold
  * @author JSR-51 Expert Group
+#if[byte]
+ * @sealedGraph
+#end[byte]
  * @since 1.4
  */
 
-public abstract class $Type$Buffer
+public abstract sealed class $Type$Buffer
     extends Buffer
     implements Comparable<$Type$Buffer>{#if[char]?, Appendable, CharSequence, Readable}
+    permits
+#if[byte]
+    Heap$Type$Buffer, MappedByteBuffer
+#else[byte]
+#if[char]
+    StringCharBuffer,
+#end[char]
+    Heap$Type$Buffer, Direct$Type$BufferS, Direct$Type$BufferU,
+    ByteBufferAs$Type$BufferB, ByteBufferAs$Type$BufferL
+#end[byte]
 {
+    // Cached array base offset
+    private static final long ARRAY_BASE_OFFSET = UNSAFE.arrayBaseOffset($type$[].class);
 
     // These fields are declared here rather than in Heap-X-Buffer in order to
     // reduce the number of virtual method invocations needed to access these
@@ -281,7 +314,7 @@ public abstract class $Type$Buffer
     // backing array, and array offset
     //
     $Type$Buffer(int mark, int pos, int lim, int cap,   // package-private
-                 $type$[] hb, int offset, MemorySegmentProxy segment)
+                 $type$[] hb, int offset, MemorySegment segment)
     {
         super(mark, pos, lim, cap, segment);
         this.hb = hb;
@@ -290,13 +323,13 @@ public abstract class $Type$Buffer
 
     // Creates a new buffer with the given mark, position, limit, and capacity
     //
-    $Type$Buffer(int mark, int pos, int lim, int cap, MemorySegmentProxy segment) { // package-private
+    $Type$Buffer(int mark, int pos, int lim, int cap, MemorySegment segment) { // package-private
         this(mark, pos, lim, cap, null, 0, segment);
     }
 
     // Creates a new buffer with given base, address and capacity
     //
-    $Type$Buffer($type$[] hb, long addr, int cap, MemorySegmentProxy segment) { // package-private
+    $Type$Buffer($type$[] hb, long addr, int cap, MemorySegment segment) { // package-private
         super(addr, cap, segment);
         this.hb = hb;
         this.offset = 0;
@@ -441,13 +474,16 @@ public abstract class $Type$Buffer
      * Attempts to read characters into the specified character buffer.
      * The buffer is used as a repository of characters as-is: the only
      * changes made are the results of a put operation. No flipping or
-     * rewinding of the buffer is performed.
+     * rewinding of the buffer is performed. If the {@linkplain #length
+     * length} of the specified character buffer is zero, then no characters
+     * will be read and zero will be returned.
      *
      * @param target the buffer to read characters into
-     * @return The number of characters added to the buffer, or
-     *         -1 if this source of characters is at its end
+     * @return The number of characters added to the buffer,
+     *         possibly zero, or -1 if this source of characters is at its end
      * @throws IOException if an I/O error occurs
-     * @throws ReadOnlyBufferException if target is a read only buffer
+     * @throws ReadOnlyBufferException if target is a read only buffer,
+     *         even if its length is zero
      * @since 1.5
      */
     public int read(CharBuffer target) throws IOException {
@@ -758,10 +794,10 @@ public abstract class $Type$Buffer
      * <code>src.get(dst,&nbsp;off,&nbsp;len)</code> has exactly the same effect as
      * the loop
      *
-     * <pre>{@code
+     * {@snippet lang=java :
      *     for (int i = off; i < off + len; i++)
      *         dst[i] = src.get();
-     * }</pre>
+     * }
      *
      * except that it first checks that there are sufficient $type$s in
      * this buffer and it is potentially much more efficient.
@@ -791,11 +827,13 @@ public abstract class $Type$Buffer
      */
     public $Type$Buffer get($type$[] dst, int offset, int length) {
         Objects.checkFromIndexSize(offset, length, dst.length);
-        if (length > remaining())
+        int pos = position();
+        if (length > limit() - pos)
             throw new BufferUnderflowException();
-        int end = offset + length;
-        for (int i = offset; i < end; i++)
-            dst[i] = get();
+
+        getArray(pos, dst, offset, length);
+
+        position(pos + length);
         return this;
     }
 
@@ -806,8 +844,9 @@ public abstract class $Type$Buffer
      * destination array.  An invocation of this method of the form
      * {@code src.get(a)} behaves in exactly the same way as the invocation
      *
-     * <pre>
-     *     src.get(a, 0, a.length) </pre>
+     * {@snippet lang=java :
+     *     src.get(a, 0, a.length)
+     * }
      *
      * @param   dst
      *          The destination array
@@ -836,10 +875,10 @@ public abstract class $Type$Buffer
      * checks the consistency of the supplied parameters and it is potentially
      * much more efficient:
      *
-     * <pre>{@code
+     * {@snippet lang=java :
      *     for (int i = offset, j = index; i < offset + length; i++, j++)
      *         dst[i] = src.get(j);
-     * }</pre>
+     * }
      *
      * @param  index
      *         The index in this buffer from which the first $type$ will be
@@ -869,9 +908,9 @@ public abstract class $Type$Buffer
     public $Type$Buffer get(int index, $type$[] dst, int offset, int length) {
         Objects.checkFromIndexSize(index, length, limit());
         Objects.checkFromIndexSize(offset, length, dst.length);
-        int end = offset + length;
-        for (int i = offset, j = index; i < end; i++, j++)
-            dst[i] = get(j);
+
+        getArray(index, dst, offset, length);
+
         return this;
     }
 
@@ -884,8 +923,9 @@ public abstract class $Type$Buffer
      * <code>src.get(index,&nbsp;dst)</code> behaves in exactly the same
      * way as the invocation:
      *
-     * <pre>
-     *     src.get(index, dst, 0, dst.length) </pre>
+     * {@snippet lang=java :
+     *     src.get(index, dst, 0, dst.length)
+     * }
      *
      * @param  index
      *         The index in this buffer from which the first $type$ will be
@@ -904,6 +944,40 @@ public abstract class $Type$Buffer
      */
     public $Type$Buffer get(int index, $type$[] dst) {
         return get(index, dst, 0, dst.length);
+    }
+
+    private $Type$Buffer getArray(int index, $type$[] dst, int offset, int length) {
+        if (
+#if[char]
+            isAddressable() &&
+#end[char]
+            ((long)length << $LG_BYTES_PER_VALUE$) > Bits.JNI_COPY_TO_ARRAY_THRESHOLD) {
+            long bufAddr = address + ((long)index << $LG_BYTES_PER_VALUE$);
+            long dstOffset =
+                ARRAY_BASE_OFFSET + ((long)offset << $LG_BYTES_PER_VALUE$);
+            long len = (long)length << $LG_BYTES_PER_VALUE$;
+
+            try {
+#if[!byte]
+                if (order() != ByteOrder.nativeOrder())
+                    SCOPED_MEMORY_ACCESS.copySwapMemory(
+                            session(), null, base(), bufAddr,
+                            dst, dstOffset, len, $Fulltype$.BYTES);
+                else
+#end[!byte]
+                    SCOPED_MEMORY_ACCESS.copyMemory(
+                            session(), null, base(), bufAddr,
+                            dst, dstOffset, len);
+            } finally {
+                Reference.reachabilityFence(this);
+            }
+        } else {
+            int end = offset + length;
+            for (int i = offset, j = index; i < end; i++, j++) {
+                dst[i] = get(j);
+            }
+        }
+        return this;
     }
 
     // -- Bulk put operations --
@@ -926,9 +1000,10 @@ public abstract class $Type$Buffer
      * <p> In other words, an invocation of this method of the form
      * {@code dst.put(src)} has exactly the same effect as the loop
      *
-     * <pre>
+     * {@snippet lang=java :
      *     while (src.hasRemaining())
-     *         dst.put(src.get()); </pre>
+     *         dst.put(src.get());
+     * }
      *
      * except that it first checks that there is sufficient space in this
      * buffer and it is potentially much more efficient.  If this buffer and
@@ -988,10 +1063,10 @@ public abstract class $Type$Buffer
      * <code>dst.put(index,&nbsp;src,&nbsp;offset,&nbsp;length)</code>
      * has exactly the same effect as the loop
      *
-     * <pre>{@code
-     * for (int i = offset, j = index; i < offset + length; i++, j++)
-     *     dst.put(j, src.get(i));
-     * }</pre>
+     * {@snippet lang=java :
+     *     for (int i = offset, j = index; i < offset + length; i++, j++)
+     *         dst.put(j, src.get(i));
+     * }
      *
      * except that it first checks the consistency of the supplied parameters
      * and it is potentially much more efficient.  If this buffer and
@@ -1038,8 +1113,8 @@ public abstract class $Type$Buffer
     }
 
     void putBuffer(int pos, $Type$Buffer src, int srcPos, int n) {
+#if[rw]
         Object srcBase = src.base();
-
 #if[char]
         if (src.isAddressable()) {
 #else[char]
@@ -1053,29 +1128,21 @@ public abstract class $Type$Buffer
             long addr = address + ((long)pos << $LG_BYTES_PER_VALUE$);
             long len = (long)n << $LG_BYTES_PER_VALUE$;
 
+            try {
 #if[!byte]
-            if (this.order() == src.order()) {
-#end[!byte]
-                try {
-                    SCOPED_MEMORY_ACCESS.copyMemory(
-                            scope(), src.scope(), srcBase,
-                            srcAddr, base, addr, len);
-                } finally {
-                    Reference.reachabilityFence(src);
-                    Reference.reachabilityFence(this);
-                }
-#if[!byte]
-            } else {
-                try {
+                if (this.order() != src.order())
                     SCOPED_MEMORY_ACCESS.copySwapMemory(
-                            scope(), src.scope(), srcBase,
-                            srcAddr, base, addr, len, (long)1 << $LG_BYTES_PER_VALUE$);
-                } finally {
-                    Reference.reachabilityFence(src);
-                    Reference.reachabilityFence(this);
-                }
-            }
+                            src.session(), session(), srcBase, srcAddr,
+                            base, addr, len, $Fulltype$.BYTES);
+                else
 #end[!byte]
+                    SCOPED_MEMORY_ACCESS.copyMemory(
+                            src.session(), session(), srcBase, srcAddr,
+                            base, addr, len);
+            } finally {
+                Reference.reachabilityFence(src);
+                Reference.reachabilityFence(this);
+            }
 #if[char]
         } else { // src.isAddressable() == false
             assert StringCharBuffer.class.isInstance(src);
@@ -1084,6 +1151,9 @@ public abstract class $Type$Buffer
                 put(i, src.get(j));
         }
 #end[char]
+#else[rw]
+        throw new ReadOnlyBufferException();
+#end[rw]
     }
 
     /**
@@ -1105,10 +1175,10 @@ public abstract class $Type$Buffer
      * <code>dst.put(src,&nbsp;off,&nbsp;len)</code> has exactly the same effect as
      * the loop
      *
-     * <pre>{@code
+     * {@snippet lang=java :
      *     for (int i = off; i < off + len; i++)
      *         dst.put(src[i]);
-     * }</pre>
+     * }
      *
      * except that it first checks that there is sufficient space in this
      * buffer and it is potentially much more efficient.
@@ -1138,12 +1208,16 @@ public abstract class $Type$Buffer
      *          If this buffer is read-only
      */
     public $Type$Buffer put($type$[] src, int offset, int length) {
+        if (isReadOnly())
+            throw new ReadOnlyBufferException();
         Objects.checkFromIndexSize(offset, length, src.length);
-        if (length > remaining())
+        int pos = position();
+        if (length > limit() - pos)
             throw new BufferOverflowException();
-        int end = offset + length;
-        for (int i = offset; i < end; i++)
-            this.put(src[i]);
+
+        putArray(pos, src, offset, length);
+
+        position(pos + length);
         return this;
     }
 
@@ -1155,8 +1229,9 @@ public abstract class $Type$Buffer
      * form {@code dst.put(a)} behaves in exactly the same way as the
      * invocation
      *
-     * <pre>
-     *     dst.put(a, 0, a.length) </pre>
+     * {@snippet lang=java :
+     *     dst.put(a, 0, a.length)
+     * }
      *
      * @param   src
      *          The source array
@@ -1186,10 +1261,10 @@ public abstract class $Type$Buffer
      * checks the consistency of the supplied parameters and it is potentially
      * much more efficient:
      *
-     * <pre>{@code
+     * {@snippet lang=java :
      *     for (int i = offset, j = index; i < offset + length; i++, j++)
      *         dst.put(j, src[i]);
-     * }</pre>
+     * }
      *
      * @param  index
      *         The index in this buffer at which the first $type$ will be
@@ -1223,9 +1298,9 @@ public abstract class $Type$Buffer
             throw new ReadOnlyBufferException();
         Objects.checkFromIndexSize(index, length, limit());
         Objects.checkFromIndexSize(offset, length, src.length);
-        int end = offset + length;
-        for (int i = offset, j = index; i < end; i++, j++)
-            this.put(j, src[i]);
+
+        putArray(index, src, offset, length);
+
         return this;
     }
 
@@ -1237,8 +1312,9 @@ public abstract class $Type$Buffer
      * method of the form <code>dst.put(index,&nbsp;src)</code>
      * behaves in exactly the same way as the invocation:
      *
-     * <pre>
-     *     dst.put(index, src, 0, src.length); </pre>
+     * {@snippet lang=java :
+     *     dst.put(index, src, 0, src.length);
+     * }
      *
      * @param  index
      *         The index in this buffer at which the first $type$ will be
@@ -1260,6 +1336,43 @@ public abstract class $Type$Buffer
      */
     public $Type$Buffer put(int index, $type$[] src) {
         return put(index, src, 0, src.length);
+    }
+
+    $Type$Buffer putArray(int index, $type$[] src, int offset, int length) {
+#if[rw]
+        if (
+#if[char]
+            isAddressable() &&
+#end[char]
+            ((long)length << $LG_BYTES_PER_VALUE$) > Bits.JNI_COPY_FROM_ARRAY_THRESHOLD) {
+            long bufAddr = address + ((long)index << $LG_BYTES_PER_VALUE$);
+            long srcOffset =
+                ARRAY_BASE_OFFSET + ((long)offset << $LG_BYTES_PER_VALUE$);
+            long len = (long)length << $LG_BYTES_PER_VALUE$;
+
+            try {
+#if[!byte]
+                if (order() != ByteOrder.nativeOrder())
+                    SCOPED_MEMORY_ACCESS.copySwapMemory(
+                            null, session(), src, srcOffset,
+                            base(), bufAddr, len, $Fulltype$.BYTES);
+                else
+#end[!byte]
+                    SCOPED_MEMORY_ACCESS.copyMemory(
+                            null, session(), src, srcOffset,
+                            base(), bufAddr, len);
+            } finally {
+                Reference.reachabilityFence(this);
+            }
+        } else {
+            int end = offset + length;
+            for (int i = offset, j = index; i < end; i++, j++)
+                this.put(j, src[i]);
+        }
+        return this;
+#else[rw]
+        throw new ReadOnlyBufferException();
+#end[rw]
     }
 
 #if[char]
@@ -1284,10 +1397,10 @@ public abstract class $Type$Buffer
      * <code>dst.put(src,&nbsp;start,&nbsp;end)</code> has exactly the same effect
      * as the loop
      *
-     * <pre>{@code
+     * {@snippet lang=java :
      *     for (int i = start; i < end; i++)
      *         dst.put(src.charAt(i));
-     * }</pre>
+     * }
      *
      * except that it first checks that there is sufficient space in this
      * buffer and it is potentially much more efficient.
@@ -1335,8 +1448,9 @@ public abstract class $Type$Buffer
      * into this buffer.  An invocation of this method of the form
      * {@code dst.put(s)} behaves in exactly the same way as the invocation
      *
-     * <pre>
-     *     dst.put(s, 0, s.length()) </pre>
+     * {@snippet lang=java :
+     *     dst.put(s, 0, s.length())
+     * }
      *
      * @param   src
      *          The source string
@@ -1432,6 +1546,7 @@ public abstract class $Type$Buffer
 
     /**
      * {@inheritDoc}
+     * @since 9
      */
     @Override
     public
@@ -1445,6 +1560,7 @@ public abstract class $Type$Buffer
     
     /**
      * {@inheritDoc}
+     * @since 9
      */
     @Override
     public
@@ -1458,6 +1574,7 @@ public abstract class $Type$Buffer
     
     /**
      * {@inheritDoc}
+     * @since 9
      */
     @Override
     public 
@@ -1471,6 +1588,7 @@ public abstract class $Type$Buffer
 
     /**
      * {@inheritDoc}
+     * @since 9
      */
     @Override
     public 
@@ -1484,6 +1602,7 @@ public abstract class $Type$Buffer
 
     /**
      * {@inheritDoc}
+     * @since 9
      */
     @Override
     public 
@@ -1497,6 +1616,7 @@ public abstract class $Type$Buffer
 
     /**
      * {@inheritDoc}
+     * @since 9
      */
     @Override
     public 
@@ -1510,6 +1630,7 @@ public abstract class $Type$Buffer
 
     /**
      * {@inheritDoc}
+     * @since 9
      */
     @Override
     public 
@@ -1545,14 +1666,14 @@ public abstract class $Type$Buffer
      * write was incomplete.  The following loop, for example, copies bytes
      * from one channel to another via the buffer {@code buf}:
      *
-     * <blockquote><pre>{@code
-     *   buf.clear();          // Prepare buffer for use
-     *   while (in.read(buf) >= 0 || buf.position != 0) {
-     *       buf.flip();
-     *       out.write(buf);
-     *       buf.compact();    // In case of partial write
-     *   }
-     * }</pre></blockquote>
+     * {@snippet lang=java :
+     *     buf.clear();          // Prepare buffer for use
+     *     while (in.read(buf) >= 0 || buf.position != 0) {
+     *         buf.flip();
+     *         out.write(buf);
+     *         buf.compact();    // In case of partial write
+     *     }
+     * }
      *
 #end[byte]
      *
@@ -1592,16 +1713,11 @@ public abstract class $Type$Buffer
      * @return  A summary string
      */
     public String toString() {
-        StringBuffer sb = new StringBuffer();
-        sb.append(getClass().getName());
-        sb.append("[pos=");
-        sb.append(position());
-        sb.append(" lim=");
-        sb.append(limit());
-        sb.append(" cap=");
-        sb.append(capacity());
-        sb.append("]");
-        return sb.toString();
+        return getClass().getName()
+                 + "[pos=" + position()
+                 + " lim=" + limit()
+                 + " cap=" + capacity()
+                 + "]";
     }
 
 #end[!char]
@@ -1882,8 +1998,9 @@ public abstract class $Type$Buffer
      * <p> An invocation of this method of the form {@code dst.append(csq)}
      * behaves in exactly the same way as the invocation
      *
-     * <pre>
-     *     dst.put(csq.toString()) </pre>
+     * {@snippet lang=java :
+     *     dst.put(csq.toString())
+     * }
      *
      * <p> Depending on the specification of {@code toString} for the
      * character sequence {@code csq}, the entire sequence may not be
@@ -1909,6 +2026,8 @@ public abstract class $Type$Buffer
     public $Type$Buffer append(CharSequence csq) {
         if (csq == null)
             return put("null");
+        else if (csq instanceof CharBuffer cb)
+            return put(cb);
         else
             return put(csq.toString());
     }
@@ -1921,8 +2040,9 @@ public abstract class $Type$Buffer
      * end)} when {@code csq} is not {@code null}, behaves in exactly the
      * same way as the invocation
      *
-     * <pre>
-     *     dst.put(csq.subSequence(start, end).toString()) </pre>
+     * {@snippet lang=java :
+     *     dst.put(csq.subSequence(start, end).toString())
+     * }
      *
      * @param  csq
      *         The character sequence from which a subsequence will be
@@ -1946,6 +2066,24 @@ public abstract class $Type$Buffer
      * @since  1.5
      */
     public $Type$Buffer append(CharSequence csq, int start, int end) {
+        if (csq instanceof CharBuffer cb) {
+            Objects.checkFromToIndex(start, end, csq.length());
+
+            //
+            // the append method throws BufferOverflowException when
+            // there is insufficient space in the buffer
+            //
+            int length = end - start;
+            int pos = position();
+            int lim = limit();
+            int rem = (pos <= lim) ? lim - pos : 0;
+            if (length > rem)
+                throw new BufferOverflowException();
+
+            put(pos, cb, start, length);
+            position(pos + length);
+            return this;
+        }
         CharSequence cs = (csq == null ? "null" : csq);
         return put(cs.subSequence(start, end).toString());
     }
@@ -1957,8 +2095,9 @@ public abstract class $Type$Buffer
      * <p> An invocation of this method of the form {@code dst.append($x$)}
      * behaves in exactly the same way as the invocation
      *
-     * <pre>
-     *     dst.put($x$) </pre>
+     * {@snippet lang=java :
+     *     dst.put($x$)
+     * }
      *
      * @param  $x$
      *         The 16-bit $type$ to append
@@ -2057,14 +2196,17 @@ public abstract class $Type$Buffer
      * aligned address.  Specifically, the index should either be decremented by
      * the return value if the latter is not greater than {@code index}, or be
      * incremented by the unit size minus the return value.  Therefore given
-     * <blockquote><pre>
-     * int value = alignmentOffset(index, unitSize)</pre></blockquote>
+     * {@snippet lang=java :
+     *     int value = alignmentOffset(index, unitSize)
+     * }
      * then the identities
-     * <blockquote><pre>
-     * alignmentOffset(index - value, unitSize) == 0, value &le; index</pre></blockquote>
+     * {@snippet lang=java :
+     *     alignmentOffset(index - value, unitSize) == 0, value <= index
+     * }
      * and
-     * <blockquote><pre>
-     * alignmentOffset(index + (unitSize - value), unitSize) == 0</pre></blockquote>
+     * {@snippet lang=java :
+     *     alignmentOffset(index + (unitSize - value), unitSize) == 0
+     * }
      * must hold.
      * 
      * @apiNote
@@ -2123,10 +2265,10 @@ public abstract class $Type$Buffer
      * and limit will be zero.  If rounding is within bounds the following
      * expressions will be true for a new buffer {@code nb} and unit size
      * {@code unitSize}:
-     * <pre>{@code
-     * nb.alignmentOffset(0, unitSize) == 0
-     * nb.alignmentOffset(nb.limit(), unitSize) == 0
-     * }</pre>
+     * {@snippet lang=java :
+     *     nb.alignmentOffset(0, unitSize) == 0
+     *     nb.alignmentOffset(nb.limit(), unitSize) == 0
+     * }
      *
      * <p> Changes to this buffer's content will be visible in the new
      * buffer, and vice versa; the two buffers' position, limit, and mark

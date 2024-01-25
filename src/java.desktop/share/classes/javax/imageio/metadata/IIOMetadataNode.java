@@ -192,7 +192,7 @@ class IIOAttr extends IIOMetadataNode implements Attr {
      * to always return false. One reason for this, is we have no good
      * way to document this exception, since this class, IIOAttr,
      * is not a public class. The rest of the methods that throw
-     * DOMException are publically documented as such on IIOMetadataNode.
+     * DOMException are publicly documented as such on IIOMetadataNode.
      * @return false
      */
     public boolean isId() {
@@ -464,7 +464,7 @@ public class IIOMetadataNode implements Element, NodeList {
      *
      * @return the node being inserted.
      *
-     * @exception IllegalArgumentException if {@code newChild} is
+     * @throws IllegalArgumentException if {@code newChild} is
      * {@code null}.
      */
     public Node insertBefore(Node newChild,
@@ -522,7 +522,7 @@ public class IIOMetadataNode implements Element, NodeList {
      *
      * @return the node replaced.
      *
-     * @exception IllegalArgumentException if {@code newChild} is
+     * @throws IllegalArgumentException if {@code newChild} is
      * {@code null}.
      */
     public Node replaceChild(Node newChild,
@@ -573,7 +573,7 @@ public class IIOMetadataNode implements Element, NodeList {
      *
      * @return the node removed.
      *
-     * @exception IllegalArgumentException if {@code oldChild} is
+     * @throws IllegalArgumentException if {@code oldChild} is
      * {@code null}.
      */
     public Node removeChild(Node oldChild) {
@@ -617,7 +617,7 @@ public class IIOMetadataNode implements Element, NodeList {
      *
      * @return the node added.
      *
-     * @exception IllegalArgumentException if {@code newChild} is
+     * @throws IllegalArgumentException if {@code newChild} is
      * {@code null}.
      */
     public Node appendChild(Node newChild) {

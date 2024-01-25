@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /**
  * @test
  * @requires vm.cds
+ * @requires vm.flagless
  * @bug 8005933
  * @summary -Xshare:auto is the default when -Xshare is not specified
  * @library /test/lib
@@ -38,7 +39,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class XShareAuto {
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-server", "-XX:+UnlockDiagnosticVMOptions",
             "-XX:SharedArchiveFile=./XShareAuto.jsa", "-Xshare:dump", "-Xlog:cds");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
@@ -54,7 +55,7 @@ public class XShareAuto {
         };
 
         for (String x : cases) {
-            pb = ProcessTools.createJavaProcessBuilder(
+            pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:SharedArchiveFile=./XShareAuto.jsa",
                 "-Xlog:cds",

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  * @key randomness
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TestDSAKeyLength
- * @run main/othervm TestDSAKeyLength sm
+ * @run main/othervm -Djava.security.manager=allow TestDSAKeyLength sm
  */
 
 import java.security.InvalidKeyException;
@@ -48,7 +48,7 @@ public class TestDSAKeyLength extends PKCS11Test {
 
     @Override
     protected boolean skipTest(Provider provider) {
-        if (isNSS(provider) && getNSSVersion() >= 3.14) {
+        if (isNSS(provider) && (getNSSVersion() == 0.0 || getNSSVersion() >= 3.14)) {
             System.out.println("Skip testing NSS " + getNSSVersion());
             return true;
         }

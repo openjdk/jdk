@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,14 +53,16 @@ class UnhandledOopEntry : public CHeapObj<mtThread> {
  private:
   oop* _oop_ptr;
   bool _ok_for_gc;
-  address _pc;
- public:
-  oop* oop_ptr() { return _oop_ptr; }
-  UnhandledOopEntry() : _oop_ptr(NULL), _ok_for_gc(false), _pc(NULL) {}
-  UnhandledOopEntry(oop* op, address pc) :
-                        _oop_ptr(op),   _ok_for_gc(false), _pc(pc) {}
-};
 
+  bool match_oop_entry(oop* op) const {
+    return _oop_ptr == op;
+  }
+
+ public:
+  UnhandledOopEntry() : _oop_ptr(nullptr), _ok_for_gc(false) {}
+  UnhandledOopEntry(oop* op) :
+                        _oop_ptr(op),   _ok_for_gc(false) {}
+};
 
 class UnhandledOops : public CHeapObj<mtThread> {
  friend class Thread;
@@ -75,7 +77,7 @@ class UnhandledOops : public CHeapObj<mtThread> {
 
  public:
   static void dump_oops(UnhandledOops* list);
-  void register_unhandled_oop(oop* op, address pc);
+  void register_unhandled_oop(oop* op);
   void unregister_unhandled_oop(oop* op);
 };
 

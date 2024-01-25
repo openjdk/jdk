@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_MacroAssembler.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
@@ -51,7 +52,7 @@ void LIR_OpShenandoahCompareAndSwap::emit_code(LIR_Assembler* masm) {
 
   ShenandoahBarrierSet::assembler()->cmpxchg_oop(masm->masm(), addr, cmpval, newval, /*acquire*/ true, /*release*/ true, /*is_cae*/ false, result);
 
-  if (CompilerConfig::is_c1_only_no_aot_or_jvmci()) {
+  if (CompilerConfig::is_c1_only_no_jvmci()) {
     // The membar here is necessary to prevent reordering between the
     // release store in the CAS above and a subsequent volatile load.
     // However for tiered compilation C1 inserts a full barrier before

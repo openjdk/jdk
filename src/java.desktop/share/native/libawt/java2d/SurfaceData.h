@@ -129,9 +129,9 @@ typedef struct {
  * array of bytes indexed by RxGxB where each component is reduced to 5
  * bits of precision before indexing.
  *
- *      char *redErrTable;
- *      char *grnErrTable;
- *      char *bluErrTable;
+ *      signed char *redErrTable;
+ *      signed char *grnErrTable;
+ *      signed char *bluErrTable;
  * [Requires SD_LOCK_INVCOLOR]
  * Pointers to the beginning of the ordered dither color error tables
  * for the colormap.  The error tables are formatted as an 8x8 array
@@ -159,9 +159,9 @@ typedef struct {
     unsigned int        lutSize;                /* # colors in colormap */
     jint                *lutBase;               /* Pointer to colormap[0] */
     unsigned char       *invColorTable;         /* Inverse color table */
-    char                *redErrTable;           /* Red ordered dither table */
-    char                *grnErrTable;           /* Green ordered dither table */
-    char                *bluErrTable;           /* Blue ordered dither table */
+    signed char         *redErrTable;           /* Red ordered dither table */
+    signed char         *grnErrTable;           /* Green ordered dither table */
+    signed char         *bluErrTable;           /* Blue ordered dither table */
     int                 *invGrayTable;          /* Inverse gray table */
     int                 representsPrimaries;    /* whether cmap represents primary colors */
     union {
@@ -553,7 +553,7 @@ SurfaceData_GetOps(JNIEnv *env, jobject sData);
  * Does the same as the above, but doesn't call Setup function
  * even if it's set.
  */
-JNIEXPORT SurfaceDataOps * JNICALL
+SurfaceDataOps *
 SurfaceData_GetOpsNoSetup(JNIEnv *env, jobject sData);
 
 /*
@@ -569,7 +569,7 @@ SurfaceData_GetOpsNoSetup(JNIEnv *env, jobject sData);
  *      is called since this function will not leave any outstanding
  *      JNI Critical locks unreleased.
  */
-JNIEXPORT void JNICALL
+void
 SurfaceData_SetOps(JNIEnv *env, jobject sData, SurfaceDataOps *ops);
 
 /*
@@ -661,7 +661,7 @@ SurfaceData_InitOps(JNIEnv *env, jobject sData, int opsSize);
 void SurfaceData_DisposeOps(JNIEnv *env, jlong ops);
 
 #ifdef __cplusplus
-};
+}
 #endif
 
 #endif

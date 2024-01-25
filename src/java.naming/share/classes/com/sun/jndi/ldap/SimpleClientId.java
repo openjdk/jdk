@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,11 +69,9 @@ class SimpleClientId extends ClientId {
     }
 
     public boolean equals(Object obj) {
-        if (obj == null || !(obj instanceof SimpleClientId)) {
+        if (!(obj instanceof SimpleClientId other)) {
             return false;
         }
-
-        SimpleClientId other = (SimpleClientId)obj;
 
         return super.equals(obj)
             && (username == other.username // null OK

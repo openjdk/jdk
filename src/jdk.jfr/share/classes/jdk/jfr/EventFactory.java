@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,11 +33,13 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+import jdk.internal.module.Checks;
 import jdk.jfr.internal.EventClassBuilder;
 import jdk.jfr.internal.JVMSupport;
 import jdk.jfr.internal.MetadataRepository;
+import jdk.jfr.internal.SecuritySupport;
 import jdk.jfr.internal.Type;
-import jdk.jfr.internal.Utils;
+import jdk.jfr.internal.util.Utils;
 
 /**
  * Class for defining an event at runtime.
@@ -51,29 +53,7 @@ import jdk.jfr.internal.Utils;
  * <p>
  * The following example shows how to implement a dynamic {@code Event} class.
  *
- * <pre>
- * {@code
- * List<ValueDescriptor> fields = new ArrayList<>();
- * List<AnnotationElement> messageAnnotations = Collections.singletonList(new AnnotationElement(Label.class, "Message"));
- * fields.add(new ValueDescriptor(String.class, "message", messageAnnotations));
- * List<AnnotationElement> numberAnnotations = Collections.singletonList(new AnnotationElement(Label.class, "Number"));
- * fields.add(new ValueDescriptor(int.class, "number", numberAnnotations));
- *
- * String[] category = { "Example", "Getting Started" };
- * List<AnnotationElement> eventAnnotations = new ArrayList<>();
- * eventAnnotations.add(new AnnotationElement(Name.class, "com.example.HelloWorld"));
- * eventAnnotations.add(new AnnotationElement(Label.class, "Hello World"));
- * eventAnnotations.add(new AnnotationElement(Description.class, "Helps programmer getting started"));
- * eventAnnotations.add(new AnnotationElement(Category.class, category));
- *
- * EventFactory f = EventFactory.create(eventAnnotations, fields);
- *
- * Event event = f.newEvent();
- * event.set(0, "hello, world!");
- * event.set(1, 4711);
- * event.commit();
- * }
- * </pre>
+ * {@snippet class="Snippets" region="EventFactoryOverview"}
  *
  * @since 9
  */
@@ -118,15 +98,15 @@ public final class EventFactory {
      * @see Event#set(int, Object)
      */
     public static EventFactory create(List<AnnotationElement> annotationElements, List<ValueDescriptor> fields) {
-        Objects.requireNonNull(fields);
-        Objects.requireNonNull(annotationElements);
+        Objects.requireNonNull(annotationElements, "annotationElements");
+        Objects.requireNonNull(fields, "fields");
         JVMSupport.ensureWithInternalError();
 
-        Utils.checkRegisterPermission();
+        SecuritySupport.checkRegisterPermission();
 
         List<AnnotationElement> sanitizedAnnotation = Utils.sanitizeNullFreeList(annotationElements, AnnotationElement.class);
         List<ValueDescriptor> sanitizedFields = Utils.sanitizeNullFreeList(fields, ValueDescriptor.class);
-        Set<String> nameSet = new HashSet<>();
+        Set<String> nameSet = HashSet.newHashSet(sanitizedFields.size());
         for (ValueDescriptor v : sanitizedFields) {
             String name = v.getName();
             if (v.isArray()) {
@@ -135,7 +115,7 @@ public final class EventFactory {
             if (!Type.isValidJavaFieldType(v.getTypeName())) {
                 throw new IllegalArgumentException(v.getTypeName() + " is not a valid type for an event field");
             }
-            if (!Type.isValidJavaIdentifier(v.getName())) {
+            if (!Checks.isJavaIdentifier(v.getName())) {
                 throw new IllegalArgumentException(name + " is not a valid name for an event field");
             }
             if (nameSet.contains(name)) {
@@ -171,9 +151,9 @@ public final class EventFactory {
         try {
             return new EventFactory(eventClass, sanitizedAnnotation, sanitizedFields);
         } catch (IllegalAccessException e) {
-            throw new IllegalAccessError("Could not access constructor of generated event handler, " + e.getMessage());
+            throw new IllegalAccessError("Could not access constructor of generated event class, " + e.getMessage());
         } catch (NoSuchMethodException e) {
-            throw new InternalError("Could not find constructor in generated event handler, " + e.getMessage());
+            throw new InternalError("Could not find constructor in generated event class, " + e.getMessage());
         }
     }
 
@@ -247,5 +227,4 @@ public final class EventFactory {
     public void unregister() {
         MetadataRepository.getInstance().unregister(eventClass);
     }
-
 }

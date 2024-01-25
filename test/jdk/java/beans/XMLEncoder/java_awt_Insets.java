@@ -25,6 +25,7 @@
  * @test
  * @bug 6402062 6471539
  * @summary Tests Insets encoding
+ * @run main/othervm -Djava.security.manager=allow java_awt_Insets
  * @author Sergey Malenkov
  */
 

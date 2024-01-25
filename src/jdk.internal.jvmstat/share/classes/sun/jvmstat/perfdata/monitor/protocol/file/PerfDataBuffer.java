@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,13 +28,12 @@ package sun.jvmstat.perfdata.monitor.protocol.file;
 import sun.jvmstat.monitor.*;
 import sun.jvmstat.perfdata.monitor.*;
 import java.io.*;
-import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
 /**
  * The concrete PerfDataBuffer implementation for the <em>file:</em>
- * protocol for the HotSpot PerfData monitoring implemetation.
+ * protocol for the HotSpot PerfData monitoring implementation.
  * <p>
  * This class is responsible for acquiring access to the instrumentation
  * buffer stored in a file referenced by a file URI.
@@ -54,23 +53,11 @@ public class PerfDataBuffer extends AbstractPerfDataBuffer {
      */
     public PerfDataBuffer(VmIdentifier vmid) throws MonitorException {
         File f = new File(vmid.getURI());
-        String mode = vmid.getMode();
 
-        try {
-            FileChannel fc = new RandomAccessFile(f, mode).getChannel();
-            ByteBuffer bb = null;
-
-            if (mode.compareTo("r") == 0) {
-                bb = fc.map(FileChannel.MapMode.READ_ONLY, 0L, (int)fc.size());
-            } else if (mode.compareTo("rw") == 0) {
-                bb = fc.map(FileChannel.MapMode.READ_WRITE, 0L, (int)fc.size());
-            } else {
-                throw new IllegalArgumentException("Invalid mode: " + mode);
-            }
-
-            fc.close();               // doesn't need to remain open
-
+        try (FileChannel fc = new RandomAccessFile(f, "r").getChannel()) {
+            ByteBuffer bb = fc.map(FileChannel.MapMode.READ_ONLY, 0L, (int)fc.size());
             createPerfDataBuffer(bb, 0);
+            // fc doesn't need to remain open
         } catch (FileNotFoundException e) {
             throw new MonitorException("Could not find " + vmid.toString());
         } catch (IOException e) {

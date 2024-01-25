@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 8141211 8147477
  * @summary exceptions=info output should have an exception message for interpreter methods
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -56,25 +57,25 @@ public class ExceptionsTest {
     }
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:exceptions=info",
-                                                                  InternalClass.class.getName());
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:exceptions=info",
+                                                                             InternalClass.class.getName());
         analyzeOutputOn(pb);
 
-        pb = ProcessTools.createJavaProcessBuilder("-Xlog:exceptions=off",
-                                                   InternalClass.class.getName());
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:exceptions=off",
+                                                              InternalClass.class.getName());
         analyzeOutputOff(pb);
 
-        pb = ProcessTools.createJavaProcessBuilder(InternalClass.class.getName());
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(InternalClass.class.getName());
         updateEnvironment(pb, "_JAVA_OPTIONS", "-Xlog:exceptions=info");
         analyzeOutputOn(pb);
 
-        pb = ProcessTools.createJavaProcessBuilder(InternalClass.class.getName());
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(InternalClass.class.getName());
         updateEnvironment(pb, "JAVA_TOOL_OPTIONS", "-Xlog:exceptions=info -Xlog:exceptions=off");
         analyzeOutputOff(pb);
 
-        pb = ProcessTools.createJavaProcessBuilder("-XX:VMOptionsFile=" + System.getProperty("test.src", ".")
-                                                   + File.separator + "ExceptionsTest_options_file",
-                                                   InternalClass.class.getName());
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:VMOptionsFile=" + System.getProperty("test.src", ".")
+                                                              + File.separator + "ExceptionsTest_options_file",
+                                                              InternalClass.class.getName());
         analyzeOutputOn(pb);
     }
 

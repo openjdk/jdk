@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ import sun.awt.SunToolkit;
  * {@code InputMethodManager} class. It is runnable as a separate
  * thread in the AWT environment.&nbsp;
  * {@code InputMethodManager.getInstance()} creates an instance of
- * {@code ExecutableInputMethodManager} and executes it as a deamon
+ * {@code ExecutableInputMethodManager} and executes it as a daemon
  * thread.
  *
  * @see InputMethodManager
@@ -252,6 +252,7 @@ class ExecutableInputMethodManager extends InputMethodManager
      * initializes the input method locator list for all
      * installed input method descriptors.
      */
+    @SuppressWarnings("removal")
     private void initializeInputMethodLocatorList() {
         synchronized (javaInputMethodLocatorList) {
             javaInputMethodLocatorList.clear();
@@ -374,7 +375,7 @@ class ExecutableInputMethodManager extends InputMethodManager
                     variant = localeString.substring(postIndex + 1);
                 }
             }
-            Locale locale = new Locale(language, country, variant);
+            Locale locale = Locale.of(language, country, variant);
             locator = locator.deriveLocator(locale);
         }
 
@@ -549,8 +550,8 @@ class ExecutableInputMethodManager extends InputMethodManager
         if (preferredLocale.equals(Locale.KOREA)) {
             preferredLocale = Locale.KOREAN;
         }
-        if (preferredLocale.equals(new Locale("th", "TH"))) {
-            preferredLocale = new Locale("th");
+        if (preferredLocale.equals(Locale.of("th", "TH"))) {
+            preferredLocale = Locale.of("th");
         }
 
         // obtain node
@@ -593,6 +594,7 @@ class ExecutableInputMethodManager extends InputMethodManager
         }
     }
 
+    @SuppressWarnings("removal")
     private Preferences getUserRoot() {
         return AccessController.doPrivileged(new PrivilegedAction<Preferences>() {
             public Preferences run() {
@@ -621,10 +623,10 @@ class ExecutableInputMethodManager extends InputMethodManager
                 advertised = Locale.KOREAN;
             }
         } else if (locale.getLanguage().equals("th")) {
-            if (locator.isLocaleAvailable(new Locale("th", "TH"))) {
-                advertised = new Locale("th", "TH");
-            } else if (locator.isLocaleAvailable(new Locale("th"))) {
-                advertised = new Locale("th");
+            if (locator.isLocaleAvailable(Locale.of("th", "TH"))) {
+                advertised = Locale.of("th", "TH");
+            } else if (locator.isLocaleAvailable(Locale.of("th"))) {
+                advertised = Locale.of("th");
             }
         }
 

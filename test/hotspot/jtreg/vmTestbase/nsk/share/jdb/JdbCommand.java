@@ -99,6 +99,8 @@ package nsk.share.jdb;
  *
  *   !!                        -- repeat last command
  *   <n> <command>             -- repeat command n times
+ *   repeat                    -- show whether GDB-style empty command repetition is enabled
+ *   repeat <on|off>           -- enable/disable GDB-style repetition
  *   help (or ?)               -- list commands
  *   version                   -- print version information
  *   exit (or quit)            -- exit debugger
@@ -145,6 +147,7 @@ public class JdbCommand {
     public static final String read         = "read ";
     public static final String redefine     = "redefine ";
     public static final String reenter      = "reenter" + ls;
+    public static final String repeat       = "repeat ";
     public static final String resume       = "resume ";
     public static final String run          = "run ";
     public static final String set          = "set ";

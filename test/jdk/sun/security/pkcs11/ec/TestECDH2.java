@@ -32,7 +32,7 @@
  *          jdk.crypto.cryptoki
  * @compile -XDignore.symbol.file TestECDH2.java
  * @run main/othervm TestECDH2
- * @run main/othervm TestECDH2 sm
+ * @run main/othervm -Djava.security.manager=allow TestECDH2 sm
  */
 
 import java.math.BigInteger;

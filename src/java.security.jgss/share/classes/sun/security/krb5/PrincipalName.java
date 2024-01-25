@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ package sun.security.krb5;
 import sun.security.krb5.internal.*;
 import sun.security.util.*;
 import java.net.*;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.Locale;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -209,12 +209,9 @@ public class PrincipalName implements Cloneable {
         if (this == o) {
             return true;
         }
-        if (o instanceof PrincipalName) {
-            PrincipalName other = (PrincipalName)o;
-            return nameRealm.equals(other.nameRealm) &&
-                    Arrays.equals(nameStrings, other.nameStrings);
-        }
-        return false;
+        return o instanceof PrincipalName other
+                && nameRealm.equals(other.nameRealm)
+                && Arrays.equals(nameStrings, other.nameStrings);
     }
 
     /**
@@ -270,15 +267,14 @@ public class PrincipalName implements Cloneable {
             if (subDer.getTag() != DerValue.tag_SequenceOf) {
                 throw new Asn1Exception(Krb5.ASN1_BAD_ID);
             }
-            Vector<String> v = new Vector<>();
+            ArrayList<String> v = new ArrayList<>();
             DerValue subSubDer;
             while(subDer.getData().available() > 0) {
                 subSubDer = subDer.getData().getDerValue();
                 String namePart = new KerberosString(subSubDer).toString();
-                v.addElement(namePart);
+                v.add(namePart);
             }
-            nameStrings = new String[v.size()];
-            v.copyInto(nameStrings);
+            nameStrings = v.toArray(new String[0]);
             validateNameStrings(nameStrings);
         } else  {
             throw new Asn1Exception(Krb5.ASN1_BAD_ID);
@@ -326,7 +322,7 @@ public class PrincipalName implements Cloneable {
     // Code repetition, realm parsed again by class Realm
     private static String[] parseName(String name) {
 
-        Vector<String> tempStrings = new Vector<>();
+        ArrayList<String> tempStrings = new ArrayList<>();
         String temp = name;
         int i = 0;
         int componentStart = 0;
@@ -346,7 +342,7 @@ public class PrincipalName implements Cloneable {
                 else {
                     if (componentStart <= i) {
                         component = temp.substring(componentStart, i);
-                        tempStrings.addElement(component);
+                        tempStrings.add(component);
                     }
                     componentStart = i + 1;
                 }
@@ -363,7 +359,7 @@ public class PrincipalName implements Cloneable {
                     } else {
                         if (componentStart < i) {
                             component = temp.substring(componentStart, i);
-                            tempStrings.addElement(component);
+                            tempStrings.add(component);
                         }
                         componentStart = i + 1;
                         break;
@@ -375,11 +371,10 @@ public class PrincipalName implements Cloneable {
 
         if (i == temp.length()) {
             component = temp.substring(componentStart, i);
-            tempStrings.addElement(component);
+            tempStrings.add(component);
         }
 
-        String[] result = new String[tempStrings.size()];
-        tempStrings.copyInto(result);
+        String[] result = tempStrings.toArray(new String[0]);
         return result;
     }
 
@@ -515,6 +510,7 @@ public class PrincipalName implements Cloneable {
         return temp.toString();
     }
 
+    @Override
     public int hashCode() {
         return toString().hashCode();
     }

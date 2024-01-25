@@ -1,4 +1,0 @@
-remove("category", "floating");
-remove("category", "state");
-remove("category", "phi");
-remove("category", "proxy");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/vmClasses.hpp"
 #include "gc/shared/allocTracer.hpp"
@@ -31,6 +32,7 @@
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/gcVMOperations.hpp"
@@ -41,6 +43,7 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/classLoaderMetaspace.hpp"
+#include "memory/metaspace.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -48,8 +51,8 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/perfData.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmThread.hpp"
 #include "services/heapDumper.hpp"
@@ -59,7 +62,10 @@
 
 class ClassLoaderData;
 
+size_t CollectedHeap::_lab_alignment_reserve = SIZE_MAX;
+Klass* CollectedHeap::_filler_object_klass = nullptr;
 size_t CollectedHeap::_filler_array_max_size = 0;
+size_t CollectedHeap::_stack_chunk_max_size = 0;
 
 class GCMessage : public FormatBuffer<1024> {
  public:
@@ -95,7 +101,7 @@ void GCHeapLog::log_heap(CollectedHeap* heap, bool before) {
   double timestamp = fetch_timestamp();
   MutexLocker ml(&_mutex, Mutex::_no_safepoint_check_flag);
   int index = compute_log_index();
-  _records[index].thread = NULL; // Its the GC thread so it's not that interesting.
+  _records[index].thread = nullptr; // Its the GC thread so it's not that interesting.
   _records[index].timestamp = timestamp;
   _records[index].data.is_before = before;
   stringStream st(_records[index].data.buffer(), _records[index].data.size());
@@ -107,6 +113,18 @@ void GCHeapLog::log_heap(CollectedHeap* heap, bool before) {
 
   heap->print_on(&st);
   st.print_cr("}");
+}
+
+ParallelObjectIterator::ParallelObjectIterator(uint thread_num) :
+  _impl(Universe::heap()->parallel_object_iterator(thread_num))
+{}
+
+ParallelObjectIterator::~ParallelObjectIterator() {
+  delete _impl;
+}
+
+void ParallelObjectIterator::object_iterate(ObjectClosure* cl, uint worker_id) {
+  _impl->object_iterate(cl, worker_id);
 }
 
 size_t CollectedHeap::unused() const {
@@ -127,26 +145,17 @@ GCHeapSummary CollectedHeap::create_heap_summary() {
 }
 
 MetaspaceSummary CollectedHeap::create_metaspace_summary() {
-  const MetaspaceSizes meta_space(
-      MetaspaceUtils::committed_bytes(),
-      MetaspaceUtils::used_bytes(),
-      MetaspaceUtils::reserved_bytes());
-  const MetaspaceSizes data_space(
-      MetaspaceUtils::committed_bytes(Metaspace::NonClassType),
-      MetaspaceUtils::used_bytes(Metaspace::NonClassType),
-      MetaspaceUtils::reserved_bytes(Metaspace::NonClassType));
-  const MetaspaceSizes class_space(
-      MetaspaceUtils::committed_bytes(Metaspace::ClassType),
-      MetaspaceUtils::used_bytes(Metaspace::ClassType),
-      MetaspaceUtils::reserved_bytes(Metaspace::ClassType));
-
   const MetaspaceChunkFreeListSummary& ms_chunk_free_list_summary =
     MetaspaceUtils::chunk_free_list_summary(Metaspace::NonClassType);
   const MetaspaceChunkFreeListSummary& class_chunk_free_list_summary =
     MetaspaceUtils::chunk_free_list_summary(Metaspace::ClassType);
-
-  return MetaspaceSummary(MetaspaceGC::capacity_until_GC(), meta_space, data_space, class_space,
+  return MetaspaceSummary(MetaspaceGC::capacity_until_GC(),
+                          MetaspaceUtils::get_combined_statistics(),
                           ms_chunk_free_list_summary, class_chunk_free_list_summary);
+}
+
+bool CollectedHeap::contains_null(const oop* p) const {
+  return *p == nullptr;
 }
 
 void CollectedHeap::print_heap_before_gc() {
@@ -158,7 +167,7 @@ void CollectedHeap::print_heap_before_gc() {
     print_on(&ls);
   }
 
-  if (_gc_heap_log != NULL) {
+  if (_gc_heap_log != nullptr) {
     _gc_heap_log->log_heap_before(this);
   }
 }
@@ -172,7 +181,7 @@ void CollectedHeap::print_heap_after_gc() {
     print_on(&ls);
   }
 
-  if (_gc_heap_log != NULL) {
+  if (_gc_heap_log != nullptr) {
     _gc_heap_log->log_heap_after(this);
   }
 }
@@ -185,7 +194,7 @@ void CollectedHeap::print_on_error(outputStream* st) const {
   st->cr();
 
   BarrierSet* bs = BarrierSet::barrier_set();
-  if (bs != NULL) {
+  if (bs != nullptr) {
     bs->print_on(st);
   }
 }
@@ -220,7 +229,7 @@ bool CollectedHeap::is_oop(oop object) const {
     return false;
   }
 
-  if (is_in(object->klass_or_null())) {
+  if (!Metaspace::contains(object->klass_raw())) {
     return false;
   }
 
@@ -240,6 +249,14 @@ CollectedHeap::CollectedHeap() :
   _gc_cause(GCCause::_no_gc),
   _gc_lastcause(GCCause::_no_gc)
 {
+  // If the minimum object size is greater than MinObjAlignment, we can
+  // end up with a shard at the end of the buffer that's smaller than
+  // the smallest object.  We can't allow that because the buffer must
+  // look like it's full of objects when we retire it, so we make
+  // sure we have enough space for a filler int array object.
+  size_t min_size = min_dummy_object_size();
+  _lab_alignment_reserve = min_size > (size_t)MinObjAlignment ? align_object_size(min_size) : 0;
+
   const size_t max_len = size_t(arrayOopDesc::max_array_length(T_INT));
   const size_t elements_per_word = HeapWordSize / sizeof(jint);
   _filler_array_max_size = align_object_size(filler_array_hdr_size() +
@@ -264,7 +281,7 @@ CollectedHeap::CollectedHeap() :
   if (LogEvents) {
     _gc_heap_log = new GCHeapLog();
   } else {
-    _gc_heap_log = NULL;
+    _gc_heap_log = nullptr;
   }
 }
 
@@ -278,14 +295,15 @@ void CollectedHeap::collect_as_vm_thread(GCCause::Cause cause) {
   assert(Heap_lock->is_locked(), "Precondition#2");
   GCCauseSetter gcs(this, cause);
   switch (cause) {
+    case GCCause::_codecache_GC_threshold:
+    case GCCause::_codecache_GC_aggressive:
     case GCCause::_heap_inspection:
     case GCCause::_heap_dump:
-    case GCCause::_metadata_GC_threshold : {
+    case GCCause::_metadata_GC_threshold: {
       HandleMark hm(thread);
       do_full_collection(false);        // don't clear all soft refs
       break;
     }
-    case GCCause::_archive_time_gc:
     case GCCause::_metadata_GC_clear_soft_refs: {
       HandleMark hm(thread);
       do_full_collection(true);         // do clear all soft refs
@@ -307,7 +325,7 @@ MetaWord* CollectedHeap::satisfy_failed_metadata_allocation(ClassLoaderData* loa
 
   do {
     MetaWord* result = loader_data->metaspace_non_null()->allocate(word_size, mdtype);
-    if (result != NULL) {
+    if (result != nullptr) {
       return result;
     }
 
@@ -316,7 +334,7 @@ MetaWord* CollectedHeap::satisfy_failed_metadata_allocation(ClassLoaderData* loa
       // If that does not succeed, wait if this thread is not
       // in a critical section itself.
       result = loader_data->metaspace_non_null()->expand_and_allocate(word_size, mdtype);
-      if (result != NULL) {
+      if (result != nullptr) {
         return result;
       }
       JavaThread* jthr = JavaThread::current();
@@ -333,7 +351,7 @@ MetaWord* CollectedHeap::satisfy_failed_metadata_allocation(ClassLoaderData* loa
           fatal("Possible deadlock due to allocating while"
                 " in jni critical section");
         }
-        return NULL;
+        return nullptr;
       }
     }
 
@@ -383,17 +401,6 @@ void CollectedHeap::set_gc_cause(GCCause::Cause v) {
   _gc_cause = v;
 }
 
-#ifndef PRODUCT
-void CollectedHeap::check_for_non_bad_heap_word_value(HeapWord* addr, size_t size) {
-  if (CheckMemoryInitialization && ZapUnusedHeapArea) {
-    // please note mismatch between size (in 32/64 bit words), and ju_addr that always point to a 32 bit word
-    for (juint* ju_addr = reinterpret_cast<juint*>(addr); ju_addr < reinterpret_cast<juint*>(addr + size); ++ju_addr) {
-      assert(*ju_addr == badHeapWordVal, "Found non badHeapWordValue in pre-allocation check");
-    }
-  }
-}
-#endif // PRODUCT
-
 size_t CollectedHeap::max_tlab_size() const {
   // TLABs can't be bigger than we can fill with a int[Integer.MAX_VALUE].
   // This restriction could be removed by enabling filling with multiple arrays.
@@ -417,6 +424,11 @@ size_t CollectedHeap::filler_array_min_size() {
   return align_object_size(filler_array_hdr_size()); // align to MinObjAlignment
 }
 
+void CollectedHeap::zap_filler_array_with(HeapWord* start, size_t words, juint value) {
+  Copy::fill_to_words(start + filler_array_hdr_size(),
+                      words - filler_array_hdr_size(), value);
+}
+
 #ifdef ASSERT
 void CollectedHeap::fill_args_check(HeapWord* start, size_t words)
 {
@@ -427,8 +439,7 @@ void CollectedHeap::fill_args_check(HeapWord* start, size_t words)
 void CollectedHeap::zap_filler_array(HeapWord* start, size_t words, bool zap)
 {
   if (ZapFillerObjects && zap) {
-    Copy::fill_to_words(start + filler_array_hdr_size(),
-                        words - filler_array_hdr_size(), 0XDEAFBABE);
+    zap_filler_array_with(start, words, 0XDEAFBABE);
   }
 }
 #endif // ASSERT
@@ -443,9 +454,15 @@ CollectedHeap::fill_with_array(HeapWord* start, size_t words, bool zap)
   const size_t len = payload_size * HeapWordSize / sizeof(jint);
   assert((int)len >= 0, "size too large " SIZE_FORMAT " becomes %d", words, (int)len);
 
-  ObjArrayAllocator allocator(Universe::intArrayKlassObj(), words, (int)len, /* do_zero */ false);
+  ObjArrayAllocator allocator(Universe::fillerArrayKlassObj(), words, (int)len, /* do_zero */ false);
   allocator.initialize(start);
-  DEBUG_ONLY(zap_filler_array(start, words, zap);)
+  if (CDSConfig::is_dumping_heap()) {
+    // This array is written into the CDS archive. Make sure it
+    // has deterministic contents.
+    zap_filler_array_with(start, words, 0);
+  } else {
+    DEBUG_ONLY(zap_filler_array(start, words, zap);)
+  }
 }
 
 void
@@ -457,7 +474,7 @@ CollectedHeap::fill_with_object_impl(HeapWord* start, size_t words, bool zap)
     fill_with_array(start, words, zap);
   } else if (words > 0) {
     assert(words == min_fill_size(), "unaligned size");
-    ObjAllocator allocator(vmClasses::Object_klass(), words);
+    ObjAllocator allocator(CollectedHeap::filler_object_klass(), words);
     allocator.initialize(start);
   }
 }
@@ -493,20 +510,11 @@ void CollectedHeap::fill_with_dummy_object(HeapWord* start, HeapWord* end, bool 
   CollectedHeap::fill_with_object(start, end, zap);
 }
 
-size_t CollectedHeap::min_dummy_object_size() const {
-  return oopDesc::header_size();
-}
-
-size_t CollectedHeap::tlab_alloc_reserve() const {
-  size_t min_size = min_dummy_object_size();
-  return min_size > (size_t)MinObjAlignment ? align_object_size(min_size) : 0;
-}
-
 HeapWord* CollectedHeap::allocate_new_tlab(size_t min_size,
                                            size_t requested_size,
                                            size_t* actual_size) {
   guarantee(false, "thread-local allocation buffers not supported");
-  return NULL;
+  return nullptr;
 }
 
 void CollectedHeap::ensure_parsability(bool retire_tlabs) {
@@ -549,10 +557,14 @@ void CollectedHeap::record_whole_heap_examined_timestamp() {
 }
 
 void CollectedHeap::full_gc_dump(GCTimer* timer, bool before) {
-  assert(timer != NULL, "timer is null");
+  assert(timer != nullptr, "timer is null");
+  static uint count = 0;
   if ((HeapDumpBeforeFullGC && before) || (HeapDumpAfterFullGC && !before)) {
-    GCTraceTime(Info, gc) tm(before ? "Heap Dump (before full gc)" : "Heap Dump (after full gc)", timer);
-    HeapDumper::dump_heap();
+    if (FullGCHeapDumpLimit == 0 || count < FullGCHeapDumpLimit) {
+      GCTraceTime(Info, gc) tm(before ? "Heap Dump (before full gc)" : "Heap Dump (after full gc)", timer);
+      HeapDumper::dump_heap();
+      count++;
+    }
   }
 
   LogTarget(Trace, gc, classhisto) lt;
@@ -582,6 +594,7 @@ void CollectedHeap::initialize_reserved_region(const ReservedHeapSpace& rs) {
 }
 
 void CollectedHeap::post_initialize() {
+  StringDedup::initialize();
   initialize_serviceability();
 }
 
@@ -619,32 +632,6 @@ void CollectedHeap::reset_promotion_should_fail() {
 }
 
 #endif  // #ifndef PRODUCT
-
-bool CollectedHeap::supports_object_pinning() const {
-  return false;
-}
-
-oop CollectedHeap::pin_object(JavaThread* thread, oop obj) {
-  ShouldNotReachHere();
-  return NULL;
-}
-
-void CollectedHeap::unpin_object(JavaThread* thread, oop obj) {
-  ShouldNotReachHere();
-}
-
-bool CollectedHeap::is_archived_object(oop object) const {
-  return false;
-}
-
-void CollectedHeap::deduplicate_string(oop str) {
-  // Do nothing, unless overridden in subclass.
-}
-
-uint32_t CollectedHeap::hash_oop(oop obj) const {
-  const uintptr_t addr = cast_from_oop<uintptr_t>(obj);
-  return static_cast<uint32_t>(addr >> LogMinObjAlignment);
-}
 
 // It's the caller's responsibility to ensure glitch-freedom
 // (if required).

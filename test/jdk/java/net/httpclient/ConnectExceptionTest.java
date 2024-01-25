@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @summary Expect ConnectException for all non-security related connect errors
  * @bug 8204864
- * @run testng/othervm ConnectExceptionTest
+ * @run testng/othervm -Djdk.net.hosts.file=HostFileDoesNotExist ConnectExceptionTest
  * @run testng/othervm/java.security.policy=noPermissions.policy ConnectExceptionTest
  */
 

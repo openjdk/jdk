@@ -25,6 +25,7 @@
  * @test
  * @bug 5023557
  * @summary Tests complex references
+ * @run main/othervm -Djava.security.manager=allow Test5023557
  * @author Sergey Malenkov
  */
 

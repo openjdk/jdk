@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,8 @@ import java.util.Objects;
 
 public class StringReader extends Reader {
 
+    private final int length;
     private String str;
-    private int length;
     private int next = 0;
     private int mark = 0;
 
@@ -47,8 +47,8 @@ public class StringReader extends Reader {
      * @param s  String providing the character stream.
      */
     public StringReader(String s) {
-        this.str = s;
         this.length = s.length();
+        this.str = s;
     }
 
     /** Check to make sure that the stream has not been closed */
@@ -136,7 +136,7 @@ public class StringReader extends Reader {
             // Bound skip by beginning and end of the source
             long r = Math.min(length - next, n);
             r = Math.max(-next, r);
-            next += r;
+            next += (int)r;
             return r;
         }
     }

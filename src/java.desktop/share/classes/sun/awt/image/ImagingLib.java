@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@ import java.security.PrivilegedAction;
  * (in which case our java code will be executed) or may throw
  * an exception.
  */
+@SuppressWarnings("removal")
 public class ImagingLib {
 
     static boolean useLib = true;
@@ -64,10 +65,10 @@ public class ImagingLib {
     private static Class<?>[] nativeOpClass = new Class<?>[NUM_NATIVE_OPS];
 
     /**
-     * Returned value indicates whether the library initailization was
-     * succeded.
+     * Returned value indicates whether the library initialization
+     * succeeded.
      *
-     * There could be number of reasons to failure:
+     * There could be a number of reasons for failure:
      * - failed to load library.
      * - failed to get all required entry points.
      */
@@ -92,8 +93,6 @@ public class ImagingLib {
         PrivilegedAction<Boolean> doMlibInitialization =
             new PrivilegedAction<Boolean>() {
                 public Boolean run() {
-                    String arch = System.getProperty("os.arch");
-
                     try {
                         System.loadLibrary("mlib_image");
                     } catch (UnsatisfiedLinkError e) {

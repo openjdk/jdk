@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import com.sun.jmx.remote.util.ClassLogger;
 import com.sun.jmx.remote.util.EnvHelp;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.net.MalformedURLException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -127,8 +126,8 @@ import javax.management.remote.JMXConnectorFactory.ConnectorFactory;
  * <code><em>protocol</em></code>, or it will throw a
  * <code>MalformedURLException</code> if there is none.  An
  * implementation may choose to find providers by other means.  For
- * example, it may support <a
- * href="{@docRoot}/java.base/java/util/ServiceLoader.html#developing-service-providers">service providers</a>,
+ * example, it may support {@linkplain
+ * java.util.ServiceLoader##developing-service-providers service providers},
  * where the service interface is <code>JMXConnectorServerProvider</code>.</p>
  *
  * <p>Every implementation must support the RMI connector protocol with
@@ -262,10 +261,10 @@ public class JMXConnectorServerFactory {
             throws IOException {
         Map<String, Object> envcopy;
         if (environment == null)
-            envcopy = new HashMap<String, Object>();
+            envcopy = new HashMap<>();
         else {
             EnvHelp.checkAttributes(environment);
-            envcopy = new HashMap<String, Object>(environment);
+            envcopy = new HashMap<>(environment);
         }
 
         final Class<JMXConnectorServerProvider> targetInterface =

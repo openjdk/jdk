@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@
  *     Incorrect checking of proxy server response
  * @modules jdk.crypto.ec
  *          java.base/sun.net.www
- * @library /javax/net/ssl/templates
+ * @library /test/lib /javax/net/ssl/templates
  * @run main/othervm ProxyAuthTest fail
  * @run main/othervm -Djdk.http.auth.tunneling.disabledSchemes=Basic
  *      ProxyAuthTest fail
@@ -98,6 +98,17 @@ public class ProxyAuthTest extends SSLSocketTemplate {
     @Override
     protected boolean isCustomizedClientConnection() {
         return true;
+    }
+
+    @Override
+    protected void doServerSide() throws Exception {
+        if (expectSuccess) {
+            super.doServerSide();
+        } else {
+            // we don't expect anything to connect to the server
+            serverPort = 443;
+            serverCondition.countDown();
+        }
     }
 
     @Override

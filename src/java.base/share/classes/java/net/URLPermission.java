@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.security.Permission;
+import java.util.Locale;
+import java.util.Objects;
 
 /**
  * Represents permission to access a resource or set of resources defined by a
@@ -147,6 +149,10 @@ import java.security.Permission;
  * from being set by application code, regardless of whether the security policy
  * in force, permits it.
  *
+ * @spec https://www.rfc-editor.org/info/rfc2296
+ *      RFC 2296: HTTP Remote Variant Selection Algorithm -- RVSA/1.0
+ * @spec https://www.rfc-editor.org/info/rfc2732
+ *      RFC 2732: Format for Literal IPv6 Addresses in URL's
  * @since 1.8
  */
 public final class URLPermission extends Permission {
@@ -371,6 +377,7 @@ public final class URLPermission extends Permission {
      * Returns true if, this.getActions().equals(p.getActions())
      * and p's url equals this's url.  Returns false otherwise.
      */
+    @Override
     public boolean equals(Object p) {
         if (!(p instanceof URLPermission that)) {
             return false;
@@ -384,22 +391,19 @@ public final class URLPermission extends Permission {
         if (!this.authority.equals(that.authority)) {
             return false;
         }
-        if (this.path != null) {
-            return this.path.equals(that.path);
-        } else {
-            return that.path == null;
-        }
+        return Objects.equals(this.path, that.path);
     }
 
     /**
      * Returns a hashcode calculated from the hashcode of the
      * actions String and the url string.
      */
+    @Override
     public int hashCode() {
         return getActions().hashCode()
             + scheme.hashCode()
             + authority.hashCode()
-            + (path == null ? 0 : path.hashCode());
+            + Objects.hashCode(path);
     }
 
 
@@ -418,7 +422,7 @@ public final class URLPermission extends Permission {
                     "White space not allowed in methods: \"" + methods + "\"");
             } else {
                 if (c >= 'a' && c <= 'z') {
-                    c += 'A' - 'a';
+                    c += (char) ('A' - 'a');
                 }
                 b.append(c);
             }
@@ -437,7 +441,7 @@ public final class URLPermission extends Permission {
             char c = headers.charAt(i);
             if (c >= 'a' && c <= 'z') {
                 if (capitalizeNext) {
-                    c += 'A' - 'a';
+                    c += (char) ('A' - 'a');
                     capitalizeNext = false;
                 }
                 b.append(c);
@@ -471,7 +475,7 @@ public final class URLPermission extends Permission {
             throw new IllegalArgumentException(
                 "Invalid URL string: \"" + url + "\"");
         }
-        scheme = url.substring(0, delim).toLowerCase();
+        scheme = url.substring(0, delim).toLowerCase(Locale.ROOT);
         this.ssp = url.substring(delim + 1);
 
         if (!ssp.startsWith("//")) {
@@ -493,7 +497,7 @@ public final class URLPermission extends Permission {
             auth = authpath.substring(0, delim);
             this.path = authpath.substring(delim);
         }
-        this.authority = new Authority(scheme, auth.toLowerCase());
+        this.authority = new Authority(scheme, auth.toLowerCase(Locale.ROOT));
     }
 
     private String actions() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import sun.util.logging.PlatformLogger;
 public abstract class X11InputMethod extends X11InputMethodBase {
 
     // to keep the instance of activating if IM resumed
-    static protected X11InputMethod activatedInstance = null;
+    protected static X11InputMethod activatedInstance = null;
 
     /**
      * Constructs an X11InputMethod instance. It initializes the XIM
@@ -125,7 +125,7 @@ public abstract class X11InputMethod extends X11InputMethodBase {
         /* Usually as the client component, let's call it component A,
            loses the focus, this method is called. Then when another client
            component, let's call it component B,  gets the focus, activate is first called on
-           the previous focused compoent which is A, then endComposition is called on A,
+           the previous focused component which is A, then endComposition is called on A,
            deactivate is called on A again. And finally activate is called on the newly
            focused component B. Here is the call sequence.
 
@@ -231,7 +231,7 @@ public abstract class X11InputMethod extends X11InputMethodBase {
 
         // Replace control character with a square box
         if (chgText != null) {
-            StringBuffer newChgText = new StringBuffer();
+            StringBuilder newChgText = new StringBuilder();
             for (int i=0; i < chgText.length(); i++){
                 char c = chgText.charAt(i);
                 if (Character.isISOControl(c)){
@@ -466,7 +466,7 @@ public abstract class X11InputMethod extends X11InputMethodBase {
            return.
            setCompositionEnabledNative may throw UnsupportedOperationException.
            Don't try to catch it since the method may be called by clients.
-           Use package private mthod 'resetCompositionState' if you want the
+           Use package private method 'resetCompositionState' if you want the
            exception to be caught.
         */
         boolean pre, post;

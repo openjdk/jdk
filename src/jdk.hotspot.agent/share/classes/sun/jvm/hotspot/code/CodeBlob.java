@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,8 +133,6 @@ public class CodeBlob extends VMObject {
   // Typing
   public boolean isBufferBlob()         { return false; }
 
-  public boolean isAOT()                { return false; }
-
   public boolean isCompiled()           { return false; }
 
   public boolean isNMethod()            { return false; }
@@ -184,12 +182,6 @@ public class CodeBlob extends VMObject {
   public boolean contains(Address addr)        { return contentContains(addr);                                                  }
 
   public boolean isFrameCompleteAt(Address a)  { return codeContains(a) && a.minus(codeBegin()) >= getFrameCompleteOffset(); }
-
-  // Reclamation support (really only used by the nmethods, but in order to get asserts to work
-  // in the CodeCache they are defined virtual here)
-  public boolean isZombie()             { return false; }
-
-  public boolean isLockedByVM()         { return false; }
 
   public ImmutableOopMap getOopMapForReturnAddress(Address returnAddress, boolean debugging) {
     Address pc = returnAddress;

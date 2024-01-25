@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -224,16 +224,20 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
     }
 
     /**
-     * Obsolete - not used.
+     * Obsolete - not used. This method is a no-op.
      * @param e list data event
+     * @deprecated Obsolete method, not used anymore.
      */
+    @Deprecated(since = "17", forRemoval = true)
     public void intervalAdded(ListDataEvent e) {
     }
 
     /**
-     * Obsolete - not used.
+     * Obsolete - not used. This method is a no-op.
      * @param e list data event
+     * @deprecated Obsolete method, not used anymore.
      */
+    @Deprecated(since = "17", forRemoval = true)
     public void intervalRemoved(ListDataEvent e) {
     }
 
@@ -251,7 +255,9 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
      * @return a comparison of the file names
      * @param a a file
      * @param b another file
+     * @deprecated Obsolete method, not used anymore.
      */
+    @Deprecated(since = "17", forRemoval = true)
     protected boolean lt(File a, File b) {
         // First ignore case when comparing
         int diff = a.getName().toLowerCase().compareTo(b.getName().toLowerCase());
@@ -354,12 +360,15 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
                                 break;
                             }
                         }
-                        if (start >= 0 && end > start
-                            && newFileCache.subList(end, newSize).equals(fileCache.subList(start, oldSize))) {
-                            if (loadThread.isInterrupted()) {
-                                return null;
+
+                        if (start >= 0 && end > start) {
+                            List<File> listStart_OldSize = new Vector<>(fileCache.subList(start, oldSize));
+                            if (newFileCache.subList(end, newSize).equals(listStart_OldSize)) {
+                                if (loadThread.isInterrupted()) {
+                                    return null;
+                                }
+                                return new DoChangeContents(newFileCache.subList(start, end), start, null, 0, fid);
                             }
-                            return new DoChangeContents(newFileCache.subList(start, end), start, null, 0, fid);
                         }
                     } else if (newSize < oldSize) {
                         //see if interval is removed
@@ -372,12 +381,15 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
                                 break;
                             }
                         }
-                        if (start >= 0 && end > start
-                            && fileCache.subList(end, oldSize).equals(newFileCache.subList(start, newSize))) {
-                            if (loadThread.isInterrupted()) {
-                                return null;
+
+                        if (start >= 0 && end > start) {
+                            List<File> listEnd_OldSize = new Vector<>(fileCache.subList(end, oldSize));
+                            if (listEnd_OldSize.equals(newFileCache.subList(start, newSize))) {
+                                if (loadThread.isInterrupted()) {
+                                    return null;
+                                }
+                                return new DoChangeContents(null, 0, new Vector<>(fileCache.subList(start, end)), start, fid);
                             }
-                            return new DoChangeContents(null, 0, new Vector<>(fileCache.subList(start, end)), start, fid);
                         }
                     }
                     if (!fileCache.equals(newFileCache)) {
@@ -486,7 +498,7 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
 
     /**
      * Set the busy state for the model. The model is considered
-     * busy when it is running a separate (interruptable)
+     * busy when it is running a separate (interruptible)
      * thread in order to load the contents of a directory.
      */
     private synchronized void setBusy(final boolean busy, int fid) {

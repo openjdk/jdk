@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary itables=trace should have logging from each of the statements
  *          in the code
  * @requires vm.debug
+ * @requires vm.flagless
  * @library /test/lib
  * @compile ClassB.java
  *          ItablesVtableTest.java
@@ -40,7 +41,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class ItablesTest {
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:itables=trace", "ClassB");
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:itables=trace", "ClassB");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain(": Initializing itables for ClassB");
         output.shouldContain(": Initializing itable indices for interface ");
@@ -52,7 +53,7 @@ public class ItablesTest {
         output.shouldContain("invokeinterface selected method: receiver-class");
         output.shouldHaveExitValue(0);
 
-        pb = ProcessTools.createJavaProcessBuilder("-Xlog:itables=trace", "ItablesVtableTest");
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:itables=trace", "ItablesVtableTest");
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("vtable index ");
         output.shouldHaveExitValue(0);

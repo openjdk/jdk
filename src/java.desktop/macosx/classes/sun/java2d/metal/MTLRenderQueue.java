@@ -46,6 +46,7 @@ public class MTLRenderQueue extends RenderQueue {
     private static MTLRenderQueue theInstance;
     private final QueueFlusher flusher;
 
+    @SuppressWarnings("removal")
     private MTLRenderQueue() {
         /*
          * The thread must be a member of a thread group

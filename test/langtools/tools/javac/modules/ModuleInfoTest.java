@@ -748,27 +748,31 @@ public class ModuleInfoTest extends ModuleTestBase {
     public void testJDK8202832(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src.resolve("m1a"),
-                          "module m1a {\n" +
-                          "    requires m2a;\n" +
-                          "    requires m2b;\n" +
-                          "}");
+                          """
+                              module m1a {
+                                  requires m2a;
+                                  requires m2b;
+                              }""");
         tb.writeJavaFiles(src.resolve("m1b"),
-                          "module m1b {\n" +
-                          "    requires m2b;\n" +
-                          "    requires m2a;\n" +
-                          "}");
+                          """
+                              module m1b {
+                                  requires m2b;
+                                  requires m2a;
+                              }""");
         tb.writeJavaFiles(src.resolve("m2a"),
-                          "module m2a {\n" +
-                          "    requires m3;\n" +
-                          "    requires m1a;\n" +
-                          "    requires m1b;\n" +
-                          "}");
+                          """
+                              module m2a {
+                                  requires m3;
+                                  requires m1a;
+                                  requires m1b;
+                              }""");
         tb.writeJavaFiles(src.resolve("m2b"),
-                          "module m2b {\n" +
-                          "    requires m3;\n" +
-                          "    requires m1a;\n" +
-                          "    requires m1b;\n" +
-                          "}");
+                          """
+                              module m2b {
+                                  requires m3;
+                                  requires m1a;
+                                  requires m1b;
+                              }""");
         tb.writeJavaFiles(src.resolve("m3"),
                           "module m3 { }");
 

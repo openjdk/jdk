@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import java.security.spec.KeySpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.util.Arrays;
 
 /**
  * This class implements the DSA key factory of the Sun provider.
@@ -62,8 +63,7 @@ public class DSAKeyFactory extends KeyFactorySpi {
     protected PublicKey engineGeneratePublic(KeySpec keySpec)
     throws InvalidKeySpecException {
         try {
-            if (keySpec instanceof DSAPublicKeySpec) {
-                DSAPublicKeySpec dsaPubKeySpec = (DSAPublicKeySpec)keySpec;
+            if (keySpec instanceof DSAPublicKeySpec dsaPubKeySpec) {
                 return new DSAPublicKeyImpl(dsaPubKeySpec.getY(),
                                     dsaPubKeySpec.getP(),
                                     dsaPubKeySpec.getQ(),
@@ -93,19 +93,21 @@ public class DSAKeyFactory extends KeyFactorySpi {
      * is inappropriate for this key factory to produce a private key.
      */
     protected PrivateKey engineGeneratePrivate(KeySpec keySpec)
-    throws InvalidKeySpecException {
+            throws InvalidKeySpecException {
         try {
-            if (keySpec instanceof DSAPrivateKeySpec) {
-                DSAPrivateKeySpec dsaPrivKeySpec = (DSAPrivateKeySpec)keySpec;
+            if (keySpec instanceof DSAPrivateKeySpec dsaPrivKeySpec) {
                 return new DSAPrivateKey(dsaPrivKeySpec.getX(),
                                          dsaPrivKeySpec.getP(),
                                          dsaPrivKeySpec.getQ(),
                                          dsaPrivKeySpec.getG());
 
             } else if (keySpec instanceof PKCS8EncodedKeySpec) {
-                return new DSAPrivateKey
-                    (((PKCS8EncodedKeySpec)keySpec).getEncoded());
-
+                byte[] encoded = ((PKCS8EncodedKeySpec)keySpec).getEncoded();
+                try {
+                    return new DSAPrivateKey(encoded);
+                } finally {
+                    Arrays.fill(encoded, (byte) 0);
+                }
             } else {
                 throw new InvalidKeySpecException
                     ("Inappropriate key specification");
@@ -183,8 +185,12 @@ public class DSAKeyFactory extends KeyFactorySpi {
                                                               params.getG()));
 
                 } else if (keySpec.isAssignableFrom(pkcs8KeySpec)) {
-                    return keySpec.cast(new PKCS8EncodedKeySpec(key.getEncoded()));
-
+                    byte[] encoded = key.getEncoded();
+                    try {
+                        return keySpec.cast(new PKCS8EncodedKeySpec(encoded));
+                    } finally {
+                        Arrays.fill(encoded, (byte)0);
+                    }
                 } else {
                     throw new InvalidKeySpecException
                         ("Inappropriate key specification");

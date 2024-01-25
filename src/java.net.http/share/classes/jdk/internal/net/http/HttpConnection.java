@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,10 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentLinkedDeque;
@@ -44,6 +44,10 @@ import java.util.function.Predicate;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpHeaders;
+
+import javax.net.ssl.SNIServerName;
+
+import jdk.internal.net.http.common.Alpns;
 import jdk.internal.net.http.common.Demand;
 import jdk.internal.net.http.common.FlowTube;
 import jdk.internal.net.http.common.Logger;
@@ -67,31 +71,44 @@ import static jdk.internal.net.http.common.Utils.ProxyHeaders;
 abstract class HttpConnection implements Closeable {
 
     final Logger debug = Utils.getDebugLogger(this::dbgString, Utils.DEBUG);
-    final static Logger DEBUG_LOGGER = Utils.getDebugLogger(
+    static final Logger DEBUG_LOGGER = Utils.getDebugLogger(
             () -> "HttpConnection(SocketTube(?))", Utils.DEBUG);
+    public static final Comparator<HttpConnection> COMPARE_BY_ID
+            = Comparator.comparing(HttpConnection::id);
 
     /** The address this connection is connected to. Could be a server or a proxy. */
     final InetSocketAddress address;
     private final HttpClientImpl client;
     private final TrailingOperations trailingOperations;
+    private final long id;
 
     HttpConnection(InetSocketAddress address, HttpClientImpl client) {
         this.address = address;
         this.client = client;
         trailingOperations = new TrailingOperations();
+        this.id = newConnectionId(client);
+    }
+
+    // This is overridden in tests
+    long newConnectionId(HttpClientImpl client) {
+        return client.newConnectionId();
+    }
+
+    private long id() {
+        return id;
     }
 
     private static final class TrailingOperations {
         private final Map<CompletionStage<?>, Boolean> operations =
                 new IdentityHashMap<>();
         void add(CompletionStage<?> cf) {
-            synchronized(operations) {
+            synchronized (operations) {
                 operations.put(cf, Boolean.TRUE);
                 cf.whenComplete((r,t)-> remove(cf));
             }
         }
         boolean remove(CompletionStage<?> cf) {
-            synchronized(operations) {
+            synchronized (operations) {
                 return operations.remove(cf);
             }
         }
@@ -274,7 +291,7 @@ abstract class HttpConnection implements Closeable {
             } else {
                 String[] alpn = null;
                 if (version == HTTP_2 && hasRequiredHTTP2TLSVersion(client)) {
-                    alpn = new String[] { "h2", "http/1.1" };
+                    alpn = new String[] { Alpns.H2, Alpns.HTTP_1_1 };
                 }
                 return getSSLConnection(addr, proxy, alpn, request, client);
             }
@@ -411,13 +428,32 @@ abstract class HttpConnection implements Closeable {
         return address;
     }
 
+    /**
+     * Returns an unmodifiable list of {@link SNIServerName}s that were used during TLS handshake
+     * of this connection. If this connection doesn't represent a TLS based connection or if no SNI
+     * server names were used during the handshake, then this method returns an empty list.
+     *
+     * @return the SNI server names
+     */
+    public List<SNIServerName> getSNIServerNames() {
+        return List.of();
+    }
+
     abstract ConnectionPool.CacheKey cacheKey();
 
     /**
-     * Closes this connection, by returning the socket to its connection pool.
+     * Closes this connection.
      */
     @Override
     public abstract void close();
+
+    /**
+     * Closes this connection due to the given cause.
+     * @param cause the cause for which the connection is closed, may be null
+     */
+    void close(Throwable cause) {
+        close();
+    }
 
     abstract FlowTube getConnectionFlow();
 

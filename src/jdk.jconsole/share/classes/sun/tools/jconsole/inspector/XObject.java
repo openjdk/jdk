@@ -37,7 +37,7 @@ import java.util.Objects;
 public class XObject extends JLabel {
     private Object object;
     private static boolean useHashCodeRepresentation = true;
-    public final static XObject NULL_OBJECT = new XObject("null");
+    public static final XObject NULL_OBJECT = new XObject("null");
     public XObject (Object object, Icon icon) {
         this(object);
         setIcon(icon);

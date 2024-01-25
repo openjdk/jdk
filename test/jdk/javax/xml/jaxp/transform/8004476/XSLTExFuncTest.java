@@ -24,7 +24,7 @@
  * @test
  * @bug 8004476
  * @summary test XSLT extension functions
- * @run main/othervm XSLTExFuncTest
+ * @run main/othervm -Djava.security.manager=allow XSLTExFuncTest
  */
 
 import java.io.StringWriter;

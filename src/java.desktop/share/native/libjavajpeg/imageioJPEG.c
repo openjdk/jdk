@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ static jfieldID JPEGHuffmanTable_valuesID;
 /*
  * Defined in jpegdecoder.c.  Copy code from there if and
  * when that disappears. */
-extern JavaVM *jvm;
+extern JavaVM *the_jvm;
 
 /*
  * The following sets of defines must match the warning messages in the
@@ -557,7 +557,7 @@ sun_jpeg_output_message (j_common_ptr cinfo)
     char buffer[JMSG_LENGTH_MAX];
     jstring string;
     imageIODataPtr data = (imageIODataPtr) cinfo->client_data;
-    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(the_jvm, JNI_VERSION_1_2);
     jobject theObject;
 
     /* Create the message */
@@ -713,6 +713,7 @@ static int setQTables(JNIEnv *env,
         CHECK_NULL_RETURN(table, 0);
         qdata = (*env)->GetObjectField(env, table, JPEGQTable_tableID);
         qdataBody = (*env)->GetPrimitiveArrayCritical(env, qdata, NULL);
+        CHECK_NULL_RETURN(qdataBody, 0);
 
         if (cinfo->is_decompressor) {
             decomp = (j_decompress_ptr) cinfo;
@@ -928,7 +929,7 @@ imageio_fill_input_buffer(j_decompress_ptr cinfo)
     struct jpeg_source_mgr *src = cinfo->src;
     imageIODataPtr data = (imageIODataPtr) cinfo->client_data;
     streamBufferPtr sb = &data->streamBuf;
-    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(the_jvm, JNI_VERSION_1_2);
     int ret;
     jobject input = NULL;
 
@@ -1021,7 +1022,7 @@ imageio_fill_suspended_buffer(j_decompress_ptr cinfo)
     struct jpeg_source_mgr *src = cinfo->src;
     imageIODataPtr data = (imageIODataPtr) cinfo->client_data;
     streamBufferPtr sb = &data->streamBuf;
-    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(the_jvm, JNI_VERSION_1_2);
     jint ret;
     size_t offset, buflen;
     jobject input = NULL;
@@ -1122,7 +1123,7 @@ imageio_skip_input_data(j_decompress_ptr cinfo, long num_bytes)
     struct jpeg_source_mgr *src = cinfo->src;
     imageIODataPtr data = (imageIODataPtr) cinfo->client_data;
     streamBufferPtr sb = &data->streamBuf;
-    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(the_jvm, JNI_VERSION_1_2);
     jlong ret;
     jobject reader;
     jobject input = NULL;
@@ -1131,6 +1132,10 @@ imageio_skip_input_data(j_decompress_ptr cinfo, long num_bytes)
         return;
     }
     num_bytes += sb->remaining_skip;
+    // Check for overflow if remaining_skip value is too large
+    if (num_bytes < 0) {
+        return;
+    }
     sb->remaining_skip = 0;
 
     /* First the easy case where we are skipping <= the current contents. */
@@ -1207,7 +1212,7 @@ imageio_term_source(j_decompress_ptr cinfo)
     // To pushback, just seek back by src->bytes_in_buffer
     struct jpeg_source_mgr *src = cinfo->src;
     imageIODataPtr data = (imageIODataPtr) cinfo->client_data;
-    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(the_jvm, JNI_VERSION_1_2);
     jobject reader = data->imageIOobj;
     if (src->bytes_in_buffer > 0) {
          RELEASE_ARRAYS(env, data, src->next_input_byte);
@@ -1290,7 +1295,7 @@ marker_is_icc (jpeg_saved_marker_ptr marker)
  * with an appropriate message.
  */
 
-jbyteArray
+static jbyteArray
 read_icc_profile (JNIEnv *env, j_decompress_ptr cinfo)
 {
     jpeg_saved_marker_ptr marker;
@@ -1613,7 +1618,8 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_setSource
 /*
  * For EXIF images, the APP1 will appear immediately after the SOI,
  * so it's safe to only look at the first marker in the list.
- * (see http://www.exif.org/Exif2-2.PDF, section 4.7, page 58)
+ * (see https://www.cipa.jp/std/documents/e/DC-008-2012_E.pdf,
+ * section 4.7, page 83)
  */
 #define IS_EXIF(c) \
     (((c)->marker_list != NULL) && ((c)->marker_list->marker == JPEG_APP1))
@@ -1714,7 +1720,8 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_readImageHeader
              *  - we got JFIF image
              *     Must be YCbCr (see http://www.w3.org/Graphics/JPEG/jfif3.pdf, page 2)
              *  - we got EXIF image
-             *     Must be YCbCr (see http://www.exif.org/Exif2-2.PDF, section 4.7, page 63)
+             *     Must be YCbCr (see https://www.cipa.jp/std/documents/e/DC-008-2012_E.pdf,
+             *     section 4.7, page 88)
              *  - something else
              *     Apply heuristical rules to identify actual colorspace.
              */
@@ -2369,7 +2376,7 @@ imageio_init_destination (j_compress_ptr cinfo)
     struct jpeg_destination_mgr *dest = cinfo->dest;
     imageIODataPtr data = (imageIODataPtr) cinfo->client_data;
     streamBufferPtr sb = &data->streamBuf;
-    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(the_jvm, JNI_VERSION_1_2);
 
     if (sb->buf == NULL) {
         // We forgot to pin the array
@@ -2395,7 +2402,7 @@ imageio_empty_output_buffer (j_compress_ptr cinfo)
     struct jpeg_destination_mgr *dest = cinfo->dest;
     imageIODataPtr data = (imageIODataPtr) cinfo->client_data;
     streamBufferPtr sb = &data->streamBuf;
-    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(the_jvm, JNI_VERSION_1_2);
     jobject output = NULL;
 
     RELEASE_ARRAYS(env, data, (const JOCTET *)(dest->next_output_byte));
@@ -2431,7 +2438,7 @@ imageio_term_destination (j_compress_ptr cinfo)
     struct jpeg_destination_mgr *dest = cinfo->dest;
     imageIODataPtr data = (imageIODataPtr) cinfo->client_data;
     streamBufferPtr sb = &data->streamBuf;
-    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(the_jvm, JNI_VERSION_1_2);
 
     /* find out how much needs to be written */
     /* this conversion from size_t to jint is safe, because the lenght of the buffer is limited by jint */

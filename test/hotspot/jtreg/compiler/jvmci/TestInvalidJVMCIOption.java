@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,20 @@
  * @test TestInvalidJVMCIOption
  * @bug 8257220
  * @summary Ensures invalid JVMCI options do not crash the VM with a hs-err log.
- * @requires vm.jvmci & vm.compMode == "Xmixed"
+ * @requires vm.flagless
+ * @requires vm.jvmci
  * @library /test/lib
  * @run driver TestInvalidJVMCIOption
  */
 
+import jdk.test.lib.Asserts;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class TestInvalidJVMCIOption {
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:+UnlockExperimentalVMOptions",
             "-XX:+EagerJVMCI",
             "-XX:+UseJVMCICompiler",
@@ -45,13 +47,14 @@ public class TestInvalidJVMCIOption {
         String expectStdout = String.format(
             "Error parsing JVMCI options: Could not find option jvmci.XXXXXXXXX%n" +
             "Error: A fatal exception has occurred. Program will exit.%n");
-        String actualStdout = output.getStdout();
-        if (!actualStdout.equals(expectStdout)) {
-            throw new RuntimeException(String.format("Invalid STDOUT:%nExpect:%n%s%nActual:%n%s", expectStdout, actualStdout));
-        }
-        if (!output.getStderr().isEmpty()) {
-            throw new RuntimeException("STDERR was not empty: " + output.getStderr());
-        }
+
+        // Test for containment instead of equality as -XX:+EagerJVMCI means
+        // the main thread and one or more libjvmci compiler threads
+        // may initialize libjvmci at the same time and thus the error
+        // message can appear multiple times.
+        output.stdoutShouldContain(expectStdout);
+
+        output.stderrShouldBeEmpty();
         output.shouldHaveExitValue(1);
     }
 }

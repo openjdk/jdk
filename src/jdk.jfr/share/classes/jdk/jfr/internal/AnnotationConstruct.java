@@ -29,7 +29,6 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.Collections;
 import java.util.List;
 
 import jdk.jfr.AnnotationElement;
@@ -39,11 +38,11 @@ import jdk.jfr.Unsigned;
 
 public final class AnnotationConstruct {
 
-    private static final class AnnotationInvokationHandler implements InvocationHandler {
+    private static final class AnnotationInvocationHandler implements InvocationHandler {
 
         private final AnnotationElement annotationElement;
 
-        AnnotationInvokationHandler(AnnotationElement a) {
+        AnnotationInvocationHandler(AnnotationElement a) {
             this.annotationElement = a;
         }
 
@@ -58,17 +57,18 @@ public final class AnnotationConstruct {
         }
     }
 
-    private List<AnnotationElement> annotationElements = Collections.emptyList();
+    private List<AnnotationElement> annotationElements;
     private byte unsignedFlag = -1;
-    public AnnotationConstruct(List<AnnotationElement> ann) {
-        this.annotationElements = ann;
+    public AnnotationConstruct(List<AnnotationElement> elements) {
+        this.annotationElements = List.copyOf(elements);
     }
 
     public AnnotationConstruct() {
+        this(List.of());
     }
 
     public void setAnnotationElements(List<AnnotationElement> elements) {
-        annotationElements = Utils.smallUnmodifiable(elements);
+        annotationElements = List.copyOf(elements);
     }
 
     public String getLabel() {
@@ -91,18 +91,13 @@ public final class AnnotationConstruct {
     public final <T> T getAnnotation(Class<? extends Annotation> clazz) {
         AnnotationElement ae = getAnnotationElement(clazz);
         if (ae != null) {
-            return (T) Proxy.newProxyInstance(clazz.getClassLoader(), new Class<?>[] { clazz }, new AnnotationInvokationHandler(ae));
+            return (T) Proxy.newProxyInstance(clazz.getClassLoader(), new Class<?>[] { clazz }, new AnnotationInvocationHandler(ae));
         }
         return null;
     }
 
     public List<AnnotationElement> getUnmodifiableAnnotationElements() {
         return annotationElements;
-    }
-
-    // package private
-    boolean remove(AnnotationElement annotation) {
-        return annotationElements.remove(annotation);
     }
 
     private AnnotationElement getAnnotationElement(Class<? extends Annotation> clazz) {

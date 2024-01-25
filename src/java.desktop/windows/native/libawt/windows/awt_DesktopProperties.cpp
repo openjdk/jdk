@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
  * questions.
  */
 
+#include <cmath>
+
 #include "awt.h"
 #include "mmsystem.h"
 #include "jlong.h"
@@ -34,14 +36,6 @@
 #include "zmouse.h"
 #include <shellapi.h>
 #include <shlobj.h>
-
-#include "math.h"
-
-#if defined(_MSC_VER) && _MSC_VER >= 1800
-#  define ROUND_TO_INT(num)    ((int) round(num))
-#else
-#  define ROUND_TO_INT(num)    ((int) floor((num) + 0.5))
-#endif
 
 // WDesktopProperties fields
 jfieldID AwtDesktopProperties::pDataID = 0;
@@ -103,7 +97,7 @@ void getInvScale(float &invScaleX, float &invScaleY) {
 }
 
 int rescale(int value, float invScale){
-    return invScale == 1.0f ? value : ROUND_TO_INT(value * invScale);
+    return invScale == 1.0f ? value : (int) round(value * invScale);
 }
 
 void AwtDesktopProperties::GetSystemProperties() {
@@ -138,7 +132,7 @@ void AwtDesktopProperties::GetSystemProperties() {
 // Note that it uses malloc() and returns the pointer to allocated
 // memory, so remember to use free() when you are done with its
 // result.
-static LPTSTR resolveShellDialogFont(LPTSTR fontName, HKEY handle) {
+static LPTSTR resolveShellDialogFont(LPCTSTR fontName, HKEY handle) {
     DWORD valueType, valueSize;
     if (RegQueryValueEx((HKEY)handle, fontName, NULL,
                         &valueType, NULL, &valueSize) != 0) {
@@ -164,7 +158,7 @@ static LPTSTR resolveShellDialogFont(LPTSTR fontName, HKEY handle) {
 // memory, so remember to use free() when you are done with its
 // result.
 static LPTSTR resolveShellDialogFont() {
-    LPTSTR subKey = TEXT("Software\\Microsoft\\Windows NT\\CurrentVersion\\FontSubstitutes");
+    LPCTSTR subKey = TEXT("Software\\Microsoft\\Windows NT\\CurrentVersion\\FontSubstitutes");
 
     HKEY handle;
     if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, subKey, 0, KEY_READ, &handle) != 0) {
@@ -183,7 +177,7 @@ static LPTSTR resolveShellDialogFont() {
 // Note that it uses malloc() and returns the pointer to allocated
 // memory, so remember to use free() when you are done with its
 // result.
-static LPTSTR getWindowsPropFromReg(LPTSTR subKey, LPTSTR valueName, DWORD *valueType) {
+static LPTSTR getWindowsPropFromReg(LPCTSTR subKey, LPCTSTR valueName, DWORD *valueType) {
     HKEY handle;
     if (RegOpenKeyEx(HKEY_CURRENT_USER, subKey, 0, KEY_READ, &handle) != 0) {
         return NULL;
@@ -221,7 +215,7 @@ static LPTSTR getWindowsPropFromReg(LPTSTR subKey, LPTSTR valueName, DWORD *valu
     }
 }
 
-static LPTSTR getXPStylePropFromReg(LPTSTR valueName) {
+static LPTSTR getXPStylePropFromReg(LPCTSTR valueName) {
     DWORD valueType;
     return getWindowsPropFromReg(TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\ThemeManager"),
                                  valueName, &valueType);
@@ -286,7 +280,7 @@ void AwtDesktopProperties::GetNonClientParameters() {
     // when running on XP. However this can't be referenced at compile time
     // with the older SDK, so there use 'lfMessageFont' plus its size.
     if (!IS_WINVISTA) {
-#if defined(_MSC_VER) && (_MSC_VER >= 1600)
+#if defined(_MSC_VER)
         ncmetrics.cbSize = offsetof(NONCLIENTMETRICS, iPaddedBorderWidth);
 #else
         ncmetrics.cbSize = offsetof(NONCLIENTMETRICS,lfMessageFont) + sizeof(LOGFONT);
@@ -539,7 +533,7 @@ void AwtDesktopProperties::GetColorParameters() {
 }
 
 void AwtDesktopProperties::GetOtherParameters() {
-    // TODO BEGIN: On NT4, some setttings don't trigger WM_SETTINGCHANGE --
+    // TODO BEGIN: On NT4, some settings don't trigger WM_SETTINGCHANGE --
     // check whether this has been fixed on Windows 2000 and Windows 98
     // ECH 10/6/2000 seems to be fixed on NT4 SP5, but not on 98
     SetBooleanProperty(TEXT("win.frame.fullWindowDragsOn"), GetBooleanParameter(SPI_GETDRAGFULLWINDOWS));
@@ -651,11 +645,11 @@ void AwtDesktopProperties::GetOtherParameters() {
         throw;
     }
 
-    LPTSTR valueName = TEXT("PlaceN");
+    LPCTSTR valueName = TEXT("PlaceN");
     LPTSTR valueNameBuf = (LPTSTR)SAFE_SIZE_ARRAY_ALLOC(safe_Malloc, (lstrlen(valueName) + 1), sizeof(TCHAR));
     lstrcpy(valueNameBuf, valueName);
 
-    LPTSTR propKey = TEXT("win.comdlg.placesBarPlaceN");
+    LPCTSTR propKey = TEXT("win.comdlg.placesBarPlaceN");
 
     LPTSTR propKeyBuf;
     try {
@@ -672,7 +666,7 @@ void AwtDesktopProperties::GetOtherParameters() {
         valueNameBuf[5] = _T('0' + i++);
         propKeyBuf[25] = valueNameBuf[5];
 
-        LPTSTR key = TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\comdlg32\\PlacesBar");
+        LPCTSTR key = TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\comdlg32\\PlacesBar");
         try {
             value = NULL;
             if ((value = getWindowsPropFromReg(key, valueNameBuf, &valueType)) != NULL) {
@@ -752,6 +746,7 @@ void AwtDesktopProperties::SetStringProperty(LPCTSTR propName, LPTSTR value) {
                              key, jValue);
     GetEnv()->DeleteLocalRef(jValue);
     GetEnv()->DeleteLocalRef(key);
+    (void)safe_ExceptionOccurred(GetEnv());
 }
 
 void AwtDesktopProperties::SetIntegerProperty(LPCTSTR propName, int value) {
@@ -764,6 +759,7 @@ void AwtDesktopProperties::SetIntegerProperty(LPCTSTR propName, int value) {
                              AwtDesktopProperties::setIntegerPropertyID,
                              key, (jint)value);
     GetEnv()->DeleteLocalRef(key);
+    (void)safe_ExceptionOccurred(GetEnv());
 }
 
 void AwtDesktopProperties::SetBooleanProperty(LPCTSTR propName, BOOL value) {
@@ -775,6 +771,7 @@ void AwtDesktopProperties::SetBooleanProperty(LPCTSTR propName, BOOL value) {
                              AwtDesktopProperties::setBooleanPropertyID,
                              key, value ? JNI_TRUE : JNI_FALSE);
     GetEnv()->DeleteLocalRef(key);
+    (void)safe_ExceptionOccurred(GetEnv());
 }
 
 void AwtDesktopProperties::SetColorProperty(LPCTSTR propName, DWORD value) {
@@ -787,6 +784,7 @@ void AwtDesktopProperties::SetColorProperty(LPCTSTR propName, DWORD value) {
                              key, GetRValue(value), GetGValue(value),
                              GetBValue(value));
     GetEnv()->DeleteLocalRef(key);
+    (void)safe_ExceptionOccurred(GetEnv());
 }
 
 void AwtDesktopProperties::SetFontProperty(HDC dc, int fontID,
@@ -849,6 +847,7 @@ void AwtDesktopProperties::SetFontProperty(HDC dc, int fontID,
                               key, fontName, style, pointSize);
                     GetEnv()->DeleteLocalRef(key);
                     GetEnv()->DeleteLocalRef(fontName);
+                    (void)safe_ExceptionOccurred(GetEnv());
                 }
             }
             delete[] face;
@@ -896,6 +895,7 @@ void AwtDesktopProperties::SetFontProperty(LPCTSTR propName, const LOGFONT & fon
                              key, fontName, style, pointSize);
     GetEnv()->DeleteLocalRef(key);
     GetEnv()->DeleteLocalRef(fontName);
+    (void)safe_ExceptionOccurred(GetEnv());
 }
 
 void AwtDesktopProperties::SetSoundProperty(LPCTSTR propName, LPCTSTR winEventName) {
@@ -913,6 +913,7 @@ void AwtDesktopProperties::SetSoundProperty(LPCTSTR propName, LPCTSTR winEventNa
                              key, event);
     GetEnv()->DeleteLocalRef(event);
     GetEnv()->DeleteLocalRef(key);
+    (void)safe_ExceptionOccurred(GetEnv());
 }
 
 void AwtDesktopProperties::PlayWindowsSound(LPCTSTR event) {

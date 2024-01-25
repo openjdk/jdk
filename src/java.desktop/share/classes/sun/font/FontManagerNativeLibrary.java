@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,9 @@
 
 package sun.font;
 
-import sun.java2d.SunGraphicsEnvironment;
+import sun.awt.OSInfo;
 
+@SuppressWarnings("removal")
 public class FontManagerNativeLibrary {
     static {
         java.security.AccessController.doPrivileged(
@@ -34,7 +35,7 @@ public class FontManagerNativeLibrary {
             public Object run() {
                /* REMIND do we really have to load awt here? */
                System.loadLibrary("awt");
-               if (System.getProperty("os.name").startsWith("Windows")) {
+               if (OSInfo.getOSType() == OSInfo.OSType.WINDOWS) {
                    /* Ideally fontmanager library should not depend on
                       particular implementation of the font scaler.
                       However, freetype scaler is basically small wrapper on
@@ -67,7 +68,7 @@ public class FontManagerNativeLibrary {
      * Method acts as trigger to ensure this class is loaded
      * (and therefore initializer code is executed).
      * Actual loading is performed by static initializer.
-     * (no need to execute doPrivilledged block more than once)
+     * (no need to execute doPrivileged block more than once)
      */
     public static void load() {}
 }

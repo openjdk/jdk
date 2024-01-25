@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zLock.hpp"
+#include "gc/z/zMarkStack.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class ZMarkStackSpace {
@@ -34,8 +35,12 @@ private:
   uintptr_t          _start;
   volatile uintptr_t _top;
   volatile uintptr_t _end;
+  volatile bool      _recently_expanded;
 
-  void expand();
+  size_t used() const;
+
+  size_t expand_space();
+  size_t shrink_space();
 
   uintptr_t alloc_space(size_t size);
   uintptr_t expand_and_alloc_space(size_t size);
@@ -45,15 +50,19 @@ public:
 
   bool is_initialized() const;
 
+  uintptr_t start() const;
+  size_t size() const;
+
   uintptr_t alloc(size_t size);
+  void free();
 };
 
-class ZMarkStackAllocator {
+class ZMarkStackAllocator : public CHeapObj<mtGC> {
 private:
-  ZCACHE_ALIGNED ZMarkStackMagazineList _freelist;
   ZCACHE_ALIGNED ZMarkStackSpace        _space;
+  ZCACHE_ALIGNED ZMarkStackMagazineList _freelist;
+  ZCACHE_ALIGNED volatile bool          _expanded_recently;
 
-  void prime_freelist();
   ZMarkStackMagazine* create_magazine_from_space(uintptr_t addr, size_t size);
 
 public:
@@ -61,8 +70,15 @@ public:
 
   bool is_initialized() const;
 
+  uintptr_t start() const;
+  size_t size() const;
+
+  bool clear_and_get_expanded_recently();
+
   ZMarkStackMagazine* alloc_magazine();
   void free_magazine(ZMarkStackMagazine* magazine);
+
+  void free();
 };
 
 #endif // SHARE_GC_Z_ZMARKSTACKALLOCATOR_HPP

@@ -25,6 +25,7 @@
  * @test
  * @bug 5023552
  * @summary Tests reference count updating
+ * @run main/othervm -Djava.security.manager=allow Test5023552
  * @author Sergey Malenkov
  */
 

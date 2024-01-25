@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,72 +23,29 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/stringTable.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
-#include "gc/shared/stringdedup/stringDedupQueue.hpp"
-#include "gc/shared/stringdedup/stringDedupQueue.inline.hpp"
-#include "gc/shared/stringdedup/stringDedupTable.hpp"
+#include "gc/shared/stringdedup/stringDedupProcessor.hpp"
 #include "gc/shared/stringdedup/stringDedupThread.hpp"
-#include "gc/shared/suspendibleThreadSet.hpp"
-#include "logging/log.hpp"
-#include "oops/access.inline.hpp"
-#include "oops/oop.inline.hpp"
+#include "runtime/handles.hpp"
+#include "runtime/os.hpp"
+#include "utilities/exceptions.hpp"
 
-StringDedupThread* StringDedupThread::_thread = NULL;
+StringDedupThread::StringDedupThread() : JavaThread(thread_entry) {}
 
-StringDedupThread::StringDedupThread() :
-  ConcurrentGCThread() {
-  set_name("StrDedup");
-  create_and_start();
+void StringDedupThread::initialize() {
+  EXCEPTION_MARK;
+
+  const char* name = "StringDedupThread";
+  Handle thread_oop = JavaThread::create_system_thread_object(name, CHECK);
+  StringDedupThread* thread = new StringDedupThread();
+  JavaThread::vm_exit_on_osthread_failure(thread);
+  JavaThread::start_internal_daemon(THREAD, thread, thread_oop, NormPriority);
 }
 
-StringDedupThread::~StringDedupThread() {
-  ShouldNotReachHere();
+void StringDedupThread::thread_entry(JavaThread* thread, TRAPS) {
+  StringDedup::_processor->run(thread);
 }
 
-StringDedupThread* StringDedupThread::thread() {
-  assert(_thread != NULL, "String deduplication thread not created");
-  return _thread;
-}
-
-class StringDedupSharedClosure: public OopClosure {
- private:
-  StringDedupStat* _stat;
-
- public:
-  StringDedupSharedClosure(StringDedupStat* stat) : _stat(stat) {}
-
-  virtual void do_oop(narrowOop* p) { ShouldNotReachHere(); }
-  virtual void do_oop(oop* p) {
-    oop java_string = RawAccess<>::oop_load(p);
-    StringDedupTable::deduplicate(java_string, _stat);
-  }
-};
-
-// The CDS archive does not include the string deduplication table. Only the string
-// table is saved in the archive. The shared strings from CDS archive need to be
-// added to the string deduplication table before deduplication occurs. That is
-// done in the beginning of the StringDedupThread (see StringDedupThread::do_deduplication()).
-void StringDedupThread::deduplicate_shared_strings(StringDedupStat* stat) {
-  StringDedupSharedClosure sharedStringDedup(stat);
-  StringTable::shared_oops_do(&sharedStringDedup);
-}
-
-void StringDedupThread::stop_service() {
-  StringDedupQueue::cancel_wait();
-}
-
-void StringDedupThread::print_start(const StringDedupStat* last_stat) {
-  StringDedupStat::print_start(last_stat);
-}
-
-void StringDedupThread::print_end(const StringDedupStat* last_stat, const StringDedupStat* total_stat) {
-  StringDedupStat::print_end(last_stat, total_stat);
-  if (log_is_enabled(Debug, gc, stringdedup)) {
-    last_stat->print_statistics(false);
-    total_stat->print_statistics(true);
-
-    StringDedupTable::print_statistics();
-    StringDedupQueue::print_statistics();
-  }
+bool StringDedupThread::is_hidden_from_external_view() const {
+  return true;
 }

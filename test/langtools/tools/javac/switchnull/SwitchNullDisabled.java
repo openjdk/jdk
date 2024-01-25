@@ -1,8 +1,9 @@
 /*
  * @test /nodynamiccopyright/
  * @bug 8206986
- * @summary Verify "case null" is not allowed.
- * @compile/fail/ref=SwitchNullDisabled.out -XDrawDiagnostics SwitchNullDisabled.java
+ * @summary Verify "case null" is not allowed for --release 16, 20
+ * @compile/fail/ref=SwitchNullDisabled.out -XDrawDiagnostics --release 20 SwitchNullDisabled.java
+ * @compile SwitchNullDisabled.java
  */
 
 public class SwitchNullDisabled {

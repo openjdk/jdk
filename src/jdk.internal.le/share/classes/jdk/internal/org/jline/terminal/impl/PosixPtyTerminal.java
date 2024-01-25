@@ -15,7 +15,6 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import jdk.internal.org.jline.terminal.spi.Pty;
 import jdk.internal.org.jline.utils.ClosedException;
@@ -143,10 +142,10 @@ public class PosixPtyTerminal extends AbstractPosixTerminal {
         }
     }
 
-    private class InputStreamWrapper extends NonBlockingInputStream {
+    private static class InputStreamWrapper extends NonBlockingInputStream {
 
         private final NonBlockingInputStream in;
-        private final AtomicBoolean closed = new AtomicBoolean();
+        private volatile boolean closed;
 
         protected InputStreamWrapper(NonBlockingInputStream in) {
             this.in = in;
@@ -154,7 +153,7 @@ public class PosixPtyTerminal extends AbstractPosixTerminal {
 
         @Override
         public int read(long timeout, boolean isPeek) throws IOException {
-            if (closed.get()) {
+            if (closed) {
                 throw new ClosedException();
             }
             return in.read(timeout, isPeek);
@@ -162,7 +161,7 @@ public class PosixPtyTerminal extends AbstractPosixTerminal {
 
         @Override
         public void close() throws IOException {
-            closed.set(true);
+            closed = true;
         }
     }
 

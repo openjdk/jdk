@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,24 +28,24 @@ package jdk.jfr.internal;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.SequencedSet;
 
 import jdk.jfr.internal.SecuritySupport.SafePath;
 
 // This class keeps track of files that can't be deleted
-// so they can a later staged be removed.
+// so they can at a later staged be removed.
 final class FilePurger {
 
-    private final static Set<SafePath> paths = new LinkedHashSet<>();
+    private static final SequencedSet<SafePath> paths = new LinkedHashSet<>();
 
-    public synchronized static void add(SafePath p) {
+    public static synchronized void add(SafePath p) {
         paths.add(p);
         if (paths.size() > 1000) {
             removeOldest();
         }
     }
 
-    public synchronized static void purge() {
+    public static synchronized void purge() {
         if (paths.isEmpty()) {
             return;
         }
@@ -58,11 +58,17 @@ final class FilePurger {
     }
 
     private static void removeOldest() {
-        SafePath oldest = paths.iterator().next();
-        paths.remove(oldest);
+        paths.removeFirst();
     }
 
     private static boolean delete(SafePath p) {
+        try {
+            if (!SecuritySupport.exists(p)) {
+                return true;
+            }
+        } catch (IOException e) {
+            // ignore
+        }
         try {
             SecuritySupport.delete(p);
             return true;

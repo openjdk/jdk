@@ -293,14 +293,10 @@ public final class OptionalInt {
             return true;
         }
 
-        if (!(obj instanceof OptionalInt)) {
-            return false;
-        }
-
-        OptionalInt other = (OptionalInt) obj;
-        return (isPresent && other.isPresent)
+        return obj instanceof OptionalInt other
+                && (isPresent && other.isPresent
                 ? value == other.value
-                : isPresent == other.isPresent;
+                : isPresent == other.isPresent);
     }
 
     /**
@@ -330,7 +326,7 @@ public final class OptionalInt {
     @Override
     public String toString() {
         return isPresent
-                ? String.format("OptionalInt[%s]", value)
+                ? ("OptionalInt[" + value + "]")
                 : "OptionalInt.empty";
     }
 }

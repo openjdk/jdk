@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -282,45 +282,6 @@ public class LookupDefineClass {
                     .build();
 
             new Runner(opt).run();
-        }
-    }
-
-    @State(Scope.Thread)
-    @Warmup(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
-    @Measurement(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
-    @Fork(3)
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.NANOSECONDS)
-    public static class UnsafeAnonymousClass {
-        static final sun.misc.Unsafe unsafe = getUnsafe();
-
-        private static final MethodHandles.Lookup lookup =
-                defineHostClass(new Loader("anonymous-class-loader"),"foo.AnonymousHost", FOO_HOST_BYTES);
-
-        @SuppressWarnings("removal")
-        @Benchmark
-        public Class<?> load() throws ClassNotFoundException {
-            return unsafe.defineAnonymousClass(lookup.lookupClass(), X_BYTECODE, null);
-        }
-
-        public static void main(String[] args) throws RunnerException {
-            Options opt = new OptionsBuilder()
-                    .include(LookupDefineClass.UnsafeAnonymousClass.class.getSimpleName())
-                    // .addProfiler(ClassloaderProfiler.class)
-                    // .addProfiler(CompilerProfiler.class)
-                    .build();
-
-            new Runner(opt).run();
-        }
-    }
-
-    static sun.misc.Unsafe getUnsafe() {
-        try {
-            Field f = sun.misc.Unsafe.class.getDeclaredField("theUnsafe");
-            f.setAccessible(true);
-            return (sun.misc.Unsafe)f.get(null);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
         }
     }
 

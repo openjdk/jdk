@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ public class DESKeySpec implements java.security.spec.KeySpec {
      */
     public static final int DES_KEY_LEN = 8;
 
-    private byte[] key;
+    private final byte[] key;
 
     /*
      * Weak/semi-weak keys copied from FIPS 74.
@@ -226,13 +226,14 @@ public class DESKeySpec implements java.security.spec.KeySpec {
         }
         for (int i = 0; i < WEAK_KEYS.length; i++) {
             boolean found = true;
-            for (int j = 0; j < DES_KEY_LEN && found == true; j++) {
-                if (WEAK_KEYS[i][j] != key[j+offset]) {
+            for (int j = 0; j < DES_KEY_LEN; j++) {
+                if (WEAK_KEYS[i][j] != key[j + offset]) {
                     found = false;
+                    break;
                 }
             }
-            if (found == true) {
-                return found;
+            if (found) {
+                return true;
             }
         }
         return false;

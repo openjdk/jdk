@@ -46,7 +46,7 @@ public class T4954546 {
         f(true, new A(), new B());
     }
     static void f(boolean cond, A a, B b) {
-        (cond?a:b).f();;
-        (cond?a:b).g();;
+        (cond?a:b).f();
+        (cond?a:b).g();
     }
 }

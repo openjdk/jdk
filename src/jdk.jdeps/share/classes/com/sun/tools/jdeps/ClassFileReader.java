@@ -260,8 +260,8 @@ public class ClassFileReader implements Closeable {
             DirectoryIterator() throws IOException {
                 List<Path> paths = null;
                 try (Stream<Path> stream = Files.walk(path, Integer.MAX_VALUE)) {
-                    paths = stream.filter(ClassFileReader::isClass)
-                                  .collect(Collectors.toList());
+                    paths = stream.filter(ClassFileReader::isClass).toList();
+
                 }
                 this.entries = paths;
                 this.index = 0;
@@ -356,7 +356,8 @@ public class ClassFileReader implements Closeable {
         protected ClassFile readClassFile(JarFile jarfile, JarEntry e) throws IOException {
             try (InputStream is = jarfile.getInputStream(e)) {
                 ClassFile cf = ClassFile.read(is);
-                if (jarfile.isMultiRelease()) {
+                // exclude module-info.class since this jarFile is on classpath
+                if (jarfile.isMultiRelease() && !cf.getName().equals("module-info")) {
                     VersionHelper.add(jarfile, e, cf);
                 }
                 return cf;
@@ -437,5 +438,4 @@ public class ClassFileReader implements Closeable {
             throw new UnsupportedOperationException("Not supported yet.");
         }
     }
-    private static final String MODULE_INFO = "module-info.class";
 }

@@ -29,7 +29,7 @@
  * @author Tom Rodriguez
  *
  * @modules java.rmi
- * @run main compiler.exceptions.ExceptionInInit
+ * @run main/othervm -Djava.security.manager=allow compiler.exceptions.ExceptionInInit
  */
 
 package compiler.exceptions;

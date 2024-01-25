@@ -29,6 +29,7 @@
  * @modules
  *     jdk.compiler/com.sun.tools.javac.api
  *     jdk.compiler/com.sun.tools.javac.main
+ *     jdk.jshell/jdk.internal.jshell.tool:open
  *     jdk.jshell/jdk.internal.jshell.tool.resources:open
  *     jdk.jshell/jdk.jshell:open
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask

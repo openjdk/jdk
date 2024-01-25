@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,10 +34,10 @@
 // class JvmtiUtil
 //
 
-ResourceArea* JvmtiUtil::_single_threaded_resource_area = NULL;
+ResourceArea* JvmtiUtil::_single_threaded_resource_area = nullptr;
 
 ResourceArea* JvmtiUtil::single_threaded_resource_area() {
-  if (_single_threaded_resource_area == NULL) {
+  if (_single_threaded_resource_area == nullptr) {
     // lazily create the single threaded resource area
     // pick a size which is not a standard since the pools don't exist yet
     _single_threaded_resource_area = new (mtInternal) ResourceArea(Chunk::non_pool_size);

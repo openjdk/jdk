@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 package java.lang;
 
 import java.util.*;
+import java.util.concurrent.RejectedExecutionException;
 
 /*
  * Class to track and run user level shutdown hooks registered through
@@ -97,9 +98,15 @@ class ApplicationShutdownHooks {
             threads = hooks.keySet();
             hooks = null;
         }
-
         for (Thread hook : threads) {
-            hook.start();
+            try {
+                hook.start();
+            } catch (IllegalThreadStateException ignore) {
+                // already started
+            } catch (RejectedExecutionException ignore) {
+                // scheduler shutdown?
+                assert hook.isVirtual();
+            }
         }
         for (Thread hook : threads) {
             while (true) {

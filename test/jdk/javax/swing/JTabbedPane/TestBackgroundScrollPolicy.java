@@ -36,7 +36,7 @@ import javax.swing.UnsupportedLookAndFeelException;
  * @key headful
  * @bug 8172269 8244557
  * @summary Tests JTabbedPane background for SCROLL_TAB_LAYOUT
- * @run main TestBackgroundScrollPolicy
+ * @run main/othervm -Dsun.java2d.uiScale=1 TestBackgroundScrollPolicy
  */
 
 public class TestBackgroundScrollPolicy {

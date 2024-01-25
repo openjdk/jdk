@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHWORKGROUP_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHWORKGROUP_HPP
 
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 #include "memory/allocation.hpp"
 
@@ -34,9 +34,9 @@ class ShenandoahObjToScanQueueSet;
 class ShenandoahWorkerScope : public StackObj {
 private:
   uint      _n_workers;
-  WorkGang* _workers;
+  WorkerThreads* _workers;
 public:
-  ShenandoahWorkerScope(WorkGang* workers, uint nworkers, const char* msg, bool do_check = true);
+  ShenandoahWorkerScope(WorkerThreads* workers, uint nworkers, const char* msg, bool do_check = true);
   ~ShenandoahWorkerScope();
 };
 
@@ -44,37 +44,24 @@ class ShenandoahPushWorkerScope : StackObj {
 protected:
   uint      _n_workers;
   uint      _old_workers;
-  WorkGang* _workers;
+  WorkerThreads* _workers;
 
 public:
-  ShenandoahPushWorkerScope(WorkGang* workers, uint nworkers, bool do_check = true);
+  ShenandoahPushWorkerScope(WorkerThreads* workers, uint nworkers, bool do_check = true);
   ~ShenandoahPushWorkerScope();
 };
 
-class ShenandoahWorkGang : public WorkGang {
+class ShenandoahWorkerThreads : public WorkerThreads {
 private:
   bool     _initialize_gclab;
 public:
-  ShenandoahWorkGang(const char* name,
-           uint workers,
-           bool are_GC_task_threads,
-           bool are_ConcurrentGC_threads) :
-    WorkGang(name, workers, are_GC_task_threads, are_ConcurrentGC_threads), _initialize_gclab(false) {
+  ShenandoahWorkerThreads(const char* name,
+           uint workers) :
+    WorkerThreads(name, workers), _initialize_gclab(false) {
     }
 
-  // Create a GC worker and install it into the work gang.
   // We need to initialize gclab for dynamic allocated workers
-  AbstractGangWorker* install_worker(uint which);
-
-  // We allow _active_workers < _total_workers when UseDynamicNumberOfGCThreads is off.
-  // We use the same WorkGang for concurrent and parallel processing, and honor
-  // ConcGCThreads and ParallelGCThreads settings
-  virtual uint active_workers() const {
-    assert(_active_workers > 0, "no active worker");
-    assert(_active_workers <= _total_workers,
-           "_active_workers: %u > _total_workers: %u", _active_workers, _total_workers);
-    return _active_workers;
-  }
+  void on_create_worker(WorkerThread* worker);
 
   void set_initialize_gclab() { assert(!_initialize_gclab, "Can only enable once"); _initialize_gclab = true; }
 };

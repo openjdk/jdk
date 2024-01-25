@@ -26,11 +26,10 @@
 #define SHARE_PRIMS_WHITEBOX_HPP
 
 #include "jni.h"
-
-#include "utilities/exceptions.hpp"
 #include "memory/allocation.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "oops/symbol.hpp"
+#include "utilities/exceptions.hpp"
 
 #define WB_METHOD_DECLARE(result_type) extern "C" result_type JNICALL
 
@@ -46,6 +45,7 @@ public:
 };
 
 class CodeBlob;
+enum class CodeBlobType;
 class CodeHeap;
 class JavaThread;
 
@@ -60,14 +60,14 @@ class WhiteBox : public AllStatic {
     Symbol* signature_symbol);
   static const char* lookup_jstring(const char* field_name, oop object);
   static bool lookup_bool(const char* field_name, oop object);
-  static int get_blob_type(const CodeBlob* code);
-  static CodeHeap* get_code_heap(int blob_type);
-  static CodeBlob* allocate_code_blob(int size, int blob_type);
+  static CodeBlobType get_blob_type(const CodeBlob* code);
+  static CodeHeap* get_code_heap(CodeBlobType blob_type);
+  static CodeBlob* allocate_code_blob(int size, CodeBlobType blob_type);
   static int array_bytes_to_length(size_t bytes);
   static void register_methods(JNIEnv* env, jclass wbclass, JavaThread* thread,
     JNINativeMethod* method_array, int method_count);
   static void register_extended(JNIEnv* env, jclass wbclass, JavaThread* thread);
-  static bool compile_method(Method* method, int comp_level, int bci, Thread* THREAD);
+  static bool compile_method(Method* method, int comp_level, int bci, JavaThread* THREAD);
 #ifdef LINUX
   static bool validate_cgroup(const char* proc_cgroups, const char* proc_self_cgroup, const char* proc_self_mountinfo, u1* cg_flags);
 #endif

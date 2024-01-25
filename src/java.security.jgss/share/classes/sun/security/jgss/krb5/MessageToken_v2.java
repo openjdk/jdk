@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,13 @@
 
 package sun.security.jgss.krb5;
 
-import org.ietf.jgss.*;
+import org.ietf.jgss.GSSException;
+import org.ietf.jgss.MessageProp;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.IOException;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.security.MessageDigest;
 import java.util.Arrays;
 
@@ -499,8 +500,8 @@ abstract class MessageToken_v2 extends Krb5Token {
      */
     class MessageTokenHeader {
 
-        private int tokenId;
-        private byte[] bytes = new byte[TOKEN_HEADER_SIZE];
+        private final int tokenId;
+        private final byte[] bytes = new byte[TOKEN_HEADER_SIZE];
 
         // Writes a new token header
         public MessageTokenHeader(int tokenId, boolean conf) throws GSSException {
@@ -511,7 +512,7 @@ abstract class MessageToken_v2 extends Krb5Token {
             bytes[1] = (byte) (tokenId);
 
             // Flags (Note: MIT impl requires subkey)
-            int flags = 0;
+            int flags;
             flags = (initiator ? 0 : FLAG_SENDER_IS_ACCEPTOR) |
                      ((conf && tokenId != MIC_ID_v2) ?
                                 FLAG_WRAP_CONFIDENTIAL : 0) |
@@ -576,12 +577,8 @@ abstract class MessageToken_v2 extends Krb5Token {
 
             // check for confidentiality
             int conf_flag = bytes[TOKEN_FLAG_POS] & FLAG_WRAP_CONFIDENTIAL;
-            if ((conf_flag == FLAG_WRAP_CONFIDENTIAL) &&
-                (tokenId == WRAP_ID_v2)) {
-                prop.setPrivacy(true);
-            } else {
-                prop.setPrivacy(false);
-            }
+            prop.setPrivacy((conf_flag == FLAG_WRAP_CONFIDENTIAL) &&
+                    (tokenId == WRAP_ID_v2));
 
             if (tokenId == WRAP_ID_v2) {
                 // validate filler

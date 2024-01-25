@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +31,9 @@
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *          jdk.internal.vm.ci/jdk.vm.ci.hotspot
  *          java.base/jdk.internal.misc
- * @build sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
  * @build jdk.internal.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run testng/othervm -Xbootclasspath/a:.
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
@@ -42,7 +42,7 @@
 
 package jdk.vm.ci.hotspot.test;
 
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.JavaKind;
@@ -64,6 +64,11 @@ public class MemoryAccessProviderTest {
         Assert.assertNull(PROVIDER.readPrimitiveConstant(kind, null, offset, bitsCount), "Unexpected value for null base");
     }
 
+    @Test(dataProvider = "unalignedPrimitive", dataProviderClass = MemoryAccessProviderData.class, expectedExceptions = {IllegalArgumentException.class})
+    public void testReadUnalignedConstantConstant(JavaKind kind, Constant base, Long offset, Object expected, int bitsCount) {
+        PROVIDER.readPrimitiveConstant(kind, null, offset, bitsCount);
+    }
+
     @Test(dataProvider = "negative", dataProviderClass = MemoryAccessProviderData.class, expectedExceptions = {IllegalArgumentException.class})
     public void testNegativeReadPrimitiveConstant(JavaKind kind, Constant base) {
         PROVIDER.readPrimitiveConstant(kind, base, 0L, kind == null ? 0 : kind.getByteCount() / 8);
@@ -75,7 +80,7 @@ public class MemoryAccessProviderTest {
             PROVIDER.readPrimitiveConstant(kind, base, offset, kind.getByteCount() * 8);
             Assert.assertFalse(isOutOfBounds);
         } catch (IllegalArgumentException iae) {
-            Assert.assertTrue(isOutOfBounds);
+            Assert.assertTrue(isOutOfBounds, iae.getMessage());
         }
     }
 
@@ -85,7 +90,17 @@ public class MemoryAccessProviderTest {
             PROVIDER.readPrimitiveConstant(kind, base, offset, kind.getByteCount() * 8);
             Assert.assertFalse(isOutOfBounds);
         } catch (IllegalArgumentException iae) {
-            Assert.assertTrue(isOutOfBounds);
+            Assert.assertTrue(isOutOfBounds, iae.getMessage());
+        }
+    }
+
+    @Test(dataProvider = "outOfBoundsObjectArray", dataProviderClass = MemoryAccessProviderData.class)
+    public void testReadObjectOutOfBoundsObjectArray(JavaKind kind, Constant base, Long offset, boolean isOutOfBounds) {
+        try {
+            PROVIDER.readObjectConstant(base, offset);
+            Assert.assertFalse(isOutOfBounds);
+        } catch (IllegalArgumentException iae) {
+            Assert.assertTrue(isOutOfBounds, iae.getMessage());
         }
     }
 

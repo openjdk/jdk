@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import com.sun.tools.javac.code.Kinds.Kind;
 import java.lang.ref.WeakReference;
 import java.util.*;
 import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
 import com.sun.tools.javac.code.Symbol.TypeSymbol;
@@ -70,7 +71,7 @@ public abstract class Scope {
 
     /**Returns Symbols that match the given filter. Symbols from outward Scopes are included.
      */
-    public final Iterable<Symbol> getSymbols(Filter<Symbol> sf) {
+    public final Iterable<Symbol> getSymbols(Predicate<Symbol> sf) {
         return getSymbols(sf, RECURSIVE);
     }
 
@@ -84,7 +85,7 @@ public abstract class Scope {
     /**Returns Symbols that match the given filter. Symbols from outward Scopes are included
      * iff lookupKind == RECURSIVE.
      */
-    public abstract Iterable<Symbol> getSymbols(Filter<Symbol> sf, LookupKind lookupKind);
+    public abstract Iterable<Symbol> getSymbols(Predicate<Symbol> sf, LookupKind lookupKind);
 
     /**Returns Symbols with the given name. Symbols from outward Scopes are included.
      */
@@ -95,7 +96,7 @@ public abstract class Scope {
     /**Returns Symbols with the given name that match the given filter.
      * Symbols from outward Scopes are included.
      */
-    public final Iterable<Symbol> getSymbolsByName(final Name name, final Filter<Symbol> sf) {
+    public final Iterable<Symbol> getSymbolsByName(final Name name, final Predicate<Symbol> sf) {
         return getSymbolsByName(name, sf, RECURSIVE);
     }
 
@@ -109,28 +110,28 @@ public abstract class Scope {
     /**Returns Symbols with the given name that match the given filter.
      * Symbols from outward Scopes are included iff lookupKind == RECURSIVE.
      */
-    public abstract Iterable<Symbol> getSymbolsByName(final Name name, final Filter<Symbol> sf,
+    public abstract Iterable<Symbol> getSymbolsByName(final Name name, final Predicate<Symbol> sf,
             final LookupKind lookupKind);
 
-    /** Return the first Symbol from this or outward scopes with the given name.
+    /** Returns the first Symbol from this or outward scopes with the given name.
      * Returns null if none.
      */
     public final Symbol findFirst(Name name) {
         return findFirst(name, noFilter);
     }
 
-    /** Return the first Symbol from this or outward scopes with the given name that matches the
+    /** Returns the first Symbol from this or outward scopes with the given name that matches the
      *  given filter. Returns null if none.
      */
-    public Symbol findFirst(Name name, Filter<Symbol> sf) {
+    public Symbol findFirst(Name name, Predicate<Symbol> sf) {
         Iterator<Symbol> it = getSymbolsByName(name, sf).iterator();
         return it.hasNext() ? it.next() : null;
     }
 
-    /** Returns true iff there are is at least one Symbol in this scope matching the given filter.
+    /** Returns true iff there is at least one Symbol in this scope matching the given filter.
      *  Does not inspect outward scopes.
      */
-    public boolean anyMatch(Filter<Symbol> filter) {
+    public boolean anyMatch(Predicate<Symbol> filter) {
         return getSymbols(filter, NON_RECURSIVE).iterator().hasNext();
     }
 
@@ -152,7 +153,7 @@ public abstract class Scope {
         return !getSymbols(NON_RECURSIVE).iterator().hasNext();
     }
 
-    /** Returns the Scope from which the givins Symbol originates in this scope.
+    /** Returns the Scope from which the given Symbol originates in this scope.
      */
     public abstract Scope getOrigin(Symbol byName);
 
@@ -160,7 +161,7 @@ public abstract class Scope {
      */
     public abstract boolean isStaticallyImported(Symbol byName);
 
-    private static final Filter<Symbol> noFilter = null;
+    private static final Predicate<Symbol> noFilter = null;
 
     /** A list of scopes to be notified if items are to be removed from this scope.
      */
@@ -231,7 +232,7 @@ public abstract class Scope {
         public abstract void remove(Symbol c);
 
         /** Construct a fresh scope within this scope, with same owner. The new scope may
-         *  shares internal structures with the this scope. Used in connection with
+         *  share internal structures with this scope. Used in connection with
          *  method leave if scope access is stack-like in order to avoid allocation
          *  of fresh tables.
          */
@@ -240,7 +241,7 @@ public abstract class Scope {
         }
 
         /** Construct a fresh scope within this scope, with new owner. The new scope may
-         *  shares internal structures with the this scope. Used in connection with
+         *  share internal structures with this scope. Used in connection with
          *  method leave if scope access is stack-like in order to avoid allocation
          *  of fresh tables.
          */
@@ -271,11 +272,11 @@ public abstract class Scope {
     }
 
     private static class ScopeImpl extends WriteableScope {
-        /** The number of scopes that share this scope's hash table.
+        /** true if this scope's hash table is shared with a nested scope.
          */
-        private int shared;
+        private boolean shared;
 
-        /** Next enclosing scope (with whom this scope may share a hashtable)
+        /** Next enclosing scope (with whom this scope may share a hash table)
          */
         public ScopeImpl next;
 
@@ -338,8 +339,10 @@ public abstract class Scope {
          *  of fresh tables.
          */
         public WriteableScope dup(Symbol newOwner) {
+            Assert.check(!shared);
+
             ScopeImpl result = new ScopeImpl(this, newOwner, this.table, this.nelems);
-            shared++;
+            shared = true;
             // System.out.println("====> duping scope " + this.hashCode() + " owned by " + newOwner + " to " + result.hashCode());
             // new Error().printStackTrace(System.out);
             return result;
@@ -350,7 +353,7 @@ public abstract class Scope {
          *  the table of its outer scope.
          */
         public WriteableScope dupUnshared(Symbol newOwner) {
-            if (shared > 0) {
+            if (shared) {
                 //The nested Scopes might have already added something to the table, so all items
                 //that don't originate in this Scope or any of its outer Scopes need to be cleared:
                 Set<Scope> acceptScopes = Collections.newSetFromMap(new IdentityHashMap<>());
@@ -382,7 +385,7 @@ public abstract class Scope {
          *  with next.
          */
         public WriteableScope leave() {
-            Assert.check(shared == 0);
+            Assert.check(!shared);
             if (table != next.table) return next;
             while (elems != null) {
                 int hash = getIndex(elems.sym.name);
@@ -391,8 +394,8 @@ public abstract class Scope {
                 table[hash] = elems.shadowed;
                 elems = elems.nextSibling;
             }
-            Assert.check(next.shared > 0);
-            next.shared--;
+            Assert.check(next.shared);
+            next.shared = false;
             next.nelems = nelems;
             // System.out.println("====> leaving scope " + this.hashCode() + " owned by " + this.owner + " to " + next.hashCode());
             // new Error().printStackTrace(System.out);
@@ -402,12 +405,12 @@ public abstract class Scope {
         /** Double size of hash table.
          */
         private void dble() {
-            Assert.check(shared == 0);
+            Assert.check(!shared);
             Entry[] oldtable = table;
             Entry[] newtable = new Entry[oldtable.length * 2];
             for (ScopeImpl s = this; s != null; s = s.next) {
                 if (s.table == oldtable) {
-                    Assert.check(s == this || s.shared != 0);
+                    Assert.check(s == this || s.shared);
                     s.table = newtable;
                     s.hashMask = newtable.length - 1;
                 }
@@ -428,7 +431,7 @@ public abstract class Scope {
         /** Enter symbol sym in this scope.
          */
         public void enter(Symbol sym) {
-            Assert.check(shared == 0);
+            Assert.check(!shared);
             if (nelems * 3 >= hashMask * 2)
                 dble();
             int hash = getIndex(sym.name);
@@ -448,7 +451,7 @@ public abstract class Scope {
         /** Remove symbol from this scope.
          */
         public void remove(Symbol sym) {
-            Assert.check(shared == 0);
+            Assert.check(!shared);
             Entry e = lookup(sym.name, candidate -> candidate == sym);
             if (e.scope == null) return;
 
@@ -486,7 +489,7 @@ public abstract class Scope {
         /** Enter symbol sym in this scope if not already there.
          */
         public void enterIfAbsent(Symbol sym) {
-            Assert.check(shared == 0);
+            Assert.check(!shared);
             Entry e = lookup(sym.name);
             while (e.scope == this && e.sym.kind != sym.kind) e = e.next();
             if (e.scope != this) enter(sym);
@@ -514,16 +517,16 @@ public abstract class Scope {
             return lookup(name, noFilter);
         }
 
-        protected Entry lookup(Name name, Filter<Symbol> sf) {
+        protected Entry lookup(Name name, Predicate<Symbol> sf) {
             Entry e = table[getIndex(name)];
             if (e == null || e == sentinel)
                 return sentinel;
-            while (e.scope != null && (e.sym.name != name || (sf != null && !sf.accepts(e.sym))))
+            while (e.scope != null && (e.sym.name != name || (sf != null && !sf.test(e.sym))))
                 e = e.shadowed;
             return e;
         }
 
-        public Symbol findFirst(Name name, Filter<Symbol> sf) {
+        public Symbol findFirst(Name name, Predicate<Symbol> sf) {
             return lookup(name, sf).sym;
         }
 
@@ -563,11 +566,11 @@ public abstract class Scope {
             }
         }
 
-        public boolean anyMatch(Filter<Symbol> sf) {
+        public boolean anyMatch(Predicate<Symbol> sf) {
             return getSymbols(sf, NON_RECURSIVE).iterator().hasNext();
         }
 
-        public Iterable<Symbol> getSymbols(final Filter<Symbol> sf,
+        public Iterable<Symbol> getSymbols(final Predicate<Symbol> sf,
                                            final LookupKind lookupKind) {
             return () -> new Iterator<Symbol>() {
                 private ScopeImpl currScope = ScopeImpl.this;
@@ -616,7 +619,7 @@ public abstract class Scope {
                 }
 
                 void skipToNextMatchingEntry() {
-                    while (currEntry != null && sf != null && !sf.accepts(currEntry.sym)) {
+                    while (currEntry != null && sf != null && !sf.test(currEntry.sym)) {
                         currEntry = currEntry.nextSibling;
                     }
                 }
@@ -624,7 +627,7 @@ public abstract class Scope {
         }
 
         public Iterable<Symbol> getSymbolsByName(final Name name,
-                                                 final Filter<Symbol> sf,
+                                                 final Predicate<Symbol> sf,
                                                  final LookupKind lookupKind) {
             return () -> new Iterator<Symbol>() {
                Entry currentEntry = lookup(name, sf);
@@ -729,8 +732,8 @@ public abstract class Scope {
             return shadowed;
         }
 
-        public Entry next(Filter<Symbol> sf) {
-            if (shadowed.sym == null || sf == null || sf.accepts(shadowed.sym)) return shadowed;
+        public Entry next(Predicate<Symbol> sf) {
+            if (shadowed.sym == null || sf == null || sf.test(shadowed.sym)) return shadowed;
             else return shadowed.next(sf);
         }
 
@@ -752,8 +755,9 @@ public abstract class Scope {
         }
 
         protected Scope finalizeSingleScope(Scope impScope) {
-            if (impScope instanceof FilterImportScope && impScope.owner.kind == Kind.TYP &&
-                ((FilterImportScope) impScope).isStaticallyImported()) {
+            if (impScope instanceof FilterImportScope filterImportScope
+                    && impScope.owner.kind == Kind.TYP
+                    && filterImportScope.isStaticallyImported()) {
                 WriteableScope finalized = WriteableScope.create(impScope.owner);
 
                 for (Symbol sym : impScope.getSymbols()) {
@@ -815,7 +819,7 @@ public abstract class Scope {
         }
 
         @Override
-        public Iterable<Symbol> getSymbolsByName(Name name, Filter<Symbol> sf, LookupKind lookupKind) {
+        public Iterable<Symbol> getSymbolsByName(Name name, Predicate<Symbol> sf, LookupKind lookupKind) {
             Scope[] scopes = name2Scopes.get(name);
             if (scopes == null)
                 return Collections.emptyList();
@@ -848,16 +852,16 @@ public abstract class Scope {
             }
 
             @Override
-            public Iterable<Symbol> getSymbols(Filter<Symbol> sf, LookupKind lookupKind) {
-                return sf == null || sf.accepts(sym) ? content : Collections.emptyList();
+            public Iterable<Symbol> getSymbols(Predicate<Symbol> sf, LookupKind lookupKind) {
+                return sf == null || sf.test(sym) ? content : Collections.emptyList();
             }
 
             @Override
             public Iterable<Symbol> getSymbolsByName(Name name,
-                                                     Filter<Symbol> sf,
+                                                     Predicate<Symbol> sf,
                                                      LookupKind lookupKind) {
                 return sym.name == name &&
-                       (sf == null || sf.accepts(sym)) ? content : Collections.emptyList();
+                       (sf == null || sf.test(sym)) ? content : Collections.emptyList();
             }
 
             @Override
@@ -928,7 +932,7 @@ public abstract class Scope {
         }
 
         @Override
-        public Iterable<Symbol> getSymbols(final Filter<Symbol> sf, final LookupKind lookupKind) {
+        public Iterable<Symbol> getSymbols(final Predicate<Symbol> sf, final LookupKind lookupKind) {
             if (filterName != null)
                 return getSymbolsByName(filterName, sf, lookupKind);
             try {
@@ -951,7 +955,7 @@ public abstract class Scope {
 
         @Override
         public Iterable<Symbol> getSymbolsByName(final Name name,
-                                                 final Filter<Symbol> sf,
+                                                 final Predicate<Symbol> sf,
                                                  final LookupKind lookupKind) {
             if (filterName != null && filterName != name)
                 return Collections.emptyList();
@@ -1075,7 +1079,7 @@ public abstract class Scope {
         }
 
         @Override
-        public Iterable<Symbol> getSymbols(final Filter<Symbol> sf,
+        public Iterable<Symbol> getSymbols(final Predicate<Symbol> sf,
                                            final LookupKind lookupKind) {
             return () -> Iterators.createCompoundIterator(subScopes,
                                                           scope -> scope.getSymbols(sf,
@@ -1085,7 +1089,7 @@ public abstract class Scope {
 
         @Override
         public Iterable<Symbol> getSymbolsByName(final Name name,
-                                                 final Filter<Symbol> sf,
+                                                 final Predicate<Symbol> sf,
                                                  final LookupKind lookupKind) {
             return () -> Iterators.createCompoundIterator(subScopes,
                                                           scope -> scope.getSymbolsByName(name,

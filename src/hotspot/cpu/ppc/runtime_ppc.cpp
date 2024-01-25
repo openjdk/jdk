@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #ifdef COMPILER2
 #include "asm/macroAssembler.inline.hpp"
 #include "code/vmreg.hpp"
+#include "compiler/oopMap.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "memory/resourceArea.hpp"
@@ -76,7 +77,7 @@ void OptoRuntime::generate_exception_blob() {
 
   address start = __ pc();
 
-  int frame_size_in_bytes = frame::abi_reg_args_size;
+  int frame_size_in_bytes = frame::native_abi_reg_args_size;
   OopMap* map = new OopMap(frame_size_in_bytes / sizeof(jint), 0);
 
   // Exception pc is 'return address' for stack walker.
@@ -107,7 +108,7 @@ void OptoRuntime::generate_exception_blob() {
   address calls_return_pc = __ last_calls_return_pc();
 # ifdef ASSERT
   __ cmpdi(CCR0, R3_RET, 0);
-  __ asm_assert_ne("handle_exception_C must not return NULL");
+  __ asm_assert_ne("handle_exception_C must not return null");
 # endif
 
   // Set an oopmap for the call site. This oopmap will only be used if we

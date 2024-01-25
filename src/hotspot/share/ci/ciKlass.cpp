@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ ciKlass::ciKlass(Klass* k) : ciType(k) {
   Klass* klass = get_Klass();
   _layout_helper = klass->layout_helper();
   Symbol* klass_name = klass->name();
-  assert(klass_name != NULL, "wrong ciKlass constructor");
+  assert(klass_name != nullptr, "wrong ciKlass constructor");
   _name = CURRENT_ENV->get_symbol(klass_name);
 }
 
@@ -75,12 +75,15 @@ bool ciKlass::is_subtype_of(ciKlass* that) {
     return true;
   }
 
-  VM_ENTRY_MARK;
-  Klass* this_klass = get_Klass();
-  Klass* that_klass = that->get_Klass();
-  bool result = this_klass->is_subtype_of(that_klass);
+  bool is_subtype;
+  GUARDED_VM_ENTRY(is_subtype = get_Klass()->is_subtype_of(that->get_Klass());)
 
-  return result;
+  // Ensure consistency with ciInstanceKlass::has_subklass().
+  assert(!that->is_instance_klass() || // array klasses are irrelevant
+          that->is_interface()      || // has_subklass is always false for interfaces
+         !is_subtype || that->as_instance_klass()->has_subklass(), "inconsistent");
+
+  return is_subtype;
 }
 
 // ------------------------------------------------------------------
@@ -89,7 +92,20 @@ bool ciKlass::is_subclass_of(ciKlass* that) {
   assert(this->is_loaded(), "must be loaded: %s", this->name()->as_quoted_ascii());
   assert(that->is_loaded(), "must be loaded: %s", that->name()->as_quoted_ascii());
 
-  GUARDED_VM_ENTRY(return get_Klass()->is_subclass_of(that->get_Klass());)
+  // Check to see if the klasses are identical.
+  if (this == that) {
+    return true;
+  }
+
+  bool is_subclass;
+  GUARDED_VM_ENTRY(is_subclass = get_Klass()->is_subclass_of(that->get_Klass());)
+
+  // Ensure consistency with ciInstanceKlass::has_subklass().
+  assert(!that->is_instance_klass() || // array klasses are irrelevant
+          that->is_interface()      || // has_subklass is always false for interfaces
+         !is_subclass || that->as_instance_klass()->has_subklass(), "inconsistent");
+
+  return is_subclass;
 }
 
 // ------------------------------------------------------------------
@@ -120,7 +136,7 @@ ciKlass* ciKlass::super_of_depth(juint i) {
   VM_ENTRY_MARK;
   Klass* this_klass = get_Klass();
   Klass* super = this_klass->primary_super_of_depth(i);
-  return (super != NULL) ? CURRENT_THREAD_ENV->get_klass(super) : NULL;
+  return (super != nullptr) ? CURRENT_THREAD_ENV->get_klass(super) : nullptr;
 }
 
 // ------------------------------------------------------------------
@@ -151,9 +167,11 @@ ciKlass::least_common_ancestor(ciKlass* that) {
   // Many times the LCA will be either this_klass or that_klass.
   // Treat these as special cases.
   if (lca == that_klass) {
+    assert(this->is_subtype_of(that), "sanity");
     return that;
   }
   if (this_klass == lca) {
+    assert(that->is_subtype_of(this), "sanity");
     return this;
   }
 
@@ -161,6 +179,7 @@ ciKlass::least_common_ancestor(ciKlass* that) {
   ciKlass* result =
     CURRENT_THREAD_ENV->get_klass(lca);
 
+  assert(this->is_subtype_of(result) && that->is_subtype_of(result), "sanity");
   return result;
 }
 
@@ -214,6 +233,7 @@ jint ciKlass::access_flags() {
 void ciKlass::print_impl(outputStream* st) {
   st->print(" name=");
   print_name_on(st);
+  st->print(" loaded=%s", (is_loaded() ? "true" : "false"));
 }
 
 // ------------------------------------------------------------------

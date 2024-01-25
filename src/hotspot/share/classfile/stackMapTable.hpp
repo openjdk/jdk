@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,13 +88,13 @@ class StackMapStream : StackObj {
     : _data(ah), _index(0) {
   }
   u1 get_u1(TRAPS) {
-    if (_data == NULL || _index >= _data->length()) {
+    if (_data == nullptr || _index >= _data->length()) {
       stackmap_format_error("access beyond the end of attribute", CHECK_0);
     }
     return _data->at(_index++);
   }
   u2 get_u2(TRAPS) {
-    if (_data == NULL || _index >= _data->length() - 1) {
+    if (_data == nullptr || _index >= _data->length() - 1) {
       stackmap_format_error("access beyond the end of attribute", CHECK_0);
     }
     u2 res = Bytes::get_Java_u2(_data->adr_at(_index));
@@ -102,7 +102,7 @@ class StackMapStream : StackObj {
     return res;
   }
   bool at_end() {
-    return (_data == NULL) || (_index == _data->length());
+    return (_data == nullptr) || (_index == _data->length());
   }
   static void stackmap_format_error(const char* msg, TRAPS);
 };
@@ -125,7 +125,7 @@ class StackMapReader : StackObj {
       int32_t size, int32_t max_size, TRAPS) {
     if (size < 0 || size > max_size) {
       // Since this error could be caused someone rewriting the method
-      // but not knowing to update the stackmap data, we call the the
+      // but not knowing to update the stackmap data, we call the
       // verifier's error method, which may not throw an exception and
       // failover to the old verifier instead.
       _verifier->class_format_error(

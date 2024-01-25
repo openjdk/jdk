@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8242184 8242068
+ * @bug 8242184 8242068 8267319
  * @summary keytool and jarsigner for all algorithms
  * @library /test/lib
  * @modules java.base/sun.security.util
@@ -74,18 +74,18 @@ public class GenerateAll {
     @DataProvider(name = "eddsa")
     public Object[][] eddsaData() {
         return new Object[][]{
-                {"eddsa", null, "ed25519"},
-                {"eddsa", "eddsa", "ed25519"},
-                {"eddsa", "ed25519", "ed25519"},
+                {"eddsa", null, Ed25519},
+                {"eddsa", "eddsa", Ed25519},
+                {"eddsa", "ed25519", Ed25519},
                 {"eddsa", "ed448", null},
-                {"ed25519", null, "ed25519"},
-                {"ed25519", "eddsa", "ed25519"},
-                {"ed25519", "ed25519", "ed25519"},
+                {"ed25519", null, Ed25519},
+                {"ed25519", "eddsa", Ed25519},
+                {"ed25519", "ed25519", Ed25519},
                 {"ed25519", "ed448", null},
-                {"ed448", null, "ed448"},
-                {"ed448", "eddsa", "ed448"},
+                {"ed448", null, Ed448},
+                {"ed448", "eddsa", Ed448},
                 {"ed448", "ed25519", null},
-                {"ed448", "ed448", "ed448"},
+                {"ed448", "ed448", Ed448},
         };
     }
 
@@ -96,7 +96,7 @@ public class GenerateAll {
      * @param expected expected algorithm of generated signature
      */
     @Test(dataProvider = "eddsa")
-    public void eddsaTest(String keyAlg, String sigAlg, String expected)
+    public void eddsaTest(String keyAlg, String sigAlg, KnownOIDs expected)
             throws Exception {
         String alias = keyAlg + "-" + sigAlg;
         OutputAnalyzer oa = kt0("-genkeypair -alias " + alias
@@ -117,11 +117,11 @@ public class GenerateAll {
     @DataProvider(name = "all")
     public Object[][] dataProvider() {
         return new Object[][]{
-                {"rsa", "rsa", null, "RSA", SHA_256, SHA256withRSA},
+                {"rsa", "rsa", null, "RSA", SHA_384, SHA384withRSA},
                 {"dsa", "dsa", null, "DSA", SHA_256, SHA256withDSA},
-                {"r", "rsa", "rsassa-pss", "RSA", SHA_256, RSASSA_PSS},
-                {"pss", "rsassa-pss", null, "RSA", SHA_256, RSASSA_PSS},
-                {"ec", "ec", null, "EC", SHA_256, SHA256withECDSA},
+                {"r", "rsa", "rsassa-pss", "RSA", SHA_384, RSASSA_PSS},
+                {"pss", "rsassa-pss", null, "RSA", SHA_384, RSASSA_PSS},
+                {"ec", "ec", null, "EC", SHA_384, SHA384withECDSA},
                 {"ed25519", "ed25519", null, "EC", SHA_512, Ed25519},
                 {"ed448", "ed448", null, "EC", SHAKE256_LEN, Ed448},
         };
@@ -177,19 +177,22 @@ public class GenerateAll {
             sigAlg = SignatureUtil.getDefaultSigAlgForKey(pk);
         }
 
+        KnownOIDs sigOID = KnownOIDs.findMatch(sigAlg);
+        KnownOIDs keyOID = KnownOIDs.findMatch(keyAlg);
+
         byte[] crt = read(alias + ".self");
-        DerUtils.checkAlg(crt, "020", sigAlg);  // tbsCertificate.signature
-        DerUtils.checkAlg(crt, "0600", keyAlg); // tbsCertificate.subjectPublicKeyInfo.algorithm
+        DerUtils.checkAlg(crt, "020", sigOID);  // tbsCertificate.signature
+        DerUtils.checkAlg(crt, "0600", keyOID); // tbsCertificate.subjectPublicKeyInfo.algorithm
         assertEquals(
                 DerUtils.innerDerValue(crt, "02"),   // tbsCertificate.signature
                 DerUtils.innerDerValue(crt, "1"));   // signatureAlgorithm
 
         byte[] req = read(alias + ".req");
-        DerUtils.checkAlg(req, "10", sigAlg);   // signatureAlgorithm
-        DerUtils.checkAlg(req, "0200", keyAlg); // certificationRequestInfo.subjectPKInfo.algorithm
+        DerUtils.checkAlg(req, "10", sigOID);   // signatureAlgorithm
+        DerUtils.checkAlg(req, "0200", keyOID); // certificationRequestInfo.subjectPKInfo.algorithm
 
         byte[] crl = read(alias + ".crl");
-        DerUtils.checkAlg(crl, "000", sigAlg);  // tbsCertList.signature
+        DerUtils.checkAlg(crl, "000", sigOID);  // tbsCertList.signature
         assertEquals(
                 DerUtils.innerDerValue(crl, "00"),   // tbsCertList.signature
                 DerUtils.innerDerValue(crl, "1"));   // signatureAlgorithm

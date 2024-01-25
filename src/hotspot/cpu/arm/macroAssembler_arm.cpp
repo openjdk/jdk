@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,13 +35,15 @@
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
+#include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
+#include "metaprogramming/primitiveConversions.hpp"
 #include "oops/accessDecorators.hpp"
 #include "oops/klass.inline.hpp"
 #include "prims/methodHandles.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/os.hpp"
@@ -91,7 +94,7 @@ void AddressLiteral::set_rspec(relocInfo::relocType rtype) {
 void MacroAssembler::lookup_virtual_method(Register recv_klass,
                                            Register vtable_index,
                                            Register method_result) {
-  const int base_offset = in_bytes(Klass::vtable_start_offset()) + vtableEntry::method_offset_in_bytes();
+  const ByteSize base_offset = Klass::vtable_start_offset() + vtableEntry::method_offset();
   assert(vtableEntry::size() * wordSize == wordSize, "adjust the scaling in the code below");
   add(recv_klass, recv_klass, AsmOperand(vtable_index, lsl, LogBytesPerWord));
   ldr(method_result, Address(recv_klass, base_offset));
@@ -107,8 +110,8 @@ void MacroAssembler::check_klass_subtype(Register sub_klass,
                                          Register temp_reg3,
                                          Label& L_success) {
   Label L_failure;
-  check_klass_subtype_fast_path(sub_klass, super_klass, temp_reg, temp_reg2, &L_success, &L_failure, NULL);
-  check_klass_subtype_slow_path(sub_klass, super_klass, temp_reg, temp_reg2, temp_reg3, &L_success, NULL);
+  check_klass_subtype_fast_path(sub_klass, super_klass, temp_reg, temp_reg2, &L_success, &L_failure, nullptr);
+  check_klass_subtype_slow_path(sub_klass, super_klass, temp_reg, temp_reg2, temp_reg3, &L_success, nullptr);
   bind(L_failure);
 };
 
@@ -125,10 +128,10 @@ void MacroAssembler::check_klass_subtype_fast_path(Register sub_klass,
 
   Label L_fallthrough;
   int label_nulls = 0;
-  if (L_success == NULL)   { L_success   = &L_fallthrough; label_nulls++; }
-  if (L_failure == NULL)   { L_failure   = &L_fallthrough; label_nulls++; }
-  if (L_slow_path == NULL) { L_slow_path = &L_fallthrough; label_nulls++; }
-  assert(label_nulls <= 1, "at most one NULL in the batch");
+  if (L_success == nullptr)   { L_success   = &L_fallthrough; label_nulls++; }
+  if (L_failure == nullptr)   { L_failure   = &L_fallthrough; label_nulls++; }
+  if (L_slow_path == nullptr) { L_slow_path = &L_fallthrough; label_nulls++; }
+  assert(label_nulls <= 1, "at most one null in the batch");
 
   int sc_offset = in_bytes(Klass::secondary_super_cache_offset());
   int sco_offset = in_bytes(Klass::super_check_offset_offset());
@@ -205,9 +208,9 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
 
   Label L_fallthrough;
   int label_nulls = 0;
-  if (L_success == NULL)   { L_success   = &L_fallthrough; label_nulls++; }
-  if (L_failure == NULL)   { L_failure   = &L_fallthrough; label_nulls++; }
-  assert(label_nulls <= 1, "at most one NULL in the batch");
+  if (L_success == nullptr)   { L_success   = &L_fallthrough; label_nulls++; }
+  if (L_failure == nullptr)   { L_failure   = &L_fallthrough; label_nulls++; }
+  assert(label_nulls <= 1, "at most one null in the batch");
 
   // a couple of useful fields in sub_klass:
   int ss_offset = in_bytes(Klass::secondary_supers_offset());
@@ -630,7 +633,7 @@ void MacroAssembler::mov_oop(Register rd, jobject o, int oop_index,
                              AsmCondition cond
                              ) {
 
-  if (o == NULL) {
+  if (o == nullptr) {
     mov(rd, 0, cond);
     return;
   }
@@ -651,7 +654,7 @@ void MacroAssembler::mov_oop(Register rd, jobject o, int oop_index,
 }
 
 void MacroAssembler::mov_metadata(Register rd, Metadata* o, int metadata_index) {
-  if (o == NULL) {
+  if (o == nullptr) {
     mov(rd, 0);
     return;
   }
@@ -673,15 +676,11 @@ void MacroAssembler::mov_metadata(Register rd, Metadata* o, int metadata_index) 
 
 void MacroAssembler::mov_float(FloatRegister fd, jfloat c, AsmCondition cond) {
   Label skip_constant;
-  union {
-    jfloat f;
-    jint i;
-  } accessor;
-  accessor.f = c;
+  jint float_bits = PrimitiveConversions::cast<jint>(c);
 
   flds(fd, Address(PC), cond);
   b(skip_constant);
-  emit_int32(accessor.i);
+  emit_int32(float_bits);
   bind(skip_constant);
 }
 
@@ -734,8 +733,7 @@ void MacroAssembler::sign_extend(Register rd, Register rn, int bits) {
 
 
 void MacroAssembler::cmpoop(Register obj1, Register obj2) {
-  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->obj_equals(this, obj1, obj2);
+  cmp(obj1, obj2);
 }
 
 void MacroAssembler::long_move(Register rd_lo, Register rd_hi,
@@ -843,7 +841,7 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
     block_comment(buffer);
   }
 #endif
-  const char* msg_buffer = NULL;
+  const char* msg_buffer = nullptr;
   {
     ResourceMark rm;
     stringStream ss;
@@ -885,7 +883,7 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
 void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* file, int line) {
   if (!VerifyOops) return;
 
-  const char* msg_buffer = NULL;
+  const char* msg_buffer = nullptr;
   {
     ResourceMark rm;
     stringStream ss;
@@ -941,20 +939,13 @@ void MacroAssembler::null_check(Register reg, Register tmp, int offset) {
     if (tmp == noreg) {
       tmp = Rtemp;
       assert((! Thread::current()->is_Compiler_thread()) ||
-             (! (ciEnv::current()->task() == NULL)) ||
+             (! (ciEnv::current()->task() == nullptr)) ||
              (! (ciEnv::current()->comp_level() == CompLevel_full_optimization)),
              "Rtemp not available in C2"); // explicit tmp register required
       // XXX: could we mark the code buffer as not compatible with C2 ?
     }
     ldr(tmp, Address(reg));
   }
-}
-
-// Puts address of allocated object into register `obj` and end of allocated object into register `obj_end`.
-void MacroAssembler::eden_allocate(Register obj, Register obj_end, Register tmp1, Register tmp2,
-                                 RegisterOrConstant size_expression, Label& slow_case) {
-  BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->eden_allocate(this, obj, obj_end, tmp1, tmp2, size_expression, slow_case);
 }
 
 // Puts address of allocated object into register `obj` and end of allocated object into register `obj_end`.
@@ -978,7 +969,7 @@ void MacroAssembler::zero_memory(Register start, Register end, Register tmp) {
 
 void MacroAssembler::arm_stack_overflow_check(int frame_size_in_bytes, Register tmp) {
   // Version of AbstractAssembler::generate_stack_overflow_check optimized for ARM
-  const int page_size = os::vm_page_size();
+  const int page_size = (int)os::vm_page_size();
 
   sub_slow(tmp, SP, StackOverflow::stack_shadow_zone_size());
   strb(R0, Address(tmp));
@@ -1112,7 +1103,7 @@ void MacroAssembler::debug(const char* msg, const intx* registers) {
 }
 
 void MacroAssembler::unimplemented(const char* what) {
-  const char* buf = NULL;
+  const char* buf = nullptr;
   {
     ResourceMark rm;
     stringStream ss;
@@ -1145,7 +1136,7 @@ FixedSizeCodeBlock::~FixedSizeCodeBlock() {
 
 
 // Serializes memory. Potentially blows flags and reg.
-// tmp is a scratch for v6 co-processor write op (could be noreg for other architecure versions)
+// tmp is a scratch for v6 co-processor write op (could be noreg for other architecture versions)
 // preserve_flags takes a longer path in LoadStore case (dmb rather then control dependency) to preserve status flags. Optional.
 // load_tgt is an ordered load target in a LoadStore case only, to create dependency between the load operation and conditional branch. Optional.
 void MacroAssembler::membar(Membar_mask_bits order_constraint,
@@ -1205,11 +1196,15 @@ void MacroAssembler::cas_for_lock_acquire(Register oldval, Register newval,
     atomic_cas_bool(oldval, newval, base, oopDesc::mark_offset_in_bytes(), tmp);
   }
 
+  // Here, on success, EQ is set, NE otherwise
+
   // MemBarAcquireLock barrier
   // According to JSR-133 Cookbook, this should be LoadLoad | LoadStore,
   // but that doesn't prevent a load or store from floating up between
   // the load and store in the CAS sequence, so play it safe and
   // do a full fence.
+  // Note: we preserve flags here.
+  // Todo: Do we really need this also for the CAS fail case?
   membar(Membar_mask_bits(LoadLoad | LoadStore | StoreStore | StoreLoad), noreg);
   if (!fallthrough_is_success && !allow_fallthrough_on_failure) {
     b(slow_case, ne);
@@ -1220,7 +1215,6 @@ void MacroAssembler::cas_for_lock_release(Register oldval, Register newval,
   Register base, Register tmp, Label &slow_case,
   bool allow_fallthrough_on_failure, bool one_shot)
 {
-
   bool fallthrough_is_success = false;
 
   assert_different_registers(oldval,newval,base,tmp);
@@ -1255,9 +1249,9 @@ void MacroAssembler::cas_for_lock_release(Register oldval, Register newval,
 #ifndef PRODUCT
 
 // Preserves flags and all registers.
-// On SMP the updated value might not be visible to external observers without a sychronization barrier
+// On SMP the updated value might not be visible to external observers without a synchronization barrier
 void MacroAssembler::cond_atomic_inc32(AsmCondition cond, int* counter_addr) {
-  if (counter_addr != NULL) {
+  if (counter_addr != nullptr) {
     InlinedAddress counter_addr_literal((address)counter_addr);
     Label done, retry;
     if (cond != al) {
@@ -1288,239 +1282,61 @@ void MacroAssembler::cond_atomic_inc32(AsmCondition cond, int* counter_addr) {
 
 #endif // !PRODUCT
 
-
-// Building block for CAS cases of biased locking: makes CAS and records statistics.
-// The slow_case label is used to transfer control if CAS fails. Otherwise leaves condition codes set.
-void MacroAssembler::biased_locking_enter_with_cas(Register obj_reg, Register old_mark_reg, Register new_mark_reg,
-                                                 Register tmp, Label& slow_case, int* counter_addr) {
-
-  cas_for_lock_acquire(old_mark_reg, new_mark_reg, obj_reg, tmp, slow_case);
-#ifdef ASSERT
-  breakpoint(ne); // Fallthrough only on success
-#endif
-#ifndef PRODUCT
-  if (counter_addr != NULL) {
-    cond_atomic_inc32(al, counter_addr);
-  }
-#endif // !PRODUCT
-}
-
-void MacroAssembler::biased_locking_enter(Register obj_reg, Register swap_reg, Register tmp_reg,
-                                          bool swap_reg_contains_mark,
-                                          Register tmp2,
-                                          Label& done, Label& slow_case,
-                                          BiasedLockingCounters* counters) {
-  // obj_reg must be preserved (at least) if the bias locking fails
-  // tmp_reg is a temporary register
-  // swap_reg was used as a temporary but contained a value
-  //   that was used afterwards in some call pathes. Callers
-  //   have been fixed so that swap_reg no longer needs to be
-  //   saved.
-  // Rtemp in no longer scratched
-
-  assert(UseBiasedLocking, "why call this otherwise?");
-  assert_different_registers(obj_reg, swap_reg, tmp_reg, tmp2);
-  guarantee(swap_reg!=tmp_reg, "invariant");
-  assert(tmp_reg != noreg, "must supply tmp_reg");
-
-#ifndef PRODUCT
-  if (PrintBiasedLockingStatistics && (counters == NULL)) {
-    counters = BiasedLocking::counters();
-  }
-#endif
-
-  assert(markWord::age_shift == markWord::lock_bits + markWord::biased_lock_bits, "biased locking makes assumptions about bit layout");
-  Address mark_addr(obj_reg, oopDesc::mark_offset_in_bytes());
-
-  // Biased locking
-  // See whether the lock is currently biased toward our thread and
-  // whether the epoch is still valid
-  // Note that the runtime guarantees sufficient alignment of JavaThread
-  // pointers to allow age to be placed into low bits
-  // First check to see whether biasing is even enabled for this object
-  Label cas_label;
-
-  if (!swap_reg_contains_mark) {
-    ldr(swap_reg, mark_addr);
-  }
-
-  // On MP platform loads could return 'stale' values in some cases.
-  // That is acceptable since either CAS or slow case path is taken in the worst case.
-
-  andr(tmp_reg, swap_reg, markWord::biased_lock_mask_in_place);
-  cmp(tmp_reg, markWord::biased_lock_pattern);
-
-  b(cas_label, ne);
-
-  // The bias pattern is present in the object's header. Need to check
-  // whether the bias owner and the epoch are both still current.
-  load_klass(tmp_reg, obj_reg);
-  ldr(tmp_reg, Address(tmp_reg, Klass::prototype_header_offset()));
-  orr(tmp_reg, tmp_reg, Rthread);
-  eor(tmp_reg, tmp_reg, swap_reg);
-
-  bics(tmp_reg, tmp_reg, ((int) markWord::age_mask_in_place));
-
-#ifndef PRODUCT
-  if (counters != NULL) {
-    cond_atomic_inc32(eq, counters->biased_lock_entry_count_addr());
-  }
-#endif // !PRODUCT
-
-  b(done, eq);
-
-  Label try_revoke_bias;
-  Label try_rebias;
-
-  // At this point we know that the header has the bias pattern and
-  // that we are not the bias owner in the current epoch. We need to
-  // figure out more details about the state of the header in order to
-  // know what operations can be legally performed on the object's
-  // header.
-
-  // If the low three bits in the xor result aren't clear, that means
-  // the prototype header is no longer biased and we have to revoke
-  // the bias on this object.
-  tst(tmp_reg, markWord::biased_lock_mask_in_place);
-  b(try_revoke_bias, ne);
-
-  // Biasing is still enabled for this data type. See whether the
-  // epoch of the current bias is still valid, meaning that the epoch
-  // bits of the mark word are equal to the epoch bits of the
-  // prototype header. (Note that the prototype header's epoch bits
-  // only change at a safepoint.) If not, attempt to rebias the object
-  // toward the current thread. Note that we must be absolutely sure
-  // that the current epoch is invalid in order to do this because
-  // otherwise the manipulations it performs on the mark word are
-  // illegal.
-  tst(tmp_reg, markWord::epoch_mask_in_place);
-  b(try_rebias, ne);
-
-  // tmp_reg has the age, epoch and pattern bits cleared
-  // The remaining (owner) bits are (Thread ^ current_owner)
-
-  // The epoch of the current bias is still valid but we know nothing
-  // about the owner; it might be set or it might be clear. Try to
-  // acquire the bias of the object using an atomic operation. If this
-  // fails we will go in to the runtime to revoke the object's bias.
-  // Note that we first construct the presumed unbiased header so we
-  // don't accidentally blow away another thread's valid bias.
-
-  // Note that we know the owner is not ourself. Hence, success can
-  // only happen when the owner bits is 0
-
-  // until the assembler can be made smarter, we need to make some assumptions about the values
-  // so we can optimize this:
-  assert((markWord::biased_lock_mask_in_place | markWord::age_mask_in_place | markWord::epoch_mask_in_place) == 0x1ff, "biased bitmasks changed");
-
-  mov(swap_reg, AsmOperand(swap_reg, lsl, 23));
-  mov(swap_reg, AsmOperand(swap_reg, lsr, 23)); // markWord with thread bits cleared (for CAS)
-
-  orr(tmp_reg, swap_reg, Rthread); // new mark
-
-  biased_locking_enter_with_cas(obj_reg, swap_reg, tmp_reg, tmp2, slow_case,
-        (counters != NULL) ? counters->anonymously_biased_lock_entry_count_addr() : NULL);
-
-  // If the biasing toward our thread failed, this means that
-  // another thread succeeded in biasing it toward itself and we
-  // need to revoke that bias. The revocation will occur in the
-  // interpreter runtime in the slow case.
-
-  b(done);
-
-  bind(try_rebias);
-
-  // At this point we know the epoch has expired, meaning that the
-  // current "bias owner", if any, is actually invalid. Under these
-  // circumstances _only_, we are allowed to use the current header's
-  // value as the comparison value when doing the cas to acquire the
-  // bias in the current epoch. In other words, we allow transfer of
-  // the bias from one thread to another directly in this situation.
-
-  // tmp_reg low (not owner) bits are (age: 0 | pattern&epoch: prototype^swap_reg)
-
-  eor(tmp_reg, tmp_reg, swap_reg); // OK except for owner bits (age preserved !)
-
-  // owner bits 'random'. Set them to Rthread.
-  mov(tmp_reg, AsmOperand(tmp_reg, lsl, 23));
-  mov(tmp_reg, AsmOperand(tmp_reg, lsr, 23));
-
-  orr(tmp_reg, tmp_reg, Rthread); // new mark
-
-  biased_locking_enter_with_cas(obj_reg, swap_reg, tmp_reg, tmp2, slow_case,
-        (counters != NULL) ? counters->rebiased_lock_entry_count_addr() : NULL);
-
-  // If the biasing toward our thread failed, then another thread
-  // succeeded in biasing it toward itself and we need to revoke that
-  // bias. The revocation will occur in the runtime in the slow case.
-
-  b(done);
-
-  bind(try_revoke_bias);
-
-  // The prototype mark in the klass doesn't have the bias bit set any
-  // more, indicating that objects of this data type are not supposed
-  // to be biased any more. We are going to try to reset the mark of
-  // this object to the prototype value and fall through to the
-  // CAS-based locking scheme. Note that if our CAS fails, it means
-  // that another thread raced us for the privilege of revoking the
-  // bias of this particular object, so it's okay to continue in the
-  // normal locking code.
-
-  // tmp_reg low (not owner) bits are (age: 0 | pattern&epoch: prototype^swap_reg)
-
-  eor(tmp_reg, tmp_reg, swap_reg); // OK except for owner bits (age preserved !)
-
-  // owner bits 'random'. Clear them
-  mov(tmp_reg, AsmOperand(tmp_reg, lsl, 23));
-  mov(tmp_reg, AsmOperand(tmp_reg, lsr, 23));
-
-  biased_locking_enter_with_cas(obj_reg, swap_reg, tmp_reg, tmp2, cas_label,
-        (counters != NULL) ? counters->revoked_lock_entry_count_addr() : NULL);
-
-  // Fall through to the normal CAS-based lock, because no matter what
-  // the result of the above CAS, some thread must have succeeded in
-  // removing the bias bit from the object's header.
-
-  bind(cas_label);
-}
-
-
-void MacroAssembler::biased_locking_exit(Register obj_reg, Register tmp_reg, Label& done) {
-  assert(UseBiasedLocking, "why call this otherwise?");
-
-  // Check for biased locking unlock case, which is a no-op
-  // Note: we do not have to check the thread ID for two reasons.
-  // First, the interpreter checks for IllegalMonitorStateException at
-  // a higher level. Second, if the bias was revoked while we held the
-  // lock, the object could not be rebiased toward another thread, so
-  // the bias bit would be clear.
-  ldr(tmp_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-
-  andr(tmp_reg, tmp_reg, markWord::biased_lock_mask_in_place);
-  cmp(tmp_reg, markWord::biased_lock_pattern);
-  b(done, eq);
-}
-
-
 void MacroAssembler::resolve_jobject(Register value,
                                      Register tmp1,
                                      Register tmp2) {
   assert_different_registers(value, tmp1, tmp2);
-  Label done, not_weak;
-  cbz(value, done);             // Use NULL as-is.
-  STATIC_ASSERT(JNIHandles::weak_tag_mask == 1u);
-  tbz(value, 0, not_weak);      // Test for jweak tag.
+  Label done, tagged, weak_tagged;
 
+  cbz(value, done);           // Use null as-is.
+  tst(value, JNIHandles::tag_mask); // Test for tag.
+  b(tagged, ne);
+
+  // Resolve local handle
+  access_load_at(T_OBJECT, IN_NATIVE | AS_RAW, Address(value, 0), value, tmp1, tmp2, noreg);
+  verify_oop(value);
+  b(done);
+
+  bind(tagged);
+  tst(value, JNIHandles::TypeTag::weak_global); // Test for weak tag.
+  b(weak_tagged, ne);
+
+  // Resolve global handle
+  access_load_at(T_OBJECT, IN_NATIVE, Address(value, -JNIHandles::TypeTag::global), value, tmp1, tmp2, noreg);
+  verify_oop(value);
+  b(done);
+
+  bind(weak_tagged);
   // Resolve jweak.
   access_load_at(T_OBJECT, IN_NATIVE | ON_PHANTOM_OOP_REF,
-                 Address(value, -JNIHandles::weak_tag_value), value, tmp1, tmp2, noreg);
-  b(done);
-  bind(not_weak);
-  // Resolve (untagged) jobject.
-  access_load_at(T_OBJECT, IN_NATIVE,
-                 Address(value, 0), value, tmp1, tmp2, noreg);
+                 Address(value, -JNIHandles::TypeTag::weak_global), value, tmp1, tmp2, noreg);
   verify_oop(value);
+
+  bind(done);
+}
+
+void MacroAssembler::resolve_global_jobject(Register value,
+                                     Register tmp1,
+                                     Register tmp2) {
+  assert_different_registers(value, tmp1, tmp2);
+  Label done;
+
+  cbz(value, done);           // Use null as-is.
+
+#ifdef ASSERT
+  {
+    Label valid_global_tag;
+    tst(value, JNIHandles::TypeTag::global); // Test for global tag.
+    b(valid_global_tag, ne);
+    stop("non global jobject using resolve_global_jobject");
+    bind(valid_global_tag);
+  }
+#endif
+
+  // Resolve global handle
+  access_load_at(T_OBJECT, IN_NATIVE, Address(value, -JNIHandles::TypeTag::global), value, tmp1, tmp2, noreg);
+  verify_oop(value);
+
   bind(done);
 }
 
@@ -1564,7 +1380,7 @@ void MacroAssembler::lookup_interface_method(Register Rklass,
   assert_different_registers(Rklass, Rintf, Rscan, Rtmp);
 
   const int entry_size = itableOffsetEntry::size() * HeapWordSize;
-  assert(itableOffsetEntry::interface_offset_in_bytes() == 0, "not added for convenience");
+  assert(itableOffsetEntry::interface_offset() == 0, "not added for convenience");
 
   // Compute start of first itableOffsetEntry (which is at the end of the vtable)
   const int base = in_bytes(Klass::vtable_start_offset());
@@ -1588,15 +1404,15 @@ void MacroAssembler::lookup_interface_method(Register Rklass,
 
   if (method_result != noreg) {
     // Interface found at previous position of Rscan, now load the method
-    ldr_s32(Rtmp, Address(Rscan, itableOffsetEntry::offset_offset_in_bytes() - entry_size));
+    ldr_s32(Rtmp, Address(Rscan, in_bytes(itableOffsetEntry::offset_offset()) - entry_size));
     if (itable_index.is_register()) {
       add(Rtmp, Rtmp, Rklass); // Add offset to Klass*
       assert(itableMethodEntry::size() * HeapWordSize == wordSize, "adjust the scaling in the code below");
-      assert(itableMethodEntry::method_offset_in_bytes() == 0, "adjust the offset in the code below");
+      assert(itableMethodEntry::method_offset() == 0, "adjust the offset in the code below");
       ldr(method_result, Address::indexed_ptr(Rtmp, itable_index.as_register()));
     } else {
       int method_offset = itableMethodEntry::size() * HeapWordSize * itable_index.as_constant() +
-                          itableMethodEntry::method_offset_in_bytes();
+                          in_bytes(itableMethodEntry::method_offset());
       add_slow(method_result, Rklass, method_offset);
       ldr(method_result, Address(method_result, Rtmp));
     }
@@ -1827,7 +1643,7 @@ void MacroAssembler::load_mirror(Register mirror, Register method, Register tmp)
   const int mirror_offset = in_bytes(Klass::java_mirror_offset());
   ldr(tmp, Address(method, Method::const_offset()));
   ldr(tmp, Address(tmp,  ConstMethod::constants_offset()));
-  ldr(tmp, Address(tmp, ConstantPool::pool_holder_offset_in_bytes()));
+  ldr(tmp, Address(tmp, ConstantPool::pool_holder_offset()));
   ldr(mirror, Address(tmp, mirror_offset));
   resolve_oop_handle(mirror);
 }
@@ -1841,7 +1657,6 @@ void MacroAssembler::load_mirror(Register mirror, Register method, Register tmp)
 void MacroAssembler::load_klass(Register dst_klass, Register src_oop, AsmCondition cond) {
   ldr(dst_klass, Address(src_oop, oopDesc::klass_offset_in_bytes()), cond);
 }
-
 
 // Blows src_klass.
 void MacroAssembler::store_klass(Register src_klass, Register dst_oop) {
@@ -1866,7 +1681,7 @@ void MacroAssembler::store_heap_oop_null(Address obj, Register new_val, Register
 void MacroAssembler::access_load_at(BasicType type, DecoratorSet decorators,
                                     Address src, Register dst, Register tmp1, Register tmp2, Register tmp3) {
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  decorators = AccessInternal::decorator_fixup(decorators);
+  decorators = AccessInternal::decorator_fixup(decorators, type);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
     bs->BarrierSetAssembler::load_at(this, decorators, type, dst, src, tmp1, tmp2, tmp3);
@@ -1878,7 +1693,7 @@ void MacroAssembler::access_load_at(BasicType type, DecoratorSet decorators,
 void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators,
                                      Address obj, Register new_val, Register tmp1, Register tmp2, Register tmp3, bool is_null) {
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  decorators = AccessInternal::decorator_fixup(decorators);
+  decorators = AccessInternal::decorator_fixup(decorators, type);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
     bs->BarrierSetAssembler::store_at(this, decorators, type, obj, new_val, tmp1, tmp2, tmp3, is_null);
@@ -1887,23 +1702,14 @@ void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators,
   }
 }
 
-void MacroAssembler::resolve(DecoratorSet decorators, Register obj) {
-  // Use stronger ACCESS_WRITE|ACCESS_READ by default.
-  if ((decorators & (ACCESS_READ | ACCESS_WRITE)) == 0) {
-    decorators |= ACCESS_READ | ACCESS_WRITE;
-  }
-  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  return bs->resolve(this, decorators, obj);
-}
-
 void MacroAssembler::safepoint_poll(Register tmp1, Label& slow_path) {
-  ldr_u32(tmp1, Address(Rthread, Thread::polling_word_offset()));
+  ldr_u32(tmp1, Address(Rthread, JavaThread::polling_word_offset()));
   tst(tmp1, exact_log2(SafepointMechanism::poll_bit()));
   b(slow_path, eq);
 }
 
 void MacroAssembler::get_polling_page(Register dest) {
-  ldr(dest, Address(Rthread, Thread::polling_page_offset()));
+  ldr(dest, Address(Rthread, JavaThread::polling_page_offset()));
 }
 
 void MacroAssembler::read_polling_page(Register dest, relocInfo::relocType rtype) {
@@ -1912,3 +1718,145 @@ void MacroAssembler::read_polling_page(Register dest, relocInfo::relocType rtype
   ldr(dest, Address(dest));
 }
 
+#define PUSH_REG(mask, bit, Reg)      \
+  if (mask & ((unsigned)1 << bit)) {  \
+    push(Reg);                        \
+  }
+
+#define POP_REG(mask, bit, Reg, condition)   \
+  if (mask & ((unsigned)1 << bit)) {         \
+    pop(Reg, condition);                     \
+  }
+
+#define PUSH_REGS(mask, R1, R2, R3) \
+  PUSH_REG(mask, 0, R1)             \
+  PUSH_REG(mask, 1, R2)             \
+  PUSH_REG(mask, 2, R3)
+
+#define POP_REGS(mask, R1, R2, R3, condition)   \
+  POP_REG(mask, 0, R1, condition)               \
+  POP_REG(mask, 1, R2, condition)               \
+  POP_REG(mask, 2, R3, condition)
+
+#define POISON_REG(mask, bit, Reg, poison)      \
+  if (mask & ((unsigned)1 << bit)) {            \
+    mov(Reg, poison);                           \
+  }
+
+#define POISON_REGS(mask, R1, R2, R3, poison)   \
+  POISON_REG(mask, 0, R1, poison)               \
+  POISON_REG(mask, 1, R2, poison)               \
+  POISON_REG(mask, 2, R3, poison)
+
+// Attempt to lightweight-lock an object
+// Registers:
+//  - obj: the object to be locked
+//  - t1, t2, t3: temp registers. If corresponding bit in savemask is set, they get saved, otherwise blown.
+// Result:
+//  - Success: fallthrough
+//  - Error:   break to slow, Z cleared.
+void MacroAssembler::lightweight_lock(Register obj, Register t1, Register t2, Register t3, unsigned savemask, Label& slow) {
+  assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
+  assert_different_registers(obj, t1, t2, t3);
+
+#ifdef ASSERT
+  // Poison scratch regs
+  POISON_REGS((~savemask), t1, t2, t3, 0x10000001);
+#endif
+
+  PUSH_REGS(savemask, t1, t2, t3);
+
+  // Check if we would have space on lock-stack for the object.
+  ldr(t1, Address(Rthread, JavaThread::lock_stack_top_offset()));
+  // cmp(t1, (unsigned)LockStack::end_offset()); //  too complicated constant: 1132 (46c)
+  movw(t2, LockStack::end_offset() - 1);
+  cmp(t1, t2);
+  POP_REGS(savemask, t1, t2, t3, gt);
+  b(slow, gt); // Z is cleared
+
+  // Prepare old, new header
+  Register old_hdr = t1;
+  Register new_hdr = t2;
+  ldr(new_hdr, Address(obj, oopDesc::mark_offset_in_bytes()));
+  bic(new_hdr, new_hdr, markWord::lock_mask_in_place);  // new header (00)
+  orr(old_hdr, new_hdr, markWord::unlocked_value);      // old header (01)
+
+  Label dummy;
+
+  cas_for_lock_acquire(old_hdr /* old */, new_hdr /* new */,
+      obj /* location */, t3 /* scratch */, dummy,
+      true /* allow_fallthrough_on_failure */, true /* one_shot */);
+
+  POP_REGS(savemask, t1, t2, t3, ne); // Cas failed -> slow
+  b(slow, ne);                        // Cas failed -> slow
+
+  // After successful lock, push object onto lock-stack
+  ldr(t1, Address(Rthread, JavaThread::lock_stack_top_offset()));
+  str(obj, Address(Rthread, t1));
+  add(t1, t1, oopSize);
+  str(t1, Address(Rthread, JavaThread::lock_stack_top_offset()));
+
+  POP_REGS(savemask, t1, t2, t3, al);
+
+#ifdef ASSERT
+  // Poison scratch regs
+  POISON_REGS((~savemask), t1, t2, t3, 0x20000002);
+#endif
+
+  // Success: fall through
+}
+
+// Attempt to lightweight-unlock an object
+// Registers:
+//  - obj: the object to be unlocked
+//  - t1, t2, t3: temp registers. If corresponding bit in savemask is set, they get saved, otherwise blown.
+// Result:
+//  - Success: fallthrough
+//  - Error:   break to slow, Z cleared.
+void MacroAssembler::lightweight_unlock(Register obj, Register t1, Register t2, Register t3, unsigned savemask, Label& slow) {
+  assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
+  assert_different_registers(obj, t1, t2, t3);
+
+#ifdef ASSERT
+  // Poison scratch regs
+  POISON_REGS((~savemask), t1, t2, t3, 0x30000003);
+#endif
+
+  PUSH_REGS(savemask, t1, t2, t3);
+
+  // Prepare old, new header
+  Register old_hdr = t1;
+  Register new_hdr = t2;
+  ldr(old_hdr, Address(obj, oopDesc::mark_offset_in_bytes()));
+  bic(old_hdr, old_hdr, markWord::lock_mask_in_place);    // old header (00)
+  orr(new_hdr, old_hdr, markWord::unlocked_value);        // new header (01)
+
+  // Try to swing header from locked to unlocked
+  Label dummy;
+  cas_for_lock_release(old_hdr /* old */, new_hdr /* new */,
+      obj /* location */, t3 /* scratch */, dummy,
+      true /* allow_fallthrough_on_failure */, true /* one_shot */);
+
+  POP_REGS(savemask, t1, t2, t3, ne); // Cas failed -> slow
+  b(slow, ne);                        // Cas failed -> slow
+
+  // After successful unlock, pop object from lock-stack
+  ldr(t1, Address(Rthread, JavaThread::lock_stack_top_offset()));
+  sub(t1, t1, oopSize);
+  str(t1, Address(Rthread, JavaThread::lock_stack_top_offset()));
+
+#ifdef ASSERT
+  // zero out popped slot
+  mov(t2, 0);
+  str(t2, Address(Rthread, t1));
+#endif
+
+  POP_REGS(savemask, t1, t2, t3, al);
+
+#ifdef ASSERT
+  // Poison scratch regs
+  POISON_REGS((~savemask), t1, t2, t3, 0x40000004);
+#endif
+
+  // Fallthrough: success
+}

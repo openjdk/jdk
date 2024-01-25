@@ -37,7 +37,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8077931
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true catalog.PublicFamilyTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow catalog.PublicFamilyTest
  * @run testng/othervm catalog.PublicFamilyTest
  * @summary Get matched URIs from public and delegatePublic entries.
  *          It tests the resolution priorities among the public family entries.

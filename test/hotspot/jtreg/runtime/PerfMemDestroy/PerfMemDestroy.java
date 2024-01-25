@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 8030955
  * @summary Allow multiple calls to PerfMemory::destroy() without asserting.
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -38,7 +39,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class PerfMemDestroy {
     public static void main(String args[]) throws Throwable {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+PerfAllowAtExitRegistration", "-version");
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+PerfAllowAtExitRegistration", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
     }

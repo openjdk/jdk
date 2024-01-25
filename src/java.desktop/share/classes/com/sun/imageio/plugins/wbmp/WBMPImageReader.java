@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -244,8 +244,8 @@ public class WBMPImageReader extends ImageReader {
             }
 
             // If noTransform is necessary, read the data.
-            iis.read(((DataBufferByte)tile.getDataBuffer()).getData(),
-                     0, height*sm.getScanlineStride());
+            iis.readFully(((DataBufferByte)tile.getDataBuffer()).getData(),
+                          0, height*sm.getScanlineStride());
             processImageUpdate(bi,
                                0, 0,
                                width, height, 1, 1,
@@ -280,7 +280,7 @@ public class WBMPImageReader extends ImageReader {
 
                 if (abortRequested())
                     break;
-                iis.read(buf, 0, len);
+                iis.readFully(buf, 0, len);
                 for (int i = 0; i < destinationRegion.width; i++) {
                     //get the bit and assign to the data buffer of the raster
                     int v = (buf[srcPos[i]] >> srcOff[i]) & 1;

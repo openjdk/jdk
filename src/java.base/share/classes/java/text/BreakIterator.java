@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,16 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * and a diacritical mark. What users consider to be a character can
  * differ between languages.
  *
- * <p>
+ * @implSpec The default implementation of the character boundary analysis
+ * conforms to the Unicode Consortium's Extended Grapheme Cluster breaks.
+ * For more detail, refer to
+ * <a href="https://www.unicode.org/reports/tr29/#Grapheme_Cluster_Boundaries">
+ * Grapheme Cluster Boundaries</a> section in the Unicode Standard Annex #29.
+ *
+ * @implNote The default implementations of {@code BreakIterator} will perform the equivalent
+ * of calling {@code setText("")} if the text hasn't been set by either
+ * {@link #setText(String)} or {@link #setText(CharacterIterator)}
+ * and a boundary searching operation is called by the {@code BreakIterator} instance.
  * The {@code BreakIterator} instances returned by the factory methods
  * of this class are intended for use with natural languages only, not for
  * programming language text. It is however possible to define subclasses
@@ -109,7 +118,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * <strong>Examples</strong>:<P>
  * Creating and using text boundaries:
  * <blockquote>
- * <pre>
+ * {@snippet lang=java :
  * public static void main(String args[]) {
  *      if (args.length == 1) {
  *          String stringToExamine = args[0];
@@ -125,12 +134,12 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  *          printLast(boundary, stringToExamine);
  *      }
  * }
- * </pre>
+ * }
  * </blockquote>
  *
  * Print each element in order:
  * <blockquote>
- * <pre>
+ * {@snippet lang=java :
  * public static void printEachForward(BreakIterator boundary, String source) {
  *     int start = boundary.first();
  *     for (int end = boundary.next();
@@ -139,12 +148,12 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  *          System.out.println(source.substring(start,end));
  *     }
  * }
- * </pre>
+ * }
  * </blockquote>
  *
  * Print each element in reverse order:
  * <blockquote>
- * <pre>
+ * {@snippet lang=java :
  * public static void printEachBackward(BreakIterator boundary, String source) {
  *     int end = boundary.last();
  *     for (int start = boundary.previous();
@@ -153,45 +162,45 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  *         System.out.println(source.substring(start,end));
  *     }
  * }
- * </pre>
+ * }
  * </blockquote>
  *
  * Print first element:
  * <blockquote>
- * <pre>
+ * {@snippet lang=java :
  * public static void printFirst(BreakIterator boundary, String source) {
  *     int start = boundary.first();
  *     int end = boundary.next();
  *     System.out.println(source.substring(start,end));
  * }
- * </pre>
+ * }
  * </blockquote>
  *
  * Print last element:
  * <blockquote>
- * <pre>
+ * {@snippet lang=java :
  * public static void printLast(BreakIterator boundary, String source) {
  *     int end = boundary.last();
  *     int start = boundary.previous();
  *     System.out.println(source.substring(start,end));
  * }
- * </pre>
+ * }
  * </blockquote>
  *
  * Print the element at a specified position:
  * <blockquote>
- * <pre>
+ *{@snippet lang=java :
  * public static void printAt(BreakIterator boundary, int pos, String source) {
  *     int end = boundary.following(pos);
  *     int start = boundary.previous();
  *     System.out.println(source.substring(start,end));
  * }
- * </pre>
+ * }
  * </blockquote>
  *
  * Find the next word:
  * <blockquote>
- * <pre>{@code
+ * {@snippet lang=java :
  * public static int nextWordStartAfter(int pos, String text) {
  *     BreakIterator wb = BreakIterator.getWordInstance();
  *     wb.setText(text);
@@ -207,7 +216,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  *     }
  *     return BreakIterator.DONE;
  * }
- * }</pre>
+ * }
  * (The iterator returned by BreakIterator.getWordInstance() is unique in that
  * the break positions it returns don't represent both the start and end of the
  * thing being iterated over.  That is, a sentence-break iterator returns breaks
@@ -560,22 +569,13 @@ public abstract class BreakIterator implements Cloneable
 
     private static BreakIterator createBreakInstance(LocaleProviderAdapter adapter, Locale locale, int type) {
         BreakIteratorProvider breakIteratorProvider = adapter.getBreakIteratorProvider();
-        BreakIterator iterator = null;
-        switch (type) {
-        case CHARACTER_INDEX:
-            iterator = breakIteratorProvider.getCharacterInstance(locale);
-            break;
-        case WORD_INDEX:
-            iterator = breakIteratorProvider.getWordInstance(locale);
-            break;
-        case LINE_INDEX:
-            iterator = breakIteratorProvider.getLineInstance(locale);
-            break;
-        case SENTENCE_INDEX:
-            iterator = breakIteratorProvider.getSentenceInstance(locale);
-            break;
-        }
-        return iterator;
+        return switch (type) {
+            case CHARACTER_INDEX -> breakIteratorProvider.getCharacterInstance(locale);
+            case WORD_INDEX      -> breakIteratorProvider.getWordInstance(locale);
+            case LINE_INDEX      -> breakIteratorProvider.getLineInstance(locale);
+            case SENTENCE_INDEX  -> breakIteratorProvider.getSentenceInstance(locale);
+            default              -> null;
+        };
     }
 
     /**
@@ -585,8 +585,9 @@ public abstract class BreakIterator implements Cloneable
      * The returned array represents the union of locales supported by the Java
      * runtime and by installed
      * {@link java.text.spi.BreakIteratorProvider BreakIteratorProvider} implementations.
-     * It must contain at least a {@code Locale}
-     * instance equal to {@link java.util.Locale#US Locale.US}.
+     * At a minimum, the returned array must contain a {@code Locale} instance equal to
+     * {@link Locale#ROOT Locale.ROOT} and a {@code Locale} instance equal to
+     * {@link Locale#US Locale.US}.
      *
      * @return An array of locales for which localized
      *         {@code BreakIterator} instances are available.

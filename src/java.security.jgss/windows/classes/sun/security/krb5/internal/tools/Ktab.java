@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import sun.security.krb5.internal.ktab.*;
 import java.io.IOException;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.io.File;
 import java.text.DateFormat;
 import java.util.Arrays;
 import java.util.Date;
@@ -61,10 +60,12 @@ public class Ktab {
     int etype = -1;
     char[] password = null;
 
-    boolean forced = false; // true if delete without prompt. Default false
+    boolean fopt = false;   // true if delete without prompt or
+                            // add by contacting KDC. Default false
     boolean append = false; // true if new keys are appended. Default false
     int vDel = -1;          // kvno to delete, -1 all, -2 old. Default -1
     int vAdd = -1;          // kvno to add. Default -1, means auto incremented
+    String salt = null;     // salt to use. Default null, means default salt
 
     /**
      * The main program that can be invoked at command line.
@@ -72,52 +73,76 @@ public class Ktab {
      */
     public static void main(String[] args) {
         Ktab ktab = new Ktab();
+        int exitCode = ktab.run(args);
+        if (exitCode != 0) {
+            System.exit(exitCode);
+        }
+    }
+
+    private static class ExitException extends RuntimeException {
+        @java.io.Serial
+        static final long serialVersionUID = 0L;
+        private final int errorCode;
+        public ExitException(int errorCode) {
+            this.errorCode = errorCode;
+        }
+    }
+
+    public int run(String[] args) {
+        try {
+            run0(args);
+            return 0;
+        } catch (ExitException ee) {
+            return ee.errorCode;
+        }
+    }
+
+    private void run0(String[] args) throws ExitException {
         if ((args.length == 1) &&
             ((args[0].equalsIgnoreCase("-?")) ||
              (args[0].equalsIgnoreCase("-h")) ||
              (args[0].equalsIgnoreCase("--help")) ||
              // -help: legacy.
              (args[0].equalsIgnoreCase("-help")))) {
-            ktab.printHelp();
-            System.exit(0);
+            printHelp();
             return;
         } else if ((args == null) || (args.length == 0)) {
-            ktab.action = 'l';
+            action = 'l';
         } else {
-            ktab.processArgs(args);
+            processArgs(args);
         }
-        ktab.table = KeyTab.getInstance(ktab.name);
-        if (ktab.table.isMissing() && ktab.action != 'a') {
-            if (ktab.name == null) {
+        table = KeyTab.getInstance(name);
+        if (table.isMissing() && action != 'a') {
+            if (name == null) {
                 System.out.println("No default key table exists.");
             } else {
                 System.out.println("Key table " +
-                        ktab.name + " does not exist.");
+                        name + " does not exist.");
             }
-            System.exit(-1);
+            throw new ExitException(-1);
         }
-        if (!ktab.table.isValid()) {
-            if (ktab.name == null) {
+        if (!table.isValid()) {
+            if (name == null) {
                 System.out.println("The format of the default key table " +
                         " is incorrect.");
             } else {
                 System.out.println("The format of key table " +
-                        ktab.name + " is incorrect.");
+                        name + " is incorrect.");
             }
-            System.exit(-1);
+            throw new ExitException(-1);
         }
-        switch (ktab.action) {
+        switch (action) {
         case 'l':
-            ktab.listKt();
+            listKt();
             break;
         case 'a':
-            ktab.addEntry();
+            addEntry();
             break;
         case 'd':
-            ktab.deleteEntry();
+            deleteEntry();
             break;
         default:
-            ktab.error("A command must be provided");
+            error("A command must be provided");
         }
     }
 
@@ -186,6 +211,12 @@ public class Ktab {
                             error(args[i] + " is not valid after -" + action);
                         }
                         break;
+                    case "-s":   // salt for -a
+                        if (++i >= args.length || args[i].startsWith("-")) {
+                            error("A salt string must be specified after -s");
+                        }
+                        salt = args[i];
+                        break;
                     case "-n":   // kvno for -a
                         if (++i >= args.length || args[i].startsWith("-")) {
                             error("A KVNO must be specified after -n");
@@ -213,8 +244,8 @@ public class Ktab {
                     case "-t":   // list timestamps
                         showTime = true;
                         break;
-                    case "-f":   // force delete, no prompt
-                        forced = true;
+                    case "-f":   // force delete or get salt from KDC
+                        fopt = true;
                         break;
                     case "-append": // -a, new keys append to file
                         append = true;
@@ -258,6 +289,10 @@ public class Ktab {
      * a new key table.
      */
     void addEntry() {
+        if (salt != null && fopt) {
+            System.err.println("-s and -f cannot coexist when adding a keytab entry.");
+            throw new ExitException(-1);
+        }
         PrincipalName pname = null;
         try {
             pname = new PrincipalName(principal);
@@ -265,7 +300,7 @@ public class Ktab {
             System.err.println("Failed to add " + principal +
                                " to keytab.");
             e.printStackTrace();
-            System.exit(-1);
+            throw new ExitException(-1);
         }
         if (password == null) {
             try {
@@ -277,13 +312,21 @@ public class Ktab {
             } catch (IOException e) {
                 System.err.println("Failed to read the password.");
                 e.printStackTrace();
-                System.exit(-1);
+                throw new ExitException(-1);
             }
 
         }
         try {
             // admin.addEntry(pname, password);
-            table.addEntry(pname, password, vAdd, append);
+            if (fopt) {
+                KrbAsReqBuilder builder = new KrbAsReqBuilder(pname, password);
+                builder.action();
+                table.addEntry(pname, builder.getKeys(true), vAdd, append);
+            } else if (salt != null) {
+                table.addEntry(pname, salt, password, vAdd, append);
+            } else {
+                table.addEntry(pname, password, vAdd, append);
+            }
             Arrays.fill(password, '0');  // clear password
             // admin.save();
             table.save();
@@ -294,11 +337,11 @@ public class Ktab {
         } catch (KrbException e) {
             System.err.println("Failed to add " + principal + " to keytab.");
             e.printStackTrace();
-            System.exit(-1);
+            throw new ExitException(-1);
         } catch (IOException e) {
             System.err.println("Failed to save new entry.");
             e.printStackTrace();
-            System.exit(-1);
+            throw new ExitException(-1);
         }
     }
 
@@ -367,7 +410,7 @@ public class Ktab {
         PrincipalName pname = null;
         try {
             pname = new PrincipalName(principal);
-            if (!forced) {
+            if (!fopt) {
                 String answer;
                 BufferedReader cis =
                     new BufferedReader(new InputStreamReader(System.in));
@@ -380,22 +423,23 @@ public class Ktab {
                 System.out.flush();
                 answer = cis.readLine();
                 if (answer.equalsIgnoreCase("Y") ||
-                    answer.equalsIgnoreCase("Yes"));
-                else {
+                    answer.equalsIgnoreCase("Yes")) {
+                    ;
+                } else {
                     // no error, the user did not want to delete the entry
-                    System.exit(0);
+                    return;
                 }
             }
         } catch (KrbException e) {
             System.err.println("Error occurred while deleting the entry. "+
                                "Deletion failed.");
             e.printStackTrace();
-            System.exit(-1);
+            throw new ExitException(-1);
         } catch (IOException e) {
             System.err.println("Error occurred while deleting the entry. "+
                                " Deletion failed.");
             e.printStackTrace();
-            System.exit(-1);
+            throw new ExitException(-1);
         }
 
         int count = table.deleteEntries(pname, etype, vDel);
@@ -403,7 +447,7 @@ public class Ktab {
         if (count == 0) {
             System.err.println("No matched entry in the keytab. " +
                                "Deletion fails.");
-            System.exit(-1);
+            throw new ExitException(-1);
         } else {
             try {
                 table.save();
@@ -411,7 +455,7 @@ public class Ktab {
                 System.err.println("Error occurs while saving the keytab. " +
                                    "Deletion fails.");
                 e.printStackTrace();
-                System.exit(-1);
+                throw new ExitException(-1);
             }
             System.out.println("Done! " + count + " entries removed.");
         }
@@ -422,8 +466,9 @@ public class Ktab {
             System.out.println("Error: " + error + ".");
         }
         printHelp();
-        System.exit(-1);
+        throw new ExitException(-1);
     }
+
     /**
      * Prints out the help information.
      */
@@ -434,11 +479,13 @@ public class Ktab {
         System.out.println();
         System.out.println("-l [-e] [-t]\n"
                 + "    list the keytab name and entries. -e with etype, -t with timestamp.");
-        System.out.println("-a <principal name> [<password>] [-n <kvno>] [-append]\n"
+        System.out.println("-a <principal name> [<password>] [-n <kvno>] [-f | -s <salt>] [-append]\n"
                 + "    add new key entries to the keytab for the given principal name with\n"
                 + "    optional <password>. If a <kvno> is specified, new keys' Key Version\n"
                 + "    Numbers equal to the value, otherwise, automatically incrementing\n"
-                + "    the Key Version Numbers. If -append is specified, new keys are\n"
+                + "    the Key Version Numbers. If <salt> is specified, it will be used\n"
+                + "    instead of the default salt. If -f is specified, the KDC will be\n"
+                + "    contacted to fetch the salt. If -append is specified, new keys are\n"
                 + "    appended to the keytab, otherwise, old keys for the\n"
                 + "    same principal are removed.");
         System.out.println("-d <principal name> [-f] [-e <etype>] [<kvno> | all | old]\n"
@@ -447,7 +494,7 @@ public class Ktab {
                 + "    kvno. If \"all\" is specified, delete all keys. If \"old\" is specified,\n"
                 + "    delete all keys except those with the highest kvno. Default action\n"
                 + "    is \"all\". If <etype> is specified, only keys of this encryption type\n"
-                + "    are deleted. <etype> should be specified as the numberic value etype\n"
+                + "    are deleted. <etype> should be specified as the numeric value etype\n"
                 + "    defined in RFC 3961, section 8. A prompt to confirm the deletion is\n"
                 + "    displayed unless -f is specified.");
         System.out.println();

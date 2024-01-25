@@ -91,7 +91,7 @@ public class ContainerOrderFocusTraversalPolicy extends FocusTraversalPolicy
      * Used by getComponentAfter and getComponentBefore for efficiency. In
      * order to maintain compliance with the specification of
      * FocusTraversalPolicy, if traversal wraps, we should invoke
-     * getFirstComponent or getLastComponent. These methods may be overriden in
+     * getFirstComponent or getLastComponent. These methods may be overridden in
      * subclasses to behave in a non-generic way. However, in the generic case,
      * these methods will simply return the first or last Components of the
      * sorted list, respectively. Since getComponentAfter and

@@ -87,7 +87,7 @@ class JfrPostBox : public JfrCHeapObj {
   void deposit(int new_messages);
   bool is_message_processed(uintptr_t serial_id) const;
 
-  friend void recorderthread_entry(JavaThread*, Thread*);
+  friend void recorderthread_entry(JavaThread*, JavaThread*);
   // for the friend declaration above
   bool is_empty() const;
   int collect();

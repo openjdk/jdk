@@ -24,6 +24,6 @@
 /**
  * @test
  * @build test/*
- * @run testng/othervm test/p.Tests
+ * @run testng/othervm -Djava.security.manager=allow test/p.Tests
  * @summary Tests to exercise ServiceLoader with a security manager
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -39,7 +39,6 @@ import com.sun.org.apache.xerces.internal.util.XMLChar;
 import com.sun.org.apache.xerces.internal.util.XMLLocatorWrapper;
 import com.sun.org.apache.xerces.internal.util.XMLResourceIdentifierImpl;
 import com.sun.org.apache.xerces.internal.util.XMLSymbols;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.xni.Augmentations;
 import com.sun.org.apache.xerces.internal.xni.NamespaceContext;
@@ -78,7 +77,9 @@ import javax.xml.catalog.CatalogFeatures;
 import javax.xml.catalog.CatalogManager;
 import javax.xml.catalog.CatalogResolver;
 import javax.xml.transform.Source;
+import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.JdkXmlUtils;
+import jdk.xml.internal.XMLSecurityManager;
 import org.xml.sax.InputSource;
 
 /**
@@ -127,7 +128,7 @@ import org.xml.sax.InputSource;
  *
  *
  * @see XIncludeNamespaceSupport
- * @LastModified: Nov 2017
+ * @LastModified: July 2023
  */
 public class XIncludeHandler
     implements XMLComponent, XMLDocumentFilter, XMLDTDFilter {
@@ -246,7 +247,7 @@ public class XIncludeHandler
 
     /** property identifier: XML security property manager. */
     protected static final String XML_SECURITY_PROPERTY_MANAGER =
-            Constants.XML_SECURITY_PROPERTY_MANAGER;
+            JdkConstants.XML_SECURITY_PROPERTY_MANAGER;
 
     /** Recognized features. */
     private static final String[] RECOGNIZED_FEATURES =
@@ -561,7 +562,7 @@ public class XIncludeHandler
         }
 
         fSecurityPropertyMgr = (XMLSecurityPropertyManager)
-                componentManager.getProperty(Constants.XML_SECURITY_PROPERTY_MANAGER);
+                componentManager.getProperty(JdkConstants.XML_SECURITY_PROPERTY_MANAGER);
 
         //Use Catalog
         fUseCatalog = componentManager.getFeature(XMLConstants.USE_CATALOG);
@@ -1637,8 +1638,8 @@ public class XIncludeHandler
         }
 
         XMLInputSource includedSource = null;
-        if (fEntityResolver != null) {
-            try {
+        try {
+            if (fEntityResolver != null) {
                 XMLResourceIdentifier resourceIdentifier =
                     new XMLResourceIdentifierImpl(
                         null,
@@ -1651,56 +1652,55 @@ public class XIncludeHandler
 
                 includedSource =
                     fEntityResolver.resolveEntity(resourceIdentifier);
+            }
+            if (includedSource == null && fUseCatalog) {
+                if (fCatalogFeatures == null) {
+                    fCatalogFeatures = JdkXmlUtils.getCatalogFeatures(fDefer, fCatalogFile, fPrefer, fResolve);
+                }
+                fCatalogFile = fCatalogFeatures.get(CatalogFeatures.Feature.FILES);
+                if (fCatalogFile != null) {
+                    /*
+                       Although URI entry is preferred for resolving XInclude, system entry
+                       is allowed as well.
+                    */
+                    Source source = null;
+                    try {
+                        if (fCatalogResolver == null) {
+                            fCatalogResolver = CatalogManager.catalogResolver(fCatalogFeatures);
+                        }
+                        source = fCatalogResolver.resolve(href, fCurrentBaseURI.getExpandedSystemId());
+                    } catch (CatalogException e) {}
 
-                if (includedSource == null && fUseCatalog) {
-                    if (fCatalogFeatures == null) {
-                        fCatalogFeatures = JdkXmlUtils.getCatalogFeatures(fDefer, fCatalogFile, fPrefer, fResolve);
-                    }
-                    fCatalogFile = fCatalogFeatures.get(CatalogFeatures.Feature.FILES);
-                    if (fCatalogFile != null) {
-                        /*
-                           Although URI entry is preferred for resolving XInclude, system entry
-                           is allowed as well.
-                        */
-                        Source source = null;
-                        try {
-                            if (fCatalogResolver == null) {
-                                fCatalogResolver = CatalogManager.catalogResolver(fCatalogFeatures);
-                            }
-                            source = fCatalogResolver.resolve(href, fCurrentBaseURI.getExpandedSystemId());
-                        } catch (CatalogException e) {}
-
-                        if (source != null && !source.isEmpty()) {
-                            includedSource = new XMLInputSource(null, source.getSystemId(),
-                                    fCurrentBaseURI.getExpandedSystemId(), true);
-                        } else {
-                            if (fCatalogResolver == null) {
-                                fCatalogResolver = CatalogManager.catalogResolver(fCatalogFeatures);
-                            }
-                            InputSource is = fCatalogResolver.resolveEntity(href, href);
-                            if (is != null && !is.isEmpty()) {
-                                includedSource = new XMLInputSource(is, true);
-                            }
+                    if (source != null && !source.isEmpty()) {
+                        includedSource = new XMLInputSource(null, source.getSystemId(),
+                                fCurrentBaseURI.getExpandedSystemId(), true);
+                    } else {
+                        if (fCatalogResolver == null) {
+                            fCatalogResolver = CatalogManager.catalogResolver(fCatalogFeatures);
+                        }
+                        InputSource is = fCatalogResolver.resolveEntity(href, href);
+                        if (is != null && !is.isEmpty()) {
+                            includedSource = new XMLInputSource(is, true);
                         }
                     }
                 }
-
-                if (includedSource != null &&
-                    !(includedSource instanceof HTTPInputSource) &&
-                    (accept != null || acceptLanguage != null) &&
-                    includedSource.getCharacterStream() == null &&
-                    includedSource.getByteStream() == null) {
-
-                    includedSource = createInputSource(includedSource.getPublicId(), includedSource.getSystemId(),
-                        includedSource.getBaseSystemId(), accept, acceptLanguage);
-                }
             }
-            catch (IOException | CatalogException e) {
-                reportResourceError(
-                    "XMLResourceError",
-                    new Object[] { href, e.getMessage()}, e);
-                return false;
+
+            if (includedSource != null &&
+                !(includedSource instanceof HTTPInputSource) &&
+                (accept != null || acceptLanguage != null) &&
+                includedSource.getCharacterStream() == null &&
+                includedSource.getByteStream() == null) {
+
+                includedSource = createInputSource(includedSource.getPublicId(), includedSource.getSystemId(),
+                    includedSource.getBaseSystemId(), accept, acceptLanguage);
             }
+        }
+        catch (IOException | CatalogException e) {
+            reportResourceError(
+                "XMLResourceError",
+                new Object[] { href, e.getMessage()}, e);
+            return false;
         }
 
         if (includedSource == null) {
@@ -1731,6 +1731,11 @@ public class XIncludeHandler
                 fChildConfig.setProperty(SECURITY_MANAGER, fSecurityManager);
                 fChildConfig.setProperty(XML_SECURITY_PROPERTY_MANAGER, fSecurityPropertyMgr);
                 fChildConfig.setProperty(BUFFER_SIZE, fBufferSize);
+                fChildConfig.setProperty(CatalogFeatures.Feature.FILES.getPropertyName(), fCatalogFile);
+                fChildConfig.setProperty(CatalogFeatures.Feature.DEFER.getPropertyName(), fDefer);
+                fChildConfig.setProperty(CatalogFeatures.Feature.PREFER.getPropertyName(), fPrefer);
+                fChildConfig.setProperty(CatalogFeatures.Feature.RESOLVE.getPropertyName(), fResolve);
+                fChildConfig.setFeature(XMLConstants.USE_CATALOG, fUseCatalog);
 
                 // features must be copied to child configuration
                 fNeedCopyFeatures = true;

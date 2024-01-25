@@ -154,8 +154,8 @@ LIR_Opr FrameMap::long1_opr;
 LIR_Opr FrameMap::fpu0_float_opr;
 LIR_Opr FrameMap::fpu0_double_opr;
 
-LIR_Opr FrameMap::_caller_save_cpu_regs[] = { 0, };
-LIR_Opr FrameMap::_caller_save_fpu_regs[] = { 0, };
+LIR_Opr FrameMap::_caller_save_cpu_regs[] = {};
+LIR_Opr FrameMap::_caller_save_fpu_regs[] = {};
 
 //--------------------------------------------------------
 //               FrameMap
@@ -300,8 +300,6 @@ void FrameMap::initialize() {
 
 
 Address FrameMap::make_new_address(ByteSize sp_offset) const {
-  // for rbp, based address use this:
-  // return Address(rbp, in_bytes(sp_offset) - (framesize() - 2) * 4);
   return Address(sp, in_bytes(sp_offset));
 }
 

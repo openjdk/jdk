@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,11 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.toolkit.Content;
 
 /**
  * A row of header cells for an HTML table.
@@ -42,11 +41,6 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
  * The header contains a list of {@code <th>} cells, providing the column headers.
  * The attribute {@code scope="col"} is automatically added to each header cell.
  * In addition, a series of style class names can be specified, to be applied one per cell.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class TableHeader extends Content {
 
@@ -60,6 +54,8 @@ public class TableHeader extends Content {
      */
     private List<HtmlStyle> styles;
 
+    private boolean[] sortable;
+
     /**
      * Creates a header row, with localized content for each cell.
      * Resources keys will be converted to content using {@link Contents#getContent(String)}.
@@ -69,7 +65,7 @@ public class TableHeader extends Content {
     public TableHeader(Contents contents, String... colHeaderKeys) {
         this.cellContents = Arrays.stream(colHeaderKeys)
                 .map(contents::getContent)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**
@@ -103,6 +99,20 @@ public class TableHeader extends Content {
     }
 
     /**
+     * Makes the table sortable by the content of columns for which the
+     * argument boolean array contains {@code true}.
+     * @param sortable boolean array specifying sortable columns
+     * @return this object
+     */
+    public TableHeader sortable(boolean... sortable) {
+        if (sortable.length != cellContents.size()) {
+            throw new IllegalStateException();
+        }
+        this.sortable = sortable;
+        return this;
+    }
+
+    /**
      * Set the style class names for each header cell.
      * The number of names must match the number of cells given to the constructor.
      * @param styles the style class names
@@ -129,8 +139,8 @@ public class TableHeader extends Content {
     }
 
     @Override
-    public boolean write(Writer out, boolean atNewline) throws IOException {
-        return toContent().write(out, atNewline);
+    public boolean write(Writer out, String newline, boolean atNewline) throws IOException {
+        return toContent().write(out, newline, atNewline);
     }
 
     /**
@@ -145,9 +155,16 @@ public class TableHeader extends Content {
                     : (i == 0) ? HtmlStyle.colFirst
                     : (i == (cellContents.size() - 1)) ? HtmlStyle.colLast
                     : (i == 1) ? HtmlStyle.colSecond : null;
-            HtmlTree cell = HtmlTree.DIV(HtmlStyle.tableHeader, cellContent);
+            var cell = HtmlTree.DIV(HtmlStyle.tableHeader, cellContent);
             if (style != null) {
                 cell.addStyle(style);
+            }
+            if (sortable != null && sortable[i]) {
+                cell.put(HtmlAttr.ONCLICK, "sortTable(this, " + i + ", " + sortable.length +")");
+                // Current tables happen to be sorted by first column by default, this may not hold true for future uses.
+                if (i == 0) {
+                    cell.addStyle("sort-asc");
+                }
             }
             header.add(cell);
             i++;

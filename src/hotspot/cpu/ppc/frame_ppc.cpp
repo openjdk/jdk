@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2017 SAP SE. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 
 #include "precompiled.hpp"
+#include "compiler/oopMap.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -37,6 +38,7 @@
 #include "runtime/monitorChunk.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/signature.hpp"
+#include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
 #ifdef COMPILER1
@@ -50,7 +52,9 @@ void RegisterMap::check_location_valid() {
 #endif // ASSERT
 
 bool frame::safe_for_sender(JavaThread *thread) {
-  bool safe = false;
+  if (is_heap_frame()) {
+    return true;
+  }
   address sp = (address)_sp;
   address fp = (address)_fp;
   address unextended_sp = (address)_unextended_sp;
@@ -68,28 +72,23 @@ bool frame::safe_for_sender(JavaThread *thread) {
 
   // An fp must be within the stack and above (but not equal) sp.
   bool fp_safe = thread->is_in_stack_range_excl(fp, sp);
-  // An interpreter fp must be within the stack and above (but not equal) sp.
-  // Moreover, it must be at least the size of the ijava_state structure.
+  // An interpreter fp must be fp_safe.
+  // Moreover, it must be at a distance at least the size of the ijava_state structure.
   bool fp_interp_safe = fp_safe && ((fp - sp) >= ijava_state_size);
 
   // We know sp/unextended_sp are safe, only fp is questionable here
 
   // If the current frame is known to the code cache then we can attempt to
-  // to construct the sender and do some validation of it. This goes a long way
+  // construct the sender and do some validation of it. This goes a long way
   // toward eliminating issues when we get in frame construction code
 
-  if (_cb != NULL ){
-    // Entry frame checks
-    if (is_entry_frame()) {
-      // An entry frame must have a valid fp.
-      return fp_safe && is_entry_frame_valid(thread);
-    }
+  if (_cb != nullptr) {
 
-    // Now check if the frame is complete and the test is
-    // reliable. Unfortunately we can only check frame completeness for
-    // runtime stubs and nmethods. Other generic buffer blobs are more
-    // problematic so we just assume they are OK. Adapter blobs never have a
-    // complete frame and are never OK
+    // First check if the frame is complete and the test is reliable.
+    // Unfortunately we can only check frame completeness for runtime stubs
+    // and nmethods. Other generic buffer blobs are more problematic
+    // so we just assume they are OK.
+    // Adapter blobs never have a complete frame and are never OK
     if (!_cb->is_frame_complete_at(_pc)) {
       if (_cb->is_compiled() || _cb->is_adapter_blob() || _cb->is_runtime_stub()) {
         return false;
@@ -101,28 +100,43 @@ bool frame::safe_for_sender(JavaThread *thread) {
       return false;
     }
 
+    // Entry frame checks
+    if (is_entry_frame()) {
+      // An entry frame must have a valid fp.
+      return fp_safe && is_entry_frame_valid(thread);
+    }
+
     if (is_interpreted_frame() && !fp_interp_safe) {
       return false;
     }
 
-    abi_minframe* sender_abi = (abi_minframe*) fp;
-    intptr_t* sender_sp = (intptr_t*) fp;
-    address   sender_pc = (address) sender_abi->lr;;
-
-    // We must always be able to find a recognizable pc.
-    CodeBlob* sender_blob = CodeCache::find_blob_unsafe(sender_pc);
-    if (sender_blob == NULL) {
+    // At this point, there still is a chance that fp_safe is false.
+    // In particular, fp might be null. So let's check and
+    // bail out before we actually dereference from fp.
+    if (!fp_safe) {
       return false;
     }
 
-    // Could be a zombie method
-    if (sender_blob->is_zombie() || sender_blob->is_unloaded()) {
+    common_abi* sender_abi = (common_abi*) fp;
+    intptr_t* sender_sp = (intptr_t*) fp;
+    address   sender_pc = (address) sender_abi->lr;;
+
+    if (Continuation::is_return_barrier_entry(sender_pc)) {
+      // If our sender_pc is the return barrier, then our "real" sender is the continuation entry
+      frame s = Continuation::continuation_bottom_sender(thread, *this, sender_sp);
+      sender_sp = s.sp();
+      sender_pc = s.pc();
+    }
+
+    // We must always be able to find a recognizable pc.
+    CodeBlob* sender_blob = CodeCache::find_blob(sender_pc);
+    if (sender_blob == nullptr) {
       return false;
     }
 
     // It should be safe to construct the sender though it might not be valid.
 
-    frame sender(sender_sp, sender_pc);
+    frame sender(sender_sp, sender_pc, nullptr /* unextended_sp */, nullptr /* fp */, sender_blob);
 
     // Do we have a valid fp?
     address sender_fp = (address) sender.fp();
@@ -171,12 +185,8 @@ bool frame::safe_for_sender(JavaThread *thread) {
   return true;
 }
 
-bool frame::is_interpreted_frame() const  {
-  return Interpreter::contains(pc());
-}
-
 frame frame::sender_for_entry_frame(RegisterMap *map) const {
-  assert(map != NULL, "map must be set");
+  assert(map != nullptr, "map must be set");
   // Java frame called from C; skip all C frames and return top C
   // frame of that chunk as the sender.
   JavaFrameAnchor* jfa = entry_frame_call_wrapper()->anchor();
@@ -185,89 +195,164 @@ frame frame::sender_for_entry_frame(RegisterMap *map) const {
   map->clear();
   assert(map->include_argument_oops(), "should be set by clear");
 
-  if (jfa->last_Java_pc() != NULL) {
-    frame fr(jfa->last_Java_sp(), jfa->last_Java_pc());
+  if (jfa->last_Java_pc() != nullptr) {
+    frame fr(jfa->last_Java_sp(), jfa->last_Java_pc(), kind::code_blob);
     return fr;
   }
   // Last_java_pc is not set, if we come here from compiled code. The
   // constructor retrieves the PC from the stack.
-  frame fr(jfa->last_Java_sp());
+  frame fr(jfa->last_Java_sp(), nullptr, kind::code_blob);
+  return fr;
+}
+
+UpcallStub::FrameData* UpcallStub::frame_data_for_frame(const frame& frame) const {
+  assert(frame.is_upcall_stub_frame(), "wrong frame");
+  // need unextended_sp here, since normal sp is wrong for interpreter callees
+  return reinterpret_cast<UpcallStub::FrameData*>(
+    reinterpret_cast<address>(frame.unextended_sp()) + in_bytes(_frame_data_offset));
+}
+
+bool frame::upcall_stub_frame_is_first() const {
+  assert(is_upcall_stub_frame(), "must be optimzed entry frame");
+  UpcallStub* blob = _cb->as_upcall_stub();
+  JavaFrameAnchor* jfa = blob->jfa_for_frame(*this);
+  return jfa->last_Java_sp() == nullptr;
+}
+
+frame frame::sender_for_upcall_stub_frame(RegisterMap* map) const {
+  assert(map != nullptr, "map must be set");
+  UpcallStub* blob = _cb->as_upcall_stub();
+  // Java frame called from C; skip all C frames and return top C
+  // frame of that chunk as the sender
+  JavaFrameAnchor* jfa = blob->jfa_for_frame(*this);
+  assert(!upcall_stub_frame_is_first(), "must have a frame anchor to go back to");
+  assert(jfa->last_Java_sp() > sp(), "must be above this frame on stack");
+  map->clear();
+  assert(map->include_argument_oops(), "should be set by clear");
+  frame fr(jfa->last_Java_sp(), jfa->last_Java_pc(), kind::code_blob);
+
   return fr;
 }
 
 frame frame::sender_for_interpreter_frame(RegisterMap *map) const {
-  // Pass callers initial_caller_sp as unextended_sp.
-  return frame(sender_sp(), sender_pc(), (intptr_t*)get_ijava_state()->sender_sp);
-}
-
-frame frame::sender_for_compiled_frame(RegisterMap *map) const {
-  assert(map != NULL, "map must be set");
-
-  // Frame owned by compiler.
-  address pc = *compiled_sender_pc_addr(_cb);
-  frame caller(compiled_sender_sp(_cb), pc);
-
-  // Now adjust the map.
-
-  // Get the rest.
-  if (map->update_map()) {
-    // Tell GC to use argument oopmaps for some runtime stubs that need it.
-    map->set_include_argument_oops(_cb->caller_must_gc_arguments(map->thread()));
-    if (_cb->oop_maps() != NULL) {
-      OopMapSet::update_register_map(this, map);
+  // This is the sp before any possible extension (adapter/locals).
+  intptr_t* unextended_sp = interpreter_frame_sender_sp();
+  address sender_pc = this->sender_pc();
+  if (Continuation::is_return_barrier_entry(sender_pc)) {
+    if (map->walk_cont()) { // about to walk into an h-stack
+      return Continuation::top_frame(*this, map);
+    } else {
+      return Continuation::continuation_bottom_sender(map->thread(), *this, sender_sp());
     }
   }
 
-  return caller;
+  return frame(sender_sp(), sender_pc, unextended_sp);
 }
 
-intptr_t* frame::compiled_sender_sp(CodeBlob* cb) const {
-  return sender_sp();
+// locals
+
+void frame::interpreter_frame_set_locals(intptr_t* locs)  {
+  assert(is_interpreted_frame(), "interpreted frame expected");
+  // set relativized locals
+  *addr_at(ijava_idx(locals)) = (intptr_t) (locs - fp());
 }
 
-address* frame::compiled_sender_pc_addr(CodeBlob* cb) const {
-  return sender_pc_addr();
-}
+// sender_sp
 
-frame frame::sender(RegisterMap* map) const {
-  // Default is we do have to follow them. The sender_for_xxx will
-  // update it accordingly.
-  map->set_include_argument_oops(false);
-
-  if (is_entry_frame())       return sender_for_entry_frame(map);
-  if (is_interpreted_frame()) return sender_for_interpreter_frame(map);
-  assert(_cb == CodeCache::find_blob(pc()),"Must be the same");
-
-  if (_cb != NULL) {
-    return sender_for_compiled_frame(map);
-  }
-  // Must be native-compiled frame, i.e. the marshaling code for native
-  // methods that exists in the core system.
-  return frame(sender_sp(), sender_pc());
+intptr_t* frame::interpreter_frame_sender_sp() const {
+  assert(is_interpreted_frame(), "interpreted frame expected");
+  return (intptr_t*)at(ijava_idx(sender_sp));
 }
 
 void frame::patch_pc(Thread* thread, address pc) {
   assert(_cb == CodeCache::find_blob(pc), "unexpected pc");
+  address* pc_addr = (address*)&(own_abi()->lr);
+
   if (TracePcPatching) {
     tty->print_cr("patch_pc at address " PTR_FORMAT " [" PTR_FORMAT " -> " PTR_FORMAT "]",
                   p2i(&((address*) _sp)[-1]), p2i(((address*) _sp)[-1]), p2i(pc));
   }
+  assert(!Continuation::is_return_barrier_entry(*pc_addr), "return barrier");
+  assert(_pc == *pc_addr || pc == *pc_addr || 0 == *pc_addr,
+         "must be (pc: " INTPTR_FORMAT " _pc: " INTPTR_FORMAT " pc_addr: " INTPTR_FORMAT
+         " *pc_addr: " INTPTR_FORMAT  " sp: " INTPTR_FORMAT ")",
+         p2i(pc), p2i(_pc), p2i(pc_addr), p2i(*pc_addr), p2i(sp()));
+  DEBUG_ONLY(address old_pc = _pc;)
   own_abi()->lr = (uint64_t)pc;
-  if (_cb != NULL && _cb->is_nmethod() && ((nmethod*)_cb)->is_deopt_pc(_pc)) {
-    address orig = (((nmethod*)_cb)->get_original_pc(this));
-    assert(orig == _pc, "expected original to be stored before patching");
+  _pc = pc; // must be set before call to get_deopt_original_pc
+  address original_pc = CompiledMethod::get_deopt_original_pc(this);
+  if (original_pc != nullptr) {
+    assert(original_pc == old_pc, "expected original PC to be stored before patching");
     _deopt_state = is_deoptimized;
-    // Leave _pc as is.
+    _pc = original_pc;
   } else {
     _deopt_state = not_deoptimized;
-    _pc = pc;
   }
+  assert(!is_compiled_frame() || !_cb->as_compiled_method()->is_deopt_entry(_pc), "must be");
+
+#ifdef ASSERT
+  {
+    frame f(this->sp(), pc, this->unextended_sp());
+    assert(f.is_deoptimized_frame() == this->is_deoptimized_frame() && f.pc() == this->pc() && f.raw_pc() == this->raw_pc(),
+           "must be (f.is_deoptimized_frame(): %d this->is_deoptimized_frame(): %d "
+           "f.pc(): " INTPTR_FORMAT " this->pc(): " INTPTR_FORMAT " f.raw_pc(): " INTPTR_FORMAT " this->raw_pc(): " INTPTR_FORMAT ")",
+           f.is_deoptimized_frame(), this->is_deoptimized_frame(), p2i(f.pc()), p2i(this->pc()), p2i(f.raw_pc()), p2i(this->raw_pc()));
+  }
+#endif
 }
 
 bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
-  // Is there anything to do?
   assert(is_interpreted_frame(), "Not an interpreted frame");
-  return true;
+  // These are reasonable sanity checks
+  if (fp() == 0 || (intptr_t(fp()) & (wordSize-1)) != 0) {
+    return false;
+  }
+  if (sp() == 0 || (intptr_t(sp()) & (wordSize-1)) != 0) {
+    return false;
+  }
+  int min_frame_slots = (parent_ijava_frame_abi_size + ijava_state_size) / sizeof(intptr_t);
+  if (fp() - min_frame_slots < sp()) {
+    return false;
+  }
+  // These are hacks to keep us out of trouble.
+  // The problem with these is that they mask other problems
+  if (fp() <= sp()) {        // this attempts to deal with unsigned comparison above
+    return false;
+  }
+
+  // do some validation of frame elements
+
+  // first the method
+
+  Method* m = safe_interpreter_frame_method();
+
+  // validate the method we'd find in this potential sender
+  if (!Method::is_valid_method(m)) return false;
+
+  // stack frames shouldn't be much larger than max_stack elements
+  // this test requires the use of unextended_sp which is the sp as seen by
+  // the current frame, and not sp which is the "raw" pc which could point
+  // further because of local variables of the callee method inserted after
+  // method arguments
+  if (fp() - unextended_sp() > 1024 + m->max_stack()*Interpreter::stackElementSize) {
+    return false;
+  }
+
+  // validate bci/bcx
+
+  address  bcp    = interpreter_frame_bcp();
+  if (m->validate_bci_from_bcp(bcp) < 0) {
+    return false;
+  }
+
+  // validate constantPoolCache*
+  ConstantPoolCache* cp = *interpreter_frame_cache_addr();
+  if (MetaspaceObj::is_valid(cp) == false) return false;
+
+  // validate locals
+
+  address locals =  (address)interpreter_frame_locals();
+  return thread->is_in_stack_range_incl(locals, (address)fp());
 }
 
 BasicType frame::interpreter_frame_result(oop* oop_result, jvalue* value_result) {
@@ -344,19 +429,39 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
       DESCRIBE_ADDRESS(lresult);
       DESCRIBE_ADDRESS(fresult);
   }
+
+  if (is_java_frame() || Continuation::is_continuation_enterSpecial(*this)) {
+    intptr_t* ret_pc_loc = (intptr_t*)&own_abi()->lr;
+    address ret_pc = *(address*)ret_pc_loc;
+    values.describe(frame_no, ret_pc_loc,
+      Continuation::is_return_barrier_entry(ret_pc) ? "return address (return barrier)" : "return address");
+  }
 }
 #endif
 
 intptr_t *frame::initial_deoptimization_info() {
-  // unused... but returns fp() to minimize changes introduced by 7087445
-  return fp();
+  // `this` is the caller of the deoptee. We want to trim it, if compiled, to
+  // unextended_sp. This is necessary if the deoptee frame is the bottom frame
+  // of a continuation on stack (more frames could be in a StackChunk) as it
+  // will pop its stack args. Otherwise the recursion in
+  // FreezeBase::recurse_freeze_java_frame() would not stop at the bottom frame.
+  return is_compiled_frame() ? unextended_sp() : sp();
 }
 
 #ifndef PRODUCT
 // This is a generic constructor which is only used by pns() in debug.cpp.
-frame::frame(void* sp, void* fp, void* pc) : _sp((intptr_t*)sp), _unextended_sp((intptr_t*)sp) {
-  find_codeblob_and_set_pc_and_deopt_state((address)pc); // also sets _fp and adjusts _unextended_sp
+// fp is dropped and gets determined by backlink.
+frame::frame(void* sp, void* fp, void* pc) : frame((intptr_t*)sp, (address)pc, kind::unknown) {}
+#endif
+
+BasicObjectLock* frame::interpreter_frame_monitor_end() const {
+  BasicObjectLock* result = (BasicObjectLock*) at_relative(ijava_idx(monitors));
+  // make sure the pointer points inside the frame
+  assert(sp() <= (intptr_t*) result, "monitor end should be above the stack pointer");
+  assert((intptr_t*) result < fp(),  "monitor end should be strictly below the frame pointer: result: " INTPTR_FORMAT " fp: " INTPTR_FORMAT, p2i(result), p2i(fp()));
+  return result;
 }
 
-void frame::pd_ps() {}
-#endif
+intptr_t* frame::interpreter_frame_tos_at(jint offset) const {
+  return &interpreter_frame_tos_address()[offset];
+}

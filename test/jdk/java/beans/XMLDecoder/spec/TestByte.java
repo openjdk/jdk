@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary Tests <byte> element
+ * @run main/othervm -Djava.security.manager=allow TestByte
  * @author Sergey Malenkov
  */
 

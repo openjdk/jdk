@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.util.Collections;
+import java.util.List;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.Head;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
@@ -36,7 +36,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Script;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
@@ -58,27 +57,24 @@ public class IndexRedirectWriter extends HtmlDocletWriter {
 
     public static void generate(HtmlConfiguration configuration, DocPath fileName, DocPath target)
             throws DocFileIOException {
-        IndexRedirectWriter indexRedirect = new IndexRedirectWriter(configuration, fileName, target);
-        indexRedirect.generateIndexFile();
+        var indexRedirect = new IndexRedirectWriter(configuration, fileName, target);
+        indexRedirect.buildPage();
     }
 
-    private DocPath target;
+    private final DocPath target;
 
     private IndexRedirectWriter(HtmlConfiguration configuration, DocPath filename, DocPath target) {
         super(configuration, filename);
         this.target = target;
     }
 
-    /**
-     * Generate an index file that redirects to an alternate file.
-     * @throws DocFileIOException if there is a problem generating the file
-     */
-    private void generateIndexFile() throws DocFileIOException {
-        Head head = new Head(path, configuration.getDocletVersion(), configuration.startTime)
+    @Override
+    public void buildPage() throws DocFileIOException {
+        Head head = new Head(path, configuration.getDocletVersion(), configuration.getBuildDate())
                 .setTimestamp(!options.noTimestamp())
                 .setDescription("index redirect")
                 .setGenerator(getGenerator(getClass()))
-                .setStylesheets(configuration.getMainStylesheet(), Collections.emptyList()) // avoid reference to default stylesheet
+                .setStylesheets(configuration.getMainStylesheet(), List.of(), List.of())
                 .addDefaultScript(false);
 
         String title = (options.windowTitle().length() > 0)
@@ -93,7 +89,7 @@ public class IndexRedirectWriter extends HtmlDocletWriter {
         Script script = new Script("window.location.replace(")
                 .appendStringLiteral(targetPath, '\'')
                 .append(")");
-        HtmlTree metaRefresh = new HtmlTree(TagName.META)
+        var metaRefresh = new HtmlTree(TagName.META)
                 .put(HtmlAttr.HTTP_EQUIV, "Refresh")
                 .put(HtmlAttr.CONTENT, "0;" + targetPath);
         head.addContent(script.asContent(), HtmlTree.NOSCRIPT(metaRefresh));
@@ -104,8 +100,8 @@ public class IndexRedirectWriter extends HtmlDocletWriter {
 
         bodyContent.add(HtmlTree.P(HtmlTree.A(targetPath, Text.of(targetPath))));
 
-        Content body = new HtmlTree(TagName.BODY).setStyle(HtmlStyle.indexRedirectPage);
-        HtmlTree main = HtmlTree.MAIN(bodyContent);
+        var body = new HtmlTree(TagName.BODY).setStyle(HtmlStyle.indexRedirectPage);
+        var main = HtmlTree.MAIN(bodyContent);
         body.add(main);
 
         HtmlDocument htmlDocument = new HtmlDocument(

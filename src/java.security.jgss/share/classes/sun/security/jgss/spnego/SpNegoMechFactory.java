@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ public final class SpNegoMechFactory implements MechanismFactory {
     static final Oid GSS_SPNEGO_MECH_OID =
         GSSUtil.createOid("1.3.6.1.5.5.2");
 
-    private static Oid[] nameTypes =
+    private static final Oid[] nameTypes =
         new Oid[] { GSSName.NT_USER_NAME,
                         GSSName.NT_HOSTBASED_SERVICE,
                         GSSName.NT_EXPORT_NAME};
@@ -182,7 +182,7 @@ public final class SpNegoMechFactory implements MechanismFactory {
         return new SpNegoContext(this, exportedContext);
     }
 
-    public final Oid getMechanismOid() {
+    public Oid getMechanismOid() {
         return GSS_SPNEGO_MECH_OID;
     }
 

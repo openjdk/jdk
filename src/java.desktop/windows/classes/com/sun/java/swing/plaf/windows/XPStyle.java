@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,14 +40,41 @@
 
 package com.sun.java.swing.plaf.windows;
 
-import java.awt.*;
-import java.awt.image.*;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GraphicsConfiguration;
+import java.awt.Image;
+import java.awt.Insets;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Toolkit;
+import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferInt;
+import java.awt.image.WritableRaster;
 import java.security.AccessController;
-import java.util.*;
+import java.util.HashMap;
 
-import javax.swing.*;
-import javax.swing.border.*;
-import javax.swing.plaf.*;
+import javax.swing.AbstractButton;
+import javax.swing.CellRendererPane;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JComponent;
+import javax.swing.JRadioButton;
+import javax.swing.JToolBar;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.border.AbstractBorder;
+import javax.swing.border.Border;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
+import javax.swing.plaf.ColorUIResource;
+import javax.swing.plaf.InsetsUIResource;
+import javax.swing.plaf.UIResource;
 import javax.swing.text.JTextComponent;
 
 import sun.awt.image.SunWritableRaster;
@@ -55,8 +82,10 @@ import sun.awt.windows.ThemeReader;
 import sun.security.action.GetPropertyAction;
 import sun.swing.CachedPainter;
 
-import static com.sun.java.swing.plaf.windows.TMSchema.*;
-
+import static com.sun.java.swing.plaf.windows.TMSchema.Part;
+import static com.sun.java.swing.plaf.windows.TMSchema.Prop;
+import static com.sun.java.swing.plaf.windows.TMSchema.State;
+import static com.sun.java.swing.plaf.windows.TMSchema.TypeEnum;
 
 /**
  * Implements Windows XP Styles for the Windows Look and Feel.
@@ -95,6 +124,7 @@ class XPStyle {
      * @return the singleton instance of this class or null if XP styles
      * are not active or if this is not Windows XP
      */
+    @SuppressWarnings("removal")
     static synchronized XPStyle getXP() {
         if (themeActive == null) {
             Toolkit toolkit = Toolkit.getDefaultToolkit();
@@ -132,7 +162,7 @@ class XPStyle {
      *    in the current style
      *
      * This is currently only used by WindowsInternalFrameTitlePane for painting
-     * title foregound and can be removed when no longer needed
+     * title foreground and can be removed when no longer needed
      */
     String getString(Component c, Part part, State state, Prop prop) {
         return getTypeEnumName(c, part, state, prop);
@@ -192,7 +222,7 @@ class XPStyle {
      *    in the current style
      *
      * This is currently only used by WindowsInternalFrameTitlePane for painting
-     * title foregound and can be removed when no longer needed
+     * title foreground and can be removed when no longer needed
      */
     Point getPoint(Component c, Part part, State state, Prop prop) {
         Dimension d = ThemeReader.getPosition(part.getControlName(c), part.getValue(),
@@ -207,7 +237,7 @@ class XPStyle {
      *    in the current style
      *
      * This is currently only used to create borders and by
-     * WindowsInternalFrameTitlePane for painting title foregound.
+     * WindowsInternalFrameTitlePane for painting title foreground.
      * The return value is already cached in those places.
      */
     Insets getMargin(Component c, Part part, State state, Prop prop) {
@@ -300,7 +330,7 @@ class XPStyle {
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    private class XPFillBorder extends LineBorder implements UIResource {
+    private static class XPFillBorder extends LineBorder implements UIResource {
         XPFillBorder(Color color, int thickness) {
             super(color, thickness);
         }
@@ -397,7 +427,7 @@ class XPStyle {
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    private class XPEmptyBorder extends EmptyBorder implements UIResource {
+    private static class XPEmptyBorder extends EmptyBorder implements UIResource {
         XPEmptyBorder(Insets m) {
             super(m.top+2, m.left+2, m.bottom+2, m.right+2);
         }
@@ -674,6 +704,11 @@ class XPStyle {
             w = bi.getWidth();
             h = bi.getHeight();
 
+            // Get DPI to pass further to ThemeReader.paintBackground()
+            Graphics2D g2d = (Graphics2D) g;
+            AffineTransform at = g2d.getTransform();
+            int dpi = (int)(at.getScaleX() * 96);
+
             WritableRaster raster = bi.getRaster();
             DataBufferInt dbi = (DataBufferInt)raster.getDataBuffer();
             // Note that stealData() requires a markDirty() afterwards
@@ -681,7 +716,8 @@ class XPStyle {
             ThemeReader.paintBackground(SunWritableRaster.stealData(dbi, 0),
                                         part.getControlName(c), part.getValue(),
                                         State.getValue(part, state),
-                                        0, 0, w, h, w);
+                                        0, 0, w, h, w, dpi);
+
             SunWritableRaster.markDirty(dbi);
         }
 

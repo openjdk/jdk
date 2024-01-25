@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,7 @@ public class Test {
         System.err.println("Errors:\n" + errOut);
 
         check(errOut, "Errors.java", expectErrs);
-        check(errOut, " warning ", expectWarns); // requires -locale en_US
+        check(errOut, " warning: ", expectWarns); // requires -locale en_US
     }
 
     void check(String text, String expectText, int expectCount) {

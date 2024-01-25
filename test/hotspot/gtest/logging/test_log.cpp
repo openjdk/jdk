@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,11 @@
  *
  */
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "gc/shared/gcTraceTime.inline.hpp"
+#include "jvm.h"
+#include "logging/log.hpp"
 #include "logTestFixture.hpp"
 #include "logTestUtils.inline.hpp"
-#include "logging/log.hpp"
 #include "unittest.hpp"
 
 class LogTest : public LogTestFixture {
@@ -58,8 +58,9 @@ TEST_VM_F(LogTest, large_message) {
   memset(big_msg, Xchar, sizeof(big_msg) - 1);
   log_trace(logging)("%s", big_msg);
 
+  AsyncLogWriter::flush();
   ResourceMark rm;
-  FILE* fp = fopen(TestLogFileName, "r");
+  FILE* fp = os::fopen(TestLogFileName, "r");
   ASSERT_NE((void*)NULL, fp);
   char* output = read_line(fp);
   fclose(fp);

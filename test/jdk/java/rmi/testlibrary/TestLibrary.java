@@ -88,8 +88,6 @@ public class TestLibrary {
      */
     public final static int FIXED_PORT_MIN = 60001;
     public final static int FIXED_PORT_MAX = 60010;
-    public final static int RMIDVIAINHERITEDCHANNEL_ACTIVATION_PORT = 60001;
-    public final static int RMIDVIAINHERITEDCHANNEL_REGISTRY_PORT = 60002;
     public final static int INHERITEDCHANNELNOTSERVERSOCKET_ACTIVATION_PORT = 60003;
     public final static int INHERITEDCHANNELNOTSERVERSOCKET_REGISTRY_PORT = 60004;
     public final static int READTEST_REGISTRY_PORT = 60005;
@@ -403,7 +401,7 @@ public class TestLibrary {
     /**
      * Creates an RMI {@link Registry} on a random, un-reserved port.
      *
-     * @returns an RMI Registry, using a random port.
+     * @return an RMI Registry, using a random port.
      * @throws RemoteException if there was a problem creating a Registry.
      */
     public static Registry createRegistryOnUnusedPort() throws RemoteException {
@@ -413,7 +411,7 @@ public class TestLibrary {
     /**
      * Creates an RMI {@link Registry} on an ephemeral port.
      *
-     * @returns an RMI Registry
+     * @return an RMI Registry
      * @throws RemoteException if there was a problem creating a Registry.
      */
     public static Registry createRegistryOnEphemeralPort() throws RemoteException {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,35 +23,44 @@
  */
 
 #include "precompiled.hpp"
+#include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileTask.hpp"
 #include "compiler/compilerThread.hpp"
-#include "runtime/sweeper.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 
 // Create a CompilerThread
 CompilerThread::CompilerThread(CompileQueue* queue,
                                CompilerCounters* counters)
                                : JavaThread(&CompilerThread::thread_entry) {
-  _env   = NULL;
-  _log   = NULL;
-  _task  = NULL;
+  _env   = nullptr;
+  _log   = nullptr;
+  _task  = nullptr;
   _queue = queue;
   _counters = counters;
-  _buffer_blob = NULL;
-  _compiler = NULL;
+  _buffer_blob = nullptr;
+  _can_call_java = false;
+  _compiler = nullptr;
+  _arena_stat = CompilationMemoryStatistic::enabled() ? new ArenaStatCounter : nullptr;
 
   // Compiler uses resource area for compilation, let's bias it to mtCompiler
   resource_area()->bias_to(mtCompiler);
 
 #ifndef PRODUCT
-  _ideal_graph_printer = NULL;
+  _ideal_graph_printer = nullptr;
 #endif
 }
 
 CompilerThread::~CompilerThread() {
   // Delete objects which were allocated on heap.
   delete _counters;
+  delete _arena_stat;
+}
+
+void CompilerThread::set_compiler(AbstractCompiler* c) {
+  // Only jvmci compiler threads can call Java
+  _can_call_java = c != nullptr && c->is_jvmci();
+  _compiler = c;
 }
 
 void CompilerThread::thread_entry(JavaThread* thread, TRAPS) {
@@ -59,37 +68,7 @@ void CompilerThread::thread_entry(JavaThread* thread, TRAPS) {
   CompileBroker::compiler_thread_loop();
 }
 
-bool CompilerThread::can_call_java() const {
-  return _compiler != NULL && _compiler->is_jvmci();
+// Hide native compiler threads from external view.
+bool CompilerThread::is_hidden_from_external_view() const {
+  return _compiler == nullptr || _compiler->is_hidden_from_external_view();
 }
-
-// Create sweeper thread
-CodeCacheSweeperThread::CodeCacheSweeperThread()
-: JavaThread(&CodeCacheSweeperThread::thread_entry) {
-  _scanned_compiled_method = NULL;
-}
-
-void CodeCacheSweeperThread::thread_entry(JavaThread* thread, TRAPS) {
-  NMethodSweeper::sweeper_loop();
-}
-
-void CodeCacheSweeperThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
-  JavaThread::oops_do_no_frames(f, cf);
-  if (_scanned_compiled_method != NULL && cf != NULL) {
-    // Safepoints can occur when the sweeper is scanning an nmethod so
-    // process it here to make sure it isn't unloaded in the middle of
-    // a scan.
-    cf->do_code_blob(_scanned_compiled_method);
-  }
-}
-
-void CodeCacheSweeperThread::nmethods_do(CodeBlobClosure* cf) {
-  JavaThread::nmethods_do(cf);
-  if (_scanned_compiled_method != NULL && cf != NULL) {
-    // Safepoints can occur when the sweeper is scanning an nmethod so
-    // process it here to make sure it isn't unloaded in the middle of
-    // a scan.
-    cf->do_code_blob(_scanned_compiled_method);
-  }
-}
-

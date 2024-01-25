@@ -23,8 +23,8 @@
 
 /**
  * @test
- * @run main/othervm ModuleFinderWithSecurityManager allow
- * @run main/othervm ModuleFinderWithSecurityManager deny
+ * @run main/othervm -Djava.security.manager=allow ModuleFinderWithSecurityManager allow
+ * @run main/othervm -Djava.security.manager=allow ModuleFinderWithSecurityManager deny
  * @summary Basic test for ModuleFinder.ofSystem() with security manager
  */
 

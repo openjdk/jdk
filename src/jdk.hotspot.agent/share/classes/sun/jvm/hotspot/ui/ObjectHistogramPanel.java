@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -282,7 +282,7 @@ public class ObjectHistogramPanel extends JPanel implements ActionListener {
      * Find and select the row that contains the text in the find field starting
      * from the current selected row.
      *
-     * Uses a linear search from the current row. Could be optimized withing the
+     * Uses a linear search from the current row. Could be optimized within the
      * model and internal representation.
      */
     private void findObject() {

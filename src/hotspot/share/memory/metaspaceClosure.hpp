@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,8 @@
 #include "oops/array.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/hashtable.inline.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/resizeableResourceHash.hpp"
 #include <type_traits>
 
 // The metadata hierarchy is separate from the oop hierarchy
@@ -78,10 +78,6 @@ public:
     _default
   };
 
-  enum SpecialRef {
-    _method_entry_ref
-  };
-
   // class MetaspaceClosure::Ref --
   //
   // MetaspaceClosure can be viewed as a very simple type of copying garbage
@@ -110,14 +106,13 @@ public:
   // [2] All Array<T> dimensions are statically declared.
   class Ref : public CHeapObj<mtMetaspace> {
     Writability _writability;
-    bool _keep_after_pushing;
+    address _enclosing_obj;
     Ref* _next;
-    void* _user_data;
     NONCOPYABLE(Ref);
 
   protected:
     virtual void** mpp() const = 0;
-    Ref(Writability w) : _writability(w), _keep_after_pushing(false), _next(NULL), _user_data(NULL) {}
+    Ref(Writability w) : _writability(w), _enclosing_obj(nullptr), _next(nullptr) {}
   public:
     virtual bool not_null() const = 0;
     virtual int size() const = 0;
@@ -128,33 +123,24 @@ public:
     virtual ~Ref() {}
 
     address obj() const {
-      // In some rare cases (see CPSlot in constantPool.hpp) we store some flags in the lowest
-      // 2 bits of a MetaspaceObj pointer. Unmask these when manipulating the pointer.
-      uintx p = (uintx)*mpp();
-      return (address)(p & (~FLAG_MASK));
+      return *addr();
     }
 
     address* addr() const {
       return (address*)mpp();
     }
 
-    void update(address new_loc) const;
+    // See comments in ArchiveBuilder::remember_embedded_pointer_in_enclosing_obj()
+    address enclosing_obj() const {
+      return _enclosing_obj;
+    }
+    void set_enclosing_obj(address obj) {
+      _enclosing_obj = obj;
+    }
 
     Writability writability() const { return _writability; };
-    void set_keep_after_pushing()   { _keep_after_pushing = true; }
-    bool keep_after_pushing()       { return _keep_after_pushing; }
-    void set_user_data(void* data)  { _user_data = data; }
-    void* user_data()               { return _user_data; }
     void set_next(Ref* n)           { _next = n; }
     Ref* next() const               { return _next; }
-
-  private:
-    static const uintx FLAG_MASK = 0x03;
-
-    int flag_bits() const {
-      uintx p = (uintx)*mpp();
-      return (int)(p & FLAG_MASK);
-    }
   };
 
 private:
@@ -173,7 +159,7 @@ private:
     MSORef(T** mpp, Writability w) : Ref(w), _mpp(mpp) {}
 
     virtual bool is_read_only_by_default() const { return T::is_read_only_by_default(); }
-    virtual bool not_null()                const { return dereference() != NULL; }
+    virtual bool not_null()                const { return dereference() != nullptr; }
     virtual int size()                     const { return dereference()->size(); }
     virtual MetaspaceObj::Type msotype()   const { return dereference()->type(); }
 
@@ -200,7 +186,7 @@ private:
 
     // all Arrays are read-only by default
     virtual bool is_read_only_by_default() const { return true; }
-    virtual bool not_null()                const { return dereference() != NULL;  }
+    virtual bool not_null()                const { return dereference() != nullptr;  }
     virtual int size()                     const { return dereference()->size(); }
     virtual MetaspaceObj::Type msotype()   const { return MetaspaceObj::array_type(sizeof(T)); }
   };
@@ -269,6 +255,9 @@ private:
   // Normally, chains of references like a->b->c->d are iterated recursively. However,
   // if recursion is too deep, we save the Refs in _pending_refs, and push them later in
   // MetaspaceClosure::finish(). This avoids overflowing the C stack.
+  //
+  // When we are visting d, the _enclosing_ref is c,
+  // When we are visting c, the _enclosing_ref is b, ... and so on.
   static const int MAX_NEST_LEVEL = 5;
   Ref* _pending_refs;
   int _nest_level;
@@ -278,30 +267,10 @@ private:
   void do_push(Ref* ref);
 
 public:
-  MetaspaceClosure(): _pending_refs(NULL), _nest_level(0), _enclosing_ref(NULL) {}
+  MetaspaceClosure(): _pending_refs(nullptr), _nest_level(0), _enclosing_ref(nullptr) {}
   ~MetaspaceClosure();
 
   void finish();
-
-  // enclosing_ref() is used to compute the offset of a field in a C++ class. For example
-  // class Foo { intx scala; Bar* ptr; }
-  //    Foo *f = 0x100;
-  // when the f->ptr field is iterated with do_ref() on 64-bit platforms, we will have
-  //    do_ref(Ref* r) {
-  //       r->addr() == 0x108;                // == &f->ptr;
-  //       enclosing_ref()->obj() == 0x100;   // == foo
-  // So we know that we are iterating upon a field at offset 8 of the object at 0x100.
-  //
-  // Note that if we have stack overflow, do_pending_ref(r) will be called first and
-  // do_ref(r) will be called later, for the same r. In this case, enclosing_ref() is valid only
-  // when do_pending_ref(r) is called, and will return NULL when do_ref(r) is called.
-  Ref* enclosing_ref() const {
-    return _enclosing_ref;
-  }
-
-  // This is called when a reference is placed in _pending_refs. Override this
-  // function if you're using enclosing_ref(). See notes above.
-  virtual void do_pending_ref(Ref* ref) {}
 
   // returns true if we want to keep iterating the pointers embedded inside <ref>
   virtual bool do_ref(Ref* ref, bool read_only) = 0;
@@ -309,6 +278,8 @@ public:
 private:
   template <class REF_TYPE, typename T>
   void push_with_ref(T** mpp, Writability w) {
+    // We cannot make stack allocation because the Ref may need to be saved in
+    // _pending_refs to avoid overflowing the C call stack
     push_impl(new REF_TYPE(mpp, w));
   }
 
@@ -326,8 +297,8 @@ public:
   // Note that the following will fail to compile (to prevent you from adding new fields
   // into the MetaspaceObj subtypes that cannot be properly copied by CDS):
   //
-  // Hashtable*             h  = ...;  it->push(&h);     => Hashtable is not a subclass of MetaspaceObj
-  // Array<Hashtable*>*     a6 = ...;  it->push(&a6);    => Hashtable is not a subclass of MetaspaceObj
+  // MemoryPool*            p  = ...;  it->push(&p);     => MemoryPool is not a subclass of MetaspaceObj
+  // Array<MemoryPool*>*    a6 = ...;  it->push(&a6);    => MemoryPool is not a subclass of MetaspaceObj
   // Array<int*>*           a7 = ...;  it->push(&a7);    => int       is not a subclass of MetaspaceObj
 
   template <typename T>
@@ -351,35 +322,6 @@ public:
     static_assert(std::is_base_of<MetaspaceObj, T>::value, "Do not push Arrays of arbitrary pointer types");
     push_with_ref<MSOPointerArrayRef<T>>(mpp, w);
   }
-
-#if 0
-  // Enable this block if you're changing the push(...) methods, to test for types that should be
-  // disallowed. Each of the following "push" calls should result in a compile-time error.
-  void test_disallowed_types(MetaspaceClosure* it) {
-    Hashtable<bool, mtInternal>* h  = NULL;
-    it->push(&h);
-
-    Array<Hashtable<bool, mtInternal>*>* a6 = NULL;
-    it->push(&a6);
-
-    Array<int*>* a7 = NULL;
-    it->push(&a7);
-  }
-#endif
-
-  template <class T> void push_method_entry(T** mpp, intptr_t* p) {
-    Ref* ref = new MSORef<T>(mpp, _default);
-    push_special(_method_entry_ref, ref, (intptr_t*)p);
-    if (!ref->keep_after_pushing()) {
-      delete ref;
-    }
-  }
-
-  // This is for tagging special pointers that are not a reference to MetaspaceObj. It's currently
-  // used to mark the method entry points in Method/ConstMethod.
-  virtual void push_special(SpecialRef type, Ref* obj, intptr_t* p) {
-    assert(type == _method_entry_ref, "only special type allowed for now");
-  }
 };
 
 // This is a special MetaspaceClosure that visits each unique MetaspaceObj once.
@@ -393,10 +335,11 @@ class UniqueMetaspaceClosure : public MetaspaceClosure {
 public:
   // Gets called the first time we discover an object.
   virtual bool do_unique_ref(Ref* ref, bool read_only) = 0;
-  UniqueMetaspaceClosure() : _has_been_visited(INITIAL_TABLE_SIZE) {}
+  UniqueMetaspaceClosure() : _has_been_visited(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE) {}
 
 private:
-  KVHashtable<address, bool, mtInternal> _has_been_visited;
+  ResizeableResourceHashtable<address, bool, AnyObj::C_HEAP,
+                              mtClassShared> _has_been_visited;
 };
 
 #endif // SHARE_MEMORY_METASPACECLOSURE_HPP

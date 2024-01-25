@@ -36,6 +36,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -115,101 +116,111 @@ public class GenGraphs {
     /**
      * Custom dot file attributes.
      */
-    static class ModuleGraphAttributes implements ModuleDotGraph.Attributes {
-        static Map<String, String> DEFAULT_ATTRIBUTES = Map.of(
-            "ranksep", "0.6",
-            "fontsize", "12",
-            "fontcolor", BLACK,
-            "fontname", "DejaVuSans",
-            "arrowsize", "1",
-            "arrowwidth", "2",
-            "arrowcolor", DARK_GRAY,
-            // custom
-            "requiresMandatedColor", LIGHT_GRAY,
-            "javaSubgraphColor", ORANGE,
-            "jdkSubgraphColor", BLUE
-        );
-
-        final Map<String, Integer> weights = new HashMap<>();
-        final List<Set<String>> ranks = new ArrayList<>();
-        final Map<String, String> attrs;
-        ModuleGraphAttributes(Map<String, String> attrs) {
-            int h = 1000;
-            weight("java.se", "java.sql.rowset", h * 10);
-            weight("java.sql.rowset", "java.sql", h * 10);
-            weight("java.sql", "java.xml", h * 10);
-            weight("java.xml", "java.base", h * 10);
-
-            ranks.add(Set.of("java.logging", "java.scripting", "java.xml"));
-            ranks.add(Set.of("java.sql"));
-            ranks.add(Set.of("java.transaction.xa"));
-            ranks.add(Set.of("java.compiler", "java.instrument"));
-            ranks.add(Set.of("java.desktop", "java.management"));
-
-            this.attrs = attrs;
-        }
+    static class ModuleGraphAttributes extends ModuleDotGraph.DotGraphAttributes {
+        final Properties attrs;
+        final Map<String, Integer> weights;
 
         ModuleGraphAttributes() {
-            this(DEFAULT_ATTRIBUTES);
-        }
+            this(new Properties());
+        };
         ModuleGraphAttributes(Properties props) {
-            this(toAttributes(props));
+            this.attrs = props;
+            this.weights = initWeights(props);
+        }
+
+        @Override
+        public double nodeSep() {
+            String v = attrs.getProperty("nodesep");
+            return v != null ? Double.valueOf(v) : super.nodeSep();
         }
 
         @Override
         public double rankSep() {
-            return Double.valueOf(attrs.get("ranksep"));
+            String v = attrs.getProperty("ranksep");
+            return v != null ? Double.valueOf(v) : super.rankSep();
         }
 
         @Override
         public int fontSize() {
-            return Integer.valueOf(attrs.get("fontsize"));
+            String v = attrs.getProperty("fontsize");
+            return v != null ? Integer.valueOf(v) : super.fontSize();
         }
 
         @Override
         public String fontName() {
-            return attrs.get("fontname");
+            String v = attrs.getProperty("fontname");
+            return v != null ? v : super.fontName();
         }
 
         @Override
         public String fontColor() {
-            return attrs.get("fontcolor");
+            String v = attrs.getProperty("fontcolor");
+            return v != null ? v : super.fontColor();
         }
 
         @Override
         public int arrowSize() {
-            return Integer.valueOf(attrs.get("arrowsize"));
+            String v = attrs.getProperty("arrowsize");
+            return v != null ? Integer.valueOf(v) : super.arrowSize();
         }
 
         @Override
         public int arrowWidth() {
-            return Integer.valueOf(attrs.get("arrowwidth"));
+            String v = attrs.getProperty("arrowwidth");
+            return v != null ? Integer.valueOf(v) : super.arrowWidth();
         }
 
         @Override
         public String arrowColor() {
-            return attrs.get("arrowcolor");
+            String v = attrs.getProperty("arrowcolor");
+            return v != null ? v : super.arrowColor();
         }
 
         @Override
         public List<Set<String>> ranks() {
-            return ranks;
+            return attrs.stringPropertyNames().stream()
+                        .filter(k -> k.startsWith("ranks."))
+                        .sorted()
+                        .map(k -> Arrays.stream(attrs.getProperty(k).split(","))
+                                        .collect(Collectors.toSet()))
+                        .toList();
         }
 
         @Override
         public String requiresMandatedColor() {
-            return attrs.get("requiresMandatedColor");
+            String v = attrs.getProperty("requiresMandatedColor");
+            return v != null ? v : super.requiresMandatedColor();
         }
 
         @Override
         public String javaSubgraphColor() {
-            return attrs.get("javaSubgraphColor");
+            String v = attrs.getProperty("javaSubgraphColor");
+            return v != null ? v : super.javaSubgraphColor();
         }
 
         @Override
         public String jdkSubgraphColor() {
-            return attrs.get("jdkSubgraphColor");
+            String v = attrs.getProperty("jdkSubgraphColor");
+            return v != null ? v : super.jdkSubgraphColor();
         }
+
+        @Override
+        public String nodeMargin() {
+            String v = attrs.getProperty("node-margin");
+            return v != null ? v : super.nodeMargin();
+        }
+
+        @Override
+        public String requiresStyle() {
+            String v = attrs.getProperty("requiresStyle");
+            return v != null ? v : super.requiresStyle();
+        };
+
+        @Override
+        public String requiresTransitiveStyle() {
+            String v = attrs.getProperty("requiresTransitiveStyle");
+            return v != null ? v : super.requiresTransitiveStyle();
+        };
 
         @Override
         public int weightOf(String s, String t) {
@@ -221,14 +232,25 @@ public class GenGraphs {
             return 1;
         }
 
-        public void weight(String s, String t, int w) {
-            weights.put(s + ":" + t, w);
-        }
+        /*
+         * Create a map of <mn>:<dep> with a weight trying to line up
+         * the modules in the weights property in the specified order.
+         */
+        public static Map<String, Integer> initWeights(Properties props) {
+            String[] modules = props.getProperty("weights", "").split(",");
+            int len = modules.length;
+            if (len == 0) return Map.of();
 
-        static Map<String, String> toAttributes(Properties props) {
-            return DEFAULT_ATTRIBUTES.keySet().stream()
-                .collect(Collectors.toMap(Function.identity(),
-                    k -> props.getProperty(k, DEFAULT_ATTRIBUTES.get(k))));
+            Map<String, Integer> weights = new HashMap<>();
+            String mn = modules[0];
+            int w = 10000;
+            for (int i = 1; i < len; i++) {
+                String dep = modules[i];
+                weights.put(mn + ":" + dep, w);
+                mn = dep;
+            }
+            weights.put(mn + ":java.base", w);
+            return weights;
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,17 +28,16 @@ package jdk.javadoc.internal.doclets.formats.html.markup;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.formats.html.Content;
 
 /**
  * A sequence of Content nodes.
  */
 public class ContentBuilder extends Content {
-    protected List<Content> contents = Collections.emptyList();
+    protected List<Content> contents = List.of();
 
     public ContentBuilder() { }
 
@@ -52,10 +51,11 @@ public class ContentBuilder extends Content {
     public ContentBuilder add(Content content) {
         Objects.requireNonNull(content);
         ensureMutableContents();
-        if (content instanceof ContentBuilder) {
-            contents.addAll(((ContentBuilder) content).contents);
-        } else
+        if (content instanceof ContentBuilder cb) {
+            contents.addAll(cb.contents);
+        } else {
             contents.add(content);
+        }
         return this;
     }
 
@@ -65,8 +65,8 @@ public class ContentBuilder extends Content {
             ensureMutableContents();
             Content c = contents.isEmpty() ? null : contents.get(contents.size() - 1);
             TextBuilder tb;
-            if (c != null && c instanceof TextBuilder) {
-                tb = (TextBuilder) c;
+            if (c instanceof TextBuilder tbi) {
+                tb = tbi;
             } else {
                 contents.add(tb = new TextBuilder());
             }
@@ -76,9 +76,9 @@ public class ContentBuilder extends Content {
     }
 
     @Override
-    public boolean write(Writer writer, boolean atNewline) throws IOException {
+    public boolean write(Writer writer, String newline, boolean atNewline) throws IOException {
         for (Content content: contents) {
-            atNewline = content.write(writer, atNewline);
+            atNewline = content.write(writer, newline, atNewline);
         }
         return atNewline;
     }

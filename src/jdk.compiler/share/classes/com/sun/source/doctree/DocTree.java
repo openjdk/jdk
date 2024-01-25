@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ public interface DocTree {
     enum Kind {
         /**
          * Used for instances of {@link AttributeTree}
-         * representing an HTML attribute.
+         * representing an attribute in an HTML element or tag.
          */
         ATTRIBUTE,
 
@@ -80,6 +80,8 @@ public interface DocTree {
         /**
          * Used for instances of {@link DocTypeTree}
          * representing an HTML DocType declaration.
+         *
+         * @since 10
          */
         DOC_TYPE,
 
@@ -102,6 +104,14 @@ public interface DocTree {
         ERRONEOUS,
 
         /**
+         * Used for instances of {@link EscapeTree}
+         * representing some escaped documentation text.
+         *
+         * @since 21
+         */
+        ESCAPE,
+
+        /**
          * Used for instances of {@link ThrowsTree}
          * representing an {@code @exception} tag.
          */
@@ -122,6 +132,8 @@ public interface DocTree {
         /**
          * Used for instances of {@link IndexTree}
          * representing an {@code @index} tag.
+         *
+         * @since 9
          */
         INDEX("index"),
 
@@ -158,6 +170,8 @@ public interface DocTree {
         /**
          * Used for instances of {@link ProvidesTree}
          * representing an {@code @provides} tag.
+         *
+         * @since 9
          */
         PROVIDES("provides"),
 
@@ -205,7 +219,23 @@ public interface DocTree {
         SINCE("since"),
 
         /**
-         * Used for instances of {@link EndElementTree}
+         * Used for instances of {@link SnippetTree}
+         * representing an {@code @snippet} tag.
+         *
+         * @since 18
+         */
+        SNIPPET("snippet"),
+
+        /**
+         * Used for instances of {@link SpecTree}
+         * representing an {@code @spec} tag.
+         *
+         * @since 20
+         */
+        SPEC("spec"),
+
+        /**
+         * Used for instances of {@link StartElementTree}
          * representing the start of an HTML element.
          */
         START_ELEMENT,
@@ -213,18 +243,22 @@ public interface DocTree {
         /**
          * Used for instances of {@link SystemPropertyTree}
          * representing an {@code @systemProperty} tag.
+         *
+         * @since 12
          */
         SYSTEM_PROPERTY("systemProperty"),
 
         /**
          * Used for instances of {@link SummaryTree}
          * representing an {@code @summary} tag.
+         *
+         * @since 10
          */
         SUMMARY("summary"),
 
         /**
          * Used for instances of {@link TextTree}
-         * representing some documentation text.
+         * representing some plain documentation text.
          */
         TEXT,
 
@@ -249,6 +283,8 @@ public interface DocTree {
         /**
          * Used for instances of {@link UsesTree}
          * representing an {@code @uses} tag.
+         *
+         * @since 9
          */
         USES("uses"),
 
@@ -265,7 +301,7 @@ public interface DocTree {
         VERSION("version"),
 
         /**
-         * An implementation-reserved node. This is the not the node
+         * An implementation-reserved node. This is not the node
          * you are looking for.
          */
         OTHER;

@@ -26,7 +26,7 @@
  * @bug 8239367
  * @summary Wiring of memory in SubTypeCheck macro node causes graph should be schedulable
  *
- * @run main/othervm -Xcomp -XX:CompileOnly=TestSubTypeCheckMacroNodeWrongMem::test -XX:-DoEscapeAnalysis TestSubTypeCheckMacroNodeWrongMem
+ * @run main/othervm -Xcomp -XX:CompileOnly=TestSubTypeCheckMacroNodeWrongMem::test -XX:+IgnoreUnrecognizedVMOptions -XX:-DoEscapeAnalysis TestSubTypeCheckMacroNodeWrongMem
  *
  */
 

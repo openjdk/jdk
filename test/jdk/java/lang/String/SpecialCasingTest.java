@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -47,7 +45,7 @@ public class SpecialCasingTest {
     // Locales which are used for testing
     private static List<Locale> locales = new ArrayList<>();
     static {
-        locales.add(new Locale("az", ""));
+        locales.add(Locale.of("az"));
         locales.addAll(java.util.Arrays.asList(Locale.getAvailableLocales()));
     }
 
@@ -302,7 +300,7 @@ public class SpecialCasingTest {
     private void testLowerCase(String orig, String expected,
                                String lang, String condition) {
         String got = (lang == null) ?
-            orig.toLowerCase() : orig.toLowerCase(new Locale(lang, ""));
+            orig.toLowerCase() : orig.toLowerCase(Locale.of(lang));
 
         if (!expected.equals(got)) {
             err = true;
@@ -318,7 +316,7 @@ public class SpecialCasingTest {
     private void testUpperCase(String orig, String expected,
                                String lang, String condition) {
         String got = (lang == null) ?
-            orig.toUpperCase() : orig.toUpperCase(new Locale(lang, ""));
+            orig.toUpperCase() : orig.toUpperCase(Locale.of(lang));
 
         if (!expected.equals(got)) {
             err = true;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package jdk.internal.net.http;
 
 import java.net.Authenticator;
 import java.net.CookieHandler;
+import java.net.InetAddress;
 import java.net.ProxySelector;
 import java.time.Duration;
 import java.util.concurrent.Executor;
@@ -49,6 +50,7 @@ public class HttpClientBuilderImpl implements HttpClient.Builder {
     SSLContext sslContext;
     SSLParameters sslParams;
     int priority = -1;
+    InetAddress localAddr;
 
     @Override
     public HttpClientBuilderImpl cookieHandler(CookieHandler cookieHandler) {
@@ -127,6 +129,12 @@ public class HttpClientBuilderImpl implements HttpClient.Builder {
     public HttpClientBuilderImpl authenticator(Authenticator a) {
         requireNonNull(a);
         this.authenticator = a;
+        return this;
+    }
+
+    @Override
+    public HttpClient.Builder localAddress(final InetAddress localAddr) {
+        this.localAddr = localAddr;
         return this;
     }
 

@@ -78,10 +78,14 @@ import jdk.dynalink.linker.TypeBasedGuardingDynamicLinker;
  * calls to all objects that no other linker recognized. Specifically, this
  * linker will:
  * <ul>
+ * <li>if the object is a {@link java.lang.Record record}, expose all public accessors of
+ * record components as property getters for {@link StandardOperation#GET} operations
+ * in the {@link StandardNamespace#PROPERTY} namespace;</li>
  * <li>expose all public methods of form {@code setXxx()}, {@code getXxx()},
  * and {@code isXxx()} as property setters and getters for
  * {@link StandardOperation#SET} and {@link StandardOperation#GET} operations in the
- * {@link StandardNamespace#PROPERTY} namespace;</li>
+ * {@link StandardNamespace#PROPERTY} namespace, except for getters for properties
+ * with names already handled by record component getters;</li>
  * <li>expose all public methods for retrieval for
  * {@link StandardOperation#GET} operation in the {@link StandardNamespace#METHOD} namespace;
  * the methods thus retrieved can then be invoked using {@link StandardOperation#CALL}.</li>
@@ -131,6 +135,7 @@ import jdk.dynalink.linker.TypeBasedGuardingDynamicLinker;
  * property and method names on classes and class instances, as well as access
  * to per-class linkers using the {@link #getLinkerForClass(Class)}
  * method.</p>
+ * @since 9
  */
 public class BeansLinker implements GuardingDynamicLinker {
     private static final ClassValue<TypeBasedGuardingDynamicLinker> linkers = new ClassValue<>() {

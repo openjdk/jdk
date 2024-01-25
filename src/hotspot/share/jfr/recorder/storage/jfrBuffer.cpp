@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,43 +24,36 @@
 
 #include "precompiled.hpp"
 #include "jfr/recorder/storage/jfrBuffer.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
 
-static const u1* const TOP_CRITICAL_SECTION = NULL;
+static const u1* const TOP_CRITICAL_SECTION = nullptr;
 
-JfrBuffer::JfrBuffer() : _next(NULL),
-                         _identity(NULL),
-                         _pos(NULL),
-                         _top(NULL),
+JfrBuffer::JfrBuffer() : _next(nullptr),
+                         _identity(nullptr),
+                         _pos(nullptr),
+                         _top(nullptr),
                          _size(0),
                          _header_size(0),
                          _flags(0),
-                         _context(0) {}
+                         _context(0)
+                         LP64_ONLY(COMMA _pad(0)) {}
 
-bool JfrBuffer::initialize(size_t header_size, size_t size) {
-  assert(_next == NULL, "invariant");
-  assert(_identity == NULL, "invariant");
-  _header_size = (u2)header_size;
-  _size = (u4)(size / BytesPerWord);
+void JfrBuffer::initialize(size_t header_size, size_t size) {
+  assert(_next == nullptr, "invariant");
+  assert(_identity == nullptr, "invariant");
+  assert(header_size <= max_jushort, "invariant");
+  _header_size = static_cast<u2>(header_size);
+  _size = size;
   set_pos(start());
   set_top(start());
   assert(free_size() == size, "invariant");
   assert(!transient(), "invariant");
   assert(!lease(), "invariant");
   assert(!retired(), "invariant");
-  return true;
 }
 
-void JfrBuffer::reinitialize(bool exclusion /* false */) {
+void JfrBuffer::reinitialize() {
   acquire_critical_section_top();
-  if (exclusion != excluded()) {
-    // update
-    if (exclusion) {
-      set_excluded();
-    } else {
-      clear_excluded();
-    }
-  }
   set_pos(start());
   release_critical_section_top(start());
   clear_retired();
@@ -109,34 +102,34 @@ bool JfrBuffer::acquired_by_self() const {
 }
 
 void JfrBuffer::acquire(const void* id) {
-  assert(id != NULL, "invariant");
+  assert(id != nullptr, "invariant");
   const void* current_id;
   do {
     current_id = identity();
-  } while (current_id != NULL || Atomic::cmpxchg(&_identity, current_id, id) != current_id);
+  } while (current_id != nullptr || Atomic::cmpxchg(&_identity, current_id, id) != current_id);
 }
 
 bool JfrBuffer::try_acquire(const void* id) {
-  assert(id != NULL, "invariant");
+  assert(id != nullptr, "invariant");
   const void* const current_id = identity();
-  return current_id == NULL && Atomic::cmpxchg(&_identity, current_id, id) == current_id;
+  return current_id == nullptr && Atomic::cmpxchg(&_identity, current_id, id) == current_id;
 }
 
 void JfrBuffer::set_identity(const void* id) {
-  assert(id != NULL, "invariant");
-  assert(_identity == NULL, "invariant");
+  assert(id != nullptr, "invariant");
+  assert(_identity == nullptr, "invariant");
   OrderAccess::storestore();
   _identity = id;
 }
 
 void JfrBuffer::release() {
-  assert(identity() != NULL, "invariant");
-  Atomic::release_store(&_identity, (const void*)NULL);
+  assert(identity() != nullptr, "invariant");
+  Atomic::release_store(&_identity, (const void*)nullptr);
 }
 
 #ifdef ASSERT
 static bool validate_to(const JfrBuffer* const to, size_t size) {
-  assert(to != NULL, "invariant");
+  assert(to != nullptr, "invariant");
   assert(to->acquired_by_self(), "invariant");
   assert(to->free_size() >= size, "invariant");
   return true;
@@ -181,23 +174,22 @@ size_t JfrBuffer::unflushed_size() const {
 enum FLAG {
   RETIRED = 1,
   TRANSIENT = 2,
-  LEASE = 4,
-  EXCLUDED = 8
+  LEASE = 4
 };
 
 inline u1 load(const volatile u1* dest) {
-  assert(dest != NULL, "invariant");
+  assert(dest != nullptr, "invariant");
   return Atomic::load_acquire(dest);
 }
 
 inline void set(u1* dest, u1 data) {
-  assert(dest != NULL, "invariant");
+  assert(dest != nullptr, "invariant");
   OrderAccess::storestore();
   *dest |= data;
 }
 
 inline void clear(u1* dest, u1 data) {
-  assert(dest != NULL, "invariant");
+  assert(dest != nullptr, "invariant");
   OrderAccess::storestore();
   *dest ^= data;
 }
@@ -242,24 +234,6 @@ void JfrBuffer::clear_lease() {
   assert(!lease(), "invariant");
 }
 
-bool JfrBuffer::excluded() const {
-  return test(&_flags, EXCLUDED);
-}
-
-void JfrBuffer::set_excluded() {
-  assert(acquired_by_self(), "invariant");
-  set(&_flags, EXCLUDED);
-  assert(excluded(), "invariant");
-}
-
-void JfrBuffer::clear_excluded() {
-  if (excluded()) {
-    assert(identity() != NULL, "invariant");
-    clear(&_flags, EXCLUDED);
-  }
-  assert(!excluded(), "invariant");
-}
-
 bool JfrBuffer::retired() const {
   return test(&_flags, RETIRED);
 }
@@ -284,4 +258,12 @@ void JfrBuffer::set_context(u1 context) {
 
 void JfrBuffer::clear_context() {
   set(&_context, 0);
+}
+
+ByteSize JfrBuffer::pos_offset() {
+  return byte_offset_of(JfrBuffer, _pos);
+}
+
+ByteSize JfrBuffer::flags_offset() {
+  return byte_offset_of(JfrBuffer, _flags);
 }

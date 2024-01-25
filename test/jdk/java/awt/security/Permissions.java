@@ -27,7 +27,7 @@
  * @bug 8008981
  * @summary Test that selected Toolkit and Window methods/constructors do
  *   the appropriate permission check
- * @run main/othervm Permissions
+ * @run main/othervm -Djava.security.manager=allow Permissions
  */
 
 import java.awt.AWTPermission;

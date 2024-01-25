@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @summary Ensure that a class defined within a java.base package can not
  *          be located via -Xbootclasspath/a
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -72,9 +73,11 @@ public class XbootcpNoVisibility {
         ClassFileInstaller.writeClassToDisk("Vis3_A",
                 InMemoryJavaCompiler.compile("Vis3_A", Vis3_A_src), System.getProperty("test.classes"));
 
-        new OutputAnalyzer(ProcessTools.createJavaProcessBuilder(
+        new OutputAnalyzer(ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-Xbootclasspath/a:.",
                 "Vis3_A")
-            .start()).shouldContain("XbootcpNoVisibility PASSED");
+            .start())
+            .shouldHaveExitValue(0)
+            .shouldContain("XbootcpNoVisibility PASSED");
     }
 }

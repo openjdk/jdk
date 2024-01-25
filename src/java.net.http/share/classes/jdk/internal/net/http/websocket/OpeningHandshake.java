@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package jdk.internal.net.http.websocket;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpHeaders;
-import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.net.http.WebSocketHandshakeException;
@@ -62,7 +61,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.lang.String.format;
@@ -150,7 +148,7 @@ public class OpeningHandshake {
     private static Collection<String> createRequestSubprotocols(
             Collection<String> subprotocols)
     {
-        LinkedHashSet<String> sp = new LinkedHashSet<>(subprotocols.size(), 1);
+        LinkedHashSet<String> sp = LinkedHashSet.newLinkedHashSet(subprotocols.size());
         for (String s : subprotocols) {
             if (s.trim().isEmpty() || !isValidName(s)) {
                 throw illegal("Bad subprotocol syntax: " + s);
@@ -187,6 +185,7 @@ public class OpeningHandshake {
         }
     }
 
+    @SuppressWarnings("removal")
     public CompletableFuture<Result> send() {
         PrivilegedAction<CompletableFuture<Result>> pa = () ->
                 client.sendAsync(this.request, BodyHandlers.ofString())
@@ -280,7 +279,7 @@ public class OpeningHandshake {
             throws CheckFailedException
     {
         Optional<String> opt = responseHeaders.firstValue(HEADER_PROTOCOL);
-        if (!opt.isPresent()) {
+        if (opt.isEmpty()) {
             // If there is no such header in the response, then the server
             // doesn't want to use any subprotocol
             return "";
@@ -362,7 +361,7 @@ public class OpeningHandshake {
      * or {@code null} if none is required or applicable.
      */
     private static Proxy proxyFor(Optional<ProxySelector> selector, URI uri) {
-        if (!selector.isPresent()) {
+        if (selector.isEmpty()) {
             return null;
         }
         URI requestURI = createRequestURI(uri); // Based on the HTTP scheme
@@ -384,6 +383,7 @@ public class OpeningHandshake {
      * @throws SecurityException if the security manager denies access
      */
     static void checkPermissions(BuilderImpl b, Proxy proxy) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm == null) {
             return;

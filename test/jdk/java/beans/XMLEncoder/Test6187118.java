@@ -25,6 +25,7 @@
  * @test
  * @bug 6187118
  * @summary Tests encoding of immutable list that creates itself
+ * @run main/othervm -Djava.security.manager=allow Test6187118
  * @author Sergey Malenkov
  */
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,11 +67,6 @@ import com.sun.tools.javac.util.Names;
  * Holds only the information needed throughout the
  * run and not the compiler info that could be GC'ed
  * or ported.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class ToolEnvironment {
     protected static final Context.Key<ToolEnvironment> ToolEnvKey = new Context.Key<>();
@@ -83,21 +78,19 @@ public class ToolEnvironment {
         return instance;
     }
 
-    final Messager messager;
+    final JavadocLog log;
 
     /** Predefined symbols known to the compiler. */
     public final Symtab syms;
 
-    /** Referenced directly in RootDocImpl. */
+    /** JavaDoc's subtype of the compiler's class finder */
     private final ClassFinder finder;
 
-    /** Javadoc's own version of the compiler's enter phase. */
+    /** Javadoc's subtype of the compiler's enter phase. */
     final Enter enter;
 
     /** The name table. */
     private Names names;
-
-    final Symbol externalizableSym;
 
     /** If true, prevent printing of any notifications. */
     boolean quiet = false;
@@ -139,17 +132,16 @@ public class ToolEnvironment {
         context.put(ToolEnvKey, this);
         this.context = context;
 
-        messager = Messager.instance0(context);
+        log = JavadocLog.instance0(context);
         syms = Symtab.instance(context);
         finder = JavadocClassFinder.instance(context);
         enter = JavadocEnter.instance(context);
         names = Names.instance(context);
-        externalizableSym = syms.enterClass(syms.java_base, names.fromString("java.io.Externalizable"));
         chk = Check.instance(context);
         types = com.sun.tools.javac.code.Types.instance(context);
         fileManager = context.get(JavaFileManager.class);
-        if (fileManager instanceof JavacFileManager) {
-            ((JavacFileManager)fileManager).setSymbolFileEnabled(false);
+        if (fileManager instanceof JavacFileManager jfm) {
+            jfm.setSymbolFileEnabled(false);
         }
         docTrees = JavacTrees.instance(context);
         source = Source.instance(context);
@@ -194,28 +186,14 @@ public class ToolEnvironment {
     }
 
     /**
-     * Print a notice, iff <em>quiet</em> is not specified.
+     * Prints a notice unless {@code -quiet} was specified.
      *
      * @param key selects message from resource
      */
-    public void notice(String key) {
-        if (quiet) {
-            return;
+    public void printInfo(String key, Object... args) {
+        if (!quiet) {
+            log.printNoteUsingKey(key, args);
         }
-        messager.notice(key);
-    }
-
-    /**
-     * Print a notice, iff <em>quiet</em> is not specified.
-     *
-     * @param key selects message from resource
-     * @param a1 first argument
-     */
-    public void notice(String key, String a1) {
-        if (quiet) {
-            return;
-        }
-        messager.notice(key, a1);
     }
 
     TreePath getTreePath(JCCompilationUnit tree) {
@@ -249,9 +227,5 @@ public class ToolEnvironment {
 
     public Env<AttrContext> getEnv(ClassSymbol tsym) {
         return enter.getEnv(tsym);
-    }
-
-    public boolean isQuiet() {
-        return quiet;
     }
 }

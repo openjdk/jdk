@@ -39,7 +39,6 @@ import java.lang.reflect.Field;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.StringTokenizer;
 
@@ -338,6 +337,7 @@ public abstract class GraphicsPrimitive {
 
     static {
         GetPropertyAction gpa = new GetPropertyAction("sun.java2d.trace");
+        @SuppressWarnings("removal")
         String trace = AccessController.doPrivileged(gpa);
         if (trace != null) {
             boolean verbose = false;
@@ -368,7 +368,7 @@ public abstract class GraphicsPrimitive {
                 System.err.print("GraphicsPrimitive logging ");
                 if ((traceflags & GraphicsPrimitive.TRACELOG) != 0) {
                     System.err.println("enabled");
-                    System.err.print("GraphicsPrimitive timetamps ");
+                    System.err.print("GraphicsPrimitive timestamps ");
                     if ((traceflags & GraphicsPrimitive.TRACETIMESTAMP) != 0) {
                         System.err.println("enabled");
                     } else {
@@ -401,6 +401,7 @@ public abstract class GraphicsPrimitive {
     private static PrintStream getTraceOutputFile() {
         if (traceout == null) {
             if (tracefile != null) {
+                @SuppressWarnings("removal")
                 FileOutputStream o = AccessController.doPrivileged(
                     new PrivilegedAction<FileOutputStream>() {
                         public FileOutputStream run() {
@@ -424,6 +425,7 @@ public abstract class GraphicsPrimitive {
     }
 
     public static class TraceReporter implements Runnable {
+        @SuppressWarnings("removal")
         public static void setShutdownHook() {
             AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
                 TraceReporter t = new TraceReporter();
@@ -438,12 +440,9 @@ public abstract class GraphicsPrimitive {
 
         public void run() {
             PrintStream ps = getTraceOutputFile();
-            Iterator<Map.Entry<Object, int[]>> iterator =
-                traceMap.entrySet().iterator();
             long total = 0;
             int numprims = 0;
-            while (iterator.hasNext()) {
-                Map.Entry<Object, int[]> me = iterator.next();
+            for (Map.Entry<Object, int[]> me : traceMap.entrySet()) {
                 Object prim = me.getKey();
                 int[] count = me.getValue();
                 if (count[0] == 1) {

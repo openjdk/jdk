@@ -173,9 +173,9 @@ static void initFontIDs(JNIEnv *env) {
 
      CHECK_NULL(tmpClass = (*env)->FindClass(env, "sun/font/GlyphList"));
      CHECK_NULL(sunFontIDs.glyphListX =
-         (*env)->GetFieldID(env, tmpClass, "x", "F"));
+         (*env)->GetFieldID(env, tmpClass, "gposx", "F"));
      CHECK_NULL(sunFontIDs.glyphListY =
-         (*env)->GetFieldID(env, tmpClass, "y", "F"));
+         (*env)->GetFieldID(env, tmpClass, "gposy", "F"));
      CHECK_NULL(sunFontIDs.glyphListLen =
          (*env)->GetFieldID(env, tmpClass, "len", "I"));
      CHECK_NULL(sunFontIDs.glyphImages =
@@ -199,12 +199,6 @@ Java_sun_font_SunFontManager_initIDs
     (JNIEnv *env, jclass cls) {
 
     initFontIDs(env);
-}
-
-JNIEXPORT FontManagerNativeIDs getSunFontIDs(JNIEnv *env) {
-
-    initFontIDs(env);
-    return sunFontIDs;
 }
 
 /*

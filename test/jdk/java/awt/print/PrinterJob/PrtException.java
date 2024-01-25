@@ -50,7 +50,7 @@ public class PrtException implements Printable {
             }
 
             System.out.println("PrintService found : "+defService);
-            pj = PrinterJob.getPrinterJob();;
+            pj = PrinterJob.getPrinterJob();
             pj.setPrintService(defService);
             //pj.setPrintable(this); // commenting this line should not result in PrinterException
             pj.print();

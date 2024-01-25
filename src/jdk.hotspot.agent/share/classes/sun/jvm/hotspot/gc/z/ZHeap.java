@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import sun.jvm.hotspot.types.TypeDataBase;
 public class ZHeap extends VMObject {
 
     private static long pageAllocatorFieldOffset;
-    private static long pageTableFieldOffset;
 
     static {
         VM.registerVMInitializedObserver((o, d) -> initialize(VM.getVM().getTypeDataBase()));
@@ -48,20 +47,14 @@ public class ZHeap extends VMObject {
         Type type = db.lookupType("ZHeap");
 
         pageAllocatorFieldOffset = type.getAddressField("_page_allocator").getOffset();
-        pageTableFieldOffset = type.getAddressField("_page_table").getOffset();
     }
 
     public ZHeap(Address addr) {
         super(addr);
     }
-
     private ZPageAllocator pageAllocator() {
         Address pageAllocatorAddr = addr.addOffsetTo(pageAllocatorFieldOffset);
-        return (ZPageAllocator)VMObjectFactory.newObject(ZPageAllocator.class, pageAllocatorAddr);
-    }
-
-    ZPageTable pageTable() {
-        return (ZPageTable)VMObjectFactory.newObject(ZPageTable.class, addr.addOffsetTo(pageTableFieldOffset));
+        return VMObjectFactory.newObject(ZPageAllocator.class, pageAllocatorAddr);
     }
 
     public long maxCapacity() {
@@ -74,20 +67,6 @@ public class ZHeap extends VMObject {
 
     public long used() {
         return pageAllocator().used();
-    }
-
-    boolean is_relocating(Address o) {
-        return pageTable().is_relocating(o);
-    }
-
-    Address forward_object(Address addr) {
-        ZPage page = pageTable().get(addr);
-        return page.forward_object(addr);
-    }
-
-    Address relocate_object(Address addr) {
-        ZPage page = pageTable().get(addr);
-        return page.relocate_object(addr);
     }
 
     public void printOn(PrintStream tty) {

@@ -61,7 +61,7 @@ public class PasswordView extends FieldView {
      * @param p0 the starting offset in the model &gt;= 0
      * @param p1 the ending offset in the model &gt;= p0
      * @return the X location of the end of the range &gt;= 0
-     * @exception BadLocationException if p0 or p1 are out of range
+     * @throws BadLocationException if p0 or p1 are out of range
      *
      * @deprecated replaced by
      *     {@link #drawUnselectedText(Graphics2D, float, float, int, int)}
@@ -131,7 +131,7 @@ public class PasswordView extends FieldView {
      * @param p0 the starting offset in the model &gt;= 0
      * @param p1 the ending offset in the model &gt;= p0
      * @return the X location of the end of the range &gt;= 0
-     * @exception BadLocationException if p0 or p1 are out of range
+     * @throws BadLocationException if p0 or p1 are out of range
      *
      * @deprecated replaced by
      *     {@link #drawSelectedText(Graphics2D, float, float, int, int)}
@@ -240,7 +240,7 @@ public class PasswordView extends FieldView {
      * @param pos the position to convert &gt;= 0
      * @param a the allocated region to render into
      * @return the bounding box of the given position
-     * @exception BadLocationException  if the given position does not
+     * @throws BadLocationException  if the given position does not
      *   represent a valid location in the associated document
      * @see View#modelToView
      */

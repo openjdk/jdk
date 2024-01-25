@@ -153,7 +153,7 @@ public class HexFormatTest {
         HexFormat hex = HexFormat.of();
         for (int i = 0; i < 256; i++) {
             String actual = hex.toHexDigits((byte)i);
-            int expected = hex.fromHexDigits(actual);
+            int expected = HexFormat.fromHexDigits(actual);
             assertEquals(expected, i, "fromHexDigits");
             assertEquals(actual.charAt(0), hex.toHighHexDigit((byte)i),
                     "first char mismatch");
@@ -164,9 +164,8 @@ public class HexFormatTest {
 
     @Test
     static void testIsHexDigit() {
-        HexFormat hex = HexFormat.of();
         for (int i = 0; i < 0x3ff; i++) {
-            boolean actual = hex.isHexDigit(i);
+            boolean actual = HexFormat.isHexDigit(i);
             boolean expected = Character.digit(i, 16) >= 0;
             assertEquals(actual, expected, "isHexDigit: " + i);
         }
@@ -174,23 +173,21 @@ public class HexFormatTest {
 
     @Test
     static void testFromHexDigit() {
-        HexFormat hex = HexFormat.of();
         String chars = "0123456789ABCDEF0123456789abcdef";
         for (int i = 0; i < chars.length(); i++) {
-            int v = hex.fromHexDigit(chars.charAt(i));
+            int v = HexFormat.fromHexDigit(chars.charAt(i));
             assertEquals(v, i & 0xf, "fromHex decode");
         }
     }
 
     @Test
     static void testFromHexInvalid() {
-        HexFormat hex = HexFormat.of();
         for (int i = 0; i < 65536; i++) {
             char ch = (char)i;
             if (ch > 0xff || Character.digit(ch, 16) < 0) {
-                assertFalse(hex.isHexDigit(ch), "isHexDigit incorrect for '" + ch + "'  = " + i);
+                assertFalse(HexFormat.isHexDigit(ch), "isHexDigit incorrect for '" + ch + "'  = " + i);
                 expectThrows(NumberFormatException.class,
-                        () -> hex.fromHexDigit(ch));
+                        () -> HexFormat.fromHexDigit(ch));
 
             }
         }
@@ -208,7 +205,7 @@ public class HexFormatTest {
             assertEquals(sb.charAt(0), hex.toHighHexDigit((byte)i), "MSB converted wrong");
             assertEquals(sb.charAt(1), hex.toLowHexDigit((byte)i), "LSB converted wrong");
 
-            assertEquals(hex.fromHexDigits(sb), i, "hex.format(sb, byte) wrong");
+            assertEquals(HexFormat.fromHexDigits(sb), i, "hex.format(sb, byte) wrong");
         }
     }
 
@@ -244,7 +241,7 @@ public class HexFormatTest {
         for (int i = 0; i < chars.length(); i += 2) {
             final int ndx = i;
             Throwable ex = expectThrows(NumberFormatException.class,
-                    () -> hex.fromHexDigits(chars.subSequence(ndx, ndx+2)));
+                    () -> HexFormat.fromHexDigits(chars.subSequence(ndx, ndx+2)));
             System.out.println(ex);
         }
     }
@@ -289,10 +286,10 @@ public class HexFormatTest {
 
     @Test
     static void testFromHexNPE() {
-        assertThrows(NPE, () -> HexFormat.of().fromHexDigits(null));
-        assertThrows(NPE, () -> HexFormat.of().fromHexDigits(null, 0, 0));
-        assertThrows(NPE, () -> HexFormat.of().fromHexDigitsToLong(null));
-        assertThrows(NPE, () -> HexFormat.of().fromHexDigitsToLong(null, 0, 0));
+        assertThrows(NPE, () -> HexFormat.fromHexDigits(null));
+        assertThrows(NPE, () -> HexFormat.fromHexDigits(null, 0, 0));
+        assertThrows(NPE, () -> HexFormat.fromHexDigitsToLong(null));
+        assertThrows(NPE, () -> HexFormat.fromHexDigitsToLong(null, 0, 0));
     }
 
     @Test
@@ -314,9 +311,9 @@ public class HexFormatTest {
     static void badFromHexDigits(String string, int fromIndex, int toIndex,
                            Class<? extends Throwable> exClass) {
         assertThrows(exClass,
-                () -> HexFormat.of().fromHexDigits(string, fromIndex, toIndex));
+                () -> HexFormat.fromHexDigits(string, fromIndex, toIndex));
         assertThrows(exClass,
-                () -> HexFormat.of().fromHexDigitsToLong(string, fromIndex, toIndex));
+                () -> HexFormat.fromHexDigitsToLong(string, fromIndex, toIndex));
     }
 
     // Verify IAE for strings that are too long for the target primitive type
@@ -324,13 +321,13 @@ public class HexFormatTest {
     @Test
     static void wrongNumberDigits() {
         assertThrows(IllegalArgumentException.class,
-                () -> HexFormat.of().fromHexDigits("9876543210"));
+                () -> HexFormat.fromHexDigits("9876543210"));
         assertThrows(IllegalArgumentException.class,
-                () -> HexFormat.of().fromHexDigits("9876543210", 0, 9));
+                () -> HexFormat.fromHexDigits("9876543210", 0, 9));
         assertThrows(IllegalArgumentException.class,
-                () -> HexFormat.of().fromHexDigitsToLong("98765432109876543210"));
+                () -> HexFormat.fromHexDigitsToLong("98765432109876543210"));
         assertThrows(IllegalArgumentException.class,
-                () -> HexFormat.of().fromHexDigitsToLong("98765432109876543210", 0, 17));
+                () -> HexFormat.fromHexDigitsToLong("98765432109876543210", 0, 17));
     }
 
     @Test(dataProvider="HexFormattersParsers")
@@ -572,7 +569,7 @@ public class HexFormatTest {
         final int orig = 0x76543210;
         for (int digits = 0; digits <= 8; digits++) {
             String s = hex.toHexDigits(orig, digits);
-            long actual = hex.fromHexDigits(s, 0, digits);
+            long actual = HexFormat.fromHexDigits(s, 0, digits);
             System.out.printf("    digits: %2d, formatted: \"%s\", parsed as: 0x%08x%n",
                     digits, s, actual);
             assertEquals(s, allHex.substring(8 - digits, 8));
@@ -589,7 +586,7 @@ public class HexFormatTest {
         final long orig = 0xfedcba9876543210L;
         for (int digits = 0; digits <= 16; digits++) {
             String s = hex.toHexDigits(orig, digits);
-            long actual = hex.fromHexDigitsToLong(s, 0, digits);
+            long actual = HexFormat.fromHexDigitsToLong(s, 0, digits);
             System.out.printf("    digits: %2d, formatted: \"%s\", parsed as: 0x%016xL%n",
                     digits, s, actual);
             assertEquals(s, allHex.substring(16 - digits, 16));
@@ -605,7 +602,7 @@ public class HexFormatTest {
         String allHex = "fedcba9876543210";
         final long expected = 0xfedcba9876543210L;
         String s = hex.toHexDigits(expected);
-        long actual = hex.fromHexDigitsToLong(s);
+        long actual = HexFormat.fromHexDigitsToLong(s);
         System.out.printf("    formatted: \"%s\", parsed as: 0x%016xL%n", s, actual);
         assertEquals(s, allHex);
         assertEquals(actual, expected);
@@ -667,7 +664,7 @@ public class HexFormatTest {
             String byteStr = hex.toHexDigits(b);
             System.out.println("    " + byteStr);
 
-            byte byteVal = (byte)hex.fromHexDigits(byteStr);
+            byte byteVal = (byte) HexFormat.fromHexDigits(byteStr);
             assert(byteStr.equals("7f"));
             assert(b == byteVal);
             assertTrue(byteStr.equals("7f"));
@@ -677,20 +674,20 @@ public class HexFormatTest {
             char c = 'A';
             String charStr = hex.toHexDigits(c);
             System.out.println("    " + charStr);
-            int charVal = hex.fromHexDigits(charStr);
+            int charVal = HexFormat.fromHexDigits(charStr);
             assert(c == charVal);
             assertTrue(c == charVal);
 
             int i = 12345;
             String intStr = hex.toHexDigits(i);
             System.out.println("    " + intStr);
-            int intVal = hex.fromHexDigits(intStr);
+            int intVal = HexFormat.fromHexDigits(intStr);
             assert(i == intVal);
             assertTrue(i == intVal);
 
             long l = Long.MAX_VALUE;
             String longStr = hex.toHexDigits(l, 16);
-            long longVal = hex.fromHexDigitsToLong(longStr, 0, 16);
+            long longVal = HexFormat.fromHexDigitsToLong(longStr, 0, 16);
             System.out.println("    " + longStr + ", " + longVal);
             assert(l == longVal);
             assertTrue(l == longVal);

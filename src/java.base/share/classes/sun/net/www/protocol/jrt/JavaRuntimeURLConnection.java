@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ import sun.net.www.URLConnection;
  * URLConnection implementation that can be used to connect to resources
  * contained in the runtime image.
  */
+@SuppressWarnings("removal")
 public class JavaRuntimeURLConnection extends URLConnection {
 
     // ImageReader to access resources in jimage
@@ -165,6 +166,7 @@ public class JavaRuntimeURLConnection extends URLConnection {
     /**
      * Returns a jrt URL for the given module and resource name.
      */
+    @SuppressWarnings("deprecation")
     private static URL toJrtURL(String module, String name) {
         try {
             return new URL("jrt:/" + module + "/" + name);
@@ -176,6 +178,7 @@ public class JavaRuntimeURLConnection extends URLConnection {
     /**
      * Returns a jrt URL for the given module.
      */
+    @SuppressWarnings("deprecation")
     private static URL toJrtURL(String module) {
         try {
             return new URL("jrt:/" + module);

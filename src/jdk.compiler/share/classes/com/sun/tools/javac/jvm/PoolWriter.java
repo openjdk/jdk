@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ import com.sun.tools.javac.jvm.PoolConstant.Dynamic;
 import com.sun.tools.javac.jvm.PoolConstant.Dynamic.BsmKey;
 import com.sun.tools.javac.jvm.PoolConstant.NameAndType;
 import com.sun.tools.javac.util.ByteBuffer;
+import com.sun.tools.javac.util.InvalidUtfException;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Names;
@@ -163,16 +164,16 @@ public class PoolWriter {
      * double and String.
      */
     int putConstant(Object o) {
-        if (o instanceof Integer) {
-            return putConstant(LoadableConstant.Int((int)o));
-        } else if (o instanceof Float) {
-            return putConstant(LoadableConstant.Float((float)o));
-        } else if (o instanceof Long) {
-            return putConstant(LoadableConstant.Long((long)o));
-        } else if (o instanceof Double) {
-            return putConstant(LoadableConstant.Double((double)o));
-        } else if (o instanceof String) {
-            return putConstant(LoadableConstant.String((String)o));
+        if (o instanceof Integer intVal) {
+            return putConstant(LoadableConstant.Int(intVal));
+        } else if (o instanceof Float floatVal) {
+            return putConstant(LoadableConstant.Float(floatVal));
+        } else if (o instanceof Long longVal) {
+            return putConstant(LoadableConstant.Long(longVal));
+        } else if (o instanceof Double doubleVal) {
+            return putConstant(LoadableConstant.Double(doubleVal));
+        } else if (o instanceof String strVal) {
+            return putConstant(LoadableConstant.String(strVal));
         } else {
             throw new AssertionError("unexpected constant: " + o);
         }
@@ -324,7 +325,11 @@ public class PoolWriter {
         }
 
         protected Name toName() {
-            return sigbuf.toName(names);
+            try {
+                return sigbuf.toName(names);
+            } catch (InvalidUtfException e) {
+                throw new AssertionError(e);
+            }
         }
     }
 
@@ -365,7 +370,7 @@ public class PoolWriter {
                     Type ct = (Type)c;
                     Name name = ct.hasTag(ARRAY) ?
                             typeSig(ct) :
-                            names.fromUtf(externalize(ct.tsym.flatName()));
+                            externalize(ct.tsym.flatName());
                     poolbuf.appendByte(tag);
                     poolbuf.appendChar(putName(name));
                     if (ct.hasTag(CLASS)) {
@@ -396,7 +401,7 @@ public class PoolWriter {
                 }
                 case ClassFile.CONSTANT_Package: {
                     PackageSymbol pkg = (PackageSymbol)c;
-                    Name pkgName = names.fromUtf(externalize(pkg.flatName()));
+                    Name pkgName = externalize(pkg.flatName());
                     poolbuf.appendByte(tag);
                     poolbuf.appendChar(putName(pkgName));
                     break;

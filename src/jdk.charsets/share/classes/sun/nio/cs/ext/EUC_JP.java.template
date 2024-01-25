@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,9 @@
 
 package $PACKAGE$;
 
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
+
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
@@ -43,6 +46,8 @@ public class EUC_JP
     extends Charset
     implements HistoricallyNamedCharset
 {
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+
     public EUC_JP() {
         super("EUC-JP",  $ALIASES$);
     }
@@ -67,16 +72,16 @@ public class EUC_JP
         return new Encoder(this);
     }
 
-    static class Decoder extends CharsetDecoder
+    public static class Decoder extends CharsetDecoder
         implements DelegatableDecoder {
 
-        final static SingleByte.Decoder DEC0201 =
+        public static final SingleByte.Decoder DEC0201 =
             (SingleByte.Decoder)new JIS_X_0201().newDecoder();
 
-        final static DoubleByte.Decoder DEC0208 =
+        public static final DoubleByte.Decoder DEC0208 =
             (DoubleByte.Decoder)new JIS_X_0208().newDecoder();
 
-        final static DoubleByte.Decoder DEC0212 =
+        public static final DoubleByte.Decoder DEC0212 =
             (DoubleByte.Decoder)new JIS_X_0212().newDecoder();
 
         private final SingleByte.Decoder dec0201;
@@ -223,15 +228,15 @@ public class EUC_JP
     }
 
 
-    static class Encoder extends CharsetEncoder {
+    public static class Encoder extends CharsetEncoder {
 
-        final static SingleByte.Encoder ENC0201 =
+        static final SingleByte.Encoder ENC0201 =
             (SingleByte.Encoder)new JIS_X_0201().newEncoder();
 
-        final static DoubleByte.Encoder ENC0208 =
+        static final DoubleByte.Encoder ENC0208 =
             (DoubleByte.Encoder)new JIS_X_0208().newEncoder();
 
-        final static DoubleByte.Encoder ENC0212 =
+        static final DoubleByte.Encoder ENC0212 =
             (DoubleByte.Encoder)new JIS_X_0212().newEncoder();
 
         private final Surrogate.Parser sgp = new Surrogate.Parser();
@@ -303,6 +308,11 @@ public class EUC_JP
             byte[]  tmpBuf = new byte[3];
 
             try {
+                if (enc0201.isASCIICompatible()) {
+                    int n = JLA.encodeASCII(sa, sp, da, dp, Math.min(dl - dp, sl - sp));
+                    sp += n;
+                    dp += n;
+                }
                 while (sp < sl) {
                     outputByte = tmpBuf;
                     char c = sa[sp];

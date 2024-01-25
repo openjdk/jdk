@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package com.sun.source.tree;
 
-import java.util.Collections;
 import java.util.List;
 import javax.lang.model.element.Name;
 
@@ -93,10 +92,8 @@ public interface ClassTree extends StatementTree {
      *
      * @return the subclasses
      *
-     * @since 15
+     * @since 17
      */
-    @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.SEALED_CLASSES,
-                                       reflective=true)
     default List<? extends Tree> getPermitsClause() {
         return List.of();
     }

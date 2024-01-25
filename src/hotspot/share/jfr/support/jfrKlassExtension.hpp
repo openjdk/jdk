@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 #include "jfr/support/jfrTraceIdExtension.hpp"
 
 #define DEFINE_KLASS_TRACE_ID_OFFSET \
-  static ByteSize trace_id_offset() { return in_ByteSize(offset_of(InstanceKlass, _trace_id)); }
+  static ByteSize trace_id_offset() { return byte_offset_of(InstanceKlass, _trace_id); }
 
 #define KLASS_TRACE_ID_OFFSET InstanceKlass::trace_id_offset()
 
@@ -38,6 +38,7 @@
 #define EVENT_HOST_KLASS       64
 #define EVENT_RESERVED         128
 #define IS_EVENT_KLASS(ptr) (((ptr)->trace_id() & (JDK_JFR_EVENT_KLASS | JDK_JFR_EVENT_SUBKLASS)) != 0)
-#define ON_KLASS_CREATION(k, p, t) if (IS_EVENT_KLASS(k)) JfrEventClassTransformer::on_klass_creation(k, p, t)
+#define IS_EVENT_OR_HOST_KLASS(ptr) (((ptr)->trace_id() & (JDK_JFR_EVENT_KLASS | JDK_JFR_EVENT_SUBKLASS | EVENT_HOST_KLASS)) != 0)
+#define ON_KLASS_CREATION(k, p, t) if (IS_EVENT_OR_HOST_KLASS(k)) JfrEventClassTransformer::on_klass_creation(k, p, t)
 
 #endif // SHARE_JFR_SUPPORT_JFRKLASSEXTENSION_HPP

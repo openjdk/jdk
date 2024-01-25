@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import jdk.test.lib.process.ProcessTools;
  * @bug 8194652
  * @summary Printing native stack shows an "error occurred during error reporting".
  * @modules java.base/jdk.internal.misc
+ * @requires vm.flagless
  * @requires vm.debug
  * @requires vm.flavor != "zero"
  * @library /test/lib
@@ -44,7 +45,7 @@ import jdk.test.lib.process.ProcessTools;
 // This test was adapted from SafeFetchInErrorHandlingTest.java.
 public class BadNativeStackInErrorHandlingTest {
   public static void main(String[] args) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+    ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
         "-XX:+UnlockDiagnosticVMOptions",
         "-Xmx100M",
         "-XX:ErrorHandlerTest=14",
@@ -58,44 +59,15 @@ public class BadNativeStackInErrorHandlingTest {
     output_detail.shouldMatch("# +(?:SIGSEGV|SIGBUS|EXCEPTION_ACCESS_VIOLATION).*");
 
     // extract hs-err file
-    String hs_err_file = output_detail.firstMatch("# *(\\S*hs_err_pid\\d+\\.log)", 1);
-    if (hs_err_file == null) {
-        throw new RuntimeException("Did not find hs-err file in output.\n");
-    }
-
-    File f = new File(hs_err_file);
-    if (!f.exists()) {
-        throw new RuntimeException("hs-err file missing at " +
-                                   f.getAbsolutePath() + ".\n");
-    }
-
-    System.out.println("Found hs_err file. Scanning...");
-
-    FileInputStream fis = new FileInputStream(f);
-    BufferedReader br = new BufferedReader(new InputStreamReader(fis));
-    String line = null;
+    File hs_err_file = HsErrFileUtils.openHsErrFileFromOutput(output_detail);
 
     // The failing line looks like this:
     // [error occurred during error reporting (printing native stack), id 0xb]
-    Pattern pattern =
-        Pattern.compile("\\[error occurred during error reporting \\(printing native stack\\), id .*\\]");
+    Pattern negativePatterns[] = {
+        Pattern.compile("\\[error occurred during error reporting \\(printing native stack\\), id .*\\]")
+    };
 
-    String lastLine = null;
-    while ((line = br.readLine()) != null) {
-        if (pattern.matcher(line).matches()) {
-            System.out.println("Found: " + line + ".");
-            throw new RuntimeException("hs-err file should not contain: '" +
-                                       pattern + "'");
-        }
-        lastLine = line;
-    }
-    br.close();
-
-    if (!lastLine.equals("END.")) {
-        throw new RuntimeException("hs-err file incomplete (missing END marker.)");
-    } else {
-        System.out.println("End marker found.");
-    }
+    HsErrFileUtils.checkHsErrFileContent(hs_err_file, null, negativePatterns, true /* check end marker */, false /* verbose */);
 
     System.out.println("OK.");
   }

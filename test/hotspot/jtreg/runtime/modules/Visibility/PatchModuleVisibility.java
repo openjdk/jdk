@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @summary Ensure that a newly introduced java.base package placed within the --patch-module
  *          directory is considered part of the boot loader's visibility boundary
  * @requires !(os.family == "windows")
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -85,7 +86,7 @@ public class PatchModuleVisibility {
       Files.delete(Paths.get(System.getProperty("test.classes") +  File.separator +
                                                            "p2" + File.separator + "Vis2_B.class"));
 
-      new OutputAnalyzer(ProcessTools.createJavaProcessBuilder(
+      new OutputAnalyzer(ProcessTools.createLimitedTestJavaProcessBuilder(
               "--patch-module=java.base=mods2/java.base",
               "--add-exports=java.base/p2=ALL-UNNAMED",
               "Vis2_A")

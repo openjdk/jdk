@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7025809 8028543 6415644 8028544 8029942 8187951 8193291 8196551 8233096
+ * @bug 7025809 8028543 6415644 8028544 8029942 8187951 8193291 8196551 8233096 8275308
  * @summary Test latest, latestSupported, underscore as keyword, etc.
  * @author  Joseph D. Darcy
  * @modules java.compiler
@@ -45,6 +45,8 @@ public class TestSourceVersion {
         testRestrictedKeywords();
         testVar();
         testYield();
+        testValueOfRV();
+        testRuntimeVersion();
     }
 
     private static void testLatestSupported() {
@@ -145,6 +147,63 @@ public class TestSourceVersion {
         if (result != expected) {
             throw new RuntimeException("Unexpected " + message +  "-ness of " + input +
                                        " on " + version);
+        }
+    }
+
+    /**
+     * Test that SourceVersion.valueOf() maps a Runtime.Version to a
+     * SourceVersion properly. The SourceVersion result is only a
+     * function of the feature() component of a Runtime.Version.
+     */
+    private static void testValueOfRV() {
+        for (SourceVersion sv : SourceVersion.values()) {
+            if (sv == RELEASE_0) {
+                continue;
+            } else {
+                // Plain mapping; e.g. "17" -> RELEASE_17
+                String featureBase = Integer.toString(sv.ordinal());
+                checkValueOfResult(sv, featureBase);
+
+                // More populated runtime version, N.N
+                checkValueOfResult(sv, featureBase + "." + featureBase);
+            }
+        }
+
+        // Out of range test
+        try {
+            int latestFeature = SourceVersion.latest().runtimeVersion().feature();
+            SourceVersion.valueOf(Runtime.Version.parse(Integer.toString(latestFeature +1)));
+            throw new RuntimeException("Should not reach");
+        } catch (IllegalArgumentException iae) {
+            ; // Expected
+        }
+    }
+
+    private static void checkValueOfResult(SourceVersion expected, String versionString) {
+        Runtime.Version rv = Runtime.Version.parse(versionString);
+        SourceVersion  result = SourceVersion.valueOf(rv);
+        if (result != expected) {
+            throw new RuntimeException("Unexpected result " + result +
+                                       " of mapping Runtime.Version " + versionString +
+                                       " intead of " + expected);
+        }
+    }
+
+    private static void testRuntimeVersion() {
+        for (SourceVersion sv : SourceVersion.values()) {
+            Runtime.Version result = sv.runtimeVersion();
+            if (sv.compareTo(RELEASE_6) < 0) {
+                if (result != null) {
+                    throw new RuntimeException("Unexpected result non-null " + result +
+                                               " as runtime version of  " + sv);
+                }
+            } else {
+                Runtime.Version expected = Runtime.Version.parse(Integer.toString(sv.ordinal()));
+                if (!result.equals(expected)) {
+                    throw new RuntimeException("Unexpected result " + result +
+                                               " as runtime version of " + sv);
+                }
+            }
         }
     }
 }

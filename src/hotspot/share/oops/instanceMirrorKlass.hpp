@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,27 +45,27 @@ class InstanceMirrorKlass: public InstanceKlass {
   friend class InstanceKlass;
 
  public:
-  static const KlassID ID = InstanceMirrorKlassID;
+  static const KlassKind Kind = InstanceMirrorKlassKind;
 
  private:
   static int _offset_of_static_fields;
 
-  InstanceMirrorKlass(const ClassFileParser& parser) : InstanceKlass(parser, InstanceKlass::_kind_mirror, ID) {}
+  InstanceMirrorKlass(const ClassFileParser& parser) : InstanceKlass(parser, Kind) {}
 
  public:
-  InstanceMirrorKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
+  InstanceMirrorKlass();
 
   static InstanceMirrorKlass* cast(Klass* k) {
     return const_cast<InstanceMirrorKlass*>(cast(const_cast<const Klass*>(k)));
   }
 
   static const InstanceMirrorKlass* cast(const Klass* k) {
-    assert(InstanceKlass::cast(k)->is_mirror_instance_klass(), "cast to InstanceMirrorKlass");
+    assert(k->is_mirror_instance_klass(), "cast to InstanceMirrorKlass");
     return static_cast<const InstanceMirrorKlass*>(k);
   }
 
   // Returns the size of the instance including the extra static fields.
-  virtual int oop_size(oop obj) const;
+  virtual size_t oop_size(oop obj) const;
 
   // Static field offset is an offset into the Heap, should be converted by
   // based on UseCompressedOop for traversal
@@ -86,7 +86,7 @@ class InstanceMirrorKlass: public InstanceKlass {
   int compute_static_oop_field_count(oop obj);
 
   // Given a Klass return the size of the instance
-  int instance_size(Klass* k);
+  size_t instance_size(Klass* k);
 
   // allocation
   instanceOop allocate_instance(Klass* k, TRAPS);

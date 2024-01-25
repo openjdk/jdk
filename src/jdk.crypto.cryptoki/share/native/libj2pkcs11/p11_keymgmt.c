@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -156,7 +156,6 @@ Java_sun_security_pkcs11_wrapper_PKCS11_getNativeKeyInfo
     jbyte* nativeKeyInfoArrayRawCkAttributesPtr = NULL;
     jbyte* nativeKeyInfoArrayRawDataPtr = NULL;
     CK_MECHANISM_PTR ckpMechanism = NULL;
-    char iv[16] = {0x0};
     CK_ULONG ckWrappedKeyLength = 0U;
     jbyte* wrappedKeySizeWrappedKeyArrayPtr = NULL;
     CK_BYTE_PTR wrappedKeyBufferPtr = NULL;
@@ -201,7 +200,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_getNativeKeyInfo
     ckpAttributes = (CK_ATTRIBUTE_PTR) calloc(
             CK_ATTRIBUTES_TEMPLATE_LENGTH, sizeof(CK_ATTRIBUTE));
     if (ckpAttributes == NULL) {
-        throwOutOfMemoryError(env, 0);
+        p11ThrowOutOfMemoryError(env, 0);
         goto cleanup;
     }
     memcpy(ckpAttributes, ckpAttributesTemplate,
@@ -419,7 +418,6 @@ Java_sun_security_pkcs11_wrapper_PKCS11_createNativeKey
     jbyte* wrappedKeySizePtr = NULL;
     unsigned int i = 0U;
     CK_MECHANISM_PTR ckpMechanism = NULL;
-    char iv[16] = {0x0};
     CK_ULONG ckWrappedKeyLength = 0UL;
     CK_FUNCTION_LIST_PTR ckpFunctions = getFunctionList(env, obj);
 
@@ -601,7 +599,7 @@ JNIEXPORT jlongArray JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1Generate
 
     ckpKeyHandles = (CK_OBJECT_HANDLE_PTR) calloc(2, sizeof(CK_OBJECT_HANDLE));
     if (ckpKeyHandles == NULL) {
-        throwOutOfMemoryError(env, 0);
+        p11ThrowOutOfMemoryError(env, 0);
         goto cleanup;
     }
     ckpPublicKeyHandle = ckpKeyHandles;   /* first element of array is Public Key */
@@ -701,7 +699,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1WrapKey
         ckpWrappedKey = (CK_BYTE_PTR)
                 calloc(ckWrappedKeyLength, sizeof(CK_BYTE));
         if (ckpWrappedKey == NULL) {
-            throwOutOfMemoryError(env, 0);
+            p11ThrowOutOfMemoryError(env, 0);
             goto cleanup;
         }
 
@@ -819,7 +817,7 @@ void copyBackTLSPrfParams(JNIEnv *env, CK_MECHANISM_PTR ckpMechanism, jobject jM
     jMechanismType = (*env)->GetLongField(env, jMechanism, fieldID);
     ckMechanismType = jLongToCKULong(jMechanismType);
     if (ckMechanismType != ckpMechanism->mechanism) {
-        /* we do not have maching types, this should not occur */
+        /* we do not have matching types, this should not occur */
         return;
     }
 
@@ -967,7 +965,7 @@ static void copyBackClientVersion(JNIEnv *env, CK_MECHANISM_PTR ckpMechanism, jo
     jMechanismType = (*env)->GetLongField(env, jMechanism, fieldID);
     ckMechanismType = jLongToCKULong(jMechanismType);
     if (ckMechanismType != ckpMechanism->mechanism) {
-        /* we do not have maching types, this should not occur */
+        /* we do not have matching types, this should not occur */
         return;
     }
 
@@ -1065,7 +1063,7 @@ static void copyBackKeyMatParams(JNIEnv *env, CK_MECHANISM_PTR ckpMechanism,
     jMechanismType = (*env)->GetLongField(env, jMechanism, fieldID);
     ckMechanismType = jLongToCKULong(jMechanismType);
     if (ckMechanismType != ckpMechanism->mechanism) {
-        /* we do not have maching types, this should not occur */
+        /* we do not have matching types, this should not occur */
         return;
     }
 

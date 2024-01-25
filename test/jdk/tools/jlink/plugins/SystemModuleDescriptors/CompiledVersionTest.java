@@ -86,12 +86,10 @@ public class CompiledVersionTest {
             if (version.equals("0")) {
                 assertTrue(CompilerUtils.compile(msrc, MODS_DIR,
                     "--add-exports", "java.base/jdk.internal.module=m1",
-                    "--add-exports", "java.base/jdk.internal.org.objectweb.asm=m1",
                     "--module-source-path", SRC_DIR.toString()));
             } else {
                 assertTrue(CompilerUtils.compile(msrc, MODS_DIR,
                     "--add-exports", "java.base/jdk.internal.module=m1",
-                    "--add-exports", "java.base/jdk.internal.org.objectweb.asm=m1",
                     "--module-source-path", SRC_DIR.toString(),
                     "--module-version", version));
             }

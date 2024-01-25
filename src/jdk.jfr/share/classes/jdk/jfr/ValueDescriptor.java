@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,28 +26,35 @@
 package jdk.jfr;
 
 import java.lang.annotation.Annotation;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
 import jdk.jfr.internal.AnnotationConstruct;
+import jdk.jfr.internal.SecuritySupport;
 import jdk.jfr.internal.Type;
-import jdk.jfr.internal.Utils;
+import jdk.jfr.internal.util.Utils;
 
 /**
  * Describes the event fields and annotation elements.
+ * <p>
+ * The following example shows how the {@code ValueDescriptor} class can
+ * be used to list field information of all types.
+ *
+ * {@snippet class="Snippets" region="ValueDescriptorOverview"}
  *
  * @since 9
  */
 public final class ValueDescriptor {
-
+    private static final String UNKNOWN = new String();
     private final AnnotationConstruct annotationConstruct;
     private final Type type;
     private final String name;
     private final boolean isArray;
     private final boolean constantPool;
     private final String javaFieldName;
+    private String label = UNKNOWN;
+    private String contentType = UNKNOWN;
 
     // package private, invoked by jdk.internal.
     ValueDescriptor(Type type, String name, List<AnnotationElement> annotations, int dimension, boolean constantPool, String fieldName) {
@@ -84,11 +91,13 @@ public final class ValueDescriptor {
      * </ul>
      *
      * <p>
-     * The name must be a valid Java identifier (for example, {@code "maxThroughput"}). See 3.8
-     * Java Language Specification for more information.
+     * The name must be a valid Java identifier (for example, {@code "maxThroughput"}). See
+     * section 3.8 and 3.9 of the Java Language Specification for more information.
      *
      * @param type the type, not {@code null}
      * @param name the name, not {@code null}
+     *
+     * @throws IllegalArgumentException if the name is not a valid Java identifier
      *
      * @throws SecurityException if a security manager is present and the caller
      *         doesn't have {@code FlightRecorderPermission("registerEvent")}
@@ -119,31 +128,36 @@ public final class ValueDescriptor {
      * </ul>
      *
      * <p>
-     * The name must be a valid Java identifier (for example, {@code "maxThroughput"}). See 3.8
-     * Java Language Specification for more information.
+     * The name must be a valid Java identifier (for example, {@code "maxThroughput"}). See
+     * section 3.8 and 3.9 of the Java Language Specification for more information.
      *
      * @param type the type, not {@code null}
      * @param name the name, not {@code null}
      * @param annotations the annotations on the value descriptors, not
      *        {@code null}
      *
+     * @throws IllegalArgumentException if the name is not a valid Java identifier
+     *
      * @throws SecurityException if a security manager is present and the caller
      *         doesn't have {@code FlightRecorderPermission("registerEvent")}
      */
     public ValueDescriptor(Class<?> type, String name, List<AnnotationElement> annotations) {
-        this(type, name, new ArrayList<>(annotations), false);
+        this(type, name, List.copyOf(annotations), false);
     }
 
 
     ValueDescriptor(Class<?> type, String name, List<AnnotationElement> annotations, boolean allowArray) {
-        Objects.requireNonNull(annotations);
-        Utils.checkRegisterPermission();
+        Objects.requireNonNull(type, "type");
+        Objects.requireNonNull(name, "name");
+        Objects.requireNonNull(annotations, "annotations");
+        SecuritySupport.checkRegisterPermission();
         if (!allowArray) {
             if (type.isArray()) {
                 throw new IllegalArgumentException("Array types are not allowed");
             }
         }
         this.name = Objects.requireNonNull(name, "Name of value descriptor can't be null");
+        Utils.ensureJavaIdentifier(name);
         this.type = Objects.requireNonNull(Utils.getValidType(Objects.requireNonNull(type), Objects.requireNonNull(name)));
         this.annotationConstruct = new AnnotationConstruct(annotations);
         this.javaFieldName = name; // Needed for dynamic events
@@ -159,7 +173,10 @@ public final class ValueDescriptor {
      * @return a human-readable name, or {@code null} if doesn't exist
      */
     public String getLabel() {
-        return annotationConstruct.getLabel();
+        if (label == UNKNOWN) {
+            label = annotationConstruct.getLabel();;
+        }
+        return label;
     }
 
     /**
@@ -210,14 +227,18 @@ public final class ValueDescriptor {
      * @see ContentType
      */
     public String getContentType() {
-        for (AnnotationElement anno : getAnnotationElements()) {
-            for (AnnotationElement meta : anno.getAnnotationElements()) {
-                if (meta.getTypeName().equals(ContentType.class.getName())) {
-                    return anno.getTypeName();
+        if (contentType == UNKNOWN) {
+            for (AnnotationElement anno : getAnnotationElements()) {
+                for (AnnotationElement meta : anno.getAnnotationElements()) {
+                    if (meta.getTypeName().equals(ContentType.class.getName())) {
+                        contentType = anno.getTypeName();
+                        return contentType;
+                    }
                 }
             }
+            contentType = null;
         }
-        return null;
+        return contentType;
     }
 
     /**
@@ -230,7 +251,7 @@ public final class ValueDescriptor {
      */
     public String getTypeName() {
         if (type.isSimpleType()) {
-            return type.getFields().get(0).getTypeName();
+            return type.getFields().getFirst().getTypeName();
         }
         return type.getName();
     }
@@ -267,7 +288,7 @@ public final class ValueDescriptor {
      *         directly present, else {@code null}
      */
     public <A extends Annotation> A getAnnotation(Class<A> annotationType) {
-        Objects.requireNonNull(annotationType);
+        Objects.requireNonNull(annotationType, "annotationType");
         return annotationConstruct.getAnnotation(annotationType);
     }
 
@@ -289,7 +310,7 @@ public final class ValueDescriptor {
      */
     public List<ValueDescriptor> getFields() {
         if (type.isSimpleType()) {
-            return Collections.emptyList();
+            return List.of();
         }
         return type.getFields();
     }

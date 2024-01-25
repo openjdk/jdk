@@ -77,7 +77,7 @@ make_uns_ordered_dither_array(uns_ordered_dither_array oda,
  * color used as an index.
  */
 void
-make_sgn_ordered_dither_array(char* oda, int minerr, int maxerr)
+make_sgn_ordered_dither_array(signed char* oda, int minerr, int maxerr)
 {
     int i, j, k;
 

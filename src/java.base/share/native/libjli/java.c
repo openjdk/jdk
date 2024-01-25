@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,8 @@
  */
 
 
+#include <assert.h>
+
 #include "java.h"
 #include "jni.h"
 
@@ -83,6 +85,7 @@ static jboolean _is_java_args = JNI_FALSE;
 static jboolean _have_classpath = JNI_FALSE;
 static const char *_fVersion;
 static jboolean _wc_enabled = JNI_FALSE;
+static jboolean dumpSharedSpaces = JNI_FALSE; /* -Xshare:dump */
 
 /*
  * Entries for splash screen environment variables.
@@ -108,7 +111,6 @@ static void SetJavaLauncherProp();
 static void SetClassPath(const char *s);
 static void SetMainModule(const char *s);
 static void SelectVersion(int argc, char **argv, char **main_class);
-static void SetJvmEnvironment(int argc, char **argv);
 static jboolean ParseArguments(int *pargc, char ***pargv,
                                int *pmode, char **pwhat,
                                int *pret, const char *jrepath);
@@ -122,7 +124,7 @@ static void TranslateApplicationArgs(int jargc, const char **jargv, int *pargc, 
 static jboolean AddApplicationOptions(int cpathc, const char **cpathv);
 static void SetApplicationClassPath(const char**);
 
-static void PrintJavaVersion(JNIEnv *env, jboolean extraLF);
+static void PrintJavaVersion(JNIEnv *env);
 static void PrintUsage(JNIEnv* env, jboolean doXUsage);
 static void ShowSettings(JNIEnv* env, char *optString);
 static void ShowResolvedModules(JNIEnv* env);
@@ -176,7 +178,7 @@ static void FreeKnownVMs();
 static jboolean IsWildCardEnabled();
 
 
-#define SOURCE_LAUNCHER_MAIN_ENTRY "jdk.compiler/com.sun.tools.javac.launcher.Main"
+#define SOURCE_LAUNCHER_MAIN_ENTRY "jdk.compiler/com.sun.tools.javac.launcher.SourceLauncher"
 
 /*
  * This reports error.  VM will not be created and no usage is printed.
@@ -284,9 +286,6 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
                                jvmpath, sizeof(jvmpath),
                                jvmcfg,  sizeof(jvmcfg));
 
-    /* Set env. Must be done before LoadJavaVM. */
-    SetJvmEnvironment(argc, argv);
-
     ifn.CreateJavaVM = 0;
     ifn.GetDefaultJavaVMInitArgs = 0;
 
@@ -388,6 +387,84 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
         } \
     } while (JNI_FALSE)
 
+#define CHECK_EXCEPTION_FAIL() \
+    do { \
+        if ((*env)->ExceptionOccurred(env)) { \
+            (*env)->ExceptionClear(env); \
+            return 0; \
+        } \
+    } while (JNI_FALSE)
+
+
+#define CHECK_EXCEPTION_NULL_FAIL(mainObject) \
+    do { \
+        if ((*env)->ExceptionOccurred(env)) { \
+            (*env)->ExceptionClear(env); \
+            return 0; \
+        } else if (mainObject == NULL) { \
+            return 0; \
+        } \
+    } while (JNI_FALSE)
+
+/*
+ * Invoke a static main with arguments. Returns 1 (true) if successful otherwise
+ * processes the pending exception from GetStaticMethodID and returns 0 (false).
+ */
+int
+invokeStaticMainWithArgs(JNIEnv *env, jclass mainClass, jobjectArray mainArgs) {
+    jmethodID mainID = (*env)->GetStaticMethodID(env, mainClass, "main",
+                                  "([Ljava/lang/String;)V");
+    CHECK_EXCEPTION_FAIL();
+    (*env)->CallStaticVoidMethod(env, mainClass, mainID, mainArgs);
+    return 1;
+}
+
+/*
+ * Invoke an instance main with arguments. Returns 1 (true) if successful otherwise
+ * processes the pending exception from GetMethodID and returns 0 (false).
+ */
+int
+invokeInstanceMainWithArgs(JNIEnv *env, jclass mainClass, jobjectArray mainArgs) {
+    jmethodID constructor = (*env)->GetMethodID(env, mainClass, "<init>", "()V");
+    CHECK_EXCEPTION_FAIL();
+    jobject mainObject = (*env)->NewObject(env, mainClass, constructor);
+    CHECK_EXCEPTION_NULL_FAIL(mainObject);
+    jmethodID mainID = (*env)->GetMethodID(env, mainClass, "main",
+                                 "([Ljava/lang/String;)V");
+    CHECK_EXCEPTION_FAIL();
+    (*env)->CallVoidMethod(env, mainObject, mainID, mainArgs);
+    return 1;
+ }
+
+/*
+ * Invoke a static main without arguments. Returns 1 (true) if successful otherwise
+ * processes the pending exception from GetStaticMethodID and returns 0 (false).
+ */
+int
+invokeStaticMainWithoutArgs(JNIEnv *env, jclass mainClass) {
+    jmethodID mainID = (*env)->GetStaticMethodID(env, mainClass, "main",
+                                       "()V");
+    CHECK_EXCEPTION_FAIL();
+    (*env)->CallStaticVoidMethod(env, mainClass, mainID);
+    return 1;
+}
+
+/*
+ * Invoke an instance main without arguments. Returns 1 (true) if successful otherwise
+ * processes the pending exception from GetMethodID and returns 0 (false).
+ */
+int
+invokeInstanceMainWithoutArgs(JNIEnv *env, jclass mainClass) {
+    jmethodID constructor = (*env)->GetMethodID(env, mainClass, "<init>", "()V");
+    CHECK_EXCEPTION_FAIL();
+    jobject mainObject = (*env)->NewObject(env, mainClass, constructor);
+    CHECK_EXCEPTION_NULL_FAIL(mainObject);
+    jmethodID mainID = (*env)->GetMethodID(env, mainClass, "main",
+                                 "()V");
+    CHECK_EXCEPTION_FAIL();
+    (*env)->CallVoidMethod(env, mainObject, mainID);
+    return 1;
+}
 
 int
 JavaMain(void* _args)
@@ -403,7 +480,6 @@ JavaMain(void* _args)
     JNIEnv *env = 0;
     jclass mainClass = NULL;
     jclass appClass = NULL; // actual application class being launched
-    jmethodID mainID;
     jobjectArray mainArgs;
     int ret = 0;
     jlong start = 0, end = 0;
@@ -443,7 +519,7 @@ JavaMain(void* _args)
     }
 
     if (printVersion || showVersion) {
-        PrintJavaVersion(env, showVersion);
+        PrintJavaVersion(env);
         CHECK_EXCEPTION_LEAVE(0);
         if (printVersion) {
             LEAVE();
@@ -452,6 +528,14 @@ JavaMain(void* _args)
 
     // modules have been validated at startup so exit
     if (validateModules) {
+        LEAVE();
+    }
+
+    /*
+     * -Xshare:dump does not have a main class so the VM can safely exit now
+     */
+    if (dumpSharedSpaces) {
+        CHECK_EXCEPTION_LEAVE(1);
         LEAVE();
     }
 
@@ -482,9 +566,6 @@ JavaMain(void* _args)
     ret = 1;
 
     /*
-     * Get the application's main class. It also checks if the main
-     * method exists.
-     *
      * See bugid 5030265.  The Main-Class name has already been parsed
      * from the manifest, but not parsed properly for UTF-8 support.
      * Hence the code here ignores the value previously extracted and
@@ -514,7 +595,7 @@ JavaMain(void* _args)
      * consistent in the UI we need to track and report the application main class.
      */
     appClass = GetApplicationClass(env);
-    NULL_CHECK_RETURN_VALUE(appClass, -1);
+    CHECK_EXCEPTION_NULL_LEAVE(appClass);
 
     /* Build platform specific argument array */
     mainArgs = CreateApplicationArgs(env, argv, argc);
@@ -536,17 +617,16 @@ JavaMain(void* _args)
     CHECK_EXCEPTION_LEAVE(1);
 
     /*
-     * The LoadMainClass not only loads the main class, it will also ensure
-     * that the main method's signature is correct, therefore further checking
-     * is not required. The main method is invoked here so that extraneous java
-     * stacks are not in the application stack trace.
+     * The main method is invoked here so that extraneous java stacks are not in
+     * the application stack trace.
      */
-    mainID = (*env)->GetStaticMethodID(env, mainClass, "main",
-                                       "([Ljava/lang/String;)V");
-    CHECK_EXCEPTION_NULL_LEAVE(mainID);
-
-    /* Invoke main method. */
-    (*env)->CallStaticVoidMethod(env, mainClass, mainID, mainArgs);
+    if (!invokeStaticMainWithArgs(env, mainClass, mainArgs) &&
+        !invokeInstanceMainWithArgs(env, mainClass, mainArgs) &&
+        !invokeStaticMainWithoutArgs(env, mainClass) &&
+        !invokeInstanceMainWithoutArgs(env, mainClass)) {
+        ret = 1;
+        LEAVE();
+    }
 
     /*
      * The launcher's exit code (in the absence of calls to
@@ -599,6 +679,7 @@ IsModuleOption(const char* name) {
            JLI_StrCmp(name, "-p") == 0 ||
            JLI_StrCmp(name, "--upgrade-module-path") == 0 ||
            JLI_StrCmp(name, "--add-modules") == 0 ||
+           JLI_StrCmp(name, "--enable-native-access") == 0 ||
            JLI_StrCmp(name, "--limit-modules") == 0 ||
            JLI_StrCmp(name, "--add-exports") == 0 ||
            JLI_StrCmp(name, "--add-opens") == 0 ||
@@ -611,6 +692,7 @@ IsLongFormModuleOption(const char* name) {
     return JLI_StrCCmp(name, "--module-path=") == 0 ||
            JLI_StrCCmp(name, "--upgrade-module-path=") == 0 ||
            JLI_StrCCmp(name, "--add-modules=") == 0 ||
+           JLI_StrCCmp(name, "--enable-native-access=") == 0 ||
            JLI_StrCCmp(name, "--limit-modules=") == 0 ||
            JLI_StrCCmp(name, "--add-exports=") == 0 ||
            JLI_StrCCmp(name, "--add-reads=") == 0 ||
@@ -796,84 +878,6 @@ CheckJvmType(int *pargc, char ***argv, jboolean speculative) {
     return jvmtype;
 }
 
-/*
- * This method must be called before the VM is loaded, primarily
- * used to parse and set any VM related options or env variables.
- * This function is non-destructive leaving the argument list intact.
- */
-static void
-SetJvmEnvironment(int argc, char **argv) {
-
-    static const char*  NMT_Env_Name    = "NMT_LEVEL_";
-    const char* NMT_Arg_Name = IsJavaArgs() ? "-J-XX:NativeMemoryTracking=" : "-XX:NativeMemoryTracking=";
-    int i;
-    /* process only the launcher arguments */
-    for (i = 0; i < argc; i++) {
-        char *arg = argv[i];
-        /*
-         * Java launcher (!IsJavaArgs()):
-         *   Since this must be a VM flag we stop processing once we see
-         *   an argument the launcher would not have processed beyond (such
-         *   as -version or -h), or an argument that indicates the following
-         *   arguments are for the application (i.e. the main class name, or
-         *   the -jar argument).
-         * Other launchers (IsJavaArgs()):
-         *   All arguments have to be scanned to see if it is a -J argument.
-         */
-        if (!IsJavaArgs() && i > 0) {
-            char *prev = argv[i - 1];
-            // skip non-dash arg preceded by class path specifiers
-            if (*arg != '-' && IsWhiteSpaceOption(prev)) {
-                continue;
-            }
-
-            if (*arg != '-' || isTerminalOpt(arg)) {
-                return;
-            }
-        }
-        /*
-         * The following case checks for "-XX:NativeMemoryTracking=value".
-         * If value is non null, an environmental variable set to this value
-         * will be created to be used by the JVM.
-         * The argument is passed to the JVM, which will check validity.
-         * The JVM is responsible for removing the env variable.
-         */
-        if (JLI_StrCCmp(arg, NMT_Arg_Name) == 0) {
-            int retval;
-            // get what follows this parameter, include "="
-            size_t pnlen = JLI_StrLen(NMT_Arg_Name);
-            if (JLI_StrLen(arg) > pnlen) {
-                char* value = arg + pnlen;
-                size_t pbuflen = pnlen + JLI_StrLen(value) + 10; // 10 max pid digits
-
-                /*
-                 * ensures that malloc successful
-                 * DONT JLI_MemFree() pbuf.  JLI_PutEnv() uses system call
-                 *   that could store the address.
-                 */
-                char * pbuf = (char*)JLI_MemAlloc(pbuflen);
-
-                JLI_Snprintf(pbuf, pbuflen, "%s%d=%s", NMT_Env_Name, JLI_GetPid(), value);
-                retval = JLI_PutEnv(pbuf);
-                if (JLI_IsTraceLauncher()) {
-                    char* envName;
-                    char* envBuf;
-
-                    // ensures that malloc successful
-                    envName = (char*)JLI_MemAlloc(pbuflen);
-                    JLI_Snprintf(envName, pbuflen, "%s%d", NMT_Env_Name, JLI_GetPid());
-
-                    printf("TRACER_MARKER: NativeMemoryTracking: env var is %s\n",envName);
-                    printf("TRACER_MARKER: NativeMemoryTracking: putenv arg %s\n",pbuf);
-                    envBuf = getenv(envName);
-                    printf("TRACER_MARKER: NativeMemoryTracking: got value %s\n",envBuf);
-                    free(envName);
-                }
-            }
-        }
-    }
-}
-
 /* copied from HotSpot function "atomll()" */
 static int
 parse_size(const char *s, jlong *result) {
@@ -986,10 +990,11 @@ SetClassPath(const char *s)
     if (sizeof(format) - 2 + JLI_StrLen(s) < JLI_StrLen(s))
         // s is became corrupted after expanding wildcards
         return;
-    def = JLI_MemAlloc(sizeof(format)
+    size_t defSize = sizeof(format)
                        - 2 /* strlen("%s") */
-                       + JLI_StrLen(s));
-    sprintf(def, format, s);
+                       + JLI_StrLen(s);
+    def = JLI_MemAlloc(defSize);
+    snprintf(def, defSize, format, s);
     AddOption(def, NULL);
     if (s != orig)
         JLI_MemFree((char *) s);
@@ -1044,13 +1049,9 @@ SelectVersion(int argc, char **argv, char **main_class)
 {
     char    *arg;
     char    *operand;
-    char    *version = NULL;
-    char    *jre = NULL;
     int     jarflag = 0;
     int     headlessflag = 0;
-    int     restrict_search = -1;               /* -1 implies not known */
     manifest_info info;
-    char    env_entry[MAXNAMELEN + 24] = ENV_ENTRY "=";
     char    *splash_file_name = NULL;
     char    *splash_jar_name = NULL;
     char    *env_in;
@@ -1089,7 +1090,7 @@ SelectVersion(int argc, char **argv, char **main_class)
 
     argc--;
     argv++;
-    while ((arg = *argv) != 0 && *arg == '-') {
+    while (argc > 0 && *(arg = *argv) == '-') {
         has_arg = IsOptionWithArgument(argc, argv);
         if (JLI_StrCCmp(arg, "-version:") == 0) {
             JLI_ReportErrorMessage(SPC_ERROR1);
@@ -1287,11 +1288,11 @@ ParseArguments(int *pargc, char ***pargv,
     int argc = *pargc;
     char **argv = *pargv;
     int mode = LM_UNKNOWN;
-    char *arg;
+    char *arg = NULL;
 
     *pret = 0;
 
-    while ((arg = *argv) != 0 && *arg == '-') {
+    while (argc > 0 && *(arg = *argv) == '-') {
         char *option = NULL;
         char *value = NULL;
         int kind = GetOpt(&argc, &argv, &option, &value);
@@ -1426,7 +1427,7 @@ ParseArguments(int *pargc, char ***pargv,
         } else if (JLI_StrCmp(arg, "-tm") == 0) {
             AddOption("-Xtm", NULL);
         } else if (JLI_StrCmp(arg, "-debug") == 0) {
-            AddOption("-Xdebug", NULL);
+            JLI_ReportErrorMessage(ARG_DEPRECATED, "-debug");
         } else if (JLI_StrCmp(arg, "-noclassgc") == 0) {
             AddOption("-Xnoclassgc", NULL);
         } else if (JLI_StrCmp(arg, "-Xfuture") == 0) {
@@ -1446,8 +1447,9 @@ ParseArguments(int *pargc, char ***pargv,
                    JLI_StrCCmp(arg, "-oss") == 0 ||
                    JLI_StrCCmp(arg, "-ms") == 0 ||
                    JLI_StrCCmp(arg, "-mx") == 0) {
-            char *tmp = JLI_MemAlloc(JLI_StrLen(arg) + 6);
-            sprintf(tmp, "-X%s", arg + 1); /* skip '-' */
+            size_t tmpSize = JLI_StrLen(arg) + 6;
+            char *tmp = JLI_MemAlloc(tmpSize);
+            snprintf(tmp, tmpSize, "-X%s", arg + 1); /* skip '-' */
             AddOption(tmp, NULL);
         } else if (JLI_StrCmp(arg, "-checksource") == 0 ||
                    JLI_StrCmp(arg, "-cs") == 0 ||
@@ -1456,6 +1458,8 @@ ParseArguments(int *pargc, char ***pargv,
             JLI_ReportErrorMessage(ARG_WARN, arg);
         } else if (JLI_StrCCmp(arg, "-splash:") == 0) {
             ; /* Ignore machine independent options already handled */
+        } else if (JLI_StrCmp(arg, "--disable-@files") == 0) {
+            ; /* Ignore --disable-@files option already handled */
         } else if (ProcessPlatformOption(arg)) {
             ; /* Processing of platform dependent options */
         } else {
@@ -1465,6 +1469,13 @@ ParseArguments(int *pargc, char ***pargv,
             }
             AddOption(arg, NULL);
         }
+
+        /*
+        * Check for CDS option
+        */
+        if (JLI_StrCmp(arg, "-Xshare:dump") == 0) {
+            dumpSharedSpaces = JNI_TRUE;
+        }
     }
 
     if (*pwhat == NULL && --argc >= 0) {
@@ -1473,7 +1484,7 @@ ParseArguments(int *pargc, char ***pargv,
 
     if (*pwhat == NULL) {
         /* LM_UNKNOWN okay for options that exit */
-        if (!listModules && !describeModule && !validateModules) {
+        if (!listModules && !describeModule && !validateModules && !dumpSharedSpaces) {
             *pret = 1;
         }
     } else if (mode == LM_UNKNOWN) {
@@ -1610,8 +1621,9 @@ NewPlatformStringArray(JNIEnv *env, char **strv, int strc)
 }
 
 /*
- * Loads a class and verifies that the main class is present and it is ok to
- * call it for more details refer to the java implementation.
+ * Calls LauncherHelper::checkAndLoadMain to verify that the main class
+ * is present, it is ok to load the main class and then load the main class.
+ * For more details refer to the java implementation.
  */
 static jclass
 LoadMainClass(JNIEnv *env, int mode, char *name)
@@ -1706,7 +1718,8 @@ TranslateApplicationArgs(int jargc, const char **jargv, int *pargc, char ***parg
     for (i = 0; i < jargc; i++) {
         const char *arg = jargv[i];
         if (arg[0] == '-' && arg[1] == 'J') {
-            *nargv++ = ((arg + 2) == NULL) ? NULL : JLI_StringDup(arg + 2);
+            assert(arg[2] != '\0' && "Invalid JAVA_ARGS or EXTRA_JAVA_ARGS defined by build");
+            *nargv++ = JLI_StringDup(arg + 2);
         }
     }
 
@@ -1778,8 +1791,9 @@ AddApplicationOptions(int cpathc, const char **cpathv)
             s = (char *) JLI_WildcardExpandClasspath(s);
             /* 40 for -Denv.class.path= */
             if (JLI_StrLen(s) + 40 > JLI_StrLen(s)) { // Safeguard from overflow
-                envcp = (char *)JLI_MemAlloc(JLI_StrLen(s) + 40);
-                sprintf(envcp, "-Denv.class.path=%s", s);
+                size_t envcpSize = JLI_StrLen(s) + 40;
+                envcp = (char *)JLI_MemAlloc(envcpSize);
+                snprintf(envcp, envcpSize, "-Denv.class.path=%s", s);
                 AddOption(envcp, NULL);
             }
         }
@@ -1791,8 +1805,9 @@ AddApplicationOptions(int cpathc, const char **cpathv)
     }
 
     /* 40 for '-Dapplication.home=' */
-    apphome = (char *)JLI_MemAlloc(JLI_StrLen(home) + 40);
-    sprintf(apphome, "-Dapplication.home=%s", home);
+    size_t apphomeSize = JLI_StrLen(home) + 40;
+    apphome = (char *)JLI_MemAlloc(apphomeSize);
+    snprintf(apphome, apphomeSize, "-Dapplication.home=%s", home);
     AddOption(apphome, NULL);
 
     /* How big is the application's classpath? */
@@ -1881,7 +1896,7 @@ static void SetJavaLauncherProp() {
  * Prints the version information from the java.version and other properties.
  */
 static void
-PrintJavaVersion(JNIEnv *env, jboolean extraLF)
+PrintJavaVersion(JNIEnv *env)
 {
     jclass ver;
     jmethodID print;
@@ -1889,7 +1904,7 @@ PrintJavaVersion(JNIEnv *env, jboolean extraLF)
     NULL_CHECK(ver = FindBootStrapClass(env, "java/lang/VersionProps"));
     NULL_CHECK(print = (*env)->GetStaticMethodID(env,
                                                  ver,
-                                                 (extraLF == JNI_TRUE) ? "println" : "print",
+                                                 "print",
                                                  "(Z)V"
                                                  )
               );
@@ -2084,7 +2099,6 @@ ReadKnownVMs(const char *jvmCfgName, jboolean speculative)
     int vmType;
     char *tmpPtr;
     char *altVMName = NULL;
-    char *serverClassVMName = NULL;
     static char *whiteSpace = " \t";
     if (JLI_IsTraceLauncher()) {
         start = CurrentTimeMicros();

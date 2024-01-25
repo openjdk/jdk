@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 package sun.jvm.hotspot.debugger.windbg.amd64;
 
 import sun.jvm.hotspot.debugger.*;
-import sun.jvm.hotspot.debugger.amd64.*;
 import sun.jvm.hotspot.debugger.windbg.*;
 
 class WindbgAMD64Thread implements ThreadProxy {
@@ -37,7 +36,7 @@ class WindbgAMD64Thread implements ThreadProxy {
   // The address argument must be the address of the OSThread::_thread_id
   WindbgAMD64Thread(WindbgDebugger debugger, Address addr) {
     this.debugger = debugger;
-    this.sysId    = (long)addr.getCIntegerAt(0, 4, true);
+    this.sysId    = addr.getCIntegerAt(0, 4, true);
     gotID         = false;
   }
 
@@ -70,15 +69,15 @@ class WindbgAMD64Thread implements ThreadProxy {
   }
 
   public boolean equals(Object obj) {
-    if ((obj == null) || !(obj instanceof WindbgAMD64Thread)) {
+    if (!(obj instanceof WindbgAMD64Thread other)) {
       return false;
     }
 
-    return (((WindbgAMD64Thread) obj).getThreadID() == getThreadID());
+    return (other.getThreadID() == getThreadID());
   }
 
   public int hashCode() {
-    return (int) getThreadID();
+    return Long.hashCode(getThreadID());
   }
 
   public String toString() {

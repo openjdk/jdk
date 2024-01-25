@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,15 +54,12 @@ import jdk.internal.module.SystemModuleFinders;
  *
  * <p> Example usage: </p>
  *
- * <pre>{@code
- *     Path dir1, dir2, dir3;
- *
+ * {@snippet :
+ *     Path dir1 = ..., dir2 = ..., dir3 = ...;
  *     ModuleFinder finder = ModuleFinder.of(dir1, dir2, dir3);
- *
  *     Optional<ModuleReference> omref = finder.find("jdk.foo");
  *     omref.ifPresent(mref -> ... );
- *
- * }</pre>
+ * }
  *
  * <p> The {@link #find(String) find} and {@link #findAll() findAll} methods
  * defined here can fail for several reasons. These include I/O errors, errors
@@ -148,6 +145,7 @@ public interface ModuleFinder {
      * @throws SecurityException
      *         If denied by the security manager
      */
+    @SuppressWarnings("removal")
     static ModuleFinder ofSystem() {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ public class SSLEngineExplorerMatchedSNI extends SSLEngineService {
     /*
      * Turn on SSL debugging?
      */
-    static boolean debug = false;
+    static boolean debug = true;
 
     /*
      * Define the server side of the test.
@@ -154,10 +154,10 @@ public class SSLEngineExplorerMatchedSNI extends SSLEngineService {
         ssle.setSSLParameters(params);
 
         // handshaking
-        handshaking(ssle, sc, buffer);
+        ByteBuffer peerNetData = handshaking(ssle, sc, buffer);
 
         // receive application data
-        receive(ssle, sc);
+        receive(ssle, sc, peerNetData);
 
         // send out application data
         deliver(ssle, sc);
@@ -209,13 +209,13 @@ public class SSLEngineExplorerMatchedSNI extends SSLEngineService {
         ssle.setSSLParameters(params);
 
         // handshaking
-        handshaking(ssle, sc, null);
+        ByteBuffer peerNetData = handshaking(ssle, sc, null);
 
         // send out application data
         deliver(ssle, sc);
 
         // receive application data
-        receive(ssle, sc);
+        receive(ssle, sc, peerNetData);
 
         // check server name indication
         ExtendedSSLSession session = (ExtendedSSLSession)ssle.getSession();

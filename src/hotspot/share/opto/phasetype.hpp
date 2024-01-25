@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,107 +25,208 @@
 #ifndef SHARE_OPTO_PHASETYPE_HPP
 #define SHARE_OPTO_PHASETYPE_HPP
 
-enum CompilerPhaseType {
-  PHASE_BEFORE_STRINGOPTS,
-  PHASE_AFTER_STRINGOPTS,
-  PHASE_BEFORE_REMOVEUSELESS,
-  PHASE_AFTER_PARSING,
-  PHASE_ITER_GVN1,
-  PHASE_EXPAND_VUNBOX,
-  PHASE_SCALARIZE_VBOX,
-  PHASE_INLINE_VECTOR_REBOX,
-  PHASE_EXPAND_VBOX,
-  PHASE_ELIMINATE_VBOX_ALLOC,
-  PHASE_PHASEIDEAL_BEFORE_EA,
-  PHASE_ITER_GVN_AFTER_VECTOR,
-  PHASE_ITER_GVN_BEFORE_EA,
-  PHASE_ITER_GVN_AFTER_EA,
-  PHASE_ITER_GVN_AFTER_ELIMINATION,
-  PHASE_PHASEIDEALLOOP1,
-  PHASE_PHASEIDEALLOOP2,
-  PHASE_PHASEIDEALLOOP3,
-  PHASE_CPP1,
-  PHASE_ITER_GVN2,
-  PHASE_PHASEIDEALLOOP_ITERATIONS,
-  PHASE_OPTIMIZE_FINISHED,
-  PHASE_AFTER_MATCHING,
-  PHASE_GLOBAL_CODE_MOTION,
-  PHASE_FINAL_CODE,
-  PHASE_AFTER_EA,
-  PHASE_BEFORE_CLOOPS,
-  PHASE_AFTER_CLOOPS,
-  PHASE_BEFORE_BEAUTIFY_LOOPS,
-  PHASE_AFTER_BEAUTIFY_LOOPS,
-  PHASE_BEFORE_MATCHING,
-  PHASE_MATCHING,
-  PHASE_INCREMENTAL_INLINE,
-  PHASE_INCREMENTAL_INLINE_STEP,
-  PHASE_INCREMENTAL_INLINE_CLEANUP,
-  PHASE_INCREMENTAL_BOXING_INLINE,
-  PHASE_CALL_CATCH_CLEANUP,
-  PHASE_INSERT_BARRIER,
-  PHASE_MACRO_EXPANSION,
-  PHASE_BARRIER_EXPANSION,
-  PHASE_ADD_UNSAFE_BARRIER,
-  PHASE_END,
-  PHASE_FAILURE,
-  PHASE_DEBUG,
+#include "utilities/bitMap.inline.hpp"
 
-  PHASE_NUM_TYPES
+#define COMPILER_PHASES(flags) \
+  flags(BEFORE_STRINGOPTS,              "Before StringOpts") \
+  flags(AFTER_STRINGOPTS,               "After StringOpts") \
+  flags(BEFORE_REMOVEUSELESS,           "Before RemoveUseless") \
+  flags(AFTER_PARSING,                  "After Parsing") \
+  flags(BEFORE_ITER_GVN,                "Before Iter GVN") \
+  flags(ITER_GVN1,                      "Iter GVN 1") \
+  flags(AFTER_ITER_GVN_STEP,            "After Iter GVN Step") \
+  flags(AFTER_ITER_GVN,                 "After Iter GVN") \
+  flags(INCREMENTAL_INLINE_STEP,        "Incremental Inline Step") \
+  flags(INCREMENTAL_INLINE_CLEANUP,     "Incremental Inline Cleanup") \
+  flags(INCREMENTAL_INLINE,             "Incremental Inline") \
+  flags(INCREMENTAL_BOXING_INLINE,      "Incremental Boxing Inline") \
+  flags(EXPAND_VUNBOX,                  "Expand VectorUnbox") \
+  flags(SCALARIZE_VBOX,                 "Scalarize VectorBox") \
+  flags(INLINE_VECTOR_REBOX,            "Inline Vector Rebox Calls") \
+  flags(EXPAND_VBOX,                    "Expand VectorBox") \
+  flags(ELIMINATE_VBOX_ALLOC,           "Eliminate VectorBoxAllocate") \
+  flags(ITER_GVN_BEFORE_EA,             "Iter GVN before EA") \
+  flags(ITER_GVN_AFTER_VECTOR,          "Iter GVN after vector box elimination") \
+  flags(BEFORE_BEAUTIFY_LOOPS,          "Before beautify loops") \
+  flags(AFTER_BEAUTIFY_LOOPS,           "After beautify loops") \
+  flags(BEFORE_LOOP_UNROLLING,          "Before Loop Unrolling") \
+  flags(AFTER_LOOP_UNROLLING,           "After Loop Unrolling") \
+  flags(BEFORE_SPLIT_IF,                "Before Split-If") \
+  flags(AFTER_SPLIT_IF,                 "After Split-If") \
+  flags(BEFORE_LOOP_PREDICATION_IC,     "Before Loop Predication IC") \
+  flags(AFTER_LOOP_PREDICATION_IC,      "After Loop Predication IC") \
+  flags(BEFORE_LOOP_PREDICATION_RC,     "Before Loop Predication RC") \
+  flags(AFTER_LOOP_PREDICATION_RC,      "After Loop Predication RC") \
+  flags(BEFORE_PARTIAL_PEELING,         "Before Partial Peeling") \
+  flags(AFTER_PARTIAL_PEELING,          "After Partial Peeling") \
+  flags(BEFORE_LOOP_PEELING,            "Before Loop Peeling") \
+  flags(AFTER_LOOP_PEELING,             "After Loop Peeling") \
+  flags(BEFORE_LOOP_UNSWITCHING,        "Before Loop Unswitching") \
+  flags(AFTER_LOOP_UNSWITCHING,         "After Loop Unswitching") \
+  flags(BEFORE_RANGE_CHECK_ELIMINATION, "Before Range Check Elimination") \
+  flags(AFTER_RANGE_CHECK_ELIMINATION,  "After Range Check Elimination") \
+  flags(BEFORE_PRE_MAIN_POST,           "Before Pre/Main/Post Loops") \
+  flags(AFTER_PRE_MAIN_POST,            "After Pre/Main/Post Loops") \
+  flags(SUPERWORD1_BEFORE_SCHEDULE,     "Superword 1, Before Schedule") \
+  flags(SUPERWORD2_BEFORE_OUTPUT,       "Superword 2, Before Output") \
+  flags(SUPERWORD3_AFTER_OUTPUT,        "Superword 3, After Output") \
+  flags(BEFORE_CLOOPS,                  "Before CountedLoop") \
+  flags(AFTER_CLOOPS,                   "After CountedLoop") \
+  flags(PHASEIDEAL_BEFORE_EA,           "PhaseIdealLoop before EA") \
+  flags(AFTER_EA,                       "After Escape Analysis") \
+  flags(ITER_GVN_AFTER_EA,              "Iter GVN after EA") \
+  flags(ITER_GVN_AFTER_ELIMINATION,     "Iter GVN after eliminating allocations and locks") \
+  flags(PHASEIDEALLOOP1,                "PhaseIdealLoop 1") \
+  flags(PHASEIDEALLOOP2,                "PhaseIdealLoop 2") \
+  flags(PHASEIDEALLOOP3,                "PhaseIdealLoop 3") \
+  flags(BEFORE_CCP1,                    "Before PhaseCCP 1") \
+  flags(CCP1,                           "PhaseCCP 1") \
+  flags(ITER_GVN2,                      "Iter GVN 2") \
+  flags(PHASEIDEALLOOP_ITERATIONS,      "PhaseIdealLoop iterations") \
+  flags(MACRO_EXPANSION,                "Macro expand") \
+  flags(BARRIER_EXPANSION,              "Barrier expand") \
+  flags(OPTIMIZE_FINISHED,              "Optimize finished") \
+  flags(BEFORE_MATCHING,                "Before matching") \
+  flags(MATCHING,                       "After matching") \
+  flags(GLOBAL_CODE_MOTION,             "Global code motion") \
+  flags(REGISTER_ALLOCATION,            "Register Allocation") \
+  flags(BLOCK_ORDERING,                 "Block Ordering") \
+  flags(PEEPHOLE,                       "Peephole") \
+  flags(POSTALLOC_EXPAND,               "Post-Allocation Expand") \
+  flags(MACH_ANALYSIS,                  "After mach analysis") \
+  flags(FINAL_CODE,                     "Final Code") \
+  flags(END,                            "End") \
+  flags(FAILURE,                        "Failure") \
+  flags(ALL,                            "All") \
+  flags(DEBUG,                          "Debug")
+
+#define table_entry(name, description) PHASE_##name,
+enum CompilerPhaseType {
+  COMPILER_PHASES(table_entry)
+  PHASE_NUM_TYPES,
+  PHASE_NONE
+};
+#undef table_entry
+
+static const char* phase_descriptions[] = {
+#define array_of_labels(name, description) description,
+       COMPILER_PHASES(array_of_labels)
+#undef array_of_labels
+};
+
+static const char* phase_names[] = {
+#define array_of_labels(name, description) #name,
+       COMPILER_PHASES(array_of_labels)
+#undef array_of_labels
 };
 
 class CompilerPhaseTypeHelper {
   public:
-  static const char* to_string(CompilerPhaseType cpt) {
-    switch (cpt) {
-      case PHASE_BEFORE_STRINGOPTS:          return "Before StringOpts";
-      case PHASE_AFTER_STRINGOPTS:           return "After StringOpts";
-      case PHASE_BEFORE_REMOVEUSELESS:       return "Before RemoveUseless";
-      case PHASE_AFTER_PARSING:              return "After Parsing";
-      case PHASE_ITER_GVN1:                  return "Iter GVN 1";
-      case PHASE_EXPAND_VUNBOX:              return "Expand VectorUnbox";
-      case PHASE_SCALARIZE_VBOX:             return "Scalarize VectorBox";
-      case PHASE_INLINE_VECTOR_REBOX:        return "Inline Vector Rebox Calls";
-      case PHASE_EXPAND_VBOX:                return "Expand VectorBox";
-      case PHASE_ELIMINATE_VBOX_ALLOC:       return "Eliminate VectorBoxAllocate";
-      case PHASE_PHASEIDEAL_BEFORE_EA:       return "PhaseIdealLoop before EA";
-      case PHASE_ITER_GVN_AFTER_VECTOR:      return "Iter GVN after vector box elimination";
-      case PHASE_ITER_GVN_BEFORE_EA:         return "Iter GVN before EA";
-      case PHASE_ITER_GVN_AFTER_EA:          return "Iter GVN after EA";
-      case PHASE_ITER_GVN_AFTER_ELIMINATION: return "Iter GVN after eliminating allocations and locks";
-      case PHASE_PHASEIDEALLOOP1:            return "PhaseIdealLoop 1";
-      case PHASE_PHASEIDEALLOOP2:            return "PhaseIdealLoop 2";
-      case PHASE_PHASEIDEALLOOP3:            return "PhaseIdealLoop 3";
-      case PHASE_CPP1:                       return "PhaseCPP 1";
-      case PHASE_ITER_GVN2:                  return "Iter GVN 2";
-      case PHASE_PHASEIDEALLOOP_ITERATIONS:  return "PhaseIdealLoop iterations";
-      case PHASE_OPTIMIZE_FINISHED:          return "Optimize finished";
-      case PHASE_AFTER_MATCHING:             return "After Matching";
-      case PHASE_GLOBAL_CODE_MOTION:         return "Global code motion";
-      case PHASE_FINAL_CODE:                 return "Final Code";
-      case PHASE_AFTER_EA:                   return "After Escape Analysis";
-      case PHASE_BEFORE_CLOOPS:              return "Before CountedLoop";
-      case PHASE_AFTER_CLOOPS:               return "After CountedLoop";
-      case PHASE_BEFORE_BEAUTIFY_LOOPS:      return "Before beautify loops";
-      case PHASE_AFTER_BEAUTIFY_LOOPS:       return "After beautify loops";
-      case PHASE_BEFORE_MATCHING:            return "Before matching";
-      case PHASE_MATCHING:                   return "After matching";
-      case PHASE_INCREMENTAL_INLINE:         return "Incremental Inline";
-      case PHASE_INCREMENTAL_INLINE_STEP:    return "Incremental Inline Step";
-      case PHASE_INCREMENTAL_INLINE_CLEANUP: return "Incremental Inline Cleanup";
-      case PHASE_INCREMENTAL_BOXING_INLINE:  return "Incremental Boxing Inline";
-      case PHASE_CALL_CATCH_CLEANUP:         return "Call catch cleanup";
-      case PHASE_INSERT_BARRIER:             return "Insert barrier";
-      case PHASE_MACRO_EXPANSION:            return "Macro expand";
-      case PHASE_BARRIER_EXPANSION:          return "Barrier expand";
-      case PHASE_ADD_UNSAFE_BARRIER:         return "Add barrier to unsafe op";
-      case PHASE_END:                        return "End";
-      case PHASE_FAILURE:                    return "Failure";
-      case PHASE_DEBUG:                      return "Debug";
-      default:
-        ShouldNotReachHere();
-        return NULL;
+  static const char* to_name(CompilerPhaseType cpt) {
+    return phase_names[cpt];
+  }
+  static const char* to_description(CompilerPhaseType cpt) {
+    return phase_descriptions[cpt];
+  }
+};
+
+static CompilerPhaseType find_phase(const char* str) {
+  for (int i = 0; i < PHASE_NUM_TYPES; i++) {
+    if (strcmp(phase_names[i], str) == 0) {
+      return (CompilerPhaseType)i;
     }
+  }
+  return PHASE_NONE;
+}
+
+class PhaseNameIter {
+ private:
+  char* _token;
+  char* _saved_ptr;
+  char* _list;
+
+ public:
+  PhaseNameIter(ccstrlist option) {
+    _list = (char*) canonicalize(option);
+    _saved_ptr = _list;
+    _token = strtok_r(_saved_ptr, ",", &_saved_ptr);
+  }
+
+  ~PhaseNameIter() {
+    FREE_C_HEAP_ARRAY(char, _list);
+  }
+
+  const char* operator*() const { return _token; }
+
+  PhaseNameIter& operator++() {
+    _token = strtok_r(nullptr, ",", &_saved_ptr);
+    return *this;
+  }
+
+  ccstrlist canonicalize(ccstrlist option_value) {
+    char* canonicalized_list = NEW_C_HEAP_ARRAY(char, strlen(option_value) + 1, mtCompiler);
+    int i = 0;
+    char current;
+    while ((current = option_value[i]) != '\0') {
+      if (current == '\n' || current == ' ') {
+        canonicalized_list[i] = ',';
+      } else {
+        canonicalized_list[i] = current;
+      }
+      i++;
+    }
+    canonicalized_list[i] = '\0';
+    return canonicalized_list;
+  }
+};
+
+class PhaseNameValidator {
+ private:
+  CHeapBitMap _phase_name_set;
+  bool _valid;
+  char* _bad;
+
+ public:
+  PhaseNameValidator(ccstrlist option) :
+    _phase_name_set(PHASE_NUM_TYPES, mtCompiler),
+    _valid(true),
+    _bad(nullptr)
+  {
+    for (PhaseNameIter iter(option); *iter != nullptr && _valid; ++iter) {
+
+      CompilerPhaseType cpt = find_phase(*iter);
+      if (PHASE_NONE == cpt) {
+        const size_t len = MIN2<size_t>(strlen(*iter), 63) + 1;  // cap len to a value we know is enough for all phase descriptions
+        _bad = NEW_C_HEAP_ARRAY(char, len, mtCompiler);
+        // strncpy always writes len characters. If the source string is shorter, the function fills the remaining bytes with nulls.
+        strncpy(_bad, *iter, len);
+        _valid = false;
+      } else if (PHASE_ALL == cpt) {
+        _phase_name_set.set_range(0, PHASE_NUM_TYPES);
+      } else {
+        assert(cpt < PHASE_NUM_TYPES, "out of bounds");
+        _phase_name_set.set_bit(cpt);
+      }
+    }
+  }
+
+  ~PhaseNameValidator() {
+    if (_bad != nullptr) {
+      FREE_C_HEAP_ARRAY(char, _bad);
+    }
+  }
+
+  const BitMap& phase_name_set() const {
+    assert(is_valid(), "Use of invalid phase name set");
+    return _phase_name_set;
+  }
+
+  bool is_valid() const {
+    return _valid;
+  }
+
+  const char* what() const {
+    return _bad;
   }
 };
 

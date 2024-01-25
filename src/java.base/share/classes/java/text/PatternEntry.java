@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,14 +52,14 @@ class PatternEntry {
     /**
      * Gets the current extension, quoted
      */
-    public void appendQuotedExtension(StringBuffer toAddTo) {
+    private void appendQuotedExtension(StringBuilder toAddTo) {
         appendQuoted(extension,toAddTo);
     }
 
     /**
      * Gets the current chars, quoted
      */
-    public void appendQuotedChars(StringBuffer toAddTo) {
+    private void appendQuotedChars(StringBuilder toAddTo) {
         appendQuoted(chars,toAddTo);
     }
 
@@ -83,8 +83,8 @@ class PatternEntry {
      * For debugging.
      */
     public String toString() {
-        StringBuffer result = new StringBuffer();
-        addToBuffer(result, true, false, null);
+        StringBuilder result = new StringBuilder();
+        addToBuilder(result, true, false, null);
         return result.toString();
     }
 
@@ -111,10 +111,10 @@ class PatternEntry {
 
     // ===== privates =====
 
-    void addToBuffer(StringBuffer toAddTo,
-                     boolean showExtension,
-                     boolean showWhiteSpace,
-                     PatternEntry lastEntry)
+    void addToBuilder(StringBuilder toAddTo,
+                      boolean showExtension,
+                      boolean showWhiteSpace,
+                      PatternEntry lastEntry)
     {
         if (showWhiteSpace && toAddTo.length() > 0)
             if (strength == Collator.PRIMARY || lastEntry != null)
@@ -130,14 +130,18 @@ class PatternEntry {
             if (showWhiteSpace)
                 toAddTo.append(' ');
         }
-        switch (strength) {
-        case Collator.IDENTICAL: toAddTo.append('='); break;
-        case Collator.TERTIARY:  toAddTo.append(','); break;
-        case Collator.SECONDARY: toAddTo.append(';'); break;
-        case Collator.PRIMARY:   toAddTo.append('<'); break;
-        case RESET: toAddTo.append('&'); break;
-        case UNSET: toAddTo.append('?'); break;
-        }
+        var c = switch (strength) {
+            case Collator.IDENTICAL -> '=';
+            case Collator.TERTIARY  -> ',';
+            case Collator.SECONDARY -> ';';
+            case Collator.PRIMARY   -> '<';
+            case RESET              -> '&';
+            case UNSET              -> '?';
+
+            default -> throw new IllegalStateException("Unexpected value: " + strength);
+        };
+        toAddTo.append(c);
+
         if (showWhiteSpace)
             toAddTo.append(' ');
         appendQuoted(chars,toAddTo);
@@ -147,7 +151,7 @@ class PatternEntry {
         }
     }
 
-    static void appendQuoted(String chars, StringBuffer toAddTo) {
+    private static void appendQuoted(String chars, StringBuilder toAddTo) {
         boolean inQuote = false;
         char ch = chars.charAt(0);
         if (Character.isSpaceChar(ch)) {
@@ -186,8 +190,8 @@ class PatternEntry {
     //========================================================================
 
     PatternEntry(int strength,
-                 StringBuffer chars,
-                 StringBuffer extension)
+                 StringBuilder chars,
+                 StringBuilder extension)
     {
         this.strength = strength;
         this.chars = chars.toString();
@@ -283,8 +287,8 @@ class PatternEntry {
         }
 
         // We re-use these objects in order to improve performance
-        private StringBuffer newChars = new StringBuffer();
-        private StringBuffer newExtension = new StringBuffer();
+        private StringBuilder newChars = new StringBuilder();
+        private StringBuilder newExtension = new StringBuilder();
 
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,11 +109,6 @@ public abstract class KeyboardFocusManager
     private static final PlatformLogger focusLog = PlatformLogger.getLogger("java.awt.focus.KeyboardFocusManager");
 
     static {
-        /* ensure that the necessary native libraries are loaded */
-        Toolkit.loadLibraries();
-        if (!GraphicsEnvironment.isHeadless()) {
-            initIDs();
-        }
         AWTAccessor.setKeyboardFocusManagerAccessor(
             new AWTAccessor.KeyboardFocusManagerAccessor() {
                 public int shouldNativelyFocusHeavyweight(Component heavyweight,
@@ -156,11 +151,6 @@ public abstract class KeyboardFocusManager
     }
 
     transient KeyboardFocusManagerPeer peer;
-
-    /**
-     * Initialize JNI field and method IDs
-     */
-    private static native void initIDs();
 
     private static final PlatformLogger log = PlatformLogger.getLogger("java.awt.KeyboardFocusManager");
 
@@ -644,6 +634,7 @@ public abstract class KeyboardFocusManager
         peer.clearGlobalFocusOwner(activeWindow);
     }
 
+    @SuppressWarnings("removal")
     void clearGlobalFocusOwnerPriv() {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             public Void run() {
@@ -1283,6 +1274,7 @@ public abstract class KeyboardFocusManager
                            newFocusCycleRoot);
     }
 
+    @SuppressWarnings("removal")
     void setGlobalCurrentFocusCycleRootPriv(final Container newFocusCycleRoot) {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             public Void run() {
@@ -2595,10 +2587,8 @@ public abstract class KeyboardFocusManager
         Throwable retEx = null;
         try {
             comp.dispatchEvent(event);
-        } catch (RuntimeException re) {
-            retEx = re;
-        } catch (Error er) {
-            retEx = er;
+        } catch (RuntimeException | Error e) {
+            retEx = e;
         }
         if (retEx != null) {
             if (ex != null) {
@@ -2975,13 +2965,9 @@ public abstract class KeyboardFocusManager
             if (hwFocusRequest != null) {
                 heavyweightRequests.removeFirst();
                 if (hwFocusRequest.lightweightRequests != null) {
-                    for (Iterator<KeyboardFocusManager.LightweightFocusRequest> lwIter = hwFocusRequest.lightweightRequests.
-                             iterator();
-                         lwIter.hasNext(); )
-                    {
+                    for (LightweightFocusRequest lwFocusRequest : hwFocusRequest.lightweightRequests) {
                         manager.dequeueKeyEvents
-                            (-1, lwIter.next().
-                             component);
+                            (-1, lwFocusRequest.component);
                     }
                 }
             }
@@ -3089,6 +3075,7 @@ public abstract class KeyboardFocusManager
     private static void checkReplaceKFMPermission()
         throws SecurityException
     {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             if (replaceKeyboardFocusManagerPermission == null) {

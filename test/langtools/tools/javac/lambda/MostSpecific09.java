@@ -2,7 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 8029718 8065800
  * @summary Should always use lambda body structure to disambiguate overload resolution
- * @compile/fail/ref=MostSpecific09.out -XDrawDiagnostics --should-stop=at=ATTR --debug=verboseResolution=applicable,success MostSpecific09.java
+ * @compile/fail/ref=MostSpecific09.out -XDrawDiagnostics --should-stop=ifError=ATTR --should-stop=ifNoError=ATTR --debug=verboseResolution=applicable,success MostSpecific09.java
  */
 
 class MostSpecific09 {

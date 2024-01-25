@@ -38,7 +38,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8077931
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true catalog.SystemFamilyTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow catalog.SystemFamilyTest
  * @run testng/othervm catalog.SystemFamilyTest
  * @summary Get matched URIs from system, rewriteSystem, systemSuffix and
  *          delegateSystem entries. It tests the resolution priorities among

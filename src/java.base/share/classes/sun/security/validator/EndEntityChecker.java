@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,10 +53,6 @@ import sun.security.x509.NetscapeCertTypeExtension;
  * are relaxed compared to standard code signing checks in order to
  * allow these certificates to pass.
  *
- * <li>Plugin code signing. WebStart and Plugin require their own variant
- * which is equivalent to VAR_CODE_SIGNING with additional checks for
- * compatibility/special cases. See also PKIXValidator.
- *
  * <li>TSA Server (see RFC 3161, section 2.3).
  *
  * </ul>
@@ -109,6 +105,7 @@ class EndEntityChecker {
 
     // bit numbers in the key usage extension
     private static final int KU_SIGNATURE = 0;
+    private static final int KU_NON_REPUDIATION = 1;
     private static final int KU_KEY_ENCIPHERMENT = 2;
     private static final int KU_KEY_AGREEMENT = 4;
 
@@ -119,7 +116,7 @@ class EndEntityChecker {
 
     // TLS key exchange algorithms requiring keyEncipherment key usage
     private static final Collection<String> KU_SERVER_ENCRYPTION =
-        Arrays.asList("RSA");
+        List.of("RSA");
 
     // TLS key exchange algorithms requiring keyAgreement key usage
     private static final Collection<String> KU_SERVER_KEY_AGREEMENT =
@@ -155,8 +152,6 @@ class EndEntityChecker {
         } else if (variant.equals(Validator.VAR_CODE_SIGNING)) {
             checkCodeSigning(chain[0], exts);
         } else if (variant.equals(Validator.VAR_JCE_SIGNING)) {
-            checkCodeSigning(chain[0], exts);
-        } else if (variant.equals(Validator.VAR_PLUGIN_CODE_SIGNING)) {
             checkCodeSigning(chain[0], exts);
         } else if (variant.equals(Validator.VAR_TSA_SERVER)) {
             checkTSAServer(chain[0], exts);
@@ -225,10 +220,8 @@ class EndEntityChecker {
     /**
      * Utility method checking if bit 'bit' is set in this certificates
      * key usage extension.
-     * @throws CertificateException if not
      */
-    private boolean checkKeyUsage(X509Certificate cert, int bit)
-            throws CertificateException {
+    private boolean checkKeyUsage(X509Certificate cert, int bit) {
         boolean[] keyUsage = cert.getKeyUsage();
         if (keyUsage == null) {
             return true;
@@ -243,13 +236,13 @@ class EndEntityChecker {
      */
     private void checkTLSClient(X509Certificate cert, Set<String> exts)
             throws CertificateException {
-        if (checkKeyUsage(cert, KU_SIGNATURE) == false) {
+        if (!checkKeyUsage(cert, KU_SIGNATURE)) {
             throw new ValidatorException
                 ("KeyUsage does not allow digital signatures",
                 ValidatorException.T_EE_EXTENSIONS, cert);
         }
 
-        if (checkEKU(cert, exts, OID_EKU_TLS_CLIENT) == false) {
+        if (!checkEKU(cert, exts, OID_EKU_TLS_CLIENT)) {
             throw new ValidatorException("Extended key usage does not "
                 + "permit use for TLS client authentication",
                 ValidatorException.T_EE_EXTENSIONS, cert);
@@ -276,19 +269,19 @@ class EndEntityChecker {
     private void checkTLSServer(X509Certificate cert, String parameter,
             Set<String> exts) throws CertificateException {
         if (KU_SERVER_ENCRYPTION.contains(parameter)) {
-            if (checkKeyUsage(cert, KU_KEY_ENCIPHERMENT) == false) {
+            if (!checkKeyUsage(cert, KU_KEY_ENCIPHERMENT)) {
                 throw new ValidatorException
                         ("KeyUsage does not allow key encipherment",
                         ValidatorException.T_EE_EXTENSIONS, cert);
             }
         } else if (KU_SERVER_SIGNATURE.contains(parameter)) {
-            if (checkKeyUsage(cert, KU_SIGNATURE) == false) {
+            if (!checkKeyUsage(cert, KU_SIGNATURE)) {
                 throw new ValidatorException
                         ("KeyUsage does not allow digital signatures",
                         ValidatorException.T_EE_EXTENSIONS, cert);
             }
         } else if (KU_SERVER_KEY_AGREEMENT.contains(parameter)) {
-            if (checkKeyUsage(cert, KU_KEY_AGREEMENT) == false) {
+            if (!checkKeyUsage(cert, KU_KEY_AGREEMENT)) {
                 throw new ValidatorException
                         ("KeyUsage does not allow key agreement",
                         ValidatorException.T_EE_EXTENSIONS, cert);
@@ -297,11 +290,11 @@ class EndEntityChecker {
             throw new CertificateException("Unknown authType: " + parameter);
         }
 
-        if (checkEKU(cert, exts, OID_EKU_TLS_SERVER) == false) {
+        if (!checkEKU(cert, exts, OID_EKU_TLS_SERVER)) {
             // check for equivalent but now obsolete Server-Gated-Cryptography
             // (aka Step-Up, 128 bit) EKU OIDs
-            if ((checkEKU(cert, exts, OID_EKU_MS_SGC) == false) &&
-                (checkEKU(cert, exts, OID_EKU_NS_SGC) == false)) {
+            if ((!checkEKU(cert, exts, OID_EKU_MS_SGC)) &&
+                (!checkEKU(cert, exts, OID_EKU_NS_SGC))) {
                 throw new ValidatorException
                     ("Extended key usage does not permit use for TLS "
                     + "server authentication",
@@ -327,13 +320,13 @@ class EndEntityChecker {
      */
     private void checkCodeSigning(X509Certificate cert, Set<String> exts)
             throws CertificateException {
-        if (checkKeyUsage(cert, KU_SIGNATURE) == false) {
+        if (!checkKeyUsage(cert, KU_SIGNATURE)) {
             throw new ValidatorException
                 ("KeyUsage does not allow digital signatures",
                 ValidatorException.T_EE_EXTENSIONS, cert);
         }
 
-        if (checkEKU(cert, exts, OID_EKU_CODE_SIGNING) == false) {
+        if (!checkEKU(cert, exts, OID_EKU_CODE_SIGNING)) {
             throw new ValidatorException
                 ("Extended key usage does not permit use for code signing",
                 ValidatorException.T_EE_EXTENSIONS, cert);
@@ -341,7 +334,7 @@ class EndEntityChecker {
 
         // do not check Netscape cert type for JCE code signing checks
         // (some certs were issued with incorrect extensions)
-        if (variant.equals(Validator.VAR_JCE_SIGNING) == false) {
+        if (!variant.equals(Validator.VAR_JCE_SIGNING)) {
             if (!SimpleValidator.getNetscapeCertTypeBit(cert, NSCT_CODE_SIGNING)) {
                 throw new ValidatorException
                     ("Netscape cert type does not permit use for code signing",
@@ -362,9 +355,11 @@ class EndEntityChecker {
      */
     private void checkTSAServer(X509Certificate cert, Set<String> exts)
             throws CertificateException {
-        if (checkKeyUsage(cert, KU_SIGNATURE) == false) {
+        // KU and EKU should be consistent
+        if (!checkKeyUsage(cert, KU_SIGNATURE)
+                && !checkKeyUsage(cert, KU_NON_REPUDIATION)) {
             throw new ValidatorException
-                ("KeyUsage does not allow digital signatures",
+                ("KeyUsage does not allow digital signatures or non repudiation",
                 ValidatorException.T_EE_EXTENSIONS, cert);
         }
 
@@ -375,7 +370,7 @@ class EndEntityChecker {
                 ValidatorException.T_EE_EXTENSIONS, cert);
         }
 
-        if (checkEKU(cert, exts, OID_EKU_TIME_STAMPING) == false) {
+        if (!checkEKU(cert, exts, OID_EKU_TIME_STAMPING)) {
             throw new ValidatorException
                 ("Extended key usage does not permit use for TSA server",
                 ValidatorException.T_EE_EXTENSIONS, cert);

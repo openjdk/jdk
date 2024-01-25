@@ -44,7 +44,7 @@ import org.xml.sax.SAXException;
  * @test
  * @bug 6695843
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.Bug6695843Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Bug6695843Test
  * @run testng/othervm validation.Bug6695843Test
  * @summary Test Validator should report accurate element type if there is a violation on a complexType with simpleContent that extends a base complexType.
  */

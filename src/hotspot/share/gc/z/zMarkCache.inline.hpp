@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZMARKCACHE_INLINE_HPP
 
 #include "gc/z/zMarkCache.hpp"
+
 #include "gc/z/zPage.inline.hpp"
 
 inline void ZMarkCacheEntry::inc_live(ZPage* page, size_t bytes) {
@@ -42,16 +43,16 @@ inline void ZMarkCacheEntry::inc_live(ZPage* page, size_t bytes) {
 }
 
 inline void ZMarkCacheEntry::evict() {
-  if (_page != NULL) {
+  if (_page != nullptr) {
     // Write cached data out to page
     _page->inc_live(_objects, _bytes);
-    _page = NULL;
+    _page = nullptr;
   }
 }
 
 inline void ZMarkCache::inc_live(ZPage* page, size_t bytes) {
   const size_t mask = ZMarkCacheSize - 1;
-  const size_t index = (page->start() >> _shift) & mask;
+  const size_t index = (untype(page->start()) >> _shift) & mask;
   _cache[index].inc_live(page, bytes);
 }
 

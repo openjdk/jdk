@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import com.sun.jdi.ReferenceType;
 import com.sun.jdi.TypeComponent;
 import com.sun.jdi.VirtualMachine;
 
-abstract public class TypeComponentImpl extends MirrorImpl
+public abstract class TypeComponentImpl extends MirrorImpl
     implements TypeComponent
 {
     protected final long ref;

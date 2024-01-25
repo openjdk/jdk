@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,11 @@
 #ifndef SHARE_RUNTIME_FLAGS_ALLFLAGS_HPP
 #define SHARE_RUNTIME_FLAGS_ALLFLAGS_HPP
 
+#include "cds/cds_globals.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/tlab_globals.hpp"
+#include "runtime/flags/debug_globals.hpp"
 #include "runtime/globals.hpp"
 
 // Put LP64/ARCH/JVMCI/COMPILER1/COMPILER2 at the top,
@@ -54,6 +56,15 @@
   ARCH_FLAGS(                 \
     develop,                  \
     product,                  \
+    notproduct,               \
+    range,                    \
+    constraint)               \
+                              \
+  CDS_FLAGS(                  \
+    develop,                  \
+    develop_pd,               \
+    product,                  \
+    product_pd,               \
     notproduct,               \
     range,                    \
     constraint)               \
@@ -104,6 +115,15 @@
     constraint)               \
                               \
   RUNTIME_OS_FLAGS(           \
+    develop,                  \
+    develop_pd,               \
+    product,                  \
+    product_pd,               \
+    notproduct,               \
+    range,                    \
+    constraint)               \
+                              \
+  DEBUG_RUNTIME_FLAGS(        \
     develop,                  \
     develop_pd,               \
     product,                  \

@@ -29,7 +29,7 @@
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
  * @run main/othervm MacKAT
- * @run main/othervm MacKAT sm
+ * @run main/othervm -Djava.security.manager=allow MacKAT sm
  */
 
 import java.io.UnsupportedEncodingException;

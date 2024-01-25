@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,111 +25,83 @@
  * @test
  * @bug 8240248
  * @summary Add C2 x86 Superword support for scalar logical reduction optimizations : int test
- *
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
- *      -XX:CompileThresholdScaling=0.1
- *      -XX:-TieredCompilation
- *      -XX:+SuperWordReductions
- *      -XX:LoopMaxUnroll=2
- *      compiler.loopopts.superword.RedTest_int
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
- *      -XX:CompileThresholdScaling=0.1
- *      -XX:-SuperWordReductions
- *      -XX:LoopMaxUnroll=2
- *      compiler.loopopts.superword.RedTest_int
- *
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
- *      -XX:CompileThresholdScaling=0.1
- *      -XX:-TieredCompilation
- *      -XX:+SuperWordReductions
- *      -XX:LoopMaxUnroll=4
- *      compiler.loopopts.superword.RedTest_int
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
- *      -XX:CompileThresholdScaling=0.1
- *      -XX:-SuperWordReductions
- *      -XX:LoopMaxUnroll=4
- *      compiler.loopopts.superword.RedTest_int
- *
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
- *      -XX:CompileThresholdScaling=0.1
- *      -XX:-TieredCompilation
- *      -XX:+SuperWordReductions
- *      -XX:LoopMaxUnroll=8
- *      compiler.loopopts.superword.RedTest_int
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
- *      -XX:CompileThresholdScaling=0.1
- *      -XX:-SuperWordReductions
- *      -XX:LoopMaxUnroll=8
- *      compiler.loopopts.superword.RedTest_int
- *
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
- *      -XX:CompileThresholdScaling=0.1
- *      -XX:-TieredCompilation
- *      -XX:+SuperWordReductions
- *      -XX:LoopMaxUnroll=16
- *      compiler.loopopts.superword.RedTest_int
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
- *      -XX:CompileThresholdScaling=0.1
- *      -XX:-SuperWordReductions
- *      -XX:LoopMaxUnroll=16
- *      compiler.loopopts.superword.RedTest_int
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.RedTest_int
  */
 
 package compiler.loopopts.superword;
+
+import compiler.lib.ir_framework.*;
 
 public class RedTest_int {
     static final int NUM = 1024;
     static final int ITER = 8000;
     public static void main(String[] args) throws Exception {
+        TestFramework framework = new TestFramework();
+        framework.addFlags("-XX:+IgnoreUnrecognizedVMOptions",
+                           "-XX:LoopUnrollLimit=250",
+                           "-XX:CompileThresholdScaling=0.1");
+        int i = 0;
+        Scenario[] scenarios = new Scenario[6];
+        for (int maxUnroll : new int[] {4, 8, 16}) {
+            scenarios[i] = new Scenario(i, "-XX:+SuperWordReductions",
+                                           "-XX:LoopMaxUnroll=" + maxUnroll,
+                                           "-XX:-TieredCompilation");
+            i++;
+        }
+        for (int maxUnroll : new int[] {4, 8, 16}) {
+            scenarios[i] = new Scenario(i, "-XX:-SuperWordReductions",
+                                           "-XX:LoopMaxUnroll=" + maxUnroll);
+            i++;
+        }
+        framework.addScenarios(scenarios);
+        framework.start();
+    }
+
+    @Run(test = {"sumReductionImplement",
+                 "orReductionImplement",
+                 "andReductionImplement",
+                 "xorReductionImplement",
+                 "mulReductionImplement"},
+         mode = RunMode.STANDALONE)
+    public void runTests() throws Exception {
         int[] a = new int[NUM];
         int[] b = new int[NUM];
         int[] c = new int[NUM];
-        int[] d = new int[NUM];
         reductionInit1(a, b, c);
         int total = 0;
-        int valid = 0;
+        int valid = 1454604288;
         for (int j = 0; j < ITER; j++) {
-            total = sumReductionImplement(a, b, c, d);
-        }
-        for (int j = 0; j < d.length; j++) {
-            valid += d[j];
+            total = sumReductionImplement(a, b, c, total);
         }
         testCorrectness(total, valid, "Add Reduction");
 
-        valid = 0;
+        total = 0;
+        valid = 91586175;
         for (int j = 0; j < ITER; j++) {
-            total = orReductionImplement(a, b, c, d);
-        }
-        for (int j = 0; j < d.length; j++) {
-            valid |= d[j];
+            total = orReductionImplement(a, b, c, total);
         }
         testCorrectness(total, valid, "Or Reduction");
 
-        valid = -1;
+        total = -1;
+        valid = 91492404;
         for (int j = 0; j < ITER; j++) {
-            total = andReductionImplement(a, b, c, d);
-        }
-        for (int j = 0; j < d.length; j++) {
-            valid &= d[j];
+            total = andReductionImplement(a, b, c, total);
         }
         testCorrectness(total, valid, "And Reduction");
 
+        total = -1;
         valid = -1;
         for (int j = 0; j < ITER; j++) {
-            total = xorReductionImplement(a, b, c, d);
-        }
-        for (int j = 0; j < d.length; j++) {
-            valid ^= d[j];
+            total = xorReductionImplement(a, b, c, total);
         }
         testCorrectness(total, valid, "Xor Reduction");
 
         reductionInit2(a, b, c);
-        valid = 1;
+        total = 1;
+        valid = 1690042369;
         for (int j = 0; j < ITER; j++) {
-            total = mulReductionImplement(a, b, c, d);
-        }
-        for (int j = 0; j < d.length; j++) {
-            valid *= d[j];
+            total = mulReductionImplement(a, b, c, total);
         }
         testCorrectness(total, valid, "Mul Reduction");
     }
@@ -157,67 +129,87 @@ public class RedTest_int {
     }
 
 
+    @Test
+    @IR(applyIf = {"SuperWordReductions", "false"},
+        failOn = {IRNode.ADD_REDUCTION_VI})
+    @IR(applyIfCPUFeature = {"sse4.1", "true"},
+        applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
+        counts = {IRNode.ADD_REDUCTION_VI, ">= 1", IRNode.ADD_REDUCTION_VI, "<= 2"}) // one for main-loop, one for vector-post-loop
     public static int sumReductionImplement(
             int[] a,
             int[] b,
             int[] c,
-            int[] d) {
-        int total = 0;
+            int total) {
         for (int i = 0; i < a.length; i++) {
-            d[i] = (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
-            total += d[i];
+            total += (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
         }
         return total;
     }
 
+    @Test
+    @IR(applyIf = {"SuperWordReductions", "false"},
+        failOn = {IRNode.OR_REDUCTION_V})
+    @IR(applyIfCPUFeature = {"sse4.1", "true"},
+        applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
+        counts = {IRNode.OR_REDUCTION_V, ">= 1", IRNode.OR_REDUCTION_V, "<= 2"}) // one for main-loop, one for vector-post-loop
     public static int orReductionImplement(
             int[] a,
             int[] b,
             int[] c,
-            int[] d) {
-        int total = 0;
+            int total) {
         for (int i = 0; i < a.length; i++) {
-            d[i] = (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
-            total |= d[i];
+            total |= (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
         }
         return total;
     }
 
+    @Test
+    @IR(applyIf = {"SuperWordReductions", "false"},
+        failOn = {IRNode.AND_REDUCTION_V})
+    @IR(applyIfCPUFeature = {"sse4.1", "true"},
+        applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
+        counts = {IRNode.AND_REDUCTION_V, ">= 1", IRNode.AND_REDUCTION_V, "<= 2"}) // one for main-loop, one for vector-post-loop
     public static int andReductionImplement(
             int[] a,
             int[] b,
             int[] c,
-            int[] d) {
-        int total = -1;
+            int total) {
         for (int i = 0; i < a.length; i++) {
-            d[i] = (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
-            total &= d[i];
+            total &= (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
         }
         return total;
     }
 
+    @Test
+    @IR(applyIf = {"SuperWordReductions", "false"},
+        failOn = {IRNode.XOR_REDUCTION_V})
+    @IR(applyIfCPUFeature = {"sse4.1", "true"},
+        applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
+        counts = {IRNode.XOR_REDUCTION_V, ">= 1", IRNode.XOR_REDUCTION_V, "<= 2"}) // one for main-loop, one for vector-post-loop
     public static int xorReductionImplement(
             int[] a,
             int[] b,
             int[] c,
-            int[] d) {
-        int total = -1;
+            int total) {
         for (int i = 0; i < a.length; i++) {
-            d[i] = (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
-            total ^= d[i];
+            total ^= (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
         }
         return total;
     }
 
+    @Test
+    @IR(applyIf = {"SuperWordReductions", "false"},
+        failOn = {IRNode.MUL_REDUCTION_VI})
+    @IR(applyIfCPUFeature = {"sse4.1", "true"},
+        applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
+        counts = {IRNode.MUL_REDUCTION_VI, ">= 1", IRNode.MUL_REDUCTION_VI, "<= 2"}) // one for main-loop, one for vector-post-loop
     public static int mulReductionImplement(
             int[] a,
             int[] b,
             int[] c,
-            int[] d) {
-        int total = 1;
+            int total) {
         for (int i = 0; i < a.length; i++) {
-            d[i] = (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
-            total = total*d[i];
+            total *= (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
         }
         return total;
     }
@@ -226,12 +218,10 @@ public class RedTest_int {
             int total,
             int valid,
             String op) throws Exception {
-        if (total == valid) {
-            System.out.println(op + ": Success");
-        } else {
-            System.out.println("Invalid total: " + total);
-            System.out.println("Expected value = " + valid);
-            throw new Exception(op + ": Failed");
+        if (total != valid) {
+            throw new Exception(
+                "Invalid total: " + total + " " +
+                "Expected value = " + valid + " " + op + ": Failed");
         }
     }
 }

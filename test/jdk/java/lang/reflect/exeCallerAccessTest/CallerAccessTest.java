@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,47 +24,22 @@
 
 /**
  * @test
- * @bug 8221530
- * @summary Test uses custom launcher that starts VM using JNI that verifies
- *          reflection API with null caller class
+ * @bug 8221530 8221642
  * @library /test/lib
- * @requires os.family != "aix"
  * @run main/native CallerAccessTest
  */
 
 // Test disabled on AIX since we cannot invoke the JVM on the primordial thread.
 
-import java.io.File;
-import java.util.Map;
 import jdk.test.lib.Platform;
-import jdk.test.lib.Utils;
-import jdk.test.lib.process.OutputAnalyzer;
-
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import jdk.test.lib.process.ProcessTools;
 
 public class CallerAccessTest {
-    public static void main(String[] args) throws IOException {
-        Path launcher = Paths.get(System.getProperty("test.nativepath"), "CallerAccessTest");
-        ProcessBuilder pb = new ProcessBuilder(launcher.toString());
-        Map<String, String> env = pb.environment();
-
-        String libName = Platform.isWindows() ? "bin" : "lib";
-        Path libPath = Paths.get(Utils.TEST_JDK).resolve(libName);
-        String libDir = libPath.toAbsolutePath().toString();
-        String serverDir = libPath.resolve("server").toAbsolutePath().toString();
-
-        // set up shared library path
-        String sharedLibraryPathEnvName = Platform.sharedLibraryPathVariableName();
-        env.compute(sharedLibraryPathEnvName,
-                    (k, v) -> (v == null) ? libDir : v + File.pathSeparator + libDir);
-        env.compute(sharedLibraryPathEnvName,
-                    (k, v) -> (v == null) ? serverDir : v + File.pathSeparator + serverDir);
-
-        System.out.println("Launching: " + launcher + " shared library path: " +
-                           env.get(sharedLibraryPathEnvName));
-        new OutputAnalyzer(pb.start()).shouldHaveExitValue(0);
+    public static void main(String[] args) throws Exception {
+        ProcessBuilder pb = ProcessTools.createNativeTestProcessBuilder("CallerAccessTest");
+        System.out.println("Launching: " + pb.command() + " shared library path: " +
+                           pb.environment().get(Platform.sharedLibraryPathVariableName()));
+        ProcessTools.executeProcess(pb).shouldHaveExitValue(0);
     }
 }
 

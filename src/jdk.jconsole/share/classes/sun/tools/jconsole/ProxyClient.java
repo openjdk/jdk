@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,8 +87,8 @@ public class ProxyClient implements JConsoleContext {
     private boolean vmConnector = false;
     private boolean sslRegistry = false;
     private boolean sslStub = false;
-    final private String connectionName;
-    final private String displayName;
+    private final String connectionName;
+    private final String displayName;
 
     private ClassLoadingMXBean    classLoadingMBean = null;
     private CompilationMXBean     compilationMBean = null;
@@ -103,7 +103,7 @@ public class ProxyClient implements JConsoleContext {
     private List<MemoryPoolProxy>           memoryPoolProxies = null;
     private List<GarbageCollectorMXBean>    garbageCollectorMBeans = null;
 
-    final static private String HOTSPOT_DIAGNOSTIC_MXBEAN_NAME =
+    private static final String HOTSPOT_DIAGNOSTIC_MXBEAN_NAME =
         "com.sun.management:type=HotSpotDiagnostic";
 
     private ProxyClient(String hostName, int port,
@@ -608,11 +608,7 @@ public class ProxyClient implements JConsoleContext {
                 try {
                     MBeanInfo info = server.getMBeanInfo(o);
                     result.put(o, info);
-                } catch (IntrospectionException e) {
-                    // TODO: should log the error
-                } catch (InstanceNotFoundException e) {
-                    // TODO: should log the error
-                } catch (ReflectionException e) {
+                } catch (IntrospectionException | ReflectionException | InstanceNotFoundException e) {
                     // TODO: should log the error
                 }
             }

@@ -27,11 +27,9 @@ package jdk.jfr.internal.consumer;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
-import java.time.Instant;
 
 import jdk.jfr.Recording;
 import jdk.jfr.RecordingState;
-import jdk.jfr.internal.Utils;
 import jdk.jfr.internal.SecuritySupport;
 import jdk.jfr.internal.SecuritySupport.SafePath;
 import jdk.jfr.internal.management.EventByteStream;
@@ -63,9 +61,10 @@ public final class OngoingStream extends EventByteStream {
         this.blockSize = blockSize;
         this.startTimeNanos = startTimeNanos;
         this.endTimeNanos = endTimeNanos;
-        this.repositoryFiles = new RepositoryFiles(SecuritySupport.PRIVILEGED, null);
+        this.repositoryFiles = new RepositoryFiles(SecuritySupport.PRIVILEGED, null, false);
     }
 
+    @Override
     public synchronized byte[] read() throws IOException {
         try {
             return readBytes();
@@ -215,6 +214,7 @@ public final class OngoingStream extends EventByteStream {
                 return false;
             }
             input = new RecordingInput(path.toFile(), SecuritySupport.PRIVILEGED);
+            input.setStreamed();
             header = new ChunkHeader(input);
         }
         return true;

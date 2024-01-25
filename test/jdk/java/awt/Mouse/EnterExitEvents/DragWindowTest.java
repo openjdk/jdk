@@ -34,11 +34,23 @@
  * @run main DragWindowTest
  */
 
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
+import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.Rectangle;
+import java.awt.Robot;
+import java.awt.Panel;
+import java.awt.Point;
+import java.awt.Window;
+import java.awt.event.InputEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JButton;
+import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
 
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
 
 import test.java.awt.regtesthelpers.Util;
 
@@ -55,7 +67,7 @@ public class DragWindowTest {
     public static void main(String[] args) throws Exception {
 
         Robot robot = new Robot();
-        robot.setAutoDelay(50);
+        robot.setAutoDelay(100);
 
         SwingUtilities.invokeAndWait(new Runnable() {
 
@@ -65,6 +77,7 @@ public class DragWindowTest {
             }
         });
 
+        robot.delay(250);
         robot.waitForIdle();
 
         Point pointToClick = Util.invokeOnEDT(new Callable<Point>() {
@@ -134,6 +147,7 @@ public class DragWindowTest {
         panel.add(button, BorderLayout.CENTER);
 
         frame.getContentPane().add(panel);
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
 
     }

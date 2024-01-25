@@ -35,7 +35,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 6509774
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.Bug6509774
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.Bug6509774
  * @run testng/othervm stream.Bug6509774
  * @summary Test Property javax.xml.stream.supportDTD, DTD events are now returned even if supportDTD=false.
  */

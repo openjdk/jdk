@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,7 +118,7 @@ public class TestUtils {
      * @throws nsk.share.Failure (given exception is set as Failure cause)
      *
      */
-    public static void unexpctedException(Throwable exception) {
+    public static void unexpectedException(Throwable exception) {
         throw new Failure("Unexpected exception: " + exception, exception);
     }
 

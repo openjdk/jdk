@@ -295,13 +295,16 @@ import java.util.function.LongConsumer;
  */
 public interface Spliterator<T> {
     /**
-     * If a remaining element exists, performs the given action on it,
+     * If a remaining element exists: performs the given action on it,
      * returning {@code true}; else returns {@code false}.  If this
      * Spliterator is {@link #ORDERED} the action is performed on the
      * next element in encounter order.  Exceptions thrown by the
      * action are relayed to the caller.
+     * <p>
+     * Subsequent behavior of a spliterator is unspecified if the action throws
+     * an exception.
      *
-     * @param action The action
+     * @param action The action whose operation is performed at-most once
      * @return {@code false} if no remaining elements existed
      * upon entry to this method, else {@code true}.
      * @throws NullPointerException if the specified action is null
@@ -314,6 +317,9 @@ public interface Spliterator<T> {
      * throws an exception.  If this Spliterator is {@link #ORDERED}, actions
      * are performed in encounter order.  Exceptions thrown by the action
      * are relayed to the caller.
+     * <p>
+     * Subsequent behavior of a spliterator is unspecified if the action throws
+     * an exception.
      *
      * @implSpec
      * The default implementation repeatedly invokes {@link #tryAdvance} until
@@ -613,6 +619,9 @@ public interface Spliterator<T> {
          * Spliterator is {@link #ORDERED} the action is performed on the
          * next element in encounter order.  Exceptions thrown by the
          * action are relayed to the caller.
+         * <p>
+         * Subsequent behavior of a spliterator is unspecified if the action throws
+         * an exception.
          *
          * @param action The action
          * @return {@code false} if no remaining elements existed
@@ -628,6 +637,9 @@ public interface Spliterator<T> {
          * action throws an exception.  If this Spliterator is {@link #ORDERED},
          * actions are performed in encounter order.  Exceptions thrown by the
          * action are relayed to the caller.
+         * <p>
+         * Subsequent behavior of a spliterator is unspecified if the action throws
+         * an exception.
          *
          * @implSpec
          * The default implementation repeatedly invokes {@link #tryAdvance}
@@ -647,6 +659,7 @@ public interface Spliterator<T> {
      * A Spliterator specialized for {@code int} values.
      * @since 1.8
      */
+    @SuppressWarnings("overloads")
     public interface OfInt extends OfPrimitive<Integer, IntConsumer, OfInt> {
 
         @Override
@@ -711,6 +724,7 @@ public interface Spliterator<T> {
      * A Spliterator specialized for {@code long} values.
      * @since 1.8
      */
+    @SuppressWarnings("overloads")
     public interface OfLong extends OfPrimitive<Long, LongConsumer, OfLong> {
 
         @Override
@@ -775,6 +789,7 @@ public interface Spliterator<T> {
      * A Spliterator specialized for {@code double} values.
      * @since 1.8
      */
+    @SuppressWarnings("overloads")
     public interface OfDouble extends OfPrimitive<Double, DoubleConsumer, OfDouble> {
 
         @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,48 +64,49 @@ import com.sun.tools.javac.util.Name;
  *  deletion without notice.</b> */
 public class ClassFile {
 
-    public final static int JAVA_MAGIC = 0xCAFEBABE;
+    public static final int JAVA_MAGIC = 0xCAFEBABE;
 
     // see Target
-    public final static int CONSTANT_Utf8 = 1;
-    public final static int CONSTANT_Unicode = 2;
-    public final static int CONSTANT_Integer = 3;
-    public final static int CONSTANT_Float = 4;
-    public final static int CONSTANT_Long = 5;
-    public final static int CONSTANT_Double = 6;
-    public final static int CONSTANT_Class = 7;
-    public final static int CONSTANT_String = 8;
-    public final static int CONSTANT_Fieldref = 9;
-    public final static int CONSTANT_Methodref = 10;
-    public final static int CONSTANT_InterfaceMethodref = 11;
-    public final static int CONSTANT_NameandType = 12;
-    public final static int CONSTANT_MethodHandle = 15;
-    public final static int CONSTANT_MethodType = 16;
-    public final static int CONSTANT_Dynamic = 17;
-    public final static int CONSTANT_InvokeDynamic = 18;
-    public final static int CONSTANT_Module = 19;
-    public final static int CONSTANT_Package = 20;
+    public static final int CONSTANT_Utf8 = 1;
+    public static final int CONSTANT_Unicode = 2;
+    public static final int CONSTANT_Integer = 3;
+    public static final int CONSTANT_Float = 4;
+    public static final int CONSTANT_Long = 5;
+    public static final int CONSTANT_Double = 6;
+    public static final int CONSTANT_Class = 7;
+    public static final int CONSTANT_String = 8;
+    public static final int CONSTANT_Fieldref = 9;
+    public static final int CONSTANT_Methodref = 10;
+    public static final int CONSTANT_InterfaceMethodref = 11;
+    public static final int CONSTANT_NameandType = 12;
+    public static final int CONSTANT_MethodHandle = 15;
+    public static final int CONSTANT_MethodType = 16;
+    public static final int CONSTANT_Dynamic = 17;
+    public static final int CONSTANT_InvokeDynamic = 18;
+    public static final int CONSTANT_Module = 19;
+    public static final int CONSTANT_Package = 20;
 
-    public final static int REF_getField = 1;
-    public final static int REF_getStatic = 2;
-    public final static int REF_putField = 3;
-    public final static int REF_putStatic = 4;
-    public final static int REF_invokeVirtual = 5;
-    public final static int REF_invokeStatic = 6;
-    public final static int REF_invokeSpecial = 7;
-    public final static int REF_newInvokeSpecial = 8;
-    public final static int REF_invokeInterface = 9;
+    public static final int REF_getField = 1;
+    public static final int REF_getStatic = 2;
+    public static final int REF_putField = 3;
+    public static final int REF_putStatic = 4;
+    public static final int REF_invokeVirtual = 5;
+    public static final int REF_invokeStatic = 6;
+    public static final int REF_invokeSpecial = 7;
+    public static final int REF_newInvokeSpecial = 8;
+    public static final int REF_invokeInterface = 9;
 
-    public final static int MAX_PARAMETERS = 0xff;
-    public final static int MAX_DIMENSIONS = 0xff;
-    public final static int MAX_CODE = 0xffff;
-    public final static int MAX_LOCALS = 0xffff;
-    public final static int MAX_STACK = 0xffff;
+    public static final int MAX_PARAMETERS = 0xff;
+    public static final int MAX_DIMENSIONS = 0xff;
+    public static final int MAX_CODE = 0xffff;
+    public static final int MAX_LOCALS = 0xffff;
+    public static final int MAX_STACK = 0xffff;
 
-    public final static int PREVIEW_MINOR_VERSION = 0xffff;
+    public static final int PREVIEW_MINOR_VERSION = 0xffff;
 
     public enum Version {
         V45_3(45, 3), // base level for all attributes
+        V48(48, 0),   // JDK 1.4
         V49(49, 0),   // JDK 1.5: enum, generics, annotations
         V50(50, 0),   // JDK 1.6: stackmaps
         V51(51, 0),   // JDK 1.7
@@ -118,7 +119,14 @@ public class ClassFile {
         V58(58, 0),   // JDK 14
         V59(59, 0),   // JDK 15
         V60(60, 0),   // JDK 16
-        V61(61, 0);   // JDK 17
+        V61(61, 0),   // JDK 17
+        V62(62, 0),   // JDK 18
+        V63(63, 0),   // JDK 19
+        V64(64, 0),   // JDK 20
+        V65(65, 0),   // JDK 21
+        V66(66, 0),   // JDK 22
+        V67(67, 0),   // JDK 23
+        ; // Reduce code churn when appending new constants
         Version(int major, int minor) {
             this.major = major;
             this.minor = minor;
@@ -161,24 +169,8 @@ public class ClassFile {
      * Note: the naming is the inverse of that used by JVMS 4.2 The Internal Form Of Names,
      * which defines "internal name" to be the form using "/" instead of "."
      */
-    public static byte[] internalize(Name name) {
-        return internalize(name.getByteArray(), name.getByteOffset(), name.getByteLength());
-    }
-
-    /**
-     * Return external representation of buf[offset..offset+len-1], converting '.' to '/'.
-     *
-     * Note: the naming is the inverse of that used by JVMS 4.2 The Internal Form Of Names,
-     * which defines "internal name" to be the form using "/" instead of "."
-     */
-    public static byte[] externalize(byte[] buf, int offset, int len) {
-        byte[] translated = new byte[len];
-        for (int j = 0; j < len; j++) {
-            byte b = buf[offset + j];
-            if (b == '.') translated[j] = (byte) '/';
-            else translated[j] = b;
-        }
-        return translated;
+    public static Name internalize(Name name) {
+        return name.table.names.fromString(name.toString().replace('/', '.'));
     }
 
     /**
@@ -187,7 +179,17 @@ public class ClassFile {
      * Note: the naming is the inverse of that used by JVMS 4.2 The Internal Form Of Names,
      * which defines "internal name" to be the form using "/" instead of "."
      */
-    public static byte[] externalize(Name name) {
-        return externalize(name.getByteArray(), name.getByteOffset(), name.getByteLength());
+    public static Name externalize(Name name) {
+        return name.table.names.fromString(externalize(name.toString()));
+    }
+
+    /**
+     * Return external representation of given name, converting '/' to '.'.
+     *
+     * Note: the naming is the inverse of that used by JVMS 4.2 The Internal Form Of Names,
+     * which defines "internal name" to be the form using "/" instead of "."
+     */
+    public static String externalize(String name) {
+        return name.replace('.', '/');
     }
 }

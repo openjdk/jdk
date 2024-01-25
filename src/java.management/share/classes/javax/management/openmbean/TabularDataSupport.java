@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,6 @@
 
 package javax.management.openmbean;
 
-
-// java import
-//
 import com.sun.jmx.mbeanserver.GetPropertyAction;
 import com.sun.jmx.mbeanserver.Util;
 import java.io.IOException;
@@ -46,9 +43,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import jdk.internal.access.SharedSecrets;
-
-// jmx import
-//
 
 
 /**
@@ -154,6 +148,7 @@ public class TabularDataSupport
         // Since LinkedHashMap was introduced in SE 1.4, it's conceivable even
         // if very unlikely that we might be the server of a 1.3 client.  In
         // that case you'll need to set this property.  See CR 6334663.
+        @SuppressWarnings("removal")
         String useHashMapProp = AccessController.doPrivileged(
                 new GetPropertyAction("jmx.tabular.data.hash.map"));
         boolean useHashMap = "true".equalsIgnoreCase(useHashMapProp);
@@ -161,8 +156,8 @@ public class TabularDataSupport
         // Construct the empty contents HashMap
         //
         this.dataMap = useHashMap ?
-            new HashMap<Object,CompositeData>(initialCapacity, loadFactor) :
-            new LinkedHashMap<Object, CompositeData>(initialCapacity, loadFactor);
+            new HashMap<>(initialCapacity, loadFactor) :
+            new LinkedHashMap<>(initialCapacity, loadFactor);
     }
 
 
@@ -511,7 +506,7 @@ public class TabularDataSupport
 
         // create the list of indexes corresponding to each value
         List<List<?>> indexes =
-            new ArrayList<List<?>>(values.length + 1);
+            new ArrayList<>(values.length + 1);
 
         // Check all elements in values and build index list
         //
@@ -676,7 +671,7 @@ public class TabularDataSupport
     public Object clone() {
         try {
             TabularDataSupport c = (TabularDataSupport) super.clone();
-            c.dataMap = new HashMap<Object,CompositeData>(c.dataMap);
+            c.dataMap = new HashMap<>(c.dataMap);
             return c;
         }
         catch (CloneNotSupportedException e) {
@@ -741,7 +736,7 @@ public class TabularDataSupport
             }
         }
 
-        // All tests for equality were successfull
+        // All tests for equality were successful
         //
         return true;
     }

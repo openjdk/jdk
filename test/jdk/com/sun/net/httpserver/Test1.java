@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
  * @build jdk.test.lib.net.SimpleSSLContext
  * @run main/othervm Test1
  * @run main/othervm -Djava.net.preferIPv6Addresses=true Test1
- * @run main/othervm -Djdk.net.usePlainSocketImpl Test1
  * @run main/othervm -Dsun.net.httpserver.maxReqTime=10 Test1
  * @run main/othervm -Dsun.net.httpserver.nodelay=true Test1
  * @summary  Light weight HTTP server
@@ -96,11 +95,10 @@ public class Test1 extends Test {
             test (false, "https", root+"/test1", httpsport, "largefile.txt", 2730088);
             System.out.println ("OK");
         } finally {
-            delay();
             if (s1 != null)
-                s1.stop(2);
+                s1.stop(0);
             if (s2 != null)
-                s2.stop(2);
+                s2.stop(0);
             if (executor != null)
                 executor.shutdown ();
         }

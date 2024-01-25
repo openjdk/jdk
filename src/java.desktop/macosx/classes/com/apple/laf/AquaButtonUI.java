@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,24 +25,57 @@
 
 package com.apple.laf;
 
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Insets;
+import java.awt.Rectangle;
+import java.awt.RenderingHints;
+import java.awt.Stroke;
+import java.awt.event.FocusEvent;
+import java.awt.event.HierarchyEvent;
+import java.awt.event.HierarchyListener;
+import java.awt.event.MouseMotionListener;
 import java.beans.PropertyChangeEvent;
 
-import javax.swing.*;
+import javax.swing.AbstractButton;
+import javax.swing.ButtonModel;
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComponent;
+import javax.swing.JRadioButton;
+import javax.swing.JRootPane;
+import javax.swing.JToggleButton;
+import javax.swing.JToolBar;
+import javax.swing.LookAndFeel;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 import javax.swing.border.Border;
-import javax.swing.event.*;
-import javax.swing.plaf.*;
-import javax.swing.plaf.basic.*;
+import javax.swing.event.AncestorEvent;
+import javax.swing.event.AncestorListener;
+import javax.swing.plaf.ButtonUI;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.RootPaneUI;
+import javax.swing.plaf.UIResource;
+import javax.swing.plaf.basic.BasicButtonListener;
+import javax.swing.plaf.basic.BasicButtonUI;
+import javax.swing.plaf.basic.BasicGraphicsUtils;
+import javax.swing.plaf.basic.BasicHTML;
 import javax.swing.text.View;
 
-import sun.swing.SwingUtilities2;
-
 import apple.laf.JRSUIConstants.Size;
-
 import com.apple.laf.AquaButtonExtendedTypes.TypeSpecifier;
 import com.apple.laf.AquaUtilControlSize.Sizeable;
-import com.apple.laf.AquaUtils.*;
+import com.apple.laf.AquaUtils.RecyclableSingleton;
+import com.apple.laf.AquaUtils.RecyclableSingletonFromDefaultConstructor;
+import sun.swing.SwingUtilities2;
 
 public class AquaButtonUI extends BasicButtonUI implements Sizeable {
     private static final String BUTTON_TYPE = "JButton.buttonType";
@@ -326,6 +359,35 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
         }
     }
 
+    protected void paintFocus(Graphics g, AbstractButton b,
+                              Rectangle viewRect, Rectangle textRect, Rectangle iconRect) {
+        Graphics2D g2d = null;
+        Stroke oldStroke = null;
+        Object oldAntialiasingHint = null;
+        Color oldColor = g.getColor();
+        if (g instanceof Graphics2D) {
+            g2d = (Graphics2D)g;
+            oldStroke = g2d.getStroke();
+            oldAntialiasingHint = g2d.getRenderingHint(RenderingHints.KEY_ANTIALIASING);
+            g2d.setStroke(new BasicStroke(3));
+            g2d.setRenderingHint(
+                    RenderingHints.KEY_ANTIALIASING,
+                    RenderingHints.VALUE_ANTIALIAS_ON);
+
+        }
+        Color ringColor = UIManager.getColor("Focus.color");
+        g.setColor(ringColor);
+        g.drawRoundRect(5, 3, b.getWidth() - 10, b.getHeight() - 7, 15, 15);
+        if (g2d != null) {
+            // Restore old state of Java2D renderer
+            g2d.setStroke(oldStroke);
+            g2d.setRenderingHint(
+                    RenderingHints.KEY_ANTIALIASING,
+                    oldAntialiasingHint);
+        }
+        g.setColor(oldColor);
+    }
+
     protected String layoutAndGetText(final Graphics g, final AbstractButton b, final AquaButtonBorder aquaBorder, final Insets i, Rectangle viewRect, Rectangle iconRect, Rectangle textRect) {
         // re-initialize the view rect to the selected insets
         viewRect.x = i.left;
@@ -364,10 +426,23 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
 
         if (icon == null) return;
 
+        Icon selectedIcon = null;
+
+        // the fallback icon should be based on the selected state
+        if (model.isSelected()) {
+            selectedIcon = b.getSelectedIcon();
+            if (selectedIcon != null) {
+                icon = selectedIcon;
+            }
+        }
         if (!model.isEnabled()) {
             if (model.isSelected()) {
                 tmpIcon = b.getDisabledSelectedIcon();
-            } else {
+               if (tmpIcon == null) {
+                   tmpIcon = selectedIcon;
+               }
+            }
+            if (tmpIcon == null) {
                 tmpIcon = b.getDisabledIcon();
             }
         } else if (model.isPressed() && model.isArmed()) {
@@ -380,7 +455,11 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
         } else if (b.isRolloverEnabled() && model.isRollover()) {
             if (model.isSelected()) {
                 tmpIcon = b.getRolloverSelectedIcon();
-            } else {
+                if (tmpIcon == null) {
+                    tmpIcon = selectedIcon;
+                }
+            }
+            if (tmpIcon == null) {
                 tmpIcon = b.getRolloverIcon();
             }
         } else if (model.isSelected()) {
@@ -404,7 +483,7 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
     }
 
     /**
-     * As of Java 2 platform v 1.4 this method should not be used or overriden.
+     * As of Java 2 platform v 1.4 this method should not be used or overridden.
      * Use the paintText method which takes the AbstractButton argument.
      */
     protected void paintText(final Graphics g, final JComponent c, final Rectangle localTextRect, final String text) {
@@ -496,8 +575,8 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
     }
 
     static class AquaHierarchyButtonListener implements HierarchyListener {
-        // Everytime a hierarchy is change we need to check if the button if moved on or from
-        // a toolbar. If that is the case, we need to re-set the border of the button.
+        // Every time a hierarchy is changed we need to check if the button is moved on or from
+        // the toolbar. If that is the case, we need to re-set the border of the button.
         public void hierarchyChanged(final HierarchyEvent e) {
             if ((e.getChangeFlags() & HierarchyEvent.PARENT_CHANGED) == 0) return;
 

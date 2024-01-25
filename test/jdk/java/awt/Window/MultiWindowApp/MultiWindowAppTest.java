@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @summary After calling frame.toBack() dialog goes to the back on Ubuntu 12.04
  * @key headful
@@ -38,22 +38,24 @@ public class MultiWindowAppTest {
         Window win1 = new Frame();
         Window win2 = new Dialog((Frame) null);
 
+        int delay = 300;
+
         win1.setBounds(100, 100, 200, 200);
         win1.setBackground(Color.RED);
         win1.setVisible(true);
 
         Robot robot = new Robot();
-        robot.delay(200);
+        robot.delay(delay);
         robot.waitForIdle();
 
         win2.setBounds(win1.getBounds());
         win2.setVisible(true);
 
-        robot.delay(200);
+        robot.delay(delay);
         robot.waitForIdle();
 
         win1.toFront();
-        robot.delay(200);
+        robot.delay(delay);
         robot.waitForIdle();
 
         Point point = win1.getLocationOnScreen();
@@ -66,7 +68,7 @@ public class MultiWindowAppTest {
         }
 
         win1.toBack();
-        robot.delay(200);
+        robot.delay(delay);
         robot.waitForIdle();
 
         color = robot.getPixelColor(point.x + 100, point.y + 100);

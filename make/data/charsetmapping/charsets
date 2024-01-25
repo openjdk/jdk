@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
 # be packaged into the charsets provider class "StandardCharsets"
 # which is initialized at startup time by java.nio.charset.Charset,
 # compared to the charsets packaged in "ExtendedCharsets" provider,
-# which is lazy initialized.
+# which is lazily initialized.
 ########################################################
 
 charset US-ASCII US_ASCII
@@ -49,7 +49,6 @@ charset US-ASCII US_ASCII
     alias   IBM367
     alias   cp367
     alias   csASCII
-    alias   default
                                         # Other aliases
     alias   646                         # Solaris POSIX locale
     alias   iso_646.irv:1983
@@ -147,7 +146,7 @@ charset ISO-8859-1 ISO_8859_1
 charset ISO-8859-2 ISO_8859_2
     package sun.nio.cs
     type    sbcs
-    hisname ISO8859_2
+    histname ISO8859_2
     ascii   true
     alias   iso8859_2			# JDK historical
     alias   8859_2
@@ -166,7 +165,7 @@ charset ISO-8859-2 ISO_8859_2
 charset ISO-8859-4 ISO_8859_4
     package sun.nio.cs
     type    sbcs
-    hisname ISO8859_4
+    histname ISO8859_4
     ascii   true
     alias   iso8859_4			# JDK historical
     alias   iso8859-4
@@ -185,7 +184,7 @@ charset ISO-8859-4 ISO_8859_4
 charset ISO-8859-5 ISO_8859_5
     package sun.nio.cs
     type    sbcs
-    hisname ISO8859_5
+    histname ISO8859_5
     ascii   true
     alias   iso8859_5			# JDK historical
     alias   8859_5
@@ -203,7 +202,7 @@ charset ISO-8859-5 ISO_8859_5
 charset ISO-8859-7 ISO_8859_7
     package sun.nio.cs
     type    sbcs
-    hisname ISO8859_7
+    histname ISO8859_7
     ascii   true
     alias   iso8859_7			# JDK historical
     alias   8859_7
@@ -225,7 +224,7 @@ charset ISO-8859-7 ISO_8859_7
 charset ISO-8859-9 ISO_8859_9
     package sun.nio.cs
     type    sbcs
-    hisname ISO8859_9
+    histname ISO8859_9
     ascii   true
     alias   iso8859_9			# JDK historical
     alias   8859_9
@@ -244,7 +243,7 @@ charset ISO-8859-9 ISO_8859_9
 charset ISO-8859-13 ISO_8859_13
     package sun.nio.cs
     type    sbcs
-    hisname ISO8859_13
+    histname ISO8859_13
     ascii   true
     alias   iso8859_13			# JDK historical
     alias   8859_13
@@ -254,7 +253,7 @@ charset ISO-8859-13 ISO_8859_13
 charset ISO-8859-15 ISO_8859_15
     package sun.nio.cs
     type    sbcs
-    hisname ISO8859_15
+    histname ISO8859_15
     ascii   true
     alias   ISO_8859-15                # IANA alias
     alias   Latin-9
@@ -277,7 +276,7 @@ charset ISO-8859-15 ISO_8859_15
 charset ISO-8859-16 ISO_8859_16
     package sun.nio.cs
     type    sbcs
-    hisname ISO8859_16
+    histname ISO8859_16
     ascii   true
     alias   iso-ir-226
     alias   ISO_8859-16:2001
@@ -290,7 +289,7 @@ charset ISO-8859-16 ISO_8859_16
 charset KOI8-R KOI8_R
     package sun.nio.cs
     type    sbcs
-    hisname KOI8_R
+    histname KOI8_R
     ascii   true
     alias   koi8_r			# JDK historical
     alias   koi8
@@ -299,14 +298,14 @@ charset KOI8-R KOI8_R
 charset KOI8-U KOI8_U
     package sun.nio.cs
     type    sbcs
-    hisname KOI8_U
+    histname KOI8_U
     ascii   true
     alias   koi8_u
 
 charset windows-1250 MS1250
     package sun.nio.cs
     type    sbcs
-    hisname Cp1250
+    histname Cp1250
     ascii   true
     alias   cp1250			# JDK historical
     alias   cp5346			# Euro IBM CCSID
@@ -314,7 +313,7 @@ charset windows-1250 MS1250
 charset windows-1251 MS1251
     package sun.nio.cs
     type    sbcs
-    hisname Cp1251
+    histname Cp1251
     ascii   true
     alias   cp1251			# JDK historical
     alias   cp5347			# Euro IBM CCSID
@@ -323,7 +322,7 @@ charset windows-1251 MS1251
 charset windows-1252 MS1252
     package sun.nio.cs
     type    sbcs
-    hisname Cp1252
+    histname Cp1252
     ascii   true
     alias   cp1252			# JDK historical
     alias   cp5348			# Euro IBM CCSID
@@ -333,7 +332,7 @@ charset windows-1252 MS1252
 charset windows-1253 MS1253
     package sun.nio.cs
     type    sbcs
-    hisname Cp1253
+    histname Cp1253
     ascii   true
     alias   cp1253			# JDK historical
     alias   cp5349			# Euro IBM CCSID
@@ -341,7 +340,7 @@ charset windows-1253 MS1253
 charset windows-1254 MS1254
     package sun.nio.cs
     type    sbcs
-    hisname Cp1254
+    histname Cp1254
     ascii   true
     alias   cp1254			# JDK historical
     alias   cp5350			# Euro IBM CCSID
@@ -349,7 +348,7 @@ charset windows-1254 MS1254
 charset windows-1257 MS1257
     package sun.nio.cs
     type    sbcs
-    hisname Cp1257
+    histname Cp1257
     ascii   true
     alias   cp1257			# JDK historical
     alias   cp5353			# Euro IBM CCSID
@@ -358,7 +357,7 @@ charset windows-1257 MS1257
 charset IBM437 IBM437
     package sun.nio.cs
     type    sbcs
-    hisname Cp437
+    histname Cp437
     ascii   false
     alias   cp437                      #JDK historical
     alias   ibm437
@@ -370,7 +369,7 @@ charset IBM437 IBM437
 charset x-IBM737 IBM737
     package sun.nio.cs
     type    sbcs
-    hisname Cp737
+    histname Cp737
     ascii   false
     alias   cp737                      #JDK historical
     alias   ibm737
@@ -380,7 +379,7 @@ charset x-IBM737 IBM737
 charset IBM775 IBM775
     package sun.nio.cs
     type    sbcs
-    hisname Cp775
+    histname Cp775
     ascii   false
     alias   cp775                      #JDK historical
     alias   ibm775
@@ -390,7 +389,7 @@ charset IBM775 IBM775
 charset IBM850 IBM850
     package sun.nio.cs
     type    sbcs
-    hisname Cp850
+    histname Cp850
     ascii   false
     alias   cp850                      #JDK historical
     alias   ibm-850
@@ -401,7 +400,7 @@ charset IBM850 IBM850
 charset IBM852 IBM852
     package sun.nio.cs
     type    sbcs
-    hisname Cp852
+    histname Cp852
     ascii   false
     alias   cp852                      #JDK historical
     alias   ibm852
@@ -412,7 +411,7 @@ charset IBM852 IBM852
 charset IBM855 IBM855
     package sun.nio.cs
     type    sbcs
-    hisname Cp855
+    histname Cp855
     ascii   false
     alias   cp855                      #JDK historical
     alias   ibm-855
@@ -423,7 +422,7 @@ charset IBM855 IBM855
 charset IBM857 IBM857
     package sun.nio.cs
     type    sbcs
-    hisname Cp857
+    histname Cp857
     ascii   false
     alias   cp857                      #JDK historical
     alias   ibm857
@@ -434,7 +433,7 @@ charset IBM857 IBM857
 charset IBM00858 IBM858
     package sun.nio.cs
     type    sbcs
-    hisname Cp858
+    histname Cp858
     ascii   false
     alias   cp858                      #JDK historical
     alias   ccsid00858
@@ -447,7 +446,7 @@ charset IBM00858 IBM858
 charset IBM862 IBM862
     package sun.nio.cs
     type    sbcs
-    hisname Cp862
+    histname Cp862
     ascii   false
     alias   cp862                      #JDK historical
     alias   ibm862
@@ -459,7 +458,7 @@ charset IBM862 IBM862
 charset IBM866 IBM866
     package sun.nio.cs
     type    sbcs
-    hisname Cp866
+    histname Cp866
     ascii   false
     alias   cp866                      #JDK historical
     alias   ibm866
@@ -470,12 +469,17 @@ charset IBM866 IBM866
 charset x-IBM874 IBM874
     package sun.nio.cs
     type    sbcs
-    hisname Cp874
+    histname Cp874
     ascii   false
     alias   cp874                      #JDK historical
     alias   ibm874
     alias   ibm-874
     alias   874
+
+# alias for GB18030 is generated at runtime
+charset GB18030 GB18030
+    package sun.nio.cs
+    type    source
 
 ########################################################
 #
@@ -485,7 +489,7 @@ charset x-IBM874 IBM874
 charset Big5 Big5
     package sun.nio.cs.ext
     type    dbcs
-    hisname Big5
+    histname Big5
     ascii   true
     minmax  0xa1 0xf9 0x40 0xfe
     alias   csBig5               # IANA aliases
@@ -498,14 +502,14 @@ charset x-MS950-HKSCS-XP MS950_HKSCS_XP
 charset x-MS950-HKSCS MS950_HKSCS
     package sun.nio.cs.ext
     type    template
-    hisname MS950_HKSCS
+    histname MS950_HKSCS
     ascii   true
     alias   MS950_HKSCS          # JDK historical;
 
 charset x-windows-950 MS950
     package sun.nio.cs.ext
     type    dbcs
-    hisname MS950
+    histname MS950
     ascii   true
     minmax  0x81 0xfe 0x40 0xfe
     alias   ms950                # JDK historical
@@ -514,7 +518,7 @@ charset x-windows-950 MS950
 charset x-windows-874 MS874
     package sun.nio.cs.ext
     type    sbcs
-    hisname MS874
+    histname MS874
     ascii   true
     alias   ms874                # JDK historical
     alias   ms-874
@@ -531,7 +535,7 @@ charset x-EUC-TW EUC_TW
 charset Big5-HKSCS Big5_HKSCS
     package sun.nio.cs.ext
     type    template
-    hisname Big5_HKSCS
+    histname Big5_HKSCS
     ascii   true
     alias   Big5_HKSCS           # JDK historical
     alias   big5hk
@@ -550,7 +554,7 @@ charset x-Big5-HKSCS-2001 Big5_HKSCS_2001
 charset x-Big5-Solaris Big5_Solaris
     package sun.nio.cs.ext
     type    template
-    hisname Big5_Solaris
+    histname Big5_Solaris
     ascii   true
     alias   Big5_Solaris         # JDK historical
 
@@ -558,21 +562,16 @@ charset x-Big5-Solaris Big5_Solaris
 charset GBK GBK                  # Simplified Chinese
     package sun.nio.cs.ext
     type    dbcs
-    hisname GBK
+    histname GBK
     ascii   true
     minmax  0x81 0xfe 0x40 0xfe
     alias   windows-936
     alias   CP936
 
-charset GB18030 GB18030
-    package sun.nio.cs.ext
-    type    template
-    alias   gb18030-2000
-
 charset GB2312 EUC_CN
     package sun.nio.cs.ext
     type    dbcs
-    hisname EUC_CN
+    histname EUC_CN
     ascii   true
     minmax  0xa1 0xf7 0xa1 0xfe
                                  # IANA aliases
@@ -587,7 +586,7 @@ charset GB2312 EUC_CN
 charset x-mswin-936 MS936
     package sun.nio.cs.ext
     type    dbcs
-    hisname MS936
+    histname MS936
     ascii   true
     minmax  0x81 0xfe 0x40 0xfe
     alias   ms936                # JDK historical
@@ -596,7 +595,7 @@ charset x-mswin-936 MS936
 charset Shift_JIS SJIS
     package sun.nio.cs.ext
     type    dbcs
-    hisname SJIS
+    histname SJIS
     ascii   true
     minmax  0x81 0xfc 0x40 0xfc
                                  # IANA aliases
@@ -610,7 +609,7 @@ charset Shift_JIS SJIS
 charset windows-31j MS932
     package sun.nio.cs.ext
     type    dbcs
-    hisname MS932
+    histname MS932
     ascii   true
     minmax  0x81 0xfc 0x40 0xfc
     alias   MS932                # JDK historical
@@ -620,7 +619,7 @@ charset windows-31j MS932
 charset JIS_X0201 JIS_X_0201
     package sun.nio.cs.ext
     type    sbcs
-    hisname JIS_X0201
+    histname JIS_X0201
     ascii   true
     alias   JIS0201              # JDK historical
                                  # IANA aliases
@@ -631,7 +630,7 @@ charset JIS_X0201 JIS_X_0201
 charset x-JIS0208 JIS_X_0208
     package sun.nio.cs.ext
     type    dbcsonly
-    hisname JIS0208
+    histname JIS0208
     ascii   false
     minmax  0x21 0x7e 0x21 0x7e
     alias   JIS0208              # JDK historical
@@ -645,7 +644,7 @@ charset x-JIS0208 JIS_X_0208
 charset JIS_X0212-1990 JIS_X_0212
     package sun.nio.cs.ext
     type    dbcsonly
-    hisname JIS0212
+    histname JIS0212
     ascii   false
     minmax  0x21 0x7e 0x21 0x7e
     alias   JIS0212              # JDK historical
@@ -677,7 +676,7 @@ charset x-MS932_0213 MS932_0213
 charset EUC-JP EUC_JP
     package sun.nio.cs.ext
     type    template
-    hisname EUC_JP
+    histname EUC_JP
     ascii   true
     alias   euc_jp               # JDK historical
     alias   eucjis               # IANA aliases
@@ -690,7 +689,7 @@ charset EUC-JP EUC_JP
 charset x-euc-jp-linux EUC_JP_LINUX
     package sun.nio.cs.ext
     type    template
-    hisname EUC_JP_LINUX
+    histname EUC_JP_LINUX
     ascii   true
     alias   euc_jp_linux         # JDK historical
     alias   euc-jp-linux
@@ -698,7 +697,7 @@ charset x-euc-jp-linux EUC_JP_LINUX
 charset x-eucJP-Open EUC_JP_Open
     package sun.nio.cs.ext
     type    template
-    hisname EUC_JP_Solaris
+    histname EUC_JP_Solaris
     ascii   true
     alias   EUC_JP_Solaris       # JDK historical
     alias   eucJP-open
@@ -706,7 +705,7 @@ charset x-eucJP-Open EUC_JP_Open
 charset x-PCK PCK
     package sun.nio.cs.ext
     type    dbcs
-    hisname PCK
+    histname PCK
     ascii   true
     minmax  0x81 0xfc 0x40 0xfc
                                  # IANA aliases
@@ -755,7 +754,7 @@ charset x-JISAutoDetect JISAutoDetect
 charset EUC-KR EUC_KR            # Korean
     package sun.nio.cs.ext
     type    dbcs
-    hisname EUC_KR
+    histname EUC_KR
     ascii   true
     minmax  0xa1 0xfd 0xa1 0xfe
     alias   euc_kr               # JDK historical
@@ -772,7 +771,7 @@ charset EUC-KR EUC_KR            # Korean
 charset x-windows-949 MS949
     package sun.nio.cs.ext
     type    dbcs
-    hisname MS949
+    histname MS949
     ascii   true
     minmax  0x81 0xfe 0x41 0xfe
     alias   ms949                # JDK historical
@@ -783,7 +782,7 @@ charset x-windows-949 MS949
 charset x-Johab Johab
     package sun.nio.cs.ext
     type    dbcs
-    hisname x-Johab
+    histname x-Johab
     ascii   true
     minmax  0x84 0xf9 0x31 0xfe
     alias   ksc5601-1992
@@ -827,7 +826,7 @@ charset x-ISCII91 ISCII91
 charset ISO-8859-3 ISO_8859_3
     package sun.nio.cs.ext
     type    sbcs
-    hisname ISO8859_3
+    histname ISO8859_3
     ascii   true
     alias   iso8859_3            # JDK historical
     alias   8859_3
@@ -846,7 +845,7 @@ charset ISO-8859-3 ISO_8859_3
 charset ISO-8859-6 ISO_8859_6
     package sun.nio.cs.ext
     type    sbcs
-    hisname ISO8859_6
+    histname ISO8859_6
     ascii   true
     alias   iso8859_6            # JDK historical
     alias   8859_6
@@ -866,7 +865,7 @@ charset ISO-8859-6 ISO_8859_6
 charset ISO-8859-8 ISO_8859_8
     package sun.nio.cs.ext
     type    sbcs
-    hisname ISO8859_8
+    histname ISO8859_8
     ascii   true
     alias   iso8859_8            # JDK historical
     alias   8859_8
@@ -884,7 +883,7 @@ charset ISO-8859-8 ISO_8859_8
 charset x-iso-8859-11 ISO_8859_11
     package sun.nio.cs.ext
     type    sbcs
-    hisname x-iso-8859-11
+    histname x-iso-8859-11
     ascii   true
     alias   iso-8859-11
     alias   iso8859_11
@@ -892,7 +891,7 @@ charset x-iso-8859-11 ISO_8859_11
 charset TIS-620 TIS_620
     package sun.nio.cs.ext
     type    sbcs
-    hisname TIS620
+    histname TIS620
     ascii   true
     alias   tis620               # JDK historical
     alias   tis620.2533
@@ -902,28 +901,28 @@ charset TIS-620 TIS_620
 charset windows-1255 MS1255
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp1255
+    histname Cp1255
     ascii   true
     alias   cp1255               # JDK historical
 
 charset windows-1256 MS1256
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp1256
+    histname Cp1256
     ascii   true
     alias   cp1256               # JDK historical
 
 charset windows-1258 MS1258
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp1258
+    histname Cp1258
     ascii   true
     alias   cp1258               # JDK historical
 
 charset x-IBM942 IBM942          # IBM & PC/MSDOS encodings
     package sun.nio.cs.ext
     type    dbcs
-    hisname Cp942
+    histname Cp942
     ascii   false
     minmax  0x81 0xfc 0x40 0xfc
     alias   cp942                # JDK historical
@@ -947,7 +946,7 @@ charset x-IBM942C IBM942C
 charset x-IBM943 IBM943
     package sun.nio.cs.ext
     type    dbcs
-    hisname Cp943
+    histname Cp943
     ascii   false
     minmax  0x81 0xfc 0x40 0xfc
     alias   cp943                # JDK historical
@@ -966,7 +965,7 @@ charset x-IBM943C IBM943C
 charset x-IBM948 IBM948
     package sun.nio.cs.ext
     type    dbcs
-    hisname Cp948
+    histname Cp948
     ascii   true
     minmax  0x81 0xfe 0x40 0xfc
     alias   cp948                # JDK historical
@@ -977,7 +976,7 @@ charset x-IBM948 IBM948
 charset x-IBM950 IBM950
     package sun.nio.cs.ext
     type    dbcs
-    hisname Cp950
+    histname Cp950
     ascii   true
     minmax  0x81 0xfe 0x40 0xfe
     alias   cp950                # JDK historical
@@ -988,7 +987,7 @@ charset x-IBM950 IBM950
 charset x-IBM930 IBM930
     package sun.nio.cs.ext
     type    ebcdic
-    hisname Cp930
+    histname Cp930
     ascii   false
     minmax  0x40 0x7f 0x40 0xfe
     alias   cp930                # JDK historical
@@ -999,7 +998,7 @@ charset x-IBM930 IBM930
 charset x-IBM935 IBM935
     package sun.nio.cs.ext
     type    ebcdic
-    hisname Cp935
+    histname Cp935
     ascii   false
     minmax  0x40 0x7f 0x40 0xfe
     alias   cp935                # JDK historical
@@ -1010,7 +1009,7 @@ charset x-IBM935 IBM935
 charset x-IBM937 IBM937
     package sun.nio.cs.ext
     type    ebcdic
-    hisname Cp937
+    histname Cp937
     ascii   false
     minmax  0x40 0xe2 0x40 0xfe
     alias   cp937                # JDK historical
@@ -1021,7 +1020,7 @@ charset x-IBM937 IBM937
 charset x-IBM856 IBM856
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp856
+    histname Cp856
     ascii   false
     alias   cp856                # JDK historical
     alias   ibm-856
@@ -1031,7 +1030,7 @@ charset x-IBM856 IBM856
 charset IBM860 IBM860
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp860
+    histname Cp860
     ascii   false
     alias   cp860                # JDK historical
     alias   ibm860
@@ -1042,7 +1041,7 @@ charset IBM860 IBM860
 charset IBM861 IBM861
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp861
+    histname Cp861
     ascii   false
     alias   cp861                # JDK historical
     alias   ibm861
@@ -1054,7 +1053,7 @@ charset IBM861 IBM861
 charset IBM863 IBM863
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp863
+    histname Cp863
     ascii   false
     alias   cp863                # JDK historical
     alias   ibm863
@@ -1065,7 +1064,7 @@ charset IBM863 IBM863
 charset IBM864 IBM864
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp864
+    histname Cp864
     ascii   false
     alias   cp864                # JDK historical
     alias   ibm864
@@ -1077,7 +1076,7 @@ charset IBM864 IBM864
 charset IBM865 IBM865
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp865
+    histname Cp865
     ascii   false
     alias   cp865                # JDK historical
     alias   ibm865
@@ -1088,7 +1087,7 @@ charset IBM865 IBM865
 charset IBM868 IBM868
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp868
+    histname Cp868
     ascii   false
     alias   cp868                # JDK historical
     alias   ibm868
@@ -1100,7 +1099,7 @@ charset IBM868 IBM868
 charset IBM869 IBM869
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp869
+    histname Cp869
     ascii   false
     alias   cp869                # JDK historical
     alias   ibm869
@@ -1112,7 +1111,7 @@ charset IBM869 IBM869
 charset x-IBM921 IBM921
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp921
+    histname Cp921
     ascii   false
     alias   cp921                # JDK historical
     alias   ibm921
@@ -1122,7 +1121,7 @@ charset x-IBM921 IBM921
 charset x-IBM1006 IBM1006
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp1006
+    histname Cp1006
     ascii   false
     alias   cp1006               # JDK historical
     alias   ibm1006
@@ -1132,7 +1131,7 @@ charset x-IBM1006 IBM1006
 charset x-IBM1046 IBM1046
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp1046
+    histname Cp1046
     ascii   false
     alias   cp1046               # JDK historical
     alias   ibm1046
@@ -1142,7 +1141,7 @@ charset x-IBM1046 IBM1046
 charset IBM1047 IBM1047
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp1047
+    histname Cp1047
     ascii   false
     alias   cp1047               # JDK historical
     alias   ibm-1047
@@ -1151,7 +1150,7 @@ charset IBM1047 IBM1047
 charset x-IBM1098 IBM1098
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp1098
+    histname Cp1098
     ascii   false
     alias   cp1098               # JDK historical
     alias   ibm1098
@@ -1161,7 +1160,7 @@ charset x-IBM1098 IBM1098
 charset IBM037 IBM037
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp037
+    histname Cp037
     ascii   false
     alias   cp037                # JDK historical
     alias   ibm037
@@ -1182,7 +1181,7 @@ charset IBM037 IBM037
 charset x-IBM1025 IBM1025
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp1025
+    histname Cp1025
     ascii   false
     alias   cp1025               # JDK historical
     alias   ibm1025
@@ -1192,7 +1191,7 @@ charset x-IBM1025 IBM1025
 charset IBM1026 IBM1026
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp1026
+    histname Cp1026
     ascii   false
     alias   cp1026               # JDK historical
     alias   ibm1026
@@ -1202,7 +1201,7 @@ charset IBM1026 IBM1026
 charset x-IBM1112 IBM1112
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp1112
+    histname Cp1112
     ascii   false
     alias   cp1112               # JDK historical
     alias   ibm1112
@@ -1212,7 +1211,7 @@ charset x-IBM1112 IBM1112
 charset x-IBM1122 IBM1122
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp1122
+    histname Cp1122
     ascii   false
     alias   cp1122               # JDK historical
     alias   ibm1122
@@ -1222,7 +1221,7 @@ charset x-IBM1122 IBM1122
 charset x-IBM1123 IBM1123
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp1123
+    histname Cp1123
     ascii   false
     alias   cp1123               # JDK historical
     alias   ibm1123
@@ -1232,7 +1231,7 @@ charset x-IBM1123 IBM1123
 charset x-IBM1124 IBM1124
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp1124
+    histname Cp1124
     ascii   false
     alias   cp1124               # JDK historical
     alias   ibm1124
@@ -1242,7 +1241,7 @@ charset x-IBM1124 IBM1124
 charset x-IBM1129 IBM1129
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp1129
+    histname Cp1129
     ascii   false
     alias   cp1129               # JDK historical
     alias   ibm1129
@@ -1252,7 +1251,7 @@ charset x-IBM1129 IBM1129
 charset x-IBM1364 IBM1364
     package sun.nio.cs.ext
     type    ebcdic
-    hisname Cp1364
+    histname Cp1364
     ascii   false
     minmax  0x40 0xde 0x40 0xfe
     alias   cp1364
@@ -1263,7 +1262,7 @@ charset x-IBM1364 IBM1364
 charset IBM273 IBM273
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp273
+    histname Cp273
     ascii   false
     alias   cp273               # JDK historical
     alias   ibm273
@@ -1273,7 +1272,7 @@ charset IBM273 IBM273
 charset IBM277 IBM277
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp277
+    histname Cp277
     ascii   false
     alias   cp277               # JDK historical
     alias   ibm277
@@ -1283,7 +1282,7 @@ charset IBM277 IBM277
 charset IBM278 IBM278
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp278
+    histname Cp278
     ascii   false
     alias   cp278               # JDK historical
     alias   ibm278
@@ -1296,7 +1295,7 @@ charset IBM278 IBM278
 charset IBM280 IBM280
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp280
+    histname Cp280
     ascii   false
     alias   cp280               # JDK historical
     alias   ibm280
@@ -1306,7 +1305,7 @@ charset IBM280 IBM280
 charset IBM284 IBM284
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp284
+    histname Cp284
     ascii   false
     alias   cp284               # JDK historical
     alias   ibm284
@@ -1318,7 +1317,7 @@ charset IBM284 IBM284
 charset IBM285 IBM285
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp285
+    histname Cp285
     ascii   false
     alias   cp285               # JDK historical
     alias   ibm285
@@ -1332,7 +1331,7 @@ charset IBM285 IBM285
 charset IBM297 IBM297
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp297
+    histname Cp297
     ascii   false
     alias   cp297               # JDK historical
     alias   ibm297
@@ -1345,7 +1344,7 @@ charset IBM297 IBM297
 charset IBM420 IBM420
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp420
+    histname Cp420
     ascii   false
     alias   cp420               # JDK historical
     alias   ibm420
@@ -1357,7 +1356,7 @@ charset IBM420 IBM420
 charset IBM424 IBM424
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp424
+    histname Cp424
     ascii   false
     alias   cp424               # JDK historical
     alias   ibm424
@@ -1369,7 +1368,7 @@ charset IBM424 IBM424
 charset IBM500 IBM500
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp500
+    histname Cp500
     ascii   false
     alias   cp500               # JDK historical
     alias   ibm500
@@ -1382,7 +1381,7 @@ charset IBM500 IBM500
 charset x-IBM833 IBM833
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp833
+    histname Cp833
     ascii   false
      alias   cp833
      alias   ibm833
@@ -1401,7 +1400,7 @@ charset x-IBM834 IBM834 # EBCDIC DBCS-only Korean
 charset IBM-Thai IBM838
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp838
+    histname Cp838
     ascii   false
     alias   cp838               # JDK historical
     alias   ibm838
@@ -1411,7 +1410,7 @@ charset IBM-Thai IBM838
 charset IBM870 IBM870
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp870
+    histname Cp870
     ascii   false
     alias   cp870               # JDK historical
     alias   ibm870
@@ -1424,7 +1423,7 @@ charset IBM870 IBM870
 charset IBM871 IBM871
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp871
+    histname Cp871
     ascii   false
     alias   cp871               # JDK historical
     alias   ibm871
@@ -1436,7 +1435,7 @@ charset IBM871 IBM871
 charset x-IBM875 IBM875
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp875
+    histname Cp875
     ascii   false
     alias   cp875               # JDK historical
     alias   ibm875
@@ -1446,7 +1445,7 @@ charset x-IBM875 IBM875
 charset IBM918 IBM918
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp918
+    histname Cp918
     ascii   false
     alias   cp918               # JDK historical
     alias   ibm-918
@@ -1456,7 +1455,7 @@ charset IBM918 IBM918
 charset x-IBM922 IBM922
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp922
+    histname Cp922
     ascii   false
     alias   cp922               # JDK historical
     alias   ibm922
@@ -1466,7 +1465,7 @@ charset x-IBM922 IBM922
 charset x-IBM1097 IBM1097
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp1097
+    histname Cp1097
     ascii   false
     alias   cp1097              # JDK historical
     alias   ibm1097
@@ -1476,7 +1475,7 @@ charset x-IBM1097 IBM1097
 charset x-IBM949 IBM949
     package sun.nio.cs.ext
     type    dbcs
-    hisname Cp949
+    histname Cp949
     ascii   false
     minmax  0x8f 0xfe 0xa1 0xfe
     alias   cp949               # JDK historical
@@ -1495,7 +1494,7 @@ charset x-IBM949C IBM949C
 charset x-IBM939 IBM939
     package sun.nio.cs.ext
     type    ebcdic
-    hisname Cp939
+    histname Cp939
     ascii   false
     minmax  0x40 0x7f 0x40 0xfe
     alias   cp939               # JDK historical
@@ -1506,7 +1505,7 @@ charset x-IBM939 IBM939
 charset x-IBM933 IBM933
     package sun.nio.cs.ext
     type    ebcdic
-    hisname Cp933
+    histname Cp933
     ascii   false
     minmax  0x40 0xdd 0x40 0xfe
     alias   cp933               # JDK historical
@@ -1517,7 +1516,7 @@ charset x-IBM933 IBM933
 charset x-IBM1381 IBM1381
     package sun.nio.cs.ext
     type    dbcs
-    hisname Cp1381
+    histname Cp1381
     ascii   true
     minmax  0x8c 0xf7 0xa1 0xfe
     alias   cp1381              # JDK historical
@@ -1528,7 +1527,7 @@ charset x-IBM1381 IBM1381
 charset x-IBM1383 IBM1383
     package sun.nio.cs.ext
     type    euc_sim
-    hisname Cp1383
+    histname Cp1383
     ascii   true
     minmax  0xa1 0xfe 0xa1 0xfe
     alias   cp1383              # JDK historical
@@ -1542,7 +1541,7 @@ charset x-IBM1383 IBM1383
 charset x-IBM970 IBM970
     package sun.nio.cs.ext
     type    euc_sim
-    hisname Cp970
+    histname Cp970
     ascii   true
     minmax  0xa1 0xfe 0xa1 0xfe
     alias   cp970               # JDK historical
@@ -1582,7 +1581,7 @@ charset x-IBM33722 IBM33722
 charset IBM01140 IBM1140
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp1140
+    histname Cp1140
     ascii   false
     alias   cp1140              # JDK historical
     alias   ccsid01140
@@ -1595,7 +1594,7 @@ charset IBM01140 IBM1140
 charset IBM01141 IBM1141
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp1141
+    histname Cp1141
     ascii   false
     alias   cp1141              # JDK historical
     alias   ccsid01141
@@ -1608,7 +1607,7 @@ charset IBM01141 IBM1141
 charset IBM01142 IBM1142
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp1142
+    histname Cp1142
     ascii   false
     alias   cp1142              # JDK historical
     alias   ccsid01142
@@ -1622,7 +1621,7 @@ charset IBM01142 IBM1142
 charset IBM01143 IBM1143
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp1143
+    histname Cp1143
     ascii   false
     alias   cp1143              # JDK historical
     alias   ccsid01143
@@ -1636,7 +1635,7 @@ charset IBM01143 IBM1143
 charset IBM01144 IBM1144
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp1144
+    histname Cp1144
     ascii   false
     alias   cp1144              # JDK historical
     alias   ccsid01144
@@ -1649,7 +1648,7 @@ charset IBM01144 IBM1144
 charset IBM01145 IBM1145
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp1145
+    histname Cp1145
     ascii   false
     alias   cp1145              # JDK historical
     alias   ccsid01145
@@ -1662,7 +1661,7 @@ charset IBM01145 IBM1145
 charset IBM01146 IBM1146
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp1146
+    histname Cp1146
     ascii   false
     alias   cp1146              # JDK historical
     alias   ccsid01146
@@ -1675,7 +1674,7 @@ charset IBM01146 IBM1146
 charset IBM01147 IBM1147
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp1147
+    histname Cp1147
     ascii   false
     alias   cp1147              # JDK historical
     alias   ccsid01147
@@ -1688,7 +1687,7 @@ charset IBM01147 IBM1147
 charset IBM01148 IBM1148
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp1148
+    histname Cp1148
     ascii   false
     alias   cp1148              # JDK historical
     alias   ccsid01148
@@ -1701,7 +1700,7 @@ charset IBM01148 IBM1148
 charset IBM01149 IBM1149
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp1149
+    histname Cp1149
     ascii   false
     alias   cp1149              # JDK historical
     alias   ccsid01149
@@ -1714,7 +1713,7 @@ charset IBM01149 IBM1149
 charset IBM290 IBM290
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp290
+    histname Cp290
     ascii   false
     alias   cp290
     alias   ibm290
@@ -1726,7 +1725,7 @@ charset IBM290 IBM290
 charset x-IBM1166 IBM1166
     package sun.nio.cs.ext
     type    sbcs
-    hisname Cp1166
+    histname Cp1166
     ascii   false
     alias   cp1166
     alias   ibm1166
@@ -1736,7 +1735,7 @@ charset x-IBM1166 IBM1166
 charset x-IBM300 IBM300
     package sun.nio.cs.ext
     type    dbcsonly
-    hisname Cp300
+    histname Cp300
     ascii   false
     minmax  0x40 0x7f 0x40 0xfe
     alias   cp300
@@ -1744,103 +1743,103 @@ charset x-IBM300 IBM300
     alias   ibm-300
     alias   300
 
-# Macintosh MacOS/Apple char encodingd
+# Macintosh MacOS/Apple char encoding
 
 charset x-MacRoman MacRoman
     package sun.nio.cs.ext
     type    sbcs
-    hisname MacRoman
+    histname MacRoman
     ascii   false
     alias   MacRoman            # JDK historical
 
 charset x-MacCentralEurope MacCentralEurope
     package sun.nio.cs.ext
     type    sbcs
-    hisname MacCentralEurope
+    histname MacCentralEurope
     ascii   false
     alias   MacCentralEurope    # JDK historical
 
 charset x-MacCroatian MacCroatian
     package sun.nio.cs.ext
     type    sbcs
-    hisname MacCroatian
+    histname MacCroatian
     ascii   false
     alias   MacCroatian         # JDK historical
 
 charset x-MacGreek MacGreek
     package sun.nio.cs.ext
     type    sbcs
-    hisname MacGreek
+    histname MacGreek
     ascii   false
     alias   MacGreek         # JDK historical
 
 charset x-MacCyrillic MacCyrillic
     package sun.nio.cs.ext
     type    sbcs
-    hisname MacCyrillic
+    histname MacCyrillic
     ascii   false
     alias   MacCyrillic         # JDK historical
 
 charset x-MacUkraine MacUkraine
     package sun.nio.cs.ext
     type    sbcs
-    hisname MacUkraine
+    histname MacUkraine
     ascii   false
     alias   MacUkraine          # JDK historical
 
 charset x-MacTurkish MacTurkish
     package sun.nio.cs.ext
     type    sbcs
-    hisname MacTurkish
+    histname MacTurkish
     ascii   false
     alias   MacTurkish          # JDK historical
 
 charset x-MacArabic MacArabic
     package sun.nio.cs.ext
     type    sbcs
-    hisname MacArabic
+    histname MacArabic
     ascii   false
     alias   MacArabic           # JDK historical
 
 charset x-MacHebrew MacHebrew
     package sun.nio.cs.ext
     type    sbcs
-    hisname MacHebrew
+    histname MacHebrew
     ascii   false
     alias   MacHebrew           # JDK historical
 
 charset x-MacIceland MacIceland
     package sun.nio.cs.ext
     type    sbcs
-    hisname MacIceland
+    histname MacIceland
     ascii   false
     alias   MacIceland          # JDK historical
 
 charset x-MacRomania MacRomania
     package sun.nio.cs.ext
     type    sbcs
-    hisname MacRomania
+    histname MacRomania
     ascii   false
     alias   MacRomania          # JDK historical
 
 charset x-MacThai MacThai
     package sun.nio.cs.ext
     type    sbcs
-    hisname MacThai
+    histname MacThai
     ascii   false
     alias   MacThai             # JDK historical
 
 charset x-MacSymbol MacSymbol
     package sun.nio.cs.ext
     type    sbcs
-    hisname MacSymbol
+    histname MacSymbol
     ascii   false
     alias   MacSymbol           # JDK historical
 
 charset x-MacDingbat MacDingbat
     package sun.nio.cs.ext
     type    sbcs
-    hisname MacDingbat
+    histname MacDingbat
     ascii   false
     alias   MacDingbat          # JDK historical
 
@@ -1853,7 +1852,7 @@ charset x-MacDingbat MacDingbat
 charset x-JIS0208_Solaris JIS_X_0208_Solaris
     package sun.nio.cs.ext
     type    dbcsonly
-    hisname JIS0208
+    histname JIS0208
     ascii   false
     minmax  0x21 0x9e 0x21 0x7e
     internal true
@@ -1861,7 +1860,7 @@ charset x-JIS0208_Solaris JIS_X_0208_Solaris
 charset x-JIS0208_MS5022X JIS_X_0208_MS5022X
     package sun.nio.cs.ext
     type    dbcsonly
-    hisname JIS_X_0208_MS5022X
+    histname JIS_X_0208_MS5022X
     ascii   false
     minmax  0x21 0x7e 0x21 0x7e
     internal true
@@ -1869,7 +1868,7 @@ charset x-JIS0208_MS5022X JIS_X_0208_MS5022X
 charset x-JIS0208_MS932 JIS_X_0208_MS932
     package sun.nio.cs.ext
     type    dbcsonly
-    hisname JIS_X_0208_MS932
+    histname JIS_X_0208_MS932
     ascii   false
     minmax  0x21 0x7e 0x21 0x7e
     internal true               # "internal implementation
@@ -1877,7 +1876,7 @@ charset x-JIS0208_MS932 JIS_X_0208_MS932
 charset x-JIS0212_Solaris JIS_X_0212_Solaris
     package sun.nio.cs.ext
     type    dbcsonly
-    hisname JIS_X_0212_Solaris
+    histname JIS_X_0212_Solaris
     ascii   false
     minmax  0x21 0x7e 0x21 0x7e
     internal true               # "internal implementation
@@ -1885,7 +1884,7 @@ charset x-JIS0212_Solaris JIS_X_0212_Solaris
 charset x-JIS0212_MS5022X JIS_X_0212_MS5022X
     package sun.nio.cs.ext
     type    dbcsonly
-    hisname JIS_X_0212_MS5022X
+    histname JIS_X_0212_MS5022X
     ascii   false
     minmax  0x21 0x7e 0x21 0x7e
     internal true               # "internal implementation

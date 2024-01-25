@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,11 @@ import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 
 /** Utility class which assists in calling defineClass() by
-    creating a new class loader which delegates to the one needed in
-    order for proper resolution of the given bytecodes to occur. */
+ *  creating a new class loader which delegates to the one needed in
+ *  order for proper resolution of the given bytecodes to occur.
+ *
+ *  This is only used to define SerializationConstructorAccessor.
+ */
 
 class ClassDefiner {
     static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
@@ -56,6 +59,7 @@ class ClassDefiner {
     static Class<?> defineClass(String name, byte[] bytes, int off, int len,
                                 final ClassLoader parentClassLoader)
     {
+        @SuppressWarnings("removal")
         ClassLoader newLoader = AccessController.doPrivileged(
             new PrivilegedAction<ClassLoader>() {
                 public ClassLoader run() {

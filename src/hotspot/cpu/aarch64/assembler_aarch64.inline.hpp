@@ -30,8 +30,14 @@
 #include "asm/codeBuffer.hpp"
 #include "code/codeCache.hpp"
 
-
+// Check if an offset is within the encoding range for LDR/STR instructions
+// with an immediate offset, either using unscaled signed 9-bits or, scaled
+// unsigned 12-bits. We favour the scaled unsigned encoding for all aligned
+// offsets (only using the signed 9-bit encoding for negative and unaligned
+// offsets). As a precondition, 0 <= shift <= 4 is the log2(size), for the
+// supported data widths, {1, 2, 4, 8, 16} bytes.
 inline bool Address::offset_ok_for_immed(int64_t offset, uint shift) {
+  precond(shift < 5);
   uint mask = (1 << shift) - 1;
   if (offset < 0 || (offset & mask) != 0) {
     // Unscaled signed offset, encoded in a signed imm9 field.

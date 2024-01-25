@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,11 @@
 #include "gc/g1/g1BiasedArray.hpp"
 #include "gc/g1/g1NUMA.hpp"
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/virtualspace.hpp"
+#include "nmt/memTracker.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -40,9 +41,8 @@ G1RegionToSpaceMapper::G1RegionToSpaceMapper(ReservedSpace rs,
                                              size_t region_granularity,
                                              size_t commit_factor,
                                              MEMFLAGS type) :
-  _listener(NULL),
+  _listener(nullptr),
   _storage(rs, used_size, page_size),
-  _region_granularity(region_granularity),
   _region_commit_map(rs.size() * commit_factor / region_granularity, mtGC),
   _memory_type(type) {
   guarantee(is_power_of_2(page_size), "must be");
@@ -81,15 +81,15 @@ class G1RegionsLargerThanCommitSizeMapper : public G1RegionToSpaceMapper {
 
   bool is_range_committed(uint start_idx, size_t num_regions) {
     BitMap::idx_t end = start_idx + num_regions;
-    return _region_commit_map.get_next_zero_offset(start_idx, end) == end;
+    return _region_commit_map.find_first_clear_bit(start_idx, end) == end;
   }
 
   bool is_range_uncommitted(uint start_idx, size_t num_regions) {
     BitMap::idx_t end = start_idx + num_regions;
-    return _region_commit_map.get_next_one_offset(start_idx, end) == end;
+    return _region_commit_map.find_first_set_bit(start_idx, end) == end;
   }
 
-  virtual void commit_regions(uint start_idx, size_t num_regions, WorkGang* pretouch_gang) {
+  virtual void commit_regions(uint start_idx, size_t num_regions, WorkerThreads* pretouch_workers) {
     guarantee(is_range_uncommitted(start_idx, num_regions),
               "Range not uncommitted, start: %u, num_regions: " SIZE_FORMAT,
               start_idx, num_regions);
@@ -105,7 +105,7 @@ class G1RegionsLargerThanCommitSizeMapper : public G1RegionToSpaceMapper {
       }
     }
     if (AlwaysPreTouch) {
-      _storage.pretouch(start_page, size_in_pages, pretouch_gang);
+      _storage.pretouch(start_page, size_in_pages, pretouch_workers);
     }
     _region_commit_map.par_set_range(start_idx, start_idx + num_regions, BitMap::unknown_range);
     fire_on_commit(start_idx, num_regions, zero_filled);
@@ -146,7 +146,7 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
     size_t region = page_idx * _regions_per_page;
     size_t region_limit = region + _regions_per_page;
     // Committed if there is a bit set in the range.
-    return _region_commit_map.get_next_one_offset(region, region_limit) != region_limit;
+    return _region_commit_map.find_first_set_bit(region, region_limit) != region_limit;
   }
 
   void numa_request_on_node(size_t page_idx) {
@@ -167,18 +167,18 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
                                        MEMFLAGS type) :
     G1RegionToSpaceMapper(rs, actual_size, page_size, alloc_granularity, commit_factor, type),
     _regions_per_page((page_size * commit_factor) / alloc_granularity),
-    _lock(Mutex::leaf, "G1 mapper lock", true, Mutex::_safepoint_check_never) {
+    _lock(Mutex::service-3, "G1Mapper_lock") {
 
     guarantee((page_size * commit_factor) >= alloc_granularity, "allocation granularity smaller than commit granularity");
   }
 
-  virtual void commit_regions(uint start_idx, size_t num_regions, WorkGang* pretouch_gang) {
+  virtual void commit_regions(uint start_idx, size_t num_regions, WorkerThreads* pretouch_workers) {
     uint region_limit = (uint)(start_idx + num_regions);
     assert(num_regions > 0, "Must commit at least one region");
-    assert(_region_commit_map.get_next_one_offset(start_idx, region_limit) == region_limit,
+    assert(_region_commit_map.find_first_set_bit(start_idx, region_limit) == region_limit,
            "Should be no committed regions in the range [%u, %u)", start_idx, region_limit);
 
-    size_t const NoPage = ~(size_t)0;
+    size_t const NoPage = SIZE_MAX;
 
     size_t first_committed = NoPage;
     size_t num_committed = 0;
@@ -219,7 +219,7 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
     }
 
     if (AlwaysPreTouch && num_committed > 0) {
-      _storage.pretouch(first_committed, num_committed, pretouch_gang);
+      _storage.pretouch(first_committed, num_committed, pretouch_workers);
     }
 
     fire_on_commit(start_idx, num_regions, all_zero_filled);
@@ -228,7 +228,7 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
   virtual void uncommit_regions(uint start_idx, size_t num_regions) {
     uint region_limit = (uint)(start_idx + num_regions);
     assert(num_regions > 0, "Must uncommit at least one region");
-    assert(_region_commit_map.get_next_zero_offset(start_idx, region_limit) == region_limit,
+    assert(_region_commit_map.find_first_clear_bit(start_idx, region_limit) == region_limit,
            "Should only be committed regions in the range [%u, %u)", start_idx, region_limit);
 
     size_t start_page = region_idx_to_page_idx(start_idx);
@@ -253,7 +253,7 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
 };
 
 void G1RegionToSpaceMapper::fire_on_commit(uint start_idx, size_t num_regions, bool zero_filled) {
-  if (_listener != NULL) {
+  if (_listener != nullptr) {
     _listener->on_commit(start_idx, num_regions, zero_filled);
   }
 }

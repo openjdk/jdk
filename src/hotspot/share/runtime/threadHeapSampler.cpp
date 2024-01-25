@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,6 +31,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/threadHeapSampler.hpp"
+#include "utilities/checkedCast.hpp"
 
 // Cheap random number generator.
 uint64_t ThreadHeapSampler::_rnd;
@@ -356,7 +357,7 @@ double ThreadHeapSampler::fast_log2(const double& d) {
   assert(sizeof(d) == sizeof(x),
          "double and uint64_t do not have the same size");
   x = *reinterpret_cast<const uint64_t*>(&d);
-  const uint32_t x_high = x >> 32;
+  const uint32_t x_high = checked_cast<uint32_t>(x >> 32);
   assert(FastLogNumBits <= 20, "FastLogNumBits should be less than 20.");
   const uint32_t y = x_high >> (20 - FastLogNumBits) & FastLogMask;
   const int32_t exponent = ((x_high >> 20) & 0x7FF) - 1023;
@@ -394,7 +395,7 @@ void ThreadHeapSampler::pick_next_geometric_sample() {
   double log_val = (fast_log2(q) - 26);
   double result =
       (0.0 < log_val ? 0.0 : log_val) * (-log(2.0) * (get_sampling_interval())) + 1;
-  assert(result > 0 && result < SIZE_MAX, "Result is not in an acceptable range.");
+  assert(result > 0 && result < static_cast<double>(SIZE_MAX), "Result is not in an acceptable range.");
   size_t interval = static_cast<size_t>(result);
   _bytes_until_sample = interval;
 }

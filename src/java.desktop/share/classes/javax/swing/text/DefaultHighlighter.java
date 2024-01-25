@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import javax.swing.*;
 public class DefaultHighlighter extends LayeredHighlighter {
 
     /**
-     * Creates a new DefaultHighlighther object.
+     * Creates a new DefaultHighlighter object.
      */
     public DefaultHighlighter() {
         drawsLayeredHighlights = true;
@@ -110,7 +110,7 @@ public class DefaultHighlighter extends LayeredHighlighter {
      * @param p    the painter to use to actually render the highlight
      * @return     an object that can be used as a tag
      *   to refer to the highlight
-     * @exception BadLocationException if the specified location is invalid
+     * @throws BadLocationException if the specified location is invalid
      */
     public Object addHighlight(int p0, int p1, Highlighter.HighlightPainter p) throws BadLocationException {
         if (p0 < 0) {
@@ -222,7 +222,7 @@ public class DefaultHighlighter extends LayeredHighlighter {
      * @param tag the highlight tag
      * @param p0 the beginning of the range &gt;= 0
      * @param p1 the end of the range &gt;= p0
-     * @exception BadLocationException if the specified location is invalid
+     * @throws BadLocationException if the specified location is invalid
      */
     public void changeHighlight(Object tag, int p0, int p1) throws BadLocationException {
         if (p0 < 0) {
@@ -244,7 +244,7 @@ public class DefaultHighlighter extends LayeredHighlighter {
             lhi.width = lhi.height = 0;
             lhi.p0 = doc.createPosition(p0);
             lhi.p1 = doc.createPosition(p1);
-            safeDamageRange(Math.min(p0, p1), Math.max(p0, p1));
+            safeDamageRange(p0, p1);
         }
         else {
             HighlightInfo info = (HighlightInfo) tag;
@@ -509,7 +509,7 @@ public class DefaultHighlighter extends LayeredHighlighter {
     }
 
 
-    class HighlightInfo implements Highlighter.Highlight {
+    static class HighlightInfo implements Highlighter.Highlight {
 
         public int getStartOffset() {
             return p0.getOffset();
@@ -533,7 +533,7 @@ public class DefaultHighlighter extends LayeredHighlighter {
      * LayeredHighlightPainter is used when a drawsLayeredHighlights is
      * true. It maintains a rectangle of the region to paint.
      */
-    class LayeredHighlightInfo extends HighlightInfo {
+    static class LayeredHighlightInfo extends HighlightInfo {
 
         void union(Shape bounds) {
             if (bounds == null)
@@ -589,7 +589,7 @@ public class DefaultHighlighter extends LayeredHighlighter {
     /**
      * This class invokes <code>mapper.damageRange</code> in
      * EventDispatchThread. The only one instance per Highlighter
-     * is cretaed. When a number of ranges should be damaged
+     * is created. When a number of ranges should be damaged
      * it collects them into queue and damages
      * them in consecutive order in <code>run</code>
      * call.

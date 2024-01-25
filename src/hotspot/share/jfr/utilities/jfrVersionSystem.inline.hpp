@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,11 @@
 #define SHARE_JFR_UTILITIES_JFRVERSIONSYSTEM_INLINE_HPP
 
 #include "jfr/utilities/jfrVersionSystem.hpp"
-#include "runtime/atomic.hpp"
-#include "runtime/os.inline.hpp"
 
-inline JfrVersionSystem::JfrVersionSystem() : _tip(), _head(NULL) {
+#include "runtime/atomic.hpp"
+#include "runtime/os.hpp"
+
+inline JfrVersionSystem::JfrVersionSystem() : _tip(), _head(nullptr) {
   _tip._value = 1;
 }
 
@@ -39,12 +40,12 @@ inline JfrVersionSystem::~JfrVersionSystem() {
 
 inline void JfrVersionSystem::reset() {
   NodePtr node = _head;
-  while (node != NULL) {
+  while (node != nullptr) {
     NodePtr next = node->_next;
     delete node;
     node = next;
   }
-  _head = NULL;
+  _head = nullptr;
   _tip._value = 1;
 }
 
@@ -65,7 +66,7 @@ inline JfrVersionSystem::Type JfrVersionSystem::inc_tip() {
 inline JfrVersionSystem::NodePtr JfrVersionSystem::acquire() {
   NodePtr node = _head;
   // free
-  while (node != NULL) {
+  while (node != nullptr) {
     if (node->_live || Atomic::cmpxchg(&node->_live, false, true)) {
       node = node->_next;
       continue;
@@ -88,7 +89,7 @@ inline JfrVersionSystem::Handle JfrVersionSystem::get() {
   return Handle::make(acquire());
 }
 
-inline JfrVersionSystem::Node::Node(JfrVersionSystem* system) : _system(system), _next(NULL), _version(0), _live(true) {}
+inline JfrVersionSystem::Node::Node(JfrVersionSystem* system) : _system(system), _next(nullptr), _version(0), _live(true) {}
 
 inline traceid JfrVersionSystem::Node::version() const {
   return _version;
@@ -128,14 +129,14 @@ inline void JfrVersionSystem::Node::commit() {
 inline JfrVersionSystem::NodePtr
 JfrVersionSystem::synchronize_with(JfrVersionSystem::Type version, JfrVersionSystem::NodePtr node) const {
   assert(version <= tip(), "invariant");
-  while (node != NULL) {
+  while (node != nullptr) {
     const Type checkedout = Atomic::load_acquire(&node->_version);
     if (checkedout > 0 && checkedout < version) {
       return node;
     }
     node = node->_next;
   }
-  return NULL;
+  return nullptr;
 }
 
 inline void JfrVersionSystem::await(JfrVersionSystem::Type version) {
@@ -145,7 +146,7 @@ inline void JfrVersionSystem::await(JfrVersionSystem::Type version) {
   NodePtr last = _head;
   while (true) {
     last = synchronize_with(version, last);
-    if (last == NULL) {
+    if (last == nullptr) {
       return;
     }
     os::naked_short_nanosleep(backoff_unit_ns * backoff_factor++);
@@ -154,7 +155,7 @@ inline void JfrVersionSystem::await(JfrVersionSystem::Type version) {
 
 #ifdef ASSERT
 inline void JfrVersionSystem::assert_state(const JfrVersionSystem::Node* node) const {
-  assert(node != NULL, "invariant");
+  assert(node != nullptr, "invariant");
   assert(node->_live, "invariant");
   assert(node->_version == 0, "invariant");
   assert(node->_ref_counter.current() == 0, "invariant");

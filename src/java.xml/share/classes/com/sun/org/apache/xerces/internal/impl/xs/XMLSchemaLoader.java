@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -41,7 +41,6 @@ import com.sun.org.apache.xerces.internal.util.Status;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
 import com.sun.org.apache.xerces.internal.util.URI.MalformedURIException;
 import com.sun.org.apache.xerces.internal.util.XMLSymbols;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.xni.QName;
 import com.sun.org.apache.xerces.internal.xni.XNIException;
@@ -75,7 +74,8 @@ import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.WeakHashMap;
 import javax.xml.XMLConstants;
-import jdk.xml.internal.JdkXmlFeatures;
+import jdk.xml.internal.JdkConstants;
+import jdk.xml.internal.XMLSecurityManager;
 import jdk.xml.internal.JdkXmlUtils;
 import jdk.xml.internal.SecuritySupport;
 import org.w3c.dom.DOMConfiguration;
@@ -102,7 +102,7 @@ import org.xml.sax.InputSource;
  * @xerces.internal
  *
  * @author Neil Graham, IBM
- * @LastModified: Sep 2017
+ * @LastModified: July 2023
  */
 
 public class XMLSchemaLoader implements XMLGrammarLoader, XMLComponent, XSElementDeclHelper,
@@ -161,7 +161,7 @@ XSLoader, DOMConfiguration {
     protected static final String SCHEMA_DV_FACTORY =
         Constants.XERCES_PROPERTY_PREFIX + Constants.SCHEMA_DV_FACTORY_PROPERTY;
 
-    protected static final String OVERRIDE_PARSER = JdkXmlUtils.OVERRIDE_PARSER;
+    protected static final String OVERRIDE_PARSER = JdkConstants.OVERRIDE_PARSER;
 
     // recognized features:
     private static final String[] RECOGNIZED_FEATURES = {
@@ -226,7 +226,7 @@ XSLoader, DOMConfiguration {
 
     /** Property identifier: Security property manager. */
     private static final String XML_SECURITY_PROPERTY_MANAGER =
-            Constants.XML_SECURITY_PROPERTY_MANAGER;
+            JdkConstants.XML_SECURITY_PROPERTY_MANAGER;
 
     /** Property identifier: access to external dtd */
     public static final String ACCESS_EXTERNAL_DTD = XMLConstants.ACCESS_EXTERNAL_DTD;
@@ -253,7 +253,7 @@ XSLoader, DOMConfiguration {
         JdkXmlUtils.CATALOG_FILES,
         JdkXmlUtils.CATALOG_PREFER,
         JdkXmlUtils.CATALOG_RESOLVE,
-        JdkXmlUtils.CDATA_CHUNK_SIZE
+        JdkConstants.CDATA_CHUNK_SIZE
     };
 
     // Data
@@ -283,7 +283,7 @@ XSLoader, DOMConfiguration {
     private final CMNodeFactory fNodeFactory = new CMNodeFactory(); //component mgr will be set later
     private CMBuilder fCMBuilder;
     private XSDDescription fXSDDescription = new XSDDescription();
-    private String faccessExternalSchema = Constants.EXTERNAL_ACCESS_DEFAULT;
+    private String faccessExternalSchema = JdkConstants.EXTERNAL_ACCESS_DEFAULT;
 
     private WeakHashMap<Object, SchemaGrammar> fJAXPCache;
     private Locale fLocale = Locale.getDefault();
@@ -607,7 +607,7 @@ XSLoader, DOMConfiguration {
         }
 
         if (desc.isExternal() && !source.isCreatedByResolver()) {
-            String accessError = SecuritySupport.checkAccess(desc.getExpandedSystemId(), faccessExternalSchema, Constants.ACCESS_EXTERNAL_ALL);
+            String accessError = SecuritySupport.checkAccess(desc.getExpandedSystemId(), faccessExternalSchema, JdkConstants.ACCESS_EXTERNAL_ALL);
             if (accessError != null) {
                 throw new XNIException(fErrorReporter.reportError(XSMessageFormatter.SCHEMA_DOMAIN,
                         "schema_reference.access",

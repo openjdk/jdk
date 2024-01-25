@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8131025 8141092 8153761 8145263 8131019 8175886 8176184 8176241 8176110 8177466 8197439 8221759 8234896 8240658
+ * @bug 8131025 8141092 8153761 8145263 8131019 8175886 8176184 8176241 8176110 8177466 8197439 8221759 8234896 8240658 8278039 8286206 8296789 8314662
  * @summary Test Completion and Documentation
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -48,13 +48,16 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
+import jdk.jshell.MethodSnippet;
 
 import jdk.jshell.Snippet;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import static jdk.jshell.Snippet.Status.NONEXISTENT;
 import static jdk.jshell.Snippet.Status.VALID;
 import static jdk.jshell.Snippet.Status.OVERWRITTEN;
+import static jdk.jshell.Snippet.Status.RECOVERABLE_DEFINED;
 
 @Test
 public class CompletionSuggestionTest extends KullaTesting {
@@ -150,6 +153,7 @@ public class CompletionSuggestionTest extends KullaTesting {
         assertCompletion("class A implements doubl|");
         assertCompletion("interface A extends doubl|");
         assertCompletion("enum A implements doubl|");
+        assertCompletion("record R() implements doubl|");
         assertCompletion("class A<T extends doubl|");
     }
 
@@ -330,11 +334,12 @@ public class CompletionSuggestionTest extends KullaTesting {
         //JDK-8221759:
         Compiler compiler = new Compiler();
         Path testOutDir = Paths.get("WithPrivateField");
-        String input = "package field; public class FieldTest { private static String field; private static String field2; }";
+        String input = "package field; public class FieldTest { private static String field; private static String field2; public record R<E>(String s, E e) {} }";
         compiler.compile(testOutDir, input);
         addToClasspath(compiler.getPath(testOutDir));
         assertSignature("field.FieldTest.field|");
         assertSignature("field.FieldTest.field2|");
+        assertSignature("field.FieldTest.R|", "field.FieldTest.R<E>(java.lang.String s, E e)");
     }
 
     public void testMethodsWithNoArguments() throws Exception {
@@ -721,7 +726,7 @@ public class CompletionSuggestionTest extends KullaTesting {
 
     @BeforeMethod
     public void setUp() {
-        super.setUp();
+        setUp(builder -> builder.executionEngine("local"));
 
         Path srcZip = Paths.get("src.zip");
 
@@ -772,5 +777,37 @@ public class CompletionSuggestionTest extends KullaTesting {
 
         assertEval("import p.*;");
         assertCompletion("Broke|", "BrokenA", "BrokenC");
+    }
+
+    public void testStatements() {
+        assertEval("String s = \"\";");
+        assertCompletion("if (s.conta|", (Boolean) null, "contains(");
+        assertCompletion("if (s.ch|", (Boolean) null, "charAt(", "chars()");
+        assertCompletion("while (s.conta|", (Boolean) null, "contains(");
+        assertCompletion("do {} while (s.conta|", (Boolean) null, "contains(");
+        assertCompletion("try (var v = s.conta|", (Boolean) null, "contains(");
+        assertCompletion("for (var v = s.conta|", (Boolean) null, "contains(");
+        assertCompletion("for (;;s.conta|", (Boolean) null, "contains(");
+        assertCompletion("for (var v : s.conta|", (Boolean) null, "contains(");
+    }
+
+    public void testRecord() {
+        assertCompletion("record R() implements Ru|", true, "Runnable");
+    }
+
+    //JDK-8296789
+    public void testParentMembers() {
+        assertEval("var sb=new StringBuilder();");
+        assertCompletionIncludesExcludes("sb.|", true, Set.of("capacity()", "setLength("), Set.of("maybeLatin1"));
+    }
+
+    //JDK-8314662
+    public void testDuplicateImport() {
+        MethodSnippet m1 = methodKey(assertEval("void test(String s) { foo(); }", ste(MAIN_SNIPPET, NONEXISTENT, RECOVERABLE_DEFINED, true, null)));
+        MethodSnippet m2 = methodKey(assertEval("void test(Integer i) { foo(); }", ste(MAIN_SNIPPET, NONEXISTENT, RECOVERABLE_DEFINED, true, null)));
+        assertEval("void foo() { }", ste(MAIN_SNIPPET, NONEXISTENT, VALID, true, null),
+                                     ste(m1, RECOVERABLE_DEFINED, VALID, true, MAIN_SNIPPET),
+                                     ste(m2, RECOVERABLE_DEFINED, VALID, true, MAIN_SNIPPET));
+        assertSignature("test(|", "void test(String s)", "void test(Integer i)");
     }
 }

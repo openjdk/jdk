@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,9 @@ import java.util.*;
 public class MultipleNumberScriptTest {
 
     static Locale[] locales = {
-        new Locale("ar"),
-        new Locale("ar", "EG"),
-        new Locale("ar", "DZ"),
+        Locale.of("ar"),
+        Locale.of("ar", "EG"),
+        Locale.of("ar", "DZ"),
         Locale.forLanguageTag("ar-EG-u-nu-arab"),
         Locale.forLanguageTag("ar-EG-u-nu-latn"),
         Locale.forLanguageTag("ar-DZ-u-nu-arab"),
@@ -44,7 +44,7 @@ public class MultipleNumberScriptTest {
         Locale.forLanguageTag("ee"),
         Locale.forLanguageTag("ee-GH"),
         Locale.forLanguageTag("ee-GH-u-nu-latn"),
-        new Locale("th", "TH", "TH"),
+        Locale.of("th", "TH", "TH"),
         Locale.forLanguageTag("th-TH"),
         Locale.forLanguageTag("th-TH-u-nu-thai"),
         Locale.forLanguageTag("th-TH-u-nu-hoge"),

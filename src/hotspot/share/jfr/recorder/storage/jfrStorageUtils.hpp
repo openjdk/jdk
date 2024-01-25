@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
 #include "jfr/utilities/jfrAllocation.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 
 class CompositeOperationOr {
  public:
@@ -52,18 +52,18 @@ class CompositeOperation {
   NextOperation* _next;
  public:
   CompositeOperation(Operation* op, NextOperation* next) : _op(op), _next(next) {
-    assert(_op != NULL, "invariant");
+    assert(_op != nullptr, "invariant");
   }
   typedef typename Operation::Type Type;
   bool process(Type* t) {
     const bool op_result = _op->process(t);
-    return _next == NULL ? op_result : TruthFunction::evaluate(op_result) ? _next->process(t) : op_result;
+    return _next == nullptr ? op_result : TruthFunction::evaluate(op_result) ? _next->process(t) : op_result;
   }
   size_t elements() const {
-    return _next == NULL ? _op->elements() : _op->elements() + _next->elements();
+    return _next == nullptr ? _op->elements() : _op->elements() + _next->elements();
   }
   size_t size() const {
-    return _next == NULL ? _op->size() : _op->size() + _next->size();
+    return _next == nullptr ? _op->size() : _op->size() + _next->size();
   }
 };
 
@@ -99,18 +99,8 @@ class Retired {
  public:
   typedef T Type;
   bool process(Type* t) {
-    assert(t != NULL, "invariant");
+    assert(t != nullptr, "invariant");
     return negation ? !t->retired() : t->retired();
-  }
-};
-
-template <typename T, bool negation>
-class Excluded {
- public:
-  typedef T Type;
-  bool process(Type* t) {
-    assert(t != NULL, "invariant");
-    return negation ? !t->excluded() : t->excluded();
   }
 };
 
@@ -164,9 +154,11 @@ class PredicatedConcurrentWriteOp : public ConcurrentWriteOp<Operation> {
 
 template <typename Operation>
 class ExclusiveOp : private MutexedWriteOp<Operation> {
+ private:
+  Thread* const _thread;
  public:
   typedef typename Operation::Type Type;
-  ExclusiveOp(Operation& operation) : MutexedWriteOp<Operation>(operation) {}
+  ExclusiveOp(Operation& operation);
   bool process(Type* t);
   size_t processed() const { return MutexedWriteOp<Operation>::processed(); }
 };
@@ -191,9 +183,11 @@ class DiscardOp {
 
 template <typename Operation>
 class ExclusiveDiscardOp : private DiscardOp<Operation> {
+ private:
+  Thread* const _thread;
  public:
   typedef typename Operation::Type Type;
-  ExclusiveDiscardOp(jfr_operation_mode mode = concurrent) : DiscardOp<Operation>(mode) {}
+  ExclusiveDiscardOp(jfr_operation_mode mode = concurrent);
   bool process(Type* t);
   size_t processed() const { return DiscardOp<Operation>::processed(); }
   size_t elements() const { return DiscardOp<Operation>::elements(); }
@@ -212,6 +206,13 @@ class EpochDispatchOp {
     _operation(operation), _elements(0), _previous_epoch(previous_epoch) {}
   bool process(Type* t);
   size_t elements() const { return _elements; }
+};
+
+template <typename T>
+class ReinitializationOp {
+ public:
+  typedef T Type;
+  bool process(Type* t);
 };
 
 #endif // SHARE_JFR_RECORDER_STORAGE_JFRSTORAGEUTILS_HPP

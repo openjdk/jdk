@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,10 @@
 package javax.crypto;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Objects;
 import java.util.Vector;
 import static java.util.Locale.ENGLISH;
 
@@ -41,8 +43,9 @@ import java.lang.reflect.*;
  * JCE will be used.
  *
  * The jurisdiction policy file has the same syntax as JDK policy files except
- * that JCE has new permission classes called javax.crypto.CryptoPermission
- * and javax.crypto.CryptoAllPermission.
+ * that JCE has new permission classes called
+ * {@code javax.crypto.CryptoPermission} and
+ * {@code javax.crypto.CryptoAllPermission}.
  *
  * The format of a permission entry in the jurisdiction policy file is:
  *
@@ -65,23 +68,24 @@ import java.lang.reflect.*;
 
 final class CryptoPolicyParser {
 
-    private Vector<GrantEntry> grantEntries;
+    private final Vector<GrantEntry> grantEntries;
 
     // Convenience variables for parsing
     private StreamTokenizer st;
     private int lookahead;
+    private boolean allPermEntryFound = false;
 
     /**
-     * Creates a CryptoPolicyParser object.
+     * Creates a {@code CryptoPolicyParser} object.
      */
     CryptoPolicyParser() {
-        grantEntries = new Vector<GrantEntry>();
+        grantEntries = new Vector<>();
     }
 
     /**
-     * Reads a policy configuration using a Reader object. <p>
+     * Reads a policy configuration using a {@code Reader} object. <p>
      *
-     * @param policy the policy Reader object.
+     * @param policy the policy {@code Reader} object.
      *
      * @exception ParsingException if the policy configuration
      * contains a syntax error.
@@ -128,7 +132,7 @@ final class CryptoPolicyParser {
          * The crypto jurisdiction policy must be consistent. The
          * following hashtable is used for checking consistency.
          */
-        Hashtable<String, Vector<String>> processedPermissions = null;
+        Hashtable<String, Vector<String>> processedPermissions = new Hashtable<>();
 
         /*
          * The main parsing loop.  The loop is executed once for each entry
@@ -140,8 +144,7 @@ final class CryptoPolicyParser {
         while (lookahead != StreamTokenizer.TT_EOF) {
             if (peek("grant")) {
                 GrantEntry ge = parseGrantEntry(processedPermissions);
-                if (ge != null)
-                    grantEntries.addElement(ge);
+                grantEntries.addElement(ge);
             } else {
                 throw new ParsingException(st.lineno(), "expected grant " +
                                            "statement");
@@ -191,6 +194,16 @@ final class CryptoPolicyParser {
         e.cryptoPermission = match("permission type");
 
         if (e.cryptoPermission.equals("javax.crypto.CryptoAllPermission")) {
+            /*
+             * This catches while processing the "javax.crypto.CryptoAllPermission"
+             * entry, but the "processedPermissions" Hashtable already contains
+             * an entry for "javax.crypto.CryptoPermission".
+             */
+            if (!processedPermissions.isEmpty()) {
+                throw new ParsingException(st.lineno(), "Inconsistent policy");
+            }
+            allPermEntryFound = true;
+
             // Done with the CryptoAllPermission entry.
             e.alg = CryptoAllPermission.ALG_NAME;
             e.maxKeySize = Integer.MAX_VALUE;
@@ -254,15 +267,15 @@ final class CryptoPolicyParser {
             // AlgorithmParameterSpec class name.
             String algParamSpecClassName = match("quoted string");
 
-            Vector<Integer> paramsV = new Vector<>(1);
+            ArrayList<Integer> paramsV = new ArrayList<>(1);
             while (peek(",")) {
                 match(",");
                 if (peek("number")) {
-                    paramsV.addElement(match());
+                    paramsV.add(match());
                 } else {
                     if (peek("*")) {
                         match("*");
-                        paramsV.addElement(Integer.MAX_VALUE);
+                        paramsV.add(Integer.MAX_VALUE);
                     } else {
                         throw new ParsingException(st.lineno(),
                                                    "Expecting an integer");
@@ -270,8 +283,7 @@ final class CryptoPolicyParser {
                 }
             }
 
-            Integer[] params = new Integer[paramsV.size()];
-            paramsV.copyInto(params);
+            Integer[] params = paramsV.toArray(new Integer[0]);
 
             e.checkParam = true;
             e.algParamSpec = getInstance(algParamSpecClassName, params);
@@ -280,11 +292,11 @@ final class CryptoPolicyParser {
         return e;
     }
 
-    private static final AlgorithmParameterSpec getInstance(String type,
-                                                            Integer[] params)
+    private static AlgorithmParameterSpec getInstance(String type,
+                                                      Integer[] params)
         throws ParsingException
     {
-        AlgorithmParameterSpec ret = null;
+        AlgorithmParameterSpec ret;
 
         try {
             Class<?> apsClass = Class.forName(type);
@@ -395,7 +407,7 @@ final class CryptoPolicyParser {
         switch (lookahead) {
         case StreamTokenizer.TT_NUMBER:
             throw new ParsingException(st.lineno(), expect,
-                                       "number "+String.valueOf(st.nval));
+                                       "number " + st.nval);
         case StreamTokenizer.TT_EOF:
            throw new ParsingException("expected "+expect+", read end of file");
         case StreamTokenizer.TT_WORD:
@@ -458,27 +470,22 @@ final class CryptoPolicyParser {
     }
 
     CryptoPermission[] getPermissions() {
-        Vector<CryptoPermission> result = new Vector<>();
+        ArrayList<CryptoPermission> result = new ArrayList<>();
 
-        Enumeration<GrantEntry> grantEnum = grantEntries.elements();
-        while (grantEnum.hasMoreElements()) {
-            GrantEntry ge = grantEnum.nextElement();
-            Enumeration<CryptoPermissionEntry> permEnum =
-                    ge.permissionElements();
-            while (permEnum.hasMoreElements()) {
-                CryptoPermissionEntry pe = permEnum.nextElement();
+        for (GrantEntry ge : grantEntries) {
+            for (CryptoPermissionEntry pe : ge.permissionEntries) {
                 if (pe.cryptoPermission.equals(
                                         "javax.crypto.CryptoAllPermission")) {
-                    result.addElement(CryptoAllPermission.INSTANCE);
+                    result.add(CryptoAllPermission.INSTANCE);
                 } else {
                     if (pe.checkParam) {
-                        result.addElement(new CryptoPermission(
+                        result.add(new CryptoPermission(
                                                 pe.alg,
                                                 pe.maxKeySize,
                                                 pe.algParamSpec,
                                                 pe.exemptionMechanism));
                     } else {
-                        result.addElement(new CryptoPermission(
+                        result.add(new CryptoPermission(
                                                 pe.alg,
                                                 pe.maxKeySize,
                                                 pe.exemptionMechanism));
@@ -487,10 +494,7 @@ final class CryptoPolicyParser {
             }
         }
 
-        CryptoPermission[] ret = new CryptoPermission[result.size()];
-        result.copyInto(ret);
-
-        return ret;
+        return result.toArray(new CryptoPermission[0]);
     }
 
     private boolean isConsistent(String alg, String exemptionMechanism,
@@ -498,16 +502,19 @@ final class CryptoPolicyParser {
         String thisExemptionMechanism =
             exemptionMechanism == null ? "none" : exemptionMechanism;
 
-        if (processedPermissions == null) {
-            processedPermissions = new Hashtable<String, Vector<String>>();
+        /*
+         * This catches while processing a "javax.crypto.CryptoPermission" entry, but
+         * "javax.crypto.CryptoAllPermission" entry already exists.
+         */
+        if (allPermEntryFound) {
+            return false;
+        }
+
+        if (processedPermissions.isEmpty()) {
             Vector<String> exemptionMechanisms = new Vector<>(1);
             exemptionMechanisms.addElement(thisExemptionMechanism);
             processedPermissions.put(alg, exemptionMechanisms);
             return true;
-        }
-
-        if (processedPermissions.containsKey(CryptoAllPermission.ALG_NAME)) {
-            return false;
         }
 
         Vector<String> exemptionMechanisms;
@@ -518,7 +525,7 @@ final class CryptoPolicyParser {
                 return false;
             }
         } else {
-            exemptionMechanisms = new Vector<String>(1);
+            exemptionMechanisms = new Vector<>(1);
         }
 
         exemptionMechanisms.addElement(thisExemptionMechanism);
@@ -527,8 +534,8 @@ final class CryptoPolicyParser {
     }
 
     /**
-     * Each grant entry in the policy configuration file is  represented by a
-     * GrantEntry object.
+     * Each grant entry in the policy configuration file is represented by a
+     * {@code GrantEntry} object.
      * <p>
      * For example, the entry
      * <pre>
@@ -556,39 +563,21 @@ final class CryptoPolicyParser {
 
     private static class GrantEntry {
 
-        private Vector<CryptoPermissionEntry> permissionEntries;
+        private final Vector<CryptoPermissionEntry> permissionEntries;
 
         GrantEntry() {
-            permissionEntries = new Vector<CryptoPermissionEntry>();
+            permissionEntries = new Vector<>();
         }
 
         void add(CryptoPermissionEntry pe)
         {
             permissionEntries.addElement(pe);
         }
-
-        boolean remove(CryptoPermissionEntry pe)
-        {
-            return permissionEntries.removeElement(pe);
-        }
-
-        boolean contains(CryptoPermissionEntry pe)
-        {
-            return permissionEntries.contains(pe);
-        }
-
-        /**
-         * Enumerate all the permission entries in this GrantEntry.
-         */
-        Enumeration<CryptoPermissionEntry> permissionElements(){
-            return permissionEntries.elements();
-        }
-
     }
 
     /**
      * Each crypto permission entry in the policy configuration file is
-     * represented by a CryptoPermissionEntry object.
+     * represented by a {@code CryptoPermissionEntry} object.
      * <p>
      * For example, the entry
      * <pre>
@@ -628,35 +617,26 @@ final class CryptoPolicyParser {
          * Calculates a hash code value for the object.  Objects
          * which are equal will also have the same hashcode.
          */
+        @Override
         public int hashCode() {
-            int retval = cryptoPermission.hashCode();
-            if (alg != null) retval ^= alg.hashCode();
-            if (exemptionMechanism != null) {
-                retval ^= exemptionMechanism.hashCode();
-            }
-            retval ^= maxKeySize;
-            if (checkParam) retval ^= 100;
-            if (algParamSpec != null) {
-                retval ^= algParamSpec.hashCode();
-            }
-            return retval;
+            return cryptoPermission.hashCode()
+                    ^ Objects.hashCode(alg)
+                    ^ Objects.hashCode(exemptionMechanism)
+                    ^ maxKeySize
+                    ^ (checkParam ? 100 : 0)
+                    ^ Objects.hashCode(algParamSpec);
         }
 
+        @Override
         public boolean equals(Object obj) {
             if (obj == this)
                 return true;
 
-            if (!(obj instanceof CryptoPermissionEntry))
+            if (!(obj instanceof CryptoPermissionEntry that))
                 return false;
 
-            CryptoPermissionEntry that = (CryptoPermissionEntry) obj;
-
-            if (this.cryptoPermission == null) {
-                if (that.cryptoPermission != null) return false;
-            } else {
-                if (!this.cryptoPermission.equals(
-                                                 that.cryptoPermission))
-                    return false;
+            if (!Objects.equals(this.cryptoPermission, that.cryptoPermission)) {
+                return false;
             }
 
             if (this.alg == null) {
@@ -666,19 +646,11 @@ final class CryptoPolicyParser {
                     return false;
             }
 
-            if (!(this.maxKeySize == that.maxKeySize)) return false;
+            if (this.maxKeySize != that.maxKeySize) return false;
 
             if (this.checkParam != that.checkParam) return false;
 
-            if (this.algParamSpec == null) {
-                if (that.algParamSpec != null) return false;
-            } else {
-                if (!this.algParamSpec.equals(that.algParamSpec))
-                    return false;
-            }
-
-            // everything matched -- the 2 objects are equal
-            return true;
+            return Objects.equals(this.algParamSpec, that.algParamSpec);
         }
     }
 
@@ -688,7 +660,7 @@ final class CryptoPolicyParser {
         private static final long serialVersionUID = 7147241245566588374L;
 
         /**
-         * Constructs a ParsingException with the specified
+         * Constructs a {@code ParsingException} with the specified
          * detail message.
          * @param msg the detail message.
          */

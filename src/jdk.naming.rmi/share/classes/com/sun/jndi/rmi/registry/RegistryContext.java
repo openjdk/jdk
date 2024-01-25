@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,9 @@
 
 package com.sun.jndi.rmi.registry;
 
+
+import com.sun.naming.internal.NamingManagerHelper;
+import com.sun.naming.internal.ObjectFactoriesFilter;
 
 import java.util.Hashtable;
 import java.util.Properties;
@@ -63,6 +66,7 @@ public class RegistryContext implements Context, Referenceable {
         // arbitrary URL codebase
         PrivilegedAction<String> act = () -> System.getProperty(
             "com.sun.jndi.rmi.object.trustURLCodebase", "false");
+        @SuppressWarnings("removal")
         String trust = AccessController.doPrivileged(act);
         trustURLCodebase = "true".equalsIgnoreCase(trust);
     }
@@ -119,7 +123,7 @@ public class RegistryContext implements Context, Referenceable {
         reference = ctx.reference;
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     protected void finalize() {
         close();
     }
@@ -427,6 +431,7 @@ public class RegistryContext implements Context, Referenceable {
      * Attempts to install a security manager if none is currently in
      * place.
      */
+    @SuppressWarnings("removal")
     private static void installSecurityMgr() {
 
         try {
@@ -496,8 +501,8 @@ public class RegistryContext implements Context, Referenceable {
                     "The object factory is untrusted. Set the system property" +
                     " 'com.sun.jndi.rmi.object.trustURLCodebase' to 'true'.");
             }
-            return NamingManager.getObjectInstance(obj, name, this,
-                                                   environment);
+            return NamingManagerHelper.getObjectInstance(obj, name, this,
+                    environment, ObjectFactoriesFilter::checkRmiFilter);
         } catch (NamingException e) {
             throw e;
         } catch (RemoteException e) {
@@ -594,7 +599,7 @@ class BindingEnumeration implements NamingEnumeration<Binding> {
         nextName = 0;
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     protected void finalize() {
         ctx.close();
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,19 @@
 
 package com.apple.laf;
 
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import javax.swing.Icon;
 import javax.swing.filechooser.FileView;
 
 import com.apple.laf.AquaUtils.RecyclableSingleton;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 @SuppressWarnings("serial") // JDK implementation class
 class AquaFileView extends FileView {
@@ -57,6 +62,11 @@ class AquaFileView extends FileView {
     static final int kLSItemInfoExtensionIsHidden  = 0x00100000; /* Item has a hidden extension*/
 
     static {
+        loadOSXUILibrary();
+    }
+
+    @SuppressWarnings("removal")
+    private static void loadOSXUILibrary() {
         java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Void>() {
                 public Void run() {
@@ -106,11 +116,7 @@ class AquaFileView extends FileView {
         FileInfo(final File file){
             isDirectory = file.isDirectory();
             absolutePath = file.getAbsolutePath();
-            try {
-                pathBytes = absolutePath.getBytes("UTF-8");
-            } catch (final UnsupportedEncodingException e) {
-                pathBytes = new byte[0];
-            }
+            pathBytes = absolutePath.getBytes(UTF_8);
         }
     }
 

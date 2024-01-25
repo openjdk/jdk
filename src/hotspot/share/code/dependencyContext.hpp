@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,33 +32,26 @@
 #include "runtime/safepoint.hpp"
 
 class nmethod;
+class DeoptimizationScope;
 class DepChange;
 
 //
 // nmethodBucket is used to record dependent nmethods for
 // deoptimization.  nmethod dependencies are actually <klass, method>
 // pairs but we really only care about the klass part for purposes of
-// finding nmethods which might need to be deoptimized.  Instead of
-// recording the method, a count of how many times a particular nmethod
-// was recorded is kept.  This ensures that any recording errors are
-// noticed since an nmethod should be removed as many times are it's
-// added.
+// finding nmethods which might need to be deoptimized.
 //
 class nmethodBucket: public CHeapObj<mtClass> {
   friend class VMStructs;
  private:
   nmethod*       _nmethod;
-  volatile int   _count;
   nmethodBucket* volatile _next;
   nmethodBucket* volatile _purge_list_next;
 
  public:
   nmethodBucket(nmethod* nmethod, nmethodBucket* next) :
-    _nmethod(nmethod), _count(1), _next(next), _purge_list_next(NULL) {}
+    _nmethod(nmethod), _next(next), _purge_list_next(nullptr) {}
 
-  int count()                                { return _count; }
-  int increment()                            { _count += 1; return _count; }
-  int decrement();
   nmethodBucket* next();
   nmethodBucket* next_not_unloading();
   void set_next(nmethodBucket* b);
@@ -82,6 +75,7 @@ class DependencyContext : public StackObj {
   volatile uint64_t*       _last_cleanup_addr;
 
   bool claim_cleanup();
+  static bool delete_on_release();
   void set_dependencies(nmethodBucket* b);
   nmethodBucket* dependencies();
   nmethodBucket* dependencies_not_unloading();
@@ -117,11 +111,12 @@ class DependencyContext : public StackObj {
 
   static void init();
 
-  int  mark_dependent_nmethods(DepChange& changes);
+  void mark_dependent_nmethods(DeoptimizationScope* deopt_scope, DepChange& changes);
   void add_dependent_nmethod(nmethod* nm);
-  void remove_dependent_nmethod(nmethod* nm);
-  int  remove_all_dependents();
+  void remove_all_dependents();
+  void remove_and_mark_for_deoptimization_all_dependents(DeoptimizationScope* deopt_scope);
   void clean_unloading_dependents();
+  static nmethodBucket* release_and_get_next_not_unloading(nmethodBucket* b);
   static void purge_dependency_contexts();
   static void release(nmethodBucket* b);
   static void cleaning_start();

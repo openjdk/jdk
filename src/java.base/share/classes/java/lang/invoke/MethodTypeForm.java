@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,8 @@ final class MethodTypeForm {
             LF_VH_EX_INVOKER           = 22,  // VarHandle exact invoker
             LF_VH_GEN_INVOKER          = 23,  // VarHandle generic invoker
             LF_VH_GEN_LINKER           = 24,  // VarHandle generic linker
-            LF_LIMIT                   = 25;
+            LF_COLLECTOR               = 25,  // collector handle
+            LF_LIMIT                   = 26;
 
     /** Return the type corresponding uniquely (1-1) to this MT-form.
      *  It might have any primitive returns or arguments, but will have no references except Object.
@@ -193,7 +194,7 @@ final class MethodTypeForm {
             this.lambdaForms   = new SoftReference[LF_LIMIT];
             this.methodHandles = new SoftReference[MH_LIMIT];
         } else {
-            this.basicType = MethodType.makeImpl(basicReturnType, basicPtypes, true);
+            this.basicType = MethodType.methodType(basicReturnType, basicPtypes, true);
             // fill in rest of data from the basic type:
             MethodTypeForm that = this.basicType.form();
             assert(this != that);
@@ -249,7 +250,7 @@ final class MethodTypeForm {
         // Find the erased version of the method type:
         if (rtypeCanonical == null)  rtypeCanonical = rtype;
         if (ptypesCanonical == null)  ptypesCanonical = ptypes;
-        return MethodType.makeImpl(rtypeCanonical, ptypesCanonical, true);
+        return MethodType.methodType(rtypeCanonical, ptypesCanonical, true);
     }
 
     /** Canonicalize the given return or param type.

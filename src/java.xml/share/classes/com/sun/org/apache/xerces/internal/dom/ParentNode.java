@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -1024,7 +1024,9 @@ public abstract class ParentNode
         /** Serialization version. */
         private static final long serialVersionUID = 3258126977134310455L;
 
+        @SuppressWarnings("serial") // Type of field is not Serializable
         Object fData;
+        @SuppressWarnings("serial") // Type of field is not Serializable
         UserDataHandler fHandler;
         UserDataRecord(Object data, UserDataHandler handler) {
             fData = data;

@@ -53,7 +53,7 @@ public interface RemoteRef extends java.io.Externalizable {
      * UnicastServerRef) are located in the package defined by the
      * prefix.
      */
-    final static String packagePrefix = "sun.rmi.server";
+    static final String packagePrefix = "sun.rmi.server";
 
     /**
      * Invoke a method. This form of delegating method invocation

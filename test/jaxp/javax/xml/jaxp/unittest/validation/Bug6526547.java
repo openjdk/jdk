@@ -43,7 +43,7 @@ import org.xml.sax.SAXException;
  * @test
  * @bug 6526547
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.Bug6526547
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Bug6526547
  * @run testng/othervm validation.Bug6526547
  * @summary Test document parsed without setting NamespaceAware can be validated with a Schema.
  */

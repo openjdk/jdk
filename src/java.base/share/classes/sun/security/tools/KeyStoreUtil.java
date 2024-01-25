@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,7 +91,11 @@ public class KeyStoreUtil {
     public static boolean isWindowsKeyStore(String storetype) {
         return storetype != null
                 && (storetype.equalsIgnoreCase("Windows-MY")
-                    || storetype.equalsIgnoreCase("Windows-ROOT"));
+                    || storetype.equalsIgnoreCase("Windows-ROOT")
+                    || storetype.equalsIgnoreCase("Windows-MY-CURRENTUSER")
+                    || storetype.equalsIgnoreCase("Windows-ROOT-CURRENTUSER")
+                    || storetype.equalsIgnoreCase("Windows-MY-LOCALMACHINE")
+                    || storetype.equalsIgnoreCase("Windows-ROOT-LOCALMACHINE"));
     }
 
     /**
@@ -102,6 +106,14 @@ public class KeyStoreUtil {
             return "Windows-MY";
         } else if(storetype.equalsIgnoreCase("Windows-ROOT")) {
             return "Windows-ROOT";
+        } else if(storetype.equalsIgnoreCase("Windows-MY-CURRENTUSER")) {
+            return "Windows-MY-CURRENTUSER";
+        } else if(storetype.equalsIgnoreCase("Windows-ROOT-CURRENTUSER")) {
+            return "Windows-ROOT-CURRENTUSER";
+        } else if(storetype.equalsIgnoreCase("Windows-MY-LOCALMACHINE")) {
+            return "Windows-MY-LOCALMACHINE";
+        } else if(storetype.equalsIgnoreCase("Windows-ROOT-LOCALMACHINE")) {
+            return "Windows-ROOT-LOCALMACHINE";
         } else {
             return storetype.toUpperCase(Locale.ENGLISH);
         }
@@ -141,9 +153,10 @@ public class KeyStoreUtil {
             }
         } else if (collator.compare(modifier, "file") == 0) {
             try {
-                URL url = null;
+                URL url;
                 try {
-                    url = new URL(arg);
+                    @SuppressWarnings("deprecation")
+                    var _unused = url = new URL(arg);
                 } catch (java.net.MalformedURLException mue) {
                     File f = new File(arg);
                     if (f.exists()) {
@@ -178,7 +191,7 @@ public class KeyStoreUtil {
     }
 
     /**
-     * Parses a option line likes
+     * Parses an option line likes
      *    -genkaypair -dname "CN=Me"
      * and add the results into a list
      * @param list the list to fill into
@@ -195,10 +208,7 @@ public class KeyStoreUtil {
         st.quoteChar('"');
         st.quoteChar('\'');
 
-        while (true) {
-            if (st.nextToken() == StreamTokenizer.TT_EOF) {
-                break;
-            }
+        while (st.nextToken() != StreamTokenizer.TT_EOF) {
             list.add(PropertyExpander.expand(st.sval));
         }
     }
@@ -225,7 +235,9 @@ public class KeyStoreUtil {
 
         List<String> result = new ArrayList<>();
         Properties p = new Properties();
-        p.load(new FileInputStream(file));
+        try (FileInputStream is = new FileInputStream(file)) {
+            p.load(is);
+        }
 
         String s = p.getProperty(tool + ".all");
         if (s != null) {
@@ -253,7 +265,7 @@ public class KeyStoreUtil {
             return args;
         } else {
             result.addAll(Arrays.asList(args));
-            return result.toArray(new String[result.size()]);
+            return result.toArray(new String[0]);
         }
     }
 

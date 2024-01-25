@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 /*
  * A lock-free data structure usually require support for tracking references
  * in the service of Safe Memory Reclamation (SMR). JfrVersionSystem provides local,
- * compared to global, reference tracking for an assoicated data structure.
+ * compared to global, reference tracking for an associated data structure.
  *
  * A client, before accessing a structure, will perform a "checkout" from the JfrVersionSystem.
  * This checkout is associated with the current, or latest, version, analogous to the "tip" in a version control system.
@@ -105,9 +105,9 @@ class JfrVersionSystem : public JfrCHeapObj {
   NodePtr synchronize_with(Type version, NodePtr last) const;
   DEBUG_ONLY(void assert_state(const Node* node) const;)
   struct PaddedTip {
-    DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, 0);
+    DEFINE_PAD_MINUS_SIZE(0, DEFAULT_PADDING_SIZE, 0);
     volatile Type _value;
-    DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, sizeof(volatile Type));
+    DEFINE_PAD_MINUS_SIZE(1, DEFAULT_PADDING_SIZE, sizeof(volatile Type));
   };
   PaddedTip _tip;
   NodePtr _head;

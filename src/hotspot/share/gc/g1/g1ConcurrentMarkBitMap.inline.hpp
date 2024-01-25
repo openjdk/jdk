@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_GC_G1_G1CONCURRENTMARKBITMAP_INLINE_HPP
 
 #include "gc/g1/g1ConcurrentMarkBitMap.hpp"
+
 #include "gc/shared/markBitMap.inline.hpp"
 #include "memory/memRegion.hpp"
 #include "utilities/align.hpp"
@@ -38,15 +39,15 @@ inline bool G1CMBitMap::iterate(G1CMBitMapClosure* cl, MemRegion mr) {
          p2i(mr.start()), p2i(mr.end()));
 
   BitMap::idx_t const end_offset = addr_to_offset(mr.end());
-  BitMap::idx_t offset = _bm.get_next_one_offset(addr_to_offset(mr.start()), end_offset);
+  BitMap::idx_t offset = _bm.find_first_set_bit(addr_to_offset(mr.start()), end_offset);
 
   while (offset < end_offset) {
     HeapWord* const addr = offset_to_addr(offset);
     if (!cl->do_addr(addr)) {
       return false;
     }
-    size_t const obj_size = (size_t)((oop)addr)->size();
-    offset = _bm.get_next_one_offset(offset + (obj_size >> _shifter), end_offset);
+    size_t const obj_size = cast_to_oop(addr)->size();
+    offset = _bm.find_first_set_bit(offset + (obj_size >> _shifter), end_offset);
   }
   return true;
 }

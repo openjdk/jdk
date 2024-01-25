@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,19 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.Executor;
+import jdk.jpackage.test.JavaTool;
+import jdk.jpackage.test.LinuxHelper;
+import static jdk.jpackage.test.TKit.assertTrue;
+import static jdk.jpackage.test.TKit.assertFalse;
 
 /**
  * Test --runtime-image parameter.
@@ -97,9 +102,25 @@ public class RuntimePackageTest {
         return new PackageTest()
         .forTypes(types)
         .addInitializer(cmd -> {
-            cmd.addArguments("--runtime-image", Optional.ofNullable(
-                    JPackageCommand.DEFAULT_RUNTIME_IMAGE).orElse(Path.of(
-                            System.getProperty("java.home"))));
+            final Path runtimeImageDir;
+            if (JPackageCommand.DEFAULT_RUNTIME_IMAGE != null) {
+                runtimeImageDir = JPackageCommand.DEFAULT_RUNTIME_IMAGE;
+            } else {
+                runtimeImageDir = TKit.createTempDirectory("runtime").resolve("data");
+
+                new Executor()
+                .setToolProvider(JavaTool.JLINK)
+                .dumpOutput()
+                .addArguments(
+                        "--output", runtimeImageDir.toString(),
+                        "--compress=0",
+                        "--add-modules", "ALL-MODULE-PATH",
+                        "--strip-debug",
+                        "--no-header-files",
+                        "--no-man-pages")
+                .execute();
+            }
+            cmd.addArguments("--runtime-image", runtimeImageDir);
             // Remove --input parameter from jpackage command line as we don't
             // create input directory in the test and jpackage fails
             // if --input references non existant directory.
@@ -121,6 +142,23 @@ public class RuntimePackageTest {
 
             assertFileListEmpty(srcRuntime, "Missing");
             assertFileListEmpty(dstRuntime, "Unexpected");
+        })
+        .forTypes(PackageType.LINUX_DEB)
+        .addInstallVerifier(cmd -> {
+            String installDir = cmd.getArgumentValue("--install-dir", () -> "/opt");
+            Path copyright = Path.of("/usr/share/doc",
+                    LinuxHelper.getPackageName(cmd), "copyright");
+            boolean withCopyright = LinuxHelper.getPackageFiles(cmd).anyMatch(
+                    Predicate.isEqual(copyright));
+            if (installDir.startsWith("/usr/") || installDir.equals("/usr")) {
+                assertTrue(withCopyright, String.format(
+                        "Check the package delivers [%s] copyright file",
+                        copyright));
+            } else {
+                assertFalse(withCopyright, String.format(
+                        "Check the package doesn't deliver [%s] copyright file",
+                        copyright));
+            }
         });
     }
 
@@ -130,6 +168,7 @@ public class RuntimePackageTest {
             final Path prefsDir = Path.of(".systemPrefs");
             return files.map(root::relativize)
                     .filter(x -> !x.startsWith(prefsDir))
+                    .filter(x -> !x.endsWith(".DS_Store"))
                     .collect(Collectors.toSet());
         }
     }

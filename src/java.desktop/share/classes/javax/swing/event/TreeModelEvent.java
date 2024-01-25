@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,7 @@ public class TreeModelEvent extends EventObject {
      * starting at the lowest index and working towards the highest. Accumulate
      * a Vector of <code>Integer</code> objects that specify the
      * insert-locations as you go, then convert the Vector to an
-     * array of <code>int</code> to create the event. When the postition-index
+     * array of <code>int</code> to create the event. When the position-index
      * equals zero, the node is inserted at the beginning of the list. When the
      * position index equals the size of the list, the node is "inserted" at
      * (appended to) the end of the list.
@@ -294,14 +294,13 @@ public class TreeModelEvent extends EventObject {
     public String toString() {
         StringBuilder   sb = new StringBuilder();
 
-        sb.append(getClass().getName() + " " +
-                  Integer.toString(hashCode()));
+        sb.append(getClass().getName() + " " + hashCode());
         if(path != null)
             sb.append(" path " + path);
         if(childIndices != null) {
             sb.append(" indices [ ");
             for(int counter = 0; counter < childIndices.length; counter++)
-                sb.append(Integer.toString(childIndices[counter])+ " ");
+                sb.append(childIndices[counter] + " ");
             sb.append("]");
         }
         if(children != null) {

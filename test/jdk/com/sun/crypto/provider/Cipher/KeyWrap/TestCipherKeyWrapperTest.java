@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ import javax.crypto.spec.PBEParameterSpec;
 
 /*
  * @test
- * @bug 8048599
+ * @bug 8048599 8248268 8288050
  * @summary  Tests for key wrap and unwrap operations
  */
 
@@ -74,9 +74,14 @@ public class TestCipherKeyWrapperTest {
             "pbeWithSHA1AndRC4_128/ECB/NoPadding", "PBEWithHmacSHA1AndAES_128",
             "PBEWithHmacSHA224AndAES_128", "PBEWithHmacSHA256AndAES_128",
             "PBEWithHmacSHA384AndAES_128", "PBEWithHmacSHA512AndAES_128",
+            "PBEWithHmacSHA512/224AndAES_128",
+            "PBEWithHmacSHA512/256AndAES_128",
             "PBEWithHmacSHA1AndAES_256", "PBEWithHmacSHA224AndAES_256",
             "PBEWithHmacSHA256AndAES_256", "PBEWithHmacSHA384AndAES_256",
-            "PBEWithHmacSHA512AndAES_256" };
+            "PBEWithHmacSHA512AndAES_256",
+            "PBEWithHmacSHA512/224AndAES_256",
+            "PBEWithHmacSHA512/256AndAES_256",
+    };
     private static final String[] MODEL_AR = { "ECb", "pCbC", "cbC", "cFB",
             "cFB24", "cFB40", "OfB48", "OFB64" };
     private static final String[] PADDING_AR = { NOPADDING, "PKCS5Padding" };
@@ -86,6 +91,10 @@ public class TestCipherKeyWrapperTest {
         AESWrap_128("AES", "AESWrap_128", 128),
         AESWrap_192("AES", "AESWrap_192", 192),
         AESWrap_256("AES", "AESWrap_256", 256),
+        AESWrapPad("AES", "AESWrapPad", -1),
+        AESWrapPad_128("AES", "AESWrapPad_128", 128),
+        AESWrapPad_192("AES", "AESWrapPad_192", 192),
+        AESWrapPad_256("AES", "AESWrapPad_256", 256),
         DESedeWrap("desede", "DESedeWrap", -1),
         NegtiveWrap("AES", "DESedeWrap", -1);
 
@@ -231,18 +240,20 @@ public class TestCipherKeyWrapperTest {
             IllegalBlockSizeException, InvalidAlgorithmParameterException,
             NoSuchAlgorithmException {
         for (String alg : PBE_ALGORITHM_AR) {
-            String baseAlgo = alg.split("/")[0].toUpperCase();
+            String keyAlgo = (alg.endsWith("Padding") ?
+                    alg.split("/")[0].toUpperCase() : alg);
+
             // only run the tests on longer key lengths if unlimited version
             // of JCE jurisdiction policy files are installed
 
             if (Cipher.getMaxAllowedKeyLength(alg) < Integer.MAX_VALUE
-                    && (baseAlgo.endsWith("TRIPLEDES") || alg
+                    && (keyAlgo.endsWith("TRIPLEDES") || alg
                             .endsWith("AES_256"))) {
                 out.println("keyStrength > 128 within " + alg
                         + " will not run under global policy");
                 continue;
             }
-            SecretKeyFactory skf = SecretKeyFactory.getInstance(baseAlgo, p);
+            SecretKeyFactory skf = SecretKeyFactory.getInstance(keyAlgo, p);
             SecretKey key = skf.generateSecret(new PBEKeySpec("Secret Lover"
                     .toCharArray()));
             wrapTest(alg, alg, key, key, Cipher.SECRET_KEY, true);
@@ -276,7 +287,8 @@ public class TestCipherKeyWrapperTest {
             throws NoSuchAlgorithmException, NoSuchPaddingException,
             InvalidKeyException, IllegalBlockSizeException,
             InvalidAlgorithmParameterException {
-        String algo = transformation.split("/")[0];
+        String algo = (transformation.endsWith("Padding") ?
+                transformation.split("/")[0] : transformation);
         boolean isAESBlowfish = algo.indexOf("AES") != -1
                 || algo.indexOf("Blowfish") != -1;
         AlgorithmParameters aps = null;
@@ -287,6 +299,8 @@ public class TestCipherKeyWrapperTest {
             new Random().nextBytes(salt);
             pbeParams = new PBEParameterSpec(salt, iterCnt);
         }
+
+        out.println("Testing " + wrapAlgo + " cipher wrap/unwrap");
         // Wrap & UnWrap operation
         Cipher wrapCI = Cipher.getInstance(wrapAlgo);
         if (isPBE && !isAESBlowfish) {
@@ -297,7 +311,6 @@ public class TestCipherKeyWrapperTest {
         } else {
             wrapCI.init(Cipher.WRAP_MODE, initKey);
         }
-        out.println("keysize : " + wrapKey.getEncoded().length);
         byte[] keyWrapper = wrapCI.wrap(wrapKey);
         if (isPBE && !isAESBlowfish) {
             wrapCI.init(Cipher.UNWRAP_MODE, initKey, pbeParams);
@@ -309,6 +322,7 @@ public class TestCipherKeyWrapperTest {
         Key unwrappedKey = wrapCI.unwrap(keyWrapper, algo, keyType);
         // Comparison
         if (!Arrays.equals(wrapKey.getEncoded(), unwrappedKey.getEncoded())) {
+            out.println("keysize : " + wrapKey.getEncoded().length);
             throw new RuntimeException("Comparation failed testing "
                     + transformation + ":" + wrapAlgo + ":" + keyType);
         }

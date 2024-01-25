@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+import java.util.Arrays;
+
 /*
  * @test
  * @bug 8050374 8146293
@@ -31,7 +33,6 @@
  * @summary Verify a chain of signed objects
  */
 public class SignedObjectChain {
-
     private static class Test extends Chain.Test {
 
         public Test(Chain.SigAlg sigAlg) {
@@ -52,10 +53,9 @@ public class SignedObjectChain {
     };
 
     public static void main(String argv[]) {
-        boolean resutl = java.util.Arrays.stream(tests).allMatch(
-                (test) -> Chain.runTest(test));
+        boolean result = Arrays.stream(tests).parallel().allMatch(Chain::runTest);
 
-        if(resutl) {
+        if (result) {
             System.out.println("All tests passed");
         } else {
             throw new RuntimeException("Some tests failed");

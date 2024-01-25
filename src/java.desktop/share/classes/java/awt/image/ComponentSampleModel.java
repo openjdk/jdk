@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,19 +118,16 @@ public class ComponentSampleModel extends SampleModel
      * @param scanlineStride the line stride of the region of image
      *     data described
      * @param bandOffsets the offsets of all bands
-     * @throws IllegalArgumentException if {@code w} or
-     *         {@code h} is not greater than 0
-     * @throws IllegalArgumentException if {@code pixelStride}
-     *         is less than 0
-     * @throws IllegalArgumentException if {@code scanlineStride}
-     *         is less than 0
-     * @throws IllegalArgumentException if {@code numBands}
-     *         is less than 1
+     * @throws IllegalArgumentException if {@code w} and {@code h}
+     *         are not both greater than 0
      * @throws IllegalArgumentException if the product of {@code w}
-     *         and {@code h} is greater than
-     *         {@code Integer.MAX_VALUE}
+     *         and {@code h} is greater than {@code Integer.MAX_VALUE}
+     * @throws IllegalArgumentException if {@code pixelStride} is less than 0
+     * @throws IllegalArgumentException if {@code scanlineStride} is less than 0
+     * @throws NullPointerException if {@code bandOffsets} is {@code null}
+     * @throws IllegalArgumentException if {@code bandOffsets.length} is 0
      * @throws IllegalArgumentException if {@code dataType} is not
-     *         one of the supported data types
+     *         one of the supported data types for this sample model.
      */
     public ComponentSampleModel(int dataType,
                                 int w, int h,
@@ -150,17 +147,11 @@ public class ComponentSampleModel extends SampleModel
         if (scanlineStride < 0) {
             throw new IllegalArgumentException("Scanline stride must be >= 0");
         }
-        if (numBands < 1) {
-            throw new IllegalArgumentException("Must have at least one band.");
-        }
         if ((dataType < DataBuffer.TYPE_BYTE) ||
             (dataType > DataBuffer.TYPE_DOUBLE)) {
             throw new IllegalArgumentException("Unsupported dataType.");
         }
         bankIndices = new int[numBands];
-        for (int i=0; i<numBands; i++) {
-            bankIndices[i] = 0;
-        }
         verify();
     }
 
@@ -181,19 +172,22 @@ public class ComponentSampleModel extends SampleModel
      *     data described
      * @param bankIndices the bank indices of all bands
      * @param bandOffsets the band offsets of all bands
-     * @throws IllegalArgumentException if {@code w} or
-     *         {@code h} is not greater than 0
-     * @throws IllegalArgumentException if {@code pixelStride}
-     *         is less than 0
-     * @throws IllegalArgumentException if {@code scanlineStride}
-     *         is less than 0
+     * @throws IllegalArgumentException if {@code w} and {@code h}
+     *         are not both greater than 0
+     * @throws IllegalArgumentException if the product of {@code w}
+     *         and {@code h} is greater than {@code Integer.MAX_VALUE}
+     * @throws IllegalArgumentException if {@code pixelStride} is less than 0
+     * @throws IllegalArgumentException if {@code scanlineStride} is less than 0
+     * @throws NullPointerException if {@code bankIndices} is {@code null}
+     * @throws NullPointerException if {@code bandOffsets} is {@code null}
+     * @throws IllegalArgumentException if {@code bandOffsets.length} is 0
      * @throws IllegalArgumentException if the length of
      *         {@code bankIndices} does not equal the length of
-     *         {@code bankOffsets}
+     *         {@code bandOffsets}
      * @throws IllegalArgumentException if any of the bank indices
      *         of {@code bandIndices} is less than 0
      * @throws IllegalArgumentException if {@code dataType} is not
-     *         one of the supported data types
+     *         one of the supported data types for this sample model
      */
     public ComponentSampleModel(int dataType,
                                 int w, int h,
@@ -207,6 +201,10 @@ public class ComponentSampleModel extends SampleModel
         this.scanlineStride  = scanlineStride;
         this.bandOffsets = bandOffsets.clone();
         this.bankIndices = bankIndices.clone();
+        if (this.bandOffsets.length != this.bankIndices.length) {
+            throw new IllegalArgumentException("Length of bandOffsets must "+
+                                               "equal length of bankIndices.");
+        }
         if (pixelStride < 0) {
             throw new IllegalArgumentException("Pixel stride must be >= 0");
         }
@@ -235,10 +233,6 @@ public class ComponentSampleModel extends SampleModel
         }
         numBanks         = maxBank+1;
         numBands         = this.bandOffsets.length;
-        if (this.bandOffsets.length != this.bankIndices.length) {
-            throw new IllegalArgumentException("Length of bandOffsets must "+
-                                               "equal length of bankIndices.");
-        }
         verify();
     }
 
@@ -1188,11 +1182,10 @@ public class ComponentSampleModel extends SampleModel
     }
 
     public boolean equals(Object o) {
-        if ((o == null) || !(o instanceof ComponentSampleModel)) {
+        if (!(o instanceof ComponentSampleModel that)) {
             return false;
         }
 
-        ComponentSampleModel that = (ComponentSampleModel)o;
         return this.width == that.width &&
             this.height == that.height &&
             this.numBands == that.numBands &&

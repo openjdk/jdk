@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,7 @@ final class SignatureAlgorithmsExtension {
                     "Invalid signature_algorithms: unknown extra data"));
             }
 
-            if (algs == null || algs.length == 0 || (algs.length & 0x01) != 0) {
+            if (algs.length == 0 || (algs.length & 0x01) != 0) {
                 throw hc.conContext.fatal(Alert.DECODE_ERROR,
                         new SSLProtocolException(
                     "Invalid signature_algorithms: incomplete data"));
@@ -279,6 +279,10 @@ final class SignatureAlgorithmsExtension {
                             shc.sslConfig,
                             shc.algorithmConstraints, shc.negotiatedProtocol,
                             spec.signatureSchemes);
+            if (sss == null || sss.isEmpty()) {
+                throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                        "No supported signature algorithm");
+            }
             shc.peerRequestedSignatureSchemes = sss;
 
             // If no "signature_algorithms_cert" extension is present, then
@@ -330,7 +334,7 @@ final class SignatureAlgorithmsExtension {
             if (shc.negotiatedProtocol.useTLS13PlusSpec()) {
                 throw shc.conContext.fatal(Alert.MISSING_EXTENSION,
                     "No mandatory signature_algorithms extension in the " +
-                    "received CertificateRequest handshake message");
+                    "received ClientHello handshake message");
             }
         }
     }
@@ -503,6 +507,10 @@ final class SignatureAlgorithmsExtension {
                             chc.sslConfig,
                             chc.algorithmConstraints, chc.negotiatedProtocol,
                             spec.signatureSchemes);
+            if (sss == null || sss.isEmpty()) {
+                throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                        "No supported signature algorithm");
+            }
             chc.peerRequestedSignatureSchemes = sss;
 
             // If no "signature_algorithms_cert" extension is present, then

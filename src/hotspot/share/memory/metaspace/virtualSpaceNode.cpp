@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -39,10 +39,12 @@
 #include "memory/metaspace/rootChunkArea.hpp"
 #include "memory/metaspace/runningCounters.hpp"
 #include "memory/metaspace/virtualSpaceNode.hpp"
+#include "nmt/memTracker.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
-#include "services/memTracker.hpp"
+#include "sanitizers/address.hpp"
+#include "sanitizers/leak.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -158,7 +160,7 @@ bool VirtualSpaceNode::commit_range(MetaWord* p, size_t word_size) {
 // Returns true if success, false if it did hit a commit limit.
 bool VirtualSpaceNode::ensure_range_is_committed(MetaWord* p, size_t word_size) {
   assert_lock_strong(Metaspace_lock);
-  assert(p != NULL && word_size > 0, "Sanity");
+  assert(p != nullptr && word_size > 0, "Sanity");
   MetaWord* p_start = align_down(p, Settings::commit_granule_bytes());
   MetaWord* p_end = align_up(p + word_size, Settings::commit_granule_bytes());
   return commit_range(p_start, p_end - p_start);
@@ -215,7 +217,7 @@ void VirtualSpaceNode::uncommit_range(MetaWord* p, size_t word_size) {
 
 VirtualSpaceNode::VirtualSpaceNode(ReservedSpace rs, bool owns_rs, CommitLimiter* limiter,
                                    SizeCounter* reserve_counter, SizeCounter* commit_counter) :
-  _next(NULL),
+  _next(nullptr),
   _rs(rs),
   _owns_rs(owns_rs),
   _base((MetaWord*)rs.base()),
@@ -234,6 +236,14 @@ VirtualSpaceNode::VirtualSpaceNode(ReservedSpace rs, bool owns_rs, CommitLimiter
 
   assert_is_aligned(_base, chunklevel::MAX_CHUNK_BYTE_SIZE);
   assert_is_aligned(_word_size, chunklevel::MAX_CHUNK_WORD_SIZE);
+
+  // Poison the memory region. It will be unpoisoned later on a per-chunk base for chunks that are
+  // handed to arenas.
+  ASAN_POISON_MEMORY_REGION(rs.base(), rs.size());
+
+  // Register memory region related to Metaspace. The Metaspace contains lots of pointers to malloc
+  // memory.
+  LSAN_REGISTER_ROOT_REGION(rs.base(), rs.size());
 }
 
 // Create a node of a given size (it will create its own space).
@@ -244,8 +254,7 @@ VirtualSpaceNode* VirtualSpaceNode::create_node(size_t word_size,
   DEBUG_ONLY(assert_is_aligned(word_size, chunklevel::MAX_CHUNK_WORD_SIZE);)
   ReservedSpace rs(word_size * BytesPerWord,
                    Settings::virtual_space_node_reserve_alignment_words() * BytesPerWord,
-                   false // large
-                   );
+                   os::vm_page_size());
   if (!rs.is_reserved()) {
     vm_exit_out_of_memory(word_size * BytesPerWord, OOM_MMAP_ERROR, "Failed to reserve memory for metaspace");
   }
@@ -266,7 +275,15 @@ VirtualSpaceNode* VirtualSpaceNode::create_node(ReservedSpace rs, CommitLimiter*
 VirtualSpaceNode::~VirtualSpaceNode() {
   DEBUG_ONLY(verify_locked();)
 
+  // Unregister memory region related to Metaspace.
+  LSAN_UNREGISTER_ROOT_REGION(_rs.base(), _rs.size());
+
+  // Undo the poisoning before potentially unmapping memory. This ensures that future mappings at
+  // the same address do not unexpectedly fail with use-after-poison.
+  ASAN_UNPOISON_MEMORY_REGION(_rs.base(), _rs.size());
+
   UL(debug, ": dies.");
+
   if (_owns_rs) {
     _rs.release();
   }
@@ -284,7 +301,7 @@ VirtualSpaceNode::~VirtualSpaceNode() {
 
 //// Chunk allocation, splitting, merging /////
 
-// Allocate a root chunk from this node. Will fail and return NULL if the node is full
+// Allocate a root chunk from this node. Will fail and return null if the node is full
 //  - if we used up the whole address space of this node's memory region.
 //    (in case this node backs compressed class space, this is how we hit
 //     CompressedClassSpaceSize).
@@ -305,12 +322,12 @@ Metachunk* VirtualSpaceNode::allocate_root_chunk() {
     Metachunk* c = rca->alloc_root_chunk_header(this);
     assert(c->base() == loc && c->vsnode() == this &&
            c->is_free(), "Sanity");
-    DEBUG_ONLY(c->verify();)
+    SOMETIMES(c->verify();)
 
     UL2(debug, "new root chunk " METACHUNK_FORMAT ".", METACHUNK_FORMAT_ARGS(c));
     return c;
   }
-  return NULL; // Node is full.
+  return nullptr; // Node is full.
 }
 
 // Given a chunk c, split it recursively until you get a chunk of the given target_level.
@@ -321,27 +338,27 @@ void VirtualSpaceNode::split(chunklevel_t target_level, Metachunk* c, FreeChunkL
   assert_lock_strong(Metaspace_lock);
   // Get the area associated with this chunk and let it handle the splitting
   RootChunkArea* rca = _root_chunk_area_lut.get_area_by_address(c->base());
-  DEBUG_ONLY(rca->verify_area_is_ideally_merged();)
+  SOMETIMES(rca->verify_area_is_ideally_merged();)
   rca->split(target_level, c, freelists);
 }
 
 // Given a chunk, attempt to merge it recursively with its neighboring chunks.
 //
 // If successful (merged at least once), returns address of
-// the merged chunk; NULL otherwise.
+// the merged chunk; null otherwise.
 //
 // The merged chunks are removed from the freelists.
 //
-// !!! Please note that if this method returns a non-NULL value, the
+// !!! Please note that if this method returns a non-null value, the
 // original chunk will be invalid and should not be accessed anymore! !!!
 Metachunk* VirtualSpaceNode::merge(Metachunk* c, FreeChunkListVector* freelists) {
-  assert(c != NULL && c->is_free(), "Sanity");
+  assert(c != nullptr && c->is_free(), "Sanity");
   assert_lock_strong(Metaspace_lock);
 
   // Get the rca associated with this chunk and let it handle the merging
   RootChunkArea* rca = _root_chunk_area_lut.get_area_by_address(c->base());
   Metachunk* c2 = rca->merge(c, freelists);
-  DEBUG_ONLY(rca->verify_area_is_ideally_merged();)
+  SOMETIMES(rca->verify_area_is_ideally_merged();)
   return c2;
 }
 
@@ -355,61 +372,19 @@ Metachunk* VirtualSpaceNode::merge(Metachunk* c, FreeChunkListVector* freelists)
 //
 // On success, true is returned, false otherwise.
 bool VirtualSpaceNode::attempt_enlarge_chunk(Metachunk* c, FreeChunkListVector* freelists) {
-  assert(c != NULL && c->is_in_use() && !c->is_root_chunk(), "Sanity");
+  assert(c != nullptr && c->is_in_use() && !c->is_root_chunk(), "Sanity");
   assert_lock_strong(Metaspace_lock);
 
   // Get the rca associated with this chunk and let it handle the merging
   RootChunkArea* rca = _root_chunk_area_lut.get_area_by_address(c->base());
 
   bool rc = rca->attempt_enlarge_chunk(c, freelists);
-  DEBUG_ONLY(rca->verify_area_is_ideally_merged();)
+  SOMETIMES(rca->verify_area_is_ideally_merged();)
   if (rc) {
     InternalStats::inc_num_chunks_enlarged();
   }
 
   return rc;
-}
-
-// Attempts to purge the node:
-//
-// If all chunks living in this node are free, they will all be removed from
-//  the freelist they currently reside in. Then, the node will be deleted.
-//
-// Returns true if the node has been deleted, false if not.
-// !! If this returns true, do not access the node from this point on. !!
-bool VirtualSpaceNode::attempt_purge(FreeChunkListVector* freelists) {
-  assert_lock_strong(Metaspace_lock);
-
-  if (!_owns_rs) {
-    // We do not allow purging of nodes if we do not own the
-    // underlying ReservedSpace (CompressClassSpace case).
-    return false;
-  }
-
-  // First find out if all areas are empty. Since empty chunks collapse to root chunk
-  // size, if all chunks in this node are free root chunks we are good to go.
-  if (!_root_chunk_area_lut.is_free()) {
-    return false;
-  }
-
-  UL(debug, ": purging.");
-
-  // Okay, we can purge. Before we can do this, we need to remove all chunks from the freelist.
-  for (int narea = 0; narea < _root_chunk_area_lut.number_of_areas(); narea++) {
-    RootChunkArea* ra = _root_chunk_area_lut.get_area_by_index(narea);
-    Metachunk* c = ra->first_chunk();
-    if (c != NULL) {
-      UL2(trace, "removing chunk from to-be-purged node: "
-          METACHUNK_FULL_FORMAT ".", METACHUNK_FULL_FORMAT_ARGS(c));
-      assert(c->is_free() && c->is_root_chunk(), "Sanity");
-      freelists->remove(c);
-    }
-  }
-
-  // Now, delete the node, then right away return since this object is invalid.
-  delete this;
-
-  return true;
 }
 
 void VirtualSpaceNode::print_on(outputStream* st) const {
@@ -440,12 +415,12 @@ void VirtualSpaceNode::verify() const {
   verify_locked();
 }
 
-volatile int test_access = 0;
+volatile uint test_access = 0;
 
 // Verify counters and basic structure. Slow mode: verify all chunks in depth
 void VirtualSpaceNode::verify_locked() const {
   assert_lock_strong(Metaspace_lock);
-  assert(base() != NULL, "Invalid base");
+  assert(base() != nullptr, "Invalid base");
   assert(base() == (MetaWord*)_rs.base() &&
          word_size() == _rs.size() / BytesPerWord,
          "Sanity");
@@ -461,7 +436,7 @@ void VirtualSpaceNode::verify_locked() const {
   SOMETIMES(
     for (MetaWord* p = base(); p < base() + used_words(); p += os::vm_page_size()) {
       if (_commit_mask.is_committed_address(p)) {
-        test_access += *(int*)p;
+        test_access += *(uint*)p;
       }
     }
   )

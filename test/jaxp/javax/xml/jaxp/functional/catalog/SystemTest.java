@@ -39,7 +39,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8077931
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true catalog.SystemTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow catalog.SystemTest
  * @run testng/othervm catalog.SystemTest
  * @summary Get matched URIs from system entries.
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ public class Bug4353454 {
     }
 
     private static void test() {
-        ResourceBundle myResources = ResourceBundle.getBundle("RB4353454", new Locale(""));
+        ResourceBundle myResources = ResourceBundle.getBundle("RB4353454", Locale.of(""));
         if (!"Got it!".equals(myResources.getString("text"))) {
             throw new RuntimeException("returned wrong resource for key 'text': "
                                        + myResources.getString("text"));

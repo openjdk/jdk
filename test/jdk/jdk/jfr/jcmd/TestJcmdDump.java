@@ -33,8 +33,10 @@ import jdk.jfr.Event;
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordingFile;
+import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 /**
  * @test
@@ -53,9 +55,9 @@ public class TestJcmdDump {
 
     private static final String[] names = { null, "r1" };
     private static final boolean booleanValues[] = { true, false };
+    private static final long timeoutMillis = 50000;
 
     public static void main(String[] args) throws Exception {
-
         // Create a stopped recording in the repository to complicate things
         Recording r = new Recording();
         r.start();
@@ -105,8 +107,10 @@ public class TestJcmdDump {
             leakList.add(new Object[1000_0000]);
             System.gc(); // This will shorten time for object to be emitted.
             File recording = new File("TestJCMdDump.jfr");
-            String[] params = buildParameters(pathToGCRoots, name, recording);
-            OutputAnalyzer output = JcmdHelper.jcmd(params);
+            List<String> params = buildParameters(pathToGCRoots, name, recording);
+            System.out.println(params);
+            OutputAnalyzer output = ProcessTools.executeProcess(new ProcessBuilder(params));
+            output.reportDiagnosticSummary();
             JcmdAsserts.assertRecordingDumpedToFile(output, recording);
             int rootCount = 0;
             int oldObjectCount = 0;
@@ -155,8 +159,11 @@ public class TestJcmdDump {
         }
     }
 
-    private static String[] buildParameters(Boolean pathToGCRoots, String name, File recording) {
+    private static List<String> buildParameters(Boolean pathToGCRoots, String name, File recording) {
         List<String> params = new ArrayList<>();
+        params.add(JDKToolFinder.getJDKTool("jcmd"));
+        params.add("-J-Dsun.tools.attach.attachTimeout=" + timeoutMillis);
+        params.add(String.valueOf(ProcessHandle.current().pid()));
         params.add("JFR.dump");
         params.add("filename=" + recording.getAbsolutePath());
         if (pathToGCRoots != null) { // if path-to-gc-roots is omitted, default is used (disabled).
@@ -165,6 +172,6 @@ public class TestJcmdDump {
         if (name != null) { // if name is omitted, all recordings will be dumped
             params.add("name=" + name);
         }
-        return params.toArray(new String[0]);
+        return params;
     }
 }

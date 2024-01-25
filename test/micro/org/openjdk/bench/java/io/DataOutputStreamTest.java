@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2020, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,10 @@ import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
-@Fork(value = 1, warmups = 0)
+@Fork(2)
 @Measurement(iterations = 6, time = 1)
-@Warmup(iterations=2, time = 2)
-@State(Scope.Benchmark)
+@Warmup(iterations=4, time = 2)
+@State(Scope.Thread)
 public class DataOutputStreamTest {
 
     public enum BasicType {CHAR, SHORT, INT, STRING}

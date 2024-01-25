@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2021, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,33 +25,15 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHMARK_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHMARK_HPP
 
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shenandoah/shenandoahOopClosures.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
-
-class ShenandoahCMDrainMarkingStackClosure;
-
-class ShenandoahInitMarkRootsClosure : public OopClosure {
-private:
-  ShenandoahObjToScanQueue* const _queue;
-  ShenandoahMarkingContext* const _mark_context;
-
-  template <class T>
-  inline void do_oop_work(T* p);
-
-public:
-  ShenandoahInitMarkRootsClosure(ShenandoahObjToScanQueue* q);
-
-  void do_oop(narrowOop* p) { do_oop_work(p); }
-  void do_oop(oop* p)       { do_oop_work(p); }
-};
 
 // Base class for mark
 // Mark class does not maintain states. Instead, mark states are
 // maintained by task queues, mark bitmap and SATB buffers (concurrent mark)
 class ShenandoahMark: public StackObj {
-  friend class ShenandoahCMDrainMarkingStackClosure;
-
 protected:
   ShenandoahObjToScanQueueSet* const _task_queues;
 
@@ -59,10 +41,14 @@ protected:
   ShenandoahMark();
 
 public:
-  template<class T, StringDedupMode STRING_DEDUP>
+  template<class T>
   static inline void mark_through_ref(T* p, ShenandoahObjToScanQueue* q, ShenandoahMarkingContext* const mark_context, bool weak);
 
   static void clear();
+
+  // Loom support
+  void start_mark();
+  void end_mark();
 
   // Helpers
   inline ShenandoahObjToScanQueueSet* task_queues() const;
@@ -70,8 +56,8 @@ public:
 
 // ---------- Marking loop and tasks
 private:
-  template <class T>
-  inline void do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveData* live_data, ShenandoahMarkTask* task);
+  template <class T, StringDedupMode STRING_DEDUP>
+  inline void do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveData* live_data, StringDedup::Requests* const req, ShenandoahMarkTask* task);
 
   template <class T>
   inline void do_chunked_array_start(ShenandoahObjToScanQueue* q, T* cl, oop array, bool weak);
@@ -81,16 +67,17 @@ private:
 
   inline void count_liveness(ShenandoahLiveData* live_data, oop obj);
 
-  template <class T, bool CANCELLABLE>
-  void mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint worker_id, TaskTerminator *t);
+  template <class T, bool CANCELLABLE,StringDedupMode STRING_DEDUP>
+  void mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint worker_id, TaskTerminator *t, StringDedup::Requests* const req);
 
-  template <bool CANCELLABLE>
-  void mark_loop_prework(uint worker_id, TaskTerminator *terminator, ShenandoahReferenceProcessor *rp, bool strdedup);
+  template <bool CANCELLABLE, StringDedupMode STRING_DEDUP>
+  void mark_loop_prework(uint worker_id, TaskTerminator *terminator, ShenandoahReferenceProcessor *rp, StringDedup::Requests* const req);
 
+  template <StringDedupMode STRING_DEDUP>
+  inline void dedup_string(oop obj, StringDedup::Requests* const req);
 protected:
   void mark_loop(uint worker_id, TaskTerminator* terminator, ShenandoahReferenceProcessor *rp,
-                 bool cancellable, bool strdedup);
+                 bool cancellable, StringDedupMode dedup_mode, StringDedup::Requests* const req);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHMARK_HPP
-

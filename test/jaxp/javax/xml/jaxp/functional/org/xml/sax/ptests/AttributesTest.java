@@ -47,7 +47,7 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true org.xml.sax.ptests.AttributesTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow org.xml.sax.ptests.AttributesTest
  * @run testng/othervm org.xml.sax.ptests.AttributesTest
  */
 @Listeners({jaxp.library.FilePolicy.class})

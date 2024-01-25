@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Red Hat, Inc.
+ * Copyright (c) 2019, 2023, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,12 @@
 
 /*
  * @test
- * @bug 8215032
+ * @bug 8215032 8308540
  * @library /test/lib
  * @run main/othervm/timeout=120 -Dsun.security.krb5.debug=true ReferralsTest
  * @summary Test Kerberos cross-realm referrals (RFC 6806)
  */
 
-import java.io.File;
 import java.security.Principal;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -51,6 +50,8 @@ public class ReferralsTest {
     private static final String krbConfigName = "krb5-localkdc.conf";
     private static final String krbConfigNameNoCanonicalize =
             "krb5-localkdc-nocanonicalize.conf";
+    private static final String krbConfigNameOnlyOne =
+            "krb5-localkdc-onlyone.conf";
     private static final String realmKDC1 = "RABBIT.HOLE";
     private static final String realmKDC2 = "DEV.RABBIT.HOLE";
     private static final char[] password = "123qwe@Z".toCharArray();
@@ -98,16 +99,13 @@ public class ReferralsTest {
             PrincipalName.NAME_REALM_SEPARATOR_STR + realmKDC2;
 
     public static void main(String[] args) throws Exception {
-        try {
-            initializeKDCs();
-            testSubjectCredentials();
-            testDelegation();
-            testImpersonation();
-            testDelegationWithReferrals();
-            testNoCanonicalize();
-        } finally {
-            cleanup();
-        }
+        initializeKDCs();
+        testSubjectCredentials();
+        testDelegation();
+        testImpersonation();
+        testDelegationWithReferrals();
+        testNoCanonicalize();
+        testOnlyOne();
     }
 
     private static void initializeKDCs() throws Exception {
@@ -147,18 +145,9 @@ public class ReferralsTest {
                 "forwardable=true", "canonicalize=true");
         KDC.saveConfig(krbConfigNameNoCanonicalize, kdc1, kdc2,
                 "forwardable=true");
+        KDC.saveConfig(krbConfigNameOnlyOne, kdc1,
+                "forwardable=true", "canonicalize=true");
         System.setProperty("java.security.krb5.conf", krbConfigName);
-    }
-
-    private static void cleanup() {
-        String[] configFiles = new String[]{krbConfigName,
-                krbConfigNameNoCanonicalize};
-        for (String configFile : configFiles) {
-            File f = new File(configFile);
-            if (f.exists()) {
-                f.delete();
-            }
-        }
     }
 
     /*
@@ -287,6 +276,16 @@ public class ReferralsTest {
      * on different realms.
      */
     private static void testImpersonation() throws Exception {
+        testImpersonationSingle();
+
+        // Try a second time to force the use of the Referrals Cache.
+        // During this execution, the referral ticket from RABBIT.HOLE
+        // to DEV.RABBIT.HOLE (upon the initial S4U2Self message) will
+        // be obtained from the Cache.
+        testImpersonationSingle();
+    }
+
+    private static void testImpersonationSingle() throws Exception {
         Context s = Context.fromUserPass(serviceKDC2Name, password, true);
         s.startAsServer(GSSUtil.GSS_KRB5_MECH_OID);
         GSSName impName = s.impersonate(userKDC1Name).cred().getName();
@@ -306,6 +305,16 @@ public class ReferralsTest {
      * because the server and the backend are on different realms.
      */
     private static void testDelegationWithReferrals() throws Exception {
+        testDelegationWithReferralsSingle();
+
+        // Try a second time to force the use of the Referrals Cache.
+        // During this execution, the referral ticket from RABBIT.HOLE
+        // to DEV.RABBIT.HOLE (upon the initial S4U2Proxy message) will
+        // be obtained from the Cache.
+        testDelegationWithReferralsSingle();
+    }
+
+    private static void testDelegationWithReferralsSingle() throws Exception {
         Context c = Context.fromUserPass(userKDC1Name, password, false);
         c.startAsClient(serviceName, GSSUtil.GSS_KRB5_MECH_OID);
         Context s = Context.fromUserPass(serviceKDC2Name, password, true);
@@ -353,6 +362,23 @@ public class ReferralsTest {
             throw new Exception("should not succeed");
         } catch (LoginException e) {
             // expected
+        }
+    }
+
+    // For JDK-8308540. When a KDC is not found, provide better error info.
+    private static void testOnlyOne() throws Exception {
+        System.setProperty("java.security.krb5.conf", krbConfigNameOnlyOne);
+        Config.refresh();
+        Context c = Context.fromUserPass(userKDC1Name, password, false);
+        c.startAsClient(serviceName, GSSUtil.GSS_KRB5_MECH_OID);
+        try {
+            Context.handshake(c, null);
+            throw new RuntimeException("Should not succeed");
+        } catch (Exception le) {
+            if (le.getMessage().contains("Cannot locate KDC for DEV.RABBIT.HOLE")) {
+                return;
+            }
+            throw le;
         }
     }
 }

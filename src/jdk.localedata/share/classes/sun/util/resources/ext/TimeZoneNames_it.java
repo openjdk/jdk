@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -351,7 +351,7 @@ public final class TimeZoneNames_it extends TimeZoneNamesBundle {
             {"Africa/Gaborone", CAT},
             {"Africa/Harare", CAT},
             {"Africa/Johannesburg", SAST},
-            {"Africa/Juba", EAT},
+            {"Africa/Juba", CAT},
             {"Africa/Kampala", EAT},
             {"Africa/Khartoum", CAT},
             {"Africa/Kigali", CAT},
@@ -378,7 +378,9 @@ public final class TimeZoneNames_it extends TimeZoneNamesBundle {
             {"Africa/Timbuktu", GMT},
             {"Africa/Tripoli", EET},
             {"Africa/Tunis", CET},
-            {"Africa/Windhoek", CAT},
+            {"Africa/Windhoek", new String[] {"Central African Time", "CAT",
+                                              "Western African Time", "WAT",
+                                              "Central African Time", "CAT"}},
             {"America/Adak", HST},
             {"America/Anguilla", AST},
             {"America/Antigua", AST},
@@ -425,7 +427,8 @@ public final class TimeZoneNames_it extends TimeZoneNamesBundle {
                                               "Ora estiva della Guyana Francese", "GFST",
                                               "Ora della Guyana Francese", "GFT"}},
             {"America/Cayman", EST},
-            {"America/Chihuahua", MST},
+            {"America/Chihuahua", CST},
+            {"America/Ciudad_Juarez", MST},
             {"America/Creston", MST},
             {"America/Coral_Harbour", EST},
             {"America/Cordoba", AGT},
@@ -514,7 +517,7 @@ public final class TimeZoneNames_it extends TimeZoneNamesBundle {
             {"America/North_Dakota/Center", CST},
             {"America/North_Dakota/New_Salem", CST},
             {"America/Nuuk", WGT},
-            {"America/Ojinaga", MST},
+            {"America/Ojinaga", CST},
             {"America/Panama", EST},
             {"America/Pangnirtung", EST},
             {"America/Paramaribo", new String[] {"Ora di Suriname", "SRT",
@@ -564,9 +567,9 @@ public final class TimeZoneNames_it extends TimeZoneNamesBundle {
             {"Antarctica/DumontDUrville", new String[] {"Ora di Dumont-d'Urville", "DDUT",
                                                         "Ora estiva di Dumont-d'Urville", "DDUST",
                                                         "Ora di Dumont-d'Urville", "DDUT"}},
-            {"Antarctica/Macquarie", new String[] {"Ora dell'Isola Macquarie", "MIST",
-                                                   "Ora estiva dell'Isola Macquarie", "MIST",
-                                                   "Ora dell'Isola Macquarie", "MIST"}},
+            {"Antarctica/Macquarie", new String[] {"Australian Eastern Standard Time (Macquarie)", "AEST",
+                                                   "Australian Eastern Daylight Time (Macquarie)", "AEDT",
+                                                   "Australian Eastern Time (Macquarie)", "AET"}},
             {"Antarctica/Mawson", new String[] {"Ora di Mawson", "MAWT",
                                                 "Ora estiva di Mawson", "MAWST",
                                                 "Ora di Mawson", "MAWT"}},

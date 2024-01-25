@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,15 @@
 
 package java.io;
 
-import java.io.ObjectStreamClass.WeakClassKey;
-import java.lang.ref.ReferenceQueue;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.StringJoiner;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import static java.io.ObjectStreamClass.processQueue;
+
+import jdk.internal.util.ByteArray;
 import sun.reflect.misc.ReflectUtil;
 
 /**
@@ -70,31 +68,35 @@ import sun.reflect.misc.ReflectUtil;
  * written.
  *
  * <p>For example to write an object that can be read by the example in
- * ObjectInputStream:
- * <br>
- * <pre>
- *      FileOutputStream fos = new FileOutputStream("t.tmp");
- *      ObjectOutputStream oos = new ObjectOutputStream(fos);
+ * {@link ObjectInputStream}:
+ * {@snippet lang="java":
+ *      try (FileOutputStream fos = new FileOutputStream("t.tmp");
+ *           ObjectOutputStream oos = new ObjectOutputStream(fos)) {
+ *          oos.writeObject("Today");
+ *          oos.writeObject(LocalDateTime.now());
+ *      } catch (Exception ex) {
+ *          // handle exception
+ *      }
+ * }
  *
- *      oos.writeInt(12345);
- *      oos.writeObject("Today");
- *      oos.writeObject(new Date());
+ * <p>Serializable classes that require special handling during the
+ * serialization and deserialization process should implement methods
+ * with the following signatures:
  *
- *      oos.close();
- * </pre>
+ * {@snippet lang="java":
+ *     private void readObject(java.io.ObjectInputStream stream)
+ *         throws IOException, ClassNotFoundException;
+ *     private void writeObject(java.io.ObjectOutputStream stream)
+ *         throws IOException;
+ *     private void readObjectNoData()
+ *         throws ObjectStreamException;
+ * }
  *
- * <p>Classes that require special handling during the serialization and
- * deserialization process must implement special methods with these exact
- * signatures:
- * <br>
- * <pre>
- * private void readObject(java.io.ObjectInputStream stream)
- *     throws IOException, ClassNotFoundException;
- * private void writeObject(java.io.ObjectOutputStream stream)
- *     throws IOException
- * private void readObjectNoData()
- *     throws ObjectStreamException;
- * </pre>
+ * <p>The method name, modifiers, return type, and number and type of
+ * parameters must match exactly for the method to be used by
+ * serialization or deserialization. The methods should only be
+ * declared to throw checked exceptions consistent with these
+ * signatures.
  *
  * <p>The writeObject method is responsible for writing the state of the object
  * for its particular class so that the corresponding readObject method can
@@ -153,6 +155,7 @@ import sun.reflect.misc.ReflectUtil;
  * <p>Records are serialized differently than ordinary serializable or externalizable
  * objects, see <a href="ObjectInputStream.html#record-serialization">record serialization</a>.
  *
+ * @spec serialization/index.html Java Object Serialization Specification
  * @author      Mike Warres
  * @author      Roger Riggs
  * @see java.io.DataOutput
@@ -169,12 +172,13 @@ public class ObjectOutputStream
 
     private static class Caches {
         /** cache of subclass security audit results */
-        static final ConcurrentMap<WeakClassKey,Boolean> subclassAudits =
-            new ConcurrentHashMap<>();
-
-        /** queue for WeakReferences to audited subclasses */
-        static final ReferenceQueue<Class<?>> subclassAuditsQueue =
-            new ReferenceQueue<>();
+        static final ClassValue<Boolean> subclassAudits =
+            new ClassValue<>() {
+                @Override
+                protected Boolean computeValue(Class<?> type) {
+                    return auditSubclass(type);
+                }
+            };
     }
 
     /** filter stream for handling block data conversion */
@@ -213,6 +217,7 @@ public class ObjectOutputStream
      * value of "sun.io.serialization.extendedDebugInfo" property,
      * as true or false for extended information about exception's place
      */
+    @SuppressWarnings("removal")
     private static final boolean extendedDebugInfo =
         java.security.AccessController.doPrivileged(
             new sun.security.action.GetBooleanAction(
@@ -274,6 +279,7 @@ public class ObjectOutputStream
      * @see java.io.SerializablePermission
      */
     protected ObjectOutputStream() throws IOException, SecurityException {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(SUBCLASS_IMPLEMENTATION_PERMISSION);
@@ -566,7 +572,7 @@ public class ObjectOutputStream
      * Object (as opposed to type Serializable) to allow for cases where
      * non-serializable objects are replaced by serializable ones.
      *
-     * <p>When a subclass is replacing objects it must insure that either a
+     * <p>When a subclass is replacing objects it must ensure that either a
      * complementary substitution must be made during deserialization or that
      * the substituted object is compatible with every field where the
      * reference will be stored.  Objects whose type is not a subclass of the
@@ -579,7 +585,7 @@ public class ObjectOutputStream
      * substituted or the original object.
      *
      * <p>Null can be returned as the object to be substituted, but may cause
-     * NullReferenceException in classes that contain references to the
+     * {@link NullPointerException} in classes that contain references to the
      * original object since they may be expecting an object instead of
      * null.
      *
@@ -621,6 +627,7 @@ public class ObjectOutputStream
             return enable;
         }
         if (enable) {
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 sm.checkPermission(SUBSTITUTION_PERMISSION);
@@ -649,10 +656,11 @@ public class ObjectOutputStream
      * stream.  Subclasses of ObjectOutputStream may override this method to
      * customize the way in which class descriptors are written to the
      * serialization stream.  The corresponding method in ObjectInputStream,
-     * {@code readClassDescriptor}, should then be overridden to
+     * {@link ObjectInputStream#readClassDescriptor readClassDescriptor}, should then be overridden to
      * reconstitute the class descriptor from its custom stream representation.
      * By default, this method writes class descriptors according to the format
-     * defined in the Object Serialization specification.
+     * defined in the <a href="{@docRoot}/../specs/serialization/index.html">
+     * <cite>Java Object Serialization Specification</cite></a>.
      *
      * <p>Note that this method will only be called if the ObjectOutputStream
      * is not using the old serialization stream format (set by calling
@@ -663,6 +671,7 @@ public class ObjectOutputStream
      *
      * @param   desc class descriptor to write to the stream
      * @throws  IOException If an I/O error has occurred.
+     * @spec serialization/index.html Java Object Serialization Specification
      * @see java.io.ObjectInputStream#readClassDescriptor()
      * @see #useProtocolVersion(int)
      * @see java.io.ObjectStreamConstants#PROTOCOL_VERSION_1
@@ -681,6 +690,7 @@ public class ObjectOutputStream
      * @param   val the byte to be written to the stream
      * @throws  IOException If an I/O error has occurred.
      */
+    @Override
     public void write(int val) throws IOException {
         bout.write(val);
     }
@@ -692,6 +702,7 @@ public class ObjectOutputStream
      * @param   buf the data to be written
      * @throws  IOException If an I/O error has occurred.
      */
+    @Override
     public void write(byte[] buf) throws IOException {
         bout.write(buf, 0, buf.length, false);
     }
@@ -702,16 +713,15 @@ public class ObjectOutputStream
      * @param   buf the data to be written
      * @param   off the start offset in the data
      * @param   len the number of bytes that are written
-     * @throws  IOException If an I/O error has occurred.
+     * @throws  IOException {@inheritDoc}
+     * @throws  IndexOutOfBoundsException {@inheritDoc}
      */
+    @Override
     public void write(byte[] buf, int off, int len) throws IOException {
         if (buf == null) {
             throw new NullPointerException();
         }
-        int endoff = off + len;
-        if (off < 0 || len < 0 || endoff > buf.length || endoff < 0) {
-            throw new IndexOutOfBoundsException();
-        }
+        Objects.checkFromIndexSize(off, len, buf.length);
         bout.write(buf, off, len, false);
     }
 
@@ -719,8 +729,9 @@ public class ObjectOutputStream
      * Flushes the stream. This will write any buffered output bytes and flush
      * through to the underlying stream.
      *
-     * @throws  IOException If an I/O error has occurred.
+     * @throws  IOException {@inheritDoc}
      */
+    @Override
     public void flush() throws IOException {
         bout.flush();
     }
@@ -742,6 +753,7 @@ public class ObjectOutputStream
      *
      * @throws  IOException If an I/O error has occurred.
      */
+    @Override
     public void close() throws IOException {
         flush();
         clear();
@@ -760,7 +772,7 @@ public class ObjectOutputStream
     }
 
     /**
-     * Writes an 8 bit byte.
+     * Writes an 8-bit byte.
      *
      * @param   val the byte value to be written
      * @throws  IOException if I/O errors occur while writing to the underlying
@@ -771,7 +783,7 @@ public class ObjectOutputStream
     }
 
     /**
-     * Writes a 16 bit short.
+     * Writes a 16-bit short.
      *
      * @param   val the short value to be written
      * @throws  IOException if I/O errors occur while writing to the underlying
@@ -782,7 +794,7 @@ public class ObjectOutputStream
     }
 
     /**
-     * Writes a 16 bit char.
+     * Writes a 16-bit char.
      *
      * @param   val the char value to be written
      * @throws  IOException if I/O errors occur while writing to the underlying
@@ -793,7 +805,7 @@ public class ObjectOutputStream
     }
 
     /**
-     * Writes a 32 bit int.
+     * Writes a 32-bit int.
      *
      * @param   val the integer value to be written
      * @throws  IOException if I/O errors occur while writing to the underlying
@@ -804,7 +816,7 @@ public class ObjectOutputStream
     }
 
     /**
-     * Writes a 64 bit long.
+     * Writes a 64-bit long.
      *
      * @param   val the long value to be written
      * @throws  IOException if I/O errors occur while writing to the underlying
@@ -815,7 +827,7 @@ public class ObjectOutputStream
     }
 
     /**
-     * Writes a 32 bit float.
+     * Writes a 32-bit float.
      *
      * @param   val the float value to be written
      * @throws  IOException if I/O errors occur while writing to the underlying
@@ -826,7 +838,7 @@ public class ObjectOutputStream
     }
 
     /**
-     * Writes a 64 bit double.
+     * Writes a 64-bit double.
      *
      * @param   val the double value to be written
      * @throws  IOException if I/O errors occur while writing to the underlying
@@ -1052,17 +1064,12 @@ public class ObjectOutputStream
         if (cl == ObjectOutputStream.class) {
             return;
         }
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm == null) {
             return;
         }
-        processQueue(Caches.subclassAuditsQueue, Caches.subclassAudits);
-        WeakClassKey key = new WeakClassKey(cl, Caches.subclassAuditsQueue);
-        Boolean result = Caches.subclassAudits.get(key);
-        if (result == null) {
-            result = auditSubclass(cl);
-            Caches.subclassAudits.putIfAbsent(key, result);
-        }
+        boolean result = Caches.subclassAudits.get(cl);
         if (!result) {
             sm.checkPermission(SUBCLASS_IMPLEMENTATION_PERMISSION);
         }
@@ -1073,6 +1080,7 @@ public class ObjectOutputStream
      * override security-sensitive non-final methods.  Returns TRUE if subclass
      * is "safe", FALSE otherwise.
      */
+    @SuppressWarnings("removal")
     private static Boolean auditSubclass(Class<?> subcl) {
         return AccessController.doPrivileged(
             new PrivilegedAction<>() {
@@ -1414,7 +1422,7 @@ public class ObjectOutputStream
     }
 
     /**
-     * Writes representation of a "ordinary" (i.e., not a String, Class,
+     * Writes representation of an "ordinary" (i.e., not a String, Class,
      * ObjectStreamClass, array, or enum constant) serializable object to the
      * stream.
      */
@@ -1634,7 +1642,7 @@ public class ObjectOutputStream
         }
 
         public void put(String name, boolean val) {
-            Bits.putBoolean(primVals, getFieldOffset(name, Boolean.TYPE), val);
+            ByteArray.setBoolean(primVals, getFieldOffset(name, Boolean.TYPE), val);
         }
 
         public void put(String name, byte val) {
@@ -1642,27 +1650,27 @@ public class ObjectOutputStream
         }
 
         public void put(String name, char val) {
-            Bits.putChar(primVals, getFieldOffset(name, Character.TYPE), val);
+            ByteArray.setChar(primVals, getFieldOffset(name, Character.TYPE), val);
         }
 
         public void put(String name, short val) {
-            Bits.putShort(primVals, getFieldOffset(name, Short.TYPE), val);
+            ByteArray.setShort(primVals, getFieldOffset(name, Short.TYPE), val);
         }
 
         public void put(String name, int val) {
-            Bits.putInt(primVals, getFieldOffset(name, Integer.TYPE), val);
+            ByteArray.setInt(primVals, getFieldOffset(name, Integer.TYPE), val);
         }
 
         public void put(String name, float val) {
-            Bits.putFloat(primVals, getFieldOffset(name, Float.TYPE), val);
+            ByteArray.setFloat(primVals, getFieldOffset(name, Float.TYPE), val);
         }
 
         public void put(String name, long val) {
-            Bits.putLong(primVals, getFieldOffset(name, Long.TYPE), val);
+            ByteArray.setLong(primVals, getFieldOffset(name, Long.TYPE), val);
         }
 
         public void put(String name, double val) {
-            Bits.putDouble(primVals, getFieldOffset(name, Double.TYPE), val);
+            ByteArray.setDouble(primVals, getFieldOffset(name, Double.TYPE), val);
         }
 
         public void put(String name, Object val) {
@@ -1750,7 +1758,7 @@ public class ObjectOutputStream
      * bracketed by block data markers (see object serialization specification
      * for details).
      */
-    private static class BlockDataOutputStream
+    private static final class BlockDataOutputStream
         extends OutputStream implements DataOutput
     {
         /** maximum data block length */
@@ -1904,7 +1912,7 @@ public class ObjectOutputStream
                 out.write(hbuf, 0, 2);
             } else {
                 hbuf[0] = TC_BLOCKDATALONG;
-                Bits.putInt(hbuf, 1, len);
+                ByteArray.setInt(hbuf, 1, len);
                 out.write(hbuf, 0, 5);
             }
         }
@@ -1921,7 +1929,7 @@ public class ObjectOutputStream
             if (pos >= MAX_BLOCK_SIZE) {
                 drain();
             }
-            Bits.putBoolean(buf, pos++, v);
+            ByteArray.setBoolean(buf, pos++, v);
         }
 
         public void writeByte(int v) throws IOException {
@@ -1933,7 +1941,7 @@ public class ObjectOutputStream
 
         public void writeChar(int v) throws IOException {
             if (pos + 2 <= MAX_BLOCK_SIZE) {
-                Bits.putChar(buf, pos, (char) v);
+                ByteArray.setChar(buf, pos, (char) v);
                 pos += 2;
             } else {
                 dout.writeChar(v);
@@ -1942,7 +1950,7 @@ public class ObjectOutputStream
 
         public void writeShort(int v) throws IOException {
             if (pos + 2 <= MAX_BLOCK_SIZE) {
-                Bits.putShort(buf, pos, (short) v);
+                ByteArray.setShort(buf, pos, (short) v);
                 pos += 2;
             } else {
                 dout.writeShort(v);
@@ -1951,7 +1959,7 @@ public class ObjectOutputStream
 
         public void writeInt(int v) throws IOException {
             if (pos + 4 <= MAX_BLOCK_SIZE) {
-                Bits.putInt(buf, pos, v);
+                ByteArray.setInt(buf, pos, v);
                 pos += 4;
             } else {
                 dout.writeInt(v);
@@ -1960,7 +1968,7 @@ public class ObjectOutputStream
 
         public void writeFloat(float v) throws IOException {
             if (pos + 4 <= MAX_BLOCK_SIZE) {
-                Bits.putFloat(buf, pos, v);
+                ByteArray.setFloat(buf, pos, v);
                 pos += 4;
             } else {
                 dout.writeFloat(v);
@@ -1969,7 +1977,7 @@ public class ObjectOutputStream
 
         public void writeLong(long v) throws IOException {
             if (pos + 8 <= MAX_BLOCK_SIZE) {
-                Bits.putLong(buf, pos, v);
+                ByteArray.setLong(buf, pos, v);
                 pos += 8;
             } else {
                 dout.writeLong(v);
@@ -1978,7 +1986,7 @@ public class ObjectOutputStream
 
         public void writeDouble(double v) throws IOException {
             if (pos + 8 <= MAX_BLOCK_SIZE) {
-                Bits.putDouble(buf, pos, v);
+                ByteArray.setDouble(buf, pos, v);
                 pos += 8;
             } else {
                 dout.writeDouble(v);
@@ -2038,7 +2046,7 @@ public class ObjectOutputStream
                 }
                 int stop = Math.min(endoff, off + (MAX_BLOCK_SIZE - pos));
                 while (off < stop) {
-                    Bits.putBoolean(buf, pos++, v[off++]);
+                    ByteArray.setBoolean(buf, pos++, v[off++]);
                 }
             }
         }
@@ -2051,7 +2059,7 @@ public class ObjectOutputStream
                     int avail = (MAX_BLOCK_SIZE - pos) >> 1;
                     int stop = Math.min(endoff, off + avail);
                     while (off < stop) {
-                        Bits.putChar(buf, pos, v[off++]);
+                        ByteArray.setChar(buf, pos, v[off++]);
                         pos += 2;
                     }
                 } else {
@@ -2068,7 +2076,7 @@ public class ObjectOutputStream
                     int avail = (MAX_BLOCK_SIZE - pos) >> 1;
                     int stop = Math.min(endoff, off + avail);
                     while (off < stop) {
-                        Bits.putShort(buf, pos, v[off++]);
+                        ByteArray.setShort(buf, pos, v[off++]);
                         pos += 2;
                     }
                 } else {
@@ -2085,7 +2093,7 @@ public class ObjectOutputStream
                     int avail = (MAX_BLOCK_SIZE - pos) >> 2;
                     int stop = Math.min(endoff, off + avail);
                     while (off < stop) {
-                        Bits.putInt(buf, pos, v[off++]);
+                        ByteArray.setInt(buf, pos, v[off++]);
                         pos += 4;
                     }
                 } else {
@@ -2102,7 +2110,7 @@ public class ObjectOutputStream
                     int avail = (MAX_BLOCK_SIZE - pos) >> 2;
                     int stop = Math.min(endoff, off + avail);
                     while (off < stop) {
-                        Bits.putFloat(buf, pos, v[off++]);
+                        ByteArray.setFloat(buf, pos, v[off++]);
                         pos += 4;
                     }
                 } else {
@@ -2119,7 +2127,7 @@ public class ObjectOutputStream
                     int avail = (MAX_BLOCK_SIZE - pos) >> 3;
                     int stop = Math.min(endoff, off + avail);
                     while (off < stop) {
-                        Bits.putLong(buf, pos, v[off++]);
+                        ByteArray.setLong(buf, pos, v[off++]);
                         pos += 8;
                     }
                 } else {
@@ -2136,7 +2144,7 @@ public class ObjectOutputStream
                     int avail = (MAX_BLOCK_SIZE - pos) >> 3;
                     int stop = Math.min(endoff, off + avail);
                     while (off < stop) {
-                        Bits.putDouble(buf, pos, v[off++]);
+                        ByteArray.setDouble(buf, pos, v[off++]);
                         pos += 8;
                     }
                 } else {
@@ -2256,7 +2264,7 @@ public class ObjectOutputStream
      * Lightweight identity hash table which maps objects to integer handles,
      * assigned in ascending order.
      */
-    private static class HandleTable {
+    private static final class HandleTable {
 
         /* number of mappings in table/next available handle */
         private int size;
@@ -2381,7 +2389,7 @@ public class ObjectOutputStream
      * Lightweight identity hash table which maps objects to replacement
      * objects.
      */
-    private static class ReplaceTable {
+    private static final class ReplaceTable {
 
         /* maps object -> index */
         private final HandleTable htab;
@@ -2445,7 +2453,7 @@ public class ObjectOutputStream
      * Stack to keep debug information about the state of the
      * serialization process, for embedding in exception messages.
      */
-    private static class DebugTraceInfoStack {
+    private static final class DebugTraceInfoStack {
         private final List<String> stack;
 
         DebugTraceInfoStack() {

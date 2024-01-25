@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1082,7 +1082,7 @@ public final class DMarlinRenderingEngine extends RenderingEngine
 
     /**
      * Returns the minimum pen width that the antialiasing rasterizer
-     * can represent without dropouts occuring.
+     * can represent without dropouts occurring.
      * @since 1.7
      */
     @Override
@@ -1119,6 +1119,7 @@ public final class DMarlinRenderingEngine extends RenderingEngine
         USE_THREAD_LOCAL = MarlinProperties.isUseThreadLocal();
 
         // Soft reference by default:
+        @SuppressWarnings("removal")
         final String refType = AccessController.doPrivileged(
                             new GetPropertyAction("sun.java2d.renderer.useRef",
                             "soft"));
@@ -1197,6 +1198,10 @@ public final class DMarlinRenderingEngine extends RenderingEngine
         logInfo("sun.java2d.renderer.pixelHeight      = "
                 + MarlinConst.INITIAL_PIXEL_HEIGHT);
 
+        logInfo("sun.java2d.renderer.profile          = "
+                + (MarlinProperties.isProfileQuality() ?
+                    "quality" : "speed"));
+
         logInfo("sun.java2d.renderer.subPixel_log2_X  = "
                 + MarlinConst.SUBPIXEL_LG_POSITIONS_X);
         logInfo("sun.java2d.renderer.subPixel_log2_Y  = "
@@ -1230,6 +1235,11 @@ public final class DMarlinRenderingEngine extends RenderingEngine
         logInfo("sun.java2d.renderer.pathSimplifier.pixTol = "
                 + MarlinProperties.getPathSimplifierPixelTolerance());
 
+        logInfo("sun.java2d.renderer.stroker.joinError= "
+                + MarlinProperties.getStrokerJoinError());
+        logInfo("sun.java2d.renderer.stroker.joinStyle= "
+                + MarlinProperties.getStrokerJoinStyle());
+
         logInfo("sun.java2d.renderer.clip             = "
                 + MarlinProperties.isDoClip());
         logInfo("sun.java2d.renderer.clip.runtime.enable = "
@@ -1247,6 +1257,11 @@ public final class DMarlinRenderingEngine extends RenderingEngine
                 + MarlinConst.DO_MONITORS);
         logInfo("sun.java2d.renderer.doChecks         = "
                 + MarlinConst.DO_CHECKS);
+
+        logInfo("sun.java2d.renderer.skip_rdr         = "
+                + MarlinProperties.isSkipRenderer());
+        logInfo("sun.java2d.renderer.skip_pipe        = "
+                + MarlinProperties.isSkipRenderTiles());
 
         // logging parameters
         logInfo("sun.java2d.renderer.useLogger        = "
@@ -1267,6 +1282,7 @@ public final class DMarlinRenderingEngine extends RenderingEngine
                 + MarlinProperties.getQuadDecD2());
 
         logInfo("Renderer settings:");
+        logInfo("SORT         = " + MergeSort.SORT_TYPE);
         logInfo("CUB_DEC_BND  = " + Renderer.CUB_DEC_BND);
         logInfo("CUB_INC_BND  = " + Renderer.CUB_INC_BND);
         logInfo("QUAD_DEC_BND = " + Renderer.QUAD_DEC_BND);

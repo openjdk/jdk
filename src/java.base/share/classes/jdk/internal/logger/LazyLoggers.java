@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,9 @@ import java.lang.System.LoggerFinder;
 import java.lang.System.Logger;
 import java.lang.ref.WeakReference;
 import java.util.Objects;
+import java.util.function.BooleanSupplier;
+
+import jdk.internal.logger.LoggerFinderLoader.TemporaryLoggerFinder;
 import jdk.internal.misc.VM;
 import sun.util.logging.PlatformLogger;
 
@@ -110,6 +113,9 @@ public final class LazyLoggers {
         // We need to pass the actual caller module when creating the logger.
         private final WeakReference<Module> moduleRef;
 
+        // whether this is the loading thread, can be null
+        private final BooleanSupplier isLoadingThread;
+
         // The name of the logger that will be created lazyly
         final String name;
         // The plain logger SPI object - null until it is accessed for the
@@ -122,16 +128,24 @@ public final class LazyLoggers {
         private LazyLoggerAccessor(String name,
                                    LazyLoggerFactories<? extends Logger> factories,
                                    Module module) {
-            this(Objects.requireNonNull(name), Objects.requireNonNull(factories),
-                    Objects.requireNonNull(module), null);
+            this(name, factories, module, null);
         }
 
         private LazyLoggerAccessor(String name,
                                    LazyLoggerFactories<? extends Logger> factories,
-                                   Module module, Void unused) {
+                                   Module module, BooleanSupplier isLoading) {
+
+            this(Objects.requireNonNull(name), Objects.requireNonNull(factories),
+                    Objects.requireNonNull(module), isLoading, null);
+        }
+
+        private LazyLoggerAccessor(String name,
+                                   LazyLoggerFactories<? extends Logger> factories,
+                                   Module module, BooleanSupplier isLoading, Void unused) {
             this.name = name;
             this.factories = factories;
             this.moduleRef = new WeakReference<>(module);
+            this.isLoadingThread = isLoading;
         }
 
         /**
@@ -162,7 +176,7 @@ public final class LazyLoggers {
             // BootstrapLogger has the logic to decide whether to invoke the
             // SPI or use a temporary (BootstrapLogger or SimpleConsoleLogger)
             // logger.
-            wrapped = BootstrapLogger.getLogger(this);
+            wrapped = BootstrapLogger.getLogger(this, isLoadingThread);
             synchronized(this) {
                 // if w has already been in between, simply drop 'wrapped'.
                 setWrappedIfNotSet(wrapped);
@@ -194,7 +208,7 @@ public final class LazyLoggers {
             // BootstrapLogger has the logic to decide whether to invoke the
             // SPI or use a temporary (BootstrapLogger or SimpleConsoleLogger)
             // logger.
-            final Logger wrapped = BootstrapLogger.getLogger(this);
+            final Logger wrapped = BootstrapLogger.getLogger(this, isLoadingThread);
             synchronized(this) {
                 // if w has already been set, simply drop 'wrapped'.
                 setWrappedIfNotSet(wrapped);
@@ -282,10 +296,10 @@ public final class LazyLoggers {
          * Creates a new lazy logger accessor for the named logger. The given
          * factories will be use when it becomes necessary to actually create
          * the logger.
-         * @param <T> An interface that extends {@link Logger}.
          * @param name The logger name.
          * @param factories The factories that should be used to create the
          *                  wrapped logger.
+         * @param module The module for which the logger is being created
          * @return A new LazyLoggerAccessor.
          */
         public static LazyLoggerAccessor makeAccessor(String name,
@@ -327,6 +341,7 @@ public final class LazyLoggers {
 
     // Do not expose this outside of this package.
     private static volatile LoggerFinder provider;
+    @SuppressWarnings("removal")
     private static LoggerFinder accessLoggerFinder() {
         LoggerFinder prov = provider;
         if (prov == null) {
@@ -339,6 +354,7 @@ public final class LazyLoggers {
             prov = sm == null ? LoggerFinder.getLoggerFinder() :
                 AccessController.doPrivileged(
                         (PrivilegedAction<LoggerFinder>)LoggerFinder::getLoggerFinder);
+            if (prov instanceof TemporaryLoggerFinder) return prov;
             provider = prov;
         }
         return prov;
@@ -358,7 +374,6 @@ public final class LazyLoggers {
            new LazyLoggerFactories<>(loggerSupplier);
 
 
-
     // A concrete implementation of Logger that delegates to a  System.Logger,
     // but only creates the System.Logger instance lazily when it's used for
     // the first time.
@@ -376,6 +391,11 @@ public final class LazyLoggers {
         }
     }
 
+    static Logger makeLazyLogger(String name, Module module, BooleanSupplier isLoading) {
+        final LazyLoggerAccessor holder = new LazyLoggerAccessor(name, factories, module, isLoading);
+        return new JdkLazyLogger(holder, null);
+    }
+
     /**
      * Gets a logger from the LoggerFinder. Creates the actual concrete
      * logger.
@@ -383,6 +403,7 @@ public final class LazyLoggers {
      * @param module  module on behalf of which the logger is created
      * @return  The logger returned by the LoggerFinder.
      */
+    @SuppressWarnings("removal")
     static Logger getLoggerFromFinder(String name, Module module) {
         final SecurityManager sm = System.getSecurityManager();
         if (sm == null) {

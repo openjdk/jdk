@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -218,7 +218,7 @@ public final class WPrinterJob extends RasterPrinterJob
      * generating multiple copies themselves, but uncollated is more
      * universal than collated copies.
      * When they do, they read the initial values from the PRINTDLG structure
-     * and set them into the driver's DEVMODE structure and intialise
+     * and set them into the driver's DEVMODE structure and initialise
      * the printer DC based on that, so that when printed those settings
      * will be used.
      * For drivers supporting both these capabilities via DEVMODE, then on
@@ -362,6 +362,9 @@ public final class WPrinterJob extends RasterPrinterJob
 
     private java.awt.peer.ComponentPeer dialogOwnerPeer = null;
 
+    private int graphicsMode;
+    private double[] worldTransform = new double[6];
+
  /* Static Initializations */
 
     static {
@@ -383,8 +386,8 @@ public final class WPrinterJob extends RasterPrinterJob
     }
 
     /* Implement DisposerTarget. Weak references to an Object can delay
-     * its storage reclaimation marginally.
-     * It won't make the native resources be release any more quickly, but
+     * its storage reclamation marginally.
+     * It won't make the native resources be released any more quickly, but
      * by pointing the reference held by Disposer at an object which becomes
      * no longer strongly reachable when this WPrinterJob is no longer
      * strongly reachable, we allow the WPrinterJob to be freed more promptly
@@ -728,8 +731,7 @@ public final class WPrinterJob extends RasterPrinterJob
                      */
                     if (attr.getCategory() == SunAlternateMedia.class) {
                         Media media = (Media)attributes.get(Media.class);
-                        if (media == null ||
-                            !(media instanceof MediaTray)) {
+                        if (!(media instanceof MediaTray)) {
                             attr = ((SunAlternateMedia)attr).getMedia();
                         }
                     }
@@ -960,6 +962,17 @@ public final class WPrinterJob extends RasterPrinterJob
         endPath(getPrintDC());
     }
 
+    protected void scaleTransform(float scale) {
+        graphicsMode = setAdvancedGraphicsMode();
+        getWorldTransform(worldTransform);
+        scale(scale, scale);
+    }
+
+    protected void restoreTransform() {
+        setWorldTransform(worldTransform);
+        setGraphicsMode(graphicsMode);
+    }
+
     protected void closeFigure() {
         closeFigure(getPrintDC());
     }
@@ -993,6 +1006,44 @@ public final class WPrinterJob extends RasterPrinterJob
      */
     protected void setPolyFillMode(int fillRule) {
         setPolyFillMode(getPrintDC(), fillRule);
+    }
+
+    /**
+     * Set the GDI graphics mode to {@code GM_ADVANCED}.
+     */
+    private int setAdvancedGraphicsMode() {
+        return setAdvancedGraphicsMode(getPrintDC());
+    }
+
+    /**
+     * Set the GDI graphics mode.
+     * The {@code mode} should
+     * be one of the following Windows constants:
+     * {@code GM_COMPATIBLE} or {@code GM_ADVANCED}.
+     */
+    private void setGraphicsMode(int mode) {
+        setGraphicsMode(getPrintDC(), mode);
+    }
+
+    /**
+     * Scale the GDI World Transform.
+     */
+    private void scale(double scaleX, double scaleY) {
+        scale(getPrintDC(), scaleX, scaleY);
+    }
+
+    /**
+     * Get the GDI World Transform.
+     */
+    private void getWorldTransform(double[] transform) {
+        getWorldTransform(getPrintDC(), transform);
+    }
+
+    /**
+     * Set the GDI World Transform.
+     */
+    private void setWorldTransform(double[] transform) {
+        setWorldTransform(getPrintDC(), transform);
     }
 
     /*
@@ -1104,6 +1155,10 @@ public final class WPrinterJob extends RasterPrinterJob
      */
     protected boolean setFont(String family, float size, int style,
                               int rotation, float awScale) {
+
+        if (family.isEmpty()) {
+            return false;
+        }
 
         boolean didSetFont = true;
 
@@ -1352,7 +1407,7 @@ public final class WPrinterJob extends RasterPrinterJob
      */
     private native boolean jobSetup(Pageable doc, boolean allowPrintToFile);
 
-    /* Make sure printer DC is intialised and that info about the printer
+    /* Make sure printer DC is initialised and that info about the printer
      * is reflected back up to Java code
      */
     @Override
@@ -1469,6 +1524,39 @@ public final class WPrinterJob extends RasterPrinterJob
      * {@code ALTERNATE} or {@code WINDING}.
      */
     protected native void setPolyFillMode(long printDC, int fillRule);
+
+    /**
+     * Set the GDI graphics mode to {@code GM_ADVANCED}
+     * into the device context {@code printDC}.
+     */
+    protected native int setAdvancedGraphicsMode(long printDC);
+
+    /**
+     * Set the GDI graphics {@code mode}
+     * into the device context {@code printDC}.
+     * The {@code mode} should
+     * be one of the following Windows constants:
+     * {@code GM_COMPATIBLE} or {@code GM_ADVANCED}.
+     */
+    protected native void setGraphicsMode(long printDC, int mode);
+
+    /**
+     * Scale the GDI World Transform
+     * of the device context {@code printDC}.
+     */
+    protected native void scale(long printDC, double scaleX, double scaleY);
+
+    /**
+     * Get the GDI World Transform
+     * from the device context {@code printDC}.
+     */
+    protected native void getWorldTransform(long printDC, double[] transform);
+
+    /**
+     * Set the GDI World Transform
+     * into the device context {@code printDC}.
+     */
+    protected native void setWorldTransform(long printDC, double[] transform);
 
     /**
      * Create a Window's solid brush for the color specified
@@ -1821,6 +1909,7 @@ public final class WPrinterJob extends RasterPrinterJob
 
 
     private boolean getPrintToFileEnabled() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             FilePermission printToFilePermission =
@@ -2207,7 +2296,7 @@ public final class WPrinterJob extends RasterPrinterJob
     }
 
 @SuppressWarnings("serial") // JDK-implementation class
-class PrintToFileErrorDialog extends Dialog implements ActionListener{
+static class PrintToFileErrorDialog extends Dialog implements ActionListener {
     public PrintToFileErrorDialog(Frame parent, String title, String message,
                            String buttonText) {
         super(parent, title, true);

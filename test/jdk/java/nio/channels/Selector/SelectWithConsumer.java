@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,14 @@
  */
 
 /* @test
+ * @summary Unit test for Selector.select/selectNow(Consumer)
  * @bug 8199433 8208780
  * @run testng SelectWithConsumer
- * @summary Unit test for Selector select(Consumer), select(Consumer,long) and
- *          selectNow(Consumer)
+ */
+
+/* @test
+ * @requires (os.family == "windows")
+ * @run testng/othervm -Djava.nio.channels.spi.SelectorProvider=sun.nio.ch.WindowsSelectorProvider SelectWithConsumer
  */
 
 import java.io.Closeable;
@@ -407,9 +411,7 @@ public class SelectWithConsumer {
         // select(Consumer, timeout)
         try (Selector sel = Selector.open()) {
             scheduleInterrupt(Thread.currentThread(), 1, SECONDS);
-            long start = System.currentTimeMillis();
             int n = sel.select(k -> assertTrue(false), 60*1000);
-            long duration = System.currentTimeMillis() - start;
             assertTrue(n == 0);
             assertTrue(Thread.currentThread().isInterrupted());
             assertTrue(sel.isOpen());

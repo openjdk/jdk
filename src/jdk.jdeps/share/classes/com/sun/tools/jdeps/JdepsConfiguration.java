@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,25 +126,8 @@ public class JdepsConfiguration implements AutoCloseable {
              .map(nameToModule::get)
              .forEach(this.rootModules::add);
 
-        initProfiles();
-
         trace("resolved modules: %s%n", nameToModule.keySet().stream()
                 .sorted().collect(joining("\n", "\n", "")));
-    }
-
-    private void initProfiles() {
-        // other system modules are not observed and not added in nameToModule map
-        Map<String, Module> systemModules =
-            system.moduleNames()
-                .collect(toMap(Function.identity(), (mn) -> {
-                    Module m = nameToModule.get(mn);
-                    if (m == null) {
-                        ModuleReference mref = finder.find(mn).get();
-                        m = toModule(mref);
-                    }
-                    return m;
-                }));
-        Profile.init(systemModules);
     }
 
     private void addModuleReference(ModuleReference mref) {
@@ -397,8 +380,8 @@ public class JdepsConfiguration implements AutoCloseable {
             md.requires().forEach(builder::requires);
             md.exports().forEach(builder::exports);
             md.opens().forEach(builder::opens);
-            md.provides().stream().forEach(builder::provides);
-            md.uses().stream().forEach(builder::uses);
+            md.provides().forEach(builder::provides);
+            md.uses().forEach(builder::uses);
             builder.packages(md.packages());
             return builder.build();
         }

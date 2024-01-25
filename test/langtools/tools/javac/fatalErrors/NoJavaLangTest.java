@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4263768 4785453
+ * @bug 4263768 4785453 8205187
  * @summary Verify that the compiler does not crash when java.lang is not available
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -38,7 +38,7 @@ import toolbox.JavacTask;
 import toolbox.Task;
 import toolbox.ToolBox;
 
-public class NoJavaLangTest {
+public class NoJavaLangTest  {
 
     private static final String noJavaLangSrc =
         "public class NoJavaLang {\n" +
@@ -50,7 +50,7 @@ public class NoJavaLangTest {
         "}";
 
     private static final String compilerErrorMessage =
-        "Fatal Error: Unable to find package java.lang in classpath or bootclasspath";
+        "error: Unable to find package java.lang in platform classes";
 
     public static void main(String[] args) throws Exception {
         new NoJavaLangTest().run();
@@ -90,7 +90,6 @@ public class NoJavaLangTest {
 
         Files.delete(Paths.get("modules", "java.base", "java", "lang", "Object.class"));
 
-        // ideally we'd have a better message for this case
         String[] mpOpts = { "--system", "none", "--module-path", "modules" };
         test(mpOpts, compilerErrorMessage);
     }
@@ -101,15 +100,13 @@ public class NoJavaLangTest {
         String out = new JavacTask(tb)
                 .options(options)
                 .sources(noJavaLangSrc)
-                .run(Task.Expect.FAIL, 3)
+                .run(Task.Expect.FAIL, 1)
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);
 
-        if (!out.trim().equals(expect)) {
+        if (!out.trim().startsWith(expect)) {
             throw new AssertionError("javac generated error output is not correct");
         }
-
-        System.err.println("OK");
     }
 
 }

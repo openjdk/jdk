@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,8 @@
 package javax.swing.plaf.synth;
 
 import java.awt.Graphics;
-import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.List;
 
 import sun.swing.plaf.synth.DefaultSynthStyle;
 
@@ -265,10 +266,10 @@ class ParsedSynthStyle extends DefaultSynthStyle {
     }
 
     private static class AggregatePainter extends SynthPainter {
-        private java.util.List<SynthPainter> painters;
+        private final List<SynthPainter> painters;
 
         AggregatePainter(SynthPainter painter) {
-            painters = new LinkedList<SynthPainter>();
+            painters = new ArrayList<>();
             painters.add(painter);
         }
 
@@ -1935,9 +1936,9 @@ class ParsedSynthStyle extends DefaultSynthStyle {
         }
 
         public void paintTabbedPaneTabBackground(SynthContext context,
-                     Graphics g, int x, int y, int w, int h, int direction) {
+                     Graphics g, int x, int y, int w, int h, int tabIndex) {
             getPainter(context, "tabbedpanetabbackground", -1).
-                paintTabbedPaneTabBackground(context, g, x, y, w, h, direction);
+                paintTabbedPaneTabBackground(context, g, x, y, w, h, tabIndex);
         }
 
         public void paintTabbedPaneTabBackground(SynthContext context,

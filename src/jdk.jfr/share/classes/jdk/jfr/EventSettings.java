@@ -27,6 +27,7 @@ package jdk.jfr;
 
 import java.time.Duration;
 import java.util.Map;
+import java.util.Objects;
 
 import jdk.jfr.internal.management.EventSettingsModifier;
 
@@ -38,21 +39,9 @@ import jdk.jfr.internal.management.EventSettingsModifier;
  * chaining.
  * <p>
  * The following example shows how to use the {@code EventSettings} class.
- * <pre>
- * {@code
- * Recording r = new Recording();
- * r.enable("jdk.CPULoad")
- *    .withPeriod(Duration.ofSeconds(1));
- * r.enable("jdk.FileWrite")
- *    .withoutStackTrace()
- *    .withThreshold(Duration.ofNanos(10));
- * r.start();
- * Thread.sleep(10_000);
- * r.stop();
- * r.dump(Files.createTempFile("recording", ".jfr"));
  *
- * }
- * </pre>
+ * {@snippet class="Snippets" region="EventSettingOverview"}
+ *
  * @since 9
  */
 public abstract class EventSettings {
@@ -67,8 +56,10 @@ public abstract class EventSettings {
 
         @Override
         public EventSettings with(String name, String value) {
-             delegate.with(name, value);
-             return this;
+            Objects.requireNonNull(name, "name");
+            Objects.requireNonNull(value, "value");
+            delegate.with(name, value);
+            return this;
         }
 
         @Override
@@ -88,7 +79,7 @@ public abstract class EventSettings {
      *
      * @return event settings object for further configuration, not {@code null}
      */
-    final public EventSettings withStackTrace() {
+    public final EventSettings withStackTrace() {
         return with(StackTrace.NAME, "true");
     }
 
@@ -99,7 +90,7 @@ public abstract class EventSettings {
      *
      * @return event settings object for further configuration, not {@code null}
      */
-    final public EventSettings withoutStackTrace() {
+    public final EventSettings withoutStackTrace() {
         return with(StackTrace.NAME, "false");
     }
 
@@ -111,7 +102,7 @@ public abstract class EventSettings {
      *
      * @return event settings object for further configuration, not {@code null}
      */
-    final public EventSettings withoutThreshold() {
+    public final EventSettings withoutThreshold() {
         return with(Threshold.NAME, "0 s");
     }
 
@@ -122,7 +113,8 @@ public abstract class EventSettings {
      *
      * @return event settings object for further configuration, not {@code null}
      */
-    final public EventSettings withPeriod(Duration duration) {
+    public final EventSettings withPeriod(Duration duration) {
+        Objects.requireNonNull(duration, "duration");
         return with(Period.NAME, duration.toNanos() + " ns");
     }
 
@@ -133,7 +125,7 @@ public abstract class EventSettings {
      *
      * @return event settings object for further configuration, not {@code null}
      */
-    final public EventSettings withThreshold(Duration duration) {
+    public final EventSettings withThreshold(Duration duration) {
         if (duration == null) {
             return with(Threshold.NAME, "0 ns");
         } else {
@@ -151,7 +143,7 @@ public abstract class EventSettings {
      *
      * @return event settings object for further configuration, not {@code null}
      */
-    abstract public EventSettings with(String name, String value);
+    public abstract EventSettings with(String name, String value);
 
     /**
      * Creates a settings {@code Map} for the event that is associated with this

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,9 @@
 #ifndef SHARE_MEMORY_PADDED_INLINE_HPP
 #define SHARE_MEMORY_PADDED_INLINE_HPP
 
-#include "memory/allocation.inline.hpp"
 #include "memory/padded.hpp"
+
+#include "memory/allocation.inline.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -73,7 +74,7 @@ T** Padded2DArray<T, flags, alignment>::create_unfreeable(uint rows, uint column
     result[i] = (T*)((uintptr_t)data_start + i * row_size);
   }
 
-  if (allocation_size != NULL) {
+  if (allocation_size != nullptr) {
     *allocation_size = total_size;
   }
 

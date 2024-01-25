@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -261,7 +261,7 @@ public class Desktop {
          * @since 9
          */
         MOVE_TO_TRASH
-    };
+    }
 
     private DesktopPeer peer;
 
@@ -277,6 +277,7 @@ public class Desktop {
     }
 
     private void checkEventsProcessingPermission() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new RuntimePermission(
@@ -390,6 +391,7 @@ public class Desktop {
      * the windows of the external native application.
      */
     private void checkAWTPermission() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new AWTPermission(
@@ -487,6 +489,7 @@ public class Desktop {
     public void print(File file) throws IOException {
         file = new File(file.getPath());
         checkExec();
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPrintJobAccess();
@@ -566,7 +569,7 @@ public class Desktop {
      * <p> A {@code mailto:} URI can specify message fields
      * including <i>"to"</i>, <i>"cc"</i>, <i>"subject"</i>,
      * <i>"body"</i>, etc.  See <a
-     * href="http://www.ietf.org/rfc/rfc2368.txt">The mailto URL
+     * href="https://www.rfc-editor.org/info/rfc2368">The mailto URL
      * scheme (RFC 2368)</a> for the {@code mailto:} URI specification
      * details.
      *
@@ -584,6 +587,8 @@ public class Desktop {
      * {@code AWTPermission("showWindowWithoutWarningBanner")}
      * permission, or the calling thread is not allowed to create a
      * subprocess
+     * @spec https://www.rfc-editor.org/info/rfc2368
+     *      RFC 2368: The mailto URL scheme
      * @see java.net.URI
      * @see java.awt.AWTPermission
      */
@@ -601,6 +606,7 @@ public class Desktop {
     }
 
     private void checkExec() throws SecurityException {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new FilePermission("<<ALL FILES>>",
@@ -609,6 +615,7 @@ public class Desktop {
     }
 
     private void checkRead() throws SecurityException {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new FilePermission("<<ALL FILES>>",
@@ -617,6 +624,7 @@ public class Desktop {
     }
 
     private void checkQuitPermission() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkExit(0);
@@ -779,6 +787,7 @@ public class Desktop {
      */
     public void setPrintFileHandler(final PrintFilesHandler printFileHandler) {
         checkEventsProcessingPermission();
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPrintJobAccess();
@@ -1025,6 +1034,7 @@ public class Desktop {
      *
      * @since 9
      */
+    @SuppressWarnings("removal")
     public boolean moveToTrash(File file) {
         file = new File(file.getPath());
         SecurityManager sm = System.getSecurityManager();

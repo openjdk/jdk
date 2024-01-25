@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -46,15 +46,31 @@ AC_DEFUN([FLAGS_SETUP_ARFLAGS],
 AC_DEFUN([FLAGS_SETUP_STRIPFLAGS],
 [
   ## Setup strip.
-  # FIXME: should this really be per platform, or should it be per toolchain type?
-  # strip is not provided by clang; so guessing platform makes most sense.
-  # FIXME: we should really only export STRIPFLAGS from here, not POST_STRIP_CMD.
-  if test "x$OPENJDK_TARGET_OS" = xlinux; then
-    STRIPFLAGS="-g"
-  elif test "x$OPENJDK_TARGET_OS" = xmacosx; then
-    STRIPFLAGS="-S"
-  elif test "x$OPENJDK_TARGET_OS" = xaix; then
-    STRIPFLAGS="-X32_64"
+  if test "x$STRIP" != x; then
+    AC_MSG_CHECKING([how to run strip])
+
+    # Easy cheat: Check strip variant by passing --version as an argument.
+    # Different types of strip have varying command line syntaxes for querying their
+    # version string, and all noisily fail if the provided version option is not
+    # recognised.
+    #
+    # The actual version string or failure to execute strip are hidden by redirection
+    # to config.log with 2>&AS_MESSAGE_LOG_FD >&AS_MESSAGE_LOG_FD
+
+    if $STRIP "--version" 2>&AS_MESSAGE_LOG_FD >&AS_MESSAGE_LOG_FD; then
+      # strip that comes from the GNU family uses --version
+      # This variant of strip is usually found accompanying gcc and clang
+      STRIPFLAGS="--strip-debug"
+    elif $STRIP "-V" 2>&AS_MESSAGE_LOG_FD >&AS_MESSAGE_LOG_FD; then
+      # IBM strip that works with AIX binaries only supports -V
+      STRIPFLAGS="-X32_64"
+    else
+      # The only strip variant left is MacOS/Xcode strip, which does not have any
+      # way whatsoever to be identified (lacking even basic help or version options),
+      # so we leave it as the last fallback when all other tests have failed.
+      STRIPFLAGS="-S"
+    fi
+    AC_MSG_RESULT($STRIPFLAGS)
   fi
 
   AC_SUBST(STRIPFLAGS)
@@ -72,12 +88,41 @@ AC_DEFUN([FLAGS_SETUP_RCFLAGS],
   AC_SUBST(RCFLAGS)
 ])
 
+AC_DEFUN([FLAGS_SETUP_NMFLAGS],
+[
+  # On AIX, we need to set NM flag -X64 for processing 64bit object files
+  if test "x$OPENJDK_TARGET_OS" = xaix; then
+    NMFLAGS="-X64"
+  fi
+
+  AC_SUBST(NMFLAGS)
+])
+
 ################################################################################
 # platform independent
 AC_DEFUN([FLAGS_SETUP_ASFLAGS],
 [
+  if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
+    # Force preprocessor to run, just to make sure
+    BASIC_ASFLAGS="-x assembler-with-cpp"
+  elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+    BASIC_ASFLAGS="-nologo -c"
+  fi
+  AC_SUBST(BASIC_ASFLAGS)
+
   if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-    JVM_BASIC_ASFLAGS="-x assembler-with-cpp -mno-omit-leaf-frame-pointer -mstack-alignment=16"
+    JVM_BASIC_ASFLAGS="-mno-omit-leaf-frame-pointer -mstack-alignment=16"
+
+    # Fix linker warning.
+    # Code taken from make/autoconf/flags-cflags.m4 and adapted.
+    JVM_BASIC_ASFLAGS="$JVM_BASIC_ASFLAGS \
+        -DMAC_OS_X_VERSION_MIN_REQUIRED=$MACOSX_VERSION_MIN_NODOTS \
+        -mmacosx-version-min=$MACOSX_VERSION_MIN"
+
+    if test -n "$MACOSX_VERSION_MAX"; then
+        JVM_BASIC_ASFLAGS="$JVM_BASIC_ASFLAGS $OS_CFLAGS \
+            -DMAC_OS_X_VERSION_MAX_ALLOWED=$MACOSX_VERSION_MAX_NODOTS"
+    fi
   fi
 ])
 
@@ -98,4 +143,3 @@ AC_DEFUN([FLAGS_SETUP_ASFLAGS_CPU_DEP],
 
   AC_SUBST($2JVM_ASFLAGS)
 ])
-

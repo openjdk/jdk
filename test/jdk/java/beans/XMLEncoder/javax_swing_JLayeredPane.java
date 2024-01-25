@@ -25,6 +25,7 @@
  * @test
  * @bug 5023552 6972468
  * @summary Tests JLayeredPane encoding
+ * @run main/othervm -Djava.security.manager=allow javax_swing_JLayeredPane
  * @author Sergey Malenkov
  */
 

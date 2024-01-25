@@ -29,7 +29,7 @@
  * @library /test/lib
  * @build TestSecurityManagerChecks testPkg.Host testPkg.Singleton
  * @run driver jdk.test.lib.helpers.ClassFileInstaller testPkg.Host testPkg.Host$Member testPkg.Singleton
- * @run main/othervm -Xbootclasspath/a:.  TestSecurityManagerChecks
+ * @run main/othervm -Xbootclasspath/a:. -Djava.security.manager=allow TestSecurityManagerChecks
  */
 
 // ClassFileInstaller copies the testPkg files into the "current" directory

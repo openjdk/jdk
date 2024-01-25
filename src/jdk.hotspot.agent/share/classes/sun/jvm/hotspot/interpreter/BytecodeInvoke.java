@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ public class BytecodeInvoke extends BytecodeWithCPIndex {
     if (isInvokedynamic()) {
       return cp.uncachedGetNameRefAt(indexForFieldOrMethod());
     }
-    return cp.getNameRefAt(index());
+    return cp.getNameRefAt(index(), adjustedInvokeCode());
   }
 
   // returns the signature of the invoked method
@@ -66,11 +66,11 @@ public class BytecodeInvoke extends BytecodeWithCPIndex {
     if (isInvokedynamic()) {
       return cp.uncachedGetSignatureRefAt(indexForFieldOrMethod());
     }
-    return cp.getSignatureRefAt(index());
+    return cp.getSignatureRefAt(index(), adjustedInvokeCode());
   }
 
   public Method getInvokedMethod() {
-    return method().getConstants().getMethodRefAt(index());
+    return method().getConstants().getMethodRefAt(index(), adjustedInvokeCode());
   }
 
   // returns the result type (see BasicType.java) of the invoke
@@ -106,16 +106,16 @@ public class BytecodeInvoke extends BytecodeWithCPIndex {
   }
 
   public String toString() {
-    StringBuffer buf = new StringBuffer();
+    StringBuilder buf = new StringBuilder();
     buf.append(getJavaBytecodeName());
     buf.append(spaces);
     buf.append('#');
-    buf.append(Integer.toString(indexForFieldOrMethod()));
+    buf.append(indexForFieldOrMethod());
     if (isInvokedynamic()) {
       ConstantPool cp = method.getConstants();
       buf.append('(');
       int poolIndex = cp.invokeDynamicNameAndTypeRefIndexAt(indexForFieldOrMethod());
-      buf.append(Integer.toString(poolIndex));
+      buf.append(poolIndex);
       buf.append(')');
       buf.append(" [Name and Type ");
       buf.append(name().asString());

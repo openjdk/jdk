@@ -31,9 +31,6 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-
 import com.sun.org.apache.xml.internal.security.keys.keyresolver.implementations.DEREncodedKeyValueResolver;
 import com.sun.org.apache.xml.internal.security.keys.keyresolver.implementations.DSAKeyValueResolver;
 import com.sun.org.apache.xml.internal.security.keys.keyresolver.implementations.ECKeyValueResolver;
@@ -47,6 +44,8 @@ import com.sun.org.apache.xml.internal.security.keys.keyresolver.implementations
 import com.sun.org.apache.xml.internal.security.keys.keyresolver.implementations.X509SubjectNameResolver;
 import com.sun.org.apache.xml.internal.security.keys.storage.StorageResolver;
 import com.sun.org.apache.xml.internal.security.utils.JavaUtils;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 /**
  * KeyResolver is factory class for subclass of KeyResolverSpi that
@@ -170,8 +169,8 @@ public class KeyResolver {
             ClassNotFoundException, IllegalAccessException,
             InstantiationException, InvocationTargetException {
         JavaUtils.checkRegisterPermission();
-        KeyResolverSpi keyResolverSpi =
-            (KeyResolverSpi) JavaUtils.newInstanceWithEmptyConstructor(ClassLoaderUtils.loadClass(className, KeyResolver.class));
+        KeyResolverSpi keyResolverSpi = (KeyResolverSpi)
+            JavaUtils.newInstanceWithEmptyConstructor(ClassLoaderUtils.loadClass(className, KeyResolver.class));
         register(keyResolverSpi, false);
     }
 
@@ -193,8 +192,8 @@ public class KeyResolver {
         KeyResolverSpi keyResolverSpi = null;
         Exception ex = null;
         try {
-            keyResolverSpi = (KeyResolverSpi) JavaUtils.newInstanceWithEmptyConstructor(
-                    ClassLoaderUtils.loadClass(className, KeyResolver.class));
+            keyResolverSpi = (KeyResolverSpi)
+                JavaUtils.newInstanceWithEmptyConstructor(ClassLoaderUtils.loadClass(className, KeyResolver.class));
             register(keyResolverSpi, true);
         } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | InvocationTargetException e) {
             ex = e;
@@ -253,8 +252,8 @@ public class KeyResolver {
         JavaUtils.checkRegisterPermission();
         List<KeyResolverSpi> keyResolverList = new ArrayList<>(classNames.size());
         for (String className : classNames) {
-            KeyResolverSpi keyResolverSpi = (KeyResolverSpi)JavaUtils
-                    .newInstanceWithEmptyConstructor(ClassLoaderUtils.loadClass(className, KeyResolver.class));
+            KeyResolverSpi keyResolverSpi = (KeyResolverSpi)
+                JavaUtils.newInstanceWithEmptyConstructor(ClassLoaderUtils.loadClass(className, KeyResolver.class));
             keyResolverList.add(keyResolverSpi);
         }
         resolverList.addAll(keyResolverList);
@@ -295,10 +294,12 @@ public class KeyResolver {
             it = res.iterator();
         }
 
+        @Override
         public boolean hasNext() {
             return it.hasNext();
         }
 
+        @Override
         public KeyResolverSpi next() {
             KeyResolverSpi resolver = it.next();
             if (resolver == null) {
@@ -308,6 +309,7 @@ public class KeyResolver {
             return resolver;
         }
 
+        @Override
         public void remove() {
             throw new UnsupportedOperationException("Can't remove resolvers using the iterator");
         }

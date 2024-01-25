@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import sun.jvm.hotspot.utilities.Observable;
 import sun.jvm.hotspot.utilities.Observer;
 import sun.jvm.hotspot.debugger.Address;
 import sun.jvm.hotspot.debugger.OopHandle;
-import sun.jvm.hotspot.gc.shared.CompactibleSpace;
+import sun.jvm.hotspot.gc.shared.ContiguousSpace;
 import sun.jvm.hotspot.gc.shared.LiveRegionsProvider;
 import sun.jvm.hotspot.memory.MemRegion;
 import sun.jvm.hotspot.runtime.VM;
@@ -44,13 +44,14 @@ import sun.jvm.hotspot.types.TypeDataBase;
 // Mirror class for HeapRegion. Currently we don't actually include
 // any of its fields but only iterate over it.
 
-public class HeapRegion extends CompactibleSpace implements LiveRegionsProvider {
+public class HeapRegion extends ContiguousSpace implements LiveRegionsProvider {
     private static AddressField bottomField;
-    static private AddressField topField;
+    private static AddressField topField;
     private static AddressField endField;
-    private static AddressField compactionTopField;
 
-    static private CIntegerField grainBytesField;
+    private static CIntegerField grainBytesField;
+    private static CIntegerField pinnedCountField;
+
     private static long typeFieldOffset;
     private static long pointerSize;
 
@@ -64,21 +65,22 @@ public class HeapRegion extends CompactibleSpace implements LiveRegionsProvider 
             });
     }
 
-    static private synchronized void initialize(TypeDataBase db) {
+    private static synchronized void initialize(TypeDataBase db) {
         Type type = db.lookupType("HeapRegion");
 
         bottomField = type.getAddressField("_bottom");
         topField = type.getAddressField("_top");
         endField = type.getAddressField("_end");
-        compactionTopField = type.getAddressField("_compaction_top");
 
         grainBytesField = type.getCIntegerField("GrainBytes");
+        pinnedCountField = type.getCIntegerField("_pinned_object_count");
+
         typeFieldOffset = type.getField("_type").getOffset();
 
         pointerSize = db.lookupType("HeapRegion*").getSize();
     }
 
-    static public long grainBytes() {
+    public static long grainBytes() {
         return grainBytesField.getValue();
     }
 
@@ -86,14 +88,12 @@ public class HeapRegion extends CompactibleSpace implements LiveRegionsProvider 
         super(addr);
         Address typeAddr = (addr instanceof OopHandle) ? addr.addOffsetToAsOopHandle(typeFieldOffset)
                                                        : addr.addOffsetTo(typeFieldOffset);
-        type = (HeapRegionType)VMObjectFactory.newObject(HeapRegionType.class, typeAddr);
+        type = VMObjectFactory.newObject(HeapRegionType.class, typeAddr);
     }
 
     public Address bottom()        { return bottomField.getValue(addr); }
     public Address top()           { return topField.getValue(addr); }
     public Address end()           { return endField.getValue(addr); }
-
-    public Address compactionTop() { return compactionTopField.getValue(addr); }
 
     @Override
     public List<MemRegion> getLiveRegions() {
@@ -129,7 +129,7 @@ public class HeapRegion extends CompactibleSpace implements LiveRegionsProvider 
     }
 
     public boolean isPinned() {
-        return type.isPinned();
+        return pinnedCountField.getValue(addr) != 0;
     }
 
     public boolean isOld() {
@@ -142,6 +142,6 @@ public class HeapRegion extends CompactibleSpace implements LiveRegionsProvider 
 
     public void printOn(PrintStream tty) {
         tty.print("Region: " + bottom() + "," + top() + "," + end());
-        tty.println(":" + type.typeAnnotation());
+        tty.println(":" + type.typeAnnotation() + (isPinned() ? " Pinned" : ""));
     }
 }

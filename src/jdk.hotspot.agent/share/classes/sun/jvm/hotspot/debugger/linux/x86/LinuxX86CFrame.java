@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import sun.jvm.hotspot.debugger.cdbg.*;
 import sun.jvm.hotspot.debugger.cdbg.basic.*;
 import sun.jvm.hotspot.debugger.x86.*;
 
-final public class LinuxX86CFrame extends BasicCFrame {
+public final class LinuxX86CFrame extends BasicCFrame {
    // package/class internals only
    public LinuxX86CFrame(LinuxDebugger dbg, Address ebp, Address pc) {
       super(dbg.getCDebugger());

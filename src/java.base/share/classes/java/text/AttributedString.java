@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ public class AttributedString {
         }
         else {
             // Build the String contents
-            StringBuffer buffer = new StringBuffer();
+            StringBuilder buffer = new StringBuilder();
             for (int counter = 0; counter < iterators.length; counter++) {
                 appendContents(buffer, iterators[counter]);
             }
@@ -158,9 +158,7 @@ public class AttributedString {
             runAttributes[0] = newRunAttributes;
             runAttributeValues[0] = newRunAttributeValues;
 
-            Iterator<? extends Map.Entry<? extends Attribute, ?>> iterator = attributes.entrySet().iterator();
-            while (iterator.hasNext()) {
-                Map.Entry<? extends Attribute, ?> entry = iterator.next();
+            for (Map.Entry<? extends Attribute, ?> entry : attributes.entrySet()) {
                 newRunAttributes.addElement(entry.getKey());
                 newRunAttributeValues.addElement(entry.getValue());
             }
@@ -264,9 +262,7 @@ public class AttributedString {
         // Get and set attribute runs for each attribute name. Need to
         // scan from the top of the text so that we can discard any
         // Annotation that is no longer applied to a subset text segment.
-        Iterator<Attribute> itr = keys.iterator();
-        while (itr.hasNext()) {
-            Attribute attributeKey = itr.next();
+        for (Attribute attributeKey : keys) {
             text.setIndex(textBeginIndex);
             while (text.getIndex() < endIndex) {
                 int start = text.getRunStart(attributeKey);
@@ -388,10 +384,7 @@ public class AttributedString {
         int beginRunIndex = ensureRunBreak(beginIndex);
         int endRunIndex = ensureRunBreak(endIndex);
 
-        Iterator<? extends Map.Entry<? extends Attribute, ?>> iterator =
-            attributes.entrySet().iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<? extends Attribute, ?> entry = iterator.next();
+        for (Map.Entry<? extends Attribute, ?> entry : attributes.entrySet()) {
             addAttributeRunData(entry.getKey(), entry.getValue(), beginRunIndex, endRunIndex);
         }
     }
@@ -625,7 +618,7 @@ public class AttributedString {
                 int currIndex = runIndex;
                 int runStart = runStarts[currIndex];
                 while (runStart >= beginIndex &&
-                        valuesMatch(value, getAttribute(attribute, currIndex - 1))) {
+                        Objects.equals(value, getAttribute(attribute, currIndex - 1))) {
                     currIndex--;
                     runStart = runStarts[currIndex];
                 }
@@ -639,7 +632,7 @@ public class AttributedString {
                 int currIndex = runIndex;
                 int runLimit = (currIndex < runCount - 1) ? runStarts[currIndex + 1] : textLength;
                 while (runLimit <= endIndex &&
-                        valuesMatch(value, getAttribute(attribute, currIndex + 1))) {
+                        Objects.equals(value, getAttribute(attribute, currIndex + 1))) {
                     currIndex++;
                     runLimit = (currIndex < runCount - 1) ? runStarts[currIndex + 1] : textLength;
                 }
@@ -656,30 +649,19 @@ public class AttributedString {
 
     // returns whether all specified attributes have equal values in the runs with the given indices
     private boolean attributeValuesMatch(Set<? extends Attribute> attributes, int runIndex1, int runIndex2) {
-        Iterator<? extends Attribute> iterator = attributes.iterator();
-        while (iterator.hasNext()) {
-            Attribute key = iterator.next();
-           if (!valuesMatch(getAttribute(key, runIndex1), getAttribute(key, runIndex2))) {
+        for (Attribute key : attributes) {
+            if (!Objects.equals(getAttribute(key, runIndex1), getAttribute(key, runIndex2))) {
                 return false;
             }
         }
         return true;
     }
 
-    // returns whether the two objects are either both null or equal
-    private static final boolean valuesMatch(Object value1, Object value2) {
-        if (value1 == null) {
-            return value2 == null;
-        } else {
-            return value1.equals(value2);
-        }
-    }
-
     /**
      * Appends the contents of the CharacterIterator iterator into the
-     * StringBuffer buf.
+     * StringBuilder buf.
      */
-    private final void appendContents(StringBuffer buf,
+    private final void appendContents(StringBuilder buf,
                                       CharacterIterator iterator) {
         int index = iterator.getBeginIndex();
         int end = iterator.getEndIndex();
@@ -706,11 +688,8 @@ public class AttributedString {
         if (attrs != null && (size = attrs.size()) > 0) {
             Vector<Attribute> runAttrs = new Vector<>(size);
             Vector<Object> runValues = new Vector<>(size);
-            Iterator<Map.Entry<Attribute, Object>> iterator = attrs.entrySet().iterator();
 
-            while (iterator.hasNext()) {
-                Map.Entry<Attribute, Object> entry = iterator.next();
-
+            for (Map.Entry<Attribute, Object> entry : attrs.entrySet()) {
                 runAttrs.add(entry.getKey());
                 runValues.add(entry.getValue());
             }
@@ -772,6 +751,7 @@ public class AttributedString {
 
         // Object methods. See documentation in that class.
 
+        @Override
         public boolean equals(Object obj) {
             if (this == obj) {
                 return true;
@@ -787,6 +767,7 @@ public class AttributedString {
             return true;
         }
 
+        @Override
         public int hashCode() {
             return text.hashCode() ^ currentIndex ^ beginIndex ^ endIndex;
         }
@@ -873,7 +854,7 @@ public class AttributedString {
                 int runStart = currentRunStart;
                 int runIndex = currentRunIndex;
                 while (runStart > beginIndex &&
-                        valuesMatch(value, AttributedString.this.getAttribute(attribute, runIndex - 1))) {
+                        Objects.equals(value, AttributedString.this.getAttribute(attribute, runIndex - 1))) {
                     runIndex--;
                     runStart = runStarts[runIndex];
                 }
@@ -914,7 +895,7 @@ public class AttributedString {
                 int runLimit = currentRunLimit;
                 int runIndex = currentRunIndex;
                 while (runLimit < endIndex &&
-                        valuesMatch(value, AttributedString.this.getAttribute(attribute, runIndex + 1))) {
+                        Objects.equals(value, AttributedString.this.getAttribute(attribute, runIndex + 1))) {
                     runIndex++;
                     runLimit = runIndex < runCount - 1 ? runStarts[runIndex + 1] : endIndex;
                 }
@@ -1093,11 +1074,10 @@ class AttributeEntry implements Map.Entry<Attribute,Object> {
         this.value = value;
     }
 
+    @Override
     public boolean equals(Object o) {
-        if (!(o instanceof AttributeEntry other)) {
-            return false;
-        }
-        return other.key.equals(key) && Objects.equals(other.value, value);
+        return o instanceof AttributeEntry other
+                && other.key.equals(key) && Objects.equals(other.value, value);
     }
 
     public Attribute getKey() {
@@ -1112,8 +1092,9 @@ class AttributeEntry implements Map.Entry<Attribute,Object> {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public int hashCode() {
-        return key.hashCode() ^ (value==null ? 0 : value.hashCode());
+        return key.hashCode() ^ Objects.hashCode(value);
     }
 
     public String toString() {

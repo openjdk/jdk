@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,12 @@
 #define SHARE_JFR_WRITERS_JFRJAVAEVENTWRITER_HPP
 
 #include "jni.h"
-#include "memory/allocation.hpp"
+#include "jfr/utilities/jfrTypes.hpp"
+#include "memory/allStatic.hpp"
+#include "utilities/exceptions.hpp"
 
 class JavaThread;
+class JfrBuffer;
 class Thread;
 
 class JfrJavaEventWriter : AllStatic {
@@ -42,9 +45,12 @@ class JfrJavaEventWriter : AllStatic {
 
  public:
   static void notify();
-  static jobject event_writer(Thread* t);
+  static void exclude(traceid tid, const JavaThread* jt);
+  static void include(traceid tid, const JavaThread* jt);
+  static jobject event_writer(JavaThread* t);
   static jobject new_event_writer(TRAPS);
-  static jboolean flush(jobject writer, jint used, jint requested, JavaThread* jt);
+  static void flush(jobject writer, jint used, jint requested, JavaThread* jt);
+  static jlong commit(jlong next_position);
 };
 
 #endif // SHARE_JFR_WRITERS_JFRJAVAEVENTWRITER_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,14 +34,17 @@ import javax.lang.model.element.Name;
 import com.sun.source.tree.ArrayTypeTree;
 import com.sun.source.tree.AssignmentTree;
 import com.sun.source.tree.ClassTree;
+import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.ExpressionStatementTree;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.IdentifierTree;
+import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.ModifiersTree;
 import com.sun.source.tree.NewClassTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.VariableTree;
+import com.sun.source.util.TreePathScanner;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.Pretty;
 import java.io.IOException;
@@ -71,13 +74,11 @@ import jdk.jshell.spi.ExecutionControl.NotImplementedException;
 import jdk.jshell.spi.ExecutionControl.ResolutionException;
 import jdk.jshell.spi.ExecutionControl.RunException;
 import jdk.jshell.spi.ExecutionControl.UserException;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static java.util.Collections.singletonList;
 import com.sun.tools.javac.code.Symbol.TypeSymbol;
 import static jdk.internal.jshell.debug.InternalDebugControl.DBG_GEN;
 import static jdk.jshell.Snippet.Status.RECOVERABLE_DEFINED;
-import static jdk.jshell.Snippet.Status.RECOVERABLE_NOT_DEFINED;
 import static jdk.jshell.Snippet.Status.VALID;
 import static jdk.jshell.Util.DOIT_METHOD_NAME;
 import static jdk.jshell.Util.PREFIX_PATTERN;
@@ -213,30 +214,28 @@ class Eval {
             String compileSourceInt = new MaskCommentsAndModifiers(compileSource, true).cleared();
 
             state.debug(DBG_GEN, "Kind: %s -- %s\n", unitTree.getKind(), unitTree);
-            switch (unitTree.getKind()) {
-                case IMPORT:
-                    return processImport(userSource, compileSourceInt);
-                case VARIABLE:
-                    return processVariables(userSource, units, compileSourceInt, pt);
-                case EXPRESSION_STATEMENT:
-                    return processExpression(userSource, unitTree, compileSourceInt, pt);
-                case CLASS:
-                    return processClass(userSource, unitTree, compileSourceInt, SubKind.CLASS_SUBKIND, pt);
-                case ENUM:
-                    return processClass(userSource, unitTree, compileSourceInt, SubKind.ENUM_SUBKIND, pt);
-                case ANNOTATION_TYPE:
-                    return processClass(userSource, unitTree, compileSourceInt, SubKind.ANNOTATION_TYPE_SUBKIND, pt);
-                case INTERFACE:
-                    return processClass(userSource, unitTree, compileSourceInt, SubKind.INTERFACE_SUBKIND, pt);
-                case RECORD:
-                    @SuppressWarnings("preview")
-                    List<Snippet> snippets = processClass(userSource, unitTree, compileSourceInt, SubKind.RECORD_SUBKIND, pt);
-                    return snippets;
-                case METHOD:
-                    return processMethod(userSource, unitTree, compileSourceInt, pt);
-                default:
-                    return processStatement(userSource, compileSourceInt);
-            }
+            return switch (unitTree.getKind()) {
+                case IMPORT
+                    -> processImport(userSource, compileSourceInt);
+                case VARIABLE
+                    -> processVariables(userSource, units, compileSourceInt, pt);
+                case EXPRESSION_STATEMENT
+                    -> processExpression(userSource, unitTree, compileSourceInt, pt);
+                case CLASS
+                    -> processClass(userSource, unitTree, compileSourceInt, SubKind.CLASS_SUBKIND, pt);
+                case ENUM
+                    -> processClass(userSource, unitTree, compileSourceInt, SubKind.ENUM_SUBKIND, pt);
+                case ANNOTATION_TYPE
+                    -> processClass(userSource, unitTree, compileSourceInt, SubKind.ANNOTATION_TYPE_SUBKIND, pt);
+                case INTERFACE
+                    -> processClass(userSource, unitTree, compileSourceInt, SubKind.INTERFACE_SUBKIND, pt);
+                case RECORD
+                    -> processClass(userSource, unitTree, compileSourceInt, SubKind.RECORD_SUBKIND, pt);
+                case METHOD
+                    -> processMethod(userSource, unitTree, compileSourceInt, pt);
+                default
+                    -> processStatement(userSource, compileSourceInt);
+            };
         });
     }
 
@@ -371,51 +370,43 @@ class Eval {
                 winit = winit == null ? Wrap.rangeWrap(compileSource, rinit) : winit;
                 nameMax = rinit.begin - 1;
             } else {
-                String sinit;
-                switch (typeName) {
-                    case "byte":
-                    case "short":
-                    case "int":
-                        sinit = "0";
-                        break;
-                    case "long":
-                        sinit = "0L";
-                        break;
-                    case "float":
-                        sinit = "0.0f";
-                        break;
-                    case "double":
-                        sinit = "0.0d";
-                        break;
-                    case "boolean":
-                        sinit = "false";
-                        break;
-                    case "char":
-                        sinit = "'\\u0000'";
-                        break;
-                    default:
-                        sinit = "null";
-                        break;
-                }
+                String sinit = switch (typeName) {
+                    case "byte",
+                         "short",
+                         "int"     -> "0";
+                    case "long"    -> "0L";
+                    case "float"   -> "0.0f";
+                    case "double"  -> "0.0d";
+                    case "boolean" -> "false";
+                    case "char"    -> "'\\u0000'";
+                    default        -> "null";
+                };
                 winit = Wrap.simpleWrap(sinit);
                 subkind = SubKind.VAR_DECLARATION_SUBKIND;
             }
             Wrap wname;
-            int nameStart = compileSource.lastIndexOf(name, nameMax);
-            if (nameStart < 0) {
-                // the name has been transformed (e.g. unicode).
-                // Use it directly
-                wname = Wrap.identityWrap(name);
+            String fieldName;
+            if (name.isEmpty()) {
+                fieldName = "$UNNAMED";
+                wname = Wrap.simpleWrap(fieldName);
             } else {
-                int nameEnd = nameStart + name.length();
-                Range rname = new Range(nameStart, nameEnd);
-                wname = new Wrap.RangeWrap(compileSource, rname);
+                fieldName = name;
+                int nameStart = compileSource.lastIndexOf(name, nameMax);
+                if (nameStart < 0) {
+                    // the name has been transformed (e.g. unicode).
+                    // Use it directly
+                    wname = Wrap.identityWrap(name);
+                } else {
+                    int nameEnd = nameStart + name.length();
+                    Range rname = new Range(nameStart, nameEnd);
+                    wname = new Wrap.RangeWrap(compileSource, rname);
+                }
             }
             Wrap guts = Wrap.varWrap(compileSource, typeWrap, sbBrackets.toString(), wname,
                                      winit, enhancedDesugaring, anonDeclareWrap);
             DiagList modDiag = modifierDiagnostics(vt.getModifiers(), dis, true);
             Snippet snip = new VarSnippet(state.keyMap.keyForVariable(name), userSource, guts,
-                    name, subkind, displayType, hasEnhancedType ? fullTypeName : null, anonymousClasses,
+                    name, fieldName, subkind, displayType, hasEnhancedType ? fullTypeName : null, anonymousClasses,
                     tds.declareReferences(), modDiag);
             snippets.add(snip);
         }
@@ -539,8 +530,9 @@ class Eval {
                 if (member.getKind() == Tree.Kind.VARIABLE) {
                     VariableTree vt = (VariableTree) member;
 
-                    if (vt.getInitializer() != null) {
-                        //for variables with initializer, explicitly move the initializer
+                    if (vt.getInitializer() != null &&
+                        !vt.getModifiers().getFlags().contains(Modifier.STATIC)) {
+                        //for instance variables with initializer, explicitly move the initializer
                         //to the constructor after the captured variables as assigned
                         //(the initializers would otherwise run too early):
                         Range wholeVar = dis.treeToRange(vt);
@@ -674,7 +666,7 @@ class Eval {
                 }
                 Collection<String> declareReferences = null; //TODO
                 snip = new VarSnippet(state.keyMap.keyForVariable(name), userSource, guts,
-                        name, SubKind.TEMP_VAR_EXPRESSION_SUBKIND, displayTypeName, fullTypeName, anonymousClasses, declareReferences, null);
+                        name, name, SubKind.TEMP_VAR_EXPRESSION_SUBKIND, displayTypeName, fullTypeName, anonymousClasses, declareReferences, null);
             } else {
                 guts = Wrap.methodReturnWrap(compileSource);
                 snip = new ExpressionSnippet(state.keyMap.keyForExpression(name, typeName), userSource, guts,
@@ -685,6 +677,10 @@ class Eval {
             if (ei == null) {
                 // We got no type info, check for not a statement by trying
                 DiagList dl = trialCompile(guts);
+                if (dl.hasUnreachableError()) {
+                    guts = Wrap.methodUnreachableWrap(compileSource);
+                    dl = trialCompile(guts);
+                }
                 if (dl.hasNotStatement()) {
                     guts = Wrap.methodReturnWrap(compileSource);
                     dl = trialCompile(guts);
@@ -844,7 +840,7 @@ class Eval {
      * @param userSource the incoming bad user source
      * @return a rejected snippet
      */
-    private List<Snippet> compileFailResult(BaseTask xt, String userSource, Kind probableKind) {
+    private List<Snippet> compileFailResult(BaseTask<?> xt, String userSource, Kind probableKind) {
         return compileFailResult(xt.getDiagnostics(), userSource, probableKind);
     }
 
@@ -863,23 +859,14 @@ class Eval {
 
         // Install  wrapper for query by SourceCodeAnalysis.wrapper
         String compileSource = Util.trimEnd(new MaskCommentsAndModifiers(userSource, true).cleared());
-        OuterWrap outer;
-        switch (probableKind) {
-            case IMPORT:
-                outer = state.outerMap.wrapImport(Wrap.simpleWrap(compileSource), snip);
-                break;
-            case EXPRESSION:
-                outer = state.outerMap.wrapInTrialClass(Wrap.methodReturnWrap(compileSource));
-                break;
-            case VAR:
-            case TYPE_DECL:
-            case METHOD:
-                outer = state.outerMap.wrapInTrialClass(Wrap.classMemberWrap(compileSource));
-                break;
-            default:
-                outer = state.outerMap.wrapInTrialClass(Wrap.methodWrap(compileSource));
-                break;
-        }
+        OuterWrap outer = switch (probableKind) {
+            case IMPORT     -> state.outerMap.wrapImport(Wrap.simpleWrap(compileSource), snip);
+            case EXPRESSION -> state.outerMap.wrapInTrialClass(Wrap.methodReturnWrap(compileSource));
+            case VAR,
+                 TYPE_DECL,
+                 METHOD     -> state.outerMap.wrapInTrialClass(Wrap.classMemberWrap(compileSource));
+            default         -> state.outerMap.wrapInTrialClass(Wrap.methodWrap(compileSource));
+        };
         snip.setOuterWrap(outer);
 
         return singletonList(snip);
@@ -1005,11 +992,11 @@ class Eval {
                 .filter(u -> u != c)
                 .map(u -> u.event(null, null))
                 .filter(this::interestingEvent)
-                .collect(Collectors.toList()));
+                .toList());
         events.addAll(outs.stream()
                 .flatMap(u -> u.secondaryEvents().stream())
                 .filter(this::interestingEvent)
-                .collect(Collectors.toList()));
+                .toList());
         //System.err.printf("Events: %s\n", events);
         return events;
     }
@@ -1029,21 +1016,68 @@ class Eval {
         while (true) {
             state.debug(DBG_GEN, "compileAndLoad  %s\n", ins);
 
-            ins.stream().forEach(Unit::initialize);
-            ins.stream().forEach(u -> u.setWrap(ins, ins));
+            ins.forEach(Unit::initialize);
+            ins.forEach(u -> u.setWrap(ins, ins));
+
+            if (ins.stream().anyMatch(u -> u.snippet().kind() == Kind.METHOD)) {
+                //if there is any method declaration, check the body of the method for
+                //invocations of a method of the same name. It may be an invocation of
+                //an overloaded method, in which case we need to add all the overloads to
+                //ins, so that they are processed together and can refer to each other:
+                Set<Unit> overloads = new LinkedHashSet<>();
+                Map<OuterWrap, Unit> outter2Unit = new LinkedHashMap<>();
+                ins.forEach(u -> outter2Unit.put(u.snippet().outerWrap(), u));
+
+                state.taskFactory.analyze(outter2Unit.keySet(), at -> {
+                    Set<Unit> suspiciousMethodInvocation = new LinkedHashSet<>();
+                    for (CompilationUnitTree cut : at.cuTrees()) {
+                        Unit unit = outter2Unit.get(at.sourceForFile(cut.getSourceFile()));
+                        String name = unit.snippet().name();
+
+                        new TreePathScanner<Void, Void>() {
+                            @Override
+                            public Void visitMethodInvocation(MethodInvocationTree node, Void p) {
+                                if (node.getMethodSelect().getKind() == Tree.Kind.IDENTIFIER &&
+                                    ((IdentifierTree) node.getMethodSelect()).getName().contentEquals(name)) {
+                                    suspiciousMethodInvocation.add(unit);
+                                }
+                                return super.visitMethodInvocation(node, p);
+                            }
+
+                        }.scan(cut, null);
+                    }
+                    for (Unit source : suspiciousMethodInvocation) {
+                        for (Snippet dep : state.maps.snippetList()) {
+                            if (dep != source.snippet() && dep.status().isActive() &&
+                                dep.kind() == Kind.METHOD &&
+                                source.snippet().kind() == Kind.METHOD &&
+                                dep.name().equals(source.snippet().name())) {
+                                overloads.add(new Unit(state, dep, source.snippet(), new DiagList()));
+                            }
+                        }
+                    }
+                    return null;
+                });
+
+                if (ins.addAll(overloads)) {
+                    ins.forEach(Unit::initialize);
+                    ins.forEach(u -> u.setWrap(ins, ins));
+                }
+            }
+
             state.taskFactory.analyze(outerWrapSet(ins), at -> {
-                ins.stream().forEach(u -> u.setDiagnostics(at));
+                ins.forEach(u -> u.setDiagnostics(at));
 
                 // corral any Snippets that need it
                 if (ins.stream().filter(u -> u.corralIfNeeded(ins)).count() > 0) {
                     // if any were corralled, re-analyze everything
                     state.taskFactory.analyze(outerWrapSet(ins), cat -> {
-                        ins.stream().forEach(u -> u.setCorralledDiagnostics(cat));
-                        ins.stream().forEach(u -> u.setStatus(cat));
+                        ins.forEach(u -> u.setCorralledDiagnostics(cat));
+                        ins.forEach(u -> u.setStatus(cat));
                         return null;
                     });
                 } else {
-                    ins.stream().forEach(u -> u.setStatus(at));
+                    ins.forEach(u -> u.setStatus(at));
                 }
                 return null;
             });
@@ -1052,7 +1086,7 @@ class Eval {
             while (true) {
                 List<Unit> legit = ins.stream()
                         .filter(Unit::isDefined)
-                        .collect(toList());
+                        .toList();
                 state.debug(DBG_GEN, "compileAndLoad ins = %s -- legit = %s\n",
                         ins, legit);
                 if (legit.isEmpty()) {
@@ -1060,7 +1094,7 @@ class Eval {
                     success = true;
                 } else {
                     // re-wrap with legit imports
-                    legit.stream().forEach(u -> u.setWrap(ins, legit));
+                    legit.forEach(u -> u.setWrap(ins, legit));
 
                     // generate class files for those capable
                     Result res = state.taskFactory.compile(outerWrapSet(legit), ct -> {
@@ -1084,15 +1118,15 @@ class Eval {
                         // attempt to redefine the remaining classes
                         List<Unit> toReplace = legit.stream()
                                 .filter(u -> !u.doRedefines())
-                                .collect(toList());
+                                .toList();
 
                         // prevent alternating redefine/replace cyclic dependency
                         // loop by replacing all that have been replaced
                         if (!toReplace.isEmpty()) {
                             replaced.addAll(toReplace);
-                            replaced.stream().forEach(Unit::markForReplacement);
+                            replaced.forEach(Unit::markForReplacement);
                             //ensure correct classnames are set in the snippets:
-                            replaced.stream().forEach(u -> u.setWrap(ins, legit));
+                            replaced.forEach(u -> u.setWrap(ins, legit));
                         }
 
                         return toReplace.isEmpty() ? Result.SUCESS : Result.FAILURE;
@@ -1111,14 +1145,14 @@ class Eval {
             // add any new dependencies to the working set
             List<Unit> newDependencies = ins.stream()
                     .flatMap(Unit::effectedDependents)
-                    .collect(toList());
+                    .toList();
             state.debug(DBG_GEN, "compileAndLoad %s -- deps: %s  success: %s\n",
                     ins, newDependencies, success);
             if (!ins.addAll(newDependencies) && success) {
                 // all classes that could not be directly loaded (because they
                 // are new) have been redefined, and no new dependnencies were
                 // identified
-                ins.stream().forEach(Unit::finish);
+                ins.forEach(Unit::finish);
                 return ins;
             }
         }

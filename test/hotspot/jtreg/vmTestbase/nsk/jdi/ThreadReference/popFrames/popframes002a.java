@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 package nsk.jdi.ThreadReference.popFrames;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 /**
@@ -54,8 +53,8 @@ public class popframes002a {
 
     //====================================================== test program
 
-    static Thread2popframes002a thread2 = null;
-    static Thread3popframes002a thread3 = null;
+    static Thread thread2 = null;
+    static Thread thread3 = null;
 
     //------------------------------------------------------ common section
 
@@ -89,9 +88,9 @@ public class popframes002a {
 
     //------------------------------------------------------  section tested
 
-                 thread2 =  new Thread2popframes002a("thread2");
+                 thread2 = JDIThreadFactory.newThread(new Thread2popframes002a("thread2"));
                  log1("       thread2 is created");
-                 thread3 =  new Thread3popframes002a("thread3");
+                 thread3 = JDIThreadFactory.newThread(new Thread3popframes002a("thread3"));
                  log1("       thread3 is created");
 
                  synchronized (lockingObject1) {
@@ -164,7 +163,7 @@ public class popframes002a {
 
     static Object lockingObject2 = new Object();
 
-    static class Thread2popframes002a extends Thread {
+    static class Thread2popframes002a extends NamedTask {
 
         public Thread2popframes002a(String threadName) {
             super(threadName);
@@ -189,7 +188,7 @@ public class popframes002a {
 
     static Object lockingObject3 = new Object();
 
-    static class Thread3popframes002a extends Thread {
+    static class Thread3popframes002a extends NamedTask {
 
         public Thread3popframes002a(String threadName) {
             super(threadName);

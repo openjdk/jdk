@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "classfile/javaClasses.hpp"
 #include "jfr/dcmd/jfrDcmds.hpp"
 #include "jfr/recorder/service/jfrMemorySizer.hpp"
@@ -33,7 +34,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/java.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "services/diagnosticArgument.hpp"
 #include "services/diagnosticFramework.hpp"
 #include "utilities/growableArray.hpp"
@@ -46,13 +47,13 @@ struct ObsoleteOption {
 
 static const ObsoleteOption OBSOLETE_OPTIONS[] = {
   {"checkpointbuffersize", ""},
-  {"maxsize",              "Use -XX:StartFlightRecording=maxsize=... instead."},
-  {"maxage",               "Use -XX:StartFlightRecording=maxage=... instead."},
-  {"settings",             "Use -XX:StartFlightRecording=settings=... instead."},
-  {"defaultrecording",     "Use -XX:StartFlightRecording=disk=false to create an in-memory recording."},
-  {"disk",                 "Use -XX:StartFlightRecording=disk=... instead."},
-  {"dumponexit",           "Use -XX:StartFlightRecording=dumponexit=... instead."},
-  {"dumponexitpath",       "Use -XX:StartFlightRecording=filename=... instead."},
+  {"maxsize",              "Use -XX:StartFlightRecording:maxsize=... instead."},
+  {"maxage",               "Use -XX:StartFlightRecording:maxage=... instead."},
+  {"settings",             "Use -XX:StartFlightRecording:settings=... instead."},
+  {"defaultrecording",     "Use -XX:StartFlightRecording:disk=false to create an in-memory recording."},
+  {"disk",                 "Use -XX:StartFlightRecording:disk=... instead."},
+  {"dumponexit",           "Use -XX:StartFlightRecording:dumponexit=... instead."},
+  {"dumponexitpath",       "Use -XX:StartFlightRecording:filename=... instead."},
   {"loglevel",             "Use -Xlog:jfr=... instead."}
 };
 
@@ -118,14 +119,6 @@ void JfrOptionSet::set_stackdepth(u4 depth) {
   }
 }
 
-bool JfrOptionSet::sample_threads() {
-  return _sample_threads == JNI_TRUE;
-}
-
-void JfrOptionSet::set_sample_threads(jboolean sample) {
-  _sample_threads = sample;
-}
-
 bool JfrOptionSet::can_retransform() {
   return _retransform == JNI_TRUE;
 }
@@ -158,11 +151,12 @@ bool JfrOptionSet::allow_retransforms() {
 }
 
 bool JfrOptionSet::allow_event_retransforms() {
-  return allow_retransforms() && (DumpSharedSpaces || can_retransform());
+  return allow_retransforms() && (CDSConfig::is_dumping_static_archive() || can_retransform());
 }
 
 // default options for the dcmd parser
-const char* const default_repository = NULL;
+const char* const default_repository = nullptr;
+const char* const default_dumppath = nullptr;
 const char* const default_global_buffer_size = "512k";
 const char* const default_num_global_buffers = "20";
 const char* const default_memory_size = "10m";
@@ -172,6 +166,7 @@ const char* const default_sample_threads = "true";
 const char* const default_stack_depth = "64";
 const char* const default_retransform = "true";
 const char* const default_old_object_queue_size = "256";
+const char* const default_preserve_repository = "false";
 DEBUG_ONLY(const char* const default_sample_protection = "false";)
 
 // statics
@@ -181,6 +176,13 @@ static DCmdArgument<char*> _dcmd_repository(
   "STRING",
   false,
   default_repository);
+
+static DCmdArgument<char*> _dcmd_dumppath(
+  "dumppath",
+  "Path to emergency dump",
+  "STRING",
+  false,
+  default_dumppath);
 
 static DCmdArgument<MemorySizeArgument> _dcmd_threadbuffersize(
   "threadbuffersize",
@@ -254,10 +256,18 @@ static DCmdArgument<bool> _dcmd_retransform(
   true,
   default_retransform);
 
+static DCmdArgument<bool> _dcmd_preserve_repository(
+  "preserve-repository",
+  "Preserve disk repository after JVM exit",
+  "BOOLEAN",
+  false,
+  default_preserve_repository);
+
 static DCmdParser _parser;
 
 static void register_parser_options() {
   _parser.add_dcmd_option(&_dcmd_repository);
+  _parser.add_dcmd_option(&_dcmd_dumppath);
   _parser.add_dcmd_option(&_dcmd_threadbuffersize);
   _parser.add_dcmd_option(&_dcmd_memorysize);
   _parser.add_dcmd_option(&_dcmd_globalbuffersize);
@@ -267,11 +277,12 @@ static void register_parser_options() {
   _parser.add_dcmd_option(&_dcmd_sample_threads);
   _parser.add_dcmd_option(&_dcmd_retransform);
   _parser.add_dcmd_option(&_dcmd_old_object_queue_size);
+  _parser.add_dcmd_option(&_dcmd_preserve_repository);
   DEBUG_ONLY(_parser.add_dcmd_option(&_dcmd_sample_protection);)
 }
 
 static bool parse_flight_recorder_options_internal(TRAPS) {
-  if (FlightRecorderOptions == NULL) {
+  if (FlightRecorderOptions == nullptr) {
     return true;
   }
   const size_t length = strlen((const char*)FlightRecorderOptions);
@@ -282,14 +293,14 @@ static bool parse_flight_recorder_options_internal(TRAPS) {
       ObsoleteOption option = OBSOLETE_OPTIONS[index];
       const char* p = strstr((const char*)FlightRecorderOptions, option.name);
       const size_t option_length = strlen(option.name);
-      if (p != NULL && p[option_length] == '=') {
+      if (p != nullptr && p[option_length] == '=') {
         log_error(arguments) ("-XX:FlightRecorderOptions=%s=... has been removed. %s", option.name, option.message);
         return false;
       }
     }
     ResourceMark rm(THREAD);
     oop message = java_lang_Throwable::message(PENDING_EXCEPTION);
-    if (message != NULL) {
+    if (message != nullptr) {
       const char* msg = java_lang_String::as_utf8_string(message);
       log_error(arguments) ("%s", msg);
     }
@@ -306,7 +317,6 @@ jlong JfrOptionSet::_memory_size = 0;
 jlong JfrOptionSet::_num_global_buffers = 0;
 jlong JfrOptionSet::_old_object_queue_size = 0;
 u4 JfrOptionSet::_stack_depth = STACK_DEPTH_DEFAULT;
-jboolean JfrOptionSet::_sample_threads = JNI_TRUE;
 jboolean JfrOptionSet::_retransform = JNI_TRUE;
 #ifdef ASSERT
 jboolean JfrOptionSet::_sample_protection = JNI_FALSE;
@@ -314,7 +324,7 @@ jboolean JfrOptionSet::_sample_protection = JNI_FALSE;
 jboolean JfrOptionSet::_sample_protection = JNI_TRUE;
 #endif
 
-bool JfrOptionSet::initialize(Thread* thread) {
+bool JfrOptionSet::initialize(JavaThread* thread) {
   register_parser_options();
   if (!parse_flight_recorder_options_internal(thread)) {
     return false;
@@ -327,7 +337,7 @@ bool JfrOptionSet::initialize(Thread* thread) {
 }
 
 bool JfrOptionSet::configure(TRAPS) {
-  if (FlightRecorderOptions == NULL) {
+  if (FlightRecorderOptions == nullptr) {
     return true;
   }
   ResourceMark rm(THREAD);
@@ -336,14 +346,26 @@ bool JfrOptionSet::configure(TRAPS) {
   JfrConfigureFlightRecorderDCmd configure(&st, false);
   configure._repository_path.set_is_set(_dcmd_repository.is_set());
   char* repo = _dcmd_repository.value();
-  if (repo != NULL) {
+  if (repo != nullptr) {
     const size_t len = strlen(repo);
     char* repo_copy = JfrCHeapObj::new_array<char>(len + 1);
-    if (NULL == repo_copy) {
+    if (nullptr == repo_copy) {
       return false;
     }
     strncpy(repo_copy, repo, len + 1);
     configure._repository_path.set_value(repo_copy);
+  }
+
+  configure._dump_path.set_is_set(_dcmd_dumppath.is_set());
+  char* dumppath = _dcmd_dumppath.value();
+  if (dumppath != nullptr) {
+    const size_t len = strlen(dumppath);
+    char* dumppath_copy = JfrCHeapObj::new_array<char>(len + 1);
+    if (nullptr == dumppath_copy) {
+      return false;
+    }
+    strncpy(dumppath_copy, dumppath, len + 1);
+    configure._dump_path.set_value(dumppath_copy);
   }
 
   configure._stack_depth.set_is_set(_dcmd_stackdepth.is_set());
@@ -367,12 +389,16 @@ bool JfrOptionSet::configure(TRAPS) {
   configure._sample_threads.set_is_set(_dcmd_sample_threads.is_set());
   configure._sample_threads.set_value(_dcmd_sample_threads.value());
 
+  configure._preserve_repository.set_is_set(_dcmd_preserve_repository.is_set());
+  configure._preserve_repository.set_value(_dcmd_preserve_repository.value());
+
   configure.set_verbose(false);
   configure.execute(DCmd_Source_Internal, THREAD);
 
   if (HAS_PENDING_EXCEPTION) {
     java_lang_Throwable::print(PENDING_EXCEPTION, tty);
     CLEAR_PENDING_EXCEPTION;
+    tty->cr(); // java_lang_Throwable::print will not print '\n'
     return false;
   }
   return true;
@@ -393,34 +419,41 @@ static julong divide_with_user_unit(Argument& memory_argument, julong value) {
   return value;
 }
 
-template <typename Argument>
-static void log_lower_than_min_value(Argument& memory_argument, julong min_value) {
+static const char higher_than_msg[] = "This value is higher than the maximum size limited ";
+static const char lower_than_msg[] = "This value is lower than the minimum size required ";
+template <typename Argument, bool lower>
+static void log_out_of_range_value(Argument& memory_argument, julong min_value) {
+  const char* msg = lower ? lower_than_msg : higher_than_msg;
   if (memory_argument.value()._size != memory_argument.value()._val) {
     // has multiplier
     log_error(arguments) (
-      "This value is lower than the minimum size required " JULONG_FORMAT "%c",
+      "%s" JULONG_FORMAT "%c", msg,
       divide_with_user_unit(memory_argument, min_value),
       memory_argument.value()._multiplier);
     return;
   }
   log_error(arguments) (
-    "This value is lower than the minimum size required " JULONG_FORMAT,
+    "%s" JULONG_FORMAT, msg,
     divide_with_user_unit(memory_argument, min_value));
 }
 
+static const char default_val_msg[] = "Value default for option ";
+static const char specified_val_msg[] = "Value specified for option ";
 template <typename Argument>
 static void log_set_value(Argument& memory_argument) {
   if (memory_argument.value()._size != memory_argument.value()._val) {
     // has multiplier
     log_error(arguments) (
-      "Value specified for option \"%s\" is " JULONG_FORMAT "%c",
+      "%s\"%s\" is " JULONG_FORMAT "%c",
+      memory_argument.is_set() ? specified_val_msg: default_val_msg,
       memory_argument.name(),
       memory_argument.value()._val,
       memory_argument.value()._multiplier);
     return;
   }
   log_error(arguments) (
-    "Value specified for option \"%s\" is " JULONG_FORMAT,
+    "%s\"%s\" is " JULONG_FORMAT,
+    memory_argument.is_set() ? specified_val_msg: default_val_msg,
     memory_argument.name(), memory_argument.value()._val);
 }
 
@@ -447,7 +480,7 @@ static void log_adjustments(MemoryArg& original_memory_size, julong new_memory_s
 
 // All "triangular" options are explicitly set
 // check that they are congruent and not causing
-// an ambiguous situtation
+// an ambiguous situation
 template <typename MemoryArg, typename NumberArg>
 static bool check_for_ambiguity(MemoryArg& memory_size, MemoryArg& global_buffer_size, NumberArg& num_global_buffers) {
   assert(memory_size.is_set(), "invariant");
@@ -468,7 +501,7 @@ static bool check_for_ambiguity(MemoryArg& memory_size, MemoryArg& global_buffer
       num_global_buffers.name(),
       memory_size.name());
     log_error(arguments) (
-      "Try to remove one of the involved options or make sure they are unambigous");
+      "Try to remove one of the involved options or make sure they are unambiguous");
     return false;
   }
   return true;
@@ -541,6 +574,10 @@ static bool valid_memory_relations(const JfrMemoryOptions& options) {
         return false;
       }
     }
+  } else if (options.thread_buffer_size_configured && options.memory_size_configured) {
+    if (!ensure_first_gteq_second(_dcmd_memorysize, _dcmd_threadbuffersize)) {
+      return false;
+    }
   }
   return true;
 }
@@ -609,7 +646,7 @@ template <typename Argument>
 static bool ensure_gteq(Argument& memory_argument, const jlong value) {
   if ((jlong)memory_argument.value()._size < value) {
     log_set_value(memory_argument);
-    log_lower_than_min_value(memory_argument, value);
+    log_out_of_range_value<Argument, true>(memory_argument, value);
     return false;
   }
   return true;
@@ -640,6 +677,30 @@ static bool ensure_valid_minimum_sizes() {
   return true;
 }
 
+template <typename Argument>
+static bool ensure_lteq(Argument& memory_argument, const jlong value) {
+  if ((jlong)memory_argument.value()._size > value) {
+    log_set_value(memory_argument);
+    log_out_of_range_value<Argument, false>(memory_argument, value);
+    return false;
+  }
+  return true;
+}
+
+static bool ensure_valid_maximum_sizes() {
+  if (_dcmd_globalbuffersize.is_set()) {
+    if (!ensure_lteq(_dcmd_globalbuffersize, MAX_GLOBAL_BUFFER_SIZE)) {
+      return false;
+    }
+  }
+  if (_dcmd_threadbuffersize.is_set()) {
+    if (!ensure_lteq(_dcmd_threadbuffersize, MAX_THREAD_BUFFER_SIZE)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 /**
  * Starting with the initial set of memory values from the user,
  * sanitize, enforce min/max rules and adjust to a set of consistent options.
@@ -647,7 +708,7 @@ static bool ensure_valid_minimum_sizes() {
  * Adjusted memory sizes will be page aligned.
  */
 bool JfrOptionSet::adjust_memory_options() {
-  if (!ensure_valid_minimum_sizes()) {
+  if (!ensure_valid_minimum_sizes() || !ensure_valid_maximum_sizes()) {
     return false;
   }
   JfrMemoryOptions options;
@@ -656,6 +717,24 @@ bool JfrOptionSet::adjust_memory_options() {
     return false;
   }
   if (!JfrMemorySizer::adjust_options(&options)) {
+    if (options.buffer_count < MIN_BUFFER_COUNT || options.global_buffer_size < options.thread_buffer_size) {
+      log_set_value(_dcmd_memorysize);
+      log_set_value(_dcmd_globalbuffersize);
+      log_error(arguments) ("%s \"%s\" is " JLONG_FORMAT,
+        _dcmd_numglobalbuffers.is_set() ? specified_val_msg: default_val_msg,
+        _dcmd_numglobalbuffers.name(), _dcmd_numglobalbuffers.value());
+      log_set_value(_dcmd_threadbuffersize);
+      if (options.buffer_count < MIN_BUFFER_COUNT) {
+        log_error(arguments) ("numglobalbuffers " JULONG_FORMAT " is less than minimal value " JULONG_FORMAT,
+          options.buffer_count, MIN_BUFFER_COUNT);
+        log_error(arguments) ("Decrease globalbuffersize/threadbuffersize or increase memorysize");
+      } else {
+        log_error(arguments) ("globalbuffersize " JULONG_FORMAT " is less than threadbuffersize" JULONG_FORMAT,
+          options.global_buffer_size, options.thread_buffer_size);
+        log_error(arguments) ("Decrease globalbuffersize or increase memorysize or adjust global/threadbuffersize");
+      }
+      return false;
+    }
     if (!check_for_ambiguity(_dcmd_memorysize, _dcmd_globalbuffersize, _dcmd_numglobalbuffers)) {
       return false;
     }
@@ -665,9 +744,9 @@ bool JfrOptionSet::adjust_memory_options() {
 }
 
 bool JfrOptionSet::parse_flight_recorder_option(const JavaVMOption** option, char* delimiter) {
-  assert(option != NULL, "invariant");
-  assert(delimiter != NULL, "invariant");
-  assert((*option)->optionString != NULL, "invariant");
+  assert(option != nullptr, "invariant");
+  assert(delimiter != nullptr, "invariant");
+  assert((*option)->optionString != nullptr, "invariant");
   assert(strncmp((*option)->optionString, "-XX:FlightRecorderOptions", 25) == 0, "invariant");
   if (*delimiter == '\0') {
     // -XX:FlightRecorderOptions without any delimiter and values
@@ -679,14 +758,14 @@ bool JfrOptionSet::parse_flight_recorder_option(const JavaVMOption** option, cha
   return false;
 }
 
-static GrowableArray<const char*>* start_flight_recording_options_array = NULL;
+static GrowableArray<const char*>* start_flight_recording_options_array = nullptr;
 
 bool JfrOptionSet::parse_start_flight_recording_option(const JavaVMOption** option, char* delimiter) {
-  assert(option != NULL, "invariant");
-  assert(delimiter != NULL, "invariant");
-  assert((*option)->optionString != NULL, "invariant");
+  assert(option != nullptr, "invariant");
+  assert(delimiter != nullptr, "invariant");
+  assert((*option)->optionString != nullptr, "invariant");
   assert(strncmp((*option)->optionString, "-XX:StartFlightRecording", 24) == 0, "invariant");
-  const char* value = NULL;
+  const char* value = nullptr;
   if (*delimiter == '\0') {
     // -XX:StartFlightRecording without any delimiter and values
     // Add dummy value "dumponexit=false" so -XX:StartFlightRecording can be used without explicit values.
@@ -699,13 +778,13 @@ bool JfrOptionSet::parse_start_flight_recording_option(const JavaVMOption** opti
     *delimiter = '=';
     value = delimiter + 1;
   }
-  assert(value != NULL, "invariant");
+  assert(value != nullptr, "invariant");
   const size_t value_length = strlen(value);
 
-  if (start_flight_recording_options_array == NULL) {
-    start_flight_recording_options_array = new (ResourceObj::C_HEAP, mtTracing) GrowableArray<const char*>(8, mtTracing);
+  if (start_flight_recording_options_array == nullptr) {
+    start_flight_recording_options_array = new (mtTracing) GrowableArray<const char*>(8, mtTracing);
   }
-  assert(start_flight_recording_options_array != NULL, "invariant");
+  assert(start_flight_recording_options_array != nullptr, "invariant");
   char* const startup_value = NEW_C_HEAP_ARRAY(char, value_length + 1, mtTracing);
   strncpy(startup_value, value, value_length + 1);
   assert(strncmp(startup_value, value, value_length) == 0, "invariant");
@@ -718,12 +797,12 @@ const GrowableArray<const char*>* JfrOptionSet::start_flight_recording_options()
 }
 
 void JfrOptionSet::release_start_flight_recording_options() {
-  if (start_flight_recording_options_array != NULL) {
+  if (start_flight_recording_options_array != nullptr) {
     const int length = start_flight_recording_options_array->length();
     for (int i = 0; i < length; ++i) {
       FREE_C_HEAP_ARRAY(char, start_flight_recording_options_array->at(i));
     }
     delete start_flight_recording_options_array;
-    start_flight_recording_options_array = NULL;
+    start_flight_recording_options_array = nullptr;
   }
 }

@@ -166,7 +166,7 @@ public class Main implements DiagnosticListener<JavaFileObject> {
             if (forRemoval) {
                 deprList = proc.getDeprecations().stream()
                                .filter(DeprData::isForRemoval)
-                               .collect(toList());
+                               .toList();
             } else {
                 deprList = proc.getDeprecations();
             }
@@ -190,7 +190,7 @@ public class Main implements DiagnosticListener<JavaFileObject> {
                      .filter(name -> !name.endsWith("module-info.class"))
                      .map(s -> s.replaceAll("\\.class$", ""))
                      .map(s -> s.replace(File.separatorChar, '.'))
-                     .collect(toList()));
+                     .toList());
     }
 
     /**
@@ -227,7 +227,7 @@ public class Main implements DiagnosticListener<JavaFileObject> {
                      .filter(name -> !name.endsWith("module-info.class"))
                      .map(s -> s.replaceAll("\\.class$", ""))
                      .map(this::convertModularFileName)
-                     .collect(toList()));
+                     .toList());
     }
 
     /**
@@ -406,7 +406,7 @@ public class Main implements DiagnosticListener<JavaFileObject> {
                 types.values().stream()
                      .flatMap(List::stream)
                      .map(TypeElement::toString)
-                     .collect(toList()));
+                     .toList());
         } else {
             JDKPlatformProvider pp = new JDKPlatformProvider();
             if (StreamSupport.stream(pp.getSupportedPlatformNames().spliterator(),
@@ -677,7 +677,7 @@ public class Main implements DiagnosticListener<JavaFileObject> {
                 DeprDB db = DeprDB.loadFromList(deprList);
                 List<String> cp = classPath.stream()
                                            .map(File::toString)
-                                           .collect(toList());
+                                           .toList();
                 Scan scan = new Scan(out, err, cp, db, verbose);
 
                 for (String a : args) {

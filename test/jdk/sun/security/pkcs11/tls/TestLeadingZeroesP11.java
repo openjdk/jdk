@@ -29,7 +29,7 @@
  * @author Pasi Eronen
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TestLeadingZeroesP11
- * @run main/othervm TestLeadingZeroesP11 sm
+ * @run main/othervm -Djava.security.manager=allow TestLeadingZeroesP11 sm
  */
 
 

@@ -38,7 +38,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 6565260
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true transform.Bug6565260
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.Bug6565260
  * @run testng/othervm transform.Bug6565260
  * @summary Test use-attribute-sets attribute is not used for the root node.
  */

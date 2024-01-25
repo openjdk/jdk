@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_CLASSFILE_KLASSFACTORY_HPP
 #define SHARE_CLASSFILE_KLASSFACTORY_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "runtime/handles.hpp"
 
 class ClassFileStream;
@@ -43,17 +43,17 @@ class Symbol;
  * Output: a VM runtime representation of a Java class
  *
  * Pre-conditions:
- *   a non-NULL ClassFileStream* // the classfile bytestream
- *   a non-NULL Symbol*          // the name of the class
- *   a non-NULL ClassLoaderData* // the metaspace allocator
+ *   a non-null ClassFileStream* // the classfile bytestream
+ *   a non-null Symbol*          // the name of the class
+ *   a non-null ClassLoaderData* // the metaspace allocator
  *   (no pending exceptions)
  *
  * Returns:
- *   if the returned value is non-NULL, that value is an indirection (pointer/handle)
+ *   if the returned value is non-null, that value is an indirection (pointer/handle)
  *   to a Klass. The caller will not have a pending exception.
  *
  *   On broken invariants and/or runtime errors the returned value will be
- *   NULL (or a NULL handle) and the caller *might* now have a pending exception.
+ *   null (or a null handle) and the caller *might* now have a pending exception.
  *
  */
 

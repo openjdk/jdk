@@ -1,3 +1,0 @@
-var f = new RemoveFilter("Hide control subgraph");
-f.addRule(new RemoveFilter.RemoveRule(new MatcherSelector(new Properties.StringPropertyMatcher("category", "control"))));
-f.apply(graph);

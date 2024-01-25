@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,11 +32,11 @@
  *          java.management/com.sun.jmx.remote.security
  * @run clean SubjectDelegation3Test SimpleStandard SimpleStandardMBean
  * @run build SubjectDelegation3Test SimpleStandard SimpleStandardMBean
- * @run main SubjectDelegation3Test policy31 ok
- * @run main SubjectDelegation3Test policy32 ko
- * @run main SubjectDelegation3Test policy33 ko
- * @run main SubjectDelegation3Test policy34 ok
- * @run main SubjectDelegation3Test policy35 ko
+ * @run main/othervm -Djava.security.manager=allow SubjectDelegation3Test policy31 ok
+ * @run main/othervm -Djava.security.manager=allow SubjectDelegation3Test policy32 ko
+ * @run main/othervm -Djava.security.manager=allow SubjectDelegation3Test policy33 ko
+ * @run main/othervm -Djava.security.manager=allow SubjectDelegation3Test policy34 ok
+ * @run main/othervm -Djava.security.manager=allow SubjectDelegation3Test policy35 ko
  */
 
 import com.sun.jmx.remote.security.JMXPluggableAuthenticator;
@@ -76,8 +76,8 @@ public class SubjectDelegation3Test {
             //
             System.out.println("Start RMI registry...");
             Registry reg = null;
-            int port = 5800;
-            while (port++ < 6000) {
+            int port = 5900;
+            while (port++ < 5920) {
                 try {
                     reg = LocateRegistry.createRegistry(port);
                     System.out.println("RMI registry running on port " + port);

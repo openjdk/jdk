@@ -64,12 +64,12 @@ static jmethodID InputStream_availableID;
 
 /* Initialize the Java VM instance variable when the library is
    first loaded */
-JavaVM *jvm;
+JavaVM *the_jvm;
 
 JNIEXPORT jint JNICALL
 DEF_JNI_OnLoad(JavaVM *vm, void *reserved)
 {
-    jvm = vm;
+    the_jvm = vm;
     return JNI_VERSION_1_2;
 }
 
@@ -284,7 +284,7 @@ GLOBAL(boolean)
 sun_jpeg_fill_input_buffer(j_decompress_ptr cinfo)
 {
     sun_jpeg_source_ptr src = (sun_jpeg_source_ptr) cinfo->src;
-    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(the_jvm, JNI_VERSION_1_2);
     int ret, buflen;
 
     if (src->suspendable) {
@@ -327,7 +327,7 @@ GLOBAL(void)
 sun_jpeg_fill_suspended_buffer(j_decompress_ptr cinfo)
 {
     sun_jpeg_source_ptr src = (sun_jpeg_source_ptr) cinfo->src;
-    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(the_jvm, JNI_VERSION_1_2);
     size_t offset, buflen;
     int ret;
 
@@ -397,7 +397,7 @@ GLOBAL(void)
 sun_jpeg_skip_input_data(j_decompress_ptr cinfo, long num_bytes)
 {
     sun_jpeg_source_ptr src = (sun_jpeg_source_ptr) cinfo->src;
-    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(the_jvm, JNI_VERSION_1_2);
     int ret;
     int buflen;
 
@@ -406,6 +406,10 @@ sun_jpeg_skip_input_data(j_decompress_ptr cinfo, long num_bytes)
         return;
     }
     num_bytes += src->remaining_skip;
+    // Check for overflow if remaining_skip value is too large
+    if (num_bytes < 0) {
+        return;
+    }
     src->remaining_skip = 0;
     ret = (int)src->pub.bytes_in_buffer; /* this conversion is safe, because capacity of the buffer is limited by jnit */
     if (ret >= num_bytes) {

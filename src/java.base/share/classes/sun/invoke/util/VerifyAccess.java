@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package sun.invoke.util;
 
 import java.lang.reflect.Modifier;
 import static java.lang.reflect.Modifier.*;
-import java.util.Objects;
 import jdk.internal.reflect.Reflection;
 
 /**
@@ -323,6 +322,7 @@ public class VerifyAccess {
         // memoization.  And the caller never gets to look at the alternate type binding
         // ("res"), whether it exists or not.
         final String name = type.getName();
+        @SuppressWarnings("removal")
         Class<?> res = java.security.AccessController.doPrivileged(
                 new java.security.PrivilegedAction<>() {
                     public Class<?> run() {
@@ -375,7 +375,7 @@ public class VerifyAccess {
             return true;
         if (class1.getClassLoader() != class2.getClassLoader())
             return false;
-        return Objects.equals(class1.getPackageName(), class2.getPackageName());
+        return class1.getPackageName() == class2.getPackageName();
     }
 
     /**

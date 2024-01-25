@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,13 @@
  */
 package jdk.jfr.event.runtime;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import jdk.jfr.Configuration;
 import jdk.jfr.Event;
@@ -58,8 +62,9 @@ public final class TestActiveSettingEvent {
     private static final String ACTIVE_SETTING_EVENT_NAME = EventNames.ActiveSetting;
 
     public static void main(String[] args) throws Throwable {
-        testDefaultSettings();;
-        testProfileSettings();;
+        testDefaultSettings();
+        testProfileSettings();
+        testOnlyOnce();
         testNewSettings();
         testChangedSetting();
         testUnregistered();
@@ -72,6 +77,49 @@ public final class TestActiveSettingEvent {
 
     private static void testDefaultSettings() throws Exception {
         testSettingConfiguration("default");
+    }
+
+    private static void testOnlyOnce() throws Exception {
+        Configuration c = Configuration.getConfiguration("default");
+        try (Recording r = new Recording(c)) {
+            r.enable(ACTIVE_SETTING_EVENT_NAME).withStackTrace();
+            r.start();
+            r.stop();
+            Map<String, RecordedEvent> settings = new HashMap<>();
+            List<RecordedEvent> events = Events.fromRecording(r);
+            Instant timestamp = null;
+            for (RecordedEvent e : events) {
+                if (e.getEventType().getName().equals(ACTIVE_SETTING_EVENT_NAME)) {
+                    if (!e.getDuration().equals(Duration.ZERO)) {
+                        throw new Exception("Expected event to have zero duration");
+                    }
+                    if (timestamp == null) {
+                        timestamp = e.getStartTime();
+                    }
+                    if (!e.getStartTime().equals(timestamp)) {
+                        throw new Exception("Expected all events to have the same timestamp");
+                    }
+                    long id = e.getLong("id");
+                    String name = e.getString("name");
+                    String value = e.getString("value");
+                    String s = id + "#" + name + "=" + value;
+                    if (settings.containsKey(s)) {
+                        System.out.println("Event:");
+                        System.out.println(settings.get(s));
+                        System.out.println("Duplicated by:");
+                        System.out.println(e);
+                        String message = "Found duplicated setting '" + s + "'";
+                        for (EventType type : FlightRecorder.getFlightRecorder().getEventTypes()) {
+                            if (type.getId() == id) {
+                                throw new Exception(message+  " for " + type.getName());
+                            }
+                        }
+                        throw new Exception(message);
+                    }
+                    settings.put(s, e);
+                }
+            }
+        }
     }
 
     private static void testRegistration() throws Exception {
@@ -157,6 +205,13 @@ public final class TestActiveSettingEvent {
             assertSetting(events, type, "threshold", "0 ns"); // initial value
             assertSetting(events, type, "enabled", "true");
             assertSetting(events, type, "threshold", "11 ns"); // changed value
+            Set<Instant> timestamps = new HashSet<>();
+            for (RecordedEvent e : events) {
+                timestamps.add(e.getStartTime());
+            }
+            if (timestamps.size() != 2) {
+                throw new Exception("Expected two batches of Active Setting events, at Recording.start() and during Recording.setSetting(...)");
+            }
         }
     }
 
@@ -197,6 +252,7 @@ public final class TestActiveSettingEvent {
         settingValues.put(EventNames.ActiveSetting + "#threshold", "0 ns");
         settingValues.put(EventNames.ActiveRecording + "#stackTrace", "false");
         settingValues.put(EventNames.ActiveRecording + "#threshold", "0 ns");
+        settingValues.put(EventNames.InitialSecurityProperty + "#threshold", "0 ns");
         settingValues.put(EventNames.JavaExceptionThrow + "#threshold", "0 ns");
         settingValues.put(EventNames.JavaErrorThrow + "#threshold", "0 ns");
         settingValues.put(EventNames.SecurityProperty + "#threshold", "0 ns");
@@ -205,6 +261,11 @@ public final class TestActiveSettingEvent {
         settingValues.put(EventNames.X509Validation + "#threshold", "0 ns");
         settingValues.put(EventNames.ProcessStart + "#threshold", "0 ns");
         settingValues.put(EventNames.Deserialization + "#threshold", "0 ns");
+        settingValues.put(EventNames.VirtualThreadStart + "#threshold", "0 ns");
+        settingValues.put(EventNames.VirtualThreadEnd + "#stackTrace", "false");
+        settingValues.put(EventNames.VirtualThreadEnd + "#threshold", "0 ns");
+        settingValues.put(EventNames.VirtualThreadSubmitFailed + "#threshold", "0 ns");
+        settingValues.put(EventNames.SecurityProviderService + "#threshold", "0 ns");
 
         try (Recording recording = new Recording(c)) {
             Map<Long, EventType> eventTypes = new HashMap<>();

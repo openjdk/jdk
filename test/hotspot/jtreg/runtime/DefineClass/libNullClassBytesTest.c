@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 #include <jni.h>
 
-JNIEXPORT void JNICALL
+JNIEXPORT jclass JNICALL
 Java_NullClassBytesTest_nativeDefineClass(JNIEnv *env, jclass klass, jstring className, jobject ldr,
                                           jbyte* class_bytes, jint length) {
     if (class_bytes == NULL) {
@@ -32,8 +32,8 @@ Java_NullClassBytesTest_nativeDefineClass(JNIEnv *env, jclass klass, jstring cla
         if (cls != 0) {
             (*env)->ThrowNew(env, cls, "class_bytes are null");
         }
-        return;
+        return NULL;
     }
     const char* c_name = (*env)->GetStringUTFChars(env, className, NULL);
-    (*env)->DefineClass(env, c_name, ldr, class_bytes, length);
+    return (*env)->DefineClass(env, c_name, ldr, class_bytes, length);
 }

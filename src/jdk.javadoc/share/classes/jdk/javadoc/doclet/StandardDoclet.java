@@ -63,8 +63,10 @@ import jdk.javadoc.internal.doclets.formats.html.HtmlDoclet;
  *      of {@code <dt>} and {@code <dd>} elements.
  * </dl>
  *
- * @see <a href="{@docRoot}/../specs/javadoc/doc-comment-spec.html">
- *      Documentation Comment Specification for the Standard Doclet</a>
+ * @spec javadoc/doc-comment-spec.html Documentation Comment Specification for the Standard Doclet
+ * @spec https://www.w3.org/TR/html52 HTML Standard
+ *
+ * @since 9
  */
 public class StandardDoclet implements Doclet {
 
@@ -74,6 +76,7 @@ public class StandardDoclet implements Doclet {
      * Creates an instance of the standard doclet, used to generate HTML-formatted
      * documentation.
      */
+    @SuppressWarnings("this-escape")
     public StandardDoclet() {
         htmlDoclet = new HtmlDoclet(this);
     }
@@ -101,5 +104,27 @@ public class StandardDoclet implements Doclet {
     @Override
     public boolean run(DocletEnvironment docEnv) {
         return htmlDoclet.run(docEnv);
+    }
+
+    /**
+     * {@return the locale for this doclet}
+     *
+     * @see #init(Locale, Reporter)
+     *
+     * @since 17
+     */
+    public Locale getLocale() {
+        return htmlDoclet.getConfiguration().getLocale();
+    }
+
+    /**
+     * {@return the reporter for this doclet}
+     *
+     * @see #init(Locale, Reporter)
+     *
+     * @since 17
+     */
+    public Reporter getReporter() {
+        return htmlDoclet.getConfiguration().getReporter();
     }
 }

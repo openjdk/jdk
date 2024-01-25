@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,6 +86,10 @@ public class BevelBorder extends AbstractBorder
     /**
      * Creates a bevel border with the specified type, highlight and
      * shadow colors.
+     * The bevel outer highlight color and bevel inner highlight color
+     * will be derived from specified highlight color and
+     * bevel outer shadow color and bevel inner shadow color
+     * will be derived from specified shadow color.
      * @param bevelType the type of bevel for the border
      * @param highlight the color to use for the bevel highlight
      * @param shadow the color to use for the bevel shadow
@@ -138,6 +142,8 @@ public class BevelBorder extends AbstractBorder
      * Reinitialize the insets parameter with this Border's current Insets.
      * @param c the component for which this border insets value applies
      * @param insets the object to be reinitialized
+     * @throws NullPointerException if the specified {@code insets}
+     *         is {@code null}
      */
     public Insets getBorderInsets(Component c, Insets insets) {
         insets.set(2, 2, 2, 2);

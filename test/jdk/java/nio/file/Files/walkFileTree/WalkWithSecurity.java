@@ -25,9 +25,9 @@
  * @bug 6876541
  * @summary Test Files.walkFileTree in the presence of a security manager
  * @build WalkWithSecurity
- * @run main/othervm WalkWithSecurity grantAll.policy pass
- * @run main/othervm WalkWithSecurity denyAll.policy fail
- * @run main/othervm WalkWithSecurity grantTopOnly.policy top_only
+ * @run main/othervm -Djava.security.manager=allow WalkWithSecurity grantAll.policy pass
+ * @run main/othervm -Djava.security.manager=allow WalkWithSecurity denyAll.policy fail
+ * @run main/othervm -Djava.security.manager=allow WalkWithSecurity grantTopOnly.policy top_only
  */
 
 import java.nio.file.*;

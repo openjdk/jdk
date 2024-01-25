@@ -53,7 +53,9 @@ import jdk.jpackage.test.Annotations.Test;
  * @build jdk.jpackage.test.*
  * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile IconTest.java
- * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
+ * @run main/othervm/timeout=540 -Xmx512m
+ *  --add-opens jdk.jpackage/jdk.jpackage.internal=ALL-UNNAMED
+ *  jdk.jpackage.test.Main
  *  --jpt-run=IconTest
  */
 
@@ -220,7 +222,7 @@ public class IconTest {
             case DefaultIcon:
                 lookupString = String.format(
                         "Using default package resource %s [icon] (add %s%s to the resource-dir to customize)",
-                        LauncherIconVerifier.getDefaultIcon().getFileName(),
+                        "JavaApp" + TKit.ICON_SUFFIX,
                         launcherName, TKit.ICON_SUFFIX);
                 break;
 

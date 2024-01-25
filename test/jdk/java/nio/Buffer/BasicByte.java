@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,9 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Random;
+
+
+
 
 
 
@@ -662,6 +665,60 @@ public class BasicByte
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         // Compact
 
         relPut(b);
@@ -1134,6 +1191,26 @@ public class BasicByte
 
     }
 
+    public static void testToString() {
+        final int cap = 10;
+
+
+        ByteBuffer direct1 = ByteBuffer.allocateDirect(cap);
+        if (!direct1.toString().equals(Basic.toString(direct1))) {
+           fail("Direct buffer toString is incorrect: "
+                  + direct1.toString() + " vs " + Basic.toString(direct1));
+        }
+
+
+
+        ByteBuffer nondirect1 = ByteBuffer.allocate(cap);
+        if (!nondirect1.toString().equals(Basic.toString(nondirect1))) {
+           fail("Heap buffer toString is incorrect: "
+                  + nondirect1.toString() + " vs " + Basic.toString(nondirect1));
+        }
+
+    }
+
     public static void test() {
         testAllocate();
         test(0, ByteBuffer.allocate(7 * 1024), false);
@@ -1155,6 +1232,8 @@ public class BasicByte
 
 
 
+
+        testToString();
     }
 
 }

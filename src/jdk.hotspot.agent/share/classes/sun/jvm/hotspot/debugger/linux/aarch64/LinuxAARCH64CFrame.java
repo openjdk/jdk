@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,7 +31,7 @@ import sun.jvm.hotspot.debugger.linux.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
 import sun.jvm.hotspot.debugger.cdbg.basic.*;
 
-final public class LinuxAARCH64CFrame extends BasicCFrame {
+public final class LinuxAARCH64CFrame extends BasicCFrame {
    public LinuxAARCH64CFrame(LinuxDebugger dbg, Address fp, Address pc) {
       super(dbg.getCDebugger());
       this.fp = fp;

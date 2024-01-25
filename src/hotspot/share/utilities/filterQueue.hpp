@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ class FilterQueue {
  private:
   class Node : public CHeapObj<mtInternal> {
    public:
-    Node(const E& e): _next(NULL), _data(e) { }
+    Node(const E& e): _next(nullptr), _data(e) { }
     Node*    _next;
     E                   _data;
   };
@@ -50,10 +50,10 @@ class FilterQueue {
   static bool match_all(E d) { return true; }
 
  public:
-  FilterQueue() : _first(NULL) { }
+  FilterQueue() : _first(nullptr) { }
 
   bool is_empty() {
-    return load_first() == NULL;
+    return load_first() == nullptr;
   }
 
   // Adds an item to the queue in a MT safe way, re-entrant.
@@ -67,10 +67,10 @@ class FilterQueue {
   template <typename MATCH_FUNC>
   bool contains(MATCH_FUNC& match_func);
 
-  // Same as pop(MATCH_FUNC& match_func) but matches everything, thus returning
+  // Same as peek(MATCH_FUNC& match_func) but matches everything, thus returning
   // the first inserted item.
-  E pop() {
-    return pop(match_all);
+  E peek() {
+    return peek(match_all);
   }
 
   // Applies the match_func to each item in the queue and returns the first
@@ -81,6 +81,9 @@ class FilterQueue {
   // calls.
   template <typename MATCH_FUNC>
   E pop(MATCH_FUNC& match_func);
+
+  template <typename MATCH_FUNC>
+  E peek(MATCH_FUNC& match_func);
 };
 
 #endif

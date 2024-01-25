@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,22 +28,10 @@
 #include "classfile/classLoaderDataGraph.hpp"
 #include "code/codeCache.hpp"
 #include "gc/shared/oopStorageParState.hpp"
-#include "gc/shared/stringdedup/stringDedup.hpp"
-#include "gc/shared/workgroup.hpp"
-
-class StringDedupCleaningTask : public AbstractGangTask {
-  StringDedupUnlinkOrOopsDoClosure _dedup_closure;
-
-public:
-  StringDedupCleaningTask(BoolObjectClosure* is_alive, OopClosure* keep_alive, bool resize_table);
-  ~StringDedupCleaningTask();
-
-  void work(uint worker_id);
-};
+#include "gc/shared/workerThread.hpp"
 
 class CodeCacheUnloadingTask {
 
-  CodeCache::UnloadingScope _unloading_scope;
   const bool                _unloading_occurred;
   const uint                _num_workers;
 
@@ -52,7 +40,7 @@ class CodeCacheUnloadingTask {
   CompiledMethod* volatile _claimed_nmethod;
 
 public:
-  CodeCacheUnloadingTask(uint num_workers, BoolObjectClosure* is_alive, bool unloading_occurred);
+  CodeCacheUnloadingTask(uint num_workers, bool unloading_occurred);
   ~CodeCacheUnloadingTask();
 
 private:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,18 +141,21 @@ public class InverseDepsAnalyzer extends DepsAnalyzer {
             targets().forEach(builder::addNode);
 
             // transpose the module graph
-            configuration.getModules().values().stream()
+            configuration.getModules().values()
                 .forEach(m -> {
                     builder.addNode(m);
                     m.descriptor().requires().stream()
-                        .map(Requires::name)
-                        .map(configuration::findModule)  // must be present
-                        .forEach(v -> builder.addEdge(v.get(), m));
+                        // filter "requires static" if the module is not resolved in the configuration
+                        .filter(req -> !req.modifiers().contains(Requires.Modifier.STATIC)
+                            || configuration.findModule(req.name()).isPresent())
+                            .map(Requires::name)
+                            .map(configuration::findModule)  // must be present
+                            .forEach(v -> builder.addEdge(v.get(), m));
                 });
 
             // add the dependences from the analysis
             Map<Archive, Set<Archive>> dependences = dependencyFinder.dependences();
-            dependences.entrySet().stream()
+            dependences.entrySet()
                 .forEach(e -> {
                     Archive u = e.getKey();
                     builder.addNode(u);
@@ -215,7 +218,7 @@ public class InverseDepsAnalyzer extends DepsAnalyzer {
             }
 
             // push unvisited adjacent edges
-            unvisitedDeps.stream().forEach(deque::push);
+            unvisitedDeps.forEach(deque::push);
 
 
             // when the adjacent edges of a node are visited, pop it from the path

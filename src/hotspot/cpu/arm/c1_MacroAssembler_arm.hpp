@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,11 +59,11 @@
     max_array_allocation_length = 0x01000000
   };
 
-  int lock_object(Register hdr, Register obj, Register disp_hdr, Register tmp, Label& slow_case);
+  int lock_object(Register hdr, Register obj, Register disp_hdr, Label& slow_case);
 
-  void unlock_object(Register hdr, Register obj, Register disp_hdr, Register tmp, Label& slow_case);
+  void unlock_object(Register hdr, Register obj, Register disp_hdr, Label& slow_case);
 
   // This platform only uses signal-based null checks. The Label is not needed.
-  void null_check(Register r, Label *Lnull = NULL) { MacroAssembler::null_check(r); }
+  void null_check(Register r, Label *Lnull = nullptr) { MacroAssembler::null_check(r); }
 
 #endif // CPU_ARM_C1_MACROASSEMBLER_ARM_HPP

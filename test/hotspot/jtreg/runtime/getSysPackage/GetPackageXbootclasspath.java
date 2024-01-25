@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 8187436
  * @summary Test that getPackage() works with a class loaded via -Xbootclasspath/a.
+ * @requires vm.flagless
  * @library /test/lib
  * @run driver GetPackageXbootclasspath
  */
@@ -53,7 +54,7 @@ public class GetPackageXbootclasspath {
         ClassFileInstaller.writeClassToDisk("P/Test",
             InMemoryJavaCompiler.compile("P.Test", Test_src), test_classes);
 
-        new OutputAnalyzer(ProcessTools.createJavaProcessBuilder(
+        new OutputAnalyzer(ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-Xbootclasspath/a:" + test_classes, "P.Test")
             .start()).shouldContain("Test Passed")
             .shouldHaveExitValue(0);

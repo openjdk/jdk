@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -277,9 +277,11 @@ public abstract class HttpURLConnection extends URLConnection {
      * <p>
      * This method must be called before the URLConnection is connected.
      *
-     * @param   chunklen The number of bytes to write in each chunk.
-     *          If chunklen is less than or equal to zero, a default
-     *          value will be used.
+     * @param   chunklen The number of bytes to be written in each chunk,
+     *          including a chunk size header as a hexadecimal string
+     *          (minimum of 1 byte), two CRLF's (4 bytes) and a minimum
+     *          payload length of 1 byte. If chunklen is less than or equal
+     *          to 5, a higher default value will be used.
      *
      * @throws  IllegalStateException if URLConnection is already connected
      *          or if a different streaming mode is already enabled.
@@ -388,6 +390,7 @@ public abstract class HttpURLConnection extends URLConnection {
      * @see #getFollowRedirects()
      */
     public static void setFollowRedirects(boolean set) {
+        @SuppressWarnings("removal")
         SecurityManager sec = System.getSecurityManager();
         if (sec != null) {
             // seems to be the best check here...
@@ -475,6 +478,7 @@ public abstract class HttpURLConnection extends URLConnection {
         for (int i = 0; i < methods.length; i++) {
             if (methods[i].equals(method)) {
                 if (method.equals("TRACE")) {
+                    @SuppressWarnings("removal")
                     SecurityManager s = System.getSecurityManager();
                     if (s != null) {
                         s.checkPermission(new NetPermission("allowHttpTrace"));
@@ -595,16 +599,18 @@ public abstract class HttpURLConnection extends URLConnection {
     }
 
     @SuppressWarnings("deprecation")
-    public long getHeaderFieldDate(String name, long Default) {
+    public long getHeaderFieldDate(String name, long defaultValue) {
         String dateString = getHeaderField(name);
-        try {
-            if (dateString.indexOf("GMT") == -1) {
-                dateString = dateString+" GMT";
+        if (dateString != null) {
+            if (!dateString.contains("GMT")) {
+                dateString = dateString + " GMT";
             }
-            return Date.parse(dateString);
-        } catch (Exception e) {
+            try {
+                return Date.parse(dateString);
+            } catch (Exception e) {
+            }
         }
-        return Default;
+        return defaultValue;
     }
 
 

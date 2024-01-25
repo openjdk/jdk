@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -592,7 +592,7 @@ public class IndexColorModel extends ColorModel {
     private BigInteger getAllValid() {
         int numbytes = (map_size+7)/8;
         byte[] valid = new byte[numbytes];
-        java.util.Arrays.fill(valid, (byte)0xff);
+        Arrays.fill(valid, (byte)0xff);
         valid[0] = (byte)(0xff >>> (numbytes*8 - map_size));
 
         return new BigInteger(1, valid);
@@ -1511,39 +1511,19 @@ public class IndexColorModel extends ColorModel {
     }
 
     /**
-     * Disposes of system resources associated with this
-     * {@code ColorModel} once this {@code ColorModel} is no
-     * longer referenced.
-     *
-     * @deprecated The {@code finalize} method has been deprecated.
-     *     Subclasses that override {@code finalize} in order to perform cleanup
-     *     should be modified to use alternative cleanup mechanisms and
-     *     to remove the overriding {@code finalize} method.
-     *     When overriding the {@code finalize} method, its implementation must explicitly
-     *     ensure that {@code super.finalize()} is invoked as described in {@link Object#finalize}.
-     *     See the specification for {@link Object#finalize()} for further
-     *     information about migration options.
-     */
-    @Deprecated(since = "9", forRemoval = true)
-    @SuppressWarnings("removal")
-    public void finalize() {
-    }
-
-    /**
      * Returns the {@code String} representation of the contents of
      * this {@code ColorModel} object.
      * @return a {@code String} representing the contents of this
      * {@code ColorModel} object.
      */
     public String toString() {
-       return new String("IndexColorModel: #pixelBits = "+pixel_bits
-                         + " numComponents = "+numComponents
-                         + " color space = "+colorSpace
-                         + " transparency = "+transparency
-                         + " transIndex   = "+transparent_index
-                         + " has alpha = "+supportsAlpha
-                         + " isAlphaPre = "+isAlphaPremultiplied
-                         );
+       return "IndexColorModel: #pixelBits = " + pixel_bits
+               + " numComponents = " + numComponents
+               + " color space = " + colorSpace
+               + " transparency = " + transparency
+               + " transIndex   = " + transparent_index
+               + " has alpha = " + supportsAlpha
+               + " isAlphaPre = " + isAlphaPremultiplied;
     }
 
     /**
@@ -1622,7 +1602,7 @@ public class IndexColorModel extends ColorModel {
              * We are intentionally not calculating hashCode for validBits,
              * because it is only used for 8-bit indexed screens and they
              * are very rare. It is very unlikely for 2 IndexColorModels
-             * to have different valiBits and have same value for all
+             * to have different validBits and have same value for all
              * other properties.
              */
             result = 7;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,9 +33,13 @@ import java.lang.annotation.Target;
 /**
  * Annotation that sets the default name for an element.
  * <p>
- * The name must be a valid identifier as specified in the Java language (for
- * example, {@code "com.example.Transaction"} for an event class or
- * {@code "message"} for an event field).
+ * For event classes, the name must be a legal class name as specified in the Java
+ * language, (for example, {@code "com.example.Transaction"}. For event fields
+ * or event settings, the name must be a valid identifier (for example,
+ * {@code "message"}). See section 3.8 and 3.9 of the Java Language
+ * Specification for more information.
+ * <p>
+ * If the specified name is invalid, the annotation is ignored.
  * <p>
  * A stable and easy-to-use event name is of the form:
  * <p>

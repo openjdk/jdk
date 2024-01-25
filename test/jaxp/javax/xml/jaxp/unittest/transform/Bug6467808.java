@@ -40,7 +40,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 6467808
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true transform.Bug6467808
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.Bug6467808
  * @run testng/othervm transform.Bug6467808
  * @summary Test Transformer can parse re-declare prefixed namespace mappings.
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,9 +49,8 @@
   // hdr     : must be rax, contents destroyed
   // obj     : must point to the object to lock, contents preserved
   // disp_hdr: must point to the displaced header location, contents preserved
-  // scratch : scratch register, contents destroyed
   // returns code offset at which to add null check debug information
-  int lock_object  (Register swap, Register obj, Register disp_hdr, Register scratch, Label& slow_case);
+  int lock_object  (Register swap, Register obj, Register disp_hdr, Register tmp, Label& slow_case);
 
   // unlocking
   // hdr     : contents destroyed
@@ -99,11 +98,12 @@
   //       This helps us to track the rsp changes compared to the entry rsp (->_rsp_offset)
 
   void push_jint (jint i)     { _rsp_offset++; push(i); }
-  void push_oop  (jobject o)  { _rsp_offset++; pushoop(o); }
   // Seems to always be in wordSize
   void push_addr (Address a)  { _rsp_offset++; pushptr(a); }
   void push_reg  (Register r) { _rsp_offset++; push(r); }
   void pop_reg   (Register r) { _rsp_offset--; pop(r); assert(_rsp_offset >= 0, "stack offset underflow"); }
+
+  void push_oop  (jobject o, Register rscratch) { _rsp_offset++; pushoop(o, rscratch); }
 
   void dec_stack (int nof_words) {
     _rsp_offset -= nof_words;
@@ -119,7 +119,7 @@
   void invalidate_registers(bool inv_rax, bool inv_rbx, bool inv_rcx, bool inv_rdx, bool inv_rsi, bool inv_rdi) PRODUCT_RETURN;
 
   // This platform only uses signal-based null checks. The Label is not needed.
-  void null_check(Register r, Label *Lnull = NULL) { MacroAssembler::null_check(r); }
+  void null_check(Register r, Label *Lnull = nullptr) { MacroAssembler::null_check(r); }
 
   void load_parameter(int offset_in_words, Register reg);
 

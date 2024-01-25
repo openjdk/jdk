@@ -25,6 +25,7 @@
  * @test
  * @bug 6402062 6487891
  * @summary Tests BevelBorderUIResource encoding
+ * @run main/othervm -Djava.security.manager=allow javax_swing_plaf_BorderUIResource_BevelBorderUIResource
  * @author Sergey Malenkov
  */
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,19 @@
 
 /**
  * @test
+ * @key randomness
  * @bug 7119644
  * @summary Increase superword's vector size up to 256 bits
- *
+ * @library /test/lib
  * @run main/othervm/timeout=300 -Xbatch -XX:+IgnoreUnrecognizedVMOptions
  *    -XX:-TieredCompilation -XX:-OptimizeFill
  *    compiler.codegen.TestIntDoubleVect
  */
 
 package compiler.codegen;
+
+import java.util.Random;
+import jdk.test.lib.Utils;
 
 public class TestIntDoubleVect {
   private static final int ARRLEN = 997;
@@ -40,6 +44,36 @@ public class TestIntDoubleVect {
   private static final int SCALE = 2;
   private static final int ALIGN_OFF = 8;
   private static final int UNALIGN_OFF = 5;
+
+  private static double[] dspecial = {
+    1.0,
+    -1.0,
+    0.0,
+    -0.0,
+    Double.MAX_VALUE,
+    Double.MIN_VALUE,
+    -Double.MAX_VALUE,
+    -Double.MIN_VALUE,
+    Double.NaN,
+    Double.POSITIVE_INFINITY,
+    Double.NEGATIVE_INFINITY,
+    Integer.MAX_VALUE,
+    Integer.MIN_VALUE,
+    Long.MIN_VALUE,
+    Long.MAX_VALUE,
+    -Integer.MAX_VALUE,
+    -Integer.MIN_VALUE,
+    -Long.MIN_VALUE,
+    -Long.MAX_VALUE
+  };
+
+  private static int[] ispecial = {
+    0,
+    Integer.MAX_VALUE,
+    Integer.MIN_VALUE,
+    -Integer.MAX_VALUE,
+    -Integer.MIN_VALUE
+  };
 
   public static void main(String args[]) {
     System.out.println("Testing Integer + Double vectors");
@@ -75,6 +109,8 @@ public class TestIntDoubleVect {
       test_vi_unaln(a1, b1, (int)123, 103.);
       test_cp_unalndst(a1, a2, b1, b2);
       test_cp_unalnsrc(a1, a2, b1, b2);
+      test_conv_i2d(a1, b1);
+      test_conv_d2i(a1, b1);
     }
     // Initialize
     for (int i=0; i<ARRLEN; i++) {
@@ -338,7 +374,41 @@ public class TestIntDoubleVect {
         errn += verify("test_cp_unalnsrc_overlap: a1", i, a1[i], (int)v);
         errn += verify("test_cp_unalnsrc_overlap: b1", i, b1[i], (double)v);
       }
-
+      for (int j = 0; j < ispecial.length; j++) {
+        int intValue = ispecial[j];
+        for (int i = 0; i < ARRLEN; i++) {
+          a1[i] = intValue;
+        }
+        test_conv_i2d(a1, b1);
+        for (int i = 0; i < ARRLEN; i++) {
+          errn += verify("test_conv_i2d: b1", i, b1[i], (double)intValue);
+        }
+      }
+      for (int j = 0; j < dspecial.length; j++) {
+        double doubleValue = dspecial[j];
+        for (int i = 0; i < ARRLEN; i++) {
+          b1[i] = doubleValue;
+        }
+        test_conv_d2i(a1, b1);
+        for (int i = 0; i < ARRLEN; i++) {
+          errn += verify("test_conv_d2i: a1", i, a1[i], (int)doubleValue);
+        }
+      }
+      Random r = Utils.getRandomInstance();
+      for (int i = 0; i < ARRLEN; i++) {
+        a1[i] = r.nextInt();
+      }
+      test_conv_i2d(a1, b1);
+      for (int i = 0; i < ARRLEN; i++) {
+        errn += verify("test_conv_i2d: b1", i, b1[i], (double)a1[i]);
+      }
+      for (int i = 0; i < ARRLEN; i++) {
+        b1[i] = r.nextDouble();
+      }
+      test_conv_d2i(a1, b1);
+      for (int i = 0; i < ARRLEN; i++) {
+        errn += verify("test_conv_d2i: a1", i, a1[i], (int)b1[i]);
+      }
     }
 
     if (errn > 0)
@@ -448,6 +518,18 @@ public class TestIntDoubleVect {
     }
     end = System.currentTimeMillis();
     System.out.println("test_cp_unalnsrc: " + (end - start));
+    start = System.currentTimeMillis();
+    for (int i = 0; i < ITERS; i++) {
+      test_conv_i2d(a1, b1);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_conv_i2d: " + (end - start));
+    start = System.currentTimeMillis();
+    for (int i = 0; i < ITERS; i++) {
+      test_conv_d2i(a1, b1);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_conv_d2i: " + (end - start));
     return errn;
   }
 
@@ -556,6 +638,16 @@ public class TestIntDoubleVect {
       c[i] = d[i+UNALIGN_OFF];
     }
   }
+  static void test_conv_i2d(int[] a, double[] b) {
+    for (int i = 0; i < a.length; i+=1) {
+      b[i] = (double) a[i];
+    }
+  }
+  static void test_conv_d2i(int[] a, double[] b) {
+    for (int i = 0; i < a.length; i+=1) {
+      a[i] = (int)b[i];
+    }
+  }
 
   static int verify(String text, int i, int elem, int val) {
     if (elem != val) {
@@ -565,7 +657,7 @@ public class TestIntDoubleVect {
     return 0;
   }
   static int verify(String text, int i, double elem, double val) {
-    if (elem != val) {
+    if (elem != val && !(Double.isNaN(elem) && Double.isNaN(val))) {
       System.err.println(text + "[" + i + "] = " + elem + " != " + val);
       return 1;
     }

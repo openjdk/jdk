@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,9 +131,9 @@ public class ResolveHarness implements javax.tools.DiagnosticListener<JavaFileOb
     }
 
     protected void check() throws Exception {
-        String[] options = {
-            "--should-stop=at=ATTR",
-            "--debug=verboseResolution=success,failure,applicable,inapplicable,deferred-inference,predef"
+        String[][] options = {
+                {"--should-stop=ifError=ATTR", "--should-stop=ifNoError=ATTR"},
+                {"--debug=verboseResolution=success,failure,applicable,inapplicable,deferred-inference,predef"}
         };
 
         AbstractProcessor[] processors = { new ResolveCandidateFinder(), null };

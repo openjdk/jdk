@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,9 @@
 
 package javax.xml.datatype;
 
-import java.io.File;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Iterator;
-import java.util.Properties;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.function.Supplier;
@@ -50,17 +48,6 @@ class FactoryFinder {
      * Internal debug flag.
      */
     private static boolean debug = false;
-
-    /**
-     * Cache for properties in java.home/conf/jaxp.properties
-     */
-    private final static Properties cacheProps = new Properties();
-
-    /**
-     * Flag indicating if properties from java.home/conf/jaxp.properties
-     * have been cached.
-     */
-    private static volatile boolean firstTime = true;
 
     // Define system property "jaxp.debug" to get output
     static {
@@ -166,6 +153,7 @@ class FactoryFinder {
      * @param useBSClsLoader True if cl=null actually meant bootstrap classLoader. This parameter
      * is needed since DocumentBuilderFactory/SAXParserFactory defined null as context classLoader.
      */
+    @SuppressWarnings("removal")
     static <T> T newInstance(Class<T> type, String className, ClassLoader cl,
             boolean doFallback, boolean useBSClsLoader)
         throws DatatypeConfigurationException
@@ -232,31 +220,10 @@ class FactoryFinder {
             if (debug) se.printStackTrace();
         }
 
-        // try to read from $java.home/conf/jaxp.properties
-        try {
-            if (firstTime) {
-                synchronized (cacheProps) {
-                    if (firstTime) {
-                        String configFile = SecuritySupport.getSystemProperty("java.home") + File.separator +
-                            "conf" + File.separator + "jaxp.properties";
-                        File f = new File(configFile);
-                        firstTime = false;
-                        if (SecuritySupport.doesFileExist(f)) {
-                            dPrint(()->"Read properties file "+f);
-                            cacheProps.load(SecuritySupport.getFileInputStream(f));
-                        }
-                    }
-                }
-            }
-            final String factoryClassName = cacheProps.getProperty(factoryId);
-
-            if (factoryClassName != null) {
-                dPrint(()->"found in ${java.home}/conf/jaxp.properties, value=" + factoryClassName);
-                return newInstance(type, factoryClassName, null, true);
-            }
-        }
-        catch (Exception ex) {
-            if (debug) ex.printStackTrace();
+        // try to read from the configuration file
+        String factoryClassName = SecuritySupport.readConfig(factoryId);
+        if (factoryClassName != null) {
+            return newInstance(type, factoryClassName, null, true);
         }
 
         // Try Jar Service Provider Mechanism
@@ -280,6 +247,7 @@ class FactoryFinder {
      *
      * @return instance of provider class if found or null
      */
+    @SuppressWarnings("removal")
     private static <T> T findServiceProvider(final Class<T> type)
             throws DatatypeConfigurationException
     {

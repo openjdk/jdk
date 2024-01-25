@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,8 +47,6 @@
  *       4. newclass04 - adding <final> modifiers to 3 methods
  *       5. newclass05 - adding <synchronized> modifiers to public method
  *       6. newclass06 - adding <synchronized> modifiers to 3 methods
- *       7. newclass07 - adding <strictfp> modifiers to public method
- *       8. newclass08 - adding <strictfp> modifiers to 3 methods
  *     The test checks two different cases for suspended debugee and not
  *     suspended one.
  * COMMENTS:
@@ -69,7 +67,7 @@
  *          with full debug info
  * @run driver nsk.share.ExtraClassesBuilder
  *      -g:lines,source,vars
- *      newclass01 newclass02 newclass03 newclass04 newclass05 newclass06 newclass07 newclass08
+ *      newclass01 newclass02 newclass03 newclass04 newclass05 newclass06
  *
  * @run main/othervm
  *      nsk.jdi.VirtualMachine.redefineClasses.redefineclasses008
@@ -81,4 +79,3 @@
  *      -transport.address=dynamic
  *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
  */
-

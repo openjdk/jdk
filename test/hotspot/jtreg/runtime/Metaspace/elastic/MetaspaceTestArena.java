@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2020, 2023, SAP SE. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,7 @@
  *
  */
 
-import sun.hotspot.WhiteBox;
-
-import java.util.concurrent.atomic.AtomicLong;
+import jdk.test.whitebox.WhiteBox;
 
 public class MetaspaceTestArena {
 
@@ -38,7 +36,7 @@ public class MetaspaceTestArena {
     long numAllocated = 0;
     long deallocatedWords = 0;
     long numDeallocated = 0;
-    long numAllocationFailures = 0;
+    volatile long numAllocationFailures = 0;
 
     private synchronized boolean reachedCeiling() {
         return (allocatedWords - deallocatedWords) > allocationCeiling;

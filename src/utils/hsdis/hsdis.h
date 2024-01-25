@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * The Universal Permissive License (UPL), Version 1.0
@@ -72,9 +72,14 @@
 #ifndef SHARED_TOOLS_HSDIS_H
 #define SHARED_TOOLS_HSDIS_H
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 extern
-#ifdef DLL_EXPORT
-  DLL_EXPORT
+#ifdef _WIN32
+__declspec(dllexport)
 #endif
 void* decode_instructions_virtual(uintptr_t start_va, uintptr_t end_va,
                                   unsigned char* buffer, uintptr_t length,
@@ -87,8 +92,8 @@ void* decode_instructions_virtual(uintptr_t start_va, uintptr_t end_va,
 
 /* This is the compatability interface for older versions of hotspot */
 extern
-#ifdef DLL_ENTRY
-  DLL_ENTRY
+#ifdef _WIN32
+__declspec(dllexport)
 #endif
 void* decode_instructions(void* start_pv, void* end_pv,
                     void* (*event_callback)(void*, const char*, void*),
@@ -115,4 +120,9 @@ typedef void* (*decode_func_stype) (void* start_pv, void* end_pv,
                                     decode_instructions_printf_callback_ftype printf_callback,
                                     void* printf_stream,
                                     const char* options);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* SHARED_TOOLS_HSDIS_H */

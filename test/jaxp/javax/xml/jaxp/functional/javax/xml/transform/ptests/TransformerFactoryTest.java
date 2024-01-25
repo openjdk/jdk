@@ -60,7 +60,7 @@ import org.w3c.dom.Document;
  * @test
  * @bug 8169778
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true javax.xml.transform.ptests.TransformerFactoryTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow javax.xml.transform.ptests.TransformerFactoryTest
  * @run testng/othervm javax.xml.transform.ptests.TransformerFactoryTest
  */
 @Listeners({jaxp.library.FilePolicy.class})

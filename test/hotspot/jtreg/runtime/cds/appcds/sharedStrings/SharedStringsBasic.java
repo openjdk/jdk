@@ -25,7 +25,7 @@
 /*
  * @test
  * @summary Basic test for shared strings
- * @requires vm.cds.archived.java.heap
+ * @requires vm.cds.write.archived.java.heap
  * @library /test/hotspot/jtreg/runtime/cds/appcds /test/lib
  * @build HelloString
  * @run driver SharedStringsBasic

@@ -89,7 +89,7 @@ public class TestReuse {
                 es.setReuse(true);
                 es.onEvent(e -> {
                     if(events.containsKey(e)) {
-                        success.set(true);;
+                        success.set(true);
                         es.close();
                     }
                     events.put(e,e);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,10 +62,12 @@ import com.sun.tools.javac.main.OptionHelper.GrumpyHelper;
 import com.sun.tools.javac.platform.PlatformDescription;
 import com.sun.tools.javac.platform.PlatformUtils;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
+import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticInfo;
+import com.sun.tools.javac.util.JCDiagnostic.Fragment;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Log;
@@ -114,6 +116,7 @@ public class Arguments {
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     protected Arguments(Context context) {
         context.put(argsKey, this);
         options = Options.instance(context);
@@ -448,6 +451,7 @@ public class Arguments {
             // But also note that none of these options are supported in API mode.
             if (options.isSet(Option.HELP)
                     || options.isSet(Option.X)
+                    || options.isSet(Option.HELP_LINT)
                     || options.isSet(Option.VERSION)
                     || options.isSet(Option.FULLVERSION)
                     || options.isSet(Option.MODULE)) {
@@ -456,7 +460,7 @@ public class Arguments {
 
             if (!emptyAllowed) {
                 if (!errors) {
-                    if (JavaCompiler.explicitAnnotationProcessingRequested(options)) {
+                    if (JavaCompiler.explicitAnnotationProcessingRequested(options, fileManager)) {
                         reportDiag(Errors.NoSourceFilesClasses);
                     } else {
                         reportDiag(Errors.NoSourceFiles);
@@ -478,11 +482,10 @@ public class Arguments {
 
         // The following checks are to help avoid accidental confusion between
         // directories of modules and exploded module directories.
-        if (fm instanceof StandardJavaFileManager) {
-            StandardJavaFileManager sfm = (StandardJavaFileManager) fileManager;
-            if (sfm.hasLocation(StandardLocation.CLASS_OUTPUT)) {
-                Path outDir = sfm.getLocationAsPaths(StandardLocation.CLASS_OUTPUT).iterator().next();
-                if (sfm.hasLocation(StandardLocation.MODULE_SOURCE_PATH)) {
+        if (fm instanceof StandardJavaFileManager standardJavaFileManager) {
+            if (standardJavaFileManager.hasLocation(StandardLocation.CLASS_OUTPUT)) {
+                Path outDir = standardJavaFileManager.getLocationAsPaths(StandardLocation.CLASS_OUTPUT).iterator().next();
+                if (standardJavaFileManager.hasLocation(StandardLocation.MODULE_SOURCE_PATH)) {
                     // multi-module mode
                     if (Files.exists(outDir.resolve("module-info.class"))) {
                         log.error(Errors.MultiModuleOutdirCannotBeExplodedModule(outDir));
@@ -520,9 +523,9 @@ public class Arguments {
             if (target.compareTo(source.requiredTarget()) < 0) {
                 if (targetString != null) {
                     if (sourceString == null) {
-                        reportDiag(Warnings.TargetDefaultSourceConflict(targetString, source.requiredTarget()));
+                        reportDiag(Errors.TargetDefaultSourceConflict(source.name, targetString));
                     } else {
-                        reportDiag(Warnings.SourceTargetConflict(sourceString, source.requiredTarget()));
+                        reportDiag(Errors.SourceTargetConflict(sourceString, targetString));
                     }
                     return false;
                 } else {
@@ -565,13 +568,13 @@ public class Arguments {
 
         boolean lintOptions = options.isUnset(Option.XLINT_CUSTOM, "-" + LintCategory.OPTIONS.option);
         if (lintOptions && source.compareTo(Source.DEFAULT) < 0 && !options.isSet(Option.RELEASE)) {
-            if (fm instanceof BaseFileManager) {
+            if (fm instanceof BaseFileManager baseFileManager) {
                 if (source.compareTo(Source.JDK8) <= 0) {
-                    if (((BaseFileManager) fm).isDefaultBootClassPath())
-                        log.warning(LintCategory.OPTIONS, Warnings.SourceNoBootclasspath(source.name));
+                    if (baseFileManager.isDefaultBootClassPath())
+                        log.warning(LintCategory.OPTIONS, Warnings.SourceNoBootclasspath(source.name, releaseNote(source, targetString)));
                 } else {
-                    if (((BaseFileManager) fm).isDefaultSystemModulesPath())
-                        log.warning(LintCategory.OPTIONS, Warnings.SourceNoSystemModulesPath(source.name));
+                    if (baseFileManager.isDefaultSystemModulesPath())
+                        log.warning(LintCategory.OPTIONS, Warnings.SourceNoSystemModulesPath(source.name, releaseNote(source, targetString)));
                 }
             }
         }
@@ -609,10 +612,6 @@ public class Arguments {
                 Option.LIMIT_MODULES,
                 Option.PATCH_MODULE);
 
-        if (lintOptions && options.isSet(Option.PARAMETERS) && !target.hasMethodParameters()) {
-            log.warning(Warnings.OptionParametersUnsupported(target, Target.JDK1_8));
-        }
-
         if (fm.hasLocation(StandardLocation.MODULE_SOURCE_PATH)) {
             if (!options.isSet(Option.PROC, "only")
                     && !fm.hasLocation(StandardLocation.CLASS_OUTPUT)) {
@@ -641,6 +640,22 @@ public class Arguments {
         }
 
         return !errors && (log.nerrors == 0);
+    }
+
+    private Fragment releaseNote(Source source, String targetString) {
+        if (source.compareTo(Source.JDK8) <= 0) {
+            if (targetString != null) {
+                return Fragments.SourceNoBootclasspathWithTarget(source.name, targetString);
+            } else {
+                return Fragments.SourceNoBootclasspath(source.name);
+            }
+        } else {
+            if (targetString != null) {
+                return Fragments.SourceNoSystemModulesPathWithTarget(source.name, targetString);
+            } else {
+                return Fragments.SourceNoSystemModulesPath(source.name);
+            }
+        }
     }
 
     private void validateAddExports(SourceVersion sv) {
@@ -914,10 +929,10 @@ public class Arguments {
 
     private void report(DiagnosticInfo diag) {
         // Would be good to have support for -XDrawDiagnostics here
-        if (diag instanceof JCDiagnostic.Error) {
-            log.error((JCDiagnostic.Error)diag);
-        } else if (diag instanceof JCDiagnostic.Warning){
-            log.warning((JCDiagnostic.Warning)diag);
+        if (diag instanceof JCDiagnostic.Error errorDiag) {
+            log.error(errorDiag);
+        } else if (diag instanceof JCDiagnostic.Warning warningDiag){
+            log.warning(warningDiag);
         }
     }
 

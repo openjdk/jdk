@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -188,10 +188,6 @@ void BCEscapeAnalyzer::set_global_escape(ArgumentMap vars, bool merge) {
   }
 }
 
-void BCEscapeAnalyzer::set_dirty(ArgumentMap vars) {
-  clear_bits(vars, _dirty);
-}
-
 void BCEscapeAnalyzer::set_modified(ArgumentMap vars, int offs, int size) {
 
   for (int i = 0; i < _arg_size; i++) {
@@ -204,7 +200,7 @@ void BCEscapeAnalyzer::set_modified(ArgumentMap vars, int offs, int size) {
 }
 
 bool BCEscapeAnalyzer::is_recursive_call(ciMethod* callee) {
-  for (BCEscapeAnalyzer* scope = this; scope != NULL; scope = scope->_parent) {
+  for (BCEscapeAnalyzer* scope = this; scope != nullptr; scope = scope->_parent) {
     if (scope->method() == callee) {
       return true;
     }
@@ -276,7 +272,7 @@ void BCEscapeAnalyzer::invoke(StateInfo &state, Bytecodes::Code code, ciMethod* 
 
   // direct recursive calls are skipped if they can be bound statically without introducing
   // dependencies and if parameters are passed at the same position as in the current method
-  // other calls are skipped if there are no unescaped arguments passed to them
+  // other calls are skipped if there are no non-escaped arguments passed to them
   bool directly_recursive = (method() == target) &&
                (code != Bytecodes::_invokevirtual || target->is_final_method() || state._stack[arg_base] .is_empty());
 
@@ -300,7 +296,7 @@ void BCEscapeAnalyzer::invoke(StateInfo &state, Bytecodes::Code code, ciMethod* 
   }
 
   // determine actual method (use CHA if necessary)
-  ciMethod* inline_target = NULL;
+  ciMethod* inline_target = nullptr;
   if (target->is_loaded() && klass->is_loaded()
       && (klass->is_initialized() || (klass->is_interface() && target->holder()->is_initialized()))) {
     if (code == Bytecodes::_invokestatic
@@ -312,7 +308,7 @@ void BCEscapeAnalyzer::invoke(StateInfo &state, Bytecodes::Code code, ciMethod* 
     }
   }
 
-  if (inline_target != NULL && !is_recursive_call(inline_target)) {
+  if (inline_target != nullptr && !is_recursive_call(inline_target)) {
     // analyze callee
     BCEscapeAnalyzer analyzer(inline_target, this);
 
@@ -346,6 +342,9 @@ void BCEscapeAnalyzer::invoke(StateInfo &state, Bytecodes::Code code, ciMethod* 
           (code == Bytecodes::_invokevirtual && !target->is_final_method())) {
         _dependencies.append(actual_recv);
         _dependencies.append(inline_target);
+        _dependencies.append(callee_holder);
+        _dependencies.append(target);
+        assert(callee_holder->is_interface() == (code == Bytecodes::_invokeinterface), "sanity");
       }
       _dependencies.appendAll(analyzer.dependencies());
     }
@@ -417,11 +416,11 @@ void BCEscapeAnalyzer::iterate_one_block(ciBlock *blk, StateInfo &state, Growabl
         // Avoid calling get_constant() which will try to allocate
         // unloaded constant. We need only constant's type.
         int index = s.get_constant_pool_index();
-        constantTag tag = s.get_constant_pool_tag(index);
-        if (tag.is_long() || tag.is_double()) {
+        BasicType con_bt = s.get_basic_type_for_constant_at(index);
+        if (con_bt == T_LONG || con_bt == T_DOUBLE) {
           // Only longs and doubles use 2 stack slots.
           state.lpush();
-        } else if (tag.basic_type() == T_OBJECT) {
+        } else if (con_bt == T_OBJECT) {
           state.apush(unknown_obj);
         } else {
           state.spush();
@@ -487,7 +486,6 @@ void BCEscapeAnalyzer::iterate_one_block(ciBlock *blk, StateInfo &state, Growabl
           ArgumentMap array = state.apop();
           set_method_escape(array);
           state.apush(unknown_obj);
-          set_dirty(array);
         }
         break;
       case Bytecodes::_istore:
@@ -883,7 +881,7 @@ void BCEscapeAnalyzer::iterate_one_block(ciBlock *blk, StateInfo &state, Growabl
           if (s.cur_bc() != Bytecodes::_putstatic) {
             ArgumentMap p = state.apop();
             set_method_escape(p);
-            set_modified(p, will_link ? field->offset() : OFFSET_ANY, type2size[field_type]*HeapWordSize);
+            set_modified(p, will_link ? field->offset_in_bytes() : OFFSET_ANY, type2size[field_type]*HeapWordSize);
           }
         }
         break;
@@ -893,10 +891,10 @@ void BCEscapeAnalyzer::iterate_one_block(ciBlock *blk, StateInfo &state, Growabl
       case Bytecodes::_invokedynamic:
       case Bytecodes::_invokeinterface:
         { bool ignored_will_link;
-          ciSignature* declared_signature = NULL;
+          ciSignature* declared_signature = nullptr;
           ciMethod* target = s.get_method(ignored_will_link, &declared_signature);
           ciKlass*  holder = s.get_declared_method_holder();
-          assert(declared_signature != NULL, "cannot be null");
+          assert(declared_signature != nullptr, "cannot be null");
           // If the current bytecode has an attached appendix argument,
           // push an unknown object to represent that argument. (Analysis
           // of dynamic call sites, especially invokehandle calls, needs
@@ -1107,8 +1105,8 @@ void BCEscapeAnalyzer::iterate_blocks(Arena *arena) {
     blockstates[i]._stack_height = 0;
     blockstates[i]._max_stack  = stkSize;
   }
-  GrowableArray<ciBlock *> worklist(arena, numblocks / 4, 0, NULL);
-  GrowableArray<ciBlock *> successors(arena, 4, 0, NULL);
+  GrowableArray<ciBlock *> worklist(arena, numblocks / 4, 0, nullptr);
+  GrowableArray<ciBlock *> successors(arena, 4, 0, nullptr);
 
   _methodBlocks->clear_processed();
 
@@ -1441,31 +1439,29 @@ void BCEscapeAnalyzer::dump() {
 
 BCEscapeAnalyzer::BCEscapeAnalyzer(ciMethod* method, BCEscapeAnalyzer* parent)
     : _arena(CURRENT_ENV->arena())
-    , _conservative(method == NULL || !EstimateArgEscape)
+    , _conservative(method == nullptr || !EstimateArgEscape)
     , _method(method)
-    , _methodData(method ? method->method_data() : NULL)
+    , _methodData(method ? method->method_data() : nullptr)
     , _arg_size(method ? method->arg_size() : 0)
     , _arg_local(_arena)
     , _arg_stack(_arena)
     , _arg_returned(_arena)
-    , _dirty(_arena)
     , _return_local(false)
     , _return_allocated(false)
     , _allocated_escapes(false)
     , _unknown_modified(false)
-    , _dependencies(_arena, 4, 0, NULL)
+    , _dependencies(_arena, 4, 0, nullptr)
     , _parent(parent)
-    , _level(parent == NULL ? 0 : parent->level() + 1) {
+    , _level(parent == nullptr ? 0 : parent->level() + 1) {
   if (!_conservative) {
     _arg_local.clear();
     _arg_stack.clear();
     _arg_returned.clear();
-    _dirty.clear();
     Arena* arena = CURRENT_ENV->arena();
     _arg_modified = (uint *) arena->Amalloc(_arg_size * sizeof(uint));
     Copy::zero_to_bytes(_arg_modified, _arg_size * sizeof(uint));
 
-    if (methodData() == NULL)
+    if (methodData() == nullptr)
       return;
     if (methodData()->has_escape_info()) {
       TRACE_BCEA(2, tty->print_cr("[EA] Reading previous results for %s.%s",
@@ -1495,9 +1491,11 @@ void BCEscapeAnalyzer::copy_dependencies(Dependencies *deps) {
     // callee will trigger recompilation.
     deps->assert_evol_method(method());
   }
-  for (int i = 0; i < _dependencies.length(); i+=2) {
-    ciKlass *k = _dependencies.at(i)->as_klass();
-    ciMethod *m = _dependencies.at(i+1)->as_method();
-    deps->assert_unique_concrete_method(k, m);
+  for (int i = 0; i < _dependencies.length(); i+=4) {
+    ciKlass*  recv_klass      = _dependencies.at(i+0)->as_klass();
+    ciMethod* target          = _dependencies.at(i+1)->as_method();
+    ciKlass*  resolved_klass  = _dependencies.at(i+2)->as_klass();
+    ciMethod* resolved_method = _dependencies.at(i+3)->as_method();
+    deps->assert_unique_concrete_method(recv_klass, target, resolved_klass, resolved_method);
   }
 }

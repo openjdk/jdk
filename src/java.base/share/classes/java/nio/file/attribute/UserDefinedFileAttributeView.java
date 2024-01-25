@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,15 +131,15 @@ public interface UserDefinedFileAttributeView
      * <p> <b>Usage Example:</b>
      * Suppose we want to read a file's MIME type that is stored as a user-defined
      * attribute with the name "{@code user.mimetype}".
-     * <pre>
-     *    UserDefinedFileAttributeView view =
-     *        Files.getFileAttributeView(path, UserDefinedFileAttributeView.class);
-     *    String name = "user.mimetype";
-     *    ByteBuffer buf = ByteBuffer.allocate(view.size(name));
-     *    view.read(name, buf);
-     *    buf.flip();
-     *    String value = Charset.defaultCharset().decode(buf).toString();
-     * </pre>
+     * {@snippet lang=java :
+     *     UserDefinedFileAttributeView view =
+     *         Files.getFileAttributeView(path, UserDefinedFileAttributeView.class);
+     *     String name = "user.mimetype";
+     *     ByteBuffer buf = ByteBuffer.allocate(view.size(name));
+     *     view.read(name, buf);
+     *     buf.flip();
+     *     String value = Charset.defaultCharset().decode(buf).toString();
+     * }
      *
      * @param   name
      *          The attribute name
@@ -177,8 +177,8 @@ public interface UserDefinedFileAttributeView
      * will not have changed.
      *
      * <p> If an attribute of the given name already exists then its value is
-     * replaced. If the attribute does not exist then it is created. If it
-     * implementation specific if a test to check for the existence of the
+     * replaced. If the attribute does not exist then it is created. It
+     * is implementation specific if a test to check for the existence of the
      * attribute and the creation of attribute are atomic with respect to other
      * file system activities.
      *
@@ -188,11 +188,11 @@ public interface UserDefinedFileAttributeView
      *
      * <p> <b>Usage Example:</b>
      * Suppose we want to write a file's MIME type as a user-defined attribute:
-     * <pre>
-     *    UserDefinedFileAttributeView view =
-     *        Files.getFileAttributeView(path, UserDefinedFileAttributeView.class);
-     *    view.write("user.mimetype", Charset.defaultCharset().encode("text/html"));
-     * </pre>
+     * {@snippet lang=java :
+     *     UserDefinedFileAttributeView view =
+     *         Files.getFileAttributeView(path, UserDefinedFileAttributeView.class);
+     *     view.write("user.mimetype", Charset.defaultCharset().encode("text/html"));
+     * }
      *
      * @param   name
      *          The attribute name

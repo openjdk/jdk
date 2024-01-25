@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package sun.font;
 
 import java.awt.Font;
 import java.awt.FontFormatException;
-import java.awt.GraphicsEnvironment;
 import java.awt.geom.Point2D;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -58,10 +57,10 @@ import sun.security.action.GetPropertyAction;
  * create an SFnt superclass. Eg to handle sfnt-housed postscript fonts.
  * OpenType fonts are handled by this class, and possibly should be
  * represented by a subclass.
- * An instance stores some information from the font file to faciliate
+ * An instance stores some information from the font file to facilitate
  * faster access. File size, the table directory and the names of the font
  * are the most important of these. It amounts to approx 400 bytes
- * for a typical font. Systems with mutiple locales sometimes have up to 400
+ * for a typical font. Systems with multiple locales sometimes have up to 400
  * font files, and an app which loads all font files would need around
  * 160Kbytes. So storing any more info than this would be expensive.
  */
@@ -247,6 +246,7 @@ public class TrueTypeFont extends FileFont {
                 FontUtilities.logInfo("open TTF: " + platName);
             }
             try {
+                @SuppressWarnings("removal")
                 RandomAccessFile raf = AccessController.doPrivileged(
                     new PrivilegedExceptionAction<RandomAccessFile>() {
                         public RandomAccessFile run() throws FileNotFoundException {
@@ -412,8 +412,6 @@ public class TrueTypeFont extends FileFont {
                 disposerRecord.channel.read(buffer);
                 buffer.flip();
             }
-        } catch (FontFormatException e) {
-            return null;
         } catch (ClosedChannelException e) {
             /* NIO I/O is interruptible, recurse to retry operation.
              * Clear interrupts before recursing in case NIO didn't.
@@ -421,7 +419,7 @@ public class TrueTypeFont extends FileFont {
             Thread.interrupted();
             close();
             readBlock(buffer, offset, length);
-        } catch (IOException e) {
+        } catch (FontFormatException | IOException e) {
             return null;
         }
         return buffer;
@@ -502,7 +500,9 @@ public class TrueTypeFont extends FileFont {
                 /* checksum */ ibuffer.get();
                 table.offset = ibuffer.get() & 0x7FFFFFFF;
                 table.length = ibuffer.get() & 0x7FFFFFFF;
-                if (table.offset + table.length > fileSize) {
+                if ((table.offset + table.length < table.length) ||
+                    (table.offset + table.length > fileSize))
+                {
                     throw new FontFormatException("bad table, tag="+table.tag);
                 }
             }
@@ -516,6 +516,10 @@ public class TrueTypeFont extends FileFont {
             if (getDirectoryEntry(hmtxTag) != null
                     && getDirectoryEntry(hheaTag) == null) {
                 throw new FontFormatException("missing hhea table");
+            }
+            ByteBuffer maxpTable = getTableBuffer(maxpTag);
+            if (maxpTable.getChar(4) == 0) {
+                throw new FontFormatException("zero glyphs");
             }
             initNames();
         } catch (Exception e) {
@@ -660,6 +664,7 @@ public class TrueTypeFont extends FileFont {
     };
 
     private static String defaultCodePage = null;
+    @SuppressWarnings("removal")
     static String getCodePage() {
 
         if (defaultCodePage != null) {
@@ -792,8 +797,11 @@ public class TrueTypeFont extends FileFont {
                 break;
             }
         }
+
         if (entry == null || entry.length == 0 ||
-            entry.offset+entry.length > fileSize) {
+            (entry.offset + entry.length < entry.length) ||
+            (entry.offset + entry.length > fileSize))
+        {
             return null;
         }
 
@@ -814,9 +822,7 @@ public class TrueTypeFont extends FileFont {
                 Thread.interrupted();
                 close();
                 return getTableBuffer(tag);
-            } catch (IOException e) {
-                return null;
-            } catch (FontFormatException e) {
+            } catch (IOException | FontFormatException e) {
                 return null;
             }
 
@@ -882,6 +888,9 @@ public class TrueTypeFont extends FileFont {
             return false;
         }
         ByteBuffer eblcTable = getTableBuffer(EBLCTag);
+        if (eblcTable == null) {
+            return false;
+        }
         int numSizes = eblcTable.getInt(4);
         /* The bitmapSizeTable's start at offset of 8.
          * Each bitmapSizeTable entry is 48 bytes.
@@ -979,24 +988,36 @@ public class TrueTypeFont extends FileFont {
 
     private void setStrikethroughMetrics(ByteBuffer os_2Table, int upem) {
         if (os_2Table == null || os_2Table.capacity() < 30 || upem < 0) {
-            stSize = .05f;
-            stPos = -.4f;
+            stSize = 0.05f;
+            stPos = -0.4f;
             return;
         }
         ShortBuffer sb = os_2Table.asShortBuffer();
         stSize = sb.get(13) / (float)upem;
         stPos = -sb.get(14) / (float)upem;
+        if (stSize < 0f) {
+            stSize = 0.05f;
+        }
+        if (Math.abs(stPos) > 2.0f) {
+            stPos = -0.4f;
+        }
     }
 
     private void setUnderlineMetrics(ByteBuffer postTable, int upem) {
         if (postTable == null || postTable.capacity() < 12 || upem < 0) {
-            ulSize = .05f;
-            ulPos = .1f;
+            ulSize = 0.05f;
+            ulPos = 0.1f;
             return;
         }
         ShortBuffer sb = postTable.asShortBuffer();
         ulSize = sb.get(5) / (float)upem;
         ulPos = -sb.get(4) / (float)upem;
+        if (ulSize < 0f) {
+            ulSize = 0.05f;
+        }
+        if (Math.abs(ulPos) > 2.0f) {
+            ulPos = 0.1f;
+        }
     }
 
     @Override

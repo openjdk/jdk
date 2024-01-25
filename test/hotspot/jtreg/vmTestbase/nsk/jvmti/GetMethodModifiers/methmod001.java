@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,10 +59,6 @@ public class methmod001 {
 
     private char meth_1(char c1) {
         return c1;
-    }
-
-    strictfp float meth_2(float f1, float f2) {
-        return f1 / f2;
     }
 
     class Inn {

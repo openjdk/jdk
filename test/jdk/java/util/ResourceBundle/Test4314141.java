@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ public class Test4314141 {
      * Verifies the example from the getBundle specification.
      */
     static void testExample() {
-        Locale.setDefault(new Locale("en", "UK"));
+        Locale.setDefault(Locale.of("en", "UK"));
         doTestExample("fr", "CH", new String[] {"_fr_CH.class", "_fr.properties", ".class"});
         doTestExample("fr", "FR", new String[] {"_fr.properties", ".class"});
         doTestExample("de", "DE", new String[] {"_en.properties", ".class"});
@@ -87,7 +87,7 @@ public class Test4314141 {
     static void doTest(String baseName, String language, String country, String variant,
             String[] expectedSuffixes) {
         System.out.print("Looking for " + baseName + " \"" + language + "\", \"" + country + "\", \"" + variant + "\"");
-        ResourceBundle bundle = ResourceBundle.getBundle(baseName, new Locale(language, country, variant));
+        ResourceBundle bundle = ResourceBundle.getBundle(baseName, Locale.of(language, country, variant));
         System.out.print(" => got ");
         String previousName = null;
         int nameCount = 0;

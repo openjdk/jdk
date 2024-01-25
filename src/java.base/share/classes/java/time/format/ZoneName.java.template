@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,15 +40,16 @@ class ZoneName {
 
     public static String toZid(String zid, Locale locale) {
         String mzone = zidToMzone.get(zid);
-        if (mzone == null && aliases.containsKey(zid)) {
-            zid = aliases.get(zid);
-            mzone = zidToMzone.get(zid);
+        if (mzone == null) {
+            String alias = aliases.get(zid);
+            if (alias != null) {
+                zid = alias;
+                mzone = zidToMzone.get(zid);
+            }
         }
         if (mzone != null) {
             Map<String, String> map = mzoneToZidL.get(mzone);
-            if (map != null && map.containsKey(locale.getCountry())) {
-                zid = map.get(locale.getCountry());
-            } else {
+            if (map == null || ((zid = map.get(locale.getCountry())) == null)) {
                 zid = mzoneToZid.get(mzone);
             }
         }
@@ -56,10 +57,7 @@ class ZoneName {
     }
 
     public static String toZid(String zid) {
-        if (aliases.containsKey(zid)) {
-            return aliases.get(zid);
-        }
-        return zid;
+        return aliases.getOrDefault(zid, zid);
     }
 
     private static final String[] zidMap = new String[] {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,7 +144,7 @@ import javax.swing.text.TextAction;
  * Alternatively, you could invoke <code>commitEdit</code>, which would also
  * commit the value.
  * <p>
- * <code>JFormattedTextField</code> does not do the formatting it self,
+ * <code>JFormattedTextField</code> does not do the formatting itself,
  * rather formatting is done through an instance of
  * <code>JFormattedTextField.AbstractFormatter</code> which is obtained from
  * an instance of <code>JFormattedTextField.AbstractFormatterFactory</code>.
@@ -152,7 +152,7 @@ import javax.swing.text.TextAction;
  * notified when they become active by way of the
  * <code>install</code> method, at which point the
  * <code>JFormattedTextField.AbstractFormatter</code> can install whatever
- * it needs to, typically a <code>DocumentFilter</code>. Similarly when
+ * it needs to, typically a <code>DocumentFilter</code>. Similarly, when
  * <code>JFormattedTextField</code> no longer
  * needs the <code>AbstractFormatter</code>, it will invoke
  * <code>uninstall</code>.
@@ -164,7 +164,7 @@ import javax.swing.text.TextAction;
  * policy is <code>JFormattedTextField.PERSIST</code>
  * and the <code>JFormattedTextField</code> has been edited, the
  * <code>AbstractFormatterFactory</code> will not be queried until the
- * value has been committed. Similarly if the focus lost policy is
+ * value has been committed. Similarly, if the focus lost policy is
  * <code>JFormattedTextField.COMMIT</code> and an exception
  * is thrown from <code>stringToValue</code>, the
  * <code>AbstractFormatterFactory</code> will not be queried when focus is
@@ -288,10 +288,6 @@ public class JFormattedTextField extends JTextField {
      * Used to set the dirty state.
      */
     private DocumentListener documentListener;
-    /**
-     * Masked used to set the AbstractFormatterFactory.
-     */
-    private Object mask;
     /**
      * ActionMap that the TextFormatter Actions are added to.
      */
@@ -868,11 +864,11 @@ public class JFormattedTextField extends JTextField {
             return new DefaultFormatterFactory(new DateFormatter());
         }
         if (type instanceof Number) {
-            AbstractFormatter displayFormatter = new NumberFormatter();
-            ((NumberFormatter)displayFormatter).setValueClass(type.getClass());
-            AbstractFormatter editFormatter = new NumberFormatter(
+            NumberFormatter displayFormatter = new NumberFormatter();
+            displayFormatter.setValueClass(type.getClass());
+            NumberFormatter editFormatter = new NumberFormatter(
                                   new DecimalFormat("#.#"));
-            ((NumberFormatter)editFormatter).setValueClass(type.getClass());
+            editFormatter.setValueClass(type.getClass());
 
             return new DefaultFormatterFactory(displayFormatter,
                                                displayFormatter,editFormatter);
@@ -1091,6 +1087,8 @@ public class JFormattedTextField extends JTextField {
          * <code>install</code> will install the returned value onto
          * the <code>JFormattedTextField</code>.
          *
+         * @implSpec The default implementation returns <code>null</code>.
+         *
          * @return DocumentFilter to restrict edits
          */
         protected DocumentFilter getDocumentFilter() {
@@ -1102,6 +1100,8 @@ public class JFormattedTextField extends JTextField {
          * where the user can navigate to.
          * <code>install</code> will install the returned value onto
          * the <code>JFormattedTextField</code>.
+         *
+         * @implSpec The default implementation returns <code>null</code>.
          *
          * @return NavigationFilter to restrict navigation
          */

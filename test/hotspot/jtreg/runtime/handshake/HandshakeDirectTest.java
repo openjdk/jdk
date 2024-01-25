@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,71 +28,75 @@
  * @summary This test tries to stress direct handshakes between threads while suspending them.
  * @library /testlibrary /test/lib
  * @build HandshakeDirectTest
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UseBiasedLocking -XX:+SafepointALot -XX:BiasedLockingDecayTime=100000000 -XX:BiasedLockingBulkRebiasThreshold=1000000 -XX:BiasedLockingBulkRevokeThreshold=1000000 HandshakeDirectTest
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UseBiasedLocking -XX:GuaranteedSafepointInterval=10 -XX:+HandshakeALot -XX:+SafepointALot -XX:BiasedLockingDecayTime=100000000 -XX:BiasedLockingBulkRebiasThreshold=1000000 -XX:BiasedLockingBulkRevokeThreshold=1000000 HandshakeDirectTest
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI HandshakeDirectTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:GuaranteedSafepointInterval=10 -XX:+HandshakeALot -XX:+SafepointALot HandshakeDirectTest
  */
+
+import jvmti.JVMTIUtils;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.Semaphore;
+import jdk.test.whitebox.WhiteBox;
 import java.io.*;
 
 public class HandshakeDirectTest  implements Runnable {
     static final int WORKING_THREADS = 32;
-    static final int DIRECT_HANDSHAKES_MARK = 500000;
+    static final int DIRECT_HANDSHAKES_MARK = 300000;
     static Thread[] workingThreads = new Thread[WORKING_THREADS];
-    static Semaphore[] handshakeSem = new Semaphore[WORKING_THREADS];
     static Object[] locks = new Object[WORKING_THREADS];
-    static boolean[] isBiased = new boolean[WORKING_THREADS];
     static AtomicInteger handshakeCount = new AtomicInteger(0);
+
+    static void suspendThread(Thread t) {
+        try {
+            JVMTIUtils.suspendThread(t);
+        } catch (JVMTIUtils.JvmtiException e) {
+            if (e.getCode() != JVMTIUtils.JVMTI_ERROR_THREAD_NOT_ALIVE
+                && e.getCode() != JVMTIUtils.JVMTI_ERROR_WRONG_PHASE) {
+                throw e;
+            }
+        }
+    }
+
+    static void resumeThread(Thread t) {
+        try {
+            JVMTIUtils.resumeThread(t);
+        } catch (JVMTIUtils.JvmtiException e) {
+            if (e.getCode() != JVMTIUtils.JVMTI_ERROR_THREAD_NOT_ALIVE
+                && e.getCode() != JVMTIUtils.JVMTI_ERROR_WRONG_PHASE) {
+                throw e;
+            }
+        }
+    }
 
     @Override
     public void run() {
         int me = Integer.parseInt(Thread.currentThread().getName());
+        WhiteBox wb = WhiteBox.getWhiteBox();
 
-        while (true) {
-            try {
-                if (!isBiased[me]) {
-                    handshakeSem[me].acquire();
-                    synchronized(locks[me]) {
-                        isBiased[me] = true;
-                    }
-                    handshakeSem[me].release();
-                }
-
+        while (handshakeCount.get() < DIRECT_HANDSHAKES_MARK) {
+            boolean walked = false;
+            synchronized(locks[me]) {
                 // Handshake directly some other worker
                 int handshakee = ThreadLocalRandom.current().nextInt(0, WORKING_THREADS - 1);
                 if (handshakee == me) {
                     // Pick another thread instead of me.
                     handshakee = handshakee != 0 ? handshakee - 1 : handshakee + 1;
                 }
-                handshakeSem[handshakee].acquire();
-                if (isBiased[handshakee]) {
-                    // Revoke biased lock
-                    synchronized(locks[handshakee]) {
-                        handshakeCount.incrementAndGet();
-                    }
-                    // Create new lock to be biased
-                    locks[handshakee] = new Object();
-                    isBiased[handshakee] = false;
+                // Inflate locks[handshakee] if possible
+                System.identityHashCode(locks[handshakee]);
+                walked = wb.handshakeReadMonitors(workingThreads[handshakee]);
+                if (walked) {
+                    handshakeCount.incrementAndGet();
                 }
-                handshakeSem[handshakee].release();
-                if (handshakeCount.get() >= DIRECT_HANDSHAKES_MARK) {
-                    break;
-                }
-            } catch(InterruptedException ie) {
-                throw new Error("Unexpected interrupt");
             }
+            locks[me] = new Object();
         }
     }
 
     public static void main(String... args) throws Exception {
         HandshakeDirectTest test = new HandshakeDirectTest();
-
-        // Initialize semaphores
-        for (int i = 0; i < WORKING_THREADS; i++) {
-            handshakeSem[i] = new Semaphore(1);
-        }
 
         // Initialize locks
         for (int i = 0; i < WORKING_THREADS; i++) {
@@ -111,12 +115,12 @@ public class HandshakeDirectTest  implements Runnable {
             public void run() {
                 while (true) {
                     int i = ThreadLocalRandom.current().nextInt(0, WORKING_THREADS - 1);
-                    workingThreads[i].suspend();
+                    suspendThread(workingThreads[i]);
                     try {
                         Thread.sleep(1); // sleep for 1 ms
                     } catch(InterruptedException ie) {
                     }
-                    workingThreads[i].resume();
+                    resumeThread(workingThreads[i]);
                 }
             }
         };

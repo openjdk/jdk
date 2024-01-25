@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -61,6 +63,8 @@ import com.sun.tools.javac.main.JavaCompiler;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
+import com.sun.tools.javac.util.StringUtils.DamerauLevenshteinDistance;
+import jdk.javadoc.internal.tool.AccessLevel;
 
 /**
  * Multi-function entry point for the doc check utility.
@@ -71,11 +75,6 @@ import com.sun.tools.javac.util.DefinedBy.Api;
  * <li>From javac, as a plugin
  * <li>Directly, via a simple API
  * </ul>
- *
- * <p><b>This is NOT part of any supported API.
- * If you write code that depends on this, you do so at your own
- * risk.  This code and its internal interfaces are subject to change
- * or deletion without notice.</b></p>
  */
 public class DocLint extends com.sun.tools.doclint.DocLint {
 
@@ -274,6 +273,14 @@ public class DocLint extends com.sun.tools.doclint.DocLint {
 
     // <editor-fold defaultstate="collapsed" desc="Embedding API">
 
+    /**
+     * Initialize DocLint for use with a {@code JavacTask}.
+     * {@link Env#strictReferenceChecks Strict reference checks} are <em>not</em> enabled by default.
+     *
+     * @param task            the task
+     * @param args            arguments to configure DocLint
+     * @param addTaskListener whether or not to register a {@code TaskListener} to invoke DocLint
+     */
     public void init(JavacTask task, String[] args, boolean addTaskListener) {
         env = new Env();
         env.init(task);
@@ -287,7 +294,6 @@ public class DocLint extends com.sun.tools.doclint.DocLint {
                 void visitDecl(Tree tree, Name name) {
                     TreePath p = getCurrentPath();
                     DocCommentTree dc = env.trees.getDocCommentTree(p);
-
                     checker.scan(dc, p);
                 }
             };
@@ -320,9 +326,19 @@ public class DocLint extends com.sun.tools.doclint.DocLint {
         }
     }
 
+    /**
+     * Initialize DocLint with the given utility objects and arguments.
+     * {@link Env#strictReferenceChecks Strict reference checks} <em>are</em> enabled by default.
+     *
+     * @param trees    the {@code DocTrees} utility class
+     * @param elements the {@code Elements} utility class
+     * @param types    the {@code Types} utility class
+     * @param args     arguments to configure DocLint
+     */
     public void init(DocTrees trees, Elements elements, Types types, String... args) {
         env = new Env();
         env.init(trees, elements, types);
+        env.strictReferenceChecks = true;
         processArgs(env, args);
 
         checker = new Checker(env);
@@ -361,6 +377,29 @@ public class DocLint extends com.sun.tools.doclint.DocLint {
     Env env;
     Checker checker;
 
+    public static List<String> suggestSimilar(Collection<String> knownTags, String unknownTag) {
+        final double MIN_SIMILARITY = 2.0 / 3;
+        record Pair(String tag, double similarity) { }
+        return knownTags.stream()
+                .distinct() // filter duplicates in known, otherwise they will result in duplicates in suggested
+                .map(t -> new Pair(t, similarity(t, unknownTag)))
+                .sorted(Comparator.comparingDouble(Pair::similarity).reversed() /* more similar first */)
+                // .peek(p -> System.out.printf("%.3f, (%s ~ %s)%n", p.similarity, p.tag, unknownTag)) // debug
+                .takeWhile(p -> Double.compare(p.similarity, MIN_SIMILARITY) >= 0)
+                .map(Pair::tag)
+                .toList();
+    }
+
+    // a value in [0, 1] range: the closer the value is to 1, the more similar
+    // the strings are
+    private static double similarity(String a, String b) {
+        // Normalize the distance so that similarity between "x" and "y" is
+        // less than that of "ax" and "ay". Use the greater of two lengths
+        // as normalizer, as it's an upper bound for the distance.
+        return 1.0 - ((double) DamerauLevenshteinDistance.of(a, b))
+                / Math.max(a.length(), b.length());
+    }
+
     public boolean isValidOption(String opt) {
         if (opt.equals(XMSGS_OPTION))
            return true;
@@ -372,6 +411,10 @@ public class DocLint extends com.sun.tools.doclint.DocLint {
         return false;
     }
 
+    public boolean isGroupEnabled(Messages.Group group, AccessLevel accessLevel) {
+        return env.messages.isEnabled(group, accessLevel);
+    }
+
     private String localize(String code, Object... args) {
         Messages m = (env != null) ? env.messages : new Messages(null);
         return m.localize(code, args);
@@ -379,7 +422,7 @@ public class DocLint extends com.sun.tools.doclint.DocLint {
 
     // <editor-fold defaultstate="collapsed" desc="DeclScanner">
 
-    static abstract class DeclScanner extends TreePathScanner<Void, Void> {
+    abstract static class DeclScanner extends TreePathScanner<Void, Void> {
         final Env env;
 
         public DeclScanner(Env env) {

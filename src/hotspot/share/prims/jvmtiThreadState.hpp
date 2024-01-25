@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,12 @@
 
 #include "jvmtifiles/jvmti.h"
 #include "memory/allocation.hpp"
+#include "oops/oopHandle.hpp"
 #include "prims/jvmtiEventController.hpp"
 #include "prims/jvmtiExport.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/threads.hpp"
 #include "utilities/growableArray.hpp"
 
 //
@@ -68,6 +71,108 @@ class JvmtiEnvThreadStateIterator : public StackObj {
   JvmtiEnvThreadState* next(JvmtiEnvThreadState* ets);
 };
 
+///////////////////////////////////////////////////////////////
+//
+// class JvmtiVTMSTransitionDisabler
+//
+// Virtual Thread Mount State Transition (VTMS transition) mechanism
+//
+class JvmtiVTMSTransitionDisabler {
+ private:
+  static volatile int _VTMS_transition_disable_for_one_count; // transitions for one virtual thread are disabled while it is positive
+  static volatile int _VTMS_transition_disable_for_all_count; // transitions for all virtual threads are disabled while it is positive
+  static volatile bool _SR_mode;                         // there is an active suspender or resumer
+  static volatile int _VTMS_transition_count;            // current number of VTMS transitions
+  static volatile int _sync_protocol_enabled_count;      // current number of JvmtiVTMSTransitionDisablers enabled sync protocol
+  static volatile bool _sync_protocol_enabled_permanently; // seen a suspender: JvmtiVTMSTraansitionDisabler protocol is enabled permanently
+
+  bool _is_SR;                                           // is suspender or resumer
+  jthread _thread;                                       // virtual thread to disable transitions for, no-op if it is a platform thread
+
+  DEBUG_ONLY(static void print_info();)
+  void VTMS_transition_disable_for_one();
+  void VTMS_transition_disable_for_all();
+  void VTMS_transition_enable_for_one();
+  void VTMS_transition_enable_for_all();
+
+ public:
+  static bool _VTMS_notify_jvmti_events;                 // enable notifications from VirtualThread about VTMS events
+  static bool VTMS_notify_jvmti_events()             { return _VTMS_notify_jvmti_events; }
+  static void set_VTMS_notify_jvmti_events(bool val) { _VTMS_notify_jvmti_events = val; }
+
+  static void set_VTMS_transition_count(bool val)    { _VTMS_transition_count = val; }
+
+  static void inc_sync_protocol_enabled_count()      { Atomic::inc(&_sync_protocol_enabled_count); }
+  static void dec_sync_protocol_enabled_count()      { Atomic::dec(&_sync_protocol_enabled_count); }
+  static int  sync_protocol_enabled_count()          { return Atomic::load(&_sync_protocol_enabled_count); }
+  static bool sync_protocol_enabled_permanently()    { return Atomic::load(&_sync_protocol_enabled_permanently); }
+
+  static bool sync_protocol_enabled()                { return sync_protocol_enabled_permanently() || sync_protocol_enabled_count() > 0; }
+
+  // parameter is_SR: suspender or resumer
+  JvmtiVTMSTransitionDisabler(bool is_SR = false);
+  JvmtiVTMSTransitionDisabler(jthread thread);
+  ~JvmtiVTMSTransitionDisabler();
+
+  // set VTMS transition bit value in JavaThread and java.lang.VirtualThread object
+  static void set_is_in_VTMS_transition(JavaThread* thread, jobject vthread, bool in_trans);
+
+  static void start_VTMS_transition(jthread vthread, bool is_mount);
+  static void finish_VTMS_transition(jthread vthread, bool is_mount);
+
+  static void VTMS_vthread_start(jobject vthread);
+  static void VTMS_vthread_end(jobject vthread);
+
+  static void VTMS_vthread_mount(jobject vthread, bool hide);
+  static void VTMS_vthread_unmount(jobject vthread, bool hide);
+
+  static void VTMS_mount_begin(jobject vthread);
+  static void VTMS_mount_end(jobject vthread);
+
+  static void VTMS_unmount_begin(jobject vthread, bool last_unmount);
+  static void VTMS_unmount_end(jobject vthread);
+};
+
+///////////////////////////////////////////////////////////////
+//
+// class VirtualThreadList
+//
+// Used for Virtual Threads Suspend/Resume management.
+// It's a list of thread IDs.
+//
+class VirtualThreadList : public GrowableArrayCHeap<int64_t, mtServiceability> {
+ public:
+  VirtualThreadList() : GrowableArrayCHeap<int64_t, mtServiceability>(0) {}
+  void invalidate() { clear(); }
+};
+
+///////////////////////////////////////////////////////////////
+//
+// class JvmtiVTSuspender
+//
+// Virtual Threads Suspend/Resume management
+//
+class JvmtiVTSuspender : AllStatic {
+ private:
+  // Suspend modes for virtual threads
+  typedef enum SR_Mode {
+    SR_none = 0,
+    SR_ind  = 1,
+    SR_all  = 2
+  } SR_Mode;
+
+  static SR_Mode _SR_mode;
+  static VirtualThreadList* _suspended_list;
+  static VirtualThreadList* _not_suspended_list;
+
+ public:
+  static void register_all_vthreads_suspend();
+  static void register_all_vthreads_resume();
+  static void register_vthread_suspend(oop vt);
+  static void register_vthread_resume(oop vt);
+  static bool is_vthread_suspended(oop vt);
+  static bool is_vthread_suspended(int64_t thread_id);
+};
 
 ///////////////////////////////////////////////////////////////
 //
@@ -79,9 +184,13 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
  private:
   friend class JvmtiEnv;
   JavaThread        *_thread;
+  JavaThread        *_thread_saved;
+  OopHandle         _thread_oop_h;
   // Jvmti Events that cannot be posted in their current context.
   JvmtiDeferredEventQueue* _jvmti_event_queue;
+  bool              _is_virtual;            // state belongs to a virtual thread
   bool              _hide_single_stepping;
+  bool              _pending_interp_only_mode;
   bool              _pending_step_for_popframe;
   bool              _pending_step_for_earlyret;
   int               _hide_level;
@@ -104,6 +213,7 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
 
   // This is only valid when is_interp_only_mode() returns true
   int               _cur_stack_depth;
+  int               _saved_interp_only_mode;
 
   JvmtiThreadEventEnable _thread_event_enable;
 
@@ -116,24 +226,26 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   JvmtiThreadState *_next;
   JvmtiThreadState *_prev;
 
-  // holds the current dynamic code event collector, NULL if no event collector in use
+  // holds the current dynamic code event collector, null if no event collector in use
   JvmtiDynamicCodeEventCollector* _dynamic_code_event_collector;
-  // holds the current vm object alloc event collector, NULL if no event collector in use
+  // holds the current vm object alloc event collector, null if no event collector in use
   JvmtiVMObjectAllocEventCollector* _vm_object_alloc_event_collector;
-  // holds the current sampled object alloc event collector, NULL if no event collector in use
+  // holds the current sampled object alloc event collector, null if no event collector in use
   JvmtiSampledObjectAllocEventCollector* _sampled_object_alloc_event_collector;
 
   // Should only be created by factory methods
-  JvmtiThreadState(JavaThread *thread);
+  JvmtiThreadState(JavaThread *thread, oop thread_oop);
 
   friend class JvmtiEnvThreadStateIterator;
   inline JvmtiEnvThreadState* head_env_thread_state();
   inline void set_head_env_thread_state(JvmtiEnvThreadState* ets);
 
+  static bool _seen_interp_only_mode; // interp_only_mode was requested at least once
+
  public:
   ~JvmtiThreadState();
 
-  // is event_type enabled and usable for this thread in any enviroments?
+  // is event_type enabled and usable for this thread in any environment?
   bool is_enabled(jvmtiEvent event_type) {
     return _thread_event_enable.is_enabled(event_type);
   }
@@ -149,12 +261,27 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
 
   static void periodic_clean_up();
 
+  // Return true if any thread has entered interp_only_mode at any point during the JVMs execution.
+  static bool seen_interp_only_mode() {
+    return _seen_interp_only_mode;
+  }
+
   void add_env(JvmtiEnvBase *env);
 
+  // The pending_interp_only_mode is set when the interp_only_mode is triggered.
+  // It is cleared by EnterInterpOnlyModeClosure handshake.
+  bool is_pending_interp_only_mode() { return _pending_interp_only_mode; }
+  void set_pending_interp_only_mode(bool val) { _pending_interp_only_mode = val; }
+
   // Used by the interpreter for fullspeed debugging support
-  bool is_interp_only_mode()                { return _thread->is_interp_only_mode(); }
+  bool is_interp_only_mode()                {
+    return _thread == nullptr ?  _saved_interp_only_mode != 0 : _thread->is_interp_only_mode();
+  }
   void enter_interp_only_mode();
   void leave_interp_only_mode();
+
+  static void unbind_from(JvmtiThreadState* state, JavaThread* thread);
+  static void bind_to(JvmtiThreadState* state, JavaThread* thread);
 
   // access to the linked list of all JVMTI thread states
   static JvmtiThreadState *first() {
@@ -177,6 +304,14 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   int count_frames();
 
   inline JavaThread *get_thread()      { return _thread;              }
+  inline JavaThread *get_thread_or_saved(); // return _thread_saved if _thread is null
+
+  // Needed for virtual threads as they can migrate to different JavaThread's.
+  // Also used for carrier threads to clear/restore _thread.
+  void set_thread(JavaThread* thread);
+  oop get_thread_oop();
+
+  inline bool is_virtual() { return _is_virtual; } // the _thread is virtual
 
   inline bool is_exception_detected()  { return _exception_state == ES_DETECTED;  }
   inline bool is_exception_caught()    { return _exception_state == ES_CAUGHT;  }
@@ -234,7 +369,7 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   }
 
   inline void clear_class_being_redefined() {
-    _class_being_redefined = NULL;
+    _class_being_redefined = nullptr;
     _class_load_kind = jvmti_class_load_kind_load;
   }
 
@@ -287,13 +422,13 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
     _scratch_class_for_redefinition_verification = scratch_class;
   }
 
-  inline void clear_class_versions_map() { set_class_versions_map(NULL, NULL); }
+  inline void clear_class_versions_map() { set_class_versions_map(nullptr, nullptr); }
 
   static inline
   Klass* class_to_verify_considering_redefinition(Klass* klass,
                                                     JavaThread *thread) {
     JvmtiThreadState *state = thread->jvmti_thread_state();
-    if (state != NULL && state->_the_class_for_redefinition_verification != NULL) {
+    if (state != nullptr && state->_the_class_for_redefinition_verification != nullptr) {
       if (state->_the_class_for_redefinition_verification == klass) {
         klass = state->_scratch_class_for_redefinition_verification;
       }
@@ -311,8 +446,6 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   void set_debuggable(bool debuggable) { _debuggable = debuggable; }
 
  public:
-
-  bool may_be_walked();
 
   // Thread local event collector setter and getter methods.
   JvmtiDynamicCodeEventCollector* get_dynamic_code_event_collector() {
@@ -347,11 +480,14 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   void update_for_pop_top_frame();
 
   // already holding JvmtiThreadState_lock - retrieve or create JvmtiThreadState
-  // Can return NULL if JavaThread is exiting.
-  static JvmtiThreadState *state_for_while_locked(JavaThread *thread);
+  // Can return null if JavaThread is exiting.
+  // Callers are responsible to call recompute_thread_filtered() to update event bits
+  // if thread-filtered events are enabled globally.
+  static JvmtiThreadState *state_for_while_locked(JavaThread *thread, oop thread_oop = nullptr);
   // retrieve or create JvmtiThreadState
-  // Can return NULL if JavaThread is exiting.
-  static JvmtiThreadState *state_for(JavaThread *thread);
+  // Can return null if JavaThread is exiting.
+  // Calls recompute_thread_filtered() to update event bits if thread-filtered events are enabled globally.
+  static JvmtiThreadState *state_for(JavaThread *thread, Handle thread_handle = Handle());
 
   // JVMTI ForceEarlyReturn support
 
@@ -393,7 +529,7 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   void nmethods_do(CodeBlobClosure* cf) NOT_JVMTI_RETURN;
 
 public:
-  void set_should_post_on_exceptions(bool val) { _thread->set_should_post_on_exceptions_flag(val ? JNI_TRUE : JNI_FALSE); }
+  void set_should_post_on_exceptions(bool val);
 
   // Thread local event queue, which doesn't require taking the Service_lock.
   void enqueue_event(JvmtiDeferredEvent* event) NOT_JVMTI_RETURN;

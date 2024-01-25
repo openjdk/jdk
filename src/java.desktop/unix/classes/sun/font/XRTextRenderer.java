@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package sun.font;
 
 import sun.awt.*;
 import sun.java2d.SunGraphics2D;
+import sun.java2d.SurfaceData;
 import sun.java2d.pipe.GlyphListPipe;
 import sun.java2d.xr.*;
 
@@ -36,7 +37,7 @@ import sun.java2d.xr.*;
  * @author Clemens Eisserer
  */
 public class XRTextRenderer extends GlyphListPipe {
-    // Workarround for a bug in libXrender.
+    // Workaround for a bug in libXrender.
     // In case the number of glyphs of an ELT is a multiple of 254,
     // a few garbage bytes are sent to the XServer causing hangs.
     static final int MAX_ELT_GLYPH_COUNT = 253;
@@ -61,8 +62,7 @@ public class XRTextRenderer extends GlyphListPipe {
 
         try {
             SunToolkit.awtLock();
-
-            XRSurfaceData x11sd = (XRSurfaceData) sg2d.surfaceData;
+            XRSurfaceData x11sd = SurfaceData.convertTo(XRSurfaceData.class, sg2d.surfaceData);
             x11sd.validateAsDestination(null, sg2d.getCompClip());
             x11sd.maskBuffer.validateCompositeState(sg2d.composite, sg2d.transform, sg2d.paint, sg2d);
 
@@ -83,7 +83,7 @@ public class XRTextRenderer extends GlyphListPipe {
             int activeGlyphSet = cachedGlyphs[0].getGlyphSet();
 
             int eltIndex = -1;
-            gl.getBounds();
+            gl.startGlyphIteration();
             float[] positions = gl.getPositions();
             for (int i = 0; i < gl.getNumGlyphs(); i++) {
                 gl.setGlyphIndex(i);
@@ -122,7 +122,7 @@ public class XRTextRenderer extends GlyphListPipe {
                         /*
                          * Calculate next glyph's position in the case of
                          * relative positioning. In XRender we can only position
-                         * glyphs using integer coordinates, therefor we sum all
+                         * glyphs using integer coordinates, therefore we sum all
                          * the advances up as float, and convert them to integer
                          * later. This way rounding-error can be corrected, and
                          * is required to be consistent with the software loops.

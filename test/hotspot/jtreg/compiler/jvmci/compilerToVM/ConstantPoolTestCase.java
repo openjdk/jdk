@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import jdk.internal.reflect.ConstantPool.Tag;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -248,10 +248,8 @@ public class ConstantPoolTestCase {
 
     public void test() {
         for (DummyClasses dummyClass : DummyClasses.values()) {
-            boolean isCPCached = WB.getConstantPoolCacheLength(dummyClass.klass) > -1;
-            System.out.printf("Testing dummy %s with constant pool cached = %b%n",
-                              dummyClass.klass,
-                              isCPCached);
+            System.out.printf("Testing dummy %s with constant pool",
+                              dummyClass.klass);
             HotSpotResolvedObjectType holder = CompilerToVMHelper.fromObjectClass(dummyClass.klass);
             jdk.vm.ci.meta.ConstantPool constantPoolCTVM = holder.getConstantPool();
             ConstantPool constantPoolSS = dummyClass.constantPoolSS;

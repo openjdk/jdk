@@ -31,8 +31,8 @@
  * @requires ((vm.compMode == "Xmixed") & vm.compiler2.enabled)
  * @library /test/lib /test/hotspot/jtreg
  *
- * @run build TestScaffold VMConnection TargetListener TargetAdapter sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run compile -g EATests.java
  * @run driver EATests
  *                 -XX:+UnlockDiagnosticVMOptions
@@ -41,7 +41,8 @@
  *                 -XX:CompileCommand=dontinline,*::dontinline_*
  *                 -XX:+WhiteBoxAPI
  *                 -Xbatch
- *                 -XX:+DoEscapeAnalysis -XX:+EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks -XX:+UseBiasedLocking
+ *                 -XX:+DoEscapeAnalysis -XX:+EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
+ *                 -XX:LockingMode=1
  * @run driver EATests
  *                 -XX:+UnlockDiagnosticVMOptions
  *                 -Xms256m -Xmx256m
@@ -49,7 +50,8 @@
  *                 -XX:CompileCommand=dontinline,*::dontinline_*
  *                 -XX:+WhiteBoxAPI
  *                 -Xbatch
- *                 -XX:+DoEscapeAnalysis -XX:+EliminateAllocations -XX:-EliminateLocks -XX:+EliminateNestedLocks -XX:+UseBiasedLocking -XX:-UseOptoBiasInlining
+ *                 -XX:+DoEscapeAnalysis -XX:+EliminateAllocations -XX:-EliminateLocks -XX:+EliminateNestedLocks
+ *                 -XX:LockingMode=1
  * @run driver EATests
  *                 -XX:+UnlockDiagnosticVMOptions
  *                 -Xms256m -Xmx256m
@@ -57,7 +59,8 @@
  *                 -XX:CompileCommand=dontinline,*::dontinline_*
  *                 -XX:+WhiteBoxAPI
  *                 -Xbatch
- *                 -XX:+DoEscapeAnalysis -XX:-EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks -XX:+UseBiasedLocking
+ *                 -XX:+DoEscapeAnalysis -XX:-EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
+ *                 -XX:LockingMode=1
  * @run driver EATests
  *                 -XX:+UnlockDiagnosticVMOptions
  *                 -Xms256m -Xmx256m
@@ -65,7 +68,9 @@
  *                 -XX:CompileCommand=dontinline,*::dontinline_*
  *                 -XX:+WhiteBoxAPI
  *                 -Xbatch
- *                 -XX:-DoEscapeAnalysis -XX:-EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks -XX:+UseBiasedLocking
+ *                 -XX:-DoEscapeAnalysis -XX:-EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
+ *                 -XX:LockingMode=1
+ *
  * @run driver EATests
  *                 -XX:+UnlockDiagnosticVMOptions
  *                 -Xms256m -Xmx256m
@@ -73,7 +78,8 @@
  *                 -XX:CompileCommand=dontinline,*::dontinline_*
  *                 -XX:+WhiteBoxAPI
  *                 -Xbatch
- *                 -XX:+DoEscapeAnalysis -XX:+EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks -XX:-UseBiasedLocking
+ *                 -XX:+DoEscapeAnalysis -XX:+EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
+ *                 -XX:LockingMode=2
  * @run driver EATests
  *                 -XX:+UnlockDiagnosticVMOptions
  *                 -Xms256m -Xmx256m
@@ -81,7 +87,8 @@
  *                 -XX:CompileCommand=dontinline,*::dontinline_*
  *                 -XX:+WhiteBoxAPI
  *                 -Xbatch
- *                 -XX:+DoEscapeAnalysis -XX:-EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks -XX:-UseBiasedLocking
+ *                 -XX:+DoEscapeAnalysis -XX:+EliminateAllocations -XX:-EliminateLocks -XX:+EliminateNestedLocks
+ *                 -XX:LockingMode=2
  * @run driver EATests
  *                 -XX:+UnlockDiagnosticVMOptions
  *                 -Xms256m -Xmx256m
@@ -89,7 +96,17 @@
  *                 -XX:CompileCommand=dontinline,*::dontinline_*
  *                 -XX:+WhiteBoxAPI
  *                 -Xbatch
- *                 -XX:-DoEscapeAnalysis -XX:-EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks -XX:-UseBiasedLocking
+ *                 -XX:+DoEscapeAnalysis -XX:-EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
+ *                 -XX:LockingMode=2
+ * @run driver EATests
+ *                 -XX:+UnlockDiagnosticVMOptions
+ *                 -Xms256m -Xmx256m
+ *                 -Xbootclasspath/a:.
+ *                 -XX:CompileCommand=dontinline,*::dontinline_*
+ *                 -XX:+WhiteBoxAPI
+ *                 -Xbatch
+ *                 -XX:-DoEscapeAnalysis -XX:-EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
+ *                 -XX:LockingMode=2
  *
  * @comment Excercise -XX:+DeoptimizeObjectsALot. Mostly to prevent bit-rot because the option is meant to stress object deoptimization
  *          with non-synthetic workloads.
@@ -100,7 +117,7 @@
  *                 -XX:CompileCommand=dontinline,*::dontinline_*
  *                 -XX:+WhiteBoxAPI
  *                 -Xbatch
- *                 -XX:-DoEscapeAnalysis -XX:-EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks -XX:-UseBiasedLocking
+ *                 -XX:-DoEscapeAnalysis -XX:-EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
  *                 -XX:+IgnoreUnrecognizedVMOptions -XX:+DeoptimizeObjectsALot
  *
  */
@@ -118,8 +135,8 @@
  *
  * @library /test/lib /test/hotspot/jtreg
  *
- * @run build TestScaffold VMConnection TargetListener TargetAdapter sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run compile -g EATests.java
  *
  * @comment Test with Graal. Some testcases are expected to fail because Graal does not provide all information about non-escaping
@@ -146,8 +163,8 @@ import java.util.Map;
 import java.util.function.Function;
 
 import jdk.test.lib.Asserts;
-import sun.hotspot.WhiteBox;
-import sun.hotspot.gc.GC;
+import jdk.test.whitebox.WhiteBox;
+import jdk.test.whitebox.gc.GC;
 
 
 //
@@ -232,14 +249,13 @@ class EATestsTarget {
 
         // Relocking test cases
         new EARelockingSimpleTarget()                                                       .run();
-        new EARelockingSimple_2Target()                                                     .run();
+        new EARelockingSimpleWithAccessInOtherThreadTarget()                                .run();
         new EARelockingRecursiveTarget()                                                    .run();
         new EARelockingNestedInflatedTarget()                                               .run();
         new EARelockingNestedInflated_02Target()                                            .run();
         new EARelockingArgEscapeLWLockedInCalleeFrameTarget()                               .run();
         new EARelockingArgEscapeLWLockedInCalleeFrame_2Target()                             .run();
-        new EARelockingArgEscapeLWLockedInCalleeFrame_3Target()                             .run();
-        new EARelockingArgEscapeLWLockedInCalleeFrame_4Target()                             .run();
+        new EARelockingArgEscapeLWLockedInCalleeFrameNoRecursiveTarget()                    .run();
         new EAGetOwnedMonitorsTarget()                                                      .run();
         new EAEntryCountTarget()                                                            .run();
         new EARelockingObjectCurrentlyWaitingOnTarget()                                     .run();
@@ -299,6 +315,8 @@ public class EATests extends TestScaffold {
         public final boolean DeoptimizeObjectsALot;
         public final boolean DoEscapeAnalysis;
         public final boolean ZGCIsSelected;
+        public final boolean ShenandoahGCIsSelected;
+        public final boolean StressReflectiveCode;
 
         public TargetVMOptions(EATests env, ClassType testCaseBaseTargetClass) {
             Value val;
@@ -313,6 +331,10 @@ public class EATests extends TestScaffold {
             UseJVMCICompiler = ((PrimitiveValue) val).booleanValue();
             val = testCaseBaseTargetClass.getValue(testCaseBaseTargetClass.fieldByName("ZGCIsSelected"));
             ZGCIsSelected = ((PrimitiveValue) val).booleanValue();
+            val = testCaseBaseTargetClass.getValue(testCaseBaseTargetClass.fieldByName("ShenandoahGCIsSelected"));
+            ShenandoahGCIsSelected = ((PrimitiveValue) val).booleanValue();
+            val = testCaseBaseTargetClass.getValue(testCaseBaseTargetClass.fieldByName("StressReflectiveCode"));
+            StressReflectiveCode = ((PrimitiveValue) val).booleanValue();
         }
 
     }
@@ -349,14 +371,13 @@ public class EATests extends TestScaffold {
 
         // Relocking test cases
         new EARelockingSimple()                                                       .run(this);
-        new EARelockingSimple_2()                                                     .run(this);
+        new EARelockingSimpleWithAccessInOtherThread()                                .run(this);
         new EARelockingRecursive()                                                    .run(this);
         new EARelockingNestedInflated()                                               .run(this);
         new EARelockingNestedInflated_02()                                            .run(this);
         new EARelockingArgEscapeLWLockedInCalleeFrame()                               .run(this);
         new EARelockingArgEscapeLWLockedInCalleeFrame_2()                             .run(this);
-        new EARelockingArgEscapeLWLockedInCalleeFrame_3()                             .run(this);
-        new EARelockingArgEscapeLWLockedInCalleeFrame_4()                             .run(this);
+        new EARelockingArgEscapeLWLockedInCalleeFrameNoRecursive()                    .run(this);
         new EAGetOwnedMonitors()                                                      .run(this);
         new EAEntryCount()                                                            .run(this);
         new EARelockingObjectCurrentlyWaitingOn()                                     .run(this);
@@ -424,6 +445,12 @@ abstract class EATestCaseBaseDebugger  extends EATestCaseBaseShared {
     public static final String XYVAL_NAME = XYVal.class.getName();
 
     public abstract void runTestCase() throws Exception;
+
+    @Override
+    public boolean shouldSkip() {
+        // Skip if StressReflectiveCode because it effectively disables escape analysis
+        return super.shouldSkip() || env.targetVMOptions.StressReflectiveCode;
+    }
 
     public void run(EATests env) {
         this.env = env;
@@ -793,9 +820,9 @@ abstract class EATestCaseBaseTarget extends EATestCaseBaseShared implements Runn
     public static final boolean DoEscapeAnalysis = unbox(WB.getBooleanVMFlag("DoEscapeAnalysis"), UseJVMCICompiler);
     public static final boolean EliminateAllocations = unbox(WB.getBooleanVMFlag("EliminateAllocations"), UseJVMCICompiler);
     public static final boolean DeoptimizeObjectsALot = WB.getBooleanVMFlag("DeoptimizeObjectsALot");
-    public static final long BiasedLockingBulkRebiasThreshold = WB.getIntxVMFlag("BiasedLockingBulkRebiasThreshold");
-    public static final long BiasedLockingBulkRevokeThreshold = WB.getIntxVMFlag("BiasedLockingBulkRevokeThreshold");
     public static final boolean ZGCIsSelected = GC.Z.isSelected();
+    public static final boolean ShenandoahGCIsSelected = GC.Shenandoah.isSelected();
+    public static final boolean StressReflectiveCode = unbox(WB.getBooleanVMFlag("StressReflectiveCode"), false);
 
     public String testMethodName;
     public int testMethodDepth;
@@ -808,8 +835,6 @@ abstract class EATestCaseBaseTarget extends EATestCaseBaseShared implements Runn
 
 
     public boolean warmupDone;
-
-    public volatile Object biasToBeRevoked;
 
     // an object with an inflated monitor
     public static XYVal inflatedLock;
@@ -826,6 +851,12 @@ abstract class EATestCaseBaseTarget extends EATestCaseBaseShared implements Runn
 
     public static final    Long CONST_2_OBJ     = Long.valueOf(2);
     public static final    Long CONST_3_OBJ     = Long.valueOf(3);
+
+    @Override
+    public boolean shouldSkip() {
+        // Skip if StressReflectiveCode because it effectively disables escape analysis
+        return super.shouldSkip() || StressReflectiveCode;
+    }
 
     /**
      * Main driver of a test case.
@@ -861,21 +892,18 @@ abstract class EATestCaseBaseTarget extends EATestCaseBaseShared implements Runn
     public static void staticSetUp() {
         inflatedLock = new XYVal(1, 1);
         synchronized (inflatedLock) {
-            inflatorThread = new Thread("Lock Inflator (test thread)") {
-                @Override
-                public void run() {
-                    synchronized (inflatedLock) {
-                        inflatedLockIsPermanentlyInflated = true;
-                        inflatedLock.notify(); // main thread
-                        while (true) {
-                            try {
-                                // calling wait() on a monitor will cause inflation into a heavy monitor
-                                inflatedLock.wait();
-                            } catch (InterruptedException e) { /* ignored */ }
-                        }
+            inflatorThread = DebuggeeWrapper.newThread(() -> {
+                synchronized (inflatedLock) {
+                    inflatedLockIsPermanentlyInflated = true;
+                    inflatedLock.notify(); // main thread
+                    while (true) {
+                        try {
+                            // calling wait() on a monitor will cause inflation into a heavy monitor
+                            inflatedLock.wait();
+                        } catch (InterruptedException e) { /* ignored */ }
                     }
                 }
-            };
+                }, "Lock Inflator (test thread)");
             inflatorThread.setDaemon(true);
             inflatorThread.start();
 
@@ -1051,46 +1079,6 @@ abstract class EATestCaseBaseTarget extends EATestCaseBaseShared implements Runn
             m.invoke(receiver);
         } catch (Exception e) {
             Asserts.fail("Call through reflection failed", e);
-        }
-    }
-
-    /**
-     * Trigger bulk rebiasing for the given class by creating new instances and calling <code> hashCode() </code> on them.
-     * @param cls The class to bulk rebias
-     */
-    public void dontinline_bulkRebiasAfterWarmup(Class<?> cls) {
-        if (warmupDone) {
-            try {
-                for (int i=0; i < BiasedLockingBulkRebiasThreshold+2; i++) {
-                    biasToBeRevoked = cls.getDeclaredConstructor(int.class, int.class).newInstance(1, 1);
-                    synchronized (biasToBeRevoked) { // bias towards current thread
-                        checkSum++;
-                    }
-                    biasToBeRevoked.hashCode(); // calling hashCode triggers revocation
-                }
-            } catch (Throwable e) {
-                Asserts.fail("failed to create new instance of " + cls.getName(), e);
-            }
-        }
-    }
-
-    /**
-     * Trigger bulk revoke of biases for the given class by creating new instances and calling <code> hashCode() </code> on them.
-     * @param cls The class to bulk rebias
-     */
-    public void dontinline_bulkRevokeAfterWarmup(Class<?> cls) {
-        if (warmupDone) {
-            try {
-                for (int i=0; i < BiasedLockingBulkRevokeThreshold+2; i++) {
-                    biasToBeRevoked = cls.getDeclaredConstructor(int.class, int.class).newInstance(1, 1);
-                    synchronized (biasToBeRevoked) { // bias towards current thread
-                        checkSum++;
-                    }
-                    biasToBeRevoked.hashCode(); // calling hashCode triggers revocation
-                }
-            } catch (Throwable e) {
-                Asserts.fail("failed to create new instance of " + cls.getName(), e);
-            }
         }
     }
 
@@ -1764,33 +1752,57 @@ class EARelockingSimpleTarget extends EATestCaseBaseTarget {
 
 /////////////////////////////////////////////////////////////////////////////
 
-/**
- * Test if the bias of an object O that escapes globally is revoked correctly if local objects
- * escape through JVMTI. O is referenced by field l0.
- * This tests a regression of a previous version of the implementation.
- */
-class EARelockingSimple_2 extends EATestCaseBaseDebugger {
+// The debugger reads and publishes an object with eliminated locking to an instance field.
+// A 2nd thread in the debuggee finds it there and changes its state using a synchronized method.
+// Without eager relocking the accesses are unsynchronized which can be observed.
+class EARelockingSimpleWithAccessInOtherThread extends EATestCaseBaseDebugger {
 
     public void runTestCase() throws Exception {
         BreakpointEvent bpe = resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
         printStack(bpe.thread());
-        @SuppressWarnings("unused")
-        ObjectReference o = getLocalRef(bpe.thread().frame(1), XYVAL_NAME, "l1");
+        String l1ClassName = EARelockingSimpleWithAccessInOtherThreadTarget.SyncCounter.class.getName();
+        ObjectReference ctr = getLocalRef(bpe.thread().frame(1), l1ClassName, "l1");
+        setField(testCase, "sharedCounter", ctr);
+        terminateEndlessLoop();
     }
 }
 
-class EARelockingSimple_2Target extends EATestCaseBaseTarget {
+class EARelockingSimpleWithAccessInOtherThreadTarget extends EATestCaseBaseTarget {
 
-    public XYVal l0;
+    public static class SyncCounter {
+        private int val;
+        public synchronized int inc() { return val++; }
+    }
+
+    public volatile SyncCounter sharedCounter;
+
+    @Override
+    public void setUp() {
+        super.setUp();
+        doLoop = true;
+        Thread.ofPlatform().daemon().start(() -> {
+                while (doLoop) {
+                    SyncCounter ctr = sharedCounter;
+                    if (ctr != null) {
+                        ctr.inc();
+                    }
+                }
+            });
+    }
 
     public void dontinline_testMethod() {
-        l0 = new XYVal(4, 2);         // GobalEscape
-        XYVal l1 = new XYVal(4, 2);
-        synchronized (l0) {
-            synchronized (l1) {
-                dontinline_brkpt();
-            }
+        SyncCounter l1 = new SyncCounter();
+        synchronized (l1) {      // Eliminated locking
+            l1.inc();
+            dontinline_brkpt();  // Debugger publishes l1 to sharedCounter.
+            iResult = l1.inc();  // Changes by the 2nd thread will be observed if l1
+                                 // was not relocked before passing it to the debugger.
         }
+    }
+
+    @Override
+    public int getExpectedIResult() {
+        return 1;
     }
 }
 
@@ -1995,99 +2007,42 @@ class EARelockingArgEscapeLWLockedInCalleeFrame_2Target extends EATestCaseBaseTa
 /////////////////////////////////////////////////////////////////////////////
 
 /**
- * Similar to {@link EARelockingArgEscapeLWLockedInCalleeFrame}.
- * A bulk rebias operation is triggered at a position where all locks on the local object referenced
- * by l1 are eliminated. This leaves the object with an outdated biased locking epoch which has to be
- * considered when relocking.
- * This tests a regression in a previous version.
+ * Similar to {@link EARelockingArgEscapeLWLockedInCalleeFrame_2Target}. It does
+ * not use recursive locking and exposed a bug in the lightweight-locking implementation.
  */
-class EARelockingArgEscapeLWLockedInCalleeFrame_3 extends EATestCaseBaseDebugger {
-
-    public static final String XYVAL_LOCAL_NAME = EARelockingArgEscapeLWLockedInCalleeFrame_3Target.XYValLocal.class.getName();
+class EARelockingArgEscapeLWLockedInCalleeFrameNoRecursive extends EATestCaseBaseDebugger {
 
     public void runTestCase() throws Exception {
         BreakpointEvent bpe = resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
         printStack(bpe.thread());
         @SuppressWarnings("unused")
-        ObjectReference o = getLocalRef(bpe.thread().frame(1), XYVAL_LOCAL_NAME, "l1");
+        ObjectReference o = getLocalRef(bpe.thread().frame(2), XYVAL_NAME, "l1");
     }
 }
 
-class EARelockingArgEscapeLWLockedInCalleeFrame_3Target extends EATestCaseBaseTarget {
+class EARelockingArgEscapeLWLockedInCalleeFrameNoRecursiveTarget extends EATestCaseBaseTarget {
 
-    // Using local type to avoid side effects on biased locking heuristics
-    public static class XYValLocal extends XYVal {
-        public XYValLocal(int x, int y) {
-            super(x,y);
-        }
+    @Override
+    public void setUp() {
+        super.setUp();
+        testMethodDepth = 2;
     }
 
     public void dontinline_testMethod() {
-        XYVal l1 = new XYValLocal(1, 1);       // ArgEscape
-        synchronized (l1) {                    // eliminated
-            l1.dontinline_sync_method_no_brkpt(this);  // l1 escapes
-            // trigger bulk rebias
-            dontinline_bulkRebiasAfterWarmup(l1.getClass());
-            // Now the epoch of l1 does not match the epoch of its class.
-            // This has to be considered when relocking because of JVMTI access
-            dontinline_brkpt();
+        XYVal l1 = new XYVal(1, 1);       // NoEscape, scalar replaced
+        XYVal l2 = new XYVal(4, 2);       // NoEscape, scalar replaced
+        XYVal l3 = new XYVal(5, 3);       // ArgEscape
+        synchronized (l1) {                   // eliminated
+            synchronized (l2) {               // eliminated
+                l3.dontinline_sync_method(this);  // l3 escapes
+            }
         }
+        iResult = l2.x + l2.y;
     }
 
     @Override
-    public boolean testFrameShouldBeDeoptimized() {
-        // Graal does not provide debug info about arg escape objects, therefore the frame is not deoptimized
-        return !UseJVMCICompiler && super.testFrameShouldBeDeoptimized();
-    }
-}
-
-/////////////////////////////////////////////////////////////////////////////
-
-/**
- * Similar to {@link EARelockingArgEscapeLWLockedInCalleeFrame_3}.
- * But instead of a bulk rebias a bulk revoke operation is triggered.
- * This leaves the object with a stale bias as the prototype header of its calls lost its bias
- * pattern in the bulk revoke which has to be considered during relocking.
- * This tests a regression in a previous version.
- */
-class EARelockingArgEscapeLWLockedInCalleeFrame_4 extends EATestCaseBaseDebugger {
-
-    public static final String XYVAL_LOCAL_NAME = EARelockingArgEscapeLWLockedInCalleeFrame_4Target.XYValLocal.class.getName();
-
-    public void runTestCase() throws Exception {
-        BreakpointEvent bpe = resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
-        printStack(bpe.thread());
-        @SuppressWarnings("unused")
-        ObjectReference o = getLocalRef(bpe.thread().frame(1), XYVAL_LOCAL_NAME, "l1");
-    }
-}
-
-class EARelockingArgEscapeLWLockedInCalleeFrame_4Target extends EATestCaseBaseTarget {
-
-    // Using local type to avoid side effects on biased locking heuristics
-    public static class XYValLocal extends XYVal {
-        public XYValLocal(int x, int y) {
-            super(x,y);
-        }
-    }
-
-    public void dontinline_testMethod() {
-        XYVal l1 = new XYValLocal(1, 1);       // ArgEscape
-        synchronized (l1) {                    // eliminated
-            l1.dontinline_sync_method_no_brkpt(this);  // l1 escapes
-            // trigger bulk rebias
-            dontinline_bulkRevokeAfterWarmup(l1.getClass());
-            // Now the epoch of l1 does not match the epoch of its class.
-            // This has to be considered when relocking because of JVMTI access
-            dontinline_brkpt();
-        }
-    }
-
-
-    @Override
-    public boolean testFrameShouldBeDeoptimized() {
-        // Graal does not provide debug info about arg escape objects, therefore the frame is not deoptimized
-        return !UseJVMCICompiler && super.testFrameShouldBeDeoptimized();
+    public int getExpectedIResult() {
+        return 6;
     }
 }
 
@@ -2106,13 +2061,13 @@ class EARelockingObjectCurrentlyWaitingOn extends EATestCaseBaseDebugger {
             Thread.sleep(100);
             env.targetMainThread.suspend();
             printStack(env.targetMainThread);
-            inWait = env.targetMainThread.frame(0).location().method().name().equals("wait");
+            inWait = env.targetMainThread.frame(0).location().method().name().equals("wait0");
             if (!inWait) {
                 msg("Target not yet in java.lang.Object.wait(long).");
                 env.targetMainThread.resume();
             }
         } while(!inWait);
-        StackFrame testMethodFrame = env.targetMainThread.frame(4);
+        StackFrame testMethodFrame = env.targetMainThread.frame(5);
         // Access triggers relocking of all eliminated locks, including nested locks of l1 which references
         // the object on which the target main thread is currently waiting.
         ObjectReference l0 = getLocalRef(testMethodFrame, EARelockingObjectCurrentlyWaitingOnTarget.ForLocking.class.getName(), "l0");
@@ -2403,7 +2358,9 @@ class EADeoptFrameAfterReadLocalObject_02CTarget extends EATestCaseBaseTarget {
     @Override
     public void setUp() {
         super.setUp();
-        testMethodDepth = 8;
+        // the method depth in debuggee is 11 as it includes all hidden frames
+        // the expected method depth is 6 excluding 5 hidden frames
+        testMethodDepth = 11-5;
     }
 
     @Override
@@ -2640,8 +2597,9 @@ class EAPopFrameNotInlinedReallocFailure extends EATestCaseBaseDebugger {
         // And Graal currently doesn't provide all information about non-escaping objects in debug info
         return super.shouldSkip() ||
                 !env.targetVMOptions.EliminateAllocations ||
-                // With ZGC the OOME is not always thrown as expected
+                // With ZGC or Shenandoah the OOME is not always thrown as expected
                 env.targetVMOptions.ZGCIsSelected ||
+                env.targetVMOptions.ShenandoahGCIsSelected ||
                 env.targetVMOptions.DeoptimizeObjectsALot ||
                 env.targetVMOptions.UseJVMCICompiler;
     }
@@ -2685,8 +2643,9 @@ class EAPopFrameNotInlinedReallocFailureTarget extends EATestCaseBaseTarget {
         // And Graal currently doesn't provide all information about non-escaping objects in debug info
         return super.shouldSkip() ||
                 !EliminateAllocations ||
-                // With ZGC the OOME is not always thrown as expected
+                // With ZGC or Shenandoah the OOME is not always thrown as expected
                 ZGCIsSelected ||
+                ShenandoahGCIsSelected ||
                 DeoptimizeObjectsALot ||
                 UseJVMCICompiler;
     }
@@ -2738,8 +2697,9 @@ class EAPopInlinedMethodWithScalarReplacedObjectsReallocFailure extends EATestCa
         // And Graal currently doesn't provide all information about non-escaping objects in debug info
         return super.shouldSkip() ||
                 !env.targetVMOptions.EliminateAllocations ||
-                // With ZGC the OOME is not always thrown as expected
+                // With ZGC or Shenandoah the OOME is not always thrown as expected
                 env.targetVMOptions.ZGCIsSelected ||
+                env.targetVMOptions.ShenandoahGCIsSelected ||
                 env.targetVMOptions.DeoptimizeObjectsALot ||
                 env.targetVMOptions.UseJVMCICompiler;
     }
@@ -2799,8 +2759,9 @@ class EAPopInlinedMethodWithScalarReplacedObjectsReallocFailureTarget extends EA
         // And Graal currently doesn't provide all information about non-escaping objects in debug info
         return super.shouldSkip() ||
                 !EliminateAllocations ||
-                // With ZGC the OOME is not always thrown as expected
+                // With ZGC or Shenandoah the OOME is not always thrown as expected
                 ZGCIsSelected ||
+                ShenandoahGCIsSelected ||
                 DeoptimizeObjectsALot ||
                 UseJVMCICompiler;
     }
@@ -3005,8 +2966,9 @@ class EAForceEarlyReturnOfInlinedMethodWithScalarReplacedObjectsReallocFailure e
         // And Graal currently doesn't support Force Early Return
         return super.shouldSkip() ||
                 !env.targetVMOptions.EliminateAllocations ||
-                // With ZGC the OOME is not always thrown as expected
+                // With ZGC or Shenandoah the OOME is not always thrown as expected
                 env.targetVMOptions.ZGCIsSelected ||
+                env.targetVMOptions.ShenandoahGCIsSelected ||
                 env.targetVMOptions.DeoptimizeObjectsALot ||
                 env.targetVMOptions.UseJVMCICompiler;
     }
@@ -3067,8 +3029,9 @@ class EAForceEarlyReturnOfInlinedMethodWithScalarReplacedObjectsReallocFailureTa
         // And Graal currently doesn't support Force Early Return
         return super.shouldSkip() ||
                 !EliminateAllocations ||
-                // With ZGC the OOME is not always thrown as expected
+                // With ZGC or Shenandoah the OOME is not always thrown as expected
                 ZGCIsSelected ||
+                ShenandoahGCIsSelected ||
                 DeoptimizeObjectsALot ||
                 UseJVMCICompiler;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ import org.testng.annotations.Test;
 public class TestWithCompatProvider {
 
     private static final NumberFormat FORMAT_DZ_SHORT = NumberFormat
-            .getCompactNumberInstance(new Locale("dz"), NumberFormat.Style.SHORT);
+            .getCompactNumberInstance(Locale.of("dz"), NumberFormat.Style.SHORT);
 
     private static final NumberFormat FORMAT_EN_US_SHORT = NumberFormat
             .getCompactNumberInstance(Locale.US, NumberFormat.Style.SHORT);

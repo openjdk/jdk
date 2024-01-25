@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,10 @@ import static sun.security.util.SecurityProviderConstants.*;
  *
  * - HMAC-MD5, HMAC-SHA1, HMAC with SHA2 family and SHA3 family of digests
  *
+ * - JCEKS KeyStore
+ *
+ * - DHKEM
+ *
  */
 
 public final class SunJCE extends Provider {
@@ -117,6 +121,7 @@ public final class SunJCE extends Provider {
                    attrs));
     }
 
+    @SuppressWarnings("removal")
     public SunJCE() {
         /* We are the "SunJCE" provider */
         super("SunJCE", PROVIDER_VER, info);
@@ -164,7 +169,7 @@ public final class SunJCE extends Provider {
             "|CFB8|CFB16|CFB24|CFB32|CFB40|CFB48|CFB56|CFB64" +
             "|OFB8|OFB16|OFB24|OFB32|OFB40|OFB48|OFB56|OFB64";
         final String BLOCK_MODES128 = BLOCK_MODES +
-            "|GCM|CFB72|CFB80|CFB88|CFB96|CFB104|CFB112|CFB120|CFB128" +
+            "|CFB72|CFB80|CFB88|CFB96|CFB104|CFB112|CFB120|CFB128" +
             "|OFB72|OFB80|OFB88|OFB96|OFB104|OFB112|OFB120|OFB128";
         final String BLOCK_PADS = "NOPADDING|PKCS5PADDING|ISO10126PADDING";
 
@@ -191,6 +196,16 @@ public final class SunJCE extends Provider {
 
         attrs.clear();
         attrs.put("SupportedKeyFormats", "RAW");
+        psA("Cipher", "AES/KW/NoPadding",
+                "com.sun.crypto.provider.KeyWrapCipher$AES_KW_NoPadding",
+                attrs);
+        ps("Cipher", "AES/KW/PKCS5Padding",
+                "com.sun.crypto.provider.KeyWrapCipher$AES_KW_PKCS5Padding",
+                null, attrs);
+        psA("Cipher", "AES/KWP/NoPadding",
+                "com.sun.crypto.provider.KeyWrapCipher$AES_KWP_NoPadding",
+                attrs);
+
         psA("Cipher", "AES_128/ECB/NoPadding",
                 "com.sun.crypto.provider.AESCipher$AES128_ECB_NoPadding",
                 attrs);
@@ -203,8 +218,14 @@ public final class SunJCE extends Provider {
         psA("Cipher", "AES_128/CFB/NoPadding",
                 "com.sun.crypto.provider.AESCipher$AES128_CFB_NoPadding",
                 attrs);
-        psA("Cipher", "AES_128/GCM/NoPadding",
-                "com.sun.crypto.provider.AESCipher$AES128_GCM_NoPadding",
+        psA("Cipher", "AES_128/KW/NoPadding",
+                "com.sun.crypto.provider.KeyWrapCipher$AES128_KW_NoPadding",
+                attrs);
+        ps("Cipher", "AES_128/KW/PKCS5Padding",
+                "com.sun.crypto.provider.KeyWrapCipher$AES128_KW_PKCS5Padding",
+                null, attrs);
+        psA("Cipher", "AES_128/KWP/NoPadding",
+                "com.sun.crypto.provider.KeyWrapCipher$AES128_KWP_NoPadding",
                 attrs);
 
         psA("Cipher", "AES_192/ECB/NoPadding",
@@ -219,8 +240,14 @@ public final class SunJCE extends Provider {
         psA("Cipher", "AES_192/CFB/NoPadding",
                 "com.sun.crypto.provider.AESCipher$AES192_CFB_NoPadding",
                 attrs);
-        psA("Cipher", "AES_192/GCM/NoPadding",
-                "com.sun.crypto.provider.AESCipher$AES192_GCM_NoPadding",
+        psA("Cipher", "AES_192/KW/NoPadding",
+                "com.sun.crypto.provider.KeyWrapCipher$AES192_KW_NoPadding",
+                attrs);
+        ps("Cipher", "AES_192/KW/PKCS5Padding",
+                "com.sun.crypto.provider.KeyWrapCipher$AES192_KW_PKCS5Padding",
+                null, attrs);
+        psA("Cipher", "AES_192/KWP/NoPadding",
+                "com.sun.crypto.provider.KeyWrapCipher$AES192_KWP_NoPadding",
                 attrs);
 
         psA("Cipher", "AES_256/ECB/NoPadding",
@@ -235,8 +262,31 @@ public final class SunJCE extends Provider {
         psA("Cipher", "AES_256/CFB/NoPadding",
                 "com.sun.crypto.provider.AESCipher$AES256_CFB_NoPadding",
                 attrs);
+        psA("Cipher", "AES_256/KW/NoPadding",
+                "com.sun.crypto.provider.KeyWrapCipher$AES256_KW_NoPadding",
+                attrs);
+        ps("Cipher", "AES_256/KW/PKCS5Padding",
+                "com.sun.crypto.provider.KeyWrapCipher$AES256_KW_PKCS5Padding",
+                null, attrs);
+        psA("Cipher", "AES_256/KWP/NoPadding",
+                "com.sun.crypto.provider.KeyWrapCipher$AES256_KWP_NoPadding",
+                attrs);
+
+        attrs.clear();
+        attrs.put("SupportedModes", "GCM");
+        attrs.put("SupportedKeyFormats", "RAW");
+
+        ps("Cipher", "AES/GCM/NoPadding",
+                "com.sun.crypto.provider.GaloisCounterMode$AESGCM", null,
+                attrs);
+        psA("Cipher", "AES_128/GCM/NoPadding",
+                "com.sun.crypto.provider.GaloisCounterMode$AES128",
+                attrs);
+        psA("Cipher", "AES_192/GCM/NoPadding",
+                "com.sun.crypto.provider.GaloisCounterMode$AES192",
+                attrs);
         psA("Cipher", "AES_256/GCM/NoPadding",
-                "com.sun.crypto.provider.AESCipher$AES256_GCM_NoPadding",
+                "com.sun.crypto.provider.GaloisCounterMode$AES256",
                 attrs);
 
         attrs.clear();
@@ -252,17 +302,6 @@ public final class SunJCE extends Provider {
         attrs.put("SupportedKeyFormats", "RAW");
         psA("Cipher", "ARCFOUR",
                 "com.sun.crypto.provider.ARCFOURCipher", attrs);
-        ps("Cipher", "AESWrap", "com.sun.crypto.provider.AESWrapCipher$General",
-                null, attrs);
-        psA("Cipher", "AESWrap_128",
-                "com.sun.crypto.provider.AESWrapCipher$AES128",
-                attrs);
-        psA("Cipher", "AESWrap_192",
-                "com.sun.crypto.provider.AESWrapCipher$AES192",
-                attrs);
-        psA("Cipher", "AESWrap_256",
-                "com.sun.crypto.provider.AESWrapCipher$AES256",
-                attrs);
 
         attrs.clear();
         attrs.put("SupportedKeyFormats", "RAW");
@@ -312,6 +351,13 @@ public final class SunJCE extends Provider {
         ps("Cipher", "PBEWithHmacSHA512AndAES_128",
                 "com.sun.crypto.provider.PBES2Core$HmacSHA512AndAES_128");
 
+        ps("Cipher", "PBEWithHmacSHA512/224AndAES_128",
+                "com.sun.crypto.provider.PBES2Core$HmacSHA512_224AndAES_128");
+
+        ps("Cipher", "PBEWithHmacSHA512/256AndAES_128",
+                "com.sun.crypto.provider.PBES2Core$HmacSHA512_256AndAES_128");
+
+
         ps("Cipher", "PBEWithHmacSHA1AndAES_256",
                 "com.sun.crypto.provider.PBES2Core$HmacSHA1AndAES_256");
 
@@ -326,6 +372,12 @@ public final class SunJCE extends Provider {
 
         ps("Cipher", "PBEWithHmacSHA512AndAES_256",
                 "com.sun.crypto.provider.PBES2Core$HmacSHA512AndAES_256");
+
+        ps("Cipher", "PBEWithHmacSHA512/224AndAES_256",
+                "com.sun.crypto.provider.PBES2Core$HmacSHA512_224AndAES_256");
+
+        ps("Cipher", "PBEWithHmacSHA512/256AndAES_256",
+                "com.sun.crypto.provider.PBES2Core$HmacSHA512_256AndAES_256");
 
         /*
          * Key(pair) Generator engines
@@ -463,6 +515,12 @@ public final class SunJCE extends Provider {
         ps("AlgorithmParameters", "PBEWithHmacSHA512AndAES_128",
                 "com.sun.crypto.provider.PBES2Parameters$HmacSHA512AndAES_128");
 
+        ps("AlgorithmParameters", "PBEWithHmacSHA512/224AndAES_128",
+                "com.sun.crypto.provider.PBES2Parameters$HmacSHA512_224AndAES_128");
+
+        ps("AlgorithmParameters", "PBEWithHmacSHA512/256AndAES_128",
+                "com.sun.crypto.provider.PBES2Parameters$HmacSHA512_256AndAES_128");
+
         ps("AlgorithmParameters", "PBEWithHmacSHA1AndAES_256",
                 "com.sun.crypto.provider.PBES2Parameters$HmacSHA1AndAES_256");
 
@@ -478,6 +536,12 @@ public final class SunJCE extends Provider {
         ps("AlgorithmParameters", "PBEWithHmacSHA512AndAES_256",
                 "com.sun.crypto.provider.PBES2Parameters$HmacSHA512AndAES_256");
 
+        ps("AlgorithmParameters", "PBEWithHmacSHA512/224AndAES_256",
+                "com.sun.crypto.provider.PBES2Parameters$HmacSHA512_224AndAES_256");
+
+        ps("AlgorithmParameters", "PBEWithHmacSHA512/256AndAES_256",
+                "com.sun.crypto.provider.PBES2Parameters$HmacSHA512_256AndAES_256");
+
         ps("AlgorithmParameters", "Blowfish",
                 "com.sun.crypto.provider.BlowfishParameters");
 
@@ -490,8 +554,8 @@ public final class SunJCE extends Provider {
         ps("AlgorithmParameters", "RC2",
                 "com.sun.crypto.provider.RC2Parameters");
 
-        ps("AlgorithmParameters", "OAEP",
-                "com.sun.crypto.provider.OAEPParameters");
+        psA("AlgorithmParameters", "OAEP",
+                "com.sun.crypto.provider.OAEPParameters", null);
 
         psA("AlgorithmParameters", "ChaCha20-Poly1305",
                 "com.sun.crypto.provider.ChaCha20Poly1305Parameters", null);
@@ -560,6 +624,12 @@ public final class SunJCE extends Provider {
         ps("SecretKeyFactory", "PBEWithHmacSHA512AndAES_128",
                 "com.sun.crypto.provider.PBEKeyFactory$PBEWithHmacSHA512AndAES_128");
 
+        ps("SecretKeyFactory", "PBEWithHmacSHA512/224AndAES_128",
+                "com.sun.crypto.provider.PBEKeyFactory$PBEWithHmacSHA512_224AndAES_128");
+
+        ps("SecretKeyFactory", "PBEWithHmacSHA512/256AndAES_128",
+                "com.sun.crypto.provider.PBEKeyFactory$PBEWithHmacSHA512_256AndAES_128");
+
         ps("SecretKeyFactory", "PBEWithHmacSHA1AndAES_256",
                 "com.sun.crypto.provider.PBEKeyFactory$PBEWithHmacSHA1AndAES_256");
 
@@ -575,6 +645,12 @@ public final class SunJCE extends Provider {
         ps("SecretKeyFactory", "PBEWithHmacSHA512AndAES_256",
                 "com.sun.crypto.provider.PBEKeyFactory$PBEWithHmacSHA512AndAES_256");
 
+        ps("SecretKeyFactory", "PBEWithHmacSHA512/224AndAES_256",
+                "com.sun.crypto.provider.PBEKeyFactory$PBEWithHmacSHA512_224AndAES_256");
+
+        ps("SecretKeyFactory", "PBEWithHmacSHA512/256AndAES_256",
+                "com.sun.crypto.provider.PBEKeyFactory$PBEWithHmacSHA512_256AndAES_256");
+
         // PBKDF2
         psA("SecretKeyFactory", "PBKDF2WithHmacSHA1",
                 "com.sun.crypto.provider.PBKDF2Core$HmacSHA1",
@@ -587,6 +663,10 @@ public final class SunJCE extends Provider {
                 "com.sun.crypto.provider.PBKDF2Core$HmacSHA384");
         ps("SecretKeyFactory", "PBKDF2WithHmacSHA512",
                 "com.sun.crypto.provider.PBKDF2Core$HmacSHA512");
+        ps("SecretKeyFactory", "PBKDF2WithHmacSHA512/224",
+                "com.sun.crypto.provider.PBKDF2Core$HmacSHA512_224");
+        ps("SecretKeyFactory", "PBKDF2WithHmacSHA512/256",
+                "com.sun.crypto.provider.PBKDF2Core$HmacSHA512_256");
 
         /*
          * MAC
@@ -651,6 +731,11 @@ public final class SunJCE extends Provider {
                 "com.sun.crypto.provider.PBMAC1Core$HmacSHA384", null, attrs);
         ps("Mac", "PBEWithHmacSHA512",
                 "com.sun.crypto.provider.PBMAC1Core$HmacSHA512", null, attrs);
+        ps("Mac", "PBEWithHmacSHA512/224",
+                "com.sun.crypto.provider.PBMAC1Core$HmacSHA512_224", null, attrs);
+        ps("Mac", "PBEWithHmacSHA512/256",
+                "com.sun.crypto.provider.PBMAC1Core$HmacSHA512_256", null, attrs);
+
         ps("Mac", "SslMacMD5",
                 "com.sun.crypto.provider.SslMacCore$SslMacMD5", null, attrs);
         ps("Mac", "SslMacSHA1",
@@ -661,6 +746,15 @@ public final class SunJCE extends Provider {
          */
         ps("KeyStore", "JCEKS",
                 "com.sun.crypto.provider.JceKeyStore");
+
+        /*
+         * KEMs
+         */
+        attrs.clear();
+        attrs.put("ImplementedIn", "Software");
+        attrs.put("SupportedKeyClasses", "java.security.interfaces.ECKey" +
+                "|java.security.interfaces.XECKey");
+        ps("KEM", "DHKEM", "com.sun.crypto.provider.DHKEM", null, attrs);
 
         /*
          * SSL/TLS mechanisms

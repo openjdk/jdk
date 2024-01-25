@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +39,7 @@
   //   Early clobber: result.
   //   Boolean precise controls accuracy of result value.
   unsigned int string_compress(Register result, Register src, Register dst, Register cnt,
-                               Register tmp,    bool precise);
+                               Register tmp,    bool precise, bool toASCII);
 
   // Inflate byte[] to char[].
   unsigned int string_inflate_trot(Register src, Register dst, Register cnt, Register tmp);
@@ -56,9 +57,7 @@
   //   len is signed int. Counts # characters, not bytes.
   unsigned int string_inflate_const(Register src, Register dst, Register tmp, int len);
 
-  // Kills src.
-  unsigned int has_negatives(Register result, Register src, Register cnt,
-                             Register odd_reg, Register even_reg, Register tmp);
+  unsigned int count_positives(Register result, Register src, Register cnt, Register tmp);
 
   unsigned int string_compare(Register str1, Register str2, Register cnt1, Register cnt2,
                               Register odd_reg, Register even_reg, Register result, int ae);

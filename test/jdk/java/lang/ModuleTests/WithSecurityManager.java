@@ -25,8 +25,8 @@
  * @test
  * @modules jdk.compiler
  * @summary Test java.lang.Module methods that specify permission checks
- * @run main/othervm -Djava.security.policy=${test.src}/allow.policy WithSecurityManager allow
- * @run main/othervm WithSecurityManager deny
+ * @run main/othervm -Djava.security.manager=allow -Djava.security.policy=${test.src}/allow.policy WithSecurityManager allow
+ * @run main/othervm -Djava.security.manager=allow WithSecurityManager deny
  */
 
 import java.io.IOException;

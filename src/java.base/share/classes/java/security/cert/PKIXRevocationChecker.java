@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,7 @@
 package java.security.cert;
 
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
+import java.util.*;
 
 /**
  * A {@code PKIXCertPathChecker} for checking the revocation status of
@@ -66,9 +59,10 @@ import java.util.Set;
  * to be validated to the {@link CertPathValidator#validate validate} method
  * of a PKIX {@code CertPathValidator}. When supplying a revocation checker in
  * this manner, it will be used to check revocation irrespective of the setting
- * of the {@link PKIXParameters#isRevocationEnabled RevocationEnabled} flag.
- * Similarly, a {@code PKIXRevocationChecker} may be added to a
- * {@code PKIXBuilderParameters} object for use with a PKIX
+ * of the {@link PKIXParameters#isRevocationEnabled RevocationEnabled} flag,
+ * and will override the default revocation checking mechanism of the PKIX
+ * service provider. Similarly, a {@code PKIXRevocationChecker} may be added
+ * to a {@code PKIXBuilderParameters} object for use with a PKIX
  * {@code CertPathBuilder}.
  *
  * <p>Note that when a {@code PKIXRevocationChecker} is added to
@@ -91,15 +85,15 @@ import java.util.Set;
  *
  * @see <a href="http://www.ietf.org/rfc/rfc2560.txt"><i>RFC&nbsp;2560: X.509
  * Internet Public Key Infrastructure Online Certificate Status Protocol -
- * OCSP</i></a>, <br><a
- * href="http://www.ietf.org/rfc/rfc5280.txt"><i>RFC&nbsp;5280: Internet X.509
- * Public Key Infrastructure Certificate and Certificate Revocation List (CRL)
- * Profile</i></a>
+ * OCSP</i></a>
+ * @see <a href="http://www.ietf.org/rfc/rfc5280.txt"><i>RFC&nbsp;5280:
+ * Internet X.509 Public Key Infrastructure Certificate and Certificate
+ * Revocation List (CRL) Profile</i></a>
  */
 public abstract class PKIXRevocationChecker extends PKIXCertPathChecker {
     private URI ocspResponder;
     private X509Certificate ocspResponderCert;
-    private List<Extension> ocspExtensions = Collections.<Extension>emptyList();
+    private List<Extension> ocspExtensions = Collections.emptyList();
     private Map<X509Certificate, byte[]> ocspResponses = Collections.emptyMap();
     private Set<Option> options = Collections.emptySet();
 
@@ -169,7 +163,7 @@ public abstract class PKIXRevocationChecker extends PKIXCertPathChecker {
     public void setOcspExtensions(List<Extension> extensions)
     {
         this.ocspExtensions = (extensions == null)
-                              ? Collections.<Extension>emptyList()
+                              ? Collections.emptyList()
                               : new ArrayList<>(extensions);
     }
 
@@ -195,9 +189,9 @@ public abstract class PKIXRevocationChecker extends PKIXCertPathChecker {
     public void setOcspResponses(Map<X509Certificate, byte[]> responses)
     {
         if (responses == null) {
-            this.ocspResponses = Collections.<X509Certificate, byte[]>emptyMap();
+            this.ocspResponses = Collections.emptyMap();
         } else {
-            Map<X509Certificate, byte[]> copy = new HashMap<>(responses.size());
+            Map<X509Certificate, byte[]> copy = HashMap.newHashMap(responses.size());
             for (Map.Entry<X509Certificate, byte[]> e : responses.entrySet()) {
                 copy.put(e.getKey(), e.getValue().clone());
             }
@@ -216,7 +210,7 @@ public abstract class PKIXRevocationChecker extends PKIXCertPathChecker {
      *        Returns an empty map if no responses have been specified.
      */
     public Map<X509Certificate, byte[]> getOcspResponses() {
-        Map<X509Certificate, byte[]> copy = new HashMap<>(ocspResponses.size());
+        Map<X509Certificate, byte[]> copy = HashMap.newHashMap(ocspResponses.size());
         for (Map.Entry<X509Certificate, byte[]> e : ocspResponses.entrySet()) {
             copy.put(e.getKey(), e.getValue().clone());
         }
@@ -231,7 +225,7 @@ public abstract class PKIXRevocationChecker extends PKIXCertPathChecker {
      */
     public void setOptions(Set<Option> options) {
         this.options = (options == null)
-                       ? Collections.<Option>emptySet()
+                       ? Collections.emptySet()
                        : new HashSet<>(options);
     }
 

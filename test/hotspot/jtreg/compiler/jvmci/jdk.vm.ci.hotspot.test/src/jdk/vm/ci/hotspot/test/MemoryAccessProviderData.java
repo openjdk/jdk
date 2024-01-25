@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ import java.lang.reflect.Field;
 
 import org.testng.annotations.DataProvider;
 
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 import jdk.internal.misc.Unsafe;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.vm.ci.hotspot.HotSpotConstantReflectionProvider;
@@ -49,7 +49,8 @@ public class MemoryAccessProviderData {
     private static final TestClass TEST_OBJECT = new TestClass();
     private static final JavaConstant TEST_CONSTANT = CONSTANT_REFLECTION.forObject(TEST_OBJECT);
     private static final JavaConstant TEST_CLASS_CONSTANT = CONSTANT_REFLECTION.forObject(TestClass.class);
-    private static KindData[] PRIMITIVE_KIND_DATA = {
+
+    private static final KindData[] PRIMITIVE_KIND_DATA = {
         new KindData(JavaKind.Boolean, TEST_OBJECT),
         new KindData(JavaKind.Byte, TEST_OBJECT),
         new KindData(JavaKind.Char, TEST_OBJECT),
@@ -79,6 +80,16 @@ public class MemoryAccessProviderData {
         }
         return result.toArray(new Object[result.size()][]);
     }
+    @DataProvider(name = "unalignedPrimitive")
+    public static Object[][] getUnalignedPrimitiveJavaKinds() {
+        List<Object[]> result = new ArrayList<>();
+        for (KindData k : PRIMITIVE_KIND_DATA) {
+            if (k.unalignedInstanceFieldValue != null) {
+                result.add(new Object[] {k.kind, TEST_CONSTANT, k.instanceFieldOffset - 1, k.unalignedInstanceFieldValue, Math.max(8, k.kind.getBitCount())});
+            }
+        }
+        return result.toArray(new Object[result.size()][]);
+    }
 
     @DataProvider(name = "outOfBoundsInstanceFields")
     public static Object[][] getOutOfBoundsStaticFieldReads() {
@@ -104,6 +115,28 @@ public class MemoryAccessProviderData {
             result.add(new Object[] {k.kind, TEST_CLASS_CONSTANT, (long) -1, true});
             result.add(new Object[] {k.kind, TEST_CLASS_CONSTANT, lastValidOffset + 1, true});
             result.add(new Object[] {k.kind, TEST_CLASS_CONSTANT, lastValidOffset + 100, true});
+        }
+        return result.toArray(new Object[result.size()][]);
+    }
+
+    @DataProvider(name = "outOfBoundsObjectArray")
+    public static Object[][] getOutOfBoundsObjectArrayReads() {
+        List<Object[]> result = new ArrayList<>();
+
+        for (int i = 0; i < 8; i++) {
+            Object[] objects = new Object[i];
+            for (int e = 0; e < i; e++) {
+                objects[e] = e;
+            }
+            long firstValidOffset = UNSAFE.ARRAY_OBJECT_BASE_OFFSET;
+            long endOfObjectOffset = UNSAFE.ARRAY_OBJECT_BASE_OFFSET + i * UNSAFE.ARRAY_OBJECT_INDEX_SCALE;
+            JavaConstant constant = CONSTANT_REFLECTION.forObject(objects);
+            result.add(new Object[] {JavaKind.Object, constant, firstValidOffset, i == 0});
+            result.add(new Object[] {JavaKind.Object, constant, (long) 0, true});
+            result.add(new Object[] {JavaKind.Object, constant, (long) -1, true});
+            result.add(new Object[] {JavaKind.Object, constant, endOfObjectOffset - UNSAFE.ARRAY_OBJECT_INDEX_SCALE, i == 0});
+            result.add(new Object[] {JavaKind.Object, constant, endOfObjectOffset, true});
+            result.add(new Object[] {JavaKind.Object, constant, endOfObjectOffset + 100, true});
         }
         return result.toArray(new Object[result.size()][]);
     }
@@ -147,6 +180,7 @@ public class MemoryAccessProviderData {
         final long staticFieldOffset;
         final JavaConstant instanceFieldValue;
         final JavaConstant staticFieldValue;
+        final JavaConstant unalignedInstanceFieldValue;
         KindData(JavaKind kind, Object testObject) {
             this.kind = kind;
             try {
@@ -159,6 +193,17 @@ public class MemoryAccessProviderData {
                 staticFieldOffset = UNSAFE.staticFieldOffset(staticField);
                 instanceFieldValue = JavaConstant.forBoxedPrimitive(instanceField.get(testObject));
                 staticFieldValue = JavaConstant.forBoxedPrimitive(staticField.get(null));
+                if (kind == JavaKind.Long) {
+                    unalignedInstanceFieldValue = JavaConstant.forLong(UNSAFE.getLongUnaligned(testObject, instanceFieldOffset - 1));
+                } else if (kind == JavaKind.Int) {
+                    unalignedInstanceFieldValue = JavaConstant.forInt(UNSAFE.getIntUnaligned(testObject, instanceFieldOffset - 1));
+                } else if (kind == JavaKind.Char) {
+                    unalignedInstanceFieldValue = JavaConstant.forChar(UNSAFE.getCharUnaligned(testObject, instanceFieldOffset - 1));
+                } else if (kind == JavaKind.Short) {
+                    unalignedInstanceFieldValue = JavaConstant.forShort(UNSAFE.getShortUnaligned(testObject, instanceFieldOffset - 1));
+                } else {
+                    unalignedInstanceFieldValue = null;
+                }
             } catch (Exception e) {
                 throw new Error("TESTBUG for kind " + kind, e);
             }

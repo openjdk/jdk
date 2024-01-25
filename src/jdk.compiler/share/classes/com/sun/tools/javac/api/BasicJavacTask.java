@@ -86,6 +86,7 @@ public class BasicJavacTask extends JavacTask {
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     public BasicJavacTask(Context c, boolean register) {
         context = c;
         options = Options.instance(c);
@@ -204,7 +205,7 @@ public class BasicJavacTask extends JavacTask {
                 java.util.List<String> options =
                         pluginDesc.getOptions().entrySet().stream()
                                 .map(e -> e.getKey() + "=" + e.getValue())
-                                .collect(Collectors.toList());
+                                .toList();
                 try {
                     initPlugin(pluginDesc.getPlugin(), options.toArray(new String[options.size()]));
                 } catch (RuntimeException ex) {

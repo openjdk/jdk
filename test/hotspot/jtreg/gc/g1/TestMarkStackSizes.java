@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,9 +50,7 @@ public class TestMarkStackSizes {
         Collections.addAll(testArguments, extraArgs);
         testArguments.add("-version");
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(testArguments);
-
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava(testArguments);
 
         System.out.println(output.getStderr());
 
@@ -81,7 +79,7 @@ public class TestMarkStackSizes {
 
         runTest(true, "-XX:ConcGCThreads=3", "-XX:ParallelGCThreads=3");
         runTest(true, "-XX:ConcGCThreads=0", "-XX:ParallelGCThreads=3");
-        runTest(false, "-XX:ConcGCThreads=4", "-XX:ParallelGCThreads=3");
+        runTest(true, "-XX:ConcGCThreads=4", "-XX:ParallelGCThreads=3");
 
         // With that high ParallelGCThreads the default ergonomics would calculate
         // a mark stack size higher than maximum mark stack size.

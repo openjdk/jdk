@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,19 +30,17 @@
 #include <signal.h>
 
 void OSThread::pd_initialize() {
-  assert(this != NULL, "check");
   _thread_id        = 0;
   _pthread_id       = 0;
-  _siginfo = NULL;
-  _ucontext = NULL;
+  _siginfo = nullptr;
+  _ucontext = nullptr;
   _expanding_stack = 0;
-  _alt_sig_stack = NULL;
+  _alt_sig_stack = nullptr;
 
   sigemptyset(&_caller_sigmask);
 
-  _startThread_lock = new Monitor(Mutex::event, "startThread_lock", true,
-                                  Monitor::_safepoint_check_never);
-  assert(_startThread_lock !=NULL, "check");
+  _startThread_lock = new Monitor(Mutex::event, "startThread_lock");
+  assert(_startThread_lock !=nullptr, "check");
 }
 
 void OSThread::pd_destroy() {

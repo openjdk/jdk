@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,10 @@
 #ifndef SHARE_RUNTIME_VMTHREAD_HPP
 #define SHARE_RUNTIME_VMTHREAD_HPP
 
+#include "runtime/atomic.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/perfDataTypes.hpp"
 #include "runtime/nonJavaThread.hpp"
-#include "runtime/thread.hpp"
 #include "runtime/task.hpp"
 #include "runtime/vmOperation.hpp"
 
@@ -39,26 +40,27 @@ class VMOperationTimeoutTask : public PeriodicTask {
 private:
   volatile int _armed;
   jlong _arm_time;
-
+  const char* _vm_op_name;
 public:
   VMOperationTimeoutTask(size_t interval_time) :
-          PeriodicTask(interval_time), _armed(0), _arm_time(0) {}
+          PeriodicTask(interval_time), _armed(0), _arm_time(0), _vm_op_name(nullptr) {}
 
   virtual void task();
 
   bool is_armed();
-  void arm();
+  void arm(const char* vm_op_name);
   void disarm();
 };
 
 //
-// A single VMThread (the primordial thread) spawns all other threads
-// and is itself used by other threads to offload heavy vm operations
+// A single VMThread is used by other threads to offload heavy vm operations
 // like scavenge, garbage_collect etc.
 //
 
 class VMThread: public NamedThread {
  private:
+  volatile bool _is_running;
+
   static ThreadPriority _current_priority;
 
   static bool _should_terminate;
@@ -75,7 +77,6 @@ class VMThread: public NamedThread {
   void inner_execute(VM_Operation* op);
   void wait_for_operation();
 
- public:
   // Constructor
   VMThread();
 
@@ -84,12 +85,14 @@ class VMThread: public NamedThread {
     guarantee(false, "VMThread deletion must fix the race with VM termination");
   }
 
+  // The ever running loop for the VMThread
+  void loop();
+
+ public:
+  bool is_running() const { return Atomic::load(&_is_running); }
 
   // Tester
   bool is_VM_thread() const                      { return true; }
-
-  // The ever running loop for the VMThread
-  void loop();
 
   // Called to stop the VM thread
   static void wait_for_vm_thread_exit();
@@ -107,7 +110,7 @@ class VMThread: public NamedThread {
 
   static VM_Operation::VMOp_Type vm_op_type()     {
     VM_Operation* op = vm_operation();
-    assert(op != NULL, "sanity");
+    assert(op != nullptr, "sanity");
     return op->type();
   }
 
@@ -129,6 +132,9 @@ class VMThread: public NamedThread {
   static void destroy();
 
   static void wait_until_executed(VM_Operation* op);
+
+  // Printing
+  const char* type_name() const { return "VMThread"; }
 
  private:
   // VM_Operation support

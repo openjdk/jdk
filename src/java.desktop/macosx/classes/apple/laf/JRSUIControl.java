@@ -114,7 +114,7 @@ public final class JRSUIControl {
         changes.putAll(other.changes);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     protected synchronized void finalize() throws Throwable {
         if (cfDictionaryPtr == 0) return;
         disposeCFDictionary(cfDictionaryPtr);
@@ -126,7 +126,7 @@ public final class JRSUIControl {
         NO_CHANGE,
         ALL_CHANGES_IN_BUFFER,
         SOME_CHANGES_IN_BUFFER,
-        CHANGE_WONT_FIT_IN_BUFFER;
+        CHANGE_WONT_FIT_IN_BUFFER
     }
 
     private BufferState loadBufferWithChanges(final ThreadLocalByteBuffer localByteBuffer) {

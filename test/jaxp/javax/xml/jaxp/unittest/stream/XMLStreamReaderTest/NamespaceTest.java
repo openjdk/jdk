@@ -38,7 +38,7 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.XMLStreamReaderTest.NamespaceTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLStreamReaderTest.NamespaceTest
  * @run testng/othervm stream.XMLStreamReaderTest.NamespaceTest
  * @summary Test StAX parser processes namespace.
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,20 @@
 
 package java.nio;
 
+import java.lang.foreign.MemorySegment;
 import java.util.Objects;
-import jdk.internal.access.foreign.MemorySegmentProxy;
 import jdk.internal.misc.Unsafe;
 
+#if[rw]
+sealed
+#else[rw]
+final
+#end[rw]
 class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
     extends {#if[ro]?ByteBufferAs}$Type$Buffer{#if[ro]?$BO$}
+#if[rw]
+    permits ByteBufferAs$Type$BufferR$BO$
+#end[rw]
 {
 
 #if[rw]
@@ -41,7 +49,7 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
 
 #end[rw]
 
-    ByteBufferAs$Type$Buffer$RW$$BO$(ByteBuffer bb, MemorySegmentProxy segment) {   // package-private
+    ByteBufferAs$Type$Buffer$RW$$BO$(ByteBuffer bb, MemorySegment segment) {   // package-private
 #if[rw]
         super(-1, 0,
               bb.remaining() >> $LG_BYTES_PER_VALUE$,
@@ -60,7 +68,7 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
 
     ByteBufferAs$Type$Buffer$RW$$BO$(ByteBuffer bb,
                                      int mark, int pos, int lim, int cap,
-                                     long addr, MemorySegmentProxy segment)
+                                     long addr, MemorySegment segment)
     {
 #if[rw]
         super(mark, pos, lim, cap, segment);
@@ -130,13 +138,13 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
     }
 
     public $type$ get() {
-        $memtype$ x = SCOPED_MEMORY_ACCESS.get$Memtype$Unaligned(scope(), bb.hb, byteOffset(nextGetIndex()),
+        $memtype$ x = SCOPED_MEMORY_ACCESS.get$Memtype$Unaligned(session(), bb.hb, byteOffset(nextGetIndex()),
             {#if[boB]?true:false});
         return $fromBits$(x);
     }
 
     public $type$ get(int i) {
-        $memtype$ x = SCOPED_MEMORY_ACCESS.get$Memtype$Unaligned(scope(), bb.hb, byteOffset(checkIndex(i)),
+        $memtype$ x = SCOPED_MEMORY_ACCESS.get$Memtype$Unaligned(session(), bb.hb, byteOffset(checkIndex(i)),
             {#if[boB]?true:false});
         return $fromBits$(x);
     }
@@ -154,7 +162,7 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
     public $Type$Buffer put($type$ x) {
 #if[rw]
         $memtype$ y = $toBits$(x);
-        SCOPED_MEMORY_ACCESS.put$Memtype$Unaligned(scope(), bb.hb, byteOffset(nextPutIndex()), y,
+        SCOPED_MEMORY_ACCESS.put$Memtype$Unaligned(session(), bb.hb, byteOffset(nextPutIndex()), y,
             {#if[boB]?true:false});
         return this;
 #else[rw]
@@ -165,7 +173,7 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
     public $Type$Buffer put(int i, $type$ x) {
 #if[rw]
         $memtype$ y = $toBits$(x);
-        SCOPED_MEMORY_ACCESS.put$Memtype$Unaligned(scope(), bb.hb, byteOffset(checkIndex(i)), y,
+        SCOPED_MEMORY_ACCESS.put$Memtype$Unaligned(session(), bb.hb, byteOffset(checkIndex(i)), y,
             {#if[boB]?true:false});
         return this;
 #else[rw]
@@ -207,18 +215,14 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
 
     public String toString(int start, int end) {
         Objects.checkFromToIndex(start, end, limit());
-        try {
-            int len = end - start;
-            char[] ca = new char[len];
-            CharBuffer cb = CharBuffer.wrap(ca);
-            CharBuffer db = this.duplicate();
-            db.position(start);
-            db.limit(end);
-            cb.put(db);
-            return new String(ca);
-        } catch (StringIndexOutOfBoundsException x) {
-            throw new IndexOutOfBoundsException();
-        }
+        int len = end - start;
+        char[] ca = new char[len];
+        CharBuffer cb = CharBuffer.wrap(ca);
+        CharBuffer db = this.duplicate();
+        db.position(start);
+        db.limit(end);
+        cb.put(db);
+        return new String(ca);
     }
 
 

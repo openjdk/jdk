@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,25 +122,10 @@ public class Button extends Component implements Accessible {
     @Serial
     private static final long serialVersionUID = -8774683716313001058L;
 
-
-    static {
-        /* ensure that the necessary native libraries are loaded */
-        Toolkit.loadLibraries();
-        if (!GraphicsEnvironment.isHeadless()) {
-            initIDs();
-        }
-    }
-
-    /**
-     * Initialize JNI field and method IDs for fields that may be
-     * accessed from C.
-     */
-    private static native void initIDs();
-
     /**
      * Constructs a button with an empty string for its label.
      *
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
@@ -153,7 +138,7 @@ public class Button extends Component implements Accessible {
      *
      * @param label  a string label for the button, or
      *               {@code null} for no label
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
@@ -339,7 +324,7 @@ public class Button extends Component implements Accessible {
      *          <code><em>Foo</em>Listener</code>s on this button,
      *          or an empty array if no such
      *          listeners have been added
-     * @exception ClassCastException if {@code listenerType}
+     * @throws ClassCastException if {@code listenerType}
      *          doesn't specify a class or interface that implements
      *          {@code java.util.EventListener}
      *
@@ -484,7 +469,7 @@ public class Button extends Component implements Accessible {
      * @throws IOException if an I/O error occurs
      * @throws HeadlessException if {@code GraphicsEnvironment.isHeadless()}
      *         returns {@code true}
-     * @serial
+     *
      * @see #removeActionListener(ActionListener)
      * @see #addActionListener(ActionListener)
      * @see java.awt.GraphicsEnvironment#isHeadless

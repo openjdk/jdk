@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * @test
  * @bug 8051498 8145849 8158978 8170282
  * @summary JEP 244: TLS Application-Layer Protocol Negotiation Extension
- * @compile MyX509ExtendedKeyManager.java
+ * @library /javax/net/ssl/templates
  *
  * @run main/othervm SSLServerSocketAlpnTest h2          UNUSED   h2          h2
  * @run main/othervm SSLServerSocketAlpnTest h2          UNUSED   h2,http/1.1 h2
@@ -79,56 +79,18 @@
  * This example is based on our standard SSLSocketTemplate.
  */
 import java.io.*;
-import java.security.KeyStore;
 import java.util.Arrays;
 
 import javax.net.ssl.*;
 
-public class SSLServerSocketAlpnTest {
+public class SSLServerSocketAlpnTest extends SSLSocketTemplate {
 
-    /*
-     * =============================================================
-     * Set the various variables needed for the tests, then
-     * specify what tests to run on each side.
-     */
-
-    /*
-     * Should we run the client or server in a separate thread?
-     * Both sides can throw exceptions, but do you have a preference
-     * as to which side should be the main thread.
-     */
-    static boolean separateServerThread = false;
-
-    /*
-     * Where do we find the keystores?
-     */
-    static String pathToStores = "../etc";
-    static String keyStoreFile = "keystore";
-    static String trustStoreFile = "truststore";
-    static String passwd = "passphrase";
-
-    static String keyFilename = System.getProperty("test.src", ".") + "/"
-            + pathToStores + "/" + keyStoreFile;
-    static String trustFilename = System.getProperty("test.src", ".") + "/"
-            + pathToStores + "/" + trustStoreFile;
-
-    private static boolean hasServerAPs; // whether server APs are present
     private static boolean hasCallback; // whether a callback is present
-
-    /*
-     * SSLContext
-     */
-    SSLContext mySSLContext = null;
-
-    /*
-     * Is the server ready to serve?
-     */
-    volatile static boolean serverReady = false;
 
     /*
      * Turn on SSL debugging?
      */
-    static boolean debug = false;
+    static boolean debug = Boolean.getBoolean("test.debug");
 
     static String[] serverAPs;
     static String callbackAP;
@@ -144,16 +106,8 @@ public class SSLServerSocketAlpnTest {
      * smart about it....
      */
 
-    /*
-     * Define the server side of the test.
-     *
-     * If the server prematurely exits, serverReady will be set to true
-     * to avoid infinite hangs.
-     */
-    void doServerSide() throws Exception {
-        SSLServerSocketFactory sslssf = mySSLContext.getServerSocketFactory();
-        SSLServerSocket sslServerSocket
-                = (SSLServerSocket) sslssf.createServerSocket(serverPort);
+    @Override
+    protected void configureServerSocket(SSLServerSocket sslServerSocket) {
         sslServerSocket.setNeedClientAuth(true);
 
         SSLParameters sslp = sslServerSocket.getSSLParameters();
@@ -178,13 +132,16 @@ public class SSLServerSocketAlpnTest {
         sslServerSocket.setSSLParameters(sslp);
 
         serverPort = sslServerSocket.getLocalPort();
+    }
 
-        /*
-         * Signal Client, we're ready for his connect.
-         */
-        serverReady = true;
-
-        SSLSocket sslSocket = (SSLSocket) sslServerSocket.accept();
+    /*
+     * Define the server side of the test.
+     *
+     * If the server prematurely exits, serverReady will be set to true
+     * to avoid infinite hangs.
+     */
+    @Override
+    protected void runServerApplication(SSLSocket sslSocket) throws Exception {
 
         if (sslSocket.getHandshakeApplicationProtocol() != null) {
             throw new Exception ("getHandshakeApplicationProtocol() should "
@@ -245,26 +202,9 @@ public class SSLServerSocketAlpnTest {
         sslSocket.close();
     }
 
-    /*
-     * Define the client side of the test.
-     *
-     * If the server prematurely exits, serverReady will be set to true
-     * to avoid infinite hangs.
-     */
-    void doClientSide() throws Exception {
-
-        /*
-         * Wait for server to get started.
-         */
-        while (!serverReady) {
-            Thread.sleep(50);
-        }
-
-        SSLSocketFactory sslsf = mySSLContext.getSocketFactory();
-        SSLSocket sslSocket
-                = (SSLSocket) sslsf.createSocket("localhost", serverPort);
-
-        SSLParameters sslp = sslSocket.getSSLParameters();
+    @Override
+    protected void configureClientSocket(SSLSocket socket) {
+        SSLParameters sslp = socket.getSSLParameters();
 
         /*
          * The default ciphersuite ordering from the SSLContext may not
@@ -278,7 +218,17 @@ public class SSLServerSocketAlpnTest {
 
         // Set the ALPN selection.
         sslp.setApplicationProtocols(clientAPs);
-        sslSocket.setSSLParameters(sslp);
+        socket.setSSLParameters(sslp);
+    }
+
+    /*
+     * Define the client side of the test.
+     *
+     * If the server prematurely exits, serverReady will be set to true
+     * to avoid infinite hangs.
+     */
+    @Override
+    protected void runClientApplication(SSLSocket sslSocket) throws Exception {
 
         if (sslSocket.getHandshakeApplicationProtocol() != null) {
             throw new Exception ("getHandshakeApplicationProtocol() should "
@@ -332,9 +282,6 @@ public class SSLServerSocketAlpnTest {
     // use any free port by default
     volatile int serverPort = 0;
 
-    volatile Exception serverException = null;
-    volatile Exception clientException = null;
-
     public static void main(String[] args) throws Exception {
 
         if (debug) {
@@ -351,14 +298,13 @@ public class SSLServerSocketAlpnTest {
         clientAPs = convert(args[2]);
         expectedAP = args[3];
 
-        hasServerAPs = !args[0].equals("UNUSED"); // are server APs being used?
         hasCallback = !callbackAP.equals("UNUSED"); // is callback being used?
 
         /*
          * Start the tests.
          */
         try {
-            new SSLServerSocketAlpnTest();
+            new SSLServerSocketAlpnTest().run();
         } catch (SSLHandshakeException she) {
             if (args[3].equals("ERROR")) {
                 System.out.println("Caught the expected exception: " + she);
@@ -368,40 +314,6 @@ public class SSLServerSocketAlpnTest {
         }
 
         System.out.println("Test Passed.");
-    }
-
-    SSLContext getSSLContext(String keyFilename, String trustFilename)
-            throws Exception {
-        SSLContext ctx = SSLContext.getInstance("TLS");
-
-        // Keystores
-        KeyStore keyKS = KeyStore.getInstance("JKS");
-        keyKS.load(new FileInputStream(keyFilename), passwd.toCharArray());
-
-        KeyStore trustKS = KeyStore.getInstance("JKS");
-        trustKS.load(new FileInputStream(trustFilename), passwd.toCharArray());
-
-        // Generate KeyManager and TrustManager
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-        kmf.init(keyKS, passwd.toCharArray());
-
-        KeyManager[] kms = kmf.getKeyManagers();
-        if (!(kms[0] instanceof X509ExtendedKeyManager)) {
-            throw new Exception("kms[0] not X509ExtendedKeyManager");
-        }
-
-        kms = new KeyManager[] { new MyX509ExtendedKeyManager(
-                (X509ExtendedKeyManager) kms[0], expectedAP,
-                !hasCallback && hasServerAPs) };
-
-        TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
-        tmf.init(trustKS);
-        TrustManager[] tms = tmf.getTrustManagers();
-
-        // initial SSLContext
-        ctx.init(kms, tms, null);
-
-        return ctx;
     }
 
     /*
@@ -424,144 +336,5 @@ public class SSLServerSocketAlpnTest {
         }
 
         return strings;
-    }
-
-    Thread clientThread = null;
-    Thread serverThread = null;
-
-    /*
-     * Primary constructor, used to drive remainder of the test.
-     *
-     * Fork off the other side, then do your work.
-     */
-    SSLServerSocketAlpnTest() throws Exception {
-        Exception startException = null;
-        mySSLContext = getSSLContext(keyFilename, trustFilename);
-        try {
-            if (separateServerThread) {
-                startServer(true);
-                startClient(false);
-            } else {
-                startClient(true);
-                startServer(false);
-            }
-        } catch (Exception e) {
-            startException = e;
-        }
-
-        /*
-         * Wait for other side to close down.
-         */
-        if (separateServerThread) {
-            if (serverThread != null) {
-                serverThread.join();
-            }
-        } else {
-            if (clientThread != null) {
-                clientThread.join();
-            }
-        }
-
-        /*
-         * When we get here, the test is pretty much over.
-         * Which side threw the error?
-         */
-        Exception local;
-        Exception remote;
-
-        if (separateServerThread) {
-            remote = serverException;
-            local = clientException;
-        } else {
-            remote = clientException;
-            local = serverException;
-        }
-
-        Exception exception = null;
-
-        /*
-         * Check various exception conditions.
-         */
-        if ((local != null) && (remote != null)) {
-            // If both failed, return the curthread's exception.
-            local.initCause(remote);
-            exception = local;
-        } else if (local != null) {
-            exception = local;
-        } else if (remote != null) {
-            exception = remote;
-        } else if (startException != null) {
-            exception = startException;
-        }
-
-        /*
-         * If there was an exception *AND* a startException,
-         * output it.
-         */
-        if (exception != null) {
-            if (exception != startException && startException != null) {
-                exception.addSuppressed(startException);
-            }
-            throw exception;
-        }
-
-        // Fall-through: no exception to throw!
-    }
-
-    void startServer(boolean newThread) throws Exception {
-        if (newThread) {
-            serverThread = new Thread() {
-                @Override
-                public void run() {
-                    try {
-                        doServerSide();
-                    } catch (Exception e) {
-                        /*
-                         * Our server thread just died.
-                         *
-                         * Release the client, if not active already...
-                         */
-                        System.err.println("Server died...");
-                        serverReady = true;
-                        serverException = e;
-                    }
-                }
-            };
-            serverThread.start();
-        } else {
-            try {
-                doServerSide();
-            } catch (Exception e) {
-                serverException = e;
-            } finally {
-                serverReady = true;
-            }
-        }
-    }
-
-    void startClient(boolean newThread) throws Exception {
-        if (newThread) {
-            clientThread = new Thread() {
-                @Override
-                public void run() {
-                    try {
-                        doClientSide();
-                    } catch (Exception e) {
-                        /*
-                         * Our client thread just died.
-                         */
-                        System.err.println("Client died...");
-                        clientException = e;
-                    }
-                }
-            };
-            clientThread.start();
-        } else {
-            try {
-                doClientSide();
-            } catch (Exception e) {
-                clientException = e;
-            }
-        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package sun.security.jca;
 
 import java.security.Provider;
+import sun.security.x509.AlgorithmId;
 
 /**
  * Collection of methods to get and set provider list. Also includes
@@ -61,7 +62,7 @@ public class Providers {
     // After the switch to modules, JDK providers are all in modules and JDK
     // no longer needs to load signed jars during start up.
     //
-    // However, for earlier releases, it need special handling to resolve
+    // However, for earlier releases, it needs special handling to resolve
     // circularities when loading signed JAR files during startup. The code
     // below is part of that.
     //
@@ -100,7 +101,7 @@ public class Providers {
     /**
      * Start JAR verification. This sets a special provider list for
      * the current thread. You MUST save the return value from this
-     * method and you MUST call stopJarVerification() with that object
+     * method, and you MUST call stopJarVerification() with that object
      * once you are done.
      */
     public static Object startJarVerification() {
@@ -130,7 +131,7 @@ public class Providers {
 
     /**
      * Return the current ProviderList. If the thread-local list is set,
-     * it is returned. Otherwise, the system wide list is returned.
+     * it is returned. Otherwise, the system-wide list is returned.
      */
     public static ProviderList getProviderList() {
         ProviderList list = getThreadProviderList();
@@ -142,7 +143,7 @@ public class Providers {
 
     /**
      * Set the current ProviderList. Affects the thread-local list if set,
-     * otherwise the system wide list.
+     * otherwise the system-wide list.
      */
     public static void setProviderList(ProviderList newList) {
         if (getThreadProviderList() == null) {
@@ -150,7 +151,17 @@ public class Providers {
         } else {
             changeThreadProviderList(newList);
         }
+        clearCachedValues();
+    }
+
+    /**
+     * Clears the cached provider-list-specific values. These values need to
+     * be re-generated whenever provider list is changed. The logic for
+     * generating them is in the respective classes.
+     */
+    private static void clearCachedValues() {
         JCAUtil.clearDefSecureRandom();
+        AlgorithmId.clearAliasOidsTable();
     }
 
     /**

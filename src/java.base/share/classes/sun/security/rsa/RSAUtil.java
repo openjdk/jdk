@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,9 @@ package sun.security.rsa;
 import java.io.IOException;
 import java.security.*;
 import java.security.spec.*;
+import sun.security.util.DerInputStream;
+import sun.security.util.DerOutputStream;
+import sun.security.util.DerValue;
 import sun.security.util.ObjectIdentifier;
 import sun.security.x509.AlgorithmId;
 
@@ -61,9 +64,9 @@ public class RSAUtil {
 
             // match loosely in order to work with 3rd party providers which
             // may not follow the standard names
-            if (name.indexOf("PSS") != -1) {
+            if (name.contains("PSS")) {
                 return PSS;
-            } else if (name.indexOf("RSA") != -1) {
+            } else if (name.contains("RSA")) {
                 return RSA;
             } else { // no match
                 throw new ProviderException("Unsupported algorithm " + name);
@@ -151,7 +154,7 @@ public class RSAUtil {
         } catch (ProviderException pe) {
             // accommodate RSA keys encoded with various RSA signature oids
             // for backward compatibility
-            if (algName.indexOf("RSA") != -1) {
+            if (algName.contains("RSA")) {
                 result[0] = KeyType.RSA;
             } else {
                 // pass it up
@@ -161,5 +164,31 @@ public class RSAUtil {
 
         result[1] = getParamSpec(algid.getParameters());
         return result;
+    }
+
+    /**
+     * Encode the digest, return the to-be-signed data.
+     * Also used by the PKCS#11 provider.
+     */
+    public static byte[] encodeSignature(ObjectIdentifier oid, byte[] digest) {
+        DerOutputStream out = new DerOutputStream();
+        new AlgorithmId(oid).encode(out);
+        out.putOctetString(digest);
+        DerValue result =
+            new DerValue(DerValue.tag_Sequence, out.toByteArray());
+        return result.toByteArray();
+    }
+
+    /**
+     * Encode the digest without the NULL params, return the to-be-signed data.
+     * This is only used by SunRsaSign.
+     */
+    static byte[] encodeSignatureWithoutNULL(ObjectIdentifier oid, byte[] digest) {
+        DerOutputStream out = new DerOutputStream();
+        out.write(DerValue.tag_Sequence, new DerOutputStream().putOID(oid));
+        out.putOctetString(digest);
+        DerValue result =
+                new DerValue(DerValue.tag_Sequence, out.toByteArray());
+        return result.toByteArray();
     }
 }

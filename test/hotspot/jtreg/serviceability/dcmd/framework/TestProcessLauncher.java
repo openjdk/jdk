@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ public class TestProcessLauncher {
     }
 
     public TestProcessLauncher(String className) {
-        this(className, new ArgumentHandler(new String[0]));
+        this(className, new ArgumentHandler(new String[] {"-transport.address=dynamic"}));
     }
 
     public Process launch() {
@@ -61,12 +61,12 @@ public class TestProcessLauncher {
         Binder binder = new Binder(argHandler, log);
         binder.prepareForPipeConnection(argHandler);
 
+        pipe = IOPipe.startDebuggerPipe(binder);
+
         String cmd = prepareLaunch(java, argHandler.getPipePort());
 
         Debugee debuggee = binder.startLocalDebugee(cmd);
         debuggee.redirectOutput(log);
-
-        pipe = new IOPipe(debuggee);
 
         String line = pipe.readln();
         if (!"ready".equals(line)) {
@@ -77,7 +77,11 @@ public class TestProcessLauncher {
 
     public void quit() {
         if (pipe != null) {
-            pipe.println("quit");
+            if (pipe.isConnected()) {
+                pipe.println("quit");
+            } else {
+                System.out.println("WARNING: IOPipe is not connected");
+            }
         }
     }
 

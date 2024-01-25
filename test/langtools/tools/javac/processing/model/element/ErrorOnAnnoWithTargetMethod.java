@@ -33,8 +33,7 @@
  *      jdk.compiler/com.sun.tools.javac.util
  * @build toolbox.ToolBox toolbox.JavacTask
  * @build JavacTestingAbstractProcessor
- * @compile --enable-preview -source ${jdk.version} ErrorOnAnnoWithTargetMethod.java
- * @run main/othervm --enable-preview ErrorOnAnnoWithTargetMethod
+ * @run main/othervm ErrorOnAnnoWithTargetMethod
  */
 
 import java.io.*;
@@ -157,10 +156,7 @@ public class ErrorOnAnnoWithTargetMethod extends TestRunner {
             String source = SOURCE.replaceFirst("#ANNO", anno);
             tb.writeJavaFiles(r, source);
             new JavacTask(tb, Mode.API)
-                    .options("-nowarn",
-                            "-processor", Processor.class.getName(),
-                            "--enable-preview",
-                            "-source", Integer.toString(Runtime.version().feature()))
+                    .options("-nowarn", "-processor", Processor.class.getName())
                     .files(findJavaFiles(src))
                     .outdir(classes)
                     .run()

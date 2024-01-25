@@ -51,7 +51,7 @@ import org.xml.sax.helpers.DefaultHandler;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true org.xml.sax.ptests.DefaultHandlerTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow org.xml.sax.ptests.DefaultHandlerTest
  * @run testng/othervm org.xml.sax.ptests.DefaultHandlerTest
  */
 @Listeners({jaxp.library.FilePolicy.class})

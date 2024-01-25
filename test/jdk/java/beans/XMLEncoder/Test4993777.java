@@ -25,6 +25,7 @@
  * @test
  * @bug 4993777
  * @summary Tests encoding of multi-dimensional arrays
+ * @run main/othervm -Djava.security.manager=allow Test4993777
  * @author Sergey Malenkov
  */
 

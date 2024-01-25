@@ -35,7 +35,10 @@ import sun.java2d.Disposer;
 import sun.java2d.DisposerRecord;
 
 import java.awt.geom.Point2D;
+import java.lang.foreign.MemorySegment;
 import java.lang.ref.SoftReference;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.WeakHashMap;
 
@@ -88,7 +91,7 @@ import java.util.WeakHashMap;
  * character.
  *
  * I'd expect that the majority of scripts use the default mapper for
- * a particular font.  Loading the hastable with 40 or so keys 30+ of
+ * a particular font.  Loading the hashtable with 40 or so keys 30+ of
  * which all map to the same object is unfortunate.  It might be worth
  * instead having a per-font list of 'scripts with non-default
  * engines', e.g. the factory has a hashtable mapping fonts to 'script
@@ -151,33 +154,8 @@ public final class SunLayoutEngine implements LayoutEngine, LayoutEngineFactory 
         this.key = key;
     }
 
-    static WeakHashMap<Font2D, Boolean> aatInfo = new WeakHashMap<>();
     private static final WeakHashMap<Font2D, FaceRef> facePtr =
             new WeakHashMap<>();
-
-    private static boolean isAAT(Font2D font) {
-       Boolean aatObj;
-       synchronized (aatInfo) {
-           aatObj = aatInfo.get(font);
-       }
-       if (aatObj != null) {
-          return aatObj.booleanValue();
-       }
-       boolean aat = false;
-       if (font instanceof TrueTypeFont) {
-           TrueTypeFont ttf = (TrueTypeFont)font;
-           aat =  ttf.getDirectoryEntry(TrueTypeFont.morxTag) != null ||
-                  ttf.getDirectoryEntry(TrueTypeFont.mortTag) != null;
-       } else if (font instanceof PhysicalFont) {
-           PhysicalFont pf = (PhysicalFont)font;
-           aat =  pf.getTableBytes(TrueTypeFont.morxTag) != null ||
-                  pf.getTableBytes(TrueTypeFont.mortTag) != null;
-       }
-       synchronized (aatInfo) {
-           aatInfo.put(font, Boolean.valueOf(aat));
-       }
-       return aat;
-    }
 
     private long getFacePtr(Font2D font2D) {
         FaceRef ref;
@@ -187,32 +165,50 @@ public final class SunLayoutEngine implements LayoutEngine, LayoutEngineFactory 
         return ref.getNativePtr();
     }
 
+    static boolean useFFM = true;
+    static {
+        @SuppressWarnings("removal")
+        String prop = AccessController.doPrivileged(
+            (PrivilegedAction<String>) () ->
+               System.getProperty("sun.font.layout.ffm", "true"));
+        useFFM = "true".equals(prop);
+
+    }
+
     public void layout(FontStrikeDesc desc, float[] mat, float ptSize, int gmask,
                        int baseIndex, TextRecord tr, int typo_flags,
                        Point2D.Float pt, GVData data) {
+
         Font2D font = key.font();
         FontStrike strike = font.getStrike(desc);
-        long pNativeFont = font.getPlatformNativeFontPtr(); // used on OSX
-        long pFace = getFacePtr(font);
-        if (pFace != 0) {
-            shape(font, strike, ptSize, mat, pNativeFont,
-                    pFace, isAAT(font),
+        if (useFFM) {
+            MemorySegment face = HBShaper.getFace(font);
+            if (face != null) {
+                HBShaper.shape(font, strike, ptSize, mat, face,
+                        tr.text, data, key.script(),
+                        tr.start, tr.limit, baseIndex, pt,
+                        typo_flags, gmask);
+            }
+        } else {
+            long pFace = getFacePtr(font);
+            if (pFace != 0) {
+                shape(font, strike, ptSize, mat, pFace,
                     tr.text, data, key.script(),
                     tr.start, tr.limit, baseIndex, pt,
                     typo_flags, gmask);
+            }
         }
     }
 
     /* Native method to invoke harfbuzz layout engine */
     private static native boolean
         shape(Font2D font, FontStrike strike, float ptSize, float[] mat,
-              long pNativeFont, long pFace, boolean aat,
+              long pFace,
               char[] chars, GVData data,
               int script, int offset, int limit,
               int baseIndex, Point2D.Float pt, int typo_flags, int slot);
 
     private static native long createFace(Font2D font,
-                                          boolean aat,
                                           long platformNativeFontPtr);
 
     private static native void disposeFace(long facePtr);
@@ -227,7 +223,7 @@ public final class SunLayoutEngine implements LayoutEngine, LayoutEngineFactory 
 
         private synchronized long getNativePtr() {
             if (facePtr == null) {
-                facePtr = createFace(font, isAAT(font),
+                facePtr = createFace(font,
                         font.getPlatformNativeFontPtr());
                 if (facePtr != 0) {
                     Disposer.addObjectRecord(font, this);

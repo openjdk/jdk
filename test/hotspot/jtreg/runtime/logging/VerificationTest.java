@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 8150083 8234656
  * @summary test enabling and disabling verification logging and verification log levels
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -62,17 +63,17 @@ public class VerificationTest {
     }
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:verification=info",
-                                                                  InternalClass.class.getName());
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:verification=info",
+                                                                             InternalClass.class.getName());
         analyzeOutputOn(pb, true);
 
-        pb = ProcessTools.createJavaProcessBuilder("-Xlog:verification=off",
-                                                   InternalClass.class.getName());
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:verification=off",
+                                                              InternalClass.class.getName());
         analyzeOutputOff(pb);
 
         // logging level 'debug' should output stackmaps and bytecode data.
-        pb = ProcessTools.createJavaProcessBuilder("-Xlog:verification=debug",
-                                                   InternalClass.class.getName());
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:verification=debug",
+                                                              InternalClass.class.getName());
         analyzeOutputOn(pb, false);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package java.io;
 
+import java.nio.CharBuffer;
 import java.util.Objects;
 
 /**
@@ -45,7 +46,7 @@ public class CharArrayReader extends Reader {
     protected int markedPos = 0;
 
     /**
-     *  The index of the end of this buffer.  There is not valid
+     *  The index of the end of this buffer.  There is no valid
      *  data at or beyond this index.
      */
     protected int count;
@@ -152,6 +153,23 @@ public class CharArrayReader extends Reader {
         }
     }
 
+    @Override
+    public int read(CharBuffer target) throws IOException {
+        synchronized (lock) {
+            ensureOpen();
+
+            if (pos >= count) {
+                return -1;
+            }
+
+            int avail = count - pos;
+            int len = Math.min(avail, target.remaining());
+            target.put(buf, pos, len);
+            pos += len;
+            return len;
+        }
+    }
+
     /**
      * Skips characters. If the stream is already at its end before this method
      * is invoked, then no characters are skipped and zero is returned.
@@ -178,7 +196,7 @@ public class CharArrayReader extends Reader {
             if (n < 0) {
                 return 0;
             }
-            pos += n;
+            pos += (int) n;
             return n;
         }
     }

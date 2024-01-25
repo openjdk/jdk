@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  *
  * @test PrintAsFlag
  * @summary verify that Flag::print_as_flag() works correctly. This is used by "jinfo -flag" and -XX:+PrintCommandLineFlags.
- * @run main/othervm -XX:+PrintCommandLineFlags -XX:-ShowMessageBoxOnError -XX:BiasedLockingStartupDelay=4000 -XX:ParallelGCThreads=4 -XX:MaxRAM=1G -XX:ErrorFile="file" PrintAsFlag
+ * @run main/othervm -XX:+PrintCommandLineFlags -XX:-ShowMessageBoxOnError -XX:ParallelGCThreads=4 -XX:MaxRAM=1G -XX:ErrorFile="file" PrintAsFlag
  */
 
 public class PrintAsFlag {

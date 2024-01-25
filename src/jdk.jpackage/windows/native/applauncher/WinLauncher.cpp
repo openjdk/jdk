@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 #include <io.h>
 #include <fcntl.h>
+#include <stdlib.h>
 #include <windows.h>
 
 #include "AppLauncher.h"
@@ -33,15 +34,16 @@
 #include "Dll.h"
 #include "WinApp.h"
 #include "Toolbox.h"
+#include "Executor.h"
 #include "FileUtils.h"
+#include "PackageFile.h"
 #include "UniqueHandle.h"
 #include "ErrorHandling.h"
 #include "WinSysInfo.h"
 #include "WinErrorHandling.h"
 
 
-// AllowSetForegroundWindow
-#pragma comment(lib, "user32")
+// AllowSetForegroundWindow - Requires linking with user32
 
 
 namespace {
@@ -132,26 +134,162 @@ tstring getJvmLibPath(const Jvm& jvm) {
 }
 
 
+void addCfgFileLookupDirForEnvVariable(
+        const PackageFile& pkgFile, AppLauncher& appLauncher,
+        const tstring& envVarName) {
+
+    tstring path;
+    JP_TRY;
+    path = SysInfo::getEnvVariable(envVarName);
+    JP_CATCH_ALL;
+
+    if (!path.empty()) {
+        appLauncher.addCfgFileLookupDir(FileUtils::mkpath() << path
+                << pkgFile.getPackageName());
+    }
+}
+
+
+class RunExecutorWithMsgLoop {
+public:
+    static DWORD apply(const Executor& exec) {
+        RunExecutorWithMsgLoop instance(exec);
+
+        UniqueHandle threadHandle = UniqueHandle(CreateThread(NULL, 0, worker,
+                                    static_cast<LPVOID>(&instance), 0, NULL));
+        if (threadHandle.get() == NULL) {
+            JP_THROW(SysError("CreateThread() failed", CreateThread));
+        }
+
+        MSG msg;
+        BOOL bRet;
+        while((bRet = GetMessage(&msg, instance.hwnd, 0, 0 )) != 0) {
+            if (bRet == -1) {
+                JP_THROW(SysError("GetMessage() failed", GetMessage));
+            } else {
+                TranslateMessage(&msg);
+                DispatchMessage(&msg);
+            }
+        }
+
+        // Wait for worker thread to terminate to guarantee it will not linger
+        // around after the thread running a message loop terminates.
+        const DWORD res = ::WaitForSingleObject(threadHandle.get(), INFINITE);
+        if (WAIT_FAILED ==  res) {
+            JP_THROW(SysError("WaitForSingleObject() failed",
+                                                        WaitForSingleObject));
+        }
+
+        LOG_TRACE(tstrings::any()
+                            << "Executor worker thread terminated. Exit code="
+                            << instance.exitCode);
+        return instance.exitCode;
+    }
+
+private:
+    RunExecutorWithMsgLoop(const Executor& v): exec(v) {
+        exitCode = 1;
+
+        // Message-only window.
+        hwnd = CreateWindowEx(0, _T("STATIC"), _T(""), 0, 0, 0, 0, 0,
+                              HWND_MESSAGE, NULL, GetModuleHandle(NULL), NULL);
+        if (!hwnd) {
+            JP_THROW(SysError("CreateWindowEx() failed", CreateWindowEx));
+        }
+    }
+
+    static DWORD WINAPI worker(LPVOID param) {
+        static_cast<RunExecutorWithMsgLoop*>(param)->run();
+        return 0;
+    }
+
+    void run() {
+        JP_TRY;
+        exitCode = static_cast<DWORD>(exec.execAndWaitForExit());
+        JP_CATCH_ALL;
+
+        JP_TRY;
+        if (!PostMessage(hwnd, WM_QUIT, 0, 0)) {
+            JP_THROW(SysError("PostMessage(WM_QUIT) failed", PostMessage));
+        }
+        return;
+        JP_CATCH_ALL;
+
+        // All went wrong, PostMessage() failed. Just terminate with error code.
+        exit(1);
+    }
+
+private:
+    const Executor& exec;
+    DWORD exitCode;
+    HWND hwnd;
+};
+
+
 void launchApp() {
     // [RT-31061] otherwise UI can be left in back of other windows.
     ::AllowSetForegroundWindow(ASFW_ANY);
 
     const tstring launcherPath = SysInfo::getProcessModulePath();
     const tstring appImageRoot = FileUtils::dirname(launcherPath);
-    const tstring runtimeBinPath = FileUtils::mkpath()
-            << appImageRoot << _T("runtime") << _T("bin");
+    const tstring appDirPath = FileUtils::mkpath() << appImageRoot << _T("app");
 
-    std::unique_ptr<Jvm> jvm(AppLauncher()
-        .setImageRoot(appImageRoot)
+    const PackageFile pkgFile = PackageFile::loadFromAppDir(appDirPath);
+
+    AppLauncher appLauncher = AppLauncher().setImageRoot(appImageRoot)
         .addJvmLibName(_T("bin\\jli.dll"))
-        .setAppDir(FileUtils::mkpath() << appImageRoot << _T("app"))
+        .setAppDir(appDirPath)
+        .setLibEnvVariableName(_T("PATH"))
         .setDefaultRuntimePath(FileUtils::mkpath() << appImageRoot
-                << _T("runtime"))
-        .createJvmLauncher());
+            << _T("runtime"));
 
-    // zip.dll may be loaded by java without full path
+    if (!pkgFile.getPackageName().empty()) {
+        addCfgFileLookupDirForEnvVariable(pkgFile, appLauncher, _T("LOCALAPPDATA"));
+        addCfgFileLookupDirForEnvVariable(pkgFile, appLauncher, _T("APPDATA"));
+    }
+
+    const bool restart = !appLauncher.libEnvVariableContainsAppDir();
+
+    std::unique_ptr<Jvm> jvm(appLauncher.createJvmLauncher());
+
+    if (restart) {
+        jvm->setEnvVariables();
+
+        jvm = std::unique_ptr<Jvm>();
+
+        UniqueHandle jobHandle(CreateJobObject(NULL, NULL));
+        if (jobHandle.get() == NULL) {
+            JP_THROW(SysError(tstrings::any() << "CreateJobObject() failed",
+                                                            CreateJobObject));
+        }
+        JOBOBJECT_EXTENDED_LIMIT_INFORMATION jobInfo = { };
+        jobInfo.BasicLimitInformation.LimitFlags =
+                                          JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+        if (!SetInformationJobObject(jobHandle.get(),
+                JobObjectExtendedLimitInformation, &jobInfo, sizeof(jobInfo))) {
+            JP_THROW(SysError(tstrings::any() <<
+                                            "SetInformationJobObject() failed",
+                                                    SetInformationJobObject));
+        }
+
+        Executor exec(launcherPath);
+        exec.visible(true).withJobObject(jobHandle.get()).suspended(true).inherit(true);
+        const auto args = SysInfo::getCommandArgs();
+        std::for_each(args.begin(), args.end(), [&exec] (const tstring& arg) {
+            exec.arg(arg);
+        });
+
+        DWORD exitCode = RunExecutorWithMsgLoop::apply(exec);
+
+        exit(exitCode);
+        return;
+    }
+
+    // zip.dll (and others) may be loaded by java without full path
     // make sure it will look in runtime/bin
+    const tstring runtimeBinPath = FileUtils::dirname(jvm->getPath());
     SetDllDirectory(runtimeBinPath.c_str());
+    LOG_TRACE(tstrings::any() << "SetDllDirectory to: " << runtimeBinPath);
 
     const DllWrapper jliDll(jvm->getPath());
     std::unique_ptr<DllWrapper> splashDll;

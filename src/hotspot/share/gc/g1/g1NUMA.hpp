@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,10 +39,10 @@ class G1NUMA: public CHeapObj<mtGC> {
   // For invalid node id, return UnknownNodeIndex.
   uint* _node_id_to_index_map;
   // Length of _num_active_node_ids_id to index map.
-  int _len_node_id_to_index_map;
+  uint _len_node_id_to_index_map;
 
   // Current active node ids.
-  int* _node_ids;
+  uint* _node_ids;
   // Total number of node ids.
   uint _num_active_node_ids;
 
@@ -59,10 +59,7 @@ class G1NUMA: public CHeapObj<mtGC> {
 
   // Returns node index of the given node id.
   // Precondition: node_id is an active node id.
-  inline uint index_of_node_id(int node_id) const;
-
-  // Creates node id and node index mapping table of _node_id_to_index_map.
-  void init_node_id_to_index_map(const int* node_ids, uint num_node_ids);
+  inline uint index_of_node_id(uint node_id) const;
 
   static G1NUMA* _inst;
 
@@ -89,10 +86,10 @@ public:
 
   bool is_enabled() const;
 
-  int numa_id(int index) const;
+  uint numa_id(uint index) const;
 
   // Returns memory node ids
-  const int* node_ids() const;
+  const uint* node_ids() const;
 
   // Returns node index of current calling thread.
   uint index_of_current_thread() const;

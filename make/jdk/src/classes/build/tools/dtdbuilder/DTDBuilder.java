@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,18 +30,9 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.FileNotFoundException;
-import java.io.BufferedInputStream;
-import java.io.OutputStream;
 import java.util.Hashtable;
 import java.util.Vector;
-import java.util.BitSet;
-import java.util.StringTokenizer;
 import java.util.Enumeration;
-import java.util.Properties;
-import java.util.zip.DeflaterOutputStream;
-import java.util.zip.Deflater;
-import java.net.URL;
 
 /**
  * The representation of an SGML DTD. This is produced by the DTDParser.
@@ -56,9 +47,9 @@ import java.net.URL;
  * @see DTDParser
  * @see Parser
  * @author Arthur van Hoff
+ * @author Guy Abossolo Foh
  */
-public
-class DTDBuilder extends DTD {
+public class DTDBuilder extends DTD {
 
     static PublicMapping mapping = null;
 
@@ -130,7 +121,7 @@ class DTDBuilder extends DTD {
     }
 
     //
-    // The the id of a name from the list of names
+    // The id of a name from the list of names
     //
     private short getNameId(String name)  {
         Integer o = namesHash.get(name);
@@ -282,7 +273,7 @@ class DTDBuilder extends DTD {
 
     public static void main(String argv[]) {
 
-        String dtd_home = System.getProperty("dtd_home") + File.separator;
+        String dtd_home = System.getProperty("dtd_home");
         if (dtd_home == null) {
             System.err.println("Must set property 'dtd_home'");
             return;
@@ -291,12 +282,12 @@ class DTDBuilder extends DTD {
         DTDBuilder dtd = null;
         try {
             dtd = new DTDBuilder(argv[0]);
-            mapping = new PublicMapping(dtd_home, "public.map");
+            mapping = new PublicMapping(dtd_home + File.separator, "public.map");
             String path = mapping.get(argv[0]);
             new DTDParser().parse(new FileInputStream(path), dtd);
 
         } catch (IOException e) {
-            System.err.println("Could not open DTD file "+argv[0]);
+            System.err.println("Could not open DTD file " + argv[0]);
             e.printStackTrace(System.err);
             System.exit(1);
         }

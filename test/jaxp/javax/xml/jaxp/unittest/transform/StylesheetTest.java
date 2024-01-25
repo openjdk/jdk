@@ -38,7 +38,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8058152
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true transform.StylesheetTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.StylesheetTest
  * @run testng/othervm transform.StylesheetTest
  * @summary this test contains test cases for verifying stylesheet
  */

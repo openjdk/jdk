@@ -371,7 +371,7 @@ public class PlatformLogger {
     @Deprecated
     public void setLevel(Level newLevel) {
         final ConfigurableBridge.LoggerConfiguration spi =
-                PlatformLogger.ConfigurableBridge.getLoggerConfiguration(loggerProxy);;
+                PlatformLogger.ConfigurableBridge.getLoggerConfiguration(loggerProxy);
         if (spi != null) {
             spi.setPlatformLevel(newLevel);
         }

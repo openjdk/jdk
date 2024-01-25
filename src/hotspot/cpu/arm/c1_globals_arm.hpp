@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
 
 #ifndef COMPILER2 // avoid duplicated definitions, favoring C2 version
 define_pd_global(bool, BackgroundCompilation,        true );
-define_pd_global(bool, InlineIntrinsics,             false); // TODO: ARM
+define_pd_global(bool, InlineIntrinsics,             true );
 define_pd_global(bool, PreferInterpreterNativeStubs, false);
 define_pd_global(bool, ProfileTraps,                 false);
 define_pd_global(bool, UseOnStackReplacement,        true );
@@ -61,6 +61,5 @@ define_pd_global(bool, UseTypeProfile,               false);
 
 define_pd_global(bool, OptimizeSinglePrecision,      true);
 define_pd_global(bool, CSEArrayLength,               true);
-define_pd_global(bool, TwoOperandLIRForm,            false);
 
 #endif // CPU_ARM_C1_GLOBALS_ARM_HPP

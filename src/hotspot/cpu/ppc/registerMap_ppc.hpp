@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2013 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,17 +26,17 @@
 #ifndef CPU_PPC_REGISTERMAP_PPC_HPP
 #define CPU_PPC_REGISTERMAP_PPC_HPP
 
-// machine-dependent implemention for register maps
+// machine-dependent implementation for register maps
   friend class frame;
 
  private:
   // This is the hook for finding a register in an "well-known" location,
   // such as a register block of a predetermined format.
-  // Since there is none, we just return NULL.
-  address pd_location(VMReg reg) const { return NULL; }
+  // Since there is none, we just return null.
+  address pd_location(VMReg reg) const { return nullptr; }
 
   address pd_location(VMReg base_reg, int slot_idx) const {
-    return location(base_reg->next(slot_idx));
+    return location(base_reg->next(slot_idx), nullptr);
   }
 
   // no PD state to clear or copy:

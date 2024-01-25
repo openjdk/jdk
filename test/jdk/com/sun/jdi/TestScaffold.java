@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ import com.sun.jdi.request.*;
 import com.sun.jdi.event.*;
 import java.util.*;
 import java.io.*;
+
 
 /**
  * Framework used by all JDI regression tests
@@ -358,10 +359,46 @@ abstract public class TestScaffold extends TargetAdapter {
     }
 
     protected void startUp(String targetName) {
-        List argList = new ArrayList(Arrays.asList(args));
-        argList.add(targetName);
+        /*
+         * args[] contains all VM arguments followed by the app arguments.
+         * We need to insert targetName between the two types of arguments.
+         */
+        boolean expectSecondArg = false;
+        boolean foundFirstAppArg = false;
+        List<String> argList = new ArrayList();
+        for (int i = 0; i < args.length; i++) {
+            String arg = args[i].trim();
+            if (foundFirstAppArg) {
+                argList.add(arg);
+                continue;
+            }
+            if (expectSecondArg) {
+                expectSecondArg = false;
+                argList.add(arg);
+                continue;
+            }
+            if (doubleWordArgs.contains(arg)) {
+                expectSecondArg = true;
+                argList.add(arg);
+                continue;
+            }
+            if (arg.startsWith("-")) {
+                argList.add(arg);
+                continue;
+            }
+            // We reached the first app argument.
+            argList.add(targetName);
+            argList.add(arg);
+            foundFirstAppArg = true;
+        }
+
+        if (!foundFirstAppArg) {
+            // Add the target since we didn't do that in the above loop.
+            argList.add(targetName);
+        }
+
         println("run args: " + argList);
-        connect((String[]) argList.toArray(args));
+        connect(argList.toArray(args));
         waitForVMStart();
     }
 
@@ -451,38 +488,74 @@ abstract public class TestScaffold extends TargetAdapter {
 
     protected void failure(String str) {
         println(str);
+        StackTraceElement[] trace = Thread.currentThread().getStackTrace();
+        for (StackTraceElement traceElement : trace) {
+            System.err.println("\tat " + traceElement);
+        }
         testFailed = true;
     }
 
+    final List<String> doubleWordArgs = List.of(
+            "-connect", "-trace",   // special TestScaffold args
+            "-cp", "-classpath", "--add-opens", "--class-path",
+            "--upgrade-module-path", "--add-modules", "-d", "--add-exports",
+            "--patch-module", "--module-path");
+
     private ArgInfo parseArgs(String args[]) {
         ArgInfo argInfo = new ArgInfo();
+        // Parse arguments, like java/j* tools command-line arguments.
+        // The first argument not-starting with '-' is treated as a classname.
+        // The other arguments are split to targetVMArgs targetAppCommandLine correspondingly.
+        // The example of args for line '@run driver Frames2Test -Xss4M' is  '-Xss4M' 'Frames2Targ'.
+        // The result without any wrapper enabled:
+        //     argInfo.targetAppCommandLine : Frames2Targ
+        //     argInfo.targetVMArgs : -Xss4M
+        // The result with wrapper enabled:
+        //     argInfo.targetAppCommandLine : DebuggeeWrapper Frames2Targ
+        //     argInfo.targetVMArgs : -Xss4M -Dtest.thread.factory=Virtual
+        boolean classNameParsed = false;
         for (int i = 0; i < args.length; i++) {
-            if (args[i].equals("-connect")) {
+            String arg = args[i].trim();
+            if (classNameParsed) {
+                // once classname is read, treat any other arguments as app arguments
+                argInfo.targetAppCommandLine += (arg + ' ');
+                continue;
+            }
+            if (arg.equals("-connect")) {
                 i++;
                 argInfo.connectorSpec = args[i];
-            } else if (args[i].equals("-trace")) {
+            } else if (arg.equals("-trace")) {
                 i++;
                 argInfo.traceFlags = Integer.decode(args[i]).intValue();
-            } else if (args[i].equals("-redefstart")) {
+            } else if (arg.equals("-redefstart")) {
                 redefineAtStart = true;
-            } else if (args[i].equals("-redefevent")) {
+            } else if (arg.equals("-redefevent")) {
                 redefineAtEvents = true;
-            } else if (args[i].equals("-redefasync")) {
+            } else if (arg.equals("-redefasync")) {
                 redefineAsynchronously = true;
-            } else if (args[i].startsWith("-J")) {
-                argInfo.targetVMArgs += (args[i].substring(2) + ' ');
-
-                /*
-                 * classpath can span two arguments so we need to handle
-                 * it specially.
-                 */
-                if (args[i].equals("-J-classpath")) {
+            } else if (arg.startsWith("-J")) {
+                throw new RuntimeException("-J-option format is not supported. Incorrect arg: " + arg);
+            } else if (arg.startsWith("-")) {
+                argInfo.targetVMArgs += (arg + ' ');
+                if (doubleWordArgs.contains(arg)) {
                     i++;
                     argInfo.targetVMArgs += (args[i] + ' ');
                 }
             } else {
-                argInfo.targetAppCommandLine += (args[i] + ' ');
+                classNameParsed = true;
+                argInfo.targetAppCommandLine += (arg + ' ');
             }
+        }
+
+        // Need to change args to run wrapper using command like 'DebuggeeWrapper <app-name>'
+        // and set property 'test.thread.factory' so test could use DebuggeeWrapper.isVirtual() method
+        String testThreadFactoryName = DebuggeeWrapper.getTestThreadFactoryName();
+        if (testThreadFactoryName != null && !argInfo.targetAppCommandLine.isEmpty()) {
+            argInfo.targetVMArgs += "-D" + DebuggeeWrapper.PROPERTY_NAME + "=" + testThreadFactoryName;
+            argInfo.targetAppCommandLine = DebuggeeWrapper.class.getName() + ' ' + argInfo.targetAppCommandLine;
+        } else if ("true".equals(System.getProperty("test.enable.preview"))) {
+            // the test specified @enablePreview.
+            argInfo.targetVMArgs += "--enable-preview ";
         }
         return argInfo;
     }
@@ -513,7 +586,7 @@ abstract public class TestScaffold extends TargetAdapter {
     public void connect(String args[]) {
         ArgInfo argInfo = parseArgs(args);
 
-        argInfo.targetVMArgs += VMConnection.getDebuggeeVMOptions();
+        argInfo.targetVMArgs = VMConnection.getDebuggeeVMOptions() + " " + argInfo.targetVMArgs;
         connection = new VMConnection(argInfo.connectorSpec,
                                       argInfo.traceFlags);
 
@@ -535,16 +608,15 @@ abstract public class TestScaffold extends TargetAdapter {
                         Location loc = ((Locatable)event).location();
                         ReferenceType rt = loc.declaringType();
                         String name = rt.name();
-                        if (name.startsWith("java.") &&
-                                       !name.startsWith("sun.") &&
-                                       !name.startsWith("com.")) {
+                        if (name.startsWith("java.")
+                            || name.startsWith("sun.")
+                            || name.startsWith("com.")
+                            || name.startsWith("jdk.")) {
                             if (mainStartClass != null) {
                                 redefine(mainStartClass);
                             }
                         } else {
-                            if (!name.startsWith("jdk.")) {
-                                redefine(rt);
-                            }
+                            redefine(rt);
                         }
                     }
                 }
@@ -687,6 +759,13 @@ abstract public class TestScaffold extends TargetAdapter {
         return vmStartThread;
     }
 
+    /*
+     * Tests that expect an exitValue other than 0 or 1 will need to override this method.
+     */
+    protected boolean allowedExitValue(int exitValue) {
+        return exitValue == 0;
+    }
+
     public synchronized void waitForVMDisconnect() {
         traceln("TS: waitForVMDisconnect");
         while (!vmDisconnected) {
@@ -695,6 +774,19 @@ abstract public class TestScaffold extends TargetAdapter {
             } catch (InterruptedException e) {
             }
         }
+
+        // Make sure debuggee exits with no errors. Otherwise failures might go unnoticed.
+        Process p = vm.process();
+        try {
+            p.waitFor();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        int exitValue = p.exitValue();
+        if (!allowedExitValue(exitValue)) {
+            throw new RuntimeException("Invalid debuggee exitValue: " + exitValue);
+        }
+
         traceln("TS: waitForVMDisconnect: done");
     }
 
@@ -837,6 +929,14 @@ abstract public class TestScaffold extends TargetAdapter {
         return (Location)locs.get(0);
     }
 
+    public Location findMethodLocation(ReferenceType rt, String methodName,
+                                       String methodSignature, int methodLineNumber)
+        throws AbsentInformationException {
+        Method m = findMethod(rt, methodName, methodSignature);
+        int lineNumber = m.location().lineNumber() + methodLineNumber - 1;
+        return findLocation(rt, lineNumber);
+    }
+
     public BreakpointEvent resumeTo(String clsName, String methodName,
                                          String methodSignature) {
         return resumeTo(clsName, methodName, methodSignature, false /* suspendThread */);
@@ -941,4 +1041,5 @@ abstract public class TestScaffold extends TargetAdapter {
         vmDied = true;
         vmDisconnected = true;
     }
+
 }

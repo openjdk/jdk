@@ -37,7 +37,7 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true parsers.FactoryFindTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow parsers.FactoryFindTest
  * @run testng/othervm parsers.FactoryFindTest
  * @summary Test Classloader for SAXParserFactory.
  */

@@ -83,6 +83,7 @@ public abstract class Canonicalizer20010315 extends CanonicalizerBase {
      * @param writer OutputStream to write the canonicalization result
      * @throws CanonicalizationException always
      */
+    @Override
     public void engineCanonicalizeXPathNodeSet(Set<Node> xpathNodeSet, String inclusiveNamespaces, OutputStream writer)
         throws CanonicalizationException {
 
@@ -98,6 +99,7 @@ public abstract class Canonicalizer20010315 extends CanonicalizerBase {
      * @param writer OutputStream to write the canonicalization result
      * @throws CanonicalizationException
      */
+    @Override
     public void engineCanonicalizeSubTree(Node rootNode, String inclusiveNamespaces, OutputStream writer)
         throws CanonicalizationException {
 
@@ -113,6 +115,7 @@ public abstract class Canonicalizer20010315 extends CanonicalizerBase {
      * @param writer OutputStream to write the canonicalization result
      * @throws CanonicalizationException
      */
+    @Override
     public void engineCanonicalizeSubTree(
             Node rootNode, String inclusiveNamespaces, boolean propagateDefaultNamespace, OutputStream writer)
             throws CanonicalizationException {
@@ -125,7 +128,7 @@ public abstract class Canonicalizer20010315 extends CanonicalizerBase {
      * Output the Attr[]s for the given element.
      * <br>
      * The code of this method is a copy of
-     * {@link #outputAttributes(Element, NameSpaceSymbTable, Map)},
+     * {@link #outputAttributes(Element, NameSpaceSymbTable, Map, OutputStream)},
      * whereas it takes into account that subtree-c14n is -- well -- subtree-based.
      * So if the element in question isRoot of c14n, it's parent is not in the
      * node set, as well as all other ancestors.
@@ -297,6 +300,7 @@ public abstract class Canonicalizer20010315 extends CanonicalizerBase {
         }
     }
 
+    @Override
     protected void circumventBugIfNeeded(XMLSignatureInput input)
         throws XMLParserException, IOException {
         if (!input.isNeedsToBeExpanded()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,15 @@ import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.Robot;
+import java.awt.Toolkit;
 import java.awt.event.InputEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.File;
+import java.io.IOException;
+import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -37,7 +42,6 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
-import test.java.awt.regtesthelpers.Util;
 
 /**
  * AWT/Swing overlapping test for viewport
@@ -65,6 +69,7 @@ public class ViewportOverlapping extends OverlappingTestBase {
     private Point vLoc;
     private Point testLoc;
     private Point resizeLoc;
+    private static Robot robot;
 
     private JFrame f;
     private JPanel p;
@@ -81,7 +86,6 @@ public class ViewportOverlapping extends OverlappingTestBase {
 
         f = new JFrame();
         f.addMouseListener(new MouseAdapter() {
-
             @Override
             public void mouseClicked(MouseEvent e) {
                 frameClicked++;
@@ -99,60 +103,75 @@ public class ViewportOverlapping extends OverlappingTestBase {
     @Override
     protected boolean performTest() {
         try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-                public void run() {
-                    // prepare test data
-                    frameClicked = 0;
+            SwingUtilities.invokeAndWait(() -> {
+                // prepare test data
+                frameClicked = 0;
 
-                    b.requestFocus();
+                b.requestFocus();
 
-                    scrollPane.getHorizontalScrollBar().setUnitIncrement(40);
-                    scrollPane.getVerticalScrollBar().setUnitIncrement(40);
+                scrollPane.getHorizontalScrollBar().setUnitIncrement(40);
+                scrollPane.getVerticalScrollBar().setUnitIncrement(40);
 
-                    hLoc = scrollPane.getHorizontalScrollBar().getLocationOnScreen();
-                    hLoc.translate(scrollPane.getHorizontalScrollBar().getWidth() - 3, 3);
-                    vLoc = scrollPane.getVerticalScrollBar().getLocationOnScreen();
-                    vLoc.translate(3, scrollPane.getVerticalScrollBar().getHeight() - 3);
+                hLoc = scrollPane.getHorizontalScrollBar().getLocationOnScreen();
+                hLoc.translate(scrollPane.getHorizontalScrollBar().getWidth() - 3, 3);
+                vLoc = scrollPane.getVerticalScrollBar().getLocationOnScreen();
+                vLoc.translate(3, scrollPane.getVerticalScrollBar().getHeight() - 3);
 
-                    testLoc = p.getLocationOnScreen();
-                    testLoc.translate(-3, -3);
+                testLoc = p.getLocationOnScreen();
+                testLoc.translate(-3, -3);
 
-                    resizeLoc = f.getLocationOnScreen();
-                    resizeLoc.translate(f.getWidth() - 1, f.getHeight() - 1);
-                }
+                resizeLoc = f.getLocationOnScreen();
+                resizeLoc.translate(f.getWidth() - 1, f.getHeight() - 1);
             });
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException("Problem preparing test GUI.");
         }
-        // run robot
-        Robot robot = Util.createRobot();
-        robot.setAutoDelay(ROBOT_DELAY);
 
         robot.mouseMove(hLoc.x, hLoc.y);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
-        Util.waitForIdle(robot);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+        robot.waitForIdle();
+        captureScreen("Img_1");
 
         robot.mouseMove(vLoc.x, vLoc.y);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
-        Util.waitForIdle(robot);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+        robot.waitForIdle();
+        captureScreen("Img_2");
 
         clickAndBlink(robot, testLoc, false);
         robot.mouseMove(resizeLoc.x, resizeLoc.y);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseMove(resizeLoc.x + 5, resizeLoc.y + 5);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
-        Util.waitForIdle(robot);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+        robot.waitForIdle();
+        captureScreen("Img_3");
 
         clickAndBlink(robot, testLoc, false);
-        return frameClicked == 2;
+        captureScreen("Img_4");
+        return (frameClicked == 2);
     }
 
     // this strange plumbing stuff is required due to "Standard Test Machinery" in base class
-    public static void main(String args[]) throws InterruptedException {
+    public static void main(String[] args) throws Exception {
+        robot = new Robot();
+        robot.setAutoDelay(ROBOT_DELAY);
+
         instance = new ViewportOverlapping();
         OverlappingTestBase.doMain(args);
+        captureScreen("Img_5");
+    }
+
+    private static void captureScreen(String filename) {
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        try {
+            ImageIO.write(
+                    robot.createScreenCapture(new Rectangle(0, 0, screenSize.width, screenSize.height)),
+                    "png",
+                    new File(filename + ".png")
+            );
+        } catch (IOException ignored) {
+        }
     }
 }

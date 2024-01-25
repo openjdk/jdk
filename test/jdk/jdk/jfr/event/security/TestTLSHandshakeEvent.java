@@ -43,7 +43,7 @@ import jdk.test.lib.security.TestTLSHandshake;
 public class TestTLSHandshakeEvent {
     public static void main(String[] args) throws Exception {
         try (Recording recording = new Recording()) {
-            recording.enable(EventNames.TLSHandshake);
+            recording.enable(EventNames.TLSHandshake).withStackTrace();
             recording.start();
             TestTLSHandshake handshake = new TestTLSHandshake();
             handshake.run();
@@ -61,8 +61,12 @@ public class TestTLSHandshakeEvent {
             if (handshake.peerHost.equals(e.getString("peerHost"))) {
                 Events.assertField(e, "peerPort").equal(handshake.peerPort);
                 Events.assertField(e, "protocolVersion").equal(handshake.protocolVersion);
-                Events.assertField(e, "certificateId").equal(TestTLSHandshake.HASHCODE);
+                Events.assertField(e, "certificateId").equal(TestTLSHandshake.CERT_ID);
                 Events.assertField(e, "cipherSuite").equal(TestTLSHandshake.CIPHER_SUITE);
+                var method = e.getStackTrace().getFrames().get(0).getMethod();
+                if (method.getName().equals("recordEvent")) {
+                    throw new Exception("Didn't expected recordEvent as top frame");
+                }
                 return;
             }
         }

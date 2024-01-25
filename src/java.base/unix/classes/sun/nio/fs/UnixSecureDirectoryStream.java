@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ class UnixSecureDirectoryStream
         ds.writeLock().lock();
         try {
             if (ds.closeImpl()) {
-                UnixNativeDispatcher.close(dfd);
+                UnixNativeDispatcher.close(dfd, e -> e.asIOException(ds.directory()));
             }
         } finally {
             ds.writeLock().unlock();
@@ -94,6 +94,7 @@ class UnixSecureDirectoryStream
         boolean followLinks = Util.followLinks(options);
 
         // permission check using name resolved against original path of directory
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             child.checkRead();
@@ -116,13 +117,14 @@ class UnixSecureDirectoryStream
                 newdfd2 = dup(newdfd1);
                 ptr = fdopendir(newdfd1);
             } catch (UnixException x) {
+                IOException ioe = x.errno() == UnixConstants.ENOTDIR ?
+                    new NotDirectoryException(file.toString()) :
+                    x.asIOException(file);
                 if (newdfd1 != -1)
-                    UnixNativeDispatcher.close(newdfd1);
+                    UnixNativeDispatcher.close(newdfd1, e -> null);
                 if (newdfd2 != -1)
-                    UnixNativeDispatcher.close(newdfd2);
-                if (x.errno() == UnixConstants.ENOTDIR)
-                    throw new NotDirectoryException(file.toString());
-                x.rethrowAsIOException(file);
+                    UnixNativeDispatcher.close(newdfd1, e -> null);
+                throw ioe;
             }
             return new UnixSecureDirectoryStream(child, ptr, newdfd2, null);
         } finally {
@@ -172,6 +174,7 @@ class UnixSecureDirectoryStream
         UnixPath file = getName(obj);
 
         // permission check using name resolved against original path of directory
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             ds.directory().resolve(file).checkDelete();
@@ -237,6 +240,7 @@ class UnixSecureDirectoryStream
         UnixSecureDirectoryStream that = (UnixSecureDirectoryStream)dir;
 
         // permission check
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             this.ds.directory().resolve(from).checkWrite();
@@ -334,6 +338,7 @@ class UnixSecureDirectoryStream
         }
 
         private void checkWriteAccess() {
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 if (file == null) {
@@ -356,6 +361,7 @@ class UnixSecureDirectoryStream
                 if (!ds.isOpen())
                     throw new ClosedDirectoryStreamException();
 
+                @SuppressWarnings("removal")
                 SecurityManager sm = System.getSecurityManager();
                 if (sm != null) {
                     if (file == null) {
@@ -417,7 +423,7 @@ class UnixSecureDirectoryStream
                     }
                 } finally {
                     if (file != null)
-                        UnixNativeDispatcher.close(fd);
+                        UnixNativeDispatcher.close(fd, e-> null);
                 }
             } finally {
                 ds.readLock().unlock();
@@ -436,6 +442,7 @@ class UnixSecureDirectoryStream
         }
 
         private void checkWriteAndUserAccess() {
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 super.checkWriteAccess();
@@ -450,6 +457,7 @@ class UnixSecureDirectoryStream
 
         @Override
         public PosixFileAttributes readAttributes() throws IOException {
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 if (file == null)
@@ -497,7 +505,7 @@ class UnixSecureDirectoryStream
                     x.rethrowAsIOException(file);
                 } finally {
                     if (file != null && fd >= 0)
-                        UnixNativeDispatcher.close(fd);
+                        UnixNativeDispatcher.close(fd, e-> null);
                 }
             } finally {
                 ds.readLock().unlock();
@@ -520,7 +528,7 @@ class UnixSecureDirectoryStream
                     x.rethrowAsIOException(file);
                 } finally {
                     if (file != null && fd >= 0)
-                        UnixNativeDispatcher.close(fd);
+                        UnixNativeDispatcher.close(fd, e-> null);
                 }
             } finally {
                 ds.readLock().unlock();

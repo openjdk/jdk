@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,10 +179,10 @@ interface TestInterface1 {
     default <A> A bar(){return null;}
 
     @ExpectedString(
-   "public default strictfp double TestInterface1.quux()")
+   "public default double TestInterface1.quux()")
     @ExpectedGenericString(
-    "public default strictfp double TestInterface1.quux()")
-    strictfp default double quux(){return 1.0;}
+    "public default double TestInterface1.quux()")
+    default double quux(){return 1.0;}
 }
 
 @Retention(RetentionPolicy.RUNTIME)

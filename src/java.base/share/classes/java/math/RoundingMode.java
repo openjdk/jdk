@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,21 @@ package java.math;
  * contribution to the value of the number.  In other words,
  * considered as a numerical value, the discarded fraction could have
  * an absolute value greater than one.
+ *
+ * <p>More generally, a rounding policy defines a mapping from the
+ * real numbers to a subset of representable values. In the case of
+ * {@link BigDecimal}, the representable values are a function of the
+ * {@linkplain MathContext#getPrecision() precision} being used in the
+ * computation. Assuming the mathematical result is within the
+ * exponent range of {@code BigDecimal}, the mathematical result will
+ * be exactly representable in the result precision or will fall
+ * between two adjacent representable values. In the case of falling
+ * between two representable values, the rounding policy determines
+ * which of those two bracketing values is the result. For in-range
+ * real numbers, for a given set of representable values, a rounding
+ * policy maps a continuous segment of the real number line to a
+ * single representable value where the real number numerically equal
+ * to a representable value is mapped to that value.
  *
  * <p>Each rounding mode description includes a table listing how
  * different two-digit decimal values would round to a one digit
@@ -90,12 +105,16 @@ package java.math;
  * @apiNote
  * Five of the rounding modes declared in this class correspond to
  * rounding-direction attributes defined in the <cite>IEEE Standard
- * for Floating-Point Arithmetic</cite>, IEEE 754-2019. Where present,
+ * for Floating-Point Arithmetic</cite>. Where present,
  * this correspondence will be noted in the documentation of the
  * particular constant.
  *
  * @see     BigDecimal
  * @see     MathContext
+ * @see <a href="https://standards.ieee.org/ieee/754/6210/">
+ *      <cite>IEEE Standard for Floating-Point Arithmetic</cite></a>
+ * @jls 15.4 Floating-point Expressions
+ *
  * @author  Josh Bloch
  * @author  Mike Cowlishaw
  * @author  Joseph D. Darcy
@@ -137,7 +156,13 @@ public enum RoundingMode {
          * Rounding mode to round towards zero.  Never increments the digit
          * prior to a discarded fraction (i.e., truncates).  Note that this
          * rounding mode never increases the magnitude of the calculated value.
-         * This mode corresponds to the IEEE 754-2019 rounding-direction
+         *
+         * @apiNote
+         * This rounding mode is analogous to the rounding policy used
+         * for the {@code float} and {@code double} operators
+         * remainder and conversion to an integer value (JLS {@jls
+         * 15.4}).
+         * This mode corresponds to the IEEE 754 rounding-direction
          * attribute roundTowardZero.
          *
          *<p>Example:
@@ -168,7 +193,7 @@ public enum RoundingMode {
          * result is positive, behaves as for {@code RoundingMode.UP};
          * if negative, behaves as for {@code RoundingMode.DOWN}.  Note
          * that this rounding mode never decreases the calculated value.
-         * This mode corresponds to the IEEE 754-2019 rounding-direction
+         * This mode corresponds to the IEEE 754 rounding-direction
          * attribute roundTowardPositive.
          *
          *<p>Example:
@@ -199,7 +224,7 @@ public enum RoundingMode {
          * result is positive, behave as for {@code RoundingMode.DOWN};
          * if negative, behave as for {@code RoundingMode.UP}.  Note that
          * this rounding mode never increases the calculated value.
-         * This mode corresponds to the IEEE 754-2019 rounding-direction
+         * This mode corresponds to the IEEE 754 rounding-direction
          * attribute roundTowardNegative.
          *
          *<p>Example:
@@ -232,7 +257,7 @@ public enum RoundingMode {
          * fraction is &ge; 0.5; otherwise, behaves as for
          * {@code RoundingMode.DOWN}.  Note that this is the rounding
          * mode commonly taught at school.
-         * This mode corresponds to the IEEE 754-2019 rounding-direction
+         * This mode corresponds to the IEEE 754 rounding-direction
          * attribute roundTiesToAway.
          *
          *<p>Example:
@@ -294,14 +319,16 @@ public enum RoundingMode {
          * towards the even neighbor.  Behaves as for
          * {@code RoundingMode.HALF_UP} if the digit to the left of the
          * discarded fraction is odd; behaves as for
-         * {@code RoundingMode.HALF_DOWN} if it's even.  Note that this
+         * {@code RoundingMode.HALF_DOWN} if it's even.
+         * @apiNote
+         * This
          * is the rounding mode that statistically minimizes cumulative
          * error when applied repeatedly over a sequence of calculations.
          * It is sometimes known as {@literal "Banker's rounding,"} and is
          * chiefly used in the USA.  This rounding mode is analogous to
-         * the rounding policy used for {@code float} and {@code double}
-         * arithmetic in Java.
-         * This mode corresponds to the IEEE 754-2019 rounding-direction
+         * the rounding policy used for most {@code float} and {@code double}
+         * arithmetic operators in Java (JLS {@jls 15.4}).
+         * This mode corresponds to the IEEE 754 rounding-direction
          * attribute roundTiesToEven.
          *
          *<p>Example:
@@ -377,34 +404,16 @@ public enum RoundingMode {
      * @throws IllegalArgumentException integer is out of range
      */
     public static RoundingMode valueOf(int rm) {
-        switch(rm) {
-
-        case BigDecimal.ROUND_UP:
-            return UP;
-
-        case BigDecimal.ROUND_DOWN:
-            return DOWN;
-
-        case BigDecimal.ROUND_CEILING:
-            return CEILING;
-
-        case BigDecimal.ROUND_FLOOR:
-            return FLOOR;
-
-        case BigDecimal.ROUND_HALF_UP:
-            return HALF_UP;
-
-        case BigDecimal.ROUND_HALF_DOWN:
-            return HALF_DOWN;
-
-        case BigDecimal.ROUND_HALF_EVEN:
-            return HALF_EVEN;
-
-        case BigDecimal.ROUND_UNNECESSARY:
-            return UNNECESSARY;
-
-        default:
-            throw new IllegalArgumentException("argument out of range");
-        }
+        return switch (rm) {
+            case BigDecimal.ROUND_UP          -> UP;
+            case BigDecimal.ROUND_DOWN        -> DOWN;
+            case BigDecimal.ROUND_CEILING     -> CEILING;
+            case BigDecimal.ROUND_FLOOR       -> FLOOR;
+            case BigDecimal.ROUND_HALF_UP     -> HALF_UP;
+            case BigDecimal.ROUND_HALF_DOWN   -> HALF_DOWN;
+            case BigDecimal.ROUND_HALF_EVEN   -> HALF_EVEN;
+            case BigDecimal.ROUND_UNNECESSARY -> UNNECESSARY;
+            default -> throw new IllegalArgumentException("argument out of range");
+        };
     }
 }

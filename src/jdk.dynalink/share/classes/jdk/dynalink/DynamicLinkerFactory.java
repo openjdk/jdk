@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,8 +105,10 @@ import jdk.dynalink.linker.support.TypeUtilities;
  * {@link #setClassLoader(ClassLoader) automatically discovered} ones, and
  * finally the ones configured with {@link #setFallbackLinkers(List)}; this last
  * category usually includes {@link BeansLinker}.
+ * @since 9
  */
 public final class DynamicLinkerFactory {
+    @SuppressWarnings("removal")
     private static final AccessControlContext GET_CLASS_LOADER_CONTEXT =
             AccessControlContextFactory.createAccessControlContext("getClassLoader");
 
@@ -434,6 +436,7 @@ public final class DynamicLinkerFactory {
         final ClassLoader effectiveClassLoader = classLoaderExplicitlySet ? classLoader : getThreadContextClassLoader();
         final List<GuardingDynamicLinker> discovered = new LinkedList<>();
         try {
+            @SuppressWarnings("removal")
             final ServiceLoader<GuardingDynamicLinkerExporter> linkerLoader =
                     AccessController.doPrivileged((PrivilegedAction<ServiceLoader<GuardingDynamicLinkerExporter>>)()-> {
                         if (effectiveClassLoader == null) {
@@ -470,6 +473,7 @@ public final class DynamicLinkerFactory {
         return discovered;
     }
 
+    @SuppressWarnings("removal")
     private static ClassLoader getThreadContextClassLoader() {
         return AccessController.doPrivileged(
             (PrivilegedAction<ClassLoader>) () -> Thread.currentThread().getContextClassLoader(),

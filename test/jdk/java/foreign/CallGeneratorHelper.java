@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -22,59 +22,35 @@
  *
  */
 
-import jdk.incubator.foreign.GroupLayout;
-import jdk.incubator.foreign.MemoryAddress;
-import jdk.incubator.foreign.MemoryLayout;
-import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.ValueLayout;
+import java.lang.foreign.*;
 
-import java.lang.invoke.VarHandle;
+import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
+import jdk.internal.foreign.Utils;
 import org.testng.annotations.*;
 
-import static jdk.incubator.foreign.CLinker.*;
-import static org.testng.Assert.*;
-
 public class CallGeneratorHelper extends NativeTestHelper {
+
+    static final List<MemoryLayout> STACK_PREFIX_LAYOUTS = Stream.concat(
+            Stream.generate(() -> (MemoryLayout) C_LONG_LONG).limit(8),
+            Stream.generate(() -> (MemoryLayout)  C_DOUBLE).limit(8)
+        ).toList();
+
+    static SegmentAllocator THROWING_ALLOCATOR = (size, align) -> {
+        throw new UnsupportedOperationException();
+    };
+
+    static final int SAMPLE_FACTOR = Integer.parseInt((String)System.getProperties().getOrDefault("generator.sample.factor", "-1"));
 
     static final int MAX_FIELDS = 3;
     static final int MAX_PARAMS = 3;
     static final int CHUNK_SIZE = 600;
-
-    static int functions = 0;
-
-    public static void assertStructEquals(MemorySegment actual, MemorySegment expected, MemoryLayout layout) {
-        assertEquals(actual.byteSize(), expected.byteSize());
-        GroupLayout g = (GroupLayout) layout;
-        for (MemoryLayout field : g.memberLayouts()) {
-            if (field instanceof ValueLayout) {
-                VarHandle vh = g.varHandle(vhCarrier(field), MemoryLayout.PathElement.groupElement(field.name().orElseThrow()));
-                assertEquals(vh.get(actual), vh.get(expected));
-            }
-        }
-    }
-
-    private static Class<?> vhCarrier(MemoryLayout layout) {
-        if (layout instanceof ValueLayout) {
-            if (isIntegral(layout)) {
-                if (layout.bitSize() == 64) {
-                    return long.class;
-                }
-                return int.class;
-            } else if (layout.bitSize() == 32) {
-                return float.class;
-            }
-            return double.class;
-        } else {
-            throw new IllegalStateException("Unexpected layout: " + layout);
-        }
-    }
 
     enum Ret {
         VOID,
@@ -133,19 +109,10 @@ public class CallGeneratorHelper extends NativeTestHelper {
 
         MemoryLayout layout(List<StructFieldType> fields) {
             if (this == STRUCT) {
-                long offset = 0L;
-                List<MemoryLayout> layouts = new ArrayList<>();
-                for (StructFieldType field : fields) {
-                    MemoryLayout l = field.layout();
-                    long padding = offset % l.bitSize();
-                    if (padding != 0) {
-                        layouts.add(MemoryLayout.ofPaddingBits(padding));
-                        offset += padding;
-                    }
-                    layouts.add(l.withName("field" + offset));
-                    offset += l.bitSize();
-                }
-                return MemoryLayout.ofStruct(layouts.toArray(new MemoryLayout[0]));
+                return Utils.computePaddedStructLayout(
+                        IntStream.range(0, fields.size())
+                            .mapToObj(i -> fields.get(i).layout().withName("f" + i))
+                            .toArray(MemoryLayout[]::new));
             } else {
                 return layout;
             }
@@ -182,6 +149,7 @@ public class CallGeneratorHelper extends NativeTestHelper {
 
     @DataProvider(name = "functions")
     public static Object[][] functions() {
+        int functions = 0;
         List<Object[]> downcalls = new ArrayList<>();
         for (Ret r : Ret.values()) {
             for (int i = 0; i <= MAX_PARAMS; i++) {
@@ -193,16 +161,22 @@ public class CallGeneratorHelper extends NativeTestHelper {
                         for (int j = 1; j <= MAX_FIELDS; j++) {
                             for (List<StructFieldType> fields : StructFieldType.perms(j)) {
                                 String structCode = sigCode(fields);
+                                int count = functions;
                                 int fCode = functions++ / CHUNK_SIZE;
                                 String fName = String.format("f%d_%s_%s_%s", fCode, retCode, sigCode, structCode);
-                                downcalls.add(new Object[] { fName, r, ptypes, fields });
+                                if (SAMPLE_FACTOR == -1 || (count % SAMPLE_FACTOR) == 0) {
+                                    downcalls.add(new Object[]{count, fName, r, ptypes, fields});
+                                }
                             }
                         }
                     } else {
                         String structCode = sigCode(List.<StructFieldType>of());
+                        int count = functions;
                         int fCode = functions++ / CHUNK_SIZE;
                         String fName = String.format("f%d_%s_%s_%s", fCode, retCode, sigCode, structCode);
-                        downcalls.add(new Object[] { fName, r, ptypes, List.of() });
+                        if (SAMPLE_FACTOR == -1 || (count % SAMPLE_FACTOR) == 0) {
+                            downcalls.add(new Object[]{count, fName, r, ptypes, List.of()});
+                        }
                     }
                 }
             }
@@ -356,109 +330,11 @@ public class CallGeneratorHelper extends NativeTestHelper {
 
     //helper methods
 
-    @SuppressWarnings("unchecked")
-    static Object makeArg(MemoryLayout layout, List<Consumer<Object>> checks, boolean check, List<MemorySegment> segments) throws ReflectiveOperationException {
-        if (layout instanceof GroupLayout) {
-            MemorySegment segment = MemorySegment.allocateNative(layout);
-            initStruct(segment, (GroupLayout)layout, checks, check, segments);
-            segments.add(segment);
-            return segment;
-        } else if (isPointer(layout)) {
-            MemorySegment segment = MemorySegment.allocateNative(1);
-            segments.add(segment);
-            if (check) {
-                checks.add(o -> {
-                    try {
-                        assertEquals((MemoryAddress)o, segment.address());
-                    } catch (Throwable ex) {
-                        throw new IllegalStateException(ex);
-                    }
-                });
-            }
-            return segment.address();
-        } else if (layout instanceof ValueLayout) {
-            if (isIntegral(layout)) {
-                if (check) {
-                    checks.add(o -> assertEquals(o, 42));
-                }
-                return 42;
-            } else if (layout.bitSize() == 32) {
-                if (check) {
-                    checks.add(o -> assertEquals(o, 12f));
-                }
-                return 12f;
-            } else {
-                if (check) {
-                    checks.add(o -> assertEquals(o, 24d));
-                }
-                return 24d;
-            }
-        } else {
-            throw new IllegalStateException("Unexpected layout: " + layout);
+    MethodHandle downcallHandle(Linker abi, MemorySegment symbol, SegmentAllocator allocator, FunctionDescriptor descriptor) {
+        MethodHandle mh = abi.downcallHandle(symbol, descriptor);
+        if (descriptor.returnLayout().isPresent() && descriptor.returnLayout().get() instanceof GroupLayout) {
+            mh = mh.bindTo(allocator);
         }
-    }
-
-    static void initStruct(MemorySegment str, GroupLayout g, List<Consumer<Object>> checks, boolean check, List<MemorySegment> segments) throws ReflectiveOperationException {
-        for (MemoryLayout l : g.memberLayouts()) {
-            if (l.isPadding()) continue;
-            VarHandle accessor = g.varHandle(structFieldCarrier(l), MemoryLayout.PathElement.groupElement(l.name().get()));
-            List<Consumer<Object>> fieldsCheck = new ArrayList<>();
-            Object value = makeArg(l, fieldsCheck, check, segments);
-            if (isPointer(l)) {
-                value = ((MemoryAddress)value).toRawLongValue();
-            }
-            //set value
-            accessor.set(str, value);
-            //add check
-            if (check) {
-                assertTrue(fieldsCheck.size() == 1);
-                checks.add(o -> {
-                    MemorySegment actual = (MemorySegment)o;
-                    try {
-                        if (isPointer(l)) {
-                            fieldsCheck.get(0).accept(MemoryAddress.ofLong((long)accessor.get(actual)));
-                        } else {
-                            fieldsCheck.get(0).accept(accessor.get(actual));
-                        }
-                    } catch (Throwable ex) {
-                        throw new IllegalStateException(ex);
-                    }
-                });
-            }
-        }
-    }
-
-    static Class<?> structFieldCarrier(MemoryLayout layout) {
-        if (isPointer(layout)) {
-            return long.class;
-        } else if (layout instanceof ValueLayout) {
-            if (isIntegral(layout)) {
-                return int.class;
-            } else if (layout.bitSize() == 32) {
-                return float.class;
-            } else {
-                return double.class;
-            }
-        } else {
-            throw new IllegalStateException("Unexpected layout: " + layout);
-        }
-    }
-
-    static Class<?> paramCarrier(MemoryLayout layout) {
-        if (layout instanceof GroupLayout) {
-            return MemorySegment.class;
-        } if (isPointer(layout)) {
-            return MemoryAddress.class;
-        } else if (layout instanceof ValueLayout) {
-            if (isIntegral(layout)) {
-                return int.class;
-            } else if (layout.bitSize() == 32) {
-                return float.class;
-            } else {
-                return double.class;
-            }
-        } else {
-            throw new IllegalStateException("Unexpected layout: " + layout);
-        }
+        return mh;
     }
 }

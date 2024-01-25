@@ -198,7 +198,7 @@ alias sun.cls.unloadedBytes                       // 1.5.0 b39
 
 // sun.gc
 alias sun.gc.cause                                // 1.5.0 b39
-        hotspot.gc.cause                          // 1.4.2_02 
+        hotspot.gc.cause                          // 1.4.2_02
 
 // sun.gc.collector.0
 alias sun.gc.collector.0.invocations              // 1.5.0 b39
@@ -401,7 +401,7 @@ alias sun.gc.generation.2.spaces                  // 1.5.0 b39
 
 // sun.gc
 alias sun.gc.lastCause                            // 1.5.0 b39
-        hotspot.gc.last_cause                     // 1.4.2_02 
+        hotspot.gc.last_cause                     // 1.4.2_02
 
 // sun.gc.policy
 alias sun.gc.policy.avgBaseFootprint              // 1.5.0 b39
@@ -525,25 +525,23 @@ alias sun.gc.tlab.alloc                           // 1.5.0 b39
 	hotspot.gc.tlab.alloc                     // 1.5.0 b21
 alias sun.gc.tlab.allocThreads                    // 1.5.0 b39
 	hotspot.gc.tlab.alloc_thrds               // 1.5.0 b21
-alias sun.gc.tlab.fastWaste                       // 1.5.0 b39
-	hotspot.gc.tlab.fastwaste                 // 1.5.0 b21
 alias sun.gc.tlab.fills                           // 1.5.0 b39
 	hotspot.gc.tlab.fills                     // 1.5.0 b21
 alias sun.gc.tlab.gcWaste                         // 1.5.0 b39
 	hotspot.gc.tlab.gcwaste                   // 1.5.0 b21
-alias sun.gc.tlab.maxFastWaste                    // 1.5.0 b39
-	hotspot.gc.tlab.maxfastwaste              // 1.5.0 b21
 alias sun.gc.tlab.maxFills                        // 1.5.0 b39
 	hotspot.gc.tlab.maxfills                  // 1.5.0 b21
 alias sun.gc.tlab.maxGcWaste                      // 1.5.0 b39
 	hotspot.gc.tlab.maxgcwaste                // 1.5.0 b21
 alias sun.gc.tlab.maxSlowAlloc                    // 1.5.0 b39
 	hotspot.gc.tlab.maxslowalloc              // 1.5.0 b21
-alias sun.gc.tlab.maxSlowWaste                    // 1.5.0 b39
+alias sun.gc.tlab.maxRefillWaste                  // 17
+	sun.gc.tlab.maxSlowWaste                  // 1.5.0 b39
 	hotspot.gc.tlab.maxslowwaste              // 1.5.0 b21
 alias sun.gc.tlab.slowAlloc                       // 1.5.0 b39
 	hotspot.gc.tlab.slowalloc                 // 1.5.0 b21
-alias sun.gc.tlab.slowWaste                       // 1.5.0 b39
+alias sun.gc.tlab.refillWaste                     // 17
+	sun.gc.tlab.slowWaste                     // 1.5.0 b39
 	hotspot.gc.tlab.slowwaste                 // 1.5.0 b21
 
 // sun.os

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2019, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,12 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHCLOSURES_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHCLOSURES_HPP
 
+#include "code/nmethod.hpp"
 #include "memory/iterator.hpp"
 #include "oops/accessDecorators.hpp"
 #include "runtime/handshake.hpp"
 
+class BarrierSetNMethod;
 class ShenandoahBarrierSet;
 class ShenandoahHeap;
 class ShenandoahMarkingContext;
@@ -70,7 +72,12 @@ private:
   void do_oop_work(T* p);
 };
 
-class ShenandoahUpdateRefsClosure: public OopClosure {
+class ShenandoahOopClosureBase : public MetadataVisitingOopIterateClosure {
+public:
+  inline void do_nmethod(nmethod* nm);
+};
+
+class ShenandoahUpdateRefsClosure: public ShenandoahOopClosureBase {
 private:
   ShenandoahHeap* _heap;
 public:
@@ -82,42 +89,23 @@ private:
   inline void do_oop_work(T* p);
 };
 
-template <DecoratorSet MO = MO_UNORDERED>
-class ShenandoahEvacuateUpdateMetadataClosure: public BasicOopIterateClosure {
-private:
+template <bool concurrent, bool stable_thread>
+class ShenandoahEvacuateUpdateRootClosureBase : public ShenandoahOopClosureBase {
+protected:
   ShenandoahHeap* const _heap;
-  Thread* const         _thread;
+  Thread* const _thread;
 public:
-  inline ShenandoahEvacuateUpdateMetadataClosure();
+  inline ShenandoahEvacuateUpdateRootClosureBase();
   inline void do_oop(oop* p);
   inline void do_oop(narrowOop* p);
-
-private:
+protected:
   template <class T>
   inline void do_oop_work(T* p);
 };
 
-// Context free version, cannot cache calling thread
-class ShenandoahEvacuateUpdateRootsClosure : public BasicOopIterateClosure {
-private:
-  ShenandoahHeap* const _heap;
-public:
-  inline ShenandoahEvacuateUpdateRootsClosure();
-  inline void do_oop(oop* p);
-  inline void do_oop(narrowOop* p);
-protected:
-  template <typename T>
-  inline void do_oop_work(T* p, Thread* thr);
-};
-
-class ShenandoahContextEvacuateUpdateRootsClosure : public ShenandoahEvacuateUpdateRootsClosure {
-private:
-  Thread* const _thread;
-public:
-  inline ShenandoahContextEvacuateUpdateRootsClosure();
-  inline void do_oop(oop* p);
-  inline void do_oop(narrowOop* p);
-};
+using ShenandoahEvacuateUpdateMetadataClosure = ShenandoahEvacuateUpdateRootClosureBase<false, true>;
+using ShenandoahEvacuateUpdateRootsClosure = ShenandoahEvacuateUpdateRootClosureBase<true, false>;
+using ShenandoahContextEvacuateUpdateRootsClosure = ShenandoahEvacuateUpdateRootClosureBase<true, true>;
 
 template <bool CONCURRENT, typename IsAlive, typename KeepAlive>
 class ShenandoahCleanUpdateWeakOopsClosure : public OopClosure {

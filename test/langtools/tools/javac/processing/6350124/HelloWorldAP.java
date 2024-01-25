@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@ import javax.annotation.processing.*;
 import javax.lang.model.element.*;
 import javax.lang.model.type.*;
 import javax.lang.model.util.*;
-import static javax.tools.Diagnostic.Kind.*;
 
 import java.util.Set;
 
@@ -46,9 +45,8 @@ public class HelloWorldAP extends AbstractProcessor {
     public boolean process(Set<? extends TypeElement> tes, RoundEnvironment renv ) {
         boolean ret = true;
         if(!renv.processingOver() && !DONE) {
-            msgr.printMessage(NOTE, "running process to create HelloWorld.");
-            try {
-                Writer pw = filer.createSourceFile("HelloWorld").openWriter();
+            msgr.printNote("running process to create HelloWorld.");
+            try (Writer pw = filer.createSourceFile("HelloWorld").openWriter()) {
                 pw.write("public class HelloWorld {\n");
                 pw.write("  public static void main (String argv[]) {\n");
                 pw.write("    System.out.println(\"Hello apt world.\");\n");
@@ -57,21 +55,19 @@ public class HelloWorldAP extends AbstractProcessor {
                 pw.flush();
                 pw.close();
 
-                OutputStream os = filer.createClassFile("HelloWorldAP").openOutputStream();
                 // the easiest way to create a class file is to copy another one
-                InputStream is = getClass().getResourceAsStream("HelloWorldAP.class");
-                copy(is, os);
-                is.close();
-                os.flush();
-                os.close();
+                try (OutputStream os = filer.createClassFile("HelloWorldAP").openOutputStream();
+                     InputStream is = getClass().getResourceAsStream("HelloWorldAP.class")) {
+                    copy(is, os);
+                }
                 DONE=true;
             }
             catch (IOException ioe) {
-                msgr.printMessage(ERROR, ioe.getMessage());
+                msgr.printError(ioe.getMessage());
                 ret = false;
             }
             catch (Exception e) {
-                msgr.printMessage(ERROR, e.getMessage());
+                msgr.printError(e.getMessage());
                 ret = false;
             }
         }

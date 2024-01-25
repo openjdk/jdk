@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,9 +59,50 @@ Node* MulNode::Identity(PhaseGVN* phase) {
 // We also canonicalize the Node, moving constants to the right input,
 // and flatten expressions (so that 1+x+2 becomes x+3).
 Node *MulNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  const Type *t1 = phase->type( in(1) );
-  const Type *t2 = phase->type( in(2) );
-  Node *progress = NULL;        // Progress flag
+  Node* in1 = in(1);
+  Node* in2 = in(2);
+  Node* progress = nullptr;        // Progress flag
+
+  // This code is used by And nodes too, but some conversions are
+  // only valid for the actual Mul nodes.
+  uint op = Opcode();
+  bool real_mul = (op == Op_MulI) || (op == Op_MulL) ||
+                  (op == Op_MulF) || (op == Op_MulD);
+
+  // Convert "(-a)*(-b)" into "a*b".
+  if (real_mul && in1->is_Sub() && in2->is_Sub()) {
+    if (phase->type(in1->in(1))->is_zero_type() &&
+        phase->type(in2->in(1))->is_zero_type()) {
+      set_req_X(1, in1->in(2), phase);
+      set_req_X(2, in2->in(2), phase);
+      in1 = in(1);
+      in2 = in(2);
+      progress = this;
+    }
+  }
+
+  // convert "max(a,b) * min(a,b)" into "a*b".
+  if ((in(1)->Opcode() == max_opcode() && in(2)->Opcode() == min_opcode())
+      || (in(1)->Opcode() == min_opcode() && in(2)->Opcode() == max_opcode())) {
+    Node *in11 = in(1)->in(1);
+    Node *in12 = in(1)->in(2);
+
+    Node *in21 = in(2)->in(1);
+    Node *in22 = in(2)->in(2);
+
+    if ((in11 == in21 && in12 == in22) ||
+        (in11 == in22 && in12 == in21)) {
+      set_req_X(1, in11, phase);
+      set_req_X(2, in12, phase);
+      in1 = in(1);
+      in2 = in(2);
+      progress = this;
+    }
+  }
+
+  const Type* t1 = phase->type(in1);
+  const Type* t2 = phase->type(in2);
+
   // We are OK if right is a constant, or right is a load and
   // left is a non-constant.
   if( !(t2->singleton() ||
@@ -79,11 +120,10 @@ Node *MulNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // If the right input is a constant, and the left input is a product of a
   // constant, flatten the expression tree.
-  uint op = Opcode();
   if( t2->singleton() &&        // Right input is a constant?
       op != Op_MulF &&          // Float & double cannot reassociate
       op != Op_MulD ) {
-    if( t2 == Type::TOP ) return NULL;
+    if( t2 == Type::TOP ) return nullptr;
     Node *mul1 = in(1);
 #ifdef ASSERT
     // Check for dead loop
@@ -164,7 +204,7 @@ const Type* MulNode::Value(PhaseGVN* phase) const {
 #if defined(IA32)
   // Can't trust native compilers to properly fold strict double
   // multiplication with round-to-zero on this platform.
-  if (op == Op_MulD && phase->C->method()->is_strict()) {
+  if (op == Op_MulD) {
     return TypeD::DOUBLE;
   }
 #endif
@@ -172,22 +212,35 @@ const Type* MulNode::Value(PhaseGVN* phase) const {
   return mul_ring(t1,t2);            // Local flavor of type multiplication
 }
 
+MulNode* MulNode::make(Node* in1, Node* in2, BasicType bt) {
+  switch (bt) {
+    case T_INT:
+      return new MulINode(in1, in2);
+    case T_LONG:
+      return new MulLNode(in1, in2);
+    default:
+      fatal("Not implemented for %s", type2name(bt));
+  }
+  return nullptr;
+}
+
+
 //=============================================================================
 //------------------------------Ideal------------------------------------------
 // Check for power-of-2 multiply, then try the regular MulNode::Ideal
 Node *MulINode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  // Swap constant to right
-  jint con;
-  if ((con = in(1)->find_int_con(0)) != 0) {
-    swap_edges(1, 2);
-    // Finish rest of method to use info in 'con'
-  } else if ((con = in(2)->find_int_con(0)) == 0) {
+  const jint con = in(2)->find_int_con(0);
+  if (con == 0) {
+    // If in(2) is not a constant, call Ideal() of the parent class to
+    // try to move constant to the right side.
     return MulNode::Ideal(phase, can_reshape);
   }
 
-  // Now we have a constant Node on the right and the constant in con
-  if (con == 0) return NULL;   // By zero is handled by Value call
-  if (con == 1) return NULL;   // By one  is handled by Identity call
+  // Now we have a constant Node on the right and the constant in con.
+  if (con == 1) {
+    // By one is handled by Identity call
+    return nullptr;
+  }
 
   // Check for negative constant; if so negate the final result
   bool sign_flip = false;
@@ -198,8 +251,8 @@ Node *MulINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   // Get low bit; check for being the only bit
-  Node *res = NULL;
-  unsigned int bit1 = abs_con & (0-abs_con);       // Extract low bit
+  Node *res = nullptr;
+  unsigned int bit1 = submultiple_power_of_2(abs_con);
   if (bit1 == abs_con) {           // Found a power of 2?
     res = new LShiftINode(in(1), phase->intcon(log2i_exact(bit1)));
   } else {
@@ -228,61 +281,202 @@ Node *MulINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return res;                   // Return final result
 }
 
-//------------------------------mul_ring---------------------------------------
-// Compute the product type of two integer ranges into this node.
-const Type *MulINode::mul_ring(const Type *t0, const Type *t1) const {
-  const TypeInt *r0 = t0->is_int(); // Handy access
-  const TypeInt *r1 = t1->is_int();
+// This template class performs type multiplication for MulI/MulLNode. NativeType is either jint or jlong.
+// In this class, the inputs of the MulNodes are named left and right with types [left_lo,left_hi] and [right_lo,right_hi].
+//
+// In general, the multiplication of two x-bit values could produce a result that consumes up to 2x bits if there is
+// enough space to hold them all. We can therefore distinguish the following two cases for the product:
+// - no overflow (i.e. product fits into x bits)
+// - overflow (i.e. product does not fit into x bits)
+//
+// When multiplying the two x-bit inputs 'left' and 'right' with their x-bit types [left_lo,left_hi] and [right_lo,right_hi]
+// we need to find the minimum and maximum of all possible products to define a new type. To do that, we compute the
+// cross product of [left_lo,left_hi] and [right_lo,right_hi] in 2x-bit space where no over- or underflow can happen.
+// The cross product consists of the following four multiplications with 2x-bit results:
+// (1) left_lo * right_lo
+// (2) left_lo * right_hi
+// (3) left_hi * right_lo
+// (4) left_hi * right_hi
+//
+// Let's define the following two functions:
+// - Lx(i): Returns the lower x bits of the 2x-bit number i.
+// - Ux(i): Returns the upper x bits of the 2x-bit number i.
+//
+// Let's first assume all products are positive where only overflows are possible but no underflows. If there is no
+// overflow for a product p, then the upper x bits of the 2x-bit result p are all zero:
+//     Ux(p) = 0
+//     Lx(p) = p
+//
+// If none of the multiplications (1)-(4) overflow, we can truncate the upper x bits and use the following result type
+// with x bits:
+//      [result_lo,result_hi] = [MIN(Lx(1),Lx(2),Lx(3),Lx(4)),MAX(Lx(1),Lx(2),Lx(3),Lx(4))]
+//
+// If any of these multiplications overflows, we could pessimistically take the bottom type for the x bit result
+// (i.e. all values in the x-bit space could be possible):
+//      [result_lo,result_hi] = [NativeType_min,NativeType_max]
+//
+// However, in case of any overflow, we can do better by analyzing the upper x bits of all multiplications (1)-(4) with
+// 2x-bit results. The upper x bits tell us something about how many times a multiplication has overflown the lower
+// x bits. If the upper x bits of (1)-(4) are all equal, then we know that all of these multiplications overflowed
+// the lower x bits the same number of times:
+//     Ux((1)) = Ux((2)) = Ux((3)) = Ux((4))
+//
+// If all upper x bits are equal, we can conclude:
+//     Lx(MIN((1),(2),(3),(4))) = MIN(Lx(1),Lx(2),Lx(3),Lx(4)))
+//     Lx(MAX((1),(2),(3),(4))) = MAX(Lx(1),Lx(2),Lx(3),Lx(4)))
+//
+// Therefore, we can use the same precise x-bit result type as for the no-overflow case:
+//     [result_lo,result_hi] = [(MIN(Lx(1),Lx(2),Lx(3),Lx(4))),MAX(Lx(1),Lx(2),Lx(3),Lx(4)))]
+//
+//
+// Now let's assume that (1)-(4) are signed multiplications where over- and underflow could occur:
+// Negative numbers are all sign extend with ones. Therefore, if a negative product does not underflow, then the
+// upper x bits of the 2x-bit result are all set to ones which is minus one in two's complement. If there is an underflow,
+// the upper x bits are decremented by the number of times an underflow occurred. The smallest possible negative product
+// is NativeType_min*NativeType_max, where the upper x bits are set to NativeType_min / 2 (b11...0). It is therefore
+// impossible to underflow the upper x bits. Thus, when having all ones (i.e. minus one) in the upper x bits, we know
+// that there is no underflow.
+//
+// To be able to compare the number of over-/underflows of positive and negative products, respectively, we normalize
+// the upper x bits of negative 2x-bit products by adding one. This way a product has no over- or underflow if the
+// normalized upper x bits are zero. Now we can use the same improved type as for strictly positive products because we
+// can compare the upper x bits in a unified way with N() being the normalization function:
+//     N(Ux((1))) = N(Ux((2))) = N(Ux((3)) = N(Ux((4)))
+template<typename NativeType>
+class IntegerTypeMultiplication {
 
-  // Fetch endpoints of all ranges
-  jint lo0 = r0->_lo;
-  double a = (double)lo0;
-  jint hi0 = r0->_hi;
-  double b = (double)hi0;
-  jint lo1 = r1->_lo;
-  double c = (double)lo1;
-  jint hi1 = r1->_hi;
-  double d = (double)hi1;
+  NativeType _lo_left;
+  NativeType _lo_right;
+  NativeType _hi_left;
+  NativeType _hi_right;
+  short _widen_left;
+  short _widen_right;
 
-  // Compute all endpoints & check for overflow
-  int32_t A = java_multiply(lo0, lo1);
-  if( (double)A != a*c ) return TypeInt::INT; // Overflow?
-  int32_t B = java_multiply(lo0, hi1);
-  if( (double)B != a*d ) return TypeInt::INT; // Overflow?
-  int32_t C = java_multiply(hi0, lo1);
-  if( (double)C != b*c ) return TypeInt::INT; // Overflow?
-  int32_t D = java_multiply(hi0, hi1);
-  if( (double)D != b*d ) return TypeInt::INT; // Overflow?
+  static const Type* overflow_type();
+  static NativeType multiply_high(NativeType x, NativeType y);
+  const Type* create_type(NativeType lo, NativeType hi) const;
 
-  if( A < B ) { lo0 = A; hi0 = B; } // Sort range endpoints
-  else { lo0 = B; hi0 = A; }
-  if( C < D ) {
-    if( C < lo0 ) lo0 = C;
-    if( D > hi0 ) hi0 = D;
-  } else {
-    if( D < lo0 ) lo0 = D;
-    if( C > hi0 ) hi0 = C;
+  static NativeType multiply_high_signed_overflow_value(NativeType x, NativeType y) {
+    return normalize_overflow_value(x, y, multiply_high(x, y));
   }
-  return TypeInt::make(lo0, hi0, MAX2(r0->_widen,r1->_widen));
+
+  bool cross_product_not_same_overflow_value() const {
+    const NativeType lo_lo_high_product = multiply_high_signed_overflow_value(_lo_left, _lo_right);
+    const NativeType lo_hi_high_product = multiply_high_signed_overflow_value(_lo_left, _hi_right);
+    const NativeType hi_lo_high_product = multiply_high_signed_overflow_value(_hi_left, _lo_right);
+    const NativeType hi_hi_high_product = multiply_high_signed_overflow_value(_hi_left, _hi_right);
+    return lo_lo_high_product != lo_hi_high_product ||
+           lo_hi_high_product != hi_lo_high_product ||
+           hi_lo_high_product != hi_hi_high_product;
+  }
+
+  bool does_product_overflow(NativeType x, NativeType y) const {
+    return multiply_high_signed_overflow_value(x, y) != 0;
+  }
+
+  static NativeType normalize_overflow_value(const NativeType x, const NativeType y, NativeType result) {
+    return java_multiply(x, y) < 0 ? result + 1 : result;
+  }
+
+ public:
+  template<class IntegerType>
+  IntegerTypeMultiplication(const IntegerType* left, const IntegerType* right)
+      : _lo_left(left->_lo), _lo_right(right->_lo),
+        _hi_left(left->_hi), _hi_right(right->_hi),
+        _widen_left(left->_widen), _widen_right(right->_widen)  {}
+
+  // Compute the product type by multiplying the two input type ranges. We take the minimum and maximum of all possible
+  // values (requires 4 multiplications of all possible combinations of the two range boundary values). If any of these
+  // multiplications overflows/underflows, we need to make sure that they all have the same number of overflows/underflows
+  // If that is not the case, we return the bottom type to cover all values due to the inconsistent overflows/underflows).
+  const Type* compute() const {
+    if (cross_product_not_same_overflow_value()) {
+      return overflow_type();
+    }
+
+    NativeType lo_lo_product = java_multiply(_lo_left, _lo_right);
+    NativeType lo_hi_product = java_multiply(_lo_left, _hi_right);
+    NativeType hi_lo_product = java_multiply(_hi_left, _lo_right);
+    NativeType hi_hi_product = java_multiply(_hi_left, _hi_right);
+    const NativeType min = MIN4(lo_lo_product, lo_hi_product, hi_lo_product, hi_hi_product);
+    const NativeType max = MAX4(lo_lo_product, lo_hi_product, hi_lo_product, hi_hi_product);
+    return create_type(min, max);
+  }
+
+  bool does_overflow() const {
+    return does_product_overflow(_lo_left, _lo_right) ||
+           does_product_overflow(_lo_left, _hi_right) ||
+           does_product_overflow(_hi_left, _lo_right) ||
+           does_product_overflow(_hi_left, _hi_right);
+  }
+};
+
+template <>
+const Type* IntegerTypeMultiplication<jint>::overflow_type() {
+  return TypeInt::INT;
 }
 
+template <>
+jint IntegerTypeMultiplication<jint>::multiply_high(const jint x, const jint y) {
+  const jlong x_64 = x;
+  const jlong y_64 = y;
+  const jlong product = x_64 * y_64;
+  return (jint)((uint64_t)product >> 32u);
+}
+
+template <>
+const Type* IntegerTypeMultiplication<jint>::create_type(jint lo, jint hi) const {
+  return TypeInt::make(lo, hi, MAX2(_widen_left, _widen_right));
+}
+
+template <>
+const Type* IntegerTypeMultiplication<jlong>::overflow_type() {
+  return TypeLong::LONG;
+}
+
+template <>
+jlong IntegerTypeMultiplication<jlong>::multiply_high(const jlong x, const jlong y) {
+  return multiply_high_signed(x, y);
+}
+
+template <>
+const Type* IntegerTypeMultiplication<jlong>::create_type(jlong lo, jlong hi) const {
+  return TypeLong::make(lo, hi, MAX2(_widen_left, _widen_right));
+}
+
+// Compute the product type of two integer ranges into this node.
+const Type* MulINode::mul_ring(const Type* type_left, const Type* type_right) const {
+  const IntegerTypeMultiplication<jint> integer_multiplication(type_left->is_int(), type_right->is_int());
+  return integer_multiplication.compute();
+}
+
+bool MulINode::does_overflow(const TypeInt* type_left, const TypeInt* type_right) {
+  const IntegerTypeMultiplication<jint> integer_multiplication(type_left, type_right);
+  return integer_multiplication.does_overflow();
+}
+
+// Compute the product type of two long ranges into this node.
+const Type* MulLNode::mul_ring(const Type* type_left, const Type* type_right) const {
+  const IntegerTypeMultiplication<jlong> integer_multiplication(type_left->is_long(), type_right->is_long());
+  return integer_multiplication.compute();
+}
 
 //=============================================================================
 //------------------------------Ideal------------------------------------------
 // Check for power-of-2 multiply, then try the regular MulNode::Ideal
 Node *MulLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  // Swap constant to right
-  jlong con;
-  if ((con = in(1)->find_long_con(0)) != 0) {
-    swap_edges(1, 2);
-    // Finish rest of method to use info in 'con'
-  } else if ((con = in(2)->find_long_con(0)) == 0) {
+  const jlong con = in(2)->find_long_con(0);
+  if (con == 0) {
+    // If in(2) is not a constant, call Ideal() of the parent class to
+    // try to move constant to the right side.
     return MulNode::Ideal(phase, can_reshape);
   }
 
-  // Now we have a constant Node on the right and the constant in con
-  if (con == CONST64(0)) return NULL;  // By zero is handled by Value call
-  if (con == CONST64(1)) return NULL;  // By one  is handled by Identity call
+  // Now we have a constant Node on the right and the constant in con.
+  if (con == 1) {
+    // By one is handled by Identity call
+    return nullptr;
+  }
 
   // Check for negative constant; if so negate the final result
   bool sign_flip = false;
@@ -292,8 +486,8 @@ Node *MulLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   // Get low bit; check for being the only bit
-  Node *res = NULL;
-  julong bit1 = abs_con & (0-abs_con);      // Extract low bit
+  Node *res = nullptr;
+  julong bit1 = submultiple_power_of_2(abs_con);
   if (bit1 == abs_con) {           // Found a power of 2?
     res = new LShiftLNode(in(1), phase->intcon(log2i_exact(bit1)));
   } else {
@@ -324,50 +518,26 @@ Node *MulLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return res;                   // Return final result
 }
 
-//------------------------------mul_ring---------------------------------------
-// Compute the product type of two integer ranges into this node.
-const Type *MulLNode::mul_ring(const Type *t0, const Type *t1) const {
-  const TypeLong *r0 = t0->is_long(); // Handy access
-  const TypeLong *r1 = t1->is_long();
-
-  // Fetch endpoints of all ranges
-  jlong lo0 = r0->_lo;
-  double a = (double)lo0;
-  jlong hi0 = r0->_hi;
-  double b = (double)hi0;
-  jlong lo1 = r1->_lo;
-  double c = (double)lo1;
-  jlong hi1 = r1->_hi;
-  double d = (double)hi1;
-
-  // Compute all endpoints & check for overflow
-  jlong A = java_multiply(lo0, lo1);
-  if( (double)A != a*c ) return TypeLong::LONG; // Overflow?
-  jlong B = java_multiply(lo0, hi1);
-  if( (double)B != a*d ) return TypeLong::LONG; // Overflow?
-  jlong C = java_multiply(hi0, lo1);
-  if( (double)C != b*c ) return TypeLong::LONG; // Overflow?
-  jlong D = java_multiply(hi0, hi1);
-  if( (double)D != b*d ) return TypeLong::LONG; // Overflow?
-
-  if( A < B ) { lo0 = A; hi0 = B; } // Sort range endpoints
-  else { lo0 = B; hi0 = A; }
-  if( C < D ) {
-    if( C < lo0 ) lo0 = C;
-    if( D > hi0 ) hi0 = D;
-  } else {
-    if( D < lo0 ) lo0 = D;
-    if( C > hi0 ) hi0 = C;
-  }
-  return TypeLong::make(lo0, hi0, MAX2(r0->_widen,r1->_widen));
-}
-
 //=============================================================================
 //------------------------------mul_ring---------------------------------------
 // Compute the product type of two double ranges into this node.
 const Type *MulFNode::mul_ring(const Type *t0, const Type *t1) const {
   if( t0 == Type::FLOAT || t1 == Type::FLOAT ) return Type::FLOAT;
   return TypeF::make( t0->getf() * t1->getf() );
+}
+
+//------------------------------Ideal---------------------------------------
+// Check to see if we are multiplying by a constant 2 and convert to add, then try the regular MulNode::Ideal
+Node* MulFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  const TypeF *t2 = phase->type(in(2))->isa_float_constant();
+
+  // x * 2 -> x + x
+  if (t2 != nullptr && t2->getf() == 2) {
+    Node* base = in(1);
+    return new AddFNode(base, base);
+  }
+
+  return MulNode::Ideal(phase, can_reshape);
 }
 
 //=============================================================================
@@ -379,17 +549,43 @@ const Type *MulDNode::mul_ring(const Type *t0, const Type *t1) const {
   return TypeD::make( t0->getd() * t1->getd() );
 }
 
+//------------------------------Ideal---------------------------------------
+// Check to see if we are multiplying by a constant 2 and convert to add, then try the regular MulNode::Ideal
+Node* MulDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  const TypeD *t2 = phase->type(in(2))->isa_double_constant();
+
+  // x * 2 -> x + x
+  if (t2 != nullptr && t2->getd() == 2) {
+    Node* base = in(1);
+    return new AddDNode(base, base);
+  }
+
+  return MulNode::Ideal(phase, can_reshape);
+}
+
 //=============================================================================
 //------------------------------Value------------------------------------------
 const Type* MulHiLNode::Value(PhaseGVN* phase) const {
-  // Either input is TOP ==> the result is TOP
   const Type *t1 = phase->type( in(1) );
   const Type *t2 = phase->type( in(2) );
+  const Type *bot = bottom_type();
+  return MulHiValue(t1, t2, bot);
+}
+
+const Type* UMulHiLNode::Value(PhaseGVN* phase) const {
+  const Type *t1 = phase->type( in(1) );
+  const Type *t2 = phase->type( in(2) );
+  const Type *bot = bottom_type();
+  return MulHiValue(t1, t2, bot);
+}
+
+// A common routine used by UMulHiLNode and MulHiLNode
+const Type* MulHiValue(const Type *t1, const Type *t2, const Type *bot) {
+  // Either input is TOP ==> the result is TOP
   if( t1 == Type::TOP ) return Type::TOP;
   if( t2 == Type::TOP ) return Type::TOP;
 
   // Either input is BOTTOM ==> the result is the local BOTTOM
-  const Type *bot = bottom_type();
   if( (t1 == bot) || (t2 == bot) ||
       (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM) )
     return bot;
@@ -430,6 +626,15 @@ const Type *AndINode::mul_ring( const Type *t0, const Type *t1 ) const {
   return TypeInt::INT;          // No constants to be had
 }
 
+const Type* AndINode::Value(PhaseGVN* phase) const {
+  // patterns similar to (v << 2) & 3
+  if (AndIL_shift_and_mask_is_always_zero(phase, in(1), in(2), T_INT, true)) {
+    return TypeInt::ZERO;
+  }
+
+  return MulNode::Value(phase);
+}
+
 //------------------------------Identity---------------------------------------
 // Masking off the high bits of an unsigned load is not required
 Node* AndINode::Identity(PhaseGVN* phase) {
@@ -446,7 +651,7 @@ Node* AndINode::Identity(PhaseGVN* phase) {
     int con = t2->get_con();
     // Masking off high bits which are always zero is useless.
     const TypeInt* t1 = phase->type(in(1))->isa_int();
-    if (t1 != NULL && t1->_lo >= 0) {
+    if (t1 != nullptr && t1->_lo >= 0) {
       jint t1_support = right_n_bits(1 + log2i_graceful(t1->_hi));
       if ((t1_support & con) == t1_support)
         return in1;
@@ -469,6 +674,19 @@ Node* AndINode::Identity(PhaseGVN* phase) {
 
 //------------------------------Ideal------------------------------------------
 Node *AndINode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  // pattern similar to (v1 + (v2 << 2)) & 3 transformed to v1 & 3
+  Node* progress = AndIL_add_shift_and_mask(phase, T_INT);
+  if (progress != nullptr) {
+    return progress;
+  }
+
+  // Convert "(~a) & (~b)" into "~(a | b)"
+  if (AddNode::is_not(phase, in(1), T_INT) && AddNode::is_not(phase, in(2), T_INT)) {
+    Node* or_a_b = new OrINode(in(1)->in(1), in(2)->in(1));
+    Node* tn = phase->transform(or_a_b);
+    return AddNode::make_not(phase, tn, T_INT);
+  }
+
   // Special case constant AND mask
   const TypeInt *t2 = phase->type( in(2) )->isa_int();
   if( !t2 || !t2->is_con() ) return MulNode::Ideal(phase, can_reshape);
@@ -554,6 +772,15 @@ const Type *AndLNode::mul_ring( const Type *t0, const Type *t1 ) const {
   return TypeLong::LONG;        // No constants to be had
 }
 
+const Type* AndLNode::Value(PhaseGVN* phase) const {
+  // patterns similar to (v << 2) & 3
+  if (AndIL_shift_and_mask_is_always_zero(phase, in(1), in(2), T_LONG, true)) {
+    return TypeLong::ZERO;
+  }
+
+  return MulNode::Value(phase);
+}
+
 //------------------------------Identity---------------------------------------
 // Masking off the high bits of an unsigned load is not required
 Node* AndLNode::Identity(PhaseGVN* phase) {
@@ -569,7 +796,7 @@ Node* AndLNode::Identity(PhaseGVN* phase) {
     jlong con = t2->get_con();
     // Masking off high bits which are always zero is useless.
     const TypeLong* t1 = phase->type( in(1) )->isa_long();
-    if (t1 != NULL && t1->_lo >= 0) {
+    if (t1 != nullptr && t1->_lo >= 0) {
       int bit_count = log2i_graceful(t1->_hi) + 1;
       jlong t1_support = jlong(max_julong >> (BitsPerJavaLong - bit_count));
       if ((t1_support & con) == t1_support)
@@ -594,13 +821,26 @@ Node* AndLNode::Identity(PhaseGVN* phase) {
 
 //------------------------------Ideal------------------------------------------
 Node *AndLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  // pattern similar to (v1 + (v2 << 2)) & 3 transformed to v1 & 3
+  Node* progress = AndIL_add_shift_and_mask(phase, T_LONG);
+  if (progress != nullptr) {
+    return progress;
+  }
+
+  // Convert "(~a) & (~b)" into "~(a | b)"
+  if (AddNode::is_not(phase, in(1), T_LONG) && AddNode::is_not(phase, in(2), T_LONG)) {
+    Node* or_a_b = new OrLNode(in(1)->in(1), in(2)->in(1));
+    Node* tn = phase->transform(or_a_b);
+    return AddNode::make_not(phase, tn, T_LONG);
+  }
+
   // Special case constant AND mask
   const TypeLong *t2 = phase->type( in(2) )->isa_long();
   if( !t2 || !t2->is_con() ) return MulNode::Ideal(phase, can_reshape);
   const jlong mask = t2->get_con();
 
   Node* in1 = in(1);
-  uint op = in1->Opcode();
+  int op = in1->Opcode();
 
   // Are we masking a long that was converted from an int with a mask
   // that fits in 32-bits?  Commute them and use an AndINode.  Don't
@@ -619,7 +859,7 @@ Node *AndLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     if( t12 && t12->is_con() ) { // Shift is by a constant
       int shift = t12->get_con();
       shift &= BitsPerJavaLong - 1;  // semantics of Java shifts
-      const jlong sign_bits_mask = ~(((jlong)CONST64(1) << (jlong)(BitsPerJavaLong - shift)) -1);
+      const julong sign_bits_mask = ~(((julong)CONST64(1) << (julong)(BitsPerJavaLong - shift)) -1);
       // If the AND'ing of the 2 masks has no bits, then only original shifted
       // bits survive.  NO sign-extension bits survive the maskings.
       if( (sign_bits_mask & mask) == 0 ) {
@@ -633,11 +873,23 @@ Node *AndLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return MulNode::Ideal(phase, can_reshape);
 }
 
+LShiftNode* LShiftNode::make(Node* in1, Node* in2, BasicType bt) {
+  switch (bt) {
+    case T_INT:
+      return new LShiftINode(in1, in2);
+    case T_LONG:
+      return new LShiftLNode(in1, in2);
+    default:
+      fatal("Not implemented for %s", type2name(bt));
+  }
+  return nullptr;
+}
+
 //=============================================================================
 
 static bool const_shift_count(PhaseGVN* phase, Node* shiftNode, int* count) {
   const TypeInt* tcount = phase->type(shiftNode->in(2))->isa_int();
-  if (tcount != NULL && tcount->is_con()) {
+  if (tcount != nullptr && tcount->is_con()) {
     *count = tcount->get_con();
     return true;
   }
@@ -681,19 +933,29 @@ Node* LShiftINode::Identity(PhaseGVN* phase) {
 Node *LShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   int con = maskShiftAmount(phase, this, BitsPerJavaInteger);
   if (con == 0) {
-    return NULL;
+    return nullptr;
   }
 
-  // Left input is an add of a constant?
+  // Left input is an add?
   Node *add1 = in(1);
   int add1_op = add1->Opcode();
   if( add1_op == Op_AddI ) {    // Left input is an add?
     assert( add1 != add1->in(1), "dead loop in LShiftINode::Ideal" );
-    const TypeInt *t12 = phase->type(add1->in(2))->isa_int();
-    if( t12 && t12->is_con() ){ // Left input is an add of a con?
-      // Transform is legal, but check for profit.  Avoid breaking 'i2s'
-      // and 'i2b' patterns which typically fold into 'StoreC/StoreB'.
-      if( con < 16 ) {
+
+    // Transform is legal, but check for profit.  Avoid breaking 'i2s'
+    // and 'i2b' patterns which typically fold into 'StoreC/StoreB'.
+    if( con < 16 ) {
+      // Left input is an add of the same number?
+      if (add1->in(1) == add1->in(2)) {
+        // Convert "(x + x) << c0" into "x << (c0 + 1)"
+        // In general, this optimization cannot be applied for c0 == 31 since
+        // 2x << 31 != x << 32 = x << 0 = x (e.g. x = 1: 2 << 31 = 0 != 1)
+        return new LShiftINode(add1->in(1), phase->intcon(con + 1));
+      }
+
+      // Left input is an add of a constant?
+      const TypeInt *t12 = phase->type(add1->in(2))->isa_int();
+      if( t12 && t12->is_con() ){ // Left input is an add of a con?
         // Compute X << con0
         Node *lsh = phase->transform( new LShiftINode( add1->in(1), in(2) ) );
         // Compute X<<con0 + (con1<<con0)
@@ -702,21 +964,74 @@ Node *LShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
-  // Check for "(x>>c0)<<c0" which just masks off low bits
-  if( (add1_op == Op_RShiftI || add1_op == Op_URShiftI ) &&
-      add1->in(2) == in(2) )
-    // Convert to "(x & -(1<<c0))"
-    return new AndINode(add1->in(1),phase->intcon( -(1<<con)));
+  // Check for "(x >> C1) << C2"
+  if (add1_op == Op_RShiftI || add1_op == Op_URShiftI) {
+    int add1Con = 0;
+    const_shift_count(phase, add1, &add1Con);
 
-  // Check for "((x>>c0) & Y)<<c0" which just masks off more low bits
-  if( add1_op == Op_AndI ) {
+    // Special case C1 == C2, which just masks off low bits
+    if (add1Con > 0 && con == add1Con) {
+      // Convert to "(x & -(1 << C2))"
+      return new AndINode(add1->in(1), phase->intcon(java_negate(jint(1 << con))));
+    } else {
+      // Wait until the right shift has been sharpened to the correct count
+      if (add1Con > 0 && add1Con < BitsPerJavaInteger) {
+        // As loop parsing can produce LShiftI nodes, we should wait until the graph is fully formed
+        // to apply optimizations, otherwise we can inadvertently stop vectorization opportunities.
+        if (phase->is_IterGVN()) {
+          if (con > add1Con) {
+            // Creates "(x << (C2 - C1)) & -(1 << C2)"
+            Node* lshift = phase->transform(new LShiftINode(add1->in(1), phase->intcon(con - add1Con)));
+            return new AndINode(lshift, phase->intcon(java_negate(jint(1 << con))));
+          } else {
+            assert(con < add1Con, "must be (%d < %d)", con, add1Con);
+            // Creates "(x >> (C1 - C2)) & -(1 << C2)"
+
+            // Handle logical and arithmetic shifts
+            Node* rshift;
+            if (add1_op == Op_RShiftI) {
+              rshift = phase->transform(new RShiftINode(add1->in(1), phase->intcon(add1Con - con)));
+            } else {
+              rshift = phase->transform(new URShiftINode(add1->in(1), phase->intcon(add1Con - con)));
+            }
+
+            return new AndINode(rshift, phase->intcon(java_negate(jint(1 << con))));
+          }
+        } else {
+          phase->record_for_igvn(this);
+        }
+      }
+    }
+  }
+
+  // Check for "((x >> C1) & Y) << C2"
+  if (add1_op == Op_AndI) {
     Node *add2 = add1->in(1);
     int add2_op = add2->Opcode();
-    if( (add2_op == Op_RShiftI || add2_op == Op_URShiftI ) &&
-        add2->in(2) == in(2) ) {
-      // Convert to "(x & (Y<<c0))"
-      Node *y_sh = phase->transform( new LShiftINode( add1->in(2), in(2) ) );
-      return new AndINode( add2->in(1), y_sh );
+    if (add2_op == Op_RShiftI || add2_op == Op_URShiftI) {
+      // Special case C1 == C2, which just masks off low bits
+      if (add2->in(2) == in(2)) {
+        // Convert to "(x & (Y << C2))"
+        Node* y_sh = phase->transform(new LShiftINode(add1->in(2), phase->intcon(con)));
+        return new AndINode(add2->in(1), y_sh);
+      }
+
+      int add2Con = 0;
+      const_shift_count(phase, add2, &add2Con);
+      if (add2Con > 0 && add2Con < BitsPerJavaInteger) {
+        if (phase->is_IterGVN()) {
+          // Convert to "((x >> C1) << C2) & (Y << C2)"
+
+          // Make "(x >> C1) << C2", which will get folded away by the rule above
+          Node* x_sh = phase->transform(new LShiftINode(add2, phase->intcon(con)));
+          // Make "Y << C2", which will simplify when Y is a constant
+          Node* y_sh = phase->transform(new LShiftINode(add1->in(2), phase->intcon(con)));
+
+          return new AndINode(x_sh, y_sh);
+        } else {
+          phase->record_for_igvn(this);
+        }
+      }
     }
   }
 
@@ -727,7 +1042,7 @@ Node *LShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
       phase->type(add1->in(2)) == TypeInt::make( bits_mask ) )
     return new LShiftINode( add1->in(1), in(2) );
 
-  return NULL;
+  return nullptr;
 }
 
 //------------------------------Value------------------------------------------
@@ -794,15 +1109,28 @@ Node* LShiftLNode::Identity(PhaseGVN* phase) {
 Node *LShiftLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   int con = maskShiftAmount(phase, this, BitsPerJavaLong);
   if (con == 0) {
-    return NULL;
+    return nullptr;
   }
 
-  // Left input is an add of a constant?
+  // Left input is an add?
   Node *add1 = in(1);
   int add1_op = add1->Opcode();
   if( add1_op == Op_AddL ) {    // Left input is an add?
     // Avoid dead data cycles from dead loops
     assert( add1 != add1->in(1), "dead loop in LShiftLNode::Ideal" );
+
+    // Left input is an add of the same number?
+    if (con != (BitsPerJavaLong - 1) && add1->in(1) == add1->in(2)) {
+      // Convert "(x + x) << c0" into "x << (c0 + 1)"
+      // Can only be applied if c0 != 63 because:
+      // (x + x) << 63 = 2x << 63, while
+      // (x + x) << 63 --transform--> x << 64 = x << 0 = x (!= 2x << 63, for example for x = 1)
+      // According to the Java spec, chapter 15.19, we only consider the six lowest-order bits of the right-hand operand
+      // (i.e. "right-hand operand" & 0b111111). Therefore, x << 64 is the same as x << 0 (64 = 0b10000000 & 0b0111111 = 0).
+      return new LShiftLNode(add1->in(1), phase->intcon(con + 1));
+    }
+
+    // Left input is an add of a constant?
     const TypeLong *t12 = phase->type(add1->in(2))->isa_long();
     if( t12 && t12->is_con() ){ // Left input is an add of a con?
       // Compute X << con0
@@ -812,21 +1140,74 @@ Node *LShiftLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
-  // Check for "(x>>c0)<<c0" which just masks off low bits
-  if( (add1_op == Op_RShiftL || add1_op == Op_URShiftL ) &&
-      add1->in(2) == in(2) )
-    // Convert to "(x & -(1<<c0))"
-    return new AndLNode(add1->in(1),phase->longcon( -(CONST64(1)<<con)));
+  // Check for "(x >> C1) << C2"
+  if (add1_op == Op_RShiftL || add1_op == Op_URShiftL) {
+    int add1Con = 0;
+    const_shift_count(phase, add1, &add1Con);
 
-  // Check for "((x>>c0) & Y)<<c0" which just masks off more low bits
-  if( add1_op == Op_AndL ) {
-    Node *add2 = add1->in(1);
+    // Special case C1 == C2, which just masks off low bits
+    if (add1Con > 0 && con == add1Con) {
+      // Convert to "(x & -(1 << C2))"
+      return new AndLNode(add1->in(1), phase->longcon(java_negate(jlong(CONST64(1) << con))));
+    } else {
+      // Wait until the right shift has been sharpened to the correct count
+      if (add1Con > 0 && add1Con < BitsPerJavaLong) {
+        // As loop parsing can produce LShiftI nodes, we should wait until the graph is fully formed
+        // to apply optimizations, otherwise we can inadvertently stop vectorization opportunities.
+        if (phase->is_IterGVN()) {
+          if (con > add1Con) {
+            // Creates "(x << (C2 - C1)) & -(1 << C2)"
+            Node* lshift = phase->transform(new LShiftLNode(add1->in(1), phase->intcon(con - add1Con)));
+            return new AndLNode(lshift, phase->longcon(java_negate(jlong(CONST64(1) << con))));
+          } else {
+            assert(con < add1Con, "must be (%d < %d)", con, add1Con);
+            // Creates "(x >> (C1 - C2)) & -(1 << C2)"
+
+            // Handle logical and arithmetic shifts
+            Node* rshift;
+            if (add1_op == Op_RShiftL) {
+              rshift = phase->transform(new RShiftLNode(add1->in(1), phase->intcon(add1Con - con)));
+            } else {
+              rshift = phase->transform(new URShiftLNode(add1->in(1), phase->intcon(add1Con - con)));
+            }
+
+            return new AndLNode(rshift, phase->longcon(java_negate(jlong(CONST64(1) << con))));
+          }
+        } else {
+          phase->record_for_igvn(this);
+        }
+      }
+    }
+  }
+
+  // Check for "((x >> C1) & Y) << C2"
+  if (add1_op == Op_AndL) {
+    Node* add2 = add1->in(1);
     int add2_op = add2->Opcode();
-    if( (add2_op == Op_RShiftL || add2_op == Op_URShiftL ) &&
-        add2->in(2) == in(2) ) {
-      // Convert to "(x & (Y<<c0))"
-      Node *y_sh = phase->transform( new LShiftLNode( add1->in(2), in(2) ) );
-      return new AndLNode( add2->in(1), y_sh );
+    if (add2_op == Op_RShiftL || add2_op == Op_URShiftL) {
+      // Special case C1 == C2, which just masks off low bits
+      if (add2->in(2) == in(2)) {
+        // Convert to "(x & (Y << C2))"
+        Node* y_sh = phase->transform(new LShiftLNode(add1->in(2), phase->intcon(con)));
+        return new AndLNode(add2->in(1), y_sh);
+      }
+
+      int add2Con = 0;
+      const_shift_count(phase, add2, &add2Con);
+      if (add2Con > 0 && add2Con < BitsPerJavaLong) {
+        if (phase->is_IterGVN()) {
+          // Convert to "((x >> C1) << C2) & (Y << C2)"
+
+          // Make "(x >> C1) << C2", which will get folded away by the rule above
+          Node* x_sh = phase->transform(new LShiftLNode(add2, phase->intcon(con)));
+          // Make "Y << C2", which will simplify when Y is a constant
+          Node* y_sh = phase->transform(new LShiftLNode(add1->in(2), phase->intcon(con)));
+
+          return new AndLNode(x_sh, y_sh);
+        } else {
+          phase->record_for_igvn(this);
+        }
+      }
     }
   }
 
@@ -837,7 +1218,7 @@ Node *LShiftLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       phase->type(add1->in(2)) == TypeLong::make( bits_mask ) )
     return new LShiftLNode( add1->in(1), in(2) );
 
-  return NULL;
+  return nullptr;
 }
 
 //------------------------------Value------------------------------------------
@@ -905,7 +1286,7 @@ Node* RShiftINode::Identity(PhaseGVN* phase) {
       int lo = (-1 << (BitsPerJavaInteger - ((uint)count)-1)); // FFFF8000
       int hi = ~lo;               // 00007FFF
       const TypeInt* t11 = phase->type(in(1)->in(1))->isa_int();
-      if (t11 == NULL) {
+      if (t11 == nullptr) {
         return this;
       }
       // Does actual value fit inside of mask?
@@ -921,11 +1302,11 @@ Node* RShiftINode::Identity(PhaseGVN* phase) {
 Node *RShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Inputs may be TOP if they are dead.
   const TypeInt *t1 = phase->type(in(1))->isa_int();
-  if (!t1) return NULL;        // Left input is an integer
+  if (!t1) return nullptr;        // Left input is an integer
   const TypeInt *t3;  // type of in(1).in(2)
   int shift = maskShiftAmount(phase, this, BitsPerJavaInteger);
   if (shift == 0) {
-    return NULL;
+    return nullptr;
   }
 
   // Check for (x & 0xFF000000) >> 24, whose mask can be made smaller.
@@ -943,7 +1324,7 @@ Node *RShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // Check for "(short[i] <<16)>>16" which simply sign-extends
   const Node *shl = in(1);
-  if( shl->Opcode() != Op_LShiftI ) return NULL;
+  if( shl->Opcode() != Op_LShiftI ) return nullptr;
 
   if( shift == 16 &&
       (t3 = phase->type(shl->in(2))->isa_int()) &&
@@ -979,7 +1360,7 @@ Node *RShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
-  return NULL;
+  return nullptr;
 }
 
 //------------------------------Value------------------------------------------
@@ -1000,15 +1381,12 @@ const Type* RShiftINode::Value(PhaseGVN* phase) const {
   if (t1 == Type::BOTTOM || t2 == Type::BOTTOM)
     return TypeInt::INT;
 
-  if (t2 == TypeInt::INT)
-    return TypeInt::INT;
-
   const TypeInt *r1 = t1->is_int(); // Handy access
   const TypeInt *r2 = t2->is_int(); // Handy access
 
   // If the shift is a constant, just shift the bounds of the type.
   // For example, if the shift is 31, we just propagate sign bits.
-  if (r2->is_con()) {
+  if (!r1->is_con() && r2->is_con()) {
     uint shift = r2->get_con();
     shift &= BitsPerJavaInteger-1;  // semantics of Java shifts
     // Shift by a multiple of 32 does nothing:
@@ -1030,11 +1408,22 @@ const Type* RShiftINode::Value(PhaseGVN* phase) const {
     return ti;
   }
 
-  if( !r1->is_con() || !r2->is_con() )
+  if (!r1->is_con() || !r2->is_con()) {
+    // If the left input is non-negative the result must also be non-negative, regardless of what the right input is.
+    if (r1->_lo >= 0) {
+      return TypeInt::make(0, r1->_hi, MAX2(r1->_widen, r2->_widen));
+    }
+
+    // Conversely, if the left input is negative then the result must be negative.
+    if (r1->_hi <= -1) {
+      return TypeInt::make(r1->_lo, -1, MAX2(r1->_widen, r2->_widen));
+    }
+
     return TypeInt::INT;
+  }
 
   // Signed shift right
-  return TypeInt::make( r1->get_con() >> (r2->get_con()&31) );
+  return TypeInt::make(r1->get_con() >> (r2->get_con() & 31));
 }
 
 //=============================================================================
@@ -1062,15 +1451,12 @@ const Type* RShiftLNode::Value(PhaseGVN* phase) const {
   if (t1 == Type::BOTTOM || t2 == Type::BOTTOM)
     return TypeLong::LONG;
 
-  if (t2 == TypeInt::INT)
-    return TypeLong::LONG;
-
   const TypeLong *r1 = t1->is_long(); // Handy access
   const TypeInt  *r2 = t2->is_int (); // Handy access
 
   // If the shift is a constant, just shift the bounds of the type.
   // For example, if the shift is 63, we just propagate sign bits.
-  if (r2->is_con()) {
+  if (!r1->is_con() && r2->is_con()) {
     uint shift = r2->get_con();
     shift &= (2*BitsPerJavaInteger)-1;  // semantics of Java shifts
     // Shift by a multiple of 64 does nothing:
@@ -1092,7 +1478,21 @@ const Type* RShiftLNode::Value(PhaseGVN* phase) const {
     return tl;
   }
 
-  return TypeLong::LONG;                // Give up
+  if (!r1->is_con() || !r2->is_con()) {
+    // If the left input is non-negative the result must also be non-negative, regardless of what the right input is.
+    if (r1->_lo >= 0) {
+      return TypeLong::make(0, r1->_hi, MAX2(r1->_widen, r2->_widen));
+    }
+
+    // Conversely, if the left input is negative then the result must be negative.
+    if (r1->_hi <= -1) {
+      return TypeLong::make(r1->_lo, -1, MAX2(r1->_widen, r2->_widen));
+    }
+
+    return TypeLong::LONG;
+  }
+
+  return TypeLong::make(r1->get_con() >> (r2->get_con() & 63));
 }
 
 //=============================================================================
@@ -1119,7 +1519,7 @@ Node* URShiftINode::Identity(PhaseGVN* phase) {
           t_lshift_count == phase->type(in(2))) {
         Node          *x   = add->in(1)->in(1);
         const TypeInt *t_x = phase->type(x)->isa_int();
-        if (t_x != NULL && 0 <= t_x->_lo && t_x->_hi <= (max_jint>>LogBytesPerWord)) {
+        if (t_x != nullptr && 0 <= t_x->_lo && t_x->_hi <= (max_jint>>LogBytesPerWord)) {
           return x;
         }
       }
@@ -1133,7 +1533,7 @@ Node* URShiftINode::Identity(PhaseGVN* phase) {
 Node *URShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   int con = maskShiftAmount(phase, this, BitsPerJavaInteger);
   if (con == 0) {
-    return NULL;
+    return nullptr;
   }
 
   // We'll be wanting the right-shift amount as a mask of that many bits
@@ -1205,7 +1605,7 @@ Node *URShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
-  return NULL;
+  return nullptr;
 }
 
 //------------------------------Value------------------------------------------
@@ -1297,7 +1697,7 @@ Node* URShiftLNode::Identity(PhaseGVN* phase) {
 Node *URShiftLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   int con = maskShiftAmount(phase, this, BitsPerJavaLong);
   if (con == 0) {
-    return NULL;
+    return nullptr;
   }
 
   // We'll be wanting the right-shift amount as a mask of that many bits
@@ -1350,7 +1750,7 @@ Node *URShiftLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       return new URShiftLNode(in11, phase->intcon(63));
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 //------------------------------Value------------------------------------------
@@ -1412,6 +1812,20 @@ const Type* URShiftLNode::Value(PhaseGVN* phase) const {
   }
 
   return TypeLong::LONG;                // Give up
+}
+
+//=============================================================================
+//------------------------------Ideal------------------------------------------
+Node* FmaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  // We canonicalize the node by converting "(-a)*b+c" into "b*(-a)+c"
+  // This reduces the number of rules in the matcher, as we only need to check
+  // for negations on the second argument, and not the symmetric case where
+  // the first argument is negated.
+  if (in(1)->is_Neg() && !in(2)->is_Neg()) {
+    swap_edges(1, 2);
+    return this;
+  }
+  return nullptr;
 }
 
 //=============================================================================
@@ -1544,7 +1958,7 @@ Node* RotateLeftNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       return new RotateRightNode(in(1), phase->intcon(64 - (lshift & 63)), TypeLong::LONG);
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 Node* RotateRightNode::Identity(PhaseGVN* phase) {
@@ -1607,4 +2021,121 @@ const Type* RotateRightNode::Value(PhaseGVN* phase) const {
     }
     return TypeLong::LONG;
   }
+}
+
+// Given an expression (AndX shift mask) or (AndX mask shift),
+// determine if the AndX must always produce zero, because the
+// the shift (x<<N) is bitwise disjoint from the mask #M.
+// The X in AndX must be I or L, depending on bt.
+// Specifically, the following cases fold to zero,
+// when the shift value N is large enough to zero out
+// all the set positions of the and-mask M.
+//   (AndI (LShiftI _ #N) #M) => #0
+//   (AndL (LShiftL _ #N) #M) => #0
+//   (AndL (ConvI2L (LShiftI _ #N)) #M) => #0
+// The M and N values must satisfy ((-1 << N) & M) == 0.
+// Because the optimization might work for a non-constant
+// mask M, we check the AndX for both operand orders.
+bool MulNode::AndIL_shift_and_mask_is_always_zero(PhaseGVN* phase, Node* shift, Node* mask, BasicType bt, bool check_reverse) {
+  if (mask == nullptr || shift == nullptr) {
+    return false;
+  }
+  const TypeInteger* mask_t = phase->type(mask)->isa_integer(bt);
+  if (mask_t == nullptr || phase->type(shift)->isa_integer(bt) == nullptr) {
+    return false;
+  }
+  shift = shift->uncast();
+  if (shift == nullptr) {
+    return false;
+  }
+  if (phase->type(shift)->isa_integer(bt) == nullptr) {
+    return false;
+  }
+  BasicType shift_bt = bt;
+  if (bt == T_LONG && shift->Opcode() == Op_ConvI2L) {
+    bt = T_INT;
+    Node* val = shift->in(1);
+    if (val == nullptr) {
+      return false;
+    }
+    val = val->uncast();
+    if (val == nullptr) {
+      return false;
+    }
+    if (val->Opcode() == Op_LShiftI) {
+      shift_bt = T_INT;
+      shift = val;
+      if (phase->type(shift)->isa_integer(bt) == nullptr) {
+        return false;
+      }
+    }
+  }
+  if (shift->Opcode() != Op_LShift(shift_bt)) {
+    if (check_reverse &&
+        (mask->Opcode() == Op_LShift(bt) ||
+         (bt == T_LONG && mask->Opcode() == Op_ConvI2L))) {
+      // try it the other way around
+      return AndIL_shift_and_mask_is_always_zero(phase, mask, shift, bt, false);
+    }
+    return false;
+  }
+  Node* shift2 = shift->in(2);
+  if (shift2 == nullptr) {
+    return false;
+  }
+  const Type* shift2_t = phase->type(shift2);
+  if (!shift2_t->isa_int() || !shift2_t->is_int()->is_con()) {
+    return false;
+  }
+
+  jint shift_con = shift2_t->is_int()->get_con() & ((shift_bt == T_INT ? BitsPerJavaInteger : BitsPerJavaLong) - 1);
+  if ((((jlong)1) << shift_con) > mask_t->hi_as_long() && mask_t->lo_as_long() >= 0) {
+    return true;
+  }
+
+  return false;
+}
+
+// Given an expression (AndX (AddX v1 (LShiftX v2 #N)) #M)
+// determine if the AndX must always produce (AndX v1 #M),
+// because the shift (v2<<N) is bitwise disjoint from the mask #M.
+// The X in AndX will be I or L, depending on bt.
+// Specifically, the following cases fold,
+// when the shift value N is large enough to zero out
+// all the set positions of the and-mask M.
+//   (AndI (AddI v1 (LShiftI _ #N)) #M) => (AndI v1 #M)
+//   (AndL (AddI v1 (LShiftL _ #N)) #M) => (AndL v1 #M)
+//   (AndL (AddL v1 (ConvI2L (LShiftI _ #N))) #M) => (AndL v1 #M)
+// The M and N values must satisfy ((-1 << N) & M) == 0.
+// Because the optimization might work for a non-constant
+// mask M, and because the AddX operands can come in either
+// order, we check for every operand order.
+Node* MulNode::AndIL_add_shift_and_mask(PhaseGVN* phase, BasicType bt) {
+  Node* add = in(1);
+  Node* mask = in(2);
+  if (add == nullptr || mask == nullptr) {
+    return nullptr;
+  }
+  int addidx = 0;
+  if (add->Opcode() == Op_Add(bt)) {
+    addidx = 1;
+  } else if (mask->Opcode() == Op_Add(bt)) {
+    mask = add;
+    addidx = 2;
+    add = in(addidx);
+  }
+  if (addidx > 0) {
+    Node* add1 = add->in(1);
+    Node* add2 = add->in(2);
+    if (add1 != nullptr && add2 != nullptr) {
+      if (AndIL_shift_and_mask_is_always_zero(phase, add1, mask, bt, false)) {
+        set_req_X(addidx, add2, phase);
+        return this;
+      } else if (AndIL_shift_and_mask_is_always_zero(phase, add2, mask, bt, false)) {
+        set_req_X(addidx, add1, phase);
+        return this;
+      }
+    }
+  }
+  return nullptr;
 }

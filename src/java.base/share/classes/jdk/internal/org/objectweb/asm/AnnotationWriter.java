@@ -56,6 +56,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package jdk.internal.org.objectweb.asm;
 
 /**
@@ -143,7 +144,7 @@ final class AnnotationWriter extends AnnotationVisitor {
             final boolean useNamedValues,
             final ByteVector annotation,
             final AnnotationWriter previousAnnotation) {
-        super(/* latest api = */ Opcodes.ASM8);
+        super(/* latest api = */ Opcodes.ASM9);
         this.symbolTable = symbolTable;
         this.useNamedValues = useNamedValues;
         this.annotation = annotation;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,11 @@
 #ifndef SHARE_GC_SHARED_GCTRACETIME_INLINE_HPP
 #define SHARE_GC_SHARED_GCTRACETIME_INLINE_HPP
 
-#include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTraceTime.hpp"
+
+#include "gc/shared/gcTimer.hpp"
 #include "logging/log.hpp"
+#include "runtime/os.hpp"
 #include "utilities/ticks.hpp"
 
 inline GCTraceTimeDriver::GCTraceTimeDriver(
@@ -62,17 +64,17 @@ inline GCTraceTimeDriver::~GCTraceTimeDriver() {
 }
 
 inline bool GCTraceTimeDriver::has_callbacks() const {
-  return _cb0 != NULL || _cb1 != NULL || _cb2 != NULL;
+  return _cb0 != nullptr || _cb1 != nullptr || _cb2 != nullptr;
 }
 
 inline void GCTraceTimeDriver::at_start(TimespanCallback* cb, Ticks start) {
-  if (cb != NULL) {
+  if (cb != nullptr) {
     cb->at_start(start);
   }
 }
 
 inline void GCTraceTimeDriver::at_end(TimespanCallback* cb, Ticks end) {
-  if (cb != NULL) {
+  if (cb != nullptr) {
     cb->at_end(end);
   }
 }
@@ -111,14 +113,14 @@ inline bool GCTraceTimeLoggerImpl::is_enabled() const {
 inline GCTraceTimeTimer::GCTraceTimeTimer(const char* title, GCTimer* timer) : _title(title), _timer(timer) {}
 
 inline void GCTraceTimeTimer::at_start(Ticks start) {
-  if (_timer != NULL) {
+  if (_timer != nullptr) {
     _timer->register_gc_phase_start(_title, start);
   }
 
 }
 
 inline void GCTraceTimeTimer::at_end(Ticks end) {
-  if (_timer != NULL) {
+  if (_timer != nullptr) {
     _timer->register_gc_phase_end(end);
   }
 }
@@ -126,13 +128,13 @@ inline void GCTraceTimeTimer::at_end(Ticks end) {
 inline GCTraceTimePauseTimer::GCTraceTimePauseTimer(const char* title, GCTimer* timer) : _title(title), _timer(timer) {}
 
 inline void GCTraceTimePauseTimer::at_start(Ticks start) {
-  if (_timer != NULL) {
+  if (_timer != nullptr) {
     _timer->register_gc_pause_start(_title, start);
   }
 }
 
 inline void GCTraceTimePauseTimer::at_end(Ticks end) {
-  if (_timer != NULL) {
+  if (_timer != nullptr) {
     _timer->register_gc_pause_end(end);
   }
 }
@@ -151,8 +153,8 @@ inline GCTraceTimeImpl::GCTraceTimeImpl(
                 out_end),
         _timer(title, timer),
         // Only register the callbacks if they are enabled
-        _driver((_logger.is_enabled() ? &_logger : NULL),
-                (timer != NULL ? &_timer : NULL)) {}
+        _driver((_logger.is_enabled() ? &_logger : nullptr),
+                (timer != nullptr ? &_timer : nullptr)) {}
 
 // Figure out the first __NO_TAG position and replace it with 'start'.
 #define INJECT_START_TAG(T1, T2, T3, T4) \
@@ -184,7 +186,7 @@ class GCTraceTimeWrapper : public StackObj {
 public:
   GCTraceTimeWrapper(
       const char* title,
-      GCTimer* timer = NULL,
+      GCTimer* timer = nullptr,
       GCCause::Cause gc_cause = GCCause::_no_gc,
       bool log_heap_usage = false) :
           _impl(title,

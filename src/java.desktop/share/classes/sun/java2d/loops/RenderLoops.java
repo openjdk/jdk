@@ -52,4 +52,5 @@ public class RenderLoops {
     public DrawGlyphList        drawGlyphListLoop;
     public DrawGlyphListAA      drawGlyphListAALoop;
     public DrawGlyphListLCD     drawGlyphListLCDLoop;
+    public DrawGlyphListColor   drawGlyphListColorLoop;
 }

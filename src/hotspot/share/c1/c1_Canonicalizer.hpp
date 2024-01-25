@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,18 +40,8 @@ class Canonicalizer: InstructionVisitor {
   void set_constant(jlong x)                     { set_canonical(new Constant(new LongConstant(x))); }
   void set_constant(jfloat x)                    { set_canonical(new Constant(new FloatConstant(x))); }
   void set_constant(jdouble x)                   { set_canonical(new Constant(new DoubleConstant(x))); }
-#ifdef _WINDOWS
-  // jint is defined as long in jni_md.h, so convert from int to jint
-  void set_constant(int x)                       { set_constant((jint)x); }
-#endif
   void move_const_to_right(Op2* x);
   void do_Op2(Op2* x);
-  void do_UnsafeRawOp(UnsafeRawOp* x);
-
-  void unsafe_raw_match(UnsafeRawOp* x,
-                        Instruction** base,
-                        Instruction** index,
-                        int* scale);
 
  public:
   Canonicalizer(Compilation* c, Value x, int bci) : _compilation(c), _canonical(x), _bci(bci) {
@@ -75,7 +65,6 @@ class Canonicalizer: InstructionVisitor {
   virtual void do_LogicOp        (LogicOp*         x);
   virtual void do_CompareOp      (CompareOp*       x);
   virtual void do_IfOp           (IfOp*            x);
-  virtual void do_IfInstanceOf   (IfInstanceOf*    x);
   virtual void do_Convert        (Convert*         x);
   virtual void do_NullCheck      (NullCheck*       x);
   virtual void do_TypeCast       (TypeCast*        x);
@@ -100,11 +89,9 @@ class Canonicalizer: InstructionVisitor {
   virtual void do_OsrEntry       (OsrEntry*        x);
   virtual void do_ExceptionObject(ExceptionObject* x);
   virtual void do_RoundFP        (RoundFP*         x);
-  virtual void do_UnsafeGetRaw   (UnsafeGetRaw*    x);
-  virtual void do_UnsafePutRaw   (UnsafePutRaw*    x);
-  virtual void do_UnsafeGetObject(UnsafeGetObject* x);
-  virtual void do_UnsafePutObject(UnsafePutObject* x);
-  virtual void do_UnsafeGetAndSetObject(UnsafeGetAndSetObject* x);
+  virtual void do_UnsafeGet      (UnsafeGet*       x);
+  virtual void do_UnsafePut      (UnsafePut*       x);
+  virtual void do_UnsafeGetAndSet(UnsafeGetAndSet* x);
   virtual void do_ProfileCall    (ProfileCall*     x);
   virtual void do_ProfileReturnType (ProfileReturnType*  x);
   virtual void do_ProfileInvoke  (ProfileInvoke*   x);

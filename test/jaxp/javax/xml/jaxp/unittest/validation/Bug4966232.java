@@ -39,7 +39,7 @@ import org.xml.sax.InputSource;
  * @test
  * @bug 4966232
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.Bug4966232
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Bug4966232
  * @run testng/othervm validation.Bug4966232
  * @summary Test SchemaFactory.newSchema(Source) returns a Schema instance for DOMSource & SAXSource.
  */

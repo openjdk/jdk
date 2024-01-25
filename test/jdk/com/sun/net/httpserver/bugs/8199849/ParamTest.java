@@ -200,6 +200,7 @@ public class ParamTest {
             URI uri = url.toURI();
             HttpClient client = HttpClient.newBuilder()
                 .authenticator(auth)
+                .proxy(ProxySelector.of(null))
                 .build();
 
             HttpRequest request = HttpRequest

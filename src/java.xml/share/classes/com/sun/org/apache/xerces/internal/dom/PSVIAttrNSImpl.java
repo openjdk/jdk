@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -60,9 +60,11 @@ public class PSVIAttrNSImpl extends AttrNSImpl implements AttributePSVI {
     }
 
     /** attribute declaration */
+    @SuppressWarnings("serial") // Type of field is not Serializable
     protected XSAttributeDeclaration fDeclaration = null;
 
     /** type of attribute, simpleType */
+    @SuppressWarnings("serial") // Type of field is not Serializable
     protected XSTypeDefinition fTypeDecl = null;
 
     /** If this attribute was explicitly given a
@@ -70,6 +72,7 @@ public class PSVIAttrNSImpl extends AttrNSImpl implements AttributePSVI {
     protected boolean fSpecified = true;
 
     /** Schema value */
+    @SuppressWarnings("serial") // Type of field is not Serializable
     protected ValidatedInfo fValue = new ValidatedInfo();
 
     /** validation attempted: none, partial, full */
@@ -79,9 +82,11 @@ public class PSVIAttrNSImpl extends AttrNSImpl implements AttributePSVI {
     protected short fValidity = AttributePSVI.VALIDITY_NOTKNOWN;
 
     /** error codes */
+    @SuppressWarnings("serial") // Type of field is not Serializable
     protected StringList fErrorCodes = null;
 
     /** error messages */
+    @SuppressWarnings("serial") // Type of field is not Serializable
     protected StringList fErrorMessages = null;
 
     /** validation context: could be QName or XPath expression*/

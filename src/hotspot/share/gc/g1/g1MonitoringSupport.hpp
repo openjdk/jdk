@@ -121,24 +121,27 @@ class MemoryPool;
 
 class G1MonitoringSupport : public CHeapObj<mtGC> {
   friend class VMStructs;
-  friend class G1MonitoringScope;
+  friend class G1YoungGCMonitoringScope;
+  friend class G1FullGCMonitoringScope;
+  friend class G1ConcGCMonitoringScope;
 
   G1CollectedHeap* _g1h;
 
   // java.lang.management MemoryManager and MemoryPool support
-  GCMemoryManager _incremental_memory_manager;
+  GCMemoryManager _young_gc_memory_manager;
   GCMemoryManager _full_gc_memory_manager;
+  GCMemoryManager _conc_gc_memory_manager;
 
   MemoryPool* _eden_space_pool;
   MemoryPool* _survivor_space_pool;
   MemoryPool* _old_gen_pool;
 
   // jstat performance counters
-  //  incremental collections both young and mixed
-  CollectorCounters*   _incremental_collection_counters;
+  //  young stop-the-world collections (including mixed)
+  CollectorCounters*   _young_collection_counters;
   //  full stop-the-world collections
   CollectorCounters*   _full_collection_counters;
-  //  stop-the-world phases in G1
+  //  stop-the-world phases in G1 concurrent collection
   CollectorCounters*   _conc_collection_counters;
   //  young collection set counters.  The _eden_counters,
   // _from_counters, and _to_counters are associated with
@@ -177,8 +180,6 @@ class G1MonitoringSupport : public CHeapObj<mtGC> {
   // Recalculate all the sizes.
   void recalculate_sizes();
 
-  void recalculate_eden_size();
-
 public:
   G1MonitoringSupport(G1CollectedHeap* g1h);
   ~G1MonitoringSupport();
@@ -189,30 +190,11 @@ public:
   GrowableArray<GCMemoryManager*> memory_managers();
   GrowableArray<MemoryPool*> memory_pools();
 
-  // Unfortunately, the jstat tool assumes that no space has 0
-  // capacity. In our case, given that each space is logical, it's
-  // possible that no regions will be allocated to it, hence to have 0
-  // capacity (e.g., if there are no survivor regions, the survivor
-  // space has 0 capacity). The way we deal with this is to always pad
-  // each capacity value we report to jstat by a very small amount to
-  // make sure that it's never zero. Given that we sometimes have to
-  // report a capacity of a generation that contains several spaces
-  // (e.g., young gen includes one eden, two survivor spaces), the
-  // mult parameter is provided in order to adding the appropriate
-  // padding multiple times so that the capacities add up correctly.
-  static size_t pad_capacity(size_t size_bytes, size_t mult = 1) {
-    return size_bytes + MinObjAlignmentInBytes * mult;
-  }
-
   // Recalculate all the sizes from scratch and update all the jstat
   // counters accordingly.
   void update_sizes();
 
   void update_eden_size();
-
-  CollectorCounters* conc_collection_counters() {
-    return _conc_collection_counters;
-  }
 
   // Monitoring support used by
   //   MemoryService
@@ -238,10 +220,30 @@ public:
 
 // Scope object for java.lang.management support.
 class G1MonitoringScope : public StackObj {
+  G1MonitoringSupport* _monitoring_support;
   TraceCollectorStats _tcs;
   TraceMemoryManagerStats _tms;
-public:
-  G1MonitoringScope(G1MonitoringSupport* g1mm, bool full_gc, bool all_memory_pools_affected);
+protected:
+  G1MonitoringScope(G1MonitoringSupport* monitoring_support,
+                    CollectorCounters* collection_counters,
+                    GCMemoryManager* gc_memory_manager,
+                    const char* end_message,
+                    bool all_memory_pools_affected = true);
+  ~G1MonitoringScope();
 };
 
+class G1YoungGCMonitoringScope : public G1MonitoringScope {
+public:
+  G1YoungGCMonitoringScope(G1MonitoringSupport* monitoring_support, bool all_memory_pools_affected);
+};
+
+class G1FullGCMonitoringScope : public G1MonitoringScope {
+public:
+  G1FullGCMonitoringScope(G1MonitoringSupport* monitoring_support);
+};
+
+class G1ConcGCMonitoringScope : public G1MonitoringScope {
+public:
+  G1ConcGCMonitoringScope(G1MonitoringSupport* monitoring_support);
+};
 #endif // SHARE_GC_G1_G1MONITORINGSUPPORT_HPP

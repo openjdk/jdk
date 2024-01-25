@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,6 @@ public:
     _igvn.register_new_node_with_optimizer(n);
     return n;
   }
-  void set_eden_pointers(Node* &eden_top_adr, Node* &eden_end_adr);
   Node* make_load( Node* ctl, Node* mem, Node* base, int offset,
                    const Type* value_type, BasicType bt);
   Node* make_store(Node* ctl, Node* mem, Node* base, int offset,
@@ -68,10 +67,10 @@ public:
                        const TypeFunc* call_type, address call_addr,
                        const char* call_name,
                        const TypePtr* adr_type,
-                       Node* parm0 = NULL, Node* parm1 = NULL,
-                       Node* parm2 = NULL, Node* parm3 = NULL,
-                       Node* parm4 = NULL, Node* parm5 = NULL,
-                       Node* parm6 = NULL, Node* parm7 = NULL);
+                       Node* parm0 = nullptr, Node* parm1 = nullptr,
+                       Node* parm2 = nullptr, Node* parm3 = nullptr,
+                       Node* parm4 = nullptr, Node* parm5 = nullptr,
+                       Node* parm6 = nullptr, Node* parm7 = nullptr);
 
   address basictype2arraycopy(BasicType t,
                               Node* src_offset,
@@ -82,14 +81,7 @@ public:
 
 private:
   // projections extracted from a call node
-  ProjNode *_fallthroughproj;
-  ProjNode *_fallthroughcatchproj;
-  ProjNode *_ioproj_fallthrough;
-  ProjNode *_ioproj_catchall;
-  ProjNode *_catchallcatchproj;
-  ProjNode *_memproj_fallthrough;
-  ProjNode *_memproj_catchall;
-  ProjNode *_resproj;
+  CallProjections _callprojs;
 
   // Additional data collected during macro expansion
   bool _has_locks;
@@ -99,16 +91,16 @@ private:
   void expand_allocate_common(AllocateNode* alloc,
                               Node* length,
                               const TypeFunc* slow_call_type,
-                              address slow_call_address);
-  void yank_initalize_node(InitializeNode* node);
+                              address slow_call_address,
+                              Node* valid_length_test);
   void yank_alloc_node(AllocateNode* alloc);
   Node *value_from_mem(Node *mem, Node *ctl, BasicType ft, const Type *ftype, const TypeOopPtr *adr_t, AllocateNode *alloc);
   Node *value_from_mem_phi(Node *mem, BasicType ft, const Type *ftype, const TypeOopPtr *adr_t, AllocateNode *alloc, Node_Stack *value_phis, int level);
 
   bool eliminate_boxing_node(CallStaticJavaNode *boxing);
   bool eliminate_allocate_node(AllocateNode *alloc);
-  bool can_eliminate_allocation(AllocateNode *alloc, GrowableArray <SafePointNode *>& safepoints);
-  bool scalar_replacement(AllocateNode *alloc, GrowableArray <SafePointNode *>& safepoints_done);
+  void undo_previous_scalarizations(GrowableArray <SafePointNode *> safepoints_done, AllocateNode* alloc);
+  bool scalar_replacement(AllocateNode *alloc, GrowableArray <SafePointNode *>& safepoints);
   void process_users_of_allocation(CallNode *alloc);
 
   void eliminate_gc_barrier(Node *p2x);
@@ -119,7 +111,7 @@ private:
   void expand_unlock_node(UnlockNode *unlock);
 
   // More helper methods modeled after GraphKit for array copy
-  void insert_mem_bar(Node** ctrl, Node** mem, int opcode, Node* precedent = NULL);
+  void insert_mem_bar(Node** ctrl, Node** mem, int opcode, Node* precedent = nullptr);
   Node* array_element_address(Node* ary, Node* idx, BasicType elembt);
   Node* ConvI2L(Node* offset);
 
@@ -147,7 +139,7 @@ private:
                            Node* copy_length,
                            bool disjoint_bases = false,
                            bool length_never_negative = false,
-                           RegionNode* slow_region = NULL);
+                           RegionNode* slow_region = nullptr);
   void generate_clear_array(Node* ctrl, MergeMemNode* merge_mem,
                             const TypePtr* adr_type,
                             Node* dest,
@@ -193,13 +185,11 @@ private:
 
   int replace_input(Node *use, Node *oldref, Node *newref);
   void migrate_outs(Node *old, Node *target);
-  void copy_call_debug_info(CallNode *oldcall, CallNode * newcall);
   Node* opt_bits_test(Node* ctrl, Node* region, int edge, Node* word, int mask, int bits, bool return_fast_path = false);
   void copy_predefined_input_for_runtime_call(Node * ctrl, CallNode* oldcall, CallNode* call);
   CallNode* make_slow_call(CallNode *oldcall, const TypeFunc* slow_call_type, address slow_call,
                            const char* leaf_name, Node* slow_path, Node* parm0, Node* parm1,
                            Node* parm2);
-  void extract_call_projections(CallNode *call);
 
   Node* initialize_object(AllocateNode* alloc,
                           Node* control, Node* rawmem, Node* object,
@@ -215,13 +205,27 @@ public:
   void eliminate_macro_nodes();
   bool expand_macro_nodes();
 
+  SafePointScalarObjectNode* create_scalarized_object_description(AllocateNode *alloc, SafePointNode* sfpt);
+  static bool can_eliminate_allocation(PhaseIterGVN *igvn, AllocateNode *alloc, GrowableArray <SafePointNode *> *safepoints);
+
+
   PhaseIterGVN &igvn() const { return _igvn; }
+
+#ifndef PRODUCT
+    static int _objs_scalar_replaced_counter;
+    static int _monitor_objects_removed_counter;
+    static int _GC_barriers_removed_counter;
+    static int _memory_barriers_removed_counter;
+    static void print_statistics();
+    static int count_MemBar(Compile *C);
+#endif
 
   // Members accessed from BarrierSetC2
   void replace_node(Node* source, Node* target) { _igvn.replace_node(source, target); }
   Node* intcon(jint con)        const { return _igvn.intcon(con); }
   Node* longcon(jlong con)      const { return _igvn.longcon(con); }
   Node* makecon(const Type *t)  const { return _igvn.makecon(t); }
+  Node* zerocon(BasicType bt)   const { return _igvn.zerocon(bt); }
   Node* top()                   const { return C->top(); }
 
   Node* prefetch_allocation(Node* i_o,

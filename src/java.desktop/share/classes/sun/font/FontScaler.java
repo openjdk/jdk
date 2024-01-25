@@ -88,7 +88,7 @@ public abstract class FontScaler implements DisposerRecord {
     //   (theoretically logic can be font type specific)
 
     /* This is the only place to instantiate new FontScaler.
-     * Therefore this is very convinient place to register
+     * Therefore this is very convenient place to register
      * scaler with Disposer as well as trigger deregistering a bad font
      * when the scaler reports this.
      */
@@ -116,7 +116,7 @@ public abstract class FontScaler implements DisposerRecord {
 
     /*
      * At the moment it is harmless to create 2 null scalers so, technically,
-     * syncronized keyword is not needed.
+     * synchronized keyword is not needed.
      *
      * But it is safer to keep it to avoid subtle problems if we will be adding
      * checks like whether scaler is null scaler.
@@ -129,7 +129,7 @@ public abstract class FontScaler implements DisposerRecord {
     }
 
     protected WeakReference<Font2D> font = null;
-    protected long nativeScaler = 0; //used by decendants
+    protected long nativeScaler = 0; //used by descendants
                                      //that have native state
     protected boolean disposed = false;
 
@@ -149,7 +149,7 @@ public abstract class FontScaler implements DisposerRecord {
      *
      *  Note:
      *   currently this method has to return not 0L but pointer to valid
-     *   GlyphInfo object. Because Strike and drawing releated logic does
+     *   GlyphInfo object. Because Strike and drawing related logic does
      *   expect that.
      *   In the future we may want to rework this to allow 0L here.
      */

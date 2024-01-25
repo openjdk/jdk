@@ -37,6 +37,7 @@ import sun.awt.image.BufImgSurfaceData;
 import sun.java2d.SunGraphics2D;
 import sun.java2d.SurfaceData;
 import sun.java2d.pipe.Region;
+import sun.java2d.loops.GraphicsPrimitiveMgr.GeneralPrimitives;
 
 /**
  * BlitBg
@@ -114,7 +115,7 @@ public class BlitBg extends GraphicsPrimitive
                               int width, int height);
 
     static {
-        GraphicsPrimitiveMgr.registerGeneral(new BlitBg(null, null, null));
+        GeneralPrimitives.register(new BlitBg(null, null, null));
     }
 
     protected GraphicsPrimitive makePrimitive(SurfaceType srctype,
