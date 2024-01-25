@@ -54,5 +54,5 @@ Java_jdk_internal_platform_CgroupMetrics_getTotalSwapSize0
     if (retval < 0) {
          return 0; // syinfo failed, treat as no swap
     }
-    return (jlong)si.totalswap * si.mem_unit;
+    return (jlong)(si.totalswap * si.mem_unit);
 }
