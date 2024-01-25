@@ -317,6 +317,28 @@ import java.util.Objects;
  * <h3>Usage Information</h3>
  *
  * <p>
+ * Here are some examples of usage.
+ * In real internationalized programs, the message format pattern and other
+ * static strings will, of course, be obtained from resource bundles.
+ * Other parameters will be dynamically determined at runtime.
+ *
+ * <p>
+ * The first example uses the static method {@code MessageFormat.format},
+ * which internally creates a {@code MessageFormat} for one-time use:
+ * {@snippet lang=java :
+ * int planet = 7;
+ * String event = "a disturbance in the Force";
+ *
+ * String result = MessageFormat.format(
+ *     "At {1,time} on {1,date}, there was {2} on planet {0,number,integer}.",
+ *     planet, new Date(), event);
+ * }
+ * The output is:
+ * <blockquote><pre>
+ * At 12:30 PM on Jul 3, 2053, there was a disturbance in the Force on planet 7.
+ * </pre></blockquote>
+ *
+ * <p>
  * For more sophisticated patterns, {@link ChoiceFormat} can be used with
  * {@code MessageFormat} to produce accurate forms for singular and plural:
  * {@snippet lang=java :
