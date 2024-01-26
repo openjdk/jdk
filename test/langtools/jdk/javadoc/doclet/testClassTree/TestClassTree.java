@@ -66,8 +66,8 @@ public class TestClassTree extends JavadocTester {
         tb.writeJavaFiles(src,
                 """
                     package badpkg;
-                    public class ChildClass extends ParentClass
-                        implements AnInterface, Iterable {
+                    public class ChildClass extends UndefinedClass
+                        implements UndefinedInterface, Iterable {
 
                     }
                     """
@@ -90,10 +90,10 @@ public class TestClassTree extends JavadocTester {
                 """
                     <div class="type-signature"><span class="modifiers">public class </span>\
                     <span class="element-name type-name-label">ChildClass</span>
-                    <span class="extends-implements">extends ParentClass
+                    <span class="extends-implements">extends UndefinedClass
                     implements java.lang.Iterable</span></div>
                     """);
-        checkOutput("badpkg/ChildClass.html", false, "AnInterface");
+        checkOutput("badpkg/ChildClass.html", false, "UndefinedInterface");
     }
 
     @Test
