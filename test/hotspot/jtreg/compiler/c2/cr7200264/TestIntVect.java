@@ -521,7 +521,15 @@ public class TestIntVect {
                    IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
                    IRNode.SUB_VI,
                    IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0" },
-        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
+        applyIfCPUFeature = {"sse2", "true"},
+        applyIfAnd = {"UseAVX", ">= 2", "UseSSE", ">= 4"})
+    // Does not currently vectorize on aarch64. NOTE: This check does not
+    // document the _desired_ behavior of the system but the current behavior
+    // (no vectorization)
+    @IR(counts = { IRNode.ADD_VI,    "= 0",
+                   IRNode.RSHIFT_VI, "= 0",
+                   IRNode.SUB_VI,    "= 0" },
+        applyIfCPUFeature = {"asimd", "true"})
     void test_divc(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]/VALUE);
@@ -535,7 +543,15 @@ public class TestIntVect {
                    IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
                    IRNode.SUB_VI,
                    IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0" },
-        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
+        applyIfCPUFeature = {"sse2", "true"},
+        applyIfAnd = {"UseAVX", ">= 2", "UseSSE", ">= 4"})
+    // Does not currently vectorize on aarch64. NOTE: This check does not
+    // document the _desired_ behavior of the system but the current behavior
+    // (no vectorization)
+    @IR(counts = { IRNode.ADD_VI,    "= 0",
+                   IRNode.RSHIFT_VI, "= 0",
+                   IRNode.SUB_VI,    "= 0" },
+        applyIfCPUFeature = {"asimd", "true"})
     void test_divc_n(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]/(-VALUE));
