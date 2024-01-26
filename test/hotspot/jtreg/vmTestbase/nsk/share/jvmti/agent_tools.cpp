@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "native_thread.h"
+#include "native_thread.hpp"
 #include "jni_tools.h"
 #include "jvmti_tools.h"
 

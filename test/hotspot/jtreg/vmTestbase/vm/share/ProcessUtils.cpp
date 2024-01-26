@@ -21,7 +21,7 @@
  * questions.
  */
 #include "jni.h"
-#include "native_thread.h"
+#include "native_thread.hpp"
 #ifdef _WIN32
 #include <windows.h>
 #include <process.h>
