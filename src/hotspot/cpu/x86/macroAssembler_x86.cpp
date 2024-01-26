@@ -9365,14 +9365,18 @@ void MacroAssembler::vpshufb(XMMRegister dst, XMMRegister nds, AddressLiteral sr
   }
 }
 
+void MacroAssembler::vpor(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
+  Assembler::vpor(dst, nds, src, vector_len);
+}
+
 void MacroAssembler::vpor(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch) {
   assert(rscratch != noreg || always_reachable(src), "missing");
 
   if (reachable(src)) {
-    vpor(dst, nds, as_Address(src), vector_len);
+    Assembler::vpor(dst, nds, as_Address(src), vector_len);
   } else {
     lea(rscratch, src);
-    vpor(dst, nds, Address(rscratch, 0), vector_len);
+    Assembler::vpor(dst, nds, Address(rscratch, 0), vector_len);
   }
 }
 

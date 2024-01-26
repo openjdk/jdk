@@ -1805,6 +1805,7 @@ public:
 
   using Assembler::vpor;
   void vpor(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch = noreg);
+  void vpor(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 
   using Assembler::vpternlogq;
   void vpternlogq(XMMRegister dst, int imm8, XMMRegister src2, AddressLiteral src3, int vector_len, Register rscratch = noreg);

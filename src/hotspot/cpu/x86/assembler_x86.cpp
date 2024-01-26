@@ -5157,7 +5157,7 @@ void Assembler::vpmadd52luq(XMMRegister dst, XMMRegister src1, Address src2, int
 }
 
 void Assembler::vpmadd52luq(XMMRegister dst, KRegister mask, XMMRegister src1, Address src2, bool merge, int vector_len) {
-  assert(VM_Version::supports_avx512ifma(), ""); //TODO: AVXIFMA
+  //assert(VM_Version::supports_avx512ifma(), ""); //TODO: AVXIFMA
   InstructionMark im(this);
   InstructionAttr attributes(vector_len, /* rex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
   //attributes.set_is_evex_instruction();
@@ -5176,7 +5176,7 @@ void Assembler::vpmadd52luq(XMMRegister dst, XMMRegister src1, XMMRegister src2,
 }
 
 void Assembler::vpmadd52luq(XMMRegister dst, KRegister mask, XMMRegister src1, XMMRegister src2, bool merge, int vector_len) {
-  assert(VM_Version::supports_avx512ifma(), ""); //TODO: AVXIFMA
+  //assert(VM_Version::supports_avx512ifma(), ""); //TODO: AVXIFMA
   InstructionAttr attributes(vector_len, /* rex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
   //attributes.set_is_evex_instruction();
   attributes.set_embedded_opmask_register_specifier(mask);
@@ -5210,7 +5210,7 @@ void Assembler::vpmadd52huq(XMMRegister dst, XMMRegister src1, Address src2, int
 }
 
 void Assembler::vpmadd52huq(XMMRegister dst, KRegister mask, XMMRegister src1, Address src2, bool merge, int vector_len) {
-  assert(VM_Version::supports_avx512ifma(), ""); //TODO: AVXIFMA
+  //assert(VM_Version::supports_avx512ifma(), ""); //TODO: AVXIFMA
   InstructionMark im(this);
   InstructionAttr attributes(vector_len, /* rex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
   //attributes.set_is_evex_instruction();
@@ -5225,11 +5225,11 @@ void Assembler::vpmadd52huq(XMMRegister dst, KRegister mask, XMMRegister src1, A
 }
 
 void Assembler::vpmadd52huq(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len) {
-  evpmadd52huq(dst, k0, src1, src2, false, vector_len);
+  vpmadd52huq(dst, k0, src1, src2, false, vector_len);
 }
 
 void Assembler::vpmadd52huq(XMMRegister dst, KRegister mask, XMMRegister src1, XMMRegister src2, bool merge, int vector_len) {
-  assert(VM_Version::supports_avx512ifma(), "");
+  //assert(VM_Version::supports_avx512ifma(), ""); TODO: AVX-IFMA
   InstructionAttr attributes(vector_len, /* rex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
   //attributes.set_is_evex_instruction();
   attributes.set_embedded_opmask_register_specifier(mask);
