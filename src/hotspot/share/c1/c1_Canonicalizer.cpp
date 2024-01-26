@@ -843,7 +843,11 @@ void Canonicalizer::do_LookupSwitch(LookupSwitch* x) {
     int v = x->tag()->type()->as_IntConstant()->value();
     BlockBegin* sux = x->default_sux();
     for (int i = 0; i < x->length(); i++) {
-      if (v == x->key_at(i)) {
+      int key = x->key_at(i);
+      if (v < key) {
+        break;
+      }
+      if (v == key) {
         sux = x->sux_at(i);
         break;
       }
