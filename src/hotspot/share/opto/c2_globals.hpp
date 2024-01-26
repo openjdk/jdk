@@ -354,6 +354,9 @@
   notproduct(bool, TraceNewVectors, false,                                  \
           "Trace creation of Vector nodes")                                 \
                                                                             \
+  product(bool, MergeStores, true, DIAGNOSTIC,                              \
+          "Optimize stores by combining values into larger store")          \
+                                                                            \
   notproduct(bool, TraceMergeStores, false,                                 \
           "Trace creation of merged stores")                                \
                                                                             \

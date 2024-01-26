@@ -2477,7 +2477,7 @@ void Compile::Optimize() {
   }
 
 #ifdef VM_LITTLE_ENDIAN
-  if (true) {
+  if (MergeStores) {
     assert(!C->merge_stores_phase(), "merge store phase not yet set");
     C->gather_nodes_for_merge_stores(igvn);
     C->set_merge_stores_phase(true);
