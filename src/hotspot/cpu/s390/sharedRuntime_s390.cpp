@@ -2318,7 +2318,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
     c2i_unverified_entry = __ pc();
 
     __ ic_check(2);
-    __ z_lg(Z_method, Address(Z_method, CompiledICData::speculated_method_offset()));
+    __ z_lg(Z_method, Address(Z_inline_cache, CompiledICData::speculated_method_offset()));
     // This def MUST MATCH code in gen_c2i_adapter!
     const Register code = Z_R11;
 
