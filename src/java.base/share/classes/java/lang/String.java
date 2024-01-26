@@ -4155,7 +4155,7 @@ public final class String
 
     /**
      * Returns a string whose value is this string, with escape sequences
-     * and unicode escapes translated as if in a string literal.
+     * and Unicode escapes translated as if in a string literal.
      * <p>
      * Escapes are translated as follows;
      * <table class="striped">
@@ -4225,7 +4225,7 @@ public final class String
      *   </tr>
      *   <tr>
      *     <th scope="row">{@code \u005Cu...uXXXX}</th>
-     *     <td>unicode escape</td>
+     *     <td>Unicode escape</td>
      *     <td>single UTF-16 code unit equivalent</td>
      *   </tr>
      *   </tbody>
@@ -4233,15 +4233,15 @@ public final class String
      *
      * @throws IllegalArgumentException when an escape sequence is malformed.
      *
-     * @return String with escape sequences and unicode escapes translated.
+     * @return String with escape sequences and Unicode escapes translated.
      *
      * @implNote Unicode escapes are translated by the compiler before string
      * literals are translated. As a convenience for use with constructed
-     * strings, this method also translates unicode escapes. For example, this
-     * method could be used when ASCII encoded text files need to maintain unicode
+     * strings, this method also translates Unicode escapes. For example, this
+     * method could be used when ASCII encoded text files need to maintain Unicode
      * content. The translation is done in a single pass and is non-recursive. That is,
-     * escape sequences and unicode escapes are translated as encountered in one pass and
-     * <strong>not</strong> done as an unicode escapes pass followed by an escape sequences
+     * escape sequences and Unicode escapes are translated as encountered in one pass and
+     * <strong>not</strong> done as an Unicode escapes pass followed by an escape sequences
      * pass.
      *
      * @jls 3.10.7 Escape Sequences
@@ -4289,10 +4289,10 @@ public final class String
                         try {
                             ch = (char) Integer.parseInt(this, from - 4, from, 16);
                         } catch (NumberFormatException ex) {
-                            throw new IllegalArgumentException("Invalid unicode sequence: " + substring(from - 4, from));
+                            throw new IllegalArgumentException("Invalid Unicode sequence: " + substring(from - 4, from));
                         }
                     } else {
-                        throw new IllegalArgumentException("Invalid unicode sequence: " + substring(from));
+                        throw new IllegalArgumentException("Invalid Unicode sequence: " + substring(from));
                     }
                     break;
                 case '\'':
