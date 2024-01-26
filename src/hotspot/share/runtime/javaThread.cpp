@@ -1039,7 +1039,8 @@ MonitorChunk* JavaThread::monitor_chunks_safe() const {
   if (chunks != nullptr) {
     // Deopt is working, not at a safepoint.  Use Handshake:
     ReadMonitorChunksHandshake rmch;
-    Handshake::execute(&rmch, (JavaThread*) JavaThread::cast(this));
+    ThreadsListHandle tlh;
+    Handshake::execute(&rmch, &tlh, (JavaThread*) JavaThread::cast(this));
     chunks = rmch.monitor_chunks(); // will be null, deopt has finished after handshake
     assert(chunks == nullptr, "_monitor_chunks not null");
   }
