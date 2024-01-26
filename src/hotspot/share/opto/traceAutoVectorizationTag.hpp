@@ -26,6 +26,7 @@
 #define SHARE_OPTO_TRACE_AUTO_VECTORIZATION_TAG_HPP
 
 #include "utilities/bitMap.inline.hpp"
+#include "utilities/stringUtils.hpp"
 
 #define COMPILER_TRACE_AUTO_VECTORIZATION_TAG(flags) \
   flags(POINTER_ANALYSIS,     "Trace VPointer") \
@@ -71,47 +72,6 @@ static TraceAutoVectorizationTag find_tag(const char* str) {
   return TRACE_AUTO_VECTORIZATION_TAG_NONE;
 }
 
-class TraceAutoVectorizationTagNameIter {
- private:
-  char* _token;
-  char* _saved_ptr;
-  char* _list;
-
- public:
-  TraceAutoVectorizationTagNameIter(ccstrlist option) {
-    _list = (char*) canonicalize(option);
-    _saved_ptr = _list;
-    _token = strtok_r(_saved_ptr, ",", &_saved_ptr);
-  }
-
-  ~TraceAutoVectorizationTagNameIter() {
-    FREE_C_HEAP_ARRAY(char, _list);
-  }
-
-  const char* operator*() const { return _token; }
-
-  TraceAutoVectorizationTagNameIter& operator++() {
-    _token = strtok_r(nullptr, ",", &_saved_ptr);
-    return *this;
-  }
-
-  ccstrlist canonicalize(ccstrlist option_value) {
-    char* canonicalized_list = NEW_C_HEAP_ARRAY(char, strlen(option_value) + 1, mtCompiler);
-    int i = 0;
-    char current;
-    while ((current = option_value[i]) != '\0') {
-      if (current == '\n' || current == ' ') {
-        canonicalized_list[i] = ',';
-      } else {
-        canonicalized_list[i] = current;
-      }
-      i++;
-    }
-    canonicalized_list[i] = '\0';
-    return canonicalized_list;
-  }
-};
-
 class TraceAutoVectorizationTagValidator {
  private:
   CHeapBitMap _tags;
@@ -126,7 +86,7 @@ class TraceAutoVectorizationTagValidator {
     _bad(nullptr),
     _is_print_usage(is_print_usage)
   {
-    for (TraceAutoVectorizationTagNameIter iter(option); *iter != nullptr && _valid; ++iter) {
+    for (StringUtils::CommaSeparatedStringIterator iter(option); *iter != nullptr && _valid; ++iter) {
       char const* tag_name = *iter;
       if (strcmp("help", tag_name) == 0) {
         if (_is_print_usage) {
