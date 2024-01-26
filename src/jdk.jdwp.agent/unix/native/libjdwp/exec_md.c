@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,9 @@
  * questions.
  */
 
+#include <dirent.h>
+#include <errno.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
@@ -42,6 +45,99 @@ static char *skipNonWhitespace(char *p) {
         p++;
     }
     return p;
+}
+
+int
+isAsciiDigit(char c)
+{
+  return c >= '0' && c <= '9';
+}
+
+#if defined(_AIX)
+  /* AIX does not understand '/proc/self' - it requires the real process ID */
+  #define FD_DIR aix_fd_dir
+  #define DIR DIR64
+  #define dirent dirent64
+  #define opendir opendir64
+  #define readdir readdir64
+  #define closedir closedir64
+#elif defined(_ALLBSD_SOURCE)
+  #define FD_DIR "/dev/fd"
+#else
+  #define FD_DIR "/proc/self/fd"
+#endif
+
+// closes every file descriptor that is listed as a directory
+// entry in "/proc/self/fd" (or its equivalent). standard
+// input/output/error file descriptors will not be closed
+// by this function. this function returns 0 on failure
+// and 1 on success
+int
+closeDescriptors(void)
+{
+    DIR *dp;
+    struct dirent *dirp;
+    /* leave out standard input/output/error descriptors */
+    int from_fd = STDERR_FILENO + 1;
+
+    /* We're trying to close all file descriptors, but opendir() might
+     * itself be implemented using a file descriptor, and we certainly
+     * don't want to close that while it's in use.  We assume that if
+     * opendir() is implemented using a file descriptor, then it uses
+     * the lowest numbered file descriptor, just like open().  So we
+     * close a couple explicitly, so that opendir() can then use
+     * these lowest numbered closed file descriptors afresh.   */
+
+    close(from_fd);          /* for possible use by opendir() */
+    close(from_fd + 1);      /* another one for good luck */
+    from_fd += 2; /* leave out the 2 we just closed, which the opendir() may use */
+
+#if defined(_AIX)
+    /* set FD_DIR for AIX which does not understand '/proc/self' - it
+     * requires the real process ID */
+    char aix_fd_dir[32];     /* the pid has at most 19 digits */
+    snprintf(aix_fd_dir, 32, "/proc/%d/fd", getpid());
+#endif
+
+    if ((dp = opendir(FD_DIR)) == NULL)
+        return 0; // failure
+
+    while ((dirp = readdir(dp)) != NULL) {
+        int fd;
+        if (isAsciiDigit(dirp->d_name[0]) &&
+            (fd = strtol(dirp->d_name, NULL, 10)) >= from_fd)
+            close(fd);
+    }
+
+    closedir(dp);
+
+    return 1; // success
+}
+
+// does necessary housekeeping of a forked child process
+// (like closing copied file descriptors) before
+// execing the child process. this function never returns
+void
+forkedChildProcess(const char *file, char *const argv[])
+{
+    /* close all file descriptors that have been copied over
+     * from the parent process due to fork() */
+    if (closeDescriptors() == 0) { /* failed,  close the old way */
+        /* find max allowed file descriptors for a process
+         * and assume all were opened for the parent process and
+         * copied over to this child process. we close them all */
+        const rlim_t max_fd = sysconf(_SC_OPEN_MAX);
+        JDI_ASSERT(max_fd != (rlim_t)-1);
+        /* leave out standard input/output/error file descriptors */
+        rlim_t i = STDERR_FILENO + 1;
+        for (; i < max_fd; i++) {
+            (void)close(i);
+        }
+    }
+
+    (void)execvp(file, argv); /* not expected to return */
+
+    exit(errno); /* errno will have been set by the failed execvp */
 }
 
 int
@@ -93,21 +189,11 @@ dbgsysExec(char *cmdLine)
     argv[i] = NULL;  /* NULL terminate */
 
     if ((pid = fork()) == 0) {
-        /* Child process */
-        int i;
-        long max_fd;
-
-        /* close everything */
-        max_fd = sysconf(_SC_OPEN_MAX);
-        /*LINTED*/
-        for (i = 3; i < (int)max_fd; i++) {
-            (void)close(i);
-        }
-
-        (void)execvp(argv[0], argv);
-
-        exit(-1);
+        // manage the child process
+        forkedChildProcess(argv[0], argv);
     }
+    // call to forkedChildProcess(...) will never return for a forked process
+    JDI_ASSERT(pid != 0);
     jvmtiDeallocate(args);
     jvmtiDeallocate(argv);
     if (pid == pid_err) {
