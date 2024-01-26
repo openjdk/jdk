@@ -19,7 +19,8 @@ import javax.swing.JFileChooser;
  */
 public final class BasicDirectoryModelConcurrency {
     private static final long NUMBER_OF_FILES = 1_000;
-    private static final int NUMBER_OF_THREADS = 10;
+    private static final int NUMBER_OF_THREADS = 20;
+    public static final int NUMBER_OF_REPEATS = 1_000;
 
     public static void main(String[] args) throws Exception {
         final Path temp = Files.createTempDirectory("fileChooser-concurrency");
@@ -36,14 +37,8 @@ public final class BasicDirectoryModelConcurrency {
                   .limit(NUMBER_OF_THREADS)
                   .forEach(threads::add);
 
-            timer.scheduleAtFixedRate(new TimerTask() {
-                private long no = NUMBER_OF_FILES;
-
-                @Override
-                public void run() {
-                    createFile(temp.resolve((++no) + ".file"));
-                }
-            }, 5, 5_000);
+            timer.scheduleAtFixedRate(new CreateFilesTimerTask(temp),
+                                      5, 500);
 
             threads.forEach(Thread::start);
 
@@ -70,12 +65,20 @@ public final class BasicDirectoryModelConcurrency {
                 throw new RuntimeException(e);
             }
 
-            System.out.println("> rescan");
             int counter = 0;
             do {
                 fileChooser.rescanCurrentDirectory();
-            } while (++counter < 100 && !Thread.currentThread().isInterrupted());
-            System.out.println("< rescan" + counter);
+                delay((long) (Math.random() * 100));
+            } while (++counter < NUMBER_OF_REPEATS
+                     && !Thread.currentThread().isInterrupted());
+        }
+    }
+
+    private static void delay(long delay) {
+        try {
+            Thread.sleep(delay);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -112,6 +115,24 @@ public final class BasicDirectoryModelConcurrency {
             Files.delete(file);
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private static final class CreateFilesTimerTask extends TimerTask {
+        private final Path temp;
+        private long no;
+
+        public CreateFilesTimerTask(Path temp) {
+            this.temp = temp;
+            no = NUMBER_OF_FILES;
+        }
+
+        @Override
+        public void run() {
+            int count = (int) (Math.random() * 10);
+            while (count-- > 0) {
+                createFile(temp.resolve((++no) + ".file"));
+            }
         }
     }
 }
