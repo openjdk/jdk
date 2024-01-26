@@ -25,8 +25,8 @@
 
 #include <dirent.h>
 #include <errno.h>
-#include <limits.h>
 #include <stdlib.h>
+#include <sys/resource.h>
 #include <unistd.h>
 #include <string.h>
 #include <ctype.h>
