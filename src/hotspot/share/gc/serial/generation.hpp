@@ -83,12 +83,6 @@ class Generation: public CHeapObj<mtGC> {
   Generation(ReservedSpace rs, size_t initial_byte_size);
 
  public:
-  // The set of possible generation kinds.
-  enum Name {
-    DefNew,
-    MarkSweepCompact,
-  };
-
   enum SomePublicConstants {
     // Generations are GenGrain-aligned and have size that are multiples of
     // GenGrain.
@@ -239,10 +233,6 @@ class Generation: public CHeapObj<mtGC> {
   // may not pack objects densely; a chunk may either be an object or a
   // non-object.
   virtual HeapWord* block_start(const void* addr) const;
-
-  // Requires "addr" to be the start of a block, and returns "TRUE" iff
-  // the block is an object.
-  virtual bool block_is_obj(const HeapWord* addr) const;
 
   virtual void print() const;
   virtual void print_on(outputStream* st) const;

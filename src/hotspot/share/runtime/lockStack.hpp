@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +99,7 @@ public:
   inline bool is_recursive(oop o) const;
 
   // Try recursive enter.
-  // Precondition: This lock-stack must no be full.
+  // Precondition: This lock-stack must not be full.
   inline bool try_recursive_enter(oop o);
 
   // Try recursive exit.

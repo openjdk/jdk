@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,8 +159,6 @@ class DefNewGeneration: public Generation {
                    size_t max_byte_size,
                    const char* policy="Serial young collection pauses");
 
-  virtual Generation::Name kind() { return Generation::DefNew; }
-
   // allocate and initialize ("weak") refs processing support
   void ref_processor_init();
   ReferenceProcessor* ref_processor() { return _ref_processor; }
@@ -258,6 +256,10 @@ class DefNewGeneration: public Generation {
   // able to safely unwind and recover from that failure, albeit
   // at some additional cost.
   bool collection_attempt_is_safe();
+
+  // Requires "addr" to be the start of a block, and returns "TRUE" iff
+  // the block is an object.
+  bool block_is_obj(const HeapWord* addr) const;
 
   virtual void collect(bool   full,
                        bool   clear_all_soft_refs,
