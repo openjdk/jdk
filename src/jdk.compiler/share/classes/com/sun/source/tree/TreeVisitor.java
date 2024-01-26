@@ -264,9 +264,8 @@ public interface TreeVisitor<R,P> {
      * @param node the node being visited
      * @param p a parameter value
      * @return a result value
-     * @since 21
+     * @since 23
      */
-    @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES, reflective=true)
     R visitStringTemplate(StringTemplateTree node, P p);
 
     /**

@@ -116,9 +116,8 @@ public final class StringConcatFactory {
      * we do not use all those slots, to let the strategies with MethodHandle
      * combinators to use some arguments.
      *
-     * @since 21
+     * @since 23
      */
-    @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
     public static final int MAX_INDY_CONCAT_ARG_SLOTS;
     // Use static initialize block to avoid MAX_INDY_CONCAT_ARG_SLOTS being treating
     // as a constant for constant folding.
@@ -1064,9 +1063,8 @@ public final class StringConcatFactory {
      * @throws NullPointerException If any of the incoming arguments is null.
      * @throws IllegalArgumentException If the number of value slots exceed {@link #MAX_INDY_CONCAT_ARG_SLOTS}.
      *
-     * @since 21
+     * @since 23
      */
-    @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
     public static MethodHandle makeConcatWithTemplate(
             List<String> fragments,
             List<Class<?>> ptypes)
@@ -1195,9 +1193,8 @@ public final class StringConcatFactory {
      * @throws NullPointerException If any of the incoming arguments is null.
      * @throws IllegalArgumentException If the number of value slots exceed {@link #MAX_INDY_CONCAT_ARG_SLOTS}.
      *
-     * @since 21
+     * @since 23
      */
-    @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
     public static List<MethodHandle> makeConcatWithTemplateCluster(
             List<String> fragments,
             List<Class<?>> ptypes,
@@ -1272,9 +1269,8 @@ public final class StringConcatFactory {
      * @throws NullPointerException If any of the incoming arguments is null
      * @throws IllegalArgumentException If the number of value slots exceed {@link #MAX_INDY_CONCAT_ARG_SLOTS}.
      *
-     * @since 21
+     * @since 23
      */
-    @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
     public static MethodHandle makeConcatWithTemplateGetters(
             List<String> fragments,
             List<MethodHandle> getters,

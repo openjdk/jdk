@@ -109,11 +109,10 @@ import jdk.internal.javac.PreviewFeature;
  * {@link StringTemplate#fragments()} must be one element larger than the list returned
  * by {@link StringTemplate#values()}.
  *
- * @since 21
+ * @since 23
  *
  * @jls 15.8.6 Process Template Expressions
  */
-@PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
 public interface StringTemplate {
     /**
      * Returns a list of fragment literals for this {@link StringTemplate}.
@@ -531,11 +530,10 @@ public interface StringTemplate {
      * @see StringTemplate
      * @see java.util.FormatProcessor
      *
-     * @since 21
+     * @since 23
      *
      * @jls 15.8.6 Process Template Expressions
      */
-    @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
     @FunctionalInterface
     public interface Processor<R, E extends Throwable> {
 
@@ -596,9 +594,8 @@ public interface StringTemplate {
          * @implNote This interface is sealed to only allow standard processors.
          *
          * @sealedGraph
-         * @since 21
+         * @since 23
          */
-        @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
         public sealed interface Linkage permits FormatProcessor {
             /**
              * This method creates a {@link MethodHandle} that when invoked with arguments of

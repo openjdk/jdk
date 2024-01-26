@@ -67,7 +67,6 @@ public @interface PreviewFeature {
         // not used, but required for interim javac to not warn.
         VIRTUAL_THREADS,
         FOREIGN,
-        @JEP(number=459, title="String Templates", status="Second Preview")
         STRING_TEMPLATES,
         @JEP(number=445, title="Unnamed Classes and Instance Main Methods", status="Deprecated")
         UNNAMED_CLASSES,

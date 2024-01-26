@@ -32,9 +32,8 @@ import jdk.internal.javac.PreviewFeature;
 /**
  * A tree node for a string template expression.
  *
- * @since 21
+ * @since 23
  */
-@PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES, reflective=true)
 public interface StringTemplateTree extends ExpressionTree {
     /**
      * Returns templated string processor (may be qualified) or null.

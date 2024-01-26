@@ -207,7 +207,6 @@ public class Preview {
      */
     public boolean isPreview(Feature feature) {
         return switch (feature) {
-            case STRING_TEMPLATES -> true;
             case IMPLICIT_CLASSES -> true;
             case SUPER_INIT -> true;
             //Note: this is a backdoor which allows to optionally treat all features as 'preview' (for testing).

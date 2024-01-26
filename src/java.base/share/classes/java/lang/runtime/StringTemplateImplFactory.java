@@ -38,10 +38,7 @@ import java.util.List;
  * fragments and bootstrap method type. Usage is primarily from
  * {@link java.lang.runtime.TemplateRuntime}.
  *
- * @since 21
- *
- * Warning: This class is part of PreviewFeature.Feature.STRING_TEMPLATES.
- *          Do not rely on its availability.
+ * @since 23
  */
 final class StringTemplateImplFactory {
 

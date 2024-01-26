@@ -23,9 +23,8 @@
 
 /*
  * @test
- * @bug 0000000
+ * @bug 8285932
  * @summary Exercise runtime handing of templated strings.
- * @enablePreview true
  */
 
 import java.io.ByteArrayOutputStream;

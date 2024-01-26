@@ -21,11 +21,8 @@
  * questions.
  */
 
- // key: compiler.note.preview.filename
- // key: compiler.note.preview.recompile
  // key: compiler.err.unclosed.str.lit
  // key: compiler.err.string.template.is.not.well.formed
- // options: --enable-preview -source ${jdk.version}
 
 import java.lang.*;
 

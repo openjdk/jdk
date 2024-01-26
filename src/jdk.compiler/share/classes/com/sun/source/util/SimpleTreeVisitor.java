@@ -634,10 +634,9 @@ public class SimpleTreeVisitor <R,P> implements TreeVisitor<R,P> {
      * @param node {@inheritDoc}
      * @param p {@inheritDoc}
      * @return  the result of {@code defaultAction}
-     * @since 21
+     * @since 23
      */
     @Override
-    @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES, reflective=true)
     public R visitStringTemplate(StringTemplateTree node, P p) {
         return defaultAction(node, p);
     }
