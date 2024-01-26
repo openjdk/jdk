@@ -280,42 +280,52 @@ class SuperWord : public ResourceObj {
     return TraceSuperWord ||
            _vtrace.is_trace(TraceAutoVectorizationTag::SW_PRECONDITION);
   }
+
   bool is_trace_superword_vector_element_type() const {
     // Too verbose for TraceSuperWord
     return _vtrace.is_trace(TraceAutoVectorizationTag::SW_TYPES);
   }
+
   bool is_trace_superword_alignment() const {
     // Too verbose for TraceSuperWord
     return _vtrace.is_trace(TraceAutoVectorizationTag::SW_ALIGNMENT);
   }
+
   bool is_trace_superword_memory_slices() const {
     return TraceSuperWord ||
            _vtrace.is_trace(TraceAutoVectorizationTag::SW_MEMORY_SLICES);
   }
+
   bool is_trace_superword_dependence_graph() const {
     return TraceSuperWord ||
            _vtrace.is_trace(TraceAutoVectorizationTag::SW_DEPENDENCE_GRAPH);
   }
+
   bool is_trace_superword_adjacent_memops() const {
     return TraceSuperWord ||
            _vtrace.is_trace(TraceAutoVectorizationTag::SW_ADJACENT_MEMOPS);
   }
+
   bool is_trace_superword_rejections() const {
     return TraceSuperWord ||
            _vtrace.is_trace(TraceAutoVectorizationTag::SW_REJECTIONS);
   }
+
   bool is_trace_superword_packset() const {
     return TraceSuperWord ||
            _vtrace.is_trace(TraceAutoVectorizationTag::SW_PACKSET);
   }
+
   bool is_trace_superword_info() const {
     return TraceSuperWord ||
            _vtrace.is_trace(TraceAutoVectorizationTag::SW_INFO);
   }
+
   bool is_trace_superword_verbose() const {
     // Too verbose for TraceSuperWord
     return _vtrace.is_trace(TraceAutoVectorizationTag::SW_VERBOSE);
   }
+
   bool is_trace_superword_any() const {
     return TraceSuperWord ||
            is_trace_align_vector() ||
@@ -330,6 +340,7 @@ class SuperWord : public ResourceObj {
            _vtrace.is_trace(TraceAutoVectorizationTag::SW_INFO) ||
            _vtrace.is_trace(TraceAutoVectorizationTag::SW_VERBOSE);
   }
+
   bool is_trace_align_vector() const {
     return _vtrace.is_trace(TraceAutoVectorizationTag::ALIGN_VECTOR) ||
            is_trace_superword_verbose();

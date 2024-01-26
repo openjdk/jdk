@@ -341,7 +341,7 @@ bool DirectivesParser::set_option_flag(JSON_TYPE t, JSON_VAL* v, const key* opti
 
           valid = validator.is_valid();
           if (valid) {
-            set->set_traceautovectorization_tags(validator.tags());
+            set->set_trace_auto_vectorization_tags(validator.tags());
           } else {
             error(VALUE_ERROR, "Unrecognized tag name detected in TraceAutoVectorization: %s", validator.what());
           }

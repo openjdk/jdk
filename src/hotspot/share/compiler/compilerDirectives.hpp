@@ -131,7 +131,7 @@ private:
   CompilerDirectives* _directive;
   TriBoolArray<(size_t)vmIntrinsics::number_of_intrinsics(), int> _intrinsic_control_words;
   CHeapBitMap _ideal_phase_name_set;
-  CHeapBitMap _traceautovectorization_tags;
+  CHeapBitMap _trace_auto_vectorization_tags;
 
 public:
   DirectiveSet(CompilerDirectives* directive);
@@ -206,11 +206,11 @@ void set_##name(void* value) {                                      \
   bool should_print_phase(const CompilerPhaseType cpt) const {
     return _ideal_phase_name_set.at(cpt);
   };
-  void set_traceautovectorization_tags(const CHeapBitMap& tags) {
-    _traceautovectorization_tags.set_from(tags);
+  void set_trace_auto_vectorization_tags(const CHeapBitMap& tags) {
+    _trace_auto_vectorization_tags.set_from(tags);
   };
-  const CHeapBitMap& traceautovectorization_tags() {
-    return _traceautovectorization_tags;
+  const CHeapBitMap& trace_auto_vectorization_tags() {
+    return _trace_auto_vectorization_tags;
   };
 
   void print_intx(outputStream* st, ccstr n, intx v, bool mod) { if (mod) { st->print("%s:" INTX_FORMAT " ", n, v); } }

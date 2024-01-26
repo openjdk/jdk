@@ -441,7 +441,7 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
       if (CompilerOracle::has_option_value(method, CompileCommand::TraceAutoVectorization, option)) {
         TraceAutoVectorizationTagValidator validator(option, false);
         if (validator.is_valid()) {
-          set.cloned()->set_traceautovectorization_tags(validator.tags());
+          set.cloned()->set_trace_auto_vectorization_tags(validator.tags());
         }
       }
     }

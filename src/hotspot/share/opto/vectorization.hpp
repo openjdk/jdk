@@ -39,7 +39,7 @@ private:
   const CHeapBitMap &_trace_tags;
 
 public:
-  VTrace() : _trace_tags(Compile::current()->directive()->traceautovectorization_tags()) {}
+  VTrace() : _trace_tags(Compile::current()->directive()->trace_auto_vectorization_tags()) {}
   NONCOPYABLE(VTrace);
 
   bool is_trace(TraceAutoVectorizationTag tag) const {

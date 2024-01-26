@@ -22,12 +22,11 @@
  *
  */
 
-#ifndef SHARE_OPTO_TRACEAUTOVECTORIZATIONTAG_HPP
-#define SHARE_OPTO_TRACEAUTOVECTORIZATIONTAG_HPP
+#ifndef SHARE_OPTO_TRACE_AUTO_VECTORIZATION_TAG_HPP
+#define SHARE_OPTO_TRACE_AUTO_VECTORIZATION_TAG_HPP
 
 #include "utilities/bitMap.inline.hpp"
 
-// TODO: adjust tags to what we need
 #define COMPILER_TRACE_AUTO_VECTORIZATION_TAG(flags) \
   flags(POINTER_ANALYSIS,     "Trace VPointer") \
   flags(SW_PRECONDITION,      "Trace SuperWord precondition") \
@@ -38,38 +37,38 @@
   flags(SW_ADJACENT_MEMOPS,   "Trace SuperWord::find_adjacent_refs") \
   flags(SW_REJECTIONS,        "Trace SuperWord rejections (non vectorizations)") \
   flags(SW_PACKSET,           "Trace SuperWord packset at different stages") \
-  flags(SW_INFO,              "Trace SuperWord info") \
-  flags(SW_VERBOSE,           "Trace SuperWord verbose (all)") \
+  flags(SW_INFO,              "Trace SuperWord info (equivalent to TraceSuperWord)") \
+  flags(SW_VERBOSE,           "Trace SuperWord verbose (all SW tags enabled)") \
   flags(ALIGN_VECTOR,         "Trace AlignVector") \
   flags(ALL,                  "Trace everything (very verbose)")
 
 #define table_entry(name, description) name,
 enum TraceAutoVectorizationTag {
-  COMPILER_TRACEAUTOVECTORIZATION_TAG(table_entry)
-  TRACEAUTOVECTORIZATION_TAG_NUM,
-  TRACEAUTOVECTORIZATION_TAG_NONE
+  COMPILER_TRACE_AUTO_VECTORIZATION_TAG(table_entry)
+  TRACE_AUTO_VECTORIZATION_TAG_NUM,
+  TRACE_AUTO_VECTORIZATION_TAG_NONE
 };
 #undef table_entry
 
 static const char* tag_descriptions[] = {
 #define array_of_labels(name, description) description,
-       COMPILER_TRACEAUTOVECTORIZATION_TAG(array_of_labels)
+       COMPILER_TRACE_AUTO_VECTORIZATION_TAG(array_of_labels)
 #undef array_of_labels
 };
 
 static const char* tag_names[] = {
 #define array_of_labels(name, description) #name,
-       COMPILER_TRACEAUTOVECTORIZATION_TAG(array_of_labels)
+       COMPILER_TRACE_AUTO_VECTORIZATION_TAG(array_of_labels)
 #undef array_of_labels
 };
 
 static TraceAutoVectorizationTag find_tag(const char* str) {
-  for (int i = 0; i < TRACEAUTOVECTORIZATION_TAG_NUM; i++) {
+  for (int i = 0; i < TRACE_AUTO_VECTORIZATION_TAG_NUM; i++) {
     if (strcmp(tag_names[i], str) == 0) {
       return (TraceAutoVectorizationTag)i;
     }
   }
-  return TRACEAUTOVECTORIZATION_TAG_NONE;
+  return TRACE_AUTO_VECTORIZATION_TAG_NONE;
 }
 
 class TraceAutoVectorizationTagNameIter {
@@ -122,7 +121,7 @@ class TraceAutoVectorizationTagValidator {
 
  public:
   TraceAutoVectorizationTagValidator(ccstrlist option, bool is_print_usage) :
-    _tags(TRACEAUTOVECTORIZATION_TAG_NUM, mtCompiler),
+    _tags(TRACE_AUTO_VECTORIZATION_TAG_NUM, mtCompiler),
     _valid(true),
     _bad(nullptr),
     _is_print_usage(is_print_usage)
@@ -142,7 +141,7 @@ class TraceAutoVectorizationTagValidator {
         set_bit = false;
       }
       TraceAutoVectorizationTag tag = find_tag(tag_name);
-      if (TRACEAUTOVECTORIZATION_TAG_NONE == tat) {
+      if (TRACE_AUTO_VECTORIZATION_TAG_NONE == tag) {
         // cap len to a value we know is enough for all tags
         const size_t len = MIN2<size_t>(strlen(*iter), 63) + 1;
         _bad = NEW_C_HEAP_ARRAY(char, len, mtCompiler);
@@ -150,9 +149,9 @@ class TraceAutoVectorizationTagValidator {
         // shorter, the function fills the remaining bytes with nulls.
         strncpy(_bad, *iter, len);
         _valid = false;
-      } else if (ALL == tat) {
-        _tags.set_range(0, TRACEAUTOVECTORIZATION_TAG_NUM);
-      } else if (SW_VERBOSE == tat) {
+      } else if (ALL == tag) {
+        _tags.set_range(0, TRACE_AUTO_VECTORIZATION_TAG_NUM);
+      } else if (SW_VERBOSE == tag) {
         _tags.at_put(SW_PRECONDITION, set_bit);
         _tags.at_put(SW_TYPES, set_bit);
         _tags.at_put(SW_ALIGNMENT, set_bit);
@@ -163,7 +162,7 @@ class TraceAutoVectorizationTagValidator {
         _tags.at_put(SW_PACKSET, set_bit);
         _tags.at_put(SW_INFO, set_bit);
         _tags.at_put(SW_VERBOSE, set_bit);
-      } else if (SW_INFO == tat) {
+      } else if (SW_INFO == tag) {
         _tags.at_put(SW_PRECONDITION, set_bit);
         _tags.at_put(SW_MEMORY_SLICES, set_bit);
         _tags.at_put(SW_DEPENDENCE_GRAPH, set_bit);
@@ -172,8 +171,8 @@ class TraceAutoVectorizationTagValidator {
         _tags.at_put(SW_PACKSET, set_bit);
         _tags.at_put(SW_INFO, set_bit);
       } else {
-        assert(tat < TRACEAUTOVECTORIZATION_TAG_NUM, "out of bounds");
-        _tags.at_put(tat, set_bit);
+        assert(tag < TRACE_AUTO_VECTORIZATION_TAG_NUM, "out of bounds");
+        _tags.at_put(tag, set_bit);
       }
     }
   }
@@ -196,11 +195,11 @@ class TraceAutoVectorizationTagValidator {
     tty->print_cr("Usage for CompileCommand TraceAutoVectorization:");
     tty->print_cr("  -XX:CompileCommand=TraceAutoVectorization,<package.class::method>,<tags>");
     tty->print_cr("  %-22s %s", "tags", "descriptions");
-    for (int i = 0; i < TRACEAUTOVECTORIZATION_TAG_NUM; i++) {
+    for (int i = 0; i < TRACE_AUTO_VECTORIZATION_TAG_NUM; i++) {
       tty->print_cr("  %-22s %s", tag_names[i], tag_descriptions[i]);
     }
     tty->cr();
   }
 };
 
-#endif // SHARE_OPTO_TRACEAUTOVECTORIZATIONTAG_HPP
+#endif // SHARE_OPTO_TRACE_AUTO_VECTORIZATION_TAG_HPP
