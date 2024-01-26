@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,10 @@ import javax.lang.model.type.*;
 
 /**
  * Utility methods for operating on types.
+ *
+ * Where a method returns a type mirror or a collection of type
+ * mirrors, any type mirrors represent types with no type annotations,
+ * unless otherwise indicated.
  *
  * <p><b>Compatibility Note:</b> Methods may be added to this interface
  * in future releases of the platform.
@@ -153,6 +157,8 @@ public interface Types {
      * the direct supertypes of a type mirror representing {@code
      * java.lang.Object}.
      *
+     * Annotations on the direct super types are preserved.
+     *
      * @param t  the type being examined
      * @return the direct supertypes, or an empty list if none
      * @throws IllegalArgumentException if given a type for an executable, package, or module
@@ -235,6 +241,8 @@ public interface Types {
     /**
      * {@return an array type with the specified component type}
      *
+     * Annotations on the component type are preserved.
+     *
      * @param componentType  the component type
      * @throws IllegalArgumentException if the component type is not valid for
      *          an array
@@ -244,6 +252,8 @@ public interface Types {
     /**
      * {@return a new wildcard type}  Either of the wildcard's
      * bounds may be specified, or neither, but not both.
+     *
+     * Annotations on the bounds are preserved.
      *
      * @param extendsBound  the extends (upper) bound, or {@code null} if none
      * @param superBound    the super (lower) bound, or {@code null} if none
@@ -259,6 +269,8 @@ public interface Types {
      * for {@code String},
      * for example, this method may be used to get the
      * parameterized type {@code Set<String>}.
+     *
+     * Annotations on the type arguments are preserved.
      *
      * <p> The number of type arguments must either equal the
      * number of the type element's formal type parameters, or must be
@@ -290,6 +302,8 @@ public interface Types {
      * {@link #getDeclaredType(TypeElement, TypeMirror...)}
      * to get the type {@code Outer<String>}, and then invoking
      * this method.
+     *
+     * Annotations on the type arguments are preserved.
      *
      * <p> If the containing type is a parameterized type,
      * the number of type arguments must equal the
@@ -324,4 +338,29 @@ public interface Types {
      *          for the given type
      */
     TypeMirror asMemberOf(DeclaredType containing, Element element);
+
+    /**
+     * {@return a type mirror equivalent to the argument, but with no annotations}
+     * If the type mirror is a composite type, such as an array type
+     * or a wildcard type, any constitute types, such as the
+     * component type of an array and the type of the bounds of a
+     * wildcard type, also have no annotations, recursively.
+     *
+     * <p>For most kinds of type mirrors, the result of
+     * {@snippet lang="java" :
+     *   types.isSameType(typeMirror, types.stripAnnotations(typeMirror))
+     * }
+     * is {@code true}. The predicate is {@code false} on wildcard
+     * types for {@linkplain #isSameType(TypeMirror, TypeMirror)
+     * reasons discussed elsewhere}.
+     *
+     * @param t the type mirror
+     * @param <T> the specific type of type mirror
+     * @implSpec
+     * The default implementation throws {@code UnsupportedOperationException}.
+     * @since 23
+     */
+    default <T extends TypeMirror> T stripAnnotations(T t) {
+        throw new UnsupportedOperationException();
+    }
 }
