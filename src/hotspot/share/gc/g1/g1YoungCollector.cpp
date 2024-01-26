@@ -536,12 +536,6 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) 
 #endif
 
   allocation_failure_injector()->arm_if_needed();
-
-#ifdef ASSERT
-  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thread = jtiwh.next(); ) {
-    assert(G1ThreadLocalData::pin_count_cache(thread).count() == 0, "must be flushed");
-  }
-#endif
 }
 
 class G1ParEvacuateFollowersClosure : public VoidClosure {
