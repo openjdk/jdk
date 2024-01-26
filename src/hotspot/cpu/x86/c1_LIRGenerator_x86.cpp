@@ -1100,6 +1100,9 @@ void LIRGenerator::do_Clone(Intrinsic* x) {
   __ move(len, length);
 
   LIR_Opr tmp =           (FrameMap::rsi_opr);
+
+  FrameMap* f = Compilation::current()->frame_map();
+  f->update_reserved_argument_area_size(3 * BytesPerWord);
 #else
 
   // The java calling convention will give us enough registers

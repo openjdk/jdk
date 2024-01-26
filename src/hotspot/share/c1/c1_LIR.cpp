@@ -353,7 +353,11 @@ LIR_OpArrayCopy::LIR_OpArrayCopy(LIR_Opr src, LIR_Opr src_pos, LIR_Opr dst, LIR_
   , _tmp(tmp)
   , _expected_type(expected_type)
   , _flags(flags) {
-  _stub = new ArrayCopyStub(this);
+  if (expected_type != nullptr && flags == 0) {
+    _stub = nullptr;
+  } else {
+    _stub = new ArrayCopyStub(this);
+  }
 }
 
 LIR_OpUpdateCRC32::LIR_OpUpdateCRC32(LIR_Opr crc, LIR_Opr val, LIR_Opr res)
@@ -999,7 +1003,10 @@ void LIR_OpLabel::emit_code(LIR_Assembler* masm) {
 
 void LIR_OpArrayCopy::emit_code(LIR_Assembler* masm) {
   masm->emit_arraycopy(this);
-  masm->append_code_stub(stub());
+  ArrayCopyStub* code_stub = stub();
+  if (code_stub != nullptr) {
+    masm->append_code_stub(code_stub);
+  }
 }
 
 void LIR_OpUpdateCRC32::emit_code(LIR_Assembler* masm) {
