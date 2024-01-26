@@ -61,7 +61,6 @@ public class PointerLocation {
 
   // If UseTLAB was enabled and the pointer was found in a
   // currently-active TLAB, these will be set
-  boolean inTLAB;
   JavaThread tlabThread;
   ThreadLocalAllocBuffer tlab;
 
@@ -129,7 +128,7 @@ public class PointerLocation {
 
   /** This may be true if isInNewGen is also true */
   public boolean isInTLAB() {
-    return inTLAB;
+    return (tlab != null);
   }
 
   /** Only valid if isInTLAB() returns true */

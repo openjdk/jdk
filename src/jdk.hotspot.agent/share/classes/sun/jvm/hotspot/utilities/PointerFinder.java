@@ -95,7 +95,6 @@ public class PointerFinder {
           JavaThread t = threads.getJavaThreadAt(i);
           ThreadLocalAllocBuffer tlab = t.tlab();
           if (tlab.contains(a)) {
-            loc.inTLAB = true;
             loc.tlabThread = t;
             loc.tlab = tlab;
             break;
