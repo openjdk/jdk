@@ -303,6 +303,8 @@ public interface Types {
      * to get the type {@code Outer<String>}, and then invoking
      * this method.
      *
+     * Annotations on the type arguments are preserved.
+     *
      * <p> If the containing type is a parameterized type,
      * the number of type arguments must equal the
      * number of {@code typeElem}'s formal type parameters.
