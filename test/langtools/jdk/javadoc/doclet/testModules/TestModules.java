@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -521,6 +521,7 @@ public class TestModules extends JavadocTester {
                 """
                     </nav>
                     </header>
+                    <div class="main-grid">
                     <main role="main">
                     <div class="block">The overview summary page header.</div>
                     <div id="all-modules-table">
@@ -576,7 +577,7 @@ public class TestModules extends JavadocTester {
     }
 
     void checkModuleLink() {
-        checkOutput("index.html", true,
+        checkOutput("index.html", false,
                 "<li>Module</li>");
         checkOutput("moduleA/module-summary.html", true,
                 """
@@ -586,16 +587,16 @@ public class TestModules extends JavadocTester {
                     <li class="nav-bar-cell1-rev">Module</li>""");
         checkOutput("moduleA/testpkgmdlA/class-use/TestClassInModuleA.html", true,
                 """
-                    <li><a href="../../module-summary.html">Module</a></li>""");
+                    <li><a href="../../module-summary.html">moduleA</a></li>""");
         checkOutput("moduleB/testpkgmdlB/package-summary.html", true,
                 """
-                    <li><a href="../module-summary.html">Module</a></li>""");
-        checkOutput("moduleB/testpkgmdlB/TestClassInModuleB.html", true,
+                    <li><a href="../module-summary.html">moduleB</a></li>""");
+        checkOutput("moduleB/testpkgmdlB/TestClassInModuleB.html", false,
                 """
                     <li><a href="../module-summary.html">Module</a></li>""");
         checkOutput("moduleB/testpkgmdlB/class-use/TestClassInModuleB.html", true,
                 """
-                    <li><a href="../../module-summary.html">Module</a></li>""");
+                    <li><a href="../../module-summary.html">moduleB</a></li>""");
     }
 
     void checkNoModuleLink() {
@@ -710,6 +711,7 @@ public class TestModules extends JavadocTester {
                 """
                     </nav>
                     </header>
+                    <div class="main-grid">
                     <main role="main">
                     <div class="block">The overview summary page header.</div>
                     <div id="all-packages-table">
@@ -720,13 +722,11 @@ public class TestModules extends JavadocTester {
     void checkModuleSummary() {
         checkOutput("moduleA/module-summary.html", true,
                 """
-                    <ul class="sub-nav-list">
-                    <li>Module:&nbsp;</li>
-                    <li><a href="#module-description">Description</a>&nbsp;|&nbsp;</li>
-                    <li><a href="#modules-summary">Modules</a>&nbsp;|&nbsp;</li>
-                    <li><a href="#packages-summary">Packages</a>&nbsp;|&nbsp;</li>
-                    <li>Services</li>
-                    </ul>""",
+                    <ol class="toc-list">
+                    <li><a href="#" tabindex="0">Description</a></li>
+                    <li><a href="#packages-summary" tabindex="0">Packages</a></li>
+                    <li><a href="#modules-summary" tabindex="0">Modules</a></li>
+                    </ol>""",
                 """
                     <section class="modules-summary" id="modules-summary">
                     <!-- ============ MODULES SUMMARY =========== -->
@@ -748,10 +748,11 @@ public class TestModules extends JavadocTester {
                     """);
         checkOutput("moduleB/module-summary.html", true,
                 """
-                    <li><a href="#module-description">Description</a>&nbsp;|&nbsp;</li>
-                    <li>Modules&nbsp;|&nbsp;</li>
-                    <li><a href="#packages-summary">Packages</a>&nbsp;|&nbsp;</li>
-                    <li><a href="#services-summary">Services</a></li>""",
+                    <ol class="toc-list">
+                    <li><a href="#" tabindex="0">Description</a></li>
+                    <li><a href="#packages-summary" tabindex="0">Packages</a></li>
+                    <li><a href="#services-summary" tabindex="0">Services</a></li>
+                    </ol>""",
                 """
                     <!-- ============ PACKAGES SUMMARY =========== -->
                     <h2>Packages</h2>""",
@@ -822,23 +823,19 @@ public class TestModules extends JavadocTester {
     void checkModuleFilesAndLinks(boolean found) {
         checkFileAndOutput("moduleA/testpkgmdlA/package-summary.html", found,
                 """
-                    <li><a href="../module-summary.html">Module</a></li>""",
+                    <li><a href="../module-summary.html">moduleA</a></li>""",
                 """
-                    <div class="sub-title"><span class="module-label-in-package">Module</span>&nbsp;\
-                    <a href="../module-summary.html">moduleA</a></div>""");
+                    <li><a href="../module-summary.html">moduleA</a></li>""");
         checkFileAndOutput("moduleA/testpkgmdlA/TestClassInModuleA.html", found,
                 """
-                    <li><a href="../module-summary.html">Module</a></li>""",
+                    <li><a href="../module-summary.html">moduleA</a></li>""",
                 """
-                    <div class="sub-title"><span class="module-label-in-type">Module</span>&nbsp;<a \
-                    href="../module-summary.html">moduleA</a></div>""");
+                    <li><a href="../module-summary.html">moduleA</a></li>""");
         checkFileAndOutput("moduleB/testpkgmdlB/AnnotationType.html", found,
                 """
-                    <div class="sub-title"><span class="module-label-in-type">Module</span>&nbsp;<a \
-                    href="../module-summary.html">moduleB</a></div>""",
+                    <li><a href="../module-summary.html">moduleB</a></li>""",
                 """
-                    <div class="sub-title"><span class="package-label-in-type">Package</span>&nbsp;<\
-                    a href="package-summary.html">testpkgmdlB</a></div>""");
+                    <li><a href="package-summary.html">testpkgmdlB</a></li>""");
         checkFiles(found,
                 "moduleA/module-summary.html");
     }
@@ -900,10 +897,11 @@ public class TestModules extends JavadocTester {
                     </div>""");
         checkOutput("moduleA/module-summary.html", true,
                 """
-                    <li><a href="#module-description">Description</a>&nbsp;|&nbsp;</li>
-                    <li><a href="#modules-summary">Modules</a>&nbsp;|&nbsp;</li>
-                    <li><a href="#packages-summary">Packages</a>&nbsp;|&nbsp;</li>
-                    <li>Services</li>""",
+                    <ol class="toc-list">
+                    <li><a href="#" tabindex="0">Description</a></li>
+                    <li><a href="#packages-summary" tabindex="0">Packages</a></li>
+                    <li><a href="#modules-summary" tabindex="0">Modules</a></li>
+                    </ol>""",
                 """
                     <div class="col-first even-row-color"><a href="../moduleB/module-summary.html">moduleB</a></div>
                     <div class="col-last even-row-color"><a href="../moduleB/testpkgmdlB/package-summary.html">testpkgmdlB</a></div>
@@ -914,10 +912,11 @@ public class TestModules extends JavadocTester {
                     -tab1"><a href="testpkgmdltags/package-summary.html">testpkgmdltags</a></div>
                     <div class="col-last even-row-color package-summary-table package-summary-table-tab1">&nbsp;</div>""",
                 """
-                    <li><a href="#module-description">Description</a>&nbsp;|&nbsp;</li>
-                    <li><a href="#modules-summary">Modules</a>&nbsp;|&nbsp;</li>
-                    <li><a href="#packages-summary">Packages</a>&nbsp;|&nbsp;</li>
-                    <li>Services</li>""",
+                    <ol class="toc-list">
+                    <li><a href="#" tabindex="0">Description</a></li>
+                    <li><a href="#packages-summary" tabindex="0">Packages</a></li>
+                    <li><a href="#modules-summary" tabindex="0">Modules</a></li>
+                    </ol>""",
                 """
                     <div class="caption"><span>Indirect Requires</span></div>
                     <div class="details-table three-column-summary">""",
@@ -961,10 +960,11 @@ public class TestModules extends JavadocTester {
                     <div class="col-last even-row-color package-summary-table package-summary-table-tab1">&nbsp;</div>""");
         checkOutput("moduleB/module-summary.html", found,
                 """
-                    <li><a href="#module-description">Description</a>&nbsp;|&nbsp;</li>
-                    <li>Modules&nbsp;|&nbsp;</li>
-                    <li><a href="#packages-summary">Packages</a>&nbsp;|&nbsp;</li>
-                    <li><a href="#services-summary">Services</a></li>""",
+                    <ol class="toc-list">
+                    <li><a href="#" tabindex="0">Description</a></li>
+                    <li><a href="#packages-summary" tabindex="0">Packages</a></li>
+                    <li><a href="#services-summary" tabindex="0">Services</a></li>
+                    </ol>""",
                 """
                     <div class="col-first even-row-color package-summary-table package-summary-table\
                     -tab2"><a href="testpkgmdlB/package-summary.html">testpkgmdlB</a></div>
@@ -1037,10 +1037,12 @@ public class TestModules extends JavadocTester {
                     <div class="col-last even-row-color package-summary-table package-summary-table-tab3">&nbsp;</div>""");
         checkOutput("moduleB/module-summary.html", found,
                 """
-                    <li><a href="#module-description">Description</a>&nbsp;|&nbsp;</li>
-                    <li><a href="#modules-summary">Modules</a>&nbsp;|&nbsp;</li>
-                    <li><a href="#packages-summary">Packages</a>&nbsp;|&nbsp;</li>
-                    <li><a href="#services-summary">Services</a></li>""",
+                    <ol class="toc-list">
+                    <li><a href="#" tabindex="0">Description</a></li>
+                    <li><a href="#packages-summary" tabindex="0">Packages</a></li>
+                    <li><a href="#modules-summary" tabindex="0">Modules</a></li>
+                    <li><a href="#services-summary" tabindex="0">Services</a></li>
+                    </ol>""",
                 """
                     <div class="col-first even-row-color package-summary-table package-summary-table\
                     -tab2"><a href="testpkgmdlB/package-summary.html">testpkgmdlB</a></div>

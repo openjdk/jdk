@@ -507,7 +507,9 @@ TEST_VM(os, release_multi_mappings) {
 
   // ...re-reserve the middle stripes. This should work unless release silently failed.
   address p2 = (address)os::attempt_reserve_memory_at((char*)p_middle_stripes, middle_stripe_len);
+
   ASSERT_EQ(p2, p_middle_stripes);
+
   PRINT_MAPPINGS("C");
 
   // Clean up. Release all mappings.
@@ -551,26 +553,29 @@ TEST_VM(os, release_bad_ranges) {
 TEST_VM(os, release_one_mapping_multi_commits) {
   // Test that we can release an area consisting of interleaved
   //  committed and uncommitted regions:
-  const size_t stripe_len = 4 * M;
-  const int num_stripes = 4;
+  const size_t stripe_len = os::vm_allocation_granularity();
+  const int num_stripes = 6;
   const size_t total_range_len = stripe_len * num_stripes;
 
   // reserve address space...
   address p = reserve_one_commit_multiple(num_stripes, stripe_len);
-  ASSERT_NE(p, (address)NULL);
   PRINT_MAPPINGS("A");
+  ASSERT_NE(p, (address)nullptr);
 
-  // .. release it...
-  ASSERT_TRUE(os::release_memory((char*)p, total_range_len));
+  // // make things even more difficult by trying to reserve at the border of the region
+  address border = p + num_stripes * stripe_len;
+  address p2 = (address)os::attempt_reserve_memory_at((char*)border, stripe_len);
   PRINT_MAPPINGS("B");
 
-  // re-reserve it. This should work unless release failed.
-  address p2 = (address)os::attempt_reserve_memory_at((char*)p, total_range_len);
-  ASSERT_EQ(p2, p);
-  PRINT_MAPPINGS("C");
+  ASSERT_TRUE(p2 == nullptr || p2 == border);
 
   ASSERT_TRUE(os::release_memory((char*)p, total_range_len));
-  PRINT_MAPPINGS("D");
+  PRINT_MAPPINGS("C");
+
+  if (p2 != nullptr) {
+    ASSERT_TRUE(os::release_memory((char*)p2, stripe_len));
+    PRINT_MAPPINGS("D");
+  }
 }
 
 static void test_show_mappings(address start, size_t size) {
