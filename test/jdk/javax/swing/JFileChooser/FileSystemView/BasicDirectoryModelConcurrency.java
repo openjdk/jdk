@@ -18,7 +18,7 @@ import javax.swing.JFileChooser;
  */
 public final class BasicDirectoryModelConcurrency {
     private static final long NUMBER_OF_FILES = 1_000;
-    private static final int NUMBER_OF_THREADS = 10;
+    private static final int NUMBER_OF_THREADS = 5;
     public static final int NUMBER_OF_REPEATS = 2_000;
 
     public static void main(String[] args) throws Exception {
