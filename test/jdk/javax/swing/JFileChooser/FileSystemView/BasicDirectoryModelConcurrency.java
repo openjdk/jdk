@@ -19,8 +19,8 @@ import javax.swing.JFileChooser;
  */
 public final class BasicDirectoryModelConcurrency {
     private static final long NUMBER_OF_FILES = 1_000;
-    private static final int NUMBER_OF_THREADS = 20;
-    public static final int NUMBER_OF_REPEATS = 1_000;
+    private static final int NUMBER_OF_THREADS = 10;
+    public static final int NUMBER_OF_REPEATS = 2_000;
 
     public static void main(String[] args) throws Exception {
         final Path temp = Files.createTempDirectory("fileChooser-concurrency");
@@ -129,7 +129,7 @@ public final class BasicDirectoryModelConcurrency {
 
         @Override
         public void run() {
-            int count = (int) (Math.random() * 10);
+            int count = (int) (Math.random() * 20);
             while (count-- > 0) {
                 createFile(temp.resolve((++no) + ".file"));
             }
