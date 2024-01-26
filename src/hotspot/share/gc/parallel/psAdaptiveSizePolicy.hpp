@@ -91,8 +91,6 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
 
   const size_t _space_alignment; // alignment for eden, survivors
 
-  const double _gc_minor_pause_goal_sec;    // goal for maximum minor gc pause
-
   // The amount of live data in the heap at the last full GC, used
   // as a baseline to help us determine when we need to perform the
   // next full GC.
@@ -112,9 +110,6 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
   uint _old_gen_size_increment_supplement;
 
  private:
-
-  // Accessors
-  double gc_minor_pause_goal_sec() const { return _gc_minor_pause_goal_sec; }
 
   void adjust_eden_for_minor_pause_time(size_t* desired_eden_size_ptr);
   // Change the generation sizes to achieve a GC pause time goal
@@ -187,7 +182,6 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
                        size_t init_survivor_size,
                        size_t space_alignment,
                        double gc_pause_goal_sec,
-                       double gc_minor_pause_goal_sec,
                        uint gc_time_ratio);
 
   // Methods indicating events of interest to the adaptive size policy,
