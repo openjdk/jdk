@@ -44,8 +44,7 @@ import javax.lang.model.type.*;
  * {@linkplain TypeKind#PACKAGE packages} and {@linkplain
  * TypeKind#MODULE modules} are generally out of scope for these
  * methods. One or more out of scope arguments will typically result
- * in a method throwing an {@link IllegalArgumentException
- * IllegalArgumentException}.
+ * in a method throwing an {@link IllegalArgumentException}.
  *
  * <p>Where a method returns a type mirror or a collection of type
  * mirrors, any type mirrors represent types with no type annotations,
