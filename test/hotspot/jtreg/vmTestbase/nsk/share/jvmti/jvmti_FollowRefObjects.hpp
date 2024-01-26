@@ -34,7 +34,7 @@ void jvmti_FollowRefObject_init();
 /* ============================================================================= */
 
 #define DBG(x) x
-#define DEREF(ptr) (((ptr) == NULL ? 0 : *(ptr)))
+#define DEREF(ptr) (((ptr) == nullptr ? 0 : *(ptr)))
 
 extern jvmtiHeapCallbacks g_wrongHeapCallbacks; /* Callbacks that blame */
 
