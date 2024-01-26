@@ -254,8 +254,6 @@ class SuperWord : public ResourceObj {
   DepGraph _dg; // Dependence graph
 
   // Scratch pads
-  VectorSet    _visited;       // Visited set
-  VectorSet    _post_visited;  // Post-visited set
   Node_Stack   _n_idx_list;    // List of (node,index) pairs
   GrowableArray<Node*> _nlist; // List of nodes
   GrowableArray<Node*> _stk;   // Stack of nodes
@@ -336,15 +334,6 @@ class SuperWord : public ResourceObj {
   int  bb_idx(const Node* n) const { assert(in_bb(n), "must be"); return _bb_idx.at(n->_idx); }
  private:
   void set_bb_idx(Node* n, int i)  { _bb_idx.at_put_grow(n->_idx, i); }
-
-  // visited set accessors
-  void visited_clear()           { _visited.clear(); }
-  void visited_set(Node* n)      { return _visited.set(bb_idx(n)); }
-  int visited_test(Node* n)      { return _visited.test(bb_idx(n)); }
-  int visited_test_set(Node* n)  { return _visited.test_set(bb_idx(n)); }
-  void post_visited_clear()      { _post_visited.clear(); }
-  void post_visited_set(Node* n) { return _post_visited.set(bb_idx(n)); }
-  int post_visited_test(Node* n) { return _post_visited.test(bb_idx(n)); }
 
   // Ensure node_info contains element "i"
   void grow_node_info(int i) { if (i >= _node_info.length()) _node_info.at_put_grow(i, SWNodeInfo::initial); }

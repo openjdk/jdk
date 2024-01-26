@@ -58,11 +58,8 @@ SuperWord::SuperWord(PhaseIdealLoop* phase) :
   _align_to_ref(nullptr),                                   // memory reference to align vectors to
   _disjoint_ptrs(arena(), 8,  0, OrderedPair::initial),     // runtime disambiguated pointer pairs
   _dg(_arena),                                              // dependence graph
-  _visited(arena()),                                        // visited node set
-  _post_visited(arena()),                                   // post visited node set
   _n_idx_list(arena(), 8),                                  // scratch list of (node,index) pairs
   _nlist(arena(), 8, 0, nullptr),                           // scratch list of nodes
-  _stk(arena(), 8, 0, nullptr),                             // scratch stack of nodes
   _lpt(nullptr),                                            // loop tree node
   _lp(nullptr),                                             // CountedLoopNode
   _loop_reductions(arena()),                                // reduction nodes in the current loop
@@ -2973,7 +2970,6 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) {
 bool SuperWord::construct_bb() {
   Node* entry = bb();
 
-  assert(_stk.length() == 0,            "stk is empty");
   assert(_block.length() == 0,          "block is empty");
   assert(_data_entry.length() == 0,     "data_entry is empty");
   assert(_mem_slice_head.length() == 0, "mem_slice_head is empty");
@@ -3030,31 +3026,33 @@ bool SuperWord::construct_bb() {
 
   // Create an RPO list of nodes in block
 
-  visited_clear();
-  post_visited_clear();
+  ResourceMark rm;
+  GrowableArray<Node*> stack;
+  VectorSet visited;
+  VectorSet post_visited;
 
   // Push all non-control nodes with no inputs from within block, then control entry
   for (int j = 0; j < _data_entry.length(); j++) {
     Node* n = _data_entry.at(j);
-    visited_set(n);
-    _stk.push(n);
+    visited.set(bb_idx(n));
+    stack.push(n);
   }
-  visited_set(entry);
-  _stk.push(entry);
+  visited.set(bb_idx(entry));
+  stack.push(entry);
 
   // Do a depth first walk over out edges
   int rpo_idx = bb_ct - 1;
   int size;
   int reduction_uses = 0;
-  while ((size = _stk.length()) > 0) {
-    Node* n = _stk.top(); // Leave node on stack
-    if (!visited_test_set(n)) {
+  while ((size = stack.length()) > 0) {
+    Node* n = stack.top(); // Leave node on stack
+    if (!visited.test_set(bb_idx(n))) {
       // forward arc in graph
-    } else if (!post_visited_test(n)) {
+    } else if (!post_visited.test(bb_idx(n))) {
       // cross or back arc
       for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
         Node *use = n->fast_out(i);
-        if (in_bb(use) && !visited_test(use) &&
+        if (in_bb(use) && !visited.test(bb_idx(use)) &&
             // Don't go around backedge
             (!use->is_Phi() || n == entry)) {
           if (is_marked_reduction(use)) {
@@ -3065,20 +3063,20 @@ bool SuperWord::construct_bb() {
               reduction_uses++;
             }
           }
-          _stk.push(use);
+          stack.push(use);
         }
       }
-      if (_stk.length() == size) {
+      if (stack.length() == size) {
         // There were no additional uses, post visit node now
-        _stk.pop(); // Remove node from stack
+        stack.pop(); // Remove node from stack
         assert(rpo_idx >= 0, "");
         _block.at_put_grow(rpo_idx, n);
         rpo_idx--;
-        post_visited_set(n);
-        assert(rpo_idx >= 0 || _stk.is_empty(), "");
+        post_visited.set(bb_idx(n));
+        assert(rpo_idx >= 0 || stack.is_empty(), "");
       }
     } else {
-      _stk.pop(); // Remove post-visited node from stack
+      stack.pop(); // Remove post-visited node from stack
     }
   }//while
 
