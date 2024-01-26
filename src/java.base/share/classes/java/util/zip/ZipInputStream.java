@@ -645,9 +645,9 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
      * 'compressed size' and 'uncompressed size' fields of the Data Descriptor record
      * as 64-bit numbers instead of the regular 32-bit numbers.
      *
-     * Returns true if the LOC has the 'streaming mode' flag set, the 'compressed size' and
-     * 'uncompressed size' are set to the Zip64 magic value 0xFFFFFFFF, and the LOC's extra field
-     * contains a Zip64 field where both 'Original Size' and 'Compressed Size' are set to zero.
+     * Returns true if the LOC has the 'streaming mode' flag set, at least one of the
+     * 'compressed size' and 'uncompressed size' are set to the Zip64 magic value
+     * 0xFFFFFFFF, and the LOC's extra field contains a Zip64 Extended Information Field.
      *
      * @param extra the LOC extra field to look for a Zip64 field in
      * @param flag the value of the 'general purpose bit flag' field in the LOC
