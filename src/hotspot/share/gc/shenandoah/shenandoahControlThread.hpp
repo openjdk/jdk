@@ -31,27 +31,7 @@
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
-#include "runtime/task.hpp"
 #include "utilities/ostream.hpp"
-
-// Periodic task is useful for doing asynchronous things that do not require (heap) locks,
-// or synchronization with other parts of collector. These could run even when ShenandoahConcurrentThread
-// is busy driving the GC cycle.
-class ShenandoahPeriodicTask : public PeriodicTask {
-private:
-  ShenandoahControlThread* _thread;
-public:
-  ShenandoahPeriodicTask(ShenandoahControlThread* thread) :
-          PeriodicTask(100), _thread(thread) {}
-  virtual void task();
-};
-
-// Periodic task to notify blocked paced waiters.
-class ShenandoahPeriodicPacerNotify : public PeriodicTask {
-public:
-  ShenandoahPeriodicPacerNotify() : PeriodicTask(PeriodicTask::min_interval) {}
-  virtual void task();
-};
 
 class ShenandoahControlThread: public ConcurrentGCThread {
   friend class VMStructs;
@@ -69,8 +49,6 @@ private:
   // to make complete explicit cycle for for demanding customers.
   Monitor _alloc_failure_waiters_lock;
   Monitor _gc_waiters_lock;
-  ShenandoahPeriodicTask _periodic_task;
-  ShenandoahPeriodicPacerNotify _periodic_pacer_notify_task;
 
 public:
   void run_service();
@@ -81,8 +59,6 @@ private:
   ShenandoahSharedFlag _alloc_failure_gc;
   ShenandoahSharedFlag _graceful_shutdown;
   ShenandoahSharedFlag _heap_changed;
-  ShenandoahSharedFlag _do_counters_update;
-  ShenandoahSharedFlag _force_counters_update;
   GCCause::Cause       _requested_gc_cause;
   ShenandoahGC::ShenandoahDegenPoint _degen_point;
 
@@ -119,7 +95,6 @@ private:
 public:
   // Constructor
   ShenandoahControlThread();
-  ~ShenandoahControlThread();
 
   // Handle allocation failure from a mutator allocation.
   // Optionally blocks while collector is handling the failure. If the GC
@@ -131,10 +106,6 @@ public:
   void handle_alloc_failure_evac(size_t words);
 
   void request_gc(GCCause::Cause cause);
-
-  void handle_counters_update();
-  void handle_force_counters_update();
-  void set_forced_counters_update(bool value);
 
   void notify_heap_changed();
 

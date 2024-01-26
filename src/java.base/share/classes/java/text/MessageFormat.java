@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1182,6 +1182,17 @@ public class MessageFormat extends Format {
     @Override
     public int hashCode() {
         return pattern.hashCode(); // enough for reasonable distribution
+    }
+
+    /**
+     * {@return a string identifying this {@code MessageFormat}, for debugging}
+     */
+    @Override
+    public String toString() {
+        return
+            """
+            MessageFormat [locale: %s, pattern: "%s"]
+            """.formatted(locale == null ? null : '"' + locale.getDisplayName() + '"', toPattern());
     }
 
 
