@@ -660,12 +660,12 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
             return false;
         }
 
-        // The LOC's 'compressed size' and 'uncompressed size' must both be marked for Zip64
-        if (csize != ZIP64_MAGICVAL || size != ZIP64_MAGICVAL) {
+        // At least one LOC size field must be marked for Zip64
+        if (csize != ZIP64_MAGICVAL && size != ZIP64_MAGICVAL) {
             return false;
         }
 
-        // Look for a Zip64 field valid for use with data descriptors
+        // Look for a Zip64 field
         int headerSize = 2 * Short.BYTES; // id + size
         if (extra != null) {
             for (int i = 0; i + headerSize < extra.length;) {
@@ -674,55 +674,13 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
                 if (i + headerSize + dsize > extra.length) {
                     return false; // Invalid size
                 }
-                if (isZip64DataDescriptorField(id, extra, i + headerSize, dsize)) {
+                if (id == ZIP64_EXTID) {
                     return true;
                 }
                 i += headerSize + dsize;
             }
         }
         return false;
-    }
-
-    /**
-     * Returns true if the given extra field is a Zip64 field with both 'Original Size'
-     * and 'Compressed Size' fields set to zero, making it valid for use with a Data Descriptor.
-     * <p>
-     * The order of the Zip64 fields is fixed, but the fields MUST
-     * only appear if the corresponding LOC field is set to 0xFFFFFFFF:
-     * Uncompressed Size - 8 bytes
-     * Compressed Size   - 8 bytes
-     * <p>
-     * This entry in the Local header MUST include BOTH original
-     * and compressed file size fields.
-     * <p>
-     * See PKWare APP.Note Section 4.5.3 for more details
-     *
-     * @param headerId the extra field header id
-     * @param extra the array where the extra block is stored
-     * @param blockStart the offset into the array where the extra block starts
-     * @param blockSize the size of the extra field data block
-     * @return true if the extra field is a Zip64 extra field compatible with data descriptors
-     */
-    private static boolean isZip64DataDescriptorField(int headerId, byte[] extra, int blockStart, int blockSize) {
-        if (headerId != ZIP64_EXTID) {
-            return false; // Not a Zip64 extra field
-        }
-
-        if (blockSize != 16) {
-            return false; // MUST include BOTH original and compressed file size
-        }
-
-        // Sanity check that we can access the full block size in the array
-        if (extra == null || blockStart + blockSize > extra.length) {
-            return false;
-        }
-
-        // Read the original and compressed size fields
-        long size = get64(extra, blockStart);
-        long csize = get64(extra, blockStart + 8);
-
-        // Used with Data Descriptors, both fields should be zero
-        return size == 0 && csize == 0;
     }
 
     /*
