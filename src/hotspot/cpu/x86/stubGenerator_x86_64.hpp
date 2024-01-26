@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,6 +98,10 @@ class StubGenerator: public StubCodeGenerator {
   address generate_vector_byte_shuffle_mask(const char *stub_name);
 
   address generate_fp_mask(const char *stub_name, int64_t mask);
+
+  address generate_compress_perm_table(const char *stub_name, int32_t esize);
+
+  address generate_expand_perm_table(const char *stub_name, int32_t esize);
 
   address generate_vector_mask(const char *stub_name, int64_t mask);
 

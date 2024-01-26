@@ -77,7 +77,8 @@ final class ConstantMap {
             if (id != 0) {
                 String msg = "Missing object ID " + id + " in pool " + getName() + ". All IDs should reference an object";
                 Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, msg);
-                assert false : msg;
+                // Disable assertion until JDK-8323883 is fixed
+                // assert false : msg;
             }
             return null;
         }
