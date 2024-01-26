@@ -4235,8 +4235,8 @@ public final class String
      *
      * @return String with escape sequences and unicode escapes translated.
      *
-     * @implNote Normally, unicode escapes are translated by the compiler before string
-     * literals are translated. However, as a convenience for use with constructed
+     * @implNote Unicode escapes are translated by the compiler before string
+     * literals are translated. As a convenience for use with constructed
      * strings, this method also translates unicode escapes. For example, this
      * method could be used when ASCII encoded text files need to maintain unicode
      * content. The translation is done in a single pass and is non-recursive. That is,

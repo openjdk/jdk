@@ -91,34 +91,41 @@ public class TranslateEscapes {
      * Unicode escapes.
      */
     static void test5() {
-        verifyEscape("\\u0000", "\u0000");
-        verifyEscape("\\u2022", "\u2022");
-        verifyEscape("\\ud83c\\udf09", "\ud83c\udf09");
-        verifyEscape("\\uuuuu2022", "\uuuuu2022");
+        verifyUnicodeEscape("\\u0000", "\u0000");
+        verifyUnicodeEscape("\\u2022", "\u2022");
+        verifyUnicodeEscape("\\ud83c\\udf09", "\ud83c\udf09");
+        verifyUnicodeEscape("\\uuuuu2022", "\uuuuu2022");
 
-        verifyUnicodeEscape("\\u000x");
-        verifyUnicodeEscape("\\u000");
-        verifyUnicodeEscape("\\u00");
-        verifyUnicodeEscape("\\u0");
-        verifyUnicodeEscape("\\u");
+        verifyIllegalUnicodeEscape("\\u000x");
+        verifyIllegalUnicodeEscape("\\u000");
+        verifyIllegalUnicodeEscape("\\u00");
+        verifyIllegalUnicodeEscape("\\u0");
+        verifyIllegalUnicodeEscape("\\u");
     }
 
     static void verifyEscape(String string, char ch) {
         String escapes = "\\" + string;
         if (escapes.translateEscapes().charAt(0) != ch) {
-            System.err.format("\"%s\" not escape \"%s\"'%n", string, escapes);
+            System.err.format("\"%s\" does not escape \"%s\"'%n", string, escapes);
             throw new RuntimeException();
         }
     }
 
     static void verifyEscape(String string1, String string2) {
         if (!string1.translateEscapes().equals(string2)) {
-            System.err.format("\"%s\" not escaped \"%s\"%n", string1, string2);
+            System.err.format("\"%s\" does not escape \"%s\"%n", string1, string2);
             throw new RuntimeException();
         }
     }
 
-    static void verifyUnicodeEscape(String string) {
+    static void verifyUnicodeEscape(String string1, String string2) {
+        if (!string1.translateEscapes().equals(string2)) {
+            System.err.format("\"%s\" does not unicode escape \"%s\"%n", string1, string2);
+            throw new RuntimeException();
+        }
+    }
+
+    static void verifyIllegalUnicodeEscape(String string) {
         try {
             string.translateEscapes();
             System.err.format("\"%s\" should be an error%n", string);
