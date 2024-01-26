@@ -171,13 +171,13 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   assert(VtableStub::receiver_location() == j_rarg0->as_VMReg(), "receiver expected in j_rarg0");
 
   // Entry arguments:
-  //  t1: CompiledICHolder
+  //  t1: CompiledICData
   //  j_rarg0: Receiver
 
   // This stub is called from compiled code which has no callee-saved registers,
   // so all registers except arguments are free at this point.
   const Register recv_klass_reg     = x18;
-  const Register holder_klass_reg   = x19; // declaring interface klass (DECC)
+  const Register holder_klass_reg   = x19; // declaring interface klass (DEFC)
   const Register resolved_klass_reg = x30; // resolved interface klass (REFC)
   const Register temp_reg           = x28;
   const Register temp_reg2          = x29;

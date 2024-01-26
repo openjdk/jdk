@@ -174,7 +174,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   // This stub is called from compiled code which has no callee-saved registers,
   // so all registers except arguments are free at this point.
   const Register recv_klass_reg     = r10;
-  const Register holder_klass_reg   = r16; // declaring interface klass (DECC)
+  const Register holder_klass_reg   = r16; // declaring interface klass (DEFC)
   const Register resolved_klass_reg = r17; // resolved interface klass (REFC)
   const Register temp_reg           = r11;
   const Register temp_reg2          = r15;

@@ -1172,7 +1172,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
   BLOCK_COMMENT("c2i unverified entry");
   c2i_unverified_entry = __ pc();
 
-  // inline_cache contains a compiledICHolder
+  // inline_cache contains a CompiledICData
   const Register ic             = R19_method;
   const Register ic_klass       = R11_scratch1;
   const Register receiver_klass = R12_scratch2;

@@ -176,13 +176,13 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
 #endif /* PRODUCT */
 
   // Entry arguments:
-  //  rax: CompiledICHolder
+  //  rax: CompiledICData
   //  rcx: Receiver
 
   // Most registers are in use; we'll use rax, rbx, rcx, rdx, rsi, rdi
   // (If we need to make rsi, rdi callee-save, do a push/pop here.)
   const Register recv_klass_reg     = rsi;
-  const Register holder_klass_reg   = rax; // declaring interface klass (DECC)
+  const Register holder_klass_reg   = rax; // declaring interface klass (DEFC)
   const Register resolved_klass_reg = rdi; // resolved interface klass (REFC)
   const Register temp_reg           = rdx;
   const Register method             = rbx;
