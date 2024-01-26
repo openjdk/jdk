@@ -304,7 +304,7 @@ final class Poly1305 {
                 keyIsZero |= keyBytes[i];
             }
             if (keyIsZero == 0) {
-                // throw new InvalidKeyException("R is set to zero");
+                throw new InvalidKeyException("R is set to zero");
             }
 
             keyIsZero = 0;
@@ -312,7 +312,7 @@ final class Poly1305 {
                 keyIsZero |= keyBytes[i];
             }
             if (keyIsZero == 0) {
-                // throw new InvalidKeyException("S is set to zero");
+                throw new InvalidKeyException("S is set to zero");
             }
         }
 
