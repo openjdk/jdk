@@ -2950,19 +2950,12 @@ StoreNode* StoreNode::can_merge_with_def(PhaseGVN* phase, bool check_use) {
 
   StoreNode* s1 = this;
   StoreNode* s2 = def->as_Store();
-  //tty->print_cr("try");
-  //s1->dump_bfs(4,0,"#d");
-  //s2->dump_bfs(4,0,"#d");
   assert(s1->memory_size() == s2->memory_size(), "same size");
 
   // Check ctrl compatibility
   Node* ctrl_s1 = s1->in(MemNode::Control);
   Node* ctrl_s2 = s2->in(MemNode::Control);
   if (ctrl_s1 != ctrl_s2) {
-    //tty->print_cr("fail on ctrl");
-    //s1->dump_bfs(5,0,"#c$");
-    //tty->print_cr("with");
-    //s2->dump_bfs(5,0,"#c$");
     // See if we can bypass a RangeCheck
     if (!ctrl_s1->is_IfProj() ||
         !ctrl_s1->in(0)->is_RangeCheck() ||
