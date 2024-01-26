@@ -357,7 +357,7 @@ class SuperWord : public ResourceObj {
   void set_alignment(Node* n, int a)         { int i = bb_idx(n); grow_node_info(i); _node_info.adr_at(i)->_alignment = a; }
 
   // Max expression (DAG) depth from beginning of the block for each node
-  int depth(Node* n)                         { return _node_info.adr_at(bb_idx(n))->_depth; }
+  int depth(Node* n) const                   { return _node_info.adr_at(bb_idx(n))->_depth; }
   void set_depth(Node* n, int d)             { int i = bb_idx(n); grow_node_info(i); _node_info.adr_at(i)->_depth = d; }
 
   // vector element type
@@ -460,15 +460,13 @@ private:
   bool isomorphic(Node* s1, Node* s2);
   // Is there no data path from s1 to s2 or s2 to s1?
   bool independent(Node* s1, Node* s2);
-  // Is any s1 in p dependent on any s2 in p? Yes: return such a s2. No: return nullptr.
-  Node* find_dependence(Node_List* p);
+  // Are all nodes in nodes mutually independent?
+  bool mutually_independent(Node_List* nodes) const;
   // For a node pair (s1, s2) which is isomorphic and independent,
   // do s1 and s2 have similar input edges?
   bool have_similar_inputs(Node* s1, Node* s2);
   // Is there a data path between s1 and s2 and both are reductions?
   bool reduction(Node* s1, Node* s2);
-  // Helper for independent
-  bool independent_path(Node* shallow, Node* deep, uint dp=0);
   void set_alignment(Node* s1, Node* s2, int align);
   int data_size(Node* s);
   // Extend packset by following use->def and def->use links from pack members.
