@@ -5142,16 +5142,6 @@ assert(vector_len == AVX_128bit? VM_Version::supports_avx() :
   emit_int16(0x04, (0xC0 | encode));
 }
 
-// void Assembler::vfmadd231ps(XMMRegister dst, XMMRegister src1, Address src2, int vector_len) {
-//   assert(VM_Version::supports_fma(), "");
-//   InstructionMark im(this);
-//   InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
-//   attributes.set_address_attributes(/* tuple_type */ EVEX_FV, /* input_size_in_bits */ EVEX_32bit);
-//   vex_prefix(src2, src1->encoding(), dst->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
-//   emit_int8((unsigned char)0xB8);
-//   emit_operand(dst, src2, 0);
-// }
-
 void Assembler::vpmadd52luq(XMMRegister dst, XMMRegister src1, Address src2, int vector_len) {
   vpmadd52luq(dst, k0, src1, src2, false, vector_len);
 }
