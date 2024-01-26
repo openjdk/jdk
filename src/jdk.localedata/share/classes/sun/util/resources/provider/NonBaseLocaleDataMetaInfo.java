@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,58 +23,38 @@
  * questions.
  */
 
-#warn This file is preprocessed before being compiled
-
 /*
  * This class contains a map which records the locale list string for
  * each resource in sun.util.resources & sun.text.resources.
  * It is used to avoid loading non-existent localized resources so that
  * jar files won't be opened unnecessary to look up them.
  */
-package #Package#;
+package sun.util.resources.provider;
 
 import java.util.HashMap;
 import java.util.Map;
 import sun.util.locale.provider.LocaleDataMetaInfo;
 import static sun.util.locale.provider.LocaleProviderAdapter.Type;
 
-public class #Lang#LocaleDataMetaInfo implements LocaleDataMetaInfo {
+public class NonBaseLocaleDataMetaInfo implements LocaleDataMetaInfo {
 
-    private static final Map<String, String> resourceNameToLocales = new HashMap<>(9);
+    private static final Map<String, String> resourceNameToLocales = HashMap.newHashMap(5);
 
     static {
-        /* During JDK build time, #XXX_YYY# will be replaced by a string contain all the locales
-           supported by the resource.
-
-           Don't remove the space character between " and #. That is put there purposely so that
-           look up locale string such as "en" could be based on if it contains " en ".
-        */
         resourceNameToLocales.put("FormatData",
-                                  " #FormatData_Locales# ");
+                                  "  ja ");
 
         resourceNameToLocales.put("CollationData",
-                                  " #CollationData_Locales# ");
+                                  "  ar be bg ca cs da el es et fi fr he hi hr hu is ja ko lt lv mk nb nb-NO nn-NO no pl ro ru sk sl sq sr sr-Latn sv th tr uk vi zh zh-HK zh-Hant-HK zh-Hant-TW zh-TW ");
 
         resourceNameToLocales.put("BreakIteratorInfo",
-                                  " #BreakIteratorInfo_Locales# ");
+                                  "  nb nb-NO nn-NO th ");
 
         resourceNameToLocales.put("BreakIteratorRules",
-                                  " #BreakIteratorRules_Locales# ");
-
-        resourceNameToLocales.put("TimeZoneNames",
-                                  " #TimeZoneNames_Locales# ");
-
-        resourceNameToLocales.put("LocaleNames",
-                                  " #LocaleNames_Locales# ");
-
-        resourceNameToLocales.put("CurrencyNames",
-                                  " #CurrencyNames_Locales# ");
-
-        resourceNameToLocales.put("CalendarData",
-                                  " #CalendarData_Locales# ");
+                                  "  nb nb-NO nn-NO th ");
 
         resourceNameToLocales.put("AvailableLocales",
-                                  " #AvailableLocales_Locales# ");
+                                  " ar ar-AE ar-BH ar-DZ ar-EG ar-IQ ar-JO ar-KW ar-LB ar-LY ar-MA ar-OM ar-QA ar-SA ar-SD ar-SY ar-TN ar-YE be be-BY bg bg-BG ca ca-ES cs cs-CZ da da-DK de de-AT de-CH de-DE de-LU el el-CY el-GR en-AU en-CA en-GB en-IE en-IN en-MT en-NZ en-PH en-SG en-ZA es es-AR es-BO es-CL es-CO es-CR es-CU es-DO es-EC es-ES es-GT es-HN es-MX es-NI es-PA es-PE es-PR es-PY es-SV es-US es-UY es-VE et et-EE fi fi-FI fr fr-BE fr-CA fr-CH fr-FR fr-LU ga ga-IE he he-IL hi hi-IN hr hr-HR hu hu-HU id id-ID is is-IS it it-CH it-IT ja ja-JP ja-JP-JP ko ko-KR lt lt-LT lv lv-LV mk mk-MK ms ms-MY mt mt-MT nb nb-NO nl nl-BE nl-NL nn-NO no no-NO no-NO-NY pl pl-PL pt pt-BR pt-PT ro ro-RO ru ru-RU sk sk-SK sl sl-SI sq sq-AL sr sr-BA sr-CS sr-Latn sr-Latn-BA sr-Latn-ME sr-Latn-RS sr-ME sr-RS sv sv-SE th th-TH th-TH-TH tr tr-TR uk uk-UA vi vi-VN zh zh-CN zh-HK zh-Hans-CN zh-Hans-SG zh-Hant-HK zh-Hant-TW zh-SG zh-TW ");
     }
 
     /*
@@ -91,7 +71,7 @@ public class #Lang#LocaleDataMetaInfo implements LocaleDataMetaInfo {
     @Override
     public Type getType() {
         return Type.JRE;
-}
+    }
 
     @Override
     public String availableLanguageTags(String category) {
