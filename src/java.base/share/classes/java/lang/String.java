@@ -4224,9 +4224,9 @@ public final class String
      *     <td>discard</td>
      *   </tr>
      *   <tr>
-     *     <th scope="row">{@code \u005Cu...uXXXX}</th>
+     *     <th scope="row">{@code \u005CuXXXX}</th>
      *     <td>Unicode escape</td>
-     *     <td>single UTF-16 code unit equivalent</td>
+     *     <td>single UTF-16 code unit equivalent {@code U+XXXX}<p>multiple 'u' are support per jls 3.3</td>
      *   </tr>
      *   </tbody>
      * </table>
@@ -4235,19 +4235,19 @@ public final class String
      *
      * @return String with escape sequences and Unicode escapes translated.
      *
+     * @jls 3.10.7 Escape Sequences
+     * @jls 3.3 Unicode Escapes
+     *
+     * @since 15
+     *
      * @implNote Unicode escapes are translated by the compiler before string
      * literals are translated. As a convenience for use with constructed
-     * strings, this method also translates Unicode escapes. For example, this
+     * strings, this method translates Unicode escapes. For example, this
      * method could be used when ASCII encoded text files need to maintain Unicode
      * content. The translation is done in a single pass and is non-recursive. That is,
      * escape sequences and Unicode escapes are translated as encountered in one pass and
      * <strong>not</strong> done as an Unicode escapes pass followed by an escape sequences
      * pass.
-     *
-     * @jls 3.10.7 Escape Sequences
-     * @jls 3.3 Unicode Escapes
-     *
-     * @since 15
      */
     public String translateEscapes() {
         if (isEmpty()) {
