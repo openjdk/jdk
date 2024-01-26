@@ -34,7 +34,7 @@ extern "C" {
 
 JNIEXPORT jint JNICALL
 Java_ThreadListStackTracesTest_getStateSingle(JNIEnv* jni, jclass clazz, jthread vthread) {
-  jvmtiStackInfo* info = NULL;
+  jvmtiStackInfo* info = nullptr;
 
   jvmtiError err = jvmti->GetThreadListStackTraces(1, &vthread, MAX_FRAME_COUNT, &info);
   check_jvmti_status(jni, err, "getStateSingle: error in JVMTI GetThreadListStackTraces");
@@ -45,7 +45,7 @@ Java_ThreadListStackTracesTest_getStateSingle(JNIEnv* jni, jclass clazz, jthread
 JNIEXPORT jint JNICALL
 Java_ThreadListStackTracesTest_getStateMultiple(JNIEnv* jni, jclass clazz, jthread vhread, jthread other) {
   jthread threads[2] = { vhread, other };
-  jvmtiStackInfo* info = NULL;
+  jvmtiStackInfo* info = nullptr;
 
   jvmtiError err = jvmti->GetThreadListStackTraces(2, threads, MAX_FRAME_COUNT, &info);
   check_jvmti_status(jni, err, "getStateMultiple: error in JVMTI GetThreadListStackTraces");

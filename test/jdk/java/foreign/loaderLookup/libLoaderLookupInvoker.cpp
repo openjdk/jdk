@@ -32,7 +32,7 @@ struct Context {
 void call(void* ctxt) {
     Context* context = (Context*) ctxt;
     JNIEnv* env;
-    context->jvm->AttachCurrentThread((void**)&env, NULL);
+    context->jvm->AttachCurrentThread((void**)&env, nullptr);
     jclass symbolLookupClass = env->FindClass("java/lang/foreign/SymbolLookup");
     jmethodID loaderLookupMethod = env->GetStaticMethodID(symbolLookupClass, "loaderLookup", "()Ljava/lang/foreign/SymbolLookup;");
     context->res = env->NewGlobalRef(env->CallStaticObjectMethod(symbolLookupClass, loaderLookupMethod));

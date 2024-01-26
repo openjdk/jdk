@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,9 @@ extern "C" {
 #define MAX_FRAME_COUNT 20
 #define FRAMES_TO_NOTIFY_POP 7
 
-static jvmtiEnv *jvmti = NULL;
-static jthread exp_thread = NULL;
-static jrawMonitorID event_mon = NULL;
+static jvmtiEnv *jvmti = nullptr;
+static jthread exp_thread = nullptr;
+static jrawMonitorID event_mon = nullptr;
 static int method_entry_count = 0;
 static int frame_pop_count = 0;
 
@@ -40,13 +40,13 @@ static void
 print_frame_event_info(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread, jmethodID method, const char* event_name) {
   char* tname = get_thread_name(jvmti, jni, thread);
   char* cname = get_method_class_name(jvmti, jni, method);
-  char* mname = NULL;
-  char* msign = NULL;
+  char* mname = nullptr;
+  char* msign = nullptr;
   jboolean is_virtual = jni->IsVirtualThread(thread);
   const char* virt =  is_virtual ? "virtual" : "carrier";
   jvmtiError err;
 
-  err = jvmti->GetMethodName(method, &mname, &msign, NULL);
+  err = jvmti->GetMethodName(method, &mname, &msign, nullptr);
   check_jvmti_status(jni, err, "event handler: error in JVMTI GetMethodName call");
 
   if (strcmp(event_name, "MethodEntry") == 0) {
@@ -78,7 +78,7 @@ MethodEntry(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread, jmethodID method) {
     // Request FramePop notifications for all continuation frames.
     // They all are expected to be cleared as a part of yield protocol.
     for (jint depth = 0; depth < FRAMES_TO_NOTIFY_POP; depth++) {
-      jmethodID frame_method = NULL;
+      jmethodID frame_method = nullptr;
       jlocation location = 0LL;
 
       err = jvmti->NotifyFramePop(thread, depth);

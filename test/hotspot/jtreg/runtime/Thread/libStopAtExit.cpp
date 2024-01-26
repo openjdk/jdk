@@ -26,7 +26,7 @@
 
 extern "C" {
 
-static jvmtiEnv* jvmti = NULL;
+static jvmtiEnv* jvmti = nullptr;
 
 #define LOG(...) \
   do { \

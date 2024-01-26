@@ -27,7 +27,7 @@
 
 extern "C" {
 
-static jvmtiEnv* jvmti = NULL;
+static jvmtiEnv* jvmti = nullptr;
 
 JNIEXPORT jint JNICALL
 Java_jvmti_JVMTIUtils_init(JNIEnv *jni, jclass cls) {

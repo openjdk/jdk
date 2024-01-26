@@ -27,7 +27,7 @@
 void call(void* ctxt) {
     JavaVM* jvm = (JavaVM*) ctxt;
     JNIEnv* env;
-    jvm->AttachCurrentThread((void**)&env, NULL);
+    jvm->AttachCurrentThread((void**)&env, nullptr);
     jclass linkerClass = env->FindClass("java/lang/foreign/Linker");
     jmethodID nativeLinkerMethod = env->GetStaticMethodID(linkerClass, "nativeLinker", "()Ljava/lang/foreign/Linker;");
     env->CallStaticVoidMethod(linkerClass, nativeLinkerMethod);

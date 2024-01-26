@@ -26,7 +26,7 @@
 
 extern "C" {
 
-static jvmtiEnv* jvmti = NULL;
+static jvmtiEnv* jvmti = nullptr;
 static jrawMonitorID monitor;
 
 JNIEXPORT jint JNICALL

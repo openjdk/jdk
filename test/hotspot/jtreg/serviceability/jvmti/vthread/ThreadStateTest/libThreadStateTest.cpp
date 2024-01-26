@@ -87,7 +87,7 @@ JNIEXPORT void JNICALL
 Java_ThreadStateTest_testGetThreadListStackTraces(JNIEnv* jni, jclass klass, jthread vthread) {
   jthread cthread = get_carrier_thread(jvmti, jni, vthread);
   jthread threads[2] = { cthread, vthread };
-  jvmtiStackInfo* stackInfo = NULL;
+  jvmtiStackInfo* stackInfo = nullptr;
 
   jvmtiError err = jvmti->GetThreadListStackTraces(2, threads, MAX_FRAME_COUNT, &stackInfo);
   check_jvmti_status(jni, err, "testGetThreadState: error in JVMTI GetThreadListStackTraces");

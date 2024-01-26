@@ -27,7 +27,7 @@
 
 namespace {
     jlong nextTag = 1;
-    jvmtiEnv *jvmti = NULL;
+    jvmtiEnv *jvmti = nullptr;
 
     void checkJvmti(int code, const char* message) {
         if (code != JVMTI_ERROR_NONE) {
@@ -55,7 +55,7 @@ extern "C" JNIEXPORT jlong JNICALL Java_TagMapTest_getTag(JNIEnv* jni_env, jclas
 }
 
 extern "C" JNIEXPORT void JNICALL Java_TagMapTest_iterate(JNIEnv* jni_env, jclass clazz, jboolean tagged) {
-    checkJvmti(jvmti->IterateOverHeap(tagged ? JVMTI_HEAP_OBJECT_TAGGED : JVMTI_HEAP_OBJECT_EITHER, &heapObjectCallback, NULL), "could not iterate");
+    checkJvmti(jvmti->IterateOverHeap(tagged ? JVMTI_HEAP_OBJECT_TAGGED : JVMTI_HEAP_OBJECT_EITHER, &heapObjectCallback, nullptr), "could not iterate");
 }
 
 extern "C" JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {

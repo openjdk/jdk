@@ -62,7 +62,7 @@ struct SavedClassBytes {
 
     jbyteArray get(JNIEnv *env) {
       if (bytes == nullptr) {
-        _log("SavedClassBytes: NULL\n");
+        _log("SavedClassBytes: nullptr\n");
         return nullptr;
       }
 
