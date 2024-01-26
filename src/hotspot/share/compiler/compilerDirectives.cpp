@@ -302,7 +302,7 @@ DirectiveSet::DirectiveSet(CompilerDirectives* d) :
   _inlinematchers(nullptr),
   _directive(d),
   _ideal_phase_name_set(PHASE_NUM_TYPES, mtCompiler),
-  _traceautovectorization_tags(TRACEAUTOVECTORIZATION_TAG_NUM, mtCompiler)
+  _trace_auto_vectorization_tags(TRACE_AUTO_VECTORIZATION_TAG_NUM, mtCompiler)
 {
 #define init_defaults_definition(name, type, dvalue, compiler) this->name##Option = dvalue;
   compilerdirectives_common_flags(init_defaults_definition)

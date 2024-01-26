@@ -1253,7 +1253,7 @@ bool SuperWord::follow_use_defs(Node_List* p) {
   if (s1->is_Load()) return false;
 
 #ifndef PRODUCT
-  if(is_trace_superword_alignment()) {
+  if (is_trace_superword_alignment()) {
     tty->print_cr("SuperWord::follow_use_defs: s1 %d, align %d",
                   s1->_idx, alignment(s1));
   }
@@ -1277,7 +1277,7 @@ bool SuperWord::follow_use_defs(Node_List* p) {
         pair->push(t2);
         _packset.append(pair);
 #ifndef PRODUCT
-        if(is_trace_superword_alignment()) {
+        if (is_trace_superword_alignment()) {
           tty->print_cr("SuperWord::follow_use_defs: set_alignment(%d, %d, %d)",
                         t1->_idx, t2->_idx, align);
         }
@@ -1304,7 +1304,7 @@ bool SuperWord::follow_def_uses(Node_List* p) {
 
   int align = alignment(s1);
 #ifndef PRODUCT
-  if(is_trace_superword_alignment()) {
+  if (is_trace_superword_alignment()) {
     tty->print_cr("SuperWord::follow_def_uses: s1 %d, align %d",
                   s1->_idx, align);
   }
@@ -1351,7 +1351,7 @@ bool SuperWord::follow_def_uses(Node_List* p) {
     pair->push(u2);
     _packset.append(pair);
 #ifndef PRODUCT
-    if(is_trace_superword_alignment()) {
+    if (is_trace_superword_alignment()) {
       tty->print_cr("SuperWord::follow_def_uses: set_alignment(%d, %d, %d)",
                     u1->_idx, u2->_idx, align);
     }

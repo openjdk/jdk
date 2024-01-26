@@ -28,7 +28,7 @@
 #include "utilities/bitMap.inline.hpp"
 
 // TODO: adjust tags to what we need
-#define COMPILER_TRACEAUTOVECTORIZATION_TAG(flags) \
+#define COMPILER_TRACE_AUTO_VECTORIZATION_TAG(flags) \
   flags(POINTER_ANALYSIS,     "Trace VPointer") \
   flags(SW_PRECONDITION,      "Trace SuperWord precondition") \
   flags(SW_TYPES,             "Trace SuperWord::compute_vector_element_type") \
@@ -141,7 +141,7 @@ class TraceAutoVectorizationTagValidator {
         tag_name++;
         set_bit = false;
       }
-      TraceAutoVectorizationTag tat = find_tag(tag_name);
+      TraceAutoVectorizationTag tag = find_tag(tag_name);
       if (TRACEAUTOVECTORIZATION_TAG_NONE == tat) {
         // cap len to a value we know is enough for all tags
         const size_t len = MIN2<size_t>(strlen(*iter), 63) + 1;
