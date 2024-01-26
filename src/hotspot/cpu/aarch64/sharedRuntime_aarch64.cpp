@@ -738,7 +738,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
   address c2i_unverified_entry = __ pc();
   Label skip_fixup;
 
-  Register holder = rscratch2;
+  Register data = rscratch2;
   Register receiver = j_rarg0;
   Register tmp = r10;  // A call-clobbered register not used for arg passing
 
@@ -754,7 +754,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
   {
     __ block_comment("c2i_unverified_entry {");
     __ ic_check(1 /* end_alignment */);
-    __ ldr(rmethod, Address(holder, CompiledICData::speculated_method_offset()));
+    __ ldr(rmethod, Address(data, CompiledICData::speculated_method_offset()));
 
     __ ldr(rscratch1, Address(rmethod, in_bytes(Method::code_offset())));
     __ cbz(rscratch1, skip_fixup);

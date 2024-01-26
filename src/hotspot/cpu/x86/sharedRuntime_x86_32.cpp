@@ -943,13 +943,13 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
   address c2i_unverified_entry = __ pc();
   Label skip_fixup;
 
-  Register holder = rax;
+  Register data = rax;
   Register receiver = rcx;
   Register temp = rbx;
 
   {
     __ ic_check(1 /* end_alignment */);
-    __ movptr(rbx, Address(holder, CompiledICData::speculated_method_offset()));
+    __ movptr(rbx, Address(data, CompiledICData::speculated_method_offset()));
     // Method might have been compiled since the call site was patched to
     // interpreted if that is the case treat it as a miss so we can get
     // the call site corrected.

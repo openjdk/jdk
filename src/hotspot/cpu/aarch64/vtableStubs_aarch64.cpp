@@ -178,12 +178,12 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   const Register resolved_klass_reg = r17; // resolved interface klass (REFC)
   const Register temp_reg           = r11;
   const Register temp_reg2          = r15;
-  const Register icholder_reg       = rscratch2;
+  const Register icdata_reg         = rscratch2;
 
   Label L_no_such_interface;
 
-  __ ldr(resolved_klass_reg, Address(icholder_reg, CompiledICData::itable_refc_klass_offset()));
-  __ ldr(holder_klass_reg,   Address(icholder_reg, CompiledICData::itable_defc_klass_offset()));
+  __ ldr(resolved_klass_reg, Address(icdata_reg, CompiledICData::itable_refc_klass_offset()));
+  __ ldr(holder_klass_reg,   Address(icdata_reg, CompiledICData::itable_defc_klass_offset()));
 
   start_pc = __ pc();
 

@@ -623,7 +623,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
   Label ok;
 
   const Register receiver = j_rarg0;
-  const Register holder = t1;
+  const Register data = t1;
   const Register tmp = t2;  // A call-clobbered register not used for arg passing
 
   // -------------------------------------------------------------------------
@@ -639,7 +639,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
     __ block_comment("c2i_unverified_entry {");
 
     __ ic_check();
-    __ ld(xmethod, Address(holder, CompiledICData::speculated_method_offset()));
+    __ ld(xmethod, Address(data, CompiledICData::speculated_method_offset()));
 
     __ bind(ok);
     // Method might have been compiled since the call site was patched to
