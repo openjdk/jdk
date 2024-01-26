@@ -529,7 +529,6 @@ TRACE_REQUEST_FUNC(PhysicalMemory) {
 
 TRACE_REQUEST_FUNC(SwapSpace) {
   EventSwapSpace event;
-  // check that the type matches (long? ulong ?)
   event.set_totalSize(os::total_swap_space());
   event.set_freeSize(os::free_swap_space());
   event.commit();
