@@ -56,7 +56,6 @@ SuperWord::SuperWord(PhaseIdealLoop* phase) :
   _node_info(arena(), 8,  0, SWNodeInfo::initial),          // info needed per node
   _clone_map(phase->C->clone_map()),                        // map of nodes created in cloning
   _align_to_ref(nullptr),                                   // memory reference to align vectors to
-  _disjoint_ptrs(arena(), 8,  0, OrderedPair::initial),     // runtime disambiguated pointer pairs
   _dg(_arena),                                              // dependence graph
   _visited(arena()),                                        // visited node set
   _post_visited(arena()),                                   // post visited node set
@@ -545,7 +544,7 @@ bool SuperWord::SLP_extract() {
     return false; // Exit if no interesting nodes or complex graph.
   }
 
-  // build _dg, _disjoint_ptrs
+  // build _dg
   dependence_graph();
 
   // compute function depth(Node*)
@@ -896,12 +895,6 @@ void SuperWord::dependence_graph() {
         VPointer p2(s2->as_Mem(), phase(), lpt(), nullptr, false);
 
         int cmp = p1.cmp(p2);
-        if (SuperWordRTDepCheck &&
-            p1.base() != p2.base() && p1.valid() && p2.valid()) {
-          // Trace disjoint pointers
-          OrderedPair pp(p1.base(), p2.base());
-          _disjoint_ptrs.append_if_missing(pp);
-        }
         if (!VPointer::not_equal(cmp)) {
           // Possibly same address
           _dg.make_edge(s1, s2);
@@ -923,16 +916,6 @@ void SuperWord::dependence_graph() {
 
     _nlist.clear();
   }
-
-  if (TraceSuperWord) {
-    tty->print_cr("\ndisjoint_ptrs: %s", _disjoint_ptrs.length() > 0 ? "" : "NONE");
-    for (int r = 0; r < _disjoint_ptrs.length(); r++) {
-      _disjoint_ptrs.at(r).print();
-      tty->cr();
-    }
-    tty->cr();
-  }
-
 }
 
 //---------------------------mem_slice_preds---------------------------
@@ -3801,7 +3784,6 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
 void SuperWord::init() {
   _dg.init();
   _packset.clear();
-  _disjoint_ptrs.clear();
   _block.clear();
   _data_entry.clear();
   _mem_slice_head.clear();
@@ -3858,10 +3840,6 @@ void SuperWord::print_stmt(Node* s) {
   s->dump();
 #endif
 }
-
-// ========================= OrderedPair =====================
-
-const OrderedPair OrderedPair::initial;
 
 // ========================= SWNodeInfo =====================
 
