@@ -213,7 +213,7 @@ TEST_VM(ThreadsListHandle, sanity) {
 
     // Test case: after first nested ThreadsListHandle (tlh2) has been destroyed
 
-    // Verify the current thread's hazard ptr is nullptr:
+    // Verify the current thread's hazard ptr is null:
     EXPECT_EQ(ThreadsListHandleTest::get_Thread_threads_hazard_ptr(thr), (ThreadsList*)nullptr)
         << "thr->_threads_hazard_ptr must be null";
     // Verify the current thread's threads list ptr refers to tlh1:
@@ -397,7 +397,7 @@ TEST_VM(ThreadsListHandle, sanity) {
 
       // Test case: after double nested ThreadsListHandle (tlh3) has been destroyed
 
-      // Verify the current thread's hazard ptr is nullptr:
+      // Verify the current thread's hazard ptr is null:
       EXPECT_EQ(ThreadsListHandleTest::get_Thread_threads_hazard_ptr(thr), (ThreadsList*)nullptr)
           << "thr->_threads_hazard_ptr must be null";
       // Verify the current thread's threads list ptr refers to tlh2:
@@ -445,7 +445,7 @@ TEST_VM(ThreadsListHandle, sanity) {
 
     // Test case: after first nested ThreadsListHandle (tlh2) has been destroyed
 
-    // Verify the current thread's hazard ptr is nullptr:
+    // Verify the current thread's hazard ptr is null:
     EXPECT_EQ(ThreadsListHandleTest::get_Thread_threads_hazard_ptr(thr), (ThreadsList*)nullptr)
         << "thr->_threads_hazard_ptr must be null";
     // Verify the current thread's threads list ptr refers to tlh1:
@@ -565,7 +565,7 @@ TEST_VM(ThreadsListHandle, sanity) {
 
     // Test case: after first back-to-back nested ThreadsListHandle (tlh2a) has been destroyed
 
-    // Verify the current thread's hazard ptr is nullptr:
+    // Verify the current thread's hazard ptr is null:
     EXPECT_EQ(ThreadsListHandleTest::get_Thread_threads_hazard_ptr(thr), (ThreadsList*)nullptr)
         << "thr->_threads_hazard_ptr must be null";
     // Verify the current thread's threads list ptr refers to tlh1:
@@ -643,7 +643,7 @@ TEST_VM(ThreadsListHandle, sanity) {
 
     // Test case: after second back-to-back nested ThreadsListHandle (tlh2b) has been destroyed
 
-    // Verify the current thread's hazard ptr is nullptr:
+    // Verify the current thread's hazard ptr is null:
     EXPECT_EQ(ThreadsListHandleTest::get_Thread_threads_hazard_ptr(thr), (ThreadsList*)nullptr)
         << "thr->_threads_hazard_ptr must be null";
     // Verify the current thread's threads list ptr refers to tlh1:

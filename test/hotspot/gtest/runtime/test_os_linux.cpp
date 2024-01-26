@@ -200,7 +200,7 @@ TEST_VM(os_linux, reserve_memory_special_huge_tlbfs_size_not_aligned_with_bad_re
       char* p = HugeTlbfsMemory::reserve_memory_special_huge_tlbfs(size, alignment, lp, req_addr, false);
       HugeTlbfsMemory mr(p, size);
       // as the area around req_addr contains already existing mappings, the API should always
-      // return nullptr (as per contract, it cannot return another address)
+      // return null (as per contract, it cannot return another address)
       EXPECT_TRUE(p == nullptr) << " size = " << size
                              << ", alignment = " << alignment
                              << ", req_addr = " << req_addr

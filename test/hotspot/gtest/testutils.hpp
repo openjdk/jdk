@@ -53,8 +53,8 @@ public:
 #define EXPECT_RANGE_IS_MARKED(p, size)             EXPECT_TRUE(GtestUtils::is_range_marked(p, size))
 
 // Mimicking the official ASSERT_xx and EXPECT_xx counterparts of the googletest suite.
-// (ASSERT|EXPECT)_NOT_NULL: check that the given pointer is not nullptr
-// (ASSERT|EXPECT)_NULL: check that the given pointer is nullptr
+// (ASSERT|EXPECT)_NOT_NULL: check that the given pointer is not null
+// (ASSERT|EXPECT)_NULL: check that the given pointer is null
 #define ASSERT_NOT_NULL(p)  ASSERT_NE(p2i(p), 0)
 #define ASSERT_NULL(p)      ASSERT_EQ(p2i(p), 0)
 #define EXPECT_NOT_NULL(p)  EXPECT_NE(p2i(p), 0)

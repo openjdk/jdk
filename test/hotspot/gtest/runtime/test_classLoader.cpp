@@ -31,8 +31,8 @@
 TEST_VM(ClassLoader, null_class_name) {
   bool bad_class_name = false;
   TempNewSymbol retval = ClassLoader::package_from_class_name(nullptr, &bad_class_name);
-  ASSERT_TRUE(bad_class_name) << "Function did not set bad_class_name with nullptr class name";
-  ASSERT_TRUE(retval == nullptr) << "Wrong package for nullptr class name pointer";
+  ASSERT_TRUE(bad_class_name) << "Function did not set bad_class_name with null class name";
+  ASSERT_TRUE(retval == nullptr) << "Wrong package for null class name pointer";
 }
 
 TEST_VM(ClassLoader, empty_class_name) {

@@ -152,7 +152,7 @@ public:
 
 class OopStorageParIterPerf::Closure : public OopClosure {
 public:
-  virtual void do_oop(oop* p) { guarantee(*p == nullptr, "expected nullptr"); }
+  virtual void do_oop(oop* p) { guarantee(*p == nullptr, "expected null"); }
   virtual void do_oop(narrowOop* p) { ShouldNotReachHere(); }
 };
 

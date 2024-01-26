@@ -33,7 +33,7 @@ TEST_VM(CollectedHeap, is_in) {
   uintptr_t outside_heap = (uintptr_t) &epsilon;
 
   // Test that nullptr is not in the heap.
-  ASSERT_FALSE(heap->is_in(nullptr)) << "nullptr is unexpectedly in the heap";
+  ASSERT_FALSE(heap->is_in(nullptr)) << "null is unexpectedly in the heap";
 
   // Test that a pointer to outside the heap start is reported as outside the heap.
   ASSERT_FALSE(heap->is_in((void*)outside_heap)) << "outside_heap: " << outside_heap
