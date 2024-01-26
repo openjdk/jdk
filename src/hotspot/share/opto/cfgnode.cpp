@@ -1782,8 +1782,16 @@ static Node* is_absolute( PhaseGVN *phase, PhiNode *phi_root, int true_path) {
 static Node* is_minmax(PhaseGVN* phase, PhiNode* phi_root, int true_path) {
   assert(true_path != 0, "only diamond shape graph expected");
 
-  BoolNode* bol = phi_root->in(0)->in(1)->in(0)->in(1)->as_Bool();
+  Node* region = phi_root->in(0);
+  IfNode* iff = region->in(1)->in(0)->as_If();
+  BoolNode* bol = iff->in(1)->as_Bool();
   Node* cmp = bol->in(1);
+
+  // Don't transform if the branch is highly predictable
+  constexpr float infrequent_prob = PROB_UNLIKELY_MAG(2);
+  if (iff->_prob < infrequent_prob || iff->_prob > (1.0f - infrequent_prob)) {
+    return nullptr;
+  }
 
   int false_path = 3 - true_path;
   bool is_min = false;
@@ -2300,7 +2308,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       opt = is_cond_add(phase, this, true_path);
     }
 
-    // These 4 optimizations could subsume the phi:
+    // These optimizations could subsume the phi:
     // have to check for a dead data loop creation.
     if( opt != nullptr ) {
       if( opt == unsafe_id || is_unsafe_data_reference(opt) ) {
