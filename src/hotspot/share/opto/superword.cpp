@@ -2869,6 +2869,7 @@ void SuperWord::verify_no_extract() {
           Node* maybe_def = use->in(k);
           if (def == maybe_def) {
             Node_List* p_use = my_pack(use);
+            if (is_marked_reduction(def)) { continue; }
             assert(p_use != nullptr && is_vector_use(use, k), "all uses must be vector uses");
           }
         }
