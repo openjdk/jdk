@@ -2778,6 +2778,7 @@ void Parse::do_one_bytecode() {
   }
 
 #ifndef PRODUCT
+  if (failing()) { return; }
   constexpr int perBytecode = 6;
   if (C->should_print_igv(perBytecode)) {
     IdealGraphPrinter* printer = C->igv_printer();
