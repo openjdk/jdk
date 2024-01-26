@@ -58,10 +58,14 @@ public class TestAnnotationStripping extends JavacTestingAbstractProcessor {
     public boolean process(Set<? extends TypeElement> annotations,
                            RoundEnvironment roundEnv) {
         if (!roundEnv.processingOver()) {
-            TypeElement hostClassElt = eltUtils.getTypeElement("HostClass");
+            TypeElement juSetElt = eltUtils.getTypeElement("java.util.Set");
+            TypeElement testElt  = elements.getTypeElement("TestAnnotationStripping");
+            TypeElement boxElt   = elements.getTypeElement("TestAnnotationStripping.Box");
+
             TypeMirror expectedAnnotation = eltUtils.getTypeElement("TestTypeAnnotation").asType();
 
-            for (ExecutableElement m : methodsIn(hostClassElt.getEnclosedElements())) {
+            for (ExecutableElement m :
+                     methodsIn(eltUtils.getTypeElement("HostClass").getEnclosedElements())) {
                 /*
                  * The kinds of types include:
                  *
@@ -128,9 +132,13 @@ public class TestAnnotationStripping extends JavacTestingAbstractProcessor {
                      * For getDeclaredType()
                      * "Annotations on the type arguments are preserved."
                      */
-                    DeclaredType declaredType =
-                        typeUtils.getDeclaredType(elements.getTypeElement("java.util.Set"),
-                                                  returnType);
+                    DeclaredType declaredType = typeUtils.getDeclaredType(juSetElt, returnType);
+                    checkEqualTypeAndAnnotations(returnType, declaredType.getTypeArguments().get(0));
+
+                    // Check both overloads
+                    declaredType = typeUtils.getDeclaredType(typeUtils.getDeclaredType(testElt), // outer type
+                                                             boxElt,
+                                                             returnType);
                     checkEqualTypeAndAnnotations(returnType, declaredType.getTypeArguments().get(0));
                 }
 
@@ -244,6 +252,17 @@ public class TestAnnotationStripping extends JavacTestingAbstractProcessor {
             failures++;
             System.err.printf("Unequal annotations on and %s.%n", tm1, tm2);
         }
+    }
+
+    // Nested class to test getDeclaredType overload.
+    class Box<T> {
+        private T contents;
+
+        public Box(T t){
+            contents = t;
+        }
+
+        T value() { return contents;};
     }
 }
 
