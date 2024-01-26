@@ -89,7 +89,7 @@ inline bool LockStack::is_recursive(oop o) const {
   // This will succeed iff there is a consecutive run of oops on the
   // lock-stack with a length of at least 2.
 
-  assert(contains(o), "entries must exist");
+  assert(contains(o), "at least one entry must exist");
   int end = to_index(_top);
   // Start iterating from the top because the runtime code is more
   // interested in the balanced locking case when the top oop on the
@@ -146,7 +146,7 @@ inline bool LockStack::try_recursive_exit(oop o) {
   assert(contains(o), "entries must exist");
 
   int end = to_index(_top);
-  if (end <= 1 || _base[end - 1] != o ||  _base[end - 2] != o) {
+  if (end <= 1 || _base[end - 1] != o || _base[end - 2] != o) {
     // The two topmost oops do not match o.
     return false;
   }

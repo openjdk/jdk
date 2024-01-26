@@ -98,7 +98,7 @@ public:
   inline bool is_recursive(oop o) const;
 
   // Try recursive enter.
-  // Precondition: This lock-stack must no be full.
+  // Precondition: This lock-stack must not be full.
   inline bool try_recursive_enter(oop o);
 
   // Try recursive exit.
