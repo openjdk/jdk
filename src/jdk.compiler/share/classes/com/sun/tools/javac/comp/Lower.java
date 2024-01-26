@@ -2981,18 +2981,9 @@ public class Lower extends TreeTranslator {
                     .VarDef(dollar_s, instanceOfExpr).setType(dollar_s.type);
 
             if (types.checkUnconditionallyExact(tree.expr.type, tree.pattern.type)) {
-                if (tree.expr.type.isReference()) {
-                    JCExpression nullCheck = makeBinary(NE,
-                            make.Ident(dollar_s),
-                            makeNull());
-
-                    exactnessCheck = make.LetExpr(List.of(var), nullCheck)
-                            .setType(syms.booleanType);
-                } else {
-                    exactnessCheck = make
-                            .LetExpr(List.of(var), make.Literal(BOOLEAN, 1).setType(syms.booleanType))
-                            .setType(syms.booleanType);
-                }
+                exactnessCheck = make
+                        .LetExpr(List.of(var), make.Literal(BOOLEAN, 1).setType(syms.booleanType.constType(1)))
+                        .setType(syms.booleanType);
             }
             else if (tree.expr.type.isReference()) {
                 JCExpression nullCheck = makeBinary(NE,
