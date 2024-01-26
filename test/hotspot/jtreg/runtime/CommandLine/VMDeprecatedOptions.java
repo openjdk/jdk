@@ -56,7 +56,6 @@ public class VMDeprecatedOptions {
         ArrayList<String[]> deprecated = new ArrayList(
           Arrays.asList(new String[][] {
             // deprecated non-alias flags:
-            {"MaxGCMinorPauseMillis",     "1032"},
             {"MaxRAMFraction",            "8"},
             {"MinRAMFraction",            "2"},
             {"InitialRAMFraction",        "64"},
