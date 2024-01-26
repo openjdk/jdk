@@ -109,7 +109,7 @@ class PatchCompressedEmbeddedPointers: public BitMapClosure {
     size_t shift = MetaspaceShared::oopmap_leading_zeros();
     narrowOop* p = _start + offset + shift;
     narrowOop v = *p;
-    assert(!CompressedOops::is_null(v), "null oops should have been filtered out at dump time, %ld", shift);
+    assert(!CompressedOops::is_null(v), "null oops should have been filtered out at dump time");
     oop o = ArchiveHeapLoader::decode_from_mapped_archive(v);
     RawAccess<IS_NOT_NULL>::oop_store(p, o);
     return true;
