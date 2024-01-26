@@ -2013,7 +2013,7 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, AlwaysRecordEvolDependencies, true, EXPERIMENTAL,           \
                 "Unconditionally record nmethod dependencies on class "     \
                 "rewriting/transformation independently of the JVMTI "      \
-                " can_{retransform/redefine}_classes capabilities.")        \
+                "can_{retransform/redefine}_classes capabilities.")         \
 
 // end of RUNTIME_FLAGS
 
