@@ -309,23 +309,6 @@
           "MaxRAM * MaxRAMPercentage / 100")                                \
           range(0, max_uintx)                                               \
                                                                             \
-  product(uintx, MaxRAMFraction, 4,                                         \
-          "Maximum fraction (1/n) of real memory used for maximum heap "    \
-          "size. "                                                          \
-          "Deprecated, use MaxRAMPercentage instead")                       \
-          range(1, max_uintx)                                               \
-                                                                            \
-  product(uintx, MinRAMFraction, 2,                                         \
-          "Minimum fraction (1/n) of real memory used for maximum heap "    \
-          "size on systems with small physical memory size. "               \
-          "Deprecated, use MinRAMPercentage instead")                       \
-          range(1, max_uintx)                                               \
-                                                                            \
-  product(uintx, InitialRAMFraction, 64,                                    \
-          "Fraction (1/n) of real memory used for initial heap size. "      \
-          "Deprecated, use InitialRAMPercentage instead")                   \
-          range(1, max_uintx)                                               \
-                                                                            \
   product(double, MaxRAMPercentage, 25.0,                                   \
           "Maximum percentage of real memory used for maximum heap size")   \
           range(0.0, 100.0)                                                 \

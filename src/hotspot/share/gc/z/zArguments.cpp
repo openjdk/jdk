@@ -39,7 +39,6 @@ void ZArguments::initialize_alignments() {
 
 void ZArguments::initialize_heap_flags_and_sizes() {
   if (!FLAG_IS_CMDLINE(MaxHeapSize) &&
-      !FLAG_IS_CMDLINE(MaxRAMFraction) &&
       !FLAG_IS_CMDLINE(MaxRAMPercentage) &&
       !FLAG_IS_CMDLINE(SoftMaxHeapSize)) {
     // We are really just guessing how much memory the program needs.

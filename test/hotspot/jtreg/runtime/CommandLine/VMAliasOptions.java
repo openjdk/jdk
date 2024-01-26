@@ -41,7 +41,6 @@ public class VMAliasOptions {
      * (true/false/n/string)}.
      */
     public static final String[][] ALIAS_OPTIONS = {
-        {"DefaultMaxRAMFraction",   "MaxRAMFraction", "1032"},
         {"CreateMinidumpOnCrash",   "CreateCoredumpOnCrash", "false" },
     };
 
