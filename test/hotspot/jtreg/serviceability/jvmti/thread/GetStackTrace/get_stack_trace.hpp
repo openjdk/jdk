@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef GET_STACK_TRACE_H
-#define GET_STACK_TRACE_H
+#ifndef GET_STACK_TRACE_HPP
+#define GET_STACK_TRACE_HPP
 #include "jvmti.h"
 
 typedef struct {
@@ -103,4 +103,4 @@ int compare_stack_trace(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread,
 }
 
 
-#endif //GET_STACK_TRACE_H
+#endif //GET_STACK_TRACE_HPP
