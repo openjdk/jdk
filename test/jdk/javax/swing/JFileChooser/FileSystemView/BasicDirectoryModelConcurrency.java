@@ -8,7 +8,6 @@ import java.util.TimerTask;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 import java.util.stream.LongStream;
-import java.util.stream.Stream;
 
 import javax.swing.JFileChooser;
 
@@ -33,14 +32,16 @@ public final class BasicDirectoryModelConcurrency {
             createFiles(temp);
 
             final JFileChooser fc = new JFileChooser(temp.toFile());
-            Stream.generate(() -> new Thread(new Scanner(barrier, fc)))
-                  .limit(NUMBER_OF_THREADS)
-                  .forEach(threads::add);
+
+            int counter = NUMBER_OF_THREADS;
+            while (counter-- > 0) {
+                Thread thread = new Thread(new Scanner(barrier, fc));
+                threads.add(thread);
+                thread.start();
+            }
 
             timer.scheduleAtFixedRate(new CreateFilesTimerTask(temp),
                                       5, 500);
-
-            threads.forEach(Thread::start);
 
             threads.forEach(BasicDirectoryModelConcurrency::join);
         } catch (Exception e) {
