@@ -842,14 +842,18 @@ void Canonicalizer::do_LookupSwitch(LookupSwitch* x) {
   if (x->tag()->type()->is_constant()) {
     int v = x->tag()->type()->as_IntConstant()->value();
     BlockBegin* sux = x->default_sux();
-    for (int i = 0; i < x->length(); i++) {
-      int key = x->key_at(i);
-      if (v < key) {
+    int low = 0;
+    int high = x->length() - 1;
+    while (low <= high) {
+      int mid = low + ((high - low) >> 1);
+      int key = x->key_at(mid);
+      if (key == v) {
+        sux = x->sux_at(mid);
         break;
-      }
-      if (v == key) {
-        sux = x->sux_at(i);
-        break;
+      } else if (key > v) {
+        high = mid - 1;
+      } else {
+        low = mid + 1;
       }
     }
     set_canonical(new Goto(sux, x->state_before(), is_safepoint(x, sux)));
