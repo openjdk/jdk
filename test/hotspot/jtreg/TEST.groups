@@ -21,12 +21,19 @@
 # questions.
 #
 
+# All tests
+
+all = \
+  :hotspot_all
+
 hotspot_all = \
   /
 
 hotspot_all_no_apps = \
   / \
   -applications
+
+# Component test groups
 
 hotspot_compiler = \
   compiler
