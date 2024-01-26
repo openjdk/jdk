@@ -50,14 +50,16 @@ public class TestIntVect {
     }
 
     @Run(test = {
-           "test_addc", "test_addv", "test_adda", "test_subc", "test_subv",
-           "test_suba", "test_mulc", "test_mulc_n", "test_mulv", "test_mula",
-           "test_divc", "test_divc_n", "test_andc", "test_andv", "test_anda",
-           "test_orc", "test_orv", "test_ora", "test_xorc", "test_xorv",
-           "test_xora", "test_sllc", "test_sllc_n", "test_sllc_o",
-           "test_sllc_on", "test_sllv", "test_srlc", "test_srlc_n",
-           "test_srlc_o", "test_srlc_on", "test_srlv", "test_srac",
-           "test_srac_n", "test_srac_o", "test_srac_on", "test_srav"
+           "test_sum", "test_addc", "test_addv", "test_adda", "test_subc",
+           "test_subv", "test_suba", "test_mulc", "test_mulc_n", "test_mulv",
+           "test_mula", "test_divc", "test_divc_n", "test_divv", "test_diva",
+           "test_andc", "test_andv", "test_anda", "test_orc", "test_orv",
+           "test_ora", "test_xorc", "test_xorv", "test_xora", "test_sllc",
+           "test_sllc_n", "test_sllc_o", "test_sllc_on", "test_sllv",
+           "test_srlc", "test_srlc_n", "test_srlc_o", "test_srlc_on",
+           "test_srlv", "test_srac", "test_srac_n", "test_srac_o",
+           "test_srac_on", "test_srav", "test_pack2", "test_unpack2",
+           "test_pack2_swap", "test_unpack2_swap"
          },
          mode = RunMode.STANDALONE)
     public void run() {
@@ -408,7 +410,12 @@ public class TestIntVect {
 
     }
 
-    // Not vectorized: simple addition not profitable, see JDK-8307516.
+    // Not vectorized: simple addition not profitable, see JDK-8307516. NOTE:
+    // This check does not document the _desired_ behavior of the system but
+    // the current behavior (no vectorization)
+    @Test
+    @IR(counts = { IRNode.LOAD_VECTOR_I, "= 0",
+                   IRNode.STORE_VECTOR,  "= 0" })
     int test_sum(int[] a1) {
         int sum = 0;
         for (int i = 0; i < a1.length; i+=1) {
@@ -508,9 +515,12 @@ public class TestIntVect {
     }
 
     @Test
-    @IR(counts = { IRNode.ADD_VI,    "> 0",
-                   IRNode.RSHIFT_VI, "> 0",
-                   IRNode.SUB_VI,    "> 0" },
+    @IR(counts = { IRNode.ADD_VI,
+                   IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
+                   IRNode.RSHIFT_VI,
+                   IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
+                   IRNode.SUB_VI,
+                   IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0" },
         applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
     void test_divc(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
@@ -519,9 +529,12 @@ public class TestIntVect {
     }
 
     @Test
-    @IR(counts = { IRNode.ADD_VI,    "> 0",
-                   IRNode.RSHIFT_VI, "> 0",
-                   IRNode.SUB_VI,    "> 0" },
+    @IR(counts = { IRNode.ADD_VI,
+                   IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
+                   IRNode.RSHIFT_VI,
+                   IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
+                   IRNode.SUB_VI,
+                   IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0" },
         applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
     void test_divc_n(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
@@ -529,14 +542,24 @@ public class TestIntVect {
         }
     }
 
-    // Not vectorized: no vector div.
+    // Not vectorized: no vector div. NOTE: This check does not document the
+    // _desired_ behavior of the system but the current behavior (no
+    // vectorization)
+    @Test
+    @IR(counts = { IRNode.LOAD_VECTOR_I, "= 0",
+                   IRNode.STORE_VECTOR,  "= 0" })
     void test_divv(int[] a0, int[] a1, int b) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]/b);
         }
     }
 
-    // Not vectorized: no vector div.
+    // Not vectorized: no vector div. NOTE: This check does not document the
+    // _desired_ behavior of the system but the current behavior (no
+    // vectorization)
+    @Test
+    @IR(counts = { IRNode.LOAD_VECTOR_I, "= 0",
+                   IRNode.STORE_VECTOR,  "= 0" })
     void test_diva(int[] a0, int[] a1, int[] a2) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]/a2[i]);
@@ -642,6 +665,7 @@ public class TestIntVect {
         }
     }
 
+    // Vector shift not expected as shift is a NOP.
     @Test
     @IR(counts = { IRNode.LSHIFT_VI,     "= 0",
                    IRNode.LOAD_VECTOR_I, "> 0",
@@ -653,6 +677,7 @@ public class TestIntVect {
         }
     }
 
+    // Vector shift not expected as shift is a NOP.
     @Test
     @IR(counts = { IRNode.LSHIFT_VI,     "= 0",
                    IRNode.LOAD_VECTOR_I, "> 0",
@@ -691,6 +716,7 @@ public class TestIntVect {
         }
     }
 
+    // Vector shift not expected as shift is a NOP.
     @Test
     @IR(counts = { IRNode.URSHIFT_VI,    "= 0",
                    IRNode.LOAD_VECTOR_I, "> 0",
@@ -702,6 +728,7 @@ public class TestIntVect {
         }
     }
 
+    // Vector shift not expected as shift is a NOP.
     @Test
     @IR(counts = { IRNode.URSHIFT_VI,    "= 0",
                    IRNode.LOAD_VECTOR_I, "> 0",
@@ -740,6 +767,7 @@ public class TestIntVect {
         }
     }
 
+    // Vector shift not expected as shift is a NOP.
     @Test
     @IR(counts = { IRNode.RSHIFT_VI,     "= 0",
                    IRNode.LOAD_VECTOR_I, "> 0",
@@ -751,6 +779,7 @@ public class TestIntVect {
         }
     }
 
+    // Vector shift not expected as shift is a NOP.
     @Test
     @IR(counts = { IRNode.RSHIFT_VI,     "= 0",
                    IRNode.LOAD_VECTOR_I, "> 0",
@@ -771,7 +800,12 @@ public class TestIntVect {
         }
     }
 
-    // Not vectorized currently
+    // Not vectorized currently. NOTE: This check does not document the
+    // _desired_ behavior of the system but the current behavior (no
+    // vectorization)
+    @Test
+    @IR(counts = { IRNode.LOAD_VECTOR_I, "= 0",
+                   IRNode.STORE_VECTOR,  "= 0" })
     void test_pack2(long[] p2, int[] a1) {
         if (p2.length*2 > a1.length) return;
         for (int i = 0; i < p2.length; i+=1) {
@@ -781,7 +815,12 @@ public class TestIntVect {
         }
     }
 
-    // Not vectorized currently
+    // Not vectorized currently. NOTE: This check does not document the
+    // _desired_ behavior of the system but the current behavior (no
+    // vectorization)
+    @Test
+    @IR(counts = { IRNode.LOAD_VECTOR_I, "= 0",
+                   IRNode.STORE_VECTOR,  "= 0" })
     void test_unpack2(int[] a0, long[] p2) {
         if (p2.length*2 > a0.length) return;
         for (int i = 0; i < p2.length; i+=1) {
@@ -791,7 +830,12 @@ public class TestIntVect {
         }
     }
 
-    // Not vectorized currently
+    // Not vectorized currently. NOTE: This check does not document the
+    // _desired_ behavior of the system but the current behavior (no
+    // vectorization)
+    @Test
+    @IR(counts = { IRNode.LOAD_VECTOR_I, "= 0",
+                   IRNode.STORE_VECTOR,  "= 0" })
     void test_pack2_swap(long[] p2, int[] a1) {
         if (p2.length*2 > a1.length) return;
         for (int i = 0; i < p2.length; i+=1) {
@@ -801,7 +845,12 @@ public class TestIntVect {
         }
     }
 
-    // Not vectorized currently
+    // Not vectorized currently. NOTE: This check does not document the
+    // _desired_ behavior of the system but the current behavior (no
+    // vectorization)
+    @Test
+    @IR(counts = { IRNode.LOAD_VECTOR_I, "= 0",
+                   IRNode.STORE_VECTOR,  "= 0" })
     void test_unpack2_swap(int[] a0, long[] p2) {
         if (p2.length*2 > a0.length) return;
         for (int i = 0; i < p2.length; i+=1) {
