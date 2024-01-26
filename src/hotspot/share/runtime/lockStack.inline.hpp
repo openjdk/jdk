@@ -38,6 +38,8 @@
 
 inline int LockStack::to_index(uint32_t offset) {
   assert(is_aligned(offset, oopSize), "Bad alignment: %u", offset);
+  assert((offset <= end_offset()), "lockstack overflow: offset %d end_offset %d", offset, end_offset());
+  assert((offset >= start_offset()), "lockstack underflow: offset %d end_offset %d", offset, start_offset());
   return (offset - lock_stack_base_offset) / oopSize;
 }
 
