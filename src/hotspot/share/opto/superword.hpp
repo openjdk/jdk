@@ -284,21 +284,9 @@ class SuperWord : public ResourceObj {
     // Too verbose for TraceSuperWord
     return _vtrace.is_trace(TraceAutoVectorizationTag::SW_TYPES);
   }
-  bool is_trace_superword_adjacent_memops() const {
-    return TraceSuperWord ||
-           _vtrace.is_trace(TraceAutoVectorizationTag::SW_ADJACENT_MEMOPS);
-  }
   bool is_trace_superword_alignment() const {
     // Too verbose for TraceSuperWord
     return _vtrace.is_trace(TraceAutoVectorizationTag::SW_ALIGNMENT);
-  }
-  bool is_trace_superword_rejections() const {
-    return TraceSuperWord ||
-           _vtrace.is_trace(TraceAutoVectorizationTag::SW_REJECTIONS);
-  }
-  bool is_trace_superword_packset() const {
-    return TraceSuperWord ||
-           _vtrace.is_trace(TraceAutoVectorizationTag::SW_PACKSET);
   }
   bool is_trace_superword_memory_slices() const {
     return TraceSuperWord ||
@@ -308,24 +296,37 @@ class SuperWord : public ResourceObj {
     return TraceSuperWord ||
            _vtrace.is_trace(TraceAutoVectorizationTag::SW_DEPENDENCE_GRAPH);
   }
-  bool is_trace_superword_verbose() const {
-    // Too verbose for TraceSuperWord
-    return _vtrace.is_trace(TraceAutoVectorizationTag::SW_VERBOSE);
+  bool is_trace_superword_adjacent_memops() const {
+    return TraceSuperWord ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_ADJACENT_MEMOPS);
+  }
+  bool is_trace_superword_rejections() const {
+    return TraceSuperWord ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_REJECTIONS);
+  }
+  bool is_trace_superword_packset() const {
+    return TraceSuperWord ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_PACKSET);
   }
   bool is_trace_superword_info() const {
     return TraceSuperWord ||
            _vtrace.is_trace(TraceAutoVectorizationTag::SW_INFO);
   }
+  bool is_trace_superword_verbose() const {
+    // Too verbose for TraceSuperWord
+    return _vtrace.is_trace(TraceAutoVectorizationTag::SW_VERBOSE);
+  }
   bool is_trace_superword_any() const {
     return TraceSuperWord ||
            is_trace_align_vector() ||
            _vtrace.is_trace(TraceAutoVectorizationTag::SW_PRECONDITION) ||
-           _vtrace.is_trace(TraceAutoVectorizationTag::SW_ADJACENT_MEMOPS) ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_TYPES) ||
            _vtrace.is_trace(TraceAutoVectorizationTag::SW_ALIGNMENT) ||
-           _vtrace.is_trace(TraceAutoVectorizationTag::SW_REJECTIONS) ||
-           _vtrace.is_trace(TraceAutoVectorizationTag::SW_PACKSET) ||
            _vtrace.is_trace(TraceAutoVectorizationTag::SW_MEMORY_SLICES) ||
            _vtrace.is_trace(TraceAutoVectorizationTag::SW_DEPENDENCE_GRAPH) ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_ADJACENT_MEMOPS) ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_REJECTIONS) ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_PACKSET) ||
            _vtrace.is_trace(TraceAutoVectorizationTag::SW_INFO) ||
            _vtrace.is_trace(TraceAutoVectorizationTag::SW_VERBOSE);
   }
