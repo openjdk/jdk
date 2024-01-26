@@ -177,9 +177,8 @@ public interface Tree {
 
         /**
          * Used for instances of {@link StringTemplateTree}.
-         * @since 21
+         * @since 23
          */
-        @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES, reflective=true)
         TEMPLATE(StringTemplateTree.class),
 
         /**

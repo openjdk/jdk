@@ -90,11 +90,10 @@ import jdk.internal.javac.PreviewFeature;
  * }
  * In the above example, the value of {@code result} will be {@code "0x000a + 0x0014 = 0x001E"}.
  *
- * @since 21
+ * @since 23
  *
  * @see Processor
  */
-@PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
 public final class FormatProcessor implements Processor<String, RuntimeException>, Linkage {
     /**
      * {@link Locale} used to format

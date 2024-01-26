@@ -21,8 +21,6 @@
  * questions.
  */
 
- // key: compiler.note.preview.filename
- // key: compiler.note.preview.recompile
  // key: compiler.misc.unexpected.ret.val
  // key: compiler.err.prob.found.req
  // options: --enable-preview -source ${jdk.version}

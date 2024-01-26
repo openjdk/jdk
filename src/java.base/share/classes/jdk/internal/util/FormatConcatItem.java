@@ -30,10 +30,7 @@ package jdk.internal.util;
  * assist {@link java.lang.invoke.StringConcatFactory} perform optimal
  * insertion.
  *
- * @since 21
- *
- * Warning: This class is part of PreviewFeature.Feature.STRING_TEMPLATES.
- *          Do not rely on its availability.
+ * @since 23
  */
 public interface FormatConcatItem {
     /**

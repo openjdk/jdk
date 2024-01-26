@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 0000000
+ * @bug 8285932
  * @summary Exercise javac handing of templated strings.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api

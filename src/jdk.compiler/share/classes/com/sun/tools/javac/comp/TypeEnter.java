@@ -147,12 +147,18 @@ public class TypeEnter implements Completer {
         preview = Preview.instance(context);
         Source source = Source.instance(context);
         allowDeprecationOnImport = Feature.DEPRECATION_ON_IMPORT.allowedInSource(source);
+        allowStringTemplates = Feature.STRING_TEMPLATES.allowedInSource(source);
     }
 
     /**
      * Switch: should deprecation warnings be issued on import
      */
     boolean allowDeprecationOnImport;
+
+    /**
+     * Switch: should string templates be allowed
+     */
+    boolean allowStringTemplates;
 
     /** A flag to disable completion from time to time during member
      *  enter, as we only need to look up types.  This avoids
@@ -329,36 +335,44 @@ public class TypeEnter implements Completer {
                 sym.owner.complete();
         }
 
-        private void importJavaLang(JCCompilationUnit tree, Env<AttrContext> env, ImportFilter typeImportFilter) {
+        private PackageSymbol javaLangSymbol() {
+            ModuleSymbol javaBase = syms.java_base;
+            PackageSymbol javaLang = syms.enterPackage(javaBase, names.java_lang);
+            return javaLang.members().isEmpty() && !javaLang.exists() ? null : javaLang;
+        }
+
+        private void implicitImports(JCCompilationUnit tree, Env<AttrContext> env) {
             // Import-on-demand java.lang.
-            PackageSymbol javaLang = syms.enterPackage(syms.java_base, names.java_lang);
-            if (javaLang.members().isEmpty() && !javaLang.exists()) {
+            PackageSymbol javaLang = javaLangSymbol();
+            if (javaLang == null) {
                 log.error(Errors.NoJavaLang);
                 throw new Abort();
             }
             importAll(make.at(tree.pos()).Import(make.Select(make.QualIdent(javaLang.owner), javaLang), false),
                 javaLang, env);
-        }
 
-        private void staticImports(JCCompilationUnit tree, Env<AttrContext> env, ImportFilter staticImportFilter) {
-             if (preview.isEnabled() && preview.isPreview(Feature.STRING_TEMPLATES)) {
-                Lint prevLint = chk.setLint(lint.suppress(LintCategory.DEPRECATION, LintCategory.REMOVAL, LintCategory.PREVIEW));
-                boolean prevPreviewCheck = chk.disablePreviewCheck;
+            String implicitImports = "";
 
-                try {
-                    chk.disablePreviewCheck = true;
-                    String autoImports = """
+            try {
+                TypeSymbol stringTemplateSym = syms.stringTemplateType.tsym;
+                if (allowStringTemplates && tree.getModuleDecl() == null &&
+                        tree.modle.visiblePackages != null &&
+                        !stringTemplateSym.members().isEmpty() &&
+                        (stringTemplateSym.flags() & PREVIEW_API) == 0) {
+                    implicitImports += """
                             import static java.lang.StringTemplate.STR;
                             """;
-                    Parser parser = parserFactory.newParser(autoImports, false, false, false, false);
-                    JCCompilationUnit importTree = parser.parseCompilationUnit();
+                }
+            } catch (CompletionFailure ex) {
+                // fall thru - StringTemplate not available for completion
+            }
 
-                    for (JCImport imp : importTree.getImports()) {
-                        doImport(imp);
-                    }
-                } finally {
-                    chk.setLint(prevLint);
-                    chk.disablePreviewCheck = prevPreviewCheck;
+            if (!implicitImports.isEmpty()) {
+                Parser parser = parserFactory.newParser(implicitImports, false, false, false, false);
+                JCCompilationUnit importTree = parser.parseCompilationUnit();
+
+                for (JCImport imp : importTree.getImports()) {
+                    doImport(imp);
                 }
             }
         }
@@ -385,8 +399,7 @@ public class TypeEnter implements Completer {
                         (origin, sym) -> sym.kind == TYP &&
                                          chk.importAccessible(sym, packge);
 
-                importJavaLang(tree, env, typeImportFilter);
-                staticImports(tree, env, staticImportFilter);
+                implicitImports(tree, env);
 
                 JCModuleDecl decl = tree.getModuleDecl();
 

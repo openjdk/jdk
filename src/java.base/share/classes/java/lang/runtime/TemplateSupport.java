@@ -37,10 +37,7 @@ import jdk.internal.access.SharedSecrets;
  * This class provides runtime support for string templates. The methods within
  * are intended for internal use only.
  *
- * @since 21
- *
- * Warning: This class is part of PreviewFeature.Feature.STRING_TEMPLATES.
- *          Do not rely on its availability.
+ * @since 23
  */
 final class TemplateSupport implements JavaTemplateAccess {
 

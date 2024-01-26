@@ -36,6 +36,7 @@ import com.sun.tools.javac.tree.DCTree;
 import com.sun.tools.javac.tree.DCTree.DCDocComment;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
+import com.sun.tools.javac.tree.JCTree.JCStringTemplate;
 import com.sun.tools.javac.util.Pair;
 
 public abstract class AbstractTreeScannerTest {
@@ -283,6 +284,10 @@ public abstract class AbstractTreeScannerTest {
         if (fields == null) {
             fields = new HashSet<Field>();
             for (Field f: tree.getClass().getFields()) {
+                // List of strings
+                if (tree instanceof JCStringTemplate && f.getName().equals("fragments")) {
+                    continue;
+                }
                 Class<?> fc = f.getType();
                 if (JCTree.class.isAssignableFrom(fc) || List.class.isAssignableFrom(fc))
                     fields.add(f);
