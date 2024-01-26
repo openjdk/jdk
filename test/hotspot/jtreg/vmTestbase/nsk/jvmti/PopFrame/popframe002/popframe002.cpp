@@ -104,7 +104,7 @@ Java_nsk_jvmti_PopFrame_popframe002_doPopFrame(JNIEnv *env,
     switch (t_case) {
     /* nullptr pointer to the thread*/
     case 1:
-        printf("\nInvoke PopFrame() with nullptr pointer to a thread...\n");
+        printf("\nInvoke PopFrame() with null pointer to a thread...\n");
         fflush(stdout);
         set_watch_ev(1); /* watch JVMTI events */
         err = (jvmti->PopFrame(nullptr)); /* explode the bomb */

@@ -152,7 +152,7 @@ public:
 
     jbyteArray getSavedHookClassBytes() {
         if (savedClassBytes == nullptr) {
-            _log("%s: savedClassBytes is nullptr\n", mode);
+            _log("%s: savedClassBytes is null\n", mode);
             return nullptr;
         }
 

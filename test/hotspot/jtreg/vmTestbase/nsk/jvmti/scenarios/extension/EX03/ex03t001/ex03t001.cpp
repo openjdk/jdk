@@ -53,7 +53,7 @@ ClassUnload(jvmtiEnv* jvmti_env, ...) {
     // The name argument should never be null
     if (name == nullptr) {
         nsk_jvmti_setFailStatus();
-        NSK_COMPLAIN0("ClassUnload: 'name' input parameter is nullptr.\n");
+        NSK_COMPLAIN0("ClassUnload: 'name' input parameter is null.\n");
     } else {
         NSK_DISPLAY1("Class unloaded %s\n", name);
     }

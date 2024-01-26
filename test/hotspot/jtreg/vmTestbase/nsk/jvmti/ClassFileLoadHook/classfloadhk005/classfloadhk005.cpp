@@ -61,7 +61,7 @@ static int checkBytecode(const char kind[], jint size, const unsigned char bytes
     }
 
     if (bytes == nullptr) {
-        NSK_COMPLAIN2("Unexpected nullptr pointer to %s bytecode in CLASS_FILE_LOAD_HOOK: 0x%p\n",
+        NSK_COMPLAIN2("Unexpected null pointer to %s bytecode in CLASS_FILE_LOAD_HOOK: 0x%p\n",
                                                             kind, (void*)bytes);
         return NSK_FALSE;
     }
@@ -270,14 +270,14 @@ callbackClassFileLoadHook(jvmtiEnv *jvmti, JNIEnv *jni,
 
         NSK_DISPLAY1("Check pointer to new_class_data_len: 0x%p\n", (void*)new_class_data_len);
         if (new_class_data_len == nullptr) {
-            NSK_COMPLAIN1("nullptr new_class_data_len pointer passed to CLASS_FILE_LOAD_HOOK: 0x%p\n",
+            NSK_COMPLAIN1("null new_class_data_len pointer passed to CLASS_FILE_LOAD_HOOK: 0x%p\n",
                                                     (void*)new_class_data_len);
             nsk_jvmti_setFailStatus();
         }
 
         NSK_DISPLAY1("Check pointer to new_class_data: 0x%p\n", (void*)new_class_data);
         if (new_class_data == nullptr) {
-            NSK_COMPLAIN1("nullptr new_class_data pointer passed to CLASS_FILE_LOAD_HOOK: 0x%p\n",
+            NSK_COMPLAIN1("null new_class_data pointer passed to CLASS_FILE_LOAD_HOOK: 0x%p\n",
                                                     (void*)new_class_data);
             nsk_jvmti_setFailStatus();
         }

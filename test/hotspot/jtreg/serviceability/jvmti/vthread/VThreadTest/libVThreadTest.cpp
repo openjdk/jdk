@@ -124,12 +124,12 @@ test_GetVirtualThread(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread, jthread vthr
 
   // #1: Test JVMTI GetVirtualThread extension function nullptr thread (current)
   err = GetVirtualThread(jvmti, jni, nullptr, &thread_vthread);
-  check_jvmti_status(jni, err, "event handler: error in JVMTI GetVirtualThread with nullptr thread (current)");
+  check_jvmti_status(jni, err, "event handler: error in JVMTI GetVirtualThread with null thread (current)");
 
   if (thread_vthread == nullptr) {
-    fatal(jni, "event handler: JVMTI GetVirtualThread with nullptr thread (current) failed to return non-nullptr vthread");
+    fatal(jni, "event handler: JVMTI GetVirtualThread with nullptr thread (current) failed to return non-null vthread");
   }
-  LOG("JVMTI GetVirtualThread with nullptr thread (current) returned non-nullptr vthread as expected\n");
+  LOG("JVMTI GetVirtualThread with nullptr thread (current) returned non-null vthread as expected\n");
 
   // #2: Test JVMTI GetVirtualThread extension function with a bad thread
   err = GetVirtualThread(jvmti, jni, vthread, &thread_vthread);
@@ -142,9 +142,9 @@ test_GetVirtualThread(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread, jthread vthr
   check_jvmti_status(jni, err, "event handler: error in JVMTI GetVirtualThread");
 
   if (thread_vthread == nullptr) {
-    fatal(jni, "event handler: JVMTI GetVirtualThread with good thread failed to return non-nullptr vthread");
+    fatal(jni, "event handler: JVMTI GetVirtualThread with good thread failed to return non-null vthread");
   }
-  LOG("JVMTI GetVirtualThread with good thread returned non-nullptr vthread as expected\n");
+  LOG("JVMTI GetVirtualThread with good thread returned non-null vthread as expected\n");
 }
 
 static void
@@ -169,9 +169,9 @@ test_GetCarrierThread(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread, jthread vthr
   check_jvmti_status(jni, err, "event handler: error in JVMTI GetCarrierThread");
 
   if (vthread_thread == nullptr) {
-    fatal(jni, "event handler: JVMTI GetCarrierThread with good vthread failed to return non-nullptr carrier thread");
+    fatal(jni, "event handler: JVMTI GetCarrierThread with good vthread failed to return non-null carrier thread");
   }
-  LOG("JVMTI GetCarrierThread with good vthread returned non-nullptr carrier thread as expected\n");
+  LOG("JVMTI GetCarrierThread with good vthread returned non-null carrier thread as expected\n");
 }
 
 static void
@@ -231,8 +231,8 @@ test_GetFrameCount(jvmtiEnv *jvmti, JNIEnv *jni, jthread vthread, const char *ev
   // #1: Test JVMTI GetFrameCount function with nullptr count_ptr pointer
   err = jvmti->GetFrameCount(vthread, nullptr);
   if (err != JVMTI_ERROR_NULL_POINTER) {
-    LOG("JVMTI GetFrameCount with nullptr count_ptr returned error: %d\n", err);
-    fatal(jni, "event handler: JVMTI GetFrameCount with nullptr count_ptr pointer failed to return JVMTI_ERROR_NULL_POINTER");
+    LOG("JVMTI GetFrameCount with null count_ptr returned error: %d\n", err);
+    fatal(jni, "event handler: JVMTI GetFrameCount with null count_ptr pointer failed to return JVMTI_ERROR_NULL_POINTER");
   }
 
   // #2: Test JVMTI GetFrameCount function with a good vthread
@@ -263,15 +263,15 @@ test_GetFrameLocation(jvmtiEnv *jvmti, JNIEnv *jni, jthread vthread, const char 
   // #2: Test JVMTI GetFrameLocation function with nullptr method_ptr
   err = jvmti->GetFrameLocation(vthread, 0, nullptr, &location);
   if (err != JVMTI_ERROR_NULL_POINTER) {
-    LOG("JVMTI GetFrameLocation with nullptr method_ptr returned error: %d\n", err);
-    fatal(jni, "event handler: JVMTI GetFrameLocation with nullptr method_ptr failed to return JVMTI_ERROR_NULL_POINTER");
+    LOG("JVMTI GetFrameLocation with null method_ptr returned error: %d\n", err);
+    fatal(jni, "event handler: JVMTI GetFrameLocation with null method_ptr failed to return JVMTI_ERROR_NULL_POINTER");
   }
 
   // #3: Test JVMTI GetFrameLocation function with nullptr location_ptr
   err = jvmti->GetFrameLocation(vthread, 0, &method, nullptr);
   if (err != JVMTI_ERROR_NULL_POINTER) {
-    LOG("JVMTI GetFrameCount with nullptr location_ptr returned error: %d\n", err);
-    fatal(jni, "event handler: JVMTI GetFrameLocation with nullptr location_ptr failed to return JVMTI_ERROR_NULL_POINTER");
+    LOG("JVMTI GetFrameCount with null location_ptr returned error: %d\n", err);
+    fatal(jni, "event handler: JVMTI GetFrameLocation with null location_ptr failed to return JVMTI_ERROR_NULL_POINTER");
   }
 
   // #4: Test JVMTI GetFrameLocation function with a good vthread
@@ -331,15 +331,15 @@ test_GetStackTrace(jvmtiEnv *jvmti, JNIEnv *jni, jthread vthread, const char *ev
   // #3: Test JVMTI GetStackTrace function with nullptr frame_buffer pointer
   err = jvmti->GetStackTrace(vthread, 0, MAX_FRAME_COUNT, nullptr, &count);
   if (err != JVMTI_ERROR_NULL_POINTER) {
-    LOG("JVMTI GetStackTrace with nullptr frame_buffer pointer returned error: %d\n", err);
-    fatal(jni, "event handler: JVMTI GetStackTrace witt nullptr frame_buffer pointer failed to return JVMTI_ERROR_NULL_POINTER");
+    LOG("JVMTI GetStackTrace with null frame_buffer pointer returned error: %d\n", err);
+    fatal(jni, "event handler: JVMTI GetStackTrace witt null frame_buffer pointer failed to return JVMTI_ERROR_NULL_POINTER");
   }
 
   // #4: Test JVMTI GetStackTrace function with nullptr count_ptr pointer
   err = jvmti->GetStackTrace(vthread, 0, MAX_FRAME_COUNT, frames, nullptr);
   if (err != JVMTI_ERROR_NULL_POINTER) {
-    LOG("JVMTI GetStackTrace with nullptr count_ptr pointer returned error: %d\n", err);
-    fatal(jni, "event handler: JVMTI GetStackTrace witt nullptr count_ptr pointer failed to return JVMTI_ERROR_NULL_POINTER");
+    LOG("JVMTI GetStackTrace with null count_ptr pointer returned error: %d\n", err);
+    fatal(jni, "event handler: JVMTI GetStackTrace witt null count_ptr pointer failed to return JVMTI_ERROR_NULL_POINTER");
   }
 
   // #5: Test JVMTI GetStackTrace function with a good vthread
@@ -426,8 +426,8 @@ test_GetLocal(jvmtiEnv *jvmti, JNIEnv *jni, jthread cthread, jthread vthread, co
   // #5: Test JVMTI GetLocalObject function with nullptr value_ptr
   err = jvmti->GetLocalObject(vthread, depth, SlotObj, nullptr);
   if (err != JVMTI_ERROR_NULL_POINTER) {
-    LOG("JVMTI GetLocalObject with nullptr method_ptr returned error: %d\n", err);
-    fatal(jni, "JVMTI GetLocalObject with nullptr method_ptr failed to return JVMTI_ERROR_NULL_POINTER");
+    LOG("JVMTI GetLocalObject with null method_ptr returned error: %d\n", err);
+    fatal(jni, "JVMTI GetLocalObject with null method_ptr failed to return JVMTI_ERROR_NULL_POINTER");
   }
 
   // #6: Test JVMTI GetLocal<Type> functions with a good vthread

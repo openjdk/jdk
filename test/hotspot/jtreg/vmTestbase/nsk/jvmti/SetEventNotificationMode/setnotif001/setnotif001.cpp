@@ -122,7 +122,7 @@ void setWatches(jvmtiEnv *jvmti_env, JNIEnv *env, jclass cls) {
 
     mid = env->GetStaticMethodID(cls, "meth01", "(I)V");
     if (mid == nullptr) {
-      printf("(GetStaticMethodID) returns nullptr");
+      printf("(GetStaticMethodID) returns null");
       result = STATUS_FAILED;
       return;
     }

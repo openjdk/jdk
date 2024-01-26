@@ -167,7 +167,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
         if (!NSK_JNI_VERIFY(jni, (catcher =
                 jni->GetStaticObjectField(debugeeClass, fid)) != nullptr)) {
-            NSK_COMPLAIN0("GetStaticObjectField returned nullptr for 'catcher' field value\n\n");
+            NSK_COMPLAIN0("GetStaticObjectField returned null for 'catcher' field value\n\n");
             nsk_jvmti_setFailStatus();
             break;
         }

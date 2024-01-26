@@ -50,7 +50,7 @@ void checkMeth(JNIEnv *env, const char *cl_name, const char *name, const char *s
         mid = env->GetMethodID(cl, name, sig);
     }
     if (mid == nullptr) {
-        printf("%s.%s%s: mid = nullptr\n", cl_name, name, sig);
+        printf("%s.%s%s: mid = null\n", cl_name, name, sig);
         result = STATUS_FAILED;
         return;
     }

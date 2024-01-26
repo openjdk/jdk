@@ -68,12 +68,12 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     NSK_DISPLAY1("    reserved: 0x%p\n", (void*)jvm);
 
     if (jvm == nullptr) {
-        NSK_COMPLAIN1("First parameter 'vm' in JVM_OnLoad() is nullptr: 0x%p\n", (void*)jvm);
+        NSK_COMPLAIN1("First parameter 'vm' in JVM_OnLoad() is null: 0x%p\n", (void*)jvm);
         status = STATUS_FAILED;
     }
 
     if (options == nullptr) {
-        NSK_COMPLAIN1("Second parameter 'options' in JVM_OnLoad() is nullptr: 0x%p\n", (void*)options);
+        NSK_COMPLAIN1("Second parameter 'options' in JVM_OnLoad() is null: 0x%p\n", (void*)options);
         status = STATUS_FAILED;
     }
 

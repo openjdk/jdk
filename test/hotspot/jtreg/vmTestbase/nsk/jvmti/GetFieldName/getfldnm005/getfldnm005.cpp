@@ -41,7 +41,7 @@ extern "C" {
 /* expected field signatures are below */
 static const char *fld_sig[][FLDS_NUM] = {
     { "_getfldnm005St", "static",
-      "Lnsk/jvmti/GetFieldName/getfldnm005;", "nullptr" },
+      "Lnsk/jvmti/GetFieldName/getfldnm005;", "null" },
 
     { "_getfldnm005b", "instance",
       "Lnsk/jvmti/GetFieldName/getfldnm005b;",
@@ -59,10 +59,10 @@ static const char *fld_sig[][FLDS_NUM] = {
 
     { "_getfldnm005e", "instance",
       "Lnsk/jvmti/GetFieldName/getfldnm005e;",
-      "nullptr" },
+      "null" },
     { "_getfldnm005eSt", "static",
       "Lnsk/jvmti/GetFieldName/getfldnm005e;",
-      "nullptr" },
+      "null" },
 
     { "_getfldnm005if", "instance",
       "Lnsk/jvmti/GetFieldName/getfldnm005if;",
@@ -80,7 +80,7 @@ static const char *fld_sig[][FLDS_NUM] = {
 
     { "_getfldnm005gArr", "instance",
       "[Lnsk/jvmti/GetFieldName/getfldnm005g;",
-      "nullptr" }
+      "null" }
 };
 
 static jvmtiEnv *jvmti = nullptr;
@@ -101,7 +101,7 @@ static int checkSig(JNIEnv *jni_env, jclass testedCls,
             name);
 
         if (strcmp(fld_sig[idx][2], sign) != 0 ||
-                strcmp(fld_sig[idx][3], (gen_sign == nullptr) ? "nullptr" : gen_sign) != 0) {
+                strcmp(fld_sig[idx][3], (gen_sign == nullptr) ? "null" : gen_sign) != 0) {
             NSK_COMPLAIN6(
                 "TEST FAILED: %s field \"%s\" has\n"
                 "\tsignature: \"%s\"\n"
@@ -110,13 +110,13 @@ static int checkSig(JNIEnv *jni_env, jclass testedCls,
                 "\t\t\"%s\"\n\n",
                (instance == 0) ? "instance" : "static",
                 fld_sig[idx][0],
-                sign, (gen_sign == nullptr) ? "nullptr" : gen_sign,
+                sign, (gen_sign == nullptr) ? "null" : gen_sign,
                 fld_sig[idx][2], fld_sig[idx][3]);
             totRes = STATUS_FAILED;
         }
         else
             NSK_DISPLAY2("CHECK PASSED: signature: \"%s\",\n\tgeneric signature: \"%s\"\n",
-                sign, (gen_sign == nullptr) ? "nullptr" : gen_sign);
+                sign, (gen_sign == nullptr) ? "null" : gen_sign);
 
         NSK_DISPLAY0("Deallocating name & signature arrays\n");
         if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*) name)))

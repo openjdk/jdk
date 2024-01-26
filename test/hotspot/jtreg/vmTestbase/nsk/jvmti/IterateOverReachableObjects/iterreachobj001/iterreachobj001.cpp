@@ -301,7 +301,7 @@ heapRootCallback(jvmtiHeapRootKind root_kind,
     }
 
     if (tag_ptr == nullptr) {
-        NSK_COMPLAIN4("nullptr tag_ptr is passed to heapRootCallback:\n"
+        NSK_COMPLAIN4("null tag_ptr is passed to heapRootCallback:\n"
                       "#   tag_ptr:        0x%p\n"
                       "#   root_kind:      %d\n"
                       "#   class_tag:      %ld\n"
@@ -394,7 +394,7 @@ stackReferenceCallback(jvmtiHeapRootKind root_kind,
     }
 
     if (tag_ptr == nullptr) {
-        NSK_COMPLAIN8("nullptr tag_ptr is passed to stackReferenceCallback:\n"
+        NSK_COMPLAIN8("null tag_ptr is passed to stackReferenceCallback:\n"
                       "#   tag_ptr:        0x%p\n"
                       "#   root_kind:      %d\n"
                       "#   class_tag:      %ld\n"
@@ -519,7 +519,7 @@ objectReferenceCallback(jvmtiObjectReferenceKind reference_kind,
     }
 
     if (tag_ptr == nullptr) {
-        NSK_COMPLAIN6("nullptr tag_ptr is passed to objectReferenceCallback:\n"
+        NSK_COMPLAIN6("null tag_ptr is passed to objectReferenceCallback:\n"
                       "#   tag_ptr:        0x%p\n"
                       "#   reference_kind: %d\n"
                       "#   class_tag:      %ld\n"

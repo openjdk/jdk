@@ -202,14 +202,14 @@ static int checkTestedObjects(jvmtiEnv* jvmti, JNIEnv* jni, int tagsCount, int o
     }
 
     if (taggedObjectsList == nullptr && taggedObjectsCount > 0) {
-        NSK_COMPLAIN2("GetObjectsWithTags() returns nullptr list of objects %s: 0x%p\n",
+        NSK_COMPLAIN2("GetObjectsWithTags() returns null list of objects %s: 0x%p\n",
                         kind, (void*)taggedObjectsList);
         nsk_jvmti_setFailStatus();
         return NSK_TRUE;
     }
 
     if (taggedObjectsTags == nullptr && taggedObjectsCount > 0) {
-        NSK_COMPLAIN2("GetObjectsWithTags() returns nullptr list of tags for objects %s: 0x%p\n",
+        NSK_COMPLAIN2("GetObjectsWithTags() returns null list of tags for objects %s: 0x%p\n",
                         kind, (void*)taggedObjectsTags);
         nsk_jvmti_setFailStatus();
         return NSK_TRUE;
@@ -224,7 +224,7 @@ static int checkTestedObjects(jvmtiEnv* jvmti, JNIEnv* jni, int tagsCount, int o
         NSK_DISPLAY3("   #%d: object: 0x%p, tag: %ld\n", k, (void*)object, (long)tag);
 
         if (object == nullptr) {
-            NSK_COMPLAIN3("GetObjectsWithTags() returns nullptr for object #%d %s: 0x%p\n",
+            NSK_COMPLAIN3("GetObjectsWithTags() returns null for object #%d %s: 0x%p\n",
                         k, kind, (void*)object);
             nsk_jvmti_setFailStatus();
             continue;

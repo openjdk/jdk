@@ -137,7 +137,7 @@ JNIEXPORT jboolean JNICALL Java_nsk_jvmti_unit_FollowReferences_FollowRefObjects
         }
 
         if (!s) {
-            NSK_COMPLAIN1("Can't get string at %#p: nullptr\n", sInfo);
+            NSK_COMPLAIN1("Can't get string at %#p: null\n", sInfo);
             return JNI_FALSE;
         }
 

@@ -101,7 +101,7 @@ void JNICALL FieldAccess(jvmtiEnv *jvmti_env, JNIEnv *env,
         return;
     }
     if (fld_name == nullptr) {
-        printf("GetFieldName returned nullptr field name\n");
+        printf("GetFieldName returned null field name\n");
         result = STATUS_FAILED;
         return;
     }

@@ -347,7 +347,7 @@ MethodExit(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread, jmethodID method,
   }
 
   // print_frame_event_info(jvmti, jni, thread, method, "MethodExit", method_exit_count);
-  if (strstr(mname, "brkpt") != nullptr) { // event IS in the "brkpt" method
+  if (strstr(mname, "brkpt") != null) { // event IS in the "brkpt" method
     LOG("Hit #%d: MethodExit #%d: method: %s on thread: %p\n",
            brkptBreakpointHit, method_exit_count, mname, (void*)thread);
     received_method_exit_event = JNI_TRUE; // set it for brkpt method only if brkptBreakpointHit > 1

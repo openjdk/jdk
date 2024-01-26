@@ -69,7 +69,7 @@ static int checkCpuTime(jvmtiEnv* jvmti, jthread thread, julong* time,
     char buf[64], buf2[64], buf3[64];
     int success = NSK_TRUE;
 
-    NSK_DISPLAY1("GetThreadCpuTime() for current thread (passing nullptr): 0x%p\n", (void*)thread);
+    NSK_DISPLAY1("GetThreadCpuTime() for current thread (passing null): 0x%p\n", (void*)thread);
     if (!NSK_JVMTI_VERIFY(
             jvmti->GetThreadCpuTime(nullptr, (jlong *)time))) {
         return NSK_FALSE;

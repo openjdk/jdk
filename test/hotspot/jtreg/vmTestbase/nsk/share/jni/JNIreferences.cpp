@@ -43,7 +43,7 @@ Java_nsk_share_ReferringObject_createJNIGlobalReferenceNative(JNIEnv *env,
 
                 if (globalReferences == nullptr)
                 {
-                        NSK_COMPLAIN0("malloc return nullptr\n");
+                        NSK_COMPLAIN0("malloc return null\n");
                         return -1;
                 }
 
@@ -63,11 +63,11 @@ Java_nsk_share_ReferringObject_createJNIGlobalReferenceNative(JNIEnv *env,
 
                         if (reference == nullptr)
                         {
-                                NSK_COMPLAIN0("NewGlobalRef return nullptr\n");
+                                NSK_COMPLAIN0("NewGlobalRef return null\n");
 
                                 env->ThrowNew(
                                     env->FindClass("nsk/share/TestJNIError"),
-                                    "NewGlobalRef return nullptr");
+                                    "NewGlobalRef return null");
                         }
 
                         globalReferences[i] = reference;
@@ -89,11 +89,11 @@ Java_nsk_share_ReferringObject_deleteJNIGlobalReferenceNative(JNIEnv *env,
 
         if (reference == nullptr)
         {
-                NSK_COMPLAIN1("globalReferences[%d] = nullptr, possible wrong index is passed\n", index);
+                NSK_COMPLAIN1("globalReferences[%d] = null, possible wrong index is passed\n", index);
 
                 env->ThrowNew(
                     env->FindClass("nsk/share/TestBug"),
-                    "Requested globalReferences[] element is nullptr, possible wrong index is passed");
+                    "Requested globalReferences[] element is null, possible wrong index is passed");
         }
 
         env->DeleteGlobalRef(reference);
@@ -111,11 +111,11 @@ Java_nsk_share_ReferringObject_createJNILocalReferenceNative(JNIEnv *env,
 
         if (reference == nullptr)
         {
-                NSK_COMPLAIN0("NewLocalRef return nullptr\n");
+                NSK_COMPLAIN0("NewLocalRef return null\n");
 
                 env->ThrowNew(
                     env->FindClass("nsk/share/TestJNIError"),
-                    "NewLocalRef return nullptr");
+                    "NewLocalRef return null");
         }
 
         klass = env->GetObjectClass(createWicket);
@@ -142,7 +142,7 @@ Java_nsk_share_ReferringObject_createJNIWeakReferenceNative(JNIEnv *env,
 
                 if (weakReferences == nullptr)
                 {
-                        NSK_COMPLAIN0("malloc return nullptr\n");
+                        NSK_COMPLAIN0("malloc return null\n");
 
                         return -1;
                 }
@@ -163,11 +163,11 @@ Java_nsk_share_ReferringObject_createJNIWeakReferenceNative(JNIEnv *env,
 
                         if (reference == nullptr)
                         {
-                                NSK_COMPLAIN0("NewWeakGlobalRef return nullptr\n");
+                                NSK_COMPLAIN0("NewWeakGlobalRef return null\n");
 
                                 env->ThrowNew(
                                     env->FindClass("nsk/share/TestJNIError"),
-                                    "NewWeakGlobalRef return nullptr");
+                                    "NewWeakGlobalRef return null");
                         }
 
                         weakReferences[i] = reference;
@@ -189,11 +189,11 @@ Java_nsk_share_ReferringObject_deleteJNIWeakReferenceNative(JNIEnv *env,
 
         if (reference == nullptr)
         {
-                NSK_COMPLAIN1("weakReferences[%d] = nullptr, possible wrong index is passed\n", index);
+                NSK_COMPLAIN1("weakReferences[%d] = null, possible wrong index is passed\n", index);
 
                 env->ThrowNew(
                     env->FindClass("nsk/share/TestBug"),
-                    "Requested weakReferences[] element is nullptr, possible wrong index is passed");
+                    "Requested weakReferences[] element is null, possible wrong index is passed");
         }
 
         if (env->IsSameObject(reference, nullptr) == JNI_TRUE)

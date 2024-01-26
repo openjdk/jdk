@@ -147,14 +147,14 @@ Java_nsk_jvmti_scenarios_allocation_AP01_ap01t001_newObject(JNIEnv* jni, jclass 
     jobject result;
 
     if (!NSK_JNI_VERIFY(jni, (cid = jni->GetMethodID(cls, "<init>", "()V")) != nullptr)) {
-         NSK_COMPLAIN0("newObject: GetMethodID returned nullptr\n\n");
+         NSK_COMPLAIN0("newObject: GetMethodID returned null\n\n");
          nsk_jvmti_setFailStatus();
          return nullptr;
     }
 
     if (!NSK_JNI_VERIFY(jni, (result = jni->NewObject(cls, cid)) != nullptr)) {
 
-         NSK_COMPLAIN0("newObject: NewObject returned nullptr\n\n");
+         NSK_COMPLAIN0("newObject: NewObject returned null\n\n");
          nsk_jvmti_setFailStatus();
          return nullptr;
     }
@@ -169,14 +169,14 @@ Java_nsk_jvmti_scenarios_allocation_AP01_ap01t001_allocObject(JNIEnv* jni, jclas
 
     if (!NSK_JNI_VERIFY(jni, (cid = jni->GetMethodID(cls, "<init>", "()V")) != nullptr)) {
 
-         NSK_COMPLAIN0("allocObject: GetMethodID returned nullptr\n\n");
+         NSK_COMPLAIN0("allocObject: GetMethodID returned null\n\n");
          nsk_jvmti_setFailStatus();
          return nullptr;
     }
 
     if (!NSK_JNI_VERIFY(jni, (result = jni->AllocObject(cls)) != nullptr)) {
 
-         NSK_COMPLAIN0("allocObject: AllocObject returned nullptr\n\n");
+         NSK_COMPLAIN0("allocObject: AllocObject returned null\n\n");
          nsk_jvmti_setFailStatus();
          return nullptr;
     }

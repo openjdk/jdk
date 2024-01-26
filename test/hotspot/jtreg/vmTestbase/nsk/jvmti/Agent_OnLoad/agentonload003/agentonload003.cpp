@@ -49,7 +49,7 @@ JNIEXPORT jint JNI_OnLoad_agentonload003(JavaVM *jvm, char *options, void *reser
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     if (options == nullptr) {
-        printf("# ERROR: Second parameter 'options' in JVM_OnLoad() is nullptr: 0x%p\n",
+        printf("# ERROR: Second parameter 'options' in JVM_OnLoad() is null: 0x%p\n",
                     (void*)options);
         return JNI_ERR;
     }

@@ -76,7 +76,7 @@ Java_thrinfo01_checkInfo0(JNIEnv *jni, jclass cls, jthread thread, jthreadGroup 
 
   check_jvmti_status(jni, jvmti_env->GetThreadInfo(thread, &inf), "Error in GetThreadInfo.");
   if (inf.name == nullptr) {
-    LOG("Thread %s: incorrect name in nullptr\n", expected_info.name);
+    LOG("Thread %s: incorrect name in null\n", expected_info.name);
     result = JNI_FALSE;
   }
 

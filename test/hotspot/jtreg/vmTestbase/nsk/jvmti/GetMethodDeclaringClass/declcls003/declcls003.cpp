@@ -56,7 +56,7 @@ void do_check(JNIEnv *env, const char *name, const char *meth, const char *sig) 
     cl = env->FindClass(name);
     mid = env->GetMethodID(cl, meth, sig);
     if (mid == nullptr) {
-        printf("%s.%s%s: mid = nullptr\n", name, meth, sig);
+        printf("%s.%s%s: mid = null\n", name, meth, sig);
         result = STATUS_FAILED;
         return;
     }

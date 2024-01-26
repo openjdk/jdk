@@ -459,7 +459,7 @@ jint JNICALL heapReferenceCallback(
     fflush(0);
 
     if (tag_ptr == nullptr) {
-        NSK_COMPLAIN1("nullptr tag_ptr is passed to heapReferenceCallback:"
+        NSK_COMPLAIN1("null tag_ptr is passed to heapReferenceCallback:"
                       " tag_ptr=0x%p\n", (void*)tag_ptr);
         nsk_jvmti_setFailStatus();
     }

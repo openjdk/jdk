@@ -492,7 +492,7 @@ Java_nsk_share_RASagent_setHotSwapMode(JNIEnv *jni_env, jclass cls,
     jmethodID mid = nullptr;
 
     if (jvmti == nullptr) {
-        printf("ERROR(%s,%d): JVMTIagent was not properly loaded: JVMTI env = nullptr\n",
+        printf("ERROR(%s,%d): JVMTIagent was not properly loaded: JVMTI env = null\n",
                __FILE__, __LINE__);
         return 1;
     }

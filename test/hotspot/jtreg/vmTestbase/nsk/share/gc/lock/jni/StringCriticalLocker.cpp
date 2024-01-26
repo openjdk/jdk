@@ -64,7 +64,7 @@ JNIEXPORT jchar JNICALL Java_nsk_share_gc_lock_jni_StringCriticalLocker_critical
         hash ^= pa[i];
       }
     } else {
-      jni_env->FatalError("GetStringCritical returned nullptr");
+      jni_env->FatalError("GetStringCritical returned null");
     }
     mssleep((long) sleepTime);
     ec_jni->ReleaseStringCritical(str, pa, TRACE_JNI_CALL);

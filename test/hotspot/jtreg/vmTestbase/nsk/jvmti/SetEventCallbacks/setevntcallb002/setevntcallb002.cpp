@@ -83,7 +83,7 @@ static int checkEventCounts() {
 
     for (i = 1; i < EVENTS_COUNT; i++) {
         if (eventsCountList[i] > 0) {
-            NSK_COMPLAIN2("# %s event callback was invoked after SetEventCallbacks(nullptr):\n"
+            NSK_COMPLAIN2("# %s event callback was invoked after SetEventCallbacks(null):\n"
                           "#   invoked: %d times\n",
                           eventsNameList[i], eventsCountList[i]);
             success = NSK_FALSE;
@@ -143,7 +143,7 @@ callbackVMInit(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
     NSK_DISPLAY1("  <VM_INIT>: thread: 0x%p\n", (void*)thread);
     eventsCountList[0]++;
 
-    NSK_DISPLAY0(">>> Testcase #2: Set nullptr for events callbacks\n");
+    NSK_DISPLAY0(">>> Testcase #2: Set null for events callbacks\n");
     {
         if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(nullptr, 0))) {
             nsk_jvmti_setFailStatus();

@@ -264,7 +264,7 @@ const char* nsk_jvmti_findOptionValue(const char name[]) {
     int i;
 
     if (name == nullptr) {
-        nsk_complain("nsk_jvmti_findOptionValue(): option name is nullptr\n");
+        nsk_complain("nsk_jvmti_findOptionValue(): option name is null\n");
         return nullptr;
     }
 
@@ -283,7 +283,7 @@ const char* nsk_jvmti_findOptionStringValue(const char name[], const char* defau
     const char* value;
 
     if (name == nullptr) {
-        nsk_complain("nsk_jvmti_findOptionStringValue(): option name is nullptr\n");
+        nsk_complain("nsk_jvmti_findOptionStringValue(): option name is null\n");
         return nullptr;
     }
 
@@ -308,7 +308,7 @@ int nsk_jvmti_findOptionIntValue(const char name[], int defaultValue) {
     const char* value;
 
     if (name == nullptr) {
-        nsk_complain("nsk_jvmti_findOptionIntValue(): option name is nullptr\n");
+        nsk_complain("nsk_jvmti_findOptionIntValue(): option name is null\n");
         return -1;
     }
 

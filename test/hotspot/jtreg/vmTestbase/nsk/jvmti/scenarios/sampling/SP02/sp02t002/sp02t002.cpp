@@ -314,7 +314,7 @@ static int checkThreads(int suspended, const char* kind) {
                                         (long)frameStack[j].location);
             /* check frame method */
             if (frameStack[j].method == nullptr) {
-                NSK_COMPLAIN3("nullptr methodID in stack for %s thread #%d (%s)\n",
+                NSK_COMPLAIN3("null methodID in stack for %s thread #%d (%s)\n",
                             kind, i, threadsDesc[i].threadName);
                 nsk_jvmti_setFailStatus();
             } else if (frameStack[j].method == threadsDesc[i].method) {

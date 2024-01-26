@@ -142,7 +142,7 @@ Java_nsk_stress_jni_JNIter003_jniBodyChangeArray (JNIEnv *env, jobject jobj,
   int i;
 
   if ((orig == nullptr) || (clone == nullptr)) {
-    fprintf(stderr, "JNI received a nullptr array from Java\n");
+    fprintf(stderr, "JNI received a null array from Java\n");
     return JNI_FALSE;
   }
   if (count == limit) {

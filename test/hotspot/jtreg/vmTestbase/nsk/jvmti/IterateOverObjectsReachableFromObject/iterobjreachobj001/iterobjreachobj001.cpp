@@ -323,7 +323,7 @@ objectReferenceCallback(jvmtiObjectReferenceKind reference_kind,
     }
 
     if (tag_ptr == nullptr) {
-        NSK_COMPLAIN6("nullptr tag_ptr is passed to objectReferenceCallback:\n"
+        NSK_COMPLAIN6("null tag_ptr is passed to objectReferenceCallback:\n"
                       "#   tag_ptr:        0x%p\n"
                       "#   reference_kind: %d\n"
                       "#   class_tag:      %ld\n"

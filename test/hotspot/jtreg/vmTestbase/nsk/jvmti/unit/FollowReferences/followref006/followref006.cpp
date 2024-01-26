@@ -105,7 +105,7 @@ static void verifyReturnCodes(JNIEnv* jni, jvmtiEnv* jvmti)
         nsk_jvmti_setFailStatus();
     }
 
-    NSK_DISPLAY0("GetTag: nullptr object pointer:");
+    NSK_DISPLAY0("GetTag: null object pointer:");
 
     retCode = jvmti->GetTag(nullptr, &tag);
 
@@ -113,7 +113,7 @@ static void verifyReturnCodes(JNIEnv* jni, jvmtiEnv* jvmti)
         nsk_jvmti_setFailStatus();
     }
 
-    NSK_DISPLAY0("GetTag: nullptr tag pointer:");
+    NSK_DISPLAY0("GetTag: null tag pointer:");
 
     retCode = jvmti->GetTag((jobject) &g_wrongHeapCallbacks, nullptr);
 
@@ -131,7 +131,7 @@ static void verifyReturnCodes(JNIEnv* jni, jvmtiEnv* jvmti)
         nsk_jvmti_setFailStatus();
     }
 
-    NSK_DISPLAY0("SetTag: nullptr object pointer:");
+    NSK_DISPLAY0("SetTag: null object pointer:");
 
     retCode = jvmti->GetTag(nullptr, &tag);
 
@@ -139,7 +139,7 @@ static void verifyReturnCodes(JNIEnv* jni, jvmtiEnv* jvmti)
         nsk_jvmti_setFailStatus();
     }
 
-    NSK_DISPLAY0("GetTag: nullptr tag pointer:");
+    NSK_DISPLAY0("GetTag: null tag pointer:");
 
 } /* verifyReturnCodes */
 

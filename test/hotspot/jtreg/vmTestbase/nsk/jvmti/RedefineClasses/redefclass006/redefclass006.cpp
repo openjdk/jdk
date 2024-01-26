@@ -107,12 +107,12 @@ Java_nsk_jvmti_RedefineClasses_redefclass006_makeRedefinition(JNIEnv *env,
             break;
 /* nullptr pointer to the jvmtiClassDefinition in debug mode */
         case 1:
-            printf("Invoke RedefineClasses() with nullptr pointer to the structure jvmtiClassDefinition\n");
+            printf("Invoke RedefineClasses() with null pointer to the structure jvmtiClassDefinition\n");
             fflush(stdout);
             break;
 /* nullptr pointer to the jvmtiClassDefinition->class_bytes in debug mode */
         case 3:
-            printf("Invoke RedefineClasses() with nullptr pointer to the field jvmtiClassDefinition->class_bytes\n");
+            printf("Invoke RedefineClasses() with null pointer to the field jvmtiClassDefinition->class_bytes\n");
             fflush(stdout);
             // fallthrough
 /* nullptr pointer to the jvmtiClassDefinition->class_bytes */

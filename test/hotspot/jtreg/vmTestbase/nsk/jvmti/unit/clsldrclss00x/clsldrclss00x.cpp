@@ -87,7 +87,7 @@ Java_nsk_jvmti_unit_clsldrclss00x_check(JNIEnv *env, jclass appCls, jclass objCl
         return result;
     }
     if (appClassloader == nullptr) {
-        printf("(GetClassLoader app) unexpected loader - nullptr\n");
+        printf("(GetClassLoader app) unexpected loader - null\n");
         result = STATUS_FAILED;
         return result;
     }
@@ -100,7 +100,7 @@ Java_nsk_jvmti_unit_clsldrclss00x_check(JNIEnv *env, jclass appCls, jclass objCl
         return result;
     }
     if (objClassloader != nullptr) {
-        printf("(GetClassLoader obj) unexpected loader - !nullptr\n");
+        printf("(GetClassLoader obj) unexpected loader - !null\n");
         result = STATUS_FAILED;
         return result;
     }

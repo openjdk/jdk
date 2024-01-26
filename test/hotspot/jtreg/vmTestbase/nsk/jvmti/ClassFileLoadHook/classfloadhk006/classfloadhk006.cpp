@@ -66,7 +66,7 @@ static int checkBytecode(const char kind[], jint size, const unsigned char bytes
     }
 
     if (bytes == nullptr) {
-        NSK_COMPLAIN2("Unexpected nullptr pointer to %s bytecode in CLASS_FILE_LOAD_HOOK: 0x%p\n",
+        NSK_COMPLAIN2("Unexpected null pointer to %s bytecode in CLASS_FILE_LOAD_HOOK: 0x%p\n",
                                                             kind, (void*)bytes);
         return NSK_FALSE;
     }
@@ -336,7 +336,7 @@ callbackClassFileLoadHook(jvmtiEnv *jvmti, JNIEnv *jni,
 
         NSK_DISPLAY1("Check class_being_redefined: 0x%p\n", (void*)class_being_redefined);
         if (class_being_redefined == nullptr) {
-            NSK_COMPLAIN1("Unexpected nullptr class_being_redefined in CLASS_FILE_LOAD_HOOK: 0x%p\n",
+            NSK_COMPLAIN1("Unexpected null class_being_redefined in CLASS_FILE_LOAD_HOOK: 0x%p\n",
                                                     (void*)class_being_redefined);
             nsk_jvmti_setFailStatus();
         } else if (!jni->IsSameObject(class_being_redefined, testedClass)) {

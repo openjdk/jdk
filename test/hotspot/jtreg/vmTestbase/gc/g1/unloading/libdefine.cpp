@@ -51,7 +51,7 @@ JNIEXPORT jclass JNICALL Java_gc_g1_unloading_classloaders_JNIClassloader_loadTh
   env->ReleaseByteArrayElements(bytecode, arrayContent, JNI_ABORT);
   env->ReleaseStringUTFChars(className, classNameChar);
   if (!returnValue) {
-    printf("ERROR: DefineClass call returned nullptr by some reason. Classloading failed.\n");
+    printf("ERROR: DefineClass call returned null by some reason. Classloading failed.\n");
   }
 
   return returnValue;

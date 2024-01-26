@@ -168,8 +168,8 @@ test_GetLocal(jvmtiEnv *jvmti, JNIEnv *jni, jthread cthread, jthread vthread,
   // #5: Test JVMTI GetLocalObject function with nullptr value_ptr
   err = jvmti->GetLocalObject(vthread, depth, SlotString, nullptr);
   if (err != JVMTI_ERROR_NULL_POINTER) {
-    LOG("JVMTI GetLocalObject with nullptr value_ptr returned error: %d\n", err);
-    fatal(jni, "JVMTI GetLocalObject with nullptr value_ptr failed to return JVMTI_ERROR_NULL_POINTER");
+    LOG("JVMTI GetLocalObject with null value_ptr returned error: %d\n", err);
+    fatal(jni, "JVMTI GetLocalObject with null value_ptr failed to return JVMTI_ERROR_NULL_POINTER");
   }
 
   // #6: Test JVMTI GetLocal<Type> functions with a good vthread

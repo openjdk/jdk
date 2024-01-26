@@ -75,7 +75,7 @@ JNIEXPORT jint JNICALL
 Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jint res = jvm->GetEnv((void **) &jvmti_env, JVMTI_VERSION_1_1);
   if (res != JNI_OK || !jvmti_env) {
-    LOG("Agent_OnLoad: Error: GetEnv returned error or nullptr\n");
+    LOG("Agent_OnLoad: Error: GetEnv returned error or null\n");
     return JNI_ERR;
   }
   wait_lock = create_raw_monitor(jvmti_env, "beast");

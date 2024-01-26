@@ -298,7 +298,7 @@ void nsk_printHexBytes(const char indent[], int columns,
 /*************************************************************/
 
 const char* nsk_null_string(const char* str) {
-    return (str == nullptr)? "<nullptr>" : str;
+    return (str == nullptr)? "<null>" : str;
 }
 
 /*************************************************************/

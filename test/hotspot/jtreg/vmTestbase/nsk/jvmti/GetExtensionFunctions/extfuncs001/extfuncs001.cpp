@@ -61,7 +61,7 @@ static int checkExtensions(jvmtiEnv* jvmti, const char phase[]) {
 
     if (extCount > 0) {
         if (extList == nullptr) {
-            NSK_COMPLAIN3("In %s phase GetExtensionFunctions() returned nullptr pointer:\n"
+            NSK_COMPLAIN3("In %s phase GetExtensionFunctions() returned null pointer:\n"
                           "#   extensions pointer: 0x%p\n"
                           "#   extensions count:   %d\n",
                             phase, (void*)extList, (int)extCount);
@@ -108,7 +108,7 @@ static int checkExtensions(jvmtiEnv* jvmti, const char phase[]) {
                     || extList[i].short_description == nullptr
                     || (extList[i].params == nullptr && extList[i].param_count > 0)
                     || (extList[i].errors == nullptr && extList[i].error_count > 0)) {
-                NSK_COMPLAIN9("In %s phase GetExtensionFunctions() returned function #%d with nullptr attribute(s):\n"
+                NSK_COMPLAIN9("In %s phase GetExtensionFunctions() returned function #%d with null attribute(s):\n"
                               "#   func:        0x%p\n"
                               "#   id:          0x%p (%s)\n"
                               "#   short_desc:  0x%p (%s)\n"

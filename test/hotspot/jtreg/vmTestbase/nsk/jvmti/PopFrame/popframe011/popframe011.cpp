@@ -113,7 +113,7 @@ Java_nsk_jvmti_PopFrame_popframe011_doPopFrame(JNIEnv *env,
     switch (t_case) {
 /* nullptr pointer to the thread in debug mode */
     case 1:
-        printf("\nInvoke PopFrame() with nullptr pointer to a thread...\n");
+        printf("\nInvoke PopFrame() with null pointer to a thread...\n");
         fflush(stdout);
         // fallthrough
 /* nullptr pointer to the thread */

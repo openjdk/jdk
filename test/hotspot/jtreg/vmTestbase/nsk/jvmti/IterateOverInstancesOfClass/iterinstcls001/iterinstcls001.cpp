@@ -360,7 +360,7 @@ heapObjectCallback(jlong class_tag, jlong size, jlong* tag_ptr, void* user_data)
     }
 
     if (tag_ptr == nullptr) {
-        NSK_COMPLAIN3("nullptr tag_ptr is passed to heapObjectCallback:\n"
+        NSK_COMPLAIN3("null tag_ptr is passed to heapObjectCallback:\n"
                       "#   tag_ptr:        0x%p\n"
                       "#   class_tag:      %ld\n"
                       "#   size:           %ld\n",

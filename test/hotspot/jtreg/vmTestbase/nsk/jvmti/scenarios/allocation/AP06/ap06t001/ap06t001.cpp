@@ -160,7 +160,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
         if (!NSK_JNI_VERIFY(jni, (localRefThread =
                 jni->GetStaticObjectField(debugeeClass, fid)) != nullptr)) {
-            NSK_COMPLAIN0("GetStaticObjectField returned nullptr for 'thread' field value\n\n");
+            NSK_COMPLAIN0("GetStaticObjectField returned null for 'thread' field value\n\n");
             nsk_jvmti_setFailStatus();
             break;
         }

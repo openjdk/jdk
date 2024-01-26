@@ -913,7 +913,7 @@ static ExpectedContentFrame *get_native_frames(JNIEnv* env, jclass cls,
   native_frames = reinterpret_cast<ExpectedContentFrame*> (malloc(size * sizeof(*native_frames)));
 
   if (native_frames == nullptr) {
-    env->FatalError("Error in get_native_frames: malloc returned nullptr\n");
+    env->FatalError("Error in get_native_frames: malloc returned null\n");
   }
 
   if (fill_native_frames(env, frames, native_frames, size) != 0) {
@@ -1136,7 +1136,7 @@ void JNICALL RecursiveSampledObjectAlloc(jvmtiEnv *jvmti_env,
   int i;
   for (i = 0; i < 1000; i++) {
     if (allocate_object(jni_env) == nullptr) {
-      jni_env->FatalError("allocate_object returned nullptr\n");
+      jni_env->FatalError("allocate_object returned null\n");
     }
   }
 

@@ -64,7 +64,7 @@ JNIEXPORT jdouble JNICALL Java_nsk_share_gc_lock_jni_DoubleArrayCriticalLocker_c
         hash += pa[i];
       }
     } else {
-      jni_env->FatalError("GetPrimitiveArrayCritical returned nullptr");
+      jni_env->FatalError("GetPrimitiveArrayCritical returned null");
     }
     mssleep((long) sleepTime);
     ec_jni->ReleasePrimitiveArrayCritical(arr, pa, 0, TRACE_JNI_CALL);

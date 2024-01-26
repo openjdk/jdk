@@ -97,7 +97,7 @@ Java_nsk_jvmti_GetSourceDebugExtension_srcdebugex002_getSrcDebugX(JNIEnv *env,
 
     switch (t_case) {
         case 1: /* nullptr pointer in test debug mode */
-            printf("\nInvoke GetSourceDebugExtension() with nullptr pointer...\n");
+            printf("\nInvoke GetSourceDebugExtension() with null pointer...\n");
             fflush(stdout);
             // fallthrough
         case 0: /* nullptr pointer */

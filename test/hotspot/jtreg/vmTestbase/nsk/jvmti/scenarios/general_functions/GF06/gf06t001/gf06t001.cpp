@@ -81,7 +81,7 @@ static int checkEnvStorage(jvmtiEnv* jvmti, const char where[]) {
     NSK_DISPLAY1("  ... got storage: 0x%p\n", (void*)storage);
 
     if (storage != nullptr) {
-        NSK_COMPLAIN2("GetEnvironmentLocalStorage() returned NOT nullptr storage in %s:\n"
+        NSK_COMPLAIN2("GetEnvironmentLocalStorage() returned NOT null storage in %s:\n"
                       "#   storage pointer: 0x%p\n",
                         where, (void*)storage);
         return NSK_FALSE;

@@ -33,9 +33,9 @@
 // methods.
 static bool is_error_called;
 static const char* const null_return_expected_message_start =
-    "JNI method GetFieldID : Return is nullptr from exceptionjni001.cpp : ";
+    "JNI method GetFieldID : Return is null from exceptionjni001.cpp : ";
 static const char* const null_file_expected_message_start =
-    "JNI method GetFieldID : Return is nullptr from Unknown File : ";
+    "JNI method GetFieldID : Return is null from Unknown File : ";
 
 // Used by the ErrorCheckerMessage and the tests to determine test success.
 static long expected_line_number;
@@ -56,7 +56,7 @@ static bool CheckMessage(JNIEnv* env, const char* message, const char* expected_
   long actual_line = strtol(message + len, &end_ptr, 0);
 
   if (end_ptr == nullptr || *end_ptr != '\0') {
-    fprintf(stderr, "end_ptr == nullptr or *end_ptr terminating from %s\n", message);
+    fprintf(stderr, "end_ptr == null or *end_ptr terminating from %s\n", message);
     return false;
   }
 

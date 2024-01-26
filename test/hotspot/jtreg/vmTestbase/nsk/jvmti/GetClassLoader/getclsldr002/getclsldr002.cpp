@@ -98,7 +98,7 @@ Java_nsk_jvmti_GetClassLoader_getclsldr002_check(JNIEnv *env,
     }
 
     if (classloader != nullptr) {
-        printf("(%d:%s) class loader is not nullptr: 0x%p\n",
+        printf("(%d:%s) class loader is not null: 0x%p\n",
                i, sig, classloader);
         result = STATUS_FAILED;
     }

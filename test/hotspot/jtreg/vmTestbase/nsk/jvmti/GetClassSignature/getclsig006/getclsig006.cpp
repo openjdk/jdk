@@ -40,7 +40,7 @@ extern "C" {
 
 /* expected class signatures are below */
 static const char *class_sig[][CLS_NUM] = {
-    { "getclsig006", "Lnsk/jvmti/GetClassSignature/getclsig006;", "nullptr" },
+    { "getclsig006", "Lnsk/jvmti/GetClassSignature/getclsig006;", "null" },
     { "getclsig006b", "Lnsk/jvmti/GetClassSignature/getclsig006b;",
       "<L:Ljava/lang/String;>Ljava/lang/Object;" },
     { "getclsig006c", "Lnsk/jvmti/GetClassSignature/getclsig006c;",
@@ -67,7 +67,7 @@ static int checkSig(JNIEnv *jni_env, jclass testedCls, int idx) {
             class_sig[idx][0]);
 
         if (strcmp(class_sig[idx][1], sign) != 0 ||
-                strcmp(class_sig[idx][2], (gen_sign == nullptr) ? "nullptr" : gen_sign) != 0) {
+                strcmp(class_sig[idx][2], (gen_sign == nullptr) ? "null" : gen_sign) != 0) {
             NSK_COMPLAIN5(
                 "TEST FAILED: class: \"%s\" has\n"
                 "\tsignature: \"%s\"\n"
@@ -75,13 +75,13 @@ static int checkSig(JNIEnv *jni_env, jclass testedCls, int idx) {
                 "\tExpected: \"%s\"\n"
                 "\t\"%s\"\n\n",
                 class_sig[idx][0],
-                sign, (gen_sign == nullptr) ? "nullptr" : gen_sign,
+                sign, (gen_sign == nullptr) ? "null" : gen_sign,
                 class_sig[idx][1], class_sig[idx][2]);
             totRes = STATUS_FAILED;
         }
         else
             NSK_DISPLAY2("CHECK PASSED: signature: \"%s\",\n\tgeneric signature: \"%s\"\n",
-                sign, (gen_sign == nullptr) ? "nullptr" : gen_sign);
+                sign, (gen_sign == nullptr) ? "null" : gen_sign);
 
         NSK_DISPLAY0("Deallocating the signature array\n");
         if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*) sign))) {

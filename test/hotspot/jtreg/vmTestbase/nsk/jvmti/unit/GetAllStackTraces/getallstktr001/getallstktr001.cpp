@@ -194,7 +194,7 @@ void compare_one_stack_trace(int ti,
     if (thr_info->name != nullptr) {
         printf("compare stack #%d: thread: %s\n", ti, thr_info->name);
     } else {
-        printf("compare stack #%d: thread is nullptr\n", ti);
+        printf("compare stack #%d: thread is null\n", ti);
         return;
     }
 

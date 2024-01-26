@@ -55,7 +55,7 @@ is_hidden_mid(JNIEnv* jni) {
   jmethodID *methods = nullptr;
   jclass clazz  = jni->FindClass("java/lang/Class");
   if (clazz == nullptr) {
-    jni->FatalError("is_hidden_mid: Error: FindClass returned nullptr for java/lang/Class\n");
+    jni->FatalError("is_hidden_mid: Error: FindClass returned null for java/lang/Class\n");
     return nullptr;
   }
 
@@ -104,7 +104,7 @@ check_class_signature(jvmtiEnv* jvmti, JNIEnv* jni, jclass klass, bool is_hidden
     failed = true;
   }
   if (is_hidden && gsig == nullptr) {
-    LOG0("check_class_signature: FAIL: unexpected nullptr generic signature for hidden class\n");
+    LOG0("check_class_signature: FAIL: unexpected null generic signature for hidden class\n");
     failed = true;
   }
 }
@@ -264,7 +264,7 @@ static void process_class_event(jvmtiEnv* jvmti, JNIEnv* jni, jclass klass,
       is_hidden(jni, klass)) {
     (*event_count_ptr)++;
     if (gsig == nullptr) {
-      LOG1("%s event: FAIL: GetClassSignature returned nullptr generic signature for hidden class\n", event_name);
+      LOG1("%s event: FAIL: GetClassSignature returned null generic signature for hidden class\n", event_name);
       failed = true;
     }
     LOG2("%s event: hidden class with sig: %s\n", event_name, sig);
@@ -344,7 +344,7 @@ Java_P_Q_HiddenClassSigTest_checkHiddenClass(JNIEnv *jni, jclass klass, jclass h
   const char* exp_sig = jni->GetStringUTFChars(exp_sig_str, nullptr);
 
   if (exp_sig == nullptr) {
-    jni->FatalError("check_hidden_class: Error: JNI GetStringChars returned nullptr for jstring\n");
+    jni->FatalError("check_hidden_class: Error: JNI GetStringChars returned null for jstring\n");
     return;
   }
   check_hidden_class(jvmti, jni, hidden_klass, exp_sig);
@@ -358,7 +358,7 @@ Java_P_Q_HiddenClassSigTest_checkHiddenClassArray(JNIEnv *jni, jclass klass, jcl
   const char* exp_sig = jni->GetStringUTFChars(exp_sig_str, nullptr);
 
   if (exp_sig == nullptr) {
-    jni->FatalError("check_hidden_class_array: Error: JNI GetStringChars returned nullptr for jstring\n");
+    jni->FatalError("check_hidden_class_array: Error: JNI GetStringChars returned null for jstring\n");
     return;
   }
   check_hidden_class_array(jvmti, jni, hidden_klass_array, exp_sig);

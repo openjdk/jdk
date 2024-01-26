@@ -49,11 +49,11 @@ MonitorWaited(jvmtiEnv *jvmti, JNIEnv *jni, jthread thr, jobject obj, jboolean t
   print_thread_info(jvmti, jni, thr);
 
   if (expected_thread == nullptr) {
-    jni->FatalError("expected_thread is nullptr.");
+    jni->FatalError("expected_thread is null.");
   }
 
   if (expected_object == nullptr) {
-    jni->FatalError("expected_object is nullptr.");
+    jni->FatalError("expected_object is null.");
   }
 
   /* check if event is for tested thread and for tested object */

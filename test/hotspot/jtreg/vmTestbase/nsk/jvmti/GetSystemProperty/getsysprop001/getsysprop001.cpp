@@ -72,7 +72,7 @@ static int checkProperties(jvmtiEnv* jvmti, const char phase[]) {
             NSK_DISPLAY1("    value: \"%s\"\n", nsk_null_string(value));
 
             if (value == nullptr) {
-                NSK_COMPLAIN4("In %s phase GetSystemProperty() returned nullptr for property #%d:\n"
+                NSK_COMPLAIN4("In %s phase GetSystemProperty() returned null for property #%d:\n"
                               "#   property name: %s\n"
                               "#   got value:     0x%p\n",
                                 phase, i,

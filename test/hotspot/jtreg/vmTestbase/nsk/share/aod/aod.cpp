@@ -144,7 +144,7 @@ const char* nsk_aod_getOptionValue(Options* options, const char* option) {
     int i;
 
     if (!NSK_VERIFY(options != nullptr)) {
-        NSK_COMPLAIN0("Options nullptr\n");
+        NSK_COMPLAIN0("Options null\n");
         return nullptr;
     }
 
@@ -163,7 +163,7 @@ int nsk_aod_optionSpecified(Options* options, const char* option) {
     int i;
 
     if (!NSK_VERIFY(options != nullptr)) {
-        NSK_COMPLAIN0("Options nullptr\n");
+        NSK_COMPLAIN0("Options null\n");
         return NSK_FALSE;
     }
 

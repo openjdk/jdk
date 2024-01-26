@@ -65,9 +65,9 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         }
         NSK_DISPLAY1("  ... got storage: %p\n", (void*)storage);
 
-        NSK_DISPLAY0("Check obtained storage pointer against nullptr\n");
+        NSK_DISPLAY0("Check obtained storage pointer against null\n");
         if (storage != nullptr) {
-            NSK_COMPLAIN2("GetThreadLocalStorage() returned NOT nullptr storage for tested thread:\n"
+            NSK_COMPLAIN2("GetThreadLocalStorage() returned NOT null storage for tested thread:\n"
                           "#   thread:  %p\n"
                           "#   storage: %p\n",
                             (void*)testedThread, (void*)storage);
@@ -82,9 +82,9 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         }
         NSK_DISPLAY1("  ... got storage: %p\n", (void*)storage);
 
-        NSK_DISPLAY0("Check obtained storage pointer against nullptr\n");
+        NSK_DISPLAY0("Check obtained storage pointer against null\n");
         if (storage != nullptr) {
-            NSK_COMPLAIN1("GetThreadLocalStorage() returned NOT nullptr storage for current agent thread:\n"
+            NSK_COMPLAIN1("GetThreadLocalStorage() returned NOT null storage for current agent thread:\n"
                           "#   storage: %p\n",
                             (void*)storage);
             nsk_jvmti_setFailStatus();

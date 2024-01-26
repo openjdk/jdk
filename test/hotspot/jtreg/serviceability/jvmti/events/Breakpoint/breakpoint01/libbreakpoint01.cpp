@@ -116,7 +116,7 @@ Breakpoint(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread, jmethodID method, jloca
     return;
   }
 
-  const char* thr_name = thr_info.name == nullptr ? "nullptr" : thr_info.name;
+  const char* thr_name = thr_info.name == nullptr ? "null" : thr_info.name;
   const char* thr_virtual_tag = jni->IsVirtualThread(thread) == JNI_TRUE ? "virtual" : "platform";
   const char* thr_daemon_tag = thr_info.is_daemon == JNI_TRUE ? "deamon" : "user";
   if (thr_info.name == nullptr || strcmp(thr_info.name, THREAD_NAME) != 0) {
@@ -150,7 +150,7 @@ Breakpoint(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread, jmethodID method, jloca
   }
   if (clsSig == nullptr || strcmp(clsSig, CLASS_SIG) != 0) {
     result = checkStatus = STATUS_FAILED;
-    LOG("TEST FAILED: Breakpoint event with unexpected class signature: %s\n\n", (clsSig == nullptr) ? "nullptr" : clsSig);
+    LOG("TEST FAILED: Breakpoint event with unexpected class signature: %s\n\n", (clsSig == nullptr) ? "null" : clsSig);
   } else {
     LOG("CHECK PASSED: class signature: \"%s\"\n", clsSig);
   }

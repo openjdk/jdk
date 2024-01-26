@@ -200,7 +200,7 @@ class JNIVerifier {
 
   T ResultNotNull(T ptr) {
     if (ptr == nullptr) {
-      _error_message = "Return is nullptr";
+      _error_message = "Return is null";
     }
     return ptr;
   }

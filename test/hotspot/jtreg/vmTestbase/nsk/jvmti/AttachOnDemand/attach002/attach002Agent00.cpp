@@ -158,7 +158,7 @@ void JNICALL classFileLoadHoockHandler(
             classFileLoadHookReceived++;
         }
     } else {
-        NSK_DISPLAY1("%s: ClassFileLoadHook event received for class with nullptr name\n", agentName);
+        NSK_DISPLAY1("%s: ClassFileLoadHook event received for class with null name\n", agentName);
     }
 }
 

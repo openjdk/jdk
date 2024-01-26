@@ -352,7 +352,7 @@ Java_nsk_jvmti_scenarios_allocation_AP04_ap04t001_runIterateOverObjectsReachable
 
     if (!NSK_JNI_VERIFY(jni, (root =
             jni->GetStaticObjectField(debugeeClass, rootFieldID)) != nullptr)) {
-        NSK_COMPLAIN0("GetStaticObjectField returned nullptr for 'root' field value\n\n");
+        NSK_COMPLAIN0("GetStaticObjectField returned null for 'root' field value\n\n");
         nsk_jvmti_setFailStatus();
         return;
     }

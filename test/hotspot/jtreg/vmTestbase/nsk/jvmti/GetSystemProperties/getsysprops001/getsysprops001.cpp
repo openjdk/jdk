@@ -57,7 +57,7 @@ static int checkProperties(jvmtiEnv* jvmti, const char phase[]) {
     }
 
     if (properties == nullptr) {
-        NSK_COMPLAIN2("In %s phase GetSystemProperties() returned nullptr pointer for properties list: 0x%p\n",
+        NSK_COMPLAIN2("In %s phase GetSystemProperties() returned null pointer for properties list: 0x%p\n",
                         phase, (void*)properties);
         success = NSK_FALSE;
     } else {
@@ -67,7 +67,7 @@ static int checkProperties(jvmtiEnv* jvmti, const char phase[]) {
         for (i = 0; i < count; i++) {
             NSK_DISPLAY2("    property #%d: [%s]\n", i, nsk_null_string(properties[i]));
             if (properties[i] == nullptr) {
-                NSK_COMPLAIN3("In %s phase GetSystemProperties() returned nullptr for property #%d: 0x%p\n",
+                NSK_COMPLAIN3("In %s phase GetSystemProperties() returned null for property #%d: 0x%p\n",
                                 phase, i, (void*)properties[i]);
                 success = NSK_FALSE;
             }

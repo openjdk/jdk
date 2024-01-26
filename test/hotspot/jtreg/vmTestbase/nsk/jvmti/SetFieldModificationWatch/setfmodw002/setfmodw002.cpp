@@ -116,7 +116,7 @@ Java_nsk_jvmti_SetFieldModificationWatch_setfmodw002_check(JNIEnv *env,
 
     fid = env->GetStaticFieldID(cls, "fld1", "I");
     if (fid == nullptr) {
-      printf("(GetStaticFieldID) returns nullptr");
+      printf("(GetStaticFieldID) returns null");
       result = STATUS_FAILED;
       return result;
     }

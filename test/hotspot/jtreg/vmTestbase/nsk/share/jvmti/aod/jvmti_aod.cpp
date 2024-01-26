@@ -231,7 +231,7 @@ int nsk_jvmti_aod_redefineClass(
         return NSK_FALSE;
     }
     if (fileName == nullptr) {
-        NSK_COMPLAIN0("File name is nullptr\n");
+        NSK_COMPLAIN0("File name is null\n");
         return NSK_FALSE;
     }
     {

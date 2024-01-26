@@ -215,7 +215,7 @@ Java_MyPackage_ASGCTBaseTest_checkAsyncGetCallTraceCall(JNIEnv* env, jclass cls)
 
   JvmtiDeallocator<char*> name;
   if (trace.frames[0].method_id == nullptr) {
-    fprintf(stderr, "First frame method_id is nullptr\n");
+    fprintf(stderr, "First frame method_id is null\n");
     return false;
   }
 
@@ -226,7 +226,7 @@ Java_MyPackage_ASGCTBaseTest_checkAsyncGetCallTraceCall(JNIEnv* env, jclass cls)
   }
 
   if (name.get() == nullptr) {
-    fprintf(stderr, "Name is nullptr\n");
+    fprintf(stderr, "Name is null\n");
     return false;
   }
 

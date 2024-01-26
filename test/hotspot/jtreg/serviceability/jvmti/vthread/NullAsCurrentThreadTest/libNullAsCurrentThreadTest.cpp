@@ -331,7 +331,7 @@ Java_NullAsCurrentThreadTest_testJvmtiFunctions(JNIEnv *jni, jclass cls) {
   err = jvmti->GetCurrentThread(&cur_thr);
   check(jni, "GetCurrentThread", err);
 
-  LOG("Testing JMTI functions accepting nullptr jthread as current thread\n");
+  LOG("Testing JMTI functions accepting null jthread as current thread\n");
 
   testGetThreadInfo(jvmti, jni, cur_thr);
   testGetThreadState(jvmti, jni, cur_thr);

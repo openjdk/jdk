@@ -352,7 +352,7 @@ void handleException(bool isCatch,
 
         const char* threadName = getThreadName(jvmti_env, jni_env, thread);
         NSK_DISPLAY3(">>>> %s %s in thread - %s\n", isCatch ? "Caught exception" : "Exception",
-            className, threadName != nullptr ? threadName : "nullptr");
+            className, threadName != nullptr ? threadName : "null");
         jvmti->Deallocate((unsigned char*)className);
         if (threadName != nullptr) {
             jvmti->Deallocate((unsigned char*)threadName);
