@@ -2966,10 +2966,9 @@ size_t os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
       // OS will initially always use small pages.
       return os::vm_page_size();
     } else if (err != 0) {
-      log_warning(gc, os)("::madvise(" PTR_FORMAT ", " SIZE_FORMAT
-                          ", %d) failed; error='%s' (errno=%d)",
-                          p2i(first), len, MADV_POPULATE_WRITE,
-                          os::strerror(err), err);
+      log_info(gc, os)("::madvise(" PTR_FORMAT ", " SIZE_FORMAT ", %d) failed; "
+                       "error='%s' (errno=%d)", p2i(first), len,
+                       MADV_POPULATE_WRITE, os::strerror(err), err);
     }
     return 0;
   }
