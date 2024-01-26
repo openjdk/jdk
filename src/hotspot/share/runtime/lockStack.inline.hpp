@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +39,8 @@
 
 inline int LockStack::to_index(uint32_t offset) {
   assert(is_aligned(offset, oopSize), "Bad alignment: %u", offset);
+  assert((offset <= end_offset()), "lockstack overflow: offset %d end_offset %d", offset, end_offset());
+  assert((offset >= start_offset()), "lockstack underflow: offset %d end_offset %d", offset, start_offset());
   return (offset - lock_stack_base_offset) / oopSize;
 }
 
@@ -85,11 +88,12 @@ inline bool LockStack::is_recursive(oop o) const {
   if (!VM_Version::supports_recursive_lightweight_locking()) {
     return false;
   }
+  verify("pre-is_recursive");
 
   // This will succeed iff there is a consecutive run of oops on the
   // lock-stack with a length of at least 2.
 
-  assert(contains(o), "entries must exist");
+  assert(contains(o), "at least one entry must exist");
   int end = to_index(_top);
   // Start iterating from the top because the runtime code is more
   // interested in the balanced locking case when the top oop on the
@@ -97,6 +101,7 @@ inline bool LockStack::is_recursive(oop o) const {
   // in the first loop iteration if it is non-recursive.
   for (int i = end - 1; i > 0; i--) {
     if (_base[i - 1] == o && _base[i] == o) {
+      verify("post-is_recursive");
       return true;
     }
     if (_base[i] == o) {
@@ -107,6 +112,7 @@ inline bool LockStack::is_recursive(oop o) const {
     }
   }
 
+  verify("post-is_recursive");
   return false;
 }
 
@@ -114,6 +120,7 @@ inline bool LockStack::try_recursive_enter(oop o) {
   if (!VM_Version::supports_recursive_lightweight_locking()) {
     return false;
   }
+  verify("pre-try_recursive_enter");
 
   // This will succeed iff the top oop on the stack matches o.
   // When successful o will be pushed to the lock-stack creating
@@ -125,11 +132,13 @@ inline bool LockStack::try_recursive_enter(oop o) {
   int end = to_index(_top);
   if (end == 0 || _base[end - 1] != o) {
     // Topmost oop does not match o.
+    verify("post-try_recursive_enter");
     return false;
   }
 
   _base[end] = o;
   _top += oopSize;
+  verify("post-try_recursive_enter");
   return true;
 }
 
@@ -137,6 +146,7 @@ inline bool LockStack::try_recursive_exit(oop o) {
   if (!VM_Version::supports_recursive_lightweight_locking()) {
     return false;
   }
+  verify("pre-try_recursive_exit");
 
   // This will succeed iff the top two oops on the stack matches o.
   // When successful the top oop will be popped of the lock-stack.
@@ -146,13 +156,15 @@ inline bool LockStack::try_recursive_exit(oop o) {
   assert(contains(o), "entries must exist");
 
   int end = to_index(_top);
-  if (end <= 1 || _base[end - 1] != o ||  _base[end - 2] != o) {
+  if (end <= 1 || _base[end - 1] != o || _base[end - 2] != o) {
     // The two topmost oops do not match o.
+    verify("post-try_recursive_exit");
     return false;
   }
 
   _top -= oopSize;
   DEBUG_ONLY(_base[to_index(_top)] = nullptr;)
+  verify("post-try_recursive_exit");
   return true;
 }
 

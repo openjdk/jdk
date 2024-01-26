@@ -254,8 +254,13 @@ Impact: Low
 .PP
 \f[I]arguments\f[R]:
 .IP \[bu] 2
-\f[I]filename\f[R]: (Optional) The name of the map file (STRING, no
-default value)
+\f[I]filename\f[R]: (Optional) The name of the map file (STRING,
+/tmp/perf-<pid>.map)
+.PP
+If \f[V]filename\f[R] is not specified, a default file name is chosen
+using the pid of the target JVM process.
+For example, if the pid is \f[V]12345\f[R], then the default
+\f[V]filename\f[R] will be \f[V]/tmp/perf-12345.map\f[R].
 .RE
 .TP
 \f[V]Compiler.queue\f[R]
@@ -880,7 +885,7 @@ false)
 .PP
 \f[I]arguments\f[R]:
 .IP \[bu] 2
-\f[V]filepath\f[R]: The file path to the output file (STRING, no default
+\f[I]filepath\f[R]: The file path to the output file (STRING, no default
 value)
 .RE
 .TP
@@ -913,11 +918,11 @@ Impact: Medium --- pause time depends on number of loaded classes
 .PP
 \f[I]arguments\f[R]:
 .IP \[bu] 2
-\f[V]subcmd\f[R]: must be either \f[V]static_dump\f[R] or
+\f[I]subcmd\f[R]: must be either \f[V]static_dump\f[R] or
 \f[V]dynamic_dump\f[R] (STRING, no default value)
 .IP \[bu] 2
-\f[V]filename\f[R]: (Optional) Name of the shared archive to be dumped
-(STRING, no default value)
+\f[I]filename\f[R]: (Optional) Name of the shared archive to be dumped
+(STRING, java_pid<pid>_<subcmd>.jsa)
 .PP
 If \f[V]filename\f[R] is not specified, a default file name is chosen
 using the pid of the target JVM process.
