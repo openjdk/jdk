@@ -2851,7 +2851,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
 
 #ifdef ASSERT
 // We check that every packset (name it p_def) only has vector uses (p_use),
-// which are properly vector uses of def.
+// which are proper vector uses of def.
 void SuperWord::verify_no_extract() {
   for (int i = 0; i < _packset.length(); i++) {
     Node_List* p_def = _packset.at(i);
