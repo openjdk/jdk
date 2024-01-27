@@ -510,15 +510,20 @@ public final class Objects {
      * <p>This method is useful for implementing {@link Object#equals()}.
      * Consider the following example.</p>
      *
-     * <blockquote><pre>
-     * &#064;Override public boolean equals(Object obj) {
+     * {@snippet :
+     * @Override public boolean equals(Object obj) {
+     *     
      *     //Assume that there's a class Point3D with the fields int x, int y, and int z.
      *     //Also assume that each field has an accompanying getter.
-     *     return (this == obj) 
-     *         || (obj instanceof Point3D other 
+     *
+     *     if (this == obj) {
+     *         return true;
+     *     } 
+     *     
+     *     return obj instanceof Point3D other 
      *             && Objects.equalsBy(this, other, Point3D::getX, Point3D::getY, Point3D::getZ));
      * }
-     * </pre></blockquote>
+     * }
      *
      * @param a the first object to be compared for equality
      * @param b the second object to be compared for equality
