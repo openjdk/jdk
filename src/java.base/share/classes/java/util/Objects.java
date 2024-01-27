@@ -584,6 +584,9 @@ public final class Objects {
         requireNonNull(rest);
 
         for (final var function : rest) {
+
+            requireNonNull(function);
+
             final var aValue = function.apply(a);
             final var bValue = function.apply(b);
 
