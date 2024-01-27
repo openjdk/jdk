@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,9 +172,9 @@ int VectorNode::opcode(int sopc, BasicType bt) {
     return (is_integral_type(bt) ? Op_ReverseV : 0);
   case Op_ReverseBytesS:
   case Op_ReverseBytesUS:
-    // Subword operations in superword usually don't have precise info
-    // about signedness. But the behavior of reverseBytes for short and
-    // char are exactly the same.
+    // Subword operations in autovectorization usually don't have precise
+    // info about signedness. But the behavior of reverseBytes for short
+    // and char are exactly the same.
     return ((bt == T_SHORT || bt == T_CHAR) ? Op_ReverseBytesV : 0);
   case Op_ReverseBytesI:
     // There is no reverseBytes() in Byte class but T_BYTE may appear
@@ -388,8 +388,8 @@ int VectorNode::scalar_opcode(int sopc, BasicType bt) {
 }
 
 // Limits on vector size (number of elements) for auto-vectorization.
-bool VectorNode::vector_size_supported_superword(const BasicType bt, int size) {
-  return Matcher::superword_max_vector_size(bt) >= size &&
+bool VectorNode::vector_size_supported_autovectorization(const BasicType bt, int size) {
+  return Matcher::max_vector_size_autovectorization(bt) >= size &&
          Matcher::min_vector_size(bt) <= size;
 }
 
@@ -398,7 +398,7 @@ bool VectorNode::vector_size_supported_superword(const BasicType bt, int size) {
 bool VectorNode::implemented(int opc, uint vlen, BasicType bt) {
   if (is_java_primitive(bt) &&
       (vlen > 1) && is_power_of_2(vlen) &&
-      vector_size_supported_superword(bt, vlen)) {
+      vector_size_supported_autovectorization(bt, vlen)) {
     int vopc = VectorNode::opcode(opc, bt);
     // For rotate operation we will do a lazy de-generation into
     // OrV/LShiftV/URShiftV pattern if the target does not support
@@ -409,7 +409,7 @@ bool VectorNode::implemented(int opc, uint vlen, BasicType bt) {
     if (VectorNode::is_vector_integral_negate(vopc)) {
       return is_vector_integral_negate_supported(vopc, vlen, bt, false);
     }
-    return vopc > 0 && Matcher::match_rule_supported_superword(vopc, vlen, bt);
+    return vopc > 0 && Matcher::match_rule_supported_autovectorization(vopc, vlen, bt);
   }
   return false;
 }
@@ -1432,9 +1432,9 @@ bool VectorCastNode::implemented(int opc, uint vlen, BasicType src_type, BasicTy
   if (is_java_primitive(dst_type) &&
       is_java_primitive(src_type) &&
       (vlen > 1) && is_power_of_2(vlen) &&
-      VectorNode::vector_size_supported_superword(dst_type, vlen)) {
+      VectorNode::vector_size_supported_autovectorization(dst_type, vlen)) {
     int vopc = VectorCastNode::opcode(opc, src_type);
-    return vopc > 0 && Matcher::match_rule_supported_superword(vopc, vlen, dst_type);
+    return vopc > 0 && Matcher::match_rule_supported_autovectorization(vopc, vlen, dst_type);
   }
   return false;
 }
@@ -1526,9 +1526,9 @@ Node* ReductionNode::make_identity_con_scalar(PhaseGVN& gvn, int sopc, BasicType
 bool ReductionNode::implemented(int opc, uint vlen, BasicType bt) {
   if (is_java_primitive(bt) &&
       (vlen > 1) && is_power_of_2(vlen) &&
-      VectorNode::vector_size_supported_superword(bt, vlen)) {
+      VectorNode::vector_size_supported_autovectorization(bt, vlen)) {
     int vopc = ReductionNode::opcode(opc, bt);
-    return vopc != opc && Matcher::match_rule_supported_superword(vopc, vlen, bt);
+    return vopc != opc && Matcher::match_rule_supported_autovectorization(vopc, vlen, bt);
   }
   return false;
 }

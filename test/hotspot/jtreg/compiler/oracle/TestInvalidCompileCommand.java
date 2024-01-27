@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -52,7 +52,7 @@ public class TestInvalidCompileCommand {
             "-version"
         },
         {
-            "-XX:CompileCommand=option,Test::test,VectorizeDebug,3",
+            "-XX:CompileCommand=option,Test::test,MemStat,3",
             "-version"
         },
         {
@@ -72,7 +72,7 @@ public class TestInvalidCompileCommand {
             "Missing type 'intx' before option 'RepeatCompilation'"
         },
         {
-            "Missing type 'uintx' before option 'VectorizeDebug'"
+            "Missing type 'uintx' before option 'MemStat'"
         },
         {
             "Missing type 'ccstrlist' before option 'ControlIntrinsic'"

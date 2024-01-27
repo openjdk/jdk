@@ -25,21 +25,585 @@
 #ifndef SHARE_OPTO_VECTORIZATION_HPP
 #define SHARE_OPTO_VECTORIZATION_HPP
 
+#include "utilities/pair.hpp"
 #include "opto/node.hpp"
 #include "opto/loopnode.hpp"
+#include "opto/traceautovectorizationtags.hpp"
 
 // Code in this file and the vectorization.cpp contains shared logics and
 // utilities for C2's loop auto-vectorization.
 
+// VLoop: check preconditions for auto-vectorination, and provide basic
+//        loop structure accessors.
+class VLoop : public StackObj {
+private:
+  PhaseIdealLoop* const _phase = nullptr;
+  IdealLoopTree* const _lpt = nullptr;
+  const bool _allow_cfg = false;
+  CountedLoopNode* _cl = nullptr;
+  Node* _cl_exit = nullptr;
+  PhiNode* _iv = nullptr;
+  CountedLoopEndNode* _pre_loop_end; // only for main loops
+
+  const CHeapBitMap &_trace_tags;
+
+  static constexpr char const* SUCCESS                    = "success";
+  static constexpr char const* FAILURE_ALREADY_VECTORIZED = "loop already vectorized";
+  static constexpr char const* FAILURE_UNROLL_ONLY        = "loop only wants to be unrolled";
+  static constexpr char const* FAILURE_VECTOR_WIDTH       = "vector_width must be power of 2";
+  static constexpr char const* FAILURE_VALID_COUNTED_LOOP = "must be valid counted loop (int)";
+  static constexpr char const* FAILURE_CONTROL_FLOW       = "control flow in loop not allowed";
+  static constexpr char const* FAILURE_BACKEDGE           = "nodes on backedge not allowed";
+  static constexpr char const* FAILURE_PRE_LOOP_LIMIT     = "main-loop must be able to adjust pre-loop-limit (not found)";
+
+public:
+  VLoop(IdealLoopTree* lpt, bool allow_cfg) :
+    _phase     (lpt->_phase),
+    _lpt       (lpt),
+    _allow_cfg (allow_cfg),
+    _cl        (nullptr),
+    _cl_exit   (nullptr),
+    _iv        (nullptr),
+    _trace_tags(phase()->C->directive()->traceautovectorization_tags()) {}
+
+  NONCOPYABLE(VLoop);
+
+public:
+  IdealLoopTree* lpt()        const { return _lpt; };
+  PhaseIdealLoop* phase()     const { return _phase; }
+  CountedLoopNode* cl()       const { return _cl; };
+  Node* cl_exit()             const { return _cl_exit; };
+  PhiNode* iv()               const { return _iv; };
+  int iv_stride()             const { return cl()->stride_con(); };
+  bool is_allow_cfg()         const { return _allow_cfg; }
+
+  CountedLoopEndNode* pre_loop_end() const {
+    assert(cl()->is_main_loop(), "only main loop can reference pre-loop");
+    assert(_pre_loop_end != nullptr, "must have found it");
+    return _pre_loop_end;
+  };
+
+  CountedLoopNode* pre_loop_head() const {
+    CountedLoopNode* head = pre_loop_end()->loopnode();
+    assert(head != nullptr, "must find head");
+    return head;
+  };
+
+  int estimated_body_length() const { return lpt()->_body.size(); };
+  int estimated_node_count()  const { return (int)(1.10 * phase()->C->unique()); };
+
+  bool in_body(const Node* n) const {
+    // We only accept any nodes which have the loop head as their ctrl.
+    const Node* ctrl = _phase->has_ctrl(n) ? _phase->get_ctrl(n) : n;
+    return n != nullptr && n->outcnt() > 0 && ctrl == _cl;
+  }
+
+  // Do we have to enforce strict alignment criteria on this platform?
+  static bool vectors_must_be_aligned() {
+   return !Matcher::misaligned_vectors_ok() || AlignVector;
+  }
+
+#ifndef PRODUCT
+  bool is_trace(TraceAutovectorizationTag tag) const {
+    return _trace_tags.at(tag);
+  }
+  bool is_trace_precondition() const {
+    return is_trace(TraceAutovectorizationTag::PRECONDITION);
+  }
+  bool is_trace_loop_analyzer() const {
+    return is_trace(TraceAutovectorizationTag::LOOP_ANALYZER);
+  }
+  bool is_trace_memory_slices() const {
+    return is_trace(TraceAutovectorizationTag::MEMORY_SLICES);
+  }
+  bool is_trace_body() const {
+    return is_trace(TraceAutovectorizationTag::BODY);
+  }
+  bool is_trace_dependence_graph() const {
+    return is_trace(TraceAutovectorizationTag::DEPENDENCE_GRAPH);
+  }
+  bool is_trace_vector_element_type() const {
+    return is_trace(TraceAutovectorizationTag::TYPES);
+  }
+  bool is_trace_pointer_analysis() const {
+    return is_trace(TraceAutovectorizationTag::POINTER_ANALYSIS);
+  }
+  bool is_trace_align_vector() const {
+    return is_trace(TraceAutovectorizationTag::ALIGN_VECTOR);
+  }
+#endif
+
+  // Check if the loop passes some basic preconditions for vectorization.
+  // Overwrite previous data. Return indicates if analysis succeeded.
+  bool check_preconditions();
+
+private:
+  const char* check_preconditions_helper();
+};
+
+// Submodule of VLoopAnalyzer.
+// Identify and mark all reductions in the loop.
+class VLoopReductions : public StackObj {
+private:
+  typedef const Pair<const Node*, int> PathEnd;
+
+  const VLoop& _vloop;
+  VectorSet _loop_reductions;
+
+public:
+  VLoopReductions(Arena* arena, const VLoop& vloop) :
+    _vloop(vloop),
+    _loop_reductions(arena){};
+
+  NONCOPYABLE(VLoopReductions);
+
+private:
+  // Search for a path P = (n_1, n_2, ..., n_k) such that:
+  // - original_input(n_i, input) = n_i+1 for all 1 <= i < k,
+  // - path(n) for all n in P,
+  // - k <= max, and
+  // - there exists a node e such that original_input(n_k, input) = e and end(e).
+  // Return <e, k>, if P is found, or <nullptr, -1> otherwise.
+  // Note that original_input(n, i) has the same behavior as n->in(i) except
+  // that it commutes the inputs of binary nodes whose edges have been swapped.
+  template <typename NodePredicate1, typename NodePredicate2>
+  static PathEnd find_in_path(const Node* n1, uint input, int max,
+                              NodePredicate1 path, NodePredicate2 end) {
+    const PathEnd no_path(nullptr, -1);
+    const Node* current = n1;
+    int k = 0;
+    for (int i = 0; i <= max; i++) {
+      if (current == nullptr) {
+        return no_path;
+      }
+      if (end(current)) {
+        return PathEnd(current, k);
+      }
+      if (!path(current)) {
+        return no_path;
+      }
+      current = original_input(current, input);
+      k++;
+    }
+    return no_path;
+  }
+
+public:
+  // Whether n is a reduction operator and part of a reduction cycle.
+  // This function can be used for individual queries outside auto-vectorization,
+  // e.g. to inform matching in target-specific code. Otherwise, the
+  // almost-equivalent but faster mark_reductions() is preferable.
+  static bool is_reduction(const Node* n);
+  // Whether n is marked as a reduction node.
+  bool is_marked_reduction(const Node* n) const { return _loop_reductions.test(n->_idx); }
+  bool is_marked_reduction_loop() const { return !_loop_reductions.is_empty(); }
+  // Are s1 and s2 reductions with a data path between them?
+  bool is_marked_reduction_pair(Node* s1, Node* s2) const;
+private:
+  // Whether n is a standard reduction operator.
+  static bool is_reduction_operator(const Node* n);
+  // Whether n is part of a reduction cycle via the 'input' edge index. To bound
+  // the search, constrain the size of reduction cycles to LoopMaxUnroll.
+  static bool in_reduction_cycle(const Node* n, uint input);
+  // Reference to the i'th input node of n, commuting the inputs of binary nodes
+  // whose edges have been swapped. Assumes n is a commutative operation.
+  static Node* original_input(const Node* n, uint i);
+public:
+  // Find and mark reductions in a loop. Running mark_reductions() is similar to
+  // querying is_reduction(n) for every node in the loop, but stricter in
+  // that it assumes counted loops and requires that reduction nodes are not
+  // used within the loop except by their reduction cycle predecessors.
+  void mark_reductions();
+};
+
+// Submodule of VLoopAnalyzer.
+// Find the memory slices in the loop.
+class VLoopMemorySlices : public StackObj {
+private:
+  const VLoop& _vloop;
+
+  GrowableArray<PhiNode*> _heads;
+  GrowableArray<MemNode*> _tails;
+
+public:
+  VLoopMemorySlices(Arena* arena, const VLoop& vloop) :
+    _vloop(vloop),
+    _heads(arena, 8, 0, nullptr),
+    _tails(arena, 8, 0, nullptr) {};
+
+  NONCOPYABLE(VLoopMemorySlices);
+
+  void analyze();
+
+  const GrowableArray<PhiNode*> &heads() const { return _heads; }
+  const GrowableArray<MemNode*> &tails() const { return _tails; }
+
+  // Get all memory nodes of a slice, in reverse order
+  void get_slice(Node* head, Node* tail, GrowableArray<Node*> &slice) const;
+
+  bool same_memory_slice(MemNode* n1, MemNode* n2) const;
+
+#ifndef PRODUCT
+  void print() const;
+#endif
+};
+
+// Submodule of VLoopAnalyzer.
+// Find all nodes in the body, and create a mapping node->_idx to a body_idx.
+// This mapping is used so that subsequent datastructures sizes only grow with
+// the body size, and not the number of all nodes in the compilation.
+class VLoopBody : public StackObj {
+private:
+  const VLoop& _vloop;
+
+  GrowableArray<Node*> _body;
+  GrowableArray<int> _body_idx;
+
+  static constexpr char const* FAILURE_NODE_NOT_ALLOWED  = "encontered unhandled node";
+
+public:
+  VLoopBody(Arena* arena, const VLoop& vloop) :
+    _vloop   (vloop),
+    _body    (arena, vloop.estimated_body_length(), 0, nullptr),
+    _body_idx(arena, vloop.estimated_node_count(),  0, 0) {}
+
+  NONCOPYABLE(VLoopBody);
+
+  const char* construct();
+
+#ifndef PRODUCT
+  void print() const;
+#endif
+
+  int body_idx(const Node* n) const {
+    assert(_vloop.in_body(n), "must be in loop_body");
+    return _body_idx.at(n->_idx);
+  }
+
+  const GrowableArray<Node*>& body() const { return _body; }
+
+private:
+  void set_body_idx(Node* n, int i) {
+    assert(_vloop.in_body(n), "must be in loop_body");
+    _body_idx.at_put_grow(n->_idx, i);
+  }
+};
+
+// Submodule of VLoopAnalyzer.
+// We construct a dependence graph for the loop body, based on:
+// 1) data dependencies:
+//    The edges of the C2 IR nodes that represent data inputs.
+// 2) memory dependencies:
+//    We must respect Store->Store, Store->Load, and Load->Store order.
+//    We do not have to respect the order if:
+//    2.1) two memory operations are in different memory slices or
+//    2.2) we can prove that the memory regions will never overlap.
+//
+// The graph can be queried in the following ways:
+// 1) PredsIterator:
+//    Given some node in the body, iterate over all its predecessors
+//    in the dependence graph.
+// 2) independent(s1, s2):
+//    Check if there is a path s1->s2 or s2->s1. If not, then s1 and s2
+//    can be executed in parallel (e.g. in a vector operation).
+// 3) mutually_independent:
+//    Check if all nodes in a list are mutually independent. If so, then
+//    they can be executed in parallel (e.g. in a vector operation).
+class VLoopDependenceGraph : public StackObj {
+private:
+  class DependenceEdge;
+  class DependenceNode;
+
+  const VLoop& _vloop;
+  const VLoopMemorySlices& _memory_slices;
+  const VLoopBody& _body;
+
+  Arena* _arena;
+
+  // node->_idx -> DependenceNode* (or nullptr)
+  GrowableArray<DependenceNode*> _map;
+  GrowableArray<int> _depth; // body_idx -> depth in graph (DAG)
+  DependenceNode* _root;
+  DependenceNode* _sink;
+
+public:
+  VLoopDependenceGraph(Arena* arena,
+                       const VLoop& vloop,
+                       const VLoopMemorySlices& memory_slices,
+                       const VLoopBody& body) :
+    _vloop          (vloop),
+    _memory_slices  (memory_slices),
+    _body           (body),
+    _arena          (arena),
+    _map            (arena, vloop.estimated_node_count(),  0, nullptr),
+    _depth          (arena, vloop.estimated_body_length(), 0, 0),
+    _root           (new (arena) DependenceNode(nullptr)),
+    _sink           (new (arena) DependenceNode(nullptr)) {}
+
+  NONCOPYABLE(VLoopDependenceGraph);
+
+  void build();
+
+#ifndef PRODUCT
+  void print() const;
+#endif
+
+private:
+  Arena* arena() { return _arena; }
+
+  DependenceNode* root() const { return _root; }
+  DependenceNode* sink() const { return _sink; }
+
+  // Return dependence node corresponding to an ideal node
+  DependenceNode* get_node(Node* node) const {
+    assert(node != nullptr, "must not be nullptr");
+    DependenceNode* d = _map.at(node->_idx);
+    assert(d != nullptr, "must find dependence node");
+    return d;
+  }
+
+  // Make a new dependence graph node for an ideal node.
+  DependenceNode* make_node(Node* node);
+
+  // Make a new dependence graph edge dprec->dsucc
+  DependenceEdge* make_edge(DependenceNode* dpred, DependenceNode* dsucc);
+
+  // An edge in the dependence graph.  The edges incident to a dependence
+  // node are threaded through _next_in for incoming edges and _next_out
+  // for outgoing edges.
+  class DependenceEdge : public ArenaObj {
+  protected:
+    DependenceNode* _pred;
+    DependenceNode* _succ;
+    DependenceEdge* _next_in;  // list of in edges, null terminated
+    DependenceEdge* _next_out; // list of out edges, null terminated
+
+  public:
+    DependenceEdge(DependenceNode* pred,
+                   DependenceNode* succ,
+                   DependenceEdge* next_in,
+                   DependenceEdge* next_out) :
+      _pred(pred), _succ(succ), _next_in(next_in), _next_out(next_out) {}
+
+    DependenceEdge* next_in()  { return _next_in; }
+    DependenceEdge* next_out() { return _next_out; }
+    DependenceNode* pred()     { return _pred; }
+    DependenceNode* succ()     { return _succ; }
+  };
+
+  // A node in the dependence graph.  _in_head starts the threaded list of
+  // incoming edges, and _out_head starts the list of outgoing edges.
+  class DependenceNode : public ArenaObj {
+  protected:
+    Node*           _node;     // Corresponding ideal node
+    DependenceEdge* _in_head;  // Head of list of in edges, null terminated
+    DependenceEdge* _out_head; // Head of list of out edges, null terminated
+
+  public:
+    DependenceNode(Node* node) :
+      _node(node),
+      _in_head(nullptr),
+      _out_head(nullptr)
+    {
+      assert(node == nullptr ||
+             node->is_Mem() ||
+             node->is_memory_phi(),
+             "only memory graph nodes expected");
+    }
+
+    Node*           node()                { return _node;     }
+    DependenceEdge* in_head()             { return _in_head;  }
+    DependenceEdge* out_head()            { return _out_head; }
+    void set_in_head(DependenceEdge* hd)  { _in_head = hd;    }
+    void set_out_head(DependenceEdge* hd) { _out_head = hd;   }
+
+    int in_cnt();  // Incoming edge count
+    int out_cnt(); // Outgoing edge count
+
+    void print() const;
+  };
+
+public:
+  // Given some node in the body, iterate over all its predecessors
+  // in the dependence graph.
+  class PredsIterator {
+  private:
+    Node*           _n;
+    int             _next_idx;
+    int             _end_idx;
+    DependenceEdge* _dep_next;
+    Node*           _current;
+    bool            _done;
+
+  public:
+    PredsIterator(Node* n, const VLoopDependenceGraph &dg);
+    NONCOPYABLE(PredsIterator);
+
+    Node* current() { return _current; }
+    bool  done()    { return _done; }
+    void  next();
+  };
+
+  // Are s1 and s2 independent? i.e. no path from s1 to s2 / s2 to s1?
+  bool independent(Node* s1, Node* s2) const;
+  // Are all nodes in nodes mutually independent?
+  bool mutually_independent(Node_List* nodes) const;
+
+private:
+  // Depth in graph (DAG). Used to prune search paths.
+  int depth(Node* n) const {
+    assert(_vloop.in_body(n), "only call on nodes in loop");
+    return _depth.at(_body.body_idx(n));
+  }
+
+  void set_depth(Node* n, int d) {
+    assert(_vloop.in_body(n), "only call on nodes in loop");
+    _depth.at_put(_body.body_idx(n), d);
+  }
+
+  void compute_max_depth();
+};
+
+// Submodule of VLoopAnalyzer.
+// Compute the vector element type for every node in the loop body.
+// We need to do this to be able to vectorize the narrower integer
+// types (byte, char, short). In the C2 IR, their operations are
+// done with full int type with 4 byte precision (e.g. AddI, MulI).
+// Example:  char a,b,c;  a = (char)(b + c);
+// However, if we can prove the the upper bits are only truncated,
+// and the lower bits for the narrower type computed correctly, we
+// can compute the operations in the narrower type directly (e.g we
+// perform the AddI or MulI with 1 or 2 bytes). This allows us to
+// fit more operations in a vector, and can remove the otherwise
+// required conversion (int <-> narrower type).
+// We compute the types backwards (use-to-def): If all use nodes
+// only require the lower bits, then the def node can do the operation
+// only with the lower bits, and we propagate the narrower type to it.
+class VLoopTypes : public StackObj {
+private:
+  const VLoop& _vloop;
+  const VLoopBody& _body;
+
+  // body_idx -> vector element type
+  GrowableArray<const Type*> _velt_type;
+
+public:
+  VLoopTypes(Arena* arena,
+             const VLoop& vloop,
+             const VLoopBody& body) :
+    _vloop(vloop),
+    _body(body),
+    _velt_type(arena, vloop.estimated_body_length(), 0, nullptr) {}
+
+  NONCOPYABLE(VLoopTypes);
+
+  void compute_vector_element_type();
+
+#ifndef PRODUCT
+  void print() const;
+#endif
+
+  const Type* velt_type(const Node* n) const {
+    assert(_vloop.in_body(n), "only call on nodes in loop");
+    const Type* t = _velt_type.at(_body.body_idx(n));
+    assert(t != nullptr, "must have type");
+    return t;
+  }
+
+  BasicType velt_basic_type(const Node* n) const {
+    return velt_type(n)->array_element_basic_type();
+  }
+
+  int data_size(Node* s) const {
+    int bsize = type2aelembytes(velt_basic_type(s));
+    assert(bsize != 0, "valid size");
+    return bsize;
+  }
+
+  bool same_velt_type(Node* n1, Node* n2) const {
+    const Type* vt1 = velt_type(n1);
+    const Type* vt2 = velt_type(n2);
+    if (vt1->basic_type() == T_INT && vt2->basic_type() == T_INT) {
+      // Compare vectors element sizes for integer types.
+      return data_size(n1) == data_size(n2);
+    }
+    return vt1 == vt2;
+  }
+
+  int vector_width(const Node* n) const {
+    BasicType bt = velt_basic_type(n);
+    return MIN2(ABS(_vloop.iv_stride()), Matcher::max_vector_size(bt));
+  }
+
+  int vector_width_in_bytes(const Node* n) const {
+    BasicType bt = velt_basic_type(n);
+    return vector_width(n) * type2aelembytes(bt);
+  }
+
+private:
+  void set_velt_type(Node* n, const Type* t) {
+    assert(t != nullptr, "cannot set nullptr");
+    assert(_vloop.in_body(n), "only call on nodes in loop");
+    _velt_type.at_put(_body.body_idx(n), t);
+  }
+
+  const Type* container_type(Node* n) const;
+};
+
+// Analyze the loop in preparation for auto-vectorization. This class is
+// deliberately structured into many submodules, which are as independent
+// as possible, though some submodules do require other submodules.
+class VLoopAnalyzer : public StackObj {
+private:
+  static constexpr char const* SUCCESS               = "success";
+  static constexpr char const* FAILURE_NO_MAX_UNROLL = "slp max unroll analysis required";
+  static constexpr char const* FAILURE_NO_REDUCTION_OR_STORE = "no reduction and no store in loop";
+
+  const VLoop&         _vloop;
+
+  // Submodules that analyze different aspects of the loop
+  VLoopReductions      _reductions;
+  VLoopMemorySlices    _memory_slices;
+  VLoopBody            _body;
+  VLoopTypes           _types;
+  VLoopDependenceGraph _dependence_graph;
+
+public:
+  VLoopAnalyzer(Arena* arena, const VLoop& vloop) :
+    _vloop           (vloop),
+    _reductions      (arena, vloop),
+    _memory_slices   (arena, vloop),
+    _body            (arena, vloop),
+    _types           (arena, vloop, body()),
+    _dependence_graph(arena, vloop, memory_slices(), body())
+  {
+  };
+
+  NONCOPYABLE(VLoopAnalyzer);
+
+  // Analyze the loop in preparation for vectorization.
+  // Overwrite previous data. Return indicates if analysis succeeded.
+  bool analyze();
+
+  // Read-only accessors for submodules
+  const VLoop& vloop()                           const { return _vloop; }
+  const VLoopReductions& reductions()            const { return _reductions; }
+  const VLoopMemorySlices& memory_slices()       const { return _memory_slices; }
+  const VLoopBody& body()                        const { return _body; }
+  const VLoopTypes& types()                      const { return _types; }
+  const VLoopDependenceGraph& dependence_graph() const { return _dependence_graph; }
+
+private:
+  const char* analyze_helper();
+};
+
 // A vectorization pointer (VPointer) has information about an address for
 // dependence checking and vector alignment. It's usually bound to a memory
 // operation in a counted loop for vectorizable analysis.
-class VPointer : public ArenaObj {
+class VPointer : public StackObj {
  protected:
   const MemNode*  _mem;      // My memory reference node
-  PhaseIdealLoop* _phase;    // PhaseIdealLoop handle
-  IdealLoopTree*  _lpt;      // Current IdealLoopTree
-  PhiNode*        _iv;       // The loop induction variable
+  const VLoop&    _vloop;
 
   Node* _base;               // null if unsafe nonheap reference
   Node* _adr;                // address pointer
@@ -57,9 +621,10 @@ class VPointer : public ArenaObj {
   bool        _analyze_only; // Used in loop unrolling only for vpointer trace
   uint        _stack_idx;    // Used in loop unrolling only for vpointer trace
 
-  PhaseIdealLoop* phase() const { return _phase; }
-  IdealLoopTree*  lpt() const   { return _lpt; }
-  PhiNode*        iv() const    { return _iv; }
+  const VLoop&    vloop() const { return _vloop; }
+  PhaseIdealLoop* phase() const { return _vloop.phase(); }
+  IdealLoopTree*  lpt() const   { return _vloop.lpt(); }
+  PhiNode*        iv() const    { return _vloop.iv(); }
 
   bool is_loop_member(Node* n) const;
   bool invariant(Node* n) const;
@@ -80,16 +645,21 @@ class VPointer : public ArenaObj {
     NotComparable = (Less | Greater | Equal)
   };
 
-  VPointer(const MemNode* mem,
-           PhaseIdealLoop* phase, IdealLoopTree* lpt,
+  VPointer(const MemNode* mem, const VLoop& vloop) :
+    VPointer(mem, vloop, nullptr, false) {}
+  VPointer(const MemNode* mem, const VLoop& vloop, Node_Stack* nstack) :
+    VPointer(mem, vloop, nstack, true) {}
+ private:
+  VPointer(const MemNode* mem, const VLoop& vloop,
            Node_Stack* nstack, bool analyze_only);
   // Following is used to create a temporary object during
   // the pattern match of an address expression.
   VPointer(VPointer* p);
+  NONCOPYABLE(VPointer);
 
+ public:
   bool valid()             const { return _adr != nullptr; }
   bool has_iv()            const { return _scale != 0; }
-
   Node* base()             const { return _base; }
   Node* adr()              const { return _adr; }
   const MemNode* mem()     const { return _mem; }
@@ -126,7 +696,7 @@ class VPointer : public ArenaObj {
   bool overlap_possible_with_any_in(Node_List* p) {
     for (uint k = 0; k < p->size(); k++) {
       MemNode* mem = p->at(k)->as_Mem();
-      VPointer p_mem(mem, phase(), lpt(), nullptr, false);
+      VPointer p_mem(mem, vloop());
       // Only if we know that we have Less or Greater can we
       // be sure that there can never be an overlap between
       // the two memory regions.
@@ -149,7 +719,7 @@ class VPointer : public ArenaObj {
 #ifndef PRODUCT
   class Tracer {
     friend class VPointer;
-    bool _is_trace_alignment;
+    const VLoop &_vloop;
     static int _depth;
     int _depth_save;
     void print_depth() const;
@@ -166,7 +736,9 @@ class VPointer : public ArenaObj {
       Depth(int x) { _depth = 0; }
       ~Depth()     { if (_depth > 0) --_depth; }
     };
-    Tracer(bool is_trace_alignment) : _is_trace_alignment(is_trace_alignment) {}
+    Tracer(const VLoop &vloop) : _vloop(vloop) {}
+
+    bool is_trace_pointer_analysis() const { return _vloop.is_trace_pointer_analysis(); }
 
     // tracing functions
     void ctor_1(const Node* mem);
@@ -561,7 +1133,7 @@ private:
   const int      _pre_stride;     // address increment per pre-loop iteration
   const int      _main_stride;    // address increment per main-loop iteration
 
-  DEBUG_ONLY( const bool _is_trace; );
+  NOT_PRODUCT( const bool _is_trace; )
 
   static const MemNode* mem_ref_not_null(const MemNode* mem_ref) {
     assert(mem_ref != nullptr, "not nullptr");
@@ -579,8 +1151,7 @@ public:
                   const Node* init_node,
                   const int pre_stride,
                   const int main_stride
-                  DEBUG_ONLY( COMMA const bool is_trace)
-                  ) :
+                  NOT_PRODUCT(COMMA const bool is_trace)) :
       _mem_ref(           mem_ref_not_null(mem_ref)),
       _vector_length(     vector_length),
       _element_size(      _mem_ref->memory_size()),
@@ -594,7 +1165,7 @@ public:
       _init_node(         init_node),
       _pre_stride(        pre_stride),
       _main_stride(       main_stride)
-      DEBUG_ONLY( COMMA _is_trace(is_trace) )
+      NOT_PRODUCT(COMMA _is_trace(is_trace))
   {
     assert(_mem_ref != nullptr &&
            (_mem_ref->is_Load() || _mem_ref->is_Store()),
@@ -641,7 +1212,7 @@ private:
     int C_invar_mod_abs_C_pre() const { return AlignmentSolution::mod(_C_invar, abs(_C_pre)); }
     int C_init_mod_abs_C_pre() const  { return AlignmentSolution::mod(_C_init,  abs(_C_pre)); }
 
-#ifdef ASSERT
+#ifndef PRODUCT
    public:
     void trace() const;
 
@@ -654,7 +1225,7 @@ private:
 #endif
   };
 
-#ifdef ASSERT
+#ifndef PRODUCT
   bool is_trace() const { return _is_trace; }
   void trace_start_solve() const;
   void trace_reshaped_form(const int C_const,

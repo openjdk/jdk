@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,6 @@
 #include "opto/predicates.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
-#include "opto/superword.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -4863,25 +4862,12 @@ void PhaseIdealLoop::build_and_optimize() {
      C->set_major_progress();
   }
 
-  // Convert scalar to superword operations at the end of all loop opts.
+  // Auto-Vectorize the main-loop
   if (C->do_superword() && C->has_loops() && !C->major_progress()) {
-    // SuperWord transform
-    SuperWord sw(this);
+    ResourceArea autovectorization_arena;
     for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
       IdealLoopTree* lpt = iter.current();
-      if (lpt->is_counted()) {
-        CountedLoopNode *cl = lpt->_head->as_CountedLoop();
-        if (cl->is_main_loop()) {
-          if (!sw.transform_loop(lpt, true)) {
-            // Instigate more unrolling for optimization when vectorization fails.
-            if (cl->has_passed_slp()) {
-              C->set_major_progress();
-              cl->set_notpassed_slp();
-              cl->mark_do_unroll_only();
-            }
-          }
-        }
-      }
+      autovectorize(lpt, &autovectorization_arena);
     }
   }
 
@@ -5961,30 +5947,6 @@ CountedLoopEndNode* CountedLoopNode::find_pre_loop_end() {
   }
   return pre_end;
 }
-
-  CountedLoopNode* CountedLoopNode::pre_loop_head() const {
-    assert(is_main_loop(), "Only main loop has pre loop");
-    assert(_pre_loop_end != nullptr && _pre_loop_end->loopnode() != nullptr,
-           "should find head from pre loop end");
-    return _pre_loop_end->loopnode();
-  }
-
-  CountedLoopEndNode* CountedLoopNode::pre_loop_end() {
-#ifdef ASSERT
-    assert(is_main_loop(), "Only main loop has pre loop");
-    assert(_pre_loop_end != nullptr, "should be set when fetched");
-    Node* found_pre_end = find_pre_loop_end();
-    assert(_pre_loop_end == found_pre_end && _pre_loop_end == pre_loop_head()->loopexit(),
-           "should find the pre loop end and must be the same result");
-#endif
-    return _pre_loop_end;
-  }
-
-  void CountedLoopNode::set_pre_loop_end(CountedLoopEndNode* pre_loop_end) {
-    assert(is_main_loop(), "Only main loop has pre loop");
-    assert(pre_loop_end, "must be valid");
-    _pre_loop_end = pre_loop_end;
-  }
 
 //------------------------------get_late_ctrl----------------------------------
 // Compute latest legal control.
