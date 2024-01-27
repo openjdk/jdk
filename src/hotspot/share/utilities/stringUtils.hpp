@@ -65,9 +65,7 @@ public:
       _token = strtok_r(_saved_ptr, ",", &_saved_ptr);
     }
 
-    ~CommaSeparatedStringIterator() {
-      FREE_C_HEAP_ARRAY(char, _list);
-    }
+    ~CommaSeparatedStringIterator();
 
     const char* operator*() const { return _token; }
 
@@ -76,21 +74,7 @@ public:
       return *this;
     }
 
-    ccstrlist canonicalize(ccstrlist option_value) {
-      char* canonicalized_list = NEW_C_HEAP_ARRAY(char, strlen(option_value) + 1, mtCompiler);
-      int i = 0;
-      char current;
-      while ((current = option_value[i]) != '\0') {
-        if (current == '\n' || current == ' ') {
-          canonicalized_list[i] = ',';
-        } else {
-          canonicalized_list[i] = current;
-        }
-        i++;
-      }
-      canonicalized_list[i] = '\0';
-      return canonicalized_list;
-    }
+    ccstrlist canonicalize(ccstrlist option_value);
   };
 };
 
