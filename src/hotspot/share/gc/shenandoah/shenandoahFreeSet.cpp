@@ -548,7 +548,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
 
   if (alloc_capacity(r) < PLAB::min_size() * HeapWordSize) {
     // Regardless of whether this allocation succeeded, if the remaining memory is less than PLAB:min_size(), retire this region.
-    // Note that retire_within_free_set() increased used to account for waste.
+    // Note that retire_within_free_set() increases used to account for waste.
 
     // Note that a previous implementation of this function would retire a region following any failure to
     // allocate within.  This was observed to result in large amounts of available memory being ignored
