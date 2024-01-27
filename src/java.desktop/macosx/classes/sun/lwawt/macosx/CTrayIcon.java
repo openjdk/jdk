@@ -173,7 +173,7 @@ public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
         }
 
         LWCToolkit.targetDisposedPeer(target, this);
-        target = null;
+//        target = null;
 
         super.dispose();
     }
