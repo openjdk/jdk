@@ -535,7 +535,7 @@ public final class Objects {
      *
      * //Returns false -- Same logic as the previous example, but this time,
      * //rest itself is null.
-     * System.out.println(equalsBy(a, c, Point3D::x, null, Point3D::z));
+     * System.out.println(equalsBy(a, c, Point3D::x, null));
      *
      * }
      *
