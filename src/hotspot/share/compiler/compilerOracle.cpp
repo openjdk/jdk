@@ -776,7 +776,7 @@ static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
           jio_snprintf(errorbuf, buf_size, "Unrecognized intrinsic detected in %s: %s", option2name(option), validator.what());
         }
       }
-#ifndef PRODUCT
+#if !defined(PRODUCT) && defined(COMPILER2)
       else if (option == CompileCommand::TraceAutoVectorization) {
         TraceAutoVectorizationTagValidator validator(value, true);
 

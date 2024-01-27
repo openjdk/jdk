@@ -336,7 +336,9 @@ bool DirectivesParser::set_option_flag(JSON_TYPE t, JSON_VAL* v, const key* opti
           if (!valid) {
             error(VALUE_ERROR, "Unrecognized intrinsic detected in DisableIntrinsic: %s", validator.what());
           }
-        } else if (strncmp(option_key->name, "TraceAutoVectorization", 22) == 0) {
+        }
+#if !defined(PRODUCT) && defined(COMPILER2)
+        else if (strncmp(option_key->name, "TraceAutoVectorization", 22) == 0) {
           TraceAutoVectorizationTagValidator validator(s, false);
 
           valid = validator.is_valid();
@@ -355,6 +357,7 @@ bool DirectivesParser::set_option_flag(JSON_TYPE t, JSON_VAL* v, const key* opti
             error(VALUE_ERROR, "Unrecognized phase name detected in PrintIdealPhase: %s", validator.what());
           }
         }
+#endif
 
         if (!valid) {
           FREE_C_HEAP_ARRAY(char, s);
