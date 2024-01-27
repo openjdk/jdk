@@ -350,6 +350,40 @@ TEST_VM(os_linux, reserve_memory_special_concurrent) {
   }
 }
 
+TEST_VM(os_linux, pretouch_thp_and_use_concurrent) {
+  // Explicitly enable thp to test cocurrent system calls.
+  const size_t size = 1 * G;
+  const bool useThp = UseTransparentHugePages;
+  UseTransparentHugePages = true;
+  char* const heap = os::reserve_memory(size, false, mtInternal);
+  EXPECT_NE(heap, (char*)NULL);
+  EXPECT_TRUE(os::commit_memory(heap, size, false));
+
+  {
+    auto pretouch = [heap, size](Thread*, int) {
+      os::pretouch_memory(heap, heap + size, os::vm_page_size());
+    };
+    auto useMemory = [heap, size](Thread*, int) {
+      int* iptr = reinterpret_cast<int*>(heap);
+      for (int i = 0; i < 1000; i++) *iptr++ = i;
+    };
+    TestThreadGroup<decltype(pretouch)> pretouchThreads{pretouch, 4};
+    TestThreadGroup<decltype(useMemory)> useMemoryThreads{useMemory, 4};
+    useMemoryThreads.doit();
+    pretouchThreads.doit();
+    useMemoryThreads.join();
+    pretouchThreads.join();
+  }
+
+  int* iptr = reinterpret_cast<int*>(heap);
+  for (int i = 0; i < 1000; i++)
+    EXPECT_EQ(*iptr++, i);
+
+  EXPECT_TRUE(os::uncommit_memory(heap, size, false));
+  EXPECT_TRUE(os::release_memory(heap, size));
+  UseTransparentHugePages = useThp;
+}
+
 // Check that method JNI_CreateJavaVM is found.
 TEST(os_linux, addr_to_function_valid) {
   char buf[128] = "";
