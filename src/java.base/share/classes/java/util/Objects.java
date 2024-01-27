@@ -521,7 +521,7 @@ public final class Objects {
      *     } 
      *     
      *     return obj instanceof Point3D other 
-     *             && Objects.equalsBy(this, other, Point3D::getX, Point3D::getY, Point3D::getZ));
+     *             && Objects.equalsBy(this, other, Point3D::getX, Point3D::getY, Point3D::getZ);
      * }
      * }
      *
