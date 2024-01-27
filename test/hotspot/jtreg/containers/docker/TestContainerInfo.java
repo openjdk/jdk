@@ -73,32 +73,25 @@ public class TestContainerInfo {
         checkContainerInfo(out);
     }
 
+    private static void shouldMatchWithValue(OutputAnalyzer output, String match, String value) {
+        output.shouldContain(match);
+        String str = output.getOutput();
+        for (String s : str.split(System.lineSeparator())) {
+            if (s.contains(match)) {
+                if (!s.contains(value)) {
+                    throw new RuntimeException("memory_swap_current_in_bytes NOT " + value + "! Line was : " + s);
+                }
+            }
+        }
+    }
+
     private static void checkContainerInfo(OutputAnalyzer out) throws Exception {
         String str = out.getOutput();
         if (str.contains("cgroupv2")) {
-            out.shouldContain("memory_swap_max_limit_in_bytes");
-            for (String s : str.split(System.lineSeparator())) {
-                if (s.contains("memory_swap_max_limit_in_bytes")) {
-                    if (!s.contains("0")) {
-                        throw new RuntimeException("memory_swap_max_limit_in_bytes NOT 0!");
-                    }
-                }
-            }
-            out.shouldContain("memory_swap_current_in_bytes");
-            for (String s : str.split(System.lineSeparator())) {
-                if (s.contains("memory_swap_current_in_bytes")) {
-                    if (!s.contains("0")) {
-                        throw new RuntimeException("memory_swap_current_in_bytes NOT 0!");
-                    }
-                    if (s.contains("Unlimited")) {
-                        // '0' means '0', not 'Unlimited'
-                        throw new RuntimeException("memory_swap_current_in_bytes is Unlimited (should be 0)!");
-                    }
-                }
-            }
+            shouldMatchWithValue("memory_swap_max_limit_in_bytes", "0");
+            shouldMatchWithValue("memory_swap_current_in_bytes", "0");
         } else {
             throw new SkippedException("This test is cgroups v2 specific, skipped on cgroups v1");
         }
     }
-
 }
