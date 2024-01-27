@@ -105,11 +105,13 @@ closeDescriptors(void)
     while ((dirp = readdir(dp)) != NULL) {
         int fd;
         if (isAsciiDigit(dirp->d_name[0]) &&
-            (fd = strtol(dirp->d_name, NULL, 10)) >= from_fd)
-            close(fd);
+            (fd = strtol(dirp->d_name, NULL, 10)) >= from_fd) {
+            (void)close(fd);
+        }
+
     }
 
-    closedir(dp);
+    (void)closedir(dp);
 
     return 1; // success
 }
