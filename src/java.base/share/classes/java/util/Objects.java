@@ -567,7 +567,7 @@ public final class Objects {
      * @param b the second object to be checked for equality
      * @param first the first function to be applied to {@code a} and {@code b}
      * @param rest the rest of the functions to be applied to {@code a} and {@code b}
-     * @throws NullPointerException if any of the arguments are {@code null} and (potentially) if {@code rest} contains a {@code null}
+     * @throws NullPointerException if {@code a}, {@code b}, or {@code first} are {@code null} and (potentially) if {@code rest} is {@code null} or contains a {@code null}
      * @since 23
      */
     @SafeVarargs
