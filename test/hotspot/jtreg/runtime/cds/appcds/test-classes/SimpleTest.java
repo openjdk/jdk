@@ -28,8 +28,8 @@
  * which will also load its interface java.util.function.IntFunction.
  * By default, all of the above classes should be in the default CDS archive.
  */
-public class SimpleTest { 
-    public static void main(String[] args) throws Exception { 
-        new java.text.SimpleDateFormat(); 
-    } 
+public class SimpleTest {
+    public static void main(String[] args) throws Exception {
+        new java.text.SimpleDateFormat();
+    }
 }
