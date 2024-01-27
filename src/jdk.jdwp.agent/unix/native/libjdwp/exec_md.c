@@ -30,6 +30,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <ctype.h>
+#include "log_messages.h"
 #include "sys.h"
 #include "util.h"
 
@@ -132,6 +133,9 @@ forkedChildProcess(const char *file, char *const argv[])
         JDI_ASSERT(max_fd != (rlim_t)-1);
         /* leave out standard input/output/error file descriptors */
         rlim_t i = STDERR_FILENO + 1;
+        LOG_MISC(("warning: failed to close file descriptors of"
+                  " child process optimally, falling back to closing"
+                  " %d file descriptors sequentially", (max_fd - i + 1)));
         for (; i < max_fd; i++) {
             (void)close(i);
         }
