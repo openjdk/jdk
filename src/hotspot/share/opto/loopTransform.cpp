@@ -336,7 +336,7 @@ Node* IdealLoopTree::reassociate_add_sub_cmp(Node* n1, int inv1_idx, int inv2_id
   bool n1_is_cmp = n1->is_Cmp();
   bool n2_is_sub = n2->is_Sub();
   assert(n1->is_Add() || n1_is_sub || n1_is_cmp, "Target node should be add, subtract, or compare");
-  assert(n2->is_Add() || n2_is_sub, "Child node should be add or subtract");
+  assert(n2->is_Add() || (n2_is_sub && !n2->is_Cmp()), "Child node should be add or subtract");
   Node* inv1 = n1->in(inv1_idx);
   Node* inv2 = n2->in(inv2_idx);
   Node* x    = n2->in(3 - inv2_idx);

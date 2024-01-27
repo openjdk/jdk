@@ -742,7 +742,7 @@ public:
   void reassociate_invariants(PhaseIdealLoop *phase);
   // Reassociate invariant binary expressions.
   Node* reassociate(Node* n1, PhaseIdealLoop *phase);
-  // Reassociate invariant add and subtract expressions.
+  // Reassociate invariant add, subtract, and compare expressions.
   Node* reassociate_add_sub_cmp(Node* n1, int inv1_idx, int inv2_idx, PhaseIdealLoop *phase);
   // Return nonzero index of invariant operand if invariant and variant
   // are combined with an associative binary. Helper for reassociate_invariants.

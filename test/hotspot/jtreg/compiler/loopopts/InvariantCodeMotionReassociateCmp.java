@@ -28,8 +28,8 @@ import jdk.test.lib.Asserts;
 
 /*
  * @test
- * @bug 8250808
- * @summary Test loop invariant code motion through reassociation
+ * @bug 8323220
+ * @summary Test loop invariant code motion for cmp nodes through reassociation
  * @library /test/lib /
  * @run driver compiler.c2.loopopts.InvariantCodeMotionReassociateCmp
  */
@@ -189,19 +189,28 @@ public class InvariantCodeMotionReassociateCmp {
     @Test
     @Arguments({Argument.NUMBER_42, Argument.NUMBER_42})
     @IR(failOn = {IRNode.SUB_I})
-    public void leDontReassociate(int inv1, int inv2) {
+    public int leDontReassociate(int inv1, int inv2) {
         int i = 0;
         for (; i < 500; ++i) {
             if (inv1 + i <= inv2) {
                 blackhole();
+                break;
             }
+        }
+        return i;
+    }
+
+    @Check(test = "leDontReassociate")
+    public void checkLeDontReassociate(int returnValue, TestInfo info) {
+        if (returnValue != 0) {
+            throw new RuntimeException("Illegal reassociation");
         }
     }
 
     @Test
     @Arguments({Argument.NUMBER_42, Argument.MIN})
     @IR(failOn = {IRNode.SUB_I})
-    public void gtDontReassociate(int inv1, int inv2) {
+    public int gtDontReassociate(int inv1, int inv2) {
         int i = 0;
         for (; i < 500; ++i) {
             if (inv1 + i > inv2) {
@@ -209,13 +218,20 @@ public class InvariantCodeMotionReassociateCmp {
                 break;
             }
         }
-        Asserts.assertEQ(i, 0, "illegal reassociation of a + b > c");
+        return i;
+    }
+
+    @Check(test = "gtDontReassociate")
+    public void checkGtDontReassociate(int returnValue, TestInfo info) {
+        if (returnValue != 0) {
+            throw new RuntimeException("Illegal reassociation");
+        }
     }
 
     @Test
     @Arguments({Argument.NUMBER_42, Argument.MIN})
     @IR(failOn = {IRNode.SUB_I})
-    public void geDontReassociate(int inv1, int inv2) {
+    public int geDontReassociate(int inv1, int inv2) {
         int i = 0;
         for (; i < 500; ++i) {
             if (inv1 + i >= inv2) {
@@ -223,7 +239,15 @@ public class InvariantCodeMotionReassociateCmp {
                 break;
             }
         }
-        Asserts.assertEQ(i, 0, "illegal reassociation of a + b >= c");
+        return i;
     }
+
+    @Check(test = "geDontReassociate")
+    public void checkGeDontReassociate(int returnValue, TestInfo info) {
+        if (returnValue != 0) {
+            throw new RuntimeException("Illegal reassociation");
+        }
+    }
+
 }
 
