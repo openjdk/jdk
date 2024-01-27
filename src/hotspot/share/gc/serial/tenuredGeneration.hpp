@@ -129,8 +129,6 @@ class TenuredGeneration: public Generation {
 
   bool no_allocs_since_save_marks();
 
-  inline bool block_is_obj(const HeapWord* addr) const;
-
   virtual void collect(bool full,
                        bool clear_all_soft_refs,
                        size_t size,

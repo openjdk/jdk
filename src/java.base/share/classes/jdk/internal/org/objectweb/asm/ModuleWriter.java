@@ -283,4 +283,3 @@ final class ModuleWriter extends ModuleVisitor {
         }
     }
 }
-
