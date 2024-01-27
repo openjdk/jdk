@@ -1162,7 +1162,7 @@ static void* dll_load_library(const char *filename, char *ebuf, int ebuflen) {
 /*
  Load library named <filename>
  Search order:
- filename-> load "libfilename.so" first,then load libfilename.a,on failure. 
+ libfilename-> load "libfilename.so" first,then load libfilename.a,on failure. 
  In,OpenJ9,the libary with .so extension is loaded first and then .a extension,on failure.
 */
 void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
