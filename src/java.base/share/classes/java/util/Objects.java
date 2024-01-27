@@ -549,15 +549,15 @@ public final class Objects {
      * {@snippet :
      * @Override public boolean equals(Object obj) {
      *
-     *     //Assume that there's a class Point3D with the fields int x, int y, and int z.
-     *     //Also assume that each field has an accompanying getter.
+     *     //Assume that we are writing an equals method for the Point3D from
+     *     //above (even though it doesn't need it since it is a record).
      *
      *     if (this == obj) {
      *         return true;
      *     }
      *
-     *     return obj instanceof Point3D other
-     *             && Objects.equalsBy(this, other, Point3D::getX, Point3D::getY, Point3D::getZ);
+     *     return obj instanceof final Point3D other
+     *             && Objects.equalsBy(this, other, Point3D::x, Point3D::y, Point3D::z);
      *
      * }
      * }
