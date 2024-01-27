@@ -182,7 +182,7 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
     ignored_loop_nodes[i] = -1;
   }
 
-  int max_vector = Matcher::max_vector_size_autovectorization(T_BYTE);
+  int max_vector = Matcher::max_vector_size_auto_vectorization(T_BYTE);
 
   // Process the loop, some/all of the stack entries will not be in order, ergo
   // need to preprocess the ignored initial state before we process the loop
@@ -296,7 +296,7 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
 
       if (is_java_primitive(bt) == false) continue;
 
-      int cur_max_vector = Matcher::max_vector_size_autovectorization(bt);
+      int cur_max_vector = Matcher::max_vector_size_auto_vectorization(bt);
 
       // If a max vector exists which is not larger than _local_loop_unroll_factor
       // stop looking, we already have the max vector to map to.
@@ -794,13 +794,13 @@ int SuperWord::get_vw_bytes_special(MemNode* s) {
       }
     }
     if (should_combine_adjacent) {
-      vw = MIN2(Matcher::max_vector_size_autovectorization(btype)*type2aelembytes(btype), vw * 2);
+      vw = MIN2(Matcher::max_vector_size_auto_vectorization(btype)*type2aelembytes(btype), vw * 2);
     }
   }
 
   // Check for special case where there is a type conversion between different data size.
   int vectsize = max_vector_size_in_def_use_chain(s);
-  if (vectsize < Matcher::max_vector_size_autovectorization(btype)) {
+  if (vectsize < Matcher::max_vector_size_auto_vectorization(btype)) {
     vw = MIN2(vectsize * type2aelembytes(btype), vw);
   }
 
@@ -990,8 +990,8 @@ bool SuperWord::stmts_can_pack(Node* s1, Node* s2, int align) {
   if(!is_java_primitive(bt1) || !is_java_primitive(bt2))
     return false;
   BasicType longer_bt = longer_type_for_conversion(s1);
-  if (Matcher::max_vector_size_autovectorization(bt1) < 2 ||
-      (longer_bt != T_ILLEGAL && Matcher::max_vector_size_autovectorization(longer_bt) < 2)) {
+  if (Matcher::max_vector_size_auto_vectorization(bt1) < 2 ||
+      (longer_bt != T_ILLEGAL && Matcher::max_vector_size_auto_vectorization(longer_bt) < 2)) {
     return false; // No vectors for this type
   }
 
@@ -3073,7 +3073,7 @@ bool SuperWord::construct_bb() {
             // First see if we can map the reduction on the given system we are on, then
             // make a data entry operation for each reduction we see.
             BasicType bt = use->bottom_type()->basic_type();
-            if (ReductionNode::implemented(use->Opcode(), Matcher::max_vector_size_autovectorization(bt), bt)) {
+            if (ReductionNode::implemented(use->Opcode(), Matcher::max_vector_size_auto_vectorization(bt), bt)) {
               reduction_uses++;
             }
           }
@@ -3227,10 +3227,10 @@ int SuperWord::max_vector_size_in_def_use_chain(Node* n) {
     vt = (newt == T_ILLEGAL) ? vt : newt;
   }
 
-  int max = Matcher::max_vector_size_autovectorization(vt);
+  int max = Matcher::max_vector_size_auto_vectorization(vt);
   // If now there is no vectors for the longest type, the nodes with the longest
   // type in the def-use chain are not packed in SuperWord::stmts_can_pack.
-  return max < 2 ? Matcher::max_vector_size_autovectorization(bt) : max;
+  return max < 2 ? Matcher::max_vector_size_auto_vectorization(bt) : max;
 }
 
 //-------------------------compute_vector_element_type-----------------------
