@@ -423,7 +423,7 @@ test_GetLocal(jvmtiEnv *jvmti, JNIEnv *jni, jthread cthread, jthread vthread, co
                " to return JVMTI_ERROR_INVALID_SLOT or JVMTI_ERROR_TYPE_MISMATCH");
   }
 
-  // #5: Test JVMTI GetLocalObject function with nullptr value_ptr
+  // #5: Test JVMTI GetLocalObject function with null value_ptr
   err = jvmti->GetLocalObject(vthread, depth, SlotObj, nullptr);
   if (err != JVMTI_ERROR_NULL_POINTER) {
     LOG("JVMTI GetLocalObject with null method_ptr returned error: %d\n", err);
