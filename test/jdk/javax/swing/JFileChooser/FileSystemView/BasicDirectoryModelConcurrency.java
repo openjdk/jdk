@@ -28,6 +28,7 @@ public final class BasicDirectoryModelConcurrency {
             new AtomicReference<>();
 
     public static void main(String[] args) throws Throwable {
+        long timeStart = System.currentTimeMillis();
         final Path temp = Files.createTempDirectory("fileChooser-concurrency");
         final CyclicBarrier start = new CyclicBarrier(NUMBER_OF_THREADS);
         final CyclicBarrier end = new CyclicBarrier(NUMBER_OF_THREADS + 1);
@@ -59,6 +60,8 @@ public final class BasicDirectoryModelConcurrency {
             deleteFiles(temp);
             Files.delete(temp);
         }
+        long diff = System.currentTimeMillis() - timeStart;
+        System.out.printf("Duration: %,d\n", diff);
         if (exception.get() != null) {
             throw exception.get();
         }
