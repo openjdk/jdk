@@ -501,7 +501,31 @@ public final class Objects {
      * If any of the arguments are {@code null}, a {@code NullPointerException}
      * will be thrown. If any of the functions inside of {@code rest} are
      * {@code null}, a {@code NullPointerException} *may* be thrown, depending on
-     * if this function short-circuits prior to reaching the {@code null} function.
+     * whether or not this function short-circuits prior to reaching the 
+     * {@code null} function in {@code rest}.
+     * 
+     * Here is an example.
+     * 
+     * {@snippet :
+     * 
+     * record Point3D(int x, int y, int z) {}
+     * 
+     * final var a = new Point3D(1, 2, 3);
+     * final var b = new Point3D(1, 24, 3);
+     *
+     * //Always a NPE -- the first function can never be null!
+     * System.out.println(equalsBy(a, b, null, Point3D::y, Point3D::z));
+     *
+     * //NPE -- the first function returned an equivalent value, so we try
+     * //the second function, only to find out that it is null. So, NPE.
+     * System.out.println(equalsBy(a, b, Point3D::x, null, Point3D::z));
+     *
+     * //Returns false -- We short circuit early because, while Point3D::x
+     * //returned true, Point3D::y returned false. Therefore, no need to
+     * //apply the final function, thus avoiding the NPE.
+     * System.out.println(equalsBy(a, b, Point3D::x, Point3D::y, null));
+     *
+     * }
      *
      * Value equivalence is determined by calling {@link Objects#equals equals} on
      * the values produced by passing in {@code a} and {@code b} to the given
@@ -522,6 +546,7 @@ public final class Objects {
      *     
      *     return obj instanceof Point3D other 
      *             && Objects.equalsBy(this, other, Point3D::getX, Point3D::getY, Point3D::getZ);
+     * 
      * }
      * }
      *
