@@ -7,6 +7,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.LongStream;
 
 import javax.swing.JFileChooser;
@@ -21,10 +22,15 @@ public final class BasicDirectoryModelConcurrency {
     private static final int NUMBER_OF_THREADS = 5;
     public static final int NUMBER_OF_REPEATS = 2_000;
 
-    public static void main(String[] args) throws Exception {
+    private static final List<Thread> threads = new ArrayList<>(NUMBER_OF_THREADS);
+
+    private static final AtomicReference<Throwable> exception =
+            new AtomicReference<>();
+
+    public static void main(String[] args) throws Throwable {
         final Path temp = Files.createTempDirectory("fileChooser-concurrency");
-        final CyclicBarrier barrier = new CyclicBarrier(NUMBER_OF_THREADS);
-        final List<Thread> threads = new ArrayList<>(NUMBER_OF_THREADS);
+        final CyclicBarrier start = new CyclicBarrier(NUMBER_OF_THREADS);
+        final CyclicBarrier end = new CyclicBarrier(NUMBER_OF_THREADS + 1);
 
         final Timer timer = new Timer("File creator");
 
@@ -35,16 +41,16 @@ public final class BasicDirectoryModelConcurrency {
 
             int counter = NUMBER_OF_THREADS;
             while (counter-- > 0) {
-                Thread thread = new Thread(new Scanner(barrier, fc));
+                Thread thread = new Thread(new Scanner(start, end, fc));
                 threads.add(thread);
                 thread.start();
             }
 
             timer.scheduleAtFixedRate(new CreateFilesTimerTask(temp),
-                                      5, 500);
+                                      0, 500);
 
-            threads.forEach(BasicDirectoryModelConcurrency::join);
-        } catch (Exception e) {
+            end.await();
+        } catch (Throwable e) {
             threads.forEach(Thread::interrupt);
             throw e;
         } finally {
@@ -53,42 +59,50 @@ public final class BasicDirectoryModelConcurrency {
             deleteFiles(temp);
             Files.delete(temp);
         }
+        if (exception.get() != null) {
+            throw exception.get();
+        }
     }
 
-    private record Scanner(CyclicBarrier barrier, JFileChooser fileChooser)
+    private record Scanner(CyclicBarrier start,
+                           CyclicBarrier end,
+                           JFileChooser fileChooser)
             implements Runnable {
 
         @Override
         public void run() {
             try {
-                barrier.await();
-            } catch (InterruptedException | BrokenBarrierException e) {
-                throw new RuntimeException(e);
+                start.await();
+
+                int counter = 0;
+                try {
+                    do {
+                        fileChooser.rescanCurrentDirectory();
+                        Thread.sleep((long) (Math.random() * 100));
+                    } while (++counter < NUMBER_OF_REPEATS
+                             && !Thread.interrupted());
+                } catch (InterruptedException e) {
+                    // Just exit the loop
+                }
+            } catch (Throwable throwable) {
+                handleException(throwable);
+            } finally {
+                try {
+                    end.await();
+                } catch (InterruptedException | BrokenBarrierException e) {
+                    handleException(e);
+                }
             }
-
-            int counter = 0;
-            do {
-                fileChooser.rescanCurrentDirectory();
-                delay((long) (Math.random() * 100));
-            } while (++counter < NUMBER_OF_REPEATS
-                     && !Thread.currentThread().isInterrupted());
         }
     }
 
-    private static void delay(long delay) {
-        try {
-            Thread.sleep(delay);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+    private static void handleException(Throwable throwable) {
+        if (!exception.compareAndSet(null, throwable)) {
+            exception.get().addSuppressed(throwable);
         }
-    }
-
-    private static void join(Thread thread) {
-        try {
-            thread.join();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+        threads.stream()
+               .filter(t -> t != Thread.currentThread())
+               .forEach(Thread::interrupt);
     }
 
     private static void createFiles(final Path parent) {
@@ -130,9 +144,13 @@ public final class BasicDirectoryModelConcurrency {
 
         @Override
         public void run() {
-            int count = (int) (Math.random() * 20);
-            while (count-- > 0) {
-                createFile(temp.resolve((++no) + ".file"));
+            try {
+                int count = (int) (Math.random() * 20);
+                while (count-- > 0) {
+                    createFile(temp.resolve((++no) + ".file"));
+                }
+            } catch (Throwable t) {
+                handleException(t);
             }
         }
     }
