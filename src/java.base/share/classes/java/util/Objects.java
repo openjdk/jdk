@@ -573,19 +573,19 @@ public final class Objects {
     @SafeVarargs
     public static <T> boolean equalsBy(T a, T b, Function<? super T, ?> first, Function<? super T, ?>... rest) {
 
-        requireNonNull(a);
-        requireNonNull(b);
-        requireNonNull(first);
+        requireNonNull(a, "Objects.equalsBy cannot execute unless the first object being checked is non-null!");
+        requireNonNull(b, "Objects.equalsBy cannot execute unless the second object being checked is non-null!");
+        requireNonNull(first, "Objects.equalsBy cannot execute unless the first function being applied is non-null!");
 
         if (!equals(first.apply(a), first.apply(b))) {
             return false;
         }
 
-        requireNonNull(rest);
+        requireNonNull(rest, "Objects.equalsBy cannot iterate through a null array of functions!");
 
         for (final var function : rest) {
 
-            requireNonNull(function);
+            requireNonNull(function, "Objects.equalsBy cannot apply a null function!");
 
             final var aValue = function.apply(a);
             final var bValue = function.apply(b);
