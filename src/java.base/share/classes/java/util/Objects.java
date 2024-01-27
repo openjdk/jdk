@@ -498,11 +498,12 @@ public final class Objects {
      * when they are passed in as parameters to {@code first} and the functions of
      * {@code rest}, and {@code false} otherwise.}
      *
-     * If any of the arguments are {@code null}, a {@code NullPointerException}
-     * will be thrown. If any of the functions inside of {@code rest} are
-     * {@code null}, a {@code NullPointerException} *may* be thrown, depending on
-     * whether or not this function short-circuits prior to reaching the 
-     * {@code null} function in {@code rest}.
+     * If {@code a}, {@code b}, or {@code first} are {@code null}, a 
+     * {@code NullPointerException} will be thrown. If {@code rest} (or any of
+     * the functions inside of {@code rest}) are {@code null}, a
+     * {@code NullPointerException} *may* be thrown, depending on
+     * whether or not this function short-circuits prior to reaching {@code rest},
+     * or the {@code null} function in {@code rest}.
      * 
      * Here is an example.
      * 
@@ -524,6 +525,17 @@ public final class Objects {
      * //returned true, Point3D::y returned false. Therefore, no need to
      * //apply the final function, thus avoiding the NPE.
      * System.out.println(equalsBy(a, b, Point3D::x, Point3D::y, null));
+     *
+     * final var c = new Point3D(2, 123, 123);
+     *
+     * //Returns false -- We short circuit on first because Point3D::x
+     * //returned false. Therefore, no need to apply the null function in
+     * //rest, thus avoiding the NPE.
+     * System.out.println(equalsBy(a, c, Point3D::x, null, Point3D::z));
+     *
+     * //Returns false -- Same logic as the previous example, but this time,
+     * //rest itself is null.
+     * System.out.println(equalsBy(a, c, Point3D::x, null, Point3D::z));
      *
      * }
      *
@@ -563,11 +575,12 @@ public final class Objects {
         requireNonNull(a);
         requireNonNull(b);
         requireNonNull(first);
-        requireNonNull(rest);
 
         if (!equals(first.apply(a), first.apply(b))) {
             return false;
         }
+
+        requireNonNull(rest);
 
         for (final var function : rest) {
             final var aValue = function.apply(a);
