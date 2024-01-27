@@ -449,7 +449,7 @@ private:
   bool isomorphic(Node* s1, Node* s2);
   // Is there no data path from s1 to s2 or s2 to s1?
   bool independent(Node* s1, Node* s2);
-  // Are all nodes in nodes mutually independent?
+  // Are all nodes in nodes list mutually independent?
   bool mutually_independent(Node_List* nodes) const;
   // For a node pair (s1, s2) which is isomorphic and independent,
   // do s1 and s2 have similar input edges?

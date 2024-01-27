@@ -1107,7 +1107,7 @@ bool SuperWord::independent(Node* s1, Node* s2) {
   return true; // not found -> independent
 }
 
-// Are all nodes in nodes mutually independent?
+// Are all nodes in nodes list mutually independent?
 // We could query independent(s1, s2) for all pairs, but that results
 // in O(size * size) graph traversals. We can do it all in one BFS!
 // Start the BFS traversal at all nodes from the nodes list. Traverse
