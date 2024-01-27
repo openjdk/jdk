@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -498,19 +498,19 @@ public final class Objects {
      * when they are passed in as parameters to {@code first} and the functions of
      * {@code rest}, and {@code false} otherwise.}
      *
-     * If {@code a}, {@code b}, or {@code first} are {@code null}, a 
+     * If {@code a}, {@code b}, or {@code first} are {@code null}, a
      * {@code NullPointerException} will be thrown. If {@code rest} (or any of
      * the functions inside of {@code rest}) are {@code null}, a
      * {@code NullPointerException} *may* be thrown, depending on
      * whether or not this function short-circuits prior to reaching {@code rest},
      * or the {@code null} function in {@code rest}.
-     * 
+     *
      * Here is an example.
-     * 
+     *
      * {@snippet :
-     * 
+     *
      * record Point3D(int x, int y, int z) {}
-     * 
+     *
      * final var a = new Point3D(1, 2, 3);
      * final var b = new Point3D(1, 24, 3);
      *
@@ -548,17 +548,17 @@ public final class Objects {
      *
      * {@snippet :
      * @Override public boolean equals(Object obj) {
-     *     
+     *
      *     //Assume that there's a class Point3D with the fields int x, int y, and int z.
      *     //Also assume that each field has an accompanying getter.
      *
      *     if (this == obj) {
      *         return true;
-     *     } 
-     *     
-     *     return obj instanceof Point3D other 
+     *     }
+     *
+     *     return obj instanceof Point3D other
      *             && Objects.equalsBy(this, other, Point3D::getX, Point3D::getY, Point3D::getZ);
-     * 
+     *
      * }
      * }
      *
