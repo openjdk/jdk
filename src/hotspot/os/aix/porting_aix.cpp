@@ -911,14 +911,12 @@ struct handletableentry{
     dev64_t devid;
     uint    refcount;
 };
-
 constexpr unsigned init_num_handles = 128;
 static unsigned max_handletable = 0;
 static unsigned g_handletable_used = 0;
 // We start with an empty array. At first use we will dynamically allocate memory for 128 entries.
 // If this table is full we dynamically reallocate a memory reagion of double size, and so on.
 static struct handletableentry* p_handletable = nullptr;
-
 
 // get the library search path burned in to the executable file during linking
 // If the libpath cannot be retrieved return an empty path
