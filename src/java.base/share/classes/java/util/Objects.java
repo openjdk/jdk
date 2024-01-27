@@ -562,15 +562,16 @@ public final class Objects {
      * }
      * }
      *
-     * @param a the first object to be compared for equality
-     * @param b the second object to be compared for equality
+     * @param <T> the type of the objects being checked for equality
+     * @param a the first object to be checked for equality
+     * @param b the second object to be checked for equality
      * @param first the first function to be applied to {@code a} and {@code b}
      * @param rest the rest of the functions to be applied to {@code a} and {@code b}
      * @throws NullPointerException if any of the arguments are {@code null} and (potentially) if {@code rest} contains a {@code null}
      * @since 23
      */
     @SafeVarargs
-    public static <T,R> boolean equalsBy(T a, T b, Function<? super T, ? extends R> first, Function<? super T, ? extends R>... rest) {
+    public static <T> boolean equalsBy(T a, T b, Function<? super T, ?> first, Function<? super T, ?>... rest) {
 
         requireNonNull(a);
         requireNonNull(b);
