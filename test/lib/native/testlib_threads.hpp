@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef TEST_LIB_NATIVE_THREAD_H
-#define TEST_LIB_NATIVE_THREAD_H
+#ifndef TEST_LIB_NATIVE_THREAD_HPP
+#define TEST_LIB_NATIVE_THREAD_HPP
 
 // Header only library for using threads in tests
 
@@ -99,4 +99,4 @@ void run_in_new_thread_and_join(PROCEDURE proc, void* context) {
 
 }
 
-#endif // TEST_LIB_NATIVE_THREAD_H
+#endif // TEST_LIB_NATIVE_THREAD_HPP

@@ -21,7 +21,7 @@
  * questions.
  */
 
-#include "testlib_threads.h"
+#include "testlib_threads.hpp"
 
 #include "shared.h"
 
