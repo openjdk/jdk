@@ -33,8 +33,11 @@ import java.io.File;
 import java.io.RandomAccessFile;
 import java.io.UncheckedIOException;
 import java.lang.ref.Cleaner.Cleanable;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.nio.file.InvalidPathException;
+import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.Files;
 import java.util.ArrayDeque;
@@ -67,6 +70,7 @@ import jdk.internal.util.OperatingSystem;
 import jdk.internal.perf.PerfCounter;
 import jdk.internal.ref.CleanerFactory;
 import jdk.internal.vm.annotation.Stable;
+import sun.nio.ch.FileChannelImpl;
 import sun.nio.cs.UTF_8;
 import sun.nio.fs.DefaultFileSystemProvider;
 import sun.security.action.GetPropertyAction;
@@ -319,7 +323,7 @@ public class ZipFile implements ZipConstants, Closeable {
      * @since 1.7
      */
     public String getComment() {
-        synchronized (this) {
+        try {
             ensureOpen();
             if (res.zsrc.comment == null) {
                 return null;
@@ -331,6 +335,8 @@ public class ZipFile implements ZipConstants, Closeable {
             } catch (IllegalArgumentException iae) {
                 return null;
             }
+        } catch (RuntimeException ex) {
+            throw rethrowExceptionWithOpenCheck(ex);
         }
     }
 
@@ -345,14 +351,15 @@ public class ZipFile implements ZipConstants, Closeable {
     public ZipEntry getEntry(String name) {
         Objects.requireNonNull(name, "name");
         ZipEntry entry = null;
-        synchronized (this) {
-            ensureOpen();
+        try {
             int pos = res.zsrc.getEntryPos(name, true);
             if (pos != -1) {
                 entry = getZipEntry(name, pos);
             }
+            return entry;
+        } catch (RuntimeException ex) {
+            throw rethrowExceptionWithOpenCheck(ex);
         }
-        return entry;
     }
 
     /**
@@ -384,7 +391,8 @@ public class ZipFile implements ZipConstants, Closeable {
         Set<InputStream> istreams = res.istreams;
         synchronized (this) {
             ensureOpen();
-            if (Objects.equals(lastEntryName, entry.name)) {
+            // == operator is sufficient as both strings should come from the same entry for typical usage
+            if (lastEntryName == entry.name) {
                 pos = lastEntryPos;
             } else {
                 pos = zsrc.getEntryPos(entry.name, false);
@@ -394,28 +402,28 @@ public class ZipFile implements ZipConstants, Closeable {
             }
             in = new ZipFileInputStream(zsrc.cen, pos);
             switch (CENHOW(zsrc.cen, pos)) {
-                case STORED:
-                    synchronized (istreams) {
-                        istreams.add(in);
-                    }
-                    return in;
-                case DEFLATED:
-                    // Inflater likes a bit of slack
-                    // MORE: Compute good size for inflater stream:
-                    long size = CENLEN(zsrc.cen, pos) + 2;
-                    if (size > 65536) {
-                        size = 8192;
-                    }
-                    if (size <= 0) {
-                        size = 4096;
-                    }
-                    InputStream is = new ZipFileInflaterInputStream(in, res, (int) size);
-                    synchronized (istreams) {
-                        istreams.add(is);
-                    }
-                    return is;
-                default:
-                    throw new ZipException("invalid compression method");
+            case STORED:
+                synchronized (istreams) {
+                    istreams.add(in);
+                }
+                return in;
+            case DEFLATED:
+                // Inflater likes a bit of slack
+                // MORE: Compute good size for inflater stream:
+                long size = CENLEN(zsrc.cen, pos) + 2;
+                if (size > 65536) {
+                    size = 8192;
+                }
+                if (size <= 0) {
+                    size = 4096;
+                }
+                InputStream is = new ZipFileInflaterInputStream(in, res, (int) size);
+                synchronized (istreams) {
+                    istreams.add(is);
+                }
+                return is;
+            default:
+                throw new ZipException("invalid compression method");
             }
         }
     }
@@ -870,12 +878,6 @@ public class ZipFile implements ZipConstants, Closeable {
         }
     }
 
-    private void ensureOpenOrZipException() throws IOException {
-        if (closeRequested) {
-            throw new ZipException("ZipFile closed");
-        }
-    }
-
     /*
      * Inner class implementing the input stream used to read a
      * (possibly compressed) ZIP file entry.
@@ -944,25 +946,29 @@ public class ZipFile implements ZipConstants, Closeable {
          * the entry data offset.
          */
         private long initDataOffset() throws IOException {
-            if (pos <= 0) {
-                byte[] loc = new byte[LOCHDR];
-                pos = -pos;
-                int len = ZipFile.this.res.zsrc.readFullyAt(loc, 0, loc.length, pos);
-                if (len != LOCHDR) {
-                    throw new ZipException("ZipFile error reading zip file");
+            try {
+                if (pos <= 0) {
+                    byte[] loc = new byte[LOCHDR];
+                    pos = -pos;
+                    int len = ZipFile.this.res.zsrc.readFullyAt(loc, 0, loc.length, pos);
+                    if (len != LOCHDR) {
+                        throw new ZipException("ZipFile error reading zip file");
+                    }
+                    if (LOCSIG(loc) != LOCSIG) {
+                        throw new ZipException("ZipFile invalid LOC header (bad signature)");
+                    }
+                    pos += LOCHDR + LOCNAM(loc) + LOCEXT(loc);
+                    startingPos = pos; // Save starting position for the entry
                 }
-                if (LOCSIG(loc) != LOCSIG) {
-                    throw new ZipException("ZipFile invalid LOC header (bad signature)");
-                }
-                pos += LOCHDR + LOCNAM(loc) + LOCEXT(loc);
-                startingPos = pos; // Save starting position for the entry
+                return pos;
             }
-            return pos;
+            catch (RuntimeException ex) {
+                throw rethrowIOExceptionWithOpenCheck(ex);
+            }
         }
 
         public int read(byte[] b, int off, int len) throws IOException {
-            synchronized (ZipFile.this) {
-                ensureOpenOrZipException();
+            try {
                 initDataOffset();
                 if (rem == 0) {
                     return -1;
@@ -978,11 +984,14 @@ public class ZipFile implements ZipConstants, Closeable {
                     pos += len;
                     rem -= len;
                 }
+                if (rem == 0) {
+                    close();
+                }
+                return len;
             }
-            if (rem == 0) {
-                close();
+            catch (RuntimeException ex) {
+                throw rethrowIOExceptionWithOpenCheck(ex);
             }
-            return len;
         }
 
         public int read() throws IOException {
@@ -995,25 +1004,23 @@ public class ZipFile implements ZipConstants, Closeable {
         }
 
         public long skip(long n) throws IOException {
-            synchronized (ZipFile.this) {
-                initDataOffset();
-                long newPos = pos + n;
-                if (n > 0) {
-                    // If we overflowed adding the skip value or are moving
-                    // past EOF, set the skip value to number of bytes remaining
-                    // to reach EOF
-                    if (newPos < 0 || n > rem) {
-                        n = rem;
-                    }
-                } else if (newPos < startingPos) {
-                    // Tried to position before BOF so set position to the
-                    // BOF and return the number of bytes we moved backwards
-                    // to reach BOF
-                    n = startingPos - pos;
+            initDataOffset();
+            long newPos = pos + n;
+            if (n > 0) {
+                // If we overflowed adding the skip value or are moving
+                // past EOF, set the skip value to number of bytes remaining
+                // to reach EOF
+                if (newPos < 0 || n > rem) {
+                    n = rem;
                 }
-                pos += n;
-                rem -= n;
+            } else if (newPos < startingPos) {
+                // Tried to position before BOF so set position to the
+                // BOF and return the number of bytes we moved backwards
+                // to reach BOF
+                n = startingPos - pos;
             }
+            pos += n;
+            rem -= n;
             if (rem == 0) {
                 close();
             }
@@ -1113,6 +1120,22 @@ public class ZipFile implements ZipConstants, Closeable {
         }
     }
 
+    private <X extends Exception> X rethrowExceptionWithOpenCheck(X ex)
+    {
+        if (closeRequested) {
+            throw new IllegalStateException("ZipFile is closed");
+        }
+        return ex;
+    }
+
+    private <X extends Exception> X rethrowIOExceptionWithOpenCheck(X ex) throws IOException
+    {
+        if (closeRequested) {
+            throw new ZipException("ZipFile closed");
+        }
+        return ex;
+    }
+
     /**
      * Returns the value of the System property which indicates whether the
      * Extra ZIP64 validation should be disabled.
@@ -1190,7 +1213,7 @@ public class ZipFile implements ZipConstants, Closeable {
 
         private int refs = 1;
 
-        private RandomAccessFile zfile;      // zfile of the underlying ZIP file
+        private FileChannel zfile;           // zfile of the underlying zip file
         private byte[] cen;                  // CEN & ENDHDR
         private long locpos;                 // position of first LOC header (usually 0)
         private byte[] comment;              // ZIP file comment
@@ -1550,14 +1573,15 @@ public class ZipFile implements ZipConstants, Closeable {
             if (toDelete) {
                 if (OperatingSystem.isWindows()) {
                     this.zfile = SharedSecrets.getJavaIORandomAccessFileAccess()
-                                              .openAndDelete(key.file, "r");
+                                              .openAndDelete(key.file, "r").getChannel();
                 } else {
-                    this.zfile = new RandomAccessFile(key.file, "r");
+                    this.zfile = FileChannel.open(key.file.toPath(), StandardOpenOption.READ);
                     key.file.delete();
                 }
             } else {
-                this.zfile = new RandomAccessFile(key.file, "r");
+                this.zfile = FileChannel.open(key.file.toPath(), StandardOpenOption.READ);
             }
+            ((FileChannelImpl) this.zfile).setUninterruptible();
             try {
                 initCEN(-1);
                 byte[] buf = new byte[4];
@@ -1587,26 +1611,23 @@ public class ZipFile implements ZipConstants, Closeable {
         private final int readFullyAt(byte[] buf, int off, int len, long pos)
             throws IOException
         {
-            synchronized (zfile) {
-                zfile.seek(pos);
-                int N = len;
-                while (N > 0) {
-                    int n = Math.min(BUF_SIZE, N);
-                    zfile.readFully(buf, off, n);
-                    off += n;
-                    N -= n;
+            ByteBuffer byteBuf = ByteBuffer.wrap(buf, off, len);
+            long currentPos = pos;
+            while (byteBuf.hasRemaining()) {
+                int n = zfile.read(byteBuf, currentPos);
+                if (n <= 0) {
+                    throw new IOException("Unable to read zip file: pos=" + currentPos + " len=" + byteBuf.remaining());
                 }
-                return len;
+                off += n;
+                currentPos += n;
             }
+            return len;
         }
 
         private final int readAt(byte[] buf, int off, int len, long pos)
             throws IOException
         {
-            synchronized (zfile) {
-                zfile.seek(pos);
-                return zfile.read(buf, off, len);
-            }
+            return zfile.read(ByteBuffer.wrap(buf, off, len), pos);
         }
 
 
@@ -1624,7 +1645,7 @@ public class ZipFile implements ZipConstants, Closeable {
          * was not found or an error occurred.
          */
         private End findEND() throws IOException {
-            long ziplen = zfile.length();
+            long ziplen = zfile.size();
             if (ziplen <= 0)
                 zerror("zip file is empty");
             End end = new End();
