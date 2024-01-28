@@ -30,7 +30,7 @@
 #include "agent_common.hpp"
 
 #include "JVMTITools.h"
-#include "jvmti_tools.h"
+#include "jvmti_tools.hpp"
 #include "nsk_tools.h"
 
 extern "C" {

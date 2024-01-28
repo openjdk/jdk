@@ -27,7 +27,7 @@
 
 #include "nsk_tools.h"
 #include "JVMTITools.h"
-#include "jvmti_tools.h"
+#include "jvmti_tools.hpp"
 #include "jni_tools.h"
 
 extern "C" {

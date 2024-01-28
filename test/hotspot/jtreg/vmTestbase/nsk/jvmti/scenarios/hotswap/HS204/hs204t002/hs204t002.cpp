@@ -25,7 +25,7 @@
 #include "agent_common.hpp"
 #include <jni.h>
 #include <string.h>
-#include "jvmti_tools.h"
+#include "jvmti_tools.hpp"
 #include "JVMTITools.h"
 /*
  *1. Enable event ClassPrepare.

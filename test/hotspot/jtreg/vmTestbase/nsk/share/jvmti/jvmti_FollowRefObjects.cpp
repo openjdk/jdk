@@ -24,7 +24,7 @@
 #include <string.h>
 #include <jvmti.h>
 #include "jni_tools.h"
-#include "jvmti_tools.h"
+#include "jvmti_tools.hpp"
 #include "jvmti_FollowRefObjects.hpp"
 
 extern "C" {
