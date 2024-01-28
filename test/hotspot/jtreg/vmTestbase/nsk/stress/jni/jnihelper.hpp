@@ -26,7 +26,7 @@
 // checked malloc to trap OOM conditions
 static void* c_malloc(JNIEnv* env, size_t size) {
   void* ret = malloc(size);
-  if (ret == NULL)
+  if (ret == nullptr)
     env->FatalError("malloc failed");
   return ret;
 }
