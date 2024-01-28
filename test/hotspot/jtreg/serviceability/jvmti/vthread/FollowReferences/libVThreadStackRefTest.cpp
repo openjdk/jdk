@@ -23,7 +23,7 @@
 
 #include <jni.h>
 #include <jvmti.h>
-#include <jvmti_common.h>
+#include <jvmti_common.hpp>
 #include <atomic>
 #include <string.h>
 

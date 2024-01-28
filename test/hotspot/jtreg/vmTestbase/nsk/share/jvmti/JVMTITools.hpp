@@ -26,6 +26,6 @@
 
 #include "jvmti.h"
 
-#include "jvmti_common.h"
+#include "jvmti_common.hpp"
 
 #endif /* _NSK_SHARE_JVMTI_JVMTITOOLS_HPP_ */

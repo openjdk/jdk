@@ -26,7 +26,7 @@
 #include <jni.h>
 #include <jvmti.h>
 
-#include "jvmti_common.h"
+#include "jvmti_common.hpp"
 #include "jvmti_thread.hpp"
 
 

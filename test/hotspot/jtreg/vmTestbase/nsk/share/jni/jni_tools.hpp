@@ -34,7 +34,7 @@
 
 /*************************************************************/
 
-#include "jvmti_common.h"
+#include "jvmti_common.hpp"
 
 /* printf format specifier for jlong */
 #ifdef _WIN32
