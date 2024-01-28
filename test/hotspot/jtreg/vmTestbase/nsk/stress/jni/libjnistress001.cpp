@@ -26,7 +26,7 @@
 /* Changed from strings.h to string.h for Windows. */
 #include <string.h>
 #include <stdlib.h>
-#include "jnihelper.h"
+#include "jnihelper.hpp"
 
 extern "C" {
 
