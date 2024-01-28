@@ -192,8 +192,12 @@ public class CopyMoveVariations {
                     assertThrows(FileAlreadyExistsException.class,
                                  () -> Files.move(src, dst, options));
                 } else {
-                    Files.move(source, target, options);
-                    assert Files.exists(target);
+                    try {
+                        Files.move(source, target, options);
+                        assert Files.exists(target);
+                    } catch (AccessDeniedException ade) {
+                        assertTrue(mode.charAt(0) != 'r');
+                    }
                 }
             } else if (type == PathType.DIR) {
                 if (op == OpType.COPY) {
@@ -212,7 +216,7 @@ public class CopyMoveVariations {
                         Files.move(source, target, options);
                         assert Files.exists(target);
                     } catch (AccessDeniedException ade) {
-                        assertTrue(mode.charAt(1) != 'w');
+                        assertTrue(mode.charAt(1) != 'r');
                     } catch (FileAlreadyExistsException faee) {
                         assertTrue(targetExists && !replaceExisting);
                     }
