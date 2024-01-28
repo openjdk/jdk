@@ -138,7 +138,7 @@ class VM_Version : public Abstract_VM_Version {
   decl(ext_H           , "h"           ,    ('H' - 'A'), true , NO_UPDATE_DEFAULT)              \
   decl(ext_V           , "v"           ,    ('V' - 'A'), true , UPDATE_DEFAULT(UseRVV))         \
   decl(ext_Zicbom      , "Zicbom"      , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZicbom))      \
-  decl(ext_Zicboz      , "Zicboz"      , RV_NO_FLAG_BIT, true , NO_UPDATE_DEFAULT)              \
+  decl(ext_Zicboz      , "Zicboz"      , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZicboz))      \
   decl(ext_Zicbop      , "Zicbop"      , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZicbop))      \
   decl(ext_Zba         , "Zba"         , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZba))         \
   decl(ext_Zbb         , "Zbb"         , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZbb))         \
@@ -149,9 +149,9 @@ class VM_Version : public Abstract_VM_Version {
   decl(ext_Zicsr       , "Zicsr"       , RV_NO_FLAG_BIT, true , NO_UPDATE_DEFAULT)              \
   decl(ext_Zifencei    , "Zifencei"    , RV_NO_FLAG_BIT, true , NO_UPDATE_DEFAULT)              \
   decl(ext_Zic64b      , "Zic64b"      , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZic64b))      \
-  decl(ext_Ztso        , "Ztso"        , RV_NO_FLAG_BIT, true , NO_UPDATE_DEFAULT)              \
+  decl(ext_Ztso        , "Ztso"        , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZtso))        \
   decl(ext_Zihintpause , "Zihintpause" , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZihintpause)) \
-  decl(ext_Zacas       , "Zacas"       , RV_NO_FLAG_BIT, true , NO_UPDATE_DEFAULT)              \
+  decl(ext_Zacas       , "Zacas"       , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZacas))       \
   decl(mvendorid       , "VendorId"    , RV_NO_FLAG_BIT, false, NO_UPDATE_DEFAULT)              \
   decl(marchid         , "ArchId"      , RV_NO_FLAG_BIT, false, NO_UPDATE_DEFAULT)              \
   decl(mimpid          , "ImpId"       , RV_NO_FLAG_BIT, false, NO_UPDATE_DEFAULT)              \
