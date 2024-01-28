@@ -553,9 +553,10 @@ public class MessageFormat extends Format {
      * The string is constructed from internal information and therefore
      * does not necessarily equal the previously applied pattern.
      *
-     * @implSpec The implementation in {@link MessageFormat} returns a string
-     * that can be used to create a new instance that is semantically equivalent
-     * to this instance.
+     * @implSpec The implementation in {@link MessageFormat} returns a
+     * string that, when passed to a {@code MessageFormat()} constructor
+     * or {@link #applyPattern applyPattern()}, produces an instance that
+     * is semantically equivalent to this instance.
      *
      * @return a pattern representing the current state of the message format
      */
