@@ -64,7 +64,7 @@ public class ClhsdbJstackWithConcurrentLock {
                 if (line.contains(key)) {
                     String[] words = line.split(key + "|[, ]");
                     for (String word : words) {
-                        word = word.replace("<","").replace(">","");
+                        word = word.replace("<", "").replace(">", "");
                         if (word.startsWith("0x")) {
                             addressString = word;
                             break;
