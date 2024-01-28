@@ -23,7 +23,7 @@
 #ifndef NSK_SHARE_JVMTI_AOD_HPP
 #define NSK_SHARE_JVMTI_AOD_HPP
 
-#include <aod.h>
+#include <aod.hpp>
 #include <jvmti.h>
 #include <jvmti_tools.h>
 
