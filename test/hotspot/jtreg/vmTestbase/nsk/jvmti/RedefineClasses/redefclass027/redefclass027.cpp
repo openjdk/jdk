@@ -26,7 +26,7 @@
 #include "jvmti.h"
 #include "agent_common.hpp"
 #include "JVMTITools.hpp"
-#include "jni_tools.h"
+#include "jni_tools.hpp"
 
 extern "C" {
 

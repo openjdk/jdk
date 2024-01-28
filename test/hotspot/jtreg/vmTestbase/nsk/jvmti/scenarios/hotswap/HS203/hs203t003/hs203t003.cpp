@@ -27,7 +27,7 @@
 #include <jni.h>
 #include <string.h>
 #include "jvmti_tools.hpp"
-#include "jni_tools.h"
+#include "jni_tools.hpp"
 #include "JVMTITools.hpp"
 /*
    hs203T003:

@@ -24,7 +24,7 @@
 #define NSK_SHARE_AOD_HPP
 
 #include <jni.h>
-#include <jni_tools.h>
+#include <jni_tools.hpp>
 #include <nsk_tools.h>
 
 extern "C" {

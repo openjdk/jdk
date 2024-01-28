@@ -27,7 +27,7 @@
 #include "agent_common.hpp"
 #include "ExceptionCheckingJniEnv.hpp"
 #include "nsk_tools.h"
-#include "jni_tools.h"
+#include "jni_tools.hpp"
 #include "JVMTITools.hpp"
 #include "jvmti_tools.hpp"
 

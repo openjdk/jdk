@@ -25,7 +25,7 @@
 #include <string.h>
 
 #include "native_thread.hpp"
-#include "jni_tools.h"
+#include "jni_tools.hpp"
 #include "jvmti_tools.hpp"
 
 extern "C" {

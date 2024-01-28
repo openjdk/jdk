@@ -29,7 +29,7 @@
 #include "agent_common.hpp"
 #include <string.h>
 #include "jvmti_tools.hpp"
-#include "jni_tools.h"
+#include "jni_tools.hpp"
 
 extern "C" {
 #define FILE_NAME "nsk/jvmti/scenarios/hotswap/HS301/hs301t002/MyClass"
