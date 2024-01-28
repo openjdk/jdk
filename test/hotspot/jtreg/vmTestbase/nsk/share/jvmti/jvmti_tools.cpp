@@ -33,7 +33,7 @@
 
 /*************************************************************/
 
-#include "nsk_tools.h"
+#include "nsk_tools.hpp"
 #include "jni_tools.hpp"
 #include "jvmti_tools.hpp"
 #include "JVMTITools.hpp"

@@ -21,7 +21,7 @@
  * questions.
  */
 #include "jni.h"
-#include "nsk_tools.h"
+#include "nsk_tools.hpp"
 
 extern "C" {
 

@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <jni.h>
 #include <jni_tools.hpp>
-#include <nsk_tools.h>
+#include <nsk_tools.hpp>
 #include <aod.hpp>
 
 extern "C" {

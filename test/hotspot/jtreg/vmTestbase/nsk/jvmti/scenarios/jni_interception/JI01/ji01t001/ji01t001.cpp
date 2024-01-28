@@ -31,7 +31,7 @@
 
 #include "JVMTITools.hpp"
 #include "jvmti_tools.hpp"
-#include "nsk_tools.h"
+#include "nsk_tools.hpp"
 
 extern "C" {
 

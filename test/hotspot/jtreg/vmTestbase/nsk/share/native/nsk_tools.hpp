@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,7 +160,7 @@ void nsk_printHexBytes(const char indent[], int columns,
 /*************************************************************/
 
 /**
- * Returns str or "<NULL>" if str is NULL; useful for printing strings.
+ * Returns str or "<NULL>" if str is null; useful for printing strings.
  */
 const char* nsk_null_string(const char* str);
 
