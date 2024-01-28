@@ -26,7 +26,7 @@
 #include <string.h>
 #include <stdarg.h>
 #include "jvmti_tools.hpp"
-#include "JVMTITools.h"
+#include "JVMTITools.hpp"
 
 /*
 hs202t002:

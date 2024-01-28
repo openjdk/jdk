@@ -32,7 +32,7 @@
 
 #include "nsk_tools.h"
 #include "jni_tools.h"
-#include "JVMTITools.h"
+#include "JVMTITools.hpp"
 
 
 extern "C" {

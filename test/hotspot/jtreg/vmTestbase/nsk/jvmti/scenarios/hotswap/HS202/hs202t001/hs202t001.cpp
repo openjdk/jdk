@@ -25,7 +25,7 @@
 #include "agent_common.hpp"
 #include <string.h>
 #include "jvmti_tools.hpp"
-#include "JVMTITools.h"
+#include "JVMTITools.hpp"
 /*
     hs202t001:
         1. Set breakpoints in several methods when Object.wait(),

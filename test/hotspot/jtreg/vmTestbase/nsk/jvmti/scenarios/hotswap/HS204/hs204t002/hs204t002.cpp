@@ -26,7 +26,7 @@
 #include <jni.h>
 #include <string.h>
 #include "jvmti_tools.hpp"
-#include "JVMTITools.h"
+#include "JVMTITools.hpp"
 /*
  *1. Enable event ClassPrepare.
  *2. Upon occurrence of ClassPrepare, set a breakpoint in class static

@@ -28,7 +28,7 @@
 #include "agent_common.hpp"
 
 #include "nsk_tools.h"
-#include "JVMTITools.h"
+#include "JVMTITools.hpp"
 #include "jvmti_tools.hpp"
 #include "jni_tools.h"
 

@@ -30,8 +30,8 @@ which provides support for JVMTI tests and accessing JVMTI environment.
         agent_tools.c
         Injector.hpp
         Injector.cpp
-        JVMTITools.h
-        JVMTITools.c
+        JVMTITools.hpp
+        JVMTITools.cpp
 
     Naming conventions:
         macroses:  NSK_JVMTI_*
@@ -135,7 +135,7 @@ or with saving error code:
 
 ---------------------------------------------------------------------------------
 
-JVMTITools.h
+JVMTITools.hpp
 
 Provides set of functions which convert JVMTI binary data to
 a null-terminated character string:

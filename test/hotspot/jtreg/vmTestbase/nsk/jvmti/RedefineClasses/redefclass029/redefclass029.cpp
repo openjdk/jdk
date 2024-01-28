@@ -30,7 +30,7 @@
 
 #include "nsk_tools.h"
 #include "native_thread.hpp"
-#include "JVMTITools.h"
+#include "JVMTITools.hpp"
 #include "jvmti_tools.hpp"
 
 extern "C" {

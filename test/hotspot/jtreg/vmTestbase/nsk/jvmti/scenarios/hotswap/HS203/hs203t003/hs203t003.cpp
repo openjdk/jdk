@@ -28,7 +28,7 @@
 #include <string.h>
 #include "jvmti_tools.hpp"
 #include "jni_tools.h"
-#include "JVMTITools.h"
+#include "JVMTITools.hpp"
 /*
    hs203T003:
    1. Set FieldAccessWatch, FieldModificatoinWatch for a field.
