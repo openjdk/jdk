@@ -1,0 +1,97 @@
+/*
+ * Copyright (c) 2014, 2024, Alibaba Group Holding Limited. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+package gc.parallel;
+
+/**
+ * @test TestAlwaysPreTouchBehavior
+ * @summary Tests AlwaysPreTouch Bahavior, pages of java heap should be pretouched with AlwaysPreTouch enabled. This test reads RSS of test process, which should be bigger than heap size(1g) with AlwaysPreTouch enabled.
+ * @requires os.family == "linux"
+ * @library /test/lib
+ * @run main/othervm -Xmx1g -Xms1g -XX:+UseParallelGC -XX:+AlwaysPreTouch gc.parallel.TestAlwaysPreTouchBehavior
+ */
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadInfo;
+import java.lang.management.ThreadMXBean;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.io.IOException;
+import java.util.*;
+import javax.management.*;
+import java.lang.management.*;
+import jdk.test.lib.Utils;
+import jdk.test.lib.Asserts;
+import java.lang.management.*;
+import java.util.stream.*;
+import java.io.*;
+
+public class TestAlwaysPreTouchBehavior {
+    static final long EXCEPTION_VALUE = -1L;
+    public static long getProcessRssInKb() throws IOException {
+        String pid = ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
+        // Read RSS from /proc/$pid/status. Only avaiable on Linux
+	String processStatusFile = "/proc/" + pid + "/status";
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader(processStatusFile));
+            StringBuilder stringBuilder = new StringBuilder();
+            String line = null;
+            while ((line = reader.readLine()) != null) {
+                if (line.startsWith("VmRSS:")) {
+                    stringBuilder.append(line);
+                    break;
+                }
+            }
+            stringBuilder.deleteCharAt(stringBuilder.length() - 1);
+            reader.close();
+
+            String content = stringBuilder.toString();
+            return Long.valueOf(content.split("\\s+")[1].trim());
+        } catch (Exception e) {
+           return EXCEPTION_VALUE;
+        }
+
+    }
+    public static void main(String [] args) {
+    long rss = 0;
+    Runtime runtime = Runtime.getRuntime();
+    long committedMemory = (runtime.totalMemory()) / 1024; // in kb
+    long base = (long)(committedMemory * 0.9);
+    try {
+       rss = getProcessRssInKb();
+       System.out.println("RSS = " + rss);
+    } catch (Exception e) {
+       rss = EXCEPTION_VALUE;
+    }
+    if (rss == EXCEPTION_VALUE) {
+	System.out.println("cannot get RSS, just skip");
+        return; // Did not get avaiable RSS, just ignore this test
+    } else if (rss < base) {
+        System.out.println("RSS = " + rss + " smaller than committed heap memory");
+    } else {
+	System.out.println("Passed RSS = " + rss + " base value " + base);
+    }
+    Asserts.assertTrue(rss >= base, "heap rss should be bigger than committed heap mem");
+   }
+}
+
