@@ -92,6 +92,13 @@ void VirtualMemoryView::report(VirtualMemory& mem, outputStream* output, size_t 
     RegionStorage& reserved_ranges = mem.reserved_regions.at(space_id);
     OffsetRegionStorage& mapped_ranges = mem.mapped_regions.at(space_id);
     RegionStorage& committed_ranges = mem.committed_regions.at(space_id);
+    // Sort and minimize
+    sort_regions(reserved_ranges);
+    sort_regions(mapped_ranges);
+    sort_regions(committed_ranges);
+    merge_memregions(reserved_ranges);
+    merge_memregions(committed_ranges);
+    merge_mapped(mapped_ranges);
     for (int i = 0; i < reserved_ranges.length(); i++) {
       print_reserved_memory(reserved_ranges.at(i));
     }
@@ -279,7 +286,7 @@ void VirtualMemoryView::initialize(bool is_detailed_mode) {
   heap = register_space("Heap");
 }
 
-void VirtualMemoryView::merge_committed(RegionStorage& ranges) {
+void VirtualMemoryView::merge_memregions(RegionStorage& ranges) {
   RegionStorage merged_ranges;
   int rlen = ranges.length();
   if (rlen <= 1) return;

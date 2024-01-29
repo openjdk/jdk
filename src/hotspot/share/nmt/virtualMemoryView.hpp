@@ -35,13 +35,10 @@
 
 /*
   Remaining issues:
-  1. No VirtualMemorySummary accounting.
-     This is pretty simple. We need to store a VirtualMemorySnapshot for each space (as we need to save the peak values).
-     Then, we need to reset the _reserved and _committed but not _peak_size.
-
-  3. No baseline diffing
+  3. No baseline summary diffing
+  4. No baseline detail diffing
   4. Reporting not part of Reporter class but part of VirtualMemoryView, not too bad.
-  5. Insufficient amount of unit tests
+  5. Insufficient amount of unit tests 
   6. Need to fix includes, copyright stmts etc
 */
 
@@ -211,7 +208,7 @@ private:
   // 1. Their NativeCallStacks are the same
   // 2. Their starts align correctly
   static void merge_ranges(GrowableArray<Range>& ranges);
-  static void merge_committed(RegionStorage& ranges);
+  static void merge_memregions(RegionStorage& ranges);
   static void merge_mapped(OffsetRegionStorage& ranges);
 
   static void sort_regions(GrowableArrayCHeap<VirtualMemoryView::Range, mtNMT>& storage);
