@@ -138,8 +138,8 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
 #ifdef _LP64
     lightweight_unlock(obj, disp_hdr, r15_thread, hdr, slow_case);
 #else
-    // This relies on the implementation of lightweight_unlock knowing that it
-    // will clobber its thread when using EAX.
+    // This relies on the implementation of lightweight_unlock being able to handle
+    // that the reg_rax and thread Register parameters may alias each other.
     get_thread(disp_hdr);
     lightweight_unlock(obj, disp_hdr, disp_hdr, hdr, slow_case);
 #endif

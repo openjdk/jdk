@@ -1311,8 +1311,8 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg) {
 #ifdef _LP64
       lightweight_unlock(obj_reg, swap_reg, r15_thread, header_reg, slow_case);
 #else
-      // This relies on the implementation of lightweight_unlock knowing that it
-      // will clobber its thread when using EAX.
+    // This relies on the implementation of lightweight_unlock being able to handle
+    // that the reg_rax and thread Register parameters may alias each other.
       get_thread(swap_reg);
       lightweight_unlock(obj_reg, swap_reg, swap_reg, header_reg, slow_case);
 #endif
