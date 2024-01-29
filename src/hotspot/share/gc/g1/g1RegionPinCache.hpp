@@ -33,7 +33,7 @@
 // _region_idx on a per thread basis.
 // Keeping such a cache avoids the expensive atomic operations when updating the
 // pin count for the very common case that the application pins and unpins the
-// same object with any interleaving by a garbage collection or pinning/unpinning
+// same object without any interleaving by a garbage collection or pinning/unpinning
 // to an object in another region.
 class G1RegionPinCache : public StackObj {
   uint _region_idx;
