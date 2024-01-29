@@ -59,7 +59,7 @@ public:
 // (1) The first receiver klass and its selected method
 // (2) Itable call metadata
 
-class CompiledICData : public CHeapObj<mtCompiler> {
+class CompiledICData : public CHeapObj<mtCode> {
   friend class VMStructs;
   friend class JVMCIVMStructs;
 

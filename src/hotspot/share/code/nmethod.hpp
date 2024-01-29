@@ -27,6 +27,7 @@
 
 #include "code/compiledMethod.hpp"
 
+class CompiledICData;
 class CompileTask;
 class DepChange;
 class DirectiveSet;
@@ -196,6 +197,7 @@ class nmethod : public CompiledMethod {
   address _verified_entry_point;             // entry point without class check
   address _osr_entry_point;                  // entry point for on stack replacement
 
+  CompiledICData* _compiled_ic_data;
   bool _is_unlinked;
 
   // Shared fields for all nmethod's

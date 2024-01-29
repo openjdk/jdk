@@ -407,18 +407,6 @@ void CompiledMethod::clear_inline_caches() {
   }
 }
 
-// Delete any associated CompiledICData.
-void CompiledMethod::purge_ic_callsites() {
-  ResourceMark rm;
-  RelocIterator iter(this);
-  while(iter.next()) {
-    if (iter.type() == relocInfo::virtual_call_type) {
-      CompiledIC* ic = CompiledIC_at(&iter);
-      delete ic->data();
-    }
-  }
-}
-
 #ifdef ASSERT
 // Check class_loader is alive for this bit of metadata.
 class CheckClass : public MetadataClosure {

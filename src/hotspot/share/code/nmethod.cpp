@@ -640,6 +640,7 @@ nmethod::nmethod(
   ByteSize basic_lock_sp_offset,
   OopMapSet* oop_maps )
   : CompiledMethod(method, "native nmethod", type, nmethod_size, sizeof(nmethod), code_buffer, offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false, true),
+  _compiled_ic_data(nullptr),
   _is_unlinked(false),
   _native_receiver_sp_offset(basic_lock_owner_sp_offset),
   _native_basic_lock_sp_offset(basic_lock_sp_offset),
@@ -784,6 +785,7 @@ nmethod::nmethod(
 #endif
   )
   : CompiledMethod(method, "nmethod", type, nmethod_size, sizeof(nmethod), code_buffer, offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false, true),
+  _compiled_ic_data(nullptr),
   _is_unlinked(false),
   _native_receiver_sp_offset(in_ByteSize(-1)),
   _native_basic_lock_sp_offset(in_ByteSize(-1)),
@@ -1145,6 +1147,8 @@ static void install_post_call_nop_displacement(nmethod* nm, address pc) {
 void nmethod::finalize_relocations() {
   NoSafepointVerifier nsv;
 
+  GrowableArray<NativeMovConstReg*> virtual_call_data;
+
   // Make sure that post call nops fill in nmethod offsets eagerly so
   // we don't have to race with deoptimization
   RelocIterator iter(this);
@@ -1152,11 +1156,22 @@ void nmethod::finalize_relocations() {
     if (iter.type() == relocInfo::virtual_call_type) {
       virtual_call_Relocation* r = iter.virtual_call_reloc();
       NativeMovConstReg* value = nativeMovConstReg_at(r->cached_value());
-      value->set_data((intptr_t)new CompiledICData());
+      virtual_call_data.append(value);
     } else if (iter.type() == relocInfo::post_call_nop_type) {
       post_call_nop_Relocation* const reloc = iter.post_call_nop_reloc();
       address pc = reloc->addr();
       install_post_call_nop_displacement(this, pc);
+    }
+  }
+
+  if (virtual_call_data.length() > 0) {
+    // We allocate a block of CompiledICData per nmethod so the GC can purge this faster.
+    _compiled_ic_data = new CompiledICData[virtual_call_data.length()];
+    CompiledICData* next_data = _compiled_ic_data;
+
+    for (NativeMovConstReg* value : virtual_call_data) {
+      value->set_data((intptr_t)next_data);
+      next_data++;
     }
   }
 }
@@ -1464,7 +1479,7 @@ void nmethod::purge(bool free_code_cache_data, bool unregister_nmethod) {
     ec = next;
   }
 
-  purge_ic_callsites();
+  delete[] _compiled_ic_data;
 
   if (unregister_nmethod) {
     Universe::heap()->unregister_nmethod(this);
