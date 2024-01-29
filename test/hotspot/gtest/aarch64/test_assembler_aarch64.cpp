@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,6 +28,7 @@
 
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
+#include "asm/macroAssembler.hpp"
 #include "compiler/disassembler.hpp"
 #include "memory/resourceArea.hpp"
 #include "unittest.hpp"
@@ -79,6 +80,205 @@ TEST_VM(AssemblerAArch64, validate) {
   }
 
   BufferBlob::free(b);
+}
+
+static void asm_dump(address start, address end) {
+  ResourceMark rm;
+  stringStream ss;
+  ss.print_cr("Insns:");
+  Disassembler::decode(start, end, &ss);
+  printf("%s\n", ss.as_string());
+}
+
+TEST_VM(AssemblerAArch64, merge_dmb) {
+  BufferBlob* b = BufferBlob::create("aarch64Test", 400);
+  CodeBuffer code(b);
+  MacroAssembler _masm(&code);
+
+  {
+    // merge with same type
+    __ membar(Assembler::Membar_mask_bits::StoreStore);
+    __ membar(Assembler::Membar_mask_bits::StoreStore);
+    __ membar(Assembler::Membar_mask_bits::StoreStore);
+    __ nop();
+    __ membar(Assembler::Membar_mask_bits::LoadStore);
+    __ membar(Assembler::Membar_mask_bits::LoadStore);
+    __ membar(Assembler::Membar_mask_bits::LoadStore);
+    __ membar(Assembler::Membar_mask_bits::LoadStore);
+    __ nop();
+    // merge with high rank
+    __ membar(Assembler::Membar_mask_bits::LoadStore);
+    __ membar(Assembler::Membar_mask_bits::LoadStore);
+    __ membar(Assembler::Membar_mask_bits::AnyAny);
+    __ membar(Assembler::Membar_mask_bits::StoreStore);
+    __ membar(Assembler::Membar_mask_bits::StoreStore);
+    __ nop();
+    // merge with different type
+    __ membar(Assembler::Membar_mask_bits::LoadStore);
+    __ membar(Assembler::Membar_mask_bits::StoreStore);
+    __ membar(Assembler::Membar_mask_bits::LoadStore);
+    __ membar(Assembler::Membar_mask_bits::StoreStore);
+  }
+  asm_dump(code.insts()->start(), code.insts()->end());
+  // AlwaysMergeDMB
+  static const unsigned int insns1[] = {
+    0xd5033abf, // dmb.ishst
+    0xd503201f, // nop
+    0xd50339bf, // dmb.ishld
+    0xd503201f, // nop
+    0xd5033bbf, // dmb.ish
+    0xd503201f, // nop
+    0xd5033bbf, // dmb.ish
+  };
+  // !AlwaysMergeDMB
+  static const unsigned int insns2[] = {
+    0xd5033abf, // dmb.ishst
+    0xd503201f, // nop
+    0xd50339bf, // dmb.ishld
+    0xd503201f, // nop
+    0xd5033bbf, // dmb.ish
+    0xd503201f, // nop
+    0xd50339bf, // dmb.ishld
+    0xd5033abf, // dmb.ishst
+  };
+  if (AlwaysMergeDMB) {
+    EXPECT_EQ(code.insts()->size(), (CodeSection::csize_t)(sizeof insns1));
+    asm_check((const unsigned int *)code.insts()->start(), insns1, sizeof insns1 / sizeof insns1[0]);
+  } else {
+    EXPECT_EQ(code.insts()->size(), (CodeSection::csize_t)(sizeof insns2));
+    asm_check((const unsigned int *)code.insts()->start(), insns2, sizeof insns2 / sizeof insns2[0]);
+  }
+
+  BufferBlob::free(b);
+}
+
+TEST_VM(AssemblerAArch64, merge_dmb_block_by_label) {
+  BufferBlob* b = BufferBlob::create("aarch64Test", 400);
+  CodeBuffer code(b);
+  MacroAssembler _masm(&code);
+
+  {
+    Label l;
+    // merge can not cross the label
+    __ membar(Assembler::Membar_mask_bits::StoreStore);
+    __ bind(l);
+    __ membar(Assembler::Membar_mask_bits::StoreStore);
+  }
+  asm_dump(code.insts()->start(), code.insts()->end());
+  static const unsigned int insns[] = {
+    0xd5033abf, // dmb.ishst
+    0xd5033abf, // dmb.ishst
+  };
+  EXPECT_EQ(code.insts()->size(), (CodeSection::csize_t)(sizeof insns));
+  asm_check((const unsigned int *)code.insts()->start(), insns, sizeof insns / sizeof insns[0]);
+
+  BufferBlob::free(b);
+}
+
+TEST_VM(AssemblerAArch64, merge_dmb_after_expand) {
+  ResourceMark rm;
+  BufferBlob* b = BufferBlob::create("aarch64Test", 400);
+  CodeBuffer code(b);
+  code.set_blob(b);
+  MacroAssembler _masm(&code);
+
+  {
+    __ membar(Assembler::Membar_mask_bits::StoreStore);
+    code.insts()->maybe_expand_to_ensure_remaining(50000);
+    __ membar(Assembler::Membar_mask_bits::StoreStore);
+  }
+  asm_dump(code.insts()->start(), code.insts()->end());
+  static const unsigned int insns[] = {
+    0xd5033abf, // dmb.ishst
+  };
+  EXPECT_EQ(code.insts()->size(), (CodeSection::csize_t)(sizeof insns));
+  asm_check((const unsigned int *)code.insts()->start(), insns, sizeof insns / sizeof insns[0]);
+}
+
+TEST_VM(AssemblerAArch64, merge_ldst) {
+  BufferBlob* b = BufferBlob::create("aarch64Test", 400);
+  CodeBuffer code(b);
+  MacroAssembler _masm(&code);
+
+  {
+    Label l;
+    // merge ld/st into ldp/stp
+    __ ldr(r0, Address(sp, 8));
+    __ ldr(r1, Address(sp, 0));
+    __ nop();
+    __ str(r0, Address(sp, 0));
+    __ str(r1, Address(sp, 8));
+    __ nop();
+    __ ldrw(r0, Address(sp, 0));
+    __ ldrw(r1, Address(sp, 4));
+    __ nop();
+    __ strw(r0, Address(sp, 4));
+    __ strw(r1, Address(sp, 0));
+    __ nop();
+    // can not merge
+    __ ldrw(r0, Address(sp, 4));
+    __ ldr(r1, Address(sp, 8));
+    __ nop();
+    __ ldrw(r0, Address(sp, 0));
+    __ ldrw(r1, Address(sp, 8));
+    __ nop();
+    __ str(r0, Address(sp, 0));
+    __ bind(l);                     // block by label
+    __ str(r1, Address(sp, 8));
+    __ nop();
+  }
+  asm_dump(code.insts()->start(), code.insts()->end());
+  static const unsigned int insns1[] = {
+    0xa94003e1, // ldp x1, x0, [sp]
+    0xd503201f, // nop
+    0xa90007e0, // stp x0, x1, [sp]
+    0xd503201f, // nop
+    0x294007e0, // ldp w0, w1, [sp]
+    0xd503201f, // nop
+    0x290003e1, // stp w1, w0, [sp]
+    0xd503201f, // nop
+    0xb94007e0, // ldr w0, [sp, 4]
+    0xf94007e1, // ldr x1, [sp, 8]
+    0xd503201f, // nop
+    0xb94003e0, // ldr w0, [sp]
+    0xb9400be1, // ldr w1, [sp, 8]
+    0xd503201f, // nop
+    0xf90003e0, // str x0, [sp]
+    0xf90007e1, // str x1, [sp, 8]
+    0xd503201f, // nop
+  };
+  EXPECT_EQ(code.insts()->size(), (CodeSection::csize_t)(sizeof insns1));
+  asm_check((const unsigned int *)code.insts()->start(), insns1, sizeof insns1 / sizeof insns1[0]);
+
+  BufferBlob::free(b);
+}
+
+TEST_VM(AssemblerAArch64, merge_ldst_after_expand) {
+  ResourceMark rm;
+  BufferBlob* b = BufferBlob::create("aarch64Test", 400);
+  CodeBuffer code(b);
+  code.set_blob(b);
+  MacroAssembler _masm(&code);
+
+  {
+    __ ldr(r0, Address(sp, 8));
+    code.insts()->maybe_expand_to_ensure_remaining(10000);
+    __ ldr(r1, Address(sp, 0));
+    __ nop();
+    __ str(r0, Address(sp, 0));
+    code.insts()->maybe_expand_to_ensure_remaining(100000);
+    __ str(r1, Address(sp, 8));
+    __ nop();
+  }
+  asm_dump(code.insts()->start(), code.insts()->end());
+  static const unsigned int insns[] = {
+    0xa94003e1, // ldp x1, x0, [sp]
+    0xd503201f, // nop
+    0xa90007e0, // stp x0, x1, [sp]
+    0xd503201f, // nop
+  };
+  EXPECT_EQ(code.insts()->size(), (CodeSection::csize_t)(sizeof insns));
+  asm_check((const unsigned int *)code.insts()->start(), insns, sizeof insns / sizeof insns[0]);
 }
 
 #endif  // AARCH64

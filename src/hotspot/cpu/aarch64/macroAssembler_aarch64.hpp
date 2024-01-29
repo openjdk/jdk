@@ -150,6 +150,7 @@ class MacroAssembler: public Assembler {
   void bind(Label& L) {
     Assembler::bind(L);
     code()->clear_last_insn();
+    code()->set_last_label(pc());
   }
 
   void membar(Membar_mask_bits order_constraint);
