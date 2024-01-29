@@ -787,7 +787,7 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
      * minimum size from the preferred size in one axis and a
      * fixed minimum size in the other.
      *
-     * @return the minimum size as specified above.
+     * @return the minimum size as specified above
      */
     public Dimension getMinimumSize() {
         Dimension pref = getPreferredSize();
@@ -806,7 +806,7 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
      * maximum size from the preferred size in one axis and a
      * fixed maximum size in the other.
      *
-     * @return the maximum size as specified above.
+     * @return the maximum size as specified above
      */
     public Dimension getMaximumSize() {
         Dimension pref = getPreferredSize();
