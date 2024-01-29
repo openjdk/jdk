@@ -2838,14 +2838,14 @@ int os::Linux::commit_memory_impl(char* addr, size_t size, bool exec) {
     return 0;
   } else {
     ErrnoPreserver ep;
-    log_trace(os,map)("mmap failed: " RANGEFMT " errno=(%d)", RANGEFMTARGS(addr, size), ep.saved());
+    log_trace(os,map)("mmap failed: " RANGEFMT " errno=(%s)", RANGEFMTARGS(addr, size), os::strerror(ep.saved()));
   }
 
   int err = errno;  // save errno from mmap() call above
 
   if (!recoverable_mmap_error(err)) {
     ErrnoPreserver ep;
-    log_trace(os,map)("mmap failed: " RANGEFMT " errno=(%d)", RANGEFMTARGS(addr, size), ep.saved());
+    log_trace(os,map)("mmap failed: " RANGEFMT " errno=(%s)", RANGEFMTARGS(addr, size), os::strerror(ep.saved()));
     warn_fail_commit_memory(addr, size, exec, err);
     vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "committing reserved memory.");
   }
@@ -3345,7 +3345,7 @@ bool os::pd_uncommit_memory(char* addr, size_t size, bool exec) {
                                      MAP_PRIVATE|MAP_FIXED|MAP_NORESERVE|MAP_ANONYMOUS, -1, 0);
   if (res == (uintptr_t) MAP_FAILED) {
     ErrnoPreserver ep;
-    log_trace(os,map)("mmap failed: " RANGEFMT " errno=(%d)", RANGEFMTARGS(addr, size), ep.saved());
+    log_trace(os,map)("mmap failed: " RANGEFMT " errno=(%s)", RANGEFMTARGS(addr, size), os::strerror(ep.saved()));
     return false;
   }
   return true;
@@ -3569,7 +3569,7 @@ static char* anon_mmap(char* requested_addr, size_t bytes) {
   char* addr = (char*)::mmap(requested_addr, bytes, PROT_NONE, flags, -1, 0);
   if (addr == MAP_FAILED) {
     ErrnoPreserver ep;
-    log_trace(os,map)("mmap failed: " RANGEFMT " errno=(%d)", RANGEFMTARGS(requested_addr, bytes), ep.saved());
+    log_trace(os,map)("mmap failed: " RANGEFMT " errno=(%s)", RANGEFMTARGS(requested_addr, bytes), os::strerror(ep.saved()));
     return nullptr;
   }
   return addr;
@@ -3595,7 +3595,7 @@ static char* anon_mmap_aligned(char* req_addr, size_t bytes, size_t alignment) {
       if (start != req_addr) {
         if (::munmap(start, extra_size) != 0) {
           ErrnoPreserver ep;
-          log_trace(os,map)("munmap failed: " RANGEFMT " errno=(%d)", RANGEFMTARGS(start, extra_size), ep.saved());
+          log_trace(os,map)("munmap failed: " RANGEFMT " errno=(%s)", RANGEFMTARGS(start, extra_size), os::strerror(ep.saved()));
         }
         start = nullptr;
       }
@@ -3607,14 +3607,14 @@ static char* anon_mmap_aligned(char* req_addr, size_t bytes, size_t alignment) {
         if (::munmap(start, start_aligned - start) != 0) {
           ErrnoPreserver ep;
           size_t size = start_aligned - start;
-          log_trace(os,map)("munmap failed: " RANGEFMT " errno=(%d)", RANGEFMTARGS(start, size), ep.saved());
+          log_trace(os,map)("munmap failed: " RANGEFMT " errno=(%s)", RANGEFMTARGS(start, size), os::strerror(ep.saved()));
         }
       }
       if (end_aligned < end) {
         if (::munmap(end_aligned, end - end_aligned) != 0) {
           ErrnoPreserver ep;
           size_t size = end - end_aligned;
-          log_trace(os,map)("munmap failed: " RANGEFMT " errno=(%d)", RANGEFMTARGS(end_aligned, size), ep.saved());
+          log_trace(os,map)("munmap failed: " RANGEFMT " errno=(%s)", RANGEFMTARGS(end_aligned, size), os::strerror(ep.saved()));
         }
       }
       start = start_aligned;
@@ -3626,7 +3626,7 @@ static char* anon_mmap_aligned(char* req_addr, size_t bytes, size_t alignment) {
 static int anon_munmap(char * addr, size_t size) {
   if (::munmap(addr, size) != 0) {
     ErrnoPreserver ep;
-    log_trace(os,map)("munmap failed: " RANGEFMT " errno=(%d)", RANGEFMTARGS(addr, size), ep.saved());
+    log_trace(os,map)("munmap failed: " RANGEFMT " errno=(%s)", RANGEFMTARGS(addr, size), os::strerror(ep.saved()));
     return 0;
   }
   return 1;
@@ -4061,7 +4061,7 @@ static char* reserve_memory_special_huge_tlbfs(size_t bytes,
     // reminder of the orinal reservation.
     if (::munmap(small_start, small_size) != 0) {
       ErrnoPreserver ep;
-      log_trace(os,map)("munmap failed: " RANGEFMT " errno=(%d)", RANGEFMTARGS(small_start, small_size), ep.saved());
+      log_trace(os,map)("munmap failed: " RANGEFMT " errno=(%s)", RANGEFMTARGS(small_start, small_size), os::strerror(ep.saved()));
     }
     return nullptr;
   }
@@ -4073,7 +4073,7 @@ static char* reserve_memory_special_huge_tlbfs(size_t bytes,
     // the large pages part of the reservation.
     if (::munmap(aligned_start, large_bytes) != 0) {
       ErrnoPreserver ep;
-      log_trace(os,map)("munmap failed: " RANGEFMT " errno=(%d)", RANGEFMTARGS(aligned_start, large_bytes), ep.saved());
+      log_trace(os,map)("munmap failed: " RANGEFMT " errno=(%s)", RANGEFMTARGS(aligned_start, large_bytes), os::strerror(ep.saved()));
     }
     return nullptr;
   }
