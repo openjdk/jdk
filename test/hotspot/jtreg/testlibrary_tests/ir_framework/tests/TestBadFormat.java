@@ -205,57 +205,57 @@ class BadArgumentsAnnotation {
     public void checkNoArgAnnotation2() {}
 
     @Test
-    @Arguments(Argument.DEFAULT)
+    @Arguments(values = Argument.DEFAULT)
     public void argNumberMismatch(int a, int b) {}
 
     @Test
-    @Arguments(Argument.DEFAULT)
+    @Arguments(values = Argument.DEFAULT)
     public void argNumberMismatch2() {}
 
     @Test
-    @Arguments(Argument.NUMBER_42)
+    @Arguments(values = Argument.NUMBER_42)
     public void notBoolean(boolean a) {}
 
     @Test
-    @Arguments(Argument.NUMBER_MINUS_42)
+    @Arguments(values = Argument.NUMBER_MINUS_42)
     public void notBoolean2(boolean a) {}
 
     @Test
-    @Arguments(Argument.TRUE)
+    @Arguments(values = Argument.TRUE)
     public void notNumber(int a) {}
 
     @Test
-    @Arguments(Argument.FALSE)
+    @Arguments(values = Argument.FALSE)
     public void notNumber2(int a) {}
 
     @Test
-    @Arguments(Argument.BOOLEAN_TOGGLE_FIRST_TRUE)
+    @Arguments(values = Argument.BOOLEAN_TOGGLE_FIRST_TRUE)
     public void notNumber3(int a) {}
 
     @Test
-    @Arguments(Argument.BOOLEAN_TOGGLE_FIRST_FALSE)
+    @Arguments(values = Argument.BOOLEAN_TOGGLE_FIRST_FALSE)
     public void notNumber4(int a) {}
 
     @Test
-    @Arguments({Argument.BOOLEAN_TOGGLE_FIRST_FALSE, Argument.TRUE})
+    @Arguments(values = {Argument.BOOLEAN_TOGGLE_FIRST_FALSE, Argument.TRUE})
     public void notNumber5(boolean a, int b) {}
 
     @FailCount(2)
     @Test
-    @Arguments({Argument.BOOLEAN_TOGGLE_FIRST_FALSE, Argument.NUMBER_42})
+    @Arguments(values = {Argument.BOOLEAN_TOGGLE_FIRST_FALSE, Argument.NUMBER_42})
     public void notNumber6(int a, boolean b) {}
 
     @FailCount(2)
     @Test
-    @Arguments({Argument.MIN, Argument.MAX})
+    @Arguments(values = {Argument.MIN, Argument.MAX})
     public void notNumber7(boolean a, boolean b) {}
 
     @Test
-    @Arguments(Argument.DEFAULT)
+    @Arguments(values = Argument.DEFAULT)
     public void missingDefaultConstructor(ClassNoDefaultConstructor a) {}
 
     @Test
-    @Arguments(Argument.TRUE)
+    @Arguments(values = Argument.TRUE)
     public void wrongArgumentNumberWithRun(Object o1, Object o2) {
     }
 
@@ -265,7 +265,7 @@ class BadArgumentsAnnotation {
     }
 
     @Test
-    @Arguments(Argument.TRUE)
+    @Arguments(values = Argument.TRUE)
     public void wrongArgumentNumberWithCheck(Object o1, Object o2) {
     }
 
@@ -282,11 +282,11 @@ class BadOverloadedMethod {
     public void sameName() {}
 
     @Test
-    @Arguments(Argument.DEFAULT)
+    @Arguments(values = Argument.DEFAULT)
     public void sameName(boolean a) {}
 
     @Test
-    @Arguments(Argument.DEFAULT)
+    @Arguments(values = Argument.DEFAULT)
     public void sameName(double a) {}
 }
 
@@ -488,21 +488,21 @@ class BadWarmup {
 
 class BadBaseTests {
     @Test
-    @Arguments(Argument.DEFAULT)
+    @Arguments(values = Argument.DEFAULT)
     @FailCount(3) // No default constructor + parameter + return
     public TestInfo cannotUseTestInfoAsParameterOrReturn(TestInfo info) {
         return null;
     }
 
     @Test
-    @Arguments(Argument.DEFAULT)
+    @Arguments(values = Argument.DEFAULT)
     @FailCount(3) // No default constructor + parameter + return
     public RunInfo cannotUseRunInfoAsParameterOrReturn(RunInfo info) {
         return null;
     }
 
     @Test
-    @Arguments(Argument.DEFAULT)
+    @Arguments(values = Argument.DEFAULT)
     @FailCount(3) // No default constructor + parameter + return
     public AbstractInfo cannotUseAbstractInfoAsParameterOrReturn(AbstractInfo info) {
         return null;
@@ -531,7 +531,7 @@ class BadRunTests {
     public void noTestExists() {}
 
     @Test
-    @Arguments(Argument.DEFAULT)
+    @Arguments(values = Argument.DEFAULT)
     public void argTest(int x) {}
 
     @FailCount(0) // Combined with argTest()
@@ -578,7 +578,7 @@ class BadRunTests {
     @Test
     public void testInvalidRunWithArgAnnotation() {}
 
-    @Arguments(Argument.DEFAULT)
+    @Arguments(values = Argument.DEFAULT)
     @Run(test = "testInvalidRunWithArgAnnotation")
     public void invalidRunWithArgAnnotation(RunInfo info) {}
 
@@ -702,7 +702,7 @@ class BadCheckTest {
     @Test
     public void testInvalidRunWithArgAnnotation() {}
 
-    @Arguments(Argument.DEFAULT)
+    @Arguments(values = Argument.DEFAULT)
     @Check(test = "testInvalidRunWithArgAnnotation")
     public void invalidRunWithArgAnnotation(TestInfo info) {}
 }
