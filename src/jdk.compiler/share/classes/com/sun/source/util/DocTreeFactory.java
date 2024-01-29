@@ -298,7 +298,7 @@ public interface DocTreeFactory {
      * @return a {@code RawTextTree} object
      * @throws IllegalArgumentException if the kind is not a recognized kind for raw text
      *
-     * @since 22
+     * @since 23
      */
     RawTextTree newRawTextTree(DocTree.Kind kind, String code) throws IllegalArgumentException;
 

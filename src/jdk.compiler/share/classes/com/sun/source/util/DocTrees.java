@@ -91,7 +91,7 @@ public abstract class DocTrees extends Trees {
     /**
      * The style of a documentation comment.
      *
-     * @since 22
+     * @since 23
      */
     public enum CommentKind {
         /** The style of comments whose lines are prefixed by{@code ///}. */
@@ -106,7 +106,7 @@ public abstract class DocTrees extends Trees {
      * @param path the path for the tree node
      *
      * @see Trees#getPath(Element)
-     * @since 22
+     * @since 23
      */
     public abstract CommentKind getDocCommentKind(TreePath path);
 
@@ -314,7 +314,7 @@ public abstract class DocTrees extends Trees {
      * <p>The standard implementation returns the string {@code "standard"}
      * from {@link DocCommentTreeTransformer#name()}.
      *
-     * @since 22
+     * @since 23
      */
     public interface DocCommentTreeTransformer {
         /**
@@ -337,7 +337,7 @@ public abstract class DocTrees extends Trees {
      * {@return the transformer to be used after a documentation comment has been parsed,
      * or {@code null} if no transformer is to be used}
      *
-     * @since 22
+     * @since 23
      */
     public abstract DocCommentTreeTransformer getDocCommentTreeTransformer();
 
@@ -352,7 +352,7 @@ public abstract class DocTrees extends Trees {
      *
      * @param transformer the transformer
      *
-     * @since 22
+     * @since 23
      */
     public abstract void setDocCommentTreeTransformer(DocCommentTreeTransformer transformer);
 }

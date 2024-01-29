@@ -256,7 +256,7 @@ public interface DocTreeVisitor<R,P> {
      * @implSpec Visits the provided {@code RawTextTree} node
      * by calling {@code visitOther(node, p)}.
      *
-     * @since 22
+     * @since 23
      */
     default R visitRawText(RawTextTree node, P p) {
         return visitOther(node, p);

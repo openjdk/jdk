@@ -422,7 +422,7 @@ public class DocTreeScanner<R,P> implements DocTreeVisitor<R,P> {
      * @param p  {@inheritDoc}
      * @return the result of scanning
      *
-     * @since 22
+     * @since 23
      */
     @Override
     public R visitRawText(RawTextTree node, P p) {

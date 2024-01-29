@@ -26,7 +26,7 @@
 /**
  * Internal support for Markdown.
  *
- * @since 22
+ * @since 23
  */
 module jdk.internal.md {
     requires jdk.compiler;

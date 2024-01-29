@@ -45,7 +45,7 @@ package com.sun.source.doctree;
  * stream of Markdown nodes. Thus, the content of any non-Markdown nodes will
  * not affect how the Markdown nodes will be processed.
  *
- * @since 22
+ * @since 23
  */
 public interface RawTextTree extends DocTree {
     /**
