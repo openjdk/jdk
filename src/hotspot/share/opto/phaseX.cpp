@@ -2279,7 +2279,7 @@ void Node::set_req_X( uint i, Node *n, PhaseIterGVN *igvn ) {
     this->dump(1);
     tty->print_cr("Set at i = %d", i);
     n->dump();
-    assert( igvn->hash_find(this) != this, "Need to remove from hash before changing edges" );
+    assert(false, "Need to remove from hash before changing edges");
   }
 #endif
   Node *old = in(i);

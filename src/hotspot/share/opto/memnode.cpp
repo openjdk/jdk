@@ -2763,13 +2763,13 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   if (phase->C->merge_stores_phase()) {
     Node* progress = Ideal_merge_stores(phase);
-    if(progress != nullptr) { return progress; }
+    if (progress != nullptr) { return progress; }
   }
 
   return nullptr;                  // No further progress
 }
 
-// Link together multiple stores (B/S/C/I) into alonger one.
+// Link together multiple stores (B/S/C/I) into a longer one.
 Node* StoreNode::Ideal_merge_stores(PhaseGVN* phase) {
   int opc = Opcode();
   if (opc != Op_StoreB && opc != Op_StoreC && opc != Op_StoreI) {
@@ -3011,7 +3011,7 @@ StoreNode* StoreNode::can_merge_with_def(PhaseGVN* phase, bool check_use) {
   //
   //   AddP(AddP(AddP(AddP(base, o2), o2), o1), con)
   //
-  // Two adresses are adjacent, if they share a base and all offset (o1, o2, ...)
+  // Two addresses are adjacent, if they share a base and all offsets (o1, o2, ...)
   // are the same, and the constants have an exact difference of the memory_size.
   AddPNode* adr_s1 = s1->in(MemNode::Address)->isa_AddP();
   AddPNode* adr_s2 = s2->in(MemNode::Address)->isa_AddP();
