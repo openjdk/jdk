@@ -38,7 +38,7 @@
   3. No baseline summary diffing
   4. No baseline detail diffing
   4. Reporting not part of Reporter class but part of VirtualMemoryView, not too bad.
-  5. Insufficient amount of unit tests 
+  5. Insufficient amount of unit tests
   6. Need to fix includes, copyright stmts etc
 */
 
@@ -271,7 +271,8 @@ public:
     return *_virt_mem;
   }
 
-  static VirtualMemorySnapshot summary_snapshot(PhysicalMemorySpace space);
+  // Compute the summary snapshot of a VirtualMemory state.
+  static void compute_summary_snapshot(VirtualMemory& vmem);
 };
 
 #endif // SHARE_NMT_VIRTUALMEMORYVIEW_HPP

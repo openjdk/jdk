@@ -546,26 +546,28 @@ void VirtualMemoryView::snapshot_thread_stacks() {
   merge_thread_stacks(*thread_stacks);
 }
 
-VirtualMemorySnapshot VirtualMemoryView::summary_snapshot(PhysicalMemorySpace space) {
-  VirtualMemorySnapshot& snap = _virt_mem->summary.at(space.id);
-  // Reset all memory, keeping peak values
-  for (int i = 0; i < mt_number_of_types; i++) {
-    MEMFLAGS flag = NMTUtil::index_to_flag(i);
-    ::VirtualMemory* mem = snap.by_type(flag);
-    mem->release_memory(mem->reserved());
-    mem->uncommit_memory(mem->committed());
+void VirtualMemoryView::compute_summary_snapshot(VirtualMemory& vmem) {
+  // Take length of any array as max id, cannot look at PhysicalMemorySpace::unique_id
+  // in case it has changed.
+  for (int id = 0; id < vmem.committed_regions.length(); id++) {
+    VirtualMemorySnapshot& snap = vmem.summary.at(id);
+    // Reset all memory, keeping peak values
+    for (int i = 0; i < mt_number_of_types; i++) {
+      MEMFLAGS flag = NMTUtil::index_to_flag(i);
+      ::VirtualMemory* mem = snap.by_type(flag);
+      mem->release_memory(mem->reserved());
+      mem->uncommit_memory(mem->committed());
+    }
+    // Fill out summary
+    const RegionStorage& reserved_ranges = vmem.reserved_regions.at(id);
+    for (int i = 0; i < vmem.reserved_regions.length(); i++) {
+      const TrackedRange& range = reserved_ranges.at(i);
+      snap.by_type(range.flag)->reserve_memory(range.size);
+    }
+    const RegionStorage& committed_ranges = vmem.committed_regions.at(id);
+    for (int i = 0; i < committed_ranges.length(); i++) {
+      const TrackedRange& range = committed_ranges.at(i);
+      snap.by_type(range.flag)->commit_memory(range.size);
+    }
   }
-  // Fill out summary
-  const RegionStorage& reserved_ranges = virtual_memory().reserved_regions.at(space.id);
-  for (int i = 0; i < virtual_memory().reserved_regions.length(); i++) {
-    const TrackedRange& range = reserved_ranges.at(i);
-    snap.by_type(range.flag)->reserve_memory(range.size);
-  }
-  const RegionStorage& committed_ranges = virtual_memory().committed_regions.at(space.id);
-  for (int i = 0; i < committed_ranges.length(); i++) {
-    const TrackedRange& range = committed_ranges.at(i);
-    snap.by_type(range.flag)->commit_memory(range.size);
-  }
-
-  return snap;
 }

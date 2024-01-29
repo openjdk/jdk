@@ -73,7 +73,8 @@ class MemBaseline {
 
   // All virtual memory allocations
   LinkedListImpl<ReservedMemoryRegion>        _virtual_memory_allocations;
-  VirtualMemoryView::VirtualMemory _virtual_memory;
+  // All data from the VirtualMemoryView.
+  VirtualMemoryView::VirtualMemory _vmemview_data;
 
   // Virtual memory allocations by allocation sites, always in by_address
   // order
@@ -94,10 +95,6 @@ class MemBaseline {
   void baseline(bool summaryOnly = true);
 
   BaselineType baseline_type() const { return _baseline_type; }
-
-  VirtualMemoryView::VirtualMemory& virtual_memory_view() {
-    return _virtual_memory;
-  }
 
   MallocMemorySnapshot* malloc_memory_snapshot() {
     return &_malloc_memory_snapshot;

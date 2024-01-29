@@ -138,8 +138,6 @@ class VirtualMemoryAllocationWalker : public VirtualMemoryWalker {
 };
 
 void MemBaseline::baseline_summary_vmemview() {
-  const VirtualMemoryView::VirtualMemory& vmem = VirtualMemoryView::virtual_memory();
-  
 }
 
 void MemBaseline::baseline_summary() {
@@ -197,10 +195,10 @@ void MemBaseline::baseline(bool summaryOnly) {
   if (!summaryOnly &&
       MemTracker::tracking_level() == NMT_detail) {
     baseline_allocation_sites();
-    this->_virtual_memory = VirtualMemoryView::virtual_memory();
+    this->_vmemview_data = VirtualMemoryView::virtual_memory();
     _baseline_type = Detail_baselined;
   }
-
+  baseline_summary_vmemview();
 }
 
 int compare_allocation_site(const VirtualMemoryAllocationSite& s1,
