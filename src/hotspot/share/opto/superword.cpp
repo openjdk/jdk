@@ -59,7 +59,6 @@ SuperWord::SuperWord(PhaseIdealLoop* phase) :
   _dg(_arena),                                              // dependence graph
   _visited(arena()),                                        // visited node set
   _post_visited(arena()),                                   // post visited node set
-  _n_idx_list(arena(), 8),                                  // scratch list of (node,index) pairs
   _nlist(arena(), 8, 0, nullptr),                           // scratch list of nodes
   _stk(arena(), 8, 0, nullptr),                             // scratch stack of nodes
   _lpt(nullptr),                                            // loop tree node
@@ -2382,10 +2381,7 @@ bool SuperWord::output() {
 
   adjust_pre_loop_limit_to_align_main_loop_vectors();
 
-  // Insert extract (unpack) operations for scalar uses
-  for (int i = 0; i < _packset.length(); i++) {
-    insert_extracts(_packset.at(i));
-  }
+  DEBUG_ONLY(verify_no_extract());
 
   uint max_vlen_in_bytes = 0;
   uint max_vlen = 0;
@@ -2836,55 +2832,35 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
   return pk;
 }
 
-//------------------------------insert_extracts---------------------------
-// If a use of pack p is not a vector use, then replace the
-// use with an extract operation.
-void SuperWord::insert_extracts(Node_List* p) {
-  if (p->at(0)->is_Store()) return;
-  assert(_n_idx_list.is_empty(), "empty (node,index) list");
+#ifdef ASSERT
+// We check that every packset (name it p_def) only has vector uses (p_use),
+// which are proper vector uses of def.
+void SuperWord::verify_no_extract() {
+  for (int i = 0; i < _packset.length(); i++) {
+    Node_List* p_def = _packset.at(i);
 
-  // Inspect each use of each pack member.  For each use that is
-  // not a vector use, replace the use with an extract operation.
+    // A vector store has no uses
+    if (p_def->at(0)->is_Store()) { continue; }
 
-  for (uint i = 0; i < p->size(); i++) {
-    Node* def = p->at(i);
-    for (DUIterator_Fast jmax, j = def->fast_outs(jmax); j < jmax; j++) {
-      Node* use = def->fast_out(j);
-      for (uint k = 0; k < use->req(); k++) {
-        Node* n = use->in(k);
-        if (def == n) {
-          Node_List* u_pk = my_pack(use);
-          if ((u_pk == nullptr || use->is_CMove()) && !is_vector_use(use, k)) {
-              _n_idx_list.push(use, k);
+    // for every def in p_def, and every use:
+    for (uint i = 0; i < p_def->size(); i++) {
+      Node* def = p_def->at(i);
+      for (DUIterator_Fast jmax, j = def->fast_outs(jmax); j < jmax; j++) {
+        Node* use = def->fast_out(j);
+        // find every use->def edge:
+        for (uint k = 0; k < use->req(); k++) {
+          Node* maybe_def = use->in(k);
+          if (def == maybe_def) {
+            Node_List* p_use = my_pack(use);
+            if (is_marked_reduction(def)) { continue; }
+            assert(p_use != nullptr && is_vector_use(use, k), "all uses must be vector uses");
           }
         }
       }
     }
   }
-
-  while (_n_idx_list.is_nonempty()) {
-    Node* use = _n_idx_list.node();
-    int   idx = _n_idx_list.index();
-    _n_idx_list.pop();
-    Node* def = use->in(idx);
-
-    if (is_marked_reduction(def)) continue;
-
-    // Insert extract operation
-    _igvn.hash_delete(def);
-    int def_pos = alignment(def) / data_size(def);
-
-    ConINode* def_pos_con = _igvn.intcon(def_pos)->as_ConI();
-    Node* ex = ExtractNode::make(def, def_pos_con, velt_basic_type(def));
-    _igvn.register_new_node_with_optimizer(ex);
-    _phase->set_ctrl(ex, _phase->get_ctrl(def));
-    _igvn.replace_input_of(use, idx, ex);
-    _igvn._worklist.push(def);
-
-    bb_insert_after(ex, bb_idx(def));
-    set_velt_type(ex, velt_type(def));
-  }
 }
+#endif
 
 //------------------------------is_vector_use---------------------------
 // Is use->in(u_idx) a vector use?

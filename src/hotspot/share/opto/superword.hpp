@@ -226,7 +226,6 @@ class SuperWord : public ResourceObj {
   // Scratch pads
   VectorSet    _visited;       // Visited set
   VectorSet    _post_visited;  // Post-visited set
-  Node_Stack   _n_idx_list;    // List of (node,index) pairs
   GrowableArray<Node*> _nlist; // List of nodes
   GrowableArray<Node*> _stk;   // Stack of nodes
 
@@ -483,8 +482,8 @@ private:
   bool implemented(Node_List* p);
   // For pack p, are all operands and all uses (with in the block) vector?
   bool profitable(Node_List* p);
-  // If a use of pack p is not a vector use, then replace the use with an extract operation.
-  void insert_extracts(Node_List* p);
+  // Verify that all uses of packs are also packs, i.e. we do not need extract operations.
+  DEBUG_ONLY(void verify_no_extract();)
   // Is use->in(u_idx) a vector use?
   bool is_vector_use(Node* use, int u_idx);
   // Construct reverse postorder list of block members
