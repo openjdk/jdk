@@ -95,8 +95,11 @@ closeDescriptors(void)
     snprintf(aix_fd_dir, 32, "/proc/%d/fd", getpid());
 #endif
 
-    if ((dp = opendir(FD_DIR)) == NULL)
+    if ((dp = opendir(FD_DIR)) == NULL) {
+        LOG_MISC(("warning: failed to open dir %s while determining"
+                  " file descriptors to close for process %d", FD_DIR, getpid()));
         return 0; // failure
+    }
 
     while ((dirp = readdir(dp)) != NULL) {
         int fd;
