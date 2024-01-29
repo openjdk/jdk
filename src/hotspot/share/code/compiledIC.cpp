@@ -169,29 +169,19 @@ CompiledIC::CompiledIC(RelocIterator* iter)
 
 CompiledIC* CompiledIC_before(CompiledMethod* nm, address return_addr) {
   address call_site = nativeCall_before(return_addr)->instruction_address();
-  RelocIterator iter(nm, call_site, call_site + 1);
-  iter.next();
-  CompiledIC* c_ic = new CompiledIC(&iter);
-  c_ic->verify();
-  return c_ic;
+  return CompiledIC_at(nm, call_site);
 }
 
 CompiledIC* CompiledIC_at(CompiledMethod* nm, address call_site) {
   RelocIterator iter(nm, call_site, call_site + 1);
   iter.next();
-  CompiledIC* c_ic = new CompiledIC(&iter);
-  c_ic->verify();
-  return c_ic;
+  return CompiledIC_at(&iter);
 }
 
 CompiledIC* CompiledIC_at(Relocation* call_reloc) {
   address call_site = call_reloc->addr();
   CompiledMethod* cm = CodeCache::find_blob(call_reloc->addr())->as_compiled_method();
-  RelocIterator iter(cm, call_site, call_site + 1);
-  iter.next();
-  CompiledIC* c_ic = new CompiledIC(&iter);
-  c_ic->verify();
-  return c_ic;
+  return CompiledIC_at(cm, call_site);
 }
 
 CompiledIC* CompiledIC_at(RelocIterator* reloc_iter) {
