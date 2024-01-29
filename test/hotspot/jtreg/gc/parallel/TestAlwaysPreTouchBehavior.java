@@ -51,7 +51,7 @@ public class TestAlwaysPreTouchBehavior {
     public static long getProcessRssInKb() throws IOException {
         String pid = ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
         // Read RSS from /proc/$pid/status. Only avaiable on Linux
-	String processStatusFile = "/proc/" + pid + "/status";
+        String processStatusFile = "/proc/" + pid + "/status";
         try {
             BufferedReader reader = new BufferedReader(new FileReader(processStatusFile));
             StringBuilder stringBuilder = new StringBuilder();
@@ -84,12 +84,12 @@ public class TestAlwaysPreTouchBehavior {
        rss = EXCEPTION_VALUE;
     }
     if (rss == EXCEPTION_VALUE) {
-	System.out.println("cannot get RSS, just skip");
+        System.out.println("cannot get RSS, just skip");
         return; // Did not get avaiable RSS, just ignore this test
     } else if (rss < base) {
         System.out.println("RSS = " + rss + " smaller than committed heap memory");
     } else {
-	System.out.println("Passed RSS = " + rss + " base value " + base);
+        System.out.println("Passed RSS = " + rss + " base value " + base);
     }
     Asserts.assertTrue(rss >= base, "heap rss should be bigger than committed heap mem");
    }
