@@ -56,13 +56,8 @@ SuperWord::SuperWord(PhaseIdealLoop* phase) :
   _node_info(arena(), 8,  0, SWNodeInfo::initial),          // info needed per node
   _clone_map(phase->C->clone_map()),                        // map of nodes created in cloning
   _align_to_ref(nullptr),                                   // memory reference to align vectors to
-  _disjoint_ptrs(arena(), 8,  0, OrderedPair::initial),     // runtime disambiguated pointer pairs
   _dg(_arena),                                              // dependence graph
-  _visited(arena()),                                        // visited node set
-  _post_visited(arena()),                                   // post visited node set
-  _n_idx_list(arena(), 8),                                  // scratch list of (node,index) pairs
   _nlist(arena(), 8, 0, nullptr),                           // scratch list of nodes
-  _stk(arena(), 8, 0, nullptr),                             // scratch stack of nodes
   _lpt(nullptr),                                            // loop tree node
   _lp(nullptr),                                             // CountedLoopNode
   _loop_reductions(arena()),                                // reduction nodes in the current loop
@@ -182,7 +177,7 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
     ignored_loop_nodes[i] = -1;
   }
 
-  int max_vector = Matcher::superword_max_vector_size(T_BYTE);
+  int max_vector = Matcher::max_vector_size_auto_vectorization(T_BYTE);
 
   // Process the loop, some/all of the stack entries will not be in order, ergo
   // need to preprocess the ignored initial state before we process the loop
@@ -296,7 +291,7 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
 
       if (is_java_primitive(bt) == false) continue;
 
-      int cur_max_vector = Matcher::superword_max_vector_size(bt);
+      int cur_max_vector = Matcher::max_vector_size_auto_vectorization(bt);
 
       // If a max vector exists which is not larger than _local_loop_unroll_factor
       // stop looking, we already have the max vector to map to.
@@ -545,7 +540,7 @@ bool SuperWord::SLP_extract() {
     return false; // Exit if no interesting nodes or complex graph.
   }
 
-  // build _dg, _disjoint_ptrs
+  // build _dg
   dependence_graph();
 
   // compute function depth(Node*)
@@ -794,13 +789,13 @@ int SuperWord::get_vw_bytes_special(MemNode* s) {
       }
     }
     if (should_combine_adjacent) {
-      vw = MIN2(Matcher::superword_max_vector_size(btype)*type2aelembytes(btype), vw * 2);
+      vw = MIN2(Matcher::max_vector_size_auto_vectorization(btype)*type2aelembytes(btype), vw * 2);
     }
   }
 
   // Check for special case where there is a type conversion between different data size.
   int vectsize = max_vector_size_in_def_use_chain(s);
-  if (vectsize < Matcher::superword_max_vector_size(btype)) {
+  if (vectsize < Matcher::max_vector_size_auto_vectorization(btype)) {
     vw = MIN2(vectsize * type2aelembytes(btype), vw);
   }
 
@@ -896,12 +891,6 @@ void SuperWord::dependence_graph() {
         VPointer p2(s2->as_Mem(), phase(), lpt(), nullptr, false);
 
         int cmp = p1.cmp(p2);
-        if (SuperWordRTDepCheck &&
-            p1.base() != p2.base() && p1.valid() && p2.valid()) {
-          // Trace disjoint pointers
-          OrderedPair pp(p1.base(), p2.base());
-          _disjoint_ptrs.append_if_missing(pp);
-        }
         if (!VPointer::not_equal(cmp)) {
           // Possibly same address
           _dg.make_edge(s1, s2);
@@ -923,16 +912,6 @@ void SuperWord::dependence_graph() {
 
     _nlist.clear();
   }
-
-  if (TraceSuperWord) {
-    tty->print_cr("\ndisjoint_ptrs: %s", _disjoint_ptrs.length() > 0 ? "" : "NONE");
-    for (int r = 0; r < _disjoint_ptrs.length(); r++) {
-      _disjoint_ptrs.at(r).print();
-      tty->cr();
-    }
-    tty->cr();
-  }
-
 }
 
 //---------------------------mem_slice_preds---------------------------
@@ -990,8 +969,8 @@ bool SuperWord::stmts_can_pack(Node* s1, Node* s2, int align) {
   if(!is_java_primitive(bt1) || !is_java_primitive(bt2))
     return false;
   BasicType longer_bt = longer_type_for_conversion(s1);
-  if (Matcher::superword_max_vector_size(bt1) < 2 ||
-      (longer_bt != T_ILLEGAL && Matcher::superword_max_vector_size(longer_bt) < 2)) {
+  if (Matcher::max_vector_size_auto_vectorization(bt1) < 2 ||
+      (longer_bt != T_ILLEGAL && Matcher::max_vector_size_auto_vectorization(longer_bt) < 2)) {
     return false; // No vectors for this type
   }
 
@@ -1077,54 +1056,71 @@ bool SuperWord::isomorphic(Node* s1, Node* s2) {
 //------------------------------independent---------------------------
 // Is there no data path from s1 to s2 or s2 to s1?
 bool SuperWord::independent(Node* s1, Node* s2) {
-  //  assert(s1->Opcode() == s2->Opcode(), "check isomorphic first");
   int d1 = depth(s1);
   int d2 = depth(s2);
-  if (d1 == d2) return s1 != s2;
+
+  if (d1 == d2) {
+    // Same depth:
+    //  1) same node       -> dependent
+    //  2) different nodes -> same level implies there is no path
+    return s1 != s2;
+  }
+
+  // Traversal starting at the deeper node to find the shallower one.
   Node* deep    = d1 > d2 ? s1 : s2;
   Node* shallow = d1 > d2 ? s2 : s1;
+  int min_d = MIN2(d1, d2); // prune traversal at min_d
 
-  visited_clear();
-
-  return independent_path(shallow, deep);
+  ResourceMark rm;
+  Unique_Node_List worklist;
+  worklist.push(deep);
+  for (uint i = 0; i < worklist.size(); i++) {
+    Node* n = worklist.at(i);
+    for (DepPreds preds(n, _dg); !preds.done(); preds.next()) {
+      Node* pred = preds.current();
+      if (in_bb(pred) && depth(pred) >= min_d) {
+        if (pred == shallow) {
+          return false; // found it -> dependent
+        }
+        worklist.push(pred);
+      }
+    }
+  }
+  return true; // not found -> independent
 }
 
-//------------------------------find_dependence---------------------
-// Is any s1 in p dependent on any s2 in p? Yes: return such a s2. No: return nullptr.
+// Are all nodes in nodes list mutually independent?
 // We could query independent(s1, s2) for all pairs, but that results
-// in O(p.size * p.size) graph traversals. We can do it all in one BFS!
-// Start the BFS traversal at all nodes from the pack. Traverse DepPreds
-// recursively, for nodes that have at least depth min_d, which is the
-// smallest depth of all nodes from the pack. Once we have traversed all
-// those nodes, and have not found another node from the pack, we know
-// that all nodes in the pack are independent.
-Node* SuperWord::find_dependence(Node_List* p) {
-  if (is_marked_reduction(p->at(0))) {
-    return nullptr; // ignore reductions
-  }
+// in O(size * size) graph traversals. We can do it all in one BFS!
+// Start the BFS traversal at all nodes from the nodes list. Traverse
+// Preds recursively, for nodes that have at least depth min_d, which
+// is the smallest depth of all nodes from the nodes list. Once we have
+// traversed all those nodes, and have not found another node from the
+// nodes list, we know that all nodes in the nodes list are independent.
+bool SuperWord::mutually_independent(Node_List* nodes) const {
   ResourceMark rm;
-  Unique_Node_List worklist; // traversal queue
-  int min_d = depth(p->at(0));
-  visited_clear();
-  for (uint k = 0; k < p->size(); k++) {
-    Node* n = p->at(k);
+  Unique_Node_List worklist;
+  VectorSet nodes_set;
+  int min_d = depth(nodes->at(0));
+  for (uint k = 0; k < nodes->size(); k++) {
+    Node* n = nodes->at(k);
     min_d = MIN2(min_d, depth(n));
-    worklist.push(n); // start traversal at all nodes in p
-    visited_set(n); // mark node
+    worklist.push(n); // start traversal at all nodes in nodes list
+    nodes_set.set(bb_idx(n));
   }
   for (uint i = 0; i < worklist.size(); i++) {
     Node* n = worklist.at(i);
     for (DepPreds preds(n, _dg); !preds.done(); preds.next()) {
       Node* pred = preds.current();
       if (in_bb(pred) && depth(pred) >= min_d) {
-        if (visited_test(pred)) { // marked as in p?
-          return pred;
+        if (nodes_set.test(bb_idx(pred))) {
+          return false; // found one -> dependent
         }
         worklist.push(pred);
       }
     }
   }
-  return nullptr;
+  return true; // not found -> independent
 }
 
 //--------------------------have_similar_inputs-----------------------
@@ -1170,27 +1166,6 @@ bool SuperWord::reduction(Node* s1, Node* s2) {
   }
 
   return retValue;
-}
-
-//------------------------------independent_path------------------------------
-// Helper for independent
-bool SuperWord::independent_path(Node* shallow, Node* deep, uint dp) {
-  if (dp >= 1000) return false; // stop deep recursion
-  visited_set(deep);
-  int shal_depth = depth(shallow);
-  assert(shal_depth <= depth(deep), "must be");
-  for (DepPreds preds(deep, _dg); !preds.done(); preds.next()) {
-    Node* pred = preds.current();
-    if (in_bb(pred) && !visited_test(pred)) {
-      if (shallow == pred) {
-        return false;
-      }
-      if (shal_depth < depth(pred) && !independent_path(shallow, pred, dp+1)) {
-        return false;
-      }
-    }
-  }
-  return true;
 }
 
 //------------------------------set_alignment---------------------------
@@ -1585,13 +1560,13 @@ void SuperWord::combine_packs() {
   for (int i = 0; i < _packset.length(); i++) {
     Node_List* p = _packset.at(i);
     if (p != nullptr) {
-      Node* dependence = find_dependence(p);
-      if (dependence != nullptr) {
+      // reductions are trivially connected
+      if (!is_marked_reduction(p->at(0)) &&
+          !mutually_independent(p)) {
 #ifndef PRODUCT
         if (TraceSuperWord) {
           tty->cr();
           tty->print_cr("WARNING: Found dependency at distance greater than 1.");
-          dependence->dump();
           tty->print_cr("In pack[%d]", i);
           print_pack(p);
         }
@@ -1974,24 +1949,16 @@ void SuperWord::verify_packs() {
   // Verify independence at pack level.
   for (int i = 0; i < _packset.length(); i++) {
     Node_List* p = _packset.at(i);
-    Node* dependence = find_dependence(p);
-    if (dependence != nullptr) {
-      tty->print_cr("Other nodes in pack have dependence on:");
-      dependence->dump();
-      tty->print_cr("The following nodes are not independent:");
-      for (uint k = 0; k < p->size(); k++) {
-        Node* n = p->at(k);
-        if (!independent(n, dependence)) {
-          n->dump();
-        }
-      }
-      tty->print_cr("They are all from pack[%d]", i);
+    if (!is_marked_reduction(p->at(0)) &&
+        !mutually_independent(p)) {
+      tty->print_cr("FAILURE: nodes not mutually independent in pack[%d]", i);
       print_pack(p);
+      assert(false, "pack nodes not mutually independent");
     }
-    assert(dependence == nullptr, "all nodes in pack must be mutually independent");
   }
 
   // Verify all nodes in packset have my_pack set correctly.
+  ResourceMark rm;
   Unique_Node_List processed;
   for (int i = 0; i < _packset.length(); i++) {
     Node_List* p = _packset.at(i);
@@ -2399,10 +2366,7 @@ bool SuperWord::output() {
 
   adjust_pre_loop_limit_to_align_main_loop_vectors();
 
-  // Insert extract (unpack) operations for scalar uses
-  for (int i = 0; i < _packset.length(); i++) {
-    insert_extracts(_packset.at(i));
-  }
+  DEBUG_ONLY(verify_no_extract());
 
   uint max_vlen_in_bytes = 0;
   uint max_vlen = 0;
@@ -2853,55 +2817,35 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
   return pk;
 }
 
-//------------------------------insert_extracts---------------------------
-// If a use of pack p is not a vector use, then replace the
-// use with an extract operation.
-void SuperWord::insert_extracts(Node_List* p) {
-  if (p->at(0)->is_Store()) return;
-  assert(_n_idx_list.is_empty(), "empty (node,index) list");
+#ifdef ASSERT
+// We check that every packset (name it p_def) only has vector uses (p_use),
+// which are proper vector uses of def.
+void SuperWord::verify_no_extract() {
+  for (int i = 0; i < _packset.length(); i++) {
+    Node_List* p_def = _packset.at(i);
 
-  // Inspect each use of each pack member.  For each use that is
-  // not a vector use, replace the use with an extract operation.
+    // A vector store has no uses
+    if (p_def->at(0)->is_Store()) { continue; }
 
-  for (uint i = 0; i < p->size(); i++) {
-    Node* def = p->at(i);
-    for (DUIterator_Fast jmax, j = def->fast_outs(jmax); j < jmax; j++) {
-      Node* use = def->fast_out(j);
-      for (uint k = 0; k < use->req(); k++) {
-        Node* n = use->in(k);
-        if (def == n) {
-          Node_List* u_pk = my_pack(use);
-          if ((u_pk == nullptr || use->is_CMove()) && !is_vector_use(use, k)) {
-              _n_idx_list.push(use, k);
+    // for every def in p_def, and every use:
+    for (uint i = 0; i < p_def->size(); i++) {
+      Node* def = p_def->at(i);
+      for (DUIterator_Fast jmax, j = def->fast_outs(jmax); j < jmax; j++) {
+        Node* use = def->fast_out(j);
+        // find every use->def edge:
+        for (uint k = 0; k < use->req(); k++) {
+          Node* maybe_def = use->in(k);
+          if (def == maybe_def) {
+            Node_List* p_use = my_pack(use);
+            if (is_marked_reduction(def)) { continue; }
+            assert(p_use != nullptr && is_vector_use(use, k), "all uses must be vector uses");
           }
         }
       }
     }
   }
-
-  while (_n_idx_list.is_nonempty()) {
-    Node* use = _n_idx_list.node();
-    int   idx = _n_idx_list.index();
-    _n_idx_list.pop();
-    Node* def = use->in(idx);
-
-    if (is_marked_reduction(def)) continue;
-
-    // Insert extract operation
-    _igvn.hash_delete(def);
-    int def_pos = alignment(def) / data_size(def);
-
-    ConINode* def_pos_con = _igvn.intcon(def_pos)->as_ConI();
-    Node* ex = ExtractNode::make(def, def_pos_con, velt_basic_type(def));
-    _igvn.register_new_node_with_optimizer(ex);
-    _phase->set_ctrl(ex, _phase->get_ctrl(def));
-    _igvn.replace_input_of(use, idx, ex);
-    _igvn._worklist.push(def);
-
-    bb_insert_after(ex, bb_idx(def));
-    set_velt_type(ex, velt_type(def));
-  }
 }
+#endif
 
 //------------------------------is_vector_use---------------------------
 // Is use->in(u_idx) a vector use?
@@ -2985,7 +2929,6 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) {
 bool SuperWord::construct_bb() {
   Node* entry = bb();
 
-  assert(_stk.length() == 0,            "stk is empty");
   assert(_block.length() == 0,          "block is empty");
   assert(_data_entry.length() == 0,     "data_entry is empty");
   assert(_mem_slice_head.length() == 0, "mem_slice_head is empty");
@@ -3042,55 +2985,57 @@ bool SuperWord::construct_bb() {
 
   // Create an RPO list of nodes in block
 
-  visited_clear();
-  post_visited_clear();
+  ResourceMark rm;
+  GrowableArray<Node*> stack;
+  VectorSet visited;
+  VectorSet post_visited;
 
   // Push all non-control nodes with no inputs from within block, then control entry
   for (int j = 0; j < _data_entry.length(); j++) {
     Node* n = _data_entry.at(j);
-    visited_set(n);
-    _stk.push(n);
+    visited.set(bb_idx(n));
+    stack.push(n);
   }
-  visited_set(entry);
-  _stk.push(entry);
+  visited.set(bb_idx(entry));
+  stack.push(entry);
 
   // Do a depth first walk over out edges
   int rpo_idx = bb_ct - 1;
   int size;
   int reduction_uses = 0;
-  while ((size = _stk.length()) > 0) {
-    Node* n = _stk.top(); // Leave node on stack
-    if (!visited_test_set(n)) {
+  while ((size = stack.length()) > 0) {
+    Node* n = stack.top(); // Leave node on stack
+    if (!visited.test_set(bb_idx(n))) {
       // forward arc in graph
-    } else if (!post_visited_test(n)) {
+    } else if (!post_visited.test(bb_idx(n))) {
       // cross or back arc
       for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
         Node *use = n->fast_out(i);
-        if (in_bb(use) && !visited_test(use) &&
+        if (in_bb(use) && !visited.test(bb_idx(use)) &&
             // Don't go around backedge
             (!use->is_Phi() || n == entry)) {
           if (is_marked_reduction(use)) {
             // First see if we can map the reduction on the given system we are on, then
             // make a data entry operation for each reduction we see.
             BasicType bt = use->bottom_type()->basic_type();
-            if (ReductionNode::implemented(use->Opcode(), Matcher::superword_max_vector_size(bt), bt)) {
+            if (ReductionNode::implemented(use->Opcode(), Matcher::max_vector_size_auto_vectorization(bt), bt)) {
               reduction_uses++;
             }
           }
-          _stk.push(use);
+          stack.push(use);
         }
       }
-      if (_stk.length() == size) {
+      if (stack.length() == size) {
         // There were no additional uses, post visit node now
-        _stk.pop(); // Remove node from stack
+        stack.pop(); // Remove node from stack
         assert(rpo_idx >= 0, "");
         _block.at_put_grow(rpo_idx, n);
         rpo_idx--;
-        post_visited_set(n);
-        assert(rpo_idx >= 0 || _stk.is_empty(), "");
+        post_visited.set(bb_idx(n));
+        assert(rpo_idx >= 0 || stack.is_empty(), "");
       }
     } else {
-      _stk.pop(); // Remove post-visited node from stack
+      stack.pop(); // Remove post-visited node from stack
     }
   }//while
 
@@ -3227,10 +3172,10 @@ int SuperWord::max_vector_size_in_def_use_chain(Node* n) {
     vt = (newt == T_ILLEGAL) ? vt : newt;
   }
 
-  int max = Matcher::superword_max_vector_size(vt);
+  int max = Matcher::max_vector_size_auto_vectorization(vt);
   // If now there is no vectors for the longest type, the nodes with the longest
   // type in the def-use chain are not packed in SuperWord::stmts_can_pack.
-  return max < 2 ? Matcher::superword_max_vector_size(bt) : max;
+  return max < 2 ? Matcher::max_vector_size_auto_vectorization(bt) : max;
 }
 
 //-------------------------compute_vector_element_type-----------------------
@@ -3428,23 +3373,21 @@ void SuperWord::remove_pack_at(int pos) {
 
 void SuperWord::packset_sort(int n) {
   // simple bubble sort so that we capitalize with O(n) when its already sorted
-  while (n != 0) {
-    bool swapped = false;
+  do {
+    int max_swap_index = 0;
     for (int i = 1; i < n; i++) {
       Node_List* q_low = _packset.at(i-1);
       Node_List* q_i = _packset.at(i);
 
       // only swap when we find something to swap
       if (alignment(q_low->at(0)) > alignment(q_i->at(0))) {
-        Node_List* t = q_i;
         *(_packset.adr_at(i)) = q_low;
         *(_packset.adr_at(i-1)) = q_i;
-        swapped = true;
+        max_swap_index = i;
       }
     }
-    if (swapped == false) break;
-    n--;
-  }
+    n = max_swap_index;
+  } while (n > 1);
 }
 
 LoadNode::ControlDependency SuperWord::control_dependency(Node_List* p) {
@@ -3803,7 +3746,6 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
 void SuperWord::init() {
   _dg.init();
   _packset.clear();
-  _disjoint_ptrs.clear();
   _block.clear();
   _data_entry.clear();
   _mem_slice_head.clear();
@@ -3860,10 +3802,6 @@ void SuperWord::print_stmt(Node* s) {
   s->dump();
 #endif
 }
-
-// ========================= OrderedPair =====================
-
-const OrderedPair OrderedPair::initial;
 
 // ========================= SWNodeInfo =====================
 

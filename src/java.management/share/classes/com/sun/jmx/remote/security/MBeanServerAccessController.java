@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,12 +75,11 @@ import javax.management.remote.MBeanServerForwarder;
  * inappropriate.</p>
  *
  * <p>If there is no SecurityManager, then the access controller will refuse
- * to create an MBean that is a ClassLoader, which includes MLets, or to
- * execute the method addURL on an MBean that is an MLet. This prevents
+ * to create an MBean that is a ClassLoader.  This prevents
  * people from opening security holes unintentionally. Otherwise, it
  * would not be obvious that granting write access grants the ability to
  * download and execute arbitrary code in the target MBean server. Advanced
- * users who do want the ability to use MLets are presumably advanced enough
+ * users who do want an MBean which is a ClassLoader are presumably advanced enough
  * to handle policy files and security managers.</p>
  */
 public abstract class MBeanServerAccessController
@@ -468,7 +467,6 @@ public abstract class MBeanServerAccessController
         MBeanException,
         ReflectionException {
         checkWrite();
-        checkMLetMethods(name, operationName);
         return getMBeanServer().invoke(name, operationName, params, signature);
     }
 
@@ -618,49 +616,6 @@ public abstract class MBeanServerAccessController
                                         "MBean that is a ClassLoader " +
                                         "is forbidden unless a security " +
                                         "manager is installed.");
-    }
-
-    private void checkMLetMethods(ObjectName name, String operation)
-    throws InstanceNotFoundException {
-        // Check if security manager installed
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            return;
-        }
-        // Check for addURL and getMBeansFromURL methods
-        if (!operation.equals("addURL") &&
-                !operation.equals("getMBeansFromURL")) {
-            return;
-        }
-        // Check if MBean is instance of MLet
-        if (!getMBeanServer().isInstanceOf(name,
-                "javax.management.loading.MLet")) {
-            return;
-        }
-        // Throw security exception
-        if (operation.equals("addURL")) { // addURL
-            throw new SecurityException("Access denied! MLet method addURL " +
-                    "cannot be invoked unless a security manager is installed.");
-        } else { // getMBeansFromURL
-            // Whether or not calling getMBeansFromURL is allowed is controlled
-            // by the value of the "jmx.remote.x.mlet.allow.getMBeansFromURL"
-            // system property. If the value of this property is true, calling
-            // the MLet's getMBeansFromURL method is allowed. The default value
-            // for this property is false.
-            final String propName = "jmx.remote.x.mlet.allow.getMBeansFromURL";
-            GetPropertyAction propAction = new GetPropertyAction(propName);
-            @SuppressWarnings("removal")
-            String propValue = AccessController.doPrivileged(propAction);
-            boolean allowGetMBeansFromURL = "true".equalsIgnoreCase(propValue);
-            if (!allowGetMBeansFromURL) {
-                throw new SecurityException("Access denied! MLet method " +
-                        "getMBeansFromURL cannot be invoked unless a " +
-                        "security manager is installed or the system property " +
-                        "-Djmx.remote.x.mlet.allow.getMBeansFromURL=true " +
-                        "is specified.");
-            }
-        }
     }
 
     //------------------
