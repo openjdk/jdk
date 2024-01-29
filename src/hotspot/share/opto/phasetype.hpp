@@ -28,51 +28,77 @@
 #include "utilities/bitMap.inline.hpp"
 
 #define COMPILER_PHASES(flags) \
-  flags(BEFORE_STRINGOPTS,            "Before StringOpts") \
-  flags(AFTER_STRINGOPTS,             "After StringOpts") \
-  flags(BEFORE_REMOVEUSELESS,         "Before RemoveUseless") \
-  flags(AFTER_PARSING,                "After Parsing") \
-  flags(BEFORE_ITER_GVN,              "Before Iter GVN") \
-  flags(ITER_GVN1,                    "Iter GVN 1") \
-  flags(AFTER_ITER_GVN_STEP,          "After Iter GVN Step") \
-  flags(AFTER_ITER_GVN,               "After Iter GVN") \
-  flags(INCREMENTAL_INLINE_STEP,      "Incremental Inline Step") \
-  flags(INCREMENTAL_INLINE_CLEANUP,   "Incremental Inline Cleanup") \
-  flags(INCREMENTAL_INLINE,           "Incremental Inline") \
-  flags(INCREMENTAL_BOXING_INLINE,    "Incremental Boxing Inline") \
-  flags(EXPAND_VUNBOX,                "Expand VectorUnbox") \
-  flags(SCALARIZE_VBOX,               "Scalarize VectorBox") \
-  flags(INLINE_VECTOR_REBOX,          "Inline Vector Rebox Calls") \
-  flags(EXPAND_VBOX,                  "Expand VectorBox") \
-  flags(ELIMINATE_VBOX_ALLOC,         "Eliminate VectorBoxAllocate") \
-  flags(ITER_GVN_BEFORE_EA,           "Iter GVN before EA") \
-  flags(ITER_GVN_AFTER_VECTOR,        "Iter GVN after vector box elimination") \
-  flags(BEFORE_BEAUTIFY_LOOPS,        "Before beautify loops") \
-  flags(AFTER_BEAUTIFY_LOOPS,         "After beautify loops") \
-  flags(BEFORE_CLOOPS,                "Before CountedLoop") \
-  flags(AFTER_CLOOPS,                 "After CountedLoop") \
-  flags(PHASEIDEAL_BEFORE_EA,         "PhaseIdealLoop before EA") \
-  flags(AFTER_EA,                     "After Escape Analysis") \
-  flags(ITER_GVN_AFTER_EA,            "Iter GVN after EA") \
-  flags(ITER_GVN_AFTER_ELIMINATION,   "Iter GVN after eliminating allocations and locks") \
-  flags(PHASEIDEALLOOP1,              "PhaseIdealLoop 1") \
-  flags(PHASEIDEALLOOP2,              "PhaseIdealLoop 2") \
-  flags(PHASEIDEALLOOP3,              "PhaseIdealLoop 3") \
-  flags(CCP1,                         "PhaseCCP 1") \
-  flags(ITER_GVN2,                    "Iter GVN 2") \
-  flags(PHASEIDEALLOOP_ITERATIONS,    "PhaseIdealLoop iterations") \
-  flags(MACRO_EXPANSION,              "Macro expand") \
-  flags(BARRIER_EXPANSION,            "Barrier expand") \
-  flags(OPTIMIZE_FINISHED,            "Optimize finished") \
-  flags(BEFORE_MATCHING,              "Before matching") \
-  flags(MATCHING,                     "After matching") \
-  flags(GLOBAL_CODE_MOTION,           "Global code motion") \
-  flags(MACH_ANALYSIS,                "After mach analysis") \
-  flags(FINAL_CODE,                   "Final Code") \
-  flags(END,                          "End") \
-  flags(FAILURE,                      "Failure") \
-  flags(ALL,                          "All") \
-  flags(DEBUG,                        "Debug")
+  flags(BEFORE_STRINGOPTS,              "Before StringOpts") \
+  flags(AFTER_STRINGOPTS,               "After StringOpts") \
+  flags(BEFORE_REMOVEUSELESS,           "Before RemoveUseless") \
+  flags(AFTER_PARSING,                  "After Parsing") \
+  flags(BEFORE_ITER_GVN,                "Before Iter GVN") \
+  flags(ITER_GVN1,                      "Iter GVN 1") \
+  flags(AFTER_ITER_GVN_STEP,            "After Iter GVN Step") \
+  flags(AFTER_ITER_GVN,                 "After Iter GVN") \
+  flags(INCREMENTAL_INLINE_STEP,        "Incremental Inline Step") \
+  flags(INCREMENTAL_INLINE_CLEANUP,     "Incremental Inline Cleanup") \
+  flags(INCREMENTAL_INLINE,             "Incremental Inline") \
+  flags(INCREMENTAL_BOXING_INLINE,      "Incremental Boxing Inline") \
+  flags(EXPAND_VUNBOX,                  "Expand VectorUnbox") \
+  flags(SCALARIZE_VBOX,                 "Scalarize VectorBox") \
+  flags(INLINE_VECTOR_REBOX,            "Inline Vector Rebox Calls") \
+  flags(EXPAND_VBOX,                    "Expand VectorBox") \
+  flags(ELIMINATE_VBOX_ALLOC,           "Eliminate VectorBoxAllocate") \
+  flags(ITER_GVN_BEFORE_EA,             "Iter GVN before EA") \
+  flags(ITER_GVN_AFTER_VECTOR,          "Iter GVN after vector box elimination") \
+  flags(BEFORE_BEAUTIFY_LOOPS,          "Before beautify loops") \
+  flags(AFTER_BEAUTIFY_LOOPS,           "After beautify loops") \
+  flags(BEFORE_LOOP_UNROLLING,          "Before Loop Unrolling") \
+  flags(AFTER_LOOP_UNROLLING,           "After Loop Unrolling") \
+  flags(BEFORE_SPLIT_IF,                "Before Split-If") \
+  flags(AFTER_SPLIT_IF,                 "After Split-If") \
+  flags(BEFORE_LOOP_PREDICATION_IC,     "Before Loop Predication IC") \
+  flags(AFTER_LOOP_PREDICATION_IC,      "After Loop Predication IC") \
+  flags(BEFORE_LOOP_PREDICATION_RC,     "Before Loop Predication RC") \
+  flags(AFTER_LOOP_PREDICATION_RC,      "After Loop Predication RC") \
+  flags(BEFORE_PARTIAL_PEELING,         "Before Partial Peeling") \
+  flags(AFTER_PARTIAL_PEELING,          "After Partial Peeling") \
+  flags(BEFORE_LOOP_PEELING,            "Before Loop Peeling") \
+  flags(AFTER_LOOP_PEELING,             "After Loop Peeling") \
+  flags(BEFORE_LOOP_UNSWITCHING,        "Before Loop Unswitching") \
+  flags(AFTER_LOOP_UNSWITCHING,         "After Loop Unswitching") \
+  flags(BEFORE_RANGE_CHECK_ELIMINATION, "Before Range Check Elimination") \
+  flags(AFTER_RANGE_CHECK_ELIMINATION,  "After Range Check Elimination") \
+  flags(BEFORE_PRE_MAIN_POST,           "Before Pre/Main/Post Loops") \
+  flags(AFTER_PRE_MAIN_POST,            "After Pre/Main/Post Loops") \
+  flags(SUPERWORD1_BEFORE_SCHEDULE,     "Superword 1, Before Schedule") \
+  flags(SUPERWORD2_BEFORE_OUTPUT,       "Superword 2, Before Output") \
+  flags(SUPERWORD3_AFTER_OUTPUT,        "Superword 3, After Output") \
+  flags(BEFORE_CLOOPS,                  "Before CountedLoop") \
+  flags(AFTER_CLOOPS,                   "After CountedLoop") \
+  flags(PHASEIDEAL_BEFORE_EA,           "PhaseIdealLoop before EA") \
+  flags(AFTER_EA,                       "After Escape Analysis") \
+  flags(ITER_GVN_AFTER_EA,              "Iter GVN after EA") \
+  flags(ITER_GVN_AFTER_ELIMINATION,     "Iter GVN after eliminating allocations and locks") \
+  flags(PHASEIDEALLOOP1,                "PhaseIdealLoop 1") \
+  flags(PHASEIDEALLOOP2,                "PhaseIdealLoop 2") \
+  flags(PHASEIDEALLOOP3,                "PhaseIdealLoop 3") \
+  flags(BEFORE_CCP1,                    "Before PhaseCCP 1") \
+  flags(CCP1,                           "PhaseCCP 1") \
+  flags(ITER_GVN2,                      "Iter GVN 2") \
+  flags(PHASEIDEALLOOP_ITERATIONS,      "PhaseIdealLoop iterations") \
+  flags(MACRO_EXPANSION,                "Macro expand") \
+  flags(BARRIER_EXPANSION,              "Barrier expand") \
+  flags(OPTIMIZE_FINISHED,              "Optimize finished") \
+  flags(BEFORE_MATCHING,                "Before matching") \
+  flags(MATCHING,                       "After matching") \
+  flags(GLOBAL_CODE_MOTION,             "Global code motion") \
+  flags(REGISTER_ALLOCATION,            "Register Allocation") \
+  flags(BLOCK_ORDERING,                 "Block Ordering") \
+  flags(PEEPHOLE,                       "Peephole") \
+  flags(POSTALLOC_EXPAND,               "Post-Allocation Expand") \
+  flags(MACH_ANALYSIS,                  "After mach analysis") \
+  flags(FINAL_CODE,                     "Final Code") \
+  flags(END,                            "End") \
+  flags(FAILURE,                        "Failure") \
+  flags(ALL,                            "All") \
+  flags(DEBUG,                          "Debug")
 
 #define table_entry(name, description) PHASE_##name,
 enum CompilerPhaseType {

@@ -47,9 +47,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static com.sun.tools.javac.code.Flags.RECORD;
-import static com.sun.tools.javac.code.Flags.SEALED;
-import static com.sun.tools.javac.code.Flags.NON_SEALED;
 import static com.sun.tools.javac.main.Option.PREVIEW;
 import com.sun.tools.javac.util.JCDiagnostic;
 
@@ -84,7 +81,7 @@ public class Preview {
     private final Log log;
     private final Source source;
 
-    private static final Context.Key<Preview> previewKey = new Context.Key<>();
+    protected static final Context.Key<Preview> previewKey = new Context.Key<>();
 
     public static Preview instance(Context context) {
         Preview instance = context.get(previewKey);
@@ -94,7 +91,8 @@ public class Preview {
         return instance;
     }
 
-    Preview(Context context) {
+    @SuppressWarnings("this-escape")
+    protected Preview(Context context) {
         context.put(previewKey, this);
         Options options = Options.instance(context);
         names = Names.instance(context);
@@ -210,7 +208,7 @@ public class Preview {
     public boolean isPreview(Feature feature) {
         return switch (feature) {
             case STRING_TEMPLATES -> true;
-            case UNNAMED_CLASSES -> true;
+            case IMPLICIT_CLASSES -> true;
             case SUPER_INIT -> true;
             //Note: this is a backdoor which allows to optionally treat all features as 'preview' (for testing).
             //When real preview features will be added, this method can be implemented to return 'true'

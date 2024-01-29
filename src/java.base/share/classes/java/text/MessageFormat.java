@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -231,7 +231,6 @@ import java.util.Objects;
  * <p>
  * The first example uses the static method {@code MessageFormat.format},
  * which internally creates a {@code MessageFormat} for one-time use:
- * <blockquote>
  * {@snippet lang=java :
  * int planet = 7;
  * String event = "a disturbance in the Force";
@@ -240,7 +239,6 @@ import java.util.Objects;
  *     "At {1,time} on {1,date}, there was {2} on planet {0,number,integer}.",
  *     planet, new Date(), event);
  * }
- * </blockquote>
  * The output is:
  * <blockquote><pre>
  * At 12:30 PM on Jul 3, 2053, there was a disturbance in the Force on planet 7.
@@ -249,7 +247,6 @@ import java.util.Objects;
  * <p>
  * The following example creates a {@code MessageFormat} instance that
  * can be used repeatedly:
- * <blockquote>
  * {@snippet lang=java :
  * int fileCount = 1273;
  * String diskName = "MyDisk";
@@ -260,7 +257,6 @@ import java.util.Objects;
  *
  * System.out.println(form.format(testArgs));
  * }
- * </blockquote>
  * The output with different values for {@code fileCount}:
  * <blockquote><pre>
  * The disk "MyDisk" contains 0 file(s).
@@ -269,23 +265,17 @@ import java.util.Objects;
  * </pre></blockquote>
  *
  * <p>
- * For more sophisticated patterns, you can use a {@code ChoiceFormat}
- * to produce correct forms for singular and plural:
- * <blockquote>
+ * For more sophisticated patterns, {@link ChoiceFormat} can be used with
+ * {@code MessageFormat} to produce accurate forms for singular and plural:
  * {@snippet lang=java :
- * MessageFormat form = new MessageFormat("The disk \"{1}\" contains {0}.");
- * double[] filelimits = {0,1,2};
- * String[] filepart = {"no files","one file","{0,number} files"};
- * ChoiceFormat fileform = new ChoiceFormat(filelimits, filepart);
- * form.setFormatByArgumentIndex(0, fileform);
- *
- * int fileCount = 1273;
- * String diskName = "MyDisk";
- * Object[] testArgs = {Long.valueOf(fileCount), diskName};
- *
- * System.out.println(form.format(testArgs));
+ * MessageFormat msgFmt = new MessageFormat("The disk \"{0}\" contains {1}.");
+ * double[] fileLimits = {0,1,2};
+ * String[] filePart = {"no files","one file","{1,number} files"};
+ * ChoiceFormat fileChoices = new ChoiceFormat(fileLimits, filePart);
+ * msgFmt.setFormatByArgumentIndex(1, fileChoices);
+ * Object[] args = {"MyDisk", 1273};
+ * System.out.println(msgFmt.format(args));
  * }
- * </blockquote>
  * The output with different values for {@code fileCount}:
  * <blockquote><pre>
  * The disk "MyDisk" contains no files.
@@ -297,24 +287,26 @@ import java.util.Objects;
  * You can create the {@code ChoiceFormat} programmatically, as in the
  * above example, or by using a pattern. See {@link ChoiceFormat}
  * for more information.
- * <blockquote>
  * {@snippet lang=java :
- * form.applyPattern(
- *    "There {0,choice,0#are no files|1#is one file|1<are {0,number,integer} files}.");
+ * msgFmt.applyPattern(
+ *    "There {0,choice,0#are no files|1#is one file|1<are {1,number,integer} files}.");
  * }
- * </blockquote>
  *
  * <p>
- * <strong>Note:</strong> As we see above, the string produced
- * by a {@code ChoiceFormat} in {@code MessageFormat} is treated as special;
- * occurrences of '{' are used to indicate subformats, and cause recursion.
+ * <strong id="pattern_caveats">Notes:</strong> As seen in the previous snippet,
+ * the string produced by a {@code ChoiceFormat} in {@code MessageFormat} is
+ * treated as special; occurrences of '{' are used to indicate subformats, and
+ * cause recursion. If a {@code FormatElement} is defined in the {@code ChoiceFormat}
+ * pattern, it will only be formatted according to the {@code FormatType} and
+ * {@code FormatStyle} pattern provided. The associated subformats of the
+ * top level {@code MessageFormat} will not be applied to the {@code FormatElement}
+ * defined in the {@code ChoiceFormat} pattern.
  * If you create both a {@code MessageFormat} and {@code ChoiceFormat}
  * programmatically (instead of using the string patterns), then be careful not to
  * produce a format that recurses on itself, which will cause an infinite loop.
  * <p>
  * When a single argument is parsed more than once in the string, the last match
  * will be the final result of the parsing.  For example,
- * <blockquote>
  * {@snippet lang=java :
  * MessageFormat mf = new MessageFormat("{0,number,#.##}, {0,number,#.#}");
  * Object[] objs = {Double.valueOf(3.1415)};
@@ -323,20 +315,17 @@ import java.util.Objects;
  * objs = mf.parse(result, new ParsePosition(0));
  * // objs now equals {Double.valueOf(3.1)}
  * }
- * </blockquote>
  *
  * <p>
  * Likewise, parsing with a {@code MessageFormat} object using patterns containing
  * multiple occurrences of the same argument would return the last match.  For
  * example,
- * <blockquote>
  * {@snippet lang=java :
  * MessageFormat mf = new MessageFormat("{0}, {0}, {0}");
  * String forParsing = "x, y, z";
  * Object[] objs = mf.parse(forParsing, new ParsePosition(0));
  * // objs now equals {new String("z")}
  * }
- * </blockquote>
  *
  * <h3><a id="synchronization">Synchronization</a></h3>
  *
@@ -1193,6 +1182,17 @@ public class MessageFormat extends Format {
     @Override
     public int hashCode() {
         return pattern.hashCode(); // enough for reasonable distribution
+    }
+
+    /**
+     * {@return a string identifying this {@code MessageFormat}, for debugging}
+     */
+    @Override
+    public String toString() {
+        return
+            """
+            MessageFormat [locale: %s, pattern: "%s"]
+            """.formatted(locale == null ? null : '"' + locale.getDisplayName() + '"', toPattern());
     }
 
 

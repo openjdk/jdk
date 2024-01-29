@@ -1153,7 +1153,7 @@ public class FileChannelImpl
 
     // -- Memory-mapped buffers --
 
-    private sealed abstract static class Unmapper
+    private abstract static sealed class Unmapper
         implements Runnable, UnmapperProxy
     {
         private final long address;

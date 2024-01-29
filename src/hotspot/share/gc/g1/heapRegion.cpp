@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -232,7 +232,8 @@ HeapRegion::HeapRegion(uint hrm_index,
   _young_index_in_cset(-1),
   _surv_rate_group(nullptr),
   _age_index(G1SurvRateGroup::InvalidAgeIndex),
-  _node_index(G1NUMA::UnknownNodeIndex)
+  _node_index(G1NUMA::UnknownNodeIndex),
+  _pinned_object_count(0)
 {
   assert(Universe::on_page_boundary(mr.start()) && Universe::on_page_boundary(mr.end()),
          "invalid space boundaries");
@@ -423,6 +424,7 @@ void HeapRegion::print_on(outputStream* st) const {
       st->print("|-");
     }
   }
+  st->print("|%3zu", Atomic::load(&_pinned_object_count));
   st->print_cr("");
 }
 
@@ -726,9 +728,20 @@ void HeapRegion::fill_with_dummy_object(HeapWord* address, size_t word_size, boo
 void HeapRegion::fill_range_with_dead_objects(HeapWord* start, HeapWord* end) {
   size_t range_size = pointer_delta(end, start);
 
-  // Fill the dead range with objects. G1 might need to create two objects if
-  // the range is larger than half a region, which is the max_fill_size().
-  CollectedHeap::fill_with_objects(start, range_size);
+  // We must be a bit careful with regions that contain pinned objects. While the
+  // ranges passed in here corresponding to the space between live objects, it is
+  // possible that there is a pinned object that is not any more referenced by
+  // Java code (only by native).
+  //
+  // In this case we must not zap contents of such an array but we can overwrite
+  // the header; since only pinned typearrays are allowed, this fits nicely with
+  // putting filler arrays into the dead range as the object header sizes match and
+  // no user data is overwritten.
+  //
+  // In particular String Deduplication might change the reference to the character
+  // array of the j.l.String after native code obtained a raw reference to it (via
+  // GetStringCritical()).
+  CollectedHeap::fill_with_objects(start, range_size, !has_pinned_objects());
   HeapWord* current = start;
   do {
     // Update the BOT if the a threshold is crossed.

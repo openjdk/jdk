@@ -303,12 +303,8 @@ TenuredGeneration::TenuredGeneration(ReservedSpace rs,
   // If this wasn't true, a single card could span more than on generation,
   // which would cause problems when we commit/uncommit memory, and when we
   // clear and dirty cards.
-  guarantee(_rs->is_aligned(reserved_mr.start()), "generation must be card aligned");
-  if (reserved_mr.end() != SerialHeap::heap()->reserved_region().end()) {
-    // Don't check at the very end of the heap as we'll assert that we're probing off
-    // the end if we try.
-    guarantee(_rs->is_aligned(reserved_mr.end()), "generation must be card aligned");
-  }
+  guarantee(CardTable::is_card_aligned(reserved_mr.start()), "generation must be card aligned");
+  guarantee(CardTable::is_card_aligned(reserved_mr.end()), "generation must be card aligned");
   _min_heap_delta_bytes = MinHeapDeltaBytes;
   _capacity_at_prologue = initial_byte_size;
   _used_at_prologue = 0;
@@ -335,7 +331,7 @@ TenuredGeneration::TenuredGeneration(ReservedSpace rs,
                                        _the_space, _gen_counters);
 }
 
-void TenuredGeneration::gc_prologue(bool full) {
+void TenuredGeneration::gc_prologue() {
   _capacity_at_prologue = capacity();
   _used_at_prologue = used();
 }
@@ -489,7 +485,7 @@ bool TenuredGeneration::no_allocs_since_save_marks() {
   return _the_space->saved_mark_at_top();
 }
 
-void TenuredGeneration::gc_epilogue(bool full) {
+void TenuredGeneration::gc_epilogue() {
   // update the generation and space performance counters
   update_counters();
   if (ZapUnusedHeapArea) {

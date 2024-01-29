@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
 #include "gc/shared/ageTable.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/oopStorage.hpp"
 #include "gc/shared/space.hpp"
 #if INCLUDE_EPSILONGC
@@ -99,10 +98,6 @@
   nonstatic_field(CollectedHeap,               _is_gc_active,                                 bool)                                  \
   nonstatic_field(CollectedHeap,               _total_collections,                            unsigned int)                          \
                                                                                                                                      \
-  nonstatic_field(ContiguousSpace,            _compaction_top,                               HeapWord*)                             \
-  nonstatic_field(ContiguousSpace,            _first_dead,                                   HeapWord*)                             \
-  nonstatic_field(ContiguousSpace,            _end_of_live,                                  HeapWord*)                             \
-                                                                                                                                     \
   nonstatic_field(ContiguousSpace,             _top,                                          HeapWord*)                             \
   nonstatic_field(ContiguousSpace,             _saved_mark_word,                              HeapWord*)                             \
                                                                                                                                      \
@@ -112,9 +107,6 @@
                                                                                                                                      \
   nonstatic_field(Generation::StatRecord,      invocations,                                   int)                                   \
   nonstatic_field(Generation::StatRecord,      accumulated_time,                              elapsedTimer)                          \
-                                                                                                                                     \
-  nonstatic_field(GenCollectedHeap,            _young_gen,                                    Generation*)                           \
-  nonstatic_field(GenCollectedHeap,            _old_gen,                                      Generation*)                           \
                                                                                                                                      \
   nonstatic_field(MemRegion,                   _start,                                        HeapWord*)                             \
   nonstatic_field(MemRegion,                   _word_size,                                    size_t)                                \
@@ -150,7 +142,6 @@
   /******************************************/                            \
                                                                           \
   declare_toplevel_type(CollectedHeap)                                    \
-           declare_type(GenCollectedHeap,             CollectedHeap)      \
   declare_toplevel_type(Generation)                                       \
   declare_toplevel_type(Space)                                            \
            declare_type(ContiguousSpace,             Space)               \
@@ -179,9 +170,6 @@
   declare_toplevel_type(CardTableBarrierSet**)                            \
   declare_toplevel_type(CollectedHeap*)                                   \
   declare_toplevel_type(ContiguousSpace*)                                 \
-  declare_toplevel_type(DefNewGeneration*)                                \
-  declare_toplevel_type(GenCollectedHeap*)                                \
-  declare_toplevel_type(Generation*)                                      \
   declare_toplevel_type(HeapWord*)                                        \
   declare_toplevel_type(HeapWord* volatile)                               \
   declare_toplevel_type(MemRegion*)                                       \
@@ -224,12 +212,6 @@
   declare_constant(CollectedHeap::Serial)                                   \
   declare_constant(CollectedHeap::Parallel)                                 \
   declare_constant(CollectedHeap::G1)                                       \
-                                                                            \
-  /* constants from Generation::Name enum */                                \
-                                                                            \
-  declare_constant(Generation::DefNew)                                      \
-  declare_constant(Generation::MarkSweepCompact)                            \
-  declare_constant(Generation::Other)                                       \
                                                                             \
   declare_constant(Generation::LogOfGenGrain)                               \
   declare_constant(Generation::GenGrain)                                    \
