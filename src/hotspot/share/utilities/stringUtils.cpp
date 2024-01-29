@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "jvm_io.h"
 #include "memory/allocation.hpp"
-#include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/stringUtils.hpp"
 
@@ -125,21 +124,8 @@ bool StringUtils::is_star_match(const char* star_pattern, const char* str) {
   return true; // all parts of pattern matched
 }
 
-StringUtils::CommaSeparatedStringIterator::CommaSeparatedStringIterator(ccstrlist option) {
-  // Immediately make a private copy of option, and
-  // replace spaces and newlines with comma.
-  _list = (char*) canonicalize(option);
-  _saved_ptr = _list;
-  _token = strtok_r(_saved_ptr, ",", &_saved_ptr);
-}
-
 StringUtils::CommaSeparatedStringIterator::~CommaSeparatedStringIterator() {
   FREE_C_HEAP_ARRAY(char, _list);
-}
-
-StringUtils::CommaSeparatedStringIterator& StringUtils::CommaSeparatedStringIterator::operator++() {
-  _token = strtok_r(nullptr, ",", &_saved_ptr);
-  return *this;
 }
 
 ccstrlist StringUtils::CommaSeparatedStringIterator::canonicalize(ccstrlist option_value) {

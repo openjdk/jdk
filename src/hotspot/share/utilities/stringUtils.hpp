@@ -27,6 +27,11 @@
 
 #include "memory/allStatic.hpp"
 
+#ifdef _WINDOWS
+  // strtok_s is the Windows thread-safe equivalent of POSIX strtok_r
+# define strtok_r strtok_s
+#endif
+
 class StringUtils : AllStatic {
 public:
   // Replace the substring <from> with another string <to>. <to> must be
@@ -57,13 +62,22 @@ public:
     char* _list;
 
   public:
-    CommaSeparatedStringIterator(ccstrlist option);
+    CommaSeparatedStringIterator(ccstrlist option) {
+      // Immediately make a private copy of option, and
+      // replace spaces and newlines with comma.
+      _list = (char*) canonicalize(option);
+      _saved_ptr = _list;
+      _token = strtok_r(_saved_ptr, ",", &_saved_ptr);
+    }
 
     ~CommaSeparatedStringIterator();
 
     const char* operator*() const { return _token; }
 
-    CommaSeparatedStringIterator& operator++();
+    CommaSeparatedStringIterator& operator++() {
+      _token = strtok_r(nullptr, ",", &_saved_ptr);
+      return *this;
+    }
 
     ccstrlist canonicalize(ccstrlist option_value);
   };
