@@ -43,6 +43,7 @@
   flags(EXPAND_VUNBOX,                "Expand VectorUnbox") \
   flags(SCALARIZE_VBOX,               "Scalarize VectorBox") \
   flags(INLINE_VECTOR_REBOX,          "Inline Vector Rebox Calls") \
+  flags(INLINE_VECTOR,                "Inline Vector Calls") \
   flags(EXPAND_VBOX,                  "Expand VectorBox") \
   flags(ELIMINATE_VBOX_ALLOC,         "Eliminate VectorBoxAllocate") \
   flags(ITER_GVN_BEFORE_EA,           "Iter GVN before EA") \

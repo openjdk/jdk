@@ -158,7 +158,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
         cg_intrinsic = cg;
         cg = nullptr;
       } else if (IncrementalInline && should_delay_vector_inlining(callee, jvms)) {
-        return CallGenerator::for_late_inline(callee, cg);
+        return CallGenerator::for_vector_late_inline(callee, cg);
       } else {
         return cg;
       }
@@ -212,6 +212,8 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
             return CallGenerator::for_boxing_late_inline(callee, cg);
           } else if (should_delay_vector_reboxing_inlining(callee, jvms)) {
             return CallGenerator::for_vector_reboxing_late_inline(callee, cg);
+          } else if (should_delay_vector_inlining(callee, jvms)) {
+            return CallGenerator::for_vector_late_inline(callee, cg);
           } else {
             return cg;
           }

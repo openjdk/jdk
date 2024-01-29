@@ -456,6 +456,7 @@ private:
   GrowableArray<CallGenerator*> _boxing_late_inlines; // same but for boxing operations
 
   GrowableArray<CallGenerator*> _vector_reboxing_late_inlines; // same but for vector reboxing operations
+  GrowableArray<CallGenerator*> _vector_late_inlines; // same but for other vector operations
 
   int                           _late_inlines_pos;    // Where in the queue should the next late inlining candidate go (emulate depth first inlining)
   uint                          _number_of_mh_late_inlines; // number of method handle late inlining still pending
@@ -1039,6 +1040,10 @@ private:
     _vector_reboxing_late_inlines.push(cg);
   }
 
+  void              prepend_vector_late_inline(CallGenerator* cg) {
+    _vector_late_inlines.insert_before(0, cg);
+  }
+
   template<typename N, ENABLE_IF(std::is_base_of<Node, N>::value)>
   void remove_useless_nodes(GrowableArray<N*>& node_list, Unique_Node_List& useful);
 
@@ -1076,6 +1081,7 @@ private:
   void remove_root_to_sfpts_edges(PhaseIterGVN& igvn);
 
   void inline_vector_reboxing_calls();
+  void inline_vector_calls(PhaseIterGVN& igvn);
   bool has_vbox_nodes();
 
   void process_late_inline_calls_no_inline(PhaseIterGVN& igvn);
