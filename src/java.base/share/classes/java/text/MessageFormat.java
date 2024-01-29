@@ -82,7 +82,7 @@ import java.util.Objects;
  *         { <i>ArgumentIndex</i> , <i>FormatType</i> }
  *         { <i>ArgumentIndex</i> , <i>FormatType</i> , <i>FormatStyle</i> }
  *
- * <i>FormatType: one of </i>
+ * <i>FormatType:</i>
  *         number
  *         dtf_date
  *         dtf_time
