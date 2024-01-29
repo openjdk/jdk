@@ -51,7 +51,6 @@
 #endif
 
 NEEDS_CLEANUP // remove this definitions ?
-const Register IC_Klass    = t1;    // where the IC klass is cached
 const Register SYNC_header = x10;   // synchronization header
 const Register SHIFT_count = x10;   // where count for shift operations must be
 

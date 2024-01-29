@@ -620,8 +620,6 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
   address c2i_unverified_entry = __ pc();
   Label skip_fixup;
 
-  Label ok;
-
   const Register receiver = j_rarg0;
   const Register data = t1;
   const Register tmp = t2;  // A call-clobbered register not used for arg passing
@@ -641,10 +639,6 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
     __ ic_check();
     __ ld(xmethod, Address(data, CompiledICData::speculated_method_offset()));
 
-    __ bind(ok);
-    // Method might have been compiled since the call site was patched to
-    // interpreted; if that is the case treat it as a miss so we can get
-    // the call site corrected.
     __ ld(t0, Address(xmethod, in_bytes(Method::code_offset())));
     __ beqz(t0, skip_fixup);
     __ far_jump(RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
