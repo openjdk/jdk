@@ -706,7 +706,7 @@ public:
   //
   // Feature identification not affected by VM flags
   //
-  static bool cpu_supports_evex()         { return (_cpu_features & CPU_AVX512F) != 0; }
+  static bool cpu_supports_evex()     { return (_cpu_features & CPU_AVX512F) != 0; }
 
   // Intel features
   static bool is_intel_family_core() { return is_intel() &&
