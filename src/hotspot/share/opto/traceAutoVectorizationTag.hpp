@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_OPTO_TRACE_AUTO_VECTORIZATION_TAG_HPP
-#define SHARE_OPTO_TRACE_AUTO_VECTORIZATION_TAG_HPP
+#ifndef SHARE_OPTO_TRACEAUTOVECTORIZATIONTAG_HPP
+#define SHARE_OPTO_TRACEAUTOVECTORIZATIONTAG_HPP
 
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/stringUtils.hpp"
@@ -162,4 +162,4 @@ class TraceAutoVectorizationTagValidator {
   }
 };
 
-#endif // SHARE_OPTO_TRACE_AUTO_VECTORIZATION_TAG_HPP
+#endif // SHARE_OPTO_TRACEAUTOVECTORIZATIONTAG_HPP
