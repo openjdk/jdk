@@ -407,8 +407,7 @@ void CompiledMethod::clear_inline_caches() {
   }
 }
 
-// Clear IC callsites
-// as well as any associated CompiledICHolders.
+// Delete any associated CompiledICData.
 void CompiledMethod::purge_ic_callsites() {
   ResourceMark rm;
   RelocIterator iter(this);

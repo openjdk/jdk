@@ -378,7 +378,6 @@ public:
   // Execute nmethod barrier code, as if entering through nmethod call.
   void run_nmethod_entry_barrier();
 
-  // Verify and count cached icholder relocations.
   void verify_oop_relocations();
 
   bool has_evol_metadata();
