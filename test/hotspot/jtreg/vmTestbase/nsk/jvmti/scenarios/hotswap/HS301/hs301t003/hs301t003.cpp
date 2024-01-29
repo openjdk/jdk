@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ void JNICALL callbackClassPrepare(jvmtiEnv *jvmti_env,
           nsk_jvmti_getFileName(redefineNumber, FILE_NAME,
                   fileName, sizeof(fileName)/sizeof(char));
           nsk_jvmti_disableNotification(jvmti_env,
-                  JVMTI_EVENT_CLASS_LOAD, NULL);
+                  JVMTI_EVENT_CLASS_LOAD, nullptr);
           if (nsk_jvmti_redefineClass(jvmti_env, klass, fileName)) {
               nsk_printf("\n Redefine successful.\n");
           } else {
@@ -92,7 +92,7 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
             nsk_printf(" Agent:: Error occured while setting event call back.\n");
             return JNI_ERR;
         }
-        if (nsk_jvmti_enableNotification(jvmti, JVMTI_EVENT_CLASS_PREPARE, NULL)) {
+        if (nsk_jvmti_enableNotification(jvmti, JVMTI_EVENT_CLASS_PREPARE, nullptr)) {
             nsk_printf(" Agent:: Enabled notification.\n");
         } else {
             nsk_printf(" Agent:: Failed to enable notification.\n");

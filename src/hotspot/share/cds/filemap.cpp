@@ -2156,7 +2156,7 @@ bool FileMapInfo::map_heap_region_impl() {
 
   if (_heap_pointers_need_patching) {
     char* bitmap_base = map_bitmap_region();
-    if (bitmap_base == NULL) {
+    if (bitmap_base == nullptr) {
       log_info(cds)("CDS heap cannot be used because bitmap region cannot be mapped");
       dealloc_heap_region();
       unmap_region(MetaspaceShared::hp);

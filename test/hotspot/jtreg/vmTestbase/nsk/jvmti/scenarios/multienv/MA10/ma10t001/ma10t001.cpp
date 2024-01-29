@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,10 +48,10 @@ static const char *testThreadName = "Debuggee Thread";
 
 void releaseThreadInfo(jvmtiEnv *jvmti_env, JNIEnv *jni_env, jvmtiThreadInfo *info) {
     jvmti_env->Deallocate((unsigned char *)info->name);
-    if (info->thread_group != NULL) {
+    if (info->thread_group != nullptr) {
         jni_env->DeleteLocalRef(info->thread_group);
     }
-    if (info->context_class_loader != NULL) {
+    if (info->context_class_loader != nullptr) {
         jni_env->DeleteLocalRef(info->context_class_loader);
     }
 }
@@ -80,8 +80,8 @@ static void JNICALL
 Exception(jvmtiEnv *jvmti_env, JNIEnv *jni_env, jthread thread,
         jmethodID method, jlocation location, jobject exception,
         jmethodID catch_method, jlocation catch_location) {
-    jclass klass = NULL;
-    char *signature = NULL;
+    jclass klass = nullptr;
+    char *signature = nullptr;
 
     if (!isTestThread("Exception", jvmti_env, jni_env, thread)) {
         return;
@@ -89,24 +89,24 @@ Exception(jvmtiEnv *jvmti_env, JNIEnv *jni_env, jthread thread,
 
     ExceptionEventsCount++;
 
-    if (!NSK_JNI_VERIFY(jni_env, (klass = jni_env->GetObjectClass(exception)) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni_env, (klass = jni_env->GetObjectClass(exception)) != nullptr)) {
         nsk_jvmti_setFailStatus();
         return;
     }
-    if (!NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(klass, &signature, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(klass, &signature, nullptr))) {
         nsk_jvmti_setFailStatus();
         return;
     }
     NSK_DISPLAY1("Exception event: %s\n", signature);
-    if (signature != NULL)
+    if (signature != nullptr)
         jvmti_env->Deallocate((unsigned char*)signature);
 }
 
 void JNICALL
 ExceptionCatch(jvmtiEnv *jvmti_env, JNIEnv *jni_env, jthread thread,
         jmethodID method, jlocation location, jobject exception) {
-    jclass klass = NULL;
-    char *signature = NULL;
+    jclass klass = nullptr;
+    char *signature = nullptr;
 
     if (!isTestThread("ExceptionCatch", jvmti_env, jni_env, thread)) {
         return;
@@ -114,16 +114,16 @@ ExceptionCatch(jvmtiEnv *jvmti_env, JNIEnv *jni_env, jthread thread,
 
     ExceptionCatchEventsCount++;
 
-    if (!NSK_JNI_VERIFY(jni_env, (klass = jni_env->GetObjectClass(exception)) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni_env, (klass = jni_env->GetObjectClass(exception)) != nullptr)) {
         nsk_jvmti_setFailStatus();
         return;
     }
-    if (!NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(klass, &signature, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(klass, &signature, nullptr))) {
         nsk_jvmti_setFailStatus();
         return;
     }
     NSK_DISPLAY1("ExceptionCatch event: %s\n", signature);
-    if (signature != NULL)
+    if (signature != nullptr)
         jvmti_env->Deallocate((unsigned char*)signature);
 }
 
@@ -136,9 +136,9 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
     if (!nsk_jvmti_waitForSync(timeout))
         return;
 
-    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_EXCEPTION, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_EXCEPTION, nullptr)))
         nsk_jvmti_setFailStatus();
-    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_EXCEPTION_CATCH, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_EXCEPTION_CATCH, nullptr)))
         nsk_jvmti_setFailStatus();
 
     /* resume debugee and wait for sync */
@@ -147,9 +147,9 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
     if (!nsk_jvmti_waitForSync(timeout))
         return;
 
-    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_EXCEPTION, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_EXCEPTION, nullptr)))
         nsk_jvmti_setFailStatus();
-    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_EXCEPTION_CATCH, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_EXCEPTION_CATCH, nullptr)))
         nsk_jvmti_setFailStatus();
 
     NSK_DISPLAY1("Exception events received: %d\n",
@@ -181,7 +181,7 @@ JNIEXPORT jint JNI_OnLoad_ma10t001(JavaVM *jvm, char *options, void *reserved) {
 }
 #endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
-    jvmtiEnv* jvmti = NULL;
+    jvmtiEnv* jvmti = nullptr;
     jvmtiCapabilities caps;
     jvmtiEventCallbacks callbacks;
 
@@ -193,10 +193,10 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     timeout = nsk_jvmti_getWaitTime() * 60 * 1000;
 
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     memset(&caps, 0, sizeof(caps));
