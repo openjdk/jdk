@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,21 @@ HMONITOR* g_hmpMonitors;
 // Callback for CountMonitors below
 BOOL WINAPI clb_fCountMonitors(HMONITOR hMon, HDC hDC, LPRECT rRect, LPARAM lP)
 {
-    g_nMonitorCounter ++;
+    MONITORINFOEX mieInfo;
+    memset((void*)(&mieInfo), 0, sizeof(MONITORINFOEX));
+    mieInfo.cbSize = sizeof(MONITORINFOEX);
+    if (TRUE == ::GetMonitorInfo(hMon, (LPMONITORINFOEX)(&mieInfo))) {
+        HDC hDC = CreateDC(mieInfo.szDevice, NULL, NULL, NULL);
+        if (NULL != hDC) {
+            ::DeleteDC(hDC);
+            g_nMonitorCounter++;
+        } else {
+            J2dTraceLn2(J2D_TRACE_INFO, "Devices::CountMonitors CreateDC failed for monitor with handle %p, device: %S", hMon, mieInfo.szDevice);
+        }
+    } else {
+        J2dTraceLn1(J2D_TRACE_INFO, "Devices::CountMonitors: GetMonitorInfo failed for monitor with handle %p", hMon);
+    }
+
     return TRUE;
 }
 
@@ -104,16 +118,27 @@ int WINAPI CountMonitors(void)
     g_nMonitorCounter = 0;
     ::EnumDisplayMonitors(NULL, NULL, clb_fCountMonitors, 0L);
     return g_nMonitorCounter;
-
 }
 
 // Callback for CollectMonitors below
 BOOL WINAPI clb_fCollectMonitors(HMONITOR hMon, HDC hDC, LPRECT rRect, LPARAM lP)
 {
-
-    if ((g_nMonitorCounter < g_nMonitorLimit) && (NULL != g_hmpMonitors)) {
-        g_hmpMonitors[g_nMonitorCounter] = hMon;
-        g_nMonitorCounter ++;
+    if (g_nMonitorCounter < g_nMonitorLimit) {
+        MONITORINFOEX mieInfo;
+        memset((void*)(&mieInfo), 0, sizeof(MONITORINFOEX));
+        mieInfo.cbSize = sizeof(MONITORINFOEX);
+        if (TRUE == ::GetMonitorInfo(hMon, (LPMONITORINFOEX)(&mieInfo))) {
+            HDC hDC = CreateDC(mieInfo.szDevice, NULL, NULL, NULL);
+            if (NULL != hDC) {
+                ::DeleteDC(hDC);
+                g_hmpMonitors[g_nMonitorCounter] = hMon;
+                g_nMonitorCounter++;
+            } else {
+                J2dTraceLn2(J2D_TRACE_INFO, "Devices::CollectMonitors CreateDC failed for monitor with handle %p, device: %S", hMon, mieInfo.szDevice);
+            }
+        } else {
+            J2dTraceLn1(J2D_TRACE_INFO, "Devices::CollectMonitors: GetMonitorInfo failed for monitor with handle %p", hMon);
+        }
     }
 
     return TRUE;
@@ -121,24 +146,13 @@ BOOL WINAPI clb_fCollectMonitors(HMONITOR hMon, HDC hDC, LPRECT rRect, LPARAM lP
 
 int WINAPI CollectMonitors(HMONITOR* hmpMonitors, int nNum)
 {
-    int retCode = 0;
-
-    if (NULL != hmpMonitors) {
-
-        g_nMonitorCounter   = 0;
-        g_nMonitorLimit     = nNum;
-        g_hmpMonitors       = hmpMonitors;
-
+    g_nMonitorCounter = 0;
+    g_hmpMonitors = hmpMonitors;
+    g_nMonitorLimit = nNum;
+    if (NULL != g_hmpMonitors) {
         ::EnumDisplayMonitors(NULL, NULL, clb_fCollectMonitors, 0L);
-
-        retCode             = g_nMonitorCounter;
-
-        g_nMonitorCounter   = 0;
-        g_nMonitorLimit     = 0;
-        g_hmpMonitors       = NULL;
-
     }
-    return retCode;
+    return g_nMonitorCounter;
 }
 
 BOOL WINAPI MonitorBounds(HMONITOR hmMonitor, RECT* rpBounds)
