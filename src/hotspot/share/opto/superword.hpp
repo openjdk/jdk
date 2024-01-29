@@ -57,7 +57,6 @@
 // second statement is considered the right element.
 
 class VPointer;
-class OrderedPair;
 
 // ========================= Dependence Graph =====================
 
@@ -198,33 +197,6 @@ class SWNodeInfo {
   static const SWNodeInfo initial;
 };
 
-class SuperWord;
-
-// JVMCI: OrderedPair is moved up to deal with compilation issues on Windows
-//------------------------------OrderedPair---------------------------
-// Ordered pair of Node*.
-class OrderedPair {
- protected:
-  Node* _p1;
-  Node* _p2;
- public:
-  OrderedPair() : _p1(nullptr), _p2(nullptr) {}
-  OrderedPair(Node* p1, Node* p2) {
-    if (p1->_idx < p2->_idx) {
-      _p1 = p1; _p2 = p2;
-    } else {
-      _p1 = p2; _p2 = p1;
-    }
-  }
-
-  bool operator==(const OrderedPair &rhs) {
-    return _p1 == rhs._p1 && _p2 == rhs._p2;
-  }
-  void print() { tty->print("  (%d, %d)", _p1->_idx, _p2->_idx); }
-
-  static const OrderedPair initial;
-};
-
 // -----------------------------SuperWord---------------------------------
 // Transforms scalar operations into packed (superword) operations.
 class SuperWord : public ResourceObj {
@@ -249,14 +221,11 @@ class SuperWord : public ResourceObj {
   CloneMap&            _clone_map;       // map of nodes created in cloning
   MemNode const* _align_to_ref;          // Memory reference that pre-loop will align to
 
-  GrowableArray<OrderedPair> _disjoint_ptrs; // runtime disambiguated pointer pairs
-
   DepGraph _dg; // Dependence graph
 
   // Scratch pads
   VectorSet    _visited;       // Visited set
   VectorSet    _post_visited;  // Post-visited set
-  Node_Stack   _n_idx_list;    // List of (node,index) pairs
   GrowableArray<Node*> _nlist; // List of nodes
   GrowableArray<Node*> _stk;   // Stack of nodes
 
@@ -513,8 +482,8 @@ private:
   bool implemented(Node_List* p);
   // For pack p, are all operands and all uses (with in the block) vector?
   bool profitable(Node_List* p);
-  // If a use of pack p is not a vector use, then replace the use with an extract operation.
-  void insert_extracts(Node_List* p);
+  // Verify that all uses of packs are also packs, i.e. we do not need extract operations.
+  DEBUG_ONLY(void verify_no_extract();)
   // Is use->in(u_idx) a vector use?
   bool is_vector_use(Node* use, int u_idx);
   // Construct reverse postorder list of block members

@@ -234,10 +234,6 @@ class Generation: public CHeapObj<mtGC> {
   // non-object.
   virtual HeapWord* block_start(const void* addr) const;
 
-  // Requires "addr" to be the start of a block, and returns "TRUE" iff
-  // the block is an object.
-  virtual bool block_is_obj(const HeapWord* addr) const;
-
   virtual void print() const;
   virtual void print_on(outputStream* st) const;
 
