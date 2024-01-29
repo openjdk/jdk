@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,13 +31,13 @@
 static const char CONTINUATION_CLASS_NAME[] = "jdk/internal/vm/Continuation";
 static const char CONTINUATION_METHOD_NAME[] = "enter";
 
-static jrawMonitorID event_mon = NULL;
+static jrawMonitorID event_mon = nullptr;
 
 static void
 test_stack_trace(jvmtiEnv *jvmti, JNIEnv *jni, jthread vthread) {
   jvmtiFrameInfo frames[MAX_FRAME_COUNT];
   jint count = -1;
-  jmethodID method = NULL;
+  jmethodID method = nullptr;
   jvmtiError err;
 
   err = jvmti->GetStackTrace(vthread, 0, MAX_FRAME_COUNT, frames, &count);
@@ -93,7 +93,7 @@ check_link_consistency(jvmtiEnv *jvmti, JNIEnv *jni, jthread vthread) {
     fatal(jni, "Carrier thread is NOT expected to be suspended");
   }
 
-  if (cthread != NULL) {
+  if (cthread != nullptr) {
     jthread cthread_to_vthread = get_virtual_thread(jvmti, jni, cthread);
 
     if (!jni->IsSameObject(vthread, cthread_to_vthread)) {
@@ -118,12 +118,12 @@ check_vthread_consistency_suspended(jvmtiEnv *jvmti, JNIEnv *jni, jthread vthrea
     jni->FatalError("Agent: check_vthread_consistency_suspended: vthread is expected to be virtual");
   }
   jthread cthread = get_carrier_thread(jvmti, jni, vthread);
-  //const char* cname = (cthread == NULL) ? "<no cthread>" : get_thread_name(jvmti, jni, cthread);
+  //const char* cname = (cthread == nullptr) ? "<no cthread>" : get_thread_name(jvmti, jni, cthread);
 
   err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_SINGLE_STEP, vthread);
   check_jvmti_status(jni, err, "Error in JVMTI SetEventNotificationMode: enable SINGLE_STEP");
 
-  if (cthread != NULL) { // pre-condition for reliable testing
+  if (cthread != nullptr) { // pre-condition for reliable testing
     test_stack_trace(jvmti, jni, vthread);
     check_link_consistency(jvmti, jni, vthread);
   }
@@ -145,7 +145,7 @@ SingleStep(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread,
   print_stack_trace(jvmti, jni, thread);
 
   jthread cthread = get_carrier_thread(jvmti, jni, thread);
-  if (cthread != NULL) {
+  if (cthread != nullptr) {
     print_stack_trace(jvmti, jni, cthread);
   }
 
@@ -170,7 +170,7 @@ agentProc(jvmtiEnv * jvmti, JNIEnv * jni, void * arg) {
 
   int iter = 0;
   while (true) {
-    jthread *threads = NULL;
+    jthread *threads = nullptr;
     jint count = 0;
     jvmtiError err;
 
@@ -182,7 +182,7 @@ agentProc(jvmtiEnv * jvmti, JNIEnv * jni, void * arg) {
 
     for (int i = 0; i < count; i++) {
       jthread cthread = threads[i];
-      jthread vthread = NULL;
+      jthread vthread = nullptr;
 
       err = GetVirtualThread(jvmti, jni, cthread, &vthread);
       if (err == JVMTI_ERROR_THREAD_NOT_ALIVE) {
@@ -192,7 +192,7 @@ agentProc(jvmtiEnv * jvmti, JNIEnv * jni, void * arg) {
         return;
       }
       check_jvmti_status(jni, err,  "Error in GetVirtualThread");
-      if (iter > 50 && vthread != NULL) {
+      if (iter > 50 && vthread != nullptr) {
         // char* cname = get_thread_name(jvmti, jni, cthread);
         // char* vname = get_thread_name(jvmti, jni, vthread);
 
@@ -256,7 +256,7 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
     return JNI_ERR;
   }
 
-  if (set_agent_proc(agentProc, NULL) != JNI_TRUE) {
+  if (set_agent_proc(agentProc, nullptr) != JNI_TRUE) {
     return JNI_ERR;
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 
            VMInit initial thread arg.
            SetThreadLocalStorage and SetEnvironmentLocalStorage should allow
-           value to be set to NULL.
+           value to be set to nullptr.
  */
 
 #include <stdio.h>
@@ -105,13 +105,13 @@ void check_val(intptr_t x, intptr_t y, const char* msg) {
 
 void JNICALL vmInit(jvmtiEnv *jvmti_env, JNIEnv *jni_env, jthread thread) {
   check_val(get_thread_local(thread), 0, "thread initial");
-  check_val(get_thread_local(NULL), 0, "thread initial");
+  check_val(get_thread_local(nullptr), 0, "thread initial");
   set_thread_local(thread, 35);
   check_val(get_thread_local(thread), 35, "thread set non-zero");
-  check_val(get_thread_local(NULL), 35, "thread set non-zero");
-  set_thread_local(NULL, 0);
+  check_val(get_thread_local(nullptr), 35, "thread set non-zero");
+  set_thread_local(nullptr, 0);
   check_val(get_thread_local(thread), 0, "thread set zero");
-  check_val(get_thread_local(NULL), 0, "thread set zero");
+  check_val(get_thread_local(nullptr), 0, "thread set zero");
 
   check_val(get_env_local(), 14, "env set non-zero");
   set_env_local(77);
@@ -161,7 +161,7 @@ jint Agent_Initialize(JavaVM * jvm, char *options, void *reserved) {
     res = jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks));
     JVMTI_ERROR_CHECK("SetEventCallbacks returned error", res);
 
-    res = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT,NULL);
+    res = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT,nullptr);
     JVMTI_ERROR_CHECK("SetEventNotificationMode for VM_INIT returned error", res);
 
     return JNI_OK;
@@ -175,7 +175,7 @@ Java_nsk_jvmti_unit_setNullVMInit_JvmtiTest_check(JNIEnv *env, jclass cls) {
   set_env_local(0);
   check_val(get_env_local(), 0, "env reset to zero");
 
-  check_val(get_thread_local(NULL), 0, "thread check");
+  check_val(get_thread_local(nullptr), 0, "thread check");
 
   return iGlobalStatus;
 }

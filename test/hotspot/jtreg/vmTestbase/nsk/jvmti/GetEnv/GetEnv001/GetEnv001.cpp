@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@ jint Agent_Initialize(JavaVM *vm, char *options, void *reserved)
         return JNI_ERR;
     }
 
-    if (vm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1) != JNI_OK || jvmti == NULL) {
+    if (vm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1) != JNI_OK || jvmti == nullptr) {
         NSK_COMPLAIN0("JVMTI_VERSION_1_1 isn't supported.");
         return JNI_OK;
     }
@@ -109,7 +109,7 @@ jint Agent_Initialize(JavaVM *vm, char *options, void *reserved)
         return JNI_ERR;
 
     // Enable class retransformation
-    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, nullptr)))
         return JNI_ERR;
 
     return JNI_OK;
