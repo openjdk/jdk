@@ -27,8 +27,6 @@
 
 #include "memory/allStatic.hpp"
 
-#include <string.h>
-
 class StringUtils : AllStatic {
 public:
   // Replace the substring <from> with another string <to>. <to> must be
@@ -59,22 +57,13 @@ public:
     char* _list;
 
   public:
-    CommaSeparatedStringIterator(ccstrlist option) {
-      // Immediately make a private copy of option, and
-      // replace spaces and newlines with comma.
-      _list = (char*) canonicalize(option);
-      _saved_ptr = _list;
-      _token = strtok_r(_saved_ptr, ",", &_saved_ptr);
-    }
+    CommaSeparatedStringIterator(ccstrlist option);
 
     ~CommaSeparatedStringIterator();
 
     const char* operator*() const { return _token; }
 
-    CommaSeparatedStringIterator& operator++() {
-      _token = strtok_r(nullptr, ",", &_saved_ptr);
-      return *this;
-    }
+    CommaSeparatedStringIterator& operator++();
 
     ccstrlist canonicalize(ccstrlist option_value);
   };
