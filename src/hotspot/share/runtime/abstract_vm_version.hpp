@@ -54,7 +54,7 @@ class Abstract_VM_Version: AllStatic {
   static const char*  _s_vm_release;
   static const char*  _s_internal_vm_info_string;
 
-  // CPU feature flags which can be restricted by VM flags.
+  // CPU feature flags, can be affected by VM settings.
   static uint64_t _features;
   static const char* _features_string;
 
