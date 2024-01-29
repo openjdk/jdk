@@ -314,7 +314,7 @@ import java.util.Objects;
  * strings where the original version doesn't have them.
  * </dl>
  *
- * <h3>Usage Information</h3>
+ * <h2>Usage Information</h2>
  *
  * <p>
  * Here are some examples of usage.
@@ -367,7 +367,7 @@ import java.util.Objects;
  * programmatically (instead of using the string patterns), then be careful not to
  * produce a format that recurses on itself, which will cause an infinite loop.
  *
- * <h3>Formatting Date and Time</h3>
+ * <h2>Formatting Date and Time</h2>
  *
  * MessageFormat provides patterns that support both the {@link java.time} package
  * and the {@link Date} type. Consider the 3 following examples,
