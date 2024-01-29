@@ -754,11 +754,11 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
     }
 
     /**
-     * Unlike most components, JScrollBar will derive the minimum size from
+     * Unlike most components, {@code JScrollBar} derives the minimum size from
      * the preferred size in one axis and a fixed minimum size in the other.
      * Thus, it overrides {@code JComponent.setMinimumSize} contract
-     * that subsequent calls to getMinimumSize will return the
-     * same value as set in {@code JComponent.setMinimumSize}
+     * that subsequent calls to {@code getMinimumSize} will return the
+     * same value as set in {@code JComponent.setMinimumSize}.
      *
      * @param minimumSize the new minimum size of this component
      */
@@ -767,11 +767,11 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
     }
 
     /**
-     * Unlike most components, JScrollBar will derive the maximum size from
+     * Unlike most components, {@code JScrollBar} derives the maximum size from
      * the preferred size in one axis and a fixed maximum size in the other.
      * Thus, it overrides {@code JComponent.setMaximumSize} contract
-     * that subsequent calls to getMaximumSize will return the
-     * same value as set in {@code JComponent.setMaximumSize}
+     * that subsequent calls to {@code getMaximumSize} will return the
+     * same value as set in {@code JComponent.setMaximumSize}.
      *
      * @param maximumSize the desired maximum allowable size
      */
@@ -780,6 +780,7 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
     }
 
     /**
+     * Returns the minimum size for the {@code JScrollBar}.
      * The scrollbar is flexible along its scrolling axis and
      * rigid along the other axis.
      * As specified in {@code setMinimumSize} JScrollBar will derive the
@@ -798,6 +799,7 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
     }
 
     /**
+     * Returns the maximum size for the {@code JScrollBar}.
      * The scrollbar is flexible along its scrolling axis and
      * rigid along the other axis.
      * As specified in {@code setMaximumSize} JScrollBar will derive the

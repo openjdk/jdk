@@ -1741,8 +1741,10 @@ public abstract class JComponent extends Container implements Serializable,
      * Sets the maximum size of this component to a constant
      * value.  Subsequent calls to <code>getMaximumSize</code> will always
      * return this value; the component's UI will not be asked
-     * to compute it.  Setting the maximum size to <code>null</code>
-     * restores the default behavior.
+     * to compute it.
+     * Subclasses may choose to override this by returning its own maximum size
+     * in its {@code getMaximumSize} method.
+     * Setting the maximum size to <code>null</code> restores the default behavior.
      *
      * @param maximumSize a <code>Dimension</code> containing the
      *          desired maximum allowable size
@@ -1782,8 +1784,10 @@ public abstract class JComponent extends Container implements Serializable,
      * Sets the minimum size of this component to a constant
      * value.  Subsequent calls to <code>getMinimumSize</code> will always
      * return this value; the component's UI will not be asked
-     * to compute it.  Setting the minimum size to <code>null</code>
-     * restores the default behavior.
+     * to compute it.
+     * Subclasses may choose to override this by returning its own minimum size
+     * in its {@code getMinimumSize} method.
+     * Setting the minimum size to <code>null</code> restores the default behavior.
      *
      * @param minimumSize the new minimum size of this component
      * @see #getMinimumSize
