@@ -51,6 +51,7 @@
 
 #ifdef __linux__
 #include <sys/syscall.h>
+#include <sys/sysmacros.h> // makedev macros
 #endif
 
 #if defined(__linux__) || defined(_AIX)
@@ -70,6 +71,106 @@
 #define lstat64 lstat
 #define readdir64 readdir
 #endif
+
+#if defined(__linux__)
+// Account for the case where we compile on a system without statx
+// support. We still want to ensure we can call statx at runtime
+// if the runtime glibc version supports it (>= 2.28). We do this
+// by defining binary compatible statx structs in this file and
+// not relying on included headers.
+
+#ifndef __GLIBC__
+// Alpine doesn't know these types, define them
+typedef unsigned int       __uint32_t;
+typedef unsigned short     __uint16_t;
+typedef unsigned long int  __uint64_t;
+#endif
+
+/*
+ * Timestamp structure for the timestamps in struct statx.
+ */
+struct my_statx_timestamp {
+        int64_t   tv_sec;
+        __uint32_t  tv_nsec;
+        int32_t   __reserved;
+};
+
+/*
+ * struct statx used by statx system call on >= glibc 2.28
+ * systems
+ */
+struct my_statx
+{
+  __uint32_t stx_mask;
+  __uint32_t stx_blksize;
+  __uint64_t stx_attributes;
+  __uint32_t stx_nlink;
+  __uint32_t stx_uid;
+  __uint32_t stx_gid;
+  __uint16_t stx_mode;
+  __uint16_t __statx_pad1[1];
+  __uint64_t stx_ino;
+  __uint64_t stx_size;
+  __uint64_t stx_blocks;
+  __uint64_t stx_attributes_mask;
+  struct my_statx_timestamp stx_atime;
+  struct my_statx_timestamp stx_btime;
+  struct my_statx_timestamp stx_ctime;
+  struct my_statx_timestamp stx_mtime;
+  __uint32_t stx_rdev_major;
+  __uint32_t stx_rdev_minor;
+  __uint32_t stx_dev_major;
+  __uint32_t stx_dev_minor;
+  __uint64_t __statx_pad2[14];
+};
+
+// statx masks, flags, constants
+
+#ifndef AT_SYMLINK_NOFOLLOW
+#define AT_SYMLINK_NOFOLLOW 0x100
+#endif
+
+#ifndef AT_STATX_SYNC_AS_STAT
+#define AT_STATX_SYNC_AS_STAT 0x0000
+#endif
+
+#ifndef AT_EMPTY_PATH
+#define AT_EMPTY_PATH 0x1000
+#endif
+
+#ifndef STATX_BASIC_STATS
+#define STATX_BASIC_STATS 0x000007ffU
+#endif
+
+#ifndef STATX_BTIME
+#define STATX_BTIME 0x00000800U
+#endif
+
+#ifndef STATX_TYPE
+#define STATX_TYPE 0x00000001U
+#endif
+
+#ifndef STATX_MODE
+#define STATX_MODE 0x00000002U
+#endif
+
+#ifndef STATX_ALL
+#define STATX_ALL (STATX_BTIME | STATX_BASIC_STATS)
+#endif
+
+#ifndef AT_FDCWD
+#define AT_FDCWD -100
+#endif
+
+#ifndef RTLD_DEFAULT
+#define RTLD_DEFAULT RTLD_LOCAL
+#endif
+
+#define NO_FOLLOW_SYMLINK 1
+#define FOLLOW_SYMLINK 0
+
+#endif // __linux__
+
 
 #include "jni.h"
 #include "jni_util.h"
@@ -117,8 +218,11 @@ static jfieldID attrs_st_mtime_nsec;
 static jfieldID attrs_st_ctime_sec;
 static jfieldID attrs_st_ctime_nsec;
 
-#ifdef _DARWIN_FEATURE_64_BIT_INODE
+#if defined(_DARWIN_FEATURE_64_BIT_INODE) || defined(__linux__)
 static jfieldID attrs_st_birthtime_sec;
+#endif
+#if defined(__linux__) // Linux has nsec granularity if supported
+static jfieldID attrs_st_birthtime_nsec;
 #endif
 
 static jfieldID attrs_f_frsize;
@@ -143,6 +247,10 @@ typedef int futimesat_func(int, const char *, const struct timeval *);
 typedef int futimens_func(int, const struct timespec *);
 typedef int lutimes_func(const char *, const struct timeval *);
 typedef DIR* fdopendir_func(int);
+#if defined(__linux__)
+typedef int statx_func(int dirfd, const char *restrict pathname, int flags,
+                       unsigned int mask, struct my_statx *restrict statxbuf);
+#endif
 
 static openat64_func* my_openat64_func = NULL;
 static fstatat64_func* my_fstatat64_func = NULL;
@@ -152,6 +260,9 @@ static futimesat_func* my_futimesat_func = NULL;
 static futimens_func* my_futimens_func = NULL;
 static lutimes_func* my_lutimes_func = NULL;
 static fdopendir_func* my_fdopendir_func = NULL;
+#if defined(__linux__)
+static statx_func* my_statx_func = NULL;
+#endif
 
 /**
  * fstatat missing from glibc on Linux.
@@ -174,6 +285,13 @@ static int fstatat64_wrapper(int dfd, const char *path,
                              struct stat64 *statbuf, int flag)
 {
     return syscall(__NR_newfstatat, dfd, path, statbuf, flag);
+}
+#endif
+
+#if defined(__linux__)
+static int statx_wrapper(int dirfd, const char *restrict pathname, int flags,
+                         unsigned int mask, struct my_statx *restrict statxbuf) {
+    return (*my_statx_func)(dirfd, pathname, flags, mask, statxbuf);
 }
 #endif
 
@@ -229,9 +347,13 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
     attrs_st_ctime_nsec = (*env)->GetFieldID(env, clazz, "st_ctime_nsec", "J");
     CHECK_NULL_RETURN(attrs_st_ctime_nsec, 0);
 
-#ifdef _DARWIN_FEATURE_64_BIT_INODE
+#if defined(_DARWIN_FEATURE_64_BIT_INODE) || defined(__linux__)
     attrs_st_birthtime_sec = (*env)->GetFieldID(env, clazz, "st_birthtime_sec", "J");
     CHECK_NULL_RETURN(attrs_st_birthtime_sec, 0);
+#endif
+#if defined (__linux__) // Linux has nsec granularity
+    attrs_st_birthtime_nsec = (*env)->GetFieldID(env, clazz, "st_birthtime_nsec", "J");
+    CHECK_NULL_RETURN(attrs_st_birthtime_nsec, 0);
 #endif
 
     clazz = (*env)->FindClass(env, "sun/nio/fs/UnixFileStoreAttributes");
@@ -313,6 +435,12 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
 
 #ifdef _DARWIN_FEATURE_64_BIT_INODE
     capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_BIRTHTIME;
+#endif
+#if defined(__linux__)
+    my_statx_func = (statx_func*) dlsym(RTLD_DEFAULT, "statx");
+    if (my_statx_func != NULL) {
+        capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_BIRTHTIME;
+    }
 #endif
 
     /* supports extended attributes */
@@ -490,10 +618,37 @@ Java_sun_nio_fs_UnixNativeDispatcher_write(JNIEnv* env, jclass this, jint fd,
     return (jint)n;
 }
 
+#if defined(__linux__)
+/**
+ * Copy statx members into sun.nio.fs.UnixFileAttributes
+ */
+static void copy_statx_attributes(JNIEnv* env, struct my_statx* buf, jobject attrs) {
+    (*env)->SetIntField(env, attrs, attrs_st_mode, (jint)buf->stx_mode);
+    (*env)->SetLongField(env, attrs, attrs_st_ino, (jlong)buf->stx_ino);
+    (*env)->SetIntField(env, attrs, attrs_st_nlink, (jint)buf->stx_nlink);
+    (*env)->SetIntField(env, attrs, attrs_st_uid, (jint)buf->stx_uid);
+    (*env)->SetIntField(env, attrs, attrs_st_gid, (jint)buf->stx_gid);
+    (*env)->SetLongField(env, attrs, attrs_st_size, (jlong)buf->stx_size);
+    (*env)->SetLongField(env, attrs, attrs_st_atime_sec, (jlong)buf->stx_atime.tv_sec);
+    (*env)->SetLongField(env, attrs, attrs_st_mtime_sec, (jlong)buf->stx_mtime.tv_sec);
+    (*env)->SetLongField(env, attrs, attrs_st_ctime_sec, (jlong)buf->stx_ctime.tv_sec);
+    (*env)->SetLongField(env, attrs, attrs_st_birthtime_sec, (jlong)buf->stx_btime.tv_sec);
+    (*env)->SetLongField(env, attrs, attrs_st_birthtime_nsec, (jlong)buf->stx_btime.tv_nsec);
+    (*env)->SetLongField(env, attrs, attrs_st_atime_nsec, (jlong)buf->stx_atime.tv_nsec);
+    (*env)->SetLongField(env, attrs, attrs_st_mtime_nsec, (jlong)buf->stx_mtime.tv_nsec);
+    (*env)->SetLongField(env, attrs, attrs_st_ctime_nsec, (jlong)buf->stx_ctime.tv_nsec);
+    // convert statx major:minor to dev_t using makedev
+    dev_t dev = makedev(buf->stx_dev_major, buf->stx_dev_minor);
+    dev_t rdev = makedev(buf->stx_rdev_major, buf->stx_rdev_minor);
+    (*env)->SetLongField(env, attrs, attrs_st_dev, (jlong)dev);
+    (*env)->SetLongField(env, attrs, attrs_st_rdev, (jlong)rdev);
+}
+#endif
+
 /**
  * Copy stat64 members into sun.nio.fs.UnixFileAttributes
  */
-static void prepAttributes(JNIEnv* env, struct stat64* buf, jobject attrs) {
+static void copy_stat64_attributes(JNIEnv* env, struct stat64* buf, jobject attrs) {
     (*env)->SetIntField(env, attrs, attrs_st_mode, (jint)buf->st_mode);
     (*env)->SetLongField(env, attrs, attrs_st_ino, (jlong)buf->st_ino);
     (*env)->SetLongField(env, attrs, attrs_st_dev, (jlong)buf->st_dev);
@@ -508,6 +663,7 @@ static void prepAttributes(JNIEnv* env, struct stat64* buf, jobject attrs) {
 
 #ifdef _DARWIN_FEATURE_64_BIT_INODE
     (*env)->SetLongField(env, attrs, attrs_st_birthtime_sec, (jlong)buf->st_birthtime);
+    // rely on default value of 0 for st_birthtime_nsec field on Darwin
 #endif
 
 #ifndef MACOSX
@@ -528,12 +684,28 @@ Java_sun_nio_fs_UnixNativeDispatcher_stat0(JNIEnv* env, jclass this,
     int err;
     struct stat64 buf;
     const char* path = (const char*)jlong_to_ptr(pathAddress);
+#if defined(__linux__)
+    struct my_statx statx_buf;
+    int flags = AT_STATX_SYNC_AS_STAT;
+    unsigned int mask = STATX_ALL;
 
+    if (my_statx_func != NULL) {
+        // Prefer statx over stat64 on Linux if it's available
+        RESTARTABLE(statx_wrapper(AT_FDCWD, path, flags, mask, &statx_buf), err);
+        if (err == 0) {
+            copy_statx_attributes(env, &statx_buf, attrs);
+        } else {
+            throwUnixException(env, errno);
+        }
+        // statx was available, so return now
+        return;
+    }
+#endif
     RESTARTABLE(stat64(path, &buf), err);
     if (err == -1) {
         throwUnixException(env, errno);
     } else {
-        prepAttributes(env, &buf, attrs);
+        copy_stat64_attributes(env, &buf, attrs);
     }
 }
 
@@ -543,6 +715,21 @@ Java_sun_nio_fs_UnixNativeDispatcher_stat1(JNIEnv* env, jclass this, jlong pathA
     struct stat64 buf;
     const char* path = (const char*)jlong_to_ptr(pathAddress);
 
+#if defined(__linux__)
+    struct my_statx statx_buf;
+    int flags = AT_STATX_SYNC_AS_STAT;
+    unsigned int mask = STATX_TYPE | STATX_MODE; // only want stx.mode
+
+    if (my_statx_func != NULL) {
+        // Prefer statx over stat64 on Linux if it's available
+        RESTARTABLE(statx_wrapper(AT_FDCWD, path, flags, mask, &statx_buf), err);
+        if (err == 0) {
+            return (jint)statx_buf.stx_mode;
+        } else {
+            return 0;
+        }
+    }
+#endif
     RESTARTABLE(stat64(path, &buf), err);
     if (err == -1) {
         return 0;
@@ -558,12 +745,28 @@ Java_sun_nio_fs_UnixNativeDispatcher_lstat0(JNIEnv* env, jclass this,
     int err;
     struct stat64 buf;
     const char* path = (const char*)jlong_to_ptr(pathAddress);
+#if defined(__linux__)
+    struct my_statx statx_buf;
+    int flags = AT_STATX_SYNC_AS_STAT | AT_SYMLINK_NOFOLLOW;
+    unsigned int mask = STATX_ALL;
 
+    if (my_statx_func != NULL) {
+        // Prefer statx over stat64 on Linux if it's available
+        RESTARTABLE(statx_wrapper(AT_FDCWD, path, flags, mask, &statx_buf), err);
+        if (err == 0) {
+            copy_statx_attributes(env, &statx_buf, attrs);
+        } else {
+            throwUnixException(env, errno);
+        }
+        // statx was available, so return now
+        return;
+    }
+#endif
     RESTARTABLE(lstat64(path, &buf), err);
     if (err == -1) {
         throwUnixException(env, errno);
     } else {
-        prepAttributes(env, &buf, attrs);
+        copy_stat64_attributes(env, &buf, attrs);
     }
 }
 
@@ -573,12 +776,29 @@ Java_sun_nio_fs_UnixNativeDispatcher_fstat(JNIEnv* env, jclass this, jint fd,
 {
     int err;
     struct stat64 buf;
+#if defined(__linux__)
+    struct my_statx statx_buf;
+    int flags = AT_EMPTY_PATH | AT_STATX_SYNC_AS_STAT;
+    unsigned int mask = STATX_ALL;
 
+    if (my_statx_func != NULL) {
+        // statx supports FD use via dirfd iff pathname is an empty string and the
+        // AT_EMPTY_PATH flag is specified in flags
+        RESTARTABLE(statx_wrapper((int)fd, "", flags, mask, &statx_buf), err);
+        if (err == 0) {
+            copy_statx_attributes(env, &statx_buf, attrs);
+        } else {
+            throwUnixException(env, errno);
+        }
+        // statx was available, so return now
+        return;
+    }
+#endif
     RESTARTABLE(fstat64((int)fd, &buf), err);
     if (err == -1) {
         throwUnixException(env, errno);
     } else {
-        prepAttributes(env, &buf, attrs);
+        copy_stat64_attributes(env, &buf, attrs);
     }
 }
 
@@ -589,6 +809,26 @@ Java_sun_nio_fs_UnixNativeDispatcher_fstatat0(JNIEnv* env, jclass this, jint dfd
     int err;
     struct stat64 buf;
     const char* path = (const char*)jlong_to_ptr(pathAddress);
+#if defined(__linux__)
+    struct my_statx statx_buf;
+    int flags = AT_STATX_SYNC_AS_STAT;
+    unsigned int mask = STATX_ALL;
+
+    if (my_statx_func != NULL) {
+        // Prefer statx over stat64 on Linux if it's available
+        if (((int)flag & AT_SYMLINK_NOFOLLOW) > 0) { // flag set in java code
+            flags |= AT_SYMLINK_NOFOLLOW;
+        }
+        RESTARTABLE(statx_wrapper((int)dfd, path, flags, mask, &statx_buf), err);
+        if (err == 0) {
+            copy_statx_attributes(env, &statx_buf, attrs);
+        } else {
+            throwUnixException(env, errno);
+        }
+        // statx was available, so return now
+        return;
+    }
+#endif
 
     if (my_fstatat64_func == NULL) {
         JNU_ThrowInternalError(env, "should not reach here");
@@ -598,7 +838,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_fstatat0(JNIEnv* env, jclass this, jint dfd
     if (err == -1) {
         throwUnixException(env, errno);
     } else {
-        prepAttributes(env, &buf, attrs);
+        copy_stat64_attributes(env, &buf, attrs);
     }
 }
 
