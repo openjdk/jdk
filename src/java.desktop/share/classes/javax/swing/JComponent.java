@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1739,12 +1739,13 @@ public abstract class JComponent extends Container implements Serializable,
 
     /**
      * Sets the maximum size of this component to a constant
-     * value.  Subsequent calls to <code>getMaximumSize</code> will always
+     * value.  Subsequent calls to {@code getMaximumSize} will always
      * return this value; the component's UI will not be asked
-     * to compute it.
+     * to compute it. Setting the maximum size to {@code null}
+     * restores the default behavior.
+     * <p>
      * Subclasses may choose to override this by returning its own maximum size
      * in its {@code getMaximumSize} method.
-     * Setting the maximum size to <code>null</code> restores the default behavior.
      *
      * @param maximumSize a <code>Dimension</code> containing the
      *          desired maximum allowable size
@@ -1782,12 +1783,13 @@ public abstract class JComponent extends Container implements Serializable,
 
     /**
      * Sets the minimum size of this component to a constant
-     * value.  Subsequent calls to <code>getMinimumSize</code> will always
+     * value.  Subsequent calls to {@code getMinimumSize} will always
      * return this value; the component's UI will not be asked
-     * to compute it.
+     * to compute it. Setting the minimum size to {@code null}
+     * restores the default behavior.
+     * <p>
      * Subclasses may choose to override this by returning its own minimum size
      * in its {@code getMinimumSize} method.
-     * Setting the minimum size to <code>null</code> restores the default behavior.
      *
      * @param minimumSize the new minimum size of this component
      * @see #getMinimumSize
