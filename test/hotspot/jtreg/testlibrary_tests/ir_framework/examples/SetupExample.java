@@ -94,7 +94,7 @@ public class SetupExample {
         iFld3 = invocationCounter + 2;
         return new Object[]{invocationCounter}; // passed as arguments to test method
     }
- 
+
     @Test
     @Arguments(setup = "setupTestSetupArgumentsAndFields")
     int testSetupArgumentsAndFields(int argVal) {

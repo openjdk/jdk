@@ -128,7 +128,7 @@ final class SetupArgumentsProvider extends ArgumentsProvider {
     SetupArgumentsProvider(Method setupMethod) {
         this.setupMethod = setupMethod;
     }
-    
+
     @Override
     public Object[] getArguments(Object invocationTarget, int invocationCounter) {
         Object target = Modifier.isStatic(setupMethod.getModifiers()) ? null
