@@ -26,15 +26,20 @@
 package sun.awt.screencast;
 
 import sun.awt.UNIXToolkit;
+import sun.java2d.pipe.Region;
 import sun.security.action.GetPropertyAction;
 
+import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsEnvironment;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
+import java.awt.geom.AffineTransform;
 import java.security.AccessController;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.stream.IntStream;
 
 /**
@@ -53,6 +58,13 @@ public class ScreencastHelper {
     private static final int ERROR = -1;
     private static final int DENIED = -11;
     private static final int OUT_OF_BOUNDS = -12;
+
+    private static final int DELAY_BEFORE_SESSION_CLOSE = 2000;
+
+    private static volatile TimerTask timerTask = null;
+    private static final Timer timerCloseSession
+            = new Timer("auto-close screencast session", true);
+
 
     private ScreencastHelper() {
     }
@@ -100,15 +112,45 @@ public class ScreencastHelper {
                 .stream(GraphicsEnvironment
                         .getLocalGraphicsEnvironment()
                         .getScreenDevices())
-                .map(graphicsDevice ->
-                        graphicsDevice.getDefaultConfiguration().getBounds()
-                ).toList();
+                .map(graphicsDevice -> {
+                    GraphicsConfiguration gc =
+                            graphicsDevice.getDefaultConfiguration();
+                    Rectangle screen = gc.getBounds();
+                    AffineTransform tx = gc.getDefaultTransform();
+
+                    return new Rectangle(
+                            Region.clipRound(screen.x * tx.getScaleX()),
+                            Region.clipRound(screen.y * tx.getScaleY()),
+                            Region.clipRound(screen.width * tx.getScaleX()),
+                            Region.clipRound(screen.height * tx.getScaleY())
+                    );
+                })
+                .toList();
+    }
+
+    private static synchronized native void closeSession();
+
+    private static void timerCloseSessionRestart() {
+        if (timerTask != null) {
+            timerTask.cancel();
+        }
+
+        timerTask = new TimerTask() {
+            @Override
+            public void run() {
+                closeSession();
+            }
+        };
+
+        timerCloseSession.schedule(timerTask, DELAY_BEFORE_SESSION_CLOSE);
     }
 
     public static synchronized void getRGBPixels(
             int x, int y, int width, int height, int[] pixelArray
     ) {
         if (!IS_NATIVE_LOADED) return;
+
+        timerCloseSessionRestart();
 
         Rectangle captureArea = new Rectangle(x, y, width, height);
 

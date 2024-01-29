@@ -36,11 +36,14 @@ double WorkerDataArray<double>::uninitialized() {
   return -1.0;
 }
 
+#define WDA_TIME_FORMAT "%4.2lf"
+
 template <>
 void WorkerDataArray<double>::WDAPrinter::summary(outputStream* out, double min, double avg, double max, double diff, double sum, bool print_sum) {
-  out->print(" Min: %4.1lf, Avg: %4.1lf, Max: %4.1lf, Diff: %4.1lf", min * MILLIUNITS, avg * MILLIUNITS, max * MILLIUNITS, diff* MILLIUNITS);
+  out->print(" Min: " WDA_TIME_FORMAT ", Avg: " WDA_TIME_FORMAT ", Max: " WDA_TIME_FORMAT ", Diff: " WDA_TIME_FORMAT,
+             min * MILLIUNITS, avg * MILLIUNITS, max * MILLIUNITS, diff* MILLIUNITS);
   if (print_sum) {
-    out->print(", Sum: %4.1lf", sum * MILLIUNITS);
+    out->print(", Sum: " WDA_TIME_FORMAT, sum * MILLIUNITS);
   }
 }
 
@@ -58,7 +61,7 @@ void WorkerDataArray<double>::WDAPrinter::details(const WorkerDataArray<double>*
   for (uint i = 0; i < phase->_length; ++i) {
     double value = phase->get(i);
     if (value != phase->uninitialized()) {
-      out->print(" %4.1lf", phase->get(i) * 1000.0);
+      out->print(" " WDA_TIME_FORMAT, phase->get(i) * 1000.0);
     } else {
       out->print(" -");
     }

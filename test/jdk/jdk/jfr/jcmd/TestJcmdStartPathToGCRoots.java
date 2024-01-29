@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ public class TestJcmdStartPathToGCRoots {
         }
 
         String settingName = EventNames.OldObjectSample + "#" + "cutoff";
-        Recording r = recordings.get(0);
+        Recording r = recordings.getFirst();
         String cutoff = r.getSettings().get(settingName);
         System.out.println(settingName + "=" + cutoff);
         if (!expected.equals(cutoff)) {

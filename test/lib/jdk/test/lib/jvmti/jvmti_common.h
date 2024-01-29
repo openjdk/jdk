@@ -128,6 +128,13 @@ fatal(JNIEnv* jni, const char* msg) {
   jni->FatalError(msg);
 }
 
+static void
+check_jvmti_error(jvmtiError err, const char* msg) {
+  if (err != JVMTI_ERROR_NONE) {
+    LOG("check_jvmti_error: JVMTI function returned error: %s: %s(%d)\n", msg, TranslateError(err), err);
+    abort();
+  }
+}
 
 static void
 check_jvmti_status(JNIEnv* jni, jvmtiError err, const char* msg) {

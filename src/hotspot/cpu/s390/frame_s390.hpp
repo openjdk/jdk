@@ -465,7 +465,6 @@
 
   // Initialize frame members (_pc and _sp must be given)
   inline void setup();
-  const ImmutableOopMap* get_oop_map() const;
 
  // Constructors
 
@@ -487,11 +486,6 @@
  public:
   template <typename RegisterMapT>
   static void update_map_with_saved_link(RegisterMapT* map, intptr_t** link_addr);
-
-  // Additional interface for interpreter frames:
-  static int interpreter_frame_interpreterstate_size_in_bytes();
-  static int interpreter_frame_monitor_size_in_bytes();
-
 
   // template interpreter state
   inline z_ijava_state* ijava_state_unchecked() const;

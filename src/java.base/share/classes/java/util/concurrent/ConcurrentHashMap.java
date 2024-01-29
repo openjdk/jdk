@@ -848,7 +848,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * @param m the map
      */
     public ConcurrentHashMap(Map<? extends K, ? extends V> m) {
-        this.sizeCtl = DEFAULT_CAPACITY;
+        this(m.size());
         putAll(m);
     }
 
@@ -1084,7 +1084,9 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * @param m mappings to be stored in this map
      */
     public void putAll(Map<? extends K, ? extends V> m) {
-        tryPresize(m.size());
+        if (table != null) {
+            tryPresize(size() + m.size());
+        }
         for (Map.Entry<? extends K, ? extends V> e : m.entrySet())
             putVal(e.getKey(), e.getValue(), false);
     }
@@ -1531,7 +1533,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     // ConcurrentMap methods
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc ConcurrentMap}
      *
      * @return the previous value associated with the specified key,
      *         or {@code null} if there was no mapping for the key
@@ -1542,9 +1544,10 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc ConcurrentMap}
      *
      * @throws NullPointerException if the specified key is null
+     * @return {@inheritDoc ConcurrentMap}
      */
     public boolean remove(Object key, Object value) {
         if (key == null)
@@ -1553,9 +1556,10 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc ConcurrentMap}
      *
      * @throws NullPointerException if any of the arguments are null
+     * @return {@inheritDoc ConcurrentMap}
      */
     public boolean replace(K key, V oldValue, V newValue) {
         if (key == null || oldValue == null || newValue == null)
@@ -1564,7 +1568,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc ConcurrentMap}
      *
      * @return the previous value associated with the specified key,
      *         or {@code null} if there was no mapping for the key

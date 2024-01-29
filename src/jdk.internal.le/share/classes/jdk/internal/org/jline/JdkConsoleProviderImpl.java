@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,9 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
      * public Console class.
      */
     private static class JdkConsoleImpl implements JdkConsole {
+        private final Terminal terminal;
+        private volatile LineReader jline;
+
         @Override
         public PrintWriter writer() {
             return terminal.writer();
@@ -91,6 +94,7 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
         @Override
         public String readLine(String fmt, Object ... args) {
             try {
+                initJLineIfNeeded();
                 return jline.readLine(fmt.formatted(args));
             } catch (EndOfFileException eofe) {
                 return null;
@@ -105,9 +109,12 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
         @Override
         public char[] readPassword(String fmt, Object ... args) {
             try {
+                initJLineIfNeeded();
                 return jline.readLine(fmt.formatted(args), '\0').toCharArray();
             } catch (EndOfFileException eofe) {
                 return null;
+            } finally {
+                jline.zeroOut();
             }
         }
 
@@ -126,12 +133,21 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
             return terminal.encoding();
         }
 
-        private final LineReader jline;
-        private final Terminal terminal;
-
         public JdkConsoleImpl(Terminal terminal) {
             this.terminal = terminal;
-            this.jline = LineReaderBuilder.builder().terminal(terminal).build();
+        }
+
+        private void initJLineIfNeeded() {
+            LineReader jline = this.jline;
+            if (jline == null) {
+                synchronized (this) {
+                    jline = this.jline;
+                    if (jline == null) {
+                        jline = LineReaderBuilder.builder().terminal(terminal).build();
+                        this.jline = jline;
+                    }
+                }
+            }
         }
     }
 }

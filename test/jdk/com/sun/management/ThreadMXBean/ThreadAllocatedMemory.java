@@ -22,10 +22,19 @@
  */
 
 /*
- * @test
- * @bug     6173675 8231209 8304074
+ * @test    id=G1
+ * @bug     6173675 8231209 8304074 8313081
  * @summary Basic test of ThreadMXBean.getThreadAllocatedBytes
- * @author  Paul Hohensee
+ * @requires vm.gc.G1
+ * @run main/othervm -XX:+UseG1GC ThreadAllocatedMemory
+ */
+
+/*
+ * @test    id=Serial
+ * @bug     6173675 8231209 8304074 8313081
+ * @summary Basic test of ThreadMXBean.getThreadAllocatedBytes
+ * @requires vm.gc.Serial
+ * @run main/othervm -XX:+UseSerialGC ThreadAllocatedMemory
  */
 
 import java.lang.management.*;

@@ -335,7 +335,7 @@ void Matcher::match( ) {
   Node* new_ideal_null = ConNode::make(TypePtr::NULL_PTR);
 
   // Swap out to old-space; emptying new-space
-  Arena *old = C->node_arena()->move_contents(C->old_arena());
+  Arena* old = C->swap_old_and_new();
 
   // Save debug and profile information for nodes in old space:
   _old_node_note_array = C->node_note_array();
@@ -356,9 +356,12 @@ void Matcher::match( ) {
   // Recursively match trees from old space into new space.
   // Correct leaves of new-space Nodes; they point to old-space.
   _visited.clear();
-  C->set_cached_top_node(xform( C->top(), live_nodes ));
+  Node* const n = xform(C->top(), live_nodes);
+  if (C->failing()) return;
+  C->set_cached_top_node(n);
   if (!C->failing()) {
     Node* xroot =        xform( C->root(), 1 );
+    if (C->failing()) return;
     if (xroot == nullptr) {
       Matcher::soft_match_failure();  // recursive matching process failed
       assert(false, "instruction match failed");
@@ -447,7 +450,7 @@ static RegMask *init_input_masks( uint size, RegMask &ret_adr, RegMask &fp ) {
   return rms;
 }
 
-const int Matcher::scalable_predicate_reg_slots() {
+int Matcher::scalable_predicate_reg_slots() {
   assert(Matcher::has_predicated_vectors() && Matcher::supports_scalable_vector(),
         "scalable predicate vector should be supported");
   int vector_reg_bit_size = Matcher::scalable_vector_reg_size(T_BYTE) << LogBitsPerByte;
@@ -2540,7 +2543,7 @@ void Matcher::collect_null_checks( Node *proj, Node *orig_proj ) {
       bool push_it = false;
       if( proj->Opcode() == Op_IfTrue ) {
 #ifndef PRODUCT
-        extern int all_null_checks_found;
+        extern uint all_null_checks_found;
         all_null_checks_found++;
 #endif
         if( b->_test._test == BoolTest::ne ) {
@@ -2790,6 +2793,12 @@ BasicType Matcher::vector_element_basic_type(const MachNode* use, const MachOper
   int def_idx = use->operand_index(opnd);
   Node* def = use->in(def_idx);
   return def->bottom_type()->is_vect()->element_basic_type();
+}
+
+bool Matcher::is_non_long_integral_vector(const Node* n) {
+  BasicType bt = vector_element_basic_type(n);
+  assert(bt != T_CHAR, "char is not allowed in vector");
+  return is_subword_type(bt) || bt == T_INT;
 }
 
 #ifdef ASSERT

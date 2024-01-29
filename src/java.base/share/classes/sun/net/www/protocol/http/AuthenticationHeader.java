@@ -91,14 +91,14 @@ public class AuthenticationHeader {
     // When set true, do not use Negotiate even if the response
     // headers suggest so.
     boolean dontUseNegotiate = false;
-    static String authPref=null;
+    private static final String authPref;
 
     public String toString() {
         return "AuthenticationHeader: prefer " + preferred_r;
     }
 
     static {
-        authPref = GetPropertyAction.privilegedGetProperty("http.auth.preference");
+        String pref = GetPropertyAction.privilegedGetProperty("http.auth.preference");
 
         // http.auth.preference can be set to SPNEGO or Kerberos.
         // In fact they means "Negotiate with SPNEGO" and "Negotiate with
@@ -106,12 +106,13 @@ public class AuthenticationHeader {
         // Negotiate. Read NegotiateAuthentication.java to see how they
         // were used later.
 
-        if (authPref != null) {
-            authPref = authPref.toLowerCase(Locale.ROOT);
-            if(authPref.equals("spnego") || authPref.equals("kerberos")) {
-                authPref = "negotiate";
+        if (pref != null) {
+            pref = pref.toLowerCase(Locale.ROOT);
+            if (pref.equals("spnego") || pref.equals("kerberos")) {
+                pref = "negotiate";
             }
         }
+        authPref = pref;
     }
 
     String hdrname; // Name of the header to look for

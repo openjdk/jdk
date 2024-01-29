@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,15 +59,14 @@ public class AttachSetGetFlag {
 
     // Test a non-manageable size_t flag.
     // Since it is not manageable, we can't test the setFlag functionality.
-    testGetFlag("ArrayAllocatorMallocLimit", "128");
-    // testSetFlag("ArrayAllocatorMallocLimit", "64", "128");
+    testGetFlag("MetaspaceSize", "65536");
 
     // Test a uint flag.
     testGetFlag("ParallelGCThreads", "10");
   }
 
   public static ProcessBuilder runTarget(String flagName, String flagValue) throws Exception {
-    return ProcessTools.createJavaProcessBuilder(
+    return ProcessTools.createLimitedTestJavaProcessBuilder(
         "-XX:+UnlockExperimentalVMOptions",
         "-XX:" + flagName + "=" + flagValue,
         "AttachSetGetFlag$Target");

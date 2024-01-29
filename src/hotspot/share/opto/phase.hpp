@@ -140,7 +140,7 @@ protected:
   // Object; if you wish to check an Object you need to load the Object's
   // class prior to coming here.
   // Used in GraphKit and PhaseMacroExpand
-  static Node* gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, Node* mem, PhaseGVN& gvn);
+  static Node* gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, Node* mem, PhaseGVN& gvn, ciMethod* method, int bci);
 
 public:
   Compile * C;

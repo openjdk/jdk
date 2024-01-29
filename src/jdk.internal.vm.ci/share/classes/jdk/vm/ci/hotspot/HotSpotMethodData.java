@@ -63,12 +63,11 @@ final class HotSpotMethodData implements MetaspaceObject {
         final int takenDisplacementOffset = cellIndexToOffset(config.jumpDataDisplacementOffset);
         final int typeDataRowSize = cellsToBytes(config.receiverTypeDataReceiverTypeRowCellCount);
 
-        final int nonprofiledCountOffset = cellIndexToOffset(config.receiverTypeDataNonprofiledCountOffset);
         final int typeDataFirstTypeOffset = cellIndexToOffset(config.receiverTypeDataReceiver0Offset);
         final int typeDataFirstTypeCountOffset = cellIndexToOffset(config.receiverTypeDataCount0Offset);
 
-        final int typeCheckDataSize = cellIndexToOffset(2) + typeDataRowSize * config.typeProfileWidth;
-        final int virtualCallDataSize = cellIndexToOffset(2) + typeDataRowSize * (config.typeProfileWidth + config.methodProfileWidth);
+        final int typeCheckDataSize = cellIndexToOffset(1) + typeDataRowSize * config.typeProfileWidth;
+        final int virtualCallDataSize = cellIndexToOffset(1) + typeDataRowSize * (config.typeProfileWidth + config.methodProfileWidth);
         final int virtualCallDataFirstMethodOffset = typeDataFirstTypeOffset + typeDataRowSize * config.typeProfileWidth;
         final int virtualCallDataFirstMethodCountOffset = typeDataFirstTypeCountOffset + typeDataRowSize * config.typeProfileWidth;
 
@@ -502,14 +501,8 @@ final class HotSpotMethodData implements MetaspaceObject {
                 }
             }
 
-            totalCount += getTypesNotRecordedExecutionCount(data, position);
+            totalCount += getCounterValue(data, position);
             return new RawItemProfile<>(entries, types, counts, totalCount);
-        }
-
-        protected abstract long getTypesNotRecordedExecutionCount(HotSpotMethodData data, int position);
-
-        public int getNonprofiledCount(HotSpotMethodData data, int position) {
-            return data.readUnsignedIntAsSignedInt(position, state.nonprofiledCountOffset);
         }
 
         private JavaTypeProfile createTypeProfile(TriState nullSeen, RawItemProfile<ResolvedJavaType> profile) {
@@ -546,8 +539,8 @@ final class HotSpotMethodData implements MetaspaceObject {
             RawItemProfile<ResolvedJavaType> profile = getRawTypeProfile(data, pos);
             TriState nullSeen = getNullSeen(data, pos);
             TriState exceptionSeen = getExceptionSeen(data, pos);
-            sb.append(format("count(%d) null_seen(%s) exception_seen(%s) nonprofiled_count(%d) entries(%d)", getCounterValue(data, pos), nullSeen, exceptionSeen,
-                            getNonprofiledCount(data, pos), profile.entries));
+            sb.append(format("count(%d) null_seen(%s) exception_seen(%s) entries(%d)", getCounterValue(data, pos), nullSeen, exceptionSeen,
+                            profile.entries));
             for (int i = 0; i < profile.entries; i++) {
                 long count = profile.counts[i];
                 sb.append(format("%n  %s (%d, %4.2f)", profile.items[i].toJavaName(), count, (double) count / profile.totalCount));
@@ -569,11 +562,6 @@ final class HotSpotMethodData implements MetaspaceObject {
         @Override
         public int getExecutionCount(HotSpotMethodData data, int position) {
             return -1;
-        }
-
-        @Override
-        protected long getTypesNotRecordedExecutionCount(HotSpotMethodData data, int position) {
-            return getNonprofiledCount(data, position);
         }
     }
 
@@ -601,15 +589,6 @@ final class HotSpotMethodData implements MetaspaceObject {
         }
 
         @Override
-        protected long getTypesNotRecordedExecutionCount(HotSpotMethodData data, int position) {
-            return getCounterValue(data, position);
-        }
-
-        private long getMethodsNotRecordedExecutionCount(HotSpotMethodData data, int position) {
-            return data.readUnsignedIntAsSignedInt(position, state.nonprofiledCountOffset);
-        }
-
-        @Override
         public JavaMethodProfile getMethodProfile(HotSpotMethodData data, int position) {
             return createMethodProfile(getRawMethodProfile(data, position));
         }
@@ -633,8 +612,6 @@ final class HotSpotMethodData implements MetaspaceObject {
                     entries++;
                 }
             }
-
-            totalCount += getMethodsNotRecordedExecutionCount(data, position);
 
             // Fixup the case of C1's inability to optimize profiling of a statically bindable call
             // site. If it's a monomorphic call site, attribute all the counts to the first type (if

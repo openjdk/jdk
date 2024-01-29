@@ -163,7 +163,7 @@ private:
   void report_illegal_transition(const char* method);
 
 public:
-  static const int region_states_num() {
+  static int region_states_num() {
     return _REGION_STATES_NUM;
   }
 

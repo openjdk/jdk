@@ -355,7 +355,7 @@ public:
     TestMap testmap(c->word_size());
     assert(testmap.get_num_set() == 0, "Sanity");
 
-    for (int run = 0; run < 1000; run++) {
+    for (int run = 0; run < 750; run++) {
 
       const size_t committed_words_before = testmap.get_num_set();
       ASSERT_EQ(_commit_limiter.committed_words(), committed_words_before);
@@ -425,7 +425,7 @@ public:
 
     assert(_commit_limit >= _vs_word_size, "No commit limit here pls");
 
-    // Allocate a root chunk and commit a random part of it. Then repeatedly split
+    // Allocate a root chunk and commit a part of it. Then repeatedly split
     // it and merge it back together; observe the committed regions of the split chunks.
 
     Metachunk* c = alloc_root_chunk();
@@ -562,15 +562,10 @@ TEST_VM(metaspace, virtual_space_node_test_2) {
 }
 
 TEST_VM(metaspace, virtual_space_node_test_3) {
-  double d = os::elapsedTime();
   // Test committing uncommitting arbitrary ranges
-  for (int run = 0; run < 100; run++) {
-    VirtualSpaceNodeTest test(metaspace::chunklevel::MAX_CHUNK_WORD_SIZE,
-        metaspace::chunklevel::MAX_CHUNK_WORD_SIZE);
-    test.test_split_and_merge_chunks();
-  }
-  double d2 = os::elapsedTime();
-  LOG("%f", (d2-d));
+  VirtualSpaceNodeTest test(metaspace::chunklevel::MAX_CHUNK_WORD_SIZE,
+      metaspace::chunklevel::MAX_CHUNK_WORD_SIZE);
+  test.test_split_and_merge_chunks();
 }
 
 TEST_VM(metaspace, virtual_space_node_test_4) {

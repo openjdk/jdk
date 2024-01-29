@@ -39,38 +39,9 @@ class ShenandoahNMethodTable;
 class ShenandoahNMethodTableSnapshot;
 class WorkerThreads;
 
-class ShenandoahParallelCodeHeapIterator {
-  friend class CodeCache;
-private:
-  CodeHeap*     _heap;
-  shenandoah_padding(0);
-  volatile int  _claimed_idx;
-  volatile bool _finished;
-  shenandoah_padding(1);
-public:
-  ShenandoahParallelCodeHeapIterator(CodeHeap* heap);
-  void parallel_blobs_do(CodeBlobClosure* f);
-};
-
-class ShenandoahParallelCodeCacheIterator {
-  friend class CodeCache;
-private:
-  ShenandoahParallelCodeHeapIterator* _iters;
-  int                       _length;
-
-  NONCOPYABLE(ShenandoahParallelCodeCacheIterator);
-
-public:
-  ShenandoahParallelCodeCacheIterator(const GrowableArray<CodeHeap*>* heaps);
-  ~ShenandoahParallelCodeCacheIterator();
-  void parallel_blobs_do(CodeBlobClosure* f);
-};
-
 class ShenandoahCodeRootsIterator {
   friend class ShenandoahCodeRoots;
 protected:
-  ShenandoahParallelCodeCacheIterator _par_iterator;
-  ShenandoahSharedFlag _seq_claimed;
   ShenandoahNMethodTableSnapshot* _table_snapshot;
 
 public:
@@ -88,7 +59,6 @@ public:
   static void initialize();
   static void register_nmethod(nmethod* nm);
   static void unregister_nmethod(nmethod* nm);
-  static void flush_nmethod(nmethod* nm);
 
   static ShenandoahNMethodTable* table() {
     return _nmethod_table;
@@ -97,10 +67,13 @@ public:
   // Concurrent nmethod unloading support
   static void unlink(WorkerThreads* workers, bool unloading_occurred);
   static void purge();
-  static void arm_nmethods();
+  static void arm_nmethods_for_mark();
+  static void arm_nmethods_for_evac();
   static void disarm_nmethods();
   static int  disarmed_value()         { return _disarmed_value; }
   static int* disarmed_value_address() { return &_disarmed_value; }
+
+  static bool use_nmethod_barriers_for_mark();
 
 private:
   static ShenandoahNMethodTable* _nmethod_table;

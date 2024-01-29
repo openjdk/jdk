@@ -89,7 +89,7 @@ public final class TestActiveRecordingEvent {
         List<RecordedEvent> events = Events.fromRecording(recording);
 
         Events.hasEvents(events);
-        RecordedEvent ev = events.get(0);
+        RecordedEvent ev = events.getFirst();
 
         // Duration must be kept in milliseconds
         assertEquals(REC_DURATION.toMillis(), ev.getValue("recordingDuration"));

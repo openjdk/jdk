@@ -228,6 +228,42 @@ public class VectorSupport {
     }
 
     /* ============================================================================ */
+    public interface ShuffleIotaOperation<S extends VectorSpecies<?>,
+                                          SH extends VectorShuffle<?>> {
+        SH apply(int length, int start, int step, S s);
+    }
+
+    @IntrinsicCandidate
+    public static
+    <E,
+     S extends VectorSpecies<E>,
+     SH extends VectorShuffle<E>>
+    SH shuffleIota(Class<E> eClass, Class<? extends SH> shClass, S s,
+                   int length,
+                   int start, int step, int wrap,
+                   ShuffleIotaOperation<S, SH> defaultImpl) {
+       assert isNonCapturingLambda(defaultImpl) : defaultImpl;
+       return defaultImpl.apply(length, start, step, s);
+    }
+
+    public interface ShuffleToVectorOperation<V extends Vector<?>,
+                                              SH extends VectorShuffle<?>> {
+       V apply(SH sh);
+    }
+
+    @IntrinsicCandidate
+    public static
+    <V extends Vector<E>,
+     SH extends VectorShuffle<E>,
+     E>
+    V shuffleToVector(Class<? extends Vector<E>> vClass, Class<E> eClass, Class<? extends SH> shClass, SH sh,
+                      int length,
+                      ShuffleToVectorOperation<V, SH> defaultImpl) {
+      assert isNonCapturingLambda(defaultImpl) : defaultImpl;
+      return defaultImpl.apply(sh);
+    }
+
+    /* ============================================================================ */
     public interface IndexOperation<V extends Vector<?>,
                                     S extends VectorSpecies<?>> {
         V index(V v, int step, S s);
@@ -270,20 +306,20 @@ public class VectorSupport {
 
     /* ============================================================================ */
 
-    public interface VecExtractOp<V extends Vector<?>> {
-        long apply(V v, int i);
+    public interface VecExtractOp<VM extends VectorPayload> {
+        long apply(VM vm, int i);
     }
 
     @IntrinsicCandidate
     public static
-    <V extends Vector<E>,
+    <VM extends VectorPayload,
      E>
-    long extract(Class<? extends V> vClass, Class<E> eClass,
+    long extract(Class<? extends VM> vClass, Class<E> eClass,
                  int length,
-                 V v, int i,
-                 VecExtractOp<V> defaultImpl) {
+                 VM vm, int i,
+                 VecExtractOp<VM> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
-        return defaultImpl.apply(v, i);
+        return defaultImpl.apply(vm, i);
     }
 
     /* ============================================================================ */
@@ -385,7 +421,7 @@ public class VectorSupport {
      S extends VectorSpecies<E>>
     VM load(Class<? extends VM> vmClass, Class<E> eClass,
             int length,
-            Object base, long offset,
+            Object base, long offset, boolean fromSegment,
             C container, long index, S s,
             LoadOperation<C, VM, S> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
@@ -409,7 +445,7 @@ public class VectorSupport {
      S extends VectorSpecies<E>,
      M extends VectorMask<E>>
     V loadMasked(Class<? extends V> vClass, Class<M> mClass, Class<E> eClass,
-                 int length, Object base, long offset,
+                 int length, Object base, long offset, boolean fromSegment,
                  M m, int offsetInRange,
                  C container, long index, S s,
                  LoadVectorMaskedOperation<C, V, S, M> defaultImpl) {
@@ -458,7 +494,7 @@ public class VectorSupport {
      V extends VectorPayload>
     void store(Class<?> vClass, Class<?> eClass,
                int length,
-               Object base, long offset,
+               Object base, long offset, boolean fromSegment,
                V v, C container, long index,
                StoreVectorOperation<C, V> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
@@ -479,7 +515,7 @@ public class VectorSupport {
      E>
     void storeMasked(Class<? extends V> vClass, Class<M> mClass, Class<E> eClass,
                      int length,
-                     Object base, long offset,
+                     Object base, long offset, boolean fromSegment,
                      V v, M m, C container, long index,
                      StoreVectorMaskedOperation<C, V, M> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;

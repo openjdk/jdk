@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  *  Copyright (c) 2021, Rado Smogura. All rights reserved.
  *
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -46,11 +46,10 @@ import org.openjdk.jmh.annotations.Warmup;
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
-@State(org.openjdk.jmh.annotations.Scope.Benchmark)
+@State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Fork(value = 1, jvmArgsAppend = {
     "--add-modules=jdk.incubator.vector",
-    "--enable-preview",
     "--enable-native-access", "ALL-UNNAMED"})
 public class MemorySegmentVectorAccess {
   private static final VectorSpecies<Byte> SPECIES = VectorSpecies.ofLargestShape(byte.class);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -222,29 +222,20 @@ public final class ResponderId {
      *
      * @param obj the object to be compared against
      *
-     * @return true if the specified object is equal to this {@code Responderid}
+     * @return true if the specified object is equal to this {@code ResponderId}
      */
     @Override
     public boolean equals(Object obj) {
-        if (obj == null) {
-            return false;
-        }
-
         if (this == obj) {
             return true;
         }
 
-        if (obj instanceof ResponderId respObj) {
-            return Arrays.equals(encodedRid, respObj.getEncoded());
-        }
-
-        return false;
+        return obj instanceof ResponderId respObj
+                && Arrays.equals(encodedRid, respObj.getEncoded());
     }
 
     /**
-     * Returns the hash code value for this {@code ResponderId}
-     *
-     * @return the hash code value for this {@code ResponderId}
+     * {@return the hash code value for this {@code ResponderId}}
      */
     @Override
     public int hashCode() {

@@ -36,6 +36,11 @@ static bool is_vector_mask(ciKlass* klass) {
   return klass->is_subclass_of(ciEnv::current()->vector_VectorMask_klass());
 }
 
+static bool is_vector_shuffle(ciKlass* klass) {
+  return klass->is_subclass_of(ciEnv::current()->vector_VectorShuffle_klass());
+}
+
+
 void PhaseVector::optimize_vector_boxes() {
   Compile::TracePhase tp("vector_elimination", &timers[_t_vector_elimination]);
 
@@ -271,11 +276,7 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) {
     SafePointNode* sfpt = safepoints.pop()->as_SafePoint();
 
     uint first_ind = (sfpt->req() - sfpt->jvms()->scloff());
-    Node* sobj = new SafePointScalarObjectNode(vec_box->box_type(),
-#ifdef ASSERT
-                                               vec_box,
-#endif // ASSERT
-                                               first_ind, n_fields);
+    Node* sobj = new SafePointScalarObjectNode(vec_box->box_type(), vec_box, first_ind, n_fields);
     sobj->init_req(0, C->root());
     sfpt->add_req(vec_value);
 
@@ -459,6 +460,8 @@ void PhaseVector::expand_vunbox_node(VectorUnboxNode* vec_unbox) {
 
     if (is_vector_mask(from_kls)) {
       bt = T_BOOLEAN;
+    } else if (is_vector_shuffle(from_kls)) {
+      bt = T_BYTE;
     }
 
     ciField* field = ciEnv::current()->vector_VectorPayload_klass()->get_field_by_name(ciSymbols::payload_name(),
@@ -485,7 +488,7 @@ void PhaseVector::expand_vunbox_node(VectorUnboxNode* vec_unbox) {
     // For proper aliasing, attach concrete payload type.
     ciKlass* payload_klass = ciTypeArrayKlass::make(bt);
     const Type* payload_type = TypeAryPtr::make_from_klass(payload_klass)->cast_to_ptr_type(TypePtr::NotNull);
-    vec_field_ld = gvn.transform(new CastPPNode(vec_field_ld, payload_type));
+    vec_field_ld = gvn.transform(new CastPPNode(nullptr, vec_field_ld, payload_type));
 
     Node* adr = kit.array_element_address(vec_field_ld, gvn.intcon(0), bt);
     const TypePtr* adr_type = adr->bottom_type()->is_ptr();
@@ -503,6 +506,9 @@ void PhaseVector::expand_vunbox_node(VectorUnboxNode* vec_unbox) {
 
     if (is_vector_mask(from_kls)) {
       vec_val_load = gvn.transform(new VectorLoadMaskNode(vec_val_load, TypeVect::makemask(masktype, num_elem)));
+    } else if (is_vector_shuffle(from_kls) && !vec_unbox->is_shuffle_to_vector()) {
+      assert(vec_unbox->bottom_type()->is_vect()->element_basic_type() == masktype, "expect shuffle type consistency");
+      vec_val_load = gvn.transform(new VectorLoadShuffleNode(vec_val_load, TypeVect::make(masktype, num_elem)));
     }
 
     gvn.hash_delete(vec_unbox);

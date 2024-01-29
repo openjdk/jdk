@@ -79,7 +79,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     RebuildFreeList,
     SampleCollectionSetCandidates,
     MergePSS,
-    RestoreRetainedRegions,
+    RestoreEvacuationFailedRegions,
     RemoveSelfForwards,
     ClearCardTable,
     RecalculateUsed,
@@ -88,7 +88,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 #endif
     EagerlyReclaimHumongousObjects,
     RestorePreservedMarks,
-    ClearRetainedRegionBitmaps,
+    ProcessEvacuationFailedRegions,
     ResetMarkingState,
     NoteStartOfMark,
     GCParPhasesSentinel
@@ -134,15 +134,22 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     MergeLBSkippedCards
   };
 
+  enum GCCodeRootsWorkItems {
+    CodeRootsScannedNMethods
+  };
+
   enum GCMergePSSWorkItems {
     MergePSSCopiedBytes,
     MergePSSLABSize,
     MergePSSLABWasteBytes,
-    MergePSSLABUndoWasteBytes
+    MergePSSLABUndoWasteBytes,
+    MergePSSEvacFailExtra
   };
 
-  enum RestoreRetainedRegionsWorkItems {
-    RestoreRetainedRegionsNum,
+  enum RestoreEvacFailureRegionsWorkItems {
+    RestoreEvacFailureRegionsEvacFailedNum,       // How many regions experienced an evacuation failure (pinned or allocation failure)
+    RestoreEvacFailureRegionsPinnedNum,           // How many regions were found as pinned.
+    RestoreEvacFailureRegionsAllocFailedNum       // How many regions were found experiencing an allocation failure.
   };
 
   enum RemoveSelfForwardsWorkItems {

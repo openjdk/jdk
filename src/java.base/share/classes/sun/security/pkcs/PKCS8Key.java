@@ -259,6 +259,7 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
      * @return {@code true} if this key has the same encoding as the
      *          object argument; {@code false} otherwise.
      */
+    @Override
     public boolean equals(Object object) {
         if (this == object) {
             return true;
@@ -288,6 +289,7 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
      * Calculates a hash code value for this object. Objects
      * which are equal will also have the same hashcode.
      */
+    @Override
     public int hashCode() {
         return Arrays.hashCode(getEncodedInternal());
     }

@@ -87,10 +87,10 @@ public class SumRedSqrt_Double {
        Require avx for SQRT_VD. */
     @Test
     @IR(applyIf = {"SuperWordReductions", "false"},
-        failOn = {IRNode.ADD_REDUCTION_VD, IRNode.SQRT_V})
+        failOn = {IRNode.ADD_REDUCTION_VD, IRNode.SQRT_VD})
     @IR(applyIfCPUFeature = {"avx", "true"},
         applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
-        counts = {IRNode.ADD_REDUCTION_VD, ">= 1", IRNode.SQRT_V, ">= 1"})
+        counts = {IRNode.ADD_REDUCTION_VD, ">= 1", IRNode.SQRT_VD, ">= 1"})
     public static double sumReductionWithStoreImplement(
             double[] a,
             double[] b,

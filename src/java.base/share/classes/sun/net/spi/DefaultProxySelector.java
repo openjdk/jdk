@@ -377,7 +377,7 @@ public class DefaultProxySelector extends ProxySelector {
             if (disjunct.isEmpty())
                 continue;
             disjunctionEmpty = false;
-            String regex = disjunctToRegex(disjunct.toLowerCase());
+            String regex = disjunctToRegex(disjunct.toLowerCase(Locale.ROOT));
             joiner.add(regex);
         }
         return disjunctionEmpty ? null : Pattern.compile(joiner.toString());

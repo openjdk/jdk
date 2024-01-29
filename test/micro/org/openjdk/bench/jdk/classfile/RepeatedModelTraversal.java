@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -31,16 +29,15 @@ import java.nio.file.Files;
 import java.util.Iterator;
 import java.util.ArrayList;
 import java.util.List;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.components.ClassPrinter;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.components.ClassPrinter;
 import org.openjdk.jmh.annotations.*;
 
 @BenchmarkMode(Mode.Throughput)
 @State(Scope.Benchmark)
 @Fork(value = 1, jvmArgsAppend = {
-        "--add-exports", "java.base/jdk.internal.classfile=ALL-UNNAMED",
-        "--add-exports", "java.base/jdk.internal.classfile.components=ALL-UNNAMED"})
+        "--enable-preview"})
 @Warmup(iterations = 3)
 @Measurement(iterations = 4)
 public class RepeatedModelTraversal {
@@ -51,9 +48,10 @@ public class RepeatedModelTraversal {
     @Setup(Level.Trial)
     public void setup() throws IOException {
         models = new ArrayList<>();
+        var cc = ClassFile.of();
         Files.walk(FileSystems.getFileSystem(URI.create("jrt:/")).getPath("modules/java.base/java/util")).forEach(p -> {
             if (Files.isRegularFile(p) && p.toString().endsWith(".class")) try {
-                var clm = Classfile.parse(p);
+                var clm = cc.parse(p);
                 models.add(clm);
             } catch (IOException e) {
                 throw new RuntimeException(e);

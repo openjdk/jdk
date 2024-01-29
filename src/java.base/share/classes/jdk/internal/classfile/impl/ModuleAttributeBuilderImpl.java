@@ -25,11 +25,11 @@
 
 package jdk.internal.classfile.impl;
 
-import jdk.internal.classfile.attribute.*;
-import jdk.internal.classfile.attribute.ModuleAttribute.ModuleAttributeBuilder;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.constantpool.ModuleEntry;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.attribute.*;
+import java.lang.classfile.attribute.ModuleAttribute.ModuleAttributeBuilder;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.ModuleEntry;
+import java.lang.classfile.constantpool.Utf8Entry;
 import java.lang.constant.ModuleDesc;
 import java.lang.constant.PackageDesc;
 

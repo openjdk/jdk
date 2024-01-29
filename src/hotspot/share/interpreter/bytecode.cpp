@@ -136,7 +136,7 @@ Symbol* Bytecode_member_ref::klass() const {
 
 
 Symbol* Bytecode_member_ref::name() const {
-  return constants()->name_ref_at(index(), _code);
+  return constants()->name_ref_at(index(), Bytecodes::java_code(_code));
 }
 
 
@@ -165,27 +165,27 @@ int Bytecode_member_ref::index() const {
   if (has_index_u4(rawc))
     return get_index_u4(rawc);
   else
-    return get_index_u2_cpcache(rawc);
+    return get_index_u2(rawc);
 }
 
 int Bytecode_member_ref::pool_index() const {
   if (invoke_code() == Bytecodes::_invokedynamic) {
     return resolved_indy_entry()->constant_pool_index();
   } else {
-    return cpcache_entry()->constant_pool_index();
+    return resolved_method_entry()->constant_pool_index();
   }
-}
-
-ConstantPoolCacheEntry* Bytecode_member_ref::cpcache_entry() const {
-  int index = this->index();
-  assert(invoke_code() != Bytecodes::_invokedynamic, "should not call this");
-  return cpcache()->entry_at(ConstantPool::decode_cpcache_index(index, true));
 }
 
 ResolvedIndyEntry* Bytecode_member_ref::resolved_indy_entry() const {
   int index = this->index();
   assert(invoke_code() == Bytecodes::_invokedynamic, "should not call this");
   return cpcache()->resolved_indy_entry_at(ConstantPool::decode_invokedynamic_index(index));
+}
+
+ResolvedMethodEntry* Bytecode_member_ref::resolved_method_entry() const {
+  int index = this->index();
+  assert(invoke_code() != Bytecodes::_invokedynamic, "should not call this");
+  return cpcache()->resolved_method_entry_at(index);
 }
 
 // Implementation of Bytecode_field
@@ -215,8 +215,8 @@ int Bytecode_loadconstant::pool_index() const {
 }
 
 BasicType Bytecode_loadconstant::result_type() const {
-  int index = pool_index();
-  return _method->constants()->basic_type_for_constant_at(index);
+  int cp_index = pool_index();
+  return _method->constants()->basic_type_for_constant_at(cp_index);
 }
 
 oop Bytecode_loadconstant::resolve_constant(TRAPS) const {

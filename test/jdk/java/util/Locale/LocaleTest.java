@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,9 @@
  * 4147315 4147317 4147552 4335196 4778440 4940539 5010672 6475525 6544471 6627549
  * 6786276 7066203 7085757 8008577 8030696 8170840 8255086 8263202 8287868
  * @summary test Locales
- * @library /java/text/testlib
  * @modules jdk.localedata
- * @run main/othervm -Djava.locale.providers=COMPAT,SPI LocaleTest
- * @run main/othervm -Djava.locale.providers=COMPAT,SPI -Djava.locale.useOldISOCodes=true LocaleTest
+ * @run junit/othervm -Djava.locale.providers=COMPAT,SPI LocaleTest
+ * @run junit/othervm -Djava.locale.providers=COMPAT,SPI -Djava.locale.useOldISOCodes=true LocaleTest
  */
 /*
  * This file is available under and governed by the GNU General Public
@@ -86,7 +85,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.MissingResourceException;
 
-public class LocaleTest extends IntlTest {
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.fail;
+
+public class LocaleTest {
     public LocaleTest() {
     }
 
@@ -191,52 +194,50 @@ public class LocaleTest extends IntlTest {
         {   "English (United States)", "French (France)", "Croatian (Croatia)", "Greek (Greece)", "Norwegian (Norway,Nynorsk)", "Italian", "xx (YY)" },
     };
 
-    public static void main(String[] args) throws Exception {
-        new LocaleTest().run(args);
-    }
-
+    @Test
     public void TestBasicGetters() {
         for (int i = 0; i <= MAX_LOCALES; i++) {
             Locale testLocale = Locale.of(dataTable[LANG][i], dataTable[CTRY][i], dataTable[VAR][i]);
-            logln("Testing " + testLocale + "...");
+            System.out.println("Testing " + testLocale + "...");
 
             if (!testLocale.getLanguage().equals(dataTable[LANG][i])) {
-                errln("  Language code mismatch: " + testLocale.getLanguage() + " versus "
+                fail("  Language code mismatch: " + testLocale.getLanguage() + " versus "
                         + dataTable[LANG][i]);
             }
             if (!testLocale.getCountry().equals(dataTable[CTRY][i])) {
-                errln("  Country code mismatch: " + testLocale.getCountry() + " versus "
+                fail("  Country code mismatch: " + testLocale.getCountry() + " versus "
                         + dataTable[CTRY][i]);
             }
             if (!testLocale.getVariant().equals(dataTable[VAR][i])) {
-                errln("  Variant code mismatch: " + testLocale.getVariant() + " versus "
+                fail("  Variant code mismatch: " + testLocale.getVariant() + " versus "
                         + dataTable[VAR][i]);
             }
             if (!testLocale.toString().equals(dataTable[NAME][i])) {
-                errln("  Locale name mismatch: " + testLocale.toString() + " versus "
+                fail("  Locale name mismatch: " + testLocale.toString() + " versus "
                         + dataTable[NAME][i]);
             }
         }
 
-        logln("Same thing without variant codes...");
+        System.out.println("Same thing without variant codes...");
         for (int i = 0; i <= MAX_LOCALES; i++) {
             Locale testLocale = Locale.of(dataTable[LANG][i], dataTable[CTRY][i]);
-            logln("Testing " + testLocale + "...");
+            System.out.println("Testing " + testLocale + "...");
 
             if (!testLocale.getLanguage().equals(dataTable[LANG][i])) {
-                errln("  Language code mismatch: " + testLocale.getLanguage() + " versus "
+                fail("  Language code mismatch: " + testLocale.getLanguage() + " versus "
                         + dataTable[LANG][i]);
             }
             if (!testLocale.getCountry().equals(dataTable[CTRY][i])) {
-                errln("  Country code mismatch: " + testLocale.getCountry() + " versus "
+                fail("  Country code mismatch: " + testLocale.getCountry() + " versus "
                         + dataTable[CTRY][i]);
             }
             if (!testLocale.getVariant().equals("")) {
-                errln("  Variant code mismatch: " + testLocale.getVariant() + " versus \"\"");
+                fail("  Variant code mismatch: " + testLocale.getVariant() + " versus \"\"");
             }
         }
     }
 
+    @Test
     public void TestSimpleResourceInfo() {
         for (int i = 0; i <= MAX_LOCALES; i++) {
             if (dataTable[LANG][i].equals("xx")) {
@@ -244,20 +245,20 @@ public class LocaleTest extends IntlTest {
             }
 
             Locale testLocale = Locale.of(dataTable[LANG][i], dataTable[CTRY][i], dataTable[VAR][i]);
-            logln("Testing " + testLocale + "...");
+            System.out.println("Testing " + testLocale + "...");
 
             if (!testLocale.getISO3Language().equals(dataTable[LANG3][i])) {
-                errln("  ISO-3 language code mismatch: " + testLocale.getISO3Language()
+                fail("  ISO-3 language code mismatch: " + testLocale.getISO3Language()
                         + " versus " + dataTable[LANG3][i]);
             }
             if (!testLocale.getISO3Country().equals(dataTable[CTRY3][i])) {
-                errln("  ISO-3 country code mismatch: " + testLocale.getISO3Country()
+                fail("  ISO-3 country code mismatch: " + testLocale.getISO3Country()
                         + " versus " + dataTable[CTRY3][i]);
             }
 /*
             // getLCID() is currently private
             if (!String.valueOf(testLocale.getLCID()).equals(dataTable[LCID][i]))
-                errln("  LCID mismatch: " + testLocale.getLCID() + " versus "
+                fail("  LCID mismatch: " + testLocale.getLCID() + " versus "
                             + dataTable[LCID][i]);
 */
         }
@@ -269,6 +270,7 @@ public class LocaleTest extends IntlTest {
      *              between 1.1.5 and 1.1.6, but I included a new test for it anyway)
      * @bug 4052440 Stop falling back to the default locale.
      */
+    @Test
     public void TestDisplayNames() {
         Locale saveDefault = Locale.getDefault();
         Locale english = Locale.US;
@@ -277,29 +279,29 @@ public class LocaleTest extends IntlTest {
         Locale greek = Locale.of("el", "GR");
 
         Locale.setDefault(english);
-        logln("With default = en_US...");
-        logln("  In default locale...");
+        System.out.println("With default = en_US...");
+        System.out.println("  In default locale...");
         doTestDisplayNames(null, DLANG_EN, false);
-        logln("  In locale = en_US...");
+        System.out.println("  In locale = en_US...");
         doTestDisplayNames(english, DLANG_EN, false);
-        logln("  In locale = fr_FR...");
+        System.out.println("  In locale = fr_FR...");
         doTestDisplayNames(french, DLANG_FR, false);
-        logln("  In locale = hr_HR...");
+        System.out.println("  In locale = hr_HR...");
         doTestDisplayNames(croatian, DLANG_HR, false);
-        logln("  In locale = el_GR...");
+        System.out.println("  In locale = el_GR...");
         doTestDisplayNames(greek, DLANG_EL, false);
 
         Locale.setDefault(french);
-        logln("With default = fr_FR...");
-        logln("  In default locale...");
+        System.out.println("With default = fr_FR...");
+        System.out.println("  In default locale...");
         doTestDisplayNames(null, DLANG_FR, true);
-        logln("  In locale = en_US...");
+        System.out.println("  In locale = en_US...");
         doTestDisplayNames(english, DLANG_EN, true);
-        logln("  In locale = fr_FR...");
+        System.out.println("  In locale = fr_FR...");
         doTestDisplayNames(french, DLANG_FR, true);
-        logln("  In locale = hr_HR...");
+        System.out.println("  In locale = hr_HR...");
         doTestDisplayNames(croatian, DLANG_HR, true);
-        logln("  In locale = el_GR...");
+        System.out.println("  In locale = el_GR...");
         doTestDisplayNames(greek, DLANG_EL, true);
 
         Locale.setDefault(saveDefault);
@@ -309,14 +311,14 @@ public class LocaleTest extends IntlTest {
         String language = Locale.getDefault().getLanguage();
 
         if (defaultIsFrench && !language.equals("fr")) {
-            errln("Default locale should be French, but it's really " + language);
+            fail("Default locale should be French, but it's really " + language);
         } else if (!defaultIsFrench && !language.equals("en")) {
-            errln("Default locale should be English, but it's really " + language);
+            fail("Default locale should be English, but it's really " + language);
         }
 
         for (int i = 0; i <= MAX_LOCALES; i++) {
             Locale testLocale = Locale.of(dataTable[LANG][i], dataTable[CTRY][i], dataTable[VAR][i]);
-            logln("  Testing " + testLocale + "...");
+            System.out.println("  Testing " + testLocale + "...");
 
             String testLang;
             String testCtry;
@@ -373,21 +375,22 @@ public class LocaleTest extends IntlTest {
             }
 
             if (!testLang.equals(expectedLang)) {
-                errln("Display language mismatch: " + testLang + " versus " + expectedLang);
+                fail("Display language mismatch: " + testLang + " versus " + expectedLang);
             }
             if (!testCtry.equals(expectedCtry)) {
-                errln("Display country mismatch: " + testCtry + " versus " + expectedCtry);
+                fail("Display country mismatch: " + testCtry + " versus " + expectedCtry);
             }
             if (!testVar.equals(expectedVar)) {
-                errln("Display variant mismatch: " + testVar + " versus " + expectedVar);
+                fail("Display variant mismatch: " + testVar + " versus " + expectedVar);
             }
             if (!testName.equals(expectedName)) {
-                errln("Display name mismatch: " + testName + " versus " + expectedName);
+                fail("Display name mismatch: " + testName + " versus " + expectedName);
             }
         }
     }
 
     @SuppressWarnings("deprecation")
+    @Test
     public void TestSimpleObjectStuff() {
         Locale test1 = new Locale("aa", "AA");
         Locale test2 = new Locale("aa", "AA");
@@ -395,19 +398,19 @@ public class LocaleTest extends IntlTest {
         Locale test4 = Locale.of("zz", "ZZ");
 
         if (test1 == test2 || test1 == test3 || test1 == test4 || test2 == test3) {
-            errln("Some of the test variables point to the same locale!");
+            fail("Some of the test variables point to the same locale!");
         }
 
         if (test3 == null) {
-            errln("clone() failed to produce a valid object!");
+            fail("clone() failed to produce a valid object!");
         }
 
         if (!test1.equals(test2) || !test1.equals(test3) || !test2.equals(test3)) {
-            errln("clone() or equals() failed: objects that should compare equal don't");
+            fail("clone() or equals() failed: objects that should compare equal don't");
         }
 
         if (test1.equals(test4) || test2.equals(test4) || test3.equals(test4)) {
-            errln("equals() failed: objects that shouldn't compare equal do");
+            fail("equals() failed: objects that shouldn't compare equal do");
         }
 
         int hash1 = test1.hashCode();
@@ -415,13 +418,14 @@ public class LocaleTest extends IntlTest {
         int hash3 = test3.hashCode();
 
         if (hash1 != hash2 || hash1 != hash3 || hash2 != hash3) {
-            errln("hashCode() failed: objects that should have the same hash code don't");
+            fail("hashCode() failed: objects that should have the same hash code don't");
         }
     }
 
     /**
      * @bug 4011756 4011380
      */
+    @Test
     public void TestISO3Fallback() {
         Locale test = Locale.of("xx", "YY");
         boolean gotException = false;
@@ -433,7 +437,7 @@ public class LocaleTest extends IntlTest {
             gotException = true;
         }
         if (!gotException) {
-            errln("getISO3Language() on xx_YY returned " + result + " instead of throwing an exception");
+            fail("getISO3Language() on xx_YY returned " + result + " instead of throwing an exception");
         }
 
         gotException = false;
@@ -443,13 +447,14 @@ public class LocaleTest extends IntlTest {
             gotException = true;
         }
         if (!gotException) {
-            errln("getISO3Country() on xx_YY returned " + result + " instead of throwing an exception");
+            fail("getISO3Country() on xx_YY returned " + result + " instead of throwing an exception");
         }
     }
 
     /**
      * @bug 4106155 4118587 7066203 7085757
      */
+    @Test
     public void TestGetLangsAndCountries() {
         // It didn't seem right to just do an exhaustive test of everything here, so I check
         // for the following things:
@@ -464,7 +469,7 @@ public class LocaleTest extends IntlTest {
             "he", "id", "iu", "ug", "yi", "za"};
 
         if (test.length != 188) {
-            errln("Expected getISOLanguages() to return 188 languages; it returned " + test.length);
+            fail("Expected getISOLanguages() to return 188 languages; it returned " + test.length);
         } else {
             for (int i = 0; i < spotCheck1.length; i++) {
                 int j;
@@ -474,19 +479,19 @@ public class LocaleTest extends IntlTest {
                     }
                 }
                 if (j == test.length || !test[j].equals(spotCheck1[i])) {
-                    errln("Couldn't find " + spotCheck1[i] + " in language list.");
+                    fail("Couldn't find " + spotCheck1[i] + " in language list.");
                 }
             }
         }
         for (int i = 0; i < test.length; i++) {
             if (!test[i].equals(test[i].toLowerCase())) {
-                errln(test[i] + " is not all lower case.");
+                fail(test[i] + " is not all lower case.");
             }
             if (test[i].length() != 2) {
-                errln(test[i] + " is not two characters long.");
+                fail(test[i] + " is not two characters long.");
             }
             if (i > 0 && test[i].compareTo(test[i - 1]) <= 0) {
-                errln(test[i] + " appears in an out-of-order position in the list.");
+                fail(test[i] + " appears in an out-of-order position in the list.");
             }
         }
 
@@ -495,7 +500,7 @@ public class LocaleTest extends IntlTest {
 
 
         if (test.length != 249) {
-            errln("Expected getISOCountries to return 249 countries; it returned " + test.length);
+            fail("Expected getISOCountries to return 249 countries; it returned " + test.length);
         } else {
             for (int i = 0; i < spotCheck2.length; i++) {
                 int j;
@@ -505,19 +510,19 @@ public class LocaleTest extends IntlTest {
                     }
                 }
                 if (j == test.length || !test[j].equals(spotCheck2[i])) {
-                    errln("Couldn't find " + spotCheck2[i] + " in country list.");
+                    fail("Couldn't find " + spotCheck2[i] + " in country list.");
                 }
             }
         }
         for (int i = 0; i < test.length; i++) {
             if (!test[i].equals(test[i].toUpperCase())) {
-                errln(test[i] + " is not all upper case.");
+                fail(test[i] + " is not all upper case.");
             }
             if (test[i].length() != 2) {
-                errln(test[i] + " is not two characters long.");
+                fail(test[i] + " is not two characters long.");
             }
             if (i > 0 && test[i].compareTo(test[i - 1]) <= 0) {
-                errln(test[i] + " appears in an out-of-order position in the list.");
+                fail(test[i] + " appears in an out-of-order position in the list.");
             }
         }
     }
@@ -532,28 +537,29 @@ public class LocaleTest extends IntlTest {
         test[0] = "SUCKER!!!";
         test = Locale.getISOCountries();
         if (test[0].equals("SUCKER!!!")) {
-            errln("Changed internal country code list!");
+            fail("Changed internal country code list!");
         }
 
         test = Locale.getISOLanguages();
         test[0] = "HAHAHAHA!!!";
         test = Locale.getISOLanguages();
         if (test[0].equals("HAHAHAHA!!!")) { // Fixed typo
-            errln("Changes internal language code list!");
+            fail("Changes internal language code list!");
         }
     }
 
     /**
      * @bug 4107014
      */
+    @Test
     public void TestGetAvailableLocales() {
         Locale[] locales = Locale.getAvailableLocales();
         if (locales == null || locales.length == 0) {
-            errln("Locale.getAvailableLocales() returned no installed locales!");
+            fail("Locale.getAvailableLocales() returned no installed locales!");
         } else {
-            logln("Locale.getAvailableLocales() returned a list of " + locales.length + " locales.");
+            System.out.println("Locale.getAvailableLocales() returned a list of " + locales.length + " locales.");
             for (int i = 0; i < locales.length; i++) {
-                logln(locales[i].toString());
+                System.out.println(locales[i].toString());
             }
         }
     }
@@ -561,11 +567,12 @@ public class LocaleTest extends IntlTest {
     /**
      * @bug 4135316
      */
+    @Test
     public void TestBug4135316() {
         Locale[] locales1 = Locale.getAvailableLocales();
         Locale[] locales2 = Locale.getAvailableLocales();
         if (locales1 == locales2) {
-            errln("Locale.getAvailableLocales() doesn't clone its internal storage!");
+            fail("Locale.getAvailableLocales() doesn't clone its internal storage!");
         }
     }
 
@@ -574,27 +581,28 @@ public class LocaleTest extends IntlTest {
      */
 /*
 test commented out pending API-change approval
+    @Test
     public void TestGetLanguagesForCountry() {
         String[] languages = Locale.getLanguagesForCountry("US");
 
         if (!searchStringArrayFor("en", languages))
-            errln("Didn't get en as a language for US");
+            fail("Didn't get en as a language for US");
 
         languages = Locale.getLanguagesForCountry("FR");
         if (!searchStringArrayFor("fr", languages))
-            errln("Didn't get fr as a language for FR");
+            fail("Didn't get fr as a language for FR");
 
         languages = Locale.getLanguagesForCountry("CH");
         if (!searchStringArrayFor("fr", languages))
-            errln("Didn't get fr as a language for CH");
+            fail("Didn't get fr as a language for CH");
         if (!searchStringArrayFor("it", languages))
-            errln("Didn't get it as a language for CH");
+            fail("Didn't get it as a language for CH");
         if (!searchStringArrayFor("de", languages))
-            errln("Didn't get de as a language for CH");
+            fail("Didn't get de as a language for CH");
 
         languages = Locale.getLanguagesForCountry("JP");
         if (!searchStringArrayFor("ja", languages))
-            errln("Didn't get ja as a language for JP");
+            fail("Didn't get ja as a language for JP");
     }
 */
 
@@ -607,6 +615,7 @@ test commented out pending API-change approval
     /**
      * @bug 4110613
      */
+    @Test
     public void TestSerialization() throws ClassNotFoundException, OptionalDataException,
             IOException, StreamCorruptedException {
         ObjectOutputStream ostream;
@@ -627,13 +636,14 @@ test commented out pending API-change approval
         Locale test2 = (Locale) (istream.readObject());
 
         if (!test1.equals(test2) || test1.hashCode() != test2.hashCode()) {
-            errln("Locale failed to deserialize correctly.");
+            fail("Locale failed to deserialize correctly.");
         }
     }
 
     /**
      * @bug 4118587
      */
+    @Test
     public void TestSimpleDisplayNames() {
         // This test is different from TestDisplayNames because TestDisplayNames checks
         // fallback behavior, combination of language and country names to form locale
@@ -646,7 +656,7 @@ test commented out pending API-change approval
         for (int i = 0; i < languageCodes.length; i++) {
             String test = (Locale.of(languageCodes[i])).getDisplayLanguage(Locale.US);
             if (!test.equals(languageNames[i])) {
-                errln("Got wrong display name for " + languageCodes[i] + ": Expected \""
+                fail("Got wrong display name for " + languageCodes[i] + ": Expected \""
                         + languageNames[i] + "\", got \"" + test + "\".");
             }
         }
@@ -655,6 +665,7 @@ test commented out pending API-change approval
     /**
      * @bug 4118595
      */
+    @Test
     public void TestUninstalledISO3Names() {
         // This test checks to make sure getISO3Language and getISO3Country work right
         // even for locales that are not installed.
@@ -664,7 +675,7 @@ test commented out pending API-change approval
         for (int i = 0; i < iso2Languages.length; i++) {
             String test = (Locale.of(iso2Languages[i])).getISO3Language();
             if (!test.equals(iso3Languages[i])) {
-                errln("Got wrong ISO3 code for " + iso2Languages[i] + ": Expected \""
+                fail("Got wrong ISO3 code for " + iso2Languages[i] + ": Expected \""
                         + iso3Languages[i] + "\", got \"" + test + "\".");
             }
         }
@@ -675,7 +686,7 @@ test commented out pending API-change approval
         for (int i = 0; i < iso2Countries.length; i++) {
             String test = (Locale.of("", iso2Countries[i])).getISO3Country();
             if (!test.equals(iso3Countries[i])) {
-                errln("Got wrong ISO3 code for " + iso2Countries[i] + ": Expected \""
+                fail("Got wrong ISO3 code for " + iso2Countries[i] + ": Expected \""
                         + iso3Countries[i] + "\", got \"" + test + "\".");
             }
         }
@@ -684,6 +695,7 @@ test commented out pending API-change approval
     /**
      * @bug 4052404 4778440 8263202
      */
+    @Test
     public void TestChangedISO639Codes() {
         Locale hebrewOld = Locale.of("iw", "IL");
         Locale hebrewNew = Locale.of("he", "IL");
@@ -694,28 +706,28 @@ test commented out pending API-change approval
 
         if ("true".equalsIgnoreCase(System.getProperty("java.locale.useOldISOCodes"))) {
             if (!hebrewNew.getLanguage().equals("iw")) {
-                errln("Got back wrong language code for new Hebrew: expected \"iw\", got \""
+                fail("Got back wrong language code for new Hebrew: expected \"iw\", got \""
                         + hebrewNew.getLanguage() + "\"");
             }
             if (!yiddishNew.getLanguage().equals("ji")) {
-                errln("Got back wrong language code for new Yiddish: expected \"ji\", got \""
+                fail("Got back wrong language code for new Yiddish: expected \"ji\", got \""
                         + yiddishNew.getLanguage() + "\"");
             }
             if (!indonesianNew.getLanguage().equals("in")) {
-                errln("Got back wrong language code for new Indonesian: expected \"in\", got \""
+                fail("Got back wrong language code for new Indonesian: expected \"in\", got \""
                         + indonesianNew.getLanguage() + "\"");
             }
         } else {
             if (!hebrewOld.getLanguage().equals("he")) {
-                errln("Got back wrong language code for old Hebrew: expected \"he\", got \""
+                fail("Got back wrong language code for old Hebrew: expected \"he\", got \""
                         + hebrewNew.getLanguage() + "\"");
             }
             if (!yiddishOld.getLanguage().equals("yi")) {
-                errln("Got back wrong language code for old Yiddish: expected \"yi\", got \""
+                fail("Got back wrong language code for old Yiddish: expected \"yi\", got \""
                         + yiddishNew.getLanguage() + "\"");
             }
             if (!indonesianOld.getLanguage().equals("id")) {
-                errln("Got back wrong language code for old Indonesian: expected \"id\", got \""
+                fail("Got back wrong language code for old Indonesian: expected \"id\", got \""
                         + indonesianNew.getLanguage() + "\"");
             }
         }
@@ -739,6 +751,7 @@ test commented out pending API-change approval
      * 1999-11-19 joconner
      *
      */
+    @Test
     public void TestAtypicalLocales() {
         Locale[] localesToTest = { Locale.of("de", "CA"),
                                    Locale.of("ja", "ZA"),
@@ -784,27 +797,27 @@ test commented out pending API-change approval
 
         for (int i = 0; i < localesToTest.length; i++) {
             String name = localesToTest[i].getDisplayName(Locale.US);
-            logln(name);
+            System.out.println(name);
             if (!name.equals(englishDisplayNames[i])) {
-                errln("Lookup in English failed: expected \"" + englishDisplayNames[i]
+                fail("Lookup in English failed: expected \"" + englishDisplayNames[i]
                         + "\", got \"" + name + "\"");
             }
         }
 
         for (int i = 0; i < localesToTest.length; i++) {
             String name = localesToTest[i].getDisplayName(Locale.of("es", "ES"));
-            logln(name);
+            System.out.println(name);
             if (!name.equals(spanishDisplayNames[i])) {
-                errln("Lookup in Spanish failed: expected \"" + spanishDisplayNames[i]
+                fail("Lookup in Spanish failed: expected \"" + spanishDisplayNames[i]
                         + "\", got \"" + name + "\"");
             }
         }
 
         for (int i = 0; i < localesToTest.length; i++) {
             String name = localesToTest[i].getDisplayName(Locale.FRANCE);
-            logln(name);
+            System.out.println(name);
             if (!name.equals(frenchDisplayNames[i])) {
-                errln("Lookup in French failed: expected \"" + frenchDisplayNames[i]
+                fail("Lookup in French failed: expected \"" + frenchDisplayNames[i]
                         + "\", got \"" + name + "\"");
             }
         }
@@ -816,6 +829,7 @@ test commented out pending API-change approval
     /**
      * @bug 4126371
      */
+    @Test
     public void TestNullDefault() {
         // why on earth anyone would ever try to do this is beyond me, but we should
         // definitely make sure we don't let them
@@ -827,10 +841,10 @@ test commented out pending API-change approval
             gotException = true;
         }
         if (Locale.getDefault() == null) {
-            errln("Locale.getDefault() allowed us to set default to NULL!");
+            fail("Locale.getDefault() allowed us to set default to NULL!");
         }
         if (!gotException) {
-            errln("Trying to set default locale to NULL didn't throw exception!");
+            fail("Trying to set default locale to NULL didn't throw exception!");
         }
     }
 
@@ -839,15 +853,16 @@ test commented out pending API-change approval
      * This would be better tested by the LocaleDataTest.  Will move it when I
      * get the LocaleDataTest working again.
      */
+    @Test
     public void TestThaiCurrencyFormat() {
         DecimalFormat thaiCurrency = (DecimalFormat) NumberFormat.getCurrencyInstance(
                 Locale.of("th", "TH"));
         if (!thaiCurrency.getPositivePrefix().equals("\u0e3f")) {
-            errln("Thai currency prefix wrong: expected \"\u0e3f\", got \""
+            fail("Thai currency prefix wrong: expected \"\u0e3f\", got \""
                     + thaiCurrency.getPositivePrefix() + "\"");
         }
         if (!thaiCurrency.getPositiveSuffix().equals("")) {
-            errln("Thai currency suffix wrong: expected \"\", got \""
+            fail("Thai currency suffix wrong: expected \"\", got \""
                     + thaiCurrency.getPositiveSuffix() + "\"");
         }
     }
@@ -865,6 +880,7 @@ test commented out pending API-change approval
      * DON'T ASSUME: Any specific countries support the Euro.  Instead,
      * iterate through all locales.
      */
+    @Test
     public void TestEuroSupport() {
         final String EURO_VARIANT = "EURO";
         final String EURO_CURRENCY = "\u20AC"; // Look for this string in formatted Euro currency
@@ -878,10 +894,10 @@ test commented out pending API-change approval
                 String neg = nf.format(-271828.182845);
                 if (pos.indexOf(EURO_CURRENCY) >= 0
                         && neg.indexOf(EURO_CURRENCY) >= 0) {
-                    logln("Ok: " + loc.toString()
+                    System.out.println("Ok: " + loc.toString()
                             + ": " + pos + " / " + neg);
                 } else {
-                    errln("Fail: " + loc.toString()
+                    fail("Fail: " + loc.toString()
                             + " formats without " + EURO_CURRENCY
                             + ": " + pos + " / " + neg
                             + "\n*** THIS FAILURE MAY ONLY MEAN THAT LOCALE DATA HAS CHANGED ***");
@@ -894,6 +910,7 @@ test commented out pending API-change approval
      * @bug 4139504
      * toString() doesn't work with language_VARIANT.
      */
+    @Test
     public void TestToString() {
         Object[] DATA = {
             Locale.of("xx", "", ""), "xx",
@@ -908,7 +925,7 @@ test commented out pending API-change approval
             Locale loc = (Locale) DATA[i];
             String fmt = (String) DATA[i + 1];
             if (!loc.toString().equals(fmt)) {
-                errln("Fail: Locale.toString(" + fmt + ")=>" + loc);
+                fail("Fail: Locale.toString(" + fmt + ")=>" + loc);
             }
         }
     }
@@ -918,6 +935,7 @@ test commented out pending API-change approval
      * Currency symbol in zh is wrong.  We will test this at the NumberFormat
      * end to test the whole pipe.
      */
+    @Test
     public void Test4105828() {
         Locale[] LOC = {Locale.CHINESE, Locale.of("zh", "CN"),
             Locale.of("zh", "TW"), Locale.of("zh", "HK")};
@@ -925,7 +943,7 @@ test commented out pending API-change approval
             NumberFormat fmt = NumberFormat.getPercentInstance(LOC[i]);
             String result = fmt.format(1);
             if (!result.equals("100%")) {
-                errln("Percent for " + LOC[i] + " should be 100%, got " + result);
+                fail("Percent for " + LOC[i] + " should be 100%, got " + result);
             }
         }
     }
@@ -946,6 +964,7 @@ test commented out pending API-change approval
      * is that something is wrong with the font mapping subsystem, but we can't
      * test that here.
      */
+    @Test
     public void Test4139940() {
         Locale mylocale = Locale.of("hu");
         @SuppressWarnings("deprecation")
@@ -955,7 +974,7 @@ test commented out pending API-change approval
         // Make sure that o circumflex (\u00F4) is NOT there, and
         // o double acute (\u0151) IS.
         if (str.indexOf('\u0151') < 0 || str.indexOf('\u00F4') >= 0) {
-            errln("Fail: Monday in Hungarian is wrong");
+            fail("Fail: Monday in Hungarian is wrong");
         }
     }
 
@@ -963,10 +982,11 @@ test commented out pending API-change approval
      * @bug 4143951
      * Russian first day of week should be Monday. Confirmed.
      */
+    @Test
     public void Test4143951() {
         Calendar cal = Calendar.getInstance(Locale.of("ru"));
         if (cal.getFirstDayOfWeek() != Calendar.MONDAY) {
-            errln("Fail: First day of week in Russia should be Monday");
+            fail("Fail: First day of week in Russia should be Monday");
         }
     }
 
@@ -975,6 +995,7 @@ test commented out pending API-change approval
      * java.util.Locale.getISO3Country() works wrong for non ISO-3166 codes.
      * Should throw an exception for unknown locales
      */
+    @Test
     public void Test4147315() {
         // Try with codes that are the wrong length but happen to match text
         // at a valid offset in the mapping table
@@ -983,7 +1004,7 @@ test commented out pending API-change approval
         try {
             String result = locale.getISO3Country();
 
-            errln("ERROR: getISO3Country() returns: " + result
+            fail("ERROR: getISO3Country() returns: " + result
                     + " for locale '" + locale + "' rather than exception");
         } catch (MissingResourceException e) {
         }
@@ -995,6 +1016,7 @@ test commented out pending API-change approval
      * Should throw an exception for unknown locales, except they have three
      * letter language codes.
      */
+    @Test
     public void Test4147317() {
         // Try a three letter language code, and check whether it is
         // returned as is.
@@ -1002,7 +1024,7 @@ test commented out pending API-change approval
 
         String result = locale.getISO3Language();
         if (!result.equals("aaa")) {
-            errln("ERROR: getISO3Language() returns: " + result
+            fail("ERROR: getISO3Language() returns: " + result
                     + " for locale '" + locale + "' rather than returning it as is");
         }
 
@@ -1013,7 +1035,7 @@ test commented out pending API-change approval
         try {
             result = locale.getISO3Language();
 
-            errln("ERROR: getISO3Language() returns: " + result
+            fail("ERROR: getISO3Language() returns: " + result
                     + " for locale '" + locale + "' rather than exception");
         } catch (MissingResourceException e) {
         }
@@ -1022,6 +1044,7 @@ test commented out pending API-change approval
     /*
      * @bug 4147552 4778440 8030696
      */
+    @Test
     public void Test4147552() {
         Locale[] locales = {Locale.of("no", "NO"), Locale.of("no", "NO", "B"),
             Locale.of("no", "NO", "NY"), Locale.of("nb", "NO"),
@@ -1038,11 +1061,11 @@ test commented out pending API-change approval
         for (int i = 0; i < locales.length; i++) {
             Locale loc = locales[i];
             if (!loc.getDisplayName(Locale.US).equals(englishDisplayNames[i])) {
-                errln("English display-name mismatch: expected "
+                fail("English display-name mismatch: expected "
                         + englishDisplayNames[i] + ", got " + loc.getDisplayName());
             }
             if (!loc.getDisplayName(loc).equals(norwegianDisplayNames[i])) {
-                errln("Norwegian display-name mismatch: expected "
+                fail("Norwegian display-name mismatch: expected "
                         + norwegianDisplayNames[i] + ", got "
                         + loc.getDisplayName(loc));
             }
@@ -1052,11 +1075,12 @@ test commented out pending API-change approval
     /*
      * @bug 8030696
      */
+    @Test
     public void Test8030696() {
         List<Locale> av = Arrays.asList(Locale.getAvailableLocales());
         if (!av.contains(Locale.of("nb", "NO"))
                 || !av.contains(Locale.of("nn", "NO"))) {
-            errln("\"nb-NO\" and/or \"nn-NO\" locale(s) not returned from getAvailableLocales().");
+            fail("\"nb-NO\" and/or \"nn-NO\" locale(s) not returned from getAvailableLocales().");
         }
     }
 

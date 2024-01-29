@@ -33,7 +33,7 @@ public interface JdkConsoleProvider {
     /**
      * The module name of the JdkConsole default provider.
      */
-    String DEFAULT_PROVIDER_MODULE_NAME = "java.base";
+    String DEFAULT_PROVIDER_MODULE_NAME = "jdk.internal.le";
 
     /**
      * {@return the Console instance, or {@code null} if not available}

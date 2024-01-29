@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,20 @@
 package jdk.jfr.internal;
 
 import static jdk.jfr.internal.LogLevel.DEBUG;
+import static jdk.jfr.internal.LogLevel.ERROR;
+import static jdk.jfr.internal.LogLevel.INFO;
 import static jdk.jfr.internal.LogLevel.WARN;
 import static jdk.jfr.internal.LogTag.JFR;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.FileChannel;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.StandardOpenOption;
 import java.security.AccessControlContext;
 import java.security.AccessController;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -55,6 +60,8 @@ import jdk.jfr.FlightRecorderListener;
 import jdk.jfr.Recording;
 import jdk.jfr.RecordingState;
 import jdk.jfr.internal.SecuritySupport.SafePath;
+import jdk.jfr.internal.util.Utils;
+import jdk.jfr.internal.util.ValueFormatter;
 
 public final class PlatformRecording implements AutoCloseable {
 
@@ -71,7 +78,7 @@ public final class PlatformRecording implements AutoCloseable {
     private boolean toDisk = true;
     private String name;
     private boolean dumpOnExit;
-    private SafePath dumpOnExitDirectory = new SafePath(".");
+    private SafePath dumpDirectory;
     // Timestamp information
     private Instant stopTime;
     private Instant startTime;
@@ -84,7 +91,7 @@ public final class PlatformRecording implements AutoCloseable {
     private TimerTask stopTask;
     private TimerTask startTask;
     @SuppressWarnings("removal")
-    private AccessControlContext noDestinationDumpOnExitAccessControlContext;
+    private final AccessControlContext dumpDirectoryControlContext;
     private boolean shouldWriteActiveRecordingEvent = true;
     private Duration flushInterval = Duration.ofSeconds(1);
     private long finalStartChunkNanos = Long.MIN_VALUE;
@@ -94,11 +101,11 @@ public final class PlatformRecording implements AutoCloseable {
     PlatformRecording(PlatformRecorder recorder, long id) {
         // Typically the access control context is taken
         // when you call dump(Path) or setDestination(Path),
-        // but if no destination is set and dumpOnExit=true
+        // but if no destination is set and the filename is auto-generated,
         // the control context of the recording is taken when the
         // Recording object is constructed. This works well for
         // -XX:StartFlightRecording and JFR.dump
-        this.noDestinationDumpOnExitAccessControlContext = AccessController.getContext();
+        this.dumpDirectoryControlContext = AccessController.getContext();
         this.id = id;
         this.recorder = recorder;
         this.name = String.valueOf(id);
@@ -126,16 +133,16 @@ public final class PlatformRecording implements AutoCloseable {
                     options.add("disk=false");
                 }
                 if (maxAge != null) {
-                    options.add("maxage=" + Utils.formatTimespan(maxAge, ""));
+                    options.add("maxage=" + ValueFormatter.formatTimespan(maxAge, ""));
                 }
                 if (maxSize != 0) {
-                    options.add("maxsize=" + Utils.formatBytesCompact(maxSize));
+                    options.add("maxsize=" + ValueFormatter.formatBytesCompact(maxSize));
                 }
                 if (dumpOnExit) {
                     options.add("dumponexit=true");
                 }
                 if (duration != null) {
-                    options.add("duration=" + Utils.formatTimespan(duration, ""));
+                    options.add("duration=" + ValueFormatter.formatTimespan(duration, ""));
                 }
                 if (destination != null) {
                     options.add("filename=" + destination.getRealPathText());
@@ -169,7 +176,9 @@ public final class PlatformRecording implements AutoCloseable {
             newState = getState();
         }
         WriteableUserPath dest = getDestination();
-
+        if (dest == null && dumpDirectory != null) {
+            dest = makeDumpPath();
+        }
         if (dest != null) {
             try {
                 dumpStopped(dest);
@@ -185,6 +194,33 @@ public final class PlatformRecording implements AutoCloseable {
         }
         return true;
     }
+
+    @SuppressWarnings("removal")
+    public WriteableUserPath makeDumpPath() {
+        try {
+            String name = JVMSupport.makeFilename(getRecording());
+            return AccessController.doPrivileged(new PrivilegedExceptionAction<WriteableUserPath>() {
+                @Override
+                public WriteableUserPath run() throws Exception {
+                    SafePath p = dumpDirectory;
+                    if (p == null) {
+                        p = new SafePath(".");
+                    }
+                    return new WriteableUserPath(p.toPath().resolve(name));
+                }
+            }, dumpDirectoryControlContext);
+        } catch (PrivilegedActionException e) {
+            Throwable t = e.getCause();
+            if (t instanceof SecurityException) {
+                Logger.log(LogTag.JFR, LogLevel.WARN, "Not allowed to create dump path for recording " + recording.getId() + " on exit.");
+            }
+            if (t instanceof IOException) {
+                Logger.log(LogTag.JFR, LogLevel.WARN, "Could not dump " + recording.getId() + " on exit.");
+            }
+            return null;
+        }
+    }
+
 
     public void scheduleStart(Duration delay) {
         synchronized (recorder) {
@@ -692,11 +728,6 @@ public final class PlatformRecording implements AutoCloseable {
         destination = null;
     }
 
-    @SuppressWarnings("removal")
-    public AccessControlContext getNoDestinationDumpOnExitAccessControlContext() {
-        return noDestinationDumpOnExitAccessControlContext;
-    }
-
     void setShouldWriteActiveRecordingEvent(boolean shouldWrite) {
         this.shouldWriteActiveRecordingEvent = shouldWrite;
     }
@@ -716,17 +747,33 @@ public final class PlatformRecording implements AutoCloseable {
 
     public void dumpStopped(WriteableUserPath userPath) throws IOException {
         synchronized (recorder) {
-                userPath.doPrivilegedIO(() -> {
-                    try (ChunksChannel cc = new ChunksChannel(chunks); FileChannel fc = FileChannel.open(userPath.getReal(), StandardOpenOption.WRITE, StandardOpenOption.APPEND)) {
-                        long bytes = cc.transferTo(fc);
-                        Logger.log(LogTag.JFR, LogLevel.INFO, "Transferred " + bytes + " bytes from the disk repository");
-                        // No need to force if no data was transferred, which avoids IOException when device is /dev/null
-                        if (bytes != 0) {
-                            fc.force(true);
-                        }
-                    }
-                    return null;
-                });
+            transferChunksWithRetry(userPath);
+        }
+    }
+
+    private void transferChunksWithRetry(WriteableUserPath userPath) throws IOException {
+        userPath.doPrivilegedIO(() -> {
+            try {
+                transferChunks(userPath);
+            } catch (NoSuchFileException nsfe) {
+                Logger.log(LogTag.JFR, LogLevel.ERROR, "Missing chunkfile when writing recording \"" + name + "\" (" + id + ") to " + userPath.getRealPathText() + ".");
+                // if one chunkfile was missing, its likely more are missing
+                removeNonExistantPaths();
+                // and try the transfer again
+                transferChunks(userPath);
+            }
+            return null;
+        });
+    }
+
+    private void transferChunks(WriteableUserPath userPath) throws IOException {
+        try (ChunksChannel cc = new ChunksChannel(chunks); FileChannel fc = FileChannel.open(userPath.getReal(), StandardOpenOption.WRITE, StandardOpenOption.APPEND)) {
+            long bytes = cc.transferTo(fc);
+            Logger.log(LogTag.JFR, LogLevel.INFO, "Transferred " + bytes + " bytes from the disk repository");
+            // No need to force if no data was transferred, which avoids IOException when device is /dev/null
+            if (bytes != 0) {
+                fc.force(true);
+            }
         }
     }
 
@@ -795,7 +842,7 @@ public final class PlatformRecording implements AutoCloseable {
         }
         // always keep at least one chunk
         if (result.isEmpty()) {
-            result.add(input.get(0));
+            result.add(input.getFirst());
         }
         return result;
     }
@@ -807,12 +854,13 @@ public final class PlatformRecording implements AutoCloseable {
         return result;
     }
 
-    public void setDumpOnExitDirectory(SafePath directory) {
-       this.dumpOnExitDirectory = directory;
-    }
-
-    public SafePath getDumpOnExitDirectory()  {
-        return this.dumpOnExitDirectory;
+    /**
+     * Sets the dump directory.
+     * <p>
+     * Only to be used by DCmdStart.
+     */
+    public void setDumpDirectory(SafePath directory) {
+       this.dumpDirectory = directory;
     }
 
     public void setFlushInterval(Duration interval) {
@@ -874,6 +922,29 @@ public final class PlatformRecording implements AutoCloseable {
                     it.remove();
                     removed(c);
                     return;
+                }
+            }
+        }
+    }
+
+    void removeNonExistantPaths() {
+        synchronized (recorder) {
+            Iterator<RepositoryChunk> it = chunks.iterator();
+            Logger.log(JFR, INFO, "Checking for missing chunkfiles for recording \"" + name + "\" (" + id + ")");
+            while (it.hasNext()) {
+                RepositoryChunk chunk = it.next();
+                if (chunk.isMissingFile()) {
+                    String msg = "Chunkfile \"" + chunk.getFile() + "\" is missing. " +
+                                 "Data loss might occur from " + chunk.getStartTime();
+                    if (chunk.getEndTime() != null) {
+                        msg += " to " + chunk.getEndTime();
+                    }
+                    Logger.log(JFR, ERROR, msg);
+
+                    JVM.emitDataLoss(chunk.getSize());
+
+                    it.remove();
+                    removed(chunk);
                 }
             }
         }

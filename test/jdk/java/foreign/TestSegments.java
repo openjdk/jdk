@@ -1,30 +1,29 @@
 /*
- *  Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
- *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- *  This code is free software; you can redistribute it and/or modify it
- *  under the terms of the GNU General Public License version 2 only, as
- *  published by the Free Software Foundation.
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
  *
- *  This code is distributed in the hope that it will be useful, but WITHOUT
- *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- *  version 2 for more details (a copy is included in the LICENSE file that
- *  accompanied this code).
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
  *
- *  You should have received a copy of the GNU General Public License version
- *  2 along with this work; if not, write to the Free Software Foundation,
- *  Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- *  Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- *  or visit www.oracle.com if you need additional information or have any
- *  questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
 
 /*
  * @test
- * @enablePreview
- * @requires jdk.foreign.linker != "UNSUPPORTED"
+ * @requires vm.bits == 64
  * @run testng/othervm -Xmx4G -XX:MaxDirectMemorySize=1M --enable-native-access=ALL-UNNAMED TestSegments
  */
 
@@ -35,13 +34,16 @@ import org.testng.annotations.Test;
 
 import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
 import static org.testng.Assert.*;
 
 public class TestSegments {
@@ -54,14 +56,13 @@ public class TestSegments {
     @Test
     public void testZeroLengthNativeSegment() {
         try (Arena arena = Arena.ofConfined()) {
-            Arena session = arena;
-            var segment = session.allocate(0, 1);
+            var segment = arena.allocate(0, 1);
             assertEquals(segment.byteSize(), 0);
             MemoryLayout seq = MemoryLayout.sequenceLayout(0, JAVA_INT);
-            segment = session.allocate(seq);
+            segment = arena.allocate(seq);
             assertEquals(segment.byteSize(), 0);
             assertEquals(segment.address() % seq.byteAlignment(), 0);
-            segment = session.allocate(0, 4);
+            segment = arena.allocate(0, 4);
             assertEquals(segment.byteSize(), 0);
             assertEquals(segment.address() % 4, 0);
             MemorySegment rawAddress = MemorySegment.ofAddress(segment.address());
@@ -84,7 +85,7 @@ public class TestSegments {
 
     @Test
     public void testNativeSegmentIsZeroed() {
-        VarHandle byteHandle = ValueLayout.JAVA_BYTE.arrayElementVarHandle();
+        VarHandle byteHandle = ValueLayout.JAVA_BYTE.varHandle();
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment segment = arena.allocate(1000, 1);
             for (long i = 0 ; i < segment.byteSize() ; i++) {
@@ -95,7 +96,7 @@ public class TestSegments {
 
     @Test
     public void testSlices() {
-        VarHandle byteHandle = ValueLayout.JAVA_BYTE.arrayElementVarHandle();
+        VarHandle byteHandle = ValueLayout.JAVA_BYTE.varHandle();
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment segment = arena.allocate(10, 1);
             //init
@@ -132,8 +133,7 @@ public class TestSegments {
     @Test
     public void testEqualsOffHeap() {
         try (Arena arena = Arena.ofConfined()) {
-            Arena scope1 = arena;
-            MemorySegment segment = scope1.allocate(100, 1);
+            MemorySegment segment = arena.allocate(100, 1);
             assertEquals(segment, segment.asReadOnly());
             assertEquals(segment, segment.asSlice(0, 100));
             assertNotEquals(segment, segment.asSlice(10, 90));
@@ -225,6 +225,21 @@ public class TestSegments {
         assertTrue(segment.isAccessibleBy(new Thread()) != isConfined);
     }
 
+    @Test(dataProvider = "segmentFactories")
+    public void testToString(Supplier<MemorySegment> segmentSupplier) {
+        var segment = segmentSupplier.get();
+        String s = segment.toString();
+        assertTrue(s.startsWith("MemorySegment{"));
+        assertTrue(s.contains("address: 0x"));
+        assertTrue(s.contains("byteSize: "));
+        if (segment.heapBase().isPresent()) {
+            assertTrue(s.contains("heapBase: ["));
+        } else {
+            assertFalse(s.contains("heapBase: "));
+        }
+        assertFalse(s.contains("Optional"));
+    }
+
     @DataProvider(name = "segmentFactories")
     public Object[][] segmentFactories() {
         List<Supplier<MemorySegment>> l = List.of(
@@ -233,7 +248,7 @@ public class TestSegments {
                 () -> MemorySegment.ofArray(new double[] { 1d, 2d, 3d, 4d} ),
                 () -> MemorySegment.ofArray(new float[] { 1.0f, 2.0f, 3.0f, 4.0f }),
                 () -> MemorySegment.ofArray(new int[] { 1, 2, 3, 4 }),
-                () -> MemorySegment.ofArray(new long[] { 1l, 2l, 3l, 4l } ),
+                () -> MemorySegment.ofArray(new long[] { 1L, 2L, 3L, 4L } ),
                 () -> MemorySegment.ofArray(new short[] { 1, 2, 3, 4 } ),
                 () -> Arena.ofAuto().allocate(4L, 1),
                 () -> Arena.ofAuto().allocate(4L, 8),
@@ -248,7 +263,7 @@ public class TestSegments {
 
     @Test(dataProvider = "segmentFactories")
     public void testFill(Supplier<MemorySegment> segmentSupplier) {
-        VarHandle byteHandle = ValueLayout.JAVA_BYTE.arrayElementVarHandle();
+        VarHandle byteHandle = ValueLayout.JAVA_BYTE.varHandle();
 
         for (byte value : new byte[] {(byte) 0xFF, (byte) 0x00, (byte) 0x45}) {
             MemorySegment segment = segmentSupplier.get();
@@ -309,10 +324,16 @@ public class TestSegments {
         assertEquals(segment.scope(), arena.scope());
     }
 
-    @Test(dataProvider = "segmentFactories", expectedExceptions = UnsupportedOperationException.class)
+    @Test(dataProvider = "segmentFactories", expectedExceptions = IllegalArgumentException.class)
     public void testFillIllegalAccessMode(Supplier<MemorySegment> segmentSupplier) {
         MemorySegment segment = segmentSupplier.get();
         segment.asReadOnly().fill((byte) 0xFF);
+    }
+
+    @Test(dataProvider = "segmentFactories", expectedExceptions = IllegalArgumentException.class)
+    public void testFromStringIllegalAccessMode(Supplier<MemorySegment> segmentSupplier) {
+        MemorySegment segment = segmentSupplier.get();
+        segment.asReadOnly().setString(0, "a");
     }
 
     @Test(dataProvider = "segmentFactories")
@@ -365,6 +386,71 @@ public class TestSegments {
             assertEquals(MemorySegment.ofAddress(42).reinterpret(arena, s -> counter.incrementAndGet()).scope(), arena.scope());
         }
         assertEquals(counter.get(), 2);
+    }
+
+    @Test
+    void testThrowInCleanup() {
+        AtomicInteger counter = new AtomicInteger();
+        RuntimeException thrown = null;
+        Set<String> expected = new HashSet<>();
+        try (Arena arena = Arena.ofConfined()) {
+            for (int i = 0 ; i < 10 ; i++) {
+                String msg = "exception#" + i;
+                expected.add(msg);
+                MemorySegment.ofAddress(42).reinterpret(arena, seg -> {
+                    throw new IllegalArgumentException(msg);
+                });
+            }
+            for (int i = 10 ; i < 20 ; i++) {
+                String msg = "exception#" + i;
+                expected.add(msg);
+                MemorySegment.ofAddress(42).reinterpret(100, arena, seg -> {
+                    throw new IllegalArgumentException(msg);
+                });
+            }
+            MemorySegment.ofAddress(42).reinterpret(arena, seg -> counter.incrementAndGet());
+        } catch (RuntimeException ex) {
+            thrown = ex;
+        }
+        assertNotNull(thrown);
+        assertEquals(counter.get(), 1);
+        assertEquals(thrown.getSuppressed().length, 19);
+        Throwable[] errors = new IllegalArgumentException[20];
+        assertTrue(thrown instanceof IllegalArgumentException);
+        errors[0] = thrown;
+        for (int i = 0 ; i < 19 ; i++) {
+            assertTrue(thrown.getSuppressed()[i] instanceof IllegalArgumentException);
+            errors[i + 1] = thrown.getSuppressed()[i];
+        }
+        for (Throwable t : errors) {
+            assertTrue(expected.remove(t.getMessage()));
+        }
+        assertTrue(expected.isEmpty());
+    }
+
+    @Test
+    void testThrowInCleanupSame() {
+        AtomicInteger counter = new AtomicInteger();
+        Throwable thrown = null;
+        IllegalArgumentException iae = new IllegalArgumentException();
+        try (Arena arena = Arena.ofConfined()) {
+            for (int i = 0 ; i < 10 ; i++) {
+                MemorySegment.ofAddress(42).reinterpret(arena, seg -> {
+                    throw iae;
+                });
+            }
+            for (int i = 10 ; i < 20 ; i++) {
+                MemorySegment.ofAddress(42).reinterpret(100, arena, seg -> {
+                    throw iae;
+                });
+            }
+            MemorySegment.ofAddress(42).reinterpret(arena, seg -> counter.incrementAndGet());
+        } catch (RuntimeException ex) {
+            thrown = ex;
+        }
+        assertEquals(thrown, iae);
+        assertEquals(counter.get(), 1);
+        assertEquals(thrown.getSuppressed().length, 0);
     }
 
     @DataProvider(name = "badSizeAndAlignments")

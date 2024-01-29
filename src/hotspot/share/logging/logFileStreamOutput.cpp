@@ -32,8 +32,6 @@
 #include "utilities/defaultStream.hpp"
 
 const char* const LogFileStreamOutput::FoldMultilinesOptionKey = "foldmultilines";
-LogStdoutOutput* StdoutLog = nullptr;
-LogStderrOutput* StderrLog = nullptr;
 
 bool LogFileStreamOutput::set_option(const char* key, const char* value, outputStream* errstream) {
   bool success = false;

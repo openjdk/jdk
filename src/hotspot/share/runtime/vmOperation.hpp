@@ -48,6 +48,7 @@
   template(ZombieAll)                             \
   template(Verify)                                \
   template(HeapDumper)                            \
+  template(HeapDumpMerge)                         \
   template(CollectForMetadataAllocation)          \
   template(CollectForCodeCacheAllocation)         \
   template(GC_HeapInspection)                     \
@@ -80,8 +81,6 @@
   template(GetObjectMonitorUsage)                 \
   template(GetAllStackTraces)                     \
   template(GetThreadListStackTraces)              \
-  template(VirtualThreadGetStackTrace)            \
-  template(VirtualThreadGetFrameCount)            \
   template(ChangeBreakpoints)                     \
   template(GetOrSetLocal)                         \
   template(VirtualThreadGetOrSetLocal)            \

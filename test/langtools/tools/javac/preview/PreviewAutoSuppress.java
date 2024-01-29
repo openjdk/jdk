@@ -25,14 +25,15 @@
  * @test
  * @bug 8250768
  * @library /tools/lib
+ * @enablePreview
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
- *      jdk.jdeps/com.sun.tools.classfile
+ *      java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox toolbox.JavacTask
  * @run main PreviewAutoSuppress
  */
-import com.sun.tools.classfile.ClassFile;
+import java.lang.classfile.*;
 import java.io.InputStream;
 import java.nio.file.Files;
 import toolbox.JavacTask;
@@ -206,11 +207,11 @@ public class PreviewAutoSuppress extends TestRunner {
 
     private void checkPreviewClassfile(Path p, boolean preview) throws Exception {
         try (InputStream in = Files.newInputStream(p)) {
-            ClassFile cf = ClassFile.read(in);
-            if (preview && cf.minor_version != 65535) {
-                throw new IllegalStateException("Expected preview class, but got: " + cf.minor_version);
-            } else if (!preview && cf.minor_version != 0) {
-                throw new IllegalStateException("Expected minor version == 0 but got: " + cf.minor_version);
+            ClassModel cf = ClassFile.of().parse(in.readAllBytes());
+            if (preview && cf.minorVersion() != 65535) {
+                throw new IllegalStateException("Expected preview class, but got: " + cf.minorVersion());
+            } else if (!preview && cf.minorVersion() != 0) {
+                throw new IllegalStateException("Expected minor version == 0 but got: " + cf.minorVersion());
             }
         }
     }

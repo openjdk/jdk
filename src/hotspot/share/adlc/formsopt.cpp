@@ -31,7 +31,8 @@ int RegisterForm::_reg_ctr = 0;
 //------------------------------RegisterForm-----------------------------------
 // Constructor
 RegisterForm::RegisterForm()
-  : _regDef(cmpstr,hashstr, Form::arena),
+  : _current_ac(nullptr),
+    _regDef(cmpstr,hashstr, Form::arena),
     _regClass(cmpstr,hashstr, Form::arena),
     _allocClass(cmpstr,hashstr, Form::arena) {
 }
@@ -372,6 +373,8 @@ void CodeSnippetRegClass::declare_register_masks(FILE* fp) {
 
 //------------------------------ConditionalRegClass---------------------------
 ConditionalRegClass::ConditionalRegClass(const char *classid) : RegClass(classid), _condition_code(nullptr) {
+    _rclasses[0] = nullptr;
+    _rclasses[1] = nullptr;
 }
 
 ConditionalRegClass::~ConditionalRegClass() {
@@ -436,15 +439,20 @@ void AllocClass::output(FILE *fp) {       // Write info to output files
 //==============================Frame Handling=================================
 //------------------------------FrameForm--------------------------------------
 FrameForm::FrameForm() {
+  _sync_stack_slots = nullptr;
+  _inline_cache_reg = nullptr;
+  _interpreter_frame_pointer_reg = nullptr;
+  _cisc_spilling_operand_name = nullptr;
   _frame_pointer = nullptr;
   _c_frame_pointer = nullptr;
   _alignment = nullptr;
+  _return_addr_loc = false;
+  _c_return_addr_loc = false;
   _return_addr = nullptr;
   _c_return_addr = nullptr;
   _varargs_C_out_slots_killed = nullptr;
   _return_value = nullptr;
   _c_return_value = nullptr;
-  _interpreter_frame_pointer_reg = nullptr;
 }
 
 FrameForm::~FrameForm() {

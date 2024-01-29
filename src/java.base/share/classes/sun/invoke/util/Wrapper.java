@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -580,9 +580,9 @@ public enum Wrapper {
     }
 
     private static Number numberValue(Object x) {
-        if (x instanceof Number)     return (Number)x;
-        if (x instanceof Character)  return (int)(Character)x;
-        if (x instanceof Boolean)    return (Boolean)x ? 1 : 0;
+        if (x instanceof Number n)     return n;
+        if (x instanceof Character c)  return (int) c;
+        if (x instanceof Boolean b)    return b ? 1 : 0;
         // Remaining allowed case of void:  Must be a null reference.
         return (Number)x;
     }

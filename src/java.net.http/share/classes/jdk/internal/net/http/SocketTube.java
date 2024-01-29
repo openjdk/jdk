@@ -210,10 +210,10 @@ final class SocketTube implements FlowTube {
             long wd = wdemand == null ? 0 : wdemand.get();
 
             state.append(when).append(" Reading: [ops=")
-                    .append(rops).append(", demand=").append(rd)
+                    .append(Utils.describeOps(rops)).append(", demand=").append(rd)
                     .append(", stopped=")
                     .append((sub == null ? false : sub.readScheduler.isStopped()))
-                    .append("], Writing: [ops=").append(wops)
+                    .append("], Writing: [ops=").append(Utils.describeOps(wops))
                     .append(", demand=").append(wd)
                     .append("]");
             debug.log(state.toString());

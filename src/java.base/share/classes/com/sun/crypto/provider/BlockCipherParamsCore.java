@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,10 +46,10 @@ import javax.crypto.spec.IvParameterSpec;
  *
  */
 final class BlockCipherParamsCore {
-    private int block_size = 0;
+    private final int block_size;
     private byte[] iv = null;
 
-    private int[] moreSizes = null;
+    private final int[] moreSizes;
 
     BlockCipherParamsCore(int blksize, int... moreSizes) {
         block_size = blksize;

@@ -27,22 +27,22 @@ package jdk.internal.classfile.impl;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.util.AbstractList;
-import java.util.BitSet;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
 
-import jdk.internal.classfile.Opcode;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.constantpool.ModuleEntry;
-import jdk.internal.classfile.constantpool.NameAndTypeEntry;
+import java.lang.classfile.Attribute;
+import java.lang.classfile.AttributeMapper;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.Opcode;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.ModuleEntry;
+import java.lang.classfile.constantpool.NameAndTypeEntry;
 import java.lang.constant.ModuleDesc;
-import jdk.internal.classfile.impl.TemporaryConstantPool;
 import java.lang.reflect.AccessFlag;
-
-import static jdk.internal.classfile.Classfile.ACC_STATIC;
 import jdk.internal.access.SharedSecrets;
+
+import static java.lang.classfile.ClassFile.ACC_STATIC;
 
 /**
  * Helper to create and manipulate type descriptors, where type descriptors are
@@ -54,8 +54,13 @@ public class Util {
     private Util() {
     }
 
-    public static String arrayOf(CharSequence s) {
-        return "[" + s;
+    private static final int ATTRIBUTE_STABILITY_COUNT = AttributeMapper.AttributeStability.values().length;
+
+    public static boolean isAttributeAllowed(final Attribute<?> attr,
+                                             final ClassFile.AttributesProcessingOption processingOption) {
+        return attr instanceof BoundAttribute
+                ? ATTRIBUTE_STABILITY_COUNT - attr.attributeMapper().stability().ordinal() > processingOption.ordinal()
+                : true;
     }
 
     public static int parameterSlots(MethodTypeDesc mDesc) {
@@ -85,70 +90,19 @@ public class Util {
     }
 
     /**
-     * Convert a descriptor of classes or interfaces or arrays, or an internal
-     * name of a class or interface, into a fully qualified binary name, that can
-     * be resolved by {@link Class#forName(String) Class::forName}. Primitive type
-     * descriptors should never be passed into this method.
-     *
-     * @param descOrInternalName a descriptor or internal name
-     * @return the fully qualified binary name
+     * Converts a descriptor of classes or interfaces into
+     * a binary name. Rejects primitive types or arrays.
+     * This is an inverse of {@link ClassDesc#of(String)}.
      */
-    public static String toBinaryName(String descOrInternalName) {
-        if (descOrInternalName.startsWith("L")) {
-            // descriptors of classes or interfaces
-            if (descOrInternalName.length() <= 2 || !descOrInternalName.endsWith(";")) {
-                throw new IllegalArgumentException(descOrInternalName);
-            }
-            return descOrInternalName.substring(1, descOrInternalName.length() - 1).replace('/', '.');
-        } else {
-            // arrays, classes or interfaces' internal names
-            return descOrInternalName.replace('/', '.');
-        }
-    }
-
-    public static Iterator<String> parameterTypes(String s) {
-        //TODO: gracefully non-method types
-        return new Iterator<>() {
-            int ch = 1;
-
-            @Override
-            public boolean hasNext() {
-                return s.charAt(ch) != ')';
-            }
-
-            @Override
-            public String next() {
-                char curr = s.charAt(ch);
-                switch (curr) {
-                    case 'C', 'B', 'S', 'I', 'J', 'F', 'D', 'Z':
-                        ch++;
-                        return String.valueOf(curr);
-                    case '[':
-                        ch++;
-                        return "[" + next();
-                    case 'L': {
-                        int start = ch;
-                        while (s.charAt(++ch) != ';') { }
-                        ++ch;
-                        return s.substring(start, ch);
-                    }
-                    default:
-                        throw new AssertionError("cannot parse string: " + s);
-                }
-            }
-        };
-    }
-
-    public static String returnDescriptor(String s) {
-        return s.substring(s.indexOf(')') + 1);
+    public static String toBinaryName(ClassDesc cd) {
+        return toInternalName(cd).replace('/', '.');
     }
 
     public static String toInternalName(ClassDesc cd) {
         var desc = cd.descriptorString();
-        return switch (desc.charAt(0)) {
-            case 'L' -> desc.substring(1, desc.length() - 1);
-            default -> throw new IllegalArgumentException(desc);
-        };
+        if (desc.charAt(0) == 'L')
+            return desc.substring(1, desc.length() - 1);
+        throw new IllegalArgumentException(desc);
     }
 
     public static ClassDesc toClassDesc(String classInternalNameOrArrayDesc) {
@@ -176,7 +130,7 @@ public class Util {
         for (int i = 0; i < result.length; i++) {
             result[i] = TemporaryConstantPool.INSTANCE.classEntry(list.get(i));
         }
-        return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArrayNullsAllowed(result);
+        return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArray(result);
     }
 
     public static List<ModuleEntry> moduleEntryList(List<? extends ModuleDesc> list) {
@@ -184,7 +138,7 @@ public class Util {
         for (int i = 0; i < result.length; i++) {
             result[i] = TemporaryConstantPool.INSTANCE.moduleEntry(TemporaryConstantPool.INSTANCE.utf8Entry(list.get(i).name()));
         }
-        return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArrayNullsAllowed(result);
+        return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArray(result);
     }
 
     public static void checkKind(Opcode op, Opcode.Kind k) {

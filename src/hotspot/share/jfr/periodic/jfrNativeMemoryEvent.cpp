@@ -25,8 +25,8 @@
 #include "precompiled.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/periodic/jfrNativeMemoryEvent.hpp"
-#include "services/memTracker.hpp"
-#include "services/nmtUsage.hpp"
+#include "nmt/memTracker.hpp"
+#include "nmt/nmtUsage.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ticks.hpp"
 

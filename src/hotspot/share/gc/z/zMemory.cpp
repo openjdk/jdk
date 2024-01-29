@@ -81,6 +81,10 @@ ZMemoryManager::ZMemoryManager()
   : _freelist(),
     _callbacks() {}
 
+bool ZMemoryManager::free_is_contiguous() const {
+  return _freelist.size() == 1;
+}
+
 void ZMemoryManager::register_callbacks(const Callbacks& callbacks) {
   _callbacks = callbacks;
 }

@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -29,12 +27,12 @@
  * @summary Testing BoundAttributes
  * @run junit BoundAttributeTest
  */
-import jdk.internal.classfile.Attributes;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.CodeBuilder;
-import jdk.internal.classfile.attribute.MethodParameterInfo;
-import jdk.internal.classfile.attribute.MethodParametersAttribute;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.attribute.MethodParameterInfo;
+import java.lang.classfile.attribute.MethodParametersAttribute;
 import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
 
@@ -51,16 +49,17 @@ class BoundAttributeTest {
 
     @Test
     void testReadMethodParametersAttributeWithoutParameterName() {
+        var cc = ClassFile.of();
         // build a simple method: void method(int)
         MethodTypeDesc methodTypeDesc = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_int);
-        byte[] raw = Classfile.build(ClassDesc.of("TestClass"), builder -> {
+        byte[] raw = cc.build(ClassDesc.of("TestClass"), builder -> {
             builder.withMethod("method", methodTypeDesc, 0, mb -> {
                 mb.withCode(CodeBuilder::return_);
                 // add a MethodParameters attribute without name for the parameter
                 mb.with(MethodParametersAttribute.of(MethodParameterInfo.ofParameter(Optional.empty(), 0)));
             });
         });
-        ClassModel model = Classfile.parse(raw);
+        ClassModel model = cc.parse(raw);
         MethodParametersAttribute methodParametersAttribute = model.methods().get(0)
                 .findAttribute(Attributes.METHOD_PARAMETERS)
                 .orElseThrow(() -> new AssertionFailedError("Attribute not present"));

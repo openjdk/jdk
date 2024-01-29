@@ -52,6 +52,7 @@
 #include "runtime/monitorChunk.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/safefetch.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/stackValue.hpp"
 #include "runtime/stubCodeGenerator.hpp"
@@ -299,6 +300,14 @@ bool frame::is_entry_frame_valid(JavaThread* thread) const {
   // Validate sp saved in the java frame anchor
   JavaFrameAnchor* jfa = entry_frame_call_wrapper()->anchor();
   return (jfa->last_Java_sp() > sp());
+}
+
+Method* frame::safe_interpreter_frame_method() const {
+  Method** m_addr = interpreter_frame_method_addr();
+  if (m_addr == nullptr) {
+    return nullptr;
+  }
+  return (Method*) SafeFetchN((intptr_t*) m_addr, 0);
 }
 
 bool frame::should_be_deoptimized() const {
@@ -1012,7 +1021,7 @@ class CompiledArgumentOopFinder: public SignatureIterator {
       }
       tty->print_cr("Error walking frame oops:");
       _fr.print_on(tty);
-      assert(loc != nullptr, "missing register map entry reg: " INTPTR_FORMAT " %s loc: " INTPTR_FORMAT, reg->value(), reg->name(), p2i(loc));
+      assert(loc != nullptr, "missing register map entry reg: %d %s loc: " INTPTR_FORMAT, reg->value(), reg->name(), p2i(loc));
     }
   #endif
     _f->do_oop(loc);
@@ -1430,7 +1439,7 @@ void frame::describe(FrameValues& values, int frame_no, const RegisterMap* reg_m
         assert(sig_index == sizeargs, "");
       }
       int stack_arg_slots = SharedRuntime::java_calling_convention(sig_bt, regs, sizeargs);
-      assert(stack_arg_slots ==  m->num_stack_arg_slots(), "");
+      assert(stack_arg_slots ==  m->num_stack_arg_slots(false /* rounded */), "");
       int out_preserve = SharedRuntime::out_preserve_stack_slots();
       int sig_index = 0;
       int arg_index = (m->is_static() ? 0 : -1);
@@ -1441,7 +1450,7 @@ void frame::describe(FrameValues& values, int frame_no, const RegisterMap* reg_m
         assert(t == sig_bt[sig_index], "sigs in sync");
         VMReg fst = regs[sig_index].first();
         if (fst->is_stack()) {
-          assert(((int)fst->reg2stack()) >= 0, "reg2stack: " INTPTR_FORMAT, fst->reg2stack());
+          assert(((int)fst->reg2stack()) >= 0, "reg2stack: %d", fst->reg2stack());
           int offset = (fst->reg2stack() + out_preserve) * VMRegImpl::stack_slot_size + stack_slot_offset;
           intptr_t* stack_address = (intptr_t*)((address)unextended_sp() + offset);
           if (at_this) {
@@ -1603,10 +1612,10 @@ void FrameValues::print_on(stackChunkOop chunk, outputStream* st) {
   while (!(start <= v0 && v0 <= end)) v0 = _values.at(++min_index).location;
   while (!(start <= v1 && v1 <= end)) v1 = _values.at(--max_index).location;
 
-  print_on(st, min_index, max_index, v0, v1, true /* on_heap */);
+  print_on(st, min_index, max_index, v0, v1);
 }
 
-void FrameValues::print_on(outputStream* st, int min_index, int max_index, intptr_t* v0, intptr_t* v1, bool on_heap) {
+void FrameValues::print_on(outputStream* st, int min_index, int max_index, intptr_t* v0, intptr_t* v1) {
   intptr_t* min = MIN2(v0, v1);
   intptr_t* max = MAX2(v0, v1);
   intptr_t* cur = max;
@@ -1621,8 +1630,7 @@ void FrameValues::print_on(outputStream* st, int min_index, int max_index, intpt
       const char* spacer = "          " LP64_ONLY("        ");
       st->print_cr(" %s  %s %s", spacer, spacer, fv.description);
     } else {
-      if (on_heap
-          && *fv.location != 0 && *fv.location > -100 && *fv.location < 100
+      if (*fv.location != 0 && *fv.location > -100 && *fv.location < 100
 #if !defined(PPC64)
           && (strncmp(fv.description, "interpreter_frame_", 18) == 0 || strstr(fv.description, " method "))
 #else  // !defined(PPC64)

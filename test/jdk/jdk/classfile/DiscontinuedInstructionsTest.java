@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -25,20 +23,20 @@
 
 /*
  * @test
- * @summary Testing Classfile handling JSR and RET instructions.
+ * @summary Testing ClassFile handling JSR and RET instructions.
  * @run junit DiscontinuedInstructionsTest
  */
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.util.ArrayList;
 import java.util.List;
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.instruction.DiscontinuedInstruction;
+import java.lang.classfile.*;
+import java.lang.classfile.instruction.DiscontinuedInstruction;
 import helpers.ByteArrayClassLoader;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import static java.lang.constant.ConstantDescs.*;
-import static jdk.internal.classfile.Classfile.*;
+import static java.lang.classfile.ClassFile.*;
 
 class DiscontinuedInstructionsTest {
 
@@ -47,7 +45,8 @@ class DiscontinuedInstructionsTest {
         var testClass = "JsrAndRetSample";
         var testMethod = "testMethod";
         var cd_list = ArrayList.class.describeConstable().get();
-        var bytes = Classfile.build(ClassDesc.of(testClass), clb -> clb
+        var cc = ClassFile.of();
+        var bytes = cc.build(ClassDesc.of(testClass), clb -> clb
                 .withVersion(JAVA_5_VERSION, 0)
                 .withMethodBody(testMethod, MethodTypeDesc.of(CD_void, cd_list), ACC_PUBLIC | ACC_STATIC, cob -> cob
                         .block(bb -> {
@@ -64,7 +63,7 @@ class DiscontinuedInstructionsTest {
                         .pop()
                         .with(DiscontinuedInstruction.RetInstruction.of(355))));
 
-        var c = Classfile.parse(bytes).methods().get(0).code().get();
+        var c = cc.parse(bytes).methods().get(0).code().get();
         assertEquals(356, c.maxLocals());
         assertEquals(6, c.maxStack());
 
@@ -75,22 +74,27 @@ class DiscontinuedInstructionsTest {
                 .invoke(null, list);
         assertEquals(list, List.of("Hello", "World"));
 
-        bytes = Classfile.parse(bytes).transform(ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL));
+        bytes = cc.transform(cc.parse(bytes), ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL));
 
         new ByteArrayClassLoader(DiscontinuedInstructionsTest.class.getClassLoader(), testClass, bytes)
                 .getMethod(testClass, testMethod)
                 .invoke(null, list);
         assertEquals(list, List.of("Hello", "World", "Hello", "World"));
 
-        var clm = Classfile.parse(bytes);
+        var clm = cc.parse(bytes);
 
         //test failover stack map generation
-        clm.transform(ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL)
-                   .andThen(ClassTransform.endHandler(clb -> clb.withVersion(JAVA_6_VERSION, 0))));
+        cc.transform(clm, ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL)
+                 .andThen(ClassTransform.endHandler(clb -> clb.withVersion(JAVA_6_VERSION, 0))));
 
-        //test failure of stack map generation
+        //test failure of stack map generation for Java 7
         assertThrows(IllegalArgumentException.class, () ->
-                clm.transform(ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL)
-                   .andThen(ClassTransform.endHandler(clb -> clb.withVersion(JAVA_7_VERSION, 0)))));
+                cc.transform(clm, ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL)
+                         .andThen(ClassTransform.endHandler(clb -> clb.withVersion(JAVA_7_VERSION, 0)))));
+
+        //test failure of stack map generation when enforced to generate
+        assertThrows(IllegalArgumentException.class, () ->
+                ClassFile.of(ClassFile.StackMapsOption.GENERATE_STACK_MAPS)
+                         .transform(clm, ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL)));
     }
 }

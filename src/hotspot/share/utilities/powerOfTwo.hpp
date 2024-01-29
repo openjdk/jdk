@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,7 +117,7 @@ inline T round_up_power_of_2(T value) {
 template <typename T, ENABLE_IF(std::is_integral<T>::value)>
 inline T next_power_of_2(T value)  {
   assert(value < std::numeric_limits<T>::max(), "Overflow");
-  return round_up_power_of_2(value + 1);
+  return T(round_up_power_of_2(value + 1));
 }
 
 // Find log2 value greater than this input

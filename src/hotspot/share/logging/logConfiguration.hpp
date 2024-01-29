@@ -24,6 +24,7 @@
 #ifndef SHARE_LOGGING_LOGCONFIGURATION_HPP
 #define SHARE_LOGGING_LOGCONFIGURATION_HPP
 
+#include "logging/logFileStreamOutput.hpp"
 #include "logging/logLevel.hpp"
 #include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -41,6 +42,8 @@ class LogConfiguration : public AllStatic {
  friend class VMError;
  friend class LogTestFixture;
  public:
+  static LogStdoutOutput* StdoutLog;
+  static LogStderrOutput* StderrLog;
   // Function for listeners
   typedef void (*UpdateListenerFunction)(void);
 

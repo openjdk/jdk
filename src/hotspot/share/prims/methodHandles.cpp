@@ -137,6 +137,7 @@ enum {
   IS_TYPE              = java_lang_invoke_MemberName::MN_IS_TYPE,
   CALLER_SENSITIVE     = java_lang_invoke_MemberName::MN_CALLER_SENSITIVE,
   TRUSTED_FINAL        = java_lang_invoke_MemberName::MN_TRUSTED_FINAL,
+  HIDDEN_MEMBER        = java_lang_invoke_MemberName::MN_HIDDEN_MEMBER,
   REFERENCE_KIND_SHIFT = java_lang_invoke_MemberName::MN_REFERENCE_KIND_SHIFT,
   REFERENCE_KIND_MASK  = java_lang_invoke_MemberName::MN_REFERENCE_KIND_MASK,
   LM_UNCONDITIONAL     = java_lang_invoke_MemberName::MN_UNCONDITIONAL_MODE,
@@ -693,7 +694,7 @@ Handle MethodHandles::resolve_MemberName(Handle mname, Klass* caller, int lookup
 
   if (java_lang_invoke_MemberName::vmtarget(mname()) != nullptr) {
     // Already resolved.
-    DEBUG_ONLY(int vmindex = java_lang_invoke_MemberName::vmindex(mname()));
+    DEBUG_ONLY(intptr_t vmindex = java_lang_invoke_MemberName::vmindex(mname()));
     assert(vmindex >= Method::nonvirtual_vtable_index, "");
     return mname;
   }
@@ -707,7 +708,7 @@ Handle MethodHandles::resolve_MemberName(Handle mname, Klass* caller, int lookup
     THROW_MSG_(vmSymbols::java_lang_InternalError(), "obsolete MemberName format", empty);
   }
 
-  DEBUG_ONLY(int old_vmindex);
+  DEBUG_ONLY(intptr_t old_vmindex);
   assert((old_vmindex = java_lang_invoke_MemberName::vmindex(mname())) == 0, "clean input");
 
   if (defc_oop.is_null() || name_str.is_null() || type_str.is_null()) {
@@ -907,10 +908,10 @@ void MethodHandles::expand_MemberName(Handle mname, int suppress, TRAPS) {
       }
       InstanceKlass* defc = InstanceKlass::cast(java_lang_Class::as_Klass(clazz));
       DEBUG_ONLY(clazz = nullptr);  // safety
-      int vmindex  = java_lang_invoke_MemberName::vmindex(mname());
+      intptr_t vmindex  = java_lang_invoke_MemberName::vmindex(mname());
       bool is_static = ((flags & JVM_ACC_STATIC) != 0);
       fieldDescriptor fd; // find_field initializes fd if found
-      if (!defc->find_field_from_offset(vmindex, is_static, &fd))
+      if (!defc->find_field_from_offset(checked_cast<int>(vmindex), is_static, &fd))
         break;                  // cannot expand
       if (!have_name) {
         //not java_lang_String::create_from_symbol; let's intern member names
@@ -1003,6 +1004,7 @@ void MethodHandles::trace_method_handle_interpreter_entry(MacroAssembler* _masm,
     template(java_lang_invoke_MemberName,MN_IS_TYPE) \
     template(java_lang_invoke_MemberName,MN_CALLER_SENSITIVE) \
     template(java_lang_invoke_MemberName,MN_TRUSTED_FINAL) \
+    template(java_lang_invoke_MemberName,MN_HIDDEN_MEMBER) \
     template(java_lang_invoke_MemberName,MN_REFERENCE_KIND_SHIFT) \
     template(java_lang_invoke_MemberName,MN_REFERENCE_KIND_MASK) \
     template(java_lang_invoke_MemberName,MN_NESTMATE_CLASS) \
@@ -1161,7 +1163,7 @@ static jlong find_member_field_offset(oop mname, bool must_be_static, TRAPS) {
         (must_be_static
          ? (flags & JVM_ACC_STATIC) != 0
          : (flags & JVM_ACC_STATIC) == 0)) {
-      int vmindex = java_lang_invoke_MemberName::vmindex(mname);
+      intptr_t vmindex = java_lang_invoke_MemberName::vmindex(mname);
       return (jlong) vmindex;
     }
   }

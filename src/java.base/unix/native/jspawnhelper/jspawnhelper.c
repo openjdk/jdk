@@ -136,14 +136,14 @@ void initChildStuff (int fdin, int fdout, ChildStuff *c) {
 int main(int argc, char *argv[]) {
     ChildStuff c;
     struct stat buf;
-    /* argv[0] contains the fd number to read all the child info */
+    /* argv[1] contains the fd number to read all the child info */
     int r, fdinr, fdinw, fdout;
     sigset_t unblock_signals;
 
 #ifdef DEBUG
     jtregSimulateCrash(0, 4);
 #endif
-    r = sscanf (argv[argc-1], "%d:%d:%d", &fdinr, &fdinw, &fdout);
+    r = sscanf (argv[1], "%d:%d:%d", &fdinr, &fdinw, &fdout);
     if (r == 3 && fcntl(fdinr, F_GETFD) != -1 && fcntl(fdinw, F_GETFD) != -1) {
         fstat(fdinr, &buf);
         if (!S_ISFIFO(buf.st_mode))

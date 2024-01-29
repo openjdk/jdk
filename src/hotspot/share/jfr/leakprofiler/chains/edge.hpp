@@ -45,8 +45,8 @@ class Edge {
   bool is_root() const {
     return _parent == nullptr;
   }
-  const oop pointee() const;
-  const oop reference_owner() const;
+  oop pointee() const;
+  oop reference_owner() const;
   size_t distance_to_root() const;
 
   void* operator new (size_t sz, void* here) {

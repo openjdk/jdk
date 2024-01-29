@@ -35,6 +35,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import jdk.internal.misc.Unsafe;
+import jdk.internal.util.ReferencedKeyMap;
 
 import static java.lang.invoke.MethodType.methodType;
 
@@ -366,7 +367,7 @@ final class Carriers {
          * Cache mapping {@link MethodType} to previously defined {@link CarrierElements}.
          */
         private static final Map<MethodType, CarrierElements>
-                methodTypeCache = ReferencedKeyMap.create(ConcurrentHashMap::new);
+                methodTypeCache = ReferencedKeyMap.create(false, ConcurrentHashMap::new);
 
         /**
          * Permute a raw constructor and component accessor {@link MethodHandle MethodHandles} to

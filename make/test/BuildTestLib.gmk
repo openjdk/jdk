@@ -23,11 +23,21 @@
 # questions.
 #
 
+################################################################################
+# This file builds the Java components of testlib.
+# It also covers the test-image part, where the built files are copied to the
+# test image.
+################################################################################
+
 default: all
 
 include $(SPEC)
 include MakeBase.gmk
 include JavaCompilation.gmk
+
+################################################################################
+# Targets for building the test lib jars
+################################################################################
 
 TARGETS :=
 
@@ -63,8 +73,21 @@ $(eval $(call SetupJavaCompilation, BUILD_TEST_LIB_JAR, \
 
 TARGETS += $(BUILD_TEST_LIB_JAR)
 
-##########################################################################################
+build-test-lib: $(TARGETS)
 
-all: $(TARGETS)
+################################################################################
+# Targets for building test-image.
+################################################################################
 
-.PHONY: default all
+# Copy the jars to the test image.
+$(eval $(call SetupCopyFiles, COPY_LIBTEST_JARS, \
+    DEST := $(TEST_IMAGE_DIR)/lib-test, \
+    FILES := $(BUILD_WB_JAR_JAR) $(BUILD_TEST_LIB_JAR_JAR), \
+))
+#
+
+test-image-lib: $(COPY_LIBTEST_JARS)
+
+all: build-test-lib
+
+.PHONY: default all build-test-lib test-image-lib

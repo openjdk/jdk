@@ -77,3 +77,15 @@ void LockStack::verify(const char* msg) const {
   }
 }
 #endif
+
+void LockStack::print_on(outputStream* st) {
+  for (int i = to_index(_top); (--i) >= 0;) {
+    st->print("LockStack[%d]: ", i);
+    oop o = _base[i];
+    if (oopDesc::is_oop(o)) {
+      o->print_on(st);
+    } else {
+      st->print_cr("not an oop: " PTR_FORMAT, p2i(o));
+    }
+  }
+}

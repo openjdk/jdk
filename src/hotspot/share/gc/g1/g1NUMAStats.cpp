@@ -119,7 +119,7 @@ void G1NUMAStats::NodeDataArray::copy(uint req_index, size_t* stat) {
   }
 }
 
-G1NUMAStats::G1NUMAStats(const int* node_ids, uint num_node_ids) :
+G1NUMAStats::G1NUMAStats(const uint* node_ids, uint num_node_ids) :
   _node_ids(node_ids), _num_node_ids(num_node_ids), _node_data() {
 
   assert(_num_node_ids > 1, "Should have at least one node id: %u", _num_node_ids);

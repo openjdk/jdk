@@ -430,9 +430,24 @@ public class Names {
     protected Name.Table createTable(Options options) {
         boolean useUnsharedTable = options.isSet("useUnsharedTable");
         if (useUnsharedTable)
-            return UnsharedNameTable.create(this);
-        else
-            return SharedNameTable.create(this);
+            return newUnsharedNameTable();
+        boolean useSharedTable = options.isSet("useSharedTable");
+        if (useSharedTable)
+            return newSharedNameTable();
+        boolean internStringTable = options.isSet("internStringTable");
+        return newStringNameTable(internStringTable);
+    }
+
+    public StringNameTable newStringNameTable(boolean intern) {
+        return StringNameTable.create(this, intern);
+    }
+
+    public SharedNameTable newSharedNameTable() {
+        return SharedNameTable.create(this);
+    }
+
+    public UnsharedNameTable newUnsharedNameTable() {
+        return UnsharedNameTable.create(this);
     }
 
     public void dispose() {

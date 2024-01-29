@@ -214,6 +214,24 @@ public class Convert {
         return new String(dst, 0, len1);
     }
 
+    /** Count the number of characters encoded in a Modified UTF-8 encoding.
+     *  This method does not check for invalid data.
+     *  @param buf data buffer
+     *  @param off starting offset of UTF-8 data
+     *  @param len number of bytes of UTF-8 data
+     *  @return the number of encoded characters
+     */
+    public static int utfNumChars(byte[] buf, int off, int len) {
+        int numChars = 0;
+        while (len-- > 0) {
+            int byte1 = buf[off++];
+            if (byte1 < 0)
+                len -= ((byte1 & 0xe0) == 0xc0) ? 1 : 2;
+            numChars++;
+        }
+        return numChars;
+    }
+
     /** Copy characters in source array to bytes in target array,
      *  converting them to Utf8 representation.
      *  The target array must be large enough to hold the result.
@@ -346,17 +364,14 @@ public class Convert {
 
 /* Conversion routines for qualified name splitting
  */
+
     /** Return the last part of a qualified name.
      *  @param name the qualified name
      *  @return the last part of the qualified name
      */
     public static Name shortName(Name name) {
-        int start = name.lastIndexOf((byte)'.') + 1;
-        int end = name.getByteLength();
-        if (start == 0 && end == name.length()) {
-            return name;
-        }
-        return name.subName(start, end);
+        int start = name.lastIndexOfAscii('.') + 1;
+        return start > 0 ? name.subName(start) : name;
     }
 
     /** Return the last part of a qualified name from its string representation
@@ -371,7 +386,8 @@ public class Convert {
      *  "" if not existent.
      */
     public static Name packagePart(Name classname) {
-        return classname.subName(0, classname.lastIndexOf((byte)'.'));
+        int end = Math.max(classname.lastIndexOfAscii('.'), 0);
+        return classname.subName(0, end);
     }
 
     public static String packagePart(String classname) {
@@ -382,7 +398,7 @@ public class Convert {
     public static List<Name> enclosingCandidates(Name name) {
         List<Name> names = List.nil();
         int index;
-        while ((index = name.lastIndexOf((byte)'$')) > 0) {
+        while ((index = name.lastIndexOfAscii('$')) > 0) {
             name = name.subName(0, index);
             names = names.prepend(name);
         }

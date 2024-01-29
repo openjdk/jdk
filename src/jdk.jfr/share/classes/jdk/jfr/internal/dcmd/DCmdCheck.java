@@ -35,7 +35,7 @@ import java.util.StringJoiner;
 import jdk.jfr.EventType;
 import jdk.jfr.Recording;
 import jdk.jfr.SettingDescriptor;
-import jdk.jfr.internal.Utils;
+import jdk.jfr.internal.util.ValueFormatter;
 
 /**
  * JFR.check - invoked from native
@@ -99,7 +99,7 @@ final class DCmdCheck extends AbstractDCmd {
         long maxSize = recording.getMaxSize();
         if (maxSize != 0) {
             print(" maxsize=");
-            print(Utils.formatBytesCompact(maxSize));
+            print(ValueFormatter.formatBytesCompact(maxSize));
         }
         Duration maxAge = recording.getMaxAge();
         if (maxAge != null) {

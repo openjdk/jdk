@@ -1559,22 +1559,50 @@ final class P11KeyStore extends KeyStoreSpi {
                                 cert.getSerialNumber().toByteArray()));
         attrList.add(new CK_ATTRIBUTE(CKA_VALUE, cert.getEncoded()));
 
-        if (alias != null) {
-            attrList.add(new CK_ATTRIBUTE(CKA_LABEL, alias));
-            attrList.add(new CK_ATTRIBUTE(CKA_ID, alias));
-        } else {
-            // ibutton requires something to be set
-            // - alias must be unique
-            attrList.add(new CK_ATTRIBUTE(CKA_ID,
-                        getID(cert.getSubjectX500Principal().getName
-                                        (X500Principal.CANONICAL), cert)));
-        }
-
         Session session = null;
         try {
             session = token.getOpSession();
+            long[] ch = findObjects(session,
+                    attrList.toArray(new CK_ATTRIBUTE[attrList.size()]));
+            if (ch.length != 0) { // found a match
+                if (debug != null) {
+                    String certInfo = (alias == null?
+                            "CA cert " + cert.getSubjectX500Principal() :
+                            "EE cert for alias " + alias);
+                    debug.println("storeCert: found a match for " + certInfo);
+                }
+                if (alias != null) {
+                    // Add the alias to the existing cert
+                    CK_ATTRIBUTE[] attrs = new CK_ATTRIBUTE[] {
+                        new CK_ATTRIBUTE(CKA_LABEL, alias),
+                        new CK_ATTRIBUTE(CKA_ID, alias) };
+                    token.p11.C_SetAttributeValue
+                        (session.id(), ch[0], attrs);
+                    if (debug != null) {
+                        debug.println("storeCert: added alias: " + alias);
+                    }
+                }
+                // done; no need to create the cert
+                return;
+            }
+            if (alias != null) {
+                attrList.add(new CK_ATTRIBUTE(CKA_LABEL, alias));
+                attrList.add(new CK_ATTRIBUTE(CKA_ID, alias));
+            } else {
+                // ibutton requires something to be set
+                // - alias must be unique
+                attrList.add(new CK_ATTRIBUTE(CKA_ID,
+                        getID(cert.getSubjectX500Principal().getName
+                                        (X500Principal.CANONICAL), cert)));
+            }
             token.p11.C_CreateObject(session.id(),
-                        attrList.toArray(new CK_ATTRIBUTE[attrList.size()]));
+                    attrList.toArray(new CK_ATTRIBUTE[attrList.size()]));
+            if (debug != null) {
+                String certInfo = (alias == null?
+                        "CA cert " + cert.getSubjectX500Principal() :
+                        "EE cert for alias " + alias);
+                debug.println("storeCert: created " + certInfo);
+            }
         } finally {
             token.releaseSession(session);
         }
@@ -1587,7 +1615,6 @@ final class P11KeyStore extends KeyStoreSpi {
         //
         // end cert has CKA_LABEL and CKA_ID set to alias.
         // other certs in chain have neither set.
-
         storeCert(alias, chain[0]);
         storeCaCerts(chain, 1);
     }

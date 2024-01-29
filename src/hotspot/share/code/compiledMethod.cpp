@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,7 +116,7 @@ const char* CompiledMethod::state() const {
 
 //-----------------------------------------------------------------------------
 void CompiledMethod::set_deoptimized_done() {
-  MutexLocker ml(CompiledMethod_lock->owned_by_self() ? nullptr : CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
+  ConditionalMutexLocker ml(CompiledMethod_lock, !CompiledMethod_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
   if (_deoptimization_status != deoptimize_done) { // can't go backwards
     Atomic::store(&_deoptimization_status, deoptimize_done);
   }
@@ -679,7 +679,7 @@ bool CompiledMethod::cleanup_inline_caches_impl(bool unloading_occurred, bool cl
 address CompiledMethod::continuation_for_implicit_exception(address pc, bool for_div0_check) {
   // Exception happened outside inline-cache check code => we are inside
   // an active nmethod => use cpc to determine a return address
-  int exception_offset = pc - code_begin();
+  int exception_offset = int(pc - code_begin());
   int cont_offset = ImplicitExceptionTable(this).continuation_offset( exception_offset );
 #ifdef ASSERT
   if (cont_offset == 0) {
@@ -687,12 +687,15 @@ address CompiledMethod::continuation_for_implicit_exception(address pc, bool for
     ResourceMark rm(thread);
     CodeBlob* cb = CodeCache::find_blob(pc);
     assert(cb != nullptr && cb == this, "");
-    ttyLocker ttyl;
-    tty->print_cr("implicit exception happened at " INTPTR_FORMAT, p2i(pc));
-    print();
-    method()->print_codes();
-    print_code();
-    print_pcs();
+
+    // Keep tty output consistent. To avoid ttyLocker, we buffer in stream, and print all at once.
+    stringStream ss;
+    ss.print_cr("implicit exception happened at " INTPTR_FORMAT, p2i(pc));
+    print_on(&ss);
+    method()->print_codes_on(&ss);
+    print_code_on(&ss);
+    print_pcs_on(&ss);
+    tty->print("%s", ss.as_string()); // print all at once
   }
 #endif
   if (cont_offset == 0) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,11 +44,12 @@
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/globals_extension.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-int    HeapRegion::LogOfHRGrainBytes = 0;
-int    HeapRegion::LogCardsPerRegion = 0;
+uint   HeapRegion::LogOfHRGrainBytes = 0;
+uint   HeapRegion::LogCardsPerRegion = 0;
 size_t HeapRegion::GrainBytes        = 0;
 size_t HeapRegion::GrainWords        = 0;
 size_t HeapRegion::CardsPerRegion    = 0;
@@ -77,12 +78,9 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
   // Now make sure that we don't go over or under our limits.
   region_size = clamp(region_size, HeapRegionBounds::min_size(), HeapRegionBounds::max_size());
 
-  // Calculate the log for the region size.
-  int region_size_log = log2i_exact(region_size);
-
   // Now, set up the globals.
   guarantee(LogOfHRGrainBytes == 0, "we should only set it once");
-  LogOfHRGrainBytes = region_size_log;
+  LogOfHRGrainBytes = log2i_exact(region_size);
 
   guarantee(GrainBytes == 0, "we should only set it once");
   GrainBytes = region_size;
@@ -93,21 +91,21 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
   guarantee(CardsPerRegion == 0, "we should only set it once");
   CardsPerRegion = GrainBytes >> G1CardTable::card_shift();
 
-  LogCardsPerRegion = log2i(CardsPerRegion);
+  LogCardsPerRegion = log2i_exact(CardsPerRegion);
 
   if (G1HeapRegionSize != GrainBytes) {
     FLAG_SET_ERGO(G1HeapRegionSize, GrainBytes);
   }
 }
 
-void HeapRegion::handle_evacuation_failure() {
+void HeapRegion::handle_evacuation_failure(bool retain) {
   uninstall_surv_rate_group();
   clear_young_index_in_cset();
   clear_index_in_opt_cset();
   move_to_old();
 
   _rem_set->clean_code_roots(this);
-  _rem_set->clear_locked(true /* only_cardset */);
+  _rem_set->clear(true /* only_cardset */, retain /* keep_tracked */);
 }
 
 void HeapRegion::unlink_from_list() {
@@ -124,7 +122,7 @@ void HeapRegion::hr_clear(bool clear_space) {
   set_free();
   reset_pre_dummy_top();
 
-  rem_set()->clear_locked();
+  rem_set()->clear();
 
   init_top_at_mark_start();
   if (clear_space) clear(SpaceDecorator::Mangle);
@@ -207,7 +205,7 @@ void HeapRegion::clear_humongous() {
 }
 
 void HeapRegion::prepare_remset_for_scan() {
-  return _rem_set->reset_table_scanner();
+  _rem_set->reset_table_scanner();
 }
 
 HeapRegion::HeapRegion(uint hrm_index,
@@ -234,7 +232,8 @@ HeapRegion::HeapRegion(uint hrm_index,
   _young_index_in_cset(-1),
   _surv_rate_group(nullptr),
   _age_index(G1SurvRateGroup::InvalidAgeIndex),
-  _node_index(G1NUMA::UnknownNodeIndex)
+  _node_index(G1NUMA::UnknownNodeIndex),
+  _pinned_object_count(0)
 {
   assert(Universe::on_page_boundary(mr.start()) && Universe::on_page_boundary(mr.end()),
          "invalid space boundaries");
@@ -263,23 +262,12 @@ void HeapRegion::report_region_type_change(G1HeapRegionTraceType::Type to) {
                                             used());
 }
 
- void HeapRegion::note_evacuation_failure(bool during_concurrent_start) {
+ void HeapRegion::note_evacuation_failure() {
   // PB must be bottom - we only evacuate old gen regions after scrubbing, and
   // young gen regions never have their PB set to anything other than bottom.
   assert(parsable_bottom_acquire() == bottom(), "must be");
 
   _garbage_bytes = 0;
-
-  if (during_concurrent_start) {
-    // Self-forwarding marks all objects. Adjust TAMS so that these marks are
-    // below it.
-    set_top_at_mark_start(top());
-  } else {
-    // Outside of the mixed phase all regions that had an evacuation failure must
-    // be young regions, and their TAMS is always bottom. Similarly, before the
-    // start of the mixed phase, we scrubbed and reset TAMS to bottom.
-    assert(top_at_mark_start() == bottom(), "must be");
-  }
 }
 
 void HeapRegion::note_self_forward_chunk_done(size_t garbage_bytes) {
@@ -288,24 +276,15 @@ void HeapRegion::note_self_forward_chunk_done(size_t garbage_bytes) {
 
 // Code roots support
 void HeapRegion::add_code_root(nmethod* nm) {
-  HeapRegionRemSet* hrrs = rem_set();
-  hrrs->add_code_root(nm);
-}
-
-void HeapRegion::add_code_root_locked(nmethod* nm) {
-  assert_locked_or_safepoint(CodeCache_lock);
-  HeapRegionRemSet* hrrs = rem_set();
-  hrrs->add_code_root_locked(nm);
+  rem_set()->add_code_root(nm);
 }
 
 void HeapRegion::remove_code_root(nmethod* nm) {
-  HeapRegionRemSet* hrrs = rem_set();
-  hrrs->remove_code_root(nm);
+  rem_set()->remove_code_root(nm);
 }
 
 void HeapRegion::code_roots_do(CodeBlobClosure* blk) const {
-  HeapRegionRemSet* hrrs = rem_set();
-  hrrs->code_roots_do(blk);
+  rem_set()->code_roots_do(blk);
 }
 
 class VerifyCodeRootOopClosure: public OopClosure {
@@ -440,11 +419,12 @@ void HeapRegion::print_on(outputStream* st) const {
   if (UseNUMA) {
     G1NUMA* numa = G1NUMA::numa();
     if (node_index() < numa->num_active_nodes()) {
-      st->print("|%d", numa->numa_id(node_index()));
+      st->print("|%u", numa->numa_id(node_index()));
     } else {
       st->print("|-");
     }
   }
+  st->print("|%3zu", Atomic::load(&_pinned_object_count));
   st->print_cr("");
 }
 
@@ -618,7 +598,7 @@ class G1VerifyLiveAndRemSetClosure : public BasicOopIterateClosure {
     if (CompressedOops::is_null(heap_oop)) {
       return;
     }
-    oop obj = CompressedOops::decode_not_null(heap_oop);
+    oop obj = CompressedOops::decode_raw_not_null(heap_oop);
 
     LiveChecker<T> live_check(this, _containing_obj, p, obj, _vo);
     if (live_check.failed()) {
@@ -748,9 +728,20 @@ void HeapRegion::fill_with_dummy_object(HeapWord* address, size_t word_size, boo
 void HeapRegion::fill_range_with_dead_objects(HeapWord* start, HeapWord* end) {
   size_t range_size = pointer_delta(end, start);
 
-  // Fill the dead range with objects. G1 might need to create two objects if
-  // the range is larger than half a region, which is the max_fill_size().
-  CollectedHeap::fill_with_objects(start, range_size);
+  // We must be a bit careful with regions that contain pinned objects. While the
+  // ranges passed in here corresponding to the space between live objects, it is
+  // possible that there is a pinned object that is not any more referenced by
+  // Java code (only by native).
+  //
+  // In this case we must not zap contents of such an array but we can overwrite
+  // the header; since only pinned typearrays are allowed, this fits nicely with
+  // putting filler arrays into the dead range as the object header sizes match and
+  // no user data is overwritten.
+  //
+  // In particular String Deduplication might change the reference to the character
+  // array of the j.l.String after native code obtained a raw reference to it (via
+  // GetStringCritical()).
+  CollectedHeap::fill_with_objects(start, range_size, !has_pinned_objects());
   HeapWord* current = start;
   do {
     // Update the BOT if the a threshold is crossed.

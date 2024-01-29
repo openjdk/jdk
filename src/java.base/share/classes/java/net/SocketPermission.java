@@ -44,6 +44,7 @@ import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import sun.net.util.IPAddressUtil;
 import sun.net.PortConfig;
+import sun.security.action.GetBooleanAction;
 import sun.security.util.RegisteredDomain;
 import sun.security.util.SecurityConstants;
 import sun.security.util.Debug;
@@ -234,7 +235,7 @@ public final class SocketPermission extends Permission
     private transient boolean trusted;
 
     // true if the sun.net.trustNameService system property is set
-    private static boolean trustNameService;
+    private static final boolean trustNameService = GetBooleanAction.privilegedGetProperty("sun.net.trustNameService");
 
     private static Debug debug = null;
     private static boolean debugInit = false;
@@ -244,13 +245,6 @@ public final class SocketPermission extends Permission
         static final int low = initEphemeralPorts("low", DEF_EPH_LOW);
             static final int high = initEphemeralPorts("high", PORT_MAX);
     };
-
-    static {
-        @SuppressWarnings("removal")
-        Boolean tmp = java.security.AccessController.doPrivileged(
-                new sun.security.action.GetBooleanAction("sun.net.trustNameService"));
-        trustNameService = tmp.booleanValue();
-    }
 
     private static synchronized Debug getDebug() {
         if (!debugInit) {

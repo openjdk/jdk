@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -307,7 +307,7 @@ public abstract class EmbeddedFrame extends Frame
      *    about to transfer the focus backward.
      * 2. The focus in on the last Component of this EmbeddedFrame and we are
      *    about to transfer the focus forward.
-     * This is needed to give the opportuity for keyboard focus to leave the
+     * This is needed to give the opportunity for keyboard focus to leave the
      * EmbeddedFrame. Override this method, initiate focus transfer in it and
      * return true if you want the focus to leave EmbeddedFrame's cycle.
      * The direction parameter specifies which of the two mentioned cases is

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -248,6 +248,8 @@ public class AMD64 extends Architecture {
 
     private final AMD64Kind largestKind;
 
+    private final AMD64Kind largestMaskKind;
+
     public AMD64(EnumSet<CPUFeature> features, EnumSet<Flag> flags) {
         super("AMD64", AMD64Kind.QWORD, ByteOrder.LITTLE_ENDIAN, true, allRegisters, LOAD_LOAD | LOAD_STORE | STORE_STORE, 1, 8);
         this.features = features;
@@ -256,10 +258,17 @@ public class AMD64 extends Architecture {
 
         if (features.contains(CPUFeature.AVX512F)) {
             largestKind = AMD64Kind.V512_QWORD;
+            if (features.contains(CPUFeature.AVX512BW)) {
+                largestMaskKind = AMD64Kind.MASK64;
+            } else {
+                largestMaskKind = AMD64Kind.MASK16;
+            }
         } else if (features.contains(CPUFeature.AVX)) {
             largestKind = AMD64Kind.V256_QWORD;
+            largestMaskKind = null;
         } else {
             largestKind = AMD64Kind.V128_QWORD;
+            largestMaskKind = null;
         }
     }
 
@@ -324,7 +333,7 @@ public class AMD64 extends Architecture {
         } else if (category.equals(XMM)) {
             return largestKind;
         } else if (category.equals(MASK)) {
-            return AMD64Kind.MASK64;
+            return largestMaskKind;
         } else {
             return null;
         }

@@ -157,9 +157,9 @@ class JVMCIEnv : public ResourceObj {
   friend class JNIAccessMark;
 
   // Initializes the _env, _mode and _runtime fields.
-  void init_env_mode_runtime(JavaThread* thread, JNIEnv* parent_env, bool jni_enomem_is_fatal = true);
+  void init_env_mode_runtime(JavaThread* thread, JNIEnv* parent_env);
 
-  void init(JavaThread* thread, bool is_hotspot, bool jni_enomem_is_fatal, const char* file, int line);
+  void init(JavaThread* thread, bool is_hotspot, const char* file, int line);
 
   JNIEnv*                 _env;  // JNI env for calling into shared library
   bool     _pop_frame_on_close;  // Must pop frame on close?
@@ -169,9 +169,10 @@ class JVMCIEnv : public ResourceObj {
   bool        _throw_to_caller;  // Propagate an exception raised in this env to the caller?
   const char*            _file;  // The file and ...
   int                    _line;  // ... line where this JNIEnv was created
-  bool             _jni_enomem;  // JNI_ENOMEM returned when creating or attaching to a libjvmci isolate.
-                                 // If true, the JVMCIEnv is invalid and should not be used apart from
-                                 // calling has_jni_enomem().
+  int              _init_error;  // JNI code returned when creating or attaching to a libjvmci isolate.
+                                 // If not JNI_OK, the JVMCIEnv is invalid and should not be used apart from
+                                 // calling init_error().
+  const char*  _init_error_msg;  // Message for _init_error if available. C heap allocated.
 
   // Translates an exception on the HotSpot heap (i.e., hotspot_env) to an exception on
   // the shared library heap (i.e., jni_env). The translation includes the stack and cause(s) of `throwable`.
@@ -183,19 +184,14 @@ class JVMCIEnv : public ResourceObj {
   // The translated exception is pending in hotspot_env upon returning.
   static void translate_from_jni_exception(JavaThread* THREAD, jthrowable throwable, JVMCIEnv* hotspot_env, JVMCIEnv* jni_env);
 
-  // Used by copy_saved_properties() to avoid OutOfMemoryErrors when
-  // initializing a libjvmci runtime in low HotSpot heap conditions.
-  // Must hold JVMCI_lock when initializing.
-  static jbyte* _serialized_saved_properties;
-  static int _serialized_saved_properties_len;
-
 public:
   // Opens a JVMCIEnv scope for a Java to VM call (e.g., via CompilerToVM).
+  // The `parent_env` argument must not be null.
   // An exception occurring within the scope is left pending when the
   // scope closes so that it will be propagated back to Java.
   // The JVMCIEnv destructor translates the exception object for the
   // Java runtime if necessary.
-  JVMCIEnv(JavaThread* thread, JNIEnv* env, const char* file, int line);
+  JVMCIEnv(JavaThread* thread, JNIEnv* parent_env, const char* file, int line);
 
   // Opens a JVMCIEnv scope for a compilation scheduled by the CompileBroker.
   // An exception occurring within the scope must not be propagated back to
@@ -206,44 +202,40 @@ public:
   // within the scope must not be propagated back to the caller.
   JVMCIEnv(JavaThread* env, const char* file, int line);
 
-  // Opens a JNIEnv scope for accessing `for_object`. An exception occurring
-  // within the scope must not be propagated back to the caller.
-  JVMCIEnv(JavaThread* thread, JVMCIObject for_object, const char* file, int line) {
-    // A JNI call to access an object in the shared library heap
-    // can block or take a long time so do not allow such access
-    // on the VM thread.
-    assert(for_object.is_hotspot() || !Thread::current()->is_VM_thread(),
-        "cannot open JVMCIEnv scope when in the VM thread for accessing a shared library heap object");
-    bool jni_enomem_is_fatal = true;
-    init(thread, for_object.is_hotspot(), jni_enomem_is_fatal, file, line);
-  }
-
   // Opens a JNIEnv scope for the HotSpot runtime if `is_hotspot` is true
   // otherwise for the shared library runtime. An exception occurring
   // within the scope must not be propagated back to the caller.
-  JVMCIEnv(JavaThread* thread, bool is_hotspot, bool jni_enomem_is_fatal, const char* file, int line) {
-    init(thread, is_hotspot, jni_enomem_is_fatal, file, line);
+  JVMCIEnv(JavaThread* thread, bool is_hotspot, const char* file, int line) {
+    init(thread, is_hotspot, file, line);
   }
 
   ~JVMCIEnv();
 
-  // Determines if a JNI_ENOMEM occurred while trying to create a libjvmci
-  // isolate or attach to it within the scope of a JVMCIEnv constructor.
-  bool has_jni_enomem() {
-    return _jni_enomem;
+  // Gets the JNI result code returned when creating or attaching to a libjvmci isolate.
+  // If not JNI_OK, the JVMCIEnv is invalid and the caller must abort the operation
+  // this JVMCIEnv context was created for.
+  int init_error() {
+    return _init_error;
   }
+
+  // Gets a message describing a non-zero init_error().
+  // Valid as long as this JVMCIEnv is valid.
+  const char* init_error_msg() {
+    return _init_error_msg;
+  }
+
+  // Checks the value of init_error() and throws an exception in `JVMCI_TRAPS`
+  // (which must not be this) if it is not JNI_OK.
+  void check_init(JVMCI_TRAPS);
+
+  // Checks the value of init_error() and throws an exception in `TRAPS`
+  // if it is not JNI_OK.
+  void check_init(TRAPS);
 
   JVMCIRuntime* runtime() {
+    guarantee(_init_error == 0, "invalid JVMCIEnv: %d", _init_error);
     return _runtime;
   }
-
-  // Gets the serialized saved properties from the HotSpot heap.
-  // The length of the returned array is saved in `len`.
-  jbyte* get_serialized_saved_properties(int& len, TRAPS);
-
-  // Initializes Services.savedProperties in the shared library from the given
-  // properties in the format produced by `get_serialized_saved_properties`.
-  void copy_saved_properties(jbyte* properties, int properties_len, JVMCI_TRAPS);
 
   jboolean has_pending_exception();
   void clear_pending_exception();
@@ -372,7 +364,7 @@ public:
   DO_THROW(UnsatisfiedLinkError)
   DO_THROW(UnsupportedOperationException)
   DO_THROW(OutOfMemoryError)
-  DO_THROW(ClassNotFoundException)
+  DO_THROW(NoClassDefFoundError)
 
 #undef DO_THROW
 
@@ -420,7 +412,7 @@ public:
   JVMCIObject new_HotSpotNmethod(const methodHandle& method, const char* name, jboolean isDefault, jlong compileId, JVMCI_TRAPS);
   JVMCIObject new_VMField(JVMCIObject name, JVMCIObject type, jlong offset, jlong address, JVMCIObject value, JVMCI_TRAPS);
   JVMCIObject new_VMFlag(JVMCIObject name, JVMCIObject type, JVMCIObject value, JVMCI_TRAPS);
-  JVMCIObject new_VMIntrinsicMethod(JVMCIObject declaringClass, JVMCIObject name, JVMCIObject descriptor, int id, JVMCI_TRAPS);
+  JVMCIObject new_VMIntrinsicMethod(JVMCIObject declaringClass, JVMCIObject name, JVMCIObject descriptor, int id, jboolean isAvailable, jboolean c1Supported, jboolean c2Supported, JVMCI_TRAPS);
   JVMCIObject new_HotSpotStackFrameReference(JVMCI_TRAPS);
   JVMCIObject new_JVMCIError(JVMCI_TRAPS);
   JVMCIObject new_FieldInfo(FieldInfo* fieldinfo, JVMCI_TRAPS);
@@ -509,7 +501,7 @@ public:
 #define STATIC_BOOLEAN_FIELD(className, name) STATIC_FIELD(className, name, jboolean)
 #define STATIC_OBJECT_FIELD(className, name, signature) STATIC_OOPISH_FIELD(className, name, JVMCIObject, oop)
 #define STATIC_OBJECTARRAY_FIELD(className, name, signature) STATIC_OOPISH_FIELD(className, name, JVMCIObjectArray, objArrayOop)
-#define METHOD(jniCallType, jniGetMethod, hsCallType, returnType, className, methodName, signatureSymbolName, args)
+#define METHOD(jniCallType, jniGetMethod, hsCallType, returnType, className, methodName, signatureSymbolName)
 #define CONSTRUCTOR(className, signature)
 
   JVMCI_CLASSES_DO(START_CLASS, END_CLASS, CHAR_FIELD, INT_FIELD, BOOLEAN_FIELD, LONG_FIELD, FLOAT_FIELD, OBJECT_FIELD, PRIMARRAY_FIELD, OBJECTARRAY_FIELD, STATIC_OBJECT_FIELD, STATIC_OBJECTARRAY_FIELD, STATIC_INT_FIELD, STATIC_BOOLEAN_FIELD, METHOD, CONSTRUCTOR)

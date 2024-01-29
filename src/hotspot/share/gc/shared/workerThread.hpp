@@ -48,7 +48,7 @@ private:
     _gc_id(GCId::current_or_undefined()) {}
 
   const char* name() const { return _name; }
-  const uint gc_id() const { return _gc_id; }
+  uint gc_id() const { return _gc_id; }
 
   virtual void work(uint worker_id) = 0;
 };
@@ -93,8 +93,8 @@ private:
 
   WorkerThread* create_worker(uint name_suffix);
 
-  void set_indirectly_suspendible_threads();
-  void clear_indirectly_suspendible_threads();
+  void set_indirect_states();
+  void clear_indirect_states();
 
 protected:
   virtual void on_create_worker(WorkerThread* worker) {}
@@ -111,6 +111,8 @@ public:
   uint set_active_workers(uint num_workers);
 
   void threads_do(ThreadClosure* tc) const;
+  template <typename Function>
+  void threads_do_f(Function function) const;
 
   const char* name() const { return _name; }
 

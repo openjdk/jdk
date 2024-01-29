@@ -54,10 +54,11 @@ public class TestClassParser {
     public Matchable parse(String hotspotPidFileName, String irEncoding) {
         IREncodingParser irEncodingParser = new IREncodingParser(testClass);
         TestMethods testMethods = irEncodingParser.parse(irEncoding);
+        VMInfo vmInfo = VMInfoParser.parseVMInfo(irEncoding);
         if (testMethods.hasTestMethods()) {
             HotSpotPidFileParser hotSpotPidFileParser = new HotSpotPidFileParser(testClass.getName(), testMethods);
             LoggedMethods loggedMethods = hotSpotPidFileParser.parse(hotspotPidFileName);
-            return createTestClass(testMethods, loggedMethods);
+            return createTestClass(testMethods, loggedMethods, vmInfo);
         }
         return new NonIRTestClass();
     }
@@ -66,9 +67,9 @@ public class TestClassParser {
      * Create test class with IR methods for all test methods identified by {@link IREncodingParser} by combining them
      * with the parsed compilation output from {@link HotSpotPidFileParser}.
      */
-    private Matchable createTestClass(TestMethods testMethods, LoggedMethods loggedMethods) {
+    private Matchable createTestClass(TestMethods testMethods, LoggedMethods loggedMethods, VMInfo vmInfo) {
         IRMethodBuilder irMethodBuilder = new IRMethodBuilder(testMethods, loggedMethods);
-        SortedSet<IRMethodMatchable> irMethods = irMethodBuilder.build();
+        SortedSet<IRMethodMatchable> irMethods = irMethodBuilder.build(vmInfo);
         TestFormat.throwIfAnyFailures();
         return new TestClass(irMethods);
     }

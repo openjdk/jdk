@@ -1,4 +1,4 @@
-Changes from zlib 1.2.13
+Changes from zlib 1.3
 
 (1) renamed adler32.c -> zadler32.c, crc32c -> zcrc32.c
 

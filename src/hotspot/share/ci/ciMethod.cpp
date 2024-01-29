@@ -441,6 +441,9 @@ int ciMethod::check_overflow(int c, Bytecodes::Code code) {
     case Bytecodes::_aastore:    // fall-through
     case Bytecodes::_checkcast:  // fall-through
     case Bytecodes::_instanceof: {
+      if (VM_Version::profile_all_receivers_at_type_check()) {
+        return (c < 0 ? max_jint : c); // always non-negative
+      }
       return (c > 0 ? min_jint : c); // always non-positive
     }
     default: {

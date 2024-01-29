@@ -236,13 +236,23 @@ void Copy::fill_to_memory_atomic(void* to, size_t size, jubyte value) {
     }
   } else if (bits % sizeof(jshort) == 0) {
     jshort fill = (jushort)( (jubyte)value ); // zero-extend
-    fill += fill << 8;
+    fill += (jshort)(fill << 8);
     //Copy::fill_to_jshorts_atomic((jshort*) dst, size / sizeof(jshort));
     for (uintptr_t off = 0; off < size; off += sizeof(jshort)) {
       *(jshort*)(dst + off) = fill;
     }
   } else {
     // Not aligned, so no need to be atomic.
+#ifdef MUSL_LIBC
+    // This code is used by Unsafe and may hit the next page after truncation of mapped memory.
+    // Therefore, we use volatile to prevent compilers from replacing the loop by memset which
+    // may not trigger SIGBUS as needed (observed on Alpine Linux x86_64)
+    jbyte fill = value;
+    for (uintptr_t off = 0; off < size; off += sizeof(jbyte)) {
+      *(volatile jbyte*)(dst + off) = fill;
+    }
+#else
     Copy::fill_to_bytes(dst, size, value);
+#endif
   }
 }

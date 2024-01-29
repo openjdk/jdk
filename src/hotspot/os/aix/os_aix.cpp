@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -74,11 +74,15 @@
 #include "services/runtimeService.hpp"
 #include "signals_posix.hpp"
 #include "utilities/align.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/vmError.hpp"
+#if INCLUDE_JFR
+#include "jfr/support/jfrNativeLibraryLoadEvent.hpp"
+#endif
 
 // put OS-includes here (sorted alphabetically)
 #ifdef AIX_XLC_GE_17
@@ -765,7 +769,8 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
 
   // Init thread attributes.
   pthread_attr_t attr;
-  pthread_attr_init(&attr);
+  int rslt = pthread_attr_init(&attr);
+  guarantee(rslt == 0, "pthread_attr_init has to return 0");
   guarantee(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) == 0, "???");
 
   // Make sure we run in 1:1 kernel-user-thread mode.
@@ -799,6 +804,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
                             stack_size / K);
     thread->set_osthread(nullptr);
     delete osthread;
+    pthread_attr_destroy(&attr);
     return false;
   }
 
@@ -828,7 +834,8 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     log_warning(os, thread)("Failed to start thread \"%s\" - pthread_create failed (%d=%s) for attributes: %s.",
                             thread->name(), ret, os::errno_name(ret), os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
     // Log some OS information which might explain why creating the thread failed.
-    log_info(os, thread)("Number of threads approx. running in the VM: %d", Threads::number_of_threads());
+    log_warning(os, thread)("Number of threads approx. running in the VM: %d", Threads::number_of_threads());
+    log_warning(os, thread)("Checking JVM parameter MaxExpectedDataSegmentSize (currently " SIZE_FORMAT "k)  might be helpful", MaxExpectedDataSegmentSize/K);
     LogStream st(Log(os, thread)::info());
     os::Posix::print_rlimit_info(&st);
     os::print_memory_info(&st);
@@ -1010,6 +1017,10 @@ int os::current_process_id() {
 // directory not the java application's temp directory, ala java.io.tmpdir.
 const char* os::get_temp_directory() { return "/tmp"; }
 
+void os::prepare_native_symbols() {
+  LoadedLibraries::reload();
+}
+
 // Check if addr is inside libjvm.so.
 bool os::address_is_in_vm(address addr) {
 
@@ -1097,8 +1108,6 @@ bool os::dll_address_to_library_name(address addr, char* buf,
   return true;
 }
 
-// Loads .dll/.so and in case of error it checks if .dll/.so was built
-// for the same architecture as Hotspot is running on.
 void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 
   log_info(os)("attempting shared library load of %s", filename);
@@ -1109,12 +1118,26 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   }
 
   if (!filename || strlen(filename) == 0) {
-    ::strncpy(ebuf, "dll_load: empty filename specified", ebuflen - 1);
+    if (ebuf != nullptr && ebuflen > 0) {
+      ::strncpy(ebuf, "dll_load: empty filename specified", ebuflen - 1);
+    }
     return nullptr;
   }
 
-  // RTLD_LAZY is currently not implemented. The dl is loaded immediately with all its dependants.
-  void * result= ::dlopen(filename, RTLD_LAZY);
+  // RTLD_LAZY has currently the same behavior as RTLD_NOW
+  // The dl is loaded immediately with all its dependants.
+  int dflags = RTLD_LAZY;
+  // check for filename ending with ')', it indicates we want to load
+  // a MEMBER module that is a member of an archive.
+  int flen = strlen(filename);
+  if (flen > 0 && filename[flen - 1] == ')') {
+    dflags |= RTLD_MEMBER;
+  }
+
+  void* result;
+  const char* error_report = nullptr;
+  JFR_ONLY(NativeLibraryLoadEvent load_event(filename, &result);)
+  result = Aix_dlopen(filename, dflags, &error_report);
   if (result != nullptr) {
     Events::log_dll_message(nullptr, "Loaded shared library %s", filename);
     // Reload dll cache. Don't do this in signal handling.
@@ -1123,7 +1146,6 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     return result;
   } else {
     // error analysis when dlopen fails
-    const char* error_report = ::dlerror();
     if (error_report == nullptr) {
       error_report = "dlerror returned no error description";
     }
@@ -1133,6 +1155,7 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     }
     Events::log_dll_message(nullptr, "Loading shared library %s failed, %s", filename, error_report);
     log_info(os)("shared library load of %s failed, %s", filename, error_report);
+    JFR_ONLY(load_event.set_error_msg(error_report);)
   }
   return nullptr;
 }
@@ -1560,10 +1583,13 @@ static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
   }
 
   // Now attach the shared segment.
-  // Note that I attach with SHM_RND - which means that the requested address is rounded down, if
-  // needed, to the next lowest segment boundary. Otherwise the attach would fail if the address
-  // were not a segment boundary.
-  char* const addr = (char*) shmat(shmid, requested_addr, SHM_RND);
+  // Note that we deliberately *don't* pass SHM_RND. The contract of os::attempt_reserve_memory_at() -
+  // which invokes this function with a request address != nullptr - is to map at the specified address
+  // excactly, or to fail. If the caller passed us an address that is not usable (aka not a valid segment
+  // boundary), shmat should not round down the address, or think up a completely new one.
+  // (In places where this matters, e.g. when reserving the heap, we take care of passing segment-aligned
+  // addresses on Aix. See, e.g., ReservedHeapSpace.
+  char* const addr = (char*) shmat(shmid, requested_addr, 0);
   const int errno_shmat = errno;
 
   // (A) Right after shmat and before handing shmat errors delete the shm segment.
@@ -1860,6 +1886,10 @@ void os::pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
 void os::pd_free_memory(char *addr, size_t bytes, size_t alignment_hint) {
 }
 
+size_t os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
+  return page_size;
+}
+
 void os::numa_make_global(char *addr, size_t bytes) {
 }
 
@@ -1878,7 +1908,7 @@ int os::numa_get_group_id() {
   return 0;
 }
 
-size_t os::numa_get_leaf_groups(int *ids, size_t size) {
+size_t os::numa_get_leaf_groups(uint *ids, size_t size) {
   if (size > 0) {
     ids[0] = 0;
     return 1;
@@ -1892,10 +1922,6 @@ int os::numa_get_group_id_for_address(const void* address) {
 
 bool os::numa_get_group_ids_for_range(const void** addresses, int* lgrp_ids, size_t count) {
   return false;
-}
-
-char *os::scan_pages(char *start, char* end, page_info* page_expected, page_info* page_found) {
-  return end;
 }
 
 // Reserves and attaches a shared memory segment.
@@ -2092,11 +2118,6 @@ bool os::can_commit_large_page_memory() {
   return false;
 }
 
-bool os::can_execute_large_page_memory() {
-  // Does not matter, we do not support huge pages.
-  return false;
-}
-
 char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, int file_desc) {
   assert(file_desc >= 0, "file_desc is not valid");
   char* result = nullptr;
@@ -2134,6 +2155,15 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
   }
 
   return addr;
+}
+
+size_t os::vm_min_address() {
+  // On AIX, we need to make sure we don't block the sbrk. However, this is
+  // done at actual reservation time, where we honor a "no-mmap" area following
+  // the break. See MaxExpectedDataSegmentSize. So we can return a very low
+  // address here.
+  assert(is_aligned(_vm_min_address_default, os::vm_allocation_granularity()), "Sanity");
+  return _vm_min_address_default;
 }
 
 // Used to convert frequent JVM_Yield() to nops
@@ -2918,29 +2948,22 @@ void os::Aix::initialize_libperfstat() {
 /////////////////////////////////////////////////////////////////////////////
 // thread stack
 
-// Get the current stack base from the OS (actually, the pthread library).
-// Note: usually not page aligned.
-address os::current_stack_base() {
-  AixMisc::stackbounds_t bounds;
-  bool rc = AixMisc::query_stack_bounds_for_current_thread(&bounds);
-  guarantee(rc, "Unable to retrieve stack bounds.");
-  return bounds.base;
-}
-
-// Get the current stack size from the OS (actually, the pthread library).
+// Get the current stack base and size from the OS (actually, the pthread library).
+// Note: base usually not page aligned.
 // Returned size is such that (base - size) is always aligned to page size.
-size_t os::current_stack_size() {
+void os::current_stack_base_and_size(address* stack_base, size_t* stack_size) {
   AixMisc::stackbounds_t bounds;
   bool rc = AixMisc::query_stack_bounds_for_current_thread(&bounds);
   guarantee(rc, "Unable to retrieve stack bounds.");
-  // Align the returned stack size such that the stack low address
+  *stack_base = bounds.base;
+
+  // Align the reported stack size such that the stack low address
   // is aligned to page size (Note: base is usually not and we do not care).
   // We need to do this because caller code will assume stack low address is
   // page aligned and will place guard pages without checking.
   address low = bounds.base - bounds.size;
   address low_aligned = (address)align_up(low, os::vm_page_size());
-  size_t s = bounds.base - low_aligned;
-  return s;
+  *stack_size = bounds.base - low_aligned;
 }
 
 // Get the default path to the core file
@@ -2956,7 +2979,7 @@ int os::get_core_path(char* buffer, size_t bufferSize) {
   jio_snprintf(buffer, bufferSize, "%s/core or core.%d",
                                                p, current_process_id());
 
-  return strlen(buffer);
+  return checked_cast<int>(strlen(buffer));
 }
 
 bool os::start_debugging(char *buf, int buflen) {
@@ -2994,7 +3017,7 @@ static inline time_t get_mtime(const char* filename) {
 int os::compare_file_modified_times(const char* file1, const char* file2) {
   time_t t1 = get_mtime(file1);
   time_t t2 = get_mtime(file2);
-  return t1 - t2;
+  return primitive_compare(t1, t2);
 }
 
 bool os::supports_map_sync() {

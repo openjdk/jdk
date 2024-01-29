@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -455,9 +455,8 @@ inline bool ConcurrentHashTable<CONFIG, F>::
   assert(bucket->is_locked(), "Must be locked.");
   Node* const volatile * rem_n_prev = bucket->first_ptr();
   Node* rem_n = bucket->first();
-  bool have_dead = false;
   while (rem_n != nullptr) {
-    if (lookup_f.equals(rem_n->value(), &have_dead)) {
+    if (lookup_f.equals(rem_n->value())) {
       bucket->release_assign_node_ptr(rem_n_prev, rem_n->next());
       break;
     } else {
@@ -546,9 +545,7 @@ inline void ConcurrentHashTable<CONFIG, F>::
   Node* const volatile * rem_n_prev = bucket->first_ptr();
   Node* rem_n = bucket->first();
   while (rem_n != nullptr) {
-    bool is_dead = false;
-    lookup_f.equals(rem_n->value(), &is_dead);
-    if (is_dead) {
+    if (lookup_f.is_dead(rem_n->value())) {
       ndel[dels++] = rem_n;
       Node* next_node = rem_n->next();
       bucket->release_assign_node_ptr(rem_n_prev, next_node);
@@ -626,12 +623,11 @@ ConcurrentHashTable<CONFIG, F>::
   size_t loop_count = 0;
   Node* node = bucket->first();
   while (node != nullptr) {
-    bool is_dead = false;
     ++loop_count;
-    if (lookup_f.equals(node->value(), &is_dead)) {
+    if (lookup_f.equals(node->value())) {
       break;
     }
-    if (is_dead && !(*have_dead)) {
+    if (!(*have_dead) && lookup_f.is_dead(node->value())) {
       *have_dead = true;
     }
     node = node->next();
@@ -1016,7 +1012,7 @@ inline size_t ConcurrentHashTable<CONFIG, F>::
 // Constructor
 template <typename CONFIG, MEMFLAGS F>
 inline ConcurrentHashTable<CONFIG, F>::
-ConcurrentHashTable(size_t log2size, size_t log2size_limit, size_t grow_hint, bool enable_statistics, void* context)
+ConcurrentHashTable(size_t log2size, size_t log2size_limit, size_t grow_hint, bool enable_statistics, Mutex::Rank rank, void* context)
     : _context(context), _new_table(nullptr), _log2_size_limit(log2size_limit),
       _log2_start_size(log2size), _grow_hint(grow_hint),
       _size_limit_reached(false), _resize_lock_owner(nullptr),
@@ -1027,8 +1023,7 @@ ConcurrentHashTable(size_t log2size, size_t log2size_limit, size_t grow_hint, bo
   } else {
     _stats_rate = nullptr;
   }
-  _resize_lock =
-    new Mutex(Mutex::nosafepoint-2, "ConcurrentHashTableResize_lock");
+  _resize_lock = new Mutex(rank, "ConcurrentHashTableResize_lock");
   _table = new InternalTable(log2size);
   assert(log2size_limit >= log2size, "bad ergo");
   _size_limit_reached = _table->_log2_size == _log2_size_limit;

@@ -71,4 +71,5 @@ void VMError::raise_fail_fast(void* exrecord, void* context) {
   RaiseFailFastException(static_cast<PEXCEPTION_RECORD>(exrecord),
                          static_cast<PCONTEXT>(context),
                          flags);
+  os::infinite_sleep();
 }

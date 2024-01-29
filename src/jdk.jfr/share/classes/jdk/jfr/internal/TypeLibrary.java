@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,9 @@ import jdk.jfr.SettingDescriptor;
 import jdk.jfr.Timespan;
 import jdk.jfr.Timestamp;
 import jdk.jfr.ValueDescriptor;
+import jdk.jfr.internal.util.Utils;
+import jdk.jfr.internal.util.ImplicitFields;
+import jdk.internal.module.Modules;
 
 public final class TypeLibrary {
     private static boolean implicitFieldTypes;
@@ -75,26 +78,26 @@ public final class TypeLibrary {
     private static ValueDescriptor createStartTimeField() {
         var annos = createStandardAnnotations("Start Time", null);
         annos.add(new jdk.jfr.AnnotationElement(Timestamp.class, Timestamp.TICKS));
-        return PrivateAccess.getInstance().newValueDescriptor(EventInstrumentation.FIELD_START_TIME, Type.LONG, annos, 0, false,
-                EventInstrumentation.FIELD_START_TIME);
+        return PrivateAccess.getInstance().newValueDescriptor(ImplicitFields.START_TIME, Type.LONG, annos, 0, false,
+                ImplicitFields.START_TIME);
     }
 
     private static ValueDescriptor createStackTraceField() {
         var annos = createStandardAnnotations("Stack Trace", "Stack Trace starting from the method the event was committed in");
-        return PrivateAccess.getInstance().newValueDescriptor(EventInstrumentation.FIELD_STACK_TRACE, Type.STACK_TRACE, annos, 0, true,
-                EventInstrumentation.FIELD_STACK_TRACE);
+        return PrivateAccess.getInstance().newValueDescriptor(ImplicitFields.STACK_TRACE, Type.STACK_TRACE, annos, 0, true,
+                ImplicitFields.STACK_TRACE);
     }
 
     private static ValueDescriptor createThreadField() {
         var annos = createStandardAnnotations("Event Thread", "Thread in which event was committed in");
-        return PrivateAccess.getInstance().newValueDescriptor(EventInstrumentation.FIELD_EVENT_THREAD, Type.THREAD, annos, 0, true,
-                EventInstrumentation.FIELD_EVENT_THREAD);
+        return PrivateAccess.getInstance().newValueDescriptor(ImplicitFields.EVENT_THREAD, Type.THREAD, annos, 0, true,
+                ImplicitFields.EVENT_THREAD);
     }
 
     private static ValueDescriptor createDurationField() {
         var annos = createStandardAnnotations("Duration", null);
         annos.add(new jdk.jfr.AnnotationElement(Timespan.class, Timespan.TICKS));
-        return PrivateAccess.getInstance().newValueDescriptor(EventInstrumentation.FIELD_DURATION, Type.LONG, annos, 0, false, EventInstrumentation.FIELD_DURATION);
+        return PrivateAccess.getInstance().newValueDescriptor(ImplicitFields.DURATION, Type.LONG, annos, 0, false, ImplicitFields.DURATION);
     }
 
     public static synchronized void initialize() {
@@ -163,7 +166,6 @@ public final class TypeLibrary {
             for (ValueDescriptor v : type.getFields()) {
                 values.add(invokeAnnotation(annotation, v.getName()));
             }
-
             return PrivateAccess.getInstance().newAnnotation(type, values, annotation.annotationType().getClassLoader() == null);
         }
         return null;
@@ -175,6 +177,15 @@ public final class TypeLibrary {
             m = annotation.getClass().getMethod(methodName, new Class<?>[0]);
         } catch (NoSuchMethodException e1) {
             throw (Error) new InternalError("Could not locate method " + methodName + " in annotation " + annotation.getClass().getName());
+        }
+        // Add export from JDK proxy module
+        if (annotation.getClass().getClassLoader() == null) {
+            if (annotation.getClass().getName().contains("Proxy")) {
+                Module proxyModule = annotation.getClass().getModule();
+                String proxyPackage = annotation.getClass().getPackageName();
+                Module jfrModule = TypeLibrary.class.getModule();
+                Modules.addExports(proxyModule, proxyPackage, jfrModule);
+            }
         }
         SecuritySupport.setAccessible(m);
         try {
@@ -265,7 +276,8 @@ public final class TypeLibrary {
         Type type = getType(clazz);
 
         if (eventType) {
-            addImplicitFields(type, true, true, true, true ,false);
+            ImplicitFields ifs = new ImplicitFields(clazz);
+            addImplicitFields(type, true, ifs.hasDuration(), ifs.hasEventThread(), ifs.hasStackTrace(), false);
             addUserFields(clazz, type, dynamicFields);
             type.trimFields();
         }

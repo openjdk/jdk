@@ -148,12 +148,12 @@ public class VirtualParser extends JavacParser {
 
         @Override
         public int errPos() {
-            throw new AssertionError();
+            return S.errPos();
         }
 
         @Override
         public void errPos(int pos) {
-            throw new AssertionError();
+            S.errPos(pos);
         }
 
         @Override

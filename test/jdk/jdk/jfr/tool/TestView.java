@@ -37,7 +37,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  *           & vm.opt.ExplicitGCInvokesConcurrent != false
  * @library /test/lib /test/jdk
  * @run main/othervm -XX:-ExplicitGCInvokesConcurrent -XX:-DisableExplicitGC
- *                   -XX:+UseG1GC jdk.jfr.jcmd.TestJcmdView
+ *                   -XX:+UseG1GC jdk.jfr.tool.TestView
  */
 public class TestView {
 
@@ -91,13 +91,13 @@ public class TestView {
 
     private static void testEventType(String recording) throws Throwable {
         OutputAnalyzer output = ExecuteHelper.jfr(
-             "view", "--verbose", "--width", "300", "--cell-height", "100", "SystemGC", recording);
+             "view", "--verbose", "--width", "300", "--cell-height", "100", "ThreadSleep", recording);
         // Verify title
-        output.shouldContain("System GC");
+        output.shouldContain("Thread Sleep");
         // Verify headings
-        output.shouldContain("Invoked Concurrent");
+        output.shouldContain("Sleep Time");
         // Verify verbose headings
-        output.shouldContain("invokedConcurrent");
+        output.shouldContain("time");
         // Verify thread value
         output.shouldContain(Thread.currentThread().getName());
         // Verify stack frame

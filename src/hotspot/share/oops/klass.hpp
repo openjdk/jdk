@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -193,9 +193,8 @@ private:
 
 protected:
 
-  // Constructor
   Klass(KlassKind kind);
-  Klass() : _kind(UnknownKlassKind) { assert(DumpSharedSpaces || UseSharedSpaces, "only for cds"); }
+  Klass();
 
   void* operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) throw();
 
@@ -539,14 +538,14 @@ protected:
   }
 
   // array class with specific rank
-  virtual Klass* array_klass(int rank, TRAPS) = 0;
+  virtual ArrayKlass* array_klass(int rank, TRAPS) = 0;
 
   // array class with this klass as element type
-  virtual Klass* array_klass(TRAPS) = 0;
+  virtual ArrayKlass* array_klass(TRAPS) = 0;
 
   // These will return null instead of allocating on the heap:
-  virtual Klass* array_klass_or_null(int rank) = 0;
-  virtual Klass* array_klass_or_null() = 0;
+  virtual ArrayKlass* array_klass_or_null(int rank) = 0;
+  virtual ArrayKlass* array_klass_or_null() = 0;
 
   virtual oop protection_domain() const = 0;
 
@@ -583,7 +582,7 @@ protected:
     if (has_archived_mirror_index()) {
       // _java_mirror is not a valid OopHandle but rather an encoded reference in the shared heap
       return false;
-    } else if (_java_mirror.ptr_raw() == nullptr) {
+    } else if (_java_mirror.is_empty()) {
       return false;
     } else {
       return true;

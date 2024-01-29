@@ -59,14 +59,16 @@ using MacroAssembler::null_check;
   // hdr     : must be x10, contents destroyed
   // obj     : must point to the object to lock, contents preserved
   // disp_hdr: must point to the displaced header location, contents preserved
+  // temp : temporary register, must not be scratch register t0 or t1
   // returns code offset at which to add null check debug information
-  int lock_object  (Register swap, Register obj, Register disp_hdr, Label& slow_case);
+  int lock_object(Register swap, Register obj, Register disp_hdr, Register temp, Label& slow_case);
 
   // unlocking
   // hdr     : contents destroyed
   // obj     : must point to the object to lock, contents preserved
   // disp_hdr: must be x10 & must point to the displaced header location, contents destroyed
-  void unlock_object(Register swap, Register obj, Register lock, Label& slow_case);
+  // temp : temporary register, must not be scratch register t0 or t1
+  void unlock_object(Register swap, Register obj, Register lock, Register temp, Label& slow_case);
 
   void initialize_object(
     Register obj,                      // result: pointer to object after successful allocation

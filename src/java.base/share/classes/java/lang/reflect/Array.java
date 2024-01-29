@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,13 +49,11 @@ class Array {
     /**
      * Creates a new array with the specified component type and
      * length.
+     * @implSpec
      * Invoking this method is equivalent to creating an array
      * as follows:
      * <blockquote>
-     * <pre>
-     * int[] x = {length};
-     * Array.newInstance(componentType, x);
-     * </pre>
+     * {@code Array.newInstance(componentType, new int[]{length});}
      * </blockquote>
      *
      * <p>The number of dimensions of the new array must not

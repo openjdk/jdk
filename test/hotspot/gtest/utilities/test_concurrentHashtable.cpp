@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,8 +107,11 @@ struct SimpleTestLookup {
   uintx get_hash() {
     return Pointer::get_hash(_val, NULL);
   }
-  bool equals(const uintptr_t* value, bool* is_dead) {
+  bool equals(const uintptr_t* value) {
     return _val == *value;
+  }
+  bool is_dead(const uintptr_t* value) {
+    return false;
   }
 };
 
@@ -319,7 +322,7 @@ static void cht_reset_shrink(Thread* thr) {
 
   Allocator mem_allocator;
   const uint initial_log_table_size = 4;
-  CustomTestTable* cht = new CustomTestTable(&mem_allocator);
+  CustomTestTable* cht = new CustomTestTable(Mutex::nosafepoint-2, &mem_allocator);
 
   cht_insert_and_find(thr, cht, val1);
   cht_insert_and_find(thr, cht, val2);
@@ -561,8 +564,11 @@ struct TestLookup {
   uintx get_hash() {
     return TestInterface::get_hash(_val, NULL);
   }
-  bool equals(const uintptr_t* value, bool* is_dead) {
+  bool equals(const uintptr_t* value) {
     return _val == *value;
+  }
+  bool is_dead(const uintptr_t* value) {
+    return false;
   }
 };
 

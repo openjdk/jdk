@@ -102,7 +102,7 @@ public final class View extends Command {
     public List<String> getOptionSyntax() {
         List<String> list = new ArrayList<>();
         list.add("[--verbose]");
-        list.add("[--width <integer>");
+        list.add("[--width <integer>]");
         list.add("[--truncate <mode>]");
         list.add("[--cell-height <integer>]");
         list.add("<view>");
@@ -138,7 +138,7 @@ public final class View extends Command {
             if (acceptOption(options, "--width")) {
                 configuration.width = acceptInt(options, "width");
             }
-            if (options.size() == 1) {
+            if (options.size() == 1 && !options.peek().startsWith("-")) {
                 String view = options.pop();
                 try (EventStream stream = EventStream.openFile(file)) {
                     ViewPrinter vp = new ViewPrinter(configuration, stream);
@@ -149,8 +149,6 @@ public final class View extends Command {
                     couldNotReadError(file, ioe);
                 }
             }
-            System.out.println("count:" + optionCount);
-            System.out.println("size:" + options.size());
             if (optionCount == options.size()) {
                 String peek = options.peek();
                 if (peek == null) {

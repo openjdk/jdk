@@ -281,7 +281,7 @@ class ShortLoopOptimizer : public ValueNumberingVisitor {
   }
   void      kill_array(ValueType* type)                   {
     current_map()->kill_array(type);
-    BasicType basic_type = as_BasicType(type); assert(basic_type >= 0 && basic_type < T_VOID, "Invalid type");
+    BasicType basic_type = as_BasicType(type); assert(basic_type < T_VOID, "Invalid type");
     _has_indexed_store[basic_type] = true;
   }
 
@@ -298,12 +298,12 @@ class ShortLoopOptimizer : public ValueNumberingVisitor {
   }
 
   bool has_field_store(BasicType type) {
-    assert(type >= 0 && type < T_VOID, "Invalid type");
+    assert(type < T_VOID, "Invalid type");
     return _has_field_store[type];
   }
 
   bool has_indexed_store(BasicType type) {
-    assert(type >= 0 && type < T_VOID, "Invalid type");
+    assert(type < T_VOID, "Invalid type");
     return _has_indexed_store[type];
   }
 
@@ -359,6 +359,33 @@ LoopInvariantCodeMotion::LoopInvariantCodeMotion(ShortLoopOptimizer *slo, Global
   }
 }
 
+class CheckInsertionPoint : public ValueVisitor {
+ private:
+  Value _insert;
+  bool _valid = true;
+
+  void visit(Value* vp) {
+    assert(*vp != nullptr, "value should not be null");
+    if (_insert->dominator_depth() < (*vp)->dominator_depth()) {
+      _valid = false;
+    }
+  }
+
+ public:
+  bool is_valid() { return _valid; }
+  CheckInsertionPoint(Value insert)
+    : _insert(insert) {
+    assert(insert != nullptr, "insertion point should not be null");
+  }
+};
+
+// Check that insertion point has higher dom depth than all inputs to cur
+static bool is_dominated_by_inputs(Instruction* insertion_point, Instruction* cur) {
+  CheckInsertionPoint v(insertion_point);
+  cur->input_values_do(&v);
+  return v.is_valid();
+}
+
 void LoopInvariantCodeMotion::process_block(BlockBegin* block) {
   TRACE_VALUE_NUMBERING(tty->print_cr("processing block B%d", block->block_id()));
 
@@ -394,7 +421,7 @@ void LoopInvariantCodeMotion::process_block(BlockBegin* block) {
       cur_invariant = is_invariant(cvt->value());
     }
 
-    if (cur_invariant) {
+    if (cur_invariant && is_dominated_by_inputs(_insertion_point, cur)) {
       // perform value numbering and mark instruction as loop-invariant
       _gvn->substitute(cur);
 

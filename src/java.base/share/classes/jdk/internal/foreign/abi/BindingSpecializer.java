@@ -24,11 +24,11 @@
  */
 package jdk.internal.foreign.abi;
 
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.CodeBuilder;
-import jdk.internal.classfile.Label;
-import jdk.internal.classfile.Opcode;
-import jdk.internal.classfile.TypeKind;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.Label;
+import java.lang.classfile.Opcode;
+import java.lang.classfile.TypeKind;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.foreign.Utils;
@@ -39,7 +39,10 @@ import jdk.internal.foreign.abi.Binding.BufferStore;
 import jdk.internal.foreign.abi.Binding.Cast;
 import jdk.internal.foreign.abi.Binding.Copy;
 import jdk.internal.foreign.abi.Binding.Dup;
-import jdk.internal.foreign.abi.Binding.UnboxAddress;
+import jdk.internal.foreign.abi.Binding.SegmentBase;
+import jdk.internal.foreign.abi.Binding.SegmentOffset;
+import jdk.internal.foreign.abi.Binding.ShiftLeft;
+import jdk.internal.foreign.abi.Binding.ShiftRight;
 import jdk.internal.foreign.abi.Binding.VMLoad;
 import jdk.internal.foreign.abi.Binding.VMStore;
 import sun.security.action.GetBooleanAction;
@@ -65,8 +68,8 @@ import java.util.Deque;
 import java.util.List;
 
 import static java.lang.constant.ConstantDescs.*;
-import static jdk.internal.classfile.Classfile.*;
-import static jdk.internal.classfile.TypeKind.*;
+import static java.lang.classfile.ClassFile.*;
+import static java.lang.classfile.TypeKind.*;
 
 public class BindingSpecializer {
     private static final String DUMP_CLASSES_DIR
@@ -101,7 +104,9 @@ public class BindingSpecializer {
     private static final MethodTypeDesc MTD_SCOPE = MethodTypeDesc.of(CD_MemorySegment_Scope);
     private static final MethodTypeDesc MTD_SESSION_IMPL = MethodTypeDesc.of(CD_MemorySessionImpl);
     private static final MethodTypeDesc MTD_CLOSE = MTD_void;
-    private static final MethodTypeDesc MTD_UNBOX_SEGMENT = MethodTypeDesc.of(CD_long, CD_MemorySegment);
+    private static final MethodTypeDesc MTD_CHECK_NATIVE = MethodTypeDesc.of(CD_void, CD_MemorySegment);
+    private static final MethodTypeDesc MTD_UNSAFE_GET_BASE = MethodTypeDesc.of(CD_Object);
+    private static final MethodTypeDesc MTD_UNSAFE_GET_OFFSET = MethodTypeDesc.of(CD_long);
     private static final MethodTypeDesc MTD_COPY = MethodTypeDesc.of(CD_void, CD_MemorySegment, CD_long, CD_MemorySegment, CD_long, CD_long);
     private static final MethodTypeDesc MTD_LONG_TO_ADDRESS_NO_SCOPE = MethodTypeDesc.of(CD_MemorySegment, CD_long, CD_long, CD_long);
     private static final MethodTypeDesc MTD_LONG_TO_ADDRESS_SCOPE = MethodTypeDesc.of(CD_MemorySegment, CD_long, CD_long, CD_long, CD_MemorySessionImpl);
@@ -186,7 +191,7 @@ public class BindingSpecializer {
     private static byte[] specializeHelper(MethodType leafType, MethodType callerMethodType,
                                            CallingSequence callingSequence, ABIDescriptor abi) {
         String className = callingSequence.forDowncall() ? CLASS_NAME_DOWNCALL : CLASS_NAME_UPCALL;
-        byte[] bytes = Classfile.build(ClassDesc.ofInternalName(className), clb -> {
+        byte[] bytes = ClassFile.of().build(ClassDesc.ofInternalName(className), clb -> {
             clb.withFlags(ACC_PUBLIC + ACC_FINAL + ACC_SUPER);
             clb.withSuperclass(CD_Object);
             clb.withVersion(CLASSFILE_VERSION, 0);
@@ -207,7 +212,7 @@ public class BindingSpecializer {
         }
 
         if (PERFORM_VERIFICATION) {
-            List<VerifyError> errors = Classfile.parse(bytes).verify(null);
+            List<VerifyError> errors = ClassFile.of().verify(bytes);
             if (!errors.isEmpty()) {
                 errors.forEach(System.err::println);
                 throw new IllegalStateException("Verification error(s)");
@@ -454,16 +459,19 @@ public class BindingSpecializer {
     private void doBindings(List<Binding> bindings) {
         for (Binding binding : bindings) {
             switch (binding) {
-                case VMStore vmStore         -> emitVMStore(vmStore);
-                case VMLoad vmLoad           -> emitVMLoad(vmLoad);
-                case BufferStore bufferStore -> emitBufferStore(bufferStore);
-                case BufferLoad bufferLoad   -> emitBufferLoad(bufferLoad);
-                case Copy copy               -> emitCopyBuffer(copy);
-                case Allocate allocate       -> emitAllocBuffer(allocate);
-                case BoxAddress boxAddress   -> emitBoxAddress(boxAddress);
-                case UnboxAddress unused     -> emitUnboxAddress();
-                case Dup unused              -> emitDupBinding();
-                case Cast cast               -> emitCast(cast);
+                case VMStore vmStore             -> emitVMStore(vmStore);
+                case VMLoad vmLoad               -> emitVMLoad(vmLoad);
+                case BufferStore bufferStore     -> emitBufferStore(bufferStore);
+                case BufferLoad bufferLoad       -> emitBufferLoad(bufferLoad);
+                case Copy copy                   -> emitCopyBuffer(copy);
+                case Allocate allocate           -> emitAllocBuffer(allocate);
+                case BoxAddress boxAddress       -> emitBoxAddress(boxAddress);
+                case SegmentBase unused          -> emitSegmentBase();
+                case SegmentOffset segmentOffset -> emitSegmentOffset(segmentOffset);
+                case Dup unused                  -> emitDupBinding();
+                case ShiftLeft shiftLeft         -> emitShiftLeft(shiftLeft);
+                case ShiftRight shiftRight       -> emitShiftRight(shiftRight);
+                case Cast cast                   -> emitCast(cast);
             }
         }
     }
@@ -725,6 +733,20 @@ public class BindingSpecializer {
         pushType(dupType);
     }
 
+    private void emitShiftLeft(ShiftLeft shiftLeft) {
+        popType(long.class);
+        cb.constantInstruction(shiftLeft.shiftAmount() * Byte.SIZE);
+        cb.lshl();
+        pushType(long.class);
+    }
+
+    private void emitShiftRight(ShiftRight shiftRight) {
+        popType(long.class);
+        cb.constantInstruction(shiftRight.shiftAmount() * Byte.SIZE);
+        cb.lushr();
+        pushType(long.class);
+    }
+
     private void emitCast(Cast cast) {
         Class<?> fromType = cast.fromType();
         Class<?> toType = cast.toType();
@@ -744,6 +766,11 @@ public class BindingSpecializer {
             case INT_TO_BYTE -> cb.i2b();
             case INT_TO_CHAR -> cb.i2c();
             case INT_TO_SHORT -> cb.i2s();
+            case BYTE_TO_LONG, CHAR_TO_LONG, SHORT_TO_LONG, INT_TO_LONG -> cb.i2l();
+            case LONG_TO_BYTE -> { cb.l2i(); cb.i2b(); }
+            case LONG_TO_SHORT -> { cb.l2i(); cb.i2s(); }
+            case LONG_TO_CHAR -> { cb.l2i(); cb.i2c(); }
+            case LONG_TO_INT -> cb.l2i();
             case BOOLEAN_TO_INT, BYTE_TO_INT, CHAR_TO_INT, SHORT_TO_INT -> {
                 // no-op in bytecode
             }
@@ -752,9 +779,23 @@ public class BindingSpecializer {
         pushType(toType);
     }
 
-    private void emitUnboxAddress() {
+    private void emitSegmentBase() {
         popType(MemorySegment.class);
-        cb.invokestatic(CD_SharedUtils, "unboxSegment", MTD_UNBOX_SEGMENT);
+        cb.checkcast(CD_AbstractMemorySegmentImpl);
+        cb.invokevirtual(CD_AbstractMemorySegmentImpl, "unsafeGetBase", MTD_UNSAFE_GET_BASE);
+        pushType(Object.class);
+    }
+
+    private void emitSegmentOffset(SegmentOffset segmentOffset) {
+        popType(MemorySegment.class);
+
+        if (!segmentOffset.allowHeap()) {
+            cb.dup();
+            cb.invokestatic(CD_SharedUtils, "checkNative", MTD_CHECK_NATIVE);
+        }
+        cb.checkcast(CD_AbstractMemorySegmentImpl);
+        cb.invokevirtual(CD_AbstractMemorySegmentImpl, "unsafeGetOffset", MTD_UNSAFE_GET_OFFSET);
+
         pushType(long.class);
     }
 

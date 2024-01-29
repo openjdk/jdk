@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@
 #include "io_util.h"
 #include "jlong.h"
 #include "io_util_md.h"
-#include "dirent_md.h"
 #include "java_io_FileSystem.h"
 
 #define MAX_PATH_LENGTH 1024

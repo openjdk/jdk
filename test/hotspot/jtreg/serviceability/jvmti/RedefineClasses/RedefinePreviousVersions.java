@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ public class RedefinePreviousVersions {
         if (args.length > 0) {
 
             // java -javaagent:redefineagent.jar -Xlog:stuff RedefinePreviousVersions
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder( "-javaagent:redefineagent.jar",
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder( "-javaagent:redefineagent.jar",
                "-Xlog:redefine+class+iklass+add=trace,redefine+class+iklass+purge=trace",
                "RedefinePreviousVersions");
             new OutputAnalyzer(pb.start())

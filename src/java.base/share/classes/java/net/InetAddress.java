@@ -136,7 +136,7 @@ import static java.net.spi.InetAddressResolver.LookupPolicy.IPV6_FIRST;
  *
  * <p> <i>Global</i> addresses are unique across the internet.
  *
- * <h3> Textual representation of IP addresses </h3>
+ * <h3> <a id="format">Textual representation of IP addresses</a> </h3>
  *
  * The textual representation of an IP address is address family specific.
  *
@@ -731,8 +731,8 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
      * <p>If this InetAddress was created with a host name,
      * this host name will be remembered and returned;
      * otherwise, a reverse name lookup will be performed
-     * and the result will be returned based on the system
-     * configured resolver. If a lookup of the name service
+     * and the result will be returned based on the system-wide
+     * resolver. If a lookup of the name service
      * is required, call
      * {@link #getCanonicalHostName() getCanonicalHostName}.
      *
@@ -785,9 +785,15 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
     }
 
     /**
-     * Gets the fully qualified domain name for this IP address.
-     * Best effort method, meaning we may not be able to return
-     * the FQDN depending on the underlying system configuration.
+     * Gets the fully qualified domain name for this
+     * {@linkplain InetAddress#getAddress() IP address} using the system-wide
+     * {@linkplain InetAddressResolver resolver}.
+     *
+     * <p>The system-wide resolver will be used to do a reverse name lookup of the IP address.
+     * The lookup can fail for many reasons that include the host not being registered with the name
+     * service. If the resolver is unable to determine the fully qualified
+     * domain name, this method returns the {@linkplain #getHostAddress() textual representation}
+     * of the IP address.
      *
      * <p>If there is a security manager, this method first
      * calls its {@code checkConnect} method
@@ -797,9 +803,11 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
      * If the operation is not allowed, it will return
      * the textual representation of the IP address.
      *
-     * @return  the fully qualified domain name for this IP address,
-     *    or if the operation is not allowed by the security check,
-     *    the textual representation of the IP address.
+     * @return  the fully qualified domain name for this IP address.
+     *          If either the operation is not allowed by the security check
+     *          or the system-wide resolver wasn't able to determine the
+     *          fully qualified domain name for the IP address, the textual
+     *          representation of the IP address is returned instead.
      *
      * @see SecurityManager#checkConnect
      *
@@ -814,21 +822,23 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
     }
 
     /**
-     * Returns the hostname for this address.
+     * Returns the fully qualified domain name for the given address.
      *
      * <p>If there is a security manager, this method first
      * calls its {@code checkConnect} method
      * with the hostname and {@code -1}
      * as its arguments to see if the calling code is allowed to know
-     * the hostname for this IP address, i.e., to connect to the host.
+     * the hostname for the given IP address, i.e., to connect to the host.
      * If the operation is not allowed, it will return
      * the textual representation of the IP address.
      *
-     * @return  the host name for this IP address, or if the operation
-     *    is not allowed by the security check, the textual
-     *    representation of the IP address.
-     *
      * @param check make security check if true
+     *
+     * @return  the fully qualified domain name for the given IP address.
+     *          If either the operation is not allowed by the security check
+     *          or the system-wide resolver wasn't able to determine the
+     *          fully qualified domain name for the IP address, the textual
+     *          representation of the IP address is returned instead.
      *
      * @see SecurityManager#checkConnect
      */
@@ -1407,7 +1417,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
             byte[] addrArray;
             // check if IPV4 address - most likely
             try {
-                addrArray = IPAddressUtil.validateNumericFormatV4(addrStr);
+                addrArray = IPAddressUtil.validateNumericFormatV4(addrStr, false);
             } catch (IllegalArgumentException iae) {
                 return null;
             }
@@ -1570,7 +1580,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
 
     /**
      * Given the name of a host, returns an array of its IP addresses,
-     * based on the configured system {@linkplain InetAddressResolver resolver}.
+     * based on the system-wide {@linkplain InetAddressResolver resolver}.
      *
      * <p> The host name can either be a machine name, such as
      * "{@code www.example.com}", or a textual representation of its IP
@@ -1634,51 +1644,29 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         // Check and try to parse host string as an IP address literal
         if (IPAddressUtil.digit(host.charAt(0), 16) != -1
             || (host.charAt(0) == ':')) {
-            byte[] addr = null;
-            int numericZone = -1;
-            String ifname = null;
-
+            InetAddress inetAddress = null;
             if (!ipv6Expected) {
                 // check if it is IPv4 address only if host is not wrapped in '[]'
                 try {
-                    addr = IPAddressUtil.validateNumericFormatV4(host);
+                    // Here we check the address string for ambiguity only
+                    inetAddress = Inet4Address.parseAddressString(host, false);
                 } catch (IllegalArgumentException iae) {
                     var uhe = new UnknownHostException(host);
                     uhe.initCause(iae);
                     throw uhe;
                 }
             }
-            if (addr == null) {
-                // Try to parse host string as an IPv6 literal
-                // Check if a numeric or string zone id is present first
-                int pos;
-                if ((pos = host.indexOf('%')) != -1) {
-                    numericZone = checkNumericZone(host);
-                    if (numericZone == -1) { /* remainder of string must be an ifname */
-                        ifname = host.substring(pos + 1);
-                    }
-                }
-                if ((addr = IPAddressUtil.textToNumericFormatV6(host)) == null &&
+            if (inetAddress == null) {
+                // This is supposed to be an IPv6 literal
+                // Check for presence of a numeric or string zone id
+                // is done in Inet6Address.parseAddressString
+                if ((inetAddress = Inet6Address.parseAddressString(host, false)) == null &&
                         (host.contains(":") || ipv6Expected)) {
                     throw invalidIPv6LiteralException(host, ipv6Expected);
                 }
             }
-            if(addr != null) {
-                InetAddress[] ret = new InetAddress[1];
-                if (addr.length == Inet4Address.INADDRSZ) {
-                    if (numericZone != -1 || ifname != null) {
-                        // IPv4-mapped address must not contain zone-id
-                        throw new UnknownHostException(host + ": invalid IPv4-mapped address");
-                    }
-                    ret[0] = new Inet4Address(null, addr);
-                } else {
-                    if (ifname != null) {
-                        ret[0] = new Inet6Address(null, addr, ifname);
-                    } else {
-                        ret[0] = new Inet6Address(null, addr, numericZone);
-                    }
-                }
-                return ret;
+            if (inetAddress != null) {
+                return new InetAddress[]{inetAddress};
             }
         } else if (ipv6Expected) {
             // We were expecting an IPv6 Literal since host string starts
@@ -1708,45 +1696,45 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         return impl.loopbackAddress();
     }
 
-
-    /**
-     * check if the literal address string has %nn appended
-     * returns -1 if not, or the numeric value otherwise.
-     *
-     * %nn may also be a string that represents the displayName of
-     * a currently available NetworkInterface.
-     */
-    private static int checkNumericZone (String s) throws UnknownHostException {
-        int percent = s.indexOf ('%');
-        int slen = s.length();
-        int digit, zone=0;
-        int multmax = Integer.MAX_VALUE / 10; // for int overflow detection
-        if (percent == -1) {
-            return -1;
-        }
-        for (int i=percent+1; i<slen; i++) {
-            char c = s.charAt(i);
-            if ((digit = IPAddressUtil.parseAsciiDigit(c, 10)) < 0) {
-                return -1;
-            }
-            if (zone > multmax) {
-                return -1;
-            }
-            zone = (zone * 10) + digit;
-            if (zone < 0) {
-                return -1;
-            }
-
-        }
-        return zone;
-    }
-
     /**
      * package private so SocketPermission can call it
      */
     static InetAddress[] getAllByName0 (String host, boolean check)
         throws UnknownHostException  {
         return getAllByName0(host, check, true);
+    }
+
+    /**
+     * Creates an {@code InetAddress} based on the provided {@linkplain InetAddress##format
+     * textual representation} of an IP address.
+     * <p> The provided IP address literal is parsed as
+     * {@linkplain Inet4Address#ofLiteral(String) an IPv4 address literal} first.
+     * If it cannot be parsed as an IPv4 address literal, then the method attempts
+     * to parse it as {@linkplain Inet6Address#ofLiteral(String) an IPv6 address literal}.
+     * If neither attempts succeed an {@code IllegalArgumentException} is thrown.
+     * <p> This method doesn't block, i.e. no reverse lookup is performed.
+     *
+     * @param ipAddressLiteral the textual representation of an IP address.
+     * @return an {@link InetAddress} object with no hostname set, and constructed
+     *         from the provided IP address literal.
+     * @throws IllegalArgumentException if the {@code ipAddressLiteral} cannot be parsed
+     *         as an IPv4 or IPv6 address literal.
+     * @throws NullPointerException if the {@code ipAddressLiteral} is {@code null}.
+     * @see Inet4Address#ofLiteral(String)
+     * @see Inet6Address#ofLiteral(String)
+     * @since 22
+     */
+    public static InetAddress ofLiteral(String ipAddressLiteral) {
+        Objects.requireNonNull(ipAddressLiteral);
+        InetAddress inetAddress;
+        try {
+            // First try to parse the input as an IPv4 address literal
+            inetAddress = Inet4Address.ofLiteral(ipAddressLiteral);
+        } catch (IllegalArgumentException iae) {
+            // If it fails try to parse the input as an IPv6 address literal
+            inetAddress = Inet6Address.ofLiteral(ipAddressLiteral);
+        }
+        return inetAddress;
     }
 
     /**

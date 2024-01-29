@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import javax.lang.model.type.*;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import static javax.lang.model.SourceVersion.*;
+import javax.lang.model.type.TypeVisitor;
 
 
 /**
@@ -126,118 +127,127 @@ public class SimpleTypeVisitor6<R, P> extends AbstractTypeVisitor6<R, P> {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc TypeVisitor}
      *
      * @implSpec This implementation calls {@code defaultAction}.
      *
-     * @param t {@inheritDoc}
-     * @param p {@inheritDoc}
+     * @param t {@inheritDoc TypeVisitor}
+     * @param p {@inheritDoc TypeVisitor}
      * @return  the result of {@code defaultAction}
      */
+    @Override
     public R visitPrimitive(PrimitiveType t, P p) {
         return defaultAction(t, p);
     }
 
     /**
-     * {@inheritDoc} This implementation calls {@code defaultAction}.
+     * {@inheritDoc TypeVisitor}
      *
      * @implSpec This implementation calls {@code defaultAction}.
      *
-     * @param t {@inheritDoc}
-     * @param p {@inheritDoc}
+     * @param t {@inheritDoc TypeVisitor}
+     * @param p {@inheritDoc TypeVisitor}
      * @return  the result of {@code defaultAction}
      */
+    @Override
     public R visitNull(NullType t, P p){
         return defaultAction(t, p);
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc TypeVisitor}
      *
      * @implSpec This implementation calls {@code defaultAction}.
      *
-     * @param t {@inheritDoc}
-     * @param p {@inheritDoc}
+     * @param t {@inheritDoc TypeVisitor}
+     * @param p {@inheritDoc TypeVisitor}
      * @return  the result of {@code defaultAction}
      */
+    @Override
     public R visitArray(ArrayType t, P p){
         return defaultAction(t, p);
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc TypeVisitor}
      *
      * @implSpec This implementation calls {@code defaultAction}.
      *
-     * @param t {@inheritDoc}
-     * @param p {@inheritDoc}
+     * @param t {@inheritDoc TypeVisitor}
+     * @param p {@inheritDoc TypeVisitor}
      * @return  the result of {@code defaultAction}
      */
+    @Override
     public R visitDeclared(DeclaredType t, P p){
         return defaultAction(t, p);
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc TypeVisitor}
      *
      * @implSpec This implementation calls {@code defaultAction}.
      *
-     * @param t {@inheritDoc}
-     * @param p {@inheritDoc}
+     * @param t {@inheritDoc TypeVisitor}
+     * @param p {@inheritDoc TypeVisitor}
      * @return  the result of {@code defaultAction}
      */
+    @Override
     public R visitError(ErrorType t, P p){
         return defaultAction(t, p);
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc TypeVisitor}
      *
      * @implSpec This implementation calls {@code defaultAction}.
      *
-     * @param t {@inheritDoc}
-     * @param p {@inheritDoc}
+     * @param t {@inheritDoc TypeVisitor}
+     * @param p {@inheritDoc TypeVisitor}
      * @return  the result of {@code defaultAction}
      */
+    @Override
     public R visitTypeVariable(TypeVariable t, P p){
         return defaultAction(t, p);
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc TypeVisitor}
      *
      * @implSpec This implementation calls {@code defaultAction}.
      *
-     * @param t {@inheritDoc}
-     * @param p {@inheritDoc}
+     * @param t {@inheritDoc TypeVisitor}
+     * @param p {@inheritDoc TypeVisitor}
      * @return  the result of {@code defaultAction}
      */
+    @Override
     public R visitWildcard(WildcardType t, P p){
         return defaultAction(t, p);
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc TypeVisitor}
      *
      * @implSpec This implementation calls {@code defaultAction}.
      *
-     * @param t {@inheritDoc}
-     * @param p {@inheritDoc}
+     * @param t {@inheritDoc TypeVisitor}
+     * @param p {@inheritDoc TypeVisitor}
      * @return  the result of {@code defaultAction}
      */
+    @Override
     public R visitExecutable(ExecutableType t, P p) {
         return defaultAction(t, p);
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc TypeVisitor}
      *
      * @implSpec This implementation calls {@code defaultAction}.
      *
-     * @param t {@inheritDoc}
-     * @param p {@inheritDoc}
+     * @param t {@inheritDoc TypeVisitor}
+     * @param p {@inheritDoc TypeVisitor}
      * @return  the result of {@code defaultAction}
      */
+    @Override
     public R visitNoType(NoType t, P p){
         return defaultAction(t, p);
     }

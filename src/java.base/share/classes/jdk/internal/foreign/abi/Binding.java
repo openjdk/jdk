@@ -24,6 +24,7 @@
  */
 package jdk.internal.foreign.abi;
 
+import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.Utils;
 import jdk.internal.foreign.abi.BindingInterpreter.LoadFunc;
 import jdk.internal.foreign.abi.BindingInterpreter.StoreFunc;
@@ -32,7 +33,6 @@ import java.lang.foreign.*;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
@@ -57,7 +57,7 @@ import static java.lang.foreign.ValueLayout.JAVA_SHORT_UNALIGNED;
  * the CONVERT_ADDRESS operator 'unboxes' a MemoryAddress to a long, but 'boxes' a long to a MemoryAddress.
  *
  * Here are some examples of binding recipes derived from C declarations, and according to the Windows ABI (recipes are
- * ABI-specific). Note that each argument has it's own recipe, which is indicated by '[number]:' (though, the only
+ * ABI-specific). Note that each argument has its own recipe, which is indicated by '[number]:' (though, the only
  * example that has multiple arguments is the one using varargs).
  *
  * --------------------
@@ -202,7 +202,7 @@ public sealed interface Binding {
                    LoadFunc loadFunc, SegmentAllocator allocator);
 
     private static void checkType(Class<?> type) {
-        if (!type.isPrimitive() || type == void.class)
+        if (type != Object.class && (!type.isPrimitive() || type == void.class))
             throw new IllegalArgumentException("Illegal type: " + type);
     }
 
@@ -268,12 +268,37 @@ public sealed interface Binding {
         return new BoxAddress(byteSize, 1, true);
     }
 
-    static UnboxAddress unboxAddress() {
-        return UnboxAddress.INSTANCE;
+    // alias
+    static SegmentOffset unboxAddress() {
+        return segmentOffsetNoAllowHeap();
+    }
+
+    static SegmentBase segmentBase() {
+        return SegmentBase.INSTANCE;
+    }
+
+    static SegmentOffset segmentOffsetAllowHeap() {
+        return SegmentOffset.INSTANCE_ALLOW_HEAP;
+    }
+
+    static SegmentOffset segmentOffsetNoAllowHeap() {
+        return SegmentOffset.INSTANCE_NO_ALLOW_HEAP;
     }
 
     static Dup dup() {
         return Dup.INSTANCE;
+    }
+
+    static ShiftLeft shiftLeft(int shiftAmount) {
+        if (shiftAmount <= 0)
+            throw new IllegalArgumentException("shiftAmount must be positive");
+        return new ShiftLeft(shiftAmount);
+    }
+
+    static ShiftRight shiftRight(int shiftAmount) {
+        if (shiftAmount <= 0)
+            throw new IllegalArgumentException("shiftAmount must be positive");
+        return new ShiftRight(shiftAmount);
     }
 
     static Binding cast(Class<?> fromType, Class<?> toType) {
@@ -286,6 +311,8 @@ public sealed interface Binding {
                 return Cast.INT_TO_SHORT;
             } else if (toType == char.class) {
                 return Cast.INT_TO_CHAR;
+            } else if (toType == long.class) {
+                return Cast.INT_TO_LONG;
             }
         } else if (toType == int.class) {
             if (fromType == boolean.class) {
@@ -296,6 +323,24 @@ public sealed interface Binding {
                 return Cast.SHORT_TO_INT;
             } else if (fromType == char.class) {
                 return Cast.CHAR_TO_INT;
+            } else if (fromType == long.class) {
+                return Cast.LONG_TO_INT;
+            }
+        } else if (fromType == long.class) {
+            if (toType == byte.class) {
+                return Cast.LONG_TO_BYTE;
+            } else if (toType == short.class) {
+                return Cast.LONG_TO_SHORT;
+            } else if (toType == char.class) {
+                return Cast.LONG_TO_CHAR;
+            }
+        } else if (toType == long.class) {
+            if (fromType == byte.class) {
+                return Cast.BYTE_TO_LONG;
+            } else if (fromType == short.class) {
+                return Cast.SHORT_TO_LONG;
+            } else if (fromType == char.class) {
+                return Cast.CHAR_TO_LONG;
             }
         }
         throw new IllegalArgumentException("Unknown conversion: " + fromType + " -> " + toType);
@@ -382,8 +427,41 @@ public sealed interface Binding {
             return this;
         }
 
+        public Binding.Builder segmentBase() {
+            bindings.add(Binding.segmentBase());
+            return this;
+        }
+
+        public Binding.Builder segmentOffsetAllowHeap() {
+            bindings.add(Binding.segmentOffsetAllowHeap());
+            return this;
+        }
+
+        public Binding.Builder segmentOffsetNoAllowHeap() {
+            bindings.add(Binding.segmentOffsetNoAllowHeap());
+            return this;
+        }
+
         public Binding.Builder dup() {
             bindings.add(Binding.dup());
+            return this;
+        }
+
+        // Converts to long if needed then shifts left by the given number of Bytes.
+        public Binding.Builder shiftLeft(int shiftAmount, Class<?> type) {
+            if (type != long.class) {
+                bindings.add(Binding.cast(type, long.class));
+            }
+            bindings.add(Binding.shiftLeft(shiftAmount));
+            return this;
+        }
+
+        // Shifts right by the given number of Bytes then converts from long if needed.
+        public Binding.Builder shiftRight(int shiftAmount, Class<?> type) {
+            bindings.add(Binding.shiftRight(shiftAmount));
+            if (type != long.class) {
+                bindings.add(Binding.cast(long.class, type));
+            }
             return this;
         }
 
@@ -399,8 +477,10 @@ public sealed interface Binding {
 
     /**
      * VM_STORE([storage location], [type])
-     * Pops a [type] from the operand stack, and moves it to [storage location]
-     * The [type] must be one of byte, short, char, int, long, float, or double
+     *   Pops a [type] from the operand stack, and moves it to [storage location]
+     *   The [type] must be one of byte, short, char, int, long, float, or double.
+     *   [storage location] may be 'null', indicating that this value should be passed
+     *   to the VM stub, but does not have an explicit target register (e.g. oop offsets)
      */
     record VMStore(VMStorage storage, Class<?> type) implements Move {
 
@@ -414,14 +494,14 @@ public sealed interface Binding {
         @Override
         public void interpret(Deque<Object> stack, StoreFunc storeFunc,
                               LoadFunc loadFunc, SegmentAllocator allocator) {
-            storeFunc.store(storage(), type(), stack.pop());
+            storeFunc.store(storage(), stack.pop());
         }
     }
 
     /**
      * VM_LOAD([storage location], [type])
-     * Loads a [type] from [storage location], and pushes it onto the operand stack.
-     * The [type] must be one of byte, short, char, int, long, float, or double
+     *   Loads a [type] from [storage location], and pushes it onto the operand stack.
+     *   The [type] must be one of byte, short, char, int, long, float, or double
      */
     record VMLoad(VMStorage storage, Class<?> type) implements Move {
 
@@ -444,9 +524,9 @@ public sealed interface Binding {
 
     /**
      * BUFFER_STORE([offset into memory region], [type], [width])
-     * Pops a [type] from the operand stack, then pops a MemorySegment from the operand stack.
-     * Stores [width] bytes of the value contained in the [type] to [offset into memory region].
-     * The [type] must be one of byte, short, char, int, long, float, or double
+     *   Pops a [type] from the operand stack, then pops a MemorySegment from the operand stack.
+     *   Stores [width] bytes of the value contained in the [type] to [offset into memory region].
+     *   The [type] must be one of byte, short, char, int, long, float, or double
      */
     record BufferStore(long offset, Class<?> type, int byteWidth) implements Dereference {
 
@@ -501,9 +581,9 @@ public sealed interface Binding {
 
     /**
      * BUFFER_LOAD([offset into memory region], [type], [width])
-     * Pops a MemorySegment from the operand stack,
-     * and then loads [width] bytes from it at [offset into memory region], into a [type].
-     * The [type] must be one of byte, short, char, int, long, float, or double
+     *   Pops a MemorySegment from the operand stack,
+     *   and then loads [width] bytes from it at [offset into memory region], into a [type].
+     *   The [type] must be one of byte, short, char, int, long, float, or double
      */
     record BufferLoad(long offset, Class<?> type, int byteWidth) implements Dereference {
 
@@ -557,8 +637,8 @@ public sealed interface Binding {
     /**
      * COPY([size], [alignment])
      *   Creates a new MemorySegment with the given [size] and [alignment],
-     *     and copies contents from a MemorySegment popped from the top of the operand stack into this new buffer,
-     *     and pushes the new buffer onto the operand stack
+     *   and copies contents from a MemorySegment popped from the top of the operand stack into this new buffer,
+     *   and pushes the new buffer onto the operand stack
      */
     record Copy(long size, long alignment) implements Binding {
         private static MemorySegment copyBuffer(MemorySegment operand, long size, long alignment, SegmentAllocator allocator) {
@@ -604,12 +684,37 @@ public sealed interface Binding {
     }
 
     /**
-     * UNBOX_ADDRESS()
-     * Pops a 'MemoryAddress' from the operand stack, converts it to a 'long',
-     * with the given size, and pushes that onto the operand stack
+     * SEGMENT_BASE()
+     *   Pops a MemorySegment from the stack, retrieves the heap base object from it, or null if there is none
+     *   (See: AbstractMemorySegmentImpl::unsafeGetBase), and pushes the result onto the operand stack.
      */
-    record UnboxAddress() implements Binding {
-        static final UnboxAddress INSTANCE = new UnboxAddress();
+    record SegmentBase() implements Binding {
+        static final SegmentBase INSTANCE = new SegmentBase();
+
+        @Override
+        public void verify(Deque<Class<?>> stack) {
+            Class<?> actualType = stack.pop();
+            SharedUtils.checkType(actualType, MemorySegment.class);
+            stack.push(Object.class);
+        }
+
+        @Override
+        public void interpret(Deque<Object> stack, StoreFunc storeFunc,
+                              LoadFunc loadFunc, SegmentAllocator allocator) {
+            stack.push(((AbstractMemorySegmentImpl)stack.pop()).unsafeGetBase());
+        }
+    }
+
+    /**
+     * SEGMENT_OFFSET([allowHeap])
+     *   Pops a MemorySegment from the stack, retrieves the offset from it,
+     *   (See: AbstractMemorySegmentImpl::unsafeGetOffset), and pushes the result onto the operand stack.
+     *   Note that for heap segments, the offset is a virtual address into the heap base object.
+     *   If [allowHeap] is 'false' an exception will be thrown for heap segments (See SharedUtils::checkNative).
+     */
+    record SegmentOffset(boolean allowHeap) implements Binding {
+        static final SegmentOffset INSTANCE_NO_ALLOW_HEAP = new SegmentOffset(false);
+        static final SegmentOffset INSTANCE_ALLOW_HEAP = new SegmentOffset(true);
 
         @Override
         public void verify(Deque<Class<?>> stack) {
@@ -621,14 +726,18 @@ public sealed interface Binding {
         @Override
         public void interpret(Deque<Object> stack, StoreFunc storeFunc,
                               LoadFunc loadFunc, SegmentAllocator allocator) {
-            stack.push(SharedUtils.unboxSegment((MemorySegment)stack.pop()));
+            MemorySegment operand = (MemorySegment) stack.pop();
+            if (!allowHeap) {
+                SharedUtils.checkNative(operand);
+            }
+            stack.push(((AbstractMemorySegmentImpl)operand).unsafeGetOffset());
         }
     }
 
     /**
      * BOX_ADDRESS()
-     * Pops a 'long' from the operand stack, converts it to a 'MemorySegment', with the given size and memory scope
-     * (either the context scope, or the global scope), and pushes that onto the operand stack.
+     *   Pops a 'long' from the operand stack, converts it to a 'MemorySegment', with the given size and memory scope
+     *   (either the context scope, or the global scope), and pushes that onto the operand stack.
      */
     record BoxAddress(long size, long align, boolean needsScope) implements Binding {
 
@@ -671,6 +780,52 @@ public sealed interface Binding {
     }
 
     /**
+     * ShiftLeft([shiftAmount])
+     *   Shifts the Bytes on the top of the operand stack (64 bit unsigned).
+     *   Shifts left by the given number of Bytes.
+     */
+    record ShiftLeft(int shiftAmount) implements Binding {
+
+        @Override
+        public void verify(Deque<Class<?>> stack) {
+            Class<?> last = stack.pop();
+            SharedUtils.checkType(last, long.class);
+            stack.push(long.class);
+        }
+
+        @Override
+        public void interpret(Deque<Object> stack, StoreFunc storeFunc,
+                              LoadFunc loadFunc, SegmentAllocator allocator) {
+            long l = (long) stack.pop();
+            l <<= (shiftAmount * Byte.SIZE);
+            stack.push(l);
+        }
+    }
+
+    /**
+     * ShiftRight([shiftAmount])
+     *   Shifts the Bytes on the top of the operand stack (64 bit unsigned).
+     *   Shifts right by the given number of Bytes.
+     */
+    record ShiftRight(int shiftAmount) implements Binding {
+
+        @Override
+        public void verify(Deque<Class<?>> stack) {
+            Class<?> last = stack.pop();
+            SharedUtils.checkType(last, long.class);
+            stack.push(long.class);
+        }
+
+        @Override
+        public void interpret(Deque<Object> stack, StoreFunc storeFunc,
+                              LoadFunc loadFunc, SegmentAllocator allocator) {
+            long l = (long) stack.pop();
+            l >>>= (shiftAmount * Byte.SIZE);
+            stack.push(l);
+        }
+    }
+
+    /**
      * CAST([fromType], [toType])
      *   Pop a [fromType] from the stack, convert it to [toType], and push the resulting
      *   value onto the stack.
@@ -690,10 +845,21 @@ public sealed interface Binding {
         INT_TO_BYTE(int.class, byte.class),
         INT_TO_CHAR(int.class, char.class),
         INT_TO_SHORT(int.class, short.class),
+        INT_TO_LONG(int.class, long.class),
+
         BOOLEAN_TO_INT(boolean.class, int.class),
         BYTE_TO_INT(byte.class, int.class),
         CHAR_TO_INT(char.class, int.class),
-        SHORT_TO_INT(short.class, int.class);
+        SHORT_TO_INT(short.class, int.class),
+        LONG_TO_INT(long.class, int.class),
+
+        LONG_TO_BYTE(long.class, byte.class),
+        LONG_TO_SHORT(long.class, short.class),
+        LONG_TO_CHAR(long.class, char.class),
+
+        BYTE_TO_LONG(byte.class, long.class),
+        SHORT_TO_LONG(short.class, long.class),
+        CHAR_TO_LONG(char.class, long.class);
 
         private final Class<?> fromType;
         private final Class<?> toType;

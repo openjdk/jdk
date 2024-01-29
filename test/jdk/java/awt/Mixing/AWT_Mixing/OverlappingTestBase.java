@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,39 @@
  * questions.
  */
 
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.Canvas;
+import java.awt.Choice;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.List;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.Scrollbar;
+import java.awt.TextField;
+import java.awt.Toolkit;
+import java.awt.event.InputEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.peer.ComponentPeer;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import javax.swing.*;
+
+import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
+import javax.swing.WindowConstants;
 
 import sun.awt.AWTAccessor;
 import sun.awt.EmbeddedFrame;
-import java.io.*;
+import sun.awt.OSInfo;
+
 import test.java.awt.regtesthelpers.Util;
 
 /**
@@ -401,16 +422,16 @@ public abstract class OverlappingTestBase {
         Util.waitForIdle(robot);
         try{
             Thread.sleep(500);
-        }catch(Exception exx){
+        } catch (Exception exx) {
             exx.printStackTrace();
         }
 
         if (defaultShift) {
             loc.translate(shift.x, shift.y);
         }
-        if (!(System.getProperty("os.name").toLowerCase().contains("os x"))) {
+        if (!(OSInfo.getOSType() == OSInfo.OSType.MACOSX)) {
             Color c = robot.getPixelColor(loc.x, loc.y);
-            System.out.println("C&B. color: "+c+" compare with "+AWT_VERIFY_COLOR);
+            System.out.println("C&B. color: " + c + " compare with " + AWT_VERIFY_COLOR);
             if (c.equals(AWT_VERIFY_COLOR)) {
                 fail(failMessageColorCheck);
                 passed = false;
@@ -422,8 +443,8 @@ public abstract class OverlappingTestBase {
 
         robot.mouseMove(loc.x, loc.y);
 
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         Util.waitForIdle(robot);
     }
 
@@ -454,36 +475,32 @@ public abstract class OverlappingTestBase {
      */
     protected Component currentAwtControl;
 
-    private void testComponent(Component component) throws InterruptedException, InvocationTargetException {
+    private void testComponent(Component component) throws InterruptedException,
+                                                           InvocationTargetException {
         Robot robot = null;
         try {
             robot = new Robot();
-        }catch(Exception ignorex) {
+        } catch (Exception ignored) {
         }
         currentAwtControl = component;
         System.out.println("Testing " + currentAwtControl.getClass().getSimpleName());
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                prepareControls();
-            }
-        });
+
+        SwingUtilities.invokeAndWait(() -> prepareControls());
+
         if (component != null) {
             Util.waitTillShown(component);
         }
         Util.waitForIdle(robot);
-        try {
-            Thread.sleep(500); // wait for graphic effects on systems like Win7
-        } catch (InterruptedException ex) {
-        }
+
+        // wait for graphic effects on systems like Win7
+        robot.delay(500);
+
         if (!instance.performTest()) {
             fail(failMessage);
             passed = false;
         }
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                cleanup();
-            }
-        });
+
+        SwingUtilities.invokeAndWait(() -> cleanup());
     }
 
     private void testEmbeddedFrame() throws InvocationTargetException, InterruptedException {

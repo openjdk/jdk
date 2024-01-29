@@ -23,11 +23,11 @@
  * questions.
  */
 
+#include <cmath>
+
 #include "D3DPipeline.h"
 #include "D3DVertexCacher.h"
 #include "D3DPaints.h"
-
-#include "math.h"
 
 // non-texturized macros
 

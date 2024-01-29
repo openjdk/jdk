@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -25,28 +23,29 @@
 
 /*
  * @test
- * @summary Testing Classfile LDC instructions.
+ * @summary Testing ClassFile LDC instructions.
  * @run junit LDCTest
  */
 import java.lang.constant.ClassDesc;
 import static java.lang.constant.ConstantDescs.*;
 import java.lang.constant.MethodTypeDesc;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
-import jdk.internal.classfile.constantpool.StringEntry;
+import java.lang.classfile.*;
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
+import java.lang.classfile.constantpool.StringEntry;
 import java.lang.reflect.AccessFlag;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 import static helpers.TestConstants.MTD_VOID;
-import static jdk.internal.classfile.Opcode.*;
-import static jdk.internal.classfile.TypeKind.VoidType;
-import jdk.internal.classfile.instruction.ConstantInstruction;
+import static java.lang.classfile.Opcode.*;
+import static java.lang.classfile.TypeKind.VoidType;
+import java.lang.classfile.instruction.ConstantInstruction;
 
 class LDCTest {
     @Test
     void testLDCisConvertedToLDCW() throws Exception {
-        byte[] bytes = Classfile.build(ClassDesc.of("MyClass"), cb -> {
+        var cc = ClassFile.of();
+        byte[] bytes = cc.build(ClassDesc.of("MyClass"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withVersion(52, 0);
             cb.withMethod("<init>", MethodTypeDesc.of(CD_void), 0, mb -> mb
@@ -75,7 +74,7 @@ class LDCTest {
                               }));
         });
 
-        var model = Classfile.parse(bytes);
+        var model = cc.parse(bytes);
         var code = model.elementStream()
                 .filter(e -> e instanceof MethodModel)
                 .map(e -> (MethodModel) e)

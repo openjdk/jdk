@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,19 +86,17 @@ public class HeapSummary extends Tool {
       printValMB("MetaspaceSize            = ", getFlagValue("MetaspaceSize", flagMap));
       printValMB("CompressedClassSpaceSize = ", getFlagValue("CompressedClassSpaceSize", flagMap));
       printValMB("MaxMetaspaceSize         = ", getFlagValue("MaxMetaspaceSize", flagMap));
-      if (heap instanceof ShenandoahHeap) {
-         printValMB("ShenandoahRegionSize     = ", ShenandoahHeapRegion.regionSizeBytes());
-      } else {
-         printValMB("G1HeapRegionSize         = ", HeapRegion.grainBytes());
+      if (heap instanceof G1CollectedHeap) {
+        printValMB("G1HeapRegionSize         = ", HeapRegion.grainBytes());
       }
 
       System.out.println();
       System.out.println("Heap Usage:");
 
-      if (heap instanceof GenCollectedHeap) {
-         GenCollectedHeap genHeap = (GenCollectedHeap) heap;
-         for (int n = 0; n < genHeap.nGens(); n++) {
-            Generation gen = genHeap.getGen(n);
+      if (heap instanceof SerialHeap) {
+         SerialHeap sh = (SerialHeap) heap;
+         for (int n = 0; n < sh.nGens(); n++) {
+            Generation gen = sh.getGen(n);
             if (gen instanceof DefNewGeneration) {
                System.out.println("New Generation (Eden + 1 Survivor Space):");
                printGen(gen);
@@ -138,6 +136,7 @@ public class HeapSummary extends Tool {
          long num_regions = sh.numOfRegions();
          System.out.println("Shenandoah Heap:");
          System.out.println("   regions   = " + num_regions);
+         printValMB("region size = ", ShenandoahHeapRegion.regionSizeBytes());
          printValMB("capacity  = ", num_regions * ShenandoahHeapRegion.regionSizeBytes());
          printValMB("used      = ", sh.used());
          printValMB("committed = ", sh.committed());
@@ -281,14 +280,10 @@ public class HeapSummary extends Tool {
       printValMB(System.out, title, value);
    }
 
-   private static final double FACTOR = 1024*1024;
    private void printValMB(PrintStream tty, String title, long value) {
-      if (value < 0) {
-        tty.println(alignment + title +   (value >>> 20)  + " MB");
-      } else {
-        double mb = value/FACTOR;
-        tty.println(alignment + title + value + " (" + mb + "MB)");
-      }
+       double valueMB = value >>> 20;  // unsigned divide by 1024*1024
+       String valueUnsigned = Long.toUnsignedString(value, 10);
+       tty.println(alignment + title + valueUnsigned + " (" + valueMB + "MB)");
    }
 
    private void printValue(String title, long value) {

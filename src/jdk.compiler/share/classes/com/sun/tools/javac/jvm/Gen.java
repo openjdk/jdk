@@ -73,7 +73,7 @@ public class Gen extends JCTree.Visitor {
     private final TreeMaker make;
     private final Names names;
     private final Target target;
-    private final Name accessDollar;
+    private final String accessDollar;
     private final Types types;
     private final Lower lower;
     private final Annotate annotate;
@@ -112,8 +112,7 @@ public class Gen extends JCTree.Visitor {
         concat = StringConcat.instance(context);
 
         methodType = new MethodType(null, null, null, syms.methodClass);
-        accessDollar = names.
-            fromString("access" + target.syntheticNameChar());
+        accessDollar = "access" + target.syntheticNameChar();
         lower = Lower.instance(context);
 
         Options options = Options.instance(context);
@@ -341,9 +340,10 @@ public class Gen extends JCTree.Visitor {
     /** Does given name start with "access$" and end in an odd digit?
      */
     private boolean isOddAccessName(Name name) {
+        final String string = name.toString();
         return
-            name.startsWith(accessDollar) &&
-            (name.getByteAt(name.getByteLength() - 1) & 1) == 1;
+            string.startsWith(accessDollar) &&
+            (string.charAt(string.length() - 1) & 1) != 0;
     }
 
 /* ************************************************************************
@@ -541,44 +541,18 @@ public class Gen extends JCTree.Visitor {
         nerrs++;
     }
 
-    /** Insert instance initializer code into initial constructor.
+    /** Insert instance initializer code into constructors prior to the super() call.
      *  @param md        The tree potentially representing a
      *                   constructor's definition.
      *  @param initCode  The list of instance initializer statements.
      *  @param initTAs  Type annotations from the initializer expression.
      */
     void normalizeMethod(JCMethodDecl md, List<JCStatement> initCode, List<TypeCompound> initTAs) {
-        if (md.name == names.init && TreeInfo.isInitialConstructor(md)) {
-            // We are seeing a constructor that does not call another
-            // constructor of the same class.
-            List<JCStatement> stats = md.body.stats;
-            ListBuffer<JCStatement> newstats = new ListBuffer<>();
+        if (TreeInfo.isConstructor(md) && TreeInfo.hasConstructorCall(md, names._super)) {
+            // We are seeing a constructor that has a super() call.
+            // Find the super() invocation and append the given initializer code.
+            TreeInfo.mapSuperCalls(md.body, supercall -> make.Block(0, initCode.prepend(supercall)));
 
-            if (stats.nonEmpty()) {
-                // Copy initializers of synthetic variables generated in
-                // the translation of inner classes.
-                while (TreeInfo.isSyntheticInit(stats.head)) {
-                    newstats.append(stats.head);
-                    stats = stats.tail;
-                }
-                // Copy superclass constructor call
-                newstats.append(stats.head);
-                stats = stats.tail;
-                // Copy remaining synthetic initializers.
-                while (stats.nonEmpty() &&
-                       TreeInfo.isSyntheticInit(stats.head)) {
-                    newstats.append(stats.head);
-                    stats = stats.tail;
-                }
-                // Now insert the initializer code.
-                newstats.appendList(initCode);
-                // And copy all remaining statements.
-                while (stats.nonEmpty()) {
-                    newstats.append(stats.head);
-                    stats = stats.tail;
-                }
-            }
-            md.body.stats = newstats.toList();
             if (md.body.endpos == Position.NOPOS)
                 md.body.endpos = TreeInfo.endPos(md.body.stats.last());
 
@@ -1278,11 +1252,17 @@ public class Gen extends JCTree.Visitor {
     }
     //where:
         private boolean hasTry(JCSwitchExpression tree) {
-            boolean[] hasTry = new boolean[1];
-            new TreeScanner() {
+            class HasTryScanner extends TreeScanner {
+                private boolean hasTry;
+
                 @Override
                 public void visitTry(JCTry tree) {
-                    hasTry[0] = true;
+                    hasTry = true;
+                }
+
+                @Override
+                public void visitSynchronized(JCSynchronized tree) {
+                    hasTry = true;
                 }
 
                 @Override
@@ -1292,8 +1272,12 @@ public class Gen extends JCTree.Visitor {
                 @Override
                 public void visitLambda(JCLambda tree) {
                 }
-            }.scan(tree);
-            return hasTry[0];
+            };
+
+            HasTryScanner hasTryScanner = new HasTryScanner();
+
+            hasTryScanner.scan(tree);
+            return hasTryScanner.hasTry;
         }
 
     private void handleSwitch(JCTree swtch, JCExpression selector, List<JCCase> cases,

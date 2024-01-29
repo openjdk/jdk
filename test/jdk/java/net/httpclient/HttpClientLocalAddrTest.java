@@ -54,7 +54,7 @@ import static java.net.http.HttpClient.Version.HTTP_2;
  * @test
  * @summary Tests HttpClient usage when configured with a local address to bind
  *          to, when sending requests
- * @bug 8209137
+ * @bug 8209137 8316031
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  *
  * @build jdk.test.lib.net.SimpleSSLContext jdk.test.lib.net.IPSupport
@@ -64,6 +64,7 @@ import static java.net.http.HttpClient.Version.HTTP_2;
  *      -Djdk.httpclient.HttpClient.log=frames,ssl,requests,responses,errors
  *      -Djdk.internal.httpclient.debug=true
  *      -Dsun.net.httpserver.idleInterval=50000
+ *      -Djdk.tracePinnedThreads=full
  *      HttpClientLocalAddrTest
  *
  * @run testng/othervm/java.security.policy=httpclient-localaddr-security.policy
@@ -419,4 +420,3 @@ public class HttpClientLocalAddrTest implements HttpServerAdapters {
         }
     }
 }
-

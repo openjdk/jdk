@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,30 +149,24 @@ public class GeneralSubtree implements DerEncoder {
     /**
      * Compare this GeneralSubtree with another
      *
-     * @param other GeneralSubtree to compare to this
+     * @param obj GeneralSubtree to compare to this
      * @return true if match
      */
-    public boolean equals(Object other) {
-        if (!(other instanceof GeneralSubtree otherGS))
-            return false;
-        if (this.name == null) {
-            if (otherGS.name != null) {
-                return false;
-            }
-        } else {
-            if (!((this.name).equals(otherGS.name)))
-                return false;
-        }
-        if (this.minimum != otherGS.minimum)
-            return false;
-        return this.maximum == otherGS.maximum;
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+
+        return obj instanceof GeneralSubtree other
+                && Objects.equals(this.name, other.name)
+                && this.minimum == other.minimum
+                && this.maximum == other.maximum;
     }
 
     /**
-     * Returns the hash code for this GeneralSubtree.
-     *
-     * @return a hash code value.
+     * {@return the hash code for this GeneralSubtree}
      */
+    @Override
     public int hashCode() {
         if (myhash == -1) {
             myhash = 17;

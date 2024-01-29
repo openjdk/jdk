@@ -130,7 +130,10 @@ public class ConstantPool extends Metadata implements ClassConstants {
   private static int INDY_ARGV_OFFSET;
 
   public U1Array           getTags()       { return new U1Array(tags.getValue(getAddress())); }
-  public U2Array           getOperands()   { return new U2Array(operands.getValue(getAddress())); }
+  public U2Array           getOperands()   {
+    Address addr = operands.getValue(getAddress());
+    return VMObjectFactory.newObject(U2Array.class, addr);
+  }
   public ConstantPoolCache getCache()      {
     Address addr = cache.getValue(getAddress());
     return VMObjectFactory.newObject(ConstantPoolCache.class, addr);
@@ -217,18 +220,14 @@ public class ConstantPool extends Metadata implements ClassConstants {
   }
 
   public long getLongAt(long index) {
-    int oneHalf = getAddress().getJIntAt(indexOffset(index + 1));
-    int otherHalf   = getAddress().getJIntAt(indexOffset(index));
-    // buildLongFromIntsPD accepts higher address value, lower address value
-    // in that order.
-    return VM.getVM().buildLongFromIntsPD(oneHalf, otherHalf);
+    return getAddress().getJLongAt(indexOffset(index));
   }
 
   public double getDoubleAt(long index) {
     return Double.longBitsToDouble(getLongAt(index));
   }
 
-  public int getFieldOrMethodAt(int which) {
+  public int getFieldOrMethodAt(int which, int code) {
     if (DEBUG) {
       System.err.print("ConstantPool.getFieldOrMethodAt(" + which + "): new index = ");
     }
@@ -238,7 +237,7 @@ public class ConstantPool extends Metadata implements ClassConstants {
       i = which;
     } else {
       // change byte-ordering and go via cache
-      i = cache.getEntryAt(0xFFFF & which).getConstantPoolIndex();
+      i = to_cp_index(which, code);
     }
     if (Assert.ASSERTS_ENABLED) {
       Assert.that(getTagAt(i).isFieldOrMethod(), "Corrupted constant pool");
@@ -264,17 +263,15 @@ public class ConstantPool extends Metadata implements ClassConstants {
       case Bytecodes._getstatic:
       case Bytecodes._putfield:
       case Bytecodes._putstatic:
-        // TODO: handle resolved field entries with new structure
-        // i = ....
+        return getCache().getFieldEntryAt(index).getConstantPoolIndex();
       case Bytecodes._invokeinterface:
       case Bytecodes._invokehandle:
       case Bytecodes._invokespecial:
       case Bytecodes._invokestatic:
       case Bytecodes._invokevirtual:
-        // TODO: handle resolved method entries with new structure
+        return getCache().getMethodEntryAt(index).getConstantPoolIndex();
       default:
-        // change byte-ordering and go via cache
-        return remapInstructionOperandFromCache(index);
+        throw new InternalError("Unexpected bytecode: " + code);
     }
   }
 
@@ -321,12 +318,6 @@ public class ConstantPool extends Metadata implements ClassConstants {
     return decodeInvokedynamicIndex(index);
   }
 
-  ConstantPoolCacheEntry invokedynamicCPCacheEntryAt(int index) {
-    // decode index that invokedynamic points to.
-    int cpCacheIndex = invokedynamicCPCacheIndex(index);
-    return getCache().getEntryAt(cpCacheIndex);
-  }
-
   public int uncachedGetNameAndTypeRefIndexAt(int cp_index) {
     if (getTagAt(cp_index).isInvokeDynamic() || getTagAt(cp_index).isDynamicConstant()) {
       int poolIndex = invokeDynamicNameAndTypeRefIndexAt(cp_index);
@@ -341,14 +332,6 @@ public class ConstantPool extends Metadata implements ClassConstants {
 
   public int getNameAndTypeRefIndexAt(int index, int code) {
     return uncachedGetNameAndTypeRefIndexAt(to_cp_index(index, code));
-  }
-
-  private int remapInstructionOperandFromCache(int operand) {
-    int cpc_index = operand;
-    // DEBUG_ONLY(cpc_index -= CPCACHE_INDEX_TAG);
-    // assert((int)(u2)cpc_index == cpc_index, "clean u2");
-    int member_index = getCache().getEntryAt(cpc_index).getConstantPoolIndex();
-    return member_index;
   }
 
   public int invokeDynamicNameAndTypeRefIndexAt(int which) {
@@ -374,15 +357,15 @@ public class ConstantPool extends Metadata implements ClassConstants {
   }
 
   // returns null, if not resolved.
-  public Klass getFieldOrMethodKlassRefAt(int which) {
-    int refIndex = getFieldOrMethodAt(which);
+  public Klass getFieldOrMethodKlassRefAt(int which, int code) {
+    int refIndex = getFieldOrMethodAt(which, code);
     int klassIndex = extractLowShortFromInt(refIndex);
     return getKlassAt(klassIndex);
   }
 
   // returns null, if not resolved.
   public Method getMethodRefAt(int which, int code) {
-    Klass klass = getFieldOrMethodKlassRefAt(which);
+    Klass klass = getFieldOrMethodKlassRefAt(which, code);
     if (klass == null) return null;
     Symbol name = getNameRefAt(which, code);
     Symbol sig  = getSignatureRefAt(which, code);
@@ -395,7 +378,7 @@ public class ConstantPool extends Metadata implements ClassConstants {
 
   // returns null, if not resolved.
   public Field getFieldRefAt(int which, int code) {
-    InstanceKlass klass = (InstanceKlass)getFieldOrMethodKlassRefAt(which);
+    InstanceKlass klass = (InstanceKlass)getFieldOrMethodKlassRefAt(which, code);
     if (klass == null) return null;
     Symbol name = getNameRefAt(which, code);
     Symbol sig  = getSignatureRefAt(which, code);
@@ -464,16 +447,50 @@ public class ConstantPool extends Metadata implements ClassConstants {
     return res;
   }
 
-  /** Lookup for multi-operand (InvokeDynamic, Dynamic) entries. */
-  public short[] getBootstrapSpecifierAt(int i) {
-    if (Assert.ASSERTS_ENABLED) {
-      Assert.that(getTagAt(i).isInvokeDynamic() || getTagAt(i).isDynamicConstant(), "Corrupted constant pool");
+  public int getBootstrapMethodsCount() {
+    U2Array operands = getOperands();
+    int count = 0;
+    if (operands != null) {
+      // Operands array consists of two parts. First part is an array of 32-bit values which denote
+      // index of the bootstrap method data in the operands array. Note that elements of operands array are of type short.
+      // So each element of first part occupies two slots in the array.
+      // Second part is the bootstrap methods data.
+      // This layout allows us to get BSM count by getting the index of first BSM and dividing it by 2.
+      //
+      // The example below shows layout of operands array with 3 bootstrap methods.
+      // First part has 3 32-bit values indicating the index of the respective bootstrap methods in
+      // the operands array.
+      // The first BSM is at index 6. So the count in this case is 6/2=3.
+      //
+      //            <-----first part----><-------second part------->
+      // index:     0     2      4      6        i2       i3
+      // operands:  |  6  |  i2  |  i3  |  bsm1  |  bsm2  |  bsm3  |
+      //
+      count = getOperandOffsetAt(operands, 0) / 2;
     }
-    int bsmSpec = extractLowShortFromInt(this.getIntAt(i));
+    if (DEBUG) {
+      System.err.println("ConstantPool.getBootstrapMethodsCount: count = " + count);
+    }
+    return count;
+  }
+
+  public int getBootstrapMethodArgsCount(int bsmIndex) {
+    U2Array operands = getOperands();
+    if (Assert.ASSERTS_ENABLED) {
+      Assert.that(operands != null, "Operands is not present");
+    }
+    int bsmOffset = getOperandOffsetAt(operands, bsmIndex);
+    int argc = operands.at(bsmOffset + INDY_ARGC_OFFSET);
+    if (DEBUG) {
+      System.err.println("ConstantPool.getBootstrapMethodArgsCount: bsm index = " + bsmIndex + ", args count = " + argc);
+    }
+    return argc;
+  }
+
+  public short[] getBootstrapMethodAt(int bsmIndex) {
     U2Array operands = getOperands();
     if (operands == null)  return null;  // safety first
-    int basePos = VM.getVM().buildIntFromShorts(operands.at(bsmSpec * 2 + 0),
-                                                operands.at(bsmSpec * 2 + 1));
+    int basePos = getOperandOffsetAt(operands, bsmIndex);
     int argv = basePos + INDY_ARGV_OFFSET;
     int argc = operands.at(basePos + INDY_ARGC_OFFSET);
     int endPos = argv + argc;
@@ -482,6 +499,15 @@ public class ConstantPool extends Metadata implements ClassConstants {
         values[j] = operands.at(basePos+j);
     }
     return values;
+  }
+
+  /** Lookup for multi-operand (InvokeDynamic, Dynamic) entries. */
+  public short[] getBootstrapSpecifierAt(int i) {
+    if (Assert.ASSERTS_ENABLED) {
+      Assert.that(getTagAt(i).isInvokeDynamic() || getTagAt(i).isDynamicConstant(), "Corrupted constant pool");
+    }
+    int bsmSpec = extractLowShortFromInt(this.getIntAt(i));
+    return getBootstrapMethodAt(bsmSpec);
   }
 
   private static final String[] nameForTag = new String[] {
@@ -756,4 +782,11 @@ public class ConstantPool extends Metadata implements ClassConstants {
     // must stay in sync with ConstantPool::name_and_type_at_put, method_at_put, etc.
     return val & 0xFFFF;
   }
+
+  // Return the offset of the requested Bootstrap Method in the operands array
+  private int getOperandOffsetAt(U2Array operands, int bsmIndex) {
+    return VM.getVM().buildIntFromShorts(operands.at(bsmIndex * 2),
+                                         operands.at(bsmIndex * 2 + 1));
+  }
+
 }

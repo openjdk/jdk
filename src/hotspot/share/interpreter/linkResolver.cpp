@@ -40,7 +40,7 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/constantPool.hpp"
+#include "oops/constantPool.inline.hpp"
 #include "oops/cpCache.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/klass.inline.hpp"
@@ -48,6 +48,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "oops/symbolHandle.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
@@ -1169,9 +1170,10 @@ Method* LinkResolver::linktime_resolve_special_method(const LinkInfo& link_info,
   Klass* current_klass = link_info.current_klass();
   if (current_klass != nullptr && resolved_klass->is_interface()) {
     InstanceKlass* klass_to_check = InstanceKlass::cast(current_klass);
-    // Disable verification for the dynamically-generated reflection bytecodes.
+    // Disable verification for the dynamically-generated reflection bytecodes
+    // for serialization constructor accessor.
     bool is_reflect = klass_to_check->is_subclass_of(
-                        vmClasses::reflect_MagicAccessorImpl_klass());
+                        vmClasses::reflect_SerializationConstructorAccessorImpl_klass());
 
     if (!is_reflect &&
         !klass_to_check->is_same_or_direct_interface(resolved_klass)) {
@@ -1697,12 +1699,11 @@ void LinkResolver::resolve_invokeinterface(CallInfo& result, Handle recv, const 
 }
 
 bool LinkResolver::resolve_previously_linked_invokehandle(CallInfo& result, const LinkInfo& link_info, const constantPoolHandle& pool, int index, TRAPS) {
-  int cache_index = ConstantPool::decode_cpcache_index(index, true);
-  ConstantPoolCacheEntry* cpce = pool->cache()->entry_at(cache_index);
-  if (!cpce->is_f1_null()) {
+  ResolvedMethodEntry* method_entry = pool->cache()->resolved_method_entry_at(index);
+  if (method_entry->method() != nullptr) {
     Klass* resolved_klass = link_info.resolved_klass();
-    methodHandle method(THREAD, cpce->f1_as_method());
-    Handle     appendix(THREAD, cpce->appendix_if_resolved(pool));
+    methodHandle method(THREAD, method_entry->method());
+    Handle     appendix(THREAD, pool->cache()->appendix_if_resolved(method_entry));
     result.set_handle(resolved_klass, method, appendix, CHECK_false);
     JFR_ONLY(Jfr::on_resolution(result, CHECK_false);)
     return true;

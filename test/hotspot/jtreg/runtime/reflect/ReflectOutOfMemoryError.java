@@ -25,7 +25,7 @@
  * @test
  * @bug 8297977
  * @summary Test that throwing OOM from reflected method gets InvocationTargetException
- * @run main/othervm/timeout=150 ReflectOutOfMemoryError
+ * @run main/othervm -Xmx128m ReflectOutOfMemoryError
  */
 import java.lang.reflect.*;
 

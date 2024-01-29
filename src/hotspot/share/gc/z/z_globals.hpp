@@ -24,7 +24,8 @@
 #ifndef SHARE_GC_Z_Z_GLOBALS_HPP
 #define SHARE_GC_Z_Z_GLOBALS_HPP
 
-#include "zPageAge.hpp"
+#include "gc/z/zGlobals.hpp"
+#include "gc/z/zPageAge.hpp"
 
 #define GC_Z_FLAGS(develop,                                                 \
                    develop_pd,                                              \
@@ -68,7 +69,17 @@
                                                                             \
   product(int, ZTenuringThreshold, -1, DIAGNOSTIC,                          \
           "Young generation tenuring threshold, -1 for dynamic computation")\
-          range(-1, static_cast<int>(ZPageAgeMax))
+          range(-1, static_cast<int>(ZPageAgeMax))                          \
+                                                                            \
+  develop(size_t, ZForceDiscontiguousHeapReservations, 0,                   \
+          "The gc will attempt to split the heap reservation into this "    \
+          "many reservations, subject to available virtual address space "  \
+          "and invariant restrictions. Higher virtual addresses are "       \
+          "preferred "                                                      \
+          "0: Disabled "                                                    \
+          "1: Attempt contiguous reservation starting at a higher address " \
+          "N: Force that many reservations, if possible")                   \
+          range(0, ZMaxVirtualReservations)
 
 // end of GC_Z_FLAGS
 

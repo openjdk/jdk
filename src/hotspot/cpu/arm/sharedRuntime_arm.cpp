@@ -254,10 +254,7 @@ bool SharedRuntime::is_wide_vector(int size) {
 
 int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
                                         VMRegPair *regs,
-                                        VMRegPair *regs2,
                                         int total_args_passed) {
-  assert(regs2 == nullptr, "not needed on arm");
-
   int slot = 0;
   int ireg = 0;
 #ifdef __ABI_HARD__
@@ -444,7 +441,6 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
     }
   }
 
-  if (slot & 1) slot++;
   return slot;
 }
 
@@ -795,7 +791,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     out_sig_bt[argc++] = in_sig_bt[i];
   }
 
-  int out_arg_slots = c_calling_convention(out_sig_bt, out_regs, nullptr, total_c_args);
+  int out_arg_slots = c_calling_convention(out_sig_bt, out_regs, total_c_args);
   int stack_slots = SharedRuntime::out_preserve_stack_slots() + out_arg_slots;
   // Since object arguments need to be wrapped, we must preserve space
   // for those object arguments which come in registers (GPR_PARAMS maximum)
@@ -1155,8 +1151,8 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
     if (LockingMode == LM_LIGHTWEIGHT) {
       log_trace(fastlock)("SharedRuntime lock fast");
-      __ fast_lock_2(sync_obj /* object */, disp_hdr /* t1 */, tmp /* t2 */, Rtemp /* t3 */,
-                     0x7 /* savemask */, slow_lock);
+      __ lightweight_lock(sync_obj /* object */, disp_hdr /* t1 */, tmp /* t2 */, Rtemp /* t3 */,
+                          0x7 /* savemask */, slow_lock);
       // Fall through to lock_done
     } else if (LockingMode == LM_LEGACY) {
       const Register mark = tmp;
@@ -1242,8 +1238,8 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   if (method->is_synchronized()) {
     if (LockingMode == LM_LIGHTWEIGHT) {
       log_trace(fastlock)("SharedRuntime unlock fast");
-      __ fast_unlock_2(sync_obj, R2 /* t1 */, tmp /* t2 */, Rtemp /* t3 */,
-                       7 /* savemask */, slow_unlock);
+      __ lightweight_unlock(sync_obj, R2 /* t1 */, tmp /* t2 */, Rtemp /* t3 */,
+                            7 /* savemask */, slow_unlock);
       // Fall through
     } else if (LockingMode == LM_LEGACY) {
       // See C1_MacroAssembler::unlock_object() for more comments

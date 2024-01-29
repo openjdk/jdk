@@ -151,6 +151,10 @@ enum Ampere_CPU_Model {
   static int cpu_variant()                    { return _variant; }
   static int cpu_revision()                   { return _revision; }
 
+  static bool model_is(int cpu_model) {
+    return _model == cpu_model || _model2 == cpu_model;
+  }
+
   static bool is_zva_enabled() { return 0 <= _zva_length; }
   static int zva_length() {
     assert(is_zva_enabled(), "ZVA not available");
@@ -161,6 +165,7 @@ enum Ampere_CPU_Model {
   static int dcache_line_size() { return _dcache_line_size; }
   static int get_initial_sve_vector_length()  { return _initial_sve_vector_length; };
 
+  // Aarch64 supports fast class initialization checks
   static bool supports_fast_class_init_checks() { return true; }
   constexpr static bool supports_stack_watermark_barrier() { return true; }
 

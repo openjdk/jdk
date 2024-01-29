@@ -507,13 +507,13 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
          * Directly retrieve that service and confirm
          * that it meets the other requirements.
          * If printer name isn't mentioned then go a slow path checking
-         * all printers if they meet the reqiremements.
+         * all printers if they meet the requirements.
          */
         PrintService[] services;
         PrinterName name = (PrinterName)serviceSet.get(PrinterName.class);
         PrintService defService;
         if (name != null && (defService = getDefaultPrintService()) != null) {
-            /* To avoid execing a unix command  see if the client is asking
+            /* To avoid executing a unix command, see if the client is asking
              * for the default printer by name, since we already have that
              * initialised.
              */

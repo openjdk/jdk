@@ -392,8 +392,6 @@ public class FileOutputStream extends OutputStream
      * this method should be prepared to handle possible reentrant invocation.
      *
      * @throws     IOException  if an I/O error occurs.
-     *
-     * @revised 1.4
      */
     @Override
     public void close() throws IOException {

@@ -24,6 +24,8 @@
  */
 package jdk.internal.vm;
 
+import jdk.internal.misc.VM;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -56,6 +58,7 @@ final class TranslatedException extends Exception {
      */
     private static final byte[] FALLBACK_ENCODED_THROWABLE_BYTES;
     static {
+        maybeFailClinit();
         try {
             FALLBACK_ENCODED_THROWABLE_BYTES =
                 encodeThrowable(new TranslatedException("error during encoding",
@@ -64,6 +67,22 @@ final class TranslatedException extends Exception {
                 encodeThrowable(new OutOfMemoryError(), false);
         } catch (IOException e) {
             throw new InternalError(e);
+        }
+    }
+
+    /**
+     * Helper to test exception translation.
+     */
+    private static void maybeFailClinit() {
+        String className = VM.getSavedProperty("test.jvmci.TranslatedException.clinit.throw");
+        if (className != null) {
+            try {
+                throw (Throwable) Class.forName(className).getDeclaredConstructor().newInstance();
+            } catch (RuntimeException | Error e) {
+                throw e;
+            } catch (Throwable e) {
+                throw new InternalError(e);
+            }
         }
     }
 

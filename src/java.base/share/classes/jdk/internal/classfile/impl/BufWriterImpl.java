@@ -29,32 +29,34 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
 
-import jdk.internal.classfile.BufWriter;
-import jdk.internal.classfile.WritableElement;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.constantpool.ConstantPool;
-import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
-import jdk.internal.classfile.constantpool.PoolEntry;
+import java.lang.classfile.BufWriter;
+import java.lang.classfile.WritableElement;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.ConstantPool;
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
+import java.lang.classfile.constantpool.PoolEntry;
 
 public final class BufWriterImpl implements BufWriter {
 
     private final ConstantPoolBuilder constantPool;
+    private final ClassFileImpl context;
     private LabelContext labelContext;
     private final ClassEntry thisClass;
     private final int majorVersion;
     byte[] elems;
     int offset = 0;
 
-    public BufWriterImpl(ConstantPoolBuilder constantPool) {
-        this(constantPool, 64, null, 0);
+    public BufWriterImpl(ConstantPoolBuilder constantPool, ClassFileImpl context) {
+        this(constantPool, context, 64, null, 0);
     }
 
-    public BufWriterImpl(ConstantPoolBuilder constantPool, int initialSize) {
-        this(constantPool, initialSize, null, 0);
+    public BufWriterImpl(ConstantPoolBuilder constantPool, ClassFileImpl context, int initialSize) {
+        this(constantPool, context, initialSize, null, 0);
     }
 
-    public BufWriterImpl(ConstantPoolBuilder constantPool, int initialSize, ClassEntry thisClass, int majorVersion) {
+    public BufWriterImpl(ConstantPoolBuilder constantPool, ClassFileImpl context, int initialSize, ClassEntry thisClass, int majorVersion) {
         this.constantPool = constantPool;
+        this.context = context;
         elems = new byte[initialSize];
         this.thisClass = thisClass;
         this.majorVersion = majorVersion;
@@ -83,6 +85,10 @@ public final class BufWriterImpl implements BufWriter {
 
     public int getMajorVersion() {
         return majorVersion;
+    }
+
+    public ClassFileImpl context() {
+        return context;
     }
 
     @Override

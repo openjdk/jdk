@@ -73,7 +73,7 @@ public class TestReverseBitsVector {
   }
 
   @Test
-  @IR(counts = {IRNode.REVERSE_V, "> 0"})
+  @IR(counts = {IRNode.REVERSE_VL, "> 0"})
   public void test_reverse_long1(long[] lout, long[] linp) {
       for (int i = 0; i < lout.length; i+=1) {
           lout[i] = Long.reverse(linp[i]);
@@ -89,7 +89,7 @@ public class TestReverseBitsVector {
   }
 
   @Test
-  @IR(failOn = {IRNode.REVERSE_V, IRNode.REVERSE_L})
+  @IR(failOn = {IRNode.REVERSE_VL, IRNode.REVERSE_L})
   public void test_reverse_long2(long[] lout, long[] linp) {
       for (int i = 0; i < lout.length; i+=1) {
           lout[i] = Long.reverse(Long.reverse(linp[i]));
@@ -105,7 +105,7 @@ public class TestReverseBitsVector {
   }
 
   @Test
-  @IR(failOn = {IRNode.REVERSE_V, IRNode.REVERSE_L})
+  @IR(failOn = {IRNode.REVERSE_VL, IRNode.REVERSE_L})
   public void test_reverse_long3(long[] lout, long[] linp) {
       for (int i = 0; i < lout.length; i+=1) {
           lout[i] = Long.reverse(linp[i] ^ linp[i]);
@@ -121,7 +121,7 @@ public class TestReverseBitsVector {
   }
 
   @Test
-  @IR(counts = {IRNode.REVERSE_V, "> 0"})
+  @IR(counts = {IRNode.REVERSE_VI, "> 0"})
   public void test_reverse_int1(int[] iout, int[] iinp) {
       for (int i = 0; i < iout.length; i+=1) {
           iout[i] = Integer.reverse(iinp[i]);
@@ -137,7 +137,7 @@ public class TestReverseBitsVector {
   }
 
   @Test
-  @IR(failOn = {IRNode.REVERSE_V, IRNode.REVERSE_I})
+  @IR(failOn = {IRNode.REVERSE_VI, IRNode.REVERSE_I})
   public void test_reverse_int2(int[] iout, int[] iinp) {
       for (int i = 0; i < iout.length; i+=1) {
           iout[i] = Integer.reverse(Integer.reverse(iinp[i]));
@@ -153,7 +153,7 @@ public class TestReverseBitsVector {
   }
 
   @Test
-  @IR(failOn = {IRNode.REVERSE_V, IRNode.REVERSE_I})
+  @IR(failOn = {IRNode.REVERSE_VI, IRNode.REVERSE_I})
   public void test_reverse_int3(int[] iout, int[] iinp) {
       for (int i = 0; i < iout.length; i+=1) {
           iout[i] = Integer.reverse(iinp[i] ^ iinp[i]);

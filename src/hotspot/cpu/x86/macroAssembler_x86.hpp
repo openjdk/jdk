@@ -32,6 +32,7 @@
 #include "utilities/macros.hpp"
 #include "runtime/rtmLocking.hpp"
 #include "runtime/vm_version.hpp"
+#include "utilities/checkedCast.hpp"
 
 // MacroAssembler extends Assembler by frequently used macros.
 //
@@ -110,20 +111,20 @@ class MacroAssembler: public Assembler {
         op == 0xE9 /* jmp */ ||
         op == 0xEB /* short jmp */ ||
         (op & 0xF0) == 0x70 /* short jcc */ ||
-        op == 0x0F && (branch[1] & 0xF0) == 0x80 /* jcc */ ||
-        op == 0xC7 && branch[1] == 0xF8 /* xbegin */,
+        (op == 0x0F && (branch[1] & 0xF0) == 0x80) /* jcc */ ||
+        (op == 0xC7 && branch[1] == 0xF8) /* xbegin */,
         "Invalid opcode at patch point");
 
     if (op == 0xEB || (op & 0xF0) == 0x70) {
       // short offset operators (jmp and jcc)
       char* disp = (char*) &branch[1];
-      int imm8 = target - (address) &disp[1];
+      int imm8 = checked_cast<int>(target - (address) &disp[1]);
       guarantee(this->is8bit(imm8), "Short forward jump exceeds 8-bit offset at %s:%d",
                 file == nullptr ? "<null>" : file, line);
-      *disp = imm8;
+      *disp = (char)imm8;
     } else {
       int* disp = (int*) &branch[(op == 0x0F || op == 0xC7)? 2: 1];
-      int imm32 = target - (address) &disp[1];
+      int imm32 = checked_cast<int>(target - (address) &disp[1]);
       *disp = imm32;
     }
   }
@@ -749,7 +750,7 @@ public:
   void addptr(Register dst, int32_t src);
   void addptr(Register dst, Register src);
   void addptr(Register dst, RegisterOrConstant src) {
-    if (src.is_constant()) addptr(dst, src.as_constant());
+    if (src.is_constant()) addptr(dst, checked_cast<int>(src.as_constant()));
     else                   addptr(dst, src.as_register());
   }
 
@@ -876,6 +877,7 @@ public:
 
   void testptr(Register src, int32_t imm32) {  LP64_ONLY(testq(src, imm32)) NOT_LP64(testl(src, imm32)); }
   void testptr(Register src1, Address src2) { LP64_ONLY(testq(src1, src2)) NOT_LP64(testl(src1, src2)); }
+  void testptr(Address src, int32_t imm32) {  LP64_ONLY(testq(src, imm32)) NOT_LP64(testl(src, imm32)); }
   void testptr(Register src1, Register src2);
 
   void xorptr(Register dst, Register src) { LP64_ONLY(xorq(dst, src)) NOT_LP64(xorl(dst, src)); }
@@ -1110,6 +1112,10 @@ public:
 
   using Assembler::vbroadcastss;
   void vbroadcastss(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = noreg);
+
+  // Vector float blend
+  void vblendvps(XMMRegister dst, XMMRegister nds, XMMRegister src, XMMRegister mask, int vector_len, bool compute_mask = true, XMMRegister scratch = xnoreg);
+  void vblendvpd(XMMRegister dst, XMMRegister nds, XMMRegister src, XMMRegister mask, int vector_len, bool compute_mask = true, XMMRegister scratch = xnoreg);
 
   void divsd(XMMRegister dst, XMMRegister    src) { Assembler::divsd(dst, src); }
   void divsd(XMMRegister dst, Address        src) { Assembler::divsd(dst, src); }
@@ -1788,8 +1794,14 @@ public:
   using Assembler::evpandq;
   void evpandq(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch = noreg);
 
+  using Assembler::evpaddq;
+  void evpaddq(XMMRegister dst, KRegister mask, XMMRegister nds, AddressLiteral src, bool merge, int vector_len, Register rscratch = noreg);
+
   using Assembler::evporq;
   void evporq(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch = noreg);
+
+  using Assembler::vpshufb;
+  void vpshufb(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch = noreg);
 
   using Assembler::vpternlogq;
   void vpternlogq(XMMRegister dst, int imm8, XMMRegister src2, AddressLiteral src3, int vector_len, Register rscratch = noreg);
@@ -2019,8 +2031,8 @@ public:
 
   void check_stack_alignment(Register sp, const char* msg, unsigned bias = 0, Register tmp = noreg);
 
-  void fast_lock_impl(Register obj, Register hdr, Register thread, Register tmp, Label& slow);
-  void fast_unlock_impl(Register obj, Register hdr, Register tmp, Label& slow);
+  void lightweight_lock(Register obj, Register hdr, Register thread, Register tmp, Label& slow);
+  void lightweight_unlock(Register obj, Register hdr, Register tmp, Label& slow);
 };
 
 /**

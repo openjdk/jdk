@@ -54,6 +54,7 @@ class MatchRule;
 class Attribute;
 class Effect;
 class ExpandRule;
+class Flag;
 class RewriteRule;
 class ConstructRule;
 class FormatRule;
@@ -237,6 +238,7 @@ public:
     EXP,
     REW,
     EFF,
+    FLG,
     RDEF,
     RCL,
     ACL,

@@ -84,14 +84,18 @@ public class ConstantPoolTestsHelper {
                     }
                 }
             }
-            int cacheLength = WB.getConstantPoolCacheLength(this.klass);
-            int indexTag = WB.getConstantPoolCacheIndexTag();
-            for (int cpci = indexTag; cpci < cacheLength + indexTag; cpci++) {
-                if (WB.remapInstructionOperandFromCPCache(this.klass, cpci) == cpi) {
-                    if (constantPoolSS.getTagAt(cpi).equals(Tag.INVOKEDYNAMIC)) {
-                        return WB.encodeConstantPoolIndyIndex(cpci) + indexTag;
+            if (constantPoolSS.getTagAt(cpi).equals(Tag.FIELDREF)) {
+                for (int field_index = 0; field_index < WB.getFieldEntriesLength(this.klass); field_index++) {
+                    if (WB.getFieldCPIndex(this.klass, field_index) == cpi) {
+                        return field_index;
                     }
-                    return cpci;
+                }
+            }
+            if (constantPoolSS.getTagAt(cpi).equals(Tag.METHODREF) || constantPoolSS.getTagAt(cpi).equals(Tag.INTERFACEMETHODREF)) {
+                for (int method_index = 0; method_index < WB.getMethodEntriesLength(this.klass); method_index++) {
+                    if (WB.getMethodCPIndex(this.klass, method_index) == cpi) {
+                        return method_index;
+                    }
                 }
             }
             return NO_CP_CACHE_PRESENT;

@@ -38,6 +38,9 @@ const size_t      ZGranuleSize                  = (size_t)1 << ZGranuleSizeShift
 // Virtual memory to physical memory ratio
 const size_t      ZVirtualToPhysicalRatio       = 16; // 16:1
 
+// Max virtual memory ranges
+const size_t      ZMaxVirtualReservations       = 100; // Each reservation at least 1% of total
+
 // Page size shifts
 const size_t      ZPageSizeSmallShift           = ZGranuleSizeShift;
 extern size_t     ZPageSizeMediumShift;

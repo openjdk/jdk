@@ -104,7 +104,7 @@ public final class Scenario {
             jcmdExecCommands.add(JcmdType.PRINT.command);
         }
         jcmdProcessor = new PrintDirectivesProcessor(directives);
-        executor = new Executor(isValid, vmopts, states, jcmdExecCommands);
+        executor = new Executor(vmopts, states, jcmdExecCommands);
     }
 
     /**

@@ -108,22 +108,20 @@ traceid JfrThreadId::jfr_id(const Thread* t, traceid tid) {
 }
 
 // caller needs ResourceMark
-const char* get_java_thread_name(const JavaThread* jt, int& length, oop vthread) {
+static const char* get_java_thread_name(const JavaThread* jt, int& length, oop vthread) {
   assert(jt != nullptr, "invariant");
-  const char* name_str = "<no-name - thread name unresolved>";
-  oop thread_obj = vthread != nullptr ? vthread : jt->threadObj();
-  if (thread_obj == nullptr) {
-    if (jt->is_attaching_via_jni()) {
-      name_str = "<no-name - thread is attaching>";
-    }
+  oop thread_obj;
+  if (vthread != nullptr) {
+    thread_obj = vthread;
   } else {
-    const oop name = java_lang_Thread::name(thread_obj);
-    if (name != nullptr) {
-      name_str = java_lang_String::as_utf8_string(name, length);
+    thread_obj = jt->threadObj();
+    if (thread_obj == nullptr) {
+      return nullptr;
     }
   }
-  assert(name_str != nullptr, "unexpected null thread name");
-  return name_str;
+  assert(thread_obj != nullptr, "invariant");
+  const oop name = java_lang_Thread::name(thread_obj);
+  return name != nullptr ? java_lang_String::as_utf8_string(name, length) : nullptr;
 }
 
 const char* JfrThreadName::name(const Thread* t, int& length, oop vthread) {

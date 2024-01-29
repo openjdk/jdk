@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -25,7 +23,7 @@
 
 /*
  * @test
- * @summary Testing Classfile Util.
+ * @summary Testing ClassFile Util.
  * @run junit UtilTest
  */
 import java.lang.constant.MethodTypeDesc;
@@ -46,19 +44,12 @@ class UtilTest {
             Object.class,
             Util.class,
             Test.class,
-            int[][].class,
-            Object[].class,
     })
     void testDescToBinaryName(Class<?> type) throws ReflectiveOperationException {
-        if (!type.isArray()) {
-            // Test internal name
-            var internal = type.getName().replace('.', '/');
-            assertEquals(type, Class.forName(Util.toBinaryName(internal)));
-        }
-        // Test descriptor
-        assertEquals(type, Class.forName(Util.toBinaryName(type.descriptorString())));
+        var cd = type.describeConstable().orElseThrow();
+        assertEquals(type, Class.forName(Util.toBinaryName(cd)));
+        assertEquals(type.getName(), Util.toBinaryName(cd));
     }
-
 
     @Test
     void testParameterSlots() {

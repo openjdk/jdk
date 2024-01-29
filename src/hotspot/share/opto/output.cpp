@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -169,6 +169,11 @@ public:
   // Add a node to the current bundle
   void AddNodeToBundle(Node *n, const Block *bb);
 
+  // Return an integer less than, equal to, or greater than zero
+  // if the stack offset of the first argument is respectively
+  // less than, equal to, or greater than the second.
+  int compare_two_spill_nodes(Node* first, Node* second);
+
   // Add a node to the list of available nodes
   void AddNodeToAvailableList(Node *n);
 
@@ -260,7 +265,7 @@ void PhaseOutput::perform_mach_node_analysis() {
 
   pd_perform_mach_node_analysis();
 
-  C->print_method(CompilerPhaseType::PHASE_MACH_ANALYSIS, 4);
+  C->print_method(CompilerPhaseType::PHASE_MACH_ANALYSIS, 3);
 }
 
 // Convert Nodes to instruction bits and pass off to the VM
@@ -749,7 +754,7 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
   if (local->is_SafePointScalarObject()) {
     SafePointScalarObjectNode* spobj = local->as_SafePointScalarObject();
 
-    ObjectValue* sv = sv_for_node_id(objs, spobj->_idx);
+    ObjectValue* sv = (ObjectValue*) sv_for_node_id(objs, spobj->_idx);
     if (sv == nullptr) {
       ciKlass* cik = t->is_oopptr()->exact_klass();
       assert(cik->is_instance_klass() ||
@@ -765,6 +770,31 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
       }
     }
     array->append(sv);
+    return;
+  } else if (local->is_SafePointScalarMerge()) {
+    SafePointScalarMergeNode* smerge = local->as_SafePointScalarMerge();
+    ObjectMergeValue* mv = (ObjectMergeValue*) sv_for_node_id(objs, smerge->_idx);
+
+    if (mv == nullptr) {
+      GrowableArray<ScopeValue*> deps;
+
+      int merge_pointer_idx = smerge->merge_pointer_idx(sfpt->jvms());
+      (void)FillLocArray(0, sfpt, sfpt->in(merge_pointer_idx), &deps, objs);
+      assert(deps.length() == 1, "missing value");
+
+      int selector_idx = smerge->selector_idx(sfpt->jvms());
+      (void)FillLocArray(1, nullptr, sfpt->in(selector_idx), &deps, nullptr);
+      assert(deps.length() == 2, "missing value");
+
+      mv = new ObjectMergeValue(smerge->_idx, deps.at(0), deps.at(1));
+      set_sv_for_object_node(objs, mv);
+
+      for (uint i = 1; i < smerge->req(); i++) {
+        Node* obj_node = smerge->in(i);
+        (void)FillLocArray(mv->possible_objects()->length(), sfpt, obj_node, mv->possible_objects(), objs);
+      }
+    }
+    array->append(mv);
     return;
   }
 
@@ -931,6 +961,18 @@ bool PhaseOutput::starts_bundle(const Node *n) const {
           _node_bundling_base[n->_idx].starts_bundle());
 }
 
+// Determine if there is a monitor that has 'ov' as its owner.
+bool PhaseOutput::contains_as_owner(GrowableArray<MonitorValue*> *monarray, ObjectValue *ov) const {
+  for (int k = 0; k < monarray->length(); k++) {
+    MonitorValue* mv = monarray->at(k);
+    if (mv->owner() == ov) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 //--------------------------Process_OopMap_Node--------------------------------
 void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
   // Handle special safepoint nodes for synchronization
@@ -1043,6 +1085,30 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
           }
           scval = sv;
         }
+      } else if (obj_node->is_SafePointScalarMerge()) {
+        SafePointScalarMergeNode* smerge = obj_node->as_SafePointScalarMerge();
+        ObjectMergeValue* mv = (ObjectMergeValue*) sv_for_node_id(objs, smerge->_idx);
+
+        if (mv == nullptr) {
+          GrowableArray<ScopeValue*> deps;
+
+          int merge_pointer_idx = smerge->merge_pointer_idx(youngest_jvms);
+          FillLocArray(0, sfn, sfn->in(merge_pointer_idx), &deps, objs);
+          assert(deps.length() == 1, "missing value");
+
+          int selector_idx = smerge->selector_idx(youngest_jvms);
+          FillLocArray(1, nullptr, sfn->in(selector_idx), &deps, nullptr);
+          assert(deps.length() == 2, "missing value");
+
+          mv = new ObjectMergeValue(smerge->_idx, deps.at(0), deps.at(1));
+          set_sv_for_object_node(objs, mv);
+
+          for (uint i = 1; i < smerge->req(); i++) {
+            Node* obj_node = smerge->in(i);
+            FillLocArray(mv->possible_objects()->length(), sfn, obj_node, mv->possible_objects(), objs);
+          }
+        }
+        scval = mv;
       } else if (!obj_node->is_Con()) {
         OptoReg::Name obj_reg = C->regalloc()->get_reg_first(obj_node);
         if( obj_node->bottom_type()->base() == Type::NarrowOop ) {
@@ -1059,6 +1125,21 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
       Location basic_lock = Location::new_stk_loc(Location::normal,C->regalloc()->reg2offset(box_reg));
       bool eliminated = (box_node->is_BoxLock() && box_node->as_BoxLock()->is_eliminated());
       monarray->append(new MonitorValue(scval, basic_lock, eliminated));
+    }
+
+    // Mark ObjectValue nodes as root nodes if they are directly
+    // referenced in the JVMS.
+    for (int i = 0; i < objs->length(); i++) {
+      ScopeValue* sv = objs->at(i);
+      if (sv->is_object_merge()) {
+        ObjectMergeValue* merge = sv->as_ObjectMergeValue();
+
+        for (int j = 0; j< merge->possible_objects()->length(); j++) {
+          ObjectValue* ov = merge->possible_objects()->at(j)->as_ObjectValue();
+          bool is_root = locarray->contains(ov) || exparray->contains(ov) || contains_as_owner(monarray, ov);
+          ov->set_root(is_root);
+        }
+      }
     }
 
     // We dump the object pool first, since deoptimization reads it in first.
@@ -2068,8 +2149,12 @@ void PhaseOutput::ScheduleAndBundle() {
 
 #ifndef PRODUCT
   if (C->trace_opto_output()) {
-    tty->print("\n---- After ScheduleAndBundle ----\n");
-    print_scheduling();
+    // Buffer and print all at once
+    ResourceMark rm;
+    stringStream ss;
+    ss.print("\n---- After ScheduleAndBundle ----\n");
+    print_scheduling(&ss);
+    tty->print("%s", ss.as_string());
   }
 #endif
 }
@@ -2077,14 +2162,18 @@ void PhaseOutput::ScheduleAndBundle() {
 #ifndef PRODUCT
 // Separated out so that it can be called directly from debugger
 void PhaseOutput::print_scheduling() {
+  print_scheduling(tty);
+}
+
+void PhaseOutput::print_scheduling(outputStream* output_stream) {
   for (uint i = 0; i < C->cfg()->number_of_blocks(); i++) {
-    tty->print("\nBB#%03d:\n", i);
+    output_stream->print("\nBB#%03d:\n", i);
     Block* block = C->cfg()->get_block(i);
     for (uint j = 0; j < block->number_of_nodes(); j++) {
       Node* n = block->get_node(j);
       OptoReg::Name reg = C->regalloc()->get_reg_first(n);
-      tty->print(" %-6s ", reg >= 0 && reg < REG_COUNT ? Matcher::regName[reg] : "");
-      n->dump();
+      output_stream->print(" %-6s ", reg >= 0 && reg < REG_COUNT ? Matcher::regName[reg] : "");
+      n->dump("\n", false, output_stream);
     }
   }
 }
@@ -2211,6 +2300,29 @@ Node * Scheduling::ChooseNodeToBundle() {
   return _available[0];
 }
 
+int Scheduling::compare_two_spill_nodes(Node* first, Node* second) {
+  assert(first->is_MachSpillCopy() && second->is_MachSpillCopy(), "");
+
+  OptoReg::Name first_src_lo = _regalloc->get_reg_first(first->in(1));
+  OptoReg::Name first_dst_lo = _regalloc->get_reg_first(first);
+  OptoReg::Name second_src_lo = _regalloc->get_reg_first(second->in(1));
+  OptoReg::Name second_dst_lo = _regalloc->get_reg_first(second);
+
+  // Comparison between stack -> reg and stack -> reg
+  if (OptoReg::is_stack(first_src_lo) && OptoReg::is_stack(second_src_lo) &&
+      OptoReg::is_reg(first_dst_lo) && OptoReg::is_reg(second_dst_lo)) {
+    return _regalloc->reg2offset(first_src_lo) - _regalloc->reg2offset(second_src_lo);
+  }
+
+  // Comparison between reg -> stack and reg -> stack
+  if (OptoReg::is_stack(first_dst_lo) && OptoReg::is_stack(second_dst_lo) &&
+      OptoReg::is_reg(first_src_lo) && OptoReg::is_reg(second_src_lo)) {
+    return _regalloc->reg2offset(first_dst_lo) - _regalloc->reg2offset(second_dst_lo);
+  }
+
+  return 0; // Not comparable
+}
+
 void Scheduling::AddNodeToAvailableList(Node *n) {
   assert( !n->is_Proj(), "projections never directly made available" );
 #ifndef PRODUCT
@@ -2222,11 +2334,20 @@ void Scheduling::AddNodeToAvailableList(Node *n) {
 
   int latency = _current_latency[n->_idx];
 
-  // Insert in latency order (insertion sort)
+  // Insert in latency order (insertion sort). If two MachSpillCopyNodes
+  // for stack spilling or unspilling have the same latency, we sort
+  // them in the order of stack offset. Some ports (e.g. aarch64) may also
+  // have more opportunities to do ld/st merging
   uint i;
-  for ( i=0; i < _available.size(); i++ )
-    if (_current_latency[_available[i]->_idx] > latency)
+  for (i = 0; i < _available.size(); i++) {
+    if (_current_latency[_available[i]->_idx] > latency) {
       break;
+    } else if (_current_latency[_available[i]->_idx] == latency &&
+               n->is_MachSpillCopy() && _available[i]->is_MachSpillCopy() &&
+               compare_two_spill_nodes(n, _available[i]) > 0) {
+      break;
+    }
+  }
 
   // Special Check for compares following branches
   if( n->is_Mach() && _scheduled.size() > 0 ) {

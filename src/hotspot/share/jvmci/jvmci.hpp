@@ -29,6 +29,7 @@
 #include "utilities/exceptions.hpp"
 
 class BoolObjectClosure;
+class CompilerThread;
 class constantPoolHandle;
 class JavaThread;
 class JVMCIEnv;
@@ -45,6 +46,34 @@ typedef FormatStringEventLog<256> StringEventLog;
 
 struct _jmetadata;
 typedef struct _jmetadata *jmetadata;
+
+// A stack object that manages a scope in which the current thread, if
+// it's a CompilerThread, can have its CompilerThread::_can_call_java
+// field changed. This allows restricting libjvmci better in terms
+// of when it can make Java calls. If a Java call on a CompilerThread
+// reaches a clinit, there's a risk of dead-lock when async compilation
+// is disabled (e.g. -Xbatch or -Xcomp) as the non-CompilerThread thread
+// waiting for the blocking compilation may hold the clinit lock.
+//
+// This scope is primarily used to disable Java calls when libjvmci enters
+// the VM via a C2V (i.e. CompilerToVM) native method.
+class CompilerThreadCanCallJava : StackObj {
+ private:
+  CompilerThread* _current; // Only non-null if state of thread changed
+  bool _reset_state;        // Value prior to state change, undefined
+                            // if no state change.
+public:
+  // Enters a scope in which the ability of the current CompilerThread
+  // to call Java is specified by `new_state`. This call only makes a
+  // change if the current thread is a CompilerThread associated with
+  // a JVMCI compiler whose CompilerThread::_can_call_java is not
+  // currently `new_state`.
+  CompilerThreadCanCallJava(JavaThread* current, bool new_state);
+
+  // Resets CompilerThread::_can_call_java of the current thread if the
+  // constructor changed it.
+  ~CompilerThreadCanCallJava();
+};
 
 class JVMCI : public AllStatic {
   friend class JVMCIRuntime;
@@ -101,6 +130,12 @@ class JVMCI : public AllStatic {
   // Gets the Thread* value for the current thread or null if it's not available.
   static Thread* current_thread_or_null();
 
+  // Writes into `pathbuf` the path to the existing JVMCI shared library file.
+  // If the file cannot be found and `fail_is_fatal` is true, then
+  // a fatal error occurs.
+  // Returns whether the path to an existing file was written into `pathbuf`.
+  static bool get_shared_library_path(char* pathbuf, size_t pathlen, bool fail_is_fatal);
+
  public:
 
   enum CodeInstallResult {
@@ -121,6 +156,11 @@ class JVMCI : public AllStatic {
   static bool one_shared_library_javavm_per_compilation() {
     return JVMCIThreadsPerNativeLibraryRuntime == 1 && JVMCICompilerIdleDelay == 0;
   }
+
+  // Determines if the JVMCI shared library exists. This does not
+  // take into account whether loading the library would succeed
+  // if it's not already loaded.
+  static bool shared_library_exists();
 
   // Gets the handle to the loaded JVMCI shared library, loading it
   // first if not yet loaded and `load` is true. The path from

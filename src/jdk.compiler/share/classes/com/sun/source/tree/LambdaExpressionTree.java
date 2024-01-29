@@ -36,6 +36,8 @@ import java.util.List;
  *   (List<String> ls)->ls.size()
  *   (x,y)-> { return x + y; }
  * }</pre>
+ *
+ * @since 1.8
  */
 public interface LambdaExpressionTree extends ExpressionTree {
 

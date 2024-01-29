@@ -37,6 +37,19 @@ void ZArguments::initialize_alignments() {
   HeapAlignment = SpaceAlignment;
 }
 
+void ZArguments::initialize_heap_flags_and_sizes() {
+  if (!FLAG_IS_CMDLINE(MaxHeapSize) &&
+      !FLAG_IS_CMDLINE(MaxRAMFraction) &&
+      !FLAG_IS_CMDLINE(MaxRAMPercentage) &&
+      !FLAG_IS_CMDLINE(SoftMaxHeapSize)) {
+    // We are really just guessing how much memory the program needs.
+    // When that is the case, we don't want the soft and hard limits to be the same
+    // as it can cause flakyness in the number of GC threads used, in order to keep
+    // to a random number we just pulled out of thin air.
+    FLAG_SET_ERGO(SoftMaxHeapSize, MaxHeapSize * 90 / 100);
+  }
+}
+
 void ZArguments::select_max_gc_threads() {
   // Select number of parallel threads
   if (FLAG_IS_DEFAULT(ParallelGCThreads)) {
@@ -126,19 +139,12 @@ void ZArguments::initialize() {
     FLAG_SET_ERGO_IF_DEFAULT(ZCollectionIntervalMajor, ZCollectionInterval);
   }
 
-  if (!FLAG_IS_CMDLINE(MaxHeapSize) &&
-      !FLAG_IS_CMDLINE(MaxRAMFraction) &&
-      !FLAG_IS_CMDLINE(MaxRAMPercentage)) {
-    // We are really just guessing how much memory the program needs.
-    // When that is the case, we don't want the soft and hard limits to be the same
-    // as it can cause flakyness in the number of GC threads used, in order to keep
-    // to a random number we just pulled out of thin air.
-    FLAG_SET_ERGO_IF_DEFAULT(SoftMaxHeapSize, MaxHeapSize * 90 / 100);
-  }
-
   if (FLAG_IS_DEFAULT(ZFragmentationLimit)) {
     FLAG_SET_DEFAULT(ZFragmentationLimit, 5.0);
   }
+
+  // Set medium page size here because MaxTenuringThreshold may use it.
+  ZHeuristics::set_medium_page_size();
 
   if (!FLAG_IS_DEFAULT(ZTenuringThreshold) && ZTenuringThreshold != -1) {
     FLAG_SET_ERGO_IF_DEFAULT(MaxTenuringThreshold, ZTenuringThreshold);
