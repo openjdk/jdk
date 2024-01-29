@@ -367,6 +367,10 @@ public:
   // Elastic heap support
   void entry_uncommit(double shrink_before, size_t shrink_until);
   void op_uncommit(double shrink_before, size_t shrink_until);
+  void service_uncommit(double shrink_before, size_t shrink_until);
+
+  // Returns true if the soft maximum heap has been changed using management APIs.
+  bool check_soft_max_changed();
 
 private:
   // GC support
