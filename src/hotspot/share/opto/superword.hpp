@@ -224,10 +224,7 @@ class SuperWord : public ResourceObj {
   DepGraph _dg; // Dependence graph
 
   // Scratch pads
-  VectorSet    _visited;       // Visited set
-  VectorSet    _post_visited;  // Post-visited set
   GrowableArray<Node*> _nlist; // List of nodes
-  GrowableArray<Node*> _stk;   // Stack of nodes
 
  public:
   SuperWord(PhaseIdealLoop* phase);
@@ -306,15 +303,6 @@ class SuperWord : public ResourceObj {
  private:
   void set_bb_idx(Node* n, int i)  { _bb_idx.at_put_grow(n->_idx, i); }
 
-  // visited set accessors
-  void visited_clear()           { _visited.clear(); }
-  void visited_set(Node* n)      { return _visited.set(bb_idx(n)); }
-  int visited_test(Node* n)      { return _visited.test(bb_idx(n)); }
-  int visited_test_set(Node* n)  { return _visited.test_set(bb_idx(n)); }
-  void post_visited_clear()      { _post_visited.clear(); }
-  void post_visited_set(Node* n) { return _post_visited.set(bb_idx(n)); }
-  int post_visited_test(Node* n) { return _post_visited.test(bb_idx(n)); }
-
   // Ensure node_info contains element "i"
   void grow_node_info(int i) { if (i >= _node_info.length()) _node_info.at_put_grow(i, SWNodeInfo::initial); }
 
@@ -326,7 +314,7 @@ class SuperWord : public ResourceObj {
   void set_alignment(Node* n, int a)         { int i = bb_idx(n); grow_node_info(i); _node_info.adr_at(i)->_alignment = a; }
 
   // Max expression (DAG) depth from beginning of the block for each node
-  int depth(Node* n)                         { return _node_info.adr_at(bb_idx(n))->_depth; }
+  int depth(Node* n) const                   { return _node_info.adr_at(bb_idx(n))->_depth; }
   void set_depth(Node* n, int d)             { int i = bb_idx(n); grow_node_info(i); _node_info.adr_at(i)->_depth = d; }
 
   // vector element type
@@ -429,15 +417,13 @@ private:
   bool isomorphic(Node* s1, Node* s2);
   // Is there no data path from s1 to s2 or s2 to s1?
   bool independent(Node* s1, Node* s2);
-  // Is any s1 in p dependent on any s2 in p? Yes: return such a s2. No: return nullptr.
-  Node* find_dependence(Node_List* p);
+  // Are all nodes in nodes list mutually independent?
+  bool mutually_independent(Node_List* nodes) const;
   // For a node pair (s1, s2) which is isomorphic and independent,
   // do s1 and s2 have similar input edges?
   bool have_similar_inputs(Node* s1, Node* s2);
   // Is there a data path between s1 and s2 and both are reductions?
   bool reduction(Node* s1, Node* s2);
-  // Helper for independent
-  bool independent_path(Node* shallow, Node* deep, uint dp=0);
   void set_alignment(Node* s1, Node* s2, int align);
   int data_size(Node* s);
   // Extend packset by following use->def and def->use links from pack members.

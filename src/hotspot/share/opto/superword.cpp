@@ -57,10 +57,7 @@ SuperWord::SuperWord(PhaseIdealLoop* phase) :
   _clone_map(phase->C->clone_map()),                        // map of nodes created in cloning
   _align_to_ref(nullptr),                                   // memory reference to align vectors to
   _dg(_arena),                                              // dependence graph
-  _visited(arena()),                                        // visited node set
-  _post_visited(arena()),                                   // post visited node set
   _nlist(arena(), 8, 0, nullptr),                           // scratch list of nodes
-  _stk(arena(), 8, 0, nullptr),                             // scratch stack of nodes
   _lpt(nullptr),                                            // loop tree node
   _lp(nullptr),                                             // CountedLoopNode
   _loop_reductions(arena()),                                // reduction nodes in the current loop
@@ -1059,54 +1056,71 @@ bool SuperWord::isomorphic(Node* s1, Node* s2) {
 //------------------------------independent---------------------------
 // Is there no data path from s1 to s2 or s2 to s1?
 bool SuperWord::independent(Node* s1, Node* s2) {
-  //  assert(s1->Opcode() == s2->Opcode(), "check isomorphic first");
   int d1 = depth(s1);
   int d2 = depth(s2);
-  if (d1 == d2) return s1 != s2;
+
+  if (d1 == d2) {
+    // Same depth:
+    //  1) same node       -> dependent
+    //  2) different nodes -> same level implies there is no path
+    return s1 != s2;
+  }
+
+  // Traversal starting at the deeper node to find the shallower one.
   Node* deep    = d1 > d2 ? s1 : s2;
   Node* shallow = d1 > d2 ? s2 : s1;
+  int min_d = MIN2(d1, d2); // prune traversal at min_d
 
-  visited_clear();
-
-  return independent_path(shallow, deep);
+  ResourceMark rm;
+  Unique_Node_List worklist;
+  worklist.push(deep);
+  for (uint i = 0; i < worklist.size(); i++) {
+    Node* n = worklist.at(i);
+    for (DepPreds preds(n, _dg); !preds.done(); preds.next()) {
+      Node* pred = preds.current();
+      if (in_bb(pred) && depth(pred) >= min_d) {
+        if (pred == shallow) {
+          return false; // found it -> dependent
+        }
+        worklist.push(pred);
+      }
+    }
+  }
+  return true; // not found -> independent
 }
 
-//------------------------------find_dependence---------------------
-// Is any s1 in p dependent on any s2 in p? Yes: return such a s2. No: return nullptr.
+// Are all nodes in nodes list mutually independent?
 // We could query independent(s1, s2) for all pairs, but that results
-// in O(p.size * p.size) graph traversals. We can do it all in one BFS!
-// Start the BFS traversal at all nodes from the pack. Traverse DepPreds
-// recursively, for nodes that have at least depth min_d, which is the
-// smallest depth of all nodes from the pack. Once we have traversed all
-// those nodes, and have not found another node from the pack, we know
-// that all nodes in the pack are independent.
-Node* SuperWord::find_dependence(Node_List* p) {
-  if (is_marked_reduction(p->at(0))) {
-    return nullptr; // ignore reductions
-  }
+// in O(size * size) graph traversals. We can do it all in one BFS!
+// Start the BFS traversal at all nodes from the nodes list. Traverse
+// Preds recursively, for nodes that have at least depth min_d, which
+// is the smallest depth of all nodes from the nodes list. Once we have
+// traversed all those nodes, and have not found another node from the
+// nodes list, we know that all nodes in the nodes list are independent.
+bool SuperWord::mutually_independent(Node_List* nodes) const {
   ResourceMark rm;
-  Unique_Node_List worklist; // traversal queue
-  int min_d = depth(p->at(0));
-  visited_clear();
-  for (uint k = 0; k < p->size(); k++) {
-    Node* n = p->at(k);
+  Unique_Node_List worklist;
+  VectorSet nodes_set;
+  int min_d = depth(nodes->at(0));
+  for (uint k = 0; k < nodes->size(); k++) {
+    Node* n = nodes->at(k);
     min_d = MIN2(min_d, depth(n));
-    worklist.push(n); // start traversal at all nodes in p
-    visited_set(n); // mark node
+    worklist.push(n); // start traversal at all nodes in nodes list
+    nodes_set.set(bb_idx(n));
   }
   for (uint i = 0; i < worklist.size(); i++) {
     Node* n = worklist.at(i);
     for (DepPreds preds(n, _dg); !preds.done(); preds.next()) {
       Node* pred = preds.current();
       if (in_bb(pred) && depth(pred) >= min_d) {
-        if (visited_test(pred)) { // marked as in p?
-          return pred;
+        if (nodes_set.test(bb_idx(pred))) {
+          return false; // found one -> dependent
         }
         worklist.push(pred);
       }
     }
   }
-  return nullptr;
+  return true; // not found -> independent
 }
 
 //--------------------------have_similar_inputs-----------------------
@@ -1152,27 +1166,6 @@ bool SuperWord::reduction(Node* s1, Node* s2) {
   }
 
   return retValue;
-}
-
-//------------------------------independent_path------------------------------
-// Helper for independent
-bool SuperWord::independent_path(Node* shallow, Node* deep, uint dp) {
-  if (dp >= 1000) return false; // stop deep recursion
-  visited_set(deep);
-  int shal_depth = depth(shallow);
-  assert(shal_depth <= depth(deep), "must be");
-  for (DepPreds preds(deep, _dg); !preds.done(); preds.next()) {
-    Node* pred = preds.current();
-    if (in_bb(pred) && !visited_test(pred)) {
-      if (shallow == pred) {
-        return false;
-      }
-      if (shal_depth < depth(pred) && !independent_path(shallow, pred, dp+1)) {
-        return false;
-      }
-    }
-  }
-  return true;
 }
 
 //------------------------------set_alignment---------------------------
@@ -1567,13 +1560,13 @@ void SuperWord::combine_packs() {
   for (int i = 0; i < _packset.length(); i++) {
     Node_List* p = _packset.at(i);
     if (p != nullptr) {
-      Node* dependence = find_dependence(p);
-      if (dependence != nullptr) {
+      // reductions are trivially connected
+      if (!is_marked_reduction(p->at(0)) &&
+          !mutually_independent(p)) {
 #ifndef PRODUCT
         if (TraceSuperWord) {
           tty->cr();
           tty->print_cr("WARNING: Found dependency at distance greater than 1.");
-          dependence->dump();
           tty->print_cr("In pack[%d]", i);
           print_pack(p);
         }
@@ -1956,24 +1949,16 @@ void SuperWord::verify_packs() {
   // Verify independence at pack level.
   for (int i = 0; i < _packset.length(); i++) {
     Node_List* p = _packset.at(i);
-    Node* dependence = find_dependence(p);
-    if (dependence != nullptr) {
-      tty->print_cr("Other nodes in pack have dependence on:");
-      dependence->dump();
-      tty->print_cr("The following nodes are not independent:");
-      for (uint k = 0; k < p->size(); k++) {
-        Node* n = p->at(k);
-        if (!independent(n, dependence)) {
-          n->dump();
-        }
-      }
-      tty->print_cr("They are all from pack[%d]", i);
+    if (!is_marked_reduction(p->at(0)) &&
+        !mutually_independent(p)) {
+      tty->print_cr("FAILURE: nodes not mutually independent in pack[%d]", i);
       print_pack(p);
+      assert(false, "pack nodes not mutually independent");
     }
-    assert(dependence == nullptr, "all nodes in pack must be mutually independent");
   }
 
   // Verify all nodes in packset have my_pack set correctly.
+  ResourceMark rm;
   Unique_Node_List processed;
   for (int i = 0; i < _packset.length(); i++) {
     Node_List* p = _packset.at(i);
@@ -2944,7 +2929,6 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) {
 bool SuperWord::construct_bb() {
   Node* entry = bb();
 
-  assert(_stk.length() == 0,            "stk is empty");
   assert(_block.length() == 0,          "block is empty");
   assert(_data_entry.length() == 0,     "data_entry is empty");
   assert(_mem_slice_head.length() == 0, "mem_slice_head is empty");
@@ -3001,31 +2985,33 @@ bool SuperWord::construct_bb() {
 
   // Create an RPO list of nodes in block
 
-  visited_clear();
-  post_visited_clear();
+  ResourceMark rm;
+  GrowableArray<Node*> stack;
+  VectorSet visited;
+  VectorSet post_visited;
 
   // Push all non-control nodes with no inputs from within block, then control entry
   for (int j = 0; j < _data_entry.length(); j++) {
     Node* n = _data_entry.at(j);
-    visited_set(n);
-    _stk.push(n);
+    visited.set(bb_idx(n));
+    stack.push(n);
   }
-  visited_set(entry);
-  _stk.push(entry);
+  visited.set(bb_idx(entry));
+  stack.push(entry);
 
   // Do a depth first walk over out edges
   int rpo_idx = bb_ct - 1;
   int size;
   int reduction_uses = 0;
-  while ((size = _stk.length()) > 0) {
-    Node* n = _stk.top(); // Leave node on stack
-    if (!visited_test_set(n)) {
+  while ((size = stack.length()) > 0) {
+    Node* n = stack.top(); // Leave node on stack
+    if (!visited.test_set(bb_idx(n))) {
       // forward arc in graph
-    } else if (!post_visited_test(n)) {
+    } else if (!post_visited.test(bb_idx(n))) {
       // cross or back arc
       for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
         Node *use = n->fast_out(i);
-        if (in_bb(use) && !visited_test(use) &&
+        if (in_bb(use) && !visited.test(bb_idx(use)) &&
             // Don't go around backedge
             (!use->is_Phi() || n == entry)) {
           if (is_marked_reduction(use)) {
@@ -3036,20 +3022,20 @@ bool SuperWord::construct_bb() {
               reduction_uses++;
             }
           }
-          _stk.push(use);
+          stack.push(use);
         }
       }
-      if (_stk.length() == size) {
+      if (stack.length() == size) {
         // There were no additional uses, post visit node now
-        _stk.pop(); // Remove node from stack
+        stack.pop(); // Remove node from stack
         assert(rpo_idx >= 0, "");
         _block.at_put_grow(rpo_idx, n);
         rpo_idx--;
-        post_visited_set(n);
-        assert(rpo_idx >= 0 || _stk.is_empty(), "");
+        post_visited.set(bb_idx(n));
+        assert(rpo_idx >= 0 || stack.is_empty(), "");
       }
     } else {
-      _stk.pop(); // Remove post-visited node from stack
+      stack.pop(); // Remove post-visited node from stack
     }
   }//while
 
