@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1270,7 +1270,10 @@ public class JavaCompiler {
             options.isSet(PROCESSOR_PATH) ||
             options.isSet(PROCESSOR_MODULE_PATH) ||
             options.isSet(PROC, "only") ||
+            options.isSet(PROC, "full") ||
+            options.isSet(A) ||
             options.isSet(XPRINT);
+        // Skipping -XprintRounds and -XprintProcessorInfo
     }
 
     public void setDeferredDiagnosticHandler(Log.DeferredDiagnosticHandler deferredDiagnosticHandler) {
