@@ -68,7 +68,6 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/preserveErrno.hpp"
 #include "utilities/vmError.hpp"
 #if INCLUDE_JFR
 #include "jfr/jfrEvents.hpp"
@@ -1567,7 +1566,7 @@ bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
     return true;
   } else {
     ErrnoPreserver ep;
-    log_trace(os,map)("mprotect failed: " RANGEFMT " errno=(%d)", RANGEFMTARGS(addr, size), errno);
+    log_trace(os,map)("mprotect failed: " RANGEFMT " errno=(%d)", RANGEFMTARGS(addr, size), ep.saved());
   }
 #elif defined(__APPLE__)
   if (exec) {
@@ -1576,7 +1575,7 @@ bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
       return true;
     } else {
       ErrnoPreserver ep;
-      log_trace(os,map)("mprotect failed: " RANGEFMT " errno=(%d)", RANGEFMTARGS(addr, size), errno);
+      log_trace(os,map)("mprotect failed: " RANGEFMT " errno=(%d)", RANGEFMTARGS(addr, size), ep.saved());
     }
   } else {
     uintptr_t res = (uintptr_t) ::mmap(addr, size, prot,
@@ -1585,7 +1584,7 @@ bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
       return true;
     } else {
       ErrnoPreserver ep;
-      log_trace(os,map)("mmap failed: " RANGEFMT " errno=(%d)", RANGEFMTARGS(addr, size), errno);
+      log_trace(os,map)("mmap failed: " RANGEFMT " errno=(%d)", RANGEFMTARGS(addr, size), ep.saved());
     }
   }
 #else
@@ -1595,7 +1594,7 @@ bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
     return true;
   } else {
     ErrnoPreserver ep;
-    log_trace(os,map)("mmap failed: " RANGEFMT " errno=(%d)", RANGEFMTARGS(addr, size), errno);
+    log_trace(os,map)("mmap failed: " RANGEFMT " errno=(%d)", RANGEFMTARGS(addr, size), ep.saved());
   }
 #endif
 
@@ -1676,21 +1675,21 @@ bool os::pd_uncommit_memory(char* addr, size_t size, bool exec) {
     return true;
   } else {
     ErrnoPreserver ep;
-    log_trace(os,map)("mprotect failed: " RANGEFMT " errno=(%d)", RANGEFMTARGS(addr, size), errno);
+    log_trace(os,map)("mprotect failed: " RANGEFMT " errno=(%d)", RANGEFMTARGS(addr, size), ep.saved());
     return false;
   }
 #elif defined(__APPLE__)
   if (exec) {
     if (::madvise(addr, size, MADV_FREE) != 0) {
       ErrnoPreserver ep;
-      log_trace(os,map)("madvise failed: " RANGEFMT " errno=(%d)", RANGEFMTARGS(addr, size), errno);
+      log_trace(os,map)("madvise failed: " RANGEFMT " errno=(%d)", RANGEFMTARGS(addr, size), ep.saved());
       return false;
     }
     if (::mprotect(addr, size, PROT_NONE) == 0) {
       return true;
     } else {
       ErrnoPreserver ep;
-      log_trace(os,map)("mprotect failed: " RANGEFMT " errno=(%d)", RANGEFMTARGS(addr, size), errno);
+      log_trace(os,map)("mprotect failed: " RANGEFMT " errno=(%d)", RANGEFMTARGS(addr, size), ep.saved());
       return false;
     }
   } else {
@@ -1698,7 +1697,7 @@ bool os::pd_uncommit_memory(char* addr, size_t size, bool exec) {
         MAP_PRIVATE|MAP_FIXED|MAP_NORESERVE|MAP_ANONYMOUS, -1, 0);
     if (res == (uintptr_t) MAP_FAILED) {
       ErrnoPreserver ep;
-      log_trace(os,map)("mmap failed: " RANGEFMT " errno=(%d)", RANGEFMTARGS(addr, size), errno);
+      log_trace(os,map)("mmap failed: " RANGEFMT " errno=(%d)", RANGEFMTARGS(addr, size), ep.saved());
       return false;
     }
     return true;
@@ -1708,7 +1707,7 @@ bool os::pd_uncommit_memory(char* addr, size_t size, bool exec) {
                                      MAP_PRIVATE|MAP_FIXED|MAP_NORESERVE|MAP_ANONYMOUS, -1, 0);
   if (res == (uintptr_t) MAP_FAILED) {
     ErrnoPreserver ep;
-    log_trace(os,map)("mmap failed: " RANGEFMT " errno=(%d)", RANGEFMTARGS(addr, size), errno);
+    log_trace(os,map)("mmap failed: " RANGEFMT " errno=(%d)", RANGEFMTARGS(addr, size), ep.saved());
     return false;
   }
   return true;
@@ -1739,7 +1738,7 @@ static char* anon_mmap(char* requested_addr, size_t bytes, bool exec) {
   char* addr = (char*)::mmap(requested_addr, bytes, PROT_NONE, flags, -1, 0);
   if (addr == MAP_FAILED) {
     ErrnoPreserver ep;
-    log_trace(os,map)("mmap failed: " RANGEFMT " errno=(%d)", RANGEFMTARGS(requested_addr, bytes), errno);
+    log_trace(os,map)("mmap failed: " RANGEFMT " errno=(%d)", RANGEFMTARGS(requested_addr, bytes), ep.saved());
     return nullptr;
   }
   return addr;
@@ -1750,7 +1749,7 @@ static int anon_munmap(char * addr, size_t size) {
     return 1;
   } else {
     ErrnoPreserver ep;
-    log_trace(os,map)("munmap failed: " RANGEFMT " errno=(%d)", RANGEFMTARGS(addr, size), errno);
+    log_trace(os,map)("munmap failed: " RANGEFMT " errno=(%d)", RANGEFMTARGS(addr, size), ep.saved());
     return 0;
   }
 }

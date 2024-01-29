@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,6 +151,25 @@ const bool ExecMem = true;
 typedef void (*java_call_t)(JavaValue* value, const methodHandle& method, JavaCallArguments* args, JavaThread* thread);
 
 class MallocTracker;
+
+
+// Preserve errno across a range of calls
+
+class ErrnoPreserver {
+    int _e;
+    public:
+        ErrnoPreserver() {
+            _e = errno;
+        }
+
+        ~ErrnoPreserver() {
+            errno = _e;
+        }
+
+        int saved() {
+          return _e;
+        }
+};
 
 class os: AllStatic {
   friend class VMStructs;
