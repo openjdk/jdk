@@ -41,7 +41,6 @@ PSAdaptiveSizePolicy::PSAdaptiveSizePolicy(size_t init_eden_size,
                                            size_t init_survivor_size,
                                            size_t space_alignment,
                                            double gc_pause_goal_sec,
-                                           double gc_minor_pause_goal_sec,
                                            uint gc_cost_ratio) :
      AdaptiveSizePolicy(init_eden_size,
                         init_promo_size,
@@ -55,7 +54,6 @@ PSAdaptiveSizePolicy::PSAdaptiveSizePolicy(size_t init_eden_size,
      _major_pause_young_estimator(new LinearLeastSquareFit(AdaptiveSizePolicyWeight)),
      _latest_major_mutator_interval_seconds(0),
      _space_alignment(space_alignment),
-     _gc_minor_pause_goal_sec(gc_minor_pause_goal_sec),
      _live_at_last_full_gc(init_promo_size),
      _change_old_gen_for_min_pauses(0),
      _change_young_gen_for_maj_pauses(0),
@@ -282,7 +280,7 @@ void PSAdaptiveSizePolicy::compute_eden_space_size(
     // at a time.
     adjust_eden_for_pause_time(&desired_eden_size);
 
-  } else if (_avg_minor_pause->padded_average() > gc_minor_pause_goal_sec()) {
+  } else if (_avg_minor_pause->padded_average() > gc_pause_goal_sec()) {
     // Adjust only for the minor pause time goal
     adjust_eden_for_minor_pause_time(&desired_eden_size);
 
