@@ -4226,7 +4226,7 @@ public final class String
      *   <tr>
      *     <th scope="row">{@code \u005CuXXXX}</th>
      *     <td>Unicode escape</td>
-     *     <td>single UTF-16 code unit equivalent {@code U+XXXX}<p>multiple 'u' are support per jls 3.3</td>
+     *     <td>single UTF-16 code unit equivalent {@code U+XXXX}<p>multiple 'u' are supported per JLS 3.3</td>
      *   </tr>
      *   </tbody>
      * </table>
