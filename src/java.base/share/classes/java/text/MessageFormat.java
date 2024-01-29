@@ -52,7 +52,7 @@ import java.util.Objects;
 
 /**
  * {@code MessageFormat} provides a means to produce concatenated
- * messages in a language-neutral way. Use this to construct messages
+ * messages in a language-neutral way. Use this class to construct messages
  * displayed for end users.
  *
  * <p>
@@ -317,23 +317,20 @@ import java.util.Objects;
  * <h2>Usage Information</h2>
  *
  * <p>
- * Here are some examples of usage.
- * In real internationalized programs, the message format pattern and other
- * static strings will, of course, be obtained from resource bundles.
- * Other parameters will be dynamically determined at runtime.
+ * The following example demonstrates a general usage of {@code MessageFormat}.
+ * In internationalized programs, the message format pattern and other
+ * static strings will likely be obtained from resource bundles.
  *
  * <p>
- * The first example uses the static method {@code MessageFormat.format},
- * which internally creates a {@code MessageFormat} for one-time use:
  * {@snippet lang=java :
  * int planet = 7;
  * String event = "a disturbance in the Force";
- *
  * String result = MessageFormat.format(
  *     "At {1,time} on {1,date}, there was {2} on planet {0,number,integer}.",
  *     planet, new Date(), event);
  * }
- * The output is:
+ *
+ * {@code result} returns the following:
  * <blockquote><pre>
  * At 12:30 PM on Jul 3, 2053, there was a disturbance in the Force on planet 7.
  * </pre></blockquote>
@@ -344,10 +341,10 @@ import java.util.Objects;
  * {@snippet lang=java :
  * MessageFormat msgFmt = new MessageFormat("The disk \"{0}\" contains {1,choice,0#no files|1#one file|1< {1,number,integer} files}.");
  * Object[] args = {"MyDisk", fileCount};
- * System.out.println(msgFmt.format(args));
+ * String result = msgFmt.format(args);
  * }
  *
- * The output with different values for {@code fileCount}:
+ * {@code result} with different values for {@code fileCount}, returns the following:
  * <blockquote><pre>
  * The disk "MyDisk" contains no files.
  * The disk "MyDisk" contains one file.
@@ -370,8 +367,8 @@ import java.util.Objects;
  * <h2>Formatting Date and Time</h2>
  *
  * MessageFormat provides patterns that support both the {@link java.time} package
- * and the {@link Date} type. Consider the 3 following examples,
- * with a date of 11/16/2023.
+ * and the {@link Date java.util.Date} type. Consider the following three examples,
+ * with a date of 11/16/2023:
  *
  * <p>1) a <i>date</i> {@code FormatType} with a <i>full</i> {@code FormatStyle},
  * {@snippet lang=java :
