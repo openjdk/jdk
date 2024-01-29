@@ -274,7 +274,7 @@ void VM_Version::initialize() {
       FLAG_SET_DEFAULT(UseSHA1Intrinsics, true);
     }
   } else if (UseSHA1Intrinsics) {
-    warning("Intrinsic for SHA-1 crypto hash functions not available on this CPU, as UseSHA disabled.");
+    warning("Intrinsics for SHA-1 crypto hash functions not available on this CPU.");
     FLAG_SET_DEFAULT(UseSHA1Intrinsics, false);
   }
 
