@@ -27,6 +27,8 @@
 
 #include "memory/allStatic.hpp"
 
+#include <string.h>
+
 class StringUtils : AllStatic {
 public:
   // Replace the substring <from> with another string <to>. <to> must be
