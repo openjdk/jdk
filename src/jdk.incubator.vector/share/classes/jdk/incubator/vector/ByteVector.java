@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4197,6 +4197,14 @@ public abstract class ByteVector extends AbstractVector<Byte> {
             // User entry point:  Be careful with inputs.
             return ByteVector
                 .fromArray(this, (byte[]) a, offset);
+        }
+
+        @ForceInline
+        @Override final
+        public ByteVector fromMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
+            // User entry point:  Be careful with inputs.
+            return ByteVector
+                .fromMemorySegment(this, ms, offset, bo);
         }
 
         @ForceInline

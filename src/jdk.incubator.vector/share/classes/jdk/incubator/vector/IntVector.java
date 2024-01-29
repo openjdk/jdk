@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3906,6 +3906,14 @@ public abstract class IntVector extends AbstractVector<Integer> {
             // User entry point:  Be careful with inputs.
             return IntVector
                 .fromArray(this, (int[]) a, offset);
+        }
+
+        @ForceInline
+        @Override final
+        public IntVector fromMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
+            // User entry point:  Be careful with inputs.
+            return IntVector
+                .fromMemorySegment(this, ms, offset, bo);
         }
 
         @ForceInline

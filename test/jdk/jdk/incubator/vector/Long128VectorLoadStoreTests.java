@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -248,7 +248,7 @@ public class Long128VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @DontInline
     static LongVector fromArray(long[] a, int i) {
-        return LongVector.fromArray(SPECIES, a, i);
+        return (LongVector) SPECIES.fromArray(a, i);
     }
 
     @DontInline
@@ -268,7 +268,7 @@ public class Long128VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @DontInline
     static LongVector fromMemorySegment(MemorySegment a, int i, ByteOrder bo) {
-        return LongVector.fromMemorySegment(SPECIES, a, i, bo);
+        return (LongVector) SPECIES.fromMemorySegment(a, i, bo);
     }
 
     @DontInline

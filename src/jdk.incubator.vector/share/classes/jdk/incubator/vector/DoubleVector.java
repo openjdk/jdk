@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3800,6 +3800,14 @@ public abstract class DoubleVector extends AbstractVector<Double> {
             // User entry point:  Be careful with inputs.
             return DoubleVector
                 .fromArray(this, (double[]) a, offset);
+        }
+
+        @ForceInline
+        @Override final
+        public DoubleVector fromMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
+            // User entry point:  Be careful with inputs.
+            return DoubleVector
+                .fromMemorySegment(this, ms, offset, bo);
         }
 
         @ForceInline
