@@ -753,11 +753,11 @@ void os::dll_unload(void *lib) {
 }
 
 jlong os::lseek(int fd, jlong offset, int whence) {
-  return (jlong) ::lseek(fd, offset, whence);
+  return (jlong) AIX_ONLY(::lseek64) NOT_AIX(::lseek)(fd, offset, whence);
 }
 
 int os::ftruncate(int fd, jlong length) {
-   return ::ftruncate(fd, length);
+   return AIX_ONLY(::ftruncate64) NOT_AIX(::ftruncate)(fd, length);
 }
 
 const char* os::get_current_directory(char *buf, size_t buflen) {
