@@ -521,14 +521,13 @@ public class TestIntVect {
                    IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
                    IRNode.SUB_VI,
                    IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0" },
-        applyIfCPUFeature = {"avx2", "true"})
-    // Does not currently vectorize on aarch64. NOTE: This check does not
-    // document the _desired_ behavior of the system but the current behavior
-    // (no vectorization)
-    @IR(counts = { IRNode.ADD_VI,    "= 0",
-                   IRNode.RSHIFT_VI, "= 0",
-                   IRNode.SUB_VI,    "= 0" },
-        applyIfCPUFeature = {"asimd", "true"})
+        applyIfCPUFeatureOr = {"avx2", "true", "sve", "true"})
+    // Not vectorized: On aarch64, vectorization for this example results in
+    // MulVL nodes, which asimd does not support.
+    @IR(counts = { IRNode.LOAD_VECTOR_I, "= 0",
+                   IRNode.STORE_VECTOR,  "= 0",
+                   IRNode.MUL_L,         "> 0" },
+        applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"})
     void test_divc(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]/VALUE);
@@ -542,14 +541,13 @@ public class TestIntVect {
                    IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
                    IRNode.SUB_VI,
                    IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0" },
-        applyIfCPUFeature = {"avx2", "true"})
-    // Does not currently vectorize on aarch64. NOTE: This check does not
-    // document the _desired_ behavior of the system but the current behavior
-    // (no vectorization)
-    @IR(counts = { IRNode.ADD_VI,    "= 0",
-                   IRNode.RSHIFT_VI, "= 0",
-                   IRNode.SUB_VI,    "= 0" },
-        applyIfCPUFeature = {"asimd", "true"})
+        applyIfCPUFeatureOr = {"avx2", "true", "sve", "true"})
+    // Not vectorized: On aarch64, vectorization for this example results in
+    // MulVL nodes, which asimd does not support.
+    @IR(counts = { IRNode.LOAD_VECTOR_I, "= 0",
+                   IRNode.STORE_VECTOR,  "= 0",
+                   IRNode.MUL_L,         "> 0" },
+        applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"})
     void test_divc_n(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]/(-VALUE));
