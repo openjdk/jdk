@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ extern "C" {
 #define PASSED  0
 #define STATUS_FAILED  2
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jint result = PASSED;
 static int verbose = 0;
 
@@ -44,10 +44,10 @@ static const char *classSig =
     "Lnsk/jvmti/scenarios/jni_interception/JI03/ji03t004a;";
 
 /* the original JNI function table */
-static jniNativeInterface *orig_jni_functions = NULL;
+static jniNativeInterface *orig_jni_functions = nullptr;
 
 /* the redirected JNI function table */
-static jniNativeInterface *redir_jni_functions = NULL;
+static jniNativeInterface *redir_jni_functions = nullptr;
 
 /* number of the redirected JNI function calls */
 int allobj_calls = 0;
@@ -134,7 +134,7 @@ void doExec(JNIEnv *env, jclass allCls, jmethodID ctorId, const char *msg, ...) 
     va_list args;
     va_start(args, msg);
     allObj = env->AllocObject(allCls);
-    if (allObj == NULL) {
+    if (allObj == nullptr) {
         result = STATUS_FAILED;
         printf("(%s,%d): TEST FAILED: failed to call %s AllocObject()\n",
             __FILE__, __LINE__, msg);
@@ -150,7 +150,7 @@ void doExec(JNIEnv *env, jclass allCls, jmethodID ctorId, const char *msg, ...) 
     }
 
     newObj = env->NewObjectV(allCls, ctorId, args);
-    if (newObj == NULL) {
+    if (newObj == nullptr) {
         result = STATUS_FAILED;
         printf("(%s,%d): TEST FAILED: failed to call %s NewObjectV()\n",
             __FILE__, __LINE__, msg);
@@ -208,21 +208,21 @@ Java_nsk_jvmti_scenarios_jni_1interception_JI03_ji03t004_check(JNIEnv *env, jobj
     jmethodID ctorId;
     jclass objCls;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("(%s,%d): TEST FAILURE: JVMTI client was not properly loaded\n",
             __FILE__, __LINE__);
         return STATUS_FAILED;
     }
 
     objCls = env->FindClass(classSig);
-    if (objCls == NULL) {
+    if (objCls == nullptr) {
         printf("(%s,%d): TEST FAILED: failed to call FindClass() for \"%s\"\n",
             __FILE__, __LINE__, classSig);
         return STATUS_FAILED;
     }
 
     ctorId = env->GetMethodID(objCls, "<init>", "()V");
-    if (ctorId == NULL) {
+    if (ctorId == nullptr) {
         printf("(%s,%d): TEST FAILED: failed to call GetMethodID() for a constructor\n",
             __FILE__, __LINE__);
         return STATUS_FAILED;
@@ -259,14 +259,14 @@ JNIEXPORT jint JNI_OnLoad_ji03t004(JavaVM *jvm, char *options, void *reserved) {
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jint res;
 
-    if (options != NULL && strcmp(options, "-verbose") == 0)
+    if (options != nullptr && strcmp(options, "-verbose") == 0)
         verbose = 1;
 
     if (verbose)
         printf("verbose mode on\n");
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("(%s,%d): Failed to call GetEnv\n", __FILE__, __LINE__);
         return JNI_ERR;
     }

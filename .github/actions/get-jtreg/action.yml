@@ -41,7 +41,7 @@ runs:
 
     - name: 'Check cache for JTReg'
       id: get-cached-jtreg
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: jtreg/installed
         key: jtreg-${{ steps.version.outputs.value }}

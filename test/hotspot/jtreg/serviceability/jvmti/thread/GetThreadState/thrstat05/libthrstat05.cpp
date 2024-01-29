@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ static int g_ThreadState[] = {
         | JVMTI_THREAD_STATE_WAITING_WITH_TIMEOUT,     /* TS_RUN_WAIT_SLEEPING */
 };
 
-static jvmtiEnv *jvmti_env = NULL;
+static jvmtiEnv *jvmti_env = nullptr;
 static int g_wait_time = 1000;
 jrawMonitorID wait_lock; /* Monitor is used just for sleeping */
 
@@ -75,7 +75,7 @@ JNIEXPORT jint JNICALL
 Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jint res = jvm->GetEnv((void **) &jvmti_env, JVMTI_VERSION_1_1);
   if (res != JNI_OK || !jvmti_env) {
-    LOG("Agent_OnLoad: Error: GetEnv returned error or NULL\n");
+    LOG("Agent_OnLoad: Error: GetEnv returned error or null\n");
     return JNI_ERR;
   }
   wait_lock = create_raw_monitor(jvmti_env, "beast");

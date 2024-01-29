@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
-import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 public class UpcallTestHelper extends NativeTestHelper {
 
@@ -50,16 +51,18 @@ public class UpcallTestHelper extends NativeTestHelper {
         command.add(target.getName());
         command.addAll(programArgs);
 
-        Process process = ProcessTools.createTestJavaProcessBuilder(command).start();
-
-        long timeOut = (long) (Utils.TIMEOUT_FACTOR * 1L);
-        boolean completed = process.waitFor(timeOut, TimeUnit.MINUTES);
-        assertTrue(completed, "Time out while waiting for process");
-
-        OutputAnalyzer output = new OutputAnalyzer(process);
-        output.outputTo(System.out);
-        output.errorTo(System.err);
-
-        return output;
+        try {
+            ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(command);
+            // note that it's important to use ProcessTools.startProcess here since this makes sure output streams of the
+            // fork don't fill up, which could make the process stall while writing to stdout/stderr
+            Process process = ProcessTools.startProcess(target.getName(), pb, null, null, 1L, TimeUnit.MINUTES);
+            OutputAnalyzer output = new OutputAnalyzer(process);
+            output.outputTo(System.out);
+            output.errorTo(System.err);
+            return output;
+        } catch (TimeoutException e) {
+            fail("Timeout while waiting for forked process");
+            return null;
+        }
     }
 }
