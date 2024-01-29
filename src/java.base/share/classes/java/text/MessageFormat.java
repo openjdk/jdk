@@ -645,8 +645,7 @@ public class MessageFormat extends Format {
      * does not necessarily equal the previously applied pattern.
      * @implSpec If a subformat cannot be converted to a String pattern, the {@code
      * FormatType} and {@code FormatStyle} will be omitted from the {@code
-     * FormatElement}. To check a subformat, it is recommended to use either
-     * {@link #getFormats()} or {@link #getFormatsByArgumentIndex()}.
+     * FormatElement}.
      */
     public String toPattern() {
         // later, make this more extensible
