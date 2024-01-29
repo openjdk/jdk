@@ -23,7 +23,6 @@
 package jdk.vm.ci.hotspot;
 
 import static jdk.vm.ci.common.InitTimer.timer;
-import static jdk.vm.ci.hotspot.HotSpotJVMCICompilerFactory.CompilationLevelAdjustment.None;
 import static jdk.vm.ci.services.Services.IS_BUILDING_NATIVE_IMAGE;
 import static jdk.vm.ci.services.Services.IS_IN_NATIVE_IMAGE;
 
@@ -468,7 +467,6 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
     private final JVMCIBackend hostBackend;
 
     private final JVMCICompilerFactory compilerFactory;
-    private final HotSpotJVMCICompilerFactory hsCompilerFactory;
     private volatile JVMCICompiler compiler;
     protected final HotSpotJVMCIReflection reflection;
 
@@ -572,18 +570,6 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         }
 
         compilerFactory = HotSpotJVMCICompilerConfig.getCompilerFactory(this);
-        if (compilerFactory instanceof HotSpotJVMCICompilerFactory) {
-            hsCompilerFactory = (HotSpotJVMCICompilerFactory) compilerFactory;
-            if (hsCompilerFactory.getCompilationLevelAdjustment() != None) {
-                String name = HotSpotJVMCICompilerFactory.class.getName();
-                String msg = String.format("%s.getCompilationLevelAdjustment() is no longer supported. " +
-                                "Use %s.excludeFromJVMCICompilation() instead.", name, name);
-                throw new UnsupportedOperationException(msg);
-            }
-        } else {
-            hsCompilerFactory = null;
-        }
-
         if (config.getFlag("JVMCIPrintProperties", Boolean.class)) {
             if (vmLogStream == null) {
                 vmLogStream = new PrintStream(getLogStream());
