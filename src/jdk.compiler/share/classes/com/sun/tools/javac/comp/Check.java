@@ -4836,7 +4836,7 @@ public class Check {
                     Type testType = labelType(testCaseLabel);
                     boolean dominated = false;
                     if (unconditionalCaseLabel == testCaseLabel) unconditionalFound = true;
-                    if (types.checkUnconditionallyExact(currentType, testType) &&
+                    if (types.isUnconditionallyExact(currentType, testType) &&
                         !currentType.hasTag(ERROR) && !testType.hasTag(ERROR)) {
                         //the current label is potentially dominated by the existing (test) label, check:
                         if (label instanceof JCConstantCaseLabel) {
@@ -4874,7 +4874,7 @@ public class Check {
         private boolean patternDominated(JCPattern existingPattern, JCPattern currentPattern) {
             Type existingPatternType = types.erasure(existingPattern.type);
             Type currentPatternType = types.erasure(currentPattern.type);
-            if (!types.checkUnconditionallyExact(currentPatternType, existingPatternType)) {
+            if (!types.isUnconditionallyExact(currentPatternType, existingPatternType)) {
                 return false;
             }
             if (currentPattern instanceof JCBindingPattern ||

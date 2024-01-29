@@ -1305,7 +1305,7 @@ public class Flow {
                 }
 
                 // if the target is unconditionally exact to the pattern, target is covered
-                if (types.checkUnconditionallyExact(seltype, bp.type)) {
+                if (types.isUnconditionallyExact(seltype, bp.type)) {
                     return true;
                 }
             } else if (seltype.isReference() && bp.type.isPrimitive() && types.isCastable(seltype, bp.type)) {

@@ -1796,7 +1796,7 @@ public class Attr extends JCTree.Visitor {
                         } else if (hasUnconditionalPattern) {
                             log.error(label.pos(), Errors.UnconditionalPatternAndDefault);
                         }  else if (booleanSwitch && constants.containsAll(Set.of(0, 1))) {
-                            log.error(label.pos(), Errors.UnconditionalPatternAndDefault); // TODO improve error
+                            log.error(label.pos(), Errors.DefaultAndBothBooleanValues);
                         }
                         hasDefault = true;
                         matchBindings = MatchBindingsComputer.EMPTY;
@@ -1834,14 +1834,14 @@ public class Attr extends JCTree.Visitor {
                         boolean unconditional =
                                 unguarded &&
                                 !patternType.isErroneous() &&
-                                types.checkUnconditionallyExact(seltype, patternType);
+                                types.isUnconditionallyExact(seltype, patternType);
                         if (unconditional) {
                             if (hasUnconditionalPattern) {
                                 log.error(pat.pos(), Errors.DuplicateUnconditionalPattern);
                             } else if (hasDefault) {
                                 log.error(pat.pos(), Errors.UnconditionalPatternAndDefault);
                             } else if (booleanSwitch && constants.containsAll(Set.of(0, 1))) {
-                                log.error(pat.pos(), Errors.UnconditionalPatternAndDefault); // TODO improve error
+                                log.error(pat.pos(), Errors.UnconditionalPatternAndBothBooleanValues);
                             }
                             hasUnconditionalPattern = true;
                             unconditionalCaseLabel = label;

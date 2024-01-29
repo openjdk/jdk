@@ -8,9 +8,9 @@ PrimitivePatternsSwitchErrors.java:84:18: compiler.err.prob.found.req: (compiler
 PrimitivePatternsSwitchErrors.java:90:18: compiler.err.constant.label.not.compatible: int, float
 PrimitivePatternsSwitchErrors.java:92:18: compiler.err.constant.label.not.compatible: int, float
 PrimitivePatternsSwitchErrors.java:103:13: compiler.err.duplicate.case.label
-PrimitivePatternsSwitchErrors.java:114:13: compiler.err.unconditional.pattern.and.default
-PrimitivePatternsSwitchErrors.java:122:13: compiler.err.unconditional.pattern.and.default
-PrimitivePatternsSwitchErrors.java:130:18: compiler.err.unconditional.pattern.and.default
+PrimitivePatternsSwitchErrors.java:114:13: compiler.err.default.and.both.boolean.values
+PrimitivePatternsSwitchErrors.java:122:13: compiler.err.default.and.both.boolean.values
+PrimitivePatternsSwitchErrors.java:130:18: compiler.err.unconditional.pattern.and.both.boolean.values
 PrimitivePatternsSwitchErrors.java:143:18: compiler.err.constant.label.not.compatible: long, float
 PrimitivePatternsSwitchErrors.java:145:18: compiler.err.prob.found.req: (compiler.misc.possible.loss.of.precision: double, float)
 PrimitivePatternsSwitchErrors.java:151:18: compiler.err.prob.found.req: (compiler.misc.possible.loss.of.precision: float, long)
@@ -23,7 +23,7 @@ PrimitivePatternsSwitchErrors.java:172:18: compiler.err.prob.found.req: (compile
 PrimitivePatternsSwitchErrors.java:173:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: double, java.lang.Long)
 PrimitivePatternsSwitchErrors.java:178:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: long, java.lang.Double)
 PrimitivePatternsSwitchErrors.java:179:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: float, java.lang.Double)
-PrimitivePatternsSwitchErrors.java:189:18: compiler.err.unconditional.pattern.and.default
+PrimitivePatternsSwitchErrors.java:189:18: compiler.err.unconditional.pattern.and.both.boolean.values
 PrimitivePatternsSwitchErrors.java:196:18: compiler.err.duplicate.unconditional.pattern
 PrimitivePatternsSwitchErrors.java:216:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: compiler.misc.type.null, int)
 PrimitivePatternsSwitchErrors.java:30:16: compiler.err.not.exhaustive

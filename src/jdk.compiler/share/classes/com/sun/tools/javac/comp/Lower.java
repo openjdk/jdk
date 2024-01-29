@@ -2980,7 +2980,7 @@ public class Lower extends TreeTranslator {
             JCStatement var = make.at(tree.pos())
                     .VarDef(dollar_s, instanceOfExpr).setType(dollar_s.type);
 
-            if (types.checkUnconditionallyExact(tree.expr.type, tree.pattern.type)) {
+            if (types.isUnconditionallyExact(tree.expr.type, tree.pattern.type)) {
                 exactnessCheck = make
                         .LetExpr(List.of(var), make.Literal(BOOLEAN, 1).setType(syms.booleanType.constType(1)))
                         .setType(syms.booleanType);
@@ -2989,7 +2989,7 @@ public class Lower extends TreeTranslator {
                 JCExpression nullCheck = makeBinary(NE,
                         make.Ident(dollar_s),
                         makeNull());
-                if (types.checkUnconditionallyExactPrimitives(types.unboxedType(tree.expr.type), tree.pattern.type)) {
+                if (types.isUnconditionallyExact(types.unboxedType(tree.expr.type), tree.pattern.type)) {
                     exactnessCheck = make
                             .LetExpr(List.of(var), nullCheck)
                             .setType(syms.booleanType);
@@ -3076,12 +3076,10 @@ public class Lower extends TreeTranslator {
         Name exactnessFunction = names.fromString(typePairToName.get(pair));
 
         // Resolve the exactness method
-        Symbol ecsym = rs.resolveQualifiedMethod(null,
-                attrEnv,
-                syms.exactConversionsSupportType,
+        Symbol ecsym = lookupMethod(tree.pos(),
                 exactnessFunction,
-                List.of(pair.from.type),
-                List.nil());
+                syms.exactConversionsSupportType,
+                List.of(pair.from.type));
 
         // Generate the method call ExactnessChecks.<exactness method>(<argument>);
         JCFieldAccess select = make.Select(

@@ -5037,13 +5037,13 @@ public class Types {
      *  @param source     Source primitive or reference type
      *  @param target     Target primitive or reference type
      */
-    public boolean checkUnconditionallyExact(Type source, Type target) {
+    public boolean isUnconditionallyExact(Type source, Type target) {
         if (isSameType(source, target)) {
             return true;
         }
 
         return target.isPrimitive()
-                ? checkUnconditionallyExactPrimitives(source, target)
+                ? isUnconditionallyExactPrimitives(source, target)
                 : isSubtype(boxedTypeOrType(erasure(source)), target);
     }
 
@@ -5057,7 +5057,7 @@ public class Types {
      *  @param selectorType     Type of selector
      *  @param targetType       Target type
      */
-    public boolean checkUnconditionallyExactPrimitives(Type selectorType, Type targetType) {
+    public boolean isUnconditionallyExactPrimitives(Type selectorType, Type targetType) {
         if (isSameType(selectorType, targetType)) {
             return true;
         }
