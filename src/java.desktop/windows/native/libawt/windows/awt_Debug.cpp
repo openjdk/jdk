@@ -153,16 +153,14 @@ AwtDebugSupport::~AwtDebugSupport() {
 static jboolean isHeadless() {
     jmethodID headlessFn;
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-    jclass graphicsEnvClass = env->FindClass(
-        "java/awt/GraphicsEnvironment");
+    // be on the safe side and avoid JNI warnings by calling ExceptionCheck
+    // an accumulated exception is not cleared
+    env->ExceptionCheck();
+    jclass graphicsEnvClass = env->FindClass("java/awt/GraphicsEnvironment");
 
     if (graphicsEnvClass != NULL) {
-        headlessFn = env->GetStaticMethodID(
-            graphicsEnvClass, "isHeadless", "()Z");
+        headlessFn = env->GetStaticMethodID(graphicsEnvClass, "isHeadless", "()Z");
         if (headlessFn != NULL) {
-            // be on the safe side and avoid JNI warnings by calling ExceptionCheck
-            // an accumulated exception is not cleared
-            env->ExceptionCheck();
             return env->CallStaticBooleanMethod(graphicsEnvClass, headlessFn);
         }
     }
