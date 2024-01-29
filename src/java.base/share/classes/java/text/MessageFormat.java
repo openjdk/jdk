@@ -1689,7 +1689,7 @@ public class MessageFormat extends Format {
                         DateFormat.getTimeInstance(DateFormat.FULL, locale);
                 default -> formatFromSubformatPattern(fType, style);
             };
-            case dtf_DATE -> switch (fStyle) {
+            case DTF_DATE -> switch (fStyle) {
                 case DEFAULT, MEDIUM ->
                         DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.MEDIUM).withLocale(locale).toFormat();
                 case SHORT ->
@@ -1700,7 +1700,7 @@ public class MessageFormat extends Format {
                         DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.FULL).withLocale(locale).toFormat();
                 default -> formatFromSubformatPattern(fType, style);
             };
-            case dtf_TIME -> switch (fStyle) {
+            case DTF_TIME -> switch (fStyle) {
                 case DEFAULT, MEDIUM ->
                         DateTimeFormatter.ofLocalizedTime(java.time.format.FormatStyle.MEDIUM).withLocale(locale).toFormat();
                 case SHORT ->
@@ -1711,7 +1711,7 @@ public class MessageFormat extends Format {
                         DateTimeFormatter.ofLocalizedTime(java.time.format.FormatStyle.FULL).withLocale(locale).toFormat();
                 default -> formatFromSubformatPattern(fType, style);
             };
-            case dtf_DATETIME -> switch (fStyle) {
+            case DTF_DATETIME -> switch (fStyle) {
                 case DEFAULT, MEDIUM ->
                         DateTimeFormatter.ofLocalizedDateTime(java.time.format.FormatStyle.MEDIUM).withLocale(locale).toFormat();
                 case SHORT ->
@@ -1775,7 +1775,7 @@ public class MessageFormat extends Format {
             return switch(fType) {
                 case NUMBER -> new DecimalFormat(pattern, DecimalFormatSymbols.getInstance(locale));
                 case DATE, TIME -> new SimpleDateFormat(pattern, locale);
-                case dtf_DATE, dtf_TIME, dtf_DATETIME ->
+                case DTF_DATE, DTF_TIME, DTF_DATETIME ->
                         DateTimeFormatter.ofPattern(pattern).toFormat();
                 case CHOICE -> new ChoiceFormat(pattern);
                 default ->  throw new IllegalArgumentException(String.format(
@@ -1828,9 +1828,9 @@ public class MessageFormat extends Format {
         NUMBER("number"),
         DATE("date"),
         TIME("time"),
-        dtf_DATE("dtf_date"),
-        dtf_TIME("dtf_time"),
-        dtf_DATETIME("dtf_datetime"),
+        DTF_DATE("dtf_date"),
+        DTF_TIME("dtf_time"),
+        DTF_DATETIME("dtf_datetime"),
         CHOICE("choice"),
         LIST("list"),
 
