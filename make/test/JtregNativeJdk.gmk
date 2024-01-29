@@ -100,7 +100,7 @@ ifeq ($(call isTargetOs, linux), true)
   BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libFib := -g
   BUILD_JDK_JTREG_LIBRARIES_STRIP_SYMBOLS_libFib := false
   # nio tests' libCreationTimeHelper native needs -ldl linker flag
-  BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libCreationTimeHelper := -ldl
+  BUILD_JDK_JTREG_LIBRARIES_LIBS_libCreationTimeHelper := -ldl
 endif
 
 # This evaluation is expensive and should only be done if this target was
