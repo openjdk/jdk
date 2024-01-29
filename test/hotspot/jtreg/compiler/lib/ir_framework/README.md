@@ -33,24 +33,33 @@ There are various ways how to set up and run a test within the `main()` method o
 ## 2. Features
 The framework offers various annotations and flags to control how your test code should be invoked and being checked. This section gives an overview over all these features.
 
-### 2.1 Different Tests
-There are three kinds of tests depending on how much control is needed over the test invocation.
-#### Base Tests
-The simplest form of testing provides a single `@Test` annotated method which the framework will invoke as part of the testing. The test method has no or well-defined arguments that the framework can automatically provide.
+### 2.1 Test Method
+There are two ways a test can be formulated, depending on how much control is needed over the test invocation.
 
-More information on base tests with a precise definition can be found in the Javadocs of [Test](./Test.java). Concrete examples on how to specify a base test can be found in [BaseTestsExample](../../../testlibrary_tests/ir_framework/examples/BaseTestExample.java).
+#### Normal Test Method
+The normal and simplest form of testing provides a single `@Test` annotated method which the framework invokes directly as part of the testing. The test method either has no arguments, or they must be specified with an `@Arguments` annotation.
 
-#### Checked Tests
-The base tests do not provide any way of verification by user code. A checked test enables this by allowing the user to define an additional `@Check` annotated method which is invoked directly after the `@Test` annotated method. This allows the user to perform various checks about the test method including return value verification.
+Arguments can be provided with `@Arguments(values = {...})` by providing well-specified inputs for each individual argument. Alternatively, a setup method can be chosen with `@Arguments(setup = {"setupMethodName"})`, which computes arguments and can also set fields.
 
-More information on checked tests with a precise definition can be found in the Javadocs of [Check](./Check.java). Concrete examples on how to specify a checked test can be found in [CheckedTestsExample](../../../testlibrary_tests/ir_framework/examples/CheckedTestExample.java).
+More information on normal test methods with a precise definition can be found in the Javadocs of [Test](./Test.java). Concrete examples on how to specify a normal test can be found in [BaseTestsExample](../../../testlibrary_tests/ir_framework/examples/BaseTestExample.java).
 
 #### Custom Run Tests
-Neither the base nor the checked tests provide any control over how a `@Test` annotated method is invoked in terms of customized argument values and/or conditions for the invocation itself. A custom run test gives full control over the invocation of the `@Test` annotated method to the user. The framework calls a dedicated `@Run` annotated method from which the user can invoke the `@Test` method according to his/her needs.
+The normal test method is invoked directly by the framework, and hence the user does not have control over the invokation.
+A custom run test gives full control over the invocation of the `@Test` annotated method to the user. The framework calls a dedicated `@Run` annotated method from which the user can invoke the `@Test` method according to their needs.
 
 More information on checked tests with a precise definition can be found in the Javadocs of [Run](./Run.java). Concrete examples on how to specify a custom run test can be found in [CustomRunTestsExample](../../../testlibrary_tests/ir_framework/examples/CustomRunTestExample.java).
 
-### 2.2 IR Verification
+### 2.2 Setup Method
+A `@Setup` annotated method can provide custom arguments and set fields before a normal test is run. A normal test method can be annotated with `@Arguments(setup = {"setupMethodName"})` to specify which setup method is to be used.
+
+More information on checked tests with a precise definition can be found in the Javadocs of [Setup](./Setup.java). Concrete examples on how to specify a setup method can be found in [SetupExample](../../../testlibrary_tests/ir_framework/examples/SetupExample.java).
+
+### 2.3 Check Method
+A `@Check` annotated method is invoked directly after a corresponding normal `@Test` annotated method. The user can perform various checks, such as test method return value and field value verification.
+
+More information on check methods with a precise definition can be found in the Javadocs of [Check](./Check.java). Concrete examples on how to specify check methods can be found in [CheckedTestsExample](../../../testlibrary_tests/ir_framework/examples/CheckedTestExample.java).
+
+### 2.4 IR Verification
 The main feature of this framework is to perform a simple but yet powerful regex-based C2 IR matching on the output of `-XX:+PrintIdeal`, `-XX:+PrintOptoAssembly` and/or on specific compile phases emitted by the compile command `-XX:CompileCommand=PrintIdealPhase` which supports the same set of compile phases as the Ideal Graph Visualizer (IGV).
 
 The user has the possibility to add one or more `@IR` annotations to any `@Test` annotated method (regardless of the kind of test mentioned in section 2.1) to specify regex constraints/rules on the compiled IR shape of any compile phase (for simplicity, the framework treats the output of `-XX:+PrintIdeal` and `-XX:+PrintOptoAssembly` as a separate compile phase next to the compile phases emitted by `-XX:CompileCommand=PrintIdealPhase`).
@@ -133,12 +142,12 @@ An IR verification cannot always be performed. Certain VM flags explicitly disab
 
 More information about IR matching can be found in the Javadocs of [IR](./IR.java). Concrete examples on how to specify IR constraint/rules can be found in [IRExample](../../../testlibrary_tests/ir_framework/examples/IRExample.java), [TestIRMatching](../../../testlibrary_tests/ir_framework/tests/TestIRMatching.java) (internal framework test), and [TestPhaseIRMatching](../../../testlibrary_tests/ir_framework/tests/TestPhaseIRMatching.java) (internal framework test).
 
-### 2.3 Test VM Flags and Scenarios
+### 2.5 Test VM Flags and Scenarios
 The recommended way to use the framework is by defining a single `@run driver` statement in the JTreg header which, however, does not allow the specification of additional test VM flags. Instead, the user has the possibility to provide VM flags by calling `TestFramework.runWithFlags()` or by creating a `TestFramework` builder object on which `addFlags()` can be called.
 
 If a user wants to provide multiple flag combinations for a single test, he or she has the option to provide different scenarios. A scenario based flag will always have precedence over other user defined flags. More information about scenarios can be found in the Javadocs of [Scenario](./Scenario.java).
 
-### 2.4 Compiler Controls
+### 2.6 Compiler Controls
 The framework allows the use of additional compiler control annotations for helper method and classes in the same fashion as JMH does. The following annotations are supported and described in the referenced Javadocs for the annotation class:
 
 - [@DontInline](./DontInline.java)
@@ -147,7 +156,7 @@ The framework allows the use of additional compiler control annotations for help
 - [@ForceCompile](./ForceCompile.java)
 - [@ForceCompileClassInitializer](./ForceCompileClassInitializer.java)
 
-### 2.5 Framework Debug and Stress Flags
+### 2.7 Framework Debug and Stress Flags
 The framework provides various stress and debug flags. They should mainly be used as JTreg VM and/or Javaoptions (apart from `VerifyIR`). The following (property) flags are supported:
 
 - `-DVerifyIR=false`: Explicitly disable IR verification. This is useful, for example, if some scenarios use VM flags that let `@IR` annotation rules fail and the user does not want to provide separate IR rules or add flag preconditions to the already existing IR rules.
