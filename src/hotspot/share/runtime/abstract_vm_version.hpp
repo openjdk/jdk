@@ -58,7 +58,7 @@ class Abstract_VM_Version: AllStatic {
   static uint64_t _features;
   static const char* _features_string;
 
-  // CPU feature flags not affected by VM flags.
+  // Original CPU feature flags, not affected by VM settings.
   static uint64_t _cpu_features;
 
   // These are set by machine-dependent initializations
