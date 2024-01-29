@@ -61,6 +61,7 @@ public:
 
 class CompiledICData : public CHeapObj<mtCompiler> {
   friend class VMStructs;
+  friend class JVMCIVMStructs;
 
   Method*   volatile _speculated_method;
   uintptr_t volatile _speculated_klass;
