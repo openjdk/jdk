@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,8 +159,6 @@ class DefNewGeneration: public Generation {
                    size_t max_byte_size,
                    const char* policy="Serial young collection pauses");
 
-  virtual Generation::Name kind() { return Generation::DefNew; }
-
   // allocate and initialize ("weak") refs processing support
   void ref_processor_init();
   ReferenceProcessor* ref_processor() { return _ref_processor; }
@@ -226,7 +224,7 @@ class DefNewGeneration: public Generation {
 
   HeapWord* par_allocate(size_t word_size, bool is_tlab);
 
-  virtual void gc_epilogue(bool full);
+  void gc_epilogue(bool full);
 
   // Save the tops for eden, from, and to
   virtual void record_spaces_top();
@@ -250,7 +248,7 @@ class DefNewGeneration: public Generation {
   void reset_scratch();
 
   // GC support
-  virtual void compute_new_size();
+  void compute_new_size();
 
   // Returns true if the collection is likely to be safely
   // completed. Even if this method returns true, a collection

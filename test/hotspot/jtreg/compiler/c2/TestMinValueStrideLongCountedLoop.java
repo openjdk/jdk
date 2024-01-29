@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,18 +20,30 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
-package sun.net.www.protocol.jar;
-
-import java.io.*;
-import java.net.*;
-import java.util.jar.*;
-
+package compiler.c2;
 
 /*
- * This interface is used to call back to sun.plugin package.
+ * @test
+ * @bug 8323154
+ * @summary Long counted loop exit check should not be transformed into an unsigned check
+ *
+ * @run main/othervm -Xbatch -XX:CompileCommand=compileonly,compiler.c2.TestMinValueStrideLongCountedLoop::test
+ *                   compiler.c2.TestMinValueStrideLongCountedLoop
  */
-public interface URLJarFileCallBack
-{
-        public JarFile retrieve (URL url) throws IOException;
+
+public class TestMinValueStrideLongCountedLoop {
+    static long limit = 0;
+    static long res = 0;
+
+    public static void main(String[] args) {
+        for (int i = 0; i < 10000; i++) {
+            test();
+        }
+    }
+
+    static void test() {
+        for (long i = 0; i >= limit + (Long.MIN_VALUE + 1); i += Long.MIN_VALUE) {
+            res += 42;
+        }
+    }
 }

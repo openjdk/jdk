@@ -482,8 +482,6 @@ jint ShenandoahHeap::initialize() {
   if (ShenandoahPacing) {
     _pacer = new ShenandoahPacer(this);
     _pacer->setup_for_idle();
-  } else {
-    _pacer = nullptr;
   }
 
   _control_thread = new ShenandoahControlThread();
@@ -909,8 +907,7 @@ void ShenandoahHeap::op_uncommit(double shrink_before, size_t shrink_until) {
   }
 
   if (count > 0) {
-    control_thread()->notify_heap_changed();
-    regulator_thread()->notify_heap_changed();
+    notify_heap_changed();
   }
 }
 
@@ -976,6 +973,22 @@ void ShenandoahHeap::report_promotion_failure(Thread* thread, size_t size) {
       epoch_report_count = 1;
     }
   }
+}
+
+void ShenandoahHeap::notify_heap_changed() {
+  // Update monitoring counters when we took a new region. This amortizes the
+  // update costs on slow path.
+  monitoring_support()->notify_heap_changed();
+  control_thread()->notify_heap_changed();
+  regulator_thread()->notify_heap_changed();
+}
+
+void ShenandoahHeap::set_forced_counters_update(bool value) {
+  monitoring_support()->set_forced_counters_update(value);
+}
+
+void ShenandoahHeap::handle_force_counters_update() {
+  monitoring_support()->handle_force_counters_update();
 }
 
 HeapWord* ShenandoahHeap::allocate_from_gclab_slow(Thread* thread, size_t size) {
@@ -1385,8 +1398,7 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req, bool is_p
   }
 
   if (in_new_region) {
-    control_thread()->notify_heap_changed();
-    regulator_thread()->notify_heap_changed();
+    notify_heap_changed();
   }
 
   if (result == nullptr) {
@@ -2038,7 +2050,6 @@ void ShenandoahHeap::on_cycle_start(GCCause::Cause cause, ShenandoahGeneration* 
   set_gc_cause(cause);
   set_gc_generation(generation);
 
-  shenandoah_policy()->record_cycle_start();
   generation->heuristics()->record_cycle_start();
 }
 

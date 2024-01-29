@@ -60,6 +60,8 @@ public:
   ShenandoahConcurrentGC(ShenandoahGeneration* generation, bool do_old_gc_bootstrap);
   bool collect(GCCause::Cause cause);
   ShenandoahDegenPoint degen_point() const;
+
+  // Return true if this cycle found enough immediate garbage to skip evacuation
   bool abbreviated() const { return _abbreviated; }
 
 private:

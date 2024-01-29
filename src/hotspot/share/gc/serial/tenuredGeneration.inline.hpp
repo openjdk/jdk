@@ -68,8 +68,6 @@ bool TenuredGeneration::block_is_obj(const HeapWord* addr) const {
 template <typename OopClosureType>
 void TenuredGeneration::oop_since_save_marks_iterate(OopClosureType* blk) {
   _the_space->oop_since_save_marks_iterate(blk);
-
-  save_marks();
 }
 
 #endif // SHARE_GC_SERIAL_TENUREDGENERATION_INLINE_HPP

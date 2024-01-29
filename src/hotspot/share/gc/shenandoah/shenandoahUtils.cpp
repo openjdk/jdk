@@ -74,7 +74,6 @@ ShenandoahGCSession::~ShenandoahGCSession() {
   _tracer->report_gc_reference_stats(_generation->ref_processor()->reference_process_stats());
   _tracer->report_gc_end(_timer->gc_end(), _timer->time_partitions());
   assert(!ShenandoahGCPhase::is_current_phase_valid(), "No current GC phase");
-
 }
 
 ShenandoahGCPauseMark::ShenandoahGCPauseMark(uint gc_id, const char* notification_message, SvcGCMarker::reason_type type) :
