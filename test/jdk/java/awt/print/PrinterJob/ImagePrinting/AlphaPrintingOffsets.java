@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,17 +21,26 @@
  * questions.
  */
 
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.print.Book;
+import java.awt.print.PageFormat;
+import static java.awt.print.PageFormat.LANDSCAPE;
+import static java.awt.print.PageFormat.PORTRAIT;
+import static java.awt.print.PageFormat.REVERSE_LANDSCAPE;
+import java.awt.print.Paper;
+import java.awt.print.Printable;
+import java.awt.print.PrinterException;
+import java.awt.print.PrinterJob;
 import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.standard.Sides;
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.awt.print.*;
-import java.awt.print.PrinterException;
+import javax.swing.JFrame;
 
-import static java.awt.print.PageFormat.*;
 
 /*
  * @test
@@ -39,7 +48,7 @@ import static java.awt.print.PageFormat.*;
  * @key printer
  * @library ../../../regtesthelpers
  * @build PassFailJFrame
- * @summary Test for comparing offsets of images drew with opaque and translucent colors printed in all orientations
+ * @summary Test for comparing offsets of images drawn with opaque and translucent colors printed in all orientations
  * @run main/manual AlphaPrintingOffsets
  */
 
@@ -48,8 +57,8 @@ public class AlphaPrintingOffsets {
             "This test prints 6 pages with same image except text messages. \n" +
                     "Tested bug occurs only on-paper printing so you mustn't use PDF printer\n" +
                     "1.Java print dialog should appear.\n" +
-                    "2. Press the Print button on the Java Print dialog.\n"+
-                    "3. Check that 6 pages have the same image except text messages.\n"+
+                    "2. Press the Print button on the Java Print dialog.\n" +
+                    "3. Check that 6 pages have the same image except text messages.\n" +
                     "If so, press PASS, else press FAIL.";
 
     public static void main(String[] args) throws Exception {
@@ -58,8 +67,7 @@ public class AlphaPrintingOffsets {
             PassFailJFrame.builder().instructions(INSTRUCTIONS)
                     .testUI(() -> createTestUI()).build().awaitAndCheck();
 
-        }
-        else {
+        } else {
             System.out.println("Printer not configured or available."
                     + " Test cannot continue.");
             PassFailJFrame.forcePass();
@@ -69,7 +77,7 @@ public class AlphaPrintingOffsets {
 
     public static JFrame createTestUI() {
         JFrame testUI = new JFrame("Print images");
-        testUI.setSize(1,1);
+        testUI.setSize(1, 1);
         testUI.addWindowListener(new WindowAdapter() {
             @Override
             public void windowOpened(WindowEvent e) {
@@ -92,7 +100,7 @@ public class AlphaPrintingOffsets {
         PageFormat pageFormatP = printerJob.defaultPage();
 
         Paper paper = pageFormatP.getPaper();
-        paper.setImageableArea(0,0,paper.getWidth(),paper.getHeight());
+        paper.setImageableArea(0, 0, paper.getWidth(), paper.getHeight());
         pageFormatP.setPaper(paper);
 
         PageFormat pageFormatL = (PageFormat) pageFormatP.clone();
@@ -123,8 +131,7 @@ public class AlphaPrintingOffsets {
                 e.printStackTrace();
                 throw new RuntimeException("Exception whilst printing.");
             }
-        }
-        else {
+        } else {
             throw new RuntimeException("Test failed : "
                     + "User selected 'Cancel' button on the print dialog");
         }
@@ -138,15 +145,19 @@ class CustomPrintable implements Printable {
     private int alphaValue;
 
     public CustomPrintable(int alpha) {
-        alphaValue=alpha;
+        alphaValue = alpha;
     }
 
     private static String getOrientStr(int orient) {
         switch (orient) {
-            case PORTRAIT: return "PORTRAIT";
-            case LANDSCAPE: return "LANDSCAPE";
-            case REVERSE_LANDSCAPE: return "REVERSE_LANDSCAPE";
-            default : return "BAD Orientation";
+            case PORTRAIT:
+                return "PORTRAIT";
+            case LANDSCAPE:
+                return "LANDSCAPE";
+            case REVERSE_LANDSCAPE:
+                return "REVERSE_LANDSCAPE";
+            default:
+                return "BAD Orientation";
         }
     }
 
@@ -163,7 +174,7 @@ class CustomPrintable implements Printable {
         drawSmallRectangle(g, pageFormat.getImageableX(), pageFormat.getImageableY(),
                 pageFormat.getImageableWidth(), pageFormat.getImageableHeight());
 
-        drawMsg(g,300,300, pageFormat.getOrientation());
+        drawMsg(g, 300, 300, pageFormat.getOrientation());
         return Printable.PAGE_EXISTS;
     }
 
@@ -172,14 +183,14 @@ class CustomPrintable implements Printable {
         g2d.setStroke(new BasicStroke(THICKNESS));
 
         // Draw rectangle with thick border lines
-        g2d.drawRect((int) x+MARGIN, (int) y+MARGIN, (int) width-MARGIN*2, (int) height-MARGIN*2);
+        g2d.drawRect((int) x + MARGIN, (int) y + MARGIN, (int) width - MARGIN * 2, (int) height - MARGIN * 2);
     }
 
     private void drawSmallRectangle(Graphics g, double x, double y, double width, double height) {
         Graphics2D g2d = (Graphics2D) g;
         Color originalColor = g2d.getColor();
 
-        g2d.setColor(new Color(0,0,0,alphaValue));
+        g2d.setColor(new Color(0, 0, 0, alphaValue));
         // Calculate the position to center the smaller rectangle
         double centerX = x + (width - SMALL_RECTANGLE_SIZE) / 2;
         double centerY = y + (height - SMALL_RECTANGLE_SIZE) / 2;
