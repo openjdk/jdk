@@ -19,9 +19,6 @@ public class TestShenandoahBarrierExpansion {
         TestFramework test = new TestFramework(TestShenandoahBarrierExpansion.class);
         test.addFlags(
                 "-XX:+UseShenandoahGC",
-                "-XX:-BackgroundCompilation",
-                "-XX:-UseOnStackReplacement",
-                "-XX:-UseCompressedOops",
                 "-XX:CompileCommand=dontinline," + TestShenandoahBarrierExpansion.class.getName() + "::notInlined");
         test.start();
     }
