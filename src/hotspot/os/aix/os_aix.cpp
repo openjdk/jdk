@@ -278,7 +278,7 @@ jlong os::total_swap_space() {
   if (libperfstat::perfstat_memory_total(NULL, &memory_info, sizeof(perfstat_memory_total_t), 1) == -1) {
     return -1;
   }
-  return (jlong)(memory_info.pgsp_total * 4L * 1024L);
+  return (jlong)(memory_info.pgsp_total * 4 * K);
 }
 
 jlong os::free_swap_space() {
@@ -286,7 +286,7 @@ jlong os::free_swap_space() {
   if (libperfstat::perfstat_memory_total(NULL, &memory_info, sizeof(perfstat_memory_total_t), 1) == -1) {
     return -1;
   }
-  return (jlong)(memory_info.pgsp_free * 4L * 1024L);
+  return (jlong)(memory_info.pgsp_free * 4 * K);
 }
 
 julong os::physical_memory() {
