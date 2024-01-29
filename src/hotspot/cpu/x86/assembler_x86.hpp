@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -816,8 +816,8 @@ private:
   void check_relocation(RelocationHolder const& rspec, int format);
 #endif
 
-  void emit_data(jint data, relocInfo::relocType    rtype, int format);
-  void emit_data(jint data, RelocationHolder const& rspec, int format);
+  void emit_data(jint data, relocInfo::relocType    rtype, int format = 0);
+  void emit_data(jint data, RelocationHolder const& rspec, int format = 0);
   void emit_data64(jlong data, relocInfo::relocType rtype, int format = 0);
   void emit_data64(jlong data, RelocationHolder const& rspec, int format = 0);
 
@@ -1523,6 +1523,8 @@ private:
   void korwl(KRegister dst, KRegister src1, KRegister src2);
   void kordl(KRegister dst, KRegister src1, KRegister src2);
   void korql(KRegister dst, KRegister src1, KRegister src2);
+
+  void kxnorwl(KRegister dst, KRegister src1, KRegister src2);
 
   void kxorbl(KRegister dst, KRegister src1, KRegister src2);
   void kxorwl(KRegister dst, KRegister src1, KRegister src2);
