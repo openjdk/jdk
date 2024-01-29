@@ -108,13 +108,6 @@ class Generation: public CHeapObj<mtGC> {
   // The largest number of contiguous free bytes in this or any higher generation.
   virtual size_t max_contiguous_available() const;
 
-  // Return an estimate of the maximum allocation that could be performed
-  // in the generation without triggering any collection or expansion
-  // activity.  It is "unsafe" because no locks are taken; the result
-  // should be treated as an approximation, not a guarantee, for use in
-  // heuristic resizing decisions.
-  virtual size_t unsafe_max_alloc_nogc() const = 0;
-
   // Returns true if this generation cannot be expanded further
   // without a GC. Override as appropriate.
   virtual bool is_maximal_no_gc() const {
