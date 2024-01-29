@@ -469,6 +469,10 @@ void Canonicalizer::do_CompareOp      (CompareOp*       x) {
 
 
 void Canonicalizer::do_IfOp(IfOp* x) {
+  // Currently, Canonicalizer is only used by GraphBuilder,
+  // and IfOp is not created by GraphBuilder but only later
+  // when eliminating conditional expressions with CE_Eliminator,
+  // therefor this method will not be called.
   ShouldNotReachHere();
 }
 
