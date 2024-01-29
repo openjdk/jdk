@@ -23,20 +23,23 @@
 
 package compiler.lib.ir_framework;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-
 /**
- * This annotation is used to identify Setup methods. These can be used to compute arbitrary arguments for a test
- * method (see {@link Test}), as well as set fields. A test method can use a Setup method, by specifying it in a
- * {@link Arguments} annotation. A setup method can optionally take a {@link SetupInfo} as an argument. The for the
- * arguments for the test methods are returned in an Object[].
+ * Info optionally passed to {@link Setup} annotated methods.
  *
- * @see Arguments
  * @see Setup
- * @see SetupInfo
- * @see Test
  */
-@Retention(RetentionPolicy.RUNTIME)
-public @interface Setup {
+public class SetupInfo {
+    private final int invocationCounter;
+
+    public SetupInfo(int invocationCounter) {
+        this.invocationCounter = invocationCounter;
+    }
+
+    /**
+     * Get the invocation counter, which increments with every invocation of the setup method. It allows the creation
+     * of deterministically different inputs to the test method for every invocation.
+     */
+    public int getInvocationCounter() {
+        return invocationCounter;
+    }
 }

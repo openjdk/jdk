@@ -24,6 +24,7 @@
 package ir_framework.examples;
 
 import compiler.lib.ir_framework.*;
+import compiler.lib.ir_framework.SetupInfo;
 
 /*
  * @test
@@ -88,11 +89,11 @@ public class SetupExample {
 
     // Test with non-static setup, test and check method.
     @Setup
-    Object[] setupTestSetupArgumentsAndFields(int invocationCounter) {
-        iFld  = invocationCounter;
-        iFld2 = invocationCounter + 1;
-        iFld3 = invocationCounter + 2;
-        return new Object[]{invocationCounter}; // passed as arguments to test method
+    Object[] setupTestSetupArgumentsAndFields(SetupInfo info) {
+        iFld  = info.getInvocationCounter();
+        iFld2 = info.getInvocationCounter() + 1;
+        iFld3 = info.getInvocationCounter() + 2;
+        return new Object[]{info.getInvocationCounter()}; // passed as arguments to test method
     }
 
     @Test

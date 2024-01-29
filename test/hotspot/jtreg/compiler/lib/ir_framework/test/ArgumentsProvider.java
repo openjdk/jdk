@@ -27,6 +27,7 @@ import compiler.lib.ir_framework.shared.TestFormat;
 import compiler.lib.ir_framework.shared.TestRunException;
 import compiler.lib.ir_framework.Argument;
 import compiler.lib.ir_framework.Arguments;
+import compiler.lib.ir_framework.SetupInfo;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -135,7 +136,7 @@ final class SetupArgumentsProvider extends ArgumentsProvider {
                                                                       : invocationTarget;
         try {
             if (setupMethod.getParameterCount() == 1) {
-                return (Object[]) setupMethod.invoke(target, invocationCounter);
+                return (Object[]) setupMethod.invoke(target, new SetupInfo(invocationCounter));
             } else {
                 return (Object[]) setupMethod.invoke(target);
             }
