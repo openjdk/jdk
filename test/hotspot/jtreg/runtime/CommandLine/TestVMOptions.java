@@ -63,6 +63,7 @@ public class TestVMOptions {
     pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:UnlockExperimentalVMOptions");
     output = new OutputAnalyzer(pb.start());
-    output.shouldContain("Missing +/- setting for VM option 'UnlockExperimentalVMOptions'");
+    output.stderrShouldContain("VM option 'UnlockExperimentalVMOptions' is experimental and must be enabled via -XX:+UnlockExperimentalVMOptions.");
+    output.stderrShouldContain("Missing +/- setting for VM option 'UnlockExperimentalVMOptions'");
   }
 }
