@@ -2486,7 +2486,7 @@ void PhaseIdealLoop::add_constraint(jlong stride_con, jlong scale_con, Node* off
   // If the absolute scale value is greater one, division in 'adjust_limit' may require
   // rounding. Make sure the ABS method correctly handles min_jint.
   // Only do this for the pre-loop, one less iteration of the main loop doesn't hurt.
-  bool round = ABS(scale_con) > 1;
+  bool round = uabs(scale_con) > 1;
 
   Node* scale = _igvn.longcon(scale_con);
   set_ctrl(scale, C->root());

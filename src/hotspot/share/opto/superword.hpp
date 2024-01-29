@@ -284,7 +284,8 @@ class SuperWord : public ResourceObj {
 
   int vector_width(const Node* n) const {
     BasicType bt = velt_basic_type(n);
-    return MIN2(ABS(iv_stride()), Matcher::max_vector_size(bt));
+    unsigned int u = MIN2(uabs(iv_stride()), checked_cast<unsigned int>(Matcher::max_vector_size(bt)));
+    return checked_cast<int>(u);
   }
   int vector_width_in_bytes(const Node* n) const {
     BasicType bt = velt_basic_type(n);

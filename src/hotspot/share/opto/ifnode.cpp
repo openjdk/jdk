@@ -1975,7 +1975,7 @@ Node* RangeCheckNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
           // "x - y" -> must add one to the difference for number of elements in [x,y]
           const jlong diff = (jlong)MIN2(offset2, off_lo) - (jlong)MAX2(offset2, off_hi);
-          if (ABS(diff) < maximum_number_of_min_max_interval_indices) {
+          if (uabs(diff) < maximum_number_of_min_max_interval_indices) {
             // Gather expanded bounds
             off_lo = MIN2(off_lo, offset2);
             off_hi = MAX2(off_hi, offset2);

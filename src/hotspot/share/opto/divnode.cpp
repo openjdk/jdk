@@ -54,7 +54,7 @@ static bool magic_int_divide_constants(jint d, jint &M, jint &s) {
   uint32_t ad, anc, delta, q1, r1, q2, r2, t;
   const uint32_t two31 = 0x80000000L;     // 2**31.
 
-  ad = ABS(d);
+  ad = uabs(d);
   if (d == 0 || d == 1) return false;
   t = two31 + ((uint32_t)d >> 31);
   anc = t - 1 - t%ad;     // Absolute value of nc.
@@ -222,7 +222,7 @@ static bool magic_long_divide_constants(jlong d, jlong &M, jint &s) {
   uint64_t ad, anc, delta, q1, r1, q2, r2, t;
   const uint64_t two63 = UCONST64(0x8000000000000000);     // 2**63.
 
-  ad = ABS(d);
+  ad = uabs(d);
   if (d == 0 || d == 1) return false;
   t = two63 + ((uint64_t)d >> 63);
   anc = t - 1 - t%ad;     // Absolute value of nc.

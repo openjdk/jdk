@@ -1106,8 +1106,6 @@ template<class T> constexpr T MIN3(T a, T b, T c)      { return MIN2(MIN2(a, b),
 template<class T> constexpr T MAX4(T a, T b, T c, T d) { return MAX2(MAX3(a, b, c), d); }
 template<class T> constexpr T MIN4(T a, T b, T c, T d) { return MIN2(MIN3(a, b, c), d); }
 
-template<class T> inline T ABS(T x)                 { return (x > 0) ? x : -x; }
-
 // Return the given value clamped to the range [min ... max]
 template<typename T>
 inline T clamp(T value, T min, T max) {
@@ -1140,6 +1138,7 @@ static inline julong uabs(julong n) {
 }
 static inline julong uabs(jlong n) { return uabs((julong)n); }
 static inline unsigned int uabs(int n) { return uabs((unsigned int)n); }
+static inline uint64_t uabs(int64_t n) { return uabs((julong)n); }
 
 // "to" should be greater than "from."
 inline size_t byte_size(void* from, void* to) {
