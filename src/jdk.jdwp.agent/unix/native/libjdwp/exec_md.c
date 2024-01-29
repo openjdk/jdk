@@ -48,12 +48,6 @@ static char *skipNonWhitespace(char *p) {
     return p;
 }
 
-int
-isAsciiDigit(char c)
-{
-  return c >= '0' && c <= '9';
-}
-
 #if defined(_AIX)
   /* AIX does not understand '/proc/self' - it requires the real process ID */
   #define FD_DIR aix_fd_dir
@@ -105,7 +99,7 @@ closeDescriptors(void)
 
     while ((dirp = readdir(dp)) != NULL) {
         int fd;
-        if (isAsciiDigit(dirp->d_name[0]) &&
+        if (isdigit(dirp->d_name[0]) &&
             (fd = strtol(dirp->d_name, NULL, 10)) >= from_fd) {
             (void)close(fd);
         }
