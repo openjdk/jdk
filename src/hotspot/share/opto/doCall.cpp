@@ -941,7 +941,7 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
 
   // Get the exception oop klass from its header
   Node* ex_klass_node = nullptr;
-  if (has_ex_handler() && !ex_type->klass_is_exact()) {
+  if (has_exception_handler() && !ex_type->klass_is_exact()) {
     Node* p = basic_plus_adr( ex_node, ex_node, oopDesc::klass_offset_in_bytes());
     ex_klass_node = _gvn.transform(LoadKlassNode::make(_gvn, nullptr, immutable_memory(), p, TypeInstPtr::KLASS, TypeInstKlassPtr::OBJECT));
 

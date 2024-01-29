@@ -26,12 +26,8 @@
  * @bug 8065132
  * @summary Test generation of annotations on inner class parameters.
  * @library /lib/annotations/
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  * @build annotations.classfile.ClassfileInspector SyntheticParameters
  * @run main SyntheticParameters
  */
@@ -41,7 +37,7 @@ import annotations.classfile.ClassfileInspector;
 import java.io.*;
 import java.lang.annotation.*;
 
-import jdk.internal.classfile.ClassModel;
+import java.lang.classfile.ClassModel;
 
 public class SyntheticParameters extends ClassfileInspector {
 

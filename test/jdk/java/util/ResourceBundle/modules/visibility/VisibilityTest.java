@@ -26,6 +26,7 @@
  * @bug 8137317 8139238 8210408
  * @summary Visibility tests for ResourceBundle.getBundle with and without
  *          an unnamed module argument.
+ * @requires vm.flagless
  * @library /test/lib
  *          ..
  * @build jdk.test.lib.JDKToolLauncher
@@ -330,8 +331,8 @@ public class VisibilityTest {
     }
 
     private int runCmd(List<String> argsList) throws Throwable {
-        // Build process (with VM flags)
-        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
+        // Build process (without VM flags)
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 Stream.concat(Stream.of("-ea", "-esa"), argsList.stream()).toList());
         // Evaluate process status
         return ProcessTools.executeCommand(pb).getExitValue();

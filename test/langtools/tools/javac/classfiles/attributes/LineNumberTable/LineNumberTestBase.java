@@ -21,8 +21,8 @@
  * questions.
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 import jdk.internal.classfile.impl.BoundAttribute;
 
 import java.io.InputStream;
@@ -69,7 +69,7 @@ public class LineNumberTestBase extends TestBase {
                 for (JavaFileObject file : compile(testCase.extraCompilerOptions, testCase.src).getClasses().values()) {
                     ClassModel classFile;
                     try (InputStream input = file.openInputStream()) {
-                        classFile = Classfile.of().parse(input.readAllBytes());
+                        classFile = ClassFile.of().parse(input.readAllBytes());
                     }
                     for (MethodModel m : classFile.methods()) {
                         CodeAttribute code_attribute = m.findAttribute(Attributes.CODE).orElse(null);

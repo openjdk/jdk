@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 4179262
+ @ @key printer
  * @summary Confirm that transparent colors are printed correctly. The
  * printout should show transparent rings with increasing darkness toward
  * the center.

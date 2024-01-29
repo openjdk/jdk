@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -196,7 +196,7 @@ class nmethod : public CompiledMethod {
   address _verified_entry_point;             // entry point without class check
   address _osr_entry_point;                  // entry point for on stack replacement
 
-  nmethod* _unlinked_next;
+  bool _is_unlinked;
 
   // Shared fields for all nmethod's
   int _entry_bci;      // != InvocationEntryBci if this nmethod is an on-stack replacement method
@@ -441,8 +441,8 @@ class nmethod : public CompiledMethod {
   virtual bool is_unloading();
   virtual void do_unloading(bool unloading_occurred);
 
-  nmethod* unlinked_next() const                  { return _unlinked_next; }
-  void set_unlinked_next(nmethod* next)           { _unlinked_next = next; }
+  bool is_unlinked() const                        { return _is_unlinked; }
+  void set_is_unlinked()                          { assert(!_is_unlinked, "already unlinked"); _is_unlinked = true; }
 
 #if INCLUDE_RTM_OPT
   // rtm state accessing and manipulating
@@ -522,7 +522,7 @@ public:
   void unlink();
 
   // Deallocate this nmethod - called by the GC
-  void flush();
+  void purge(bool free_code_cache_data, bool unregister_nmethod);
 
   // See comment at definition of _last_seen_on_stack
   void mark_as_maybe_on_stack();
@@ -621,7 +621,6 @@ public:
 #if defined(SUPPORT_DATA_STRUCTS)
   // print output in opt build for disassembler library
   void print_relocations()                        PRODUCT_RETURN;
-  void print_pcs() { print_pcs_on(tty); }
   void print_pcs_on(outputStream* st);
   void print_scopes() { print_scopes_on(tty); }
   void print_scopes_on(outputStream* st)          PRODUCT_RETURN;
@@ -635,8 +634,7 @@ public:
   void print_oops(outputStream* st);     // oops from the underlying CodeBlob.
   void print_metadata(outputStream* st); // metadata in metadata pool.
 #else
-  // void print_pcs()                             PRODUCT_RETURN;
-  void print_pcs()                                { return; }
+  void print_pcs_on(outputStream* st) { return; }
 #endif
 
   void print_calls(outputStream* st)              PRODUCT_RETURN;

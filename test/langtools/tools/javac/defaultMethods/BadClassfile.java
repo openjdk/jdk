@@ -26,12 +26,8 @@
  * @bug 8025087
  * @summary Verify that pre-JDK8 classfiles with default and/or static methods
  *          are refused correctly.
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.code
  *          jdk.compiler/com.sun.tools.javac.comp
@@ -42,7 +38,7 @@
  * @run main BadClassfile
  */
 
-import jdk.internal.classfile.*;
+import java.lang.classfile.*;
 import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.code.ClassFinder.BadClassFile;
 import com.sun.tools.javac.code.Symbol;
@@ -64,8 +60,8 @@ public class BadClassfile {
 
     private static void test(String classname, String expected) throws Exception {
         File classfile = new File(System.getProperty("test.classes", "."), classname + ".class");
-        ClassModel cf = Classfile.of().parse(classfile.toPath());
-        Classfile.of().transform(cf, ClassTransform.dropping(ce -> ce instanceof ClassfileVersion)
+        ClassModel cf = ClassFile.of().parse(classfile.toPath());
+        ClassFile.of().transform(cf, ClassTransform.dropping(ce -> ce instanceof ClassFileVersion)
                 .andThen(ClassTransform.endHandler(classBuilder -> classBuilder.withVersion(Target.JDK1_7.majorVersion, Target.JDK1_7.minorVersion))));
         JavaCompiler c = ToolProvider.getSystemJavaCompiler();
         JavacTaskImpl task = (JavacTaskImpl) c.getTask(null, null, null, Arrays.asList("-classpath", System.getProperty("test.classes", ".")), null, null);

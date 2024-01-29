@@ -50,21 +50,18 @@ bool ShenandoahBarrierC2Support::expand(Compile* C, PhaseIterGVN& igvn) {
        state->load_reference_barriers_count()) > 0) {
     assert(C->post_loop_opts_phase(), "no loop opts allowed");
     C->reset_post_loop_opts_phase(); // ... but we know what we are doing
-    bool attempt_more_loopopts = ShenandoahLoopOptsAfterExpansion;
     C->clear_major_progress();
     PhaseIdealLoop::optimize(igvn, LoopOptsShenandoahExpand);
     if (C->failing()) return false;
-    PhaseIdealLoop::verify(igvn);
-    if (attempt_more_loopopts) {
-      C->set_major_progress();
-      if (!C->optimize_loops(igvn, LoopOptsShenandoahPostExpand)) {
-        return false;
-      }
-      C->clear_major_progress();
 
-      C->process_for_post_loop_opts_igvn(igvn);
-      if (C->failing()) return false;
+    C->set_major_progress();
+    if (!C->optimize_loops(igvn, LoopOptsShenandoahPostExpand)) {
+      return false;
     }
+    C->clear_major_progress();
+    C->process_for_post_loop_opts_igvn(igvn);
+    if (C->failing()) return false;
+
     C->set_post_loop_opts_phase(); // now for real!
   }
   return true;
@@ -1392,11 +1389,9 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
     Node* result_mem = nullptr;
 
     Node* addr;
-    if (ShenandoahSelfFixing) {
+    {
       VectorSet visited;
       addr = get_load_addr(phase, visited, lrb);
-    } else {
-      addr = phase->igvn().zerocon(T_OBJECT);
     }
     if (addr->Opcode() == Op_AddP) {
       Node* orig_base = addr->in(AddPNode::Base);
@@ -2163,7 +2158,7 @@ void MemoryGraphFixer::collect_memory_nodes() {
           assert(m != nullptr || (c->is_Loop() && j == LoopNode::LoopBackControl && iteration == 1) || _phase->C->has_irreducible_loop() || has_never_branch(_phase->C->root()), "expect memory state");
           if (m != nullptr) {
             if (m == prev_region && ((c->is_Loop() && j == LoopNode::LoopBackControl) || (prev_region->is_Phi() && prev_region->in(0) == c))) {
-              assert(c->is_Loop() && j == LoopNode::LoopBackControl || _phase->C->has_irreducible_loop() || has_never_branch(_phase->C->root()), "");
+              assert((c->is_Loop() && j == LoopNode::LoopBackControl) || _phase->C->has_irreducible_loop() || has_never_branch(_phase->C->root()), "");
               // continue
             } else if (unique == nullptr) {
               unique = m;
