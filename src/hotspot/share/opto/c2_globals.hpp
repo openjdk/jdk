@@ -357,7 +357,7 @@
   product(bool, MergeStores, true, DIAGNOSTIC,                              \
           "Optimize stores by combining values into larger store")          \
                                                                             \
-  notproduct(bool, TraceMergeStores, false,                                 \
+  develop(bool, TraceMergeStores, false,                                    \
           "Trace creation of merged stores")                                \
                                                                             \
   product_pd(bool, OptoBundling,                                            \
