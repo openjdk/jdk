@@ -27,22 +27,22 @@ package jdk.internal.classfile.impl;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.util.AbstractList;
-import java.util.BitSet;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
 
-import jdk.internal.classfile.Opcode;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.constantpool.ModuleEntry;
-import jdk.internal.classfile.constantpool.NameAndTypeEntry;
+import java.lang.classfile.Attribute;
+import java.lang.classfile.AttributeMapper;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.Opcode;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.ModuleEntry;
+import java.lang.classfile.constantpool.NameAndTypeEntry;
 import java.lang.constant.ModuleDesc;
-import jdk.internal.classfile.impl.TemporaryConstantPool;
 import java.lang.reflect.AccessFlag;
-
-import static jdk.internal.classfile.Classfile.ACC_STATIC;
 import jdk.internal.access.SharedSecrets;
+
+import static java.lang.classfile.ClassFile.ACC_STATIC;
 
 /**
  * Helper to create and manipulate type descriptors, where type descriptors are
@@ -52,6 +52,15 @@ import jdk.internal.access.SharedSecrets;
 public class Util {
 
     private Util() {
+    }
+
+    private static final int ATTRIBUTE_STABILITY_COUNT = AttributeMapper.AttributeStability.values().length;
+
+    public static boolean isAttributeAllowed(final Attribute<?> attr,
+                                             final ClassFile.AttributesProcessingOption processingOption) {
+        return attr instanceof BoundAttribute
+                ? ATTRIBUTE_STABILITY_COUNT - attr.attributeMapper().stability().ordinal() > processingOption.ordinal()
+                : true;
     }
 
     public static int parameterSlots(MethodTypeDesc mDesc) {
@@ -121,7 +130,7 @@ public class Util {
         for (int i = 0; i < result.length; i++) {
             result[i] = TemporaryConstantPool.INSTANCE.classEntry(list.get(i));
         }
-        return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArrayNullsAllowed(result);
+        return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArray(result);
     }
 
     public static List<ModuleEntry> moduleEntryList(List<? extends ModuleDesc> list) {
@@ -129,7 +138,7 @@ public class Util {
         for (int i = 0; i < result.length; i++) {
             result[i] = TemporaryConstantPool.INSTANCE.moduleEntry(TemporaryConstantPool.INSTANCE.utf8Entry(list.get(i).name()));
         }
-        return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArrayNullsAllowed(result);
+        return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArray(result);
     }
 
     public static void checkKind(Opcode op, Opcode.Kind k) {

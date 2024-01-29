@@ -377,6 +377,9 @@ public:
   static BasicType vector_element_basic_type(const Node* n);
   static BasicType vector_element_basic_type(const MachNode* use, const MachOper* opnd);
 
+  // Vector element basic type is non double word integral type.
+  static bool is_non_long_integral_vector(const Node* n);
+
   // Check if given booltest condition is unsigned or not
   static inline bool is_unsigned_booltest_pred(int bt) {
     return ((bt & BoolTest::unsigned_compare) == BoolTest::unsigned_compare);

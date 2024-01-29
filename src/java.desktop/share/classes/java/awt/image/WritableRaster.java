@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -422,36 +422,19 @@ public class WritableRaster extends Raster {
      * @throws NullPointerException if srcRaster is null.
      */
     public void setRect(int dx, int dy, Raster srcRaster) {
-        int width  = srcRaster.getWidth();
-        int height = srcRaster.getHeight();
         int srcOffX = srcRaster.getMinX();
         int srcOffY = srcRaster.getMinY();
-        int dstOffX = dx+srcOffX;
-        int dstOffY = dy+srcOffY;
-
-        // Clip to this raster
-        if (dstOffX < this.minX) {
-            int skipX = this.minX - dstOffX;
-            width -= skipX;
-            srcOffX += skipX;
-            dstOffX = this.minX;
-        }
-        if (dstOffY < this.minY) {
-            int skipY = this.minY - dstOffY;
-            height -= skipY;
-            srcOffY += skipY;
-            dstOffY = this.minY;
-        }
-        if (dstOffX+width > this.minX+this.width) {
-            width = this.minX + this.width - dstOffX;
-        }
-        if (dstOffY+height > this.minY+this.height) {
-            height = this.minY + this.height - dstOffY;
-        }
-
-        if (width <= 0 || height <= 0) {
+        Rectangle bsrc = new Rectangle(dx+srcOffX, dy+srcOffY, srcRaster.getWidth(), srcRaster.getHeight());
+        Rectangle clip = bsrc.intersection(new Rectangle(minX, minY, width, height));
+        if (clip.isEmpty()) {
             return;
         }
+        srcOffX += clip.x - bsrc.x;
+        srcOffY += clip.y - bsrc.y;
+        final int dstOffX = clip.x;
+        final int dstOffY = clip.y;
+        final int width   = clip.width;
+        final int height  = clip.height;
 
         switch (srcRaster.getSampleModel().getDataType()) {
         case DataBuffer.TYPE_BYTE:

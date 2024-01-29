@@ -47,7 +47,7 @@ runs:
         key: jtreg-${{ steps.version.outputs.value }}
 
     - name: 'Checkout the JTReg source'
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         repository: openjdk/jtreg
         ref: jtreg-${{ steps.version.outputs.value }}

@@ -448,17 +448,17 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
   AC_SUBST(CONFIGURESUPPORT_OUTPUTDIR)
 
   # The spec.gmk file contains all variables for the make system.
-  AC_CONFIG_FILES([$OUTPUTDIR/spec.gmk:$AUTOCONF_DIR/spec.gmk.in])
+  AC_CONFIG_FILES([$OUTPUTDIR/spec.gmk:$AUTOCONF_DIR/spec.gmk.template])
   # The bootcycle-spec.gmk file contains support for boot cycle builds.
-  AC_CONFIG_FILES([$OUTPUTDIR/bootcycle-spec.gmk:$AUTOCONF_DIR/bootcycle-spec.gmk.in])
+  AC_CONFIG_FILES([$OUTPUTDIR/bootcycle-spec.gmk:$AUTOCONF_DIR/bootcycle-spec.gmk.template])
   # The buildjdk-spec.gmk file contains support for building a buildjdk when cross compiling.
-  AC_CONFIG_FILES([$OUTPUTDIR/buildjdk-spec.gmk:$AUTOCONF_DIR/buildjdk-spec.gmk.in])
+  AC_CONFIG_FILES([$OUTPUTDIR/buildjdk-spec.gmk:$AUTOCONF_DIR/buildjdk-spec.gmk.template])
   # The compare.sh is used to compare the build output to other builds.
-  AC_CONFIG_FILES([$OUTPUTDIR/compare.sh:$AUTOCONF_DIR/compare.sh.in])
+  AC_CONFIG_FILES([$OUTPUTDIR/compare.sh:$AUTOCONF_DIR/compare.sh.template])
   # The generated Makefile knows where the spec.gmk is and where the source is.
   # You can run make from the OUTPUTDIR, or from the top-level Makefile
   # which will look for generated configurations
-  AC_CONFIG_FILES([$OUTPUTDIR/Makefile:$AUTOCONF_DIR/Makefile.in])
+  AC_CONFIG_FILES([$OUTPUTDIR/Makefile:$AUTOCONF_DIR/Makefile.template])
 ])
 
 ###############################################################################
@@ -479,7 +479,7 @@ AC_DEFUN([BASIC_CHECK_DIR_ON_LOCAL_DISK],
     # df on AIX does not understand -l. On modern AIXes it understands "-T local" which
     # is the same. On older AIXes we just continue to live with a "not local build" warning.
     if test "x$OPENJDK_TARGET_OS" = xaix; then
-      if "$DF -T local > /dev/null 2>&1"; then
+      if $DF -T local > /dev/null 2>&1; then
         DF_LOCAL_ONLY_OPTION='-T local'
       else # AIX may use GNU-utils instead
         DF_LOCAL_ONLY_OPTION='-l'

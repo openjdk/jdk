@@ -28,6 +28,7 @@ import java.lang.foreign.MemorySegment;
 import java.lang.foreign.Arena;
 
 import jdk.internal.foreign.MemorySessionImpl;
+import jdk.internal.foreign.Utils;
 
 public final class UpcallStubs {
 
@@ -36,7 +37,7 @@ public final class UpcallStubs {
 
     private static void freeUpcallStub(long stubAddress) {
         if (!freeUpcallStub0(stubAddress)) {
-            throw new IllegalStateException("Not a stub address: " + stubAddress);
+            throw new IllegalStateException("Not a stub address: " + Utils.toHexString(stubAddress));
         }
     }
 

@@ -23,8 +23,6 @@
 
 /*
  * @test
- * @enablePreview
- * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @library /test/lib
  * @library ../
  * @build jdk.test.whitebox.WhiteBox

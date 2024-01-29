@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -91,7 +91,7 @@ inline frame::frame(intptr_t* sp, intptr_t* fp, address pc) {
   init(sp, fp, pc);
 }
 
-inline frame::frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc, CodeBlob* cb) {
+inline frame::frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc, CodeBlob* cb, bool allow_cb_null) {
   assert(pauth_ptr_is_raw(pc), "cannot be signed");
   intptr_t a = intptr_t(sp);
   intptr_t b = intptr_t(fp);
@@ -102,7 +102,7 @@ inline frame::frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address
   assert(pc != nullptr, "no pc?");
   _cb = cb;
   _oop_map = nullptr;
-  assert(_cb != nullptr, "pc: " INTPTR_FORMAT, p2i(pc));
+  assert(_cb != nullptr || allow_cb_null, "pc: " INTPTR_FORMAT, p2i(pc));
   _on_heap = false;
   DEBUG_ONLY(_frame_index = -1;)
 
@@ -151,7 +151,10 @@ inline frame::frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address
   setup(pc);
 }
 
-inline frame::frame(intptr_t* sp) : frame(sp, sp, *(intptr_t**)(sp - frame::sender_sp_offset), *(address*)(sp - 1)) {}
+inline frame::frame(intptr_t* sp)
+  : frame(sp, sp,
+          *(intptr_t**)(sp - frame::sender_sp_offset),
+          pauth_strip_verifiable(*(address*)(sp - 1))) {}
 
 inline frame::frame(intptr_t* sp, intptr_t* fp) {
   intptr_t a = intptr_t(sp);
@@ -192,7 +195,7 @@ inline bool frame::equal(frame other) const {
               && unextended_sp() == other.unextended_sp()
               && fp() == other.fp()
               && pc() == other.pc();
-  assert(!ret || ret && cb() == other.cb() && _deopt_state == other._deopt_state, "inconsistent construction");
+  assert(!ret || (cb() == other.cb() && _deopt_state == other._deopt_state), "inconsistent construction");
   return ret;
 }
 
@@ -356,20 +359,6 @@ inline int frame::sender_sp_ret_address_offset() {
   return frame::sender_sp_offset - frame::return_addr_offset;
 }
 
-inline const ImmutableOopMap* frame::get_oop_map() const {
-  if (_cb == nullptr) return nullptr;
-  if (_cb->oop_maps() != nullptr) {
-    NativePostCallNop* nop = nativePostCallNop_at(_pc);
-    if (nop != nullptr && nop->displacement() != 0) {
-      int slot = ((nop->displacement() >> 24) & 0xff);
-      return _cb->oop_map_for_slot(slot, _pc);
-    }
-    const ImmutableOopMap* oop_map = OopMapSet::find_map(this);
-    return oop_map;
-  }
-  return nullptr;
-}
-
 //------------------------------------------------------------------------------
 // frame::sender
 inline frame frame::sender(RegisterMap* map) const {
@@ -417,9 +406,10 @@ inline frame frame::sender_for_compiled_frame(RegisterMap* map) const {
                                                                     : sender_sp();
   assert(!_sp_is_trusted || l_sender_sp == real_fp(), "");
 
-  // the return_address is always the word on the stack
-  // For ROP protection, C1/C2 will have signed the sender_pc, but there is no requirement to authenticate it here.
-  address sender_pc = pauth_strip_verifiable((address) *(l_sender_sp-1), (address) *(l_sender_sp-2));
+  // The return_address is always the word on the stack.
+  // For ROP protection, C1/C2 will have signed the sender_pc,
+  // but there is no requirement to authenticate it here.
+  address sender_pc = pauth_strip_verifiable((address) *(l_sender_sp - 1));
 
   intptr_t** saved_fp_addr = (intptr_t**) (l_sender_sp - frame::sender_sp_offset);
 

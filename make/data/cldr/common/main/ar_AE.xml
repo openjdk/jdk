@@ -36,18 +36,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0" draft="contributed">هذه السنة</relative>
 				<relative type="1" draft="contributed">السنة التالية</relative>
 			</field>
-			<field type="year-short">
-				<relative type="0">هذه السنة</relative>
-				<relative type="1">السنة التالية</relative>
-			</field>
-			<field type="year-narrow">
-				<relative type="0">هذه السنة</relative>
-				<relative type="1">السنة التالية</relative>
-			</field>
 		</fields>
 	</dates>
 	<numbers>
 		<defaultNumberingSystem>latn</defaultNumberingSystem>
+		<defaultNumberingSystem alt="latn">latn</defaultNumberingSystem>
 		<currencies>
 			<currency type="BND">
 				<symbol alt="narrow" draft="contributed">$</symbol>

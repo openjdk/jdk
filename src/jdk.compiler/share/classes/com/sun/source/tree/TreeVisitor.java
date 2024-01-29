@@ -264,6 +264,7 @@ public interface TreeVisitor<R,P> {
      * @param node the node being visited
      * @param p a parameter value
      * @return a result value
+     * @since 21
      */
     @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES, reflective=true)
     R visitStringTemplate(StringTemplateTree node, P p);
@@ -273,9 +274,8 @@ public interface TreeVisitor<R,P> {
      * @param node the node being visited
      * @param p a parameter value
      * @return a result value
-     * @since 21
+     * @since 22
      */
-    @PreviewFeature(feature=PreviewFeature.Feature.UNNAMED)
     R visitAnyPattern(AnyPatternTree node, P p);
 
     /**

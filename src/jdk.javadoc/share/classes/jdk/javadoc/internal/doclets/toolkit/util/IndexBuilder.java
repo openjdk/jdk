@@ -35,18 +35,17 @@ import javax.lang.model.element.TypeElement;
 
 import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
-import jdk.javadoc.internal.doclets.toolkit.Messages;
 
 import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.*;
 
 /**
  * An alphabetical index of elements, search tags, and other items.
  * Two tables are maintained:
- * one is indexed by the first character of each items name;
- * the other is index by the item's category, indicating the JavaScript
+ * one is indexed by the first character of each item's name;
+ * the other is indexed by the item's category, indicating the JavaScript
  * file in which the item should be written.
  */
-public class IndexBuilder {
+public abstract class IndexBuilder {
 
     /**
      * Sets of items keyed by the first character of the names (labels)
@@ -65,73 +64,39 @@ public class IndexBuilder {
      */
     private final boolean noDeprecated;
 
-    /**
-     * Build this index only for classes?
-     */
-    protected final boolean classesOnly;
-
-    private final BaseConfiguration configuration;
-    private final Utils utils;
+    protected final BaseConfiguration configuration;
+    protected final Utils utils;
 
     /**
      * The comparator used for the sets in {@code itemsByFirstChar}.
      */
     private final Comparator<IndexItem> mainComparator;
 
-    /**
-     * Creates a new {@code IndexBuilder}.
-     *
-     * @param configuration the current configuration of the doclet
-     * @param noDeprecated  true if -nodeprecated option is used,
-     *                      false otherwise
-     */
-    public IndexBuilder(BaseConfiguration configuration,
-                        boolean noDeprecated)
-    {
-        this(configuration, noDeprecated, false);
-    }
 
     /**
      * Creates a new {@code IndexBuilder}.
      *
      * @param configuration the current configuration of the doclet
-     * @param noDeprecated  true if -nodeprecated option is used,
-     *                      false otherwise
-     * @param classesOnly   include only classes in index
      */
-    public IndexBuilder(BaseConfiguration configuration,
-                        boolean noDeprecated,
-                        boolean classesOnly)
-    {
+    public IndexBuilder(BaseConfiguration configuration) {
         this.configuration = configuration;
         this.utils = configuration.utils;
 
-        Messages messages = configuration.getMessages();
-        if (classesOnly) {
-            messages.notice("doclet.Building_Index_For_All_Classes");
-        } else {
-            messages.notice("doclet.Building_Index");
-        }
+        configuration.getMessages().notice("doclet.Building_Index");
 
-        this.noDeprecated = noDeprecated;
-        this.classesOnly = classesOnly;
-
+        noDeprecated = configuration.getOptions().noDeprecated();
         itemsByFirstChar = new TreeMap<>();
         itemsByCategory = new EnumMap<>(IndexItem.Category.class);
-
-        mainComparator = classesOnly ? makeClassComparator() : makeIndexComparator();
+        mainComparator = makeComparator();
     }
 
     /**
-     * Adds all the selected modules, packages, types and their members to the index,
-     * or just the type elements if {@code classesOnly} is {@code true}.
+     * Adds all the selected modules, packages, types and their members to the index.
      */
-    public void addElements()  {
+    public void addElements() {
         Set<TypeElement> classes = configuration.getIncludedTypeElements();
         indexTypeElements(classes);
-        if (classesOnly) {
-            return;
-        }
+
         Set<PackageElement> packages = configuration.getSpecifiedPackageElements();
         if (packages.isEmpty()) {
             packages = classes
@@ -311,21 +276,13 @@ public class IndexBuilder {
     }
 
     /**
-     * Returns a comparator for the all-classes list.
-     * @return a comparator for class element items
-     */
-    private Comparator<IndexItem> makeClassComparator() {
-        return Comparator.comparing(IndexItem::getElement, utils.comparators.allClassesComparator());
-    }
-
-    /**
      * Returns a comparator for the {@code IndexItem}s in the index page.
      * This is a composite comparator that must be able to compare all kinds of items:
      * for element items, tag items, and others.
      *
      * @return a comparator for index page items
      */
-    private Comparator<IndexItem> makeIndexComparator() {
+    private Comparator<IndexItem> makeComparator() {
         // We create comparators specific to element and search tag items, and a
         // base comparator used to compare between the two kinds of items.
         // In order to produce consistent results, it is important that the base comparator

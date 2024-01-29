@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -24,11 +22,11 @@
  */
 package org.openjdk.bench.jdk.classfile;
 
-import jdk.internal.classfile.AccessFlags;
+import java.lang.classfile.AccessFlags;
 import java.lang.reflect.AccessFlag;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.TypeKind;
-import jdk.internal.classfile.attribute.SourceFileAttribute;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.TypeKind;
+import java.lang.classfile.attribute.SourceFileAttribute;
 import jdk.internal.org.objectweb.asm.*;
 import org.openjdk.jmh.annotations.*;
 import java.io.FileOutputStream;
@@ -37,8 +35,8 @@ import static java.lang.constant.ConstantDescs.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
-import static jdk.internal.classfile.Opcode.*;
-import static jdk.internal.classfile.TypeKind.*;
+import static java.lang.classfile.Opcode.*;
+import static java.lang.classfile.TypeKind.*;
 import static org.openjdk.bench.jdk.classfile.TestConstants.*;
 
 /**
@@ -61,11 +59,7 @@ import static org.openjdk.bench.jdk.classfile.TestConstants.*;
 @Fork(value = 1, jvmArgsAppend = {
         "--add-exports", "java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED",
         "--add-exports", "java.base/jdk.internal.org.objectweb.asm.tree=ALL-UNNAMED",
-        "--add-exports", "java.base/jdk.internal.classfile=ALL-UNNAMED",
-        "--add-exports", "java.base/jdk.internal.classfile.attribute=ALL-UNNAMED",
-        "--add-exports", "java.base/jdk.internal.classfile.constantpool=ALL-UNNAMED",
-        "--add-exports", "java.base/jdk.internal.classfile.instruction=ALL-UNNAMED",
-        "--add-exports", "java.base/jdk.internal.classfile.components=ALL-UNNAMED",
+        "--enable-preview",
         "--add-exports", "java.base/jdk.internal.classfile.impl=ALL-UNNAMED"})
 public class Write {
     static String checkFileAsm = "/tmp/asw/MyClass.class";
@@ -142,7 +136,7 @@ public class Write {
     @BenchmarkMode(Mode.Throughput)
     public byte[] jdkTree() {
 
-        byte[] bytes = Classfile.of().build(CD_MyClass, cb -> {
+        byte[] bytes = ClassFile.of().build(CD_MyClass, cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withVersion(52, 0);
             cb.with(SourceFileAttribute.of(cb.constantPool().utf8Entry(("MyClass.java"))))
@@ -156,8 +150,8 @@ public class Write {
                 cb.withMethod("main" + ((xi == 0) ? "" : "" + xi), MTD_void_StringArray,
                               AccessFlags.ofMethod(AccessFlag.STATIC, AccessFlag.PUBLIC).flagsMask(),
                               mb -> mb.withCode(c0 -> {
-                                  jdk.internal.classfile.Label loopTop = c0.newLabel();
-                                  jdk.internal.classfile.Label loopEnd = c0.newLabel();
+                                  java.lang.classfile.Label loopTop = c0.newLabel();
+                                  java.lang.classfile.Label loopEnd = c0.newLabel();
                                   int vFac = 1;
                                   int vI = 2;
                                   c0.constantInstruction(ICONST_1, 1)         // 0
@@ -190,7 +184,7 @@ public class Write {
     @BenchmarkMode(Mode.Throughput)
     public byte[] jdkTreePrimitive() {
 
-        byte[] bytes = Classfile.of().build(CD_MyClass, cb -> {
+        byte[] bytes = ClassFile.of().build(CD_MyClass, cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withVersion(52, 0);
             cb.with(SourceFileAttribute.of(cb.constantPool().utf8Entry(("MyClass.java"))))
@@ -204,8 +198,8 @@ public class Write {
                 cb.withMethod("main" + ((xi == 0) ? "" : "" + xi), MTD_void_StringArray,
                               AccessFlags.ofMethod(AccessFlag.STATIC, AccessFlag.PUBLIC).flagsMask(),
                               mb -> mb.withCode(c0 -> {
-                                  jdk.internal.classfile.Label loopTop = c0.newLabel();
-                                  jdk.internal.classfile.Label loopEnd = c0.newLabel();
+                                  java.lang.classfile.Label loopTop = c0.newLabel();
+                                  java.lang.classfile.Label loopEnd = c0.newLabel();
                                   int vFac = 1;
                                   int vI = 2;
                                   c0.constantInstruction(ICONST_1, 1)        // 0

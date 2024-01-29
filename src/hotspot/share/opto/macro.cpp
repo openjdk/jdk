@@ -537,7 +537,7 @@ Node *PhaseMacroExpand::value_from_mem(Node *sfpt_mem, Node *sfpt_ctl, BasicType
     } else if (mem->is_ArrayCopy()) {
       Node* ctl = mem->in(0);
       Node* m = mem->in(TypeFunc::Memory);
-      if (sfpt_ctl->is_Proj() && sfpt_ctl->as_Proj()->is_uncommon_trap_proj(Deoptimization::Reason_none)) {
+      if (sfpt_ctl->is_Proj() && sfpt_ctl->as_Proj()->is_uncommon_trap_proj()) {
         // pin the loads in the uncommon trap path
         ctl = sfpt_ctl;
         m = sfpt_mem;
@@ -597,7 +597,7 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
         for (DUIterator_Fast kmax, k = use->fast_outs(kmax);
                                    k < kmax && can_eliminate; k++) {
           Node* n = use->fast_out(k);
-          if (!n->is_Store() && n->Opcode() != Op_CastP2X && !bs->is_gc_pre_barrier_node(n)) {
+          if (!n->is_Store() && n->Opcode() != Op_CastP2X && !bs->is_gc_pre_barrier_node(n) && !reduce_merge_precheck) {
             DEBUG_ONLY(disq_node = n;)
             if (n->is_Load() || n->is_LoadStore()) {
               NOT_PRODUCT(fail_eliminate = "Field load";)
@@ -674,6 +674,11 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
       }
 #endif /*ASSERT*/
     }
+  }
+
+  if (TraceReduceAllocationMerges && !can_eliminate && reduce_merge_precheck) {
+    tty->print_cr("\tCan't eliminate allocation because '%s': ", fail_eliminate != nullptr ? fail_eliminate : "");
+    DEBUG_ONLY(if (disq_node != nullptr) disq_node->dump();)
   }
 #endif
   return can_eliminate;
@@ -2316,7 +2321,7 @@ void PhaseMacroExpand::expand_subtypecheck_node(SubTypeCheckNode *check) {
       subklass = _igvn.transform(LoadKlassNode::make(_igvn, nullptr, C->immutable_memory(), k_adr, TypeInstPtr::KLASS));
     }
 
-    Node* not_subtype_ctrl = Phase::gen_subtype_check(subklass, superklass, &ctrl, nullptr, _igvn);
+    Node* not_subtype_ctrl = Phase::gen_subtype_check(subklass, superklass, &ctrl, nullptr, _igvn, check->method(), check->bci());
 
     _igvn.replace_input_of(iff, 0, C->top());
     _igvn.replace_node(iftrue, not_subtype_ctrl);

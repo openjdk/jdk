@@ -558,9 +558,6 @@ void ClassLoaderData::initialize_holder(Handle loader_or_mirror) {
 void ClassLoaderData::remove_class(Klass* scratch_class) {
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
 
-  // Adjust global class iterator.
-  ClassLoaderDataGraph::adjust_saved_class(scratch_class);
-
   Klass* prev = nullptr;
   for (Klass* k = _klasses; k != nullptr; k = k->next_link()) {
     if (k == scratch_class) {
@@ -602,7 +599,7 @@ void ClassLoaderData::unload() {
   free_deallocate_list_C_heap_structures();
 
   // Clean up class dependencies and tell serviceability tools
-  // these classes are unloading.  Must be called
+  // these classes are unloading.  This must be called
   // after erroneous classes are released.
   classes_do(InstanceKlass::unload_class);
 
@@ -620,9 +617,6 @@ void ClassLoaderData::unload() {
   if (_jmethod_ids != nullptr) {
     Method::clear_jmethod_ids(this);
   }
-
-  // Clean up global class iterator for compiler
-  ClassLoaderDataGraph::adjust_saved_class(this);
 }
 
 ModuleEntryTable* ClassLoaderData::modules() {
@@ -844,10 +838,10 @@ OopHandle ClassLoaderData::add_handle(Handle h) {
 
 void ClassLoaderData::remove_handle(OopHandle h) {
   assert(!is_unloading(), "Do not remove a handle for a CLD that is unloading");
-  oop* ptr = h.ptr_raw();
-  if (ptr != nullptr) {
-    assert(_handles.owner_of(ptr), "Got unexpected handle " PTR_FORMAT, p2i(ptr));
-    NativeAccess<>::oop_store(ptr, oop(nullptr));
+  if (!h.is_empty()) {
+    assert(_handles.owner_of(h.ptr_raw()),
+           "Got unexpected handle " PTR_FORMAT, p2i(h.ptr_raw()));
+    h.replace(oop(nullptr));
   }
 }
 
@@ -1009,7 +1003,11 @@ void ClassLoaderData::print_on(outputStream* out) const {
     _holder.print_on(out);
     out->print_cr("");
   }
-  out->print_cr(" - class loader        " INTPTR_FORMAT, p2i(_class_loader.ptr_raw()));
+  if (!_unloading) {
+    out->print_cr(" - class loader        " INTPTR_FORMAT, p2i(_class_loader.peek()));
+  } else {
+    out->print_cr(" - class loader        <unloading, oop is bad>");
+  }
   out->print_cr(" - metaspace           " INTPTR_FORMAT, p2i(_metaspace));
   out->print_cr(" - unloading           %s", _unloading ? "true" : "false");
   out->print_cr(" - class mirror holder %s", _has_class_mirror_holder ? "true" : "false");

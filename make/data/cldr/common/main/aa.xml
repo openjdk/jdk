@@ -143,10 +143,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<dayPeriod type="am" draft="unconfirmed">saaku</dayPeriod>
 							<dayPeriod type="pm" draft="unconfirmed">carra</dayPeriod>
 						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am" draft="unconfirmed">saaku</dayPeriod>
-							<dayPeriod type="pm" draft="unconfirmed">carra</dayPeriod>
-						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
 				<eras>

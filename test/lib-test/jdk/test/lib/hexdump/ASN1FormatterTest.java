@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,7 @@
 
 package jdk.test.lib.hexdump;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.DataInputStream;
 import java.io.EOFException;
@@ -34,7 +33,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Base64;
 
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /*
  * @test
@@ -42,14 +41,13 @@ import static org.testng.Assert.*;
  * @modules java.base/sun.security.util
  * @library /test/lib
  * @compile ASN1FormatterTest.java
- * @run testng jdk.test.lib.hexdump.ASN1FormatterTest
+ * @run junit jdk.test.lib.hexdump.ASN1FormatterTest
  */
-@Test
-public class ASN1FormatterTest {
+class ASN1FormatterTest {
     private static final String DIR = System.getProperty("test.src", ".");
 
     @Test
-    static void testPEM() throws IOException {
+    void testPEM() throws IOException {
         String certFile = "openssl.p12.pem";
         Path certPath = Path.of(DIR, certFile);
         System.out.println("certPath: " + certPath);
@@ -64,18 +62,18 @@ public class ASN1FormatterTest {
             String result = ASN1Formatter.formatter().annotate(is);
             System.out.println(result);
 
-            Assert.assertEquals(result.lines().count(), 76, "Lines");
-            Assert.assertEquals(result.lines().filter(s -> s.contains("SEQUENCE")).count(),24, "Sequences");
-            Assert.assertEquals(result.lines().filter(s -> s.contains("OBJECT ID")).count(), 17, "ObjectIDs");
-            Assert.assertEquals(result.lines().filter(s -> s.contains("UTCTIME")).count(), 2, "UTCTIME");
-            Assert.assertEquals(result.lines().filter(s -> s.contains("BIT STRING")).count(), 3, "BitStrings");
+            assertEquals(76, result.lines().count(), "Lines");
+            assertEquals(24, result.lines().filter(s -> s.contains("SEQUENCE")).count(),"Sequences");
+            assertEquals(17, result.lines().filter(s -> s.contains("OBJECT ID")).count(), "ObjectIDs");
+            assertEquals(2, result.lines().filter(s -> s.contains("UTCTIME")).count(), "UTCTIME");
+            assertEquals(3, result.lines().filter(s -> s.contains("BIT STRING")).count(), "BitStrings");
         } catch (EOFException eof) {
             // done
         }
     }
 
     @Test
-    static void dumpPEM() throws IOException {
+    void dumpPEM() throws IOException {
         String file = "openssl.p12.pem";
         Path path = Path.of(DIR, file);
         System.out.println("path: " + path);
@@ -92,34 +90,34 @@ public class ASN1FormatterTest {
             String result = p.toString(wis);
             System.out.println(result);
 
-            Assert.assertEquals(result.lines().count(), 126, "Lines");
-            Assert.assertEquals(result.lines().filter(s -> s.contains("SEQUENCE")).count(), 24, "Sequences");
-            Assert.assertEquals(result.lines().filter(s -> s.contains("OBJECT ID")).count(), 17, "ObjectIDs");
-            Assert.assertEquals(result.lines().filter(s -> s.contains("UTCTIME")).count(), 2, "UTCTIME");
-            Assert.assertEquals(result.lines().filter(s -> s.contains("BIT STRING")).count(), 3, "BitStrings");
+            assertEquals(126, result.lines().count(), "Lines");
+            assertEquals(24, result.lines().filter(s -> s.contains("SEQUENCE")).count(), "Sequences");
+            assertEquals(17, result.lines().filter(s -> s.contains("OBJECT ID")).count(), "ObjectIDs");
+            assertEquals(2, result.lines().filter(s -> s.contains("UTCTIME")).count(), "UTCTIME");
+            assertEquals(3, result.lines().filter(s -> s.contains("BIT STRING")).count(), "BitStrings");
         } catch (EOFException eof) {
             // done
         }
     }
 
     @Test
-    static void testIndefinite() {
+    void testIndefinite() {
         byte[] bytes = {0x24, (byte) 0x80, 4, 2, 'a', 'b', 4, 2, 'c', 'd', 0, 0};
         HexPrinter p = HexPrinter.simple()
                 .formatter(ASN1Formatter.formatter(), "; ", 100);
         String result = p.toString(bytes);
         System.out.println(result);
 
-        Assert.assertEquals(result.lines().filter(s -> s.contains("OCTET STRING [INDEFINITE]")).count(),
-                1, "Indefinite length");
-        Assert.assertEquals(result.lines().filter(s -> s.contains(";   OCTET STRING [2]")).count(),
-                2, "Octet Sequences");
-        Assert.assertEquals(result.lines().filter(s -> s.contains(";   END-OF-CONTENT")).count(),
-                1, "end of content");
+        assertEquals(1, result.lines().filter(s -> s.contains("OCTET STRING [INDEFINITE]")).count(),
+                "Indefinite length");
+        assertEquals(2, result.lines().filter(s -> s.contains(";   OCTET STRING [2]")).count(),
+                "Octet Sequences");
+        assertEquals(1, result.lines().filter(s -> s.contains(";   END-OF-CONTENT")).count(),
+                "end of content");
     }
 
     @Test
-    static void testMain() {
+    void testMain() {
         String file = "openssl.p12.pem";
         Path path = Path.of(DIR, file);
         String[] args = { path.toString() };

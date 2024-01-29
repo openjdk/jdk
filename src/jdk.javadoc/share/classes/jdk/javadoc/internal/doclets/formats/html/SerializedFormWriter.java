@@ -696,8 +696,8 @@ public class SerializedFormWriter extends SubWriterHolderWriter {
         source.add(bodyContents);
         printHtmlDocument(null, "serialized forms", source);
 
-        if (configuration.mainIndex != null) {
-            configuration.mainIndex.add(IndexItem.of(IndexItem.Category.TAGS,
+        if (configuration.indexBuilder != null) {
+            configuration.indexBuilder.add(IndexItem.of(IndexItem.Category.TAGS,
                     resources.getText("doclet.Serialized_Form"), path));
         }
     }

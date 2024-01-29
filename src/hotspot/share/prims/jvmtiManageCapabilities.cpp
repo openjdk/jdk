@@ -217,12 +217,7 @@ void JvmtiManageCapabilities::copy_capabilities(const jvmtiCapabilities *from, j
   }
 }
 
-Mutex* JvmtiManageCapabilities::lock() {
-  if (Thread::current_or_null() == nullptr) {
-    return nullptr;  // Detached thread, can be a call from Agent_OnLoad.
-  }
-  return _capabilities_lock;
-}
+
 
 void JvmtiManageCapabilities::get_potential_capabilities_nolock(const jvmtiCapabilities *current,
                                                          const jvmtiCapabilities *prohibited,
@@ -246,7 +241,7 @@ void JvmtiManageCapabilities::get_potential_capabilities_nolock(const jvmtiCapab
 void JvmtiManageCapabilities::get_potential_capabilities(const jvmtiCapabilities* current,
                                                          const jvmtiCapabilities* prohibited,
                                                          jvmtiCapabilities* result) {
-  MutexLocker ml(lock(), Mutex::_no_safepoint_check_flag);
+  CapabilitiesMutexLocker ml;
   get_potential_capabilities_nolock(current, prohibited, result);
 }
 
@@ -254,7 +249,7 @@ jvmtiError JvmtiManageCapabilities::add_capabilities(const jvmtiCapabilities *cu
                                                      const jvmtiCapabilities *prohibited,
                                                      const jvmtiCapabilities *desired,
                                                      jvmtiCapabilities *result) {
-  MutexLocker ml(lock(), Mutex::_no_safepoint_check_flag);
+  CapabilitiesMutexLocker ml;
 
   // check that the capabilities being added are potential capabilities
   jvmtiCapabilities temp;
@@ -296,7 +291,7 @@ jvmtiError JvmtiManageCapabilities::add_capabilities(const jvmtiCapabilities *cu
 void JvmtiManageCapabilities::relinquish_capabilities(const jvmtiCapabilities *current,
                                                       const jvmtiCapabilities *unwanted,
                                                       jvmtiCapabilities *result) {
-  MutexLocker ml(lock(), Mutex::_no_safepoint_check_flag);
+  CapabilitiesMutexLocker ml;
 
   jvmtiCapabilities to_trash;
   jvmtiCapabilities temp;

@@ -87,6 +87,15 @@ define SetupTestFilesCompilationBody
 
   $1_BUILD_INFO := $$($1_OUTPUT_DIR)/_$1-build-info.marker
 
+  # Tests are built with internal debug symbols where supported.
+  # With Visual Studio or on macosx, we revert to external.
+  $1_COPY_DEBUG_SYMBOLS := false
+  ifeq ($(TOOLCHAIN_TYPE), microsoft)
+    $1_COPY_DEBUG_SYMBOLS := true
+  else ifeq ($(call isTargetOs, macosx), true)
+    $1_COPY_DEBUG_SYMBOLS := true
+  endif
+
   # Setup a compilation for each and every one of them
   $$(foreach file, $$($1_FILTERED_FILE_LIST),\
     $$(eval name := $$(strip $$(basename $$(notdir $$(file))))) \
@@ -106,7 +115,7 @@ define SetupTestFilesCompilationBody
         LIBS := $$($1_LIBS_$$(name)), \
         TOOLCHAIN := $(if $$(filter %.cpp, $$(file)), TOOLCHAIN_LINK_CXX, TOOLCHAIN_DEFAULT), \
         OPTIMIZATION := $$(if $$($1_OPTIMIZATION_$$(name)),$$($1_OPTIMIZATION_$$(name)),LOW), \
-        COPY_DEBUG_SYMBOLS := $$(if $$($1_COPY_DEBUG_SYMBOLS_$$(name)),$$($1_COPY_DEBUG_SYMBOLS_$$(name)),false), \
+        COPY_DEBUG_SYMBOLS := $$($1_COPY_DEBUG_SYMBOLS), \
         STRIP_SYMBOLS := $$(if $$($1_STRIP_SYMBOLS_$$(name)),$$($1_STRIP_SYMBOLS_$$(name)),false), \
         BUILD_INFO_LOG_MACRO := LogInfo, \
     )) \

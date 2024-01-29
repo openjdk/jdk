@@ -89,8 +89,13 @@ ShenandoahSTWMark::ShenandoahSTWMark(bool full_gc) :
 }
 
 void ShenandoahSTWMark::mark() {
-  // Weak reference processing
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
+
+  // Arm all nmethods. Even though this is STW mark, some marking code
+  // piggybacks on nmethod barriers for special instances.
+  ShenandoahCodeRoots::arm_nmethods_for_mark();
+
+  // Weak reference processing
   ShenandoahReferenceProcessor* rp = heap->ref_processor();
   rp->reset_thread_locals();
   rp->set_soft_reference_policy(heap->soft_ref_policy()->should_clear_all_soft_refs());
@@ -119,6 +124,9 @@ void ShenandoahSTWMark::mark() {
 
   heap->mark_complete_marking_context();
   end_mark();
+
+  // Mark is finished, can disarm the nmethods now.
+  ShenandoahCodeRoots::disarm_nmethods();
 
   assert(task_queues()->is_empty(), "Should be empty");
   TASKQUEUE_STATS_ONLY(task_queues()->print_taskqueue_stats());

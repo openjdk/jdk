@@ -139,13 +139,34 @@ public class forceEarlyReturn002 extends TestDebuggerType1 {
         }
     }
 
+    // get thread ID for "startNewThread" command
+    private long getNewThreadId() throws Exception {
+        final String debugeeClassSig = "L" + getDebugeeClassName().replace('.', '/') + ";";
+        log.display("  getting classID for " + debugeeClassSig);
+        long classID = debuggee.getReferenceTypeID(debugeeClassSig);
+        log.display("  got classID: " + classID);
+
+        log.display("  getting testNewThread field value");
+        JDWP.Value value = debuggee.getStaticFieldValue(classID, "testNewThread", JDWP.Tag.THREAD);
+
+        long threadID = ((Long)value.getValue()).longValue();
+        log.display("  got threadID: " + threadID);
+        return threadID;
+    }
+
     private int createThreadStartEventRequest() {
         try {
+            long newThreadId = getNewThreadId();
             // create command packet and fill requred out data
             CommandPacket command = new CommandPacket(JDWP.Command.EventRequest.Set);
             command.addByte(JDWP.EventKind.THREAD_START);
             command.addByte(JDWP.SuspendPolicy.ALL);
-            command.addInt(0);
+            // we want the THREAD_START event only for the test thread
+            // and not any others that might be started by debuggee VM,
+            // so add THREAD_ONLY modifier
+            command.addInt(1);
+            command.addByte(JDWP.EventModifierKind.THREAD_ONLY);
+            command.addObjectID(newThreadId);
             command.setLength();
 
             transport.write(command);
@@ -175,7 +196,7 @@ public class forceEarlyReturn002 extends TestDebuggerType1 {
         Value value;
 
         value = new Value(JDWP.Tag.INT, 0);
-        // create command with invalid trheadID, expect INVALID_OBJECT error
+        // create command with invalid threadID, expect INVALID_OBJECT error
         sendCommand(-1, value, true, JDWP.Error.INVALID_OBJECT);
 
         // create StateTestThread

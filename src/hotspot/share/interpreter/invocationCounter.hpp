@@ -60,7 +60,6 @@ class InvocationCounter {
   // Manipulation
   void reset();
   void init();
-  void decay();                                  // decay counter (divide by two)
   void set_carry_on_overflow();
   void set(uint count);
   void increment()                 { _counter += count_increment; }

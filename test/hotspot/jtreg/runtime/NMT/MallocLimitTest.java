@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2022 SAP SE. All rights reserved.
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 /*
  * @test id=global-limit-fatal
  * @summary Verify -XX:MallocLimit with a global limit
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @run driver MallocLimitTest global-limit-fatal
@@ -34,6 +35,7 @@
 /*
  * @test id=global-limit-oom
  * @summary Verify -XX:MallocLimit with a global limit
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @run driver MallocLimitTest global-limit-oom
@@ -42,6 +44,7 @@
 /*
  * @test id=compiler-limit-fatal
  * @summary Verify -XX:MallocLimit with a compiler-specific limit (for "mtCompiler" category)
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @run driver MallocLimitTest compiler-limit-fatal
@@ -50,6 +53,7 @@
 /*
  * @test id=compiler-limit-oom
  * @summary Verify -XX:MallocLimit with a compiler-specific limit (for "mtCompiler" category)
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @run driver MallocLimitTest compiler-limit-oom
@@ -58,6 +62,7 @@
 /*
  * @test id=multi-limit
  * @summary Verify -XX:MallocLimit with multiple limits
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @run driver MallocLimitTest multi-limit
@@ -66,6 +71,7 @@
 /*
  * @test id=limit-without-nmt
  * @summary Verify that the VM warns if -XX:MallocLimit is given but NMT is disabled
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @run driver MallocLimitTest limit-without-nmt
@@ -92,7 +98,7 @@ public class MallocLimitTest {
         args.add("-XX:NativeMemoryTracking=summary");
         args.addAll(Arrays.asList(extraSettings));
         args.add("-version");
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(args);
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(args);
         return pb;
     }
 

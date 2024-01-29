@@ -50,7 +50,7 @@ JvmtiTagMapKey::JvmtiTagMapKey(const JvmtiTagMapKey& src) {
   _obj = nullptr;
 }
 
-void JvmtiTagMapKey::release_weak_handle() const {
+void JvmtiTagMapKey::release_weak_handle() {
   _wh.release(JvmtiExport::weak_tag_storage());
 }
 
@@ -71,7 +71,7 @@ JvmtiTagMapTable::JvmtiTagMapTable() : _table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE
 
 void JvmtiTagMapTable::clear() {
   struct RemoveAll {
-    bool do_entry(const JvmtiTagMapKey& entry, const jlong& tag) {
+    bool do_entry(JvmtiTagMapKey& entry, const jlong& tag) {
       entry.release_weak_handle();
       return true;
     }
@@ -125,7 +125,7 @@ void JvmtiTagMapTable::add(oop obj, jlong tag) {
 
 void JvmtiTagMapTable::remove(oop obj) {
   JvmtiTagMapKey jtme(obj);
-  auto clean = [] (const JvmtiTagMapKey& entry, jlong tag) {
+  auto clean = [] (JvmtiTagMapKey& entry, jlong tag) {
     entry.release_weak_handle();
   };
   _table.remove(jtme, clean);
@@ -139,7 +139,7 @@ void JvmtiTagMapTable::remove_dead_entries(GrowableArray<jlong>* objects) {
   struct IsDead {
     GrowableArray<jlong>* _objects;
     IsDead(GrowableArray<jlong>* objects) : _objects(objects) {}
-    bool do_entry(const JvmtiTagMapKey& entry, jlong tag) {
+    bool do_entry(JvmtiTagMapKey& entry, jlong tag) {
       if (entry.object_no_keepalive() == nullptr) {
         if (_objects != nullptr) {
           _objects->append(tag);

@@ -199,13 +199,9 @@ jobjectRefType JNIHandles::handle_type(JavaThread* thread, jobject handle) {
     default:
       ShouldNotReachHere();
     }
-  } else {
+  } else if (is_local_handle(thread, handle) || is_frame_handle(thread, handle)) {
     // Not in global storage.  Might be a local handle.
-    if (is_local_handle(thread, handle) || is_frame_handle(thread, handle)) {
-      result = JNILocalRefType;
-    } else {
-      ShouldNotReachHere();
-    }
+    result = JNILocalRefType;
   }
   return result;
 }

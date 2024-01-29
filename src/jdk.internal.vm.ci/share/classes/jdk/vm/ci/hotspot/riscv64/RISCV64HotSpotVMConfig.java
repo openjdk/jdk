@@ -24,8 +24,6 @@ package jdk.vm.ci.hotspot.riscv64;
 
 import jdk.vm.ci.hotspot.HotSpotVMConfigAccess;
 import jdk.vm.ci.hotspot.HotSpotVMConfigStore;
-import jdk.vm.ci.services.Services;
-import jdk.internal.util.OperatingSystem;
 
 /**
  * Used to access native configuration details.
@@ -37,8 +35,6 @@ class RISCV64HotSpotVMConfig extends HotSpotVMConfigAccess {
     RISCV64HotSpotVMConfig(HotSpotVMConfigStore config) {
         super(config);
     }
-
-    final boolean linuxOs = OperatingSystem.isLinux();
 
     final boolean useCompressedOops = getFlag("UseCompressedOops", Boolean.class);
 

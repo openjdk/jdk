@@ -24,15 +24,15 @@
  */
 
 #include "precompiled.hpp"
+#include "memory/metaspace/chunkManager.hpp"
 #include "memory/metaspace/commitLimiter.hpp"
 #include "memory/metaspace/counters.hpp"
 #include "memory/metaspace/internalStats.hpp"
 #include "memory/metaspace/metaspaceArena.hpp"
 #include "memory/metaspace/metaspaceArenaGrowthPolicy.hpp"
+#include "memory/metaspace/metaspaceCommon.hpp"
 #include "memory/metaspace/metaspaceSettings.hpp"
 #include "memory/metaspace/metaspaceStatistics.hpp"
-#include "runtime/mutex.hpp"
-#include "runtime/mutexLocker.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -55,22 +55,14 @@ class MetaspaceArenaTestHelper {
 
   MetaspaceGtestContext& _context;
 
-  Mutex* _lock;
   const ArenaGrowthPolicy* _growth_policy;
   SizeAtomicCounter _used_words_counter;
   MetaspaceArena* _arena;
 
   void initialize(const ArenaGrowthPolicy* growth_policy, const char* name = "gtest-MetaspaceArena") {
     _growth_policy = growth_policy;
-    _lock = new Mutex(Monitor::nosafepoint, "gtest-MetaspaceArenaTest_lock");
-    // Lock during space creation, since this is what happens in the VM too
-    //  (see ClassLoaderData::metaspace_non_null(), which we mimick here).
-    {
-      MutexLocker ml(_lock,  Mutex::_no_safepoint_check_flag);
-      _arena = new MetaspaceArena(&_context.cm(), _growth_policy, _lock, &_used_words_counter, name);
-    }
+    _arena = new MetaspaceArena(&_context.cm(), _growth_policy, &_used_words_counter, name);
     DEBUG_ONLY(_arena->verify());
-
   }
 
 public:
@@ -94,7 +86,6 @@ public:
 
   ~MetaspaceArenaTestHelper() {
     delete_arena_with_tests();
-    delete _lock;
   }
 
   const CommitLimiter& limiter() const { return _context.commit_limiter(); }

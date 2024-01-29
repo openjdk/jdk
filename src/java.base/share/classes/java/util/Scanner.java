@@ -189,7 +189,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *
  * <p>The localized formats are defined in terms of the following parameters,
  * which for a particular locale are taken from that locale's {@link
- * java.text.DecimalFormat DecimalFormat} object, {@code df}, and its and
+ * java.text.DecimalFormat DecimalFormat} object, {@code df}, and its
  * {@link java.text.DecimalFormatSymbols DecimalFormatSymbols} object,
  * {@code dfs}.
  *
@@ -1844,7 +1844,7 @@ public final class Scanner implements Iterator<String>, Closeable {
      * {@code NoSuchElementException} by using a pattern that can
      * match nothing, e.g., {@code sc.skip("[ \t]*")}.
      *
-     * @param pattern a string specifying the pattern to skip over
+     * @param pattern the pattern to skip over
      * @return this scanner
      * @throws NoSuchElementException if the specified pattern is not found
      * @throws IllegalStateException if this scanner is closed

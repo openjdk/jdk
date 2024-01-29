@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -55,11 +55,11 @@ KERNEL_HEADERS_RPM := kernel-headers
 
 ifeq ($(BASE_OS), OL)
   ifeq ($(ARCH), aarch64)
-    BASE_URL := http://yum.oracle.com/repo/OracleLinux/OL7/6/base/$(ARCH)/
+    BASE_URL := https://yum.oracle.com/repo/OracleLinux/OL7/6/base/$(ARCH)/
     LINUX_VERSION := OL7.6
     KERNEL_HEADERS_RPM := kernel-uek-headers
   else
-    BASE_URL := http://yum.oracle.com/repo/OracleLinux/OL6/4/base/$(ARCH)/
+    BASE_URL := https://yum.oracle.com/repo/OracleLinux/OL6/4/base/$(ARCH)/
     LINUX_VERSION := OL6.4
   endif
 else ifeq ($(BASE_OS), Fedora)
@@ -96,8 +96,17 @@ endif
 # Define external dependencies
 
 # Latest that could be made to work.
-GCC_VER := 11.3.0
-ifeq ($(GCC_VER), 11.3.0)
+GCC_VER := 13.2.0
+ifeq ($(GCC_VER), 13.2.0)
+  gcc_ver := gcc-13.2.0
+  binutils_ver := binutils-2.41
+  ccache_ver := ccache-3.7.12
+  mpfr_ver := mpfr-4.2.0
+  gmp_ver := gmp-6.3.0
+  mpc_ver := mpc-1.3.1
+  gdb_ver := gdb-13.2
+  REQUIRED_MIN_MAKE_MAJOR_VERSION := 4
+else ifeq ($(GCC_VER), 11.3.0)
   gcc_ver := gcc-11.3.0
   binutils_ver := binutils-2.39
   ccache_ver := ccache-3.7.12
@@ -539,6 +548,7 @@ $(BUILDDIR)/$(gcc_ver)/Makefile \
 	  $(PATHPRE) $(ENVS) $(GCC_CFG) $(EXTRA_CFLAGS) \
 	      $(CONFIG) \
 	      --with-sysroot=$(SYSROOT) \
+	      --with-debug-prefix-map=$(OUTPUT_ROOT)=devkit \
 	      --enable-languages=c,c++ \
 	      --enable-shared \
 	      --disable-nls \
@@ -670,7 +680,11 @@ $(PREFIX)/Tools.gmk: ./Tools.gmk
 	rm -rf $@
 	cp $< $@
 
-THESE_MAKEFILES := $(PREFIX)/Makefile $(PREFIX)/Tools.gmk
+$(PREFIX)/Tars.gmk: ./Tars.gmk
+	rm -rf $@
+	cp $< $@
+
+THESE_MAKEFILES := $(PREFIX)/Makefile $(PREFIX)/Tools.gmk $(PREFIX)/Tars.gmk
 
 ##########################################################################################
 

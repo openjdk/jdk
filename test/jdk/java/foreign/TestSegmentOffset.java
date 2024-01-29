@@ -23,13 +23,13 @@
 
 /*
  * @test
- * @enablePreview
  * @run testng TestSegmentOffset
  */
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 
+import org.testng.SkipException;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -44,27 +44,21 @@ public class TestSegmentOffset {
 
     @Test(dataProvider = "slices")
     public void testOffset(SegmentSlice s1, SegmentSlice s2) {
+        if (s1.kind != s2.kind) {
+            throw new SkipException("Slices of different segment kinds");
+        }
         if (s1.contains(s2)) {
             // check that a segment and its overlapping segment point to same elements
-            long offset = s1.segment.segmentOffset(s2.segment);
+            long offset = s1.offset(s2);
             for (int i = 0; i < s2.size(); i++) {
                 out.format("testOffset s1:%s, s2:%s, offset:%d, i:%s\n", s1, s2, offset, i);
                 byte expected = s2.segment.get(JAVA_BYTE, i);
                 byte found = s1.segment.get(JAVA_BYTE, i + offset);
                 assertEquals(found, expected);
             }
-        } else if (s1.kind != s2.kind) {
-            // check that offset from s1 to s2 fails
-            try {
-                long offset = s1.segment.segmentOffset(s2.segment);
-                out.format("testOffset s1:%s, s2:%s, offset:%d\n", s1, s2, offset);
-                fail("offset unexpectedly passed!");
-            } catch (UnsupportedOperationException ex) {
-                assertTrue(ex.getMessage().contains("Cannot compute offset from native to heap (or vice versa)."));
-            }
         } else if (!s2.contains(s1)) {
             // disjoint segments - check that offset is out of bounds
-            long offset = s1.segment.segmentOffset(s2.segment);
+            long offset = s1.offset(s2);
             for (int i = 0; i < s2.size(); i++) {
                 out.format("testOffset s1:%s, s2:%s, offset:%d, i:%s\n", s1, s2, offset, i);
                 s2.segment.get(JAVA_BYTE, i);
@@ -115,6 +109,10 @@ public class TestSegmentOffset {
 
         int size() {
             return last - first + 1;
+        }
+
+        long offset(SegmentSlice that) {
+            return that.segment.address() - segment.address();
         }
     }
 

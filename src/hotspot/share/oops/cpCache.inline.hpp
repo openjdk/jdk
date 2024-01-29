@@ -30,78 +30,20 @@
 #include "oops/oopHandle.inline.hpp"
 #include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"
+#include "oops/resolvedMethodEntry.hpp"
 #include "runtime/atomic.hpp"
 
-inline intx ConstantPoolCacheEntry::indices_ord() const { return Atomic::load_acquire(&_indices); }
-
-inline Bytecodes::Code ConstantPoolCacheEntry::bytecode_1() const {
-  return Bytecodes::cast((indices_ord() >> bytecode_1_shift) & bytecode_1_mask);
-}
-
-inline Bytecodes::Code ConstantPoolCacheEntry::bytecode_2() const {
-  return Bytecodes::cast((indices_ord() >> bytecode_2_shift) & bytecode_2_mask);
-}
-
-// Has this bytecode been resolved? Only valid for invokes and get/put field/static.
-inline bool ConstantPoolCacheEntry::is_resolved(Bytecodes::Code code) const {
-  switch (bytecode_number(code)) {
-    case 1:  return (bytecode_1() == code);
-    case 2:  return (bytecode_2() == code);
-  }
-  return false;      // default: not resolved
-}
-
-inline Method* ConstantPoolCacheEntry::f2_as_interface_method() const {
-  assert(bytecode_1() == Bytecodes::_invokeinterface, "");
-  return (Method*)_f2;
-}
-
-inline Metadata* ConstantPoolCacheEntry::f1_ord() const { return (Metadata *)Atomic::load_acquire(&_f1); }
-
-inline Method* ConstantPoolCacheEntry::f1_as_method() const {
-  Metadata* f1 = f1_ord(); assert(f1 == nullptr || f1->is_method(), "");
-  return (Method*)f1;
-}
-
-inline Klass* ConstantPoolCacheEntry::f1_as_klass() const {
-  Metadata* f1 = f1_ord(); assert(f1 == nullptr || f1->is_klass(), "");
-  return (Klass*)f1;
-}
-
-inline bool ConstantPoolCacheEntry::is_f1_null() const { Metadata* f1 = f1_ord(); return f1 == nullptr; }
-
-inline bool ConstantPoolCacheEntry::has_appendix() const {
-  return (!is_f1_null()) && (_flags & (1 << has_appendix_shift)) != 0;
-}
-
-inline bool ConstantPoolCacheEntry::has_local_signature() const {
-  return (!is_f1_null()) && (_flags & (1 << has_local_signature_shift)) != 0;
-}
-
-inline intx ConstantPoolCacheEntry::flags_ord() const   { return (intx)Atomic::load_acquire(&_flags); }
-
-inline bool ConstantPoolCacheEntry::indy_resolution_failed() const {
-  intx flags = flags_ord();
-  return (flags & (1 << indy_resolution_failed_shift)) != 0;
-}
-
 // Constructor
-inline ConstantPoolCache::ConstantPoolCache(int length,
-                                            const intStack& inverse_index_map,
-                                            const intStack& invokedynamic_references_map,
+inline ConstantPoolCache::ConstantPoolCache(const intStack& invokedynamic_references_map,
                                             Array<ResolvedIndyEntry>* invokedynamic_info,
-                                            Array<ResolvedFieldEntry>* field_entries) :
-                                                  _length(length),
+                                            Array<ResolvedFieldEntry>* field_entries,
+                                            Array<ResolvedMethodEntry>* method_entries) :
                                                   _constant_pool(nullptr),
                                                   _gc_epoch(0),
                                                   _resolved_indy_entries(invokedynamic_info),
-                                                  _resolved_field_entries(field_entries) {
+                                                  _resolved_field_entries(field_entries),
+                                                  _resolved_method_entries(method_entries) {
   CDS_JAVA_HEAP_ONLY(_archived_references_index = -1;)
-  initialize(inverse_index_map,
-             invokedynamic_references_map);
-  for (int i = 0; i < length; i++) {
-    assert(entry_at(i)->is_f1_null(), "Failed to clear?");
-  }
 }
 
 inline objArrayOop ConstantPoolCache::resolved_references() {
@@ -116,6 +58,14 @@ inline ResolvedFieldEntry* ConstantPoolCache::resolved_field_entry_at(int field_
 
 inline int ConstantPoolCache::resolved_field_entries_length() const {
   return _resolved_field_entries->length();
+}
+
+inline ResolvedMethodEntry* ConstantPoolCache::resolved_method_entry_at(int method_index) const {
+  return _resolved_method_entries->adr_at(method_index);
+}
+
+inline int ConstantPoolCache::resolved_method_entries_length() const {
+  return _resolved_method_entries->length();
 }
 
 inline ResolvedIndyEntry* ConstantPoolCache::resolved_indy_entry_at(int index) const {

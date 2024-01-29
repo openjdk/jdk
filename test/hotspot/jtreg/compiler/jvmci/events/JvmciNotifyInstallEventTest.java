@@ -48,7 +48,9 @@
  *      compiler.jvmci.common.JVMCIHelpers$EmptyVMEventListener
  * @run main/othervm -XX:+UnlockExperimentalVMOptions
  *     -Djvmci.Compiler=EmptyCompiler -Xbootclasspath/a:.
- *     -XX:+UseJVMCICompiler -XX:-BootstrapJVMCI -XX:-UseJVMCINativeLibrary
+ *     -XX:+UseJVMCICompiler -XX:-BootstrapJVMCI
+ *     -XX:-UseJVMCINativeLibrary -XX:JVMCITraceLevel=1
+ *     -Dtest.jvmci.forceRuntimeStubAllocFail=test_stub_that_fails_to_be_allocated
  *     compiler.jvmci.events.JvmciNotifyInstallEventTest
  * @run main/othervm -XX:+UnlockExperimentalVMOptions
  *     -Djvmci.Compiler=EmptyCompiler -Xbootclasspath/a:.
@@ -62,8 +64,10 @@ package compiler.jvmci.events;
 import compiler.jvmci.common.CTVMUtilities;
 import compiler.jvmci.common.testcases.SimpleClass;
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 import jdk.vm.ci.services.JVMCIServiceLocator;
+import jdk.vm.ci.code.BailoutException;
 import jdk.vm.ci.code.CompiledCode;
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.site.DataPatch;
@@ -142,6 +146,29 @@ public class JvmciNotifyInstallEventTest extends JVMCIServiceLocator implements 
         }, NullPointerException.class);
         Asserts.assertEQ(gotInstallNotification, 2,
                 "Got unexpected event count after 4th install attempt");
+
+        String stubToFail = System.getProperty("test.jvmci.forceRuntimeStubAllocFail");
+        if (Platform.isDebugBuild() && stubToFail != null) {
+            HotSpotCompiledCode stub = new HotSpotCompiledCode(stubToFail,
+                    /* targetCode */ new byte[0],
+                    /* targetCodeSize */ 0,
+                    /* sites */ new Site[0],
+                    /* assumptions */ new Assumption[0],
+                    /* methods */ new ResolvedJavaMethod[0],
+                    /* comments */ new Comment[0],
+                    /* dataSection */ new byte[0],
+                    dataSectionAlignment,
+                    /* dataSectionPatches */ new DataPatch[0],
+                    /* isImmutablePIC */ false,
+                    /* totalFrameSize */ 0,
+                    /* deoptRescueSlot */ null);
+            try {
+                codeCache.installCode(null, stub, null, null, true);
+                throw new AssertionError("Didn't get expected " + BailoutException.class.getName());
+            } catch (BailoutException e) {
+                Asserts.assertEQ(e.getMessage(), "Error installing " + stubToFail + ": code cache is full");
+            }
+        }
     }
 
     @Override

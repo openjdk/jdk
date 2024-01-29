@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -194,7 +194,7 @@ oop JavaThread::scopedValueCache() const {
 }
 
 void JavaThread::set_scopedValueCache(oop p) {
-  if (_scopedValueCache.ptr_raw() != nullptr) { // i.e. if the OopHandle has been allocated
+  if (!_scopedValueCache.is_empty()) { // i.e. if the OopHandle has been allocated
     _scopedValueCache.replace(p);
   } else {
     assert(p == nullptr, "not yet initialized");
@@ -440,6 +440,7 @@ JavaThread::JavaThread() :
   _carrier_thread_suspended(false),
   _is_in_VTMS_transition(false),
   _is_in_tmp_VTMS_transition(false),
+  _is_disable_suspend(false),
 #ifdef ASSERT
   _is_VTMS_transition_disabler(false),
 #endif
@@ -1586,6 +1587,13 @@ const char* JavaThread::name() const  {
 
   // The target JavaThread is not protected so we return the default:
   return Thread::name();
+}
+
+// Like name() but doesn't include the protection check. This must only be
+// called when it is known to be safe, even though the protection check can't tell
+// that e.g. when this thread is the init_thread() - see instanceKlass.cpp.
+const char* JavaThread::name_raw() const  {
+  return get_thread_name_string();
 }
 
 // Returns a non-null representation of this thread's name, or a suitable

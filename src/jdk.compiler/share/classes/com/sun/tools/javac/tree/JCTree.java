@@ -2522,6 +2522,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public JCExpression processor;
         public List<String> fragments;
         public List<JCExpression> expressions;
+        public Type processMethodType;
 
         protected JCStringTemplate(JCExpression processor,
                                    List<String> fragments,

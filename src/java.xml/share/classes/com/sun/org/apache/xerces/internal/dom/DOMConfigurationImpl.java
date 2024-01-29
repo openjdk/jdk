@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -32,7 +32,6 @@ import com.sun.org.apache.xerces.internal.util.MessageFormatter;
 import com.sun.org.apache.xerces.internal.util.ParserConfigurationSettings;
 import com.sun.org.apache.xerces.internal.util.PropertyState;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.xni.XMLDTDContentModelHandler;
 import com.sun.org.apache.xerces.internal.xni.XMLDTDHandler;
@@ -56,6 +55,7 @@ import javax.xml.XMLConstants;
 import javax.xml.catalog.CatalogFeatures;
 import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.JdkXmlUtils;
+import jdk.xml.internal.XMLSecurityManager;
 import org.w3c.dom.DOMConfiguration;
 import org.w3c.dom.DOMErrorHandler;
 import org.w3c.dom.DOMException;
@@ -71,7 +71,7 @@ import org.w3c.dom.ls.LSResourceResolver;
  *
  * @author Elena Litani, IBM
  * @author Neeraj Bajaj, Sun Microsystems.
- * @LastModified: May 2021
+ * @LastModified: July 2023
  */
 public class DOMConfigurationImpl extends ParserConfigurationSettings
     implements XMLParserConfiguration, DOMConfiguration {

@@ -24,11 +24,12 @@
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
+#include "nmt/memTracker.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threads.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -376,7 +377,7 @@ static inline bool can_reserve_executable_memory(void) {
 #endif
 
 // Test that os::release_memory() can deal with areas containing multiple mappings.
-#define PRINT_MAPPINGS(s) { tty->print_cr("%s", s); os::print_memory_mappings((char*)p, total_range_len, tty); }
+#define PRINT_MAPPINGS(s) { tty->print_cr("%s", s); os::print_memory_mappings((char*)p, total_range_len, tty); tty->cr(); }
 //#define PRINT_MAPPINGS
 
 // Release a range allocated with reserve_multiple carefully, to not trip mapping
@@ -506,7 +507,9 @@ TEST_VM(os, release_multi_mappings) {
 
   // ...re-reserve the middle stripes. This should work unless release silently failed.
   address p2 = (address)os::attempt_reserve_memory_at((char*)p_middle_stripes, middle_stripe_len);
+
   ASSERT_EQ(p2, p_middle_stripes);
+
   PRINT_MAPPINGS("C");
 
   // Clean up. Release all mappings.
@@ -550,26 +553,29 @@ TEST_VM(os, release_bad_ranges) {
 TEST_VM(os, release_one_mapping_multi_commits) {
   // Test that we can release an area consisting of interleaved
   //  committed and uncommitted regions:
-  const size_t stripe_len = 4 * M;
-  const int num_stripes = 4;
+  const size_t stripe_len = os::vm_allocation_granularity();
+  const int num_stripes = 6;
   const size_t total_range_len = stripe_len * num_stripes;
 
   // reserve address space...
   address p = reserve_one_commit_multiple(num_stripes, stripe_len);
-  ASSERT_NE(p, (address)NULL);
   PRINT_MAPPINGS("A");
+  ASSERT_NE(p, (address)nullptr);
 
-  // .. release it...
-  ASSERT_TRUE(os::release_memory((char*)p, total_range_len));
+  // // make things even more difficult by trying to reserve at the border of the region
+  address border = p + num_stripes * stripe_len;
+  address p2 = (address)os::attempt_reserve_memory_at((char*)border, stripe_len);
   PRINT_MAPPINGS("B");
 
-  // re-reserve it. This should work unless release failed.
-  address p2 = (address)os::attempt_reserve_memory_at((char*)p, total_range_len);
-  ASSERT_EQ(p2, p);
-  PRINT_MAPPINGS("C");
+  ASSERT_TRUE(p2 == nullptr || p2 == border);
 
   ASSERT_TRUE(os::release_memory((char*)p, total_range_len));
-  PRINT_MAPPINGS("D");
+  PRINT_MAPPINGS("C");
+
+  if (p2 != nullptr) {
+    ASSERT_TRUE(os::release_memory((char*)p2, stripe_len));
+    PRINT_MAPPINGS("D");
+  }
 }
 
 static void test_show_mappings(address start, size_t size) {
@@ -947,6 +953,18 @@ TEST_VM(os, reserve_at_wish_address_shall_not_replace_mappings_largepages) {
     tty->print_cr("Skipped.");
   }
 }
+
+#ifdef AIX
+// On Aix, we should fail attach attempts not aligned to segment boundaries (256m)
+TEST_VM(os, aix_reserve_at_non_shmlba_aligned_address) {
+  if (Use64KPages && Use64KPagesThreshold == 0) {
+    char* p = os::attempt_reserve_memory_at((char*)0x1f00000, M);
+    ASSERT_EQ(p, nullptr); // should have failed
+    p = os::attempt_reserve_memory_at((char*)((64 * G) + M), M);
+    ASSERT_EQ(p, nullptr); // should have failed
+  }
+}
+#endif // AIX
 
 TEST_VM(os, vm_min_address) {
   size_t s = os::vm_min_address();

@@ -1197,7 +1197,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         // NOTE: On KWin if the window/border snapping option is enabled,
         // the Java window may be swinging while it's being moved.
         // This doesn't make the application unusable though looks quite ugly.
-        // Probobly we need to find some hint to assign to our Security
+        // Probably we need to find some hint to assign to our Security
         // Warning window in order to exclude it from the snapping option.
         // We are not currently aware of existence of such a property.
         if (warningWindow != null) {
@@ -1698,7 +1698,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
     /*
      * This method does nothing if this window is not blocked by any modal dialog.
      * For modal blocked windows this method looks up for the nearest
-     *  prevTransiendFor window that is in the same state (Normal/Iconified/Withdrawn)
+     *  prevTransientFor window that is in the same state (Normal/Iconified/Withdrawn)
      *  as this one and makes this window transient for it. The same operation is
      *  performed for nextTransientFor window.
      * Values of prevTransientFor and nextTransientFor fields are not changed.

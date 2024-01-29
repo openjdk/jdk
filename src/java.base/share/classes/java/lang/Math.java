@@ -2755,7 +2755,7 @@ public final class Math {
      * <li> If both arguments are zero, the result is positive zero.
      * </ul>
      *
-     * <p>The computed result must be within 1 ulp of the exact
+     * <p>The computed result must be within 1.5 ulps of the exact
      * result.  If one parameter is held constant, the results must be
      * semi-monotonic in the other parameter.
      *

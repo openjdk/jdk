@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,9 +84,18 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * the {@code NumberFormat} factory methods, the pattern and symbols are
  * read from localized {@code ResourceBundle}s.
  *
- * <h2>Patterns</h2>
+ * <h2 id="patterns">Patterns</h2>
  *
- * {@code DecimalFormat} patterns have the following syntax:
+ * Note: For any given {@code DecimalFormat} pattern, if the pattern is not
+ * in scientific notation, the maximum number of integer digits will not be
+ * derived from the pattern, and instead set to {@link Integer#MAX_VALUE}.
+ * Otherwise, if the pattern is in scientific notation, the maximum number of
+ * integer digits will be derived from the pattern. This derivation is detailed
+ * in the {@link ##scientific_notation Scientific Notation} section. This behavior
+ * is the typical end-user desire; {@link #setMaximumIntegerDigits(int)} can be
+ * used to manually adjust the maximum integer digits.
+ *
+ * <p> {@code DecimalFormat} patterns have the following syntax:
  * <blockquote><pre>
  * <i>Pattern:</i>
  *         <i>PositivePattern</i>
@@ -96,9 +105,11 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * <i>NegativePattern:</i>
  *         <i>Prefix<sub>opt</sub></i> <i>Number</i> <i>Suffix<sub>opt</sub></i>
  * <i>Prefix:</i>
- *         any Unicode characters except {@code U+FFFE}, {@code U+FFFF}, and special characters
+ *         Any characters except the {@linkplain ##special_pattern_character
+ *         special pattern characters}
  * <i>Suffix:</i>
- *         any Unicode characters except {@code U+FFFE}, {@code U+FFFF}, and special characters
+ *         Any characters except the {@linkplain ##special_pattern_character
+ *         special pattern characters}
  * <i>Number:</i>
  *         <i>Integer</i> <i>Exponent<sub>opt</sub></i>
  *         <i>Integer</i> . <i>Fraction</i> <i>Exponent<sub>opt</sub></i>
@@ -245,7 +256,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * </table>
  * </blockquote>
  *
- * <h3>Scientific Notation</h3>
+ * <h3 id="scientific_notation">Scientific Notation</h3>
  *
  * <p>Numbers in scientific notation are expressed as the product of a mantissa
  * and a power of ten, for example, 1234 can be expressed as 1.234 x 10^3.  The
@@ -340,6 +351,15 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * {@code DecimalFormatSymbols} object as digits. For parsing, these
  * digits as well as all Unicode decimal digits, as defined by
  * {@link Character#digit Character.digit}, are recognized.
+ *
+ * <h3 id="digit_limits"> Integer and Fraction Digit Limits </h3>
+ *
+ * @implSpec
+ * When formatting a {@code Number} other than {@code BigInteger} and
+ * {@code BigDecimal}, {@code 309} is used as the upper limit for integer digits,
+ * and {@code 340} as the upper limit for fraction digits. This occurs, even if
+ * one of the {@code DecimalFormat} getter methods, for example, {@link #getMinimumFractionDigits()}
+ * returns a numerically greater value.
  *
  * <h4>Special Values</h4>
  *
@@ -449,6 +469,8 @@ public class DecimalFormat extends NumberFormat {
      * for the default {@link java.util.Locale.Category#FORMAT FORMAT} locale.
      * This is a convenient way to obtain a
      * DecimalFormat when internationalization is not the main concern.
+     * The number of maximum integer digits is usually not derived from the pattern.
+     * See the note in the {@link ##patterns Patterns} section for more detail.
      * <p>
      * To obtain standard formats for a given locale, use the factory methods
      * on NumberFormat such as getNumberInstance. These factories will
@@ -474,6 +496,8 @@ public class DecimalFormat extends NumberFormat {
      * Creates a DecimalFormat using the given pattern and symbols.
      * Use this constructor when you need to completely customize the
      * behavior of the format.
+     * The number of maximum integer digits is usually not derived from the pattern.
+     * See the note in the {@link ##patterns Patterns} section for more detail.
      * <p>
      * To obtain standard formats for a given
      * locale, use the factory methods on NumberFormat such as
@@ -2913,7 +2937,17 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * Overrides equals
+     * Compares the specified object with this {@code DecimalFormat} for equality.
+     * Returns true if the object is also a {@code DecimalFormat} and the
+     * two formats would format any value the same.
+     *
+     * @implSpec This method performs an equality check with a notion of class
+     * identity based on {@code getClass()}, rather than {@code instanceof}.
+     * Therefore, in the equals methods in subclasses, no instance of this class
+     * should compare as equal to an instance of a subclass.
+     * @param  obj object to be compared for equality
+     * @return {@code true} if the specified object is equal to this {@code DecimalFormat}
+     * @see Object#equals(Object)
      */
     @Override
     public boolean equals(Object obj)
@@ -2958,12 +2992,28 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * Overrides hashCode
+     * {@return the hash code for this {@code DecimalFormat}}
+     *
+     * @implSpec This method calculates the hash code value using the values returned from
+     * {@link #getPositivePrefix()} and {@link NumberFormat#hashCode()}.
+     * @see Object#hashCode()
+     * @see NumberFormat#hashCode()
      */
     @Override
     public int hashCode() {
         return super.hashCode() * 37 + positivePrefix.hashCode();
         // just enough fields for a reasonable distribution
+    }
+
+    /**
+     * {@return a string identifying this {@code DecimalFormat}, for debugging}
+     */
+    @Override
+    public String toString() {
+        return
+            """
+            DecimalFormat [locale: "%s", pattern: "%s"]
+            """.formatted(symbols.getLocale().getDisplayName(), toPattern());
     }
 
     /**
@@ -3298,9 +3348,8 @@ public class DecimalFormat extends NumberFormat {
      * These properties can also be changed individually through the
      * various setter methods.
      * <p>
-     * There is no limit to integer digits set
-     * by this routine, since that is the typical end-user desire;
-     * use setMaximumInteger if you want to set a real value.
+     * The number of maximum integer digits is usually not derived from the pattern.
+     * See the note in the {@link ##patterns Patterns} section for more detail.
      * For negative numbers, use a second pattern, separated by a semicolon
      * <P>Example {@code "#,#00.0#"} &rarr; 1,234.56
      * <P>This means a minimum of 2 integer digits, 1 fraction digit, and
@@ -3325,9 +3374,8 @@ public class DecimalFormat extends NumberFormat {
      * These properties can also be changed individually through the
      * various setter methods.
      * <p>
-     * There is no limit to integer digits set
-     * by this routine, since that is the typical end-user desire;
-     * use setMaximumInteger if you want to set a real value.
+     * The number of maximum integer digits is usually not derived from the pattern.
+     * See the note in the {@link ##patterns Patterns} section for more detail.
      * For negative numbers, use a second pattern, separated by a semicolon
      * <P>Example {@code "#,#00.0#"} &rarr; 1,234.56
      * <P>This means a minimum of 2 integer digits, 1 fraction digit, and
@@ -3679,11 +3727,9 @@ public class DecimalFormat extends NumberFormat {
 
     /**
      * Sets the maximum number of digits allowed in the integer portion of a
-     * number.
-     * For formatting numbers other than {@code BigInteger} and
-     * {@code BigDecimal} objects, the lower of {@code newValue} and
-     * 309 is used. Negative input values are replaced with 0.
+     * number. Negative input values are replaced with 0.
      * @see NumberFormat#setMaximumIntegerDigits
+     * @see ##digit_limits Integer and Fraction Digit Limits
      */
     @Override
     public void setMaximumIntegerDigits(int newValue) {
@@ -3698,11 +3744,9 @@ public class DecimalFormat extends NumberFormat {
 
     /**
      * Sets the minimum number of digits allowed in the integer portion of a
-     * number.
-     * For formatting numbers other than {@code BigInteger} and
-     * {@code BigDecimal} objects, the lower of {@code newValue} and
-     * 309 is used. Negative input values are replaced with 0.
+     * number. Negative input values are replaced with 0.
      * @see NumberFormat#setMinimumIntegerDigits
+     * @see ##digit_limits Integer and Fraction Digit Limits
      */
     @Override
     public void setMinimumIntegerDigits(int newValue) {
@@ -3717,11 +3761,9 @@ public class DecimalFormat extends NumberFormat {
 
     /**
      * Sets the maximum number of digits allowed in the fraction portion of a
-     * number.
-     * For formatting numbers other than {@code BigInteger} and
-     * {@code BigDecimal} objects, the lower of {@code newValue} and
-     * 340 is used. Negative input values are replaced with 0.
+     * number. Negative input values are replaced with 0.
      * @see NumberFormat#setMaximumFractionDigits
+     * @see ##digit_limits Integer and Fraction Digit Limits
      */
     @Override
     public void setMaximumFractionDigits(int newValue) {
@@ -3736,11 +3778,9 @@ public class DecimalFormat extends NumberFormat {
 
     /**
      * Sets the minimum number of digits allowed in the fraction portion of a
-     * number.
-     * For formatting numbers other than {@code BigInteger} and
-     * {@code BigDecimal} objects, the lower of {@code newValue} and
-     * 340 is used. Negative input values are replaced with 0.
+     * number. Negative input values are replaced with 0.
      * @see NumberFormat#setMinimumFractionDigits
+     * @see ##digit_limits Integer and Fraction Digit Limits
      */
     @Override
     public void setMinimumFractionDigits(int newValue) {
@@ -3755,11 +3795,11 @@ public class DecimalFormat extends NumberFormat {
 
     /**
      * Gets the maximum number of digits allowed in the integer portion of a
-     * number.
-     * For formatting numbers other than {@code BigInteger} and
-     * {@code BigDecimal} objects, the lower of the return value and
-     * 309 is used.
+     * number. The maximum number of integer digits can be set by either {@link #setMaximumIntegerDigits(int)}
+     * or {@link #applyPattern(String)}. See the {@link ##patterns Pattern Section} for
+     * comprehensive rules regarding maximum integer digits in patterns.
      * @see #setMaximumIntegerDigits
+     * @see ##digit_limits Integer and Fraction Digit Limits
      */
     @Override
     public int getMaximumIntegerDigits() {
@@ -3769,10 +3809,8 @@ public class DecimalFormat extends NumberFormat {
     /**
      * Gets the minimum number of digits allowed in the integer portion of a
      * number.
-     * For formatting numbers other than {@code BigInteger} and
-     * {@code BigDecimal} objects, the lower of the return value and
-     * 309 is used.
      * @see #setMinimumIntegerDigits
+     * @see ##digit_limits Integer and Fraction Digit Limits
      */
     @Override
     public int getMinimumIntegerDigits() {
@@ -3782,10 +3820,8 @@ public class DecimalFormat extends NumberFormat {
     /**
      * Gets the maximum number of digits allowed in the fraction portion of a
      * number.
-     * For formatting numbers other than {@code BigInteger} and
-     * {@code BigDecimal} objects, the lower of the return value and
-     * 340 is used.
      * @see #setMaximumFractionDigits
+     * @see ##digit_limits Integer and Fraction Digit Limits
      */
     @Override
     public int getMaximumFractionDigits() {
@@ -3795,10 +3831,8 @@ public class DecimalFormat extends NumberFormat {
     /**
      * Gets the minimum number of digits allowed in the fraction portion of a
      * number.
-     * For formatting numbers other than {@code BigInteger} and
-     * {@code BigDecimal} objects, the lower of the return value and
-     * 340 is used.
      * @see #setMinimumFractionDigits
+     * @see ##digit_limits Integer and Fraction Digit Limits
      */
     @Override
     public int getMinimumFractionDigits() {

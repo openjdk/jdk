@@ -99,16 +99,16 @@ static const jlong  VTHREAD_MOUNT_BIT = (((jlong)1) << (EXT_EVENT_VIRTUAL_THREAD
 static const jlong  VTHREAD_UNMOUNT_BIT = (((jlong)1) << (EXT_EVENT_VIRTUAL_THREAD_UNMOUNT - TOTAL_MIN_EVENT_TYPE_VAL));
 
 
-static const jlong  VTHREAD_BITS = VTHREAD_START_BIT | VTHREAD_END_BIT | VTHREAD_MOUNT_BIT | VTHREAD_UNMOUNT_BIT;
+static const jlong  VTHREAD_FILTERED_EVENT_BITS = VTHREAD_END_BIT | VTHREAD_MOUNT_BIT | VTHREAD_UNMOUNT_BIT;
 static const jlong  MONITOR_BITS = MONITOR_CONTENDED_ENTER_BIT | MONITOR_CONTENDED_ENTERED_BIT |
                           MONITOR_WAIT_BIT | MONITOR_WAITED_BIT;
 static const jlong  EXCEPTION_BITS = EXCEPTION_THROW_BIT | EXCEPTION_CATCH_BIT;
 static const jlong  INTERP_EVENT_BITS =  SINGLE_STEP_BIT | METHOD_ENTRY_BIT | METHOD_EXIT_BIT |
                                 FRAME_POP_BIT | FIELD_ACCESS_BIT | FIELD_MODIFICATION_BIT;
-static const jlong  THREAD_FILTERED_EVENT_BITS = INTERP_EVENT_BITS | EXCEPTION_BITS | MONITOR_BITS | VTHREAD_BITS |
+static const jlong  THREAD_FILTERED_EVENT_BITS = INTERP_EVENT_BITS | EXCEPTION_BITS | MONITOR_BITS | VTHREAD_FILTERED_EVENT_BITS |
                                         BREAKPOINT_BIT | CLASS_LOAD_BIT | CLASS_PREPARE_BIT | THREAD_END_BIT |
                                         SAMPLED_OBJECT_ALLOC_BIT;
-static const jlong  NEED_THREAD_LIFE_EVENTS = THREAD_FILTERED_EVENT_BITS | THREAD_START_BIT;
+static const jlong  NEED_THREAD_LIFE_EVENTS = THREAD_FILTERED_EVENT_BITS | THREAD_START_BIT | VTHREAD_START_BIT;
 static const jlong  EARLY_EVENT_BITS = CLASS_FILE_LOAD_HOOK_BIT | CLASS_LOAD_BIT | CLASS_PREPARE_BIT |
                                VM_START_BIT | VM_INIT_BIT | VM_DEATH_BIT | NATIVE_METHOD_BIND_BIT |
                                THREAD_START_BIT | THREAD_END_BIT |
@@ -309,6 +309,8 @@ public:
   static void clear_to_frame_pop(JvmtiEnvThreadState *env_thread, JvmtiFramePop fpop);
   static void change_field_watch(jvmtiEvent event_type, bool added);
 
+  static bool is_any_thread_filtered_event_enabled_globally();
+  static void recompute_thread_filtered(JvmtiThreadState *state);
   static void thread_started(JavaThread *thread);
   static void thread_ended(JavaThread *thread);
 
@@ -730,6 +732,20 @@ JvmtiEventControllerPrivate::recompute_enabled() {
   EC_TRACE(("[-] # recompute enabled - after " JULONG_FORMAT_X, any_env_thread_enabled));
 }
 
+bool
+JvmtiEventControllerPrivate::is_any_thread_filtered_event_enabled_globally() {
+  julong global_thread_events = JvmtiEventController::_universal_global_event_enabled.get_bits() & THREAD_FILTERED_EVENT_BITS;
+  return global_thread_events != 0L;
+}
+
+void
+JvmtiEventControllerPrivate::recompute_thread_filtered(JvmtiThreadState *state) {
+  assert(Threads::number_of_threads() == 0 || JvmtiThreadState_lock->is_locked(), "sanity check");
+
+  if (is_any_thread_filtered_event_enabled_globally()) {
+    JvmtiEventControllerPrivate::recompute_thread_enabled(state);
+  }
+}
 
 void
 JvmtiEventControllerPrivate::thread_started(JavaThread *thread) {
@@ -739,16 +755,10 @@ JvmtiEventControllerPrivate::thread_started(JavaThread *thread) {
   EC_TRACE(("[%s] # thread started", JvmtiTrace::safe_get_thread_name(thread)));
 
   // if we have any thread filtered events globally enabled, create/update the thread state
-  if ((JvmtiEventController::_universal_global_event_enabled.get_bits() & THREAD_FILTERED_EVENT_BITS) != 0) {
-    MutexLocker mu(JvmtiThreadState_lock);
-    // create the thread state if missing
-    JvmtiThreadState *state = JvmtiThreadState::state_for_while_locked(thread);
-    if (state != nullptr) {    // skip threads with no JVMTI thread state
-      recompute_thread_enabled(state);
-    }
+  if (is_any_thread_filtered_event_enabled_globally()) { // intentionally racy
+    JvmtiThreadState::state_for(thread);
   }
 }
-
 
 void
 JvmtiEventControllerPrivate::thread_ended(JavaThread *thread) {
@@ -1113,6 +1123,11 @@ void
 JvmtiEventController::change_field_watch(jvmtiEvent event_type, bool added) {
   MutexLocker mu(JvmtiThreadState_lock);
   JvmtiEventControllerPrivate::change_field_watch(event_type, added);
+}
+
+void
+JvmtiEventController::recompute_thread_filtered(JvmtiThreadState *state) {
+  JvmtiEventControllerPrivate::recompute_thread_filtered(state);
 }
 
 void

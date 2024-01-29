@@ -85,6 +85,13 @@ public class MacAppBundler extends AppImageBundler {
                 },
             (s, p) -> s);
 
+    public static final BundlerParamInfo<String> APP_IMAGE_SIGN_IDENTITY =
+            new StandardBundlerParam<>(
+            Arguments.CLIOptions.MAC_APP_IMAGE_SIGN_IDENTITY.getId(),
+            String.class,
+            params -> "",
+            null);
+
     public static final BundlerParamInfo<String> BUNDLE_ID_SIGNING_PREFIX =
             new StandardBundlerParam<>(
             Arguments.CLIOptions.MAC_BUNDLE_SIGNING_PREFIX.getId(),
@@ -127,13 +134,20 @@ public class MacAppBundler extends AppImageBundler {
         // reject explicitly set sign to true and no valid signature key
         if (Optional.ofNullable(
                     SIGN_BUNDLE.fetchFrom(params)).orElse(Boolean.FALSE)) {
-            String signingIdentity =
-                    DEVELOPER_ID_APP_SIGNING_KEY.fetchFrom(params);
-            if (signingIdentity == null) {
-                throw new ConfigException(
-                        I18N.getString("error.explicit-sign-no-cert"),
-                        I18N.getString("error.explicit-sign-no-cert.advice"));
+            // Validate DEVELOPER_ID_APP_SIGNING_KEY only if user provided
+            // SIGNING_KEY_USER.
+            if (!SIGNING_KEY_USER.getIsDefaultValue(params)) { // --mac-signing-key-user-name
+                String signingIdentity =
+                        DEVELOPER_ID_APP_SIGNING_KEY.fetchFrom(params);
+                if (signingIdentity == null) {
+                    throw new ConfigException(
+                            I18N.getString("error.explicit-sign-no-cert"),
+                            I18N.getString("error.explicit-sign-no-cert.advice"));
+                }
             }
+
+            // No need to validate --mac-app-image-sign-identity, since it is
+            // pass through option.
 
             // Signing will not work without Xcode with command line developer tools
             try {

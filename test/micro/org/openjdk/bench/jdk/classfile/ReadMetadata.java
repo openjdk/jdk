@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -25,10 +23,10 @@
 package org.openjdk.bench.jdk.classfile;
 
 import java.lang.reflect.AccessFlag;
-import jdk.internal.classfile.ClassElement;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.FieldModel;
+import java.lang.classfile.ClassElement;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.FieldModel;
 import jdk.internal.org.objectweb.asm.*;
 import jdk.internal.org.objectweb.asm.tree.*;
 import org.openjdk.jmh.annotations.*;
@@ -68,9 +66,27 @@ public class ReadMetadata extends AbstractCorpusBenchmark {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     public void jdkReadName(Blackhole bh) {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         for (byte[] bytes : classes) {
             bh.consume(cc.parse(bytes).thisClass().asInternalName());
+        }
+    }
+
+    @Benchmark
+    @BenchmarkMode(Mode.Throughput)
+    public void jdkReadMemberNames(Blackhole bh) {
+        var cc = ClassFile.of();
+        for (byte[] bytes : classes) {
+            var cm = cc.parse(bytes);
+            bh.consume(cm.thisClass().asInternalName());
+            for (var f : cm.fields()) {
+                bh.consume(f.fieldName().stringValue());
+                bh.consume(f.fieldType().stringValue());
+            }
+            for (var m : cm.methods()) {
+                bh.consume(m.methodName().stringValue());
+                bh.consume(m.methodType().stringValue());
+            }
         }
     }
 
@@ -114,7 +130,7 @@ public class ReadMetadata extends AbstractCorpusBenchmark {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     public void jdkTreeCountFields(Blackhole bh) {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         for (byte[] bytes : classes) {
             int count = 0;
             ClassModel cm = cc.parse(bytes);
@@ -129,7 +145,7 @@ public class ReadMetadata extends AbstractCorpusBenchmark {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     public void jdkCountFields(Blackhole bh) {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         for (byte[] bytes : classes) {
             int count = 0;
             ClassModel cm = cc.parse(bytes);

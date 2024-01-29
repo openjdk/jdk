@@ -580,7 +580,7 @@ u_char JSON::skip_line_comment() {
     return 0;
   }
   next();
-  return next();
+  return peek();
 }
 
 /*

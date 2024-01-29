@@ -528,8 +528,7 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
     }
   }
 
-  // return value can be odd number of VMRegImpl stack slots make multiple of 2
-  return align_up(stack, 2);
+  return stack;
 }
 
 // Patch the callers callsite with entry to compiled code if it exists.
@@ -978,9 +977,8 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
 
 int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
                                          VMRegPair *regs,
-                                         VMRegPair *regs2,
                                          int total_args_passed) {
-  assert(regs2 == nullptr, "not needed on x86");
+
 // We return the amount of VMRegImpl stack slots we need to reserve for all
 // the arguments NOT counting out_preserve_stack_slots.
 
@@ -1366,7 +1364,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // Now figure out where the args must be stored and how much stack space
   // they require.
   int out_arg_slots;
-  out_arg_slots = c_calling_convention(out_sig_bt, out_regs, nullptr, total_c_args);
+  out_arg_slots = c_calling_convention(out_sig_bt, out_regs, total_c_args);
 
   // Compute framesize for the wrapper.  We need to handlize all oops in
   // registers a max of 2 on x86.
@@ -1717,7 +1715,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       assert(LockingMode == LM_LIGHTWEIGHT, "must be");
       // Load object header
       __ movptr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-      __ fast_lock_impl(obj_reg, swap_reg, thread, lock_reg, slow_path_lock);
+      __ lightweight_lock(obj_reg, swap_reg, thread, lock_reg, slow_path_lock);
     }
     __ bind(count_mon);
     __ inc_held_monitor_count();
@@ -1876,7 +1874,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       assert(LockingMode == LM_LIGHTWEIGHT, "must be");
       __ movptr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
       __ andptr(swap_reg, ~(int32_t)markWord::lock_mask_in_place);
-      __ fast_unlock_impl(obj_reg, swap_reg, lock_reg, slow_path_unlock);
+      __ lightweight_unlock(obj_reg, swap_reg, lock_reg, slow_path_unlock);
       __ dec_held_monitor_count();
     }
 

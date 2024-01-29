@@ -755,14 +755,12 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
         ShouldNotReachHere();
     }
   }
-  return align_up(stk, 2);
+  return stk;
 }
 
 int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
                                         VMRegPair *regs,
-                                        VMRegPair *regs2,
                                         int total_args_passed) {
-  assert(regs2 == nullptr, "second VMRegPair array not used on this platform");
 
   // Calling conventions for C runtime calls and calls to JNI native methods.
   const VMReg z_iarg_reg[5] = {
@@ -1457,7 +1455,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   // *_slot_offset indicates offset from SP in #stack slots
   // *_offset      indicates offset from SP in #bytes
 
-  int stack_slots = c_calling_convention(out_sig_bt, out_regs, /*regs2=*/nullptr, total_c_args) + // 1+2
+  int stack_slots = c_calling_convention(out_sig_bt, out_regs, total_c_args) + // 1+2
                     SharedRuntime::out_preserve_stack_slots(); // see c_calling_convention
 
   // Now the space for the inbound oop handle area.
@@ -1716,7 +1714,9 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ add2reg(r_box, lock_offset, Z_SP);
 
     // Try fastpath for locking.
-    // Fast_lock kills r_temp_1, r_temp_2. (Don't use R1 as temp, won't work!)
+    // Fast_lock kills r_temp_1, r_temp_2.
+    // in case of DiagnoseSyncOnValueBasedClasses content for Z_R1_scratch
+    // will be destroyed, So avoid using Z_R1 as temp here.
     __ compiler_fast_lock_object(r_oop, r_box, r_tmp1, r_tmp2);
     __ z_bre(done);
 
@@ -1915,7 +1915,8 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ add2reg(r_box, lock_offset, Z_SP);
 
     // Try fastpath for unlocking.
-    __ compiler_fast_unlock_object(r_oop, r_box, r_tmp1, r_tmp2); // Don't use R1 as temp.
+    // Fast_unlock kills r_tmp1, r_tmp2.
+    __ compiler_fast_unlock_object(r_oop, r_box, r_tmp1, r_tmp2);
     __ z_bre(done);
 
     // Slow path for unlocking.

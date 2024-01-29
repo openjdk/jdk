@@ -26,8 +26,8 @@
  * @summary Test config, cmd and lib directories of jmod.
  * @author Andrei Eremeev
  * @library ../lib
+ * @enablePreview
  * @modules java.base/jdk.internal.jimage
- *          jdk.jdeps/com.sun.tools.classfile
  *          jdk.jlink/jdk.tools.jlink.internal
  *          jdk.jlink/jdk.tools.jmod
  *          jdk.jlink/jdk.tools.jimage

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,13 @@ package jdk.test.lib.hprof;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.List;
 
+import jdk.test.lib.Asserts;
 import jdk.test.lib.hprof.model.Snapshot;
 import jdk.test.lib.hprof.parser.Reader;
 
@@ -48,17 +53,24 @@ public class HprofParser {
     }
 
     /**
-     * @see #parse(File, boolean, boolean, boolean)
+     * @see #parse(File, boolean, boolean, boolean, boolean)
      */
-    public static File parse(File dump) throws Exception {
-        return parse(dump, false, true, true);
+    public static File parseAndVerify(File dump) throws Exception {
+        return parse(dump, false, true, true, true);
     }
 
     /**
-     * @see #parse(File, boolean, boolean, boolean)
+     * @see #parse(File, boolean, boolean, boolean, boolean)
+     */
+    public static File parse(File dump) throws Exception {
+        return parse(dump, false, true, true, false);
+    }
+
+    /**
+     * @see #parse(File, boolean, boolean, boolean, boolean)
      */
     public static File parseWithDebugInfo(File dump) throws Exception {
-        return parse(dump, true, true, true);
+        return parse(dump, true, true, true, false);
     }
 
     /**
@@ -68,10 +80,12 @@ public class HprofParser {
      * @param debug Turn on/off debug file parsing
      * @param callStack Turn on/off tracking of object allocation call stack
      * @param calculateRefs Turn on/off tracking object allocation call stack
+     * @param verifyParse Verify output of parse process and fail if error occurred
      * @throws Exception
      * @return File containing output from the parser
      */
-    public static File parse(File dump, boolean debug, boolean callStack, boolean calculateRefs) throws Exception {
+    public static File parse(File dump, boolean debug, boolean callStack,
+                             boolean calculateRefs, boolean verifyParse) throws Exception {
         File out = new File("hprof." + System.currentTimeMillis() + ".out");
         if (out.exists()) {
             out.delete();
@@ -87,11 +101,21 @@ public class HprofParser {
                 snapshot.resolve(calculateRefs);
                 System.out.println("Snapshot resolved.");
             }
-       } finally {
-           System.setOut(psSystemOut);
-       }
-
+        } finally {
+            System.setOut(psSystemOut);
+        }
+        if (verifyParse) {
+            verifyParse(out);
+        }
         return out;
     }
 
+    private static void verifyParse(File out) throws IOException {
+        Asserts.assertTrue(out != null && out.exists() && out.isFile(), "Could not find hprof parser output file");
+        List<String> lines = Files.readAllLines(out.toPath());
+        Asserts.assertTrue(lines.size() > 0, "hprof parser output file is empty");
+        for (String line : lines) {
+            Asserts.assertFalse(line.matches(".*WARNING(?!.*Failed to resolve object.*constantPoolOop.*).*"));
+        }
+    }
 }

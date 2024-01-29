@@ -106,7 +106,6 @@ class CodeCache : AllStatic {
   static TruncatedSeq      _unloading_gc_intervals;
   static TruncatedSeq      _unloading_allocation_rates;
   static volatile bool     _unloading_threshold_gc_requested;
-  static nmethod* volatile _unlinked_head;
 
   static ExceptionCache* volatile _exception_cache_purge_list;
 
@@ -117,7 +116,7 @@ class CodeCache : AllStatic {
   // Creates a new heap with the given name and size, containing CodeBlobs of the given type
   static void add_heap(ReservedSpace rs, const char* name, CodeBlobType code_blob_type);
   static CodeHeap* get_code_heap_containing(void* p);         // Returns the CodeHeap containing the given pointer, or nullptr
-  static CodeHeap* get_code_heap(const CodeBlob* cb);         // Returns the CodeHeap for the given CodeBlob
+  static CodeHeap* get_code_heap(const void* cb);             // Returns the CodeHeap for the given CodeBlob
   static CodeHeap* get_code_heap(CodeBlobType code_blob_type);         // Returns the CodeHeap for the given CodeBlobType
   // Returns the name of the VM option to set the size of the corresponding CodeHeap
   static const char* get_code_heap_flag_name(CodeBlobType code_blob_type);
@@ -149,10 +148,8 @@ class CodeCache : AllStatic {
   static const GrowableArray<CodeHeap*>* nmethod_heaps() { return _nmethod_heaps; }
 
   // Allocation/administration
-  static CodeBlob* allocate(int size, CodeBlobType code_blob_type, bool handle_alloc_failure = true, CodeBlobType orig_code_blob_type = CodeBlobType::All); // allocates a new CodeBlob
+  static CodeBlob* allocate(uint size, CodeBlobType code_blob_type, bool handle_alloc_failure = true, CodeBlobType orig_code_blob_type = CodeBlobType::All); // allocates a new CodeBlob
   static void commit(CodeBlob* cb);                        // called when the allocated CodeBlob has been filled
-  static int  alignment_unit();                            // guaranteed alignment of all CodeBlobs
-  static int  alignment_offset();                          // guaranteed offset of first CodeBlob byte within alignment unit (i.e., allocation header)
   static void free(CodeBlob* cb);                          // frees a CodeBlob
   static void free_unused_tail(CodeBlob* cb, size_t used); // frees the unused tail of a CodeBlob (only used by TemplateInterpreter::initialize())
   static bool contains(void *p);                           // returns whether p is included
@@ -179,17 +176,17 @@ class CodeCache : AllStatic {
 
   // GC support
   static void verify_oops();
-  // If any oops are not marked this method unloads (i.e., breaks root links
-  // to) any unmarked codeBlobs in the cache.  Sets "marked_for_unloading"
-  // to "true" iff some code got unloaded.
-  // "unloading_occurred" controls whether metadata should be cleaned because of class unloading.
-  class UnloadingScope: StackObj {
+
+  // Helper scope object managing code cache unlinking behavior, i.e. sets and
+  // restores the closure that determines which nmethods are going to be removed
+  // during the unlinking part of code cache unloading.
+  class UnlinkingScope : StackObj {
     ClosureIsUnloadingBehaviour _is_unloading_behaviour;
     IsUnloadingBehaviour*       _saved_behaviour;
 
   public:
-    UnloadingScope(BoolObjectClosure* is_alive);
-    ~UnloadingScope();
+    UnlinkingScope(BoolObjectClosure* is_alive);
+    ~UnlinkingScope();
   };
 
   // Code cache unloading heuristics
@@ -213,8 +210,7 @@ class CodeCache : AllStatic {
   //    nmethod::is_cold.
   static void arm_all_nmethods();
 
-  static void flush_unlinked_nmethods();
-  static void register_unlinked(nmethod* nm);
+  static void maybe_restart_compiler(size_t freed_memory);
   static void do_unloading(bool unloading_occurred);
   static uint8_t unloading_cycle() { return _unloading_cycle; }
 
@@ -228,10 +224,10 @@ class CodeCache : AllStatic {
   static void print_internals();
   static void print_memory_overhead();
   static void verify();                          // verifies the code cache
-  static void print_trace(const char* event, CodeBlob* cb, int size = 0) PRODUCT_RETURN;
+  static void print_trace(const char* event, CodeBlob* cb, uint size = 0) PRODUCT_RETURN;
   static void print_summary(outputStream* st, bool detailed = true); // Prints a summary of the code cache usage
   static void log_state(outputStream* st);
-  LINUX_ONLY(static void write_perf_map();)
+  LINUX_ONLY(static void write_perf_map(const char* filename = nullptr);)
   static const char* get_code_heap_name(CodeBlobType code_blob_type)  { return (heap_available(code_blob_type) ? get_code_heap(code_blob_type)->name() : "Unused"); }
   static void report_codemem_full(CodeBlobType code_blob_type, bool print);
 
@@ -397,10 +393,10 @@ template <class T, class Filter, bool is_relaxed> class CodeBlobIterator : publi
     // If set to nullptr, initialized by first call to next()
     _code_blob = nm;
     if (nm != nullptr) {
-      while(!(*_heap)->contains_blob(_code_blob)) {
+      while(!(*_heap)->contains(_code_blob)) {
         ++_heap;
       }
-      assert((*_heap)->contains_blob(_code_blob), "match not found");
+      assert((*_heap)->contains(_code_blob), "match not found");
     }
   }
 

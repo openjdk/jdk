@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -687,6 +687,24 @@ public interface Elements {
      *          elements.getTypeElement("C")); }
      * </blockquote>
      *
+     * Consistent with the usage of the {@link Override @Override}
+     * annotation, if an interface declares a method
+     * override-equivalent to a {@code public} method of {@link Object
+     * java.lang.Object}, such a method of the interface is regarded
+     * as overriding the corresponding {@code Object} method; for
+     * example:
+     *
+     * {@snippet lang=java :
+     * interface I {
+     *   @Override
+     *   String toString();
+     * }
+     * ...
+     * assert elements.overrides(elementForItoString,
+     *                           elementForObjecttoString,
+     *                           elements.getTypeElement("I"));
+     * }
+     *
      * @param overrider  the first method, possible overrider
      * @param overridden  the second method, possibly being overridden
      * @param type   the class or interface of which the first method is a member
@@ -756,6 +774,29 @@ public interface Elements {
      */
     default boolean isAutomaticModule(ModuleElement module) {
         return false;
+    }
+
+    /**
+     * {@return the class body of an {@code enum} constant if the
+     * argument is an {@code enum} constant declared with an optional
+     * class body, {@code null} otherwise}
+     *
+     * @implSpec
+     * The default implementation of this method throws {@code
+     * UnsupportedOperationException} if the argument is an {@code
+     * enum} constant and throws an {@code IllegalArgumentException}
+     * if it is not.
+     *
+     * @param enumConstant an enum constant
+     * @throws IllegalArgumentException if the argument is not an {@code enum} constant
+     * @jls 8.9.1 Enum Constants
+     * @since 22
+     */
+    default TypeElement getEnumConstantBody(VariableElement enumConstant) {
+        switch(enumConstant.getKind()) {
+        case ENUM_CONSTANT -> throw new UnsupportedOperationException();
+        default            -> throw new IllegalArgumentException("Argument not an enum constant");
+        }
     }
 
     /**

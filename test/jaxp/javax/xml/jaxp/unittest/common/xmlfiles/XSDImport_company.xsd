@@ -1,0 +1,28 @@
+<?xml version="1.1"?>
+<!DOCTYPE top SYSTEM 'test.dtd'
+[
+    <!ENTITY % pe "x">
+    <!ENTITY   x "AAAAA">
+    <!ENTITY   x1 "BBB">
+        ]>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            targetNamespace="http://www.company.org"
+            xmlns="http://www.company.org"
+            elementFormDefault="unqualified"
+            xmlns:per="http://www.person.org"
+            xmlns:pro="http://www.product.org">
+    <xsd:import namespace="http://www.person.org"
+                schemaLocation="XSDImport_person.xsd"/>
+    <xsd:import namespace="http://www.product.org"
+                schemaLocation="XSDImport_product.xsd"/>
+    <xsd:element name="Company">
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element name="Person" type="per:PersonType" 
+                             maxOccurs="unbounded"/>
+                <xsd:element name="Product" type="pro:ProductType" 
+                             maxOccurs="unbounded"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+</xsd:schema>

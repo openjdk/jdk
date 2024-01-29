@@ -62,7 +62,7 @@ ifeq ($(call check-jvm-feature, compiler2), true)
   ADLC_CFLAGS += -I$(TOPDIR)/src/hotspot/share
 
   # Add file macro mappings
-  ADLC_CFLAGS += $(FILE_MACRO_CFLAGS)
+  ADLC_CFLAGS += $(FILE_MACRO_CFLAGS) $(REPRODUCIBLE_CFLAGS)
 
   ifeq ($(UBSAN_ENABLED), true)
     ADLC_CFLAGS += $(UBSAN_CFLAGS)
@@ -131,6 +131,21 @@ ifeq ($(call check-jvm-feature, compiler2), true)
 
   ifeq ($(HOTSPOT_TARGET_CPU_ARCH), arm)
     ADLCFLAGS += -DARM=1
+  endif
+
+  # Set ASSERT, NDEBUG and PRODUCT flags just like in JvmFlags.gmk
+  ifeq ($(DEBUG_LEVEL), release)
+    # release builds disable uses of assert macro from <assert.h>.
+    ADLCFLAGS += -DNDEBUG
+    # For hotspot, release builds differ internally between "optimized" and "product"
+    # in that "optimize" does not define PRODUCT.
+    ifneq ($(HOTSPOT_DEBUG_LEVEL), optimized)
+      ADLCFLAGS += -DPRODUCT
+    endif
+  else ifeq ($(DEBUG_LEVEL), fastdebug)
+    ADLCFLAGS += -DASSERT
+  else ifeq ($(DEBUG_LEVEL), slowdebug)
+    ADLCFLAGS += -DASSERT
   endif
 
   ##############################################################################

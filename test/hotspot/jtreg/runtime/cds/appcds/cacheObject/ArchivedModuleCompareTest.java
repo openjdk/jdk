@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,6 +77,28 @@ public class ArchivedModuleCompareTest {
             String moduleResolutionOut2 = TestCommon.filterOutLogs(output.getStdout());
             TestCommon.checkOutputStrings(
                 moduleResolutionOut1, moduleResolutionOut2, "\n");
+        }
+
+        // Test case 3)
+        // dump an archive with the -m jdk.compiler option
+        // run with -Xshare:off without -m option
+        // run with archive without -m option
+        // the list of modules from both runs should be the same
+        System.out.println("---------------- Test case 3 -----------------");
+        output = TestCommon.dump(appJar,
+                     TestCommon.list("PrintSystemModulesApp"),
+                     "-m", "jdk.compiler");
+        TestCommon.checkDump(output);
+
+        output = TestCommon.execOff("-cp", appJar, "PrintSystemModulesApp");
+        output.shouldHaveExitValue(0);
+        bootModules1 = TestCommon.filterOutLogs(output.getStdout());
+
+        output = TestCommon.exec(appJar, "PrintSystemModulesApp");
+        TestCommon.checkExec(output);
+        if (output.getStderr().contains("sharing")) {
+            String bootModules2 = TestCommon.filterOutLogs(output.getStdout());
+            TestCommon.checkOutputStrings(bootModules1, bootModules2, ", ");
         }
     }
 }

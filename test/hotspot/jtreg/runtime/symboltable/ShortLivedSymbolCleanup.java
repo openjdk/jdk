@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,13 +89,13 @@ public class ShortLivedSymbolCleanup {
   }
 
   public static void main(String[] args) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:symboltable=trace",
-                                                              "-version");
+    ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:symboltable=trace",
+                                                                         "-version");
     int size = getSymbolTableSize(pb);
 
-    pb = ProcessTools.createJavaProcessBuilder("-XX:+PrintSymbolTableSizeHistogram",
-                                               LotsOfTempSymbols.class.getName(),
-                                               Integer.toString(size));
+    pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+PrintSymbolTableSizeHistogram",
+                                                          LotsOfTempSymbols.class.getName(),
+                                                          Integer.toString(size));
     analyzeOutputOn(size, pb);
   }
 

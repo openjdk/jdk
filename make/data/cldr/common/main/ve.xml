@@ -16,7 +16,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</languages>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a b d ḓ e f g h i k l ḽ m n ṅ ṋ o p r s t ṱ u v w x y z]</exemplarCharacters>
+		<exemplarCharacters>[a b dḓ e f g h i k lḽ m nṅṋ o p r s tṱ u v w x y z]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary" draft="unconfirmed">[c j q]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="unconfirmed">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
 	</characters>
@@ -107,27 +107,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<decimal>,</decimal>
 			<group> </group>
 		</symbols>
-		<decimalFormats numberSystem="latn">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern>#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<scientificFormats numberSystem="latn">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern>#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<percentFormats numberSystem="latn">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern>#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">

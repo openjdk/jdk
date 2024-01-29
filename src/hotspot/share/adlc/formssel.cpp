@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ InstructForm::InstructForm(const char *id, bool ideal_only)
       _format               = nullptr;
       _peephole             = nullptr;
       _ins_pipe             = nullptr;
+      _flag                 = nullptr;
       _uniq_idx             = nullptr;
       _num_uniq             = 0;
       _cisc_spill_operand   = Not_cisc_spillable;// Which operand may cisc-spill
@@ -86,6 +87,7 @@ InstructForm::InstructForm(const char *id, InstructForm *instr, MatchRule *rule)
       _format                = instr->_format;
       _peephole              = instr->_peephole;
       _ins_pipe              = instr->_ins_pipe;
+      _flag                  = instr->_flag;
       _uniq_idx              = instr->_uniq_idx;
       _num_uniq              = instr->_num_uniq;
       _cisc_spill_operand    = Not_cisc_spillable; // Which operand may cisc-spill
@@ -792,6 +794,7 @@ bool InstructForm::captures_bottom_type(FormDict &globals) const {
        !strcmp(_matrule->_rChild->_opType,"StrInflatedCopy") ||
        !strcmp(_matrule->_rChild->_opType,"VectorCmpMasked")||
        !strcmp(_matrule->_rChild->_opType,"VectorMaskGen")||
+       !strcmp(_matrule->_rChild->_opType,"VerifyVectorAlignment")||
        !strcmp(_matrule->_rChild->_opType,"CompareAndExchangeP") ||
        !strcmp(_matrule->_rChild->_opType,"CompareAndExchangeN"))) return true;
   else if ( is_ideal_load() == Form::idealP )                return true;
@@ -1891,6 +1894,34 @@ void Effect::dump() {
 
 void Effect::output(FILE *fp) {          // Write info to output files
   fprintf(fp,"Effect: %s\n", (_name?_name:""));
+}
+
+//---------------------------------Flag----------------------------------------
+Flag::Flag(const char *name) : _name(name), _next(nullptr) {
+  _ftype = Form::FLG;
+}
+
+Flag::~Flag() {
+}
+
+void Flag::append_flag(Flag *next_flag) {
+  if( _next == nullptr ) {
+    _next = next_flag;
+  } else {
+    _next->append_flag( next_flag );
+  }
+}
+
+Flag* Flag::next() {
+  return _next;
+}
+
+void Flag::dump() {
+  output(stderr);
+}
+
+void Flag::output(FILE *fp) {          // Write info to output files
+  fprintf(fp,"Flag: %s\n", (_name?_name:""));
 }
 
 //------------------------------ExpandRule-------------------------------------
@@ -4221,7 +4252,7 @@ bool MatchRule::is_vector() const {
     "LShiftVB","LShiftVS","LShiftVI","LShiftVL",
     "RShiftVB","RShiftVS","RShiftVI","RShiftVL",
     "URShiftVB","URShiftVS","URShiftVI","URShiftVL",
-    "ReplicateB","ReplicateS","ReplicateI","ReplicateL","ReplicateF","ReplicateD","ReverseV","ReverseBytesV",
+    "Replicate","ReverseV","ReverseBytesV",
     "RoundDoubleModeV","RotateLeftV" , "RotateRightV", "LoadVector","StoreVector",
     "LoadVectorGather", "StoreVectorScatter", "LoadVectorGatherMasked", "StoreVectorScatterMasked",
     "VectorTest", "VectorLoadMask", "VectorStoreMask", "VectorBlend", "VectorInsert",

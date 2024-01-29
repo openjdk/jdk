@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ public class IndexWriter extends HtmlDocletWriter {
      */
     public static void generate(HtmlConfiguration configuration) throws DocletException {
         var writerFactory = configuration.getWriterFactory();
-        IndexBuilder mainIndex = configuration.mainIndex;
+        IndexBuilder mainIndex = configuration.indexBuilder;
         List<Character> firstCharacters = mainIndex.getFirstCharacters();
         if (configuration.getOptions().splitIndex()) {
             ListIterator<Character> iter = firstCharacters.listIterator();
@@ -104,7 +104,7 @@ public class IndexWriter extends HtmlDocletWriter {
     protected IndexWriter(HtmlConfiguration configuration, DocPath path,
                           List<Character> allFirstCharacters, List<Character> displayFirstCharacters) {
         super(configuration, path);
-        this.mainIndex = configuration.mainIndex;
+        this.mainIndex = configuration.indexBuilder;
         this.splitIndex = configuration.getOptions().splitIndex();
         this.allFirstCharacters = allFirstCharacters;
         this.displayFirstCharacters = displayFirstCharacters;
@@ -285,9 +285,9 @@ public class IndexWriter extends HtmlDocletWriter {
         var div = HtmlTree.DIV(HtmlStyle.deprecationBlock);
         if (utils.isDeprecated(element)) {
             div.add(span);
-            List<? extends DeprecatedTree> tags = utils.getDeprecatedTrees(element);
+            var tags = utils.getDeprecatedTrees(element);
             if (!tags.isEmpty())
-                addInlineDeprecatedComment(element, tags.get(0), div);
+                addInlineDeprecatedComment(element, tags.getFirst(), div);
             content.add(div);
         } else {
             TypeElement encl = utils.getEnclosingTypeElement(element);
@@ -350,7 +350,7 @@ public class IndexWriter extends HtmlDocletWriter {
         }
 
         content.add(new HtmlTree(TagName.BR));
-        List<Content> pageLinks = Stream.of(IndexItem.Category.values())
+        var pageLinks = Stream.of(IndexItem.Category.values())
                 .flatMap(c -> mainIndex.getItems(c).stream())
                 .filter(i -> !(i.isElementItem() || i.isTagItem()))
                 .sorted((i1,i2)-> utils.compareStrings(i1.getLabel(), i2.getLabel()))

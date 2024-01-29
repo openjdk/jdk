@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,7 @@ public final class XChoicePeer extends XComponentPeer implements ChoicePeer, Top
     // MouseReleased event to send ItemStateChanged. To prevent it we should
     // use a combination of firstPress and wasDragged variables.
     // The only difference in dragging and wasDragged is: last one will not
-    // set to false on mouse ungrab. It become false after MouseRelased() finishes.
+    // set to false on mouse ungrab. It becomes false after MouseReleased() finishes.
     private boolean wasDragged = false;
     private ListHelper helper;
     private UnfurledChoice unfurledChoice;
@@ -128,7 +128,7 @@ public final class XChoicePeer extends XComponentPeer implements ChoicePeer, Top
     private boolean drawSelectedItem = true;
 
     // If set, indicates components under which choice popup should be showed.
-    // The choice's popup width and location should be adjust to appear
+    // The choice's popup width and location should be adjusted to appear
     // under both choice and alignUnder component.
     private Component alignUnder;
 
@@ -185,7 +185,7 @@ public final class XChoicePeer extends XComponentPeer implements ChoicePeer, Top
 
     // 6399679. check if super.setBounds() actually changes the size of the
     // component and then compare current Choice size with a new one. If
-    // they differs then hide dropdown menu
+    // they differ then hide dropdown menu
     public void setBounds(int x, int y, int width, int height, int op) {
         int oldX = this.x;
         int oldY = this.y;
@@ -1129,8 +1129,8 @@ public final class XChoicePeer extends XComponentPeer implements ChoicePeer, Top
     }
 
     /* Returns true if the MouseEvent coords
-     * are inside of the Choice itself (it doesnt's depends on
-     * if this choice opened or not).
+     * are inside of the Choice itself (it doesn't depend on
+     * whether this choice opened or not).
      */
     private boolean isMouseEventInChoice(MouseEvent e) {
         int x = e.getX();

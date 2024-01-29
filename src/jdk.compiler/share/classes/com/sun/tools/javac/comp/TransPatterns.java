@@ -526,6 +526,8 @@ public class TransPatterns extends TreeTranslator {
             boolean previousCompletesNormally = false;
             boolean hasDefault = false;
 
+            patchCompletingNormallyCases(cases);
+
             for (var c : cases) {
                 List<JCCaseLabel> clearedPatterns = c.labels;
                 boolean hasJoinedNull =
@@ -543,7 +545,8 @@ public class TransPatterns extends TreeTranslator {
                     validCaseLabelList = clearedPatterns.head.hasTag(Tag.PATTERNCASELABEL);
                 }
 
-                if (validCaseLabelList && !previousCompletesNormally) {
+                if ((validCaseLabelList && !previousCompletesNormally) ||
+                        c.guard != null) {
                     List<JCPatternCaseLabel> labels = clearedPatterns.stream().map(cp -> (JCPatternCaseLabel)cp).collect(List.collector());
                     bindingContext = new BasicBindingContext();
                     VarSymbol prevCurrentValue = currentValue;
@@ -659,6 +662,53 @@ public class TransPatterns extends TreeTranslator {
             super.visitSwitchExpression((JCSwitchExpression) tree);
         }
     }
+
+    // Duplicates the block statement where needed.
+    // Processes cases in place, e.g.
+    // switch (obj) {
+    //     case Integer _ when ((Integer) obj) > 0:
+    //     case String _  when !((String) obj).isEmpty():
+    //         return 1;
+    //     ...
+    // }
+    // =>
+    // switch (typeSwitch(...)) {
+    //     case 0:
+    //         if (!((Integer)obj) > 0) { ... }
+    //         return 1;
+    //     case 1:
+    //         if (!((String)obj).isEmpty()) { ... }
+    //         return 1;
+    //     ...
+    // }
+    private static void patchCompletingNormallyCases(List<JCCase> cases) {
+        while (cases.nonEmpty()) {
+            var currentCase = cases.head;
+
+            if (currentCase.caseKind == CaseKind.STATEMENT &&
+                currentCase.completesNormally &&
+                cases.tail.nonEmpty() &&
+                cases.tail.head.guard != null) {
+                ListBuffer<JCStatement> newStatements = new ListBuffer<>();
+                List<JCCase> copyFrom = cases;
+
+                while (copyFrom.nonEmpty()) {
+                    newStatements.appendList(copyFrom.head.stats);
+
+                    if (!copyFrom.head.completesNormally) {
+                        break;
+                    }
+
+                    copyFrom = copyFrom.tail;
+                };
+
+                currentCase.stats = newStatements.toList();
+            }
+
+            cases = cases.tail;
+        }
+    }
+
     //where:
         private void fixupContinue(JCTree switchTree, JCCase c, VarSymbol indexVariable, int currentCaseIndex) {
             //inject 'index = currentCaseIndex + 1;` before continue which has the current switch as the target
@@ -859,6 +909,7 @@ public class TransPatterns extends TreeTranslator {
                 }
             } else if (currentBinding != null &&
                        commonBinding.type.tsym == currentBinding.type.tsym &&
+                       commonBinding.isUnnamedVariable() == currentBinding.isUnnamedVariable() &&
                        !previousNullable &&
                        new TreeDiffer(List.of(commonBinding), List.of(currentBinding))
                                .scan(commonNestedExpression, currentNestedExpression)) {

@@ -57,20 +57,28 @@ public class forceEarlyReturn002a extends AbstractJDWPDebuggee {
 
             return true;
         } else if (command.equals(COMMAND_START_NEW_THREAD)) {
-            Thread thread = new Thread(new Runnable() {
-                public void run() {
-                    log.display("Thread exit");
-                }
-            });
-
-            thread.setName("forceEarlyReturn002a_NewThread");
-            thread.start();
+            testNewThread.start();
 
             return true;
         }
 
         return false;
     }
+
+    @Override
+    protected void init(String args[]) {
+        super.init(args);
+
+        // create thread for "NewThread" command in advance
+        testNewThread = new Thread(new Runnable() {
+            public void run() {
+                log.display("Thread exit");
+            }
+        });
+        testNewThread.setName("forceEarlyReturn002a_NewThread");
+    }
+
+    private static Thread testNewThread;
 
     private Thread testThreadInNative;
 

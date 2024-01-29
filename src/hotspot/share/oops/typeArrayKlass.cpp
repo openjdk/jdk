@@ -32,7 +32,7 @@
 #include "memory/metadataFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "oops/arrayKlass.inline.hpp"
+#include "oops/arrayKlass.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -168,63 +168,6 @@ void TypeArrayKlass::copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos
   size_t src_offset = arrayOopDesc::base_offset_in_bytes(element_type()) + ((size_t)src_pos << l2es);
   size_t dst_offset = arrayOopDesc::base_offset_in_bytes(element_type()) + ((size_t)dst_pos << l2es);
   ArrayAccess<ARRAYCOPY_ATOMIC>::arraycopy<void>(s, src_offset, d, dst_offset, (size_t)length << l2es);
-}
-
-// create a klass of array holding typeArrays
-ArrayKlass* TypeArrayKlass::array_klass(int n, TRAPS) {
-  int dim = dimension();
-  assert(dim <= n, "check order of chain");
-    if (dim == n)
-      return this;
-
-  // lock-free read needs acquire semantics
-  if (higher_dimension_acquire() == nullptr) {
-
-    ResourceMark rm;
-    JavaThread *jt = THREAD;
-    {
-      // Atomic create higher dimension and link into list
-      MutexLocker mu(THREAD, MultiArray_lock);
-
-      if (higher_dimension() == nullptr) {
-        Klass* oak = ObjArrayKlass::allocate_objArray_klass(
-              class_loader_data(), dim + 1, this, CHECK_NULL);
-        ObjArrayKlass* h_ak = ObjArrayKlass::cast(oak);
-        h_ak->set_lower_dimension(this);
-        // use 'release' to pair with lock-free load
-        release_set_higher_dimension(h_ak);
-        assert(h_ak->is_objArray_klass(), "incorrect initialization of ObjArrayKlass");
-      }
-    }
-  }
-
-  ObjArrayKlass* h_ak = higher_dimension();
-  THREAD->check_possible_safepoint();
-  return h_ak->array_klass(n, THREAD);
-}
-
-// return existing klass of array holding typeArrays
-ArrayKlass* TypeArrayKlass::array_klass_or_null(int n) {
-  int dim = dimension();
-  assert(dim <= n, "check order of chain");
-    if (dim == n)
-      return this;
-
-  // lock-free read needs acquire semantics
-  if (higher_dimension_acquire() == nullptr) {
-    return nullptr;
-  }
-
-  ObjArrayKlass* h_ak = higher_dimension();
-  return h_ak->array_klass_or_null(n);
-}
-
-ArrayKlass* TypeArrayKlass::array_klass(TRAPS) {
-  return array_klass(dimension() +  1, THREAD);
-}
-
-ArrayKlass* TypeArrayKlass::array_klass_or_null() {
-  return array_klass_or_null(dimension() +  1);
 }
 
 size_t TypeArrayKlass::oop_size(oop obj) const {

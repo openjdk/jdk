@@ -27,6 +27,7 @@
  * @bug 8303215 8312182
  * @summary On THP=always systems, we prevent THPs from forming within thread stacks
  * @library /test/lib
+ * @requires vm.flagless
  * @requires os.family == "linux"
  * @requires vm.debug
  * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64"
@@ -40,6 +41,7 @@
  * @bug 8303215 8312182
  * @summary On THP=always systems, we prevent THPs from forming within thread stacks (negative test)
  * @library /test/lib
+ * @requires vm.flagless
  * @requires os.family == "linux"
  * @requires vm.debug
  * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64"
@@ -177,7 +179,7 @@ public class THPsInThreadStackPreventionTest {
         switch (args[0]) {
             case "PATCH-ENABLED": {
                 finalargs.add(TestMain.class.getName());
-                ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(finalargs);
+                ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(finalargs);
 
                 OutputAnalyzer output = new OutputAnalyzer(pb.start());
                 output.shouldHaveExitValue(0);
@@ -214,7 +216,7 @@ public class THPsInThreadStackPreventionTest {
                 finalargs.add("-XX:-THPStackMitigation");
 
                 finalargs.add(TestMain.class.getName());
-                ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(finalargs);
+                ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(finalargs);
                 OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
                 output.shouldHaveExitValue(0);

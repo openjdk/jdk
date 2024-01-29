@@ -85,7 +85,7 @@ class ResolvedMethodTableConfig : public AllStatic {
     ResolvedMethodTable::item_added();
     return AllocateHeap(size, mtClass);
   }
-  static void free_node(void* context, void* memory, Value const& value) {
+  static void free_node(void* context, void* memory, Value& value) {
     value.release(ResolvedMethodTable::_oop_storage);
     FreeHeap(memory);
     ResolvedMethodTable::item_removed();

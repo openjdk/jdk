@@ -188,7 +188,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Register t
   __ block_comment("nmethod_entry_barrier (nmethod_entry_barrier) {");
 
   // Load stub address using toc (fixed instruction size, unlike load_const_optimized)
-  __ calculate_address_from_global_toc(tmp, StubRoutines::ppc::nmethod_entry_barrier(),
+  __ calculate_address_from_global_toc(tmp, StubRoutines::method_entry_barrier(),
                                        true, true, false); // 2 instructions
   __ mtctr(tmp);
 

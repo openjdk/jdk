@@ -24,13 +24,14 @@
 /*
  * @test
  * @bug 8027232
- * @summary ensures that j.l.i.InvokerByteCodeGenerator and ASM visitMethodInsn
- * generate  bytecodes with correct constant pool references
+ * @library /test/lib/
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          jdk.jdeps/com.sun.tools.classfile
  *          jdk.zipfs
- * @compile -XDignore.symbol.file LambdaAsm.java LUtils.java
+ * @compile LambdaAsm.java
  * @run main/othervm LambdaAsm
+ * @summary ensures that j.l.i.InvokerByteCodeGenerator and ASM visitMethodInsn
+ * generate  bytecodes with correct constant pool references
  */
 import com.sun.tools.classfile.Attribute;
 import com.sun.tools.classfile.ClassFile;
@@ -40,34 +41,36 @@ import com.sun.tools.classfile.ConstantPool.CPInfo;
 import com.sun.tools.classfile.Instruction;
 import com.sun.tools.classfile.Method;
 import java.io.ByteArrayInputStream;
-import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Path;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
+import jdk.test.lib.compiler.CompilerUtils;
+import jdk.test.lib.process.OutputAnalyzer;
 
 import static java.nio.file.Files.*;
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
+import static jdk.test.lib.process.ProcessTools.*;
 
 public class LambdaAsm {
     static final Path DUMP_LAMBDA_PROXY_CLASS_FILES = Path.of("DUMP_LAMBDA_PROXY_CLASS_FILES");
+    static final Path SRC = Path.of("src");
+    static final Path CLASSES = Path.of("classes");
 
-    static final File TestFile = new File("A.java");
-
-    static void init() {
+    static void init() throws Exception {
         emitCode();
-        LUtils.compile(TestFile.getName());
-        LUtils.TestResult tr = LUtils.doExec(LUtils.JAVA_CMD.getAbsolutePath(),
+        CompilerUtils.compile(SRC, CLASSES);
+        OutputAnalyzer outputAnalyzer = executeProcess(createTestJavaProcessBuilder(
                 "-Djdk.invoke.LambdaMetafactory.dumpProxyClassFiles=true",
-                "-cp", ".", "A");
-        if (tr.exitValue != 0) {
-            System.out.println("Error: " + tr.toString());
-            throw new RuntimeException("could not create proxy classes");
-        }
+                "-cp", CLASSES.toString(), "A"));
+        outputAnalyzer.shouldHaveExitValue(0);
     }
 
-    static void emitCode() {
+    static void emitCode() throws IOException {
         ArrayList<String> scratch = new ArrayList<>();
         scratch.add("import java.util.function.*;");
         scratch.add("class A {");
@@ -89,7 +92,10 @@ public class LambdaAsm {
         scratch.add("       I.d();");
         scratch.add("   }");
         scratch.add("}");
-        LUtils.createFile(TestFile, scratch);
+
+        Path testFile = SRC.resolve("A.java");
+        Files.createDirectories(SRC);
+        Files.write(testFile, scratch, Charset.defaultCharset());
     }
 
     static void checkMethod(String cname, String mname, ConstantPool cp,

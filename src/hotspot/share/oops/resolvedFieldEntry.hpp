@@ -37,10 +37,10 @@
 // "resolution" refers to populating the getcode and putcode fields and other relevant information.
 // The field's type (TOS), offset, holder klass, and index within that class can all be acquired
 // together and are used to populate this structure. These entries are contained
-// within the ConstantPoolCache and are accessed with indices added to the invokedynamic bytecode after
+// within the ConstantPoolCache and are accessed with indices added to the bytecode after
 // rewriting.
 
-// Field bytecodes start with a constant pool index as their operate, which is then rewritten to
+// Field bytecodes start with a constant pool index as their operand, which is then rewritten to
 // a "field index", which is an index into the array of ResolvedFieldEntry.
 
 //class InstanceKlass;

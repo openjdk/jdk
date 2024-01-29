@@ -80,8 +80,7 @@ public:
    void set_next(SeenThread* seen) { _stnext = seen; }
    void set_prev(SeenThread* seen) { _stprev = seen; }
 
-  void print_action_queue(outputStream* st) {
-    SeenThread* seen = this;
+  static void print_action_queue(SeenThread* seen, outputStream* st) {
     while (seen != nullptr) {
       seen->thread()->print_value_on(st);
       st->print(", ");
@@ -327,13 +326,13 @@ void PlaceholderEntry::print_on(outputStream* st) const {
   }
   st->cr();
   st->print("loadInstanceThreadQ threads:");
-  loadInstanceThreadQ()->print_action_queue(st);
+  SeenThread::print_action_queue(loadInstanceThreadQ(), st);
   st->cr();
   st->print("superThreadQ threads:");
-  superThreadQ()->print_action_queue(st);
+  SeenThread::print_action_queue(superThreadQ(), st);
   st->cr();
   st->print("defineThreadQ threads:");
-  defineThreadQ()->print_action_queue(st);
+  SeenThread::print_action_queue(defineThreadQ(), st);
   st->cr();
 }
 

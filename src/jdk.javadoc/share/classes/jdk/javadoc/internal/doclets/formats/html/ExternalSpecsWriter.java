@@ -86,8 +86,8 @@ public class ExternalSpecsWriter extends HtmlDocletWriter {
      */
     @Override
     public void buildPage() throws DocFileIOException {
-        boolean hasExternalSpecs = configuration.mainIndex != null
-                && !configuration.mainIndex.getItems(DocTree.Kind.SPEC).isEmpty();
+        boolean hasExternalSpecs = configuration.indexBuilder != null
+                && !configuration.indexBuilder.getItems(DocTree.Kind.SPEC).isEmpty();
         if (!hasExternalSpecs) {
             return;
         }
@@ -110,15 +110,15 @@ public class ExternalSpecsWriter extends HtmlDocletWriter {
                 .setFooter(getFooter()));
         printHtmlDocument(null, "external specifications", body);
 
-        if (configuration.mainIndex != null) {
-            configuration.mainIndex.add(IndexItem.of(IndexItem.Category.TAGS, title, path));
+        if (configuration.indexBuilder != null) {
+            configuration.indexBuilder.add(IndexItem.of(IndexItem.Category.TAGS, title, path));
         }
     }
 
     protected void checkUniqueItems() {
         Map<String, Map<String, List<IndexItem>>> itemsByURL = new HashMap<>();
         Map<String, Map<String, List<IndexItem>>> itemsByTitle = new HashMap<>();
-        for (IndexItem ii : configuration.mainIndex.getItems(DocTree.Kind.SPEC)) {
+        for (IndexItem ii : configuration.indexBuilder.getItems(DocTree.Kind.SPEC)) {
             if (ii.getDocTree() instanceof SpecTree st) {
                 String url = st.getURL().toString();
                 String title = ii.getLabel(); // normalized form of  st.getTitle()
@@ -230,7 +230,7 @@ public class ExternalSpecsWriter extends HtmlDocletWriter {
     }
 
     private Map<String, List<IndexItem>> groupExternalSpecs() {
-        return configuration.mainIndex.getItems(DocTree.Kind.SPEC).stream()
+        return configuration.indexBuilder.getItems(DocTree.Kind.SPEC).stream()
                 .collect(groupingBy(IndexItem::getLabel, () -> new TreeMap<>(getTitleComparator()), toList()));
     }
 

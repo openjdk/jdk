@@ -128,8 +128,8 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      * For simple applications requiring only line-oriented reading, use
      * {@link #readLine}.
      * <p>
-     * The bulk read operations {@link java.io.Reader#read(char[]) read(char[]) },
-     * {@link java.io.Reader#read(char[], int, int) read(char[], int, int) } and
+     * The bulk read operations {@link java.io.Reader#read(char[]) read(char[])},
+     * {@link java.io.Reader#read(char[], int, int) read(char[], int, int)} and
      * {@link java.io.Reader#read(java.nio.CharBuffer) read(java.nio.CharBuffer)}
      * on the returned object will not read in characters beyond the line
      * bound for each invocation, even if the destination buffer has space for
@@ -151,7 +151,7 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      *
      * @param  fmt
      *         A format string as described in <a
-     *         href="../util/Formatter.html#syntax">Format string syntax</a>
+     *         href="../util/Formatter.html#syntax">Format string syntax</a>.
      *
      * @param  args
      *         Arguments referenced by the format specifiers in the format
@@ -306,7 +306,7 @@ public sealed class Console implements Flushable permits ProxyingConsole {
     }
 
     /**
-     * Reads a password or passphrase from the console with echoing disabled
+     * Reads a password or passphrase from the console with echoing disabled.
      *
      * @throws IOError
      *         If an I/O error occurs.
@@ -321,7 +321,7 @@ public sealed class Console implements Flushable permits ProxyingConsole {
 
     /**
      * Flushes the console and forces any buffered output to be written
-     * immediately .
+     * immediately.
      */
     public void flush() {
         throw newUnsupportedOperationException();

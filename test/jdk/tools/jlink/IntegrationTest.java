@@ -60,8 +60,8 @@ import tests.JImageGenerator;
  * @summary Test integration API
  * @author Jean-Francois Denise
  * @library ../lib
+ * @enablePreview
  * @modules java.base/jdk.internal.jimage
- *          jdk.jdeps/com.sun.tools.classfile
  *          jdk.jlink/jdk.tools.jlink.builder
  *          jdk.jlink/jdk.tools.jlink.internal
  *          jdk.jlink/jdk.tools.jlink.internal.plugins

@@ -31,7 +31,6 @@
 package sun.security.krb5;
 
 import java.io.*;
-import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.Path;
@@ -43,6 +42,7 @@ import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import jdk.internal.util.OperatingSystem;
 import sun.net.dns.ResolverConfiguration;
@@ -610,9 +610,8 @@ public class Config {
                 } else if (line.startsWith("includedir ")) {
                     Path dir = Paths.get(
                             line.substring("includedir ".length()).trim());
-                    try (DirectoryStream<Path> files =
-                                 Files.newDirectoryStream(dir)) {
-                        for (Path p: files) {
+                    try (Stream<Path> files = Files.list(dir)) {
+                        for (Path p: files.sorted().toList()) {
                             if (Files.isDirectory(p)) continue;
                             String name = p.getFileName().toString();
                             if (name.matches("[a-zA-Z0-9_-]+") ||

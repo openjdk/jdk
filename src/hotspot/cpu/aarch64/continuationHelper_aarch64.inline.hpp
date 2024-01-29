@@ -68,6 +68,17 @@ inline void ContinuationHelper::push_pd(const frame& f) {
   *(intptr_t**)(f.sp() - frame::sender_sp_offset) = f.fp();
 }
 
+#define CPU_OVERRIDES_RETURN_ADDRESS_ACCESSORS
+
+inline address ContinuationHelper::return_address_at(intptr_t* sp) {
+  return pauth_strip_verifiable(*(address*)sp);
+}
+
+inline void ContinuationHelper::patch_return_address_at(intptr_t* sp,
+                                                        address pc) {
+  *(address*)sp = pauth_sign_return_address(pc);
+}
+
 inline void ContinuationHelper::set_anchor_to_entry_pd(JavaFrameAnchor* anchor, ContinuationEntry* entry) {
   anchor->set_last_Java_fp(entry->entry_fp());
 }
@@ -80,7 +91,8 @@ inline void ContinuationHelper::set_anchor_pd(JavaFrameAnchor* anchor, intptr_t*
 
 inline bool ContinuationHelper::Frame::assert_frame_laid_out(frame f) {
   intptr_t* sp = f.sp();
-  address pc = *(address*)(sp - frame::sender_sp_ret_address_offset());
+  address pc = ContinuationHelper::return_address_at(
+                 sp - frame::sender_sp_ret_address_offset());
   intptr_t* fp = *(intptr_t**)(sp - frame::sender_sp_offset);
   assert(f.raw_pc() == pc, "f.ra_pc: " INTPTR_FORMAT " actual: " INTPTR_FORMAT, p2i(f.raw_pc()), p2i(pc));
   assert(f.fp() == fp, "f.fp: " INTPTR_FORMAT " actual: " INTPTR_FORMAT, p2i(f.fp()), p2i(fp));
@@ -108,20 +120,21 @@ inline void ContinuationHelper::InterpretedFrame::patch_sender_sp(frame& f, cons
 }
 
 inline address ContinuationHelper::Frame::real_pc(const frame& f) {
+  // Always used in assertions. Just strip it.
   address* pc_addr = &(((address*) f.sp())[-1]);
-  return *pc_addr;
+  return pauth_strip_pointer(*pc_addr);
 }
 
 inline void ContinuationHelper::Frame::patch_pc(const frame& f, address pc) {
   address* pc_addr = &(((address*) f.sp())[-1]);
-  *pc_addr = pc;
+  *pc_addr = pauth_sign_return_address(pc);
 }
 
 inline intptr_t* ContinuationHelper::InterpretedFrame::frame_top(const frame& f, InterpreterOopMap* mask) { // inclusive; this will be copied with the frame
   // interpreter_frame_last_sp_offset, points to unextended_sp includes arguments in the frame
   // interpreter_frame_initial_sp_offset excludes expression stack slots
   int expression_stack_sz = expression_stack_size(f, mask);
-  intptr_t* res = *(intptr_t**)f.addr_at(frame::interpreter_frame_initial_sp_offset) - expression_stack_sz;
+  intptr_t* res = (intptr_t*)f.at_relative(frame::interpreter_frame_initial_sp_offset) - expression_stack_sz;
   assert(res == (intptr_t*)f.interpreter_frame_monitor_end() - expression_stack_sz, "");
   assert(res >= f.unextended_sp(),
     "res: " INTPTR_FORMAT " initial_sp: " INTPTR_FORMAT " last_sp: " INTPTR_FORMAT " unextended_sp: " INTPTR_FORMAT " expression_stack_size: %d",

@@ -59,8 +59,8 @@ public class Proxy {
         SOCKS
     };
 
-    private Type type;
-    private SocketAddress sa;
+    private final Type type;
+    private final SocketAddress sa;
 
     /**
      * A proxy setting that represents a {@code DIRECT} connection,

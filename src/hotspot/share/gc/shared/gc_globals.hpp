@@ -408,11 +408,6 @@
           "Allowed collection cost difference between generations")         \
           range(0, 100)                                                     \
                                                                             \
-  product(uint, AdaptiveSizePolicyCollectionCostMargin, 50,                 \
-          "If collection costs are within margin, reduce both by full "     \
-          "delta")                                                          \
-          range(0, 100)                                                     \
-                                                                            \
   product(uint, YoungGenerationSizeIncrement, 20,                           \
           "Adaptive size percentage change in young generation")            \
           range(0, 100)                                                     \
@@ -446,11 +441,6 @@
   product(uintx, GCPauseIntervalMillis, 0,                                  \
           "Time slice for MMU specification")                               \
           constraint(GCPauseIntervalMillisConstraintFunc,AfterErgo)         \
-                                                                            \
-  product(uintx, MaxGCMinorPauseMillis, max_uintx,                          \
-          "Adaptive size policy maximum GC minor pause time goal "          \
-          "in millisecond")                                                 \
-          range(0, max_uintx)                                               \
                                                                             \
   product(uint, GCTimeRatio, 99,                                            \
           "Adaptive size policy application time to GC time ratio")         \
@@ -687,7 +677,7 @@
   product(uint, GCDrainStackTargetSize, 64,                                 \
           "Number of entries we will try to leave on the stack "            \
           "during parallel gc")                                             \
-          range(0, (UINT_MAX - 1) / 2)                                      \
+          range(0, 8 * 1024)                                                \
                                                                             \
   product(uint, GCCardSizeInBytes, 512,                                     \
           "Card table entry size (in bytes) for card based collectors")     \

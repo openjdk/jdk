@@ -291,7 +291,7 @@ Java_sun_java2d_x11_XSurfaceData_flushNativeSurface(JNIEnv *env, jobject xsd)
 }
 
 
-JNIEXPORT X11SDOps * JNICALL
+X11SDOps *
 X11SurfaceData_GetOps(JNIEnv *env, jobject sData)
 {
 #ifdef HEADLESS

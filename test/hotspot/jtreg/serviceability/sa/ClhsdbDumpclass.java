@@ -92,6 +92,7 @@ public class ClhsdbDumpclass {
             // containing only methods with sequential control flows.
             // But the class used here (LingeredApp) is not such a case.
             out.shouldContain("StackMapTable:");
+            out.shouldContain("BootstrapMethods:");
             out.shouldNotContain("Error:");
         } catch (SkippedException se) {
             throw se;

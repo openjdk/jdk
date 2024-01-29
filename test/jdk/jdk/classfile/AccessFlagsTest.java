@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -25,7 +23,7 @@
 
 /*
  * @test
- * @summary Testing Classfile AccessFlags.
+ * @summary Testing ClassFile AccessFlags.
  * @run junit AccessFlagsTest
  */
 import java.util.EnumSet;
@@ -35,7 +33,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.lang.reflect.AccessFlag;
-import jdk.internal.classfile.AccessFlags;
+import java.lang.classfile.AccessFlags;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.provider.EnumSource;

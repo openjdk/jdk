@@ -103,8 +103,8 @@ public class WriterFactory {
     /**
      * {@return a new writer for the list of "all classes"}
      */
-    public HtmlDocletWriter newAllClassesIndexWriter(IndexBuilder indexBuilder) {
-        return new AllClassesIndexWriter(configuration, indexBuilder);
+    public HtmlDocletWriter newAllClassesIndexWriter() {
+        return new AllClassesIndexWriter(configuration);
     }
 
     /**
@@ -168,6 +168,13 @@ public class WriterFactory {
      */
     public HtmlDocletWriter newPreviewListWriter() {
         return new PreviewListWriter(configuration);
+    }
+
+    /**
+     * {@return a new writer for the list of restricted methods in this release}
+     */
+    public HtmlDocletWriter newRestrictedListWriter() {
+        return new RestrictedListWriter(configuration);
     }
 
     /**

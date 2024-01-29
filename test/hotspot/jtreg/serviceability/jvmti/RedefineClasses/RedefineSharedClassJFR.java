@@ -75,7 +75,7 @@ public class RedefineSharedClassJFR {
                 List<String> offCommand = new ArrayList<>();
                 offCommand.add("-Xshare:off");
                 offCommand.addAll(baseCommand);
-                ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(offCommand);
+                ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(offCommand);
                 new OutputAnalyzer(pb.start())
                     // We can't expect any of the transformed classes to be in use
                     // so the only thing we can verify is that no scratch classes
@@ -89,7 +89,7 @@ public class RedefineSharedClassJFR {
                 List<String> onCommand = new ArrayList<>();
                 onCommand.add("-Xshare:on");
                 onCommand.addAll(baseCommand);
-                ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(onCommand);
+                ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(onCommand);
                 new OutputAnalyzer(pb.start())
                     .shouldContain(SHOULD_CLEAN_FALSE)
                     .shouldNotContain(SHOULD_CLEAN_TRUE)

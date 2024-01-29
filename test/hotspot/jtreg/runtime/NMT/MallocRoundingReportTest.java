@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,22 +34,13 @@
  *
  */
 
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.JDKToolFinder;
-
 import jdk.test.whitebox.WhiteBox;
 
 public class MallocRoundingReportTest {
     private static long K = 1024;
 
     public static void main(String args[]) throws Exception {
-        OutputAnalyzer output;
         WhiteBox wb = WhiteBox.getWhiteBox();
-
-        // Grab my own PID
-        String pid = Long.toString(ProcessTools.getProcessId());
-        ProcessBuilder pb = new ProcessBuilder();
 
         long[] additionalBytes = {0, 1, 512, 650};
         long[] kByteSize = {1024, 2048};
@@ -63,17 +55,18 @@ public class MallocRoundingReportTest {
                 mallocd_total = wb.NMTMalloc(curKB);
                 // Run 'jcmd <pid> VM.native_memory summary', check for expected output
                 // NMT does not track memory allocations less than 1KB, and rounds to the nearest KB
-                String expectedOut = ("Test (reserved=" + numKB + "KB, committed=" + numKB + "KB)");
-
-                pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "summary" });
-                output = new OutputAnalyzer(pb.start());
-                output.shouldContain(expectedOut);
+                NMTTestUtils.runJcmdSummaryReportAndCheckOutput(
+                        "Test (reserved=" + numKB + "KB, committed=" + numKB + "KB)",
+                        "(malloc=" + numKB + "KB #1) (at peak)"
+                );
 
                 wb.NMTFree(mallocd_total);
+
                 // Run 'jcmd <pid> VM.native_memory summary', check for expected output
-                pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "summary" });
-                output = new OutputAnalyzer(pb.start());
-                output.shouldNotContain("Test (reserved=");
+                NMTTestUtils.runJcmdSummaryReportAndCheckOutput(
+                        "Test (reserved=0KB, committed=0KB)",
+                        "(malloc=0KB) (peak=" + numKB + "KB #1)"
+                );
             }
         }
     }
