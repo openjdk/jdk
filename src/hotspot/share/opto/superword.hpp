@@ -241,14 +241,78 @@ class SuperWord : public ResourceObj {
   bool early_return() const        { return _early_return; }
 
 #ifndef PRODUCT
-  bool     is_debug()              { return _vector_loop_debug > 0; }
-  bool     is_trace_alignment()    { return (_vector_loop_debug & 2) > 0; }
-  bool     is_trace_mem_slice()    { return (_vector_loop_debug & 4) > 0; }
-  bool     is_trace_loop()         { return (_vector_loop_debug & 8) > 0; }
-  bool     is_trace_adjacent()     { return (_vector_loop_debug & 16) > 0; }
-  bool     is_trace_cmov()         { return (_vector_loop_debug & 32) > 0; }
-  bool     is_trace_align_vector() { return (_vector_loop_debug & 128) > 0; }
+  // TraceAutoVectorization and TraceSuperWord
+  bool is_trace_superword_precondition() const {
+    return TraceSuperWord ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_PRECONDITION);
+  }
+
+  bool is_trace_superword_vector_element_type() const {
+    // Too verbose for TraceSuperWord
+    return _vtrace.is_trace(TraceAutoVectorizationTag::SW_TYPES);
+  }
+
+  bool is_trace_superword_alignment() const {
+    // Too verbose for TraceSuperWord
+    return _vtrace.is_trace(TraceAutoVectorizationTag::SW_ALIGNMENT);
+  }
+
+  bool is_trace_superword_memory_slices() const {
+    return TraceSuperWord ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_MEMORY_SLICES);
+  }
+
+  bool is_trace_superword_dependence_graph() const {
+    return TraceSuperWord ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_DEPENDENCE_GRAPH);
+  }
+
+  bool is_trace_superword_adjacent_memops() const {
+    return TraceSuperWord ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_ADJACENT_MEMOPS);
+  }
+
+  bool is_trace_superword_rejections() const {
+    return TraceSuperWord ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_REJECTIONS);
+  }
+
+  bool is_trace_superword_packset() const {
+    return TraceSuperWord ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_PACKSET);
+  }
+
+  bool is_trace_superword_info() const {
+    return TraceSuperWord ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_INFO);
+  }
+
+  bool is_trace_superword_verbose() const {
+    // Too verbose for TraceSuperWord
+    return _vtrace.is_trace(TraceAutoVectorizationTag::SW_VERBOSE);
+  }
+
+  bool is_trace_superword_any() const {
+    return TraceSuperWord ||
+           is_trace_align_vector() ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_PRECONDITION) ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_TYPES) ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_ALIGNMENT) ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_MEMORY_SLICES) ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_DEPENDENCE_GRAPH) ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_ADJACENT_MEMOPS) ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_REJECTIONS) ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_PACKSET) ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_INFO) ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_VERBOSE);
+  }
+
+  bool is_trace_align_vector() const {
+    return _vtrace.is_trace(TraceAutoVectorizationTag::ALIGN_VECTOR) ||
+           is_trace_superword_verbose();
+  }
 #endif
+
   bool     do_vector_loop()        { return _do_vector_loop; }
 
   const GrowableArray<Node_List*>& packset() const { return _packset; }
@@ -265,9 +329,7 @@ class SuperWord : public ResourceObj {
   bool           _do_vector_loop;  // whether to do vectorization/simd style
   int            _num_work_vecs;   // Number of non memory vector operations
   int            _num_reductions;  // Number of reduction expressions applied
-#ifndef PRODUCT
-  uintx          _vector_loop_debug; // provide more printing in debug mode
-#endif
+  NOT_PRODUCT(VTrace _vtrace);
 
   // Accessors
   Arena* arena()                   { return _arena; }
