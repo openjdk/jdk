@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,11 +35,11 @@ extern "C" {
 #define STATUS_FAILED 2
 #define WAIT_TIME 1000
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiEventCallbacks callbacks;
 static jint result = PASSED;
 static jrawMonitorID wait_lock;
-static const char *threadName = NULL;
+static const char *threadName = nullptr;
 static int startsCount = 0;
 static int startsExpected = 0;
 static int endsCount = 0;
@@ -57,7 +57,7 @@ void JNICALL ThreadStart(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread) {
 
   LOG(">>> start: %s\n", inf.name);
 
-  if (inf.name != NULL && strcmp(inf.name, threadName) == 0) {
+  if (inf.name != nullptr && strcmp(inf.name, threadName) == 0) {
     startsCount++;
   }
 }
@@ -74,7 +74,7 @@ void JNICALL ThreadEnd(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread) {
 
   LOG(">>> end: %s\n", inf.name);
 
-  if (inf.name != NULL && strcmp(inf.name, threadName) == 0) {
+  if (inf.name != nullptr && strcmp(inf.name, threadName) == 0) {
     endsCount++;
   }
 }
@@ -84,7 +84,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jint res;
 
   res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     LOG("Wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }
@@ -110,20 +110,20 @@ JNIEXPORT jint JNICALL
 Java_threadstart03_check(JNIEnv *jni, jclass cls, jthread thr, jstring name) {
   jvmtiError err;
 
-  if (jvmti == NULL) {
+  if (jvmti == nullptr) {
     LOG("JVMTI client was not properly loaded!\n");
     return STATUS_FAILED;
   }
 
-  threadName = jni->GetStringUTFChars(name, NULL);
-  if (threadName == NULL) {
+  threadName = jni->GetStringUTFChars(name, nullptr);
+  if (threadName == nullptr) {
     LOG("Failed to copy UTF-8 string!\n");
     return STATUS_FAILED;
   }
 
   wait_lock = create_raw_monitor(jvmti, "_wait_lock");
 
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_THREAD_START, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_THREAD_START, nullptr);
   if (err == JVMTI_ERROR_NONE) {
     startsExpected = 1;
   } else {
@@ -131,7 +131,7 @@ Java_threadstart03_check(JNIEnv *jni, jclass cls, jthread thr, jstring name) {
     result = STATUS_FAILED;
   }
 
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_THREAD_END, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_THREAD_END, nullptr);
   if (err == JVMTI_ERROR_NONE) {
     endsExpected = 1;
   } else {
@@ -143,7 +143,7 @@ Java_threadstart03_check(JNIEnv *jni, jclass cls, jthread thr, jstring name) {
 
   {
     RawMonitorLocker wait_locker(jvmti, jni, wait_lock);
-    err = jvmti->RunAgentThread(thr, threadProc, NULL, JVMTI_THREAD_MAX_PRIORITY);
+    err = jvmti->RunAgentThread(thr, threadProc, nullptr, JVMTI_THREAD_MAX_PRIORITY);
     if (err != JVMTI_ERROR_NONE) {
       LOG("(RunAgentThread) unexpected error: %s (%d)\n", TranslateError(err), err);
       result = STATUS_FAILED;
@@ -164,13 +164,13 @@ Java_threadstart03_check(JNIEnv *jni, jclass cls, jthread thr, jstring name) {
 
   }
 
-  err = jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_THREAD_START, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_THREAD_START, nullptr);
   if (err != JVMTI_ERROR_NONE) {
     LOG("Failed to disable JVMTI_EVENT_THREAD_START: %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;
   }
 
-  err = jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_THREAD_END, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_THREAD_END, nullptr);
   if (err != JVMTI_ERROR_NONE) {
     LOG("Failed to disable JVMTI_EVENT_THREAD_END: %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;

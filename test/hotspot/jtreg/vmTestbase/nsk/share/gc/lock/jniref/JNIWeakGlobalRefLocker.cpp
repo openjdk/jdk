@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 
 extern "C" {
 
-static jfieldID objFieldId = NULL;
+static jfieldID objFieldId = nullptr;
 
 /*
  * Class:     nsk_share_gc_lock_jniref_JNIWeakGlobalRefLocker
@@ -43,14 +43,14 @@ JNIEXPORT void JNICALL Java_nsk_share_gc_lock_jniref_JNIWeakGlobalRefLocker_crit
         jobject gref;
         time_t start_time, current_time;
 
-        if (objFieldId == NULL) {
+        if (objFieldId == nullptr) {
                 jclass klass = ec_jni->GetObjectClass(o, TRACE_JNI_CALL);
                 objFieldId = ec_jni->GetFieldID(klass, "obj", "Ljava/lang/Object;", TRACE_JNI_CALL);
         }
         obj = ec_jni->GetObjectField(o, objFieldId, TRACE_JNI_CALL);
-        ec_jni->SetObjectField(o, objFieldId, NULL, TRACE_JNI_CALL);
+        ec_jni->SetObjectField(o, objFieldId, nullptr, TRACE_JNI_CALL);
 
-        start_time = time(NULL);
+        start_time = time(nullptr);
         enterTime /= 1000;
         current_time = 0;
         while (current_time - start_time < enterTime) {
@@ -58,7 +58,7 @@ JNIEXPORT void JNICALL Java_nsk_share_gc_lock_jniref_JNIWeakGlobalRefLocker_crit
                 mssleep((long) sleepTime);
                 ec_jni->DeleteWeakGlobalRef(gref, TRACE_JNI_CALL);
                 mssleep((long) sleepTime);
-                current_time = time(NULL);
+                current_time = time(nullptr);
         }
         ec_jni->SetObjectField(o, objFieldId, obj, TRACE_JNI_CALL);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,14 +60,14 @@ static const char *meth_sig[][METH_NUM][TOT_NUM] = {
 
     { { "methname003eMeth", "instance",
         "(Lnsk/jvmti/GetMethodName/methname003e;)V",
-        "NULL" },
+        "null" },
      { "methname003eMethSt", "static",
        "(Lnsk/jvmti/GetMethodName/methname003e;)V",
-       "NULL" } },
+       "null" } },
 
     { { "methname003ifMeth", "instance",
         "()I",
-        "NULL" },
+        "null" },
      { "methname003ifMeth2", "instance",
        "(Ljava/lang/Object;)I",
        "<T:Ljava/lang/Object;>(TT;)I" } },
@@ -80,7 +80,7 @@ static const char *meth_sig[][METH_NUM][TOT_NUM] = {
        "<A:Ljava/lang/Byte;B:Ljava/lang/Double;>(TA;TB;)V" } }
 };
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 
 static int checkSig(JNIEnv *jni_env, jmethodID testedMeth,
         int instance, int clsIdx, int methIdx) {
@@ -98,17 +98,17 @@ static int checkSig(JNIEnv *jni_env, jmethodID testedMeth,
             meth_sig[clsIdx][methIdx][0]);
 
         if (strcmp(meth_sig[clsIdx][methIdx][2], sign) != 0 ||
-                strcmp(meth_sig[clsIdx][methIdx][3], (gen_sign == NULL) ? "NULL" : gen_sign) != 0) {
+                strcmp(meth_sig[clsIdx][methIdx][3], (gen_sign == nullptr) ? "null" : gen_sign) != 0) {
             NSK_COMPLAIN5("TEST FAILED: class: \"%s\" \
 has\n\tsignature: \"%s\"\n\tgeneric signature: \"%s\"\n\n\tExpected: \"%s\"\n\t\t\"%s\"\n\n",
                 meth_sig[clsIdx][methIdx][0],
-                sign, (gen_sign == NULL) ? "NULL" : gen_sign,
+                sign, (gen_sign == nullptr) ? "null" : gen_sign,
                 meth_sig[clsIdx][methIdx][2], meth_sig[clsIdx][methIdx][3]);
             totRes = STATUS_FAILED;
         }
         else
             NSK_DISPLAY2("CHECK PASSED: signature: \"%s\",\n\tgeneric signature: \"%s\"\n",
-                sign, (gen_sign == NULL) ? "NULL" : gen_sign);
+                sign, (gen_sign == nullptr) ? "null" : gen_sign);
 
         NSK_DISPLAY0("Deallocating name & signature arrays\n");
         if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*) name))) {
@@ -117,7 +117,7 @@ has\n\tsignature: \"%s\"\n\tgeneric signature: \"%s\"\n\n\tExpected: \"%s\"\n\t\
         if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*) sign))) {
             totRes = STATUS_FAILED;
         }
-        if (gen_sign != NULL)
+        if (gen_sign != nullptr)
             if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*) gen_sign))) {
                 totRes = STATUS_FAILED;
             }
@@ -130,7 +130,7 @@ JNIEXPORT jint JNICALL
 Java_nsk_jvmti_GetMethodName_methname003_check(
         JNIEnv *jni, jobject obj, jobject testedObj, jint clsIdx) {
     int res = PASSED, i, instance;
-    jmethodID testedMeth = NULL;
+    jmethodID testedMeth = nullptr;
     jclass objCls = jni->GetObjectClass(testedObj);
 
     for (i=0; i<METH_NUM; i++) {
@@ -140,7 +140,7 @@ Java_nsk_jvmti_GetMethodName_methname003_check(
             (instance == 0) ? "instance" : "static",
              meth_sig[clsIdx][i][0]);
         if (instance == 0) {
-            if (!NSK_JNI_VERIFY(jni, (testedMeth = jni->GetMethodID(objCls, meth_sig[clsIdx][i][0], meth_sig[clsIdx][i][2])) != NULL)) {
+            if (!NSK_JNI_VERIFY(jni, (testedMeth = jni->GetMethodID(objCls, meth_sig[clsIdx][i][0], meth_sig[clsIdx][i][2])) != nullptr)) {
                 NSK_COMPLAIN2("TEST FAILERE: unable to get method ID for \"%s\" \"%s\"\n\n",
                     meth_sig[clsIdx][i][0], meth_sig[clsIdx][i][2]);
                 res = STATUS_FAILED;
@@ -148,7 +148,7 @@ Java_nsk_jvmti_GetMethodName_methname003_check(
             }
         }
         else
-            if (!NSK_JNI_VERIFY(jni, (testedMeth = jni->GetStaticMethodID(objCls, meth_sig[clsIdx][i][0], meth_sig[clsIdx][i][2])) != NULL)) {
+            if (!NSK_JNI_VERIFY(jni, (testedMeth = jni->GetStaticMethodID(objCls, meth_sig[clsIdx][i][0], meth_sig[clsIdx][i][2])) != nullptr)) {
                 NSK_COMPLAIN2("TEST FAILERE: unable to get method ID for \"%s\" \"%s\"\n\n",
                     meth_sig[clsIdx][i][0], meth_sig[clsIdx][i][2]);
                 res = STATUS_FAILED;
@@ -184,7 +184,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     /* create JVMTI environment */
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     return JNI_OK;
