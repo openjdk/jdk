@@ -1590,10 +1590,14 @@ char* FileMapInfo::write_bitmap_region(const CHeapBitMap* ptrmap, ArchiveHeapInf
     // We want to keep track of how many zeros were removed
     size_t new_oop_zeros = heap_info->oopmap()->find_first_set_bit(0);
     size_t new_ptr_zeros = heap_info->ptrmap()->find_first_set_bit(0);
-    header()->set_heap_oopmap_leading_zeros(old_oop_zeros - new_oop_zeros);
-    header()->set_heap_ptrmap_leading_zeros(old_ptr_zeros - new_ptr_zeros);
-    MetaspaceShared::set_heap_oopmap_leading_zeros(old_oop_zeros - new_oop_zeros);
-    MetaspaceShared::set_heap_ptrmap_leading_zeros(old_ptr_zeros - new_ptr_zeros);
+
+    size_t removed_oop_zeros = old_oop_zeros - new_oop_zeros;
+    size_t removed_ptr_zeros = old_ptr_zeros - new_ptr_zeros;
+
+    header()->set_heap_oopmap_leading_zeros(removed_oop_zeros);
+    header()->set_heap_ptrmap_leading_zeros(removed_ptr_zeros);
+    MetaspaceShared::set_heap_oopmap_leading_zeros(removed_oop_zeros);
+    MetaspaceShared::set_heap_ptrmap_leading_zeros(removed_ptr_zeros);
 
     assert(new_oop_zeros <= old_oop_zeros, "Should have removed leading zeros");
     assert(new_ptr_zeros <= old_ptr_zeros, "Should have removed leading zeros");
