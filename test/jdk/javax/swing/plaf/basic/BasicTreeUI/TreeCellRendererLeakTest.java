@@ -29,6 +29,8 @@
  */
 
 import java.awt.Component;
+import java.util.concurrent.CountDownLatch;
+
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -41,10 +43,12 @@ import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+
 public class TreeCellRendererLeakTest {
 
-    static long smCount = 0;
-    static boolean done;
+    static int smCount = 0;
 
     private static JFrame frame;
     private JPanel jPanel1;
@@ -53,22 +57,14 @@ public class TreeCellRendererLeakTest {
     private JTabbedPane jTabbedPane1;
     private JTree jTree1;
 
-    // JLabel with an instance counter
-    public class TestLabel extends JLabel {
-        public TestLabel() {
-            smCount++;
-        }
+    static CountDownLatch testDone;
 
-        public void finalize( ) {
-            smCount--;
-        }
-    }
+    ArrayList<WeakReference<JLabel>> weakRefArrLabel = new ArrayList(50);
 
     // Custom TreeCellRenderer
     public class TreeCellRenderer extends DefaultTreeCellRenderer {
 
-        public TreeCellRenderer( ) {
-        }
+        public TreeCellRenderer() {}
 
         // Create a new JLabel every time
         public Component getTreeCellRendererComponent(
@@ -79,7 +75,7 @@ public class TreeCellRendererLeakTest {
                 boolean leaf,
                 int row,
                 boolean hasFocus) {
-            JLabel label = new TestLabel( );
+            JLabel label = new JLabel();
             label.setText("TreeNode: " + value.toString());
             if (sel) {
                 label.setBackground(getBackgroundSelectionColor());
@@ -87,6 +83,7 @@ public class TreeCellRendererLeakTest {
                 label.setBackground(getBackgroundNonSelectionColor());
             }
 
+            weakRefArrLabel.add(smCount++, new WeakReference<JLabel>(label));
             return label;
         }
     }
@@ -94,18 +91,10 @@ public class TreeCellRendererLeakTest {
     public TreeCellRendererLeakTest() {
         initComponents();
         jTree1.setCellRenderer(new TreeCellRenderer());
-        Thread updateThread = new Thread(new Runnable( ) {
-            public void run( ) {
-                runChanges( );
-            }
-        });
+        Thread updateThread = new Thread(this::runChanges);
         updateThread.setDaemon(true);
         updateThread.start();
-        Thread infoThread = new Thread(new Runnable( ) {
-            public void run( ) {
-                runInfo( );
-            }
-        });
+        Thread infoThread = new Thread(this::runInfo);
         infoThread.setDaemon(true);
         infoThread.start();
     }
@@ -142,12 +131,11 @@ public class TreeCellRendererLeakTest {
 
     public static void main(String args[]) throws Exception {
         try {
+            testDone = new CountDownLatch(1);
             SwingUtilities.invokeAndWait(() -> {
                 TreeCellRendererLeakTest tf = new TreeCellRendererLeakTest();
             });
-            while (!done) {
-                Thread.sleep(100);
-            }
+            testDone.await();
         } finally {
             SwingUtilities.invokeAndWait(() -> {
                 if (frame != null) {
@@ -162,7 +150,7 @@ public class TreeCellRendererLeakTest {
         long count = 0;
         long time = System.currentTimeMillis();
         long tm = System.currentTimeMillis();
-        while ((tm - time) < (30 * 1000)) {
+        while ((tm - time) < (15 * 1000)) {
             final long currentCount = count;
             try {
                 SwingUtilities.invokeAndWait(new Runnable( ) {
@@ -177,30 +165,44 @@ public class TreeCellRendererLeakTest {
                 count++;
                 Thread.sleep(1000);
                 tm = System.currentTimeMillis();
-                System.out.println("time elapsed " + (tm - time));
-            } catch (Exception ex) {
-                ex.printStackTrace();
+                System.out.println("time elapsed " + (tm - time)/1000 + " s");
+            } catch (InterruptedException ex) {
+                break;
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
-        done = true;
+        testDone.countDown();
     }
 
-    // Print number of uncollected TestLabels
-    public void runInfo( ) {
+    // Print number of uncollected JLabels
+    public void runInfo() {
         long time = System.currentTimeMillis();
         long initialCnt = smCount;
-        while ((System.currentTimeMillis() - time) < (30 * 1000)) {
+        while ((System.currentTimeMillis() - time) < (15 * 1000)) {
             System.gc();
-            System.err.println("Live TestLabels:" + smCount);
+            System.out.println("Live JLabels:" + smCount);
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException ex) {
                 ex.printStackTrace();
             }
         }
-        if (smCount - initialCnt > 50) {
+
+        System.out.println("\ncleanedup LabelCount " + getCleanedUpLabelCount());
+        if (getCleanedUpLabelCount() == 0) {
             throw new RuntimeException("TreeCellRenderer component leaked");
         }
+    }
+
+    private int getCleanedUpLabelCount() {
+        int count = 0;
+        for (WeakReference<JLabel> ref : weakRefArrLabel) {
+            if (ref.get() == null) {
+                count++;
+            }
+        }
+        return count;
     }
 
 }

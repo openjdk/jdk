@@ -3280,9 +3280,7 @@ public class BasicTreeUI extends TreeUI
                      expanded, treeModel.isLeaf(value), row,
                      false);
                 if(tree != null) {
-                    for (int i = 0; i < rendererPane.getComponentCount(); i++) {
-                        rendererPane.remove(i);
-                    }
+                    rendererPane.removeAll();
                     // Only ever removed when UI changes, this is OK!
                     rendererPane.add(aComponent);
                     aComponent.validate();
