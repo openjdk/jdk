@@ -387,10 +387,10 @@ import java.util.Objects;
  * fmt.format(arg); // returns "The date was Thursday, November 16, 2023"
  * }
  *
- * <p>3) an <i>iso_local_date</i> {@code FormatType},
+ * <p>3) an <i>ISO_LOCAL_DATE</i> {@code FormatType},
  * {@snippet lang=java :
  * Object[] arg = {LocalDate.of(2023, 11, 16)};
- * var fmt = new MessageFormat("The date was {0,iso_local_date}");
+ * var fmt = new MessageFormat("The date was {0,ISO_LOCAL_DATE}");
  * fmt.format(arg); // returns "The date was 2023-11-16"
  * }
  *
