@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,8 @@ import sun.jvm.hotspot.compiler.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.gc.epsilon.*;
 import sun.jvm.hotspot.gc.parallel.*;
-import sun.jvm.hotspot.gc.shared.*;
 import sun.jvm.hotspot.gc.serial.*;
+import sun.jvm.hotspot.gc.shared.*;
 import sun.jvm.hotspot.gc.shenandoah.*;
 import sun.jvm.hotspot.gc.g1.*;
 import sun.jvm.hotspot.gc.x.*;

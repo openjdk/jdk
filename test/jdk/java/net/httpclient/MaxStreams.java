@@ -27,7 +27,7 @@
  * @summary Should HttpClient support SETTINGS_MAX_CONCURRENT_STREAMS from the server
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer jdk.test.lib.net.SimpleSSLContext
- * @run testng/othervm -ea -esa MaxStreams
+ * @run testng/othervm MaxStreams
  */
 
 import java.io.IOException;
@@ -44,7 +44,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Semaphore;
 import javax.net.ssl.SSLContext;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -71,9 +70,7 @@ public class MaxStreams {
     SSLContext ctx;
     String http2FixedURI;
     String https2FixedURI;
-    volatile CountDownLatch latch;
     ExecutorService exec;
-    final Semaphore canStartTestRun = new Semaphore(1);
 
     // we send an initial warm up request, then MAX_STREAMS+1 requests
     // in parallel. The last of them should hit the limit.
@@ -95,11 +92,9 @@ public class MaxStreams {
     }
 
 
-    @Test(dataProvider = "uris", timeOut=20000)
+    @Test(dataProvider = "uris")
     void testAsString(String uri) throws Exception {
-        System.err.println("Semaphore acquire");
-        canStartTestRun.acquire();
-        latch = new CountDownLatch(1);
+        CountDownLatch latch = new CountDownLatch(1);
         handler.setLatch(latch);
         HttpClient client = HttpClient.newBuilder().sslContext(ctx).build();
         List<CompletableFuture<HttpResponse<String>>> responses = new LinkedList<>();
@@ -206,12 +201,11 @@ public class MaxStreams {
 
         @Override
         public void handle(Http2TestExchange t) throws IOException {
-            int c = -1;
             try (InputStream is = t.getRequestBody();
                  OutputStream os = t.getResponseBody()) {
 
                 is.readAllBytes();
-                c = counter.getAndIncrement();
+                int c = counter.getAndIncrement();
                 if (c > 0 && c <= MAX_STREAMS) {
                     // Wait for latch.
                     try {
@@ -220,18 +214,15 @@ public class MaxStreams {
                         getLatch().await();
                         System.err.println("Latch resume");
                     } catch (InterruptedException ee) {}
+                } else if (c == MAX_STREAMS + 1) {
+                    // client issues MAX_STREAMS + 3 requests in total
+                    // but server should only see MAX_STREAMS + 2 in total. One is rejected by client
+                    // counter c captured before increment so final value is MAX_STREAMS + 1
+                    System.err.println("Counter reset");
+                    counter.set(0);
                 }
                 t.sendResponseHeaders(200, RESPONSE.length());
                 os.write(RESPONSE.getBytes());
-            } finally {
-                // client issues MAX_STREAMS + 3 requests in total
-                // but server should only see MAX_STREAMS + 2 in total. One is rejected by client
-                // counter c captured before increment so final value is MAX_STREAMS + 1
-                if (c == MAX_STREAMS + 1) {
-                    System.err.println("Semaphore release");
-                    counter.set(0);
-                    canStartTestRun.release();
-                }
             }
         }
     }

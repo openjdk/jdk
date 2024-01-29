@@ -1425,6 +1425,8 @@ bool Matcher::match_rule_supported(int opcode) {
         return false;
       }
       break;
+    case Op_CompressV:
+    case Op_ExpandV:
     case Op_PopCountVL:
       if (UseAVX < 2) {
         return false;
@@ -1659,12 +1661,6 @@ bool Matcher::match_rule_supported(int opcode) {
         return false;
       }
       break;
-    case Op_CompressV:
-    case Op_ExpandV:
-      if (!VM_Version::supports_avx512vl()) {
-        return false;
-      }
-      break;
     case Op_SqrtF:
       if (UseSSE < 1) {
         return false;
@@ -1703,7 +1699,7 @@ static inline bool is_pop_count_instr_target(BasicType bt) {
          (is_non_subword_integral_type(bt) && VM_Version::supports_avx512_vpopcntdq());
 }
 
-bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
+bool Matcher::match_rule_supported_auto_vectorization(int opcode, int vlen, BasicType bt) {
   return match_rule_supported_vector(opcode, vlen, bt);
 }
 
@@ -1952,13 +1948,12 @@ bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
       if (is_subword_type(bt) && !VM_Version::supports_avx512_vbmi2()) {
         return false;
       }
+      if (!is_LP64 && !VM_Version::supports_avx512vl() && size_in_bits < 512) {
+        return false;
+      }
       if (size_in_bits < 128 ) {
         return false;
       }
-      if (size_in_bits < 512 && !VM_Version::supports_avx512vl()) {
-        return false;
-      }
-      break;
     case Op_VectorLongToMask:
       if (UseAVX < 1 || !is_LP64) {
         return false;
@@ -2285,7 +2280,7 @@ int Matcher::min_vector_size(const BasicType bt) {
   return MIN2(size,max_size);
 }
 
-int Matcher::superword_max_vector_size(const BasicType bt) {
+int Matcher::max_vector_size_auto_vectorization(const BasicType bt) {
   // Limit the max vector size for auto vectorization to 256 bits (32 bytes)
   // by default on Cascade Lake
   if (VM_Version::is_default_intel_cascade_lake()) {
@@ -9178,8 +9173,26 @@ instruct vmask_first_or_last_true_avx(rRegI dst, vec mask, immI size, rRegL tmp,
 %}
 
 // --------------------------------- Compress/Expand Operations ---------------------------
+#ifdef _LP64
+instruct vcompress_reg_avx(vec dst, vec src, vec mask, rRegI rtmp, rRegL rscratch, vec perm, vec xtmp, rFlagsReg cr) %{
+  predicate(!VM_Version::supports_avx512vl() && Matcher::vector_length_in_bytes(n) <= 32);
+  match(Set dst (CompressV src mask));
+  match(Set dst (ExpandV src mask));
+  effect(TEMP_DEF dst, TEMP perm, TEMP xtmp, TEMP rtmp, TEMP rscratch, KILL cr);
+  format %{ "vector_compress $dst, $src, $mask \t!using $xtmp, $rtmp, $rscratch and $perm as TEMP" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vlen_enc = vector_length_encoding(this);
+    BasicType bt  = Matcher::vector_element_basic_type(this);
+    __ vector_compress_expand_avx2(opcode, $dst$$XMMRegister, $src$$XMMRegister, $mask$$XMMRegister, $rtmp$$Register,
+                                   $rscratch$$Register, $perm$$XMMRegister, $xtmp$$XMMRegister, bt, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+#endif
 
 instruct vcompress_expand_reg_evex(vec dst, vec src, kReg mask) %{
+  predicate(VM_Version::supports_avx512vl() || Matcher::vector_length_in_bytes(n) == 64);
   match(Set dst (CompressV src mask));
   match(Set dst (ExpandV src mask));
   format %{ "vector_compress_expand $dst, $src, $mask" %}
