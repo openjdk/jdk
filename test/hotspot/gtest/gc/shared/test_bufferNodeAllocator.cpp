@@ -62,7 +62,7 @@ TEST_VM(BufferNodeAllocatorTest, test) {
   for (size_t i = 0; i < node_count; ++i) {
     ASSERT_EQ(0u, allocator.free_count());
     nodes[i] = allocator.allocate();
-    ASSERT_EQ((BufferNode*)nullptr, nodes[i]->next());
+    ASSERT_EQ(nullptr, nodes[i]->next());
   }
 
   // Release the nodes, adding them to the allocator's free list.

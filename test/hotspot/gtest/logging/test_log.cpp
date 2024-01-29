@@ -61,7 +61,7 @@ TEST_VM_F(LogTest, large_message) {
   AsyncLogWriter::flush();
   ResourceMark rm;
   FILE* fp = os::fopen(TestLogFileName, "r");
-  ASSERT_NE((void*)nullptr, fp);
+  ASSERT_NE(nullptr, fp);
   char* output = read_line(fp);
   fclose(fp);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -147,10 +147,10 @@ void check_marked_range(const MetaWord* p, size_t word_size);
 //////////////////////////////////////////////////////////
 // Some helpers to avoid typing out those annoying casts for nullptr
 
-#define ASSERT_NOT_NULL(ptr)      ASSERT_NE((void*)nullptr, (void*)ptr)
-#define ASSERT_NULL(ptr)          ASSERT_EQ((void*)nullptr, (void*)ptr)
-#define EXPECT_NOT_NULL(ptr)      EXPECT_NE((void*)nullptr, (void*)ptr)
-#define EXPECT_NULL(ptr)          EXPECT_EQ((void*)nullptr, (void*)ptr)
+#define ASSERT_NOT_NULL(ptr)      ASSERT_NE(nullptr, (void*)ptr)
+#define ASSERT_NULL(ptr)          ASSERT_EQ(nullptr, (void*)ptr)
+#define EXPECT_NOT_NULL(ptr)      EXPECT_NE(nullptr, (void*)ptr)
+#define EXPECT_NULL(ptr)          EXPECT_EQ(nullptr, (void*)ptr)
 
 #define ASSERT_0(v)               ASSERT_EQ((intptr_t)0, (intptr_t)v)
 #define ASSERT_NOT_0(v)           ASSERT_NE((intptr_t)0, (intptr_t)v)
