@@ -134,7 +134,11 @@ final class SetupArgumentsProvider extends ArgumentsProvider {
         Object target = Modifier.isStatic(setupMethod.getModifiers()) ? null
                                                                       : invocationTarget;
         try {
-            return (Object[]) setupMethod.invoke(target, invocationCounter);
+            if (setupMethod.getParameterCount() == 1) {
+                return (Object[]) setupMethod.invoke(target, invocationCounter);
+            } else {
+                return (Object[]) setupMethod.invoke(target);
+            }
         } catch (Exception e) {
             throw new TestRunException("There was an error while invoking setup method " +
                                        setupMethod + " on " + target + ", " + e);

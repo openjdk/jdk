@@ -24,7 +24,6 @@
 package ir_framework.examples;
 
 import compiler.lib.ir_framework.*;
-import compiler.lib.ir_framework.driver.irmatching.IRViolationException;
 
 /*
  * @test
@@ -49,7 +48,7 @@ public class SetupExample {
 
     // Test with static setup, test and check method.
     @Setup
-    static Object[] setupTwoIntArrays(int invocationCounter) {
+    static Object[] setupTwoIntArrays() {
         int[] a = new int[10_000];
         int[] b = new int[10_000];
         for (int i = 0; i < a.length; i++) {
