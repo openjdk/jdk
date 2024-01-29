@@ -93,7 +93,7 @@ void C2FastUnlockLightweightStub::emit(C2_MacroAssembler& masm) {
     __ addl(Address(_thread, JavaThread::lock_stack_top_offset()), oopSize);
   }
 
-  { // Restore held monitor and slow path.
+  { // Restore held monitor count and slow path.
 
     __ bind(restore_held_monitor_count_and_slow_path);
     // Restore held monitor count.
@@ -125,10 +125,10 @@ void C2FastUnlockLightweightStub::emit(C2_MacroAssembler& masm) {
 
     // Recheck successor.
     __ cmpptr(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)), NULL_WORD);
-    // Seen a successor after the release -> fence we have handed of the monitor
+    // Observed a successor after the release -> fence we have handed off the monitor
     __ jccb(Assembler::notEqual, fix_zf_and_unlocked);
 
-    // Try to relock, if it fail the monitor has been handed over
+    // Try to relock, if it fails the monitor has been handed over
     // TODO: Caveat, this may fail due to deflation, which does
     //       not handle the monitor handoff. Currently only works
     //       due to the responsible thread.

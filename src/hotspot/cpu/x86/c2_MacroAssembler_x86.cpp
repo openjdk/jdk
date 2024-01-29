@@ -558,7 +558,7 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
                                  RTMLockingCounters* stack_rtm_counters,
                                  Metadata* method_data,
                                  bool use_rtm, bool profile_rtm) {
-  assert(LockingMode != LM_LIGHTWEIGHT, "uses fast_lock_lightweight");
+  assert(LockingMode != LM_LIGHTWEIGHT, "lightweight locking should use fast_lock_lightweight");
   // Ensure the register assignments are disjoint
   assert(tmpReg == rax, "");
 
@@ -611,7 +611,7 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
     // Clear ZF so that we take the slow path at the DONE label. objReg is known to be not 0.
     testptr(objReg, objReg);
   } else {
-    assert(LockingMode == LM_LEGACY, "");
+    assert(LockingMode == LM_LEGACY, "must be");
     // Attempt stack-locking ...
     orptr (tmpReg, markWord::unlocked_value);
     movptr(Address(boxReg, 0), tmpReg);          // Anticipate successful CAS
@@ -756,7 +756,7 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
 // Xcheck:jni is enabled.
 
 void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register tmpReg, bool use_rtm) {
-  assert(LockingMode != LM_LIGHTWEIGHT, "uses fast_unlock_lightweight");
+  assert(LockingMode != LM_LIGHTWEIGHT, "lightweight locking should use fast_unlock_lightweight");
   assert(boxReg == rax, "");
   assert_different_registers(objReg, boxReg, tmpReg);
 
