@@ -289,7 +289,6 @@ jlong os::free_swap_space() {
   return (jlong)(memory_info.pgsp_free * 4L * 1024L);
 }
 
-
 julong os::physical_memory() {
   return Aix::physical_memory();
 }

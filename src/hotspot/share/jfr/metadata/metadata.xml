@@ -928,7 +928,7 @@
   </Event>
 
   <Event name="SwapSpace" category="Operating System, Memory" label="Swap Space" description="OS Swap Space" period="everyChunk">
-    <Field type="long" contentType="bytes" name="totalSize" label="Total Size" description="Total swap space available to OS" />
+    <Field type="long" contentType="bytes" name="totalSize" label="Total Size" description="Total swap space available to the OS" />
     <Field type="long" contentType="bytes" name="freeSize" label="Free Size" description="Free swap space" />
   </Event>
 
