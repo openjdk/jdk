@@ -521,8 +521,7 @@ public class TestIntVect {
                    IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
                    IRNode.SUB_VI,
                    IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0" },
-        applyIfCPUFeature = {"sse2", "true"},
-        applyIfAnd = {"UseAVX", ">= 2", "UseSSE", ">= 4"})
+        applyIfCPUFeature = {"avx2", "true"})
     // Does not currently vectorize on aarch64. NOTE: This check does not
     // document the _desired_ behavior of the system but the current behavior
     // (no vectorization)
@@ -543,8 +542,7 @@ public class TestIntVect {
                    IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
                    IRNode.SUB_VI,
                    IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0" },
-        applyIfCPUFeature = {"sse2", "true"},
-        applyIfAnd = {"UseAVX", ">= 2", "UseSSE", ">= 4"})
+        applyIfCPUFeature = {"avx2", "true"})
     // Does not currently vectorize on aarch64. NOTE: This check does not
     // document the _desired_ behavior of the system but the current behavior
     // (no vectorization)
