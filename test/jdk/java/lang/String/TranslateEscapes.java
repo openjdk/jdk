@@ -111,13 +111,6 @@ public class TranslateEscapes {
         }
     }
 
-    static void verifyEscape(String string1, String string2) {
-        if (!string1.translateEscapes().equals(string2)) {
-            System.err.format("\"%s\" does not escape \"%s\"%n", string1, string2);
-            throw new RuntimeException();
-        }
-    }
-
     static void verifyUnicodeEscape(String string1, String string2) {
         if (!string1.translateEscapes().equals(string2)) {
             System.err.format("\"%s\" does not unicode escape \"%s\"%n", string1, string2);
