@@ -640,7 +640,7 @@ public:
   }
 
   //
-  // Feature identification which can be affected by VM flags
+  // Feature identification which can be affected by VM settings
   //
   static bool supports_cpuid()        { return _features  != 0; }
   static bool supports_cmov()         { return (_features & CPU_CMOV) != 0; }
