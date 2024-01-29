@@ -389,14 +389,14 @@ public class LayoutPath {
 
         final PathKind kind;
         final UnaryOperator<LayoutPath> pathOp;
-        final String additionalInfo;
+        final String stringRepresentation;
 
         public PathElementImpl(PathKind kind,
                                UnaryOperator<LayoutPath> pathOp,
                                String stringRepresentation) {
             this.kind = kind;
             this.pathOp = pathOp;
-            this.additionalInfo = stringRepresentation;
+            this.stringRepresentation = stringRepresentation;
         }
 
         @Override
@@ -410,7 +410,7 @@ public class LayoutPath {
 
         @Override
         public String toString() {
-            return additionalInfo;
+            return stringRepresentation;
         }
     }
 }
