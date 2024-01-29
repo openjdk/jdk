@@ -729,8 +729,8 @@ public class MessageFormat extends Format {
             }
         }
         else if (fmt != null) {
-            // By here, this means that it is a JDK Format class that cannot
-            // provide a SubformatPattern or a user-defined Format subclass
+            // By here, this is an instanceof Format that is unknown to MessageFormat.
+            // Since it is unknown, do nothing
         }
         return "";
     }
