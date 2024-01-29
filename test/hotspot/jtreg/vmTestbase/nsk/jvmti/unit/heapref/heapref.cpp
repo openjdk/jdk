@@ -387,8 +387,8 @@ Java_nsk_jvmti_unit_heapref_check(JNIEnv *env, jclass cls) {
     return STATUS_FAILED;
   }
 
-  fakeRoot = newTag(rother, (const MyTag *)nullptr, 0, "FAKE_ROOT");
-  missed = newTag(rother, (const MyTag *)nullptr, 0, "MISSED");
+  fakeRoot = newTag(rother, nullptr, 0, "FAKE_ROOT");
+  missed = newTag(rother, nullptr, 0, "MISSED");
 
   if (env->PushLocalFrame(500) != 0) {
     printf("Error (PushLocalFrame): failed\n");

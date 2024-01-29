@@ -76,7 +76,7 @@ static int checkExtensions(jvmtiEnv* jvmti, const char phase[]) {
             }
             NSK_DISPLAY0("    ... done\n");
 
-            NSK_DISPLAY1("    ... clearing callback: 0x%p\n", (void*)nullptr);
+            NSK_DISPLAY1("    ... clearing callback: 0x%p\n", nullptr);
             if (!NSK_JVMTI_VERIFY(
                     jvmti->SetExtensionEventCallback(extList[i].extension_event_index, nullptr))) {
                 success = NSK_FALSE;

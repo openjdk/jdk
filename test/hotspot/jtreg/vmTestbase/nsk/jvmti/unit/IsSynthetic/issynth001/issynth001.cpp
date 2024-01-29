@@ -118,7 +118,7 @@ checkClassMethods(jclass klass) {
         jint mods;
         mid = methods_ptr[i];
         err = jvmti->GetMethodName(mid, &name_ptr,
-                                    &sign_ptr, (char **) nullptr);
+                                    &sign_ptr, nullptr);
         if (err != JVMTI_ERROR_NONE) {
             printf("(GetMethodName#%d) unexpected error: %s (%d)\n",
                    i, TranslateError(err), err);
@@ -181,7 +181,7 @@ checkClassFields(jclass klass) {
         jint mods;
         fid = fields_ptr[i];
         err = jvmti->GetFieldName(klass, fid, &name_ptr,
-                                    &sign_ptr, (char **) nullptr);
+                                    &sign_ptr, nullptr);
         if (err != JVMTI_ERROR_NONE) {
             printf("(GetFieldName#%d) unexpected error: %s (%d)\n",
                    i, TranslateError(err), err);
@@ -228,7 +228,7 @@ Java_nsk_jvmti_unit_IsSynthetic_issynth001_check(JNIEnv *env,
         return result;
     }
 
-    err = jvmti->GetClassSignature(cls, &class_sign, (char **) nullptr);
+    err = jvmti->GetClassSignature(cls, &class_sign, nullptr);
     if (err != JVMTI_ERROR_NONE) {
         printf("GetSourceFileName unexpected error: %s (%d)\n",
                TranslateError(err), err);
@@ -249,7 +249,7 @@ Java_nsk_jvmti_unit_IsSynthetic_issynth001_check(JNIEnv *env,
         return result;
     }
 
-    err = jvmti->GetClassSignature(klass, &class_sign, (char **) nullptr);
+    err = jvmti->GetClassSignature(klass, &class_sign, nullptr);
     if (err != JVMTI_ERROR_NONE) {
         printf("GetSourceFileName unexpected error: %s (%d)\n",
                TranslateError(err), err);

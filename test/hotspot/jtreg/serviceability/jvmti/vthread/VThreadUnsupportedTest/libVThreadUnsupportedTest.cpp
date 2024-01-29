@@ -98,7 +98,7 @@ test_unsupported_jvmti_functions(jvmtiEnv *jvmti, JNIEnv *jni, jthread vthread) 
     check_jvmti_error_unsupported_operation(jni, "GetCurrentThreadCpuTime", err);
   }
 
-  err = jvmti->RunAgentThread(vthread, agent_proc, (const void*)nullptr, JVMTI_THREAD_NORM_PRIORITY);
+  err = jvmti->RunAgentThread(vthread, agent_proc, nullptr, JVMTI_THREAD_NORM_PRIORITY);
   check_jvmti_error_unsupported_operation(jni, "RunAgentThread", err);
 
   LOG("test_unsupported_jvmti_functions: finished\n");
