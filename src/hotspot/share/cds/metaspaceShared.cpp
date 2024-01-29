@@ -97,8 +97,8 @@ void* MetaspaceShared::_shared_metaspace_static_top = nullptr;
 intx MetaspaceShared::_relocation_delta;
 char* MetaspaceShared::_requested_base_address;
 bool MetaspaceShared::_use_optimized_module_handling = true;
-size_t MetaspaceShared::_ptrmap_leading_zeros;
-size_t MetaspaceShared::_oopmap_leading_zeros;
+size_t MetaspaceShared::_ptrmap_leading_zeros = 0;
+size_t MetaspaceShared::_oopmap_leading_zeros = 0;
 
 // The CDS archive is divided into the following regions:
 //     rw  - read-write metadata
