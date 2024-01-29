@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,17 +29,17 @@ extern "C" {
 
 #define FIND_CLASS(_class, _className)\
     if (!NSK_JNI_VERIFY(env, (_class = \
-            env->FindClass(_className)) != NULL))\
+            env->FindClass(_className)) != nullptr))\
         return
 
 #define GET_OBJECT_CLASS(_class, _obj)\
     if (!NSK_JNI_VERIFY(env, (_class = \
-            env->GetObjectClass(_obj)) != NULL))\
+            env->GetObjectClass(_obj)) != nullptr))\
         return
 
 #define GET_STATIC_FIELD_ID(_fieldID, _class, _fieldName, _fieldSig)\
     if (!NSK_JNI_VERIFY(env, (_fieldID = \
-            env->GetStaticFieldID(_class, _fieldName, _fieldSig)) != NULL))\
+            env->GetStaticFieldID(_class, _fieldName, _fieldSig)) != nullptr))\
         return
 
 #define GET_STATIC_OBJ_FIELD(_value, _class, _fieldName, _fieldSig)\
@@ -52,7 +52,7 @@ extern "C" {
 
 #define GET_FIELD_ID(_fieldID, _class, _fieldName, _fieldSig)\
     if (!NSK_JNI_VERIFY(env, (_fieldID = \
-            env->GetFieldID(_class, _fieldName, _fieldSig)) != NULL))\
+            env->GetFieldID(_class, _fieldName, _fieldSig)) != nullptr))\
         return
 
 #define GET_INT_FIELD(_value, _obj, _class, _fieldName)\
@@ -84,12 +84,12 @@ extern "C" {
 
 #define GET_STATIC_METHOD_ID(_methodID, _class, _methodName, _sig)\
     if (!NSK_JNI_VERIFY(env, (_methodID = \
-            env->GetStaticMethodID(_class, _methodName, _sig)) != NULL))\
+            env->GetStaticMethodID(_class, _methodName, _sig)) != nullptr))\
         return
 
 #define GET_METHOD_ID(_methodID, _class, _methodName, _sig)\
     if (!NSK_JNI_VERIFY(env, (_methodID = \
-            env->GetMethodID(_class, _methodName, _sig)) != NULL))\
+            env->GetMethodID(_class, _methodName, _sig)) != nullptr))\
         return
 
 #define CALL_STATIC_VOID_NOPARAM(_class, _methodName)\
@@ -124,7 +124,7 @@ extern "C" {
 #define NEW_OBJ(_obj, _class, _constructorName, _sig, _params)\
     GET_METHOD_ID(method, _class, _constructorName, _sig);\
     if (!NSK_JNI_VERIFY(env, (_obj = \
-            env->NewObject(_class, method, _params)) != NULL))\
+            env->NewObject(_class, method, _params)) != nullptr))\
         return
 
 #define MONITOR_ENTER(x) \

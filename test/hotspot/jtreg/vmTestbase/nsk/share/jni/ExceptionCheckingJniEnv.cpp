@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2019, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -35,8 +35,8 @@ static const char* get_dirname(const char* fullname) {
   const char* p;
   const char* base = fullname;;
 
-  if (fullname == NULL) {
-    return NULL;
+  if (fullname == nullptr) {
+    return nullptr;
   }
 
   for (p = fullname; *p != '\0'; p++) {
@@ -52,7 +52,7 @@ class JNIVerifier {
  public:
   JNIVerifier(ExceptionCheckingJniEnv *env, const char* base_message,
               int line, const char* file)
-      : _env(env), _base_message(base_message), _error_message(NULL),
+      : _env(env), _base_message(base_message), _error_message(nullptr),
         _line(line), _file(get_dirname(file)) {
   }
 
@@ -61,7 +61,7 @@ class JNIVerifier {
   JNIVerifier(ExceptionCheckingJniEnv *env, const char* base_message,
               U parameter,
               int line, const char* file)
-      : _env(env), _base_message(base_message), _error_message(NULL),
+      : _env(env), _base_message(base_message), _error_message(nullptr),
         _line(line), _file(get_dirname(file)) {
           PrintPreCall(parameter);
   }
@@ -71,7 +71,7 @@ class JNIVerifier {
               U parameter1,
               V parameter2,
               int line, const char* file)
-      : _env(env), _base_message(base_message), _error_message(NULL),
+      : _env(env), _base_message(base_message), _error_message(nullptr),
         _line(line), _file(get_dirname(file)) {
           PrintPreCall(parameter1, parameter2);
   }
@@ -80,7 +80,7 @@ class JNIVerifier {
   JNIVerifier(ExceptionCheckingJniEnv *env, const char* base_message,
               U parameter1, V parameter2, W parameter3,
               int line, const char* file)
-      : _env(env), _base_message(base_message), _error_message(NULL),
+      : _env(env), _base_message(base_message), _error_message(nullptr),
         _line(line), _file(get_dirname(file)) {
           PrintPreCall(parameter1, parameter2, parameter3);
   }
@@ -93,7 +93,7 @@ class JNIVerifier {
       _error_message = "internal error";
     }
 
-    if (_error_message != NULL) {
+    if (_error_message != nullptr) {
       GenerateErrorMessage();
     }
   }
@@ -173,7 +173,7 @@ class JNIVerifier {
     len += MAX_INTEGER_DIGITS + 1;
 
     char* full_message = (char*) malloc(len);
-    if (full_message == NULL) {
+    if (full_message == nullptr) {
       _env->HandleError(_error_message);
       return;
     }
@@ -199,8 +199,8 @@ class JNIVerifier {
   }
 
   T ResultNotNull(T ptr) {
-    if (ptr == NULL) {
-      _error_message = "Return is NULL";
+    if (ptr == nullptr) {
+      _error_message = "Return is null";
     }
     return ptr;
   }

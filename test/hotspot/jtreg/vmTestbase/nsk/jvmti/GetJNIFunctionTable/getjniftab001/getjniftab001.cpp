@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,17 +38,17 @@ extern "C" {
 #define STATUS_FAILED  2
 
 static JavaVM *vm;
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 
 static int verbose = 0;
 
 static jint result = PASSED;
 
 /* the original JNI function table */
-static jniNativeInterface *orig_jni_functions = NULL;
+static jniNativeInterface *orig_jni_functions = nullptr;
 
 /* the redirected JNI function table */
-static jniNativeInterface *redir_jni_functions = NULL;
+static jniNativeInterface *redir_jni_functions = nullptr;
 
 /* number of the redirected JNI function calls */
 static volatile int redir_calls = 0;
@@ -120,7 +120,7 @@ static void doRestore(JNIEnv *env) {
 }
 
 static void checkRedir(JNIEnv *env, int exCalls) {
-    jniNativeInterface *tested_jni_functions = NULL;
+    jniNativeInterface *tested_jni_functions = nullptr;
     jvmtiError err;
     jint res;
 
@@ -156,7 +156,7 @@ JNIEXPORT jint JNICALL
 Java_nsk_jvmti_GetJNIFunctionTable_getjniftab001_check(JNIEnv *env, jobject obj) {
     int exitCode = PASSED;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("(%s,%d): TEST FAILURE: JVMTI client was not properly loaded\n",
             __FILE__, __LINE__);
         return STATUS_FAILED;
@@ -191,14 +191,14 @@ JNIEXPORT jint JNI_OnLoad_getjniftab001(JavaVM *jvm, char *options, void *reserv
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jint res;
 
-    if (options != NULL && strcmp(options, "-verbose") == 0)
+    if (options != nullptr && strcmp(options, "-verbose") == 0)
         verbose = 1;
 
     if (verbose)
         printf("verbose mode on\n");
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("(%s,%d): Failed to call GetEnv\n", __FILE__, __LINE__);
         return JNI_ERR;
     }
