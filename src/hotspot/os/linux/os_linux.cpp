@@ -289,17 +289,21 @@ julong os::Linux::free_memory() {
   return free_mem;
 }
 
-// do we need to handle container envs separately ?
 jlong os::total_swap_space() {
-  struct sysinfo si;
-  int ret = sysinfo(&si);
-  if (ret != 0) {
-    return -1;
+  if (OSContainer::is_containerized()) {
+    return (jlong)(OSContainer::memory_and_swap_limit_in_bytes() - OSContainer::memory_limit_in_bytes());
+  } else {
+    struct sysinfo si;
+    int ret = sysinfo(&si);
+    if (ret != 0) {
+      return -1;
+    }
+    return  (jlong)(si.totalswap * si.mem_unit);
   }
-  return  (jlong)(si.totalswap * si.mem_unit);
 }
 
 jlong os::free_swap_space() {
+  // TODO support free swap space in container APIs
   struct sysinfo si;
   int ret = sysinfo(&si);
   if (ret != 0) {
