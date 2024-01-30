@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -20,4 +20,13 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 
-mvn --batch-mode -f application/pom.xml nbm:run-platform >.igv.log 2>&1
+DEFAULT_USERDIR="$(pwd)/igv_userdir"
+DEFAULT_USERDIR=${IGV_USERDIR:-$DEFAULT_USERDIR}
+USERDIR=${1:-$DEFAULT_USERDIR}
+echo "The IGV user directory in which the settings are saved can be set as follows :"
+echo "  1) export IGV_USERDIR=path/to/igv_userdir"
+echo "  2) ./igv.sh path/to/igv_userdir"
+echo "  3) default is ./igv_userdir"
+echo
+echo "IGV user directory : $USERDIR";
+mvn --batch-mode -f application/pom.xml --define netbeans.userdir=$USERDIR nbm:run-platform >.igv.log 2>&1

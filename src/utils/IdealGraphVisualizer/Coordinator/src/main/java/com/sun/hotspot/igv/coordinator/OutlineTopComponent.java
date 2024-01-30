@@ -281,8 +281,6 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
 
     @Override
     public void readExternal(ObjectInput objectInput) throws IOException, ClassNotFoundException {
-        // Not called when user starts application for the first time
-        super.readExternal(objectInput);
         ((BeanTreeView) this.treeView).setRootVisible(false);
 
         String graphsPath = getGraphsPath();
@@ -357,6 +355,8 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
                 throw new RuntimeException(e);
             }
         });
+
+        super.readExternal(objectInput);
     }
 
     private String getCustomSettingsPath() {
