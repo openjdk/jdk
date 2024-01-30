@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,15 +111,15 @@ Java_nsk_jvmti_PopFrame_popframe011_doPopFrame(JNIEnv *env,
     }
 
     switch (t_case) {
-/* NULL pointer to the thread in debug mode */
+/* nullptr pointer to the thread in debug mode */
     case 1:
-        printf("\nInvoke PopFrame() with NULL pointer to a thread...\n");
+        printf("\nInvoke PopFrame() with null pointer to a thread...\n");
         fflush(stdout);
         // fallthrough
-/* NULL pointer to the thread */
+/* nullptr pointer to the thread */
     case 0:
         set_watch_ev(1); /* watch JVMTI events */
-        popframe_err = (jvmti->PopFrame(NULL)); /* explode the bomb */
+        popframe_err = (jvmti->PopFrame(nullptr)); /* explode the bomb */
         if (popframe_err != JVMTI_ERROR_INVALID_THREAD) {
             printf("TEST FAILED: the function PopFrame() returned the error %d: %s\n",
                 popframe_err, TranslateError(popframe_err));
@@ -245,7 +245,7 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jvmtiError err;
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
     }

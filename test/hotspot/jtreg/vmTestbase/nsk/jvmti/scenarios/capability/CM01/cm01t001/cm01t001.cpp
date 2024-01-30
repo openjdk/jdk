@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,22 +57,22 @@ extern "C" {
 /* ========================================================================== */
 
 /* scaffold objects */
-static JNIEnv* jni = NULL;
-static jvmtiEnv *jvmti = NULL;
+static JNIEnv* jni = nullptr;
+static jvmtiEnv *jvmti = nullptr;
 static jlong timeout = 0;
 
 /* test objects */
-static jthread thread = NULL;
-static jclass klass = NULL;
-static jmethodID method = NULL;
-static jfieldID field = NULL;
+static jthread thread = nullptr;
+static jclass klass = nullptr;
+static jmethodID method = nullptr;
+static jfieldID field = nullptr;
 
 /* ========================================================================== */
 
 static int prepare() {
     const char* THREAD_NAME = "Debuggee Thread";
     jvmtiThreadInfo info;
-    jthread *threads = NULL;
+    jthread *threads = nullptr;
     jint threads_count = 0;
     int i;
 
@@ -82,12 +82,12 @@ static int prepare() {
     if (!NSK_JVMTI_VERIFY(jvmti->GetAllThreads(&threads_count, &threads)))
         return NSK_FALSE;
 
-    if (!NSK_VERIFY(threads_count > 0 && threads != NULL))
+    if (!NSK_VERIFY(threads_count > 0 && threads != nullptr))
         return NSK_FALSE;
 
     /* find tested thread */
     for (i = 0; i < threads_count; i++) {
-        if (!NSK_VERIFY(threads[i] != NULL))
+        if (!NSK_VERIFY(threads[i] != nullptr))
             return NSK_FALSE;
 
         /* get thread information */
@@ -97,7 +97,7 @@ static int prepare() {
         NSK_DISPLAY3("    thread #%d (%s): %p\n", i, info.name, threads[i]);
 
         /* find by name */
-        if (info.name != NULL && (strcmp(info.name, THREAD_NAME) == 0)) {
+        if (info.name != nullptr && (strcmp(info.name, THREAD_NAME) == 0)) {
             thread = threads[i];
         }
     }
@@ -107,16 +107,16 @@ static int prepare() {
         return NSK_FALSE;
 
     /* get tested thread class */
-    if (!NSK_JNI_VERIFY(jni, (klass = jni->GetObjectClass(thread)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (klass = jni->GetObjectClass(thread)) != nullptr))
         return NSK_FALSE;
 
     /* get tested thread method 'run' */
-    if (!NSK_JNI_VERIFY(jni, (method = jni->GetMethodID(klass, "run", "()V")) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (method = jni->GetMethodID(klass, "run", "()V")) != nullptr))
         return NSK_FALSE;
 
     /* get tested thread field 'waitingMonitor' */
     if (!NSK_JNI_VERIFY(jni, (field =
-            jni->GetFieldID(klass, "waitingMonitor", "Ljava/lang/Object;")) != NULL))
+            jni->GetFieldID(klass, "waitingMonitor", "Ljava/lang/Object;")) != nullptr))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -156,18 +156,18 @@ static int checkSignalThread() {
     const char* THREAD_DEATH_CLASS_NAME = "java/lang/ThreadDeath";
     const char* THREAD_DEATH_CTOR_NAME = "<init>";
     const char* THREAD_DEATH_CTOR_SIGNATURE = "()V";
-    jclass cls = NULL;
-    jmethodID ctor = NULL;
-    jobject exception = NULL;
+    jclass cls = nullptr;
+    jmethodID ctor = nullptr;
+    jobject exception = nullptr;
 
-    if (!NSK_JNI_VERIFY(jni, (cls = jni->FindClass(THREAD_DEATH_CLASS_NAME)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (cls = jni->FindClass(THREAD_DEATH_CLASS_NAME)) != nullptr))
         return NSK_FALSE;
 
     if (!NSK_JNI_VERIFY(jni, (ctor =
-            jni->GetMethodID(cls, THREAD_DEATH_CTOR_NAME, THREAD_DEATH_CTOR_SIGNATURE)) != NULL))
+            jni->GetMethodID(cls, THREAD_DEATH_CTOR_NAME, THREAD_DEATH_CTOR_SIGNATURE)) != nullptr))
         return NSK_FALSE;
 
-    if (!NSK_JNI_VERIFY(jni, (exception = jni->NewObject(cls, ctor)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (exception = jni->NewObject(cls, ctor)) != nullptr))
         return NSK_FALSE;
 
     NSK_DISPLAY0("Checking negative: StopThread\n");
@@ -186,7 +186,7 @@ static int checkSignalThread() {
  */
 static int checkGetOwnedMonitorInfo() {
     jint count;
-    jobject *monitors = NULL;
+    jobject *monitors = nullptr;
 
     NSK_DISPLAY0("Checking negative: GetOwnedMonitorInfo\n");
     if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
@@ -199,7 +199,7 @@ static int checkGetOwnedMonitorInfo() {
 /* Check "can_get_current_contended_monitor" function
  */
 static int checkGetCurrentContendedMonitor() {
-    jobject monitor = NULL;
+    jobject monitor = nullptr;
 
     NSK_DISPLAY0("Checking negative: GetCurrentContendedMonitor\n");
     if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
@@ -251,8 +251,8 @@ static int checkHeapFunctions() {
     const jlong TAG_VALUE = (123456789L);
     jlong tag;
     jint count;
-    jobject *res_objects = NULL;
-    jlong *res_tags = NULL;
+    jobject *res_objects = nullptr;
+    jlong *res_tags = nullptr;
     jint dummy_user_data = 0;
 
     NSK_DISPLAY0("Checking positive: SetTag\n");
@@ -295,7 +295,7 @@ static int checkHeapFunctions() {
  */
 static int checkLocalVariableFunctions() {
     jint count;
-    jvmtiLocalVariableEntry *local_variable_table = NULL;
+    jvmtiLocalVariableEntry *local_variable_table = nullptr;
     jobject object_value;
     jint int_value;
     jlong long_value;
@@ -365,7 +365,7 @@ static int checkLocalVariableFunctions() {
 static int checkSourceInfoFunctions() {
     char *name;
     jint count;
-    jvmtiLineNumberEntry *line_number_table = NULL;
+    jvmtiLineNumberEntry *line_number_table = nullptr;
 
     NSK_DISPLAY0("Checking negative: GetSourceFileName\n");
     if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
@@ -393,7 +393,7 @@ static int checkRedefineClasses() {
     NSK_DISPLAY0("Checking negative: RedefineClasses\n");
     class_def.klass = klass;
     class_def.class_byte_count = 0;
-    class_def.class_bytes = NULL;
+    class_def.class_bytes = nullptr;
     if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
             jvmti->RedefineClasses(1, &class_def)))
         return NSK_FALSE;
@@ -565,11 +565,11 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     /* create JVMTI environment */
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     /* register agent proc and arg */
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     /* testcase #1: check GetPotentialCapabilities */

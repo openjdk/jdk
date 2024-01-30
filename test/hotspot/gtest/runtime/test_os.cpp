@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -313,8 +313,8 @@ static void test_snprintf(PrintFn pf, bool expect_count) {
   }
 
   // Special case of 0-length buffer with empty (except for terminator) output.
-  check_snprintf_result(0, 0, pf(NULL, 0, "%s", ""), expect_count);
-  check_snprintf_result(0, 0, pf(NULL, 0, ""), expect_count);
+  check_snprintf_result(0, 0, pf(nullptr, 0, "%s", ""), expect_count);
+  check_snprintf_result(0, 0, pf(nullptr, 0, ""), expect_count);
 }
 
 // This is probably equivalent to os::snprintf, but we're being
@@ -368,7 +368,7 @@ static inline bool can_reserve_executable_memory(void) {
   bool executable = true;
   size_t len = 128;
   char* p = os::reserve_memory(len, executable);
-  bool exec_supported = (p != NULL);
+  bool exec_supported = (p != nullptr);
   if (exec_supported) {
     os::release_memory(p, len);
   }
@@ -401,12 +401,12 @@ static address reserve_multiple(int num_stripes, size_t stripe_len) {
   const bool exec_supported = can_reserve_executable_memory();
 #endif
 
-  address p = NULL;
-  for (int tries = 0; tries < 256 && p == NULL; tries ++) {
+  address p = nullptr;
+  for (int tries = 0; tries < 256 && p == nullptr; tries ++) {
     size_t total_range_len = num_stripes * stripe_len;
     // Reserve a large contiguous area to get the address space...
     p = (address)os::reserve_memory(total_range_len);
-    EXPECT_NE(p, (address)NULL);
+    EXPECT_NE(p, (address)nullptr);
     // .. release it...
     EXPECT_TRUE(os::release_memory((char*)p, total_range_len));
     // ... re-reserve in the same spot multiple areas...
@@ -420,11 +420,11 @@ static address reserve_multiple(int num_stripes, size_t stripe_len) {
       const bool executable = stripe % 2 == 0;
 #endif
       q = (address)os::attempt_reserve_memory_at((char*)q, stripe_len, executable);
-      if (q == NULL) {
+      if (q == nullptr) {
         // Someone grabbed that area concurrently. Cleanup, then retry.
         tty->print_cr("reserve_multiple: retry (%d)...", stripe);
         carefully_release_multiple(p, stripe, stripe_len);
-        p = NULL;
+        p = nullptr;
       } else {
         EXPECT_TRUE(os::commit_memory((char*)q, stripe_len, executable));
       }
@@ -440,7 +440,7 @@ static address reserve_one_commit_multiple(int num_stripes, size_t stripe_len) {
   assert(is_aligned(stripe_len, os::vm_allocation_granularity()), "Sanity");
   size_t total_range_len = num_stripes * stripe_len;
   address p = (address)os::reserve_memory(total_range_len);
-  EXPECT_NE(p, (address)NULL);
+  EXPECT_NE(p, (address)nullptr);
   for (int stripe = 0; stripe < num_stripes; stripe++) {
     address q = p + (stripe * stripe_len);
     if (stripe % 2 == 0) {
@@ -491,7 +491,7 @@ TEST_VM(os, release_multi_mappings) {
 
   // reserve address space...
   address p = reserve_multiple(num_stripes, stripe_len);
-  ASSERT_NE(p, (address)NULL);
+  ASSERT_NE(p, (address)nullptr);
   PRINT_MAPPINGS("A");
 
   // .. release the middle stripes...
@@ -530,7 +530,7 @@ TEST_VM_ASSERT_MSG(os, release_bad_ranges, ".*bad release") {
 TEST_VM(os, release_bad_ranges) {
 #endif
   char* p = os::reserve_memory(4 * M);
-  ASSERT_NE(p, (char*)NULL);
+  ASSERT_NE(p, (char*)nullptr);
   // Release part of range
   ASSERT_FALSE(os::release_memory(p, M));
   // Release part of range
@@ -624,13 +624,13 @@ TEST_VM(os, find_mapping_simple) {
   os::win32::mapping_info_t mapping_info;
 
   // Some obvious negatives
-  ASSERT_FALSE(os::win32::find_mapping((address)NULL, &mapping_info));
+  ASSERT_FALSE(os::win32::find_mapping((address)nullptr, &mapping_info));
   ASSERT_FALSE(os::win32::find_mapping((address)4711, &mapping_info));
 
   // A simple allocation
   {
     address p = (address)os::reserve_memory(total_range_len);
-    ASSERT_NE(p, (address)NULL);
+    ASSERT_NE(p, (address)nullptr);
     PRINT_MAPPINGS("A");
     for (size_t offset = 0; offset < total_range_len; offset += 4711) {
       ASSERT_TRUE(os::win32::find_mapping(p + offset, &mapping_info));
@@ -659,7 +659,7 @@ TEST_VM(os, find_mapping_2) {
 
   const size_t stripe_len = total_range_len / 4;
   address p = reserve_one_commit_multiple(4, stripe_len);
-  ASSERT_NE(p, (address)NULL);
+  ASSERT_NE(p, (address)nullptr);
   PRINT_MAPPINGS("A");
   for (size_t offset = 0; offset < total_range_len; offset += 4711) {
     ASSERT_TRUE(os::win32::find_mapping(p + offset, &mapping_info));
@@ -688,7 +688,7 @@ TEST_VM(os, find_mapping_3) {
   {
     const size_t stripe_len = total_range_len / 4;
     address p = reserve_multiple(4, stripe_len);
-    ASSERT_NE(p, (address)NULL);
+    ASSERT_NE(p, (address)nullptr);
     PRINT_MAPPINGS("E");
     for (int stripe = 0; stripe < 4; stripe++) {
       ASSERT_TRUE(os::win32::find_mapping(p + (stripe * stripe_len), &mapping_info));
@@ -795,8 +795,8 @@ TEST_VM(os, dll_address_to_function_and_library_name) {
   LOG("os::print_function_and_library_name(st, -1) expects FALSE.");
   address addr = (address)(intptr_t)-1;
   EXPECT_FALSE(os::print_function_and_library_name(&st, addr));
-  LOG("os::print_function_and_library_name(st, NULL) expects FALSE.");
-  addr = NULL;
+  LOG("os::print_function_and_library_name(st, nullptr) expects FALSE.");
+  addr = nullptr;
   EXPECT_FALSE(os::print_function_and_library_name(&st, addr));
 
   // Valid addresses
@@ -813,7 +813,7 @@ TEST_VM(os, dll_address_to_function_and_library_name) {
     addr = CAST_FROM_FN_PTR(address, Threads::create_vm);
     st.reset();
     EXPECT_TRUE(os::print_function_and_library_name(&st, addr,
-                                                    provide_scratch_buffer ? tmp : NULL,
+                                                    provide_scratch_buffer ? tmp : nullptr,
                                                     sizeof(tmp),
                                                     shorten_paths, demangle,
                                                     strip_arguments));
@@ -859,7 +859,7 @@ static bool very_simple_string_matcher(const char* pattern, const char* s) {
 TEST_VM(os, iso8601_time) {
   char buffer[os::iso8601_timestamp_size + 1]; // + space for canary
   buffer[os::iso8601_timestamp_size] = 'X'; // canary
-  const char* result = NULL;
+  const char* result = nullptr;
   // YYYY-MM-DDThh:mm:ss.mmm+zzzz
   const char* const pattern_utc = "dddd-dd-dd.dd:dd:dd.ddd.0000";
   const char* const pattern_local = "dddd-dd-dd.dd:dd:dd.ddd.dddd";
