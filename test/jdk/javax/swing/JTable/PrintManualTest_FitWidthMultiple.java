@@ -26,6 +26,7 @@
  * @bug 8170349 8259550
  * @summary  Verify if printed content is within border and all columns are
  *           printed for PrintMode.FIT_WIDTH
+ * @run main/manual PrintManualTest_FitWidthMultiple
  * @run main/othervm/manual -Dswing.defaultlaf=javax.swing.plaf.nimbus.NimbusLookAndFeel PrintManualTest_FitWidthMultiple
  */
 
