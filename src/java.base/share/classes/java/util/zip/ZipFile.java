@@ -312,6 +312,43 @@ public class ZipFile implements ZipConstants, Closeable {
     }
 
     /**
+     * Creates ZipFile from {@link FileChannel}.
+     *
+     * @param fileChannel
+     *      file channel as a source
+     * @param charset
+     *      charset for filename decoding
+     * @throws IOException
+     *      if an IO error has occurred.
+     */
+    @SuppressWarnings("this-escape")
+    public ZipFile(FileChannel fileChannel, Charset charset) throws IOException
+    {
+        @SuppressWarnings("removal")
+        SecurityManager sm = System.getSecurityManager();
+        Objects.requireNonNull(charset, "charset");
+
+        this.filePath = fileChannel.toString();
+        this.fileName = this.filePath;
+        long t0 = System.nanoTime();
+
+        this.res = new CleanableResource(this, ZipCoder.get(charset), fileChannel);
+
+        PerfCounter.getZipFileOpenTime().addElapsedTimeFrom(t0);
+        PerfCounter.getZipFileCount().increment();
+    }
+
+    /**
+     * Gets archive {@link FileChannel}
+     *
+     * @return
+     *      archive {@link FileChannel}
+     */
+    public FileChannel getFileChannel() {
+        return this.res.zsrc.zfile;
+    }
+
+    /**
      * Returns the ZIP file comment. If a comment does not exist or an error is
      * encountered decoding the comment using the charset specified
      * when opening the ZIP file, then {@code null} is returned.
@@ -359,6 +396,35 @@ public class ZipFile implements ZipConstants, Closeable {
             return entry;
         } catch (RuntimeException ex) {
             throw rethrowExceptionWithOpenCheck(ex);
+        }
+    }
+
+    /**
+     * Returns data offset for the specified entry.
+     *
+     * @param entry
+     *      zip entry
+     * @return
+     *      data offset within the file.
+     *
+     * @throws IOException
+     *      if the zip file is corrupted.
+     */
+    public long getEntryDataOffset(ZipEntry entry) throws IOException {
+        try {
+            int cenPosition = res.zsrc.getEntryPos(entry.name, false);
+
+            long localHeaderPos = res.zsrc.locpos + CENOFF(res.zsrc.cen, cenPosition);
+
+            byte[] localHeader = new byte[LOCHDR];
+            res.zsrc.readFullyAt(localHeader, 0, localHeader.length, localHeaderPos);
+            if (LOCSIG(localHeader) != LOCSIG) {
+                throw new ZipException("ZipFile invalid LOC header (bad signature)");
+            }
+
+            return localHeaderPos + LOCHDR + LOCNAM(localHeader) + LOCEXT(localHeader);
+        } catch (RuntimeException ex) {
+            throw rethrowIOExceptionWithOpenCheck(ex);
         }
     }
 
@@ -750,6 +816,13 @@ public class ZipFile implements ZipConstants, Closeable {
             this.istreams = Collections.newSetFromMap(new WeakHashMap<>());
             this.inflaterCache = new ArrayDeque<>();
             this.zsrc = Source.get(file, (mode & OPEN_DELETE) != 0, zc);
+        }
+
+        CleanableResource(ZipFile zf, ZipCoder zc, FileChannel fileChannel) throws IOException {
+            this.cleanable = CleanerFactory.cleaner().register(zf, this);
+            this.istreams = Collections.newSetFromMap(new WeakHashMap<>());
+            this.inflaterCache = new ArrayDeque<>();
+            this.zsrc = Source.get(fileChannel, zc);
         }
 
         void clean() {
@@ -1485,19 +1558,28 @@ public class ZipFile implements ZipConstants, Closeable {
          */
         private static class Key {
             final BasicFileAttributes attrs;
-            File file;
+            final File file;
+            final FileChannel fileChannel;
             final boolean utf8;
 
             public Key(File file, BasicFileAttributes attrs, ZipCoder zc) {
                 this.attrs = attrs;
                 this.file = file;
+                this.fileChannel = null;
+                this.utf8 = zc.isUTF8();
+            }
+
+            public Key(FileChannel fileChannel, ZipCoder zc) {
+                this.attrs = null;
+                this.file = null;
+                this.fileChannel = fileChannel;
                 this.utf8 = zc.isUTF8();
             }
 
             public int hashCode() {
                 long t = utf8 ? 0 : Long.MAX_VALUE;
-                t += attrs.lastModifiedTime().toMillis();
-                Object fk = attrs.fileKey();
+                t += attrs == null ? 0 : attrs.lastModifiedTime().toMillis();
+                Object fk = attrs == null ? 0 : attrs.fileKey();
                 return Long.hashCode(t) +
                         (fk != null ? fk.hashCode() : file.hashCode());
             }
@@ -1507,14 +1589,19 @@ public class ZipFile implements ZipConstants, Closeable {
                     if (key.utf8 != utf8) {
                         return false;
                     }
-                    if (!attrs.lastModifiedTime().equals(key.attrs.lastModifiedTime())) {
+                    if ((attrs == null) != (key.attrs == null)) {
                         return false;
                     }
-                    Object fk = attrs.fileKey();
-                    if (fk != null) {
-                        return fk.equals(key.attrs.fileKey());
-                    } else {
-                        return file.equals(key.file);
+                    if (attrs != null) {
+                        if (!attrs.lastModifiedTime().equals(key.attrs.lastModifiedTime())) {
+                            return false;
+                        }
+                        Object fk = attrs.fileKey();
+                        if (fk != null) {
+                            return fk.equals(key.attrs.fileKey());
+                        } else {
+                            return file.equals(key.file);
+                        }
                     }
                 }
                 return false;
@@ -1558,6 +1645,34 @@ public class ZipFile implements ZipConstants, Closeable {
             }
         }
 
+        static Source get(FileChannel fileChannel, ZipCoder zc) throws IOException {
+            final Key key;
+            try {
+                key = new Key(fileChannel, zc);
+            } catch (InvalidPathException ipe) {
+                throw new IOException(ipe);
+            }
+            Source src;
+            synchronized (files) {
+                src = files.get(key);
+                if (src != null) {
+                    src.refs++;
+                    return src;
+                }
+            }
+            src = new Source(key, false, zc);
+
+            synchronized (files) {
+                Source prev = files.putIfAbsent(key, src);
+                if (prev != null) {    // someone else put in first
+                    src.close();       // close the newly created one
+                    prev.refs++;
+                    return prev;
+                }
+                return src;
+            }
+        }
+
         static void release(Source src) throws IOException {
             synchronized (files) {
                 if (src != null && --src.refs == 0) {
@@ -1570,7 +1685,9 @@ public class ZipFile implements ZipConstants, Closeable {
         private Source(Key key, boolean toDelete, ZipCoder zc) throws IOException {
             this.zc = zc;
             this.key = key;
-            if (toDelete) {
+            if (key.fileChannel != null) {
+                this.zfile = key.fileChannel;
+            } else if (toDelete) {
                 if (OperatingSystem.isWindows()) {
                     this.zfile = SharedSecrets.getJavaIORandomAccessFileAccess()
                                               .openAndDelete(key.file, "r").getChannel();
@@ -1581,7 +1698,9 @@ public class ZipFile implements ZipConstants, Closeable {
             } else {
                 this.zfile = FileChannel.open(key.file.toPath(), StandardOpenOption.READ);
             }
-            ((FileChannelImpl) this.zfile).setUninterruptible();
+            if (key.fileChannel == null) {
+                ((FileChannelImpl) this.zfile).setUninterruptible();
+            }
             try {
                 initCEN(-1);
                 byte[] buf = new byte[4];
@@ -1589,7 +1708,9 @@ public class ZipFile implements ZipConstants, Closeable {
                 this.startsWithLoc = (LOCSIG(buf) == LOCSIG);
             } catch (IOException x) {
                 try {
-                    this.zfile.close();
+                    if (key.fileChannel != null) {
+                        this.zfile.close();
+                    }
                 } catch (IOException xx) {}
                 throw x;
             }
