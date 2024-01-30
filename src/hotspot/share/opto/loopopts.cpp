@@ -1489,7 +1489,11 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
           // Replace the dominated test with an obvious true or false.
           // Place it on the IGVN worklist for later cleanup.
           C->set_major_progress();
-          dominated_by(prevdom->as_IfProj(), n->as_If());
+          // Split if pin array accesses that are control dependent on a range check to prevent an array load from
+          // floating above its range check. If a range check is replaced by a regular if then, that logic won't trigger.
+          // Pin the array access nodes here to make sure no array access is then missed at split if.
+          dominated_by(prevdom->as_IfProj(), n->as_If(), false,
+                       n->Opcode() == Op_RangeCheck && prevdom->in(0)->Opcode() != Op_RangeCheck);
           DEBUG_ONLY( if (VerifyLoopOptimizations) { verify(); } );
           return;
         }
@@ -1663,7 +1667,19 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
         // n has a control input inside a loop but get_ctrl() is member of an outer loop. This could happen, for example,
         // for Div nodes inside a loop (control input inside loop) without a use except for an UCT (outside the loop).
         // Rewire control of n to right outside of the loop, regardless if its input(s) are later sunk or not.
-        _igvn.replace_input_of(n, 0, place_outside_loop(n_ctrl, loop_ctrl));
+        Node* x = n;
+        Node* c = place_outside_loop(n_ctrl, loop_ctrl);
+        if (n->depends_only_on_test()) {
+          Node* clone = n->pin_array_access_node();
+          if (clone != nullptr) {
+            // Pin array access nodes: if this is an array load, it's going to be dependent on a condition that's not a
+            // range check for that access. If that condition is replaced by an identical dominating one, then an
+            // unpinned load would risk floating above its range check.
+            register_new_node(clone, c);
+            x = clone;
+          }
+        }
+        _igvn.replace_input_of(x, 0, c);
       }
     }
     if (n_loop != _ltree_root && n->outcnt() > 1) {
@@ -1677,7 +1693,16 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
         for (DUIterator_Last jmin, j = n->last_outs(jmin); j >= jmin;) {
           Node* u = n->last_out(j); // Clone private computation per use
           _igvn.rehash_node_delayed(u);
-          Node* x = n->clone(); // Clone computation
+          Node* x = nullptr;
+          if (n->depends_only_on_test()) {
+            // Pin array access nodes: if this is an array load, it's going to be dependent on a condition that's not a
+            // range check for that access. If that condition is replaced by an identical dominating one, then an
+            // unpinned load would risk floating above its range check.
+            x = n->pin_array_access_node();
+          }
+          if (x == nullptr) {
+            x = n->clone();
+          }
           Node* x_ctrl = nullptr;
           if (u->is_Phi()) {
             // Replace all uses of normal nodes.  Replace Phi uses
@@ -2227,6 +2252,20 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
       // We notify all uses of old, including use, and the indirect uses,
       // that may now be optimized because we have replaced old with phi.
       _igvn.add_users_to_worklist(old);
+      if (idx == 0 &&
+          use->depends_only_on_test()) {
+        Node* clone = use->pin_array_access_node();
+        if (clone != nullptr) {
+          // Pin array access nodes: control is updated here to a region. If, after some transformations, only one path
+          // into the region is left, an array load could become dependent on a condition that's not a range check for
+          // that access. If that condition is replaced by an identical dominating one, then an unpinned load would risk
+          // floating above its range check.
+          clone->set_req(0, phi);
+          register_new_node(clone, get_ctrl(use));
+          _igvn.replace_node( use, clone);
+          continue;
+        }
+      }
       _igvn.replace_input_of(use, idx, phi);
       if( use->_idx >= new_counter ) { // If updating new phis
         // Not needed for correctness, but prevents a weak assert
@@ -3862,6 +3901,19 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
     if (!n->is_CFG()           && n->in(0) != nullptr        &&
         not_peel.test(n->_idx) && peel.test(n->in(0)->_idx)) {
       Node* n_clone = old_new[n->_idx];
+      if (n_clone->depends_only_on_test()) {
+        // Pin array access nodes: control is updated here to the loop head. If, after some transformations, the
+        // backedge is removed, an array load could become dependent on a condition that's not a range check for that
+        // access. If that condition is replaced by an identical dominating one, then an unpinned load would risk
+        // floating above its range check.
+        Node* pinned_clone = n_clone->pin_array_access_node();
+        if (pinned_clone != nullptr) {
+          register_new_node(pinned_clone, get_ctrl(n_clone));
+          old_new.map(n->_idx, pinned_clone);
+          _igvn.replace_node(n_clone, pinned_clone);
+          n_clone = pinned_clone;
+        }
+      }
       _igvn.replace_input_of(n_clone, 0, new_head_clone);
     }
   }
