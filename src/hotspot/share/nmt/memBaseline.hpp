@@ -85,12 +85,12 @@ class MemBaseline {
 
   BaselineType         _baseline_type;
   void baseline_summary_vmemview();
-  struct AggregateSite {
+  /*  struct AggregateSite {
     VirtualMemory c;
     NativeCallStackStorage::StackIndex si;
   };
   // Indexed by MEMFLAG
-  GrowableArrayCHeap<AggregateSite, mtNMT> virtual_memory_aggregation;
+  GrowableArrayCHeap<AggregateSite, mtNMT> virtual_memory_aggregation;*/
   void aggregate_virtual_memory_allocation_sites_vmemview();
 
  public:
@@ -98,6 +98,10 @@ class MemBaseline {
   MemBaseline():
     _instance_class_count(0), _array_class_count(0), _thread_count(0),
     _baseline_type(Not_baselined) {
+  }
+
+  VirtualMemoryView::VirtualMemory& vmemview() {
+    return _vmemview_data;
   }
 
   void baseline(bool summaryOnly = true);

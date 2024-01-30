@@ -56,10 +56,10 @@ public:
     StackIndex(uint16_t chunk, uint16_t index)
     : _chunk(chunk), _index(index) {
     }
-    uint32_t chunk() {
+    uint16_t chunk() {
       return _chunk;
     }
-    uint32_t index() {
+    uint16_t index() {
       return _index;
     }
   };
