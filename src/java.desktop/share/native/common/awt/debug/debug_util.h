@@ -46,8 +46,6 @@ typedef void * dmutex_t;
 #include "jni_util.h"
 #include "jvm.h"
 #include <stddef.h>
-#include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 #include <assert.h>
 #include <limits.h>

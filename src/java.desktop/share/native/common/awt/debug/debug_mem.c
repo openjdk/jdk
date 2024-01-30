@@ -25,6 +25,8 @@
 
 #if defined(DEBUG)
 
+#include <stdlib.h>
+
 #include "debug_util.h"
 
 #define DMEM_MIN(a,b)   (a) < (b) ? (a) : (b)
