@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ extern "C" {
 #define STATUS_FAILED 2
 #define PASSED 0
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiCapabilities caps;
 
 jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
@@ -80,7 +80,7 @@ Java_nsk_jvmti_RedefineClasses_StressRedefine_makeRedefinition(JNIEnv *env,
     jvmtiClassDefinition classDef;
     jvmtiError err;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("JVMTI client was not properly loaded!\n");
         return STATUS_FAILED;
     }
@@ -92,7 +92,7 @@ Java_nsk_jvmti_RedefineClasses_StressRedefine_makeRedefinition(JNIEnv *env,
 /* filling the structure jvmtiClassDefinition */
     classDef.klass = redefCls;
     classDef.class_byte_count = env->GetArrayLength(classBytes);
-    classDef.class_bytes = (unsigned char *) env->GetByteArrayElements(classBytes, NULL);
+    classDef.class_bytes = (unsigned char *) env->GetByteArrayElements(classBytes, nullptr);
 
     if (fl == 2) {
         printf(">>>>>>>> Invoke RedefineClasses():\n");

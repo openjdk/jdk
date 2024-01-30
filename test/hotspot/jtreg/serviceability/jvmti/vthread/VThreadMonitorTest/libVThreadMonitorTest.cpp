@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,13 +35,13 @@ extern "C" {
 #define TEST_CLASS_0 "MonitorClass0"
 #define TEST_CLASS_2 "MonitorClass2"
 
-static jvmtiEnv *jvmti = NULL;
-static jrawMonitorID agent_monitor = NULL;
+static jvmtiEnv *jvmti = nullptr;
+static jrawMonitorID agent_monitor = nullptr;
 static volatile bool was_lock0_contended = false;
 static volatile bool was_lock2_contended = false;
 static volatile jint status = STATUS_PASSED;
-static volatile jclass test_class_0 = NULL;
-static volatile jclass test_class_2 = NULL;
+static volatile jclass test_class_0 = nullptr;
+static volatile jclass test_class_2 = nullptr;
 
 static jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved);
 
@@ -60,7 +60,7 @@ static void ShowErrorMessage(jvmtiEnv *jvmti, jvmtiError errCode,
 }
 
 static jboolean CheckLockObject0(JNIEnv *jni, jobject monitor) {
-  if (test_class_0 == NULL) {
+  if (test_class_0 == nullptr) {
     // JNI_OnLoad has not been called yet, so can't possibly be an instance of TEST_CLASS_0.
     return JNI_FALSE;
   }
@@ -68,7 +68,7 @@ static jboolean CheckLockObject0(JNIEnv *jni, jobject monitor) {
 }
 
 static jboolean CheckLockObject2(JNIEnv *jni, jobject monitor) {
-  if (test_class_2 == NULL) {
+  if (test_class_2 == nullptr) {
     // JNI_OnLoad has not been called yet, so can't possibly be an instance of TEST_CLASS_2.
     return JNI_FALSE;
   }
@@ -98,7 +98,7 @@ check_contended_monitor(jvmtiEnv *jvmti, JNIEnv *jni, const char* func,
       jni->IsSameObject(monitor2, contended_monitor) == JNI_FALSE) {
     LOG("FAIL: is_vt: %d: unexpected monitor from GetCurrentContendedMonitor\n", is_vt);
     LOG("stack trace of current thread:\n");
-    print_stack_trace(jvmti, jni, NULL);
+    print_stack_trace(jvmti, jni, nullptr);
     LOG("stack trace of target thread:\n");
     print_stack_trace(jvmti, jni, thread);
     status = STATUS_FAILED;
@@ -123,7 +123,7 @@ check_owned_monitor(jvmtiEnv *jvmti, JNIEnv *jni, const char* func,
   jvmtiError err;
   jint state = 0;
   jint mcount = -1;
-  jobject *owned_monitors = NULL;
+  jobject *owned_monitors = nullptr;
 
   err = jvmti->GetOwnedMonitorInfo(thread, &mcount, &owned_monitors);
   if (err != JVMTI_ERROR_NONE) {
@@ -182,9 +182,9 @@ MonitorContendedEnter(jvmtiEnv *jvmti, JNIEnv *jni, jthread vthread, jobject mon
   char* ctname = get_thread_name(jvmti, jni, cthread);
 
   check_contended_monitor(jvmti, jni, "MonitorContendedEnter",
-                          vthread, vtname, JNI_TRUE, monitor, NULL);
+                          vthread, vtname, JNI_TRUE, monitor, nullptr);
   check_contended_monitor(jvmti, jni, "MonitorContendedEnter",
-                          cthread,  ctname, JNI_FALSE, NULL, NULL);
+                          cthread,  ctname, JNI_FALSE, nullptr, nullptr);
   check_owned_monitor(jvmti, jni, "MonitorContendedEnter",
                       vthread, vtname, JNI_TRUE, monitor);
   check_owned_monitor(jvmti, jni, "MonitorContendedEnter",
@@ -204,9 +204,9 @@ MonitorContendedEntered(jvmtiEnv *jvmti, JNIEnv *jni, jthread vthread, jobject m
   char* ctname = get_thread_name(jvmti, jni, cthread);
 
   check_contended_monitor(jvmti, jni, "MonitorContendedEntered",
-                          vthread, vtname, JNI_TRUE, NULL, NULL);
+                          vthread, vtname, JNI_TRUE, nullptr, nullptr);
   check_contended_monitor(jvmti, jni, "MonitorContendedEntered",
-                          cthread, ctname, JNI_FALSE, NULL, NULL);
+                          cthread, ctname, JNI_FALSE, nullptr, nullptr);
 
   deallocate(jvmti, jni, (void*)vtname);
   deallocate(jvmti, jni, (void*)ctname);
@@ -226,7 +226,7 @@ static
 jclass find_test_class(JNIEnv *jni, const char* cname) {
   jclass k = jni->FindClass(cname);
 
-  if (k == NULL) {
+  if (k == nullptr) {
     LOG("Error: Could not find class %s!\n", cname);
   } else {
     k = (jclass)jni->NewGlobalRef(k);
@@ -240,7 +240,7 @@ JNI_OnLoad(JavaVM *jvm, void *reserved) {
   JNIEnv *jni;
 
   res = jvm->GetEnv((void **)&jni, JNI_VERSION_9);
-  if (res != JNI_OK || jni == NULL) {
+  if (res != JNI_OK || jni == nullptr) {
     LOG("Error: GetEnv call failed(%d)!\n", res);
     return JNI_ERR;
   }
@@ -248,7 +248,7 @@ JNI_OnLoad(JavaVM *jvm, void *reserved) {
   test_class_0 = find_test_class(jni, TEST_CLASS_0);
   test_class_2 = find_test_class(jni, TEST_CLASS_2);
 
-  if (test_class_0 == NULL || test_class_2 == NULL) {
+  if (test_class_0 == nullptr || test_class_2 == nullptr) {
     return JNI_ERR;
   }
   return JNI_VERSION_9;
@@ -264,7 +264,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   LOG("Agent_OnLoad started\n");
 
   res = jvm->GetEnv((void **)&jvmti, JVMTI_VERSION);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     LOG("Error: wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }
@@ -315,14 +315,14 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   }
 
   err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-                                        JVMTI_EVENT_MONITOR_CONTENDED_ENTER, NULL);
+                                        JVMTI_EVENT_MONITOR_CONTENDED_ENTER, nullptr);
   if (err != JVMTI_ERROR_NONE) {
     ShowErrorMessage(jvmti, err, "Agent_OnLoad",
                      "error in JVMTI SetEventNotificationMode #1");
     return JNI_ERR;
   }
   err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-                                        JVMTI_EVENT_MONITOR_CONTENDED_ENTERED, NULL);
+                                        JVMTI_EVENT_MONITOR_CONTENDED_ENTERED, nullptr);
   if (err != JVMTI_ERROR_NONE) {
     ShowErrorMessage(jvmti, err, "Agent_OnLoad",
                      "error in JVMTI SetEventNotificationMode #2");

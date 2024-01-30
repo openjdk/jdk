@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,9 +100,9 @@ static int check_option(int dashed, const char name[], const char value[]) {
             return NSK_FALSE;
         }
         {
-            char* end = NULL;
+            char* end = nullptr;
             long n = strtol(value, &end, 10);
-            if (end == NULL || end == value || *end != '\0') {
+            if (end == nullptr || end == value || *end != '\0') {
                 nsk_complain("nsk_jvmti_parseOptions(): not integer value in option: %s=%s\n", name, value);
                 return NSK_FALSE;
             }
@@ -140,7 +140,7 @@ static int add_option(const char opt[], int opt_len, const char val[], int val_l
     name = (char*)malloc(opt_len + 1);
     value = (char*)malloc(val_len + 1);
 
-    if (name == NULL || value == NULL) {
+    if (name == nullptr || value == nullptr) {
         nsk_complain("nsk_jvmti_parseOptions(): out of memory\n");
         success = NSK_FALSE;
     } else {
@@ -166,9 +166,9 @@ static int add_option(const char opt[], int opt_len, const char val[], int val_l
     }
 
     if (!success) {
-        if (name != NULL)
+        if (name != nullptr)
             free(name);
-        if (value != NULL)
+        if (value != nullptr)
             free(value);
     }
 
@@ -184,9 +184,9 @@ static void nsk_jvmti_free() {
         }
         context.options.count = 0;
     }
-    if (context.options.string != NULL) {
+    if (context.options.string != nullptr) {
         free(context.options.string);
-        context.options.string = NULL;
+        context.options.string = nullptr;
     }
 }
 
@@ -198,18 +198,18 @@ static char* token(char **s, const char *delim) {
   char *p;
   char *start = *s;
 
-  if (s == NULL || *s == NULL) {
-    return NULL;
+  if (s == nullptr || *s == nullptr) {
+    return nullptr;
   }
 
   p = strpbrk(*s, delim);
-  if (p != NULL) {
+  if (p != nullptr) {
     /* Advance to next token. */
     *p = '\0';
     *s = p + 1;
   } else {
     /* End of tokens. */
-    *s = NULL;
+    *s = nullptr;
   }
 
   return start;
@@ -218,11 +218,11 @@ static char* token(char **s, const char *delim) {
 int nsk_jvmti_parseOptions(const char options[]) {
     int success = NSK_TRUE;
 
-    char *str = NULL;
-    char *name = NULL;
-    char *value = NULL;
+    char *str = nullptr;
+    char *name = nullptr;
+    char *value = nullptr;
     const char *delimiters = " ,~";
-    if (options == NULL)
+    if (options == nullptr)
         return success;
 
     /*
@@ -233,10 +233,10 @@ int nsk_jvmti_parseOptions(const char options[]) {
 
     /* Create a temporary copy of the options string to be tokenized. */
     str = strdup(options);
-    while ((name = token(&str, delimiters)) != NULL) {
+    while ((name = token(&str, delimiters)) != nullptr) {
         value = strchr(name, '=');
 
-        if (value != NULL) {
+        if (value != nullptr) {
             *value++ = '\0';
         }
         if (!add_option(name, (int)strlen(name), value,
@@ -248,7 +248,7 @@ int nsk_jvmti_parseOptions(const char options[]) {
     if (!success) {
         nsk_jvmti_free();
     }
-    if (str != NULL) {
+    if (str != nullptr) {
       free(str);
     }
     return success;
@@ -257,45 +257,45 @@ int nsk_jvmti_parseOptions(const char options[]) {
 /*************************************************************/
 
 /**
- * Returns value of given option name; or NULL if no such option found.
- * If search name is NULL then complains an error and returns NULL.
+ * Returns value of given option name; or nullptr if no such option found.
+ * If search name is nullptr then complains an error and returns nullptr.
  */
 const char* nsk_jvmti_findOptionValue(const char name[]) {
     int i;
 
-    if (name == NULL) {
-        nsk_complain("nsk_jvmti_findOptionValue(): option name is NULL\n");
-        return NULL;
+    if (name == nullptr) {
+        nsk_complain("nsk_jvmti_findOptionValue(): option name is null\n");
+        return nullptr;
     }
 
     for (i = 0; i < context.options.count; i++) {
         if (strcmp(name, context.options.names[i]) == 0)
             return context.options.values[i];
     }
-    return NULL;
+    return nullptr;
 }
 
 /**
  * Returns string value of given option; or defaultValue if no such option found.
- * If options is specified but has empty value then complains an error and returns NULL.
+ * If options is specified but has empty value then complains an error and returns nullptr.
  */
 const char* nsk_jvmti_findOptionStringValue(const char name[], const char* defaultValue) {
     const char* value;
 
-    if (name == NULL) {
-        nsk_complain("nsk_jvmti_findOptionStringValue(): option name is NULL\n");
-        return NULL;
+    if (name == nullptr) {
+        nsk_complain("nsk_jvmti_findOptionStringValue(): option name is null\n");
+        return nullptr;
     }
 
     value = nsk_jvmti_findOptionValue(name);
-    if (value == NULL) {
+    if (value == nullptr) {
         return defaultValue;
     }
 
     if (strlen(value) <= 0) {
         nsk_complain("nsk_jvmti_findOptionStringValue(): empty value of option: %s=%s\n",
                                                                             name, value);
-        return NULL;
+        return nullptr;
     }
     return value;
 }
@@ -307,13 +307,13 @@ const char* nsk_jvmti_findOptionStringValue(const char name[], const char* defau
 int nsk_jvmti_findOptionIntValue(const char name[], int defaultValue) {
     const char* value;
 
-    if (name == NULL) {
-        nsk_complain("nsk_jvmti_findOptionIntValue(): option name is NULL\n");
+    if (name == nullptr) {
+        nsk_complain("nsk_jvmti_findOptionIntValue(): option name is null\n");
         return -1;
     }
 
     value = nsk_jvmti_findOptionValue(name);
-    if (value == NULL) {
+    if (value == nullptr) {
         return defaultValue;
     }
 
@@ -324,10 +324,10 @@ int nsk_jvmti_findOptionIntValue(const char name[], int defaultValue) {
     }
 
     {
-        char* endptr = NULL;
+        char* endptr = nullptr;
         int n = strtol(value, &endptr, 10);
 
-        if (endptr == NULL || *endptr != '\0') {
+        if (endptr == nullptr || *endptr != '\0') {
             nsk_complain("nsk_jvmti_findOptionIntValue(): not integer value of option: %s=%s\n",
                                                                             name, value);
             return -1;
@@ -345,24 +345,24 @@ int nsk_jvmti_getOptionsCount() {
 
 /**
  * Returns name of i-th parsed option.
- * If no such option then complains an error and returns NULL.
+ * If no such option then complains an error and returns nullptr.
  */
 const char* nsk_jvmti_getOptionName(int i) {
     if (i < 0 || i >= context.options.count) {
         nsk_complain("nsk_jvmti_getOptionName(): option index out of bounds: %d\n", i);
-        return NULL;
+        return nullptr;
     }
     return context.options.names[i];
 }
 
 /**
  * Returns value of i-th parsed option.
- * If no such option then complains an error and returns NULL.
+ * If no such option then complains an error and returns nullptr.
  */
 const char* nsk_jvmti_getOptionValue(int i) {
     if (i < 0 || i >= context.options.count) {
         nsk_complain("nsk_jvmti_getOptionValue(): option index out of bounds: %d\n", i);
-        return NULL;
+        return nullptr;
     }
     return context.options.values[i];
 }
@@ -414,10 +414,10 @@ int nsk_jvmti_lverify(int positive, jvmtiError error, jvmtiError expected,
 
 JNIEXPORT jstring JNICALL
 Java_nsk_share_jvmti_ArgumentHandler_getAgentOptionsString(JNIEnv *jni, jobject obj) {
-    jstring str_obj = NULL;
+    jstring str_obj = nullptr;
 
-    if (!NSK_JNI_VERIFY(jni, (str_obj = jni->NewStringUTF(context.options.string)) != NULL)) {
-        return NULL;
+    if (!NSK_JNI_VERIFY(jni, (str_obj = jni->NewStringUTF(context.options.string)) != nullptr)) {
+        return nullptr;
     }
     return str_obj;
 }
@@ -453,13 +453,13 @@ int nsk_jvmti_redefineClass(jvmtiEnv * jvmti,
         jclass classToRedefine,
         const char * fileName) {
     redefineAttempted = NSK_TRUE;
-    if (nsk_jvmti_findOptionValue(NSK_JVMTI_OPT_PATH_TO_NEW_BYTE_CODE) == NULL) {
+    if (nsk_jvmti_findOptionValue(NSK_JVMTI_OPT_PATH_TO_NEW_BYTE_CODE) == nullptr) {
         nsk_printf("#   error expected: %s \n", NSK_JVMTI_OPT_PATH_TO_NEW_BYTE_CODE);
         nsk_printf("Hint :: missing java -agentlib:agentlib=%s=DirName, ($TESTBASE/bin) \n",
                    NSK_JVMTI_OPT_PATH_TO_NEW_BYTE_CODE);
         return NSK_FALSE;
     }
-    if (fileName == NULL) {
+    if (fileName == nullptr) {
         nsk_printf("# error file name expected did not found \n");
         return NSK_FALSE;
     }
@@ -479,7 +479,7 @@ int nsk_jvmti_redefineClass(jvmtiEnv * jvmti,
 
             bytecode = fopen(file, "rb");
             error= JVMTI_ERROR_NONE;
-            if (bytecode == NULL) {
+            if (bytecode == nullptr) {
                 nsk_printf("# error **Agent::error opening file %s \n",file);
                 return NSK_FALSE;
             }
@@ -594,7 +594,7 @@ int suspendThreadAtMethod(jvmtiEnv *jvmti, jclass cls, jobject thread, jmethodID
     }
 
     int result = NSK_TRUE;
-    jmethodID method = NULL;
+    jmethodID method = nullptr;
     jlocation loc;
 
     // We need to ensure that the thread is suspended at the right place when the top
