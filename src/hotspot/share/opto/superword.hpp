@@ -201,11 +201,10 @@ class SWNodeInfo {
 // Transforms scalar operations into packed (superword) operations.
 class SuperWord : public ResourceObj {
  friend class VPointer;
- friend class CMoveKit;
+ friend class CMoveKit; // TODO remove
  private:
-  PhaseIdealLoop* _phase;
-  Arena*          _arena;
-  PhaseIterGVN   &_igvn;
+  const VLoop& _vloop;
+  Arena* _arena;
 
   enum consts { top_align = -1, bottom_align = -666 };
 
@@ -226,19 +225,28 @@ class SuperWord : public ResourceObj {
   // Scratch pads
   GrowableArray<Node*> _nlist; // List of nodes
 
+  static constexpr char const* SUCCESS                 = "success";
+  static constexpr char const* FAILURE_NO_MAX_UNROLL   = "slp max unroll analysis required";
+  static constexpr char const* FAILURE_SLP_EXTRACT     = "SuperWord::SLP_extract failed";
+
  public:
-  SuperWord(PhaseIdealLoop* phase);
+  SuperWord(Arena* arena, const VLoop &vloop);
 
-  bool transform_loop(IdealLoopTree* lpt, bool do_optimization);
+  // Attempt to run the SuperWord algorithm on the loop. Return true if we succeed.
+  bool transform_loop();
 
-  void unrolling_analysis(int &local_loop_unroll_factor);
+  // Decide if loop can eventually be vectorized, and what unrolling factor is required.
+  static void unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_factor);
 
-  // Accessors for VPointer
-  PhaseIdealLoop* phase() const    { return _phase; }
-  IdealLoopTree* lpt() const       { return _lpt; }
-  PhiNode* iv() const              { return _iv; }
-
-  bool early_return() const        { return _early_return; }
+  // VLoop Accessors
+  const VLoop& vloop()        const { return _vloop; }
+  PhaseIdealLoop* phase()     const { return vloop().phase(); }
+  PhaseIterGVN& igvn()        const { return vloop().phase()->igvn(); }
+  IdealLoopTree* lpt()        const { return vloop().lpt(); }
+  CountedLoopNode* cl()       const { return vloop().cl(); }
+  PhiNode* iv()               const { return vloop().iv(); }
+  int iv_stride()             const { return cl()->stride_con(); }
+  bool in_bb(const Node* n)   const { return vloop().in_bb(n); }
 
 #ifndef PRODUCT
   // TraceAutoVectorization and TraceSuperWord
@@ -319,11 +327,8 @@ class SuperWord : public ResourceObj {
   const GrowableArray<Node*>&      block()   const { return _block; }
   const DepGraph&                  dg()      const { return _dg; }
  private:
-  IdealLoopTree* _lpt;             // Current loop tree node
   CountedLoopNode* _lp;            // Current CountedLoopNode
   VectorSet      _loop_reductions; // Reduction nodes in the current loop
-  Node*          _bb;              // Current basic block
-  PhiNode*       _iv;              // Induction var
   bool           _race_possible;   // In cases where SDMU is true
   bool           _early_return;    // True if we do not initialize
   bool           _do_vector_loop;  // whether to do vectorization/simd style
@@ -333,16 +338,6 @@ class SuperWord : public ResourceObj {
 
   // Accessors
   Arena* arena()                   { return _arena; }
-
-  Node* bb()                       { return _bb; }
-  void set_bb(Node* bb)            { _bb = bb; }
-  void set_lpt(IdealLoopTree* lpt) { _lpt = lpt; }
-  CountedLoopNode* lp() const      { return _lp; }
-  void set_lp(CountedLoopNode* lp) {
-    _lp = lp;
-    _iv = lp->as_CountedLoop()->phi()->as_Phi();
-  }
-  int iv_stride() const            { return lp()->stride_con(); }
 
   int vector_width(const Node* n) const {
     BasicType bt = velt_basic_type(n);
@@ -356,11 +351,8 @@ class SuperWord : public ResourceObj {
   const MemNode* align_to_ref() const { return _align_to_ref; }
   void set_align_to_ref(const MemNode* m) { _align_to_ref = m; }
 
-  const Node* ctrl(const Node* n) const { return _phase->has_ctrl(n) ? _phase->get_ctrl(n) : n; }
-
   // block accessors
  public:
-  bool in_bb(const Node* n) const  { return n != nullptr && n->outcnt() > 0 && ctrl(n) == _bb; }
   int  bb_idx(const Node* n) const { assert(in_bb(n), "must be"); return _bb_idx.at(n->_idx); }
  private:
   void set_bb_idx(Node* n, int i)  { _bb_idx.at_put_grow(n->_idx, i); }
@@ -457,6 +449,8 @@ private:
   // that it assumes counted loops and requires that reduction nodes are not
   // used within the loop except by their reduction cycle predecessors.
   void mark_reductions();
+  // Attempt to run the SuperWord algorithm on the loop.
+  const char* transform_loop_helper();
   // Extract the superword level parallelism
   bool SLP_extract();
   // Find the adjacent memory references and create pack pairs for them.

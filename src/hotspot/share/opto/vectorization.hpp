@@ -48,6 +48,86 @@ public:
 };
 #endif
 
+// Basic loop structure accessors and vectorization precondition checking
+class VLoop : public StackObj {
+private:
+  PhaseIdealLoop* const _phase;
+  IdealLoopTree* const _lpt;
+  const bool _allow_cfg;
+  CountedLoopNode* _cl;
+  Node* _cl_exit;
+  PhiNode* _iv;
+  CountedLoopEndNode* _pre_loop_end; // cache access to pre-loop for main loops only
+
+  NOT_PRODUCT(VTrace _vtrace;)
+
+  static constexpr char const* SUCCESS                    = "success";
+  static constexpr char const* FAILURE_ALREADY_VECTORIZED = "loop already vectorized";
+  static constexpr char const* FAILURE_UNROLL_ONLY        = "loop only wants to be unrolled";
+  static constexpr char const* FAILURE_VECTOR_WIDTH       = "vector_width must be power of 2";
+  static constexpr char const* FAILURE_VALID_COUNTED_LOOP = "must be valid counted loop (int)";
+  static constexpr char const* FAILURE_CONTROL_FLOW       = "control flow in loop not allowed";
+  static constexpr char const* FAILURE_BACKEDGE           = "nodes on backedge not allowed";
+  static constexpr char const* FAILURE_PRE_LOOP_LIMIT     = "main-loop must be able to adjust pre-loop-limit (not found)";
+
+public:
+  VLoop(IdealLoopTree* lpt, bool allow_cfg) :
+    _phase     (lpt->_phase),
+    _lpt       (lpt),
+    _allow_cfg (allow_cfg),
+    _cl        (nullptr),
+    _cl_exit   (nullptr),
+    _iv        (nullptr) {}
+  NONCOPYABLE(VLoop);
+
+  IdealLoopTree* lpt()        const { return _lpt; };
+  PhaseIdealLoop* phase()     const { return _phase; }
+  CountedLoopNode* cl()       const { return _cl; };
+  Node* cl_exit()             const { return _cl_exit; };
+  PhiNode* iv()               const { return _iv; };
+  int iv_stride()             const { return cl()->stride_con(); };
+  bool is_allow_cfg()         const { return _allow_cfg; }
+
+  CountedLoopEndNode* pre_loop_end() const {
+    assert(cl()->is_main_loop(), "only main loop can reference pre-loop");
+    assert(_pre_loop_end != nullptr, "must have found it");
+    return _pre_loop_end;
+  };
+
+  CountedLoopNode* pre_loop_head() const {
+    CountedLoopNode* head = pre_loop_end()->loopnode();
+    assert(head != nullptr, "must find head");
+    return head;
+  };
+
+  // TODO necessary?
+  int estimated_body_length() const { return lpt()->_body.size(); };
+  int estimated_node_count()  const { return (int)(1.10 * phase()->C->unique()); };
+
+#ifndef PRODUCT
+  const VTrace& vtrace()      const { return _vtrace; }
+
+  bool is_trace_precondition() const {
+    // TODO rm SW
+    return vtrace().is_trace(TraceAutoVectorizationTag::SW_PRECONDITION);
+  }
+#endif
+
+  // Is the node in the basic block of the loop?
+  // We only accept any nodes which have the loop head as their ctrl.
+  bool in_bb(const Node* n) const {
+    const Node* ctrl = _phase->has_ctrl(n) ? _phase->get_ctrl(n) : n;
+    return n != nullptr && n->outcnt() > 0 && ctrl == _cl;
+  }
+
+  // Check if the loop passes some basic preconditions for vectorization.
+  // Return indicates if analysis succeeded.
+  bool check_preconditions();
+
+private:
+  const char* check_preconditions_helper();
+};
+
 // A vectorization pointer (VPointer) has information about an address for
 // dependence checking and vector alignment. It's usually bound to a memory
 // operation in a counted loop for vectorizable analysis.

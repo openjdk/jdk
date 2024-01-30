@@ -45,7 +45,6 @@
 #include "opto/predicates.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
-#include "opto/superword.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -4863,29 +4862,16 @@ void PhaseIdealLoop::build_and_optimize() {
      C->set_major_progress();
   }
 
-  // Convert scalar to superword operations at the end of all loop opts.
+  // Auto-vectorize main-loop
   if (C->do_superword() && C->has_loops() && !C->major_progress()) {
-    // SuperWord transform
-    SuperWord sw(this);
+    ResourceArea autovectorization_arena;
     for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
       IdealLoopTree* lpt = iter.current();
-      if (lpt->is_counted()) {
-        CountedLoopNode *cl = lpt->_head->as_CountedLoop();
-        if (cl->is_main_loop()) {
-          if (!sw.transform_loop(lpt, true)) {
-            // Instigate more unrolling for optimization when vectorization fails.
-            if (cl->has_passed_slp()) {
-              C->set_major_progress();
-              cl->set_notpassed_slp();
-              cl->mark_do_unroll_only();
-            }
-          }
-        }
-      }
+      autovectorize(lpt, &autovectorization_arena);
     }
   }
 
-  // Move UnorderedReduction out of counted loop. Can be introduced by SuperWord.
+  // Move UnorderedReduction out of counted loop. Can be introduced by AutoVectorization.
   if (C->has_loops() && !C->major_progress()) {
     for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
       IdealLoopTree* lpt = iter.current();

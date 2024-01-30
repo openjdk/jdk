@@ -31,6 +31,89 @@
 #include "opto/rootnode.hpp"
 #include "opto/vectorization.hpp"
 
+bool VLoop::check_preconditions() {
+#ifndef PRODUCT
+  if (is_trace_precondition()) {
+    tty->print_cr("\nVLoop::check_precondition");
+    lpt()->dump_head();
+    lpt()->head()->dump();
+  }
+#endif
+
+  const char* return_state = check_preconditions_helper();
+  assert(return_state != nullptr, "must have return state");
+  if (return_state == VLoop::SUCCESS) {
+    return true; // success
+  }
+
+#ifndef PRODUCT
+  if (is_trace_precondition()) {
+    tty->print_cr("VLoop::check_precondition: failed: %s", return_state);
+  }
+#endif
+  return false; // failure
+}
+
+const char* VLoop::check_preconditions_helper() {
+  // Only accept vector width that is power of 2
+  int vector_width = Matcher::vector_width_in_bytes(T_BYTE);
+  if (vector_width < 2 || !is_power_of_2(vector_width)) {
+    return VLoop::FAILURE_VECTOR_WIDTH;
+  }
+
+  // Only accept valid counted loops (int)
+  if (!_lpt->_head->as_Loop()->is_valid_counted_loop(T_INT)) {
+    return VLoop::FAILURE_VALID_COUNTED_LOOP;
+  }
+  _cl = _lpt->_head->as_CountedLoop();
+  _iv = _cl->phi()->as_Phi();
+
+  if (_cl->is_vectorized_loop()) {
+    return VLoop::FAILURE_ALREADY_VECTORIZED;
+  }
+
+  if (_cl->is_unroll_only()) {
+    return VLoop::FAILURE_UNROLL_ONLY;
+  }
+
+  // Check for control flow in the body
+  _cl_exit = _cl->loopexit();
+  bool has_cfg = _cl_exit->in(0) != _cl;
+  if (has_cfg && !is_allow_cfg()) {
+#ifndef PRODUCT
+    if (is_trace_precondition()) {
+      tty->print_cr("VLoop::check_preconditions: fails because of control flow.");
+      tty->print("  cl_exit %d", _cl_exit->_idx); _cl_exit->dump();
+      tty->print("  cl_exit->in(0) %d", _cl_exit->in(0)->_idx); _cl_exit->in(0)->dump();
+      tty->print("  lpt->_head %d", _cl->_idx); _cl->dump();
+      _lpt->dump_head();
+    }
+#endif
+    return VLoop::FAILURE_CONTROL_FLOW;
+  }
+
+  // Make sure the are no extra control users of the loop backedge
+  if (_cl->back_control()->outcnt() != 1) {
+    return VLoop::FAILURE_BACKEDGE;
+  }
+
+  // To align vector memory accesses in the main-loop, we will have to adjust
+  // the pre-loop limit.
+  if (_cl->is_main_loop()) {
+    CountedLoopEndNode* pre_end = _cl->find_pre_loop_end();
+    if (pre_end == nullptr) {
+      return VLoop::FAILURE_PRE_LOOP_LIMIT;
+    }
+    Node* pre_opaq1 = pre_end->limit();
+    if (pre_opaq1->Opcode() != Op_Opaque1) {
+      return VLoop::FAILURE_PRE_LOOP_LIMIT;
+    }
+    _pre_loop_end = pre_end;
+  }
+
+  return VLoop::SUCCESS;
+}
+
 #ifndef PRODUCT
 int VPointer::Tracer::_depth = 0;
 #endif

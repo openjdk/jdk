@@ -1437,6 +1437,9 @@ public:
   bool partial_peel( IdealLoopTree *loop, Node_List &old_new );
   bool duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old_new);
 
+  // Apply autovectorization if possible
+  bool autovectorize(IdealLoopTree* lpt, ResourceArea* arena);
+
   // Move UnorderedReduction out of loop if possible
   void move_unordered_reduction_out_of_loop(IdealLoopTree* loop);
 
