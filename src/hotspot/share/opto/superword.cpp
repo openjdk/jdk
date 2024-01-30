@@ -420,10 +420,6 @@ const char* SuperWord::transform_loop_helper() {
     return SuperWord::FAILURE_NO_MAX_UNROLL;
   }
 
-  if (SuperWordReductions) {
-    mark_reductions();
-  }
-
   return SLP_extract() ? SuperWord::SUCCESS
                        : SuperWord::FAILURE_SLP_EXTRACT;
 }
@@ -465,6 +461,10 @@ const char* SuperWord::transform_loop_helper() {
 bool SuperWord::SLP_extract() {
   CountedLoopNode* cl = lpt()->_head->as_CountedLoop();
   assert(cl->is_main_loop(), "SLP should only work on main loops");
+
+  if (SuperWordReductions) {
+    mark_reductions();
+  }
 
   // Ready the block
   if (!construct_bb()) {
