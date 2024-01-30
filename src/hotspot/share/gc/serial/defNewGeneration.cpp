@@ -649,6 +649,12 @@ size_t DefNewGeneration::max_capacity() const {
   return reserved_bytes - compute_survivor_size(reserved_bytes, SpaceAlignment);
 }
 
+bool DefNewGeneration::is_in(const void* p) const {
+  return eden()->is_in(p)
+      || from()->is_in(p)
+      || to()  ->is_in(p);
+}
+
 size_t DefNewGeneration::unsafe_max_alloc_nogc() const {
   return eden()->free();
 }

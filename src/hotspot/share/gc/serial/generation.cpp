@@ -83,26 +83,6 @@ void Generation::print_summary_info_on(outputStream* st) {
                sr->invocations > 0 ? time / sr->invocations : 0.0);
 }
 
-// Utility iterator classes
-
-class GenerationIsInClosure : public SpaceClosure {
- public:
-  const void* _p;
-  Space* sp;
-  virtual void do_space(Space* s) {
-    if (sp == nullptr) {
-      if (s->is_in(_p)) sp = s;
-    }
-  }
-  GenerationIsInClosure(const void* p) : _p(p), sp(nullptr) {}
-};
-
-bool Generation::is_in(const void* p) const {
-  GenerationIsInClosure blk(p);
-  ((Generation*)this)->space_iterate(&blk);
-  return blk.sp != nullptr;
-}
-
 size_t Generation::max_contiguous_available() const {
   // The largest number of contiguous free words in this or any higher generation.
   size_t avail = contiguous_available();
@@ -163,23 +143,4 @@ HeapWord* Generation::block_start(const void* p) const {
   // Cast away const
   ((Generation*)this)->space_iterate(&blk);
   return blk._start;
-}
-
-class GenerationBlockIsObjClosure : public SpaceClosure {
- public:
-  const HeapWord* _p;
-  bool is_obj;
-  virtual void do_space(Space* s) {
-    if (!is_obj && s->is_in_reserved(_p)) {
-      is_obj |= s->block_is_obj(_p);
-    }
-  }
-  GenerationBlockIsObjClosure(const HeapWord* p) { _p = p; is_obj = false; }
-};
-
-bool Generation::block_is_obj(const HeapWord* p) const {
-  GenerationBlockIsObjClosure blk(p);
-  // Cast away const
-  ((Generation*)this)->space_iterate(&blk);
-  return blk.is_obj;
 }

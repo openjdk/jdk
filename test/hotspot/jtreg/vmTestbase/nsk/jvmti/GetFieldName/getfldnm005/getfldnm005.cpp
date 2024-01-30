@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ extern "C" {
 /* expected field signatures are below */
 static const char *fld_sig[][FLDS_NUM] = {
     { "_getfldnm005St", "static",
-      "Lnsk/jvmti/GetFieldName/getfldnm005;", "NULL" },
+      "Lnsk/jvmti/GetFieldName/getfldnm005;", "null" },
 
     { "_getfldnm005b", "instance",
       "Lnsk/jvmti/GetFieldName/getfldnm005b;",
@@ -59,10 +59,10 @@ static const char *fld_sig[][FLDS_NUM] = {
 
     { "_getfldnm005e", "instance",
       "Lnsk/jvmti/GetFieldName/getfldnm005e;",
-      "NULL" },
+      "null" },
     { "_getfldnm005eSt", "static",
       "Lnsk/jvmti/GetFieldName/getfldnm005e;",
-      "NULL" },
+      "null" },
 
     { "_getfldnm005if", "instance",
       "Lnsk/jvmti/GetFieldName/getfldnm005if;",
@@ -80,10 +80,10 @@ static const char *fld_sig[][FLDS_NUM] = {
 
     { "_getfldnm005gArr", "instance",
       "[Lnsk/jvmti/GetFieldName/getfldnm005g;",
-      "NULL" }
+      "null" }
 };
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 
 static int checkSig(JNIEnv *jni_env, jclass testedCls,
         jfieldID testedFld, int instance, int idx) {
@@ -101,7 +101,7 @@ static int checkSig(JNIEnv *jni_env, jclass testedCls,
             name);
 
         if (strcmp(fld_sig[idx][2], sign) != 0 ||
-                strcmp(fld_sig[idx][3], (gen_sign == NULL) ? "NULL" : gen_sign) != 0) {
+                strcmp(fld_sig[idx][3], (gen_sign == nullptr) ? "null" : gen_sign) != 0) {
             NSK_COMPLAIN6(
                 "TEST FAILED: %s field \"%s\" has\n"
                 "\tsignature: \"%s\"\n"
@@ -110,20 +110,20 @@ static int checkSig(JNIEnv *jni_env, jclass testedCls,
                 "\t\t\"%s\"\n\n",
                (instance == 0) ? "instance" : "static",
                 fld_sig[idx][0],
-                sign, (gen_sign == NULL) ? "NULL" : gen_sign,
+                sign, (gen_sign == nullptr) ? "null" : gen_sign,
                 fld_sig[idx][2], fld_sig[idx][3]);
             totRes = STATUS_FAILED;
         }
         else
             NSK_DISPLAY2("CHECK PASSED: signature: \"%s\",\n\tgeneric signature: \"%s\"\n",
-                sign, (gen_sign == NULL) ? "NULL" : gen_sign);
+                sign, (gen_sign == nullptr) ? "null" : gen_sign);
 
         NSK_DISPLAY0("Deallocating name & signature arrays\n");
         if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*) name)))
             totRes = STATUS_FAILED;
         if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*) sign)))
             totRes = STATUS_FAILED;
-        if (gen_sign != NULL)
+        if (gen_sign != nullptr)
             if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*) gen_sign)))
                 totRes = STATUS_FAILED;
     }
@@ -135,7 +135,7 @@ JNIEXPORT jint JNICALL
 Java_nsk_jvmti_GetFieldName_getfldnm005_check(
         JNIEnv *jni, jobject obj) {
     int res = PASSED, i, instance;
-    jfieldID testedFld = NULL;
+    jfieldID testedFld = nullptr;
     jclass objCls = jni->GetObjectClass(obj);
 
     for (i=0; i<FLDS_NUM; i++) {
@@ -145,7 +145,7 @@ Java_nsk_jvmti_GetFieldName_getfldnm005_check(
             (instance == 0) ? "instance" : "static",
              fld_sig[i][0]);
         if (instance == 0) {
-            if (!NSK_JNI_VERIFY(jni, (testedFld = jni->GetFieldID(objCls, fld_sig[i][0], fld_sig[i][2])) != NULL)) {
+            if (!NSK_JNI_VERIFY(jni, (testedFld = jni->GetFieldID(objCls, fld_sig[i][0], fld_sig[i][2])) != nullptr)) {
                 NSK_COMPLAIN1("TEST FAILERE: unable to get field ID for \"%s\"\n\n",
                     fld_sig[i][0]);
                 res = STATUS_FAILED;
@@ -153,7 +153,7 @@ Java_nsk_jvmti_GetFieldName_getfldnm005_check(
             }
         }
         else
-            if (!NSK_JNI_VERIFY(jni, (testedFld = jni->GetStaticFieldID(objCls, fld_sig[i][0], fld_sig[i][2])) != NULL)) {
+            if (!NSK_JNI_VERIFY(jni, (testedFld = jni->GetStaticFieldID(objCls, fld_sig[i][0], fld_sig[i][2])) != nullptr)) {
                 NSK_COMPLAIN1("TEST FAILERE: unable to get field ID for \"%s\"\n\n",
                     fld_sig[i][0]);
                 res = STATUS_FAILED;
@@ -189,7 +189,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     /* create JVMTI environment */
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     return JNI_OK;
