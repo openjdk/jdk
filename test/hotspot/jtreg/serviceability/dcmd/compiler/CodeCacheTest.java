@@ -58,7 +58,7 @@ public class CodeCacheTest {
      * CodeCache: size=245760Kb used=1366Kb max_used=1935Kb free=244393Kb
      *  bounds [0x00007ff4d89f2000, 0x00007ff4d8c62000, 0x00007ff4e79f2000]
      *  total_blobs=474, nmethods=87, adapters=293, full_count=0
-     * Compilation:enabled, stopped_count=0, restarted_count=0
+     * Compilation: enabled, stopped_count=0, restarted_count=0
      *
      * Expected output with code cache segmentation (number of segments may change):
      *
@@ -70,7 +70,7 @@ public class CodeCacheTest {
      *  bounds [0x00007f09f7dc1000, 0x00007f09f8031000, 0x00007f09f8622000]
      * CodeCache: size=245760Kb, used=1366Kb, max_used=1942Kb, free=244392Kb
      *  total_blobs=474, nmethods=87, adapters=293, full_count=0
-     * Compilation:enabled, stopped_count=0, restarted_count=0
+     * Compilation: enabled, stopped_count=0, restarted_count=0
      */
 
     static Pattern line1 = Pattern.compile("(CodeCache|CodeHeap.*): size=(\\p{Digit}*)Kb used=(\\p{Digit}*)Kb max_used=(\\p{Digit}*)Kb free=(\\p{Digit}*)Kb");

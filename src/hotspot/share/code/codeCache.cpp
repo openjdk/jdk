@@ -1786,19 +1786,19 @@ void CodeCache::print_summary(outputStream* st, bool detailed) {
     if (SegmentedCodeCache) {
       st->print("CodeCache:");
       st->print_cr(" size=" JULONG_FORMAT "Kb, used=" JULONG_FORMAT
-                  "Kb, max_used=" JULONG_FORMAT "Kb, free=" JULONG_FORMAT "Kb",
-                  total_size, total_used, total_max_used, total_free);
+                   "Kb, max_used=" JULONG_FORMAT "Kb, free=" JULONG_FORMAT "Kb",
+                   total_size, total_used, total_max_used, total_free);
     }
     st->print_cr(" total_blobs=" UINT32_FORMAT ", nmethods=" UINT32_FORMAT
                  ", adapters=" UINT32_FORMAT ", full_count=" UINT32_FORMAT,
                  blob_count(), nmethod_count(), adapter_count(), full_count);
     st->print_cr("Compilation: %s, stopped_count=%d, restarted_count=%d",
-                CompileBroker::should_compile_new_jobs() ?
-                "enabled" : Arguments::mode() == Arguments::_int ?
-                "disabled (interpreter mode)" :
-                "disabled (not enough contiguous free space left)",
-                CompileBroker::get_total_compiler_stopped_count(),
-                CompileBroker::get_total_compiler_restarted_count());
+                 CompileBroker::should_compile_new_jobs() ?
+                 "enabled" : Arguments::mode() == Arguments::_int ?
+                 "disabled (interpreter mode)" :
+                 "disabled (not enough contiguous free space left)",
+                 CompileBroker::get_total_compiler_stopped_count(),
+                 CompileBroker::get_total_compiler_restarted_count());
   }
 }
 
