@@ -105,13 +105,6 @@ void CompiledDirectCall::set_to_interpreted(const methodHandle& callee, address 
   address stub = find_stub();
   guarantee(stub != nullptr, "stub not found");
 
-  {
-    ResourceMark rm;
-    log_trace(inlinecache)("CompiledDirectStaticCall@" INTPTR_FORMAT ": set_to_interpreted %s",
-                  p2i(instruction_address()),
-                  callee->name_and_sig_as_C_string());
-  }
-
   // Creation also verifies the object.
   NativeMovConstReg* method_holder = nativeMovConstReg_at(stub);
   NativeJump*        jump          = nativeJump_at(method_holder->next_instruction_address());

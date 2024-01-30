@@ -625,11 +625,9 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
   Label skip_fixup;
   const Register receiver       = R0;
   const Register holder_klass   = Rtemp; // XXX should be OK for C2 but not 100% sure
-  const Register receiver_klass = R4;
 
   __ ic_check(1 /* end_alignment */);
-  __ ldr(Rmethod, Address(receiver_klass, CompiledICData::speculated_method_offset()));
-
+  __ ldr(Rmethod, Address(Ricklass, CompiledICData::speculated_method_offset()));
 
   __ ldr(Rtemp, Address(Rmethod, Method::code_offset()), eq);
   __ cmp(Rtemp, 0, eq);
