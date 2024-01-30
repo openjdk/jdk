@@ -102,12 +102,13 @@ closeDescriptors(void)
     }
 
     while ((dirp = readdir(dp)) != NULL) {
-        int fd;
-        if (isdigit(dirp->d_name[0]) &&
-            (fd = strtol(dirp->d_name, NULL, 10)) >= from_fd) {
-            (void)close(fd);
+        if (!isdigit(dirp->d_name[0])) {
+            continue;
         }
-
+        const long fd = strtol(dirp->d_name, NULL, 10);
+        if (fd <= INT_MAX && fd >= from_fd) {
+            (void)close((int)fd);
+        }
     }
 
     (void)closedir(dp);
@@ -128,7 +129,9 @@ forkedChildProcess(const char *file, char *const argv[])
          * and assume all were opened for the parent process and
          * copied over to this child process. We close them all. */
         const rlim_t max_fd = sysconf(_SC_OPEN_MAX);
-        JDI_ASSERT(max_fd != (rlim_t)-1);
+        JDI_ASSERT(max_fd != (rlim_t)-1); // -1 represents error
+        /* close(), that we subsequently call, takes only int values */
+        JDI_ASSERT(max_fd <= INT_MAX);
         /* leave out standard input/output/error file descriptors */
         rlim_t i = STDERR_FILENO + 1;
         LOG_MISC(("warning: failed to close file descriptors of"
