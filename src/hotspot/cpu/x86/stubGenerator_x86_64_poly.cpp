@@ -1268,12 +1268,12 @@ void StubGenerator::poly1305_process_blocks_avx2(
   __ bind(L_process256LoopDone);
 
   // Need to multiply by R^4, R^3, R^2, R
-
   //Read R^4-R;
   __ vmovdqu(YMM_R0, Address(rsp, _r4_r1_save + 0));
   __ vmovdqu(YMM_R1, Address(rsp, _r4_r1_save + 32));
   __ vmovdqu(YMM_R2, Address(rsp, _r4_r1_save + 32*2));
 
+  // Generate 4*5*[R^4..R^1] (ignore lowest limb)
   // YTMP1 to have bits 87-44 of all 1-4th powers of R' in 4 qwords
   // YTMP2 to have bits 129-88 of all 1-4th powers of R' in 4 qwords
   __ vpsllq(YTMP10, YMM_R1, 2, Assembler::AVX_256bit);
@@ -1289,6 +1289,7 @@ void StubGenerator::poly1305_process_blocks_avx2(
                           YMM_R0, YMM_R1, YMM_R2, YTMP1, YTMP2,
                           YTMP3, YTMP4, YTMP5, YTMP6,
                           YTMP7, YTMP8, YTMP9, t1);
+  // 4 -> 2 blocks
   __ vextracti128(YTMP1, YMM_ACC0, 1);
   __ vextracti128(YTMP2, YMM_ACC1, 1);
   __ vextracti128(YTMP3, YMM_ACC2, 1);
@@ -1296,12 +1297,12 @@ void StubGenerator::poly1305_process_blocks_avx2(
   __ vpaddq(YMM_ACC0, YMM_ACC0, YTMP1, Assembler::AVX_128bit);
   __ vpaddq(YMM_ACC1, YMM_ACC1, YTMP2, Assembler::AVX_128bit);
   __ vpaddq(YMM_ACC2, YMM_ACC2, YTMP3, Assembler::AVX_128bit);
-
+  // 2 -> 1 blocks
   __ vpsrldq(YTMP1, YMM_ACC0, 8, Assembler::AVX_128bit);
   __ vpsrldq(YTMP2, YMM_ACC1, 8, Assembler::AVX_128bit);
   __ vpsrldq(YTMP3, YMM_ACC2, 8, Assembler::AVX_128bit);
 
-  // Finish folding and clear second qword
+  // Finish folding
   __ vpaddq(YMM_ACC0, YMM_ACC0, YTMP1, Assembler::AVX_128bit);
   __ vpaddq(YMM_ACC1, YMM_ACC1, YTMP2, Assembler::AVX_128bit);
   __ vpaddq(YMM_ACC2, YMM_ACC2, YTMP3, Assembler::AVX_128bit);
