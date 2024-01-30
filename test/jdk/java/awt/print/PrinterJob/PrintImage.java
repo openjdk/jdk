@@ -58,7 +58,7 @@ public class PrintImage extends Frame implements ActionListener {
     private final MenuItem print2Menu = new MenuItem("PrintTest2");
     private final MenuItem exitMenu = new MenuItem("Exit");
 
-    private static final String instructions =
+    private static final String INSTRUCTIONS =
             "You must have a printer available to perform this test,\n" +
             "prefererably Canon LaserShot A309GII.\n" +
             "Printing must be done in Win 98 Japanese 2nd Edition.\n" +
@@ -74,11 +74,9 @@ public class PrintImage extends Frame implements ActionListener {
         }
 
         PassFailJFrame.builder()
-                .title("Test Instructions")
-                .instructions(instructions)
+                .instructions(INSTRUCTIONS)
                 .testUI(PrintImage::new)
-                .testTimeOut(5)
-                .rows((int) instructions.lines().count() + 1)
+                .rows((int) INSTRUCTIONS.lines().count() + 1)
                 .columns(45)
                 .build()
                 .awaitAndCheck();
@@ -150,7 +148,7 @@ public class PrintImage extends Frame implements ActionListener {
         PrinterJob printerJob = PrinterJob.getPrinterJob();
         PageFormat pageFormat = printerJob.pageDialog(printerJob.defaultPage());
 
-        printerJob.setPrintable( printImageCanvas, pageFormat);
+        printerJob.setPrintable(printImageCanvas, pageFormat);
 
         if (printerJob.printDialog()) {
             try {

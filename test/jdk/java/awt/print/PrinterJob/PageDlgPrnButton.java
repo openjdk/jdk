@@ -44,7 +44,7 @@ import jtreg.SkippedException;
 public class PageDlgPrnButton implements Printable
 {
 
-    private static final String instructions =
+    private static final String INSTRUCTIONS =
             "For non-windows OS, this test PASSes.\n" +
             "You must have at least 2 printers available to perform this test.\n" +
             "This test brings up a native Windows page dialog.\n" +
@@ -54,10 +54,8 @@ public class PageDlgPrnButton implements Printable
     public static void main (String[] args) throws Exception {
 
         PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
-                .title("CustomPaper Test Instructions")
-                .instructions(instructions)
-                .testTimeOut(5)
-                .rows((int) instructions.lines().count() + 1)
+                .instructions(INSTRUCTIONS)
+                .rows((int) INSTRUCTIONS.lines().count() + 1)
                 .columns(45)
                 .build();
 

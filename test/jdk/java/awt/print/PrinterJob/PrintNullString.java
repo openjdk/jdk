@@ -53,7 +53,7 @@ public class PrintNullString extends Frame implements ActionListener {
 
     private final TextCanvas c;
 
-    private static final String instructions =
+    private static final String INSTRUCTIONS =
             "You must have a printer available to perform this test\n" +
             "This test should print a page which contains the same\n" +
             "text messages as in the test window on the screen\n" +
@@ -72,11 +72,9 @@ public class PrintNullString extends Frame implements ActionListener {
         }
 
         PassFailJFrame.builder()
-                .title("Test Instructions")
-                .instructions(instructions)
+                .instructions(INSTRUCTIONS)
                 .testUI(PrintNullString::new)
-                .testTimeOut(5)
-                .rows((int) instructions.lines().count() + 1)
+                .rows((int) INSTRUCTIONS.lines().count() + 1)
                 .columns(45)
                 .build()
                 .awaitAndCheck();

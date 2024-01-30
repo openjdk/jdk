@@ -54,7 +54,7 @@ public class PrintTranslatedFont extends Frame implements ActionListener {
 
     private final TextCanvas c;
 
-    private static final String instructions =
+    private static final String INSTRUCTIONS =
             "You must have a printer available to perform this test\n" +
             "This test should print a page which contains the same\n" +
             "content as the test window on the screen, in particular the lines\n" +
@@ -72,11 +72,9 @@ public class PrintTranslatedFont extends Frame implements ActionListener {
         }
 
         PassFailJFrame.builder()
-                .title("Test Instructions")
-                .instructions(instructions)
+                .instructions(INSTRUCTIONS)
                 .testUI(PrintTranslatedFont::new)
-                .testTimeOut(5)
-                .rows((int) instructions.lines().count() + 1)
+                .rows((int) INSTRUCTIONS.lines().count() + 1)
                 .columns(45)
                 .build()
                 .awaitAndCheck();
