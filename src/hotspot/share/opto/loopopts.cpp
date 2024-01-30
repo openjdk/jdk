@@ -4228,7 +4228,7 @@ bool PhaseIdealLoop::autovectorize(IdealLoopTree* lpt, ResourceArea* arena) {
     }
   }
 
-  // This counted main-loop either failed preconditions, the analyzer
+  // This counted main-loop either failed preconditions,
   // or in SuperWord. From now on only unroll the loop.
   if (cl->has_passed_slp()) {
     C->set_major_progress();
