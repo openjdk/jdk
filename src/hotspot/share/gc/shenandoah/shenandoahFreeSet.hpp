@@ -30,11 +30,13 @@
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 
-enum ShenandoahFreeMemoryType : uint8_t {
-  NotFree,
-  Mutator,
-  Collector,
-  NumFreeSets
+// Each ShenandoahHeapRegion is associated with a ShenandoahFreeSetRegionType.
+enum ShenandoahFreeSetRegionType : uint8_t {
+  NotFree,                      // Region has been retired and is not in any free set: there is no available memory.
+  Mutator,                      // Region is in the Mutator free set: available memory is available to mutators.
+  Collector,                    // Region is in the Collector free set: available memory is reserved for evacuations.
+
+  NumFreeSets                   // This value represents the size of an array that may be indexed by NotFree, Mutator, Collector.
 };
 
 class ShenandoahSetsOfFree {
@@ -43,7 +45,7 @@ private:
   size_t _max;                  // The maximum number of heap regions
   ShenandoahFreeSet* _free_set;
   size_t _region_size_bytes;
-  ShenandoahFreeMemoryType* _membership;
+  ShenandoahFreeSetRegionType* _membership;
   size_t _leftmosts[NumFreeSets];
   size_t _rightmosts[NumFreeSets];
   size_t _leftmosts_empty[NumFreeSets];
@@ -54,8 +56,8 @@ private:
   size_t _used_by[NumFreeSets];
   size_t _region_counts[NumFreeSets];
 
-  inline void shrink_bounds_if_touched(ShenandoahFreeMemoryType set, size_t idx);
-  inline void expand_bounds_maybe(ShenandoahFreeMemoryType set, size_t idx, size_t capacity);
+  inline void shrink_bounds_if_touched(ShenandoahFreeSetRegionType set, size_t idx);
+  inline void expand_bounds_maybe(ShenandoahFreeSetRegionType set, size_t idx, size_t capacity);
 
   // Restore all state variables to initial default state.
   void clear_internal();
@@ -74,18 +76,18 @@ public:
   void retire_within_free_set(size_t idx, size_t used_bytes);
 
   // Place region idx into free set which_set.  Requires that idx is currently NotFree.
-  void make_free(size_t idx, ShenandoahFreeMemoryType which_set, size_t region_capacity);
+  void make_free(size_t idx, ShenandoahFreeSetRegionType which_set, size_t region_capacity);
 
   // Place region idx into free set new_set.  Requires that idx is currently not NotFree.
-  void move_to_set(size_t idx, ShenandoahFreeMemoryType new_set, size_t region_capacity);
+  void move_to_set(size_t idx, ShenandoahFreeSetRegionType new_set, size_t region_capacity);
 
-  // Returns the ShenandoahFreeMemoryType affiliation of region idx, or NotFree if this region is not currently free.  This does
+  // Returns the ShenandoahFreeSetRegionType affiliation of region idx, or NotFree if this region is not currently free.  This does
   // not enforce that free_set membership implies allocation capacity.
-  inline ShenandoahFreeMemoryType membership(size_t idx) const;
+  inline ShenandoahFreeSetRegionType membership(size_t idx) const;
 
   // Returns true iff region idx is in the test_set free_set.  Before returning true, asserts that the free
   // set is not empty.  Requires that test_set != NotFree or NumFreeSets.
-  inline bool in_free_set(size_t idx, ShenandoahFreeMemoryType which_set) const;
+  inline bool in_free_set(size_t idx, ShenandoahFreeSetRegionType which_set) const;
 
   // The following four methods return the left-most and right-most bounds on ranges of regions representing
   // the requested set.  The _empty variants represent bounds on the range that holds completely empty
@@ -96,38 +98,38 @@ public:
   //     leftmost() and leftmost_empty() return _max, rightmost() and rightmost_empty() return 0
   //   otherwise, expect the following:
   //     0 <= leftmost <= leftmost_empty <= rightmost_empty <= rightmost < _max
-  inline size_t leftmost(ShenandoahFreeMemoryType which_set) const;
-  inline size_t rightmost(ShenandoahFreeMemoryType which_set) const;
-  size_t leftmost_empty(ShenandoahFreeMemoryType which_set);
-  size_t rightmost_empty(ShenandoahFreeMemoryType which_set);
+  inline size_t leftmost(ShenandoahFreeSetRegionType which_set) const;
+  inline size_t rightmost(ShenandoahFreeSetRegionType which_set) const;
+  size_t leftmost_empty(ShenandoahFreeSetRegionType which_set);
+  size_t rightmost_empty(ShenandoahFreeSetRegionType which_set);
 
-  inline bool is_empty(ShenandoahFreeMemoryType which_set) const;
+  inline bool is_empty(ShenandoahFreeSetRegionType which_set) const;
 
-  inline void increase_used(ShenandoahFreeMemoryType which_set, size_t bytes);
+  inline void increase_used(ShenandoahFreeSetRegionType which_set, size_t bytes);
 
-  inline size_t capacity_of(ShenandoahFreeMemoryType which_set) const {
+  inline size_t capacity_of(ShenandoahFreeSetRegionType which_set) const {
     assert (which_set > NotFree && which_set < NumFreeSets, "selected free set must be valid");
     return _capacity_of[which_set];
   }
 
-  inline size_t used_by(ShenandoahFreeMemoryType which_set) const {
+  inline size_t used_by(ShenandoahFreeSetRegionType which_set) const {
     assert (which_set > NotFree && which_set < NumFreeSets, "selected free set must be valid");
     return _used_by[which_set];
   }
 
-  inline void set_capacity_of(ShenandoahFreeMemoryType which_set, size_t value) {
+  inline void set_capacity_of(ShenandoahFreeSetRegionType which_set, size_t value) {
     assert (which_set > NotFree && which_set < NumFreeSets, "selected free set must be valid");
     _capacity_of[which_set] = value;
   }
 
-  inline void set_used_by(ShenandoahFreeMemoryType which_set, size_t value) {
+  inline void set_used_by(ShenandoahFreeSetRegionType which_set, size_t value) {
     assert (which_set > NotFree && which_set < NumFreeSets, "selected free set must be valid");
     _used_by[which_set] = value;
   }
 
   inline size_t max() const { return _max; }
 
-  inline size_t count(ShenandoahFreeMemoryType which_set) const { return _region_counts[which_set]; }
+  inline size_t count(ShenandoahFreeSetRegionType which_set) const { return _region_counts[which_set]; }
 
   // Assure leftmost, rightmost, leftmost_empty, and rightmost_empty bounds are valid for all free sets.
   // Valid bounds honor all of the following (where max is the number of heap regions):
