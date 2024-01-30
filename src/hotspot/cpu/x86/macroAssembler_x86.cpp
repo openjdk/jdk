@@ -2568,7 +2568,9 @@ void MacroAssembler::movptr(Register dst, Address src) {
 // src should NEVER be a real pointer. Use AddressLiteral for true pointers
 void MacroAssembler::movptr(Register dst, intptr_t src) {
 #ifdef _LP64
-  if (is_simm32(src)) {
+  if (is_uimm32(src)) {
+    movl(dst, checked_cast<uint32_t>(src));
+  } else if (is_simm32(src)) {
     movq(dst, checked_cast<int32_t>(src));
   } else {
     mov64(dst, src);

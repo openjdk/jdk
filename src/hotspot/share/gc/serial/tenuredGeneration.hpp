@@ -111,7 +111,6 @@ class TenuredGeneration: public Generation {
   const char* name() const { return "tenured generation"; }
   const char* short_name() const { return "Tenured"; }
 
-  size_t unsafe_max_alloc_nogc() const;
   size_t contiguous_available() const;
 
   // Iteration

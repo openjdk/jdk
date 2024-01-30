@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2021, 2023 SAP SE. All rights reserved.
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,17 +35,17 @@
 // Note: these could be made more suitable for covering large ranges (e.g. just mark one byte per page).
 
 void GtestUtils::mark_range_with(void* p, size_t s, uint8_t mark) {
-  if (p != NULL && s > 0) {
+  if (p != nullptr && s > 0) {
     ::memset(p, mark, s);
   }
 }
 
 bool GtestUtils::is_range_marked(const void* p, size_t s, uint8_t expected) {
-  if (p == NULL || s == 0) {
+  if (p == nullptr || s == 0) {
     return true;
   }
 
-  const char* first_wrong = NULL;
+  const char* first_wrong = nullptr;
   char* p2 = (char*)p;
   const char* const end = p2 + s;
   while (p2 < end) {
@@ -56,7 +56,7 @@ bool GtestUtils::is_range_marked(const void* p, size_t s, uint8_t expected) {
     p2 ++;
   }
 
-  if (first_wrong != NULL) {
+  if (first_wrong != nullptr) {
     tty->print_cr("check_range [" PTR_FORMAT ".." PTR_FORMAT "), 0x%X, : wrong pattern around " PTR_FORMAT,
                   p2i(p), p2i(p) + s, expected, p2i(first_wrong));
     // Note: We deliberately print the surroundings too without bounds check. Might be interesting,
@@ -65,5 +65,5 @@ bool GtestUtils::is_range_marked(const void* p, size_t s, uint8_t expected) {
                             (address)(align_up(end, 0x10) + 0x10), 1);
   }
 
-  return first_wrong == NULL;
+  return first_wrong == nullptr;
 }
