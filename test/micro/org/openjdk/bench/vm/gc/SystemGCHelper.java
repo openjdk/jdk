@@ -97,6 +97,5 @@ public class SystemGCHelper {
             }
         }
         return tmp;
-
     }
 }

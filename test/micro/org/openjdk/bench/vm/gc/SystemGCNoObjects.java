@@ -24,13 +24,15 @@ package org.openjdk.bench.vm.gc;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 
 import java.util.concurrent.TimeUnit;
 
-@BenchmarkMode(Mode.AverageTime)
-@OutputTimeUnit(TimeUnit.NANOSECONDS)
+@BenchmarkMode(Mode.SingleShotTime)
+@Fork(25)
+@OutputTimeUnit(TimeUnit.MILLISECONDS)
 public class SystemGCNoObjects {
 
     @Benchmark
