@@ -244,65 +244,65 @@ class SuperWord : public ResourceObj {
   // TraceAutoVectorization and TraceSuperWord
   bool is_trace_superword_vector_element_type() const {
     // Too verbose for TraceSuperWord
-    return _vtrace.is_trace(TraceAutoVectorizationTag::SW_TYPES);
+    return vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_TYPES);
   }
 
   bool is_trace_superword_alignment() const {
     // Too verbose for TraceSuperWord
-    return _vtrace.is_trace(TraceAutoVectorizationTag::SW_ALIGNMENT);
+    return vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_ALIGNMENT);
   }
 
   bool is_trace_superword_memory_slices() const {
     return TraceSuperWord ||
-           _vtrace.is_trace(TraceAutoVectorizationTag::SW_MEMORY_SLICES);
+           vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_MEMORY_SLICES);
   }
 
   bool is_trace_superword_dependence_graph() const {
     return TraceSuperWord ||
-           _vtrace.is_trace(TraceAutoVectorizationTag::SW_DEPENDENCE_GRAPH);
+           vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_DEPENDENCE_GRAPH);
   }
 
   bool is_trace_superword_adjacent_memops() const {
     return TraceSuperWord ||
-           _vtrace.is_trace(TraceAutoVectorizationTag::SW_ADJACENT_MEMOPS);
+           vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_ADJACENT_MEMOPS);
   }
 
   bool is_trace_superword_rejections() const {
     return TraceSuperWord ||
-           _vtrace.is_trace(TraceAutoVectorizationTag::SW_REJECTIONS);
+           vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_REJECTIONS);
   }
 
   bool is_trace_superword_packset() const {
     return TraceSuperWord ||
-           _vtrace.is_trace(TraceAutoVectorizationTag::SW_PACKSET);
+           vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_PACKSET);
   }
 
   bool is_trace_superword_info() const {
     return TraceSuperWord ||
-           _vtrace.is_trace(TraceAutoVectorizationTag::SW_INFO);
+           vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_INFO);
   }
 
   bool is_trace_superword_verbose() const {
     // Too verbose for TraceSuperWord
-    return _vtrace.is_trace(TraceAutoVectorizationTag::SW_VERBOSE);
+    return vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_VERBOSE);
   }
 
   bool is_trace_superword_any() const {
     return TraceSuperWord ||
            is_trace_align_vector() ||
-           _vtrace.is_trace(TraceAutoVectorizationTag::SW_TYPES) ||
-           _vtrace.is_trace(TraceAutoVectorizationTag::SW_ALIGNMENT) ||
-           _vtrace.is_trace(TraceAutoVectorizationTag::SW_MEMORY_SLICES) ||
-           _vtrace.is_trace(TraceAutoVectorizationTag::SW_DEPENDENCE_GRAPH) ||
-           _vtrace.is_trace(TraceAutoVectorizationTag::SW_ADJACENT_MEMOPS) ||
-           _vtrace.is_trace(TraceAutoVectorizationTag::SW_REJECTIONS) ||
-           _vtrace.is_trace(TraceAutoVectorizationTag::SW_PACKSET) ||
-           _vtrace.is_trace(TraceAutoVectorizationTag::SW_INFO) ||
-           _vtrace.is_trace(TraceAutoVectorizationTag::SW_VERBOSE);
+           vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_TYPES) ||
+           vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_ALIGNMENT) ||
+           vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_MEMORY_SLICES) ||
+           vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_DEPENDENCE_GRAPH) ||
+           vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_ADJACENT_MEMOPS) ||
+           vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_REJECTIONS) ||
+           vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_PACKSET) ||
+           vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_INFO) ||
+           vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_VERBOSE);
   }
 
   bool is_trace_align_vector() const {
-    return _vtrace.is_trace(TraceAutoVectorizationTag::ALIGN_VECTOR) ||
+    return vloop().vtrace().is_trace(TraceAutoVectorizationTag::ALIGN_VECTOR) ||
            is_trace_superword_verbose();
   }
 #endif
@@ -318,7 +318,6 @@ class SuperWord : public ResourceObj {
   bool           _do_vector_loop;  // whether to do vectorization/simd style
   int            _num_work_vecs;   // Number of non memory vector operations
   int            _num_reductions;  // Number of reduction expressions applied
-  NOT_PRODUCT(VTrace _vtrace);
 
   // Accessors
   Arena* arena()                   { return _arena; }
