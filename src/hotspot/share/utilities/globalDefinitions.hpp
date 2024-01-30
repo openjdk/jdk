@@ -1138,7 +1138,6 @@ static inline julong uabs(julong n) {
 }
 static inline julong uabs(jlong n) { return uabs((julong)n); }
 static inline unsigned int uabs(int n) { return uabs((unsigned int)n); }
-static inline uint64_t uabs(int64_t n) { return uabs((julong)n); }
 
 // "to" should be greater than "from."
 inline size_t byte_size(void* from, void* to) {
