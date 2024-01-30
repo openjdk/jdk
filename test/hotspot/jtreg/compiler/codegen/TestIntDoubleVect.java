@@ -83,6 +83,7 @@ public class TestIntDoubleVect {
       System.exit(97);
     }
     System.out.println("PASSED");
+    System.exit(1);
   }
 
   static int test() {
