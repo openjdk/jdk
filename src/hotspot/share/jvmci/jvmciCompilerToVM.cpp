@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1889,7 +1889,10 @@ C2V_END
 
 C2V_VMENTRY_0(jint, methodDataExceptionSeen, (JNIEnv* env, jobject, jlong method_data_pointer, jint bci))
   MethodData* mdo = (MethodData*) method_data_pointer;
-  MutexLocker mu(mdo->extra_data_lock());
+
+  // Lock to read ProfileData, and ensure lock is not broken by a safepoint
+  MutexLocker mu(mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
+
   DataLayout* data    = mdo->extra_data_base();
   DataLayout* end   = mdo->args_data_limit();
   for (;; data = mdo->next_extra(data)) {

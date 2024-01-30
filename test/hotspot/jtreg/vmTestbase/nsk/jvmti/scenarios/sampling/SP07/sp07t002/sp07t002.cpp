@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,12 +41,12 @@ static const jlong SAMPLING_INTERVAL = 10;
 static jlong timeout = 0;
 
 /* test objects */
-static jthread thread = NULL;
-static jrawMonitorID waitLock = NULL;
-static jfieldID field = NULL;
-static jmethodID methodRun = NULL;
-static jmethodID methodCatcher = NULL;
-static jmethodID methodThrower = NULL;
+static jthread thread = nullptr;
+static jrawMonitorID waitLock = nullptr;
+static jfieldID field = nullptr;
+static jmethodID methodRun = nullptr;
+static jmethodID methodCatcher = nullptr;
+static jmethodID methodThrower = nullptr;
 static jint MAX_LADDER = 0;
 static int sampleCount = 0;
 static jint frameCount = 0;
@@ -57,10 +57,10 @@ static jvmtiFrameInfo frameBuffer[MAX_DEPTH];
 static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
     const char* THREAD_NAME = "Debuggee Thread";
     jvmtiThreadInfo info;
-    jthread *threads = NULL;
+    jthread *threads = nullptr;
     jint threads_count = 0;
-    jclass klass = NULL;
-    jfieldID fid = NULL;
+    jclass klass = nullptr;
+    jfieldID fid = nullptr;
     int i;
 
     NSK_DISPLAY0("Prepare: find tested thread\n");
@@ -69,12 +69,12 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
     if (!NSK_JVMTI_VERIFY(jvmti->GetAllThreads(&threads_count, &threads)))
         return NSK_FALSE;
 
-    if (!NSK_VERIFY(threads_count > 0 && threads != NULL))
+    if (!NSK_VERIFY(threads_count > 0 && threads != nullptr))
         return NSK_FALSE;
 
     /* find tested thread */
     for (i = 0; i < threads_count; i++) {
-        if (!NSK_VERIFY(threads[i] != NULL))
+        if (!NSK_VERIFY(threads[i] != nullptr))
             return NSK_FALSE;
 
         /* get thread information */
@@ -84,11 +84,11 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
         NSK_DISPLAY3("    thread #%d (%s): %p\n", i, info.name, threads[i]);
 
         /* find by name */
-        if (info.name != NULL && (strcmp(info.name, THREAD_NAME) == 0)) {
+        if (info.name != nullptr && (strcmp(info.name, THREAD_NAME) == 0)) {
             thread = threads[i];
         }
 
-        if (info.name != NULL) {
+        if (info.name != nullptr) {
             if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)info.name)))
                 return NSK_FALSE;
         }
@@ -98,37 +98,37 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
     if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)threads)))
         return NSK_FALSE;
 
-    if (thread == NULL) {
+    if (thread == nullptr) {
         NSK_COMPLAIN0("Debuggee thread not found");
         return NSK_FALSE;
     }
 
     /* get tested thread class */
-    if (!NSK_JNI_VERIFY(jni, (klass = jni->GetObjectClass(thread)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (klass = jni->GetObjectClass(thread)) != nullptr))
         return NSK_FALSE;
 
     /* get tested thread field 'MAX_LADDER' */
-    if (!NSK_JNI_VERIFY(jni, (fid = jni->GetStaticFieldID(klass, "MAX_LADDER", "I")) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (fid = jni->GetStaticFieldID(klass, "MAX_LADDER", "I")) != nullptr))
         return NSK_FALSE;
 
     MAX_LADDER = jni->GetStaticIntField(klass, fid);
     NSK_DISPLAY1("MAX_LADDER: %d\n", MAX_LADDER);
 
     /* get tested thread field 'depth' */
-    if (!NSK_JNI_VERIFY(jni, (field = jni->GetFieldID(klass, "depth", "I")) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (field = jni->GetFieldID(klass, "depth", "I")) != nullptr))
         return NSK_FALSE;
 
     /* get tested thread method 'run' */
-    if (!NSK_JNI_VERIFY(jni, (methodRun = jni->GetMethodID(klass, "run", "()V")) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (methodRun = jni->GetMethodID(klass, "run", "()V")) != nullptr))
         return NSK_FALSE;
 
     /* get tested thread method 'catcher' */
     if (!NSK_JNI_VERIFY(jni, (methodCatcher =
-            jni->GetMethodID(klass, "catcher", "(II)V")) != NULL))
+            jni->GetMethodID(klass, "catcher", "(II)V")) != nullptr))
         return NSK_FALSE;
 
     /* get tested thread method 'thrower' */
-    if (!NSK_JNI_VERIFY(jni, (methodThrower= jni->GetMethodID(klass, "thrower", "(I)V")) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (methodThrower= jni->GetMethodID(klass, "thrower", "(I)V")) != nullptr))
         return NSK_FALSE;
 
     if (!NSK_JVMTI_VERIFY(jvmti->CreateRawMonitor("waitLock", &waitLock)))
@@ -155,17 +155,17 @@ static int wait_for(jvmtiEnv* jvmti, jlong millis) {
 
 static int displayFrameInfo(jvmtiEnv* jvmti, jint i) {
     char buffer[32];
-    char *name = NULL;
-    char *signature = NULL;
+    char *name = nullptr;
+    char *signature = nullptr;
 
-    if (!NSK_JVMTI_VERIFY(jvmti->GetMethodName(frameBuffer[frameCount-1-i].method, &name, &signature, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetMethodName(frameBuffer[frameCount-1-i].method, &name, &signature, nullptr)))
         return NSK_FALSE;
 
     NSK_DISPLAY4("    [%d] method: %s%s, location: %s\n", i, name,
         signature, jlong_to_string(frameBuffer[frameCount-1-i].location, buffer));
-    if (name != NULL)
+    if (name != nullptr)
         jvmti->Deallocate((unsigned char*)name);
-    if (signature != NULL)
+    if (signature != nullptr)
         jvmti->Deallocate((unsigned char*)signature);
 
     return NSK_TRUE;
@@ -173,20 +173,20 @@ static int displayFrameInfo(jvmtiEnv* jvmti, jint i) {
 
 static int complainFrameInfo(jvmtiEnv* jvmti, jint i, jmethodID method) {
     char buffer[32];
-    char *name = NULL;
-    char *signature = NULL;
+    char *name = nullptr;
+    char *signature = nullptr;
 
-    if (!NSK_JVMTI_VERIFY(jvmti->GetMethodName(frameBuffer[frameCount-1-i].method, &name, &signature, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetMethodName(frameBuffer[frameCount-1-i].method, &name, &signature, nullptr)))
         return NSK_FALSE;
 
     NSK_COMPLAIN3("    got method: %s%s, location: %s\n", name, signature,
         jlong_to_string(frameBuffer[frameCount-1-i].location, buffer));
-    if (name != NULL)
+    if (name != nullptr)
         jvmti->Deallocate((unsigned char*)name);
-    if (signature != NULL)
+    if (signature != nullptr)
         jvmti->Deallocate((unsigned char*)signature);
 
-    if (!NSK_JVMTI_VERIFY(jvmti->GetMethodName(method, &name, &signature, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetMethodName(method, &name, &signature, nullptr)))
         return NSK_FALSE;
 
     NSK_COMPLAIN2("    expected method: %s%s\n", name, signature);
@@ -196,7 +196,7 @@ static int complainFrameInfo(jvmtiEnv* jvmti, jint i, jmethodID method) {
 
 static int checkStackTrace(jvmtiEnv* jvmti, JNIEnv* jni) {
     int res = NSK_TRUE;
-    jmethodID method = NULL;
+    jmethodID method = nullptr;
     jint depth;
     jint i;
     int displayFlag =
@@ -288,7 +288,7 @@ JNIEXPORT jint JNI_OnLoad_sp07t002(JavaVM *jvm, char *options, void *reserved) {
 }
 #endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
-    jvmtiEnv* jvmti = NULL;
+    jvmtiEnv* jvmti = nullptr;
     jvmtiCapabilities caps;
 
     /* init framework and parse options */
@@ -300,7 +300,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     /* create JVMTI environment */
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     memset(&caps, 0, sizeof(caps));
@@ -309,7 +309,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         return JNI_ERR;
 
     /* register agent proc and arg */
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     return JNI_OK;
