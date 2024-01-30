@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,14 +84,19 @@ public final class SaveAsAction extends NodeAction {
                 dir = dir.getParentFile();
             }
             Settings.get().put(Settings.DIRECTORY, dir.getAbsolutePath());
-            try {
-                try (Writer writer = new OutputStreamWriter(Files.newOutputStream(file.toPath()))) {
-                    Printer p = new Printer();
-                    p.export(writer, doc);
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
+
+            export(file, doc);
+        }
+    }
+
+    public static void export(File file, GraphDocument doc) {
+        try {
+            try (Writer writer = new OutputStreamWriter(Files.newOutputStream(file.toPath()))) {
+                Printer p = new Printer();
+                p.export(writer, doc);
             }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 

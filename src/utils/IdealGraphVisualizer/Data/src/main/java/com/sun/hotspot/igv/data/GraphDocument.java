@@ -54,7 +54,7 @@ public class GraphDocument extends Properties.Entity implements ChangedEventProv
 
     public void addGraphDocument(GraphDocument document) {
         if (document != this) {
-            for (FolderElement e : document.elements) {
+            for (FolderElement e : document.getElements()) {
                 e.setParent(this);
                 this.addElement(e);
             }

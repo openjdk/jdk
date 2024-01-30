@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,22 +25,26 @@ package com.sun.hotspot.igv.coordinator;
 
 import com.sun.hotspot.igv.connection.Server;
 import com.sun.hotspot.igv.coordinator.actions.*;
-import com.sun.hotspot.igv.data.ChangedListener;
-import com.sun.hotspot.igv.data.GraphDocument;
-import com.sun.hotspot.igv.data.InputGraph;
+import com.sun.hotspot.igv.data.*;
+import com.sun.hotspot.igv.data.serialization.ParseMonitor;
+import com.sun.hotspot.igv.data.serialization.Parser;
+import com.sun.hotspot.igv.data.services.GraphViewer;
 import com.sun.hotspot.igv.data.services.GroupCallback;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import com.sun.hotspot.igv.util.LookupHistory;
+import com.sun.hotspot.igv.view.DiagramViewModel;
 import com.sun.hotspot.igv.view.EditorTopComponent;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import java.util.HashSet;
-import java.util.Set;
+import java.io.*;
+import java.nio.channels.FileChannel;
+import java.nio.file.StandardOpenOption;
+import java.util.*;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.border.Border;
+import org.netbeans.api.progress.ProgressHandle;
+import org.netbeans.api.progress.ProgressHandleFactory;
 import org.openide.ErrorManager;
 import org.openide.actions.GarbageCollectAction;
 import org.openide.awt.Toolbar;
@@ -48,9 +52,13 @@ import org.openide.awt.ToolbarPool;
 import org.openide.explorer.ExplorerManager;
 import org.openide.explorer.ExplorerUtils;
 import org.openide.explorer.view.BeanTreeView;
+import org.openide.modules.Places;
 import org.openide.nodes.Node;
 import org.openide.util.Exceptions;
+import org.openide.util.Lookup;
 import org.openide.util.NbBundle;
+import org.openide.util.RequestProcessor;
+import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
 
@@ -69,6 +77,8 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     private RemoveAllAction removeAllAction;
     private GraphNode[] selectedGraphs = new GraphNode[0];
     private final Set<FolderNode> selectedFolders = new HashSet<>();
+    private static final int WORKUNITS = 10000;
+    private static final RequestProcessor RP = new RequestProcessor("OutlineTopComponent", 1);
 
     private OutlineTopComponent() {
         initComponents();
@@ -127,7 +137,6 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     }
 
     private void initReceivers() {
-
         final GroupCallback callback = g -> {
             synchronized(OutlineTopComponent.this) {
                 g.setParent(getDocument());
@@ -275,11 +284,216 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         // Not called when user starts application for the first time
         super.readExternal(objectInput);
         ((BeanTreeView) this.treeView).setRootVisible(false);
+
+        String graphsPath = getGraphsPath();
+        if (graphsPath.isEmpty()) {
+            return;
+        }
+        try {
+            loadFile(graphsPath);
+        } catch (IOException ex) {
+            return;
+        }
+
+        final String openedPath = getOpenedPath();
+        if (openedPath.isEmpty()) {
+            return;
+        }
+
+        RP.post(() -> {
+            try {
+                FileInputStream fis = new FileInputStream(openedPath);
+                ObjectInputStream in = new ObjectInputStream(fis);
+                final GraphViewer viewer = Lookup.getDefault().lookup(GraphViewer.class);
+                assert viewer != null;
+                int tabCount = in.readInt();
+                for (int i = 0; i < tabCount; i++) {
+                    final boolean isDiffGraph = in.readBoolean();
+                    int firstGroupIdx = in.readInt();
+                    int firstGraphIdx = in.readInt();
+                    String firstGraphTag = in.readUTF();
+                    final InputGraph firstGraph = findGraph(firstGroupIdx, firstGraphIdx);
+                    if (firstGraph == null || firstGraph.getGroup() == null ||
+                            !firstGraphTag.equals(firstGraph.getGroup().getName() + "#" + firstGraph.getName())) {
+                        break;
+                    }
+                    final InputGraph secondGraph;
+                    if (isDiffGraph) {
+                        int secondGroupIdx = in.readInt();
+                        int secondGraphIdx = in.readInt();
+                        String secondGraphTag = in.readUTF();
+                        secondGraph = findGraph(secondGroupIdx, secondGraphIdx);
+                        if (secondGraph == null || secondGraph.getGroup() == null ||
+                                !secondGraphTag.equals(secondGraph.getGroup().getName() + "#" + secondGraph.getName())) {
+                            break;
+                        }
+                    } else {
+                        secondGraph = null;
+                    }
+                    final Set<Integer> hiddenNodes = new HashSet<>();
+                    int hiddenNodeCount = in.readInt();
+                    for (int j = 0; j < hiddenNodeCount; j++) {
+                        int hiddenNodeID = in.readInt();
+                        hiddenNodes.add(hiddenNodeID);
+                    }
+
+                    SwingUtilities.invokeLater(() -> {
+                        InputGraph openedGraph;
+                        if (isDiffGraph) {
+                            openedGraph = viewer.viewDifference(firstGraph, secondGraph);
+                        } else {
+                            openedGraph = viewer.view(firstGraph, true);
+                        }
+                        if (openedGraph != null) {
+                            EditorTopComponent etc = EditorTopComponent.findEditorForGraph(openedGraph);
+                            if (etc != null) {
+                                etc.getModel().setHiddenNodes(hiddenNodes);
+                            }
+                        }
+                    });
+                }
+                in.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    private String getCustomSettingsPath() {
+        return Places.getUserDirectory().getAbsolutePath();
+    }
+
+    private String getGraphsPath() {
+        String igvSettingsPath = getCustomSettingsPath();
+        if (!igvSettingsPath.isEmpty()) {
+            igvSettingsPath += "/graphs.xml";
+        }
+        return igvSettingsPath;
+    }
+
+    private String getOpenedPath() {
+        String igvSettingsPath = getCustomSettingsPath();
+        if (!igvSettingsPath.isEmpty()) {
+            igvSettingsPath += "/state.igv";
+        }
+        return igvSettingsPath;
     }
 
     @Override
     public void writeExternal(ObjectOutput objectOutput) throws IOException {
         super.writeExternal(objectOutput);
+
+        String graphsPath = getGraphsPath();
+        if (graphsPath.isEmpty()) {
+            return;
+        }
+        File file = new File(graphsPath);
+        SaveAsAction.export(file, getDocument());
+
+        String openedPath = getOpenedPath();
+        if (openedPath.isEmpty()) {
+            return;
+        }
+        FileOutputStream fos = new FileOutputStream(openedPath);
+        ObjectOutputStream out = new ObjectOutputStream(fos);
+
+        List<EditorTopComponent> editorTabs = new ArrayList<>();
+        WindowManager manager = WindowManager.getDefault();
+        for (Mode mode : manager.getModes()) {
+            List<TopComponent> compList = new ArrayList<>(Arrays.asList(manager.getOpenedTopComponents(mode)));
+            for (TopComponent comp : compList) {
+                if (comp instanceof EditorTopComponent) {
+                    editorTabs.add((EditorTopComponent) comp);
+                }
+            }
+        }
+
+        int tabCount = editorTabs.size();
+        out.writeInt(tabCount);
+        for (EditorTopComponent etc : editorTabs) {
+            DiagramViewModel model = etc.getModel();
+            boolean isDiffGraph = model.getGraph().isDiffGraph();
+            out.writeBoolean(isDiffGraph);
+            if (isDiffGraph) {
+                InputGraph firstGraph = model.getFirstGraph();
+                InputGraph secondGraph = model.getSecondGraph();
+                out.writeInt(firstGraph.getGroup().getIndex());
+                out.writeInt(firstGraph.getIndex());
+                out.writeUTF(firstGraph.getGroup().getName() + "#" + firstGraph.getName());
+                out.writeInt(secondGraph.getGroup().getIndex());
+                out.writeInt(secondGraph.getIndex());
+                out.writeUTF(secondGraph.getGroup().getName() + "#" + secondGraph.getName());
+            } else {
+                InputGraph graph = model.getGraph();
+                out.writeInt(graph.getGroup().getIndex());
+                out.writeInt(graph.getIndex());
+                out.writeUTF(graph.getGroup().getName() + "#" + graph.getName());
+            }
+            int hiddenNodeCount = model.getHiddenNodes().size();
+            out.writeInt(hiddenNodeCount);
+            for (int hiddenNodeID : model.getHiddenNodes()) {
+                out.writeInt(hiddenNodeID);
+            }
+        }
+        out.close();
+    }
+
+    public void loadFile(String absolutePath) throws IOException {
+        RP.post(() -> {
+            File file = new File(absolutePath);
+
+            final FileChannel channel;
+            try {
+                channel = FileChannel.open(file.toPath(), StandardOpenOption.READ);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            final long start;
+            try {
+                start = channel.size();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            final ProgressHandle handle = ProgressHandleFactory.createHandle("Opening file " + file.getName());
+            handle.start(WORKUNITS);
+
+            ParseMonitor monitor = new ParseMonitor() {
+                @Override
+                public void updateProgress() {
+                    try {
+                        int prog = (int) (WORKUNITS * (double) channel.position() / (double) start);
+                        handle.progress(prog);
+                    } catch (IOException ignored) {}
+                }
+                @Override
+                public void setState(String state) {
+                    updateProgress();
+                    handle.progress(state);
+                }
+            };
+            try {
+                if (file.getName().endsWith(".xml")) {
+                    final Parser parser = new Parser(channel, monitor, null);
+                    parser.setInvokeLater(false);
+                    final GraphDocument parsedDoc = parser.parse();
+                    getDocument().addGraphDocument(parsedDoc);
+                    SwingUtilities.invokeLater(this::requestActive);
+                }
+            } catch (IOException ex) {
+                Exceptions.printStackTrace(ex);
+            }
+            handle.finish();
+        });
+    }
+
+    public InputGraph findGraph(int groupIdx, int graphIdx) {
+        FolderElement folderElement = document.getElements().get(groupIdx);
+        if (folderElement instanceof Group) {
+            Group group = (Group) folderElement;
+            return group.getGraphs().get(graphIdx);
+        }
+        return null;
     }
 
     /** This method is called from within the constructor to
