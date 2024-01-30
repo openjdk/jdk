@@ -482,6 +482,7 @@ bool SuperWord::SLP_extract() {
   // Compute vector element types
   compute_vector_element_type();
 
+  // Attempt vectorization
   find_adjacent_refs();
 
   if (_packset.length() == 0) {
@@ -2319,10 +2320,10 @@ void SuperWord::schedule_reorder_memops(Node_List &memops_schedule) {
 bool SuperWord::output() {
   CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
   assert(cl->is_main_loop(), "SLP should only work on main loops");
+  Compile* C = phase()->C;
   if (_packset.length() == 0) {
     return false;
   }
-  Compile* C = phase()->C;
 
 #ifndef PRODUCT
   if (TraceLoopOpts) {
