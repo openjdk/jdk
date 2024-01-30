@@ -1018,7 +1018,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   // entry_control: {...}
   // long adjusted_limit = limit + stride;  //because phi_incr != nullptr
   // assert(!limit_check_required || (extralong)limit + stride == adjusted_limit);  // else deopt
-  // ulong inner_iters_limit = max_jint - uabs(stride) - 1;  //near 0x7FFFFFF0
+  // ulong inner_iters_limit = max_jint - ABS(stride) - 1;  //near 0x7FFFFFF0
   // outer_head:
   // for (long outer_phi = init;;) {
   //   // outer_phi := phi->clone(), in(0):=outer_head, => Phi(outer_head, init, incr)
