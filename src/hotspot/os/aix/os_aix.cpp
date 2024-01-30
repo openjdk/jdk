@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -81,7 +81,7 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/vmError.hpp"
 #if INCLUDE_JFR
-#include "jfr/jfrEvents.hpp"
+#include "jfr/support/jfrNativeLibraryLoadEvent.hpp"
 #endif
 
 // put OS-includes here (sorted alphabetically)
@@ -769,7 +769,8 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
 
   // Init thread attributes.
   pthread_attr_t attr;
-  pthread_attr_init(&attr);
+  int rslt = pthread_attr_init(&attr);
+  guarantee(rslt == 0, "pthread_attr_init has to return 0");
   guarantee(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) == 0, "???");
 
   // Make sure we run in 1:1 kernel-user-thread mode.
@@ -803,6 +804,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
                             stack_size / K);
     thread->set_osthread(nullptr);
     delete osthread;
+    pthread_attr_destroy(&attr);
     return false;
   }
 
@@ -1015,6 +1017,10 @@ int os::current_process_id() {
 // directory not the java application's temp directory, ala java.io.tmpdir.
 const char* os::get_temp_directory() { return "/tmp"; }
 
+void os::prepare_native_symbols() {
+  LoadedLibraries::reload();
+}
+
 // Check if addr is inside libjvm.so.
 bool os::address_is_in_vm(address addr) {
 
@@ -1112,14 +1118,11 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   }
 
   if (!filename || strlen(filename) == 0) {
-    ::strncpy(ebuf, "dll_load: empty filename specified", ebuflen - 1);
+    if (ebuf != nullptr && ebuflen > 0) {
+      ::strncpy(ebuf, "dll_load: empty filename specified", ebuflen - 1);
+    }
     return nullptr;
   }
-
-#if INCLUDE_JFR
-  EventNativeLibraryLoad event;
-  event.set_name(filename);
-#endif
 
   // RTLD_LAZY has currently the same behavior as RTLD_NOW
   // The dl is loaded immediately with all its dependants.
@@ -1131,23 +1134,18 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     dflags |= RTLD_MEMBER;
   }
 
-  void * result= ::dlopen(filename, dflags);
+  void* result;
+  const char* error_report = nullptr;
+  JFR_ONLY(NativeLibraryLoadEvent load_event(filename, &result);)
+  result = Aix_dlopen(filename, dflags, &error_report);
   if (result != nullptr) {
     Events::log_dll_message(nullptr, "Loaded shared library %s", filename);
     // Reload dll cache. Don't do this in signal handling.
     LoadedLibraries::reload();
     log_info(os)("shared library load of %s was successful", filename);
-
-#if INCLUDE_JFR
-    event.set_success(true);
-    event.set_errorMessage(nullptr);
-    event.commit();
-#endif
-
     return result;
   } else {
     // error analysis when dlopen fails
-    const char* error_report = ::dlerror();
     if (error_report == nullptr) {
       error_report = "dlerror returned no error description";
     }
@@ -1157,12 +1155,7 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     }
     Events::log_dll_message(nullptr, "Loading shared library %s failed, %s", filename, error_report);
     log_info(os)("shared library load of %s failed, %s", filename, error_report);
-
-#if INCLUDE_JFR
-    event.set_success(false);
-    event.set_errorMessage(error_report);
-    event.commit();
-#endif
+    JFR_ONLY(load_event.set_error_msg(error_report);)
   }
   return nullptr;
 }
@@ -1591,7 +1584,7 @@ static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
 
   // Now attach the shared segment.
   // Note that we deliberately *don't* pass SHM_RND. The contract of os::attempt_reserve_memory_at() -
-  // which invokes this function with a request address != NULL - is to map at the specified address
+  // which invokes this function with a request address != nullptr - is to map at the specified address
   // excactly, or to fail. If the caller passed us an address that is not usable (aka not a valid segment
   // boundary), shmat should not round down the address, or think up a completely new one.
   // (In places where this matters, e.g. when reserving the heap, we take care of passing segment-aligned
@@ -1893,6 +1886,10 @@ void os::pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
 void os::pd_free_memory(char *addr, size_t bytes, size_t alignment_hint) {
 }
 
+size_t os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
+  return page_size;
+}
+
 void os::numa_make_global(char *addr, size_t bytes) {
 }
 
@@ -1925,10 +1922,6 @@ int os::numa_get_group_id_for_address(const void* address) {
 
 bool os::numa_get_group_ids_for_range(const void** addresses, int* lgrp_ids, size_t count) {
   return false;
-}
-
-char *os::scan_pages(char *start, char* end, page_info* page_expected, page_info* page_found) {
-  return end;
 }
 
 // Reserves and attaches a shared memory segment.
@@ -2121,11 +2114,6 @@ size_t os::large_page_size() {
 }
 
 bool os::can_commit_large_page_memory() {
-  // Does not matter, we do not support huge pages.
-  return false;
-}
-
-bool os::can_execute_large_page_memory() {
   // Does not matter, we do not support huge pages.
   return false;
 }
@@ -3043,32 +3031,3 @@ void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {}
 void os::jfr_report_memory_info() {}
 
 #endif // INCLUDE_JFR
-
-// Simulate the library search algorithm of dlopen() (in os::dll_load)
-int os::Aix::stat64x_via_LIBPATH(const char* path, struct stat64x* stat) {
-  if (path[0] == '/' ||
-      (path[0] == '.' && (path[1] == '/' ||
-                          (path[1] == '.' && path[2] == '/')))) {
-    return stat64x(path, stat);
-  }
-
-  const char* env = getenv("LIBPATH");
-  if (env == nullptr || *env == 0)
-    return -1;
-
-  int ret = -1;
-  size_t libpathlen = strlen(env);
-  char* libpath = NEW_C_HEAP_ARRAY(char, libpathlen + 1, mtServiceability);
-  char* combined = NEW_C_HEAP_ARRAY(char, libpathlen + strlen(path) + 1, mtServiceability);
-  char *saveptr, *token;
-  strcpy(libpath, env);
-  for (token = strtok_r(libpath, ":", &saveptr); token != nullptr; token = strtok_r(nullptr, ":", &saveptr)) {
-    sprintf(combined, "%s/%s", token, path);
-    if (0 == (ret = stat64x(combined, stat)))
-      break;
-  }
-
-  FREE_C_HEAP_ARRAY(char*, combined);
-  FREE_C_HEAP_ARRAY(char*, libpath);
-  return ret;
-}

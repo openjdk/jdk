@@ -2296,29 +2296,23 @@ public final class DateTimeFormatter {
             DateTimeParseContext context;
             try {
                 context = formatter.parseUnresolved0(text, pos);
-            } catch (IndexOutOfBoundsException ex) {
-                if (pos.getErrorIndex() < 0) {
-                    pos.setErrorIndex(0);
+                if (context == null) {
+                    if (pos.getErrorIndex() < 0) {
+                        pos.setErrorIndex(0);
+                    }
+                    return null;
                 }
-                return null;
-            }
-            if (context == null) {
-                if (pos.getErrorIndex() < 0) {
-                    pos.setErrorIndex(0);
-                }
-                return null;
-            }
-            try {
                 TemporalAccessor resolved = context.toResolved(formatter.resolverStyle, formatter.resolverFields);
                 if (parseType == null) {
                     return resolved;
                 }
                 return resolved.query(parseType);
             } catch (RuntimeException ex) {
-                pos.setErrorIndex(0);
+                if (pos.getErrorIndex() < 0) {
+                    pos.setErrorIndex(0);
+                }
                 return null;
             }
         }
     }
-
 }

@@ -40,7 +40,6 @@
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
-#include "gc/shared/generationSpec.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
@@ -560,7 +559,7 @@ void DefNewGeneration::compute_new_size() {
 
   size_t old_size = gch->old_gen()->capacity();
   size_t new_size_before = _virtual_space.committed_size();
-  size_t min_new_size = initial_size();
+  size_t min_new_size = NewSize;
   size_t max_new_size = reserved().byte_size();
   assert(min_new_size <= new_size_before &&
          new_size_before <= max_new_size,
@@ -1103,11 +1102,6 @@ void DefNewGeneration::print_on(outputStream* st) const {
 
 const char* DefNewGeneration::name() const {
   return "def new generation";
-}
-
-// Moved from inline file as they are not called inline
-ContiguousSpace* DefNewGeneration::first_compaction_space() const {
-  return eden();
 }
 
 HeapWord* DefNewGeneration::allocate(size_t word_size, bool is_tlab) {

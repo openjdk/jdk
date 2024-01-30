@@ -114,7 +114,7 @@ public enum Architecture {
     }
 
     // Initialize the architecture by mapping aliases and names to the enum values.
-    private static Architecture CURRENT_ARCH = initArch(PlatformProps.CURRENT_ARCH_STRING);
+    private static final Architecture CURRENT_ARCH = initArch(PlatformProps.CURRENT_ARCH_STRING);
 
     /**
      * {@return {@code true} if the current architecture is X64, Aka amd64}

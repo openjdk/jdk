@@ -21,12 +21,19 @@
 # questions.
 #
 
+# All tests
+
+all = \
+  :hotspot_all
+
 hotspot_all = \
   /
 
 hotspot_all_no_apps = \
   / \
   -applications
+
+# Component test groups
 
 hotspot_compiler = \
   compiler
@@ -246,6 +253,7 @@ tier2_compiler = \
   -:hotspot_slow_compiler
 
 tier3_compiler = \
+  applications/ctw/modules \
   compiler/c2/ \
   compiler/ciReplay/ \
   compiler/compilercontrol/ \
@@ -356,7 +364,6 @@ tier2_gc_shenandoah = \
 tier3_gc_shenandoah = \
   gc/stress/gcold/TestGCOldWithShenandoah.java \
   gc/stress/gcbasher/TestGCBasherWithShenandoah.java \
-  gc/stress/gclocker/TestGCLockerWithShenandoah.java \
   gc/stress/systemgc/TestSystemGCWithShenandoah.java \
   gc/shenandoah/TestStringDedupStress.java \
   -:tier2_gc_shenandoah
@@ -388,6 +395,7 @@ tier1_runtime = \
  -runtime/modules/LoadUnloadModuleStress.java \
  -runtime/modules/ModuleStress/ExportModuleStressTest.java \
  -runtime/modules/ModuleStress/ModuleStressGC.java \
+ -runtime/Monitor/ConcurrentDeflation.java \
  -runtime/ReservedStack \
  -runtime/SelectionResolution/AbstractMethodErrorTest.java \
  -runtime/SelectionResolution/IllegalAccessErrorTest.java \

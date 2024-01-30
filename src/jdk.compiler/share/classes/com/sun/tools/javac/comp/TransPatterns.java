@@ -907,6 +907,7 @@ public class TransPatterns extends TreeTranslator {
                 }
             } else if (currentBinding != null &&
                        commonBinding.type.tsym == currentBinding.type.tsym &&
+                       commonBinding.isUnnamedVariable() == currentBinding.isUnnamedVariable() &&
                        !previousNullable &&
                        new TreeDiffer(List.of(commonBinding), List.of(currentBinding))
                                .scan(commonNestedExpression, currentNestedExpression)) {

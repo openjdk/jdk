@@ -232,7 +232,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         CompiledMethod* nm = (cb != nullptr) ? cb->as_compiled_method_or_null() : nullptr;
         bool is_unsafe_arraycopy = (thread->doing_unsafe_access() && UnsafeCopyMemory::contains_pc(pc));
         if ((nm != nullptr && nm->has_unsafe_access()) || is_unsafe_arraycopy) {
-          address next_pc = pc + NativeCall::instruction_size;
+          address next_pc = Assembler::locate_next_instruction(pc);
           if (is_unsafe_arraycopy) {
             next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
           }
@@ -251,9 +251,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 
         // End life with a fatal error, message and detail message and the context.
         // Note: no need to do any post-processing here (e.g. signal chaining)
-        va_list va_dummy;
-        VMError::report_and_die(thread, uc, nullptr, 0, msg, detail_msg, va_dummy);
-        va_end(va_dummy);
+        VMError::report_and_die(thread, uc, nullptr, 0, msg, "%s", detail_msg);
 
         ShouldNotReachHere();
       } else if (sig == SIGFPE  &&
@@ -273,7 +271,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                 thread->thread_state() == _thread_in_native) &&
                 sig == SIGBUS && /* info->si_code == BUS_OBJERR && */
                 thread->doing_unsafe_access()) {
-      address next_pc = pc + NativeCall::instruction_size;
+      address next_pc = Assembler::locate_next_instruction(pc);
       if (UnsafeCopyMemory::contains_pc(pc)) {
         next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
       }

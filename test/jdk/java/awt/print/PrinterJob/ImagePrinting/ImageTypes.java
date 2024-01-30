@@ -25,7 +25,7 @@
  * @test
  * @bug 4521945 7006865
  * @summary Test printing images of different types.
- * @author prr
+ * @key printer
  * @run main/manual ImageTypes
  */
 

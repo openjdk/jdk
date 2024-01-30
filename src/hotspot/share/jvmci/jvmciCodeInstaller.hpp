@@ -399,6 +399,12 @@ protected:
   void read_virtual_objects(HotSpotCompiledCodeStream* stream, JVMCI_TRAPS);
 
   int estimateStubSpace(int static_call_stubs);
+
+  JVMCI::CodeInstallResult install_runtime_stub(CodeBlob*& cb,
+                                                const char* name,
+                                                CodeBuffer* buffer,
+                                                int stack_slots,
+                                                JVMCI_TRAPS);
 };
 
 #endif // SHARE_JVMCI_JVMCICODEINSTALLER_HPP

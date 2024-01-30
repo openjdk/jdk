@@ -101,7 +101,7 @@ void C1_MacroAssembler::lock_object(Register Rmark, Register Roop, Register Rbox
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(tmp, Roop);
     testbit(Address(tmp, Klass::access_flags_offset()), exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
-    z_btrue(slow_case);
+    branch_optimized(Assembler::bcondAllOne, slow_case);
   }
 
   assert(LockingMode != LM_MONITOR, "LM_MONITOR is already handled, by emit_lock()");
@@ -170,7 +170,7 @@ void C1_MacroAssembler::unlock_object(Register Rmark, Register Roop, Register Rb
     z_lg(Rmark, Address(Roop, hdr_offset));
     z_lgr(tmp, Rmark);
     z_nill(tmp, markWord::monitor_value);
-    z_brnz(slow_case);
+    branch_optimized(Assembler::bcondNotZero, slow_case);
     lightweight_unlock(Roop, Rmark, tmp, slow_case);
   } else if (LockingMode == LM_LEGACY) {
     // Test if object header is pointing to the displaced header, and if so, restore

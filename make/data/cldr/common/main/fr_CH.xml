@@ -141,14 +141,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<dayPeriod type="night1" draft="contributed">du mat.</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
-					<dayPeriodContext type="stand-alone">
-						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="midnight" draft="contributed">min.</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="narrow">
-							<dayPeriod type="midnight" draft="contributed">min.</dayPeriod>
-						</dayPeriodWidth>
-					</dayPeriodContext>
 				</dayPeriods>
 				<dateFormats>
 					<dateFormatLength type="full">

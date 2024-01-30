@@ -1,6 +1,6 @@
 IdentifierTest.java:42:11: compiler.err.underscore.as.identifier
 IdentifierTest.java:45:16: compiler.err.underscore.as.identifier
-IdentifierTest.java:46:20: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.unnamed.variables)
+IdentifierTest.java:46:20: compiler.err.feature.not.supported.in.source.plural: (compiler.misc.feature.unnamed.variables), 9, 22
 IdentifierTest.java:47:22: compiler.err.underscore.as.identifier
 IdentifierTest.java:52:13: compiler.err.underscore.as.identifier
 IdentifierTest.java:52:23: compiler.err.underscore.as.identifier

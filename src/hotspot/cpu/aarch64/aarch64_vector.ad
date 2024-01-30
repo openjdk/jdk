@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2020, 2023, Arm Limited. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -85,6 +85,7 @@ source_hpp %{
   bool assert_not_var_shift(const Node* n);
 
   Assembler::SIMD_Arrangement get_arrangement(const Node* n);
+  Assembler::SIMD_RegVariant get_reg_variant(const Node* n);
 %}
 
 source %{
@@ -125,7 +126,7 @@ source %{
     }
   }
 
-  bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
+  bool Matcher::match_rule_supported_auto_vectorization(int opcode, int vlen, BasicType bt) {
     if (UseSVE == 0) {
       // These operations are not profitable to be vectorized on NEON, because no direct
       // NEON instructions support them. But the match rule support for them is profitable for
@@ -326,6 +327,11 @@ source %{
     uint length_in_bytes = Matcher::vector_length_in_bytes(n);
     return Assembler::esize2arrangement((uint)type2aelembytes(bt),
                                         /* isQ */ length_in_bytes == 16);
+  }
+
+  Assembler::SIMD_RegVariant get_reg_variant(const Node* n) {
+    BasicType bt = Matcher::vector_element_basic_type(n);
+    return Assembler::elemType_to_regVariant(bt);
   }
 %}
 
@@ -666,7 +672,7 @@ instruct vaddD_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
 
 instruct vaddImmB(vReg dst_src, immBAddSubV con) %{
   predicate(UseSVE > 0);
-  match(Set dst_src (AddVB dst_src (ReplicateB con)));
+  match(Set dst_src (AddVB dst_src (Replicate con)));
   format %{ "vaddImmB $dst_src, $dst_src, $con" %}
   ins_encode %{
     int val = (int)$con$$constant;
@@ -681,7 +687,7 @@ instruct vaddImmB(vReg dst_src, immBAddSubV con) %{
 
 instruct vaddImmS(vReg dst_src, immIAddSubV con) %{
   predicate(UseSVE > 0);
-  match(Set dst_src (AddVS dst_src (ReplicateS con)));
+  match(Set dst_src (AddVS dst_src (Replicate con)));
   format %{ "vaddImmS $dst_src, $dst_src, $con" %}
   ins_encode %{
     int val = (int)$con$$constant;
@@ -696,7 +702,7 @@ instruct vaddImmS(vReg dst_src, immIAddSubV con) %{
 
 instruct vaddImmI(vReg dst_src, immIAddSubV con) %{
   predicate(UseSVE > 0);
-  match(Set dst_src (AddVI dst_src (ReplicateI con)));
+  match(Set dst_src (AddVI dst_src (Replicate con)));
   format %{ "vaddImmI $dst_src, $dst_src, $con" %}
   ins_encode %{
     int val = (int)$con$$constant;
@@ -711,7 +717,7 @@ instruct vaddImmI(vReg dst_src, immIAddSubV con) %{
 
 instruct vaddImmL(vReg dst_src, immLAddSubV con) %{
   predicate(UseSVE > 0);
-  match(Set dst_src (AddVL dst_src (ReplicateL con)));
+  match(Set dst_src (AddVL dst_src (Replicate con)));
   format %{ "vaddImmL $dst_src, $dst_src, $con" %}
   ins_encode %{
     int val = (int)$con$$constant;
@@ -1190,8 +1196,8 @@ instruct vand_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
 // vector and reg imm (unpredicated)
 
 instruct vandImmB(vReg dst_src, immBLog con) %{
-  predicate(UseSVE > 0);
-  match(Set dst_src (AndV dst_src (ReplicateB con)));
+  predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n) == T_BYTE);
+  match(Set dst_src (AndV dst_src (Replicate con)));
   format %{ "vandImmB $dst_src, $dst_src, $con" %}
   ins_encode %{
     __ sve_and($dst_src$$FloatRegister, __ B, (uint64_t)($con$$constant));
@@ -1200,8 +1206,8 @@ instruct vandImmB(vReg dst_src, immBLog con) %{
 %}
 
 instruct vandImmS(vReg dst_src, immSLog con) %{
-  predicate(UseSVE > 0);
-  match(Set dst_src (AndV dst_src (ReplicateS con)));
+  predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n) == T_SHORT);
+  match(Set dst_src (AndV dst_src (Replicate con)));
   format %{ "vandImmS $dst_src, $dst_src, $con" %}
   ins_encode %{
     __ sve_and($dst_src$$FloatRegister, __ H, (uint64_t)($con$$constant));
@@ -1210,8 +1216,8 @@ instruct vandImmS(vReg dst_src, immSLog con) %{
 %}
 
 instruct vandImmI(vReg dst_src, immILog con) %{
-  predicate(UseSVE > 0);
-  match(Set dst_src (AndV dst_src (ReplicateI con)));
+  predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n) == T_INT);
+  match(Set dst_src (AndV dst_src (Replicate con)));
   format %{ "vandImmI $dst_src, $dst_src, $con" %}
   ins_encode %{
     __ sve_and($dst_src$$FloatRegister, __ S, (uint64_t)($con$$constant));
@@ -1220,8 +1226,8 @@ instruct vandImmI(vReg dst_src, immILog con) %{
 %}
 
 instruct vandImmL(vReg dst_src, immLLog con) %{
-  predicate(UseSVE > 0);
-  match(Set dst_src (AndV dst_src (ReplicateL con)));
+  predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n) == T_LONG);
+  match(Set dst_src (AndV dst_src (Replicate con)));
   format %{ "vandImmL $dst_src, $dst_src, $con" %}
   ins_encode %{
     __ sve_and($dst_src$$FloatRegister, __ D, (uint64_t)($con$$constant));
@@ -1266,8 +1272,8 @@ instruct vor_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
 // vector or reg imm (unpredicated)
 
 instruct vorImmB(vReg dst_src, immBLog con) %{
-  predicate(UseSVE > 0);
-  match(Set dst_src (OrV dst_src (ReplicateB con)));
+  predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n) == T_BYTE);
+  match(Set dst_src (OrV dst_src (Replicate con)));
   format %{ "vorImmB $dst_src, $dst_src, $con" %}
   ins_encode %{
     __ sve_orr($dst_src$$FloatRegister, __ B, (uint64_t)($con$$constant));
@@ -1276,8 +1282,8 @@ instruct vorImmB(vReg dst_src, immBLog con) %{
 %}
 
 instruct vorImmS(vReg dst_src, immSLog con) %{
-  predicate(UseSVE > 0);
-  match(Set dst_src (OrV dst_src (ReplicateS con)));
+  predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n) == T_SHORT);
+  match(Set dst_src (OrV dst_src (Replicate con)));
   format %{ "vorImmS $dst_src, $dst_src, $con" %}
   ins_encode %{
     __ sve_orr($dst_src$$FloatRegister, __ H, (uint64_t)($con$$constant));
@@ -1286,8 +1292,8 @@ instruct vorImmS(vReg dst_src, immSLog con) %{
 %}
 
 instruct vorImmI(vReg dst_src, immILog con) %{
-  predicate(UseSVE > 0);
-  match(Set dst_src (OrV dst_src (ReplicateI con)));
+  predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n) == T_INT);
+  match(Set dst_src (OrV dst_src (Replicate con)));
   format %{ "vorImmI $dst_src, $dst_src, $con" %}
   ins_encode %{
     __ sve_orr($dst_src$$FloatRegister, __ S, (uint64_t)($con$$constant));
@@ -1296,8 +1302,8 @@ instruct vorImmI(vReg dst_src, immILog con) %{
 %}
 
 instruct vorImmL(vReg dst_src, immLLog con) %{
-  predicate(UseSVE > 0);
-  match(Set dst_src (OrV dst_src (ReplicateL con)));
+  predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n) == T_LONG);
+  match(Set dst_src (OrV dst_src (Replicate con)));
   format %{ "vorImmL $dst_src, $dst_src, $con" %}
   ins_encode %{
     __ sve_orr($dst_src$$FloatRegister, __ D, (uint64_t)($con$$constant));
@@ -1342,8 +1348,8 @@ instruct vxor_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
 // vector xor reg imm (unpredicated)
 
 instruct vxorImmB(vReg dst_src, immBLog con) %{
-  predicate(UseSVE > 0);
-  match(Set dst_src (XorV dst_src (ReplicateB con)));
+  predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n) == T_BYTE);
+  match(Set dst_src (XorV dst_src (Replicate con)));
   format %{ "vxorImmB $dst_src, $dst_src, $con" %}
   ins_encode %{
     __ sve_eor($dst_src$$FloatRegister, __ B, (uint64_t)($con$$constant));
@@ -1352,8 +1358,8 @@ instruct vxorImmB(vReg dst_src, immBLog con) %{
 %}
 
 instruct vxorImmS(vReg dst_src, immSLog con) %{
-  predicate(UseSVE > 0);
-  match(Set dst_src (XorV dst_src (ReplicateS con)));
+  predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n) == T_SHORT);
+  match(Set dst_src (XorV dst_src (Replicate con)));
   format %{ "vxorImmS $dst_src, $dst_src, $con" %}
   ins_encode %{
     __ sve_eor($dst_src$$FloatRegister, __ H, (uint64_t)($con$$constant));
@@ -1362,8 +1368,8 @@ instruct vxorImmS(vReg dst_src, immSLog con) %{
 %}
 
 instruct vxorImmI(vReg dst_src, immILog con) %{
-  predicate(UseSVE > 0);
-  match(Set dst_src (XorV dst_src (ReplicateI con)));
+  predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n) == T_INT);
+  match(Set dst_src (XorV dst_src (Replicate con)));
   format %{ "vxorImmI $dst_src, $dst_src, $con" %}
   ins_encode %{
     __ sve_eor($dst_src$$FloatRegister, __ S, (uint64_t)($con$$constant));
@@ -1372,8 +1378,8 @@ instruct vxorImmI(vReg dst_src, immILog con) %{
 %}
 
 instruct vxorImmL(vReg dst_src, immLLog con) %{
-  predicate(UseSVE > 0);
-  match(Set dst_src (XorV dst_src (ReplicateL con)));
+  predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n) == T_LONG);
+  match(Set dst_src (XorV dst_src (Replicate con)));
   format %{ "vxorImmL $dst_src, $dst_src, $con" %}
   ins_encode %{
     __ sve_eor($dst_src$$FloatRegister, __ D, (uint64_t)($con$$constant));
@@ -1410,9 +1416,7 @@ instruct veor3_sve(vReg dst_src1, vReg src2, vReg src3) %{
 // vector not
 
 instruct vnotI(vReg dst, vReg src, immI_M1 m1) %{
-  match(Set dst (XorV src (ReplicateB m1)));
-  match(Set dst (XorV src (ReplicateS m1)));
-  match(Set dst (XorV src (ReplicateI m1)));
+  match(Set dst (XorV src (Replicate m1)));
   format %{ "vnotI $dst, $src" %}
   ins_encode %{
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
@@ -1428,7 +1432,7 @@ instruct vnotI(vReg dst, vReg src, immI_M1 m1) %{
 %}
 
 instruct vnotL(vReg dst, vReg src, immL_M1 m1) %{
-  match(Set dst (XorV src (ReplicateL m1)));
+  match(Set dst (XorV src (Replicate m1)));
   format %{ "vnotL $dst, $src" %}
   ins_encode %{
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
@@ -1447,13 +1451,10 @@ instruct vnotL(vReg dst, vReg src, immL_M1 m1) %{
 
 instruct vnotI_masked(vReg dst_src, immI_M1 m1, pRegGov pg) %{
   predicate(UseSVE > 0);
-  match(Set dst_src (XorV (Binary dst_src (ReplicateB m1)) pg));
-  match(Set dst_src (XorV (Binary dst_src (ReplicateS m1)) pg));
-  match(Set dst_src (XorV (Binary dst_src (ReplicateI m1)) pg));
+  match(Set dst_src (XorV (Binary dst_src (Replicate m1)) pg));
   format %{ "vnotI_masked $dst_src, $pg, $dst_src" %}
   ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    __ sve_not($dst_src$$FloatRegister, __ elemType_to_regVariant(bt),
+    __ sve_not($dst_src$$FloatRegister, get_reg_variant(this),
                $pg$$PRegister, $dst_src$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
@@ -1461,11 +1462,10 @@ instruct vnotI_masked(vReg dst_src, immI_M1 m1, pRegGov pg) %{
 
 instruct vnotL_masked(vReg dst_src, immL_M1 m1, pRegGov pg) %{
   predicate(UseSVE > 0);
-  match(Set dst_src (XorV (Binary dst_src (ReplicateL m1)) pg));
+  match(Set dst_src (XorV (Binary dst_src (Replicate m1)) pg));
   format %{ "vnotL_masked $dst_src, $pg, $dst_src" %}
   ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    __ sve_not($dst_src$$FloatRegister, __ elemType_to_regVariant(bt),
+    __ sve_not($dst_src$$FloatRegister, get_reg_variant(this),
                $pg$$PRegister, $dst_src$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
@@ -1476,9 +1476,7 @@ instruct vnotL_masked(vReg dst_src, immL_M1 m1, pRegGov pg) %{
 // vector and_not
 
 instruct vand_notI(vReg dst, vReg src1, vReg src2, immI_M1 m1) %{
-  match(Set dst (AndV src1 (XorV src2 (ReplicateB m1))));
-  match(Set dst (AndV src1 (XorV src2 (ReplicateS m1))));
-  match(Set dst (AndV src1 (XorV src2 (ReplicateI m1))));
+  match(Set dst (AndV src1 (XorV src2 (Replicate m1))));
   format %{ "vand_notI $dst, $src1, $src2" %}
   ins_encode %{
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
@@ -1494,7 +1492,7 @@ instruct vand_notI(vReg dst, vReg src1, vReg src2, immI_M1 m1) %{
 %}
 
 instruct vand_notL(vReg dst, vReg src1, vReg src2, immL_M1 m1) %{
-  match(Set dst (AndV src1 (XorV src2 (ReplicateL m1))));
+  match(Set dst (AndV src1 (XorV src2 (Replicate m1))));
   format %{ "vand_notL $dst, $src1, $src2" %}
   ins_encode %{
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
@@ -1513,13 +1511,10 @@ instruct vand_notL(vReg dst, vReg src1, vReg src2, immL_M1 m1) %{
 
 instruct vand_notI_masked(vReg dst_src1, vReg src2, immI_M1 m1, pRegGov pg) %{
   predicate(UseSVE > 0);
-  match(Set dst_src1 (AndV (Binary dst_src1 (XorV src2 (ReplicateB m1))) pg));
-  match(Set dst_src1 (AndV (Binary dst_src1 (XorV src2 (ReplicateS m1))) pg));
-  match(Set dst_src1 (AndV (Binary dst_src1 (XorV src2 (ReplicateI m1))) pg));
+  match(Set dst_src1 (AndV (Binary dst_src1 (XorV src2 (Replicate m1))) pg));
   format %{ "vand_notI_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    __ sve_bic($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
+    __ sve_bic($dst_src1$$FloatRegister, get_reg_variant(this),
                $pg$$PRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
@@ -1527,11 +1522,10 @@ instruct vand_notI_masked(vReg dst_src1, vReg src2, immI_M1 m1, pRegGov pg) %{
 
 instruct vand_notL_masked(vReg dst_src1, vReg src2, immL_M1 m1, pRegGov pg) %{
   predicate(UseSVE > 0);
-  match(Set dst_src1 (AndV (Binary dst_src1 (XorV src2 (ReplicateL m1))) pg));
+  match(Set dst_src1 (AndV (Binary dst_src1 (XorV src2 (Replicate m1))) pg));
   format %{ "vand_notL_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    __ sve_bic($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
+    __ sve_bic($dst_src1$$FloatRegister, get_reg_variant(this),
                $pg$$PRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
@@ -3748,6 +3742,68 @@ instruct reinterpret_resize_gt128b(vReg dst, vReg src, pReg ptmp, rFlagsReg cr) 
   ins_pipe(pipe_slow);
 %}
 
+// ---------------------------- Vector zero extend --------------------------------
+
+instruct vzeroExtBtoX(vReg dst, vReg src) %{
+  match(Set dst (VectorUCastB2X src));
+  format %{ "vzeroExtBtoX $dst, $src" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    assert(bt == T_SHORT || bt == T_INT || bt == T_LONG, "must be");
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    if (VM_Version::use_neon_for_vector(length_in_bytes)) {
+      // 4B to 4S/4I, 8B to 8S
+      __ neon_vector_extend($dst$$FloatRegister, bt, length_in_bytes,
+                            $src$$FloatRegister, T_BYTE, /* is_unsigned */ true);
+    } else {
+      assert(UseSVE > 0, "must be sve");
+      __ sve_vector_extend($dst$$FloatRegister, __ elemType_to_regVariant(bt),
+                           $src$$FloatRegister, __ B, /* is_unsigned */ true);
+    }
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vzeroExtStoX(vReg dst, vReg src) %{
+  match(Set dst (VectorUCastS2X src));
+  format %{ "vzeroExtStoX $dst, $src" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    assert(bt == T_INT || bt == T_LONG, "must be");
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    if (VM_Version::use_neon_for_vector(length_in_bytes)) {
+      // 4S to 4I
+      __ neon_vector_extend($dst$$FloatRegister, T_INT, length_in_bytes,
+                            $src$$FloatRegister, T_SHORT, /* is_unsigned */ true);
+    } else {
+      assert(UseSVE > 0, "must be sve");
+      __ sve_vector_extend($dst$$FloatRegister, __ elemType_to_regVariant(bt),
+                           $src$$FloatRegister, __ H, /* is_unsigned */ true);
+    }
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vzeroExtItoX(vReg dst, vReg src) %{
+  match(Set dst (VectorUCastI2X src));
+  format %{ "vzeroExtItoX $dst, $src" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    assert(bt == T_LONG, "must be");
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    if (VM_Version::use_neon_for_vector(length_in_bytes)) {
+      // 2I to 2L
+      __ neon_vector_extend($dst$$FloatRegister, T_LONG, length_in_bytes,
+                            $src$$FloatRegister, T_INT, /* is_unsigned */ true);
+    } else {
+      assert(UseSVE > 0, "must be sve");
+      __ sve_vector_extend($dst$$FloatRegister, __ D,
+                           $src$$FloatRegister, __ S, /* is_unsigned */ true);
+    }
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 // ------------------------------ Vector cast ----------------------------------
 
 // VectorCastB2X
@@ -4190,38 +4246,8 @@ instruct vcvtFtoHF_sve(vReg dst, vReg src, vReg tmp) %{
 
 // replicate from reg
 
-instruct replicateB(vReg dst, iRegIorL2I src) %{
-  match(Set dst (ReplicateB src));
-  format %{ "replicateB $dst, $src" %}
-  ins_encode %{
-    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
-    if (VM_Version::use_neon_for_vector(length_in_bytes)) {
-      __ dup($dst$$FloatRegister, get_arrangement(this), $src$$Register);
-    } else {
-      assert(UseSVE > 0, "must be sve");
-      __ sve_dup($dst$$FloatRegister, __ B, $src$$Register);
-    }
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct replicateS(vReg dst, iRegIorL2I src) %{
-  match(Set dst (ReplicateS src));
-  format %{ "replicateS $dst, $src" %}
-  ins_encode %{
-    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
-    if (VM_Version::use_neon_for_vector(length_in_bytes)) {
-      __ dup($dst$$FloatRegister, get_arrangement(this), $src$$Register);
-    } else {
-      assert(UseSVE > 0, "must be sve");
-      __ sve_dup($dst$$FloatRegister, __ H, $src$$Register);
-    }
-  %}
-  ins_pipe(pipe_slow);
-%}
-
 instruct replicateI(vReg dst, iRegIorL2I src) %{
-  match(Set dst (ReplicateI src));
+  match(Set dst (Replicate src));
   format %{ "replicateI $dst, $src" %}
   ins_encode %{
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
@@ -4229,14 +4255,14 @@ instruct replicateI(vReg dst, iRegIorL2I src) %{
       __ dup($dst$$FloatRegister, get_arrangement(this), $src$$Register);
     } else {
       assert(UseSVE > 0, "must be sve");
-      __ sve_dup($dst$$FloatRegister, __ S, $src$$Register);
+      __ sve_dup($dst$$FloatRegister, get_reg_variant(this), $src$$Register);
     }
   %}
   ins_pipe(pipe_slow);
 %}
 
 instruct replicateL(vReg dst, iRegL src) %{
-  match(Set dst (ReplicateL src));
+  match(Set dst (Replicate src));
   format %{ "replicateL $dst, $src" %}
   ins_encode %{
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
@@ -4244,14 +4270,14 @@ instruct replicateL(vReg dst, iRegL src) %{
       __ dup($dst$$FloatRegister, get_arrangement(this), $src$$Register);
     } else {
       assert(UseSVE > 0, "must be sve");
-      __ sve_dup($dst$$FloatRegister, __ D, $src$$Register);
+      __ sve_dup($dst$$FloatRegister, get_reg_variant(this), $src$$Register);
     }
   %}
   ins_pipe(pipe_slow);
 %}
 
 instruct replicateF(vReg dst, vRegF src) %{
-  match(Set dst (ReplicateF src));
+  match(Set dst (Replicate src));
   format %{ "replicateF $dst, $src" %}
   ins_encode %{
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
@@ -4266,7 +4292,7 @@ instruct replicateF(vReg dst, vRegF src) %{
 %}
 
 instruct replicateD(vReg dst, vRegD src) %{
-  match(Set dst (ReplicateD src));
+  match(Set dst (Replicate src));
   format %{ "replicateD $dst, $src" %}
   ins_encode %{
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
@@ -4283,10 +4309,9 @@ instruct replicateD(vReg dst, vRegD src) %{
 // replicate from imm
 
 instruct replicateI_imm_le128b(vReg dst, immI con) %{
-  predicate(Matcher::vector_length_in_bytes(n) <= 16);
-  match(Set dst (ReplicateB con));
-  match(Set dst (ReplicateS con));
-  match(Set dst (ReplicateI con));
+  predicate(Matcher::vector_length_in_bytes(n) <= 16 &&
+            Matcher::is_non_long_integral_vector(n));
+  match(Set dst (Replicate con));
   format %{ "replicateI_imm_le128b $dst, $con\t# vector <= 128 bits" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
@@ -4304,8 +4329,9 @@ instruct replicateI_imm_le128b(vReg dst, immI con) %{
 %}
 
 instruct replicateB_imm8_gt128b(vReg dst, immI8 con) %{
-  predicate(Matcher::vector_length_in_bytes(n) > 16);
-  match(Set dst (ReplicateB con));
+  predicate(Matcher::vector_length_in_bytes(n) > 16 &&
+            Matcher::vector_element_basic_type(n) == T_BYTE);
+  match(Set dst (Replicate con));
   format %{ "replicateB_imm8_gt128b $dst, $con\t# vector > 128 bits" %}
   ins_encode %{
     assert(UseSVE > 0, "must be sve");
@@ -4314,31 +4340,22 @@ instruct replicateB_imm8_gt128b(vReg dst, immI8 con) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct replicateS_imm8_gt128b(vReg dst, immI8_shift8 con) %{
-  predicate(Matcher::vector_length_in_bytes(n) > 16);
-  match(Set dst (ReplicateS con));
-  format %{ "replicateS_imm8_gt128b $dst, $con\t# vector > 128 bits" %}
-  ins_encode %{
-    assert(UseSVE > 0, "must be sve");
-    __ sve_dup($dst$$FloatRegister, __ H, (int)($con$$constant));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
 instruct replicateI_imm8_gt128b(vReg dst, immI8_shift8 con) %{
-  predicate(Matcher::vector_length_in_bytes(n) > 16);
-  match(Set dst (ReplicateI con));
+  predicate(Matcher::vector_length_in_bytes(n) > 16 &&
+            (Matcher::vector_element_basic_type(n) == T_SHORT ||
+             Matcher::vector_element_basic_type(n) == T_INT));
+  match(Set dst (Replicate con));
   format %{ "replicateI_imm8_gt128b $dst, $con\t# vector > 128 bits" %}
   ins_encode %{
     assert(UseSVE > 0, "must be sve");
-    __ sve_dup($dst$$FloatRegister, __ S, (int)($con$$constant));
+    __ sve_dup($dst$$FloatRegister, get_reg_variant(this), (int)($con$$constant));
   %}
   ins_pipe(pipe_slow);
 %}
 
 instruct replicateL_imm_128b(vReg dst, immL con) %{
   predicate(Matcher::vector_length_in_bytes(n) == 16);
-  match(Set dst (ReplicateL con));
+  match(Set dst (Replicate con));
   format %{ "replicateL_imm_128b $dst, $con\t# vector > 128 bits" %}
   ins_encode %{
     __ mov($dst$$FloatRegister, __ T2D, (uint64_t)($con$$constant));
@@ -4348,7 +4365,7 @@ instruct replicateL_imm_128b(vReg dst, immL con) %{
 
 instruct replicateL_imm8_gt128b(vReg dst, immL8_shift8 con) %{
   predicate(Matcher::vector_length_in_bytes(n) > 16);
-  match(Set dst (ReplicateL con));
+  match(Set dst (Replicate con));
   format %{ "replicateL_imm8_gt128b $dst, $con\t# vector > 128 bits" %}
   ins_encode %{
     assert(UseSVE > 0, "must be sve");
@@ -5169,15 +5186,13 @@ instruct vmaskcmp_neon(vReg dst, vReg src1, vReg src2, immI cond) %{
 
 instruct vmaskcmp_zeroI_neon(vReg dst, vReg src, immI0 zero, immI_cmp_cond cond) %{
   predicate(UseSVE == 0);
-  match(Set dst (VectorMaskCmp (Binary src (ReplicateB zero)) cond));
-  match(Set dst (VectorMaskCmp (Binary src (ReplicateS zero)) cond));
-  match(Set dst (VectorMaskCmp (Binary src (ReplicateI zero)) cond));
+  match(Set dst (VectorMaskCmp (Binary src (Replicate zero)) cond));
   format %{ "vmaskcmp_zeroI_neon $dst, $src, #0, $cond" %}
   ins_encode %{
     Assembler::Condition condition = to_assembler_cond((BoolTest::mask)$cond$$constant);
-    BasicType bt = Matcher::vector_element_basic_type(this);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
-    __ neon_compare_zero($dst$$FloatRegister, bt, $src$$FloatRegister,
+    __ neon_compare_zero($dst$$FloatRegister, Matcher::vector_element_basic_type(this),
+                         $src$$FloatRegister,
                          condition, /* isQ */ length_in_bytes == 16);
   %}
   ins_pipe(pipe_slow);
@@ -5185,12 +5200,13 @@ instruct vmaskcmp_zeroI_neon(vReg dst, vReg src, immI0 zero, immI_cmp_cond cond)
 
 instruct vmaskcmp_zeroL_neon(vReg dst, vReg src, immL0 zero, immI_cmp_cond cond) %{
   predicate(UseSVE == 0);
-  match(Set dst (VectorMaskCmp (Binary src (ReplicateL zero)) cond));
+  match(Set dst (VectorMaskCmp (Binary src (Replicate zero)) cond));
   format %{ "vmaskcmp_zeroL_neon $dst, $src, #0, $cond" %}
   ins_encode %{
     Assembler::Condition condition = to_assembler_cond((BoolTest::mask)$cond$$constant);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
-    __ neon_compare_zero($dst$$FloatRegister, T_LONG, $src$$FloatRegister,
+    __ neon_compare_zero($dst$$FloatRegister, T_LONG,
+                         $src$$FloatRegister,
                          condition, /* isQ */ length_in_bytes == 16);
   %}
   ins_pipe(pipe_slow);
@@ -5198,12 +5214,13 @@ instruct vmaskcmp_zeroL_neon(vReg dst, vReg src, immL0 zero, immI_cmp_cond cond)
 
 instruct vmaskcmp_zeroF_neon(vReg dst, vReg src, immF0 zero, immI_cmp_cond cond) %{
   predicate(UseSVE == 0);
-  match(Set dst (VectorMaskCmp (Binary src (ReplicateF zero)) cond));
+  match(Set dst (VectorMaskCmp (Binary src (Replicate zero)) cond));
   format %{ "vmaskcmp_zeroF_neon $dst, $src, #0, $cond" %}
   ins_encode %{
     Assembler::Condition condition = to_assembler_cond((BoolTest::mask)$cond$$constant);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
-    __ neon_compare_zero($dst$$FloatRegister, T_FLOAT, $src$$FloatRegister,
+    __ neon_compare_zero($dst$$FloatRegister, T_FLOAT,
+                         $src$$FloatRegister,
                          condition, /* isQ */ length_in_bytes == 16);
   %}
   ins_pipe(pipe_slow);
@@ -5211,12 +5228,13 @@ instruct vmaskcmp_zeroF_neon(vReg dst, vReg src, immF0 zero, immI_cmp_cond cond)
 
 instruct vmaskcmp_zeroD_neon(vReg dst, vReg src, immD0 zero, immI_cmp_cond cond) %{
   predicate(UseSVE == 0);
-  match(Set dst (VectorMaskCmp (Binary src (ReplicateD zero)) cond));
+  match(Set dst (VectorMaskCmp (Binary src (Replicate zero)) cond));
   format %{ "vmaskcmp_zeroD_neon $dst, $src, #0, $cond" %}
   ins_encode %{
     Assembler::Condition condition = to_assembler_cond((BoolTest::mask)$cond$$constant);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
-    __ neon_compare_zero($dst$$FloatRegister, T_DOUBLE, $src$$FloatRegister,
+    __ neon_compare_zero($dst$$FloatRegister, T_DOUBLE,
+                         $src$$FloatRegister,
                          condition, /* isQ */ length_in_bytes == 16);
   %}
   ins_pipe(pipe_slow);
@@ -5238,114 +5256,62 @@ instruct vmaskcmp_sve(pReg dst, vReg src1, vReg src2, immI cond, rFlagsReg cr) %
   ins_pipe(pipe_slow);
 %}
 
-instruct vmaskcmp_immB_sve(pReg dst, vReg src, immI5 imm, immI_cmp_cond cond, rFlagsReg cr) %{
-  predicate(UseSVE > 0);
-  match(Set dst (VectorMaskCmp (Binary src (ReplicateB imm)) cond));
-  effect(KILL cr);
-  format %{ "vmaskcmp_immB_sve $dst, $src, $imm, $cond\t# KILL cr" %}
-  ins_encode %{
-    Assembler::Condition condition = to_assembler_cond((BoolTest::mask)$cond$$constant);
-    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
-    assert(length_in_bytes == MaxVectorSize, "invalid vector length");
-    __ sve_cmp(condition, $dst$$PRegister, __ B, ptrue, $src$$FloatRegister, (int)$imm$$constant);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct vmaskcmpU_immB_sve(pReg dst, vReg src, immIU7 imm, immI_cmpU_cond cond, rFlagsReg cr) %{
-  predicate(UseSVE > 0);
-  match(Set dst (VectorMaskCmp (Binary src (ReplicateB imm)) cond));
-  effect(KILL cr);
-  format %{ "vmaskcmpU_immB_sve $dst, $src, $imm, $cond\t# KILL cr" %}
-  ins_encode %{
-    Assembler::Condition condition = to_assembler_cond((BoolTest::mask)$cond$$constant);
-    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
-    assert(length_in_bytes == MaxVectorSize, "invalid vector length");
-    __ sve_cmp(condition, $dst$$PRegister, __ B, ptrue, $src$$FloatRegister, (int)$imm$$constant);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct vmaskcmp_immS_sve(pReg dst, vReg src, immI5 imm, immI_cmp_cond cond, rFlagsReg cr) %{
-  predicate(UseSVE > 0);
-  match(Set dst (VectorMaskCmp (Binary src (ReplicateS imm)) cond));
-  effect(KILL cr);
-  format %{ "vmaskcmp_immS_sve $dst, $src, $imm, $cond\t# KILL cr" %}
-  ins_encode %{
-    Assembler::Condition condition = to_assembler_cond((BoolTest::mask)$cond$$constant);
-    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
-    assert(length_in_bytes == MaxVectorSize, "invalid vector length");
-    __ sve_cmp(condition, $dst$$PRegister, __ H, ptrue, $src$$FloatRegister, (int)$imm$$constant);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct vmaskcmpU_immS_sve(pReg dst, vReg src, immIU7 imm, immI_cmpU_cond cond, rFlagsReg cr) %{
-  predicate(UseSVE > 0);
-  match(Set dst (VectorMaskCmp (Binary src (ReplicateS imm)) cond));
-  effect(KILL cr);
-  format %{ "vmaskcmpU_immS_sve $dst, $src, $imm, $cond\t# KILL cr" %}
-  ins_encode %{
-    Assembler::Condition condition = to_assembler_cond((BoolTest::mask)$cond$$constant);
-    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
-    assert(length_in_bytes == MaxVectorSize, "invalid vector length");
-    __ sve_cmp(condition, $dst$$PRegister, __ H, ptrue, $src$$FloatRegister, (int)$imm$$constant);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
 instruct vmaskcmp_immI_sve(pReg dst, vReg src, immI5 imm, immI_cmp_cond cond, rFlagsReg cr) %{
   predicate(UseSVE > 0);
-  match(Set dst (VectorMaskCmp (Binary src (ReplicateI imm)) cond));
+  match(Set dst (VectorMaskCmp (Binary src (Replicate imm)) cond));
   effect(KILL cr);
   format %{ "vmaskcmp_immI_sve $dst, $src, $imm, $cond\t# KILL cr" %}
   ins_encode %{
     Assembler::Condition condition = to_assembler_cond((BoolTest::mask)$cond$$constant);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
     assert(length_in_bytes == MaxVectorSize, "invalid vector length");
-    __ sve_cmp(condition, $dst$$PRegister, __ S, ptrue, $src$$FloatRegister, (int)$imm$$constant);
+    __ sve_cmp(condition, $dst$$PRegister, get_reg_variant(in(operand_index($src))),
+               ptrue, $src$$FloatRegister, (int)$imm$$constant);
   %}
   ins_pipe(pipe_slow);
 %}
 
 instruct vmaskcmpU_immI_sve(pReg dst, vReg src, immIU7 imm, immI_cmpU_cond cond, rFlagsReg cr) %{
   predicate(UseSVE > 0);
-  match(Set dst (VectorMaskCmp (Binary src (ReplicateI imm)) cond));
+  match(Set dst (VectorMaskCmp (Binary src (Replicate imm)) cond));
   effect(KILL cr);
   format %{ "vmaskcmpU_immI_sve $dst, $src, $imm, $cond\t# KILL cr" %}
   ins_encode %{
     Assembler::Condition condition = to_assembler_cond((BoolTest::mask)$cond$$constant);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
     assert(length_in_bytes == MaxVectorSize, "invalid vector length");
-    __ sve_cmp(condition, $dst$$PRegister, __ S, ptrue, $src$$FloatRegister, (int)$imm$$constant);
+    __ sve_cmp(condition, $dst$$PRegister, get_reg_variant(in(operand_index($src))),
+               ptrue, $src$$FloatRegister, (int)$imm$$constant);
   %}
   ins_pipe(pipe_slow);
 %}
 
 instruct vmaskcmp_immL_sve(pReg dst, vReg src, immL5 imm, immI_cmp_cond cond, rFlagsReg cr) %{
   predicate(UseSVE > 0);
-  match(Set dst (VectorMaskCmp (Binary src (ReplicateL imm)) cond));
+  match(Set dst (VectorMaskCmp (Binary src (Replicate imm)) cond));
   effect(KILL cr);
   format %{ "vmaskcmp_immL_sve $dst, $src, $imm, $cond\t# KILL cr" %}
   ins_encode %{
     Assembler::Condition condition = to_assembler_cond((BoolTest::mask)$cond$$constant);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
     assert(length_in_bytes == MaxVectorSize, "invalid vector length");
-    __ sve_cmp(condition, $dst$$PRegister, __ D, ptrue, $src$$FloatRegister, (int)$imm$$constant);
+    __ sve_cmp(condition, $dst$$PRegister, get_reg_variant(in(operand_index($src))),
+               ptrue, $src$$FloatRegister, (int)$imm$$constant);
   %}
   ins_pipe(pipe_slow);
 %}
 
 instruct vmaskcmpU_immL_sve(pReg dst, vReg src, immLU7 imm, immI_cmpU_cond cond, rFlagsReg cr) %{
   predicate(UseSVE > 0);
-  match(Set dst (VectorMaskCmp (Binary src (ReplicateL imm)) cond));
+  match(Set dst (VectorMaskCmp (Binary src (Replicate imm)) cond));
   effect(KILL cr);
   format %{ "vmaskcmpU_immL_sve $dst, $src, $imm, $cond\t# KILL cr" %}
   ins_encode %{
     Assembler::Condition condition = to_assembler_cond((BoolTest::mask)$cond$$constant);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
     assert(length_in_bytes == MaxVectorSize, "invalid vector length");
-    __ sve_cmp(condition, $dst$$PRegister, __ D, ptrue, $src$$FloatRegister, (int)$imm$$constant);
+    __ sve_cmp(condition, $dst$$PRegister, get_reg_variant(in(operand_index($src))),
+               ptrue, $src$$FloatRegister, (int)$imm$$constant);
   %}
   ins_pipe(pipe_slow);
 %}

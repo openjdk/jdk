@@ -31,7 +31,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<territories>
 			<territory type="BA" draft="contributed">Bosnia y Herzegovina</territory>
 			<territory type="GB" alt="short" draft="contributed">RU</territory>
-			<territory type="TA" draft="contributed">Tristán de Acuña</territory>
+			<territory type="TL" draft="contributed">Timor-Leste</territory>
 			<territory type="UM" draft="contributed">Islas menores alejadas de EE. UU.</territory>
 		</territories>
 	</localeDisplayNames>
@@ -173,6 +173,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</monthContext>
 				</months>
 				<days>
+					<dayContext type="format">
+						<dayWidth type="narrow">
+							<day type="sun" draft="contributed">D</day>
+							<day type="mon" draft="contributed">L</day>
+							<day type="tue" draft="contributed">M</day>
+							<day type="wed" draft="contributed">m</day>
+							<day type="thu" draft="contributed">J</day>
+							<day type="fri" draft="contributed">V</day>
+							<day type="sat" draft="contributed">S</day>
+						</dayWidth>
+					</dayContext>
 					<dayContext type="stand-alone">
 						<dayWidth type="narrow">
 							<day type="sun" draft="contributed">d</day>
@@ -188,18 +199,31 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dayPeriods>
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am" draft="contributed">a. m.</dayPeriod>
 							<dayPeriod type="noon">m.</dayPeriod>
+							<dayPeriod type="pm" draft="contributed">p. m.</dayPeriod>
 							<dayPeriod type="morning2">de la mañana</dayPeriod>
 							<dayPeriod type="evening1">de la tarde</dayPeriod>
 							<dayPeriod type="night1">de la noche</dayPeriod>
 						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am" draft="contributed">a. m.</dayPeriod>
+							<dayPeriod type="pm" draft="contributed">p. m.</dayPeriod>
+						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
 						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am" draft="contributed">a. m.</dayPeriod>
 							<dayPeriod type="noon" draft="contributed">m.</dayPeriod>
+							<dayPeriod type="pm" draft="contributed">p. m.</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
-							<dayPeriod type="noon" draft="contributed">m.</dayPeriod>
+							<dayPeriod type="am" draft="contributed">a. m.</dayPeriod>
+							<dayPeriod type="pm" draft="contributed">p. m.</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am" draft="contributed">a. m.</dayPeriod>
+							<dayPeriod type="pm" draft="contributed">p. m.</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
@@ -217,32 +241,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
-				<timeFormats>
-					<timeFormatLength type="full">
-						<timeFormat>
-							<pattern>h:mm:ss a zzzz</pattern>
-							<datetimeSkeleton>ahmmsszzzz</datetimeSkeleton>
-						</timeFormat>
-					</timeFormatLength>
-					<timeFormatLength type="long">
-						<timeFormat>
-							<pattern>h:mm:ss a z</pattern>
-							<datetimeSkeleton>ahmmssz</datetimeSkeleton>
-						</timeFormat>
-					</timeFormatLength>
-					<timeFormatLength type="medium">
-						<timeFormat>
-							<pattern>h:mm:ss a</pattern>
-							<datetimeSkeleton>ahmmss</datetimeSkeleton>
-						</timeFormat>
-					</timeFormatLength>
-					<timeFormatLength type="short">
-						<timeFormat>
-							<pattern>h:mm a</pattern>
-							<datetimeSkeleton>ahmm</datetimeSkeleton>
-						</timeFormat>
-					</timeFormatLength>
-				</timeFormats>
 				<dateTimeFormats>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>

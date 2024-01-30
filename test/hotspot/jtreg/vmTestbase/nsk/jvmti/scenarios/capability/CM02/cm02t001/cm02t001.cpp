@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,9 +58,9 @@ extern "C" {
 static jlong timeout = 0;
 
 /* test objects */
-static jthread thread = NULL;
-static jclass klass = NULL;
-static jobject testedObject = NULL;
+static jthread thread = nullptr;
+static jclass klass = nullptr;
+static jobject testedObject = nullptr;
 const jlong TESTED_TAG_VALUE = 5555555L;
 static bool testedObjectNotified = false;
 
@@ -98,34 +98,34 @@ static void JNICALL
 CompiledMethodLoad(jvmtiEnv *jvmti_env, jmethodID method,
         jint code_size, const void* code_addr, jint map_length,
         const jvmtiAddrLocationMap* map, const void* compile_info) {
-    char *name = NULL;
-    char *signature = NULL;
+    char *name = nullptr;
+    char *signature = nullptr;
 
     CompiledMethodLoadEventsCount++;
 
-    if (!NSK_JVMTI_VERIFY(jvmti_env->GetMethodName(method, &name, &signature, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetMethodName(method, &name, &signature, nullptr))) {
         nsk_jvmti_setFailStatus();
         return;
     }
     NSK_DISPLAY3("CompiledMethodLoad event: %s%s (0x%p)\n",
         name, signature, code_addr);
-    if (name != NULL)
+    if (name != nullptr)
         jvmti_env->Deallocate((unsigned char*)name);
-    if (signature != NULL)
+    if (signature != nullptr)
         jvmti_env->Deallocate((unsigned char*)signature);
 }
 
 static void JNICALL
 CompiledMethodUnload(jvmtiEnv *jvmti_env, jmethodID method,
         const void* code_addr) {
-    char *name = NULL;
-    char *sig = NULL;
+    char *name = nullptr;
+    char *sig = nullptr;
     jvmtiError err;
     CompiledMethodUnloadEventsCount++;
 
     NSK_DISPLAY0("CompiledMethodUnload event received\n");
     // Check for the case that the class has been unloaded
-    err = jvmti_env->GetMethodName(method, &name, &sig, NULL);
+    err = jvmti_env->GetMethodName(method, &name, &sig, nullptr);
     if (err == JVMTI_ERROR_NONE) {
         NSK_DISPLAY3("for: \tmethod: name=\"%s\" signature=\"%s\"\n\tnative address=0x%p\n",
           name, sig, code_addr);
@@ -206,12 +206,12 @@ VMObjectAlloc(jvmtiEnv *jvmti_env, JNIEnv* jni_env,
 
     VMObjectAllocEventsCount++;
 
-    if (!NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(object_klass, &signature, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(object_klass, &signature, nullptr))) {
         nsk_jvmti_setFailStatus();
         return;
     }
     NSK_DISPLAY2("VMObjectAlloc: \"%s\", size=%d\n", signature, size);
-    if (signature != NULL)
+    if (signature != nullptr)
         jvmti_env->Deallocate((unsigned char*)signature);
 }
 
@@ -219,8 +219,8 @@ static void JNICALL
 NativeMethodBind(jvmtiEnv* jvmti_env, JNIEnv *jni_env,
         jthread thread, jmethodID method, void* func, void** func_ptr) {
     jvmtiPhase phase;
-    char *name = NULL;
-    char *signature = NULL;
+    char *name = nullptr;
+    char *signature = nullptr;
 
     NativeMethodBindEventsCount++;
 
@@ -232,16 +232,16 @@ NativeMethodBind(jvmtiEnv* jvmti_env, JNIEnv *jni_env,
     if (phase != JVMTI_PHASE_START && phase != JVMTI_PHASE_LIVE)
         return;
 
-    if (!NSK_JVMTI_VERIFY(jvmti_env->GetMethodName(method, &name, &signature, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetMethodName(method, &name, &signature, nullptr))) {
         nsk_jvmti_setFailStatus();
         return;
     }
 
     NSK_DISPLAY2("NativeMethodBind event: %s%s\n", name, signature);
 
-    if (name != NULL)
+    if (name != nullptr)
         jvmti_env->Deallocate((unsigned char*)name);
-    if (signature != NULL)
+    if (signature != nullptr)
         jvmti_env->Deallocate((unsigned char*)signature);
 }
 
@@ -274,7 +274,7 @@ ObjectFree(jvmtiEnv *jvmti_env, jlong tag) {
 static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
     const char* THREAD_NAME = "Debuggee Thread";
     jvmtiThreadInfo info;
-    jthread *threads = NULL;
+    jthread *threads = nullptr;
     jint threads_count = 0;
     int i;
 
@@ -284,12 +284,12 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
     if (!NSK_JVMTI_VERIFY(jvmti->GetAllThreads(&threads_count, &threads)))
         return NSK_FALSE;
 
-    if (!NSK_VERIFY(threads_count > 0 && threads != NULL))
+    if (!NSK_VERIFY(threads_count > 0 && threads != nullptr))
         return NSK_FALSE;
 
     /* find tested thread */
     for (i = 0; i < threads_count; i++) {
-        if (!NSK_VERIFY(threads[i] != NULL))
+        if (!NSK_VERIFY(threads[i] != nullptr))
             return NSK_FALSE;
 
         /* get thread information */
@@ -299,12 +299,12 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
         NSK_DISPLAY3("    thread #%d (%s): %p\n", i, info.name, threads[i]);
 
         /* find by name */
-        if (info.name != NULL && (strcmp(info.name, THREAD_NAME) == 0)) {
+        if (info.name != nullptr && (strcmp(info.name, THREAD_NAME) == 0)) {
             thread = threads[i];
         }
     }
 
-    if (!NSK_JNI_VERIFY(jni, (thread = jni->NewGlobalRef(thread)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (thread = jni->NewGlobalRef(thread)) != nullptr))
         return NSK_FALSE;
 
     /* deallocate threads list */
@@ -312,7 +312,7 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
         return NSK_FALSE;
 
     /* get tested thread class */
-    if (!NSK_JNI_VERIFY(jni, (klass = jni->GetObjectClass(thread)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (klass = jni->GetObjectClass(thread)) != nullptr))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -366,7 +366,7 @@ static int checkGetCapabilities(jvmtiEnv* jvmti) {
  */
 static int checkGetOwnedMonitorInfo(jvmtiEnv* jvmti) {
     jint count;
-    jobject *monitors = NULL;
+    jobject *monitors = nullptr;
 
     NSK_DISPLAY0("Checking positive: GetOwnedMonitorInfo\n");
     if (!NSK_JVMTI_VERIFY(jvmti->GetOwnedMonitorInfo(thread, &count, &monitors)))
@@ -378,7 +378,7 @@ static int checkGetOwnedMonitorInfo(jvmtiEnv* jvmti) {
 /* Check "can_get_current_contended_monitor" function
  */
 static int checkGetCurrentContendedMonitor(jvmtiEnv* jvmti) {
-    jobject monitor = NULL;
+    jobject monitor = nullptr;
 
     NSK_DISPLAY0("Checking positive: GetCurrentContendedMonitor\n");
     if (!NSK_JVMTI_VERIFY(jvmti->GetCurrentContendedMonitor(thread, &monitor)))
@@ -433,20 +433,20 @@ class NewFrame {
     _jni->PushLocalFrame(16);
   }
   ~NewFrame() {
-    _jni->PopLocalFrame(NULL);
+    _jni->PopLocalFrame(nullptr);
   }
 };
 
 static int checkObjectTagEvent(jvmtiEnv* jvmti, JNIEnv* jni) {
     jlong tag = TESTED_TAG_VALUE;
     jint count;
-    jobject *res_objects = NULL;
-    jlong *res_tags = NULL;
+    jobject *res_objects = nullptr;
+    jlong *res_tags = nullptr;
 
     NewFrame local_frame(jni);
 
     // Create a tested object to tag.
-    if (!NSK_JNI_VERIFY(jni, (testedObject = jni->NewStringUTF("abcde")) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (testedObject = jni->NewStringUTF("abcde")) != nullptr))
         return NSK_FALSE;
 
     NSK_DISPLAY0("Checking positive: SetTag\n");
@@ -468,8 +468,8 @@ static int checkObjectTagEvent(jvmtiEnv* jvmti, JNIEnv* jni) {
 static int checkObjectFreeEvent(jvmtiEnv* jvmti) {
     jlong tag = TESTED_TAG_VALUE;
     jint count;
-    jobject *res_objects = NULL;
-    jlong *res_tags = NULL;
+    jobject *res_objects = nullptr;
+    jlong *res_tags = nullptr;
 
     // Make some GCs happen
     for (int i = 0; i < 5; i++) {
@@ -493,8 +493,8 @@ static int checkHeapFunctions(jvmtiEnv* jvmti) {
     const jlong TAG_VALUE = (123456789L);
     jlong tag;
     jint count;
-    jobject *res_objects = NULL;
-    jlong *res_tags = NULL;
+    jobject *res_objects = nullptr;
+    jlong *res_tags = nullptr;
     jint dummy_user_data = 0;
 
     NSK_DISPLAY0("Checking positive: SetTag\n");
@@ -737,7 +737,7 @@ JNIEXPORT jint JNI_OnLoad_cm02t001(JavaVM *jvm, char *options, void *reserved) {
 }
 #endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
-    jvmtiEnv* jvmti = NULL;
+    jvmtiEnv* jvmti = nullptr;
     jvmtiCapabilities caps;
     jvmtiEventCallbacks callbacks;
 
@@ -750,7 +750,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     /* create JVMTI environment */
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     /* add capabilities */
@@ -791,44 +791,44 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     /* enable events */
     if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(
-            JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, NULL)))
+            JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, nullptr)))
         return JNI_ERR;
     if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(
-            JVMTI_ENABLE, JVMTI_EVENT_COMPILED_METHOD_LOAD, NULL)))
+            JVMTI_ENABLE, JVMTI_EVENT_COMPILED_METHOD_LOAD, nullptr)))
         return JNI_ERR;
     if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(
-            JVMTI_ENABLE, JVMTI_EVENT_COMPILED_METHOD_UNLOAD, NULL)))
+            JVMTI_ENABLE, JVMTI_EVENT_COMPILED_METHOD_UNLOAD, nullptr)))
         return JNI_ERR;
     if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(
-            JVMTI_ENABLE, JVMTI_EVENT_MONITOR_CONTENDED_ENTER, NULL)))
+            JVMTI_ENABLE, JVMTI_EVENT_MONITOR_CONTENDED_ENTER, nullptr)))
         return JNI_ERR;
     if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(
-            JVMTI_ENABLE, JVMTI_EVENT_MONITOR_CONTENDED_ENTERED, NULL)))
+            JVMTI_ENABLE, JVMTI_EVENT_MONITOR_CONTENDED_ENTERED, nullptr)))
         return JNI_ERR;
     if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(
-            JVMTI_ENABLE, JVMTI_EVENT_MONITOR_WAIT, NULL)))
+            JVMTI_ENABLE, JVMTI_EVENT_MONITOR_WAIT, nullptr)))
         return JNI_ERR;
     if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(
-            JVMTI_ENABLE, JVMTI_EVENT_MONITOR_WAITED, NULL)))
+            JVMTI_ENABLE, JVMTI_EVENT_MONITOR_WAITED, nullptr)))
         return JNI_ERR;
     if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(
-            JVMTI_ENABLE, JVMTI_EVENT_VM_OBJECT_ALLOC, NULL)))
+            JVMTI_ENABLE, JVMTI_EVENT_VM_OBJECT_ALLOC, nullptr)))
         return JNI_ERR;
     if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(
-            JVMTI_ENABLE, JVMTI_EVENT_NATIVE_METHOD_BIND, NULL)))
+            JVMTI_ENABLE, JVMTI_EVENT_NATIVE_METHOD_BIND, nullptr)))
         return JNI_ERR;
     if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(
-            JVMTI_ENABLE, JVMTI_EVENT_GARBAGE_COLLECTION_START, NULL)))
+            JVMTI_ENABLE, JVMTI_EVENT_GARBAGE_COLLECTION_START, nullptr)))
         return JNI_ERR;
     if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(
-            JVMTI_ENABLE, JVMTI_EVENT_GARBAGE_COLLECTION_FINISH, NULL)))
+            JVMTI_ENABLE, JVMTI_EVENT_GARBAGE_COLLECTION_FINISH, nullptr)))
         return JNI_ERR;
     if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(
-            JVMTI_ENABLE, JVMTI_EVENT_OBJECT_FREE, NULL)))
+            JVMTI_ENABLE, JVMTI_EVENT_OBJECT_FREE, nullptr)))
         return JNI_ERR;
 
     /* register agent proc and arg */
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     return JNI_OK;

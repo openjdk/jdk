@@ -230,12 +230,10 @@ public class JMXAgentInterfaceBinding {
         private static final String EXP_TERM_MSG_REG = "Exit: ([0-9]+)";
         private static final Pattern EXIT_PATTERN = Pattern.compile(EXP_TERM_MSG_REG);
         private static final String COOP_EXIT = "MainThread: Cooperative Exit";
-        private static final int WAIT_FOR_JMX_AGENT_TIMEOUT_MS = 20_000;
         private final String addr;
         private final int jmxPort;
         private final int rmiPort;
         private final boolean useSSL;
-        private boolean jmxAgentStarted = false;
         private volatile Exception excptn;
 
         private MainThread(InetAddress bindAddress, int jmxPort, int rmiPort, boolean useSSL) {
@@ -269,19 +267,11 @@ public class JMXAgentInterfaceBinding {
             JMXConnectorThread connectionTester = new JMXConnectorThread(
                     addr, jmxPort, rmiPort, useSSL, latch);
             connectionTester.start();
-            boolean expired = false;
             try {
-                expired = !latch.await(WAIT_FOR_JMX_AGENT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
-                System.out.println(
-                        "MainThread: Finished waiting for JMX agent to become available: expired == "
-                                + expired);
-                jmxAgentStarted = !expired;
+                latch.await();
+                System.out.println("MainThread: Finished waiting for JMX agent to become available.");
             } catch (InterruptedException e) {
                 throw new RuntimeException("Test failed", e);
-            }
-            if (!jmxAgentStarted) {
-                throw new RuntimeException(
-                        "Test failed. JMX server agents not becoming available.");
             }
             if (connectionTester.isFailed()
                     || !connectionTester.jmxConnectionWorked()

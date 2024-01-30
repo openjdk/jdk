@@ -25,26 +25,85 @@
 
 package javax.swing.plaf.basic;
 
-import javax.swing.*;
-import javax.swing.event.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.datatransfer.*;
-import java.beans.*;
-import java.util.Enumeration;
-import java.util.Hashtable;
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Insets;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Stroke;
+import java.awt.datatransfer.Transferable;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.Comparator;
-import javax.swing.plaf.ComponentUI;
-import javax.swing.plaf.UIResource;
-import javax.swing.plaf.TreeUI;
-import javax.swing.tree.*;
-import javax.swing.text.Position;
-import javax.swing.plaf.basic.DragRecognitionSupport.BeforeDrag;
-import sun.awt.AWTAccessor;
-import sun.swing.SwingUtilities2;
+import java.util.Enumeration;
+import java.util.Hashtable;
 
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.CellRendererPane;
+import javax.swing.Icon;
+import javax.swing.InputMap;
+import javax.swing.JComponent;
+import javax.swing.JScrollBar;
+import javax.swing.JScrollPane;
+import javax.swing.JTextField;
+import javax.swing.JTree;
+import javax.swing.JViewport;
+import javax.swing.KeyStroke;
+import javax.swing.LookAndFeel;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.Timer;
+import javax.swing.TransferHandler;
+import javax.swing.UIDefaults;
+import javax.swing.UIManager;
+import javax.swing.event.CellEditorListener;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.MouseInputListener;
+import javax.swing.event.TreeExpansionEvent;
+import javax.swing.event.TreeExpansionListener;
+import javax.swing.event.TreeModelEvent;
+import javax.swing.event.TreeModelListener;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeSelectionListener;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.TreeUI;
+import javax.swing.plaf.UIResource;
+import javax.swing.plaf.basic.DragRecognitionSupport.BeforeDrag;
+import javax.swing.text.Position;
+import javax.swing.tree.AbstractLayoutCache;
+import javax.swing.tree.DefaultTreeCellEditor;
+import javax.swing.tree.DefaultTreeCellRenderer;
+import javax.swing.tree.FixedHeightLayoutCache;
+import javax.swing.tree.TreeCellEditor;
+import javax.swing.tree.TreeCellRenderer;
+import javax.swing.tree.TreeModel;
+import javax.swing.tree.TreePath;
+import javax.swing.tree.TreeSelectionModel;
+import javax.swing.tree.VariableHeightLayoutCache;
+
+import sun.awt.AWTAccessor;
 import sun.swing.DefaultLookup;
+import sun.swing.SwingUtilities2;
 import sun.swing.UIAction;
 
 /**
@@ -4082,7 +4141,7 @@ public class BasicTreeUI extends TreeUI
                 }
 
                 // Preferably checkForClickInExpandControl could take
-                // the Event to do this it self!
+                // the Event to do this itself!
                 if(SwingUtilities.isLeftMouseButton(e)) {
                     checkForClickInExpandControl(pressedPath, e.getX(), e.getY());
                 }

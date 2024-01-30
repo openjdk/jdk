@@ -122,7 +122,7 @@ class Snippets {
             // @start region="slicing-arena-main":
             try (Arena slicingArena = new SlicingArena(1000)) {
                 for (int i = 0; i < 10; i++) {
-                    MemorySegment s = slicingArena.allocateArray(JAVA_INT, 1, 2, 3, 4, 5);
+                    MemorySegment s = slicingArena.allocateFrom(JAVA_INT, 1, 2, 3, 4, 5);
                     // ...
                 }
             } // all memory allocated is released here
@@ -148,7 +148,7 @@ class Snippets {
         void withTargetLayout() {
             AddressLayout addressLayout = ADDRESS;
             AddressLayout unboundedLayout = addressLayout.withTargetLayout(
-                    sequenceLayout(ValueLayout.JAVA_BYTE));
+                    sequenceLayout(Long.MAX_VALUE, ValueLayout.JAVA_BYTE));
         }
     }
 
@@ -168,7 +168,7 @@ class Snippets {
             );
 
             try (Arena arena = Arena.ofConfined()) {
-                MemorySegment str = arena.allocateUtf8String("Hello");
+                MemorySegment str = arena.allocateFrom("Hello");
                 long len = (long) strlen.invokeExact(str);  // 5
             }
 
@@ -197,7 +197,7 @@ class Snippets {
 
             try (Arena arena = Arena.ofConfined()) {
                 MemorySegment compareFunc = linker.upcallStub(comparHandle, comparDesc, arena);
-                MemorySegment array = arena.allocateArray(JAVA_INT, 0, 9, 3, 4, 6, 5, 1, 8, 2, 7);
+                MemorySegment array = arena.allocateFrom(JAVA_INT, 0, 9, 3, 4, 6, 5, 1, 8, 2, 7);
                 qsort.invokeExact(array, 10L, 4L, compareFunc);
                 int[] sorted = array.toArray(JAVA_INT); // [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ]
 
@@ -288,7 +288,7 @@ class Snippets {
             );
 
             try (Arena arena = Arena.ofConfined()) {
-                int res = (int) printf.invokeExact(arena.allocateUtf8String("%d plus %d equals %d"), 2, 2, 4); //prints "2 plus 2 equals 4"
+                int res = (int) printf.invokeExact(arena.allocateFrom("%d plus %d equals %d"), 2, 2, 4); //prints "2 plus 2 equals 4"
             }
 
         }
@@ -313,7 +313,7 @@ class Snippets {
             try (Arena arena = Arena.ofConfined()) {
                 MemorySegment capturedState = arena.allocate(capturedStateLayout);
                 handle.invoke(capturedState);
-                int errno = (int) errnoHandle.get(capturedState);
+                int errno = (int) errnoHandle.get(capturedState, 0L);
                 // use errno
             }
         }
@@ -351,8 +351,8 @@ class Snippets {
 
             MethodHandle offsetHandle = taggedValues.byteOffsetHandle(PathElement.sequenceElement(),
                     PathElement.groupElement("kind"));
-            long offset1 = (long) offsetHandle.invokeExact(1L); // 8
-            long offset2 = (long) offsetHandle.invokeExact(2L); // 16
+            long offset1 = (long) offsetHandle.invokeExact(0L, 1L); // 8
+            long offset2 = (long) offsetHandle.invokeExact(0L, 2L); // 16
         }
 
         void sliceHandle() {
@@ -396,7 +396,7 @@ class Snippets {
             {
                 MemorySegment segment = null; // ...
 
-                VarHandle intHandle = MethodHandles.memorySegmentViewVarHandle(ValueLayout.JAVA_INT);
+                VarHandle intHandle = ValueLayout.JAVA_INT.varHandle();
                 MethodHandle multiplyExact = MethodHandles.lookup()
                         .findStatic(Math.class, "multiplyExact",
                                 MethodType.methodType(long.class, long.class, long.class));
@@ -408,8 +408,13 @@ class Snippets {
             {
                 MemorySegment segment = null; // ...
 
-                VarHandle intHandle = ValueLayout.JAVA_INT.arrayElementVarHandle();
-                int value = (int) intHandle.get(segment, 3L); // get int element at offset 3 * 4 = 12
+                MemoryLayout segmentLayout = MemoryLayout.structLayout(
+                    ValueLayout.JAVA_INT.withName("size"),
+                    MemoryLayout.sequenceLayout(4, ValueLayout.JAVA_INT).withName("data") // array of 4 elements
+                );
+                VarHandle intHandle = segmentLayout.varHandle(MemoryLayout.PathElement.groupElement("data"),
+                                                              MemoryLayout.PathElement.sequenceElement());
+                int value = (int) intHandle.get(segment, 0L, 3L); // get int element at offset 0 + offsetof(data) + 3 * 4 = 12
             }
 
             {
@@ -524,10 +529,8 @@ class Snippets {
             MemorySegment segment = null;
             byte value = 42;
 
-            var byteHandle = MemoryLayout.sequenceLayout(ValueLayout.JAVA_BYTE)
-                    .varHandle(MemoryLayout.PathElement.sequenceElement());
             for (long l = 0; l < segment.byteSize(); l++) {
-                byteHandle.set(segment.address(), l, value);
+                segment.set(JAVA_BYTE, l, value);
             }
         }
 
@@ -570,7 +573,7 @@ class Snippets {
             );
 
             try (Arena arena = Arena.ofConfined()) {
-                MemorySegment cString = arena.allocateUtf8String("Hello");
+                MemorySegment cString = arena.allocateFrom("Hello");
                 long len = (long) strlen.invokeExact(cString); // 5
             }
 
@@ -653,17 +656,6 @@ class Snippets {
     }
 
     static class ValueLayoutSnippets {
-
-        void arrayElementVarHandle() {
-            VarHandle arrayHandle = ValueLayout.JAVA_INT.arrayElementVarHandle(10, 20);
-
-            SequenceLayout arrayLayout = MemoryLayout.sequenceLayout(
-                    MemoryLayout.sequenceLayout(10,
-                            MemoryLayout.sequenceLayout(20, ValueLayout.JAVA_INT)));
-
-            int value1 = (int) arrayHandle.get(10, 2, 4); // ok, accessed offset = 8176
-            int value2 = (int) arrayHandle.get(0, 0, 30); // out of bounds value for z
-        }
 
         void statics() {
             ADDRESS.withByteAlignment(1);

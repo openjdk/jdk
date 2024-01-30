@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,18 @@
 /**
  * @test
  * @bug 4533872 4640853
- * @library /java/text/testlib
  * @summary Unit tests for supplementary character support (JSR-204) and Unicode 4.0 support
+ * @run junit Bug4533872
  */
 
 import java.text.BreakIterator;
 import java.util.Locale;
 
-public class Bug4533872 extends IntlTest {
+import org.junit.jupiter.api.Test;
 
-    public static void main(String[] args) throws Exception {
-        new Bug4533872().run(args);
-    }
+import static org.junit.jupiter.api.Assertions.fail;
+
+public class Bug4533872 {
 
     static final String[] given = {
       /* Lu Nd    Lu     Ll    */
@@ -73,7 +73,7 @@ public class Bug4533872 extends IntlTest {
             end = iter.next();
 
             if (!expected[i][j].equals(given[i].substring(start, end))) {
-                errln("Word break failure: printEachForward() expected:<" +
+                fail("Word break failure: printEachForward() expected:<" +
                       expected[i][j] + ">, got:<" +
                       given[i].substring(start, end) +
                       "> start=" + start + "  end=" + end);
@@ -95,7 +95,7 @@ public class Bug4533872 extends IntlTest {
 
             while (end < given[i].length()) {
                 if (!iter.isBoundary(end)) {
-                    errln("Word break failure: isBoundary() This should be a boundary. Index=" +
+                    fail("Word break failure: isBoundary() This should be a boundary. Index=" +
                           end + " for " + given[i]);
                 }
                 end = iter.next();
@@ -122,7 +122,7 @@ public class Bug4533872 extends IntlTest {
             // Check current()'s return value - should be same as first()'s.
             current = iter.current();
             if (start != current) {
-                errln("Word break failure: printEachForward() Unexpected current value: current()=" +
+                fail("Word break failure: printEachForward() Unexpected current value: current()=" +
                       current + ", expected(=first())=" + start);
             }
 
@@ -134,12 +134,12 @@ public class Bug4533872 extends IntlTest {
                 // Check current()'s return value - should be same as next()'s.
                 current = iter.current();
                 if (end != current) {
-                    errln("Word break failure: printEachForward() Unexpected current value: current()=" +
+                    fail("Word break failure: printEachForward() Unexpected current value: current()=" +
                           current + ", expected(=next())=" + end);
                 }
 
                 if (!expected[i][j].equals(given[i].substring(start, end))) {
-                    errln("Word break failure: printEachForward() expected:<" +
+                    fail("Word break failure: printEachForward() expected:<" +
                           expected[i][j] + ">, got:<" +
                           given[i].substring(start, end) +
                           "> start=" + start + "  end=" + end);
@@ -161,7 +161,7 @@ public class Bug4533872 extends IntlTest {
             // Check current()'s return value - should be same as last()'s.
             current = iter.current();
             if (end != current) {
-                errln("Word break failure: printEachBackward() Unexpected current value: current()=" +
+                fail("Word break failure: printEachBackward() Unexpected current value: current()=" +
                       current + ", expected(=last())=" + end);
             }
 
@@ -173,12 +173,12 @@ public class Bug4533872 extends IntlTest {
                 // Check current()'s return value - should be same as previous()'s.
                 current = iter.current();
                 if (start != current) {
-                    errln("Word break failure: printEachBackward() Unexpected current value: current()=" +
+                    fail("Word break failure: printEachBackward() Unexpected current value: current()=" +
                           current + ", expected(=previous())=" + start);
                 }
 
                 if (!expected[i][j].equals(given[i].substring(start, end))) {
-                    errln("Word break failure: printEachBackward() expected:<" +
+                    fail("Word break failure: printEachBackward() expected:<" +
                           expected[i][j] + ">, got:<" +
                           given[i].substring(start, end) +
                           "> start=" + start + "  end=" + end);
@@ -207,7 +207,7 @@ public class Bug4533872 extends IntlTest {
                 start = iter.previous();
 
                 if (!expected[i][j].equals(given[i].substring(start, end))) {
-                    errln("Word break failure: printAt_1() expected:<" +
+                    fail("Word break failure: printAt_1() expected:<" +
                           expected[i][j] + ">, got:<" +
                           given[i].substring(start, end) +
                           "> start=" + start + "  end=" + end);
@@ -234,7 +234,7 @@ public class Bug4533872 extends IntlTest {
 
             // Check preceding(0)'s return value - should equals BreakIterator.DONE.
             if (iter.preceding(0) != BreakIterator.DONE) {
-                 errln("Word break failure: printAt_2() expected:-1(BreakIterator.DONE), got:" +
+                 fail("Word break failure: printAt_2() expected:-1(BreakIterator.DONE), got:" +
                        iter.preceding(0));
             }
 
@@ -243,7 +243,7 @@ public class Bug4533872 extends IntlTest {
                 end = iter.next();
 
                 if (!expected[i][j].equals(given[i].substring(start, end))) {
-                    errln("Word break failure: printAt_2() expected:<" +
+                    fail("Word break failure: printAt_2() expected:<" +
                           expected[i][j] + ">, got:<" +
                           given[i].substring(start, end) +
                           "> start=" + start + "  end=" + end);
@@ -254,7 +254,7 @@ public class Bug4533872 extends IntlTest {
             end = iter.last();
             start = iter.next();
             if (start != BreakIterator.DONE) {
-                 errln("Word break failure: printAt_2() expected:-1(BreakIterator.DONE), got:" + start);
+                 fail("Word break failure: printAt_2() expected:-1(BreakIterator.DONE), got:" + start);
             }
         }
     }

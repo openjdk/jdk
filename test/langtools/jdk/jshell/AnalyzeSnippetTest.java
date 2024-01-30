@@ -64,6 +64,7 @@ public class AnalyzeSnippetTest {
         state = JShell.builder()
                 .out(new PrintStream(new ByteArrayOutputStream()))
                 .err(new PrintStream(new ByteArrayOutputStream()))
+                .executionEngine(Presets.TEST_DEFAULT_EXECUTION)
                 .build();
         sca = state.sourceCodeAnalysis();
     }

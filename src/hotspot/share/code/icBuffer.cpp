@@ -34,6 +34,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -44,8 +45,8 @@ DEF_STUB_INTERFACE(ICStub);
 
 StubQueue* InlineCacheBuffer::_buffer    = nullptr;
 
-CompiledICHolder* InlineCacheBuffer::_pending_released = nullptr;
-int InlineCacheBuffer::_pending_count = 0;
+CompiledICHolder* volatile InlineCacheBuffer::_pending_released = nullptr;
+volatile int InlineCacheBuffer::_pending_count = 0;
 
 #ifdef ASSERT
 ICRefillVerifier::ICRefillVerifier()
@@ -87,7 +88,7 @@ void ICStub::finalize() {
     CompiledIC *ic = CompiledIC_at(CodeCache::find_compiled(ic_site()), ic_site());
     assert(CodeCache::find_compiled(ic->instruction_address()) != nullptr, "inline cache in non-compiled?");
 
-    assert(this == ICStub_from_destination_address(ic->stub_address()), "wrong owner of ic buffer");
+    assert(this == ICStub::from_destination_address(ic->stub_address()), "wrong owner of ic buffer");
     ic->set_ic_destination_and_value(destination(), cached_value());
   }
 }
@@ -140,13 +141,8 @@ void ICStub::print() {
 
 void InlineCacheBuffer::initialize() {
   if (_buffer != nullptr) return; // already initialized
-  _buffer = new StubQueue(new ICStubInterface, 10*K, InlineCacheBuffer_lock, "InlineCacheBuffer");
+  _buffer = new StubQueue(new ICStubInterface, checked_cast<int>(InlineCacheBufferSize), InlineCacheBuffer_lock, "InlineCacheBuffer");
   assert (_buffer != nullptr, "cannot allocate InlineCacheBuffer");
-}
-
-
-ICStub* InlineCacheBuffer::new_ic_stub() {
-  return (ICStub*)buffer()->request_committed(ic_stub_code_size());
 }
 
 
@@ -209,7 +205,7 @@ bool InlineCacheBuffer::create_transition_stub(CompiledIC *ic, void* cached_valu
   }
 
   // allocate and initialize new "out-of-line" inline-cache
-  ICStub* ic_stub = new_ic_stub();
+  ICStub* ic_stub = (ICStub*) buffer()->request_committed(ic_stub_code_size());
   if (ic_stub == nullptr) {
 #ifdef ASSERT
     ICRefillVerifier* verifier = current_ic_refill_verifier();
@@ -218,9 +214,18 @@ bool InlineCacheBuffer::create_transition_stub(CompiledIC *ic, void* cached_valu
     return false;
   }
 
+#ifdef ASSERT
+  {
+    ICStub* rev_stub = ICStub::from_destination_address(ic_stub->code_begin());
+    assert(ic_stub == rev_stub,
+           "ICStub mapping is reversible: stub=" PTR_FORMAT ", code=" PTR_FORMAT ", rev_stub=" PTR_FORMAT,
+           p2i(ic_stub), p2i(ic_stub->code_begin()), p2i(rev_stub));
+  }
+#endif
+
   // If an transition stub is already associate with the inline cache, then we remove the association.
   if (ic->is_in_transition_state()) {
-    ICStub* old_stub = ICStub_from_destination_address(ic->stub_address());
+    ICStub* old_stub = ICStub::from_destination_address(ic->stub_address());
     old_stub->clear();
   }
 
@@ -233,13 +238,13 @@ bool InlineCacheBuffer::create_transition_stub(CompiledIC *ic, void* cached_valu
 
 
 address InlineCacheBuffer::ic_destination_for(CompiledIC *ic) {
-  ICStub* stub = ICStub_from_destination_address(ic->stub_address());
+  ICStub* stub = ICStub::from_destination_address(ic->stub_address());
   return stub->destination();
 }
 
 
 void* InlineCacheBuffer::cached_value_for(CompiledIC *ic) {
-  ICStub* stub = ICStub_from_destination_address(ic->stub_address());
+  ICStub* stub = ICStub::from_destination_address(ic->stub_address());
   return stub->cached_value();
 }
 
@@ -247,26 +252,42 @@ void* InlineCacheBuffer::cached_value_for(CompiledIC *ic) {
 // Free CompiledICHolder*s that are no longer in use
 void InlineCacheBuffer::release_pending_icholders() {
   assert(SafepointSynchronize::is_at_safepoint(), "should only be called during a safepoint");
-  CompiledICHolder* holder = _pending_released;
+  CompiledICHolder* holder = Atomic::load(&_pending_released);
   _pending_released = nullptr;
+  int count = 0;
   while (holder != nullptr) {
     CompiledICHolder* next = holder->next();
     delete holder;
     holder = next;
-    _pending_count--;
+    count++;
   }
-  assert(_pending_count == 0, "wrong count");
+  assert(pending_icholder_count() == count, "wrong count");
+  Atomic::store(&_pending_count, 0);
 }
 
 // Enqueue this icholder for release during the next safepoint.  It's
-// not safe to free them until them since they might be visible to
+// not safe to free them until then since they might be visible to
 // another thread.
 void InlineCacheBuffer::queue_for_release(CompiledICHolder* icholder) {
-  MutexLocker mex(InlineCacheBuffer_lock, Mutex::_no_safepoint_check_flag);
-  icholder->set_next(_pending_released);
-  _pending_released = icholder;
-  _pending_count++;
+  assert(icholder->next() == nullptr, "multiple enqueue?");
+
+  CompiledICHolder* old = Atomic::load(&_pending_released);
+  for (;;) {
+    icholder->set_next(old);
+    // The only reader runs at a safepoint serially so there is no need for a more strict atomic.
+    CompiledICHolder* cur = Atomic::cmpxchg(&_pending_released, old, icholder, memory_order_relaxed);
+    if (cur == old) {
+      break;
+    }
+    old = cur;
+  }
+  Atomic::inc(&_pending_count, memory_order_relaxed);
+
   if (TraceICBuffer) {
     tty->print_cr("enqueueing icholder " INTPTR_FORMAT " to be freed", p2i(icholder));
   }
+}
+
+int InlineCacheBuffer::pending_icholder_count() {
+  return Atomic::load(&_pending_count);
 }

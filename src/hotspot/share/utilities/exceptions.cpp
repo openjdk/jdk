@@ -82,10 +82,20 @@ void ThreadShadow::clear_pending_nonasync_exception() {
 
 // Implementation of Exceptions
 
-bool Exceptions::special_exception(JavaThread* thread, const char* file, int line, Handle h_exception) {
+bool Exceptions::special_exception(JavaThread* thread, const char* file, int line, Handle h_exception, Symbol* h_name, const char* message) {
+  assert(h_exception.is_null() != (h_name == nullptr), "either exception (" PTR_FORMAT ") or "
+         "symbol (" PTR_FORMAT ") must be non-null but not both", p2i(h_exception()), p2i(h_name));
+
   // bootstrapping check
   if (!Universe::is_fully_initialized()) {
-   vm_exit_during_initialization(h_exception);
+    if (h_exception.not_null()) {
+      vm_exit_during_initialization(h_exception);
+    } else if (h_name == nullptr) {
+      // at least an informative message.
+      vm_exit_during_initialization("Exception", message);
+    } else {
+      vm_exit_during_initialization(h_name, message);
+    }
    ShouldNotReachHere();
   }
 
@@ -94,7 +104,7 @@ bool Exceptions::special_exception(JavaThread* thread, const char* file, int lin
   // to prevent infinite recursion trying to initialize stack overflow without
   // adequate stack space.
   // This can happen with stress testing a large value of StackShadowPages
-  if (h_exception()->klass() == vmClasses::StackOverflowError_klass()) {
+  if (h_exception.not_null() && h_exception()->klass() == vmClasses::StackOverflowError_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(h_exception->klass());
     assert(ik->is_initialized(),
            "need to increase java_thread_min_stack_allowed calculation");
@@ -102,33 +112,22 @@ bool Exceptions::special_exception(JavaThread* thread, const char* file, int lin
 #endif // ASSERT
 
   if (!thread->can_call_java()) {
+    ResourceMark rm(thread);
+    const char* exc_value = h_exception.not_null() ? h_exception->print_value_string() :
+                      h_name != nullptr ? h_name->as_C_string() :
+                      "null";
+    log_info(exceptions)("Thread cannot call Java so instead of throwing exception <%s%s%s> (" PTR_FORMAT ") \n"
+                        "at [%s, line %d]\nfor thread " PTR_FORMAT ",\n"
+                        "throwing pre-allocated exception: %s",
+                        exc_value, message ? ": " : "", message ? message : "",
+                        p2i(h_exception()), file, line, p2i(thread),
+                        Universe::vm_exception()->print_value_string());
     // We do not care what kind of exception we get for a thread which
     // is compiling.  We just install a dummy exception object
     thread->set_pending_exception(Universe::vm_exception(), file, line);
     return true;
   }
 
-  return false;
-}
-
-bool Exceptions::special_exception(JavaThread* thread, const char* file, int line, Symbol* h_name, const char* message) {
-  // bootstrapping check
-  if (!Universe::is_fully_initialized()) {
-    if (h_name == nullptr) {
-      // at least an informative message.
-      vm_exit_during_initialization("Exception", message);
-    } else {
-      vm_exit_during_initialization(h_name, message);
-    }
-    ShouldNotReachHere();
-  }
-
-  if (!thread->can_call_java()) {
-    // We do not care what kind of exception we get for a thread which
-    // is compiling.  We just install a dummy exception object
-    thread->set_pending_exception(Universe::vm_exception(), file, line);
-    return true;
-  }
   return false;
 }
 
@@ -187,7 +186,7 @@ void Exceptions::_throw(JavaThread* thread, const char* file, int line, Handle h
 void Exceptions::_throw_msg(JavaThread* thread, const char* file, int line, Symbol* name, const char* message,
                             Handle h_loader, Handle h_protection_domain) {
   // Check for special boot-strapping/compiler-thread handling
-  if (special_exception(thread, file, line, name, message)) return;
+  if (special_exception(thread, file, line, Handle(), name, message)) return;
   // Create and throw exception
   Handle h_cause(thread, nullptr);
   Handle h_exception = new_exception(thread, name, message, h_cause, h_loader, h_protection_domain);
@@ -197,7 +196,7 @@ void Exceptions::_throw_msg(JavaThread* thread, const char* file, int line, Symb
 void Exceptions::_throw_msg_cause(JavaThread* thread, const char* file, int line, Symbol* name, const char* message, Handle h_cause,
                                   Handle h_loader, Handle h_protection_domain) {
   // Check for special boot-strapping/compiler-thread handling
-  if (special_exception(thread, file, line, name, message)) return;
+  if (special_exception(thread, file, line, Handle(), name, message)) return;
   // Create and throw exception and init cause
   Handle h_exception = new_exception(thread, name, message, h_cause, h_loader, h_protection_domain);
   _throw(thread, file, line, h_exception, message);
@@ -214,7 +213,7 @@ void Exceptions::_throw_cause(JavaThread* thread, const char* file, int line, Sy
 
 void Exceptions::_throw_args(JavaThread* thread, const char* file, int line, Symbol* name, Symbol* signature, JavaCallArguments *args) {
   // Check for special boot-strapping/compiler-thread handling
-  if (special_exception(thread, file, line, name, nullptr)) return;
+  if (special_exception(thread, file, line, Handle(), name, nullptr)) return;
   // Create and throw exception
   Handle h_loader(thread, nullptr);
   Handle h_prot(thread, nullptr);

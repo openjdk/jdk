@@ -129,17 +129,6 @@ public class WhiteBox {
     return getConstantPool0(aClass);
   }
 
-  private native int getConstantPoolCacheIndexTag0();
-  public         int getConstantPoolCacheIndexTag() {
-    return getConstantPoolCacheIndexTag0();
-  }
-
-  private native int getConstantPoolCacheLength0(Class<?> aClass);
-  public         int getConstantPoolCacheLength(Class<?> aClass) {
-    Objects.requireNonNull(aClass);
-    return getConstantPoolCacheLength0(aClass);
-  }
-
   private native Object[] getResolvedReferences0(Class<?> aClass);
   public         Object[] getResolvedReferences(Class<?> aClass) {
     Objects.requireNonNull(aClass);
@@ -167,6 +156,18 @@ public class WhiteBox {
   public         int getFieldCPIndex(Class<?> aClass, int index) {
     Objects.requireNonNull(aClass);
     return getFieldCPIndex0(aClass, index);
+  }
+
+  private native int getMethodEntriesLength0(Class<?> aClass);
+  public         int getMethodEntriesLength(Class<?> aClass) {
+    Objects.requireNonNull(aClass);
+    return getMethodEntriesLength0(aClass);
+  }
+
+  private native int getMethodCPIndex0(Class<?> aClass, int index);
+  public         int getMethodCPIndex(Class<?> aClass, int index) {
+    Objects.requireNonNull(aClass);
+    return getMethodCPIndex0(aClass, index);
   }
 
   private native int getIndyInfoLength0(Class<?> aClass);
@@ -521,6 +522,8 @@ public class WhiteBox {
   public native long metaspaceCapacityUntilGC();
   public native long metaspaceSharedRegionAlignment();
 
+  public native void cleanMetaspaces();
+
   // Metaspace Arena Tests
   public native long createMetaspaceTestContext(long commit_limit, long reserve_limit);
   public native void destroyMetaspaceTestContext(long context);
@@ -783,6 +786,10 @@ public class WhiteBox {
   public native void lockCritical();
 
   public native void unlockCritical();
+
+  public native void pinObject(Object o);
+
+  public native void unpinObject(Object o);
 
   public native boolean setVirtualThreadsNotifyJvmtiMode(boolean enabled);
 

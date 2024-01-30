@@ -2,7 +2,7 @@
  * @test  /nodynamiccopyright/
  * @bug 8314216
  * @summary Multiple patterns without unnamed variables
- * @compile/fail/ref=T8314216.out -XDrawDiagnostics --enable-preview --source ${jdk.version} T8314216.java
+ * @compile/fail/ref=T8314216.out -XDrawDiagnostics T8314216.java
  */
 
 public class T8314216 {

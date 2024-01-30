@@ -23,6 +23,8 @@
  * questions.
  */
 
+import jdk.internal.javac.ParticipatesInPreview;
+
 /**
  * Provides the <em>{@index jshell jshell tool}</em> tool for evaluating
  * snippets of Java code, and defines a JDK-specific API for modeling and
@@ -63,6 +65,7 @@
  * @moduleGraph
  * @since 9
  */
+@ParticipatesInPreview
 module jdk.jshell {
     requires java.logging;
     requires jdk.compiler;

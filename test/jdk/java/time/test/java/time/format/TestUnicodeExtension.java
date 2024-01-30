@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8176841 8202537 8244245 8265315 8284840 8296248
+ * @bug 8176841 8202537 8244245 8265315 8284840 8296248 8306116
  * @summary Tests java.time classes deals with Unicode extensions
  *      correctly.
  * @modules jdk.localedata
@@ -141,7 +141,7 @@ public class TestUnicodeExtension {
             },
 
             {RG_GB, null, null, ISO, null,
-            "Thursday, 10 August 2017, 15:15:00 Pacific Daylight Time"
+            "Thursday 10 August 2017, 15:15:00 Pacific Daylight Time"
             },
 
             // DecimalStyle
@@ -231,7 +231,7 @@ public class TestUnicodeExtension {
             },
 
             {RG_GB, null, null, null, null,
-            "Thursday, 10 August 2017, 15:15:00 Pacific Daylight Time"
+            "Thursday 10 August 2017, 15:15:00 Pacific Daylight Time"
             },
 
             // DecimalStyle
@@ -340,12 +340,11 @@ public class TestUnicodeExtension {
 
         };
     }
-
     @DataProvider(name="shortTZID")
     Object[][] shortTZID() {
         return new Object[][] {
             // LDML's short ID, Expected Zone,
-            // Based on timezone.xml from CLDR
+            // Based on timezone.xml from CLDR v44
             {"adalv", "Europe/Andorra"},
             {"aedxb", "Asia/Dubai"},
             {"afkbl", "Asia/Kabul"},
@@ -385,7 +384,6 @@ public class TestUnicodeExtension {
             {"audrw", "Australia/Darwin"},
             {"aueuc", "Australia/Eucla"},
             {"auhba", "Australia/Hobart"},
-            {"aukns", "Australia/Currie"},
             {"auldc", "Australia/Lindeman"},
             {"auldh", "Australia/Lord_Howe"},
             {"aumel", "Australia/Melbourne"},
@@ -430,19 +428,15 @@ public class TestUnicodeExtension {
             {"bzbze", "America/Belize"},
             {"cacfq", "America/Creston"},
             {"caedm", "America/Edmonton"},
-            {"caffs", "America/Rainy_River"},
             {"cafne", "America/Fort_Nelson"},
             {"caglb", "America/Glace_Bay"},
             {"cagoo", "America/Goose_Bay"},
             {"cahal", "America/Halifax"},
             {"caiql", "America/Iqaluit"},
             {"camon", "America/Moncton"},
-            {"capnt", "America/Pangnirtung"},
             {"careb", "America/Resolute"},
             {"careg", "America/Regina"},
             {"casjf", "America/St_Johns"},
-            {"canpg", "America/Nipigon"},
-            {"cathu", "America/Thunder_Bay"},
             {"cator", "America/Toronto"},
             {"cavan", "America/Vancouver"},
             {"cawnp", "America/Winnipeg"},
@@ -454,7 +448,6 @@ public class TestUnicodeExtension {
             {"cayev", "America/Inuvik"},
             {"cayxy", "America/Whitehorse"},
             {"cayyn", "America/Swift_Current"},
-            {"cayzf", "America/Yellowknife"},
             {"cayzs", "America/Coral_Harbour"},
             {"cccck", "Indian/Cocos"},
             {"cdfbm", "Africa/Lubumbashi"},
@@ -619,7 +612,6 @@ public class TestUnicodeExtension {
             {"mxmzt", "America/Mazatlan"},
             {"mxoji", "America/Ojinaga"},
             {"mxpvr", "America/Bahia_Banderas"},
-            {"mxstis", "America/Santa_Isabel"},
             {"mxtij", "America/Tijuana"},
             {"mykch", "Asia/Kuching"},
             {"mykul", "Asia/Kuala_Lumpur"},
@@ -726,12 +718,9 @@ public class TestUnicodeExtension {
             {"twtpe", "Asia/Taipei"},
             {"tzdar", "Africa/Dar_es_Salaam"},
             {"uaiev", "Europe/Kiev"},
-            {"uaozh", "Europe/Zaporozhye"},
             {"uasip", "Europe/Simferopol"},
-            {"uauzh", "Europe/Uzhgorod"},
             {"ugkla", "Africa/Kampala"},
             {"umawk", "Pacific/Wake"},
-            {"umjon", "Pacific/Johnston"},
             {"ummdy", "Pacific/Midway"},
             {"usadk", "America/Adak"},
             {"usaeg", "America/Indiana/Marengo"},
@@ -817,7 +806,7 @@ public class TestUnicodeExtension {
             {Locale.US, FormatStyle.LONG, "MMMM d, y, h:mm:ss\u202fa z"},
             {Locale.US, FormatStyle.MEDIUM, "MMM d, y, h:mm:ss\u202fa"},
             {Locale.US, FormatStyle.SHORT, "M/d/yy, h:mm\u202fa"},
-            {RG_GB, FormatStyle.FULL, "EEEE, d MMMM y, HH:mm:ss zzzz"},
+            {RG_GB, FormatStyle.FULL, "EEEE d MMMM y, HH:mm:ss zzzz"},
             {RG_GB, FormatStyle.LONG, "d MMMM y, HH:mm:ss z"},
             {RG_GB, FormatStyle.MEDIUM, "d MMM y, HH:mm:ss"},
             {RG_GB, FormatStyle.SHORT, "dd/MM/y, HH:mm"},

@@ -46,7 +46,7 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 @Warmup(iterations = 2, time = 3, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 15, time = 1, timeUnit = TimeUnit.SECONDS)
 @Fork(1)
-@State(Scope.Benchmark)
+@State(Scope.Thread)
 public class ArrayClone {
 
     @Param({"0", "10", "100", "1000"})

@@ -32,8 +32,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</types>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[\u064E \u0650 \u064F \u064B \u064D \u064C \u0651 \u0652 \u0654 \u0670 آ ا أ ء ب پ ت ټ ث ج ځ چ څ ح خ د ډ ذ ر ړ ز ژ ږ س ش ښ ص ض ط ظ ع غ ف ق ک ګ گ ل م ن ڼ ه ة و ؤ ی ے ي ې ۍ ئ]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[\u200C \u200D \u200E\u200F]</exemplarCharacters>
+		<exemplarCharacters>[َ ِ ُ ً ٍ ٌ ّ ْ ٔ ٰ آ اأ ء ب پ ت ټ ث ج ځ چ څ ح خ د ډ ذ ر ړ ز ژ ږ س ش ښ ص ض ط ظ ع غ ف ق ک ګگ ل م ن ڼ هة وؤ یےيېۍئ]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[\u200C\u200D\u200E\u200F]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>
@@ -72,11 +72,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="2">د صفرے د</month>
 						</monthWidth>
 					</monthContext>
-					<monthContext type="stand-alone">
-						<monthWidth type="wide">
-							<month type="2">د صفرے د</month>
-						</monthWidth>
-					</monthContext>
 				</months>
 			</calendar>
 		</calendars>
@@ -91,42 +86,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">{0} کاله مخکے</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="year-short">
-				<relativeTime type="future">
-					<relativeTimePattern count="one">په {0} کال کے</relativeTimePattern>
-					<relativeTimePattern count="other">په {0} کالونو کے</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} کال مخکے</relativeTimePattern>
-					<relativeTimePattern count="other">{0} کاله مخکے</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="year-narrow">
-				<relativeTime type="future">
-					<relativeTimePattern count="one">په {0} کال کے</relativeTimePattern>
-					<relativeTimePattern count="other">په {0} کالونو کے</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} کال مخکے</relativeTimePattern>
-					<relativeTimePattern count="other">{0} کاله مخکے</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="weekOfMonth">
 				<displayName>د مياشتے اونۍ</displayName>
 			</field>
-			<field type="weekOfMonth-short">
-				<displayName>د مياشتے اونۍ</displayName>
-			</field>
-			<field type="weekOfMonth-narrow">
-				<displayName>د مياشتے اونۍ</displayName>
-			</field>
 			<field type="weekdayOfMonth">
-				<displayName>د مياشتے اونۍ ورځ</displayName>
-			</field>
-			<field type="weekdayOfMonth-short">
-				<displayName>د مياشتے اونۍ ورځ</displayName>
-			</field>
-			<field type="weekdayOfMonth-narrow">
 				<displayName>د مياشتے اونۍ ورځ</displayName>
 			</field>
 		</fields>
@@ -288,12 +251,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	<units>
 		<unitLength type="long">
 			<unit type="acceleration-g-force">
-				<displayName>د جاذبے قوه</displayName>
 				<unitPattern count="one">{0} د جاذبے قوه</unitPattern>
 				<unitPattern count="other">{0} د جاذبے قوه</unitPattern>
 			</unit>
 			<unit type="angle-degree">
-				<displayName>درجے</displayName>
 				<unitPattern count="one">{0} درجے</unitPattern>
 				<unitPattern count="other">{0} درجے</unitPattern>
 			</unit>
@@ -303,12 +264,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} آرک ثانيے</unitPattern>
 			</unit>
 			<unit type="area-hectare">
-				<displayName>هيکترے</displayName>
 				<unitPattern count="one">{0} هيکتر</unitPattern>
 				<unitPattern count="other">{0} هيکترے</unitPattern>
 			</unit>
 			<unit type="duration-month">
-				<displayName>مياشتے</displayName>
 				<unitPattern count="one">{0} مياشت</unitPattern>
 				<unitPattern count="other">{0} مياشتے</unitPattern>
 			</unit>
@@ -316,13 +275,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0} په هره اونۍ کے</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
-				<displayName>ورځے</displayName>
-				<unitPattern count="one">{0} ورځ</unitPattern>
-				<unitPattern count="other">{0} ورځے</unitPattern>
 				<perUnitPattern>{0} په هره ورځ کے</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
-				<displayName>انچے</displayName>
 				<unitPattern count="one">{0} انچ</unitPattern>
 				<unitPattern count="other">{0} انچے</unitPattern>
 			</unit>
@@ -352,7 +307,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} درجے فارنهايټ</unitPattern>
 			</unit>
 			<unit type="volume-cup">
-				<displayName>پيالے</displayName>
 				<unitPattern count="one">{0} پياله</unitPattern>
 				<unitPattern count="other">{0} پيالے</unitPattern>
 			</unit>

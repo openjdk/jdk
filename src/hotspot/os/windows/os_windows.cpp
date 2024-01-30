@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
 #include "os_windows.inline.hpp"
 #include "prims/jniFastGetField.hpp"
@@ -63,12 +64,11 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/threads.hpp"
 #include "runtime/threadCritical.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/attachListener.hpp"
-#include "services/memTracker.hpp"
 #include "services/runtimeService.hpp"
 #include "symbolengine.hpp"
 #include "utilities/align.hpp"
@@ -80,6 +80,7 @@
 #include "windbghelp.hpp"
 #if INCLUDE_JFR
 #include "jfr/jfrEvents.hpp"
+#include "jfr/support/jfrNativeLibraryLoadEvent.hpp"
 #endif
 
 #ifdef _DEBUG
@@ -505,12 +506,17 @@ struct tm* os::gmtime_pd(const time_t* clock, struct tm* res) {
   return nullptr;
 }
 
+enum Ept { EPT_THREAD, EPT_PROCESS, EPT_PROCESS_DIE };
+// Wrapper around _endthreadex(), exit() and _exit()
+[[noreturn]]
+static void exit_process_or_thread(Ept what, int code);
+
 JNIEXPORT
 LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo);
 
 // Thread start routine for all newly created threads.
 // Called with the associated Thread* as the argument.
-unsigned __stdcall os::win32::thread_native_entry(void* t) {
+static unsigned __stdcall thread_native_entry(void* t) {
   Thread* thread = static_cast<Thread*>(t);
 
   thread->record_stack_base_and_size();
@@ -558,7 +564,8 @@ unsigned __stdcall os::win32::thread_native_entry(void* t) {
 
   // Thread must not return from exit_process_or_thread(), but if it does,
   // let it proceed to exit normally
-  return (unsigned)os::win32::exit_process_or_thread(os::win32::EPT_THREAD, res);
+  exit_process_or_thread(EPT_THREAD, res);
+  return res;
 }
 
 static OSThread* create_os_thread(Thread* thread, HANDLE thread_handle,
@@ -745,7 +752,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     thread_handle =
       (HANDLE)_beginthreadex(nullptr,
                              (unsigned)stack_size,
-                             &os::win32::thread_native_entry,
+                             &thread_native_entry,
                              thread,
                              initflag,
                              &thread_id);
@@ -801,20 +808,12 @@ void os::free_thread(OSThread* osthread) {
 static jlong first_filetime;
 static jlong initial_performance_count;
 static jlong performance_frequency;
-
-
-jlong as_long(LARGE_INTEGER x) {
-  jlong result = 0; // initialization to avoid warning
-  set_high(&result, x.HighPart);
-  set_low(&result, x.LowPart);
-  return result;
-}
-
+static double nanos_per_count; // NANOSECS_PER_SEC / performance_frequency
 
 jlong os::elapsed_counter() {
   LARGE_INTEGER count;
   QueryPerformanceCounter(&count);
-  return as_long(count) - initial_performance_count;
+  return count.QuadPart - initial_performance_count;
 }
 
 
@@ -978,9 +977,10 @@ void os::set_native_thread_name(const char *name) {
 void os::win32::initialize_performance_counter() {
   LARGE_INTEGER count;
   QueryPerformanceFrequency(&count);
-  performance_frequency = as_long(count);
+  performance_frequency = count.QuadPart;
+  nanos_per_count = NANOSECS_PER_SEC / (double)performance_frequency;
   QueryPerformanceCounter(&count);
-  initial_performance_count = as_long(count);
+  initial_performance_count = count.QuadPart;
 }
 
 
@@ -1082,9 +1082,8 @@ void os::javaTimeSystemUTC(jlong &seconds, jlong &nanos) {
 jlong os::javaTimeNanos() {
     LARGE_INTEGER current_count;
     QueryPerformanceCounter(&current_count);
-    double current = as_long(current_count);
-    double freq = performance_frequency;
-    jlong time = (jlong)((current/freq) * NANOSECS_PER_SEC);
+    double current = current_count.QuadPart;
+    jlong time = (jlong)(current * nanos_per_count);
     return time;
 }
 
@@ -1210,7 +1209,7 @@ void os::abort(bool dump_core, void* siginfo, const void* context) {
     if (dumpFile != nullptr) {
       CloseHandle(dumpFile);
     }
-    win32::exit_process_or_thread(win32::EPT_PROCESS, 1);
+    exit_process_or_thread(EPT_PROCESS, 1);
   }
 
   dumpType = (MINIDUMP_TYPE)(MiniDumpWithFullMemory | MiniDumpWithHandleData |
@@ -1234,12 +1233,12 @@ void os::abort(bool dump_core, void* siginfo, const void* context) {
     jio_fprintf(stderr, "Call to MiniDumpWriteDump() failed (Error 0x%x)\n", GetLastError());
   }
   CloseHandle(dumpFile);
-  win32::exit_process_or_thread(win32::EPT_PROCESS, 1);
+  exit_process_or_thread(EPT_PROCESS, 1);
 }
 
 // Die immediately, no exit hook, no abort hook, no cleanup.
 void os::die() {
-  win32::exit_process_or_thread(win32::EPT_PROCESS_DIE, -1);
+  exit_process_or_thread(EPT_PROCESS_DIE, -1);
 }
 
 void  os::dll_unload(void *lib) {
@@ -1248,33 +1247,22 @@ void  os::dll_unload(void *lib) {
     snprintf(name, MAX_PATH, "<not available>");
   }
 
-#if INCLUDE_JFR
-  EventNativeLibraryUnload event;
-  event.set_name(name);
-#endif
+  JFR_ONLY(NativeLibraryUnloadEvent unload_event(name);)
 
   if (::FreeLibrary((HMODULE)lib)) {
     Events::log_dll_message(nullptr, "Unloaded dll \"%s\" [" INTPTR_FORMAT "]", name, p2i(lib));
     log_info(os)("Unloaded dll \"%s\" [" INTPTR_FORMAT "]", name, p2i(lib));
-#if INCLUDE_JFR
-    event.set_success(true);
-    event.set_errorMessage(nullptr);
-    event.commit();
-#endif
+    JFR_ONLY(unload_event.set_result(true);)
   } else {
     const DWORD errcode = ::GetLastError();
     char buf[500];
     size_t tl = os::lasterror(buf, sizeof(buf));
     Events::log_dll_message(nullptr, "Attempt to unload dll \"%s\" [" INTPTR_FORMAT "] failed (error code %d)", name, p2i(lib), errcode);
     log_info(os)("Attempt to unload dll \"%s\" [" INTPTR_FORMAT "] failed (error code %d)", name, p2i(lib), errcode);
-#if INCLUDE_JFR
-    event.set_success(false);
     if (tl == 0) {
       os::snprintf(buf, sizeof(buf), "Attempt to unload dll failed (error code %d)", (int) errcode);
     }
-    event.set_errorMessage(buf);
-    event.commit();
-#endif
+    JFR_ONLY(unload_event.set_error_msg(buf);)
   }
 }
 
@@ -1410,6 +1398,9 @@ const char* os::get_current_directory(char *buf, size_t buflen) {
   return _getcwd(buf, n);
 }
 
+void os::prepare_native_symbols() {
+}
+
 //-----------------------------------------------------------
 // Helper functions for fatal error handler
 #ifdef _WIN64
@@ -1543,21 +1534,14 @@ static int _print_module(const char* fname, address base_address,
 // same architecture as Hotspot is running on
 void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   log_info(os)("attempting shared library load of %s", name);
-#if INCLUDE_JFR
-  EventNativeLibraryLoad event;
-  event.set_name(name);
-#endif
-  void * result = LoadLibrary(name);
+  void* result;
+  JFR_ONLY(NativeLibraryLoadEvent load_event(name, &result);)
+  result = LoadLibrary(name);
   if (result != nullptr) {
     Events::log_dll_message(nullptr, "Loaded shared library %s", name);
     // Recalculate pdb search path if a DLL was loaded successfully.
     SymbolEngine::recalc_search_path();
     log_info(os)("shared library load of %s was successful", name);
-#if INCLUDE_JFR
-    event.set_success(true);
-    event.set_errorMessage(nullptr);
-    event.commit();
-#endif
     return result;
   }
   DWORD errcode = GetLastError();
@@ -1571,11 +1555,7 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   if (errcode == ERROR_MOD_NOT_FOUND) {
     strncpy(ebuf, "Can't find dependent libraries", ebuflen - 1);
     ebuf[ebuflen - 1] = '\0';
-#if INCLUDE_JFR
-    event.set_success(false);
-    event.set_errorMessage(ebuf);
-    event.commit();
-#endif
+    JFR_ONLY(load_event.set_error_msg(ebuf);)
     return nullptr;
   }
 
@@ -1586,11 +1566,7 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   // else call os::lasterror to obtain system error message
   int fd = ::open(name, O_RDONLY | O_BINARY, 0);
   if (fd < 0) {
-#if INCLUDE_JFR
-    event.set_success(false);
-    event.set_errorMessage("open on dll file did not work");
-    event.commit();
-#endif
+    JFR_ONLY(load_event.set_error_msg("open on dll file did not work");)
     return nullptr;
   }
 
@@ -1617,11 +1593,7 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   ::close(fd);
   if (failed_to_get_lib_arch) {
     // file i/o error - report os::lasterror(...) msg
-#if INCLUDE_JFR
-    event.set_success(false);
-    event.set_errorMessage("failed to get lib architecture");
-    event.commit();
-#endif
+    JFR_ONLY(load_event.set_error_msg("failed to get lib architecture");)
     return nullptr;
   }
 
@@ -1666,11 +1638,7 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   // If the architecture is right
   // but some other error took place - report os::lasterror(...) msg
   if (lib_arch == running_arch) {
-#if INCLUDE_JFR
-    event.set_success(false);
-    event.set_errorMessage("lib architecture matches, but other error occured");
-    event.commit();
-#endif
+    JFR_ONLY(load_event.set_error_msg("lib architecture matches, but other error occured");)
     return nullptr;
   }
 
@@ -1684,12 +1652,7 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
                 "Can't load this .dll (machine code=0x%x) on a %s-bit platform",
                 lib_arch, running_arch_str);
   }
-#if INCLUDE_JFR
-  event.set_success(false);
-  event.set_errorMessage(ebuf);
-  event.commit();
-#endif
-
+  JFR_ONLY(load_event.set_error_msg(ebuf);)
   return nullptr;
 }
 
@@ -2258,7 +2221,7 @@ void* os::win32::install_signal_handler(int sig, signal_handler_t handler) {
     sigbreakHandler = handler;
     return oldHandler;
   } else {
-    return ::signal(sig, handler);
+    return CAST_FROM_FN_PTR(void*, ::signal(sig, handler));
   }
 }
 
@@ -2496,8 +2459,8 @@ LONG Handle_IDiv_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
 #if defined(_M_ARM64)
   PCONTEXT ctx = exceptionInfo->ContextRecord;
   address pc = (address)ctx->Sp;
-  assert(pc[0] == 0x83, "not an sdiv opcode"); //Fixme did i get the right opcode?
-  assert(ctx->X4 == min_jint, "unexpected idiv exception");
+  guarantee(pc[0] == 0x83, "not an sdiv opcode(0x83), the actual value = 0x%x", pc[0]); //Fixme did i get the right opcode?
+  guarantee(ctx->X4 == min_jint, "unexpected idiv exception, the actual value = %d while the expected is %d", ctx->X4, min_jint);
   // set correct result values and continue after idiv instruction
   ctx->Pc = (uint64_t)pc + 4;        // idiv reg, reg, reg  is 4 bytes
   ctx->X4 = (uint64_t)min_jint;      // result
@@ -2506,8 +2469,10 @@ LONG Handle_IDiv_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
 #elif defined(_M_AMD64)
   PCONTEXT ctx = exceptionInfo->ContextRecord;
   address pc = (address)ctx->Rip;
-  assert(pc[0] >= Assembler::REX && pc[0] <= Assembler::REX_WRXB && pc[1] == 0xF7 || pc[0] == 0xF7, "not an idiv opcode");
-  assert(pc[0] >= Assembler::REX && pc[0] <= Assembler::REX_WRXB && (pc[2] & ~0x7) == 0xF8 || (pc[1] & ~0x7) == 0xF8, "cannot handle non-register operands");
+  guarantee((pc[0] >= Assembler::REX && pc[0] <= Assembler::REX_WRXB && pc[1] == 0xF7) || pc[0] == 0xF7,
+            "not an idiv opcode, pc[0] = 0x%x and pc[1] = 0x%x", pc[0], pc[1]);
+  guarantee((pc[0] >= Assembler::REX && pc[0] <= Assembler::REX_WRXB && (pc[2] & ~0x7) == 0xF8) || (pc[1] & ~0x7) == 0xF8,
+            "cannot handle non-register operands, pc[0] = 0x%x, pc[1] = 0x%x and pc[2] = 0x%x", pc[0], pc[1], pc[2]);
   if (pc[0] == 0xF7) {
     // set correct result values and continue after idiv instruction
     ctx->Rip = (DWORD64)pc + 2;        // idiv reg, reg  is 2 bytes
@@ -2522,9 +2487,9 @@ LONG Handle_IDiv_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
 #else
   PCONTEXT ctx = exceptionInfo->ContextRecord;
   address pc = (address)ctx->Eip;
-  assert(pc[0] == 0xF7, "not an idiv opcode");
-  assert((pc[1] & ~0x7) == 0xF8, "cannot handle non-register operands");
-  assert(ctx->Eax == min_jint, "unexpected idiv exception");
+  guarantee(pc[0] == 0xF7, "not an idiv opcode(0xF7), the actual value = 0x%x", pc[1]);
+  guarantee((pc[1] & ~0x7) == 0xF8, "cannot handle non-register operands, the actual value = 0x%x", pc[1]);
+  guarantee(ctx->Eax == min_jint, "unexpected idiv exception, the actual value = %d while the expected is %d", ctx->Eax, min_jint);
   // set correct result values and continue after idiv instruction
   ctx->Eip = (DWORD)pc + 2;        // idiv reg, reg  is 2 bytes
   ctx->Eax = (DWORD)min_jint;      // result
@@ -2909,22 +2874,23 @@ LONG WINAPI topLevelVectoredExceptionFilter(struct _EXCEPTION_POINTERS* exceptio
 
 #if defined(USE_VECTORED_EXCEPTION_HANDLING)
 LONG WINAPI topLevelUnhandledExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
-  if (InterceptOSException) goto exit;
-  DWORD exception_code = exceptionInfo->ExceptionRecord->ExceptionCode;
+  if (!InterceptOSException) {
+    DWORD exceptionCode = exceptionInfo->ExceptionRecord->ExceptionCode;
 #if defined(_M_ARM64)
-  address pc = (address)exceptionInfo->ContextRecord->Pc;
+    address pc = (address) exceptionInfo->ContextRecord->Pc;
 #elif defined(_M_AMD64)
-  address pc = (address) exceptionInfo->ContextRecord->Rip;
+    address pc = (address) exceptionInfo->ContextRecord->Rip;
 #else
-  address pc = (address) exceptionInfo->ContextRecord->Eip;
+    address pc = (address) exceptionInfo->ContextRecord->Eip;
 #endif
-  Thread* t = Thread::current_or_null_safe();
+    Thread* thread = Thread::current_or_null_safe();
 
-  if (exception_code != EXCEPTION_BREAKPOINT) {
-    report_error(t, exception_code, pc, exceptionInfo->ExceptionRecord,
-                exceptionInfo->ContextRecord);
+    if (exceptionCode != EXCEPTION_BREAKPOINT) {
+      report_error(thread, exceptionCode, pc, exceptionInfo->ExceptionRecord,
+                  exceptionInfo->ContextRecord);
+    }
   }
-exit:
+
   return previousUnhandledExceptionFilter ? previousUnhandledExceptionFilter(exceptionInfo) : EXCEPTION_CONTINUE_SEARCH;
 }
 #endif
@@ -3365,9 +3331,10 @@ char* os::replace_existing_mapping_with_file_mapping(char* base, size_t size, in
 // virtual space to get requested alignment, like posix-like os's.
 // Windows prevents multiple thread from remapping over each other so this loop is thread-safe.
 static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int file_desc) {
-  assert((alignment & (os::vm_allocation_granularity() - 1)) == 0,
-         "Alignment must be a multiple of allocation granularity (page size)");
-  assert((size & (alignment -1)) == 0, "size must be 'alignment' aligned");
+  assert(is_aligned(alignment, os::vm_allocation_granularity()),
+      "Alignment must be a multiple of allocation granularity (page size)");
+  assert(is_aligned(size, os::vm_allocation_granularity()),
+      "Size must be a multiple of allocation granularity (page size)");
 
   size_t extra_size = size + alignment;
   assert(extra_size >= size, "overflow, size is too large to allow alignment");
@@ -3467,10 +3434,6 @@ bool os::can_commit_large_page_memory() {
   // and committed in a single VirtualAlloc() call. This may change in the
   // future, but with Windows 2003 it's not possible to commit on demand.
   return false;
-}
-
-bool os::can_execute_large_page_memory() {
-  return true;
 }
 
 static char* reserve_large_pages_individually(size_t size, char* req_addr, bool exec) {
@@ -3833,6 +3796,11 @@ bool os::unguard_memory(char* addr, size_t bytes) {
 
 void os::pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint) { }
 void os::pd_free_memory(char *addr, size_t bytes, size_t alignment_hint) { }
+
+size_t os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
+  return page_size;
+}
+
 void os::numa_make_global(char *addr, size_t bytes)    { }
 void os::numa_make_local(char *addr, size_t bytes, int lgrp_hint)    { }
 bool os::numa_topology_changed()                       { return false; }
@@ -3860,11 +3828,6 @@ int os::numa_get_group_id_for_address(const void* address) {
 
 bool os::numa_get_group_ids_for_range(const void** addresses, int* lgrp_ids, size_t count) {
   return false;
-}
-
-char *os::scan_pages(char *start, char* end, page_info* page_expected,
-                     page_info* page_found) {
-  return end;
 }
 
 char* os::non_memory_address_word() {
@@ -4103,7 +4066,7 @@ static BOOL CALLBACK init_crit_sect_call(PINIT_ONCE, PVOID pcrit_sect, PVOID*) {
   return TRUE;
 }
 
-int os::win32::exit_process_or_thread(Ept what, int exit_code) {
+static void exit_process_or_thread(Ept what, int exit_code) {
   // Basic approach:
   //  - Each exiting thread registers its intent to exit and then does so.
   //  - A thread trying to terminate the process must wait for all
@@ -4281,7 +4244,7 @@ int os::win32::exit_process_or_thread(Ept what, int exit_code) {
   }
 
   // Should not reach here
-  return exit_code;
+  os::infinite_sleep();
 }
 
 #undef EXIT_TIMEOUT
@@ -4859,11 +4822,11 @@ ssize_t os::pd_write(int fd, const void *buf, size_t nBytes) {
 }
 
 void os::exit(int num) {
-  win32::exit_process_or_thread(win32::EPT_PROCESS, num);
+  exit_process_or_thread(EPT_PROCESS, num);
 }
 
 void os::_exit(int num) {
-  win32::exit_process_or_thread(win32::EPT_PROCESS_DIE, num);
+  exit_process_or_thread(EPT_PROCESS_DIE, num);
 }
 
 // Is a (classpath) directory empty?
@@ -5396,7 +5359,8 @@ int PlatformEvent::park(jlong Millis) {
       phri = new HighResolutionInterval(prd);
     }
     rv = ::WaitForSingleObject(_ParkHandle, prd);
-    assert(rv == WAIT_OBJECT_0 || rv == WAIT_TIMEOUT, "WaitForSingleObject failed");
+    assert(rv != WAIT_FAILED,   "WaitForSingleObject failed with error code: %lu", GetLastError());
+    assert(rv == WAIT_OBJECT_0 || rv == WAIT_TIMEOUT, "WaitForSingleObject failed with return value: %lu", rv);
     if (rv == WAIT_TIMEOUT) {
       Millis -= prd;
     }
@@ -5435,7 +5399,8 @@ void PlatformEvent::park() {
   // spin attempts by this thread.
   while (_Event < 0) {
     DWORD rv = ::WaitForSingleObject(_ParkHandle, INFINITE);
-    assert(rv == WAIT_OBJECT_0, "WaitForSingleObject failed");
+    assert(rv != WAIT_FAILED,   "WaitForSingleObject failed with error code: %lu", GetLastError());
+    assert(rv == WAIT_OBJECT_0, "WaitForSingleObject failed with return value: %lu", rv);
   }
 
   // Usually we'll find _Event == 0 at this point, but as
@@ -5498,16 +5463,25 @@ void Parker::park(bool isAbsolute, jlong time) {
   JavaThread* thread = JavaThread::current();
 
   // Don't wait if interrupted or already triggered
-  if (thread->is_interrupted(false) ||
-      WaitForSingleObject(_ParkHandle, 0) == WAIT_OBJECT_0) {
+  if (thread->is_interrupted(false)) {
     ResetEvent(_ParkHandle);
     return;
   } else {
-    ThreadBlockInVM tbivm(thread);
-    OSThreadWaitState osts(thread->osthread(), false /* not Object.wait() */);
+    DWORD rv = WaitForSingleObject(_ParkHandle, 0);
+    assert(rv != WAIT_FAILED,   "WaitForSingleObject failed with error code: %lu", GetLastError());
+    assert(rv == WAIT_OBJECT_0 || rv == WAIT_TIMEOUT, "WaitForSingleObject failed with return value: %lu", rv);
+    if (rv == WAIT_OBJECT_0) {
+      ResetEvent(_ParkHandle);
+      return;
+    } else {
+      ThreadBlockInVM tbivm(thread);
+      OSThreadWaitState osts(thread->osthread(), false /* not Object.wait() */);
 
-    WaitForSingleObject(_ParkHandle, time);
-    ResetEvent(_ParkHandle);
+      rv = WaitForSingleObject(_ParkHandle, time);
+      assert(rv != WAIT_FAILED,   "WaitForSingleObject failed with error code: %lu", GetLastError());
+      assert(rv == WAIT_OBJECT_0 || rv == WAIT_TIMEOUT, "WaitForSingleObject failed with return value: %lu", rv);
+      ResetEvent(_ParkHandle);
+    }
   }
 }
 
@@ -5583,7 +5557,9 @@ int os::fork_and_exec(const char* cmd) {
 
   if (rslt) {
     // Wait until child process exits.
-    WaitForSingleObject(pi.hProcess, INFINITE);
+    DWORD rv = WaitForSingleObject(pi.hProcess, INFINITE);
+    assert(rv != WAIT_FAILED,   "WaitForSingleObject failed with error code: %lu", GetLastError());
+    assert(rv == WAIT_OBJECT_0, "WaitForSingleObject failed with return value: %lu", rv);
 
     GetExitCodeProcess(pi.hProcess, &exit_code);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
  * 4652815 4652830 4740554 4936355 4738710 4633646 4846659 4822110 4960642
  * 4973919 4980088 4965624 5013094 5006864 8152077
  * @library /java/text/testlib
- * @run main CalendarRegression
+ * @run junit CalendarRegression
  */
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -53,22 +53,16 @@ import java.util.TimeZone;
 
 import static java.util.Calendar.*;
 
-public class CalendarRegression extends IntlTest {
+import org.junit.jupiter.api.Test;
 
-    public static void main(String[] args) throws Exception {
-        new CalendarRegression().run(args);
-    }
+import static org.junit.jupiter.api.Assertions.fail;
+
+public class CalendarRegression {
 
     /*
     Synopsis: java.sql.Timestamp constructor works wrong on Windows 95
 
     ==== Here is the test ====
-    public static void main (String args[]) {
-    java.sql.Timestamp t= new java.sql.Timestamp(0,15,5,5,8,13,123456700);
-    logln("expected=1901-04-05 05:08:13.1234567");
-    logln(" result="+t);
-    }
-
     ==== Here is the output of the test on Solaris or NT ====
     expected=1901-04-05 05:08:13.1234567
     result=1901-04-05 05:08:13.1234567
@@ -77,6 +71,7 @@ public class CalendarRegression extends IntlTest {
     expected=1901-04-05 05:08:13.1234567
     result=1901-04-05 06:08:13.1234567
      */
+    @Test
     public void Test4031502() {
         // This bug actually occurs on Windows NT as well, and doesn't
         // require the host zone to be set; it can be set in Java.
@@ -88,7 +83,7 @@ public class CalendarRegression extends IntlTest {
             cal.clear();
             cal.set(1900, 15, 5, 5, 8, 13);
             if (cal.get(HOUR) != 5) {
-                logln(zone.getID() + " "
+                System.out.println(zone.getID() + " "
                         + //zone.useDaylightTime() + " "
                         + cal.get(DST_OFFSET) / (60 * 60 * 1000) + " "
                         + zone.getRawOffset() / (60 * 60 * 1000)
@@ -97,10 +92,11 @@ public class CalendarRegression extends IntlTest {
             }
         }
         if (bad) {
-            errln("TimeZone problems with GC");
+            fail("TimeZone problems with GC");
         }
     }
 
+    @Test
     public void Test4035301() {
         GregorianCalendar c = new GregorianCalendar(98, 8, 7);
         GregorianCalendar d = new GregorianCalendar(98, 8, 7);
@@ -110,10 +106,11 @@ public class CalendarRegression extends IntlTest {
                 || c.before(c)
                 || !c.equals(c)
                 || !c.equals(d)) {
-            errln("Fail");
+            fail("Fail");
         }
     }
 
+    @Test
     public void Test4040996() {
         String[] ids = TimeZone.getAvailableIDs(-8 * 60 * 60 * 1000);
         SimpleTimeZone pdt = new SimpleTimeZone(-8 * 60 * 60 * 1000, ids[0]);
@@ -125,97 +122,100 @@ public class CalendarRegression extends IntlTest {
         calendar.set(DAY_OF_MONTH, 18);
         calendar.set(SECOND, 30);
 
-        logln("MONTH: " + calendar.get(MONTH));
-        logln("DAY_OF_MONTH: "
+        System.out.println("MONTH: " + calendar.get(MONTH));
+        System.out.println("DAY_OF_MONTH: "
                 + calendar.get(DAY_OF_MONTH));
-        logln("MINUTE: " + calendar.get(MINUTE));
-        logln("SECOND: " + calendar.get(SECOND));
+        System.out.println("MINUTE: " + calendar.get(MINUTE));
+        System.out.println("SECOND: " + calendar.get(SECOND));
 
         calendar.add(SECOND, 6);
         //This will print out todays date for MONTH and DAY_OF_MONTH
         //instead of the date it was set to.
         //This happens when adding MILLISECOND or MINUTE also
-        logln("MONTH: " + calendar.get(MONTH));
-        logln("DAY_OF_MONTH: "
+        System.out.println("MONTH: " + calendar.get(MONTH));
+        System.out.println("DAY_OF_MONTH: "
                 + calendar.get(DAY_OF_MONTH));
-        logln("MINUTE: " + calendar.get(MINUTE));
-        logln("SECOND: " + calendar.get(SECOND));
+        System.out.println("MINUTE: " + calendar.get(MINUTE));
+        System.out.println("SECOND: " + calendar.get(SECOND));
         if (calendar.get(MONTH) != 3
                 || calendar.get(DAY_OF_MONTH) != 18
                 || calendar.get(SECOND) != 36) {
-            errln("Fail: Calendar.add misbehaves");
+            fail("Fail: Calendar.add misbehaves");
         }
     }
 
+    @Test
     public void Test4051765() {
         Calendar cal = Calendar.getInstance();
         cal.setLenient(false);
         cal.set(DAY_OF_WEEK, 0);
         try {
             cal.getTime();
-            errln("Fail: DAY_OF_WEEK 0 should be disallowed");
+            fail("Fail: DAY_OF_WEEK 0 should be disallowed");
         } catch (IllegalArgumentException e) {
             return;
         }
     }
 
     /* User error - no bug here
+    @Test
     public void Test4059524() {
         // Create calendar for April 10, 1997
         GregorianCalendar calendar  = new GregorianCalendar();
         // print out a bunch of interesting things
-        logln("ERA: " + calendar.get(calendar.ERA));
-        logln("YEAR: " + calendar.get(calendar.YEAR));
-        logln("MONTH: " + calendar.get(calendar.MONTH));
-        logln("WEEK_OF_YEAR: " +
+        System.out.println("ERA: " + calendar.get(calendar.ERA));
+        System.out.println("YEAR: " + calendar.get(calendar.YEAR));
+        System.out.println("MONTH: " + calendar.get(calendar.MONTH));
+        System.out.println("WEEK_OF_YEAR: " +
                            calendar.get(calendar.WEEK_OF_YEAR));
-        logln("WEEK_OF_MONTH: " +
+        System.out.println("WEEK_OF_MONTH: " +
                            calendar.get(calendar.WEEK_OF_MONTH));
-        logln("DATE: " + calendar.get(calendar.DATE));
-        logln("DAY_OF_MONTH: " +
+        System.out.println("DATE: " + calendar.get(calendar.DATE));
+        System.out.println("DAY_OF_MONTH: " +
                            calendar.get(calendar.DAY_OF_MONTH));
-        logln("DAY_OF_YEAR: " + calendar.get(calendar.DAY_OF_YEAR));
-        logln("DAY_OF_WEEK: " + calendar.get(calendar.DAY_OF_WEEK));
-        logln("DAY_OF_WEEK_IN_MONTH: " +
+        System.out.println("DAY_OF_YEAR: " + calendar.get(calendar.DAY_OF_YEAR));
+        System.out.println("DAY_OF_WEEK: " + calendar.get(calendar.DAY_OF_WEEK));
+        System.out.println("DAY_OF_WEEK_IN_MONTH: " +
                            calendar.get(calendar.DAY_OF_WEEK_IN_MONTH));
-        logln("AM_PM: " + calendar.get(calendar.AM_PM));
-        logln("HOUR: " + calendar.get(calendar.HOUR));
-        logln("HOUR_OF_DAY: " + calendar.get(calendar.HOUR_OF_DAY));
-        logln("MINUTE: " + calendar.get(calendar.MINUTE));
-        logln("SECOND: " + calendar.get(calendar.SECOND));
-        logln("MILLISECOND: " + calendar.get(calendar.MILLISECOND));
-        logln("ZONE_OFFSET: "
+        System.out.println("AM_PM: " + calendar.get(calendar.AM_PM));
+        System.out.println("HOUR: " + calendar.get(calendar.HOUR));
+        System.out.println("HOUR_OF_DAY: " + calendar.get(calendar.HOUR_OF_DAY));
+        System.out.println("MINUTE: " + calendar.get(calendar.MINUTE));
+        System.out.println("SECOND: " + calendar.get(calendar.SECOND));
+        System.out.println("MILLISECOND: " + calendar.get(calendar.MILLISECOND));
+        System.out.println("ZONE_OFFSET: "
                            + (calendar.get(calendar.ZONE_OFFSET)/(60*60*1000)));
-        logln("DST_OFFSET: "
+        System.out.println("DST_OFFSET: "
                            + (calendar.get(calendar.DST_OFFSET)/(60*60*1000)));
         calendar  = new GregorianCalendar(1997,3,10);
         calendar.getTime();
-        logln("April 10, 1997");
-        logln("ERA: " + calendar.get(calendar.ERA));
-        logln("YEAR: " + calendar.get(calendar.YEAR));
-        logln("MONTH: " + calendar.get(calendar.MONTH));
-        logln("WEEK_OF_YEAR: " +
+        System.out.println("April 10, 1997");
+        System.out.println("ERA: " + calendar.get(calendar.ERA));
+        System.out.println("YEAR: " + calendar.get(calendar.YEAR));
+        System.out.println("MONTH: " + calendar.get(calendar.MONTH));
+        System.out.println("WEEK_OF_YEAR: " +
                            calendar.get(calendar.WEEK_OF_YEAR));
-        logln("WEEK_OF_MONTH: " +
+        System.out.println("WEEK_OF_MONTH: " +
                            calendar.get(calendar.WEEK_OF_MONTH));
-        logln("DATE: " + calendar.get(calendar.DATE));
-        logln("DAY_OF_MONTH: " +
+        System.out.println("DATE: " + calendar.get(calendar.DATE));
+        System.out.println("DAY_OF_MONTH: " +
                            calendar.get(calendar.DAY_OF_MONTH));
-        logln("DAY_OF_YEAR: " + calendar.get(calendar.DAY_OF_YEAR));
-        logln("DAY_OF_WEEK: " + calendar.get(calendar.DAY_OF_WEEK));
-        logln("DAY_OF_WEEK_IN_MONTH: " + calendar.get(calendar.DAY_OF_WEEK_IN_MONTH));
-        logln("AM_PM: " + calendar.get(calendar.AM_PM));
-        logln("HOUR: " + calendar.get(calendar.HOUR));
-        logln("HOUR_OF_DAY: " + calendar.get(calendar.HOUR_OF_DAY));
-        logln("MINUTE: " + calendar.get(calendar.MINUTE));
-        logln("SECOND: " + calendar.get(calendar.SECOND));
-        logln("MILLISECOND: " + calendar.get(calendar.MILLISECOND));
-        logln("ZONE_OFFSET: "
+        System.out.println("DAY_OF_YEAR: " + calendar.get(calendar.DAY_OF_YEAR));
+        System.out.println("DAY_OF_WEEK: " + calendar.get(calendar.DAY_OF_WEEK));
+        System.out.println("DAY_OF_WEEK_IN_MONTH: " + calendar.get(calendar.DAY_OF_WEEK_IN_MONTH));
+        System.out.println("AM_PM: " + calendar.get(calendar.AM_PM));
+        System.out.println("HOUR: " + calendar.get(calendar.HOUR));
+        System.out.println("HOUR_OF_DAY: " + calendar.get(calendar.HOUR_OF_DAY));
+        System.out.println("MINUTE: " + calendar.get(calendar.MINUTE));
+        System.out.println("SECOND: " + calendar.get(calendar.SECOND));
+        System.out.println("MILLISECOND: " + calendar.get(calendar.MILLISECOND));
+        System.out.println("ZONE_OFFSET: "
                            + (calendar.get(calendar.ZONE_OFFSET)/(60*60*1000))); // in hours
-        logln("DST_OFFSET: "
+        System.out.println("DST_OFFSET: "
                            + (calendar.get(calendar.DST_OFFSET)/(60*60*1000))); // in hours
     }
      */
+    @Test
     public void Test4059654() {
         GregorianCalendar gc = new GregorianCalendar();
 
@@ -231,10 +231,11 @@ public class CalendarRegression extends IntlTest {
         @SuppressWarnings("deprecation")
         Date exp = new Date(97, 3, 1, 0, 0, 0);
         if (!cd.equals(exp)) {
-            errln("Fail: Calendar.set broken. Got " + cd + " Want " + exp);
+            fail("Fail: Calendar.set broken. Got " + cd + " Want " + exp);
         }
     }
 
+    @Test
     public void Test4061476() {
         SimpleDateFormat fmt = new SimpleDateFormat("ddMMMyy", Locale.UK);
         Calendar cal = GregorianCalendar.getInstance(TimeZone.getTimeZone("GMT"),
@@ -246,14 +247,15 @@ public class CalendarRegression extends IntlTest {
         } catch (Exception e) {
         }
         cal.set(HOUR_OF_DAY, 13);
-        logln("Hour: " + cal.get(HOUR_OF_DAY));
+        System.out.println("Hour: " + cal.get(HOUR_OF_DAY));
         cal.add(HOUR_OF_DAY, 6);
-        logln("Hour: " + cal.get(HOUR_OF_DAY));
+        System.out.println("Hour: " + cal.get(HOUR_OF_DAY));
         if (cal.get(HOUR_OF_DAY) != 19) {
-            errln("Fail: Want 19 Got " + cal.get(HOUR_OF_DAY));
+            fail("Fail: Want 19 Got " + cal.get(HOUR_OF_DAY));
         }
     }
 
+    @Test
     public void Test4070502() {
         @SuppressWarnings("deprecation")
         Date d = getAssociatedDate(new Date(98, 0, 30));
@@ -261,7 +263,7 @@ public class CalendarRegression extends IntlTest {
         cal.setTime(d);
         if (cal.get(DAY_OF_WEEK) == SATURDAY
                 || cal.get(DAY_OF_WEEK) == SUNDAY) {
-            errln("Fail: Want weekday Got " + d);
+            fail("Fail: Want weekday Got " + d);
         }
     }
 
@@ -289,6 +291,7 @@ public class CalendarRegression extends IntlTest {
         return cal.getTime();
     }
 
+    @Test
     public void Test4071197() {
         dowTest(false);
         dowTest(true);
@@ -303,29 +306,31 @@ public class CalendarRegression extends IntlTest {
         int dow = cal.get(DAY_OF_WEEK);
         int min = cal.getMinimum(DAY_OF_WEEK);
         int max = cal.getMaximum(DAY_OF_WEEK);
-        logln(cal.getTime().toString());
+        System.out.println(cal.getTime().toString());
         if (min != SUNDAY || max != SATURDAY) {
-            errln("FAIL: Min/max bad");
+            fail("FAIL: Min/max bad");
         }
         if (dow < min || dow > max) {
-            errln("FAIL: Day of week " + dow + " out of range");
+            fail("FAIL: Day of week " + dow + " out of range");
         }
         if (dow != SUNDAY) {
-            errln("FAIL: Day of week should be SUNDAY Got " + dow);
+            fail("FAIL: Day of week should be SUNDAY Got " + dow);
         }
     }
 
     @SuppressWarnings("deprecation")
+    @Test
     public void Test4071385() {
         Calendar cal = Calendar.getInstance();
         cal.setTime(new Date(98, JUNE, 24));
         cal.set(MONTH, NOVEMBER); // change a field
-        logln(cal.getTime().toString());
+        System.out.println(cal.getTime().toString());
         if (!cal.getTime().equals(new Date(98, NOVEMBER, 24))) {
-            errln("Fail");
+            fail("Fail");
         }
     }
 
+    @Test
     public void Test4073929() {
         GregorianCalendar foo1 = new GregorianCalendar(1997, 8, 27);
         foo1.add(DAY_OF_MONTH, +1);
@@ -335,10 +340,11 @@ public class CalendarRegression extends IntlTest {
         if (testyear != 1997
                 || testmonth != 8
                 || testday != 28) {
-            errln("Fail: Calendar not initialized");
+            fail("Fail: Calendar not initialized");
         }
     }
 
+    @Test
     public void Test4083167() {
         TimeZone saveZone = TimeZone.getDefault();
         try {
@@ -351,7 +357,7 @@ public class CalendarRegression extends IntlTest {
                     + cal.get(SECOND) * 1000L
                     + cal.get(MILLISECOND);
 
-            logln("Current time: " + firstDate.toString());
+            System.out.println("Current time: " + firstDate.toString());
 
             for (int validity = 0; validity < 30; validity++) {
                 Date lastDate = new Date(firstDate.getTime()
@@ -362,7 +368,7 @@ public class CalendarRegression extends IntlTest {
                         + cal.get(SECOND) * 1000L
                         + cal.get(MILLISECOND);
                 if (firstMillisInDay != millisInDay) {
-                    errln("Day has shifted " + lastDate);
+                    fail("Day has shifted " + lastDate);
                 }
             }
         } finally {
@@ -370,6 +376,7 @@ public class CalendarRegression extends IntlTest {
         }
     }
 
+    @Test
     public void Test4086724() {
         SimpleDateFormat date;
         TimeZone saveZone = TimeZone.getDefault();
@@ -387,12 +394,12 @@ public class CalendarRegression extends IntlTest {
             Date now = cal.getTime();
             String formattedDate = date.format(now);
             if (!formattedDate.equals(summerTime)) {
-                errln("Wrong display name \"" + formattedDate
+                fail("Wrong display name \"" + formattedDate
                         + "\" for <" + now + ">");
             }
             int weekOfYear = cal.get(WEEK_OF_YEAR);
             if (weekOfYear != 40) {
-                errln("Wrong week-of-year " + weekOfYear
+                fail("Wrong week-of-year " + weekOfYear
                         + " for <" + now + ">");
             }
 
@@ -400,12 +407,12 @@ public class CalendarRegression extends IntlTest {
             now = cal.getTime();
             formattedDate = date.format(now);
             if (!formattedDate.equals(standardTime)) {
-                errln("Wrong display name \"" + formattedDate
+                fail("Wrong display name \"" + formattedDate
                         + "\" for <" + now + ">");
             }
             weekOfYear = cal.get(WEEK_OF_YEAR);
             if (weekOfYear != 1) {
-                errln("Wrong week-of-year " + weekOfYear
+                fail("Wrong week-of-year " + weekOfYear
                         + " for <" + now + ">");
             }
 
@@ -413,12 +420,12 @@ public class CalendarRegression extends IntlTest {
             now = cal.getTime();
             formattedDate = date.format(now);
             if (!formattedDate.equals(standardTime)) {
-                errln("Wrong display name \"" + formattedDate
+                fail("Wrong display name \"" + formattedDate
                         + "\" for <" + now + ">");
             }
             weekOfYear = cal.get(WEEK_OF_YEAR);
             if (weekOfYear != 1) {
-                errln("Wrong week-of-year " + weekOfYear
+                fail("Wrong week-of-year " + weekOfYear
                         + " for <" + now + ">");
             }
 
@@ -426,12 +433,12 @@ public class CalendarRegression extends IntlTest {
             now = cal.getTime();
             formattedDate = date.format(now);
             if (!formattedDate.equals(standardTime)) {
-                errln("Wrong display name \"" + formattedDate
+                fail("Wrong display name \"" + formattedDate
                         + "\" for <" + now + ">");
             }
             weekOfYear = cal.get(WEEK_OF_YEAR);
             if (weekOfYear != 2) {
-                errln("Wrong week-of-year " + weekOfYear
+                fail("Wrong week-of-year " + weekOfYear
                         + " for <" + now + ">");
             }
 
@@ -441,6 +448,7 @@ public class CalendarRegression extends IntlTest {
         }
     }
 
+    @Test
     public void Test4092362() {
         GregorianCalendar cal1 = new GregorianCalendar(1997, 10, 11, 10, 20, 40);
         /*cal1.set( Calendar.YEAR, 1997 );
@@ -450,8 +458,8 @@ public class CalendarRegression extends IntlTest {
         cal1.set( Calendar.MINUTE, 20 );
         cal1.set( Calendar.SECOND, 40 ); */
 
-        logln(" Cal1 = " + cal1.getTime().getTime());
-        logln(" Cal1 time in ms = " + cal1.get(MILLISECOND));
+        System.out.println(" Cal1 = " + cal1.getTime().getTime());
+        System.out.println(" Cal1 time in ms = " + cal1.get(MILLISECOND));
         for (int k = 0; k < 100; k++);
 
         GregorianCalendar cal2 = new GregorianCalendar(1997, 10, 11, 10, 20, 40);
@@ -462,21 +470,23 @@ public class CalendarRegression extends IntlTest {
         cal2.set( Calendar.MINUTE, 20 );
         cal2.set( Calendar.SECOND, 40 ); */
 
-        logln(" Cal2 = " + cal2.getTime().getTime());
-        logln(" Cal2 time in ms = " + cal2.get(MILLISECOND));
+        System.out.println(" Cal2 = " + cal2.getTime().getTime());
+        System.out.println(" Cal2 time in ms = " + cal2.get(MILLISECOND));
         if (!cal1.equals(cal2)) {
-            errln("Fail: Milliseconds randomized");
+            fail("Fail: Milliseconds randomized");
         }
     }
 
+    @Test
     public void Test4095407() {
         GregorianCalendar a = new GregorianCalendar(1997, NOVEMBER, 13);
         int dow = a.get(DAY_OF_WEEK);
         if (dow != THURSDAY) {
-            errln("Fail: Want THURSDAY Got " + dow);
+            fail("Fail: Want THURSDAY Got " + dow);
         }
     }
 
+    @Test
     public void Test4096231() {
         TimeZone GMT = TimeZone.getTimeZone("GMT");
         TimeZone PST = TimeZone.getTimeZone("PST");
@@ -485,19 +495,19 @@ public class CalendarRegression extends IntlTest {
         Calendar cal1 = new GregorianCalendar(PST);
         cal1.setTime(new Date(880698639000L));
         int p;
-        logln("PST 1 is: " + (p = cal1.get(HOUR_OF_DAY)));
+        System.out.println("PST 1 is: " + (p = cal1.get(HOUR_OF_DAY)));
         cal1.setTimeZone(GMT);
         // Issue 1: Changing the timezone doesn't change the
         //          represented time.
         int h1, h2;
-        logln("GMT 1 is: " + (h1 = cal1.get(HOUR_OF_DAY)));
+        System.out.println("GMT 1 is: " + (h1 = cal1.get(HOUR_OF_DAY)));
         cal1.setTime(new Date(880698639000L));
-        logln("GMT 2 is: " + (h2 = cal1.get(HOUR_OF_DAY)));
+        System.out.println("GMT 2 is: " + (h2 = cal1.get(HOUR_OF_DAY)));
         // Note: This test had a bug in it.  It wanted h1!=h2, when
         // what was meant was h1!=p.  Fixed this concurrent with fix
         // to 4177484.
         if (p == h1 || h1 != h2) {
-            errln("Fail: Hour same in different zones");
+            fail("Fail: Hour same in different zones");
         }
 
         Calendar cal2 = new GregorianCalendar(GMT);
@@ -513,11 +523,11 @@ public class CalendarRegression extends IntlTest {
                 cal1.get(SECOND));
 
         long t1, t2, t3, t4;
-        logln("RGMT 1 is: " + (t1 = cal2.getTime().getTime()));
+        System.out.println("RGMT 1 is: " + (t1 = cal2.getTime().getTime()));
         cal3.set(year, month, day, hr, min, sec);
-        logln("RPST 1 is: " + (t2 = cal3.getTime().getTime()));
+        System.out.println("RPST 1 is: " + (t2 = cal3.getTime().getTime()));
         cal3.setTimeZone(GMT);
-        logln("RGMT 2 is: " + (t3 = cal3.getTime().getTime()));
+        System.out.println("RGMT 2 is: " + (t3 = cal3.getTime().getTime()));
         cal3.set(cal1.get(YEAR),
                 cal1.get(MONTH),
                 cal1.get(DAY_OF_MONTH),
@@ -527,40 +537,42 @@ public class CalendarRegression extends IntlTest {
         // Issue 2: Calendar continues to use the timezone in its
         //          constructor for set() conversions, regardless
         //          of calls to setTimeZone()
-        logln("RGMT 3 is: " + (t4 = cal3.getTime().getTime()));
+        System.out.println("RGMT 3 is: " + (t4 = cal3.getTime().getTime()));
         if (t1 == t2
                 || t1 != t4
                 || t2 != t3) {
-            errln("Fail: Calendar zone behavior faulty");
+            fail("Fail: Calendar zone behavior faulty");
         }
     }
 
+    @Test
     public void Test4096539() {
         int[] y = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
         for (int x = 0; x < 12; x++) {
             GregorianCalendar gc = new GregorianCalendar(1997, x, y[x]);
             int m1, m2;
-            log((m1 = gc.get(MONTH) + 1) + "/"
+            System.out.println((m1 = gc.get(MONTH) + 1) + "/"
                     + gc.get(DATE) + "/" + gc.get(YEAR)
                     + " + 1mo = ");
 
             gc.add(MONTH, 1);
-            logln((m2 = gc.get(MONTH) + 1) + "/"
+            System.out.println((m2 = gc.get(MONTH) + 1) + "/"
                     + gc.get(DATE) + "/" + gc.get(YEAR)
             );
             int m = (m1 % 12) + 1;
             if (m2 != m) {
-                errln("Fail: Want " + m + " Got " + m2);
+                fail("Fail: Want " + m + " Got " + m2);
             }
         }
 
     }
 
+    @Test
     public void Test4100311() {
         Locale locale = Locale.getDefault();
         if (!TestUtils.usesGregorianCalendar(locale)) {
-            logln("Skipping this test because locale is " + locale);
+            System.out.println("Skipping this test because locale is " + locale);
             return;
         }
 
@@ -568,16 +580,17 @@ public class CalendarRegression extends IntlTest {
         cal.set(YEAR, 1997);
         cal.set(DAY_OF_YEAR, 1);
         Date d = cal.getTime();             // Should be Jan 1
-        logln(d.toString());
+        System.out.println(d.toString());
         if (cal.get(DAY_OF_YEAR) != 1) {
-            errln("Fail: DAY_OF_YEAR not set");
+            fail("Fail: DAY_OF_YEAR not set");
         }
     }
 
+    @Test
     public void Test4103271() {
         Locale locale = Locale.getDefault();
         if (!TestUtils.usesGregorianCalendar(locale)) {
-            logln("Skipping this test because locale is " + locale);
+            System.out.println("Skipping this test because locale is " + locale);
             return;
         }
 
@@ -594,7 +607,7 @@ public class CalendarRegression extends IntlTest {
                 testCal.setMinimalDaysInFirstWeek(minDays);
                 testCal.setFirstDayOfWeek(firstDay);
                 testDesc = ("Test" + String.valueOf(firstDay) + String.valueOf(minDays));
-                logln(testDesc + " => 1st day of week="
+                System.out.println(testDesc + " => 1st day of week="
                         + String.valueOf(firstDay)
                         + ", minimum days in first week="
                         + String.valueOf(minDays));
@@ -609,7 +622,7 @@ public class CalendarRegression extends IntlTest {
                             calWOY = String.valueOf(actWOY);
                             output = testDesc + " - " + sdf.format(d) + "\t";
                             output = output + "\t" + calWOY;
-                            logln(output);
+                            System.out.println(output);
                             fail = true;
                         }
                     }
@@ -626,18 +639,18 @@ public class CalendarRegression extends IntlTest {
             1, 1, 1, 1, 1, 1, 1};
         testCal.setFirstDayOfWeek(SUNDAY);
         for (int j = 0; j < DATA.length; j += 22) {
-            logln("Minimal days in first week = " + DATA[j]
+            System.out.println("Minimal days in first week = " + DATA[j]
                     + "  Week starts on Sunday");
             testCal.setMinimalDaysInFirstWeek(DATA[j]);
             testCal.set(1997, DECEMBER, 21);
             for (int i = 0; i < 21; ++i) {
                 int woy = testCal.get(WEEK_OF_YEAR);
-                log("\t" + testCal.getTime() + " " + woy);
+                System.out.println("\t" + testCal.getTime() + " " + woy);
                 if (woy != DATA[j + 1 + i]) {
-                    log(" ERROR");
+                    System.out.println(" ERROR");
                     fail = true;
                 } else {
-                    logln(" OK");
+                    System.out.println(" OK");
                 }
 
                 // Now compute the time from the fields, and make sure we
@@ -648,10 +661,10 @@ public class CalendarRegression extends IntlTest {
                 testCal.set(WEEK_OF_YEAR, DATA[j + 1 + i]);
                 testCal.set(DAY_OF_WEEK, (i % 7) + SUNDAY);
                 if (!testCal.getTime().equals(save)) {
-                    logln("  Parse failed: " + testCal.getTime());
+                    System.out.println("  Parse failed: " + testCal.getTime());
                     fail = true;
                 } else {
-                    logln("  Passed");
+                    System.out.println("  Passed");
                 }
 
                 testCal.setTime(save);
@@ -682,12 +695,12 @@ public class CalendarRegression extends IntlTest {
             testCal.set(YEAR, y);
             testCal.set(WEEK_OF_YEAR, woy);
             testCal.set(DAY_OF_WEEK, dow);
-            log(y + "-W" + woy + "-DOW" + dow);
+            System.out.println(y + "-W" + woy + "-DOW" + dow);
             if (!testCal.getTime().equals(exp)) {
-                logln("  FAILED expect: " + exp + "\n            got: " + testCal.getTime());
+                System.out.println("  FAILED expect: " + exp + "\n            got: " + testCal.getTime());
                 fail = true;
             } else {
-                logln("  OK");
+                System.out.println("  OK");
             }
         }
 
@@ -714,14 +727,14 @@ public class CalendarRegression extends IntlTest {
             } else {
                 testCal.roll(WEEK_OF_YEAR, amount);
             }
-            log((ADDROLL[i] == ADD ? "add(WOY," : "roll(WOY,")
+            System.out.println((ADDROLL[i] == ADD ? "add(WOY," : "roll(WOY,")
                     + amount + ")\t     " + before
                     + "\n\t\t  => " + testCal.getTime());
             if (!after.equals(testCal.getTime())) {
-                logln("\tFAIL\n\t\texp: " + after);
+                System.out.println("\tFAIL\n\t\texp: " + after);
                 fail = true;
             } else {
-                logln("  OK");
+                System.out.println("  OK");
             }
 
             testCal.setTime(after);
@@ -730,22 +743,23 @@ public class CalendarRegression extends IntlTest {
             } else {
                 testCal.roll(WEEK_OF_YEAR, -amount);
             }
-            log((ADDROLL[i] == ADD ? "add(WOY," : "roll(WOY,")
+            System.out.println((ADDROLL[i] == ADD ? "add(WOY," : "roll(WOY,")
                     + (-amount) + ")     " + after
                     + "\n\t\t  => " + testCal.getTime());
             if (!before.equals(testCal.getTime())) {
-                logln("\tFAIL\n\t\texp: " + before);
+                System.out.println("\tFAIL\n\t\texp: " + before);
                 fail = true;
             } else {
-                logln("\tOK");
+                System.out.println("\tOK");
             }
         }
 
         if (fail) {
-            errln("Fail: Week of year misbehaving");
+            fail("Fail: Week of year misbehaving");
         }
     }
 
+    @Test
     public void Test4106136() {
         Locale saveLocale = Locale.getDefault();
         try {
@@ -758,7 +772,7 @@ public class CalendarRegression extends IntlTest {
                     NumberFormat.getAvailableLocales().length};
                 for (int j = 0; j < n.length; ++j) {
                     if (n[j] == 0) {
-                        errln("Fail: No locales for " + locales[i]);
+                        fail("Fail: No locales for " + locales[i]);
                     }
                 }
             }
@@ -768,6 +782,7 @@ public class CalendarRegression extends IntlTest {
     }
 
     @SuppressWarnings("deprecation")
+    @Test
     public void Test4108764() {
         Date d00 = new Date(97, MARCH, 15, 12, 00, 00);
         Date d01 = new Date(97, MARCH, 15, 12, 00, 56);
@@ -779,42 +794,43 @@ public class CalendarRegression extends IntlTest {
         cal.setTime(d11);
 
         cal.clear(MINUTE);
-        logln(cal.getTime().toString());
+        System.out.println(cal.getTime().toString());
         if (!cal.getTime().equals(d01)) {
-            errln("Fail: clear(MINUTE) broken");
+            fail("Fail: clear(MINUTE) broken");
         }
 
         cal.set(SECOND, 0);
-        logln(cal.getTime().toString());
+        System.out.println(cal.getTime().toString());
         if (!cal.getTime().equals(d00)) {
-            errln("Fail: set(SECOND, 0) broken");
+            fail("Fail: set(SECOND, 0) broken");
         }
 
         cal.setTime(d11);
         cal.set(SECOND, 0);
-        logln(cal.getTime().toString());
+        System.out.println(cal.getTime().toString());
         if (!cal.getTime().equals(d10)) {
-            errln("Fail: set(SECOND, 0) broken #2");
+            fail("Fail: set(SECOND, 0) broken #2");
         }
 
         cal.clear(MINUTE);
-        logln(cal.getTime().toString());
+        System.out.println(cal.getTime().toString());
         if (!cal.getTime().equals(d00)) {
-            errln("Fail: clear(MINUTE) broken #2");
+            fail("Fail: clear(MINUTE) broken #2");
         }
 
         cal.clear();
-        logln(cal.getTime().toString());
+        System.out.println(cal.getTime().toString());
         if (!cal.getTime().equals(epoch)) {
-            errln("Fail: clear() broken Want " + epoch);
+            fail("Fail: clear() broken Want " + epoch);
         }
     }
 
     @SuppressWarnings("deprecation")
+    @Test
     public void Test4114578() {
         Locale locale = Locale.getDefault();
         if (!TestUtils.usesGregorianCalendar(locale)) {
-            logln("Skipping this test because locale is " + locale);
+            System.out.println("Skipping this test because locale is " + locale);
             return;
         }
 
@@ -849,28 +865,28 @@ public class CalendarRegression extends IntlTest {
                 int amt = (int) DATA[i + 2];
                 long expectedChange = DATA[i + 3];
 
-                log(date.toString());
+                System.out.println(date.toString());
                 cal.setTime(date);
 
                 switch ((int) DATA[i + 1]) {
                     case ADD:
-                        log(" add (HOUR," + (amt < 0 ? "" : "+") + amt + ")= ");
+                        System.out.println(" add (HOUR," + (amt < 0 ? "" : "+") + amt + ")= ");
                         cal.add(HOUR, amt);
                         break;
                     case ROLL:
-                        log(" roll(HOUR," + (amt < 0 ? "" : "+") + amt + ")= ");
+                        System.out.println(" roll(HOUR," + (amt < 0 ? "" : "+") + amt + ")= ");
                         cal.roll(HOUR, amt);
                         break;
                 }
 
-                log(cal.getTime().toString());
+                System.out.println(cal.getTime().toString());
 
                 long change = cal.getTime().getTime() - date.getTime();
                 if (change != expectedChange) {
                     fail = true;
-                    logln(" FAIL");
+                    System.out.println(" FAIL");
                 } else {
-                    logln(" OK");
+                    System.out.println(" OK");
                 }
             }
         } finally {
@@ -878,29 +894,31 @@ public class CalendarRegression extends IntlTest {
         }
 
         if (fail) {
-            errln("Fail: roll/add misbehaves around DST onset/cease");
+            fail("Fail: roll/add misbehaves around DST onset/cease");
         }
     }
 
     /**
      * Make sure maximum for HOUR field is 11, not 12.
      */
+    @Test
     public void Test4118384() {
         Calendar cal = Calendar.getInstance();
         if (cal.getMaximum(HOUR) != 11
                 || cal.getLeastMaximum(HOUR) != 11
                 || cal.getActualMaximum(HOUR) != 11) {
-            errln("Fail: maximum of HOUR field should be 11");
+            fail("Fail: maximum of HOUR field should be 11");
         }
     }
 
     /**
      * Check isLeapYear for BC years.
      */
+    @Test
     public void Test4125881() {
         Locale locale = Locale.getDefault();
         if (!TestUtils.usesGregorianCalendar(locale)) {
-            logln("Skipping this test because locale is " + locale);
+            System.out.println("Skipping this test because locale is " + locale);
             return;
         }
 
@@ -910,10 +928,10 @@ public class CalendarRegression extends IntlTest {
         for (int y = -20; y <= 10; ++y) {
             cal.set(ERA, y < 1 ? GregorianCalendar.BC : GregorianCalendar.AD);
             cal.set(YEAR, y < 1 ? 1 - y : y);
-            logln(y + " = " + fmt.format(cal.getTime()) + " "
+            System.out.println(y + " = " + fmt.format(cal.getTime()) + " "
                     + cal.isLeapYear(y));
             if (cal.isLeapYear(y) != ((y + 40) % 4 == 0)) {
-                errln("Leap years broken");
+                fail("Leap years broken");
             }
         }
     }
@@ -922,10 +940,11 @@ public class CalendarRegression extends IntlTest {
      * Prove that GregorianCalendar is proleptic (it used to cut off
      * at 45 BC, and not have leap years before then).
      */
+    @Test
     public void Test4125892() {
         Locale locale = Locale.getDefault();
         if (!TestUtils.usesGregorianCalendar(locale)) {
-            logln("Skipping this test because locale is " + locale);
+            System.out.println("Skipping this test because locale is " + locale);
             return;
         }
 
@@ -939,7 +958,7 @@ public class CalendarRegression extends IntlTest {
         cal.add(DATE, 1);
         if (cal.get(DATE) != 29
                 || !cal.isLeapYear(-80)) { // -80 == 81 BC
-            errln("Calendar not proleptic");
+            fail("Calendar not proleptic");
         }
     }
 
@@ -948,6 +967,7 @@ public class CalendarRegression extends IntlTest {
      * Calendar needs a good implementation that subclasses can override,
      * and GregorianCalendar should use that implementation.
      */
+    @Test
     public void Test4136399() {
         /* Note: This test is actually more strict than it has to be.
         * Technically, there is no requirement that unequal objects have
@@ -961,24 +981,24 @@ public class CalendarRegression extends IntlTest {
         Calendar a = Calendar.getInstance();
         Calendar b = (Calendar) a.clone();
         if (a.hashCode() != b.hashCode()) {
-            errln("Calendar hash code unequal for cloned objects");
+            fail("Calendar hash code unequal for cloned objects");
         }
 
         b.setMinimalDaysInFirstWeek(7 - a.getMinimalDaysInFirstWeek());
         if (a.hashCode() == b.hashCode()) {
-            errln("Calendar hash code ignores minimal days in first week");
+            fail("Calendar hash code ignores minimal days in first week");
         }
         b.setMinimalDaysInFirstWeek(a.getMinimalDaysInFirstWeek());
 
         b.setFirstDayOfWeek((a.getFirstDayOfWeek() % 7) + 1); // Next day
         if (a.hashCode() == b.hashCode()) {
-            errln("Calendar hash code ignores first day of week");
+            fail("Calendar hash code ignores first day of week");
         }
         b.setFirstDayOfWeek(a.getFirstDayOfWeek());
 
         b.setLenient(!a.isLenient());
         if (a.hashCode() == b.hashCode()) {
-            errln("Calendar hash code ignores lenient setting");
+            fail("Calendar hash code ignores lenient setting");
         }
         b.setLenient(a.isLenient());
 
@@ -986,36 +1006,37 @@ public class CalendarRegression extends IntlTest {
         // of a reference -- this is true as of this writing
         b.getTimeZone().setRawOffset(a.getTimeZone().getRawOffset() + 60 * 60 * 1000);
         if (a.hashCode() == b.hashCode()) {
-            errln("Calendar hash code ignores zone");
+            fail("Calendar hash code ignores zone");
         }
         b.getTimeZone().setRawOffset(a.getTimeZone().getRawOffset());
 
         GregorianCalendar c = new GregorianCalendar();
         GregorianCalendar d = (GregorianCalendar) c.clone();
         if (c.hashCode() != d.hashCode()) {
-            errln("GregorianCalendar hash code unequal for clones objects");
+            fail("GregorianCalendar hash code unequal for clones objects");
         }
         Date cutover = c.getGregorianChange();
         d.setGregorianChange(new Date(cutover.getTime() + 24 * 60 * 60 * 1000));
         if (c.hashCode() == d.hashCode()) {
-            errln("GregorianCalendar hash code ignores cutover");
+            fail("GregorianCalendar hash code ignores cutover");
         }
     }
 
     /**
      * GregorianCalendar.equals() ignores cutover date
      */
+    @Test
     public void Test4141665() {
         GregorianCalendar cal = new GregorianCalendar();
         GregorianCalendar cal2 = (GregorianCalendar) cal.clone();
         Date cut = cal.getGregorianChange();
         Date cut2 = new Date(cut.getTime() + 100 * 24 * 60 * 60 * 1000L); // 100 days later
         if (!cal.equals(cal2)) {
-            errln("Cloned GregorianCalendars not equal");
+            fail("Cloned GregorianCalendars not equal");
         }
         cal2.setGregorianChange(cut2);
         if (cal.equals(cal2)) {
-            errln("GregorianCalendar.equals() ignores cutover");
+            fail("GregorianCalendar.equals() ignores cutover");
         }
     }
 
@@ -1023,16 +1044,17 @@ public class CalendarRegression extends IntlTest {
      * Bug states that ArrayIndexOutOfBoundsException is thrown by GregorianCalendar.roll()
      * when IllegalArgumentException should be.
      */
+    @Test
     public void Test4142933() {
         GregorianCalendar calendar = new GregorianCalendar();
         try {
             calendar.roll(-1, true);
-            errln("Test failed, no exception trown");
+            fail("Test failed, no exception trown");
         } catch (IllegalArgumentException e) {
             // OK: Do nothing
             // logln("Test passed");
         } catch (Exception e) {
-            errln("Test failed. Unexpected exception is thrown: " + e);
+            fail("Test failed. Unexpected exception is thrown: " + e);
             e.printStackTrace();
         }
     }
@@ -1044,6 +1066,7 @@ public class CalendarRegression extends IntlTest {
      * report to therefore only check the behavior of a calendar with a zero raw
      * offset zone.
      */
+    @Test
     public void Test4145158() {
         GregorianCalendar calendar = new GregorianCalendar();
 
@@ -1058,13 +1081,14 @@ public class CalendarRegression extends IntlTest {
         int era2 = calendar.get(ERA);
 
         if (year1 == year2 && era1 == era2) {
-            errln("Fail: Long.MIN_VALUE or Long.MAX_VALUE wrapping around");
+            fail("Fail: Long.MIN_VALUE or Long.MAX_VALUE wrapping around");
         }
     }
 
     /**
      * Maximum value for YEAR field wrong.
      */
+    @Test
     public void Test4145983() {
         GregorianCalendar calendar = new GregorianCalendar();
         calendar.setTimeZone(TimeZone.getTimeZone("GMT"));
@@ -1074,7 +1098,7 @@ public class CalendarRegression extends IntlTest {
             int year = calendar.get(YEAR);
             int maxYear = calendar.getMaximum(YEAR);
             if (year > maxYear) {
-                errln("Failed for " + DATES[i].getTime() + " ms: year="
+                fail("Failed for " + DATES[i].getTime() + " ms: year="
                         + year + ", maxYear=" + maxYear);
             }
         }
@@ -1086,6 +1110,7 @@ public class CalendarRegression extends IntlTest {
      * report test was written.  In reality the bug is restricted to the DAY_OF_YEAR
      * field. - liu 6/29/98
      */
+    @Test
     public void Test4147269() {
         final String[] fieldName = {
             "ERA",
@@ -1121,7 +1146,7 @@ public class CalendarRegression extends IntlTest {
                 calendar.getTime(); // Force time computation
                 // We expect an exception to be thrown. If we fall through
                 // to the next line, then we have a bug.
-                errln("Test failed with field " + fieldName[field]
+                fail("Test failed with field " + fieldName[field]
                         + ", date before: " + date
                         + ", date after: " + calendar.getTime()
                         + ", value: " + value + " (max = " + max + ")");
@@ -1135,6 +1160,7 @@ public class CalendarRegression extends IntlTest {
      * doesn't behave as a pure Julian calendar.
      * CANNOT REPRODUCE THIS BUG
      */
+    @Test
     public void Test4149677() {
         TimeZone[] zones = {TimeZone.getTimeZone("GMT"),
             TimeZone.getTimeZone("PST"),
@@ -1145,11 +1171,11 @@ public class CalendarRegression extends IntlTest {
             // Make sure extreme values don't wrap around
             calendar.setTime(new Date(Long.MIN_VALUE));
             if (calendar.get(ERA) != GregorianCalendar.BC) {
-                errln("Fail: Date(Long.MIN_VALUE) has an AD year in " + zones[i]);
+                fail("Fail: Date(Long.MIN_VALUE) has an AD year in " + zones[i]);
             }
             calendar.setTime(new Date(Long.MAX_VALUE));
             if (calendar.get(ERA) != GregorianCalendar.AD) {
-                errln("Fail: Date(Long.MAX_VALUE) has a BC year in " + zones[i]);
+                fail("Fail: Date(Long.MAX_VALUE) has a BC year in " + zones[i]);
             }
 
             calendar.setGregorianChange(new Date(Long.MAX_VALUE));
@@ -1157,9 +1183,9 @@ public class CalendarRegression extends IntlTest {
 
             boolean is100Leap = calendar.isLeapYear(100);
             if (!is100Leap) {
-                errln("test failed with zone " + zones[i].getID());
-                errln(" cutover date is Date(Long.MAX_VALUE)");
-                errln(" isLeapYear(100) returns: " + is100Leap);
+                fail("test failed with zone " + zones[i].getID()
+                + "\n cutover date is Date(Long.MAX_VALUE)"
+                + "\n isLeapYear(100) returns: " + is100Leap);
             }
         }
     }
@@ -1168,6 +1194,7 @@ public class CalendarRegression extends IntlTest {
      * Calendar and Date HOUR broken.  If HOUR is out-of-range, Calendar
      * and Date classes will misbehave.
      */
+    @Test
     public void Test4162587() {
         TimeZone savedTz = TimeZone.getDefault();
         TimeZone tz = TimeZone.getTimeZone("PST");
@@ -1178,29 +1205,29 @@ public class CalendarRegression extends IntlTest {
         try {
             for (int i = 0; i < 5; ++i) {
                 if (i > 0) {
-                    logln("---");
+                    System.out.println("---");
                 }
 
                 cal.clear();
                 cal.set(1998, APRIL, 5, i, 0);
                 d = cal.getTime();
                 String s0 = d.toString();
-                logln("0 " + i + ": " + s0);
+                System.out.println("0 " + i + ": " + s0);
 
                 cal.clear();
                 cal.set(1998, APRIL, 4, i + 24, 0);
                 d = cal.getTime();
                 String sPlus = d.toString();
-                logln("+ " + i + ": " + sPlus);
+                System.out.println("+ " + i + ": " + sPlus);
 
                 cal.clear();
                 cal.set(1998, APRIL, 6, i - 24, 0);
                 d = cal.getTime();
                 String sMinus = d.toString();
-                logln("- " + i + ": " + sMinus);
+                System.out.println("- " + i + ": " + sMinus);
 
                 if (!s0.equals(sPlus) || !s0.equals(sMinus)) {
-                    errln("Fail: All three lines must match");
+                    fail("Fail: All three lines must match");
                 }
             }
         } finally {
@@ -1211,27 +1238,29 @@ public class CalendarRegression extends IntlTest {
     /**
      * Adding 12 months behaves differently from adding 1 year
      */
+    @Test
     public void Test4165343() {
         GregorianCalendar calendar = new GregorianCalendar(1996, FEBRUARY, 29);
         Date start = calendar.getTime();
-        logln("init date: " + start);
+        System.out.println("init date: " + start);
         calendar.add(MONTH, 12);
         Date date1 = calendar.getTime();
-        logln("after adding 12 months: " + date1);
+        System.out.println("after adding 12 months: " + date1);
         calendar.setTime(start);
         calendar.add(YEAR, 1);
         Date date2 = calendar.getTime();
-        logln("after adding one year : " + date2);
+        System.out.println("after adding one year : " + date2);
         if (date1.equals(date2)) {
-            logln("Test passed");
+            System.out.println("Test passed");
         } else {
-            errln("Test failed");
+            fail("Test failed");
         }
     }
 
     /**
      * GregorianCalendar.getActualMaximum() does not account for first day of week.
      */
+    @Test
     public void Test4166109() {
         /* Test month:
         *
@@ -1249,7 +1278,7 @@ public class CalendarRegression extends IntlTest {
         GregorianCalendar calendar = new GregorianCalendar(Locale.US);
         calendar.set(1998, MARCH, 1);
         calendar.setMinimalDaysInFirstWeek(1);
-        logln("Date:  " + calendar.getTime());
+        System.out.println("Date:  " + calendar.getTime());
 
         int firstInMonth = calendar.get(DAY_OF_MONTH);
 
@@ -1258,7 +1287,7 @@ public class CalendarRegression extends IntlTest {
             int returned = calendar.getActualMaximum(field);
             int expected = (31 + ((firstInMonth - firstInWeek + 7) % 7) + 6) / 7;
 
-            logln("First day of week = " + firstInWeek
+            System.out.println("First day of week = " + firstInWeek
                     + "  getActualMaximum(WEEK_OF_MONTH) = " + returned
                     + "  expected = " + expected
                     + ((returned == expected) ? "  ok" : "  FAIL"));
@@ -1268,7 +1297,7 @@ public class CalendarRegression extends IntlTest {
             }
         }
         if (!passed) {
-            errln("Test failed");
+            fail("Test failed");
         }
     }
 
@@ -1279,6 +1308,7 @@ public class CalendarRegression extends IntlTest {
      * setGregorianChange didn't change object's date. But it was
      * changed. See 4928615.
      */
+    @Test
     public void Test4167060() {
         int field = YEAR;
         DateFormat format = new SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy G",
@@ -1293,7 +1323,7 @@ public class CalendarRegression extends IntlTest {
         String[] id = {"Hybrid", "Gregorian", "Julian"};
 
         for (int k = 0; k < 3; ++k) {
-            logln("--- " + id[k] + " ---");
+            System.out.println("--- " + id[k] + " ---");
 
             for (int j = 0; j < dates.length; ++j) {
                 GregorianCalendar calendar = new GregorianCalendar();
@@ -1308,8 +1338,8 @@ public class CalendarRegression extends IntlTest {
                 Date dateBefore = calendar.getTime();
 
                 int maxYear = calendar.getActualMaximum(field);
-                logln("maxYear: " + maxYear + " for " + format.format(calendar.getTime()));
-                logln("date before: " + format.format(dateBefore));
+                System.out.println("maxYear: " + maxYear + " for " + format.format(calendar.getTime()));
+                System.out.println("date before: " + format.format(dateBefore));
 
                 int[] years = {2000, maxYear - 1, maxYear, maxYear + 1};
 
@@ -1320,12 +1350,12 @@ public class CalendarRegression extends IntlTest {
                     int newYear = calendar.get(field);
                     calendar.setTime(dateBefore); // restore calendar for next use
 
-                    logln(" Year " + years[i] + (valid ? " ok " : " bad")
+                    System.out.println(" Year " + years[i] + (valid ? " ok " : " bad")
                             + " => " + format.format(dateAfter));
                     if (valid && newYear != years[i]) {
-                        errln("  FAIL: " + newYear + " should be valid; date, month and time shouldn't change");
+                        fail("  FAIL: " + newYear + " should be valid; date, month and time shouldn't change");
                     } else if (!valid && newYear == years[i]) {
-                        errln("  FAIL: " + newYear + " should be invalid");
+                        fail("  FAIL: " + newYear + " should be invalid");
                     }
                 }
             }
@@ -1336,10 +1366,11 @@ public class CalendarRegression extends IntlTest {
      * Calendar.roll broken
      * This bug relies on the TimeZone bug 4173604 to also be fixed.
      */
+    @Test
     public void Test4173516() {
         Locale locale = Locale.getDefault();
         if (!TestUtils.usesGregorianCalendar(locale)) {
-            logln("Skipping this test because locale is " + locale);
+            System.out.println("Skipping this test because locale is " + locale);
             return;
         }
 
@@ -1365,11 +1396,11 @@ public class CalendarRegression extends IntlTest {
             cal.roll(HOUR, 0x7F000000);
             cal.roll(HOUR, -0x7F000000);
             if (cal.getTime().getTime() != 0) {
-                errln("Hour rolling broken. expected 0, got " + cal.getTime().getTime());
+                fail("Hour rolling broken. expected 0, got " + cal.getTime().getTime());
             }
 
             for (int op = 0; op < 2; ++op) {
-                logln("Testing GregorianCalendar " + (op == 0 ? "add" : "roll"));
+                System.out.println("Testing GregorianCalendar " + (op == 0 ? "add" : "roll"));
 
                 for (int field = 0; field < FIELD_COUNT; ++field) {
                     if (field != ZONE_OFFSET
@@ -1395,7 +1426,7 @@ public class CalendarRegression extends IntlTest {
                                     || cal.get(MINUTE) != fields[4]
                                     || cal.get(SECOND) != fields[5]
                                     || cal.get(MILLISECOND) != fields[6]) {
-                                errln("Field " + field
+                                fail("Field " + field
                                         + " (" + fieldNames[field]
                                         + ") FAIL, expected "
                                         + fields[0]
@@ -1417,7 +1448,7 @@ public class CalendarRegression extends IntlTest {
                                 cal.set(fields[0], fields[1], fields[2],
                                         fields[3], fields[4], fields[5]);
                                 cal.set(MILLISECOND, fields[6]);
-                                errln(cal.get(YEAR)
+                                fail(cal.get(YEAR)
                                         + "/" + (cal.get(MONTH) + 1)
                                         + "/" + cal.get(DATE)
                                         + " " + cal.get(HOUR_OF_DAY)
@@ -1435,7 +1466,7 @@ public class CalendarRegression extends IntlTest {
                                     long t = cal.getTime().getTime();
                                     long delta = t - prev;
                                     prev = t;
-                                    errln((op == 0 ? "add(" : "roll(")
+                                    fail((op == 0 ? "add(" : "roll(")
                                             + fieldNames[field] + ", "
                                             + (i < limit ? "+" : "-") + "1) => "
                                             + cal.get(YEAR)
@@ -1457,6 +1488,7 @@ public class CalendarRegression extends IntlTest {
         }
     }
 
+    @Test
     public void Test4174361() {
         GregorianCalendar calendar = new GregorianCalendar(1996, 1, 29);
 
@@ -1470,13 +1502,14 @@ public class CalendarRegression extends IntlTest {
         int d2 = calendar.get(DAY_OF_MONTH);
 
         if (d1 != d2) {
-            errln("adding months to Feb 29 broken");
+            fail("adding months to Feb 29 broken");
         }
     }
 
     /**
      * Calendar does not update field values when setTimeZone is called.
      */
+    @Test
     public void Test4177484() {
         TimeZone PST = TimeZone.getTimeZone("PST");
         TimeZone EST = TimeZone.getTimeZone("EST");
@@ -1488,7 +1521,7 @@ public class CalendarRegression extends IntlTest {
         cal.setTimeZone(EST);
         int h2 = cal.get(HOUR_OF_DAY);
         if (h1 == h2) {
-            errln("FAIL: Fields not updated after setTimeZone");
+            fail("FAIL: Fields not updated after setTimeZone");
         }
 
         // getTime() must NOT change when time zone is changed.
@@ -1500,13 +1533,14 @@ public class CalendarRegression extends IntlTest {
         cal.setTimeZone(EST);
         Date est10 = cal.getTime();
         if (!pst10.equals(est10)) {
-            errln("FAIL: setTimeZone changed time");
+            fail("FAIL: setTimeZone changed time");
         }
     }
 
     /**
      * Week of year is wrong at the start and end of the year.
      */
+    @Test
     public void Test4197699() {
         GregorianCalendar cal = new GregorianCalendar();
         cal.setFirstDayOfWeek(MONDAY);
@@ -1523,14 +1557,14 @@ public class CalendarRegression extends IntlTest {
             int expWOY = DATA[i++];
             int actWOY = cal.get(WEEK_OF_YEAR);
             if (expWOY == actWOY) {
-                logln("Ok: " + fmt.format(cal.getTime()));
+                System.out.println("Ok: " + fmt.format(cal.getTime()));
             } else {
-                errln("FAIL: " + fmt.format(cal.getTime())
+                fail("FAIL: " + fmt.format(cal.getTime())
                         + ", expected WOY=" + expWOY);
                 cal.add(DATE, -8);
                 for (int j = 0; j < 14; ++j) {
                     cal.add(DATE, 1);
-                    logln(fmt.format(cal.getTime()));
+                    System.out.println(fmt.format(cal.getTime()));
                 }
             }
         }
@@ -1549,6 +1583,7 @@ public class CalendarRegression extends IntlTest {
      *   WEEK_OF_YEAR + DAY_OF_WEEK
      */
     @SuppressWarnings("deprecation")
+    @Test
     public void Test4209071() {
         Calendar cal = Calendar.getInstance(Locale.US);
 
@@ -1625,7 +1660,7 @@ public class CalendarRegression extends IntlTest {
 
             Date act = cal.getTime();
             if (!act.equals(exp)) {
-                errln("FAIL: Test " + (i / 2) + " got " + act
+                fail("FAIL: Test " + (i / 2) + " got " + act
                         + ", want " + exp
                         + " (see test/java/util/Calendar/CalendarRegression.java");
             }
@@ -1649,13 +1684,14 @@ public class CalendarRegression extends IntlTest {
             cal.set(YEAR, 1997);
             Date actual = cal.getTime();
             if (!actual.equals(DATA[i + 1])) {
-                errln("FAIL: Sunday " + DATA[i]
+                fail("FAIL: Sunday " + DATA[i]
                         + " of Jan 1997 -> " + actual
                         + ", want " + DATA[i + 1]);
             }
         }
     }
 
+    @Test
     public void Test4288792() throws Exception {
         TimeZone savedTZ = TimeZone.getDefault();
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
@@ -1678,7 +1714,7 @@ public class CalendarRegression extends IntlTest {
                             cal.add(DATE, 1);
                             int WOY = cal.get(WEEK_OF_YEAR);
                             if (WOY != maxWeek) {
-                                errln(cal.getTime() + ",got=" + WOY
+                                fail(cal.getTime() + ",got=" + WOY
                                         + ",expected=" + maxWeek
                                         + ",min=" + j1 + ",first=" + j);
                             }
@@ -1687,7 +1723,7 @@ public class CalendarRegression extends IntlTest {
                         cal.add(DATE, 1);
                         int WOY = cal.get(WEEK_OF_YEAR);
                         if (WOY != 1) {
-                            errln(cal.getTime() + ",got=" + WOY
+                            fail(cal.getTime() + ",got=" + WOY
                                     + ",expected=1,min=" + j1 + ",first" + j);
                         }
                     }
@@ -1698,6 +1734,7 @@ public class CalendarRegression extends IntlTest {
         }
     }
 
+    @Test
     public void Test4328747() throws Exception {
         Calendar c = Calendar.getInstance(Locale.US);
         c.clear();
@@ -1718,7 +1755,7 @@ public class CalendarRegression extends IntlTest {
         // Bug gives 1965 11 19
         if ((result.get(YEAR) != 1966) || (result.get(MONTH) != 0)
                 || (result.get(DATE) != 1)) {
-            errln("deserialized Calendar returned wrong date field(s): "
+            fail("deserialized Calendar returned wrong date field(s): "
                     + result.get(YEAR) + "/" + result.get(MONTH) + "/" + result.get(DATE)
                     + ", expected 1966/0/1");
         }
@@ -1728,6 +1765,7 @@ public class CalendarRegression extends IntlTest {
      * Test whether Calendar can be serialized/deserialized correctly
      * even if invalid/customized TimeZone is used.
      */
+    @Test
     public void Test4413980() {
         TimeZone savedTimeZone = TimeZone.getDefault();
         try {
@@ -1751,18 +1789,18 @@ public class CalendarRegression extends IntlTest {
 
                 if (!c.equals(t.readObject())) {
                     pass = false;
-                    logln("Calendar instance which uses TimeZone <"
+                    System.out.println("Calendar instance which uses TimeZone <"
                             + IDs[i] + "> is incorrectly serialized/deserialized.");
                 } else {
-                    logln("Calendar instance which uses TimeZone <"
+                    System.out.println("Calendar instance which uses TimeZone <"
                             + IDs[i] + "> is correctly serialized/deserialized.");
                 }
             }
             if (!pass) {
-                errln("Fail: Calendar serialization/equality bug");
+                fail("Fail: Calendar serialization/equality bug");
             }
         } catch (IOException | ClassNotFoundException e) {
-            errln("Fail: " + e);
+            fail("Fail: " + e);
             e.printStackTrace();
         } finally {
             TimeZone.setDefault(savedTimeZone);
@@ -1772,6 +1810,7 @@ public class CalendarRegression extends IntlTest {
     /**
      * 4546637: Incorrect WEEK_OF_MONTH after changing First Day Of Week
      */
+    @Test
     public void Test4546637() {
         GregorianCalendar day = new GregorianCalendar(2001, NOVEMBER, 04);
         day.setMinimalDaysInFirstWeek(1);
@@ -1779,13 +1818,14 @@ public class CalendarRegression extends IntlTest {
 
         day.setFirstDayOfWeek(MONDAY);
         if (day.get(WEEK_OF_MONTH) != 1) {
-            errln("Fail: 2001/11/4 must be the first week of the month.");
+            fail("Fail: 2001/11/4 must be the first week of the month.");
         }
     }
 
     /**
      * 4623997: GregorianCalendar returns bad WEEK_OF_YEAR
      */
+    @Test
     public void Test4623997() {
         GregorianCalendar cal = new GregorianCalendar(2000, JANUARY, 1);
 
@@ -1795,7 +1835,7 @@ public class CalendarRegression extends IntlTest {
         cal.setMinimalDaysInFirstWeek(4);
 
         if (cal.get(WEEK_OF_YEAR) != 52) {
-            errln("Fail: 2000/1/1 must be the 52nd week of the year.");
+            fail("Fail: 2000/1/1 must be the 52nd week of the year.");
         }
     }
 
@@ -1805,11 +1845,12 @@ public class CalendarRegression extends IntlTest {
      * <p>Need to use SimpleDateFormat to test because a call to
      * get(int) changes internal states of a Calendar.
      */
+    @Test
     public void Test4685354() {
         Locale locale = Locale.getDefault();
         if (!TestUtils.usesAsciiDigits(locale)
                 || !TestUtils.usesGregorianCalendar(locale)) {
-            logln("Skipping this test because locale is " + locale);
+            System.out.println("Skipping this test because locale is " + locale);
             return;
         }
 
@@ -1831,7 +1872,7 @@ public class CalendarRegression extends IntlTest {
         calendar.set(DAY_OF_MONTH, 0);
         s = df.format(calendar.getTime());
         if (!expected.equals(s)) {
-            errln("DAY_OF_MONTH w/o ZONE_OFFSET: expected: " + expected + ", got: " + s);
+            fail("DAY_OF_MONTH w/o ZONE_OFFSET: expected: " + expected + ", got: " + s);
         }
 
         // The same thing must work with ZONE_OFFSET set
@@ -1847,7 +1888,7 @@ public class CalendarRegression extends IntlTest {
         calendar.set(DAY_OF_MONTH, 0);
         s = df.format(calendar.getTime());
         if (!expected.equals(s)) {
-            errln("DAY_OF_MONTH: expected: " + expected + ", got: " + s);
+            fail("DAY_OF_MONTH: expected: " + expected + ", got: " + s);
         }
 
         expected = "1999/12/24"; // 0th week of 2000
@@ -1867,7 +1908,7 @@ public class CalendarRegression extends IntlTest {
         calendar.set(WEEK_OF_YEAR, 0);
         s = df.format(calendar.getTime());
         if (!expected.equals(s)) {
-            errln("WEEK_OF_YEAR: expected: " + expected + ", got: " + s);
+            fail("WEEK_OF_YEAR: expected: " + expected + ", got: " + s);
         }
         // change the state back
         calendar.clear();
@@ -1879,7 +1920,7 @@ public class CalendarRegression extends IntlTest {
         calendar.set(WEEK_OF_MONTH, 0);
         s = df.format(calendar.getTime());
         if (!expected.equals(s)) {
-            errln("WEEK_OF_MONTH: expected: " + expected + ", got: " + s);
+            fail("WEEK_OF_MONTH: expected: " + expected + ", got: " + s);
         }
 
         // Make sure the time fields work correctly.
@@ -1903,7 +1944,7 @@ public class CalendarRegression extends IntlTest {
         // time should be back to 22:59:59.
         s = df.format(calendar.getTime());
         if (!expected.equals(s)) {
-            errln("MINUTE: expected: " + expected + ", got: " + s);
+            fail("MINUTE: expected: " + expected + ", got: " + s);
         }
     }
 
@@ -1913,10 +1954,11 @@ public class CalendarRegression extends IntlTest {
      * <p>Need to use SimpleDateFormat to test because a call to
      * get(int) changes internal states of a Calendar.
      */
+    @Test
     public void Test4655637() {
         Locale locale = Locale.getDefault();
         if (!TestUtils.usesGregorianCalendar(locale)) {
-            logln("Skipping this test because locale is " + locale);
+            System.out.println("Skipping this test because locale is " + locale);
             return;
         }
 
@@ -1935,7 +1977,7 @@ public class CalendarRegression extends IntlTest {
         String expected = "2001/01/08";
         String s = df.format(cal.getTime());
         if (!expected.equals(s)) {
-            errln("expected: " + expected + ", got: " + s);
+            fail("expected: " + expected + ", got: " + s);
         }
     }
 
@@ -1947,6 +1989,7 @@ public class CalendarRegression extends IntlTest {
      *
      * <p>This test case throws ArrayIndexOutOfBoundsException without the fix.
      */
+    @Test
     public void Test4683492() {
         Calendar cal = new GregorianCalendar(2002, 3, 29, 10, 0, 0);
         cal.set(DAY_OF_WEEK, FRIDAY);
@@ -1956,13 +1999,14 @@ public class CalendarRegression extends IntlTest {
         String expected = "2003/01/31";
         String s = df.format(cal.getTime());
         if (!expected.equals(s)) {
-            errln("expected: " + expected + ", got: " + s);
+            fail("expected: " + expected + ", got: " + s);
         }
     }
 
     /**
      * 4080631: Calendar.hashCode is amazingly bad
      */
+    @Test
     public void Test4080631() {
         Calendar cal = Calendar.getInstance();
         int h1 = cal.hashCode();
@@ -1971,16 +2015,16 @@ public class CalendarRegression extends IntlTest {
         Calendar cal2 = (Calendar) cal.clone();
         cal.add(MILLISECOND, +1);
         int h3 = cal.hashCode();
-        logln("hash code: h1=" + h1 + ", h2=" + h2 + ", h3=" + h3);
+        System.out.println("hash code: h1=" + h1 + ", h2=" + h2 + ", h3=" + h3);
         if (h1 == h2 || h1 == h3 || h2 == h3) {
-            errln("hash code is poor: hashCode=" + h1);
+            fail("hash code is poor: hashCode=" + h1);
         }
         h2 = cal2.hashCode();
         cal.add(MILLISECOND, -1);
         int h4 = cal.hashCode();
-        logln("hash code: h2=" + h2 + ", h4=" + h4);
+        System.out.println("hash code: h2=" + h2 + ", h4=" + h4);
         if (cal.equals(cal2) && h2 != h4) {
-            errln("broken hash code: h2=" + h2 + ", h4=" + h4);
+            fail("broken hash code: h2=" + h2 + ", h4=" + h4);
         }
         int x = cal.getFirstDayOfWeek() + 3;
         if (x > SATURDAY) {
@@ -1988,9 +2032,9 @@ public class CalendarRegression extends IntlTest {
         }
         cal.setFirstDayOfWeek(x);
         int h5 = cal.hashCode();
-        logln("hash code: h4=" + h4 + ", h5=" + h5);
+        System.out.println("hash code: h4=" + h4 + ", h5=" + h5);
         if (h4 == h5) {
-            errln("has code is poor with first day of week param: hashCode=" + h4);
+            fail("has code is poor with first day of week param: hashCode=" + h4);
         }
     }
 
@@ -1998,6 +2042,7 @@ public class CalendarRegression extends IntlTest {
      * 4125161: RFE: GregorianCalendar needs more era names (BCE and CE)
      */
     /*
+    @Test
     public void Test4125161() throws Exception {
         Class gc = GregorianCalendar.class;
         Field f;
@@ -2005,86 +2050,89 @@ public class CalendarRegression extends IntlTest {
         f = gc.getDeclaredField("BCE");
         mod = f.getModifiers();
         if (!Modifier.isStatic(mod) || !Modifier.isFinal(mod)) {
-            errln("BCE: wrong modifiers: " + mod);
+            fail("BCE: wrong modifiers: " + mod);
         }
         f = gc.getDeclaredField("CE");
         mod = f.getModifiers();
         if (!Modifier.isStatic(mod) || !Modifier.isFinal(mod)) {
-            errln("CE: wrong modifiers: " + mod);
+            fail("CE: wrong modifiers: " + mod);
         }
         if (GregorianCalendar.BCE != GregorianCalendar.BC
             || GregorianCalendar.CE != GregorianCalendar.AD) {
-            errln("Wrong BCE and/or CE values");
+            fail("Wrong BCE and/or CE values");
         }
     }
      */
     /**
      * 4167995: GregorianCalendar.setGregorianChange() not to spec
      */
+    @Test
     public void Test4167995() {
         Koyomi gc = new Koyomi(TimeZone.getTimeZone("GMT"));
-        logln("Hybrid: min date");
+        System.out.println("Hybrid: min date");
         gc.setTime(new Date(Long.MIN_VALUE));
         if (!gc.checkDate(292269055, DECEMBER, 2, SUNDAY)
                 || !gc.checkFieldValue(ERA, GregorianCalendar.BC)) {
-            errln(gc.getMessage());
+            fail(gc.getMessage());
         }
-        logln("Hybrid: max date");
+        System.out.println("Hybrid: max date");
         gc.setTime(new Date(Long.MAX_VALUE));
         if (!gc.checkDate(292278994, AUGUST, 17, SUNDAY)
                 || !gc.checkFieldValue(ERA, GregorianCalendar.AD)) {
-            errln(gc.getMessage());
+            fail(gc.getMessage());
         }
 
         gc.setGregorianChange(new Date(Long.MIN_VALUE));
-        logln("Gregorian: min date");
+        System.out.println("Gregorian: min date");
         gc.setTime(new Date(Long.MIN_VALUE));
         if (!gc.checkDate(292275056, MAY, 16, SUNDAY)
                 || !gc.checkFieldValue(ERA, GregorianCalendar.BC)) {
-            errln(gc.getMessage());
+            fail(gc.getMessage());
         }
-        logln("Gregorian: max date");
+        System.out.println("Gregorian: max date");
         gc.setTime(new Date(Long.MAX_VALUE));
         if (!gc.checkDate(292278994, AUGUST, 17, SUNDAY)
                 || !gc.checkFieldValue(ERA, GregorianCalendar.AD)) {
-            errln(gc.getMessage());
+            fail(gc.getMessage());
         }
 
         gc.setGregorianChange(new Date(Long.MAX_VALUE));
-        logln("Julian: min date");
+        System.out.println("Julian: min date");
         gc.setTime(new Date(Long.MIN_VALUE));
         if (!gc.checkDate(292269055, DECEMBER, 2, SUNDAY)
                 || !gc.checkFieldValue(ERA, GregorianCalendar.BC)) {
-            errln(gc.getMessage());
+            fail(gc.getMessage());
         }
-        logln("Julian: max date");
+        System.out.println("Julian: max date");
         gc.setTime(new Date(Long.MAX_VALUE));
         if (!gc.checkDate(292272993, JANUARY, 4, SUNDAY)
                 || !gc.checkFieldValue(ERA, GregorianCalendar.AD)) {
-            errln(gc.getMessage());
+            fail(gc.getMessage());
         }
     }
 
     /**
      * 4340146: Calendar.equals modifies state
      */
+    @Test
     public void Test4340146() {
         Koyomi cal = new Koyomi();
         cal.clear();
         cal.set(2003, OCTOBER, 32);
         cal.equals(new Koyomi());
         if (!cal.checkInternalDate(2003, OCTOBER, 32)) {
-            errln(cal.getMessage());
+            fail(cal.getMessage());
         }
         new Koyomi().equals(cal);
         if (!cal.checkInternalDate(2003, OCTOBER, 32)) {
-            errln(cal.getMessage());
+            fail(cal.getMessage());
         }
     }
 
     /**
      * 4639407: GregorianCalendar doesn't work in non-lenient due to timezone bounds checking
      */
+    @Test
     public void Test4639407() {
         // The following operations in non-lenient mode shouldn't
         // throw IllegalArgumentException.
@@ -2100,6 +2148,7 @@ public class CalendarRegression extends IntlTest {
     /**
      * 4652815: rolling week-of-year back hundreds of weeks changes year
      */
+    @Test
     public void Test4652815() {
         Koyomi cal = new Koyomi(Locale.US);
         testRoll(cal, 2003, SEPTEMBER, 29);
@@ -2112,18 +2161,18 @@ public class CalendarRegression extends IntlTest {
         cal.clear();
         cal.set(year, month, dayOfMonth);
         cal.getTime(); // normalize fields
-        logln("Roll backwards from " + cal.toDateString());
+        System.out.println("Roll backwards from " + cal.toDateString());
         for (int i = 0; i < 1000; i++) {
             cal.roll(WEEK_OF_YEAR, -i);
             if (!cal.checkFieldValue(YEAR, year)) {
-                errln(cal.getMessage());
+                fail(cal.getMessage());
             }
         }
-        logln("Roll forewards from " + cal.toDateString());
+        System.out.println("Roll forewards from " + cal.toDateString());
         for (int i = 0; i < 1000; i++) {
             cal.roll(WEEK_OF_YEAR, +i);
             if (!cal.checkFieldValue(YEAR, year)) {
-                errln(cal.getMessage());
+                fail(cal.getMessage());
             }
         }
     }
@@ -2131,47 +2180,50 @@ public class CalendarRegression extends IntlTest {
     /**
      * 4652830: GregorianCalendar roll behaves unexpectedly for dates in BC era
      */
+    @Test
     public void Test4652830() {
         Koyomi cal = new Koyomi(Locale.US);
         cal.clear();
-        logln("BCE 9-2-28 (leap year) roll DAY_OF_MONTH++ twice");
+        System.out.println("BCE 9-2-28 (leap year) roll DAY_OF_MONTH++ twice");
         cal.set(ERA, GregorianCalendar.BC);
         cal.set(9, FEBRUARY, 28);
         if (cal.getActualMaximum(DAY_OF_YEAR) != 366) {
-            errln("    wrong actual max of DAY_OF_YEAR: got "
+            fail("    wrong actual max of DAY_OF_YEAR: got "
                     + cal.getActualMaximum(DAY_OF_YEAR) + " expected " + 366);
         }
         cal.roll(DAY_OF_MONTH, +1);
         if (!cal.checkFieldValue(ERA, GregorianCalendar.BC)
                 || !cal.checkDate(9, FEBRUARY, 29)) {
-            errln(cal.getMessage());
+            fail(cal.getMessage());
         }
         cal.roll(DAY_OF_MONTH, +1);
         if (!cal.checkFieldValue(ERA, GregorianCalendar.BC)
                 || !cal.checkDate(9, FEBRUARY, 1)) {
-            errln(cal.getMessage());
+            fail(cal.getMessage());
         }
     }
 
     /**
      * 4740554: GregorianCalendar.getActualMaximum is inconsistent with normalization
      */
+    @Test
     public void Test4740554() {
-        logln("1999/(Feb+12)/1 should be normalized to 2000/Feb/1 for getActualMaximum");
+        System.out.println("1999/(Feb+12)/1 should be normalized to 2000/Feb/1 for getActualMaximum");
         Koyomi cal = new Koyomi(Locale.US);
         cal.clear();
         cal.set(1999, FEBRUARY + 12, 1);
         if (!cal.checkActualMaximum(DAY_OF_YEAR, 366)) {
-            errln(cal.getMessage());
+            fail(cal.getMessage());
         }
         if (!cal.checkActualMaximum(DAY_OF_MONTH, 29)) {
-            errln(cal.getMessage());
+            fail(cal.getMessage());
         }
     }
 
     /**
      * 4936355: GregorianCalendar causes overflow/underflow with time of day calculation
      */
+    @Test
     public void Test4936355() {
         Koyomi cal = new Koyomi(TimeZone.getTimeZone("GMT"));
         cal.clear();
@@ -2213,7 +2265,7 @@ public class CalendarRegression extends IntlTest {
         long time2 = cal.getTimeInMillis();
         if ((time + expectedDelta) != time2) {
             String s = value == Integer.MAX_VALUE ? "Integer.MAX_VALUE" : "Integer.MIN_VALUE";
-            errln("set(" + Koyomi.getFieldName(field) + ", " + s + ") failed." + " got " + time2
+            fail("set(" + Koyomi.getFieldName(field) + ", " + s + ") failed." + " got " + time2
                     + ", expected " + (time + expectedDelta));
         }
     }
@@ -2222,6 +2274,7 @@ public class CalendarRegression extends IntlTest {
      * 4722650: Calendar.equals can throw an exception in non-lenient
      * (piggy-back tests for compareTo() which is new in 1.5)
      */
+    @Test
     public void Test4722650() {
         Calendar cal1 = new GregorianCalendar();
         cal1.clear();
@@ -2233,26 +2286,26 @@ public class CalendarRegression extends IntlTest {
         cal2.set(2003, OCTOBER, 31);
         try {
             if (cal1.equals(cal2)) {
-                errln("lenient and non-lenient shouldn't be equal. (2003/10/31)");
+                fail("lenient and non-lenient shouldn't be equal. (2003/10/31)");
             }
             if (cal1.compareTo(cal2) != 0) {
-                errln("cal1 and cal2 should represent the same time. (2003/10/31)");
+                fail("cal1 and cal2 should represent the same time. (2003/10/31)");
             }
         } catch (IllegalArgumentException e) {
-            errln("equals threw IllegalArugumentException with non-lenient");
+            fail("equals threw IllegalArugumentException with non-lenient");
         }
 
         cal1.set(2003, OCTOBER, 32);
         cal2.set(2003, OCTOBER, 32);
         try {
             if (cal1.equals(cal2)) {
-                errln("lenient and non-lenient shouldn't be equal. (2003/10/32)");
+                fail("lenient and non-lenient shouldn't be equal. (2003/10/32)");
             }
             if (cal1.compareTo(cal2) != 0) {
-                errln("cal1 and cal2 should represent the same time. (2003/10/32)");
+                fail("cal1 and cal2 should represent the same time. (2003/10/32)");
             }
         } catch (IllegalArgumentException e) {
-            errln("equals threw IllegalArugumentException with non-lenient");
+            fail("equals threw IllegalArugumentException with non-lenient");
         }
 
         cal1 = Calendar.getInstance(Locale.of("th", "TH"));
@@ -2260,48 +2313,49 @@ public class CalendarRegression extends IntlTest {
         cal2 = Calendar.getInstance(Locale.US);
         cal2.setTimeInMillis(0L);
         if (cal1.equals(cal2)) {
-            errln("Buddhist.equals(Gregorian) shouldn't be true. (millis=0)");
+            fail("Buddhist.equals(Gregorian) shouldn't be true. (millis=0)");
         }
         if (cal1.compareTo(cal2) != 0) {
-            errln("cal1 (Buddhist) and cal2 (Gregorian) should represent the same time. (millis=0)");
+            fail("cal1 (Buddhist) and cal2 (Gregorian) should represent the same time. (millis=0)");
         }
     }
 
     /**
      * 4738710: API: Calendar comparison methods should be improved
      */
+    @Test
     public void Test4738710() {
         Calendar cal0 = new GregorianCalendar(2003, SEPTEMBER, 30);
         Comparable<Calendar> cal1 = new GregorianCalendar(2003, OCTOBER, 1);
         Calendar cal2 = new GregorianCalendar(2003, OCTOBER, 2);
         if (!(cal1.compareTo(cal0) > 0)) {
-            errln("!(cal1 > cal0)");
+            fail("!(cal1 > cal0)");
         }
         if (!(cal1.compareTo(cal2) < 0)) {
-            errln("!(cal1 < cal2)");
+            fail("!(cal1 < cal2)");
         }
         if (cal1.compareTo(new GregorianCalendar(2003, OCTOBER, 1)) != 0) {
-            errln("cal1 != new GregorianCalendar(2003, OCTOBER, 1)");
+            fail("cal1 != new GregorianCalendar(2003, OCTOBER, 1)");
         }
 
         if (cal0.after(cal2)) {
-            errln("cal0 shouldn't be after cal2");
+            fail("cal0 shouldn't be after cal2");
         }
         if (cal2.before(cal0)) {
-            errln("cal2 shouldn't be before cal0");
+            fail("cal2 shouldn't be before cal0");
         }
 
         if (cal0.after(0)) {
-            errln("cal0.after() returned true with an Integer.");
+            fail("cal0.after() returned true with an Integer.");
         }
         if (cal0.before(0)) {
-            errln("cal0.before() returned true with an Integer.");
+            fail("cal0.before() returned true with an Integer.");
         }
         if (cal0.after(null)) {
-            errln("cal0.after() returned true with null.");
+            fail("cal0.after() returned true with null.");
         }
         if (cal0.before(null)) {
-            errln("cal0.before() returned true with null.");
+            fail("cal0.before() returned true with null.");
         }
     }
 
@@ -2309,6 +2363,7 @@ public class CalendarRegression extends IntlTest {
      * 4633646: Setting WEEK_OF_MONTH to 1 results in incorrect date
      */
     @SuppressWarnings("deprecation")
+    @Test
     public void Test4633646() {
         Koyomi cal = new Koyomi(Locale.US);
         cal.setTime(new Date(2002 - 1900, 1 - 1, 28));
@@ -2334,15 +2389,15 @@ public class CalendarRegression extends IntlTest {
         cal.set(WEEK_OF_MONTH, 1);
         if (cal.isLenient()) {
             if (!cal.checkDate(2001, DECEMBER, 31)) {
-                errln(cal.getMessage());
+                fail(cal.getMessage());
             }
             if (!cal.checkFieldValue(WEEK_OF_MONTH, 6)) {
-                errln(cal.getMessage());
+                fail(cal.getMessage());
             }
         } else {
             try {
                 Date d = cal.getTime();
-                errln("didn't throw IllegalArgumentException in non-lenient");
+                fail("didn't throw IllegalArgumentException in non-lenient");
             } catch (IllegalArgumentException e) {
             }
         }
@@ -2352,6 +2407,7 @@ public class CalendarRegression extends IntlTest {
      * 4846659: Calendar: Both set() and roll() don't work for AM_PM time field
      * (Partially fixed only roll as of 1.5)
      */
+    @Test
     public void Test4846659() {
         Koyomi cal = new Koyomi();
         cal.clear();
@@ -2360,7 +2416,7 @@ public class CalendarRegression extends IntlTest {
         // Test roll()
         cal.roll(AM_PM, +1); // should turn to PM
         if (!cal.checkFieldValue(HOUR_OF_DAY, 10 + 12)) {
-            errln("roll: AM_PM didn't change to PM");
+            fail("roll: AM_PM didn't change to PM");
         }
 
         cal.clear();
@@ -2369,7 +2425,7 @@ public class CalendarRegression extends IntlTest {
         // Test set()
         cal.set(AM_PM, PM); // should turn to PM
         if (!cal.checkFieldValue(HOUR_OF_DAY, 10 + 12)) {
-            errln("set: AM_PM didn't change to PM");
+            fail("set: AM_PM didn't change to PM");
         }
 
         cal.clear();
@@ -2378,13 +2434,14 @@ public class CalendarRegression extends IntlTest {
         cal.set(AM_PM, PM);
         cal.set(HOUR, 9);
         if (!cal.checkFieldValue(HOUR_OF_DAY, 9 + 12)) {
-            errln("set: both AM_PM and HOUT didn't change to PM");
+            fail("set: both AM_PM and HOUT didn't change to PM");
         }
     }
 
     /**
      * 4822110: GregorianCalendar.get() returns an incorrect date after setFirstDayOfWeek()
      */
+    @Test
     public void Test4822110() {
         Koyomi cal = new Koyomi(Locale.US);
         //    June 2003
@@ -2401,17 +2458,18 @@ public class CalendarRegression extends IntlTest {
         cal.setFirstDayOfWeek(MONDAY);
         // Now 6/2 to 6/8 should be the 2nd week of June. Sunday of
         // that week is 6/8.
-        logln("1: " + cal.get(WEEK_OF_MONTH) + ", " + cal.get(DAY_OF_MONTH));
+        System.out.println("1: " + cal.get(WEEK_OF_MONTH) + ", " + cal.get(DAY_OF_MONTH));
         cal.set(DAY_OF_WEEK, SUNDAY);
-        logln("1st Sunday of June 2003 with FirstDayOfWeek=MONDAY");
+        System.out.println("1st Sunday of June 2003 with FirstDayOfWeek=MONDAY");
         if (!cal.checkDate(2003, JUNE, 8)) {
-            errln(cal.getMessage());
+            fail(cal.getMessage());
         }
     }
 
     /**
      * 4973919: Inconsistent GregorianCalendar hashCode before and after serialization
      */
+    @Test
     public void Test4966499() throws Exception {
         GregorianCalendar date1 = new GregorianCalendar(2004, JANUARY, 7);
 
@@ -2428,10 +2486,10 @@ public class CalendarRegression extends IntlTest {
         GregorianCalendar date2 = (GregorianCalendar) ois.readObject();
 
         if (!date1.equals(date2)) {
-            errln("date1.equals(date2) != true");
+            fail("date1.equals(date2) != true");
         }
         if (date1.hashCode() != date2.hashCode()) {
-            errln("inconsistent hashCode() value (before=0x"
+            fail("inconsistent hashCode() value (before=0x"
                     + Integer.toHexString(date1.hashCode())
                     + ", after=0x" + Integer.toHexString(date2.hashCode()) + ")");
         }
@@ -2440,54 +2498,56 @@ public class CalendarRegression extends IntlTest {
     /**
      * 4980088: GregorianCalendar.getActualMaximum doesn't throw exception
      */
+    @Test
     public void Test4980088() {
         GregorianCalendar cal = new GregorianCalendar();
         try {
             int x = cal.getMaximum(100);
-            errln("getMaximum(100) didn't throw an exception.");
+            fail("getMaximum(100) didn't throw an exception.");
         } catch (IndexOutOfBoundsException e) {
-            logln("getMaximum: " + e.getClass().getName() + ": " + e.getMessage());
+            System.out.println("getMaximum: " + e.getClass().getName() + ": " + e.getMessage());
         }
 
         try {
             int x = cal.getLeastMaximum(100);
-            errln("getLeastMaximum(100) didn't throw an exception.");
+            fail("getLeastMaximum(100) didn't throw an exception.");
         } catch (IndexOutOfBoundsException e) {
-            logln("getLeastMaximum: " + e.getClass().getName() + ": " + e.getMessage());
+            System.out.println("getLeastMaximum: " + e.getClass().getName() + ": " + e.getMessage());
         }
 
         try {
             int x = cal.getActualMaximum(100);
-            errln("getActualMaximum(100) didn't throw an exception.");
+            fail("getActualMaximum(100) didn't throw an exception.");
         } catch (IndexOutOfBoundsException e) {
-            logln("getActualMaximum: " + e.getClass().getName() + ": " + e.getMessage());
+            System.out.println("getActualMaximum: " + e.getClass().getName() + ": " + e.getMessage());
         }
 
         try {
             int x = cal.getMinimum(100);
-            errln("getMinimum(100) didn't throw an exception.");
+            fail("getMinimum(100) didn't throw an exception.");
         } catch (IndexOutOfBoundsException e) {
-            logln("getMinimum: " + e.getClass().getName() + ": " + e.getMessage());
+            System.out.println("getMinimum: " + e.getClass().getName() + ": " + e.getMessage());
         }
 
         try {
             int x = cal.getGreatestMinimum(100);
-            errln("getGreatestMinimum(100) didn't throw an exception.");
+            fail("getGreatestMinimum(100) didn't throw an exception.");
         } catch (IndexOutOfBoundsException e) {
-            logln("getGreatestMinimum: " + e.getClass().getName() + ": " + e.getMessage());
+            System.out.println("getGreatestMinimum: " + e.getClass().getName() + ": " + e.getMessage());
         }
 
         try {
             int x = cal.getActualMinimum(100);
-            errln("getActualMinimum(100) didn't throw an exception.");
+            fail("getActualMinimum(100) didn't throw an exception.");
         } catch (IndexOutOfBoundsException e) {
-            logln("getActualMinimum: " + e.getClass().getName() + ": " + e.getMessage());
+            System.out.println("getActualMinimum: " + e.getClass().getName() + ": " + e.getMessage());
         }
     }
 
     /**
      * 4965624: GregorianCalendar.isLeapYear(1000) returns incorrect value
      */
+    @Test
     public void Test4965624() {
         // 5013094: This test case needs to use "GMT" to specify
         // Gregorian cutover dates.
@@ -2509,7 +2569,7 @@ public class CalendarRegression extends IntlTest {
                 GregorianCalendar cal = new GregorianCalendar();
                 cal.setGregorianChange(d);
                 if (cal.isLeapYear(1000) != expected) {
-                    errln("isLeapYear(1000) returned " + cal.isLeapYear(1000)
+                    fail("isLeapYear(1000) returned " + cal.isLeapYear(1000)
                             + " with cutover date (Julian) " + d);
                 }
             });
@@ -2532,16 +2592,17 @@ public class CalendarRegression extends IntlTest {
     /**
      * 5006864: Define the minimum value of DAY_OF_WEEK_IN_MONTH as 1
      */
+    @Test
     public void Test5006864() {
         GregorianCalendar cal = new GregorianCalendar();
         int min = cal.getMinimum(DAY_OF_WEEK_IN_MONTH);
         if (min != 1) {
-            errln("GregorianCalendar.getMinimum(DAY_OF_WEEK_IN_MONTH) returned "
+            fail("GregorianCalendar.getMinimum(DAY_OF_WEEK_IN_MONTH) returned "
                     + min + ", expected 1.");
         }
         min = cal.getGreatestMinimum(DAY_OF_WEEK_IN_MONTH);
         if (min != 1) {
-            errln("GregorianCalendar.getGreatestMinimum(DAY_OF_WEEK_IN_MONTH) returned "
+            fail("GregorianCalendar.getGreatestMinimum(DAY_OF_WEEK_IN_MONTH) returned "
                     + min + ", expected 1.");
         }
     }

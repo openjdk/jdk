@@ -78,7 +78,7 @@ import java.util.regex.Pattern;
 @Fork(2)
 @Warmup(iterations = 5, time = 3, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 3, timeUnit = TimeUnit.SECONDS)
-@State(Scope.Benchmark)
+@State(Scope.Thread)
 public class Trim {
     /** Run length of non-matching consecutive whitespace chars. */
     @Param({"16", "256", "4096"})

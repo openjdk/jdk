@@ -25,8 +25,9 @@
  * @test
  * @bug 8186046
  * @summary Test bootstrap methods returning the wrong type
- * @library /lib/testlibrary/bytecode /java/lang/invoke/common
- * @build jdk.experimental.bytecode.BasicClassBuilder test.java.lang.invoke.lib.InstructionHelper
+ * @library /java/lang/invoke/common
+ * @build test.java.lang.invoke.lib.InstructionHelper
+ * @enablePreview
  * @run testng CondyWrongType
  * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:UseBootstrapCallInfo=3 CondyWrongType
  */
@@ -60,7 +61,7 @@ public class CondyWrongType {
                 "J", long.class,
                 "S", short.class,
                 "Z", boolean.class
-                );
+        );
 
         List<Object[]> cases = new ArrayList<>();
         for (String name : typeMap.keySet()) {
@@ -71,11 +72,10 @@ public class CondyWrongType {
                 boolean pass = true;
                 try {
                     zero.asType(MethodType.methodType(typeMap.get(type)));
-                }
-                catch (WrongMethodTypeException e) {
+                } catch (WrongMethodTypeException e) {
                     pass = false;
                 }
-                cases.add(new Object[] { name, type, pass});
+                cases.add(new Object[]{name, type, pass});
             }
         }
 
@@ -110,20 +110,17 @@ public class CondyWrongType {
         Throwable caught = null;
         try {
             mh.invoke();
-        }
-        catch (Throwable t) {
+        } catch (Throwable t) {
             caught = t;
         }
 
         if (caught == null) {
             if (pass) {
                 return;
-            }
-            else {
+            } else {
                 Assert.fail("Throwable expected");
             }
-        }
-        else if (pass) {
+        } else if (pass) {
             Assert.fail("Throwable not expected");
         }
 
@@ -165,8 +162,8 @@ public class CondyWrongType {
             return InstructionHelper.ldcDynamicConstant(
                     MethodHandles.lookup(),
                     name, type,
-                    "bsm", methodType(Object.class, MethodHandles.Lookup.class, String.class, Class.class).toMethodDescriptorString(),
-                    S -> { });
+                    "bsm",
+                    methodType(Object.class, MethodHandles.Lookup.class, String.class, Class.class).descriptorString());
         } catch (Exception e) {
             throw new Error(e);
         }

@@ -191,11 +191,14 @@ size_t G1Allocator::unsafe_max_tlab_alloc() {
   uint node_index = current_node_index();
   HeapRegion* hr = mutator_alloc_region(node_index)->get();
   size_t max_tlab = _g1h->max_tlab_size() * wordSize;
-  if (hr == nullptr) {
+
+  if (hr == nullptr || hr->free() < MinTLABSize) {
+    // The next TLAB allocation will most probably happen in a new region,
+    // therefore we can attempt to allocate the maximum allowed TLAB size.
     return max_tlab;
-  } else {
-    return clamp(hr->free(), MinTLABSize, max_tlab);
   }
+
+  return MIN2(hr->free(), max_tlab);
 }
 
 size_t G1Allocator::used_in_alloc_regions() {

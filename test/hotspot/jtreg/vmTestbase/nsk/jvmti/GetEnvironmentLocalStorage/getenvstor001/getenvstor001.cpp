@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ static jvmtiEvent events[EVENTS_COUNT] = {
  * @returns NSK_FALSE if any error occured.
  */
 static int checkEnvStorage(jvmtiEnv* jvmti, const char where[]) {
-    void* storage = NULL;
+    void* storage = nullptr;
 
     NSK_DISPLAY0("GetEnvironmentLocalStorage() for current JVMTI env\n");
     if (!NSK_JVMTI_VERIFY(jvmti->GetEnvironmentLocalStorage(&storage))) {
@@ -58,8 +58,8 @@ static int checkEnvStorage(jvmtiEnv* jvmti, const char where[]) {
     }
     NSK_DISPLAY1("  ... got storage: 0x%p\n", (void*)storage);
 
-    if (storage != NULL) {
-        NSK_COMPLAIN2("GetEnvironmentLocalStorage() returned NOT NULL storage in %s:\n"
+    if (storage != nullptr) {
+        NSK_COMPLAIN2("GetEnvironmentLocalStorage() returned NOT null storage in %s:\n"
                       "#   storage pointer: 0x%p\n",
                         where, (void*)storage);
         return NSK_FALSE;
@@ -113,7 +113,7 @@ callbackVMDeath(jvmtiEnv* jvmti, JNIEnv* jni) {
     success = checkEnvStorage(jvmti, "VM_DEATH callback");
 
     NSK_DISPLAY1("Disable events: %d events\n", EVENTS_COUNT);
-    if (!nsk_jvmti_enableEvents(JVMTI_DISABLE, EVENTS_COUNT, events, NULL)) {
+    if (!nsk_jvmti_enableEvents(JVMTI_DISABLE, EVENTS_COUNT, events, nullptr)) {
         success = NSK_FALSE;
     } else {
         NSK_DISPLAY0("  ... disabled\n");
@@ -140,7 +140,7 @@ JNIEXPORT jint JNI_OnLoad_getenvstor001(JavaVM *jvm, char *options, void *reserv
 }
 #endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
-    jvmtiEnv* jvmti = NULL;
+    jvmtiEnv* jvmti = nullptr;
 
     if (!NSK_VERIFY(nsk_jvmti_parseOptions(options)))
         return JNI_ERR;
@@ -148,7 +148,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     timeout = nsk_jvmti_getWaitTime() * 60 * 1000;
 
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     {
@@ -163,7 +163,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     }
 
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     NSK_DISPLAY0(">>> Testcase #1: Check env storage in JVM_OnLoad()\n");
@@ -172,7 +172,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     }
 
     NSK_DISPLAY1("Enable events: %d events\n", EVENTS_COUNT);
-    if (nsk_jvmti_enableEvents(JVMTI_ENABLE, EVENTS_COUNT, events, NULL)) {
+    if (nsk_jvmti_enableEvents(JVMTI_ENABLE, EVENTS_COUNT, events, nullptr)) {
         NSK_DISPLAY0("  ... enabled\n");
     }
 

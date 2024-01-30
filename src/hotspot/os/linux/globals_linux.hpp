@@ -44,17 +44,11 @@
   product(bool, UseLinuxPosixThreadCPUClocks, true,                     \
           "enable fast Linux Posix clocks where available")             \
                                                                         \
-  product(bool, UseHugeTLBFS, false,                                    \
-          "Use MAP_HUGETLB for large pages")                            \
-                                                                        \
   product(bool, UseTransparentHugePages, false,                         \
           "Use MADV_HUGEPAGE for large pages")                          \
                                                                         \
   product(bool, LoadExecStackDllInVMThread, true,                       \
           "Load DLLs with executable-stack attribute in the VM Thread") \
-                                                                        \
-  product(bool, UseSHM, false,                                          \
-          "Use SYSV shared memory for large pages")                     \
                                                                         \
   product(bool, UseContainerSupport, true,                              \
           "Enable detection and runtime container configuration support") \
@@ -98,7 +92,9 @@
   develop(bool, DelayThreadStartALot, false,                            \
           "Artificially delay thread starts randomly for testing.")     \
                                                                         \
-
+  product(bool, UseMadvPopulateWrite, true, DIAGNOSTIC,                 \
+          "Use MADV_POPULATE_WRITE in os::pd_pretouch_memory.")         \
+                                                                        \
 
 // end of RUNTIME_OS_FLAGS
 

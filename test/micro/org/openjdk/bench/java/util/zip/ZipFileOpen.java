@@ -29,6 +29,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -50,6 +51,7 @@ public class ZipFileOpen {
     private int size;
 
     public File zipFile;
+    public File relativePathFile;
 
     @Setup(Level.Trial)
     public void beforeRun() throws IOException {
@@ -74,6 +76,8 @@ public class ZipFileOpen {
             }
         }
         zipFile = tempFile;
+        relativePathFile = Path.of(System.getProperty("user.dir"))
+                                .relativize(zipFile.toPath()).toFile();
     }
 
     @Benchmark
@@ -89,5 +93,18 @@ public class ZipFileOpen {
         ZipFile zf = new ZipFile(zipFile);
         zf.close();
         return zf;
+    }
+
+    @Benchmark
+    public void openCloseZipFilex2() throws Exception {
+        // A follow on from the openCloseZipFile benchmark.
+        // The initCEN logic should be called once per file, if
+        // opened multiple times and not closed, for the ZipFile
+        // under test if that file is identified by a unique value
+        // returned via attrs.fileKey()
+        ZipFile zf = new ZipFile(zipFile);
+        ZipFile zf2 = new ZipFile(relativePathFile);
+        zf.close();
+        zf2.close();
     }
 }
