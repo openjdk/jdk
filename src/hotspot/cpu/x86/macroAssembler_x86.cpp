@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -9363,10 +9363,6 @@ void MacroAssembler::vpshufb(XMMRegister dst, XMMRegister nds, AddressLiteral sr
     lea(rscratch, src);
     vpshufb(dst, nds, Address(rscratch, 0), vector_len);
   }
-}
-
-void MacroAssembler::vpor(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
-  Assembler::vpor(dst, nds, src, vector_len);
 }
 
 void MacroAssembler::vpor(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch) {

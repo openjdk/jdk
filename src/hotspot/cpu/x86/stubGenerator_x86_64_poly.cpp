@@ -926,9 +926,6 @@ address StubGenerator::generate_poly1305_processBlocks() {
   __ push(r14);
   __ push(r15);
 
-  bool use_stack_avx2 = UseAVX > 2 ? false : true;
-  
-
   // Register Map
   const Register input        = rdi; // msg
   const Register length       = rbx; // msg length in bytes
@@ -993,23 +990,9 @@ address StubGenerator::generate_poly1305_processBlocks() {
                                   a0, a1, a2,
                                   r0, r1, c1);
   } else {
-    // Function entry (setup stack frame)
-    if (use_stack_avx2) {
-      // Save rbp and rsp
-      __ push(rbp);
-      __ movq(rbp, rsp);
-      // Align stack
-      //__ andq(rsp, -32);
-      __ subptr(rsp, 32*8);
-    }
     poly1305_process_blocks_avx2(input, length,
                                   a0, a1, a2,
                                   r0, r1, c1);
-    if (use_stack_avx2) {
-      // Save rbp and rsp
-      __ movq(rsp, rbp);
-      __ pop(rbp);
-    }
   }
 
 
@@ -1033,7 +1016,6 @@ address StubGenerator::generate_poly1305_processBlocks() {
   // Write output
   poly1305_limbs_out(a0, a1, a2, accumulator, t0, t1);
 
-  
   __ pop(r15);
   __ pop(r14);
   __ pop(r13);
@@ -1054,6 +1036,9 @@ void StubGenerator::poly1305_process_blocks_avx2(
     const Register a0, const Register a1, const Register a2,
     const Register r0, const Register r1, const Register c1)
 {
+  //This implementation is based on the AVX2 Poly1305 MAC computation as implemented in
+  // Intel(R) Multi-Buffer Crypto for IPsec Library.
+  // url: https://github.com/intel/intel-ipsec-mb/blob/main/lib/avx2_t3/poly_fma_avx2.asm
   Label L_process256Loop, L_process256LoopDone;
   const Register t0 = r13;
   const Register t1 = r14;
@@ -1083,12 +1068,20 @@ void StubGenerator::poly1305_process_blocks_avx2(
   const XMMRegister YMM_R1 = YTMP12;
   const XMMRegister YMM_R2 = YTMP13;
 
-  // XWORD of YMM registers 
+  // XWORD of YMM registers
   const XMMRegister XTMP1 = YTMP1;
   const XMMRegister XTMP2 = YTMP2;
   const XMMRegister XTMP3 = YTMP3;
 
-  // Spread accumulator into 44-bit limbs in quadwords XTMP1, XTMP2, XTMP3
+  // Setup stack frame
+  // Save rbp and rsp
+  __ push(rbp);
+  __ movq(rbp, rsp);
+  // Align stack
+  __ andq(rsp, -32);
+  __ subptr(rsp, 32*8);
+
+  // Spread accumulator into 44-bit limbs in quadwords
   // First limb (Acc[43:0])
   __ movq(t0, a0);
   __ andq(t0, ExternalAddress(poly1305_mask44()), t1 /*rscratch*/);
@@ -1138,6 +1131,8 @@ void StubGenerator::poly1305_process_blocks_avx2(
   __ vpaddq(YMM_ACC2, YMM_ACC2, YTMP3, Assembler::AVX_256bit);
 
   // Compute the powers of R^1..R^4 and form 44-bit limbs of each
+  // YTMP5 to have bits 0-127 for R^1 and R^2
+  // YTMP6 to have bits 128-129 for R^1 and R^2
   __ movq(XTMP1, r0);
   __ vpinsrq(XTMP1, XTMP1, r1, 1);
   __ vinserti128(YTMP5, YTMP5, XTMP1, 1);
@@ -1210,7 +1205,6 @@ void StubGenerator::poly1305_process_blocks_avx2(
   __ vpor(YMM_R2, YMM_R2, YTMP6, Assembler::AVX_256bit);
 
   // Store R^4-R for later use
-  // TODO: switch to aligned ( and -32); replace with vmovdqa
   int _r4_r1_save = 0;
   __ vmovdqu(Address(rsp, _r4_r1_save + 0), YMM_R0);
   __ vmovdqu(Address(rsp, _r4_r1_save + 32), YMM_R1);
@@ -1244,7 +1238,6 @@ void StubGenerator::poly1305_process_blocks_avx2(
   __ vpsllq(YTMP2, YTMP2, 2, Assembler::AVX_256bit);
 
   //Store R^4-R for later use
-  // TODO: switch to vmovdqa
   int _r4_save = 32*3;
   int _r4p_save = 32*6;
   __ vmovdqu(Address(rsp, _r4_save + 0), YMM_R0);
@@ -1263,7 +1256,7 @@ void StubGenerator::poly1305_process_blocks_avx2(
   __ cmpl(t0, 16*4); //64 bytes (4 blocks at a time)
   __ jcc(Assembler::belowEqual, L_process256LoopDone);
 
-  // load next block
+  // Perform multiply and reduce while loading the next block in interleaved manner
   poly1305_msg_mul_reduce_vec4_avx2(YMM_ACC0, YMM_ACC1, YMM_ACC2,
                           Address(rsp, _r4_save + 0), Address(rsp, _r4_save + 32), Address(rsp, _r4_save + 32*2),
                           Address(rsp, _r4p_save), Address(rsp, _r4p_save + 32),
@@ -1274,9 +1267,9 @@ void StubGenerator::poly1305_process_blocks_avx2(
   // end of vector loop
   __ bind(L_process256LoopDone);
 
-  // Need to multiply by r^4, r^3, r^2, r
+  // Need to multiply by R^4, R^3, R^2, R
 
-  //Read R^4-R; TODO: replace with vmovdqa
+  //Read R^4-R;
   __ vmovdqu(YMM_R0, Address(rsp, _r4_r1_save + 0));
   __ vmovdqu(YMM_R1, Address(rsp, _r4_r1_save + 32));
   __ vmovdqu(YMM_R2, Address(rsp, _r4_r1_save + 32*2));
@@ -1313,14 +1306,12 @@ void StubGenerator::poly1305_process_blocks_avx2(
   __ vpaddq(YMM_ACC1, YMM_ACC1, YTMP2, Assembler::AVX_128bit);
   __ vpaddq(YMM_ACC2, YMM_ACC2, YTMP3, Assembler::AVX_128bit);
 
-  __ movq(YMM_ACC0, YMM_ACC0); //vmovq
-  __ movq(YMM_ACC1, YMM_ACC1); //vmovq
-  __ movq(YMM_ACC2, YMM_ACC2); //vmovq
+  __ movq(YMM_ACC0, YMM_ACC0);
+  __ movq(YMM_ACC1, YMM_ACC1);
+  __ movq(YMM_ACC2, YMM_ACC2);
 
-  // add     %%MSG, POLY1305_BLOCK_SIZE*4
-  // and     %%LEN, (POLY1305_BLOCK_SIZE*4 - 1) ; Get remaining lengths (LEN < 64 bytes)
   __ lea(input, Address(input,16*4));
-  __ andq(length, 63+0); // remaining bytes < length 64
+  __ andq(length, 63); // remaining bytes < length 64
   // carry propagation
   __ vpsrlq(YTMP1, YMM_ACC0, 44, Assembler::AVX_128bit);
   __ vpand(YMM_ACC0, YMM_ACC0, ExternalAddress(poly1305_mask44()), Assembler::AVX_128bit, t1); // Clear top 20 bits
@@ -1347,8 +1338,11 @@ void StubGenerator::poly1305_process_blocks_avx2(
   __ orq(a1, t0);
   __ shrq(a2, 40);
 
-  // SAFE DATA (clear powers of R) TODO: switch to vmovdqa
-  __ vpxor(YTMP1, YTMP1, YTMP1, Assembler::AVX_256bit);
+  // cleanup
+  __ vzeroall();
+
+  // SAFE DATA (clear powers of R)
+  //__ vpxor(YTMP1, YTMP1, YTMP1, Assembler::AVX_256bit);
   __ vmovdqu(Address(rsp, _r4_r1_save + 0), YTMP1);
   __ vmovdqu(Address(rsp, _r4_r1_save + 32), YTMP1);
   __ vmovdqu(Address(rsp, _r4_r1_save + 32*2), YTMP1);
@@ -1357,6 +1351,10 @@ void StubGenerator::poly1305_process_blocks_avx2(
   __ vmovdqu(Address(rsp, _r4_save + 32*2), YTMP1);
   __ vmovdqu(Address(rsp, _r4p_save), YTMP1);
   __ vmovdqu(Address(rsp, _r4p_save + 32), YTMP1);
+
+  // Save rbp and rsp; clear stack frame
+    __ movq(rsp, rbp);
+    __ pop(rbp);
 
 }
 
@@ -1370,7 +1368,6 @@ void StubGenerator::poly1305_mul_reduce_vec4_avx2(
   const XMMRegister P2L, const XMMRegister P2H,
   const XMMRegister YTMP1, const Register rscratch)
 {
-  // POLY1305_MUL_REDUCE_VEC4
   // Reset accumulator
   __ vpxor(P0L, P0L, P0L, Assembler::AVX_256bit);
   __ vpxor(P0H, P0H, P0H, Assembler::AVX_256bit);
@@ -1408,17 +1405,15 @@ void StubGenerator::poly1305_mul_reduce_vec4_avx2(
   // Carry propgation (first pass)
   __ vpsrlq(YTMP1, P0L, 44, Assembler::AVX_256bit);
   __ vpsllq(P0H, P0H, 8, Assembler::AVX_256bit);
-  //
   __ vpmadd52luq(P1L, A1, R0, Assembler::AVX_256bit);
   __ vpmadd52huq(P1H, A1, R0, Assembler::AVX_256bit);
   // Carry propagation (first pass) - continue
   __ vpand(A0, P0L, ExternalAddress(poly1305_mask44()), Assembler::AVX_256bit, rscratch); // Clear top 20 bits
   __ vpaddq(P0H, P0H, YTMP1, Assembler::AVX_256bit);
-  //
   __ vpmadd52luq(P2L, A1, R1, Assembler::AVX_256bit);
   __ vpmadd52huq(P2H, A1, R1, Assembler::AVX_256bit);
 
-  // Carry propagation (first pass) - continue
+  // Carry propagation (first pass) - continue 2
   __ vpaddq(P1L, P1L, P0H, Assembler::AVX_256bit);
   __ vpsllq(P1H, P1H, 8, Assembler::AVX_256bit);
   __ vpsrlq(YTMP1, P1L, 44, Assembler::AVX_256bit);
@@ -1440,7 +1435,6 @@ void StubGenerator::poly1305_mul_reduce_vec4_avx2(
   __ vpsrlq(YTMP1, A0, 44, Assembler::AVX_256bit);
   __ vpand(A0, A0, ExternalAddress(poly1305_mask44()), Assembler::AVX_256bit, rscratch); // Clear top 20 bits
   __ vpaddq(A1, A1, YTMP1, Assembler::AVX_256bit);
-
 }
 
 void StubGenerator::poly1305_msg_mul_reduce_vec4_avx2(
@@ -1540,5 +1534,4 @@ void StubGenerator::poly1305_msg_mul_reduce_vec4_avx2(
   __ vpaddq(A0, A0, YTMP1, Assembler::AVX_256bit); //Add low 42-bit bits from new blocks to accumulator
   __ vpaddq(A1, A1, YTMP2, Assembler::AVX_256bit); //Add medium 42-bit bits from new blocks to accumulator
   __ vpaddq(A1, A1, YTMP5, Assembler::AVX_256bit);
-
 }
