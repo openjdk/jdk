@@ -2559,20 +2559,18 @@ Node *LoopLimitNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   const TypeInt* init_t  = phase->type(in(Init) )->is_int();
   const TypeInt* limit_t = phase->type(in(Limit))->is_int();
-  int stride_p;
   jlong lim, ini;
   julong max;
   if (stride_con > 0) {
-    stride_p = stride_con;
     lim = limit_t->_hi;
     ini = init_t->_lo;
     max = (julong)max_jint;
   } else {
-    stride_p = -stride_con;
     lim = init_t->_hi;
     ini = limit_t->_lo;
     max = (julong)min_jint;
   }
+  uint stride_p = uabs(stride_con);
   julong range = lim - ini + stride_p;
   if (range <= max) {
     // Convert to integer expression if it is not overflow.
