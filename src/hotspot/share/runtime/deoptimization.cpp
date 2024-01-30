@@ -392,7 +392,7 @@ static void restore_eliminated_locks(JavaThread* thread, GrowableArray<compiledV
   bool first = true;
 #endif // !PRODUCT
   // Start locking from outermost/oldest frame
-  for (int i = (chunk->length() - 1); i >= 0 ; i--) {
+  for (int i = (chunk->length() - 1); i >= 0; i--) {
     compiledVFrame* cvf = chunk->at(i);
     assert (cvf->scope() != nullptr,"expect only compiled java frames");
     GrowableArray<MonitorInfo*>* monitors = cvf->monitors();
