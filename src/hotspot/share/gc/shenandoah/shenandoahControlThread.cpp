@@ -287,7 +287,7 @@ void ShenandoahControlThread::run_service() {
                              heap->soft_max_capacity() :
                              heap->min_capacity();
 
-      heap->service_uncommit(shrink_before, shrink_until);
+      heap->maybe_uncommit(shrink_before, shrink_until);
       heap->phase_timings()->flush_cycle_to_global();
       last_shrink_time = current;
     }
