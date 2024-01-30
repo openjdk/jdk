@@ -1058,8 +1058,12 @@ C2V_END
 C2V_VMENTRY_0(jlong, getMaxCallTargetOffset, (JNIEnv* env, jobject, jlong addr))
   address target_addr = (address) addr;
   if (target_addr != 0x0) {
+    // Make sure we compute these without overflows.
+    if (target_addr <= CodeCache::low_bound()) {
+      return pointer_delta(CodeCache::low_bound(), target_addr, 1) - sizeof(int);
+    } else if (tar)
     jlong off_low = pointer_delta(target_addr, CodeCache::low_bound(), 1) - sizeof(int);
-    jlong off_high = pointer_delta(target_addr, CodeCache::high_bound(), 1) - sizeof(int);
+    jlong off_high = pointer_delta(CodeCache::high_bound(), target_addr, 1) - sizeof(int);
     return checked_cast<jlong>(MAX2(uabs(off_low), uabs(off_high)));
   }
   return -1;
