@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 /*
  * @test
- * @bug 8170349
+ * @bug 8170349 8259550
  * @summary  Verify if printed content is within border and all columns are
  *           printed for PrintMode.FIT_WIDTH
  * @run main/manual PrintManualTest_FitWidthMultiple
