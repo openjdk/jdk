@@ -3807,14 +3807,11 @@ void TemplateTable::_new() {
     assert(VM_Version::supports_fast_class_init_checks(), "Optimization requires support for fast class initialization checks");
     __ clinit_barrier(RinstanceKlass, R16_thread, nullptr /*L_fast_path*/, &Lslow_case);
 
-    // get instance_size.
     __ lwz(Rinstance_size, in_bytes(Klass::layout_helper_offset()), RinstanceKlass);
 
     // Make sure klass does not have has_finalizer, or is abstract, or interface or java/lang/Class.
     __ andi_(R0, Rinstance_size, Klass::_lh_instance_slow_path_bit); // slow path bit equals 0?
-
-    __ crnand(CCR0, Assembler::equal, CCR1, Assembler::equal); // slow path bit set or not fully initialized?
-    __ beq(CCR0, Lslow_case);
+    __ bne(CCR0, Lslow_case);
 
     // --------------------------------------------------------------------------
     // Fast case:
