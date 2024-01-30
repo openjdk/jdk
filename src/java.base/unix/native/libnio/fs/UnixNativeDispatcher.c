@@ -153,6 +153,14 @@ struct my_statx
 
 #include "sun_nio_fs_UnixNativeDispatcher.h"
 
+#if defined(_AIX)
+  #define DIR DIR64
+  #define dirent dirent64
+  #define opendir opendir64
+  #define readdir readdir64
+  #define closedir closedir64
+#endif
+
 /**
  * Size of password or group entry when not available via sysconf
  */

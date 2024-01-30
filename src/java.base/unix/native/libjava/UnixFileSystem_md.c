@@ -51,10 +51,16 @@
 #include "java_io_FileSystem.h"
 #include "java_io_UnixFileSystem.h"
 
-#if defined(_AIX) && !defined(NAME_MAX)
-  #define NAME_MAX MAXNAMLEN
+#if defined(_AIX)
+  #if !defined(NAME_MAX)
+    #define NAME_MAX MAXNAMLEN
+  #endif
+  #define DIR DIR64
+  #define dirent dirent64
+  #define opendir opendir64
+  #define readdir readdir64
+  #define closedir closedir64
 #endif
-
 /* -- Field IDs -- */
 
 static struct {
