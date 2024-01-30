@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ extern "C" {
 #define PASSED 0
 #define STATUS_FAILED 2
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiCapabilities caps;
 static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
@@ -43,12 +43,12 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jvmtiError err;
   jint res;
 
-  if (options != NULL && strcmp(options, "printdump") == 0) {
+  if (options != nullptr && strcmp(options, "printdump") == 0) {
     printdump = JNI_TRUE;
   }
 
   res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     LOG("Wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }
@@ -84,7 +84,7 @@ Java_frameloc03_check(JNIEnv *env, jclass cls, jthread thr) {
   jmethodID mid;
   jlocation loc;
 
-  if (jvmti == NULL) {
+  if (jvmti == nullptr) {
     LOG("JVMTI client was not properly loaded!\n");
     return STATUS_FAILED;
   }
@@ -123,7 +123,7 @@ Java_frameloc03_check(JNIEnv *env, jclass cls, jthread thr) {
   if (printdump == JNI_TRUE) {
     LOG(">>> (methodPtr) null pointer check ...\n");
   }
-  err = jvmti->GetFrameLocation(thr, 0, NULL, &loc);
+  err = jvmti->GetFrameLocation(thr, 0, nullptr, &loc);
   if (err != JVMTI_ERROR_NULL_POINTER) {
     LOG("Error expected: JVMTI_ERROR_NULL_POINTER,\n");
     LOG("        actual: %s (%d)\n", TranslateError(err), err);
@@ -133,7 +133,7 @@ Java_frameloc03_check(JNIEnv *env, jclass cls, jthread thr) {
   if (printdump == JNI_TRUE) {
     LOG(">>> (locationPtr) null pointer check ...\n");
   }
-  err = jvmti->GetFrameLocation(thr, 0, &mid, NULL);
+  err = jvmti->GetFrameLocation(thr, 0, &mid, nullptr);
   if (err != JVMTI_ERROR_NULL_POINTER) {
     LOG("Error expected: JVMTI_ERROR_NULL_POINTER,\n");
     LOG("        actual: %s (%d)\n", TranslateError(err), err);

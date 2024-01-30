@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ findLoadClass_type findLoadedClass_func;
 
 JNIEXPORT jclass JNICALL
 my_findLoadedClass(JNIEnv *env, jobject loader, jstring name) {
-  const char* sname = env->GetStringUTFChars(name, NULL);
+  const char* sname = env->GetStringUTFChars(name, nullptr);
   debug_printf("Intercepted findLoadedClass, name = %s\n", sname);
   return (*findLoadedClass_func)(env, loader, name);
 }
@@ -102,7 +102,7 @@ void JNICALL testNativeMethodBind(jvmtiEnv* jvmti_env, JNIEnv *jni_env,
     debug_printf("bind event: \n");
     print_method_name(mid);
 
-    ret = jvmti_env->GetMethodName(mid, &mname, &signature, NULL);
+    ret = jvmti_env->GetMethodName(mid, &mname, &signature, nullptr);
     if (ret == JVMTI_ERROR_NONE) {
       if (strcmp(mname, "findLoadedClass") == 0) {
         findLoadedClass_func = (findLoadClass_type)func;
@@ -161,13 +161,13 @@ jint Agent_Initialize(JavaVM * jvm, char *options, void *reserved) {
     res = jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks));
     JVMTI_ERROR_CHECK("SetEventCallbacks returned error", res);
 
-    res = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, NULL);
+    res = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, nullptr);
     JVMTI_ERROR_CHECK("SetEventNotificationMode for VM_INIT returned error", res);
 
-    res = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, NULL);
+    res = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, nullptr);
     JVMTI_ERROR_CHECK("SetEventNotificationMode for vm death event returned error", res);
 
-    res = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_NATIVE_METHOD_BIND, NULL);
+    res = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_NATIVE_METHOD_BIND, nullptr);
     JVMTI_ERROR_CHECK("SetEventNotificationMode for native method bind event returned error", res);
 
     return JNI_OK;
@@ -275,14 +275,14 @@ print_method_name(jmethodID mid) {
       return;
     }
 
-    ret = jvmti->GetClassSignature(klass, &clname, NULL);
+    ret = jvmti->GetClassSignature(klass, &clname, nullptr);
     if (ret != JVMTI_ERROR_NONE) {
       printf("Error: GetClassSignature %d  \n", ret);
       iGlobalStatus = 2;
       return;
     }
 
-    ret = jvmti->GetMethodName(mid, &mname, &signature, NULL);
+    ret = jvmti->GetMethodName(mid, &mname, &signature, nullptr);
     if (ret != JVMTI_ERROR_NONE) {
       printf("Error: GetMethodName %d  \n", ret);
       iGlobalStatus = 2;
@@ -296,7 +296,7 @@ print_method_name(jmethodID mid) {
 JNIEXPORT void JNICALL
 Java_nsk_jvmti_unit_MethodBind_JvmtiTest_GetStackTrace(JNIEnv * env, jclass cls, jobject thr) {
     jvmtiError ret;
-    jvmtiFrameInfo *stack_buffer = NULL;
+    jvmtiFrameInfo *stack_buffer = nullptr;
     jint max_count = 20;
     jint count;
 
