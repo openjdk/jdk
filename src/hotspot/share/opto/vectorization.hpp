@@ -111,6 +111,10 @@ public:
     // TODO rm SW
     return vtrace().is_trace(TraceAutoVectorizationTag::SW_PRECONDITION);
   }
+
+  bool is_trace_pointer_analysis() const {
+    return vtrace().is_trace(TraceAutoVectorizationTag::POINTER_ANALYSIS);
+  }
 #endif
 
   // Is the node in the basic block of the loop?
@@ -134,9 +138,7 @@ private:
 class VPointer : public ArenaObj {
  protected:
   const MemNode*  _mem;      // My memory reference node
-  PhaseIdealLoop* _phase;    // PhaseIdealLoop handle
-  IdealLoopTree*  _lpt;      // Current IdealLoopTree
-  PhiNode*        _iv;       // The loop induction variable
+  const VLoop&    _vloop;
 
   Node* _base;               // null if unsafe nonheap reference
   Node* _adr;                // address pointer
@@ -154,9 +156,10 @@ class VPointer : public ArenaObj {
   bool        _analyze_only; // Used in loop unrolling only for vpointer trace
   uint        _stack_idx;    // Used in loop unrolling only for vpointer trace
 
-  PhaseIdealLoop* phase() const { return _phase; }
-  IdealLoopTree*  lpt() const   { return _lpt; }
-  PhiNode*        iv() const    { return _iv; }
+  const VLoop&    vloop() const { return _vloop; }
+  PhaseIdealLoop* phase() const { return vloop().phase(); }
+  IdealLoopTree*  lpt() const   { return vloop().lpt(); }
+  PhiNode*        iv() const    { return vloop().iv(); }
 
   bool is_loop_member(Node* n) const;
   bool invariant(Node* n) const;
@@ -177,13 +180,19 @@ class VPointer : public ArenaObj {
     NotComparable = (Less | Greater | Equal)
   };
 
-  VPointer(const MemNode* mem,
-           PhaseIdealLoop* phase, IdealLoopTree* lpt,
+  VPointer(const MemNode* mem, const VLoop& vloop) :
+    VPointer(mem, vloop, nullptr, false) {}
+  VPointer(const MemNode* mem, const VLoop& vloop, Node_Stack* nstack) :
+    VPointer(mem, vloop, nstack, true) {}
+ private:
+  VPointer(const MemNode* mem, const VLoop& vloop,
            Node_Stack* nstack, bool analyze_only);
   // Following is used to create a temporary object during
   // the pattern match of an address expression.
   VPointer(VPointer* p);
+  NONCOPYABLE(VPointer);
 
+ public:
   bool valid()             const { return _adr != nullptr; }
   bool has_iv()            const { return _scale != 0; }
 
@@ -223,7 +232,7 @@ class VPointer : public ArenaObj {
   bool overlap_possible_with_any_in(Node_List* p) {
     for (uint k = 0; k < p->size(); k++) {
       MemNode* mem = p->at(k)->as_Mem();
-      VPointer p_mem(mem, phase(), lpt(), nullptr, false);
+      VPointer p_mem(mem, vloop());
       // Only if we know that we have Less or Greater can we
       // be sure that there can never be an overlap between
       // the two memory regions.

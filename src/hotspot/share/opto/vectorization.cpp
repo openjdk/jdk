@@ -118,18 +118,16 @@ const char* VLoop::check_preconditions_helper() {
 int VPointer::Tracer::_depth = 0;
 #endif
 
-VPointer::VPointer(const MemNode* mem,
-                   PhaseIdealLoop* phase, IdealLoopTree* lpt,
+VPointer::VPointer(const MemNode* mem, const VLoop& vloop,
                    Node_Stack* nstack, bool analyze_only) :
-  _mem(mem), _phase(phase), _lpt(lpt),
-  _iv(lpt->_head->as_CountedLoop()->phi()->as_Phi()),
+  _mem(mem), _vloop(vloop),
   _base(nullptr), _adr(nullptr), _scale(0), _offset(0), _invar(nullptr),
 #ifdef ASSERT
   _debug_invar(nullptr), _debug_negate_invar(false), _debug_invar_scale(nullptr),
 #endif
   _nstack(nstack), _analyze_only(analyze_only), _stack_idx(0)
 #ifndef PRODUCT
-  , _tracer(phase->C->directive()->trace_auto_vectorization_tags().at(TraceAutoVectorizationTag::POINTER_ANALYSIS))
+  , _tracer(vloop.is_trace_pointer_analysis())
 #endif
 {
   NOT_PRODUCT(_tracer.ctor_1(mem);)
@@ -192,7 +190,7 @@ VPointer::VPointer(const MemNode* mem,
 // Following is used to create a temporary object during
 // the pattern match of an address expression.
 VPointer::VPointer(VPointer* p) :
-  _mem(p->_mem), _phase(p->_phase), _lpt(p->_lpt), _iv(p->_iv),
+  _mem(p->_mem), _vloop(p->_vloop),
   _base(nullptr), _adr(nullptr), _scale(0), _offset(0), _invar(nullptr),
 #ifdef ASSERT
   _debug_invar(nullptr), _debug_negate_invar(false), _debug_invar_scale(nullptr),
@@ -236,7 +234,7 @@ bool VPointer::invariant(Node* n) const {
       // main loop (Illegal invariant happens when n_c is a CastII node that
       // prevents data nodes to flow above the main loop).
       Node* n_c = phase()->get_ctrl(n);
-      return phase()->is_dominator(n_c, cl->pre_loop_head());
+      return phase()->is_dominator(n_c, vloop().pre_loop_head());
     }
   }
   return is_not_member;
