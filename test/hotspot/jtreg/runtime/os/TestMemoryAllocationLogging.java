@@ -104,20 +104,20 @@ public class TestMemoryAllocationLogging {
             case "testSuccessfulFlow": {
                 expectedLogs = new String[]{
                         /* Debug level log */
-                        String.format("Reserved \\[0x.* - 0x.*\\] \\(%d bytes\\).", PAGE_SIZE),
-                        String.format("Committed \\[0x.* - 0x.*\\] \\(%d bytes\\).", COMMIT_SIZE),
-                        String.format("Uncommitted \\[0x.* - 0x.*\\] \\(%d bytes\\).", COMMIT_SIZE),
-                        String.format("Released \\[0x.* - 0x.*\\] \\(%d bytes\\).", PAGE_SIZE)
+                        String.format("Reserved \\[0x.* - 0x.*\\), \\(%d bytes\\)", PAGE_SIZE),
+                        String.format("Committed \\[0x.* - 0x.*\\), \\(%d bytes\\)", COMMIT_SIZE),
+                        String.format("Uncommitted \\[0x.* - 0x.*\\), \\(%d bytes\\)", COMMIT_SIZE),
+                        String.format("Released \\[0x.* - 0x.*\\), \\(%d bytes\\)", PAGE_SIZE)
                 };
                 break;
             }
             case "testAttemptedReserveFailed": {
                 expectedLogs = new String[] {
                         /* Debug level log */
-                        String.format("Reserved \\[0x.* - 0x.*\\] \\(%d bytes\\).", PAGE_SIZE),
-                        String.format("Attempt to reserve \\[0x.* - 0x.*\\] \\(.* bytes\\) failed"),
+                        String.format("Reserved \\[0x.* - 0x.*\\), \\(%d bytes\\)", PAGE_SIZE),
+                        String.format("Attempt to reserve \\[0x.* - 0x.*\\), \\(.* bytes\\) failed"),
                         /* Trace level log */
-                        "mmap failed: \\[0x.* - 0x.*\\], \\(.* bytes\\); errno=\\(Not enough space\\)"
+                        "mmap failed: \\[0x.* - 0x.*\\), \\(.* bytes\\) errno=\\(Not enough space\\)"
                 };
                 break;
             }
@@ -126,35 +126,35 @@ public class TestMemoryAllocationLogging {
                         /* Debug level log */
                         "Reserve failed \\(.* bytes\\)",
                         /* Trace level log */
-                        "mmap failed: \\[0x.* - 0x.*\\], \\(.* bytes\\); errno=\\(Not enough space\\)"
+                        "mmap failed: \\[0x.* - 0x.*\\), \\(.* bytes\\) errno=\\(Not enough space\\)"
                 };
                 break;
             }
             case "testCommitFailed": {
                 expectedLogs = new String[] {
                         /* Debug level log */
-                        String.format("Failed to commit \\[0x.* - 0x.*\\] \\(%d bytes\\)", COMMIT_SIZE),
+                        String.format("Failed to commit \\[0x.* - 0x.*\\), \\(%d bytes\\)", COMMIT_SIZE),
                         /* Trace level log */
-                        "mmap failed: \\[0x.* - 0x.*\\], \\(.* bytes\\); errno=\\(Invalid argument\\)"
+                        "mmap failed: \\[0x.* - 0x.*\\), \\(.* bytes\\) errno=\\(Invalid argument\\)"
                 };
                 break;
             }
             case "testUncommitFailed": {
                 expectedLogs = new String[] {
                         /* Debug level log */
-                        String.format("Reserved \\[0x.* - 0x.*\\] \\(%d bytes\\).", PAGE_SIZE),
-                        "Failed to uncommit \\[0x.* - 0x.*\\] \\(.* bytes\\)",
+                        String.format("Reserved \\[0x.* - 0x.*\\), \\(%d bytes\\)", PAGE_SIZE),
+                        "Failed to uncommit \\[0x.* - 0x.*\\), \\(.* bytes\\)",
                         /* Trace level log */
-                        "mmap failed: \\[0x.* - 0x.*\\], \\(.* bytes\\); errno=\\(Not enough space\\)"
+                        "mmap failed: \\[0x.* - 0x.*\\), \\(.* bytes\\) errno=\\(Not enough space\\)"
                 };
                 break;
             }
             case "testReleaseFailed": {
                 expectedLogs = new String[] {
                         /* Debug level log */
-                        "Failed to release \\[0x.* - 0x.*\\] \\(.* bytes\\)",
+                        "Failed to release \\[0x.* - 0x.*\\), \\(.* bytes\\)",
                         /* Trace level log */
-                        "munmap failed: \\[0x.* - 0x.*\\], \\(.* bytes\\); errno=\\(Invalid argument\\)"
+                        "munmap failed: \\[0x.* - 0x.*\\), \\(.* bytes\\) errno=\\(Invalid argument\\)"
                 };
                 break;
             }

@@ -379,8 +379,8 @@ inline T byte_size_in_proper_unit(T s) {
 #define PROPERFMT             SIZE_FORMAT "%s"
 #define PROPERFMTARGS(s)      byte_size_in_proper_unit(s), proper_unit_for_byte_size(s)
 
-#define RANGEFMT                      "[" PTR_FORMAT " - " PTR_FORMAT "], (" SIZE_FORMAT " bytes);"
-#define RANGEFMTARGS(p1, size)    p2i(p1), p2i(p1 + size -1), size
+#define RANGEFMT                      "[" PTR_FORMAT " - " PTR_FORMAT "), (" SIZE_FORMAT " bytes)"
+#define RANGEFMTARGS(p1, size)    p2i(p1), p2i(p1 + size), size
 
 inline const char* exact_unit_for_byte_size(size_t s) {
 #ifdef _LP64
