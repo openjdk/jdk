@@ -54,7 +54,6 @@ void PhaseVector::optimize_vector_boxes(PhaseIterGVN &igvn) {
   scalarize_vbox_nodes();
 
   C->inline_vector_reboxing_calls();
-  C->inline_vector_calls(igvn);
 
   expand_vbox_nodes();
   eliminate_vbox_alloc_nodes();

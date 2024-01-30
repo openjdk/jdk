@@ -2043,14 +2043,8 @@ bool Compile::inline_incrementally_one() {
         return false;
       } else if (inlining_progress()) {
         _late_inlines_pos = i+1; // restore the position in case new elements were inserted
-        // for (int j = _late_inlines_pos; j < _late_inlines.length(); j++) {
-        //   if (cfg()->get_block_for_node(cg->call_node())->dominates(cfg()->get_block_for_node(_late_inlines.at(j)->call_node()))) {
-        //    set_do_cleanup(true);
-        //     break;
-        //   }
-        // }
-        // if (UseNewCode) {
-          // set_do_cleanup(true);
+        // if (EnableVectorSupport && cg->method()->is_vector_method()) {
+        //   set_do_cleanup(true);
         // }
         print_method(PHASE_INCREMENTAL_INLINE_STEP, 3, cg->call_node());
         break; // process one call site at a time
@@ -2145,6 +2139,11 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
     }
   }
 
+  if (EnableVectorSupport && _vector_late_inlines.length() > 0) {
+    inline_vector_calls(igvn);
+    if (failing())  return;
+  }
+    
   igvn_worklist()->ensure_empty(); // should be done with igvn
 
   if (_string_late_inlines.length() > 0) {
@@ -2540,7 +2539,7 @@ void Compile::inline_vector_reboxing_calls() {
 }
 
 bool Compile::has_vbox_nodes() {
-  if (C->_vector_reboxing_late_inlines.length() > 0 || C->_vector_late_inlines.length()) {
+  if (C->_vector_reboxing_late_inlines.length() > 0) {
     return true;
   }
   for (int macro_idx = C->macro_count() - 1; macro_idx >= 0; macro_idx--) {
