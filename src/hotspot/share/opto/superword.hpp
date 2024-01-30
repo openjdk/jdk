@@ -139,8 +139,6 @@ class DepGraph {
   DepEdge* make_edge(DepMem* pred, Node* succ)   { return make_edge(pred,      dep(succ)); }
   DepEdge* make_edge(Node* pred,   DepMem* succ) { return make_edge(dep(pred), succ);      }
 
-  void init() { _map.clear(); } // initialize
-
   void print(Node* n)   { dep(n)->print(); }
   void print(DepMem* d) { d->print(); }
 };
@@ -555,7 +553,6 @@ private:
   void adjust_pre_loop_limit_to_align_main_loop_vectors();
   // Is the use of d1 in u1 at the same operand position as d2 in u2?
   bool opnd_positions_match(Node* d1, Node* u1, Node* d2, Node* u2);
-  void init();
 
   // print methods
   void print_packset();

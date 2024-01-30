@@ -411,11 +411,6 @@ bool SuperWord::transform_loop() {
   return false;
 }
 
-#define BAILOUT_ON_FAILURE(code) {{                  \
-  char const* state = code();                        \
-  if (state != SuperWord::SUCCESS) { return state; } \
-}}   
-
 const char* SuperWord::transform_loop_helper() {
   assert(phase()->C->do_superword(), "SuperWord option should be enabled");
   assert(cl()->is_main_loop(), "SLP should only work on main loops");
@@ -2320,10 +2315,11 @@ void SuperWord::schedule_reorder_memops(Node_List &memops_schedule) {
 // bail out of the compilation, as the graph has already been partially
 // modified. We bail out, and retry without SuperWord.
 bool SuperWord::output() {
-  assert(!_packset.is_empty(), "packset must not be empty");
-
   CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
   assert(cl->is_main_loop(), "SLP should only work on main loops");
+  if (_packset.length() == 0) {
+    return false;
+  }
   Compile* C = phase()->C;
 
 #ifndef PRODUCT
@@ -3717,21 +3713,6 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
 
   // 6: Hack the pre-loop limit
   igvn().replace_input_of(pre_opaq, 1, constrained_limit);
-}
-
-//------------------------------init---------------------------
-void SuperWord::init() {
-  _dg.init();
-  _packset.clear();
-  _block.clear();
-  _data_entry.clear();
-  _mem_slice_head.clear();
-  _mem_slice_tail.clear();
-  _node_info.clear();
-  _align_to_ref = nullptr;
-  _race_possible = 0;
-  _num_work_vecs = 0;
-  _num_reductions = 0;
 }
 
 //------------------------------print_packset---------------------------
