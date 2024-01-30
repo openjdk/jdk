@@ -2143,7 +2143,7 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
     inline_vector_calls(igvn);
     if (failing())  return;
   }
-    
+
   igvn_worklist()->ensure_empty(); // should be done with igvn
 
   if (_string_late_inlines.length() > 0) {
