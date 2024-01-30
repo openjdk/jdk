@@ -30,8 +30,6 @@ import java.awt.Graphics2D;
 import java.awt.GridLayout;
 import java.awt.Label;
 import java.awt.Panel;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.print.PageFormat;
@@ -44,10 +42,7 @@ import jtreg.SkippedException;
 
 /*
  * @test
- * @bug 4197377
- * @bug 4299145
- * @bug 6358747
- * @bug 6574633
+ * @bug 4197377 4299145 6358747 6574633
  * @key printer
  * @summary Page setup dialog settings
  * @library /java/awt/regtesthelpers
@@ -74,12 +69,12 @@ public class PageSetupDialog extends Frame implements Printable {
     boolean alpha = false;
     boolean reverse = false;
 
-    private static final String instructions =
-             " You must have a printer available to perform this test\n" +
-             "\n" +
-             " This test is very flexible and requires much interaction.\n" +
-             " If the platform print dialog supports it, adjust orientation\n" +
-             " and margins and print pages and compare the results with the request.";
+    private static final String INSTRUCTIONS =
+            " You must have a printer available to perform this test\n" +
+            "\n" +
+            " This test is very flexible and requires much interaction.\n" +
+            " If the platform print dialog supports it, adjust orientation\n" +
+            " and margins and print pages and compare the results with the request.";
 
     protected void displayPageFormatAttributes() {
 
@@ -89,14 +84,14 @@ public class PageSetupDialog extends Frame implements Printable {
                 ("Format Left Margin = " + (float) myPageFormat.getImageableX());
         myImageableRightLabel.setText
                 ("Format Right Margin = " + (float) (myPageFormat.getWidth() -
-                        (myPageFormat.getImageableX() + myPageFormat.getImageableWidth())));
+                (myPageFormat.getImageableX() + myPageFormat.getImageableWidth())));
         myImageableWidthLabel.setText
                 ("Format ImageableWidth = " + (float) myPageFormat.getImageableWidth());
         myImageableYLabel.setText
                 ("Format Top Margin = " + (float) myPageFormat.getImageableY());
         myImageableBottomLabel.setText
                 ("Format Bottom Margin = " + (float) (myPageFormat.getHeight() -
-                        (myPageFormat.getImageableY() + myPageFormat.getImageableHeight())));
+                (myPageFormat.getImageableY() + myPageFormat.getImageableHeight())));
         myImageableHeightLabel.setText
                 ("Format ImageableHeight = " + (float) myPageFormat.getImageableHeight());
         int o = myPageFormat.getOrientation();
@@ -171,40 +166,32 @@ public class PageSetupDialog extends Frame implements Printable {
         displayPageFormatAttributes();
         Panel panel = new Panel();
         Button pageButton = new Button("Page Setup...");
-        pageButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                myPageFormat = myPrinterJob.pageDialog(myPageFormat);
-                displayPageFormatAttributes();
-            }
+        pageButton.addActionListener(e -> {
+            myPageFormat = myPrinterJob.pageDialog(myPageFormat);
+            displayPageFormatAttributes();
         });
         Button printButton = new Button("Print ...");
-        printButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    if (myPrinterJob.printDialog()) {
-                        myPrinterJob.setPrintable(PageSetupDialog.this,
-                                myPageFormat);
-                        alpha = false;
-                        myPrinterJob.print();
-                    }
-                } catch (PrinterException pe) {
-                    pe.printStackTrace();
+        printButton.addActionListener(e -> {
+            try {
+                if (myPrinterJob.printDialog()) {
+                    myPrinterJob.setPrintable(PageSetupDialog.this, myPageFormat);
+                    alpha = false;
+                    myPrinterJob.print();
                 }
+            } catch (PrinterException pe) {
+                pe.printStackTrace();
             }
         });
         Button printAlphaButton = new Button("Print w/Alpha...");
-        printAlphaButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    if (myPrinterJob.printDialog()) {
-                        myPrinterJob.setPrintable(PageSetupDialog.this,
-                                myPageFormat);
-                        alpha = true;
-                        myPrinterJob.print();
-                    }
-                } catch (PrinterException pe) {
-                    pe.printStackTrace();
+        printAlphaButton.addActionListener(e -> {
+            try {
+                if (myPrinterJob.printDialog()) {
+                    myPrinterJob.setPrintable(PageSetupDialog.this, myPageFormat);
+                    alpha = true;
+                    myPrinterJob.print();
                 }
+            } catch (PrinterException pe) {
+                pe.printStackTrace();
             }
         });
         panel.add(pageButton);
@@ -249,10 +236,9 @@ public class PageSetupDialog extends Frame implements Printable {
 
         PassFailJFrame.builder()
                 .title("PageSetupDialog Test Instructions")
-                .instructions(instructions)
+                .instructions(INSTRUCTIONS)
                 .testUI(PageSetupDialog::new)
-                .testTimeOut(5)
-                .rows((int) instructions.lines().count() + 1)
+                .rows((int) INSTRUCTIONS.lines().count() + 1)
                 .columns(45)
                 .build()
                 .awaitAndCheck();

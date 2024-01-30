@@ -54,7 +54,7 @@ public class RasterTest extends Frame implements ActionListener {
 
     private final RasterCanvas c;
 
-    private static final String instructions =
+    private static final String INSTRUCTIONS =
             "You must have a printer available to perform this test\n" +
             "This test uses rendering operations which force the implementation\n" +
             "to print the page as a raster\n" +
@@ -72,11 +72,9 @@ public class RasterTest extends Frame implements ActionListener {
         }
 
         PassFailJFrame.builder()
-                .title("Test Instructions")
-                .instructions(instructions)
+                .instructions(INSTRUCTIONS)
                 .testUI(RasterTest::new)
-                .testTimeOut(5)
-                .rows((int) instructions.lines().count() + 1)
+                .rows((int) INSTRUCTIONS.lines().count() + 1)
                 .columns(45)
                 .build()
                 .awaitAndCheck();
@@ -156,7 +154,6 @@ public class RasterTest extends Frame implements ActionListener {
                     new GradientPaint(10.0f, 10.0f, alphablue, 210.0f, 210.0f, alphared, true);
             g2.setPaint(gp);
             g2.fillRect(10, 240, 200, 200);
-
         }
 
         public Dimension getPreferredSize() {

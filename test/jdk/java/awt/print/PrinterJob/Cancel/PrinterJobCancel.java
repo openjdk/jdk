@@ -48,7 +48,7 @@ public class PrinterJobCancel extends Thread implements Printable {
     PrinterJob pj;
     boolean okayed;
 
-    private static final String instructions =
+    private static final String INSTRUCTIONS =
              "Test that print job cancellation works.\n" +
              "You must have a printer available to perform this test.\n" +
              "This test silently starts a print job and while the job is\n" +
@@ -58,7 +58,7 @@ public class PrinterJobCancel extends Thread implements Printable {
              "You will need to kill the application manually since regression\n" +
              "tests apparently aren't supposed to call System.exit()";
 
-    public static void main(String args[]) throws Exception {
+    public static void main(String[] args) throws Exception {
 
         if (PrinterJob.lookupPrintServices().length == 0) {
             throw new SkippedException("Printer not configured or available."
@@ -66,10 +66,8 @@ public class PrinterJobCancel extends Thread implements Printable {
         }
 
         PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
-                .title("Test Instructions")
-                .instructions(instructions)
-                .testTimeOut(5)
-                .rows((int) instructions.lines().count() + 1)
+                .instructions(INSTRUCTIONS)
+                .rows((int) INSTRUCTIONS.lines().count() + 1)
                 .columns(45)
                 .build();
 

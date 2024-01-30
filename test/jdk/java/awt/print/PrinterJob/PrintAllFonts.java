@@ -32,7 +32,6 @@ import java.awt.print.PrinterJob;
 import jtreg.SkippedException;
 
 /*
- *
  * @test
  * @bug 4884389 7183516
  * @key printer
@@ -51,7 +50,7 @@ public class PrintAllFonts implements Printable {
     int lineHeight = 18;
     int thisPage = 0;
 
-    private static final String instructions =
+    private static final String INSTRUCTIONS =
              "You must have a printer available to perform this test.\n" +
              "\n" +
              "This bug is system dependent and is not always reproducible.\n" +
@@ -66,9 +65,8 @@ public class PrintAllFonts implements Printable {
 
         PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
                 .title("PrintAllFonts Test Instructions")
-                .instructions(instructions)
-                .testTimeOut(5)
-                .rows((int) instructions.lines().count() + 1)
+                .instructions(INSTRUCTIONS)
+                .rows((int) INSTRUCTIONS.lines().count() + 1)
                 .columns(45)
                 .build();
 

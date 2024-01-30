@@ -32,8 +32,6 @@ import java.awt.Label;
 import java.awt.Panel;
 import java.awt.TextArea;
 import java.awt.TextField;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.print.PageFormat;
 import java.awt.print.Paper;
 import java.awt.print.Printable;
@@ -176,67 +174,50 @@ public class ValidatePage extends Frame implements Printable {
 
         Panel panel = new Panel();
         Button defButton = new Button("Default Page");
-        defButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                myPageFormat = myPrinterJob.defaultPage();
-                displayPageFormatAttributes();
-            }
+        defButton.addActionListener(e -> {
+            myPageFormat = myPrinterJob.defaultPage();
+            displayPageFormatAttributes();
         });
 
         Button pageButton = new Button("Page Setup..");
-        pageButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                myPageFormat = myPrinterJob.pageDialog(myPageFormat);
-                displayPageFormatAttributes();
-            }
+        pageButton.addActionListener(e -> {
+            myPageFormat = myPrinterJob.pageDialog(myPageFormat);
+            displayPageFormatAttributes();
         });
         Button printButton = new Button("Print");
-        printButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    //if (myPrinterJob.printDialog()) {
-                    myPrinterJob.setPrintable(ValidatePage.this,
-                            myPageFormat);
-                    myPrinterJob.print();
-                    // }
-                } catch (PrinterException pe) {
-                    pe.printStackTrace();
-                }
+        printButton.addActionListener(e -> {
+            try {
+                myPrinterJob.setPrintable(ValidatePage.this, myPageFormat);
+                myPrinterJob.print();
+            } catch (PrinterException pe) {
+                pe.printStackTrace();
             }
         });
 
         Button chooseButton = new Button("Printer..");
-        chooseButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                myPrinterJob.printDialog();
-            }
-        });
+        chooseButton.addActionListener(e -> myPrinterJob.printDialog());
 
         Button validateButton = new Button("Validate Page");
-        validateButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                myPageFormat = myPrinterJob.validatePage(myPageFormat);
-                displayPageFormatAttributes();
-            }
+        validateButton.addActionListener(e -> {
+            myPageFormat = myPrinterJob.validatePage(myPageFormat);
+            displayPageFormatAttributes();
         });
         Button setButton = new Button("Set Paper");
-        setButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    Paper p = new Paper();
-                    double pwid = Double.parseDouble(tpw.getText());
-                    double phgt = Double.parseDouble(tph.getText());
-                    double pimx = Double.parseDouble(tpglm.getText());
-                    double pimy = Double.parseDouble(tpgtm.getText());
-                    double pimwid = Double.parseDouble(tpgiw.getText());
-                    double pimhgt = Double.parseDouble(tpgih.getText());
-                    p.setSize(pwid, phgt);
-                    p.setImageableArea(pimx, pimy, pimwid, pimhgt);
-                    myPageFormat.setPaper(p);
-                    displayPageFormatAttributes();
-                } catch (NumberFormatException nfe) {
-                    nfe.printStackTrace();
-                }
+        setButton.addActionListener(e -> {
+            try {
+                Paper p1 = new Paper();
+                double pwid = Double.parseDouble(tpw.getText());
+                double phgt = Double.parseDouble(tph.getText());
+                double pimx = Double.parseDouble(tpglm.getText());
+                double pimy = Double.parseDouble(tpgtm.getText());
+                double pimwid = Double.parseDouble(tpgiw.getText());
+                double pimhgt = Double.parseDouble(tpgih.getText());
+                p1.setSize(pwid, phgt);
+                p1.setImageableArea(pimx, pimy, pimwid, pimhgt);
+                myPageFormat.setPaper(p1);
+                displayPageFormatAttributes();
+            } catch (NumberFormatException nfe) {
+                nfe.printStackTrace();
             }
         });
         panel.add(setButton);
@@ -294,7 +275,7 @@ public class ValidatePage extends Frame implements Printable {
         return Printable.PAGE_EXISTS;
     }
 
-    private static final String instructions =
+    private static final String INSTRUCTIONS =
             "You must have a printer available to perform this test\n" +
             "This test is very flexible and requires much interaction.\n" +
             "There are several buttons.\n" +
@@ -324,11 +305,9 @@ public class ValidatePage extends Frame implements Printable {
         }
 
         PassFailJFrame.builder()
-                .title("Test Instructions")
-                .instructions(instructions)
+                .instructions(INSTRUCTIONS)
                 .testUI(ValidatePage::new)
-                .testTimeOut(5)
-                .rows((int) instructions.lines().count() + 1)
+                .rows((int) INSTRUCTIONS.lines().count() + 1)
                 .columns(45)
                 .build()
                 .awaitAndCheck();
