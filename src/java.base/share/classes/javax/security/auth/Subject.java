@@ -108,9 +108,14 @@ import sun.security.util.ResourcesMgr;
  * and {@code callAs} is similar to {@code doAs} except that the
  * input type and exceptions thrown are slightly different.
  *
- * <p><b><a id="sm-not-allowed">These methods behave differently depending on
+ * <p><b><a id="sm-allowed">These methods behave differently depending on
  * whether a security manager is allowed or disallowed</a></b>:
  * <ul>
+ * <li>If a security manager is allowed, which means it is either already set
+ * or allowed to be set dynamically, a {@code Subject} object is associated
+ * with an {@code AccessControlContext} through a {@code doAs} or
+ * {@code callAs} call, and the subject can then be retrieved using the
+ * {@code getSubject(AccessControlContext)} method.
 *  <li>If a security manager is not allowed, which means it
  * {@linkplain System#setSecurityManager is not set and not allowed to be set
  * dynamically}, a {@code doAs} or {@code callAs} call binds a {@code Subject}
@@ -118,11 +123,6 @@ import sun.security.util.ResourcesMgr;
  * retrieved using the {@code current} method inside the action. This subject
  * can be inherited by child threads if they are started and terminate within
  * the execution of its parent thread using structured concurrency.
- * <li>If a security manager is allowed, which means it is either already set
- * or allowed to be set dynamically, a {@code Subject} object is associated
- * with an {@code AccessControlContext} through a {@code doAs} or
- * {@code callAs} call, and the subject can then be retrieved using the
- * {@code getSubject(AccessControlContext)} method.
  * </ul>
  *
  * @since 1.4
@@ -293,9 +293,9 @@ public final class Subject implements java.io.Serializable {
 
     /**
      * Get the {@code Subject} associated with the provided
-     * {@code AccessControlContext}. When a security manager is
-     * <a href=#sm-not-allowed>not allowed</a>, this method is not supported
-     * and throws an {@code UnsupportedOperationException}.
+     * {@code AccessControlContext}. This method is intended to be used with
+     * a security manager. It throws an {@code UnsupportedOperationException}
+     * if a security manager is not allowed.
      *
      * <p> The {@code AccessControlContext} may contain many
      * Subjects (from nested {@code doAs} calls).
@@ -311,7 +311,7 @@ public final class Subject implements java.io.Serializable {
      *          with the provided {@code AccessControlContext}.
      *
      * @throws UnsupportedOperationException if a security manager is
-     *          <a href=#sm-not-allowed>not allowed</a>
+     *          not allowed
      *
      * @throws SecurityException if a security manager is installed and the
      *          caller does not have an
@@ -343,7 +343,8 @@ public final class Subject implements java.io.Serializable {
                 ("invalid.null.AccessControlContext.provided"));
 
         if (!SharedSecrets.getJavaLangAccess().allowSecurityManager()) {
-            throw new UnsupportedOperationException("getSubject is supported only if a security manager is allowed");
+            throw new UnsupportedOperationException(
+                    "getSubject is supported only if a security manager is allowed");
         } else {
             // return the Subject from the DomainCombiner of the provided context
             return AccessController.doPrivileged
@@ -365,18 +366,21 @@ public final class Subject implements java.io.Serializable {
 
     /**
      * Returns the current subject.
-     * <p>
-     * The current subject is installed by the {@link #callAs} method.
+     *
+     * <p> The current subject is installed by the {@link #callAs} method.
      * When {@code callAs(subject, action)} is called, {@code action} is
      * executed with {@code subject} as its current subject which can be
      * retrieved by this method. After {@code action} is finished, the current
      * subject is reset to its previous value. The current
      * subject is {@code null} before the first call of {@code callAs()}.
-     * <p>
-     * If a security manager is <a href=#sm-not-allowed>not allowed</a>, the
-     * current subject binds to the period of the execution of the current
-     * thread. Otherwise, it is associated with the current
+     *
+     * <p> If a security manager is <a href=#sm-allowed>allowed</a>, this
+     * method is equivalent to calling {@link #getSubject} with the current
      * {@code AccessControlContext}.
+     *
+     * <p> If a security manager is not allowed, this method returns the
+     * {@code Subject} bound to the period of the execution of the current
+     * thread.
      *
      * @return the current subject, or {@code null} if a current subject is
      *      not installed or the current subject is set to {@code null}.
@@ -396,11 +400,9 @@ public final class Subject implements java.io.Serializable {
      * Executes a {@code Callable} with {@code subject} as the
      * current subject.
      *
-     * <p> If a security manager is <a href=#sm-not-allowed>not allowed</a>,
-     * this method launches {@code action} and binds {@code subject} to the
-     * period of its execution.
-     * <p> Otherwise, this method first retrieves the
-     * current Thread's {@code AccessControlContext} via
+     * <p> If a security manager is <a href=#sm-allowed>allowed</a>,
+     * this method first retrieves the current Thread's
+     * {@code AccessControlContext} via
      * {@code AccessController.getContext},
      * and then instantiates a new {@code AccessControlContext}
      * using the retrieved context along with a new
@@ -409,6 +411,10 @@ public final class Subject implements java.io.Serializable {
      * Finally, this method invokes {@code AccessController.doPrivileged},
      * passing it the provided {@code PrivilegedAction},
      * as well as the newly constructed {@code AccessControlContext}.
+     *
+     * <p> If a security manager is not allowed,
+     * this method launches {@code action} and binds {@code subject} to the
+     * period of its execution.
      *
      * @param subject the {@code Subject} that the specified {@code action}
      *               will run as.  This parameter may be {@code null}.
@@ -450,10 +456,8 @@ public final class Subject implements java.io.Serializable {
     /**
      * Perform work as a particular {@code Subject}.
      *
-     * <p> If a security manager is <a href=#sm-not-allowed>not allowed</a>,
-     * this method launches {@code action} and binds {@code subject} to the
-     * period of its execution.
-     * <p> Otherwise, this method first retrieves the current Thread's
+     * <p> If a security manager is <a href=#sm-allowed>allowed</a>,
+     * this method first retrieves the current Thread's
      * {@code AccessControlContext} via
      * {@code AccessController.getContext},
      * and then instantiates a new {@code AccessControlContext}
@@ -463,6 +467,10 @@ public final class Subject implements java.io.Serializable {
      * Finally, this method invokes {@code AccessController.doPrivileged},
      * passing it the provided {@code PrivilegedAction},
      * as well as the newly constructed {@code AccessControlContext}.
+     *
+     * <p> If a security manager is not allowed,
+     * this method launches {@code action} and binds {@code subject} to the
+     * period of its execution.
      *
      * @param subject the {@code Subject} that the specified
      *                  {@code action} will run as.  This parameter
@@ -535,10 +543,8 @@ public final class Subject implements java.io.Serializable {
     /**
      * Perform work as a particular {@code Subject}.
      *
-     * <p> If a security manager is <a href=#sm-not-allowed>not allowed</a>,
-     * this method launches {@code action} and binds {@code subject} to the
-     * period of its execution.
-     * <p> Otherwise, this method first retrieves the current Thread's
+     * <p> If a security manager is <a href=#sm-allowed>allowed</a>,
+     * this method first retrieves the current Thread's
      * {@code AccessControlContext} via
      * {@code AccessController.getContext},
      * and then instantiates a new {@code AccessControlContext}
@@ -549,6 +555,10 @@ public final class Subject implements java.io.Serializable {
      * passing it the provided {@code PrivilegedExceptionAction},
      * as well as the newly constructed {@code AccessControlContext}.
      *
+     * <p> If a security manager is not allowed,
+     * this method launches {@code action} and binds {@code subject} to the
+     * period of its execution.
+
      * @param subject the {@code Subject} that the specified
      *                  {@code action} will run as.  This parameter
      *                  may be {@code null}.
@@ -627,16 +637,18 @@ public final class Subject implements java.io.Serializable {
     /**
      * Perform privileged work as a particular {@code Subject}.
      *
-     * <p> If a security manager is <a href=#sm-not-allowed>not allowed</a>,
-     * this method ignores the {@code acc} argument, launches {@code action},
-     * and binds {@code subject} to the period of its execution.
-     * <p> Otherwise, this method behaves exactly as {@code Subject.doAs},
+     * <p> If a security manager is <a href=#sm-allowed>allowed</a>,
+     * this method behaves exactly as {@code Subject.doAs},
      * except that instead of retrieving the current Thread's
      * {@code AccessControlContext}, it uses the provided
      * {@code AccessControlContext}.  If the provided
      * {@code AccessControlContext} is {@code null},
      * this method instantiates a new {@code AccessControlContext}
      * with an empty collection of ProtectionDomains.
+     *
+     * <p> If a security manager is not allowed,
+     * this method ignores the {@code acc} argument, launches {@code action},
+     * and binds {@code subject} to the period of its execution.
      *
      * @param subject the {@code Subject} that the specified
      *                  {@code action} will run as.  This parameter
@@ -715,16 +727,18 @@ public final class Subject implements java.io.Serializable {
     /**
      * Perform privileged work as a particular {@code Subject}.
      *
-     * <p> If a security manager is <a href=#sm-not-allowed>not allowed</a>,
-     * this method ignores the {@code acc} argument, launches {@code action},
-     * and binds {@code subject} to the period of its execution.
-     * <p> Otherwise, this method behaves exactly as {@code Subject.doAs},
+     * <p> If a security manager is <a href=#sm-allowed>allowed</a>,
+     * this method behaves exactly as {@code Subject.doAs},
      * except that instead of retrieving the current Thread's
      * {@code AccessControlContext}, it uses the provided
      * {@code AccessControlContext}.  If the provided
      * {@code AccessControlContext} is {@code null},
      * this method instantiates a new {@code AccessControlContext}
      * with an empty collection of ProtectionDomains.
+     *
+     * <p> If a security manager is not allowed,
+     * this method ignores the {@code acc} argument, launches {@code action},
+     * and binds {@code subject} to the period of its execution.
      *
      * @param subject the {@code Subject} that the specified
      *                  {@code action} will run as.  This parameter
