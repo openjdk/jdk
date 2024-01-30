@@ -42,7 +42,7 @@ static const char* region_type_name(ShenandoahFreeSetRegionType t) {
   }
 }
 
-ShenandoahSetsOfFree::ShenandoahSetsOfFree(size_t max_regions, ShenandoahFreeSet* free_set) :
+ShenandoahRegionPartition::ShenandoahRegionPartition(size_t max_regions, ShenandoahFreeSet* free_set) :
     _max(max_regions),
     _free_set(free_set),
     _region_size_bytes(ShenandoahHeapRegion::region_size_bytes())
@@ -51,7 +51,7 @@ ShenandoahSetsOfFree::ShenandoahSetsOfFree(size_t max_regions, ShenandoahFreeSet
   clear_internal();
 }
 
-ShenandoahSetsOfFree::~ShenandoahSetsOfFree() {
+ShenandoahRegionPartition::~ShenandoahRegionPartition() {
   FREE_C_HEAP_ARRAY(ShenandoahFreeSetRegionType, _membership);
 }
 
@@ -85,7 +85,7 @@ inline bool ShenandoahFreeSet::has_alloc_capacity(ShenandoahHeapRegion *r) const
   return alloc_capacity(r) > 0;
 }
 
-void ShenandoahSetsOfFree::clear_internal() {
+void ShenandoahRegionPartition::clear_internal() {
   for (size_t idx = 0; idx < _max; idx++) {
     _membership[idx] = NotFree;
   }
@@ -104,11 +104,11 @@ void ShenandoahSetsOfFree::clear_internal() {
   _region_counts[NotFree] = _max;
 }
 
-void ShenandoahSetsOfFree::clear_all() {
+void ShenandoahRegionPartition::clear_all() {
   clear_internal();
 }
 
-void ShenandoahSetsOfFree::increase_used(ShenandoahFreeSetRegionType which_set, size_t bytes) {
+void ShenandoahRegionPartition::increase_used(ShenandoahFreeSetRegionType which_set, size_t bytes) {
   assert (which_set > NotFree && which_set < NumFreeSets, "Set must correspond to a valid freeset");
   _used_by[which_set] += bytes;
   assert (_used_by[which_set] <= _capacity_of[which_set],
@@ -116,7 +116,7 @@ void ShenandoahSetsOfFree::increase_used(ShenandoahFreeSetRegionType which_set, 
           _used_by[which_set], _capacity_of[which_set], bytes);
 }
 
-inline void ShenandoahSetsOfFree::shrink_bounds_if_touched(ShenandoahFreeSetRegionType set, size_t idx) {
+inline void ShenandoahRegionPartition::shrink_bounds_if_touched(ShenandoahFreeSetRegionType set, size_t idx) {
   if (idx == _leftmosts[set]) {
     while ((_leftmosts[set] < _max) && !in_free_set(_leftmosts[set], set)) {
       _leftmosts[set]++;
@@ -137,7 +137,7 @@ inline void ShenandoahSetsOfFree::shrink_bounds_if_touched(ShenandoahFreeSetRegi
   }
 }
 
-inline void ShenandoahSetsOfFree::expand_bounds_maybe(ShenandoahFreeSetRegionType set, size_t idx, size_t region_available) {
+inline void ShenandoahRegionPartition::expand_bounds_maybe(ShenandoahFreeSetRegionType set, size_t idx, size_t region_available) {
   if (region_available == _region_size_bytes) {
     if (_leftmosts_empty[set] > idx) {
       _leftmosts_empty[set] = idx;
@@ -156,7 +156,7 @@ inline void ShenandoahSetsOfFree::expand_bounds_maybe(ShenandoahFreeSetRegionTyp
 
 // Remove this region from its free set, but leave its capacity and used as part of the original free set's totals.
 // When retiring a region, add any remnant of available memory within the region to the used total for the original free set.
-void ShenandoahSetsOfFree::retire_within_free_set(size_t idx, size_t used_bytes) {
+void ShenandoahRegionPartition::retire_within_free_set(size_t idx, size_t used_bytes) {
   ShenandoahFreeSetRegionType orig_set = membership(idx);
 
   // Note: we may remove from free set even if region is not entirely full, such as when available < PLAB::min_size()
@@ -175,7 +175,7 @@ void ShenandoahSetsOfFree::retire_within_free_set(size_t idx, size_t used_bytes)
   _region_counts[NotFree]++;
 }
 
-void ShenandoahSetsOfFree::make_free(size_t idx, ShenandoahFreeSetRegionType which_set, size_t available) {
+void ShenandoahRegionPartition::make_free(size_t idx, ShenandoahFreeSetRegionType which_set, size_t available) {
   assert (idx < _max, "index is sane: " SIZE_FORMAT " < " SIZE_FORMAT, idx, _max);
   assert (_membership[idx] == NotFree, "Cannot make free if already free");
   assert (which_set > NotFree && which_set < NumFreeSets, "selected free set must be valid");
@@ -190,7 +190,7 @@ void ShenandoahSetsOfFree::make_free(size_t idx, ShenandoahFreeSetRegionType whi
   _region_counts[which_set]++;
 }
 
-void ShenandoahSetsOfFree::move_to_set(size_t idx, ShenandoahFreeSetRegionType new_set, size_t available) {
+void ShenandoahRegionPartition::move_to_set(size_t idx, ShenandoahFreeSetRegionType new_set, size_t available) {
   assert (idx < _max, "index is sane: " SIZE_FORMAT " < " SIZE_FORMAT, idx, _max);
   assert ((new_set > NotFree) && (new_set < NumFreeSets), "New set must be valid");
   assert (available <= _region_size_bytes, "Available cannot exceed region size");
@@ -223,14 +223,14 @@ void ShenandoahSetsOfFree::move_to_set(size_t idx, ShenandoahFreeSetRegionType n
   _region_counts[new_set]++;
 }
 
-inline ShenandoahFreeSetRegionType ShenandoahSetsOfFree::membership(size_t idx) const {
+inline ShenandoahFreeSetRegionType ShenandoahRegionPartition::membership(size_t idx) const {
   assert (idx < _max, "index is sane: " SIZE_FORMAT " < " SIZE_FORMAT, idx, _max);
   return _membership[idx];
 }
 
   // Returns true iff region idx is in the test_set free_set.  Before returning true, asserts that the free
   // set is not empty.  Requires that test_set != NotFree or NumFreeSets.
-inline bool ShenandoahSetsOfFree::in_free_set(size_t idx, ShenandoahFreeSetRegionType test_set) const {
+inline bool ShenandoahRegionPartition::in_free_set(size_t idx, ShenandoahFreeSetRegionType test_set) const {
   assert (idx < _max, "index is sane: " SIZE_FORMAT " < " SIZE_FORMAT, idx, _max);
   if (_membership[idx] == test_set) {
     assert (test_set == NotFree || _free_set->alloc_capacity(idx) > 0,
@@ -242,7 +242,7 @@ inline bool ShenandoahSetsOfFree::in_free_set(size_t idx, ShenandoahFreeSetRegio
   }
 }
 
-inline size_t ShenandoahSetsOfFree::leftmost(ShenandoahFreeSetRegionType which_set) const {
+inline size_t ShenandoahRegionPartition::leftmost(ShenandoahFreeSetRegionType which_set) const {
   assert (which_set > NotFree && which_set < NumFreeSets, "selected free set must be valid");
   size_t idx = _leftmosts[which_set];
   if (idx >= _max) {
@@ -253,19 +253,19 @@ inline size_t ShenandoahSetsOfFree::leftmost(ShenandoahFreeSetRegionType which_s
   }
 }
 
-inline size_t ShenandoahSetsOfFree::rightmost(ShenandoahFreeSetRegionType which_set) const {
+inline size_t ShenandoahRegionPartition::rightmost(ShenandoahFreeSetRegionType which_set) const {
   assert (which_set > NotFree && which_set < NumFreeSets, "selected free set must be valid");
   size_t idx = _rightmosts[which_set];
   assert ((_leftmosts[which_set] == _max) || in_free_set(idx, which_set), "right-most region must be free");
   return idx;
 }
 
-inline bool ShenandoahSetsOfFree::is_empty(ShenandoahFreeSetRegionType which_set) const {
+inline bool ShenandoahRegionPartition::is_empty(ShenandoahFreeSetRegionType which_set) const {
   assert (which_set > NotFree && which_set < NumFreeSets, "selected free set must be valid");
   return (leftmost(which_set) > rightmost(which_set));
 }
 
-size_t ShenandoahSetsOfFree::leftmost_empty(ShenandoahFreeSetRegionType which_set) {
+size_t ShenandoahRegionPartition::leftmost_empty(ShenandoahFreeSetRegionType which_set) {
   assert (which_set > NotFree && which_set < NumFreeSets, "selected free set must be valid");
   for (size_t idx = _leftmosts_empty[which_set]; idx < _max; idx++) {
     if ((membership(idx) == which_set) && (_free_set->alloc_capacity(idx) == _region_size_bytes)) {
@@ -278,7 +278,7 @@ size_t ShenandoahSetsOfFree::leftmost_empty(ShenandoahFreeSetRegionType which_se
   return _max;
 }
 
-inline size_t ShenandoahSetsOfFree::rightmost_empty(ShenandoahFreeSetRegionType which_set) {
+inline size_t ShenandoahRegionPartition::rightmost_empty(ShenandoahFreeSetRegionType which_set) {
   assert (which_set > NotFree && which_set < NumFreeSets, "selected free set must be valid");
   for (intptr_t idx = _rightmosts_empty[which_set]; idx >= 0; idx--) {
     if ((membership(idx) == which_set) && (_free_set->alloc_capacity(idx) == _region_size_bytes)) {
@@ -292,7 +292,7 @@ inline size_t ShenandoahSetsOfFree::rightmost_empty(ShenandoahFreeSetRegionType 
 }
 
 #ifdef ASSERT
-void ShenandoahSetsOfFree::assert_bounds() {
+void ShenandoahRegionPartition::assert_bounds() {
 
   size_t leftmosts[NumFreeSets];
   size_t rightmosts[NumFreeSets];
