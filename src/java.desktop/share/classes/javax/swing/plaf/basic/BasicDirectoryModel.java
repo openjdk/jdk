@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.File;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 import java.util.concurrent.Callable;
@@ -363,13 +362,14 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
                                 }
                             }
 
-                            if (start >= 0 && end > start && newFileCache.subList(end, newSize)
-                                    .equals(fileCache.subList(start, oldSize))) {
+                            if (start >= 0 && end > start
+                                    && newFileCache.subList(end, newSize)
+                                                   .equals(fileCache.subList(start, oldSize))) {
                                 if (loadThread.isInterrupted()) {
                                     return null;
                                 }
-                                return new DoChangeContents(newFileCache
-                                        .subList(start, end), start, null, 0, fid);
+                                return new DoChangeContents(newFileCache.subList(start, end),
+                                                            start, null, 0, fid);
                             }
                         } else if (newSize < oldSize) {
                             //see if interval is removed
@@ -383,13 +383,14 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
                                 }
                             }
 
-                            if (start >= 0 && end > start && fileCache.subList(end, oldSize)
-                                    .equals(newFileCache.subList(start, newSize))) {
+                            if (start >= 0 && end > start
+                                    && fileCache.subList(end, oldSize)
+                                                .equals(newFileCache.subList(start, newSize))) {
                                 if (loadThread.isInterrupted()) {
                                     return null;
                                 }
-                                return new DoChangeContents(null, 0, new Vector<>(fileCache
-                                        .subList(start, end)), start, fid);
+                                return new DoChangeContents(null, 0,
+                                        new Vector<>(fileCache.subList(start, end)), start, fid);
                             }
                         }
                         if (!fileCache.equals(newFileCache)) {
