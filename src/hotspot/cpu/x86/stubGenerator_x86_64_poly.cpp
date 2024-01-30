@@ -1036,7 +1036,7 @@ void StubGenerator::poly1305_process_blocks_avx2(
     const Register a0, const Register a1, const Register a2,
     const Register r0, const Register r1, const Register c1)
 {
-  //This implementation is based on the AVX2 Poly1305 MAC computation as implemented in
+  //This implementation is based on the AVX2 Poly1305 hash computation as implemented in
   // Intel(R) Multi-Buffer Crypto for IPsec Library.
   // url: https://github.com/intel/intel-ipsec-mb/blob/main/lib/avx2_t3/poly_fma_avx2.asm
   Label L_process256Loop, L_process256LoopDone;
