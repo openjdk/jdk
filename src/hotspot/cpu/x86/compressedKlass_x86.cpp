@@ -47,7 +47,6 @@ char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size
     result = reserve_address_space_X(0, nth_bit(32), size, Metaspace::reserve_alignment(), aslr);
   }
 
-  // Nothing more to optimize for on x64. If base != 0, we will always emit the full 64-bit immediate.
   return result;
 }
 
