@@ -314,37 +314,37 @@ public class TestLayoutPaths {
     @Test
     public void testGroupElementIndexToString() {
         PathElement e = PathElement.groupElement(2);
-        assertEquals(e.toString(), "[2]");
+        assertEquals(e.toString(), "groupElement(2)");
     }
 
     @Test
     public void testGroupElementNameToString() {
         PathElement e = PathElement.groupElement("x");
-        assertEquals(e.toString(), "x");
+        assertEquals(e.toString(), "groupElement(\"x\")");
     }
 
     @Test
     public void testSequenceElementToString() {
         PathElement e = PathElement.sequenceElement();
-        assertEquals(e.toString(), "[]");
+        assertEquals(e.toString(), "sequenceElement()");
     }
 
     @Test
     public void testSequenceElementIndexToString() {
         PathElement e = PathElement.sequenceElement(2);
-        assertEquals(e.toString(), "[2]");
+        assertEquals(e.toString(), "sequenceElement(2)");
     }
 
     @Test
     public void testSequenceElementRangeToString() {
         PathElement e = PathElement.sequenceElement(2, 4);
-        assertEquals(e.toString(), "[2:4]");
+        assertEquals(e.toString(), "sequenceElement(2, 4)");
     }
 
     @Test
     public void testDerefereceElementToString() {
         PathElement e = PathElement.dereferenceElement();
-        assertEquals(e.toString(), "*");
+        assertEquals(e.toString(), "dereferenceElement()");
     }
 
     @DataProvider
