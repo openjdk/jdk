@@ -57,6 +57,7 @@ public:
 private:
   ShenandoahSharedFlag _gc_requested;
   ShenandoahSharedFlag _alloc_failure_gc;
+  ShenandoahSharedFlag _humongous_alloc_failure_gc;
   ShenandoahSharedFlag _graceful_shutdown;
   ShenandoahSharedFlag _heap_changed;
   GCCause::Cause       _requested_gc_cause;
@@ -68,14 +69,20 @@ private:
   volatile size_t _gc_id;
   shenandoah_padding(2);
 
+  // Returns true if the cycle has been cancelled or degenerated.
   bool check_cancellation_or_degen(ShenandoahGC::ShenandoahDegenPoint point);
   void service_concurrent_normal_cycle(GCCause::Cause cause);
   void service_stw_full_cycle(GCCause::Cause cause);
   void service_stw_degenerated_cycle(GCCause::Cause cause, ShenandoahGC::ShenandoahDegenPoint point);
   void service_uncommit(double shrink_before, size_t shrink_until);
 
-  bool try_set_alloc_failure_gc();
+  // Return true if setting the flag which indicates allocation failure succeeds.
+  bool try_set_alloc_failure_gc(bool is_humongous);
+
+  // Notify threads waiting for GC to complete.
   void notify_alloc_failure_waiters();
+
+  // True if allocation failure flag has been set.
   bool is_alloc_failure_gc();
 
   void reset_gc_id();

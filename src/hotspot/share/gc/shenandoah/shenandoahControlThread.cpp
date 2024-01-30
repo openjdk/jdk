@@ -61,8 +61,8 @@ ShenandoahControlThread::ShenandoahControlThread() :
 void ShenandoahControlThread::run_service() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
-  GCMode default_mode = concurrent_normal;
-  GCCause::Cause default_cause = GCCause::_shenandoah_concurrent_gc;
+  const GCMode default_mode = concurrent_normal;
+  const GCCause::Cause default_cause = GCCause::_shenandoah_concurrent_gc;
   int sleep = ShenandoahControlIntervalMin;
 
   double last_shrink_time = os::elapsedTime();
@@ -72,23 +72,24 @@ void ShenandoahControlThread::run_service() {
   // Having a period 10x lower than the delay would mean we hit the
   // shrinking with lag of less than 1/10-th of true delay.
   // ShenandoahUncommitDelay is in msecs, but shrink_period is in seconds.
-  double shrink_period = (double)ShenandoahUncommitDelay / 1000 / 10;
+  const double shrink_period = (double)ShenandoahUncommitDelay / 1000 / 10;
 
-  ShenandoahCollectorPolicy* policy = heap->shenandoah_policy();
+  ShenandoahCollectorPolicy* const policy = heap->shenandoah_policy();
   ShenandoahHeuristics* heuristics = heap->heuristics();
   while (!in_graceful_shutdown() && !should_terminate()) {
     // Figure out if we have pending requests.
-    bool alloc_failure_pending = _alloc_failure_gc.is_set();
-    bool is_gc_requested = _gc_requested.is_set();
+    const bool alloc_failure_pending = _alloc_failure_gc.is_set();
+    const bool humongous_alloc_failure_pending = _humongous_alloc_failure_gc.is_set();
+    const bool is_gc_requested = _gc_requested.is_set();
     GCCause::Cause requested_gc_cause = _requested_gc_cause;
-    bool explicit_gc_requested = is_gc_requested && is_explicit_gc(requested_gc_cause);
-    bool implicit_gc_requested = is_gc_requested && !is_explicit_gc(requested_gc_cause);
+    const bool explicit_gc_requested = is_gc_requested && is_explicit_gc(requested_gc_cause);
+    const bool implicit_gc_requested = is_gc_requested && !is_explicit_gc(requested_gc_cause);
 
     // This control loop iteration have seen this much allocations.
-    size_t allocs_seen = Atomic::xchg(&_allocs_seen, (size_t)0, memory_order_relaxed);
+    const size_t allocs_seen = Atomic::xchg(&_allocs_seen, (size_t)0, memory_order_relaxed);
 
     // Check if we have seen a new target for soft max heap size.
-    bool soft_max_changed = check_soft_max_changed();
+    const bool soft_max_changed = check_soft_max_changed();
 
     // Choose which GC mode to run in. The block below should select a single mode.
     GCMode mode = none;
@@ -105,7 +106,9 @@ void ShenandoahControlThread::run_service() {
       degen_point = _degen_point;
       _degen_point = ShenandoahGC::_degenerated_outside_cycle;
 
-      if (ShenandoahDegeneratedGC && heuristics->should_degenerate_cycle()) {
+      // If a humongous allocation has failed, then the heap is likely in need of compaction, so run
+      // a full gc (which compacts regions) instead of a degenerated gc (which does not compatct regions).
+      if (ShenandoahDegeneratedGC && heuristics->should_degenerate_cycle() && !humongous_alloc_failure_pending) {
         heuristics->record_allocation_failure_gc();
         policy->record_alloc_failure_to_degenerated(degen_point);
         mode = stw_degenerated;
@@ -501,8 +504,9 @@ void ShenandoahControlThread::handle_alloc_failure(ShenandoahAllocRequest& req, 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   assert(current()->is_Java_thread(), "expect Java thread here");
+  bool is_humongous = req.size() > ShenandoahHeapRegion::humongous_threshold_words();
 
-  if (try_set_alloc_failure_gc()) {
+  if (try_set_alloc_failure_gc(is_humongous)) {
     // Only report the first allocation failure
     log_info(gc)("Failed to allocate %s, " SIZE_FORMAT "%s",
                  req.type_string(),
@@ -523,8 +527,9 @@ void ShenandoahControlThread::handle_alloc_failure(ShenandoahAllocRequest& req, 
 
 void ShenandoahControlThread::handle_alloc_failure_evac(size_t words) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
+  bool is_humongous = words > ShenandoahHeapRegion::humongous_threshold_words();
 
-  if (try_set_alloc_failure_gc()) {
+  if (try_set_alloc_failure_gc(is_humongous)) {
     // Only report the first allocation failure
     log_info(gc)("Failed to allocate " SIZE_FORMAT "%s for evacuation",
                  byte_size_in_proper_unit(words * HeapWordSize), proper_unit_for_byte_size(words * HeapWordSize));
@@ -536,11 +541,15 @@ void ShenandoahControlThread::handle_alloc_failure_evac(size_t words) {
 
 void ShenandoahControlThread::notify_alloc_failure_waiters() {
   _alloc_failure_gc.unset();
+  _humongous_alloc_failure_gc.unset();
   MonitorLocker ml(&_alloc_failure_waiters_lock);
   ml.notify_all();
 }
 
-bool ShenandoahControlThread::try_set_alloc_failure_gc() {
+bool ShenandoahControlThread::try_set_alloc_failure_gc(bool is_humongous) {
+  if (is_humongous) {
+    _humongous_alloc_failure_gc.try_set();
+  }
   return _alloc_failure_gc.try_set();
 }
 
