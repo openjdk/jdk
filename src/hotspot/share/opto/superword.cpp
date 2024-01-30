@@ -1244,7 +1244,7 @@ bool SuperWord::follow_def_uses(Node_List* p) {
         // Only follow non-memory nodes in block - we do not want to resurrect misaligned packs.
         continue;
       }
-      if (t2->Opcode() == Op_AddI && t2 == _lp->as_CountedLoop()->incr()) continue; // don't mess with the iv
+      if (t2->Opcode() == Op_AddI && t2 == cl()->incr()) continue; // don't mess with the iv
       if (!opnd_positions_match(s1, t1, s2, t2))
         continue;
       int adjusted_align = alignment(s1);

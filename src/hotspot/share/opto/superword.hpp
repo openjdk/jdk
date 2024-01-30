@@ -325,10 +325,8 @@ class SuperWord : public ResourceObj {
   const GrowableArray<Node*>&      block()   const { return _block; }
   const DepGraph&                  dg()      const { return _dg; }
  private:
-  CountedLoopNode* _lp;            // Current CountedLoopNode
   VectorSet      _loop_reductions; // Reduction nodes in the current loop
   bool           _race_possible;   // In cases where SDMU is true
-  bool           _early_return;    // True if we do not initialize
   bool           _do_vector_loop;  // whether to do vectorization/simd style
   int            _num_work_vecs;   // Number of non memory vector operations
   int            _num_reductions;  // Number of reduction expressions applied
