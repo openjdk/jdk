@@ -90,11 +90,15 @@ jobs:
             debug-suffix: -debug
 
           - test-name: 'hs/tier1 compiler part 2'
-            test-suite: 'test/hotspot/jtreg/:tier1_compiler_2 test/hotspot/jtreg/:tier1_compiler_not_xcomp'
+            test-suite: 'test/hotspot/jtreg/:tier1_compiler_2'
             debug-suffix: -debug
 
           - test-name: 'hs/tier1 compiler part 3'
             test-suite: 'test/hotspot/jtreg/:tier1_compiler_3'
+            debug-suffix: -debug
+
+          - test-name: 'hs/tier1 compiler not-xcomp'
+            test-suite: 'test/hotspot/jtreg/:tier1_compiler_not_xcomp'
             debug-suffix: -debug
 
           - test-name: 'hs/tier1 gc'
