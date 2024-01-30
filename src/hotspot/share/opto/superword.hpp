@@ -223,10 +223,6 @@ class SuperWord : public ResourceObj {
   // Scratch pads
   GrowableArray<Node*> _nlist; // List of nodes
 
-  static constexpr char const* SUCCESS                 = "success";
-  static constexpr char const* FAILURE_NO_MAX_UNROLL   = "slp max unroll analysis required";
-  static constexpr char const* FAILURE_SLP_EXTRACT     = "SuperWord::SLP_extract failed";
-
  public:
   SuperWord(Arena* arena, const VLoop &vloop);
 
@@ -445,8 +441,6 @@ private:
   // that it assumes counted loops and requires that reduction nodes are not
   // used within the loop except by their reduction cycle predecessors.
   void mark_reductions();
-  // Attempt to run the SuperWord algorithm on the loop.
-  const char* transform_loop_helper();
   // Extract the superword level parallelism
   bool SLP_extract();
   // Find the adjacent memory references and create pack pairs for them.

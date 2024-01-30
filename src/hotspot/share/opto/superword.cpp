@@ -390,6 +390,8 @@ void SuperWord::mark_reductions() {
 }
 
 bool SuperWord::transform_loop() {
+  assert(phase()->C->do_superword(), "SuperWord option should be enabled");
+  assert(cl()->is_main_loop(), "SLP should only work on main loops");
 #ifndef PRODUCT
   if (is_trace_superword_any()) {
     tty->print_cr("\nSuperWord::transform_loop:");
@@ -398,30 +400,31 @@ bool SuperWord::transform_loop() {
   }
 #endif
 
-  const char* state = transform_loop_helper();
-  if (state == SuperWord::SUCCESS) {
-    return true;
+  // Skip any loop that has not been assigned max unroll by analysis
+  if (SuperWordLoopUnrollAnalysis && vloop().cl()->slp_max_unroll() == 0) {
+#ifndef PRODUCT
+    if (is_trace_superword_any()) {
+      tty->print_cr("\nSuperWord::transform_loop failed: slp max unroll analysis was not already done");
+    }
+#endif
+    return false;
+  }
+
+  if (!SLP_extract()) {
+#ifndef PRODUCT
+    if (is_trace_superword_any()) {
+      tty->print_cr("\nSuperWord::transform_loop failed: SuperWord::SLP_extract did not vectorize");
+    }
+#endif
+    return false;
   }
 
 #ifndef PRODUCT
   if (is_trace_superword_any()) {
-    tty->print_cr("\nSuperWord::transform_loop: failed: %s", state);
+    tty->print_cr("\nSuperWord::transform_loop: success");
   }
 #endif
-  return false;
-}
-
-const char* SuperWord::transform_loop_helper() {
-  assert(phase()->C->do_superword(), "SuperWord option should be enabled");
-  assert(cl()->is_main_loop(), "SLP should only work on main loops");
-
-  // Skip any loop that has not been assigned max unroll by analysis
-  if (SuperWordLoopUnrollAnalysis && vloop().cl()->slp_max_unroll() == 0) {
-    return SuperWord::FAILURE_NO_MAX_UNROLL;
-  }
-
-  return SLP_extract() ? SuperWord::SUCCESS
-                       : SuperWord::FAILURE_SLP_EXTRACT;
+  return true;
 }
 
 //------------------------------SLP_extract---------------------------
@@ -459,8 +462,7 @@ const char* SuperWord::transform_loop_helper() {
 //    extraction of scalar values from vectors.
 //
 bool SuperWord::SLP_extract() {
-  CountedLoopNode* cl = lpt()->_head->as_CountedLoop();
-  assert(cl->is_main_loop(), "SLP should only work on main loops");
+  assert(cl()->is_main_loop(), "SLP should only work on main loops");
 
   if (SuperWordReductions) {
     mark_reductions();
