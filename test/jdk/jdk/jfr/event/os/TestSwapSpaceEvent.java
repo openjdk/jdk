@@ -50,7 +50,8 @@ public class TestSwapSpaceEvent {
         for (RecordedEvent event : events) {
             System.out.println("Event: " + event);
             long totalSize = Events.assertField(event, "totalSize").atLeast(0L).getValue();
-            Events.assertField(event, "freeSize").atLeast(0L).atMost(totalSize);
+            Events.assertField(event, "freeSize").atLeast(-1L); // we still get on Linux -1 in container envs
+            Events.assertField(event, "freeSize").atMost(totalSize);
         }
     }
 }

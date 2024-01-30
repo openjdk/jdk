@@ -291,25 +291,30 @@ julong os::Linux::free_memory() {
 
 jlong os::total_swap_space() {
   if (OSContainer::is_containerized()) {
-    return (jlong)(OSContainer::memory_and_swap_limit_in_bytes() - OSContainer::memory_limit_in_bytes());
+    if (OSContainer::memory_limit_in_bytes() > 0) {
+      return (jlong)(OSContainer::memory_and_swap_limit_in_bytes() - OSContainer::memory_limit_in_bytes());
+    }
+  }
+  struct sysinfo si;
+  int ret = sysinfo(&si);
+  if (ret != 0) {
+    return -1;
+  }
+  return  (jlong)(si.totalswap * si.mem_unit);
+}
+
+jlong os::free_swap_space() {
+  if (OSContainer::is_containerized()) {
+    // TODO add a good implementation
+    return -1;
   } else {
     struct sysinfo si;
     int ret = sysinfo(&si);
     if (ret != 0) {
       return -1;
     }
-    return  (jlong)(si.totalswap * si.mem_unit);
+    return (jlong)(si.freeswap * si.mem_unit);
   }
-}
-
-jlong os::free_swap_space() {
-  // TODO support free swap space in container APIs
-  struct sysinfo si;
-  int ret = sysinfo(&si);
-  if (ret != 0) {
-    return -1;
-  }
-  return (jlong)(si.freeswap * si.mem_unit);
 }
 
 julong os::physical_memory() {
