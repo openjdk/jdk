@@ -25,7 +25,7 @@
  * @test
  * @bug 8323274
  * @summary sinking an array load out of loop can cause it to become dependent on a test other than its range check
- * @run main/othervm -XX:-UseOnStackReplacement -XX:-TieredCompilation -XX:-BackgroundCompilation TestArrayAccessAboveRCAfterSinking 
+ * @run main/othervm -XX:-UseOnStackReplacement -XX:-TieredCompilation -XX:-BackgroundCompilation TestArrayAccessAboveRCAfterSinking
  */
 
 
