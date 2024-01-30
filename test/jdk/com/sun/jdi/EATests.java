@@ -120,7 +120,44 @@
  *                 -XX:-DoEscapeAnalysis -XX:-EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
  *                 -XX:+IgnoreUnrecognizedVMOptions -XX:+DeoptimizeObjectsALot
  *
+ * @bug 8324881
+ * @comment Regression test for using the wrong thread when logging during re-locking from deoptimization.
+ *
+ * @comment DiagnoseSyncOnValueBasedClasses=2 will cause logging when locking on \@ValueBased objects.
+ * @run driver EATests
+ *                 -XX:+UnlockDiagnosticVMOptions
+ *                 -Xms256m -Xmx256m
+ *                 -Xbootclasspath/a:.
+ *                 -XX:CompileCommand=dontinline,*::dontinline_*
+ *                 -XX:+WhiteBoxAPI
+ *                 -Xbatch
+ *                 -XX:+DoEscapeAnalysis -XX:+EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
+ *                 -XX:LockingMode=1
+ *                 -XX:DiagnoseSyncOnValueBasedClasses=2
+ *
+ * @comment Re-lock may inflate monitors when re-locking, which cause monitorinflation trace logging.
+ * @run driver EATests
+ *                 -XX:+UnlockDiagnosticVMOptions
+ *                 -Xms256m -Xmx256m
+ *                 -Xbootclasspath/a:.
+ *                 -XX:CompileCommand=dontinline,*::dontinline_*
+ *                 -XX:+WhiteBoxAPI
+ *                 -Xbatch
+ *                 -XX:+DoEscapeAnalysis -XX:+EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
+ *                 -XX:LockingMode=0
+ *                 -Xlog:monitorinflation=trace
+ * @run driver EATests
+ *                 -XX:+UnlockDiagnosticVMOptions
+ *                 -Xms256m -Xmx256m
+ *                 -Xbootclasspath/a:.
+ *                 -XX:CompileCommand=dontinline,*::dontinline_*
+ *                 -XX:+WhiteBoxAPI
+ *                 -Xbatch
+ *                 -XX:+DoEscapeAnalysis -XX:+EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
+ *                 -XX:LockingMode=2
+ *                 -Xlog:monitorinflation=trace
  */
+
 /**
  * @test
  * @bug 8227745
@@ -259,6 +296,7 @@ class EATestsTarget {
         new EAGetOwnedMonitorsTarget()                                                      .run();
         new EAEntryCountTarget()                                                            .run();
         new EARelockingObjectCurrentlyWaitingOnTarget()                                     .run();
+        new EARelockingValueBasedTarget()                                                   .run();
 
         // Test cases that require deoptimization even though neither
         // locks nor allocations are eliminated at the point where
@@ -381,6 +419,7 @@ public class EATests extends TestScaffold {
         new EAGetOwnedMonitors()                                                      .run(this);
         new EAEntryCount()                                                            .run(this);
         new EARelockingObjectCurrentlyWaitingOn()                                     .run(this);
+        new EARelockingValueBased()                                                   .run(this);
 
         // Test cases that require deoptimization even though neither
         // locks nor allocations are eliminated at the point where
@@ -2137,6 +2176,32 @@ class EARelockingObjectCurrentlyWaitingOnTarget extends EATestCaseBaseTarget {
     public void dontinline_waitWhenWarmupDone(ForLocking l2) throws Exception {
         if (warmupDone) {
             l2.wait();
+        }
+    }
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Test relocking eliminated @ValueBased object.
+ */
+class EARelockingValueBased extends EATestCaseBaseDebugger {
+
+    public void runTestCase() throws Exception {
+        BreakpointEvent bpe = resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
+        printStack(bpe.thread());
+        @SuppressWarnings("unused")
+        ObjectReference o = getLocalRef(bpe.thread().frame(1), Integer.class.getName(), "l1");
+    }
+}
+
+class EARelockingValueBasedTarget extends EATestCaseBaseTarget {
+
+    public void dontinline_testMethod() {
+        Integer l1 = new Integer(255);
+        synchronized (l1) {
+            dontinline_brkpt();
         }
     }
 }
