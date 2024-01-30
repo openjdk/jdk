@@ -79,7 +79,7 @@ import java.util.Arrays;
  * <dl>
  * <dt><i>SubPattern:</i>
  * <dd>Limit Relation Format
- * <dd><sub>Note: Each additional SubPattern must have a Limit-Relation numerically greater than the previous SubPattern's Limit-Relation</sub></dd>
+ * <dd><sub>Note: Each additional SubPattern must have an ascending Limit-Relation interval</sub></dd>
  * </dl>
  *
  * <dl>
