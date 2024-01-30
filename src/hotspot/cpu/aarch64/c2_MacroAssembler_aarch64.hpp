@@ -94,13 +94,13 @@
 
   // Vector cast
   void neon_vector_extend(FloatRegister dst, BasicType dst_bt, unsigned dst_vlen_in_bytes,
-                          FloatRegister src, BasicType src_bt);
+                          FloatRegister src, BasicType src_bt, bool is_unsigned = false);
 
   void neon_vector_narrow(FloatRegister dst, BasicType dst_bt,
                           FloatRegister src, BasicType src_bt, unsigned src_vlen_in_bytes);
 
   void sve_vector_extend(FloatRegister dst, SIMD_RegVariant dst_size,
-                         FloatRegister src, SIMD_RegVariant src_size);
+                         FloatRegister src, SIMD_RegVariant src_size, bool is_unsigned = false);
 
   void sve_vector_narrow(FloatRegister dst, SIMD_RegVariant dst_size,
                          FloatRegister src, SIMD_RegVariant src_size, FloatRegister tmp);

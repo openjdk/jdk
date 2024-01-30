@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 6357858
+ * @key printer
  * @summary Job must reports the number of copies set in the dialog.
  * @run main/manual DialogCopies
  */

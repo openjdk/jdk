@@ -131,6 +131,27 @@ void ShenandoahDegenGC::op_degenerated() {
       // and we can do evacuation. Otherwise, it would be the shortcut cycle.
       if (heap->is_evacuation_in_progress()) {
 
+        if (_degen_point == _degenerated_evac) {
+          // Degeneration under oom-evac protocol allows the mutator LRB to expose
+          // references to from-space objects. This is okay, in theory, because we
+          // will come to the safepoint here to complete the evacuations and update
+          // the references. However, if the from-space reference is written to a
+          // region that was EC during final mark or was recycled after final mark
+          // it will not have TAMS or UWM updated. Such a region is effectively
+          // skipped during update references which can lead to crashes and corruption
+          // if the from-space reference is accessed.
+          if (UseTLAB) {
+            heap->labs_make_parsable();
+          }
+
+          for (size_t i = 0; i < heap->num_regions(); i++) {
+            ShenandoahHeapRegion* r = heap->get_region(i);
+            if (r->is_active() && r->top() > r->get_update_watermark()) {
+              r->set_update_watermark_at_safepoint(r->top());
+            }
+          }
+        }
+
         // Degeneration under oom-evac protocol might have left some objects in
         // collection set un-evacuated. Restart evacuation from the beginning to
         // capture all objects. For all the objects that are already evacuated,

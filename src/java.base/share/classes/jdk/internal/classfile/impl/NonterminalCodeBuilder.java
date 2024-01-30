@@ -26,10 +26,10 @@ package jdk.internal.classfile.impl;
 
 import java.util.Optional;
 
-import jdk.internal.classfile.CodeBuilder;
-import jdk.internal.classfile.CodeModel;
-import jdk.internal.classfile.Label;
-import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.Label;
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
 
 public abstract sealed class NonterminalCodeBuilder implements CodeBuilder
     permits ChainedCodeBuilder, BlockCodeBuilderImpl {

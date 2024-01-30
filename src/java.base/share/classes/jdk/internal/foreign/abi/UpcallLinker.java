@@ -106,6 +106,9 @@ public class UpcallLinker {
             doBindings = insertArguments(exactInvoker(doBindings.type()), 0, doBindings);
             long entryPoint = makeUpcallStub(doBindings, abi, conv,
                     callingSequence.needsReturnBuffer(), callingSequence.returnBufferSize());
+            if (entryPoint == 0) {
+                throw new OutOfMemoryError("Failed to allocate upcall stub");
+            }
             return UpcallStubs.makeUpcall(entryPoint, scope);
         };
     }

@@ -67,16 +67,26 @@ public:
 
 class G1PostEvacuateCollectionSetCleanupTask1::RecalculateUsedTask : public G1AbstractSubTask {
   bool _evacuation_failed;
+  bool _allocation_failed;
 
 public:
-  RecalculateUsedTask(bool evacuation_failed) : G1AbstractSubTask(G1GCPhaseTimes::RecalculateUsed), _evacuation_failed(evacuation_failed) { }
+  RecalculateUsedTask(bool evacuation_failed, bool allocation_failed) :
+    G1AbstractSubTask(G1GCPhaseTimes::RecalculateUsed),
+    _evacuation_failed(evacuation_failed),
+    _allocation_failed(allocation_failed) { }
 
   double worker_cost() const override {
     // If there is no evacuation failure, the work to perform is minimal.
     return _evacuation_failed ? 1.0 : AlmostNoWork;
   }
 
-  void do_work(uint worker_id) override { G1CollectedHeap::heap()->update_used_after_gc(_evacuation_failed); }
+  void do_work(uint worker_id) override {
+    G1CollectedHeap::heap()->update_used_after_gc(_evacuation_failed);
+    if (_allocation_failed) {
+      // Reset the G1GCAllocationFailureALot counters and flags
+      G1CollectedHeap::heap()->allocation_failure_injector()->reset();
+    }
+  }
 };
 
 class G1PostEvacuateCollectionSetCleanupTask1::SampleCollectionSetCandidatesTask : public G1AbstractSubTask {
@@ -309,9 +319,10 @@ G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1
   G1BatchedTask("Post Evacuate Cleanup 1", G1CollectedHeap::heap()->phase_times())
 {
   bool evac_failed = evac_failure_regions->has_regions_evac_failed();
+  bool alloc_failed = evac_failure_regions->has_regions_alloc_failed();
 
   add_serial_task(new MergePssTask(per_thread_states));
-  add_serial_task(new RecalculateUsedTask(evac_failed));
+  add_serial_task(new RecalculateUsedTask(evac_failed, alloc_failed));
   if (SampleCollectionSetCandidatesTask::should_execute()) {
     add_serial_task(new SampleCollectionSetCandidatesTask());
   }

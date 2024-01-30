@@ -28,12 +28,8 @@
  *  Add back-end support for invokedynamic
  *  temporarily workaround combo tests are causing time out in several platforms
  * @library /tools/javac/lib
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.code
  *          jdk.compiler/com.sun.tools.javac.file
@@ -56,10 +52,10 @@ import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
 import com.sun.source.util.TreeScanner;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
-import jdk.internal.classfile.constantpool.*;
-import jdk.internal.classfile.instruction.InvokeDynamicInstruction;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
+import java.lang.classfile.constantpool.*;
+import java.lang.classfile.instruction.InvokeDynamicInstruction;
 
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.MethodHandleSymbol;
@@ -257,7 +253,7 @@ public class TestInvokeDynamic extends ComboInstance<TestInvokeDynamic> {
             return;
         }
         try (InputStream is = res.get().iterator().next().openInputStream()){
-            ClassModel cm = Classfile.of().parse(is.readAllBytes());
+            ClassModel cm = ClassFile.of().parse(is.readAllBytes());
             MethodModel testMethod = null;
             for (MethodModel m : cm.methods()) {
                 if (m.methodName().equalsString("test")) {

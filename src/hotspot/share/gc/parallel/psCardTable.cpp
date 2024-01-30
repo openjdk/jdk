@@ -111,7 +111,7 @@ void PSCardTable::scan_obj_with_limit(PSPromotionManager* pm,
   }
 }
 
-void PSCardTable::pre_scavenge(HeapWord* old_gen_bottom, uint active_workers) {
+void PSCardTable::pre_scavenge(uint active_workers) {
   _preprocessing_active_workers = active_workers;
 }
 
