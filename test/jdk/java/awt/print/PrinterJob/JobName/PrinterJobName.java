@@ -42,9 +42,9 @@ public class PrinterJobName implements Printable {
 
     static String theName = "Testing the Jobname setting";
 
-    private static final String instructions =
+    private static final String INSTRUCTIONS =
             "You must have a printer available to perform this test\n" +
-                    "This test prints a page with a banner/job name of\n" + theName;
+            "This test prints a page with a banner/job name of\n" + theName;
 
     public static void main(String[] args) throws Exception {
 
@@ -54,10 +54,8 @@ public class PrinterJobName implements Printable {
         }
 
         PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
-                .title("Test Instructions")
-                .instructions(instructions)
-                .testTimeOut(5)
-                .rows((int) instructions.lines().count() + 1)
+                .instructions(INSTRUCTIONS)
+                .rows((int) INSTRUCTIONS.lines().count() + 1)
                 .columns(45)
                 .build();
 

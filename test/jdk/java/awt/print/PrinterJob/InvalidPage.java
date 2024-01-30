@@ -64,15 +64,13 @@ public class InvalidPage extends Frame implements Printable {
         setLayout(new FlowLayout());
         Panel panel = new Panel();
         Button printButton = new Button("Print");
-        printButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    if (pJob.printDialog()) {
-                        pJob.setPrintable(InvalidPage.this, pf);
-                        pJob.print();
-                    }
-                } catch (PrinterException pe) {
+        printButton.addActionListener(e -> {
+            try {
+                if (pJob.printDialog()) {
+                    pJob.setPrintable(InvalidPage.this, pf);
+                    pJob.print();
                 }
+            } catch (PrinterException pe) {
             }
         });
         panel.add(printButton);
@@ -110,7 +108,7 @@ public class InvalidPage extends Frame implements Printable {
         return Printable.PAGE_EXISTS;
     }
 
-    private static final String instructions =
+    private static final String INSTRUCTIONS =
             " You must have a printer available to perform this test\n" +
             " Press the print button, which brings up a print dialog and\n" +
             " in the dialog select a printer and press the print button\n" +
@@ -133,11 +131,9 @@ public class InvalidPage extends Frame implements Printable {
         }
 
         PassFailJFrame.builder()
-                .title("CustomPaper Test Instructions")
-                .instructions(instructions)
+                .instructions(INSTRUCTIONS)
                 .testUI(InvalidPage::new)
-                .testTimeOut(5)
-                .rows((int) instructions.lines().count() + 1)
+                .rows((int) INSTRUCTIONS.lines().count() + 1)
                 .columns(45)
                 .build()
                 .awaitAndCheck();

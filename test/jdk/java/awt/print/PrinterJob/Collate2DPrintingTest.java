@@ -135,18 +135,16 @@ public class Collate2DPrintingTest
         return null;
     }
 
-    private static final String instructions =
+    private static final String INSTRUCTIONS =
             "You must have a printer available to perform this test\n" +
             "The print result should be collated.";
 
     public static void main(String[] args) throws Exception {
 
         PassFailJFrame.builder()
-                .title("Instructions")
-                .instructions(instructions)
+                .instructions(INSTRUCTIONS)
                 .testUI(Collate2DPrintingTest::new)
-                .testTimeOut(5)
-                .rows((int) instructions.lines().count() + 1)
+                .rows((int) INSTRUCTIONS.lines().count() + 1)
                 .columns(40)
                 .build()
                 .awaitAndCheck();

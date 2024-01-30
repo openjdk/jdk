@@ -43,7 +43,7 @@ import jtreg.SkippedException;
  */
 public class NumCopies implements Printable {
 
-    private static final String instructions =
+    private static final String INSTRUCTIONS =
             "You must have a printer available to perform this test\n" +
             "This test should print a total of four pages which are two\n" +
             " copies of each of two pages which consist of the text :-\n" +
@@ -58,10 +58,8 @@ public class NumCopies implements Printable {
         }
 
         PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
-                .title("CustomPaper Test Instructions")
-                .instructions(instructions)
-                .testTimeOut(5)
-                .rows((int) instructions.lines().count() + 1)
+                .instructions(INSTRUCTIONS)
+                .rows((int) INSTRUCTIONS.lines().count() + 1)
                 .columns(45)
                 .build();
 

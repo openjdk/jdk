@@ -91,14 +91,12 @@ public class DrawImage {
         try {
             final PrinterJob pj = PrinterJob.getPrinterJob();
             pj.setJobName("Print Image");
-            pj.setPrintable(new Printable() {
-                public int print(Graphics g, PageFormat pf, int pageIndex) {
-                    int result = NO_SUCH_PAGE;
-                    if (pageIndex == 0) {
-                        result = printImage(g, _pageFormat, _image);
-                    }
-                    return result;
+            pj.setPrintable((g, pf, pageIndex) -> {
+                int result = Printable.NO_SUCH_PAGE;
+                if (pageIndex == 0) {
+                    result = printImage(g, _pageFormat, _image);
                 }
+                return result;
             });
             if (pj.printDialog()) {
                 try {
@@ -113,7 +111,7 @@ public class DrawImage {
         }
     }
 
-    private static final String instructions =
+    private static final String INSTRUCTIONS =
             "You must have a printer available to perform this test.\n" +
             "\n" +
             "The test passes if you get a printout of a gray rectangle\n" +
@@ -127,10 +125,8 @@ public class DrawImage {
         }
 
         PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
-                .title("Instructions")
-                .instructions(instructions)
-                .testTimeOut(5)
-                .rows((int) instructions.lines().count() + 1)
+                .instructions(INSTRUCTIONS)
+                .rows((int) INSTRUCTIONS.lines().count() + 1)
                 .columns(45)
                 .build();
 

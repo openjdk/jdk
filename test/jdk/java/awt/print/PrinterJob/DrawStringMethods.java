@@ -49,7 +49,7 @@ import jtreg.SkippedException;
  */
 public class DrawStringMethods implements Printable {
 
-    private static final String instructions =
+    private static final String INSTRUCTIONS =
             " Confirm that the methods are printed.\n" +
             " For Graphics: drawString, drawString, drawChars, drawBytes\n" +
             " For Graphics2D: drawString, drawString, drawGlyphVector";
@@ -62,10 +62,8 @@ public class DrawStringMethods implements Printable {
         }
 
         PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
-                .title("CustomPaper Test Instructions")
-                .instructions(instructions)
-                .testTimeOut(5)
-                .rows((int) instructions.lines().count() + 1)
+                .instructions(INSTRUCTIONS)
+                .rows((int) INSTRUCTIONS.lines().count() + 1)
                 .columns(45)
                 .build();
 
