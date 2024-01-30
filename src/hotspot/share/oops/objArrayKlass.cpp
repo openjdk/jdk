@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,13 +45,15 @@
 #include "runtime/mutexLocker.hpp"
 #include "utilities/macros.hpp"
 
-ObjArrayKlass* ObjArrayKlass::allocate(ClassLoaderData* loader_data, int n, Klass* k, Symbol* name, TRAPS) {
+// Metaspace allocation for ObjArrayKlass returns null rather than throws OOM, since the call is made while
+// holding a lock.  Callers much check for null and throw OOM.
+ObjArrayKlass* ObjArrayKlass::allocate(ClassLoaderData* loader_data, int n, Klass* k, Symbol* name) {
   assert(ObjArrayKlass::header_size() <= InstanceKlass::header_size(),
       "array klasses must be same size as InstanceKlass");
 
   int size = ArrayKlass::static_size(ObjArrayKlass::header_size());
 
-  return new (loader_data, size, THREAD) ObjArrayKlass(n, k, name);
+  return new (loader_data, size, MetaspaceObj::ClassType) ObjArrayKlass(n, k, name);
 }
 
 ObjArrayKlass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_data,
@@ -118,7 +120,8 @@ ObjArrayKlass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_da
   }
 
   // Initialize instance variables
-  ObjArrayKlass* oak = ObjArrayKlass::allocate(loader_data, n, element_klass, name, CHECK_NULL);
+  ObjArrayKlass* oak = ObjArrayKlass::allocate(loader_data, n, element_klass, name);
+  if (oak == nullptr) return nullptr;
 
   ModuleEntry* module = oak->module();
   assert(module != nullptr, "No module entry for array");
