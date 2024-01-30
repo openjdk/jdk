@@ -100,7 +100,7 @@ public:
     return head;
   };
 
-  // TODO necessary?
+  // Estimate maximum size for data structures, to avoid repeated reallocation
   int estimated_body_length() const { return lpt()->_body.size(); };
   int estimated_node_count()  const { return (int)(1.10 * phase()->C->unique()); };
 

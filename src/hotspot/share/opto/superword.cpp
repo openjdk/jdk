@@ -43,15 +43,15 @@ SuperWord::SuperWord(Arena* arena, const VLoop &vloop) :
   _arena(arena),
   _packset(arena, 8,  0, nullptr),                          // packs for the current block
   _bb_idx(arena, vloop.estimated_node_count(), 0, 0),       // node idx to index in bb
-  _block(arena, 8,  0, nullptr),                            // nodes in current block
+  _block(arena, vloop.estimated_body_length(), 0, nullptr), // nodes in current block
   _data_entry(arena, 8,  0, nullptr),                       // nodes with all inputs from outside
   _mem_slice_head(arena, 8,  0, nullptr),                   // memory slice heads
   _mem_slice_tail(arena, 8,  0, nullptr),                   // memory slice tails
-  _node_info(arena, 8,  0, SWNodeInfo::initial),            // info needed per node
+  _node_info(arena, vloop.estimated_body_length(), 0, SWNodeInfo::initial), // info needed per node
   _clone_map(phase()->C->clone_map()),                      // map of nodes created in cloning
   _align_to_ref(nullptr),                                   // memory reference to align vectors to
   _dg(arena),                                               // dependence graph
-  _nlist(arena, 8, 0, nullptr),                             // scratch list of nodes
+  _nlist(arena, vloop.estimated_body_length(), 0, nullptr), // scratch list of nodes
   _loop_reductions(arena),                                  // reduction nodes in the current loop
   _race_possible(false),                                    // cases where SDMU is true
   _do_vector_loop(phase()->C->do_vector_loop()),            // whether to do vectorization/simd style
