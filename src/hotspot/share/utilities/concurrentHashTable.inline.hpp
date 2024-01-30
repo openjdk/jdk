@@ -1222,23 +1222,38 @@ template <typename VALUE_SIZE_FUNC>
 inline TableStatistics ConcurrentHashTable<CONFIG, F>::
   statistics_calculate(Thread* thread, VALUE_SIZE_FUNC& vs_f)
 {
+  constexpr size_t batch_size = 128;
   NumberSeq summary;
   size_t literal_bytes = 0;
   InternalTable* table = get_table();
-  for (size_t bucket_it = 0; bucket_it < table->_size; bucket_it++) {
+  size_t num_batches = table->_size / batch_size;
+  for (size_t current_batch = 0; current_batch <= num_batches; current_batch++) {
+    size_t batch_start = current_batch * batch_size;
+    size_t batch_end;
+    if (current_batch == num_batches) {
+      // Last batch; walk over the remaining part of the table
+      batch_end = batch_start + table->_size % batch_size;
+    } else {
+      // Not last batch; walk over the current batch
+      batch_end = batch_start + batch_size;
+    }
     ScopedCS cs(thread, this);
-    size_t count = 0;
-    Bucket* bucket = table->get_bucket(bucket_it);
-    if (bucket->have_redirect() || bucket->is_locked()) {
-      continue;
+    for (size_t bucket_it = batch_start;
+         bucket_it < batch_end;
+         bucket_it++) {
+      size_t count = 0;
+      Bucket* bucket = table->get_bucket(bucket_it);
+      if (bucket->have_redirect() || bucket->is_locked()) {
+        continue;
+      }
+      Node* current_node = bucket->first();
+      while (current_node != nullptr) {
+        ++count;
+        literal_bytes += vs_f(current_node->value());
+        current_node = current_node->next();
+      }
+      summary.add((double)count);
     }
-    Node* current_node = bucket->first();
-    while (current_node != nullptr) {
-      ++count;
-      literal_bytes += vs_f(current_node->value());
-      current_node = current_node->next();
-    }
-    summary.add((double)count);
   }
 
   if (_stats_rate == nullptr) {
