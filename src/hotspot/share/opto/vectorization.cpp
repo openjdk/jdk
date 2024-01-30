@@ -33,8 +33,8 @@
 
 bool VLoop::check_preconditions() {
 #ifndef PRODUCT
-  if (is_trace_precondition()) {
-    tty->print_cr("\nVLoop::check_precondition");
+  if (is_trace_preconditions()) {
+    tty->print_cr("\nVLoop::check_preconditions");
     lpt()->dump_head();
     lpt()->head()->dump();
   }
@@ -47,8 +47,8 @@ bool VLoop::check_preconditions() {
   }
 
 #ifndef PRODUCT
-  if (is_trace_precondition()) {
-    tty->print_cr("VLoop::check_precondition: failed: %s", return_state);
+  if (is_trace_preconditions()) {
+    tty->print_cr("VLoop::check_preconditions: failed: %s", return_state);
   }
 #endif
   return false; // failure
@@ -81,7 +81,7 @@ const char* VLoop::check_preconditions_helper() {
   bool has_cfg = _cl_exit->in(0) != _cl;
   if (has_cfg && !is_allow_cfg()) {
 #ifndef PRODUCT
-    if (is_trace_precondition()) {
+    if (is_trace_preconditions()) {
       tty->print_cr("VLoop::check_preconditions: fails because of control flow.");
       tty->print("  cl_exit %d", _cl_exit->_idx); _cl_exit->dump();
       tty->print("  cl_exit->in(0) %d", _cl_exit->in(0)->_idx); _cl_exit->in(0)->dump();

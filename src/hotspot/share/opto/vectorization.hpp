@@ -48,7 +48,7 @@ public:
 };
 #endif
 
-// Basic loop structure accessors and vectorization precondition checking
+// Basic loop structure accessors and vectorization preconditions checking
 class VLoop : public StackObj {
 private:
   PhaseIdealLoop* const _phase;
@@ -107,9 +107,8 @@ public:
 #ifndef PRODUCT
   const VTrace& vtrace()      const { return _vtrace; }
 
-  bool is_trace_precondition() const {
-    // TODO rm SW
-    return vtrace().is_trace(TraceAutoVectorizationTag::SW_PRECONDITION);
+  bool is_trace_preconditions() const {
+    return vtrace().is_trace(TraceAutoVectorizationTag::PRECONDITIONS);
   }
 
   bool is_trace_pointer_analysis() const {

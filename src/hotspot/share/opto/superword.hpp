@@ -198,8 +198,6 @@ class SWNodeInfo {
 // -----------------------------SuperWord---------------------------------
 // Transforms scalar operations into packed (superword) operations.
 class SuperWord : public ResourceObj {
- friend class VPointer;
- friend class CMoveKit; // TODO remove
  private:
   const VLoop& _vloop;
   Arena* _arena;
@@ -244,11 +242,6 @@ class SuperWord : public ResourceObj {
 
 #ifndef PRODUCT
   // TraceAutoVectorization and TraceSuperWord
-  bool is_trace_superword_precondition() const {
-    return TraceSuperWord ||
-           _vtrace.is_trace(TraceAutoVectorizationTag::SW_PRECONDITION);
-  }
-
   bool is_trace_superword_vector_element_type() const {
     // Too verbose for TraceSuperWord
     return _vtrace.is_trace(TraceAutoVectorizationTag::SW_TYPES);
@@ -297,7 +290,6 @@ class SuperWord : public ResourceObj {
   bool is_trace_superword_any() const {
     return TraceSuperWord ||
            is_trace_align_vector() ||
-           _vtrace.is_trace(TraceAutoVectorizationTag::SW_PRECONDITION) ||
            _vtrace.is_trace(TraceAutoVectorizationTag::SW_TYPES) ||
            _vtrace.is_trace(TraceAutoVectorizationTag::SW_ALIGNMENT) ||
            _vtrace.is_trace(TraceAutoVectorizationTag::SW_MEMORY_SLICES) ||
