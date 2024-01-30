@@ -1686,7 +1686,7 @@ public class MessageFormat extends Format {
             return;
         }
 
-        // Build new string, automaticaly consolidating adjacent runs of quoted chars
+        // Build new string, automatically consolidating adjacent runs of quoted chars
         quoted = false;
         for (Qchar qchar : qchars) {
             char ch = qchar.ch;
