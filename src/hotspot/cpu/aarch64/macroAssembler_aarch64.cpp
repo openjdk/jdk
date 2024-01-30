@@ -1141,6 +1141,8 @@ void MacroAssembler::align(int modulus) {
   align(modulus, offset());
 }
 
+// Ensure that the code at target bytes offset from the current offset() is aligned
+// according to modulus.
 void MacroAssembler::align(int modulus, int target) {
   int delta = target - offset();
   while ((offset() + delta) % modulus != 0) nop();
