@@ -92,6 +92,7 @@ class ObjectSynchronizer : AllStatic {
   // deoptimization at monitor exit. Hence, it does not take a Handle argument.
 
   // This is the "slow path" version of monitor enter and exit.
+  static void enter(Handle obj, BasicLock* lock, JavaThread* locking_thread, JavaThread* current);
   static void enter(Handle obj, BasicLock* lock, JavaThread* current);
   static void exit(oop obj, BasicLock* lock, JavaThread* current);
 
@@ -110,6 +111,7 @@ class ObjectSynchronizer : AllStatic {
 
   // Inflate light weight monitor to heavy weight monitor
   static ObjectMonitor* inflate(Thread* current, oop obj, const InflateCause cause);
+  static ObjectMonitor* inflate(JavaThread* locking_thread, Thread* current, oop obj, const InflateCause cause);
   // This version is only for internal use
   static void inflate_helper(oop obj);
   static const char* inflate_cause_name(const InflateCause cause);
@@ -187,6 +189,7 @@ class ObjectSynchronizer : AllStatic {
   static size_t get_gvars_size();
   static u_char* get_gvars_stw_random_addr();
 
+  static void handle_sync_on_value_based_class(Handle obj, JavaThread* locking_thread, JavaThread* current);
   static void handle_sync_on_value_based_class(Handle obj, JavaThread* current);
 };
 
