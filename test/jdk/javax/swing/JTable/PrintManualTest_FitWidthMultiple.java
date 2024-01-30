@@ -109,10 +109,10 @@ public class PrintManualTest_FitWidthMultiple extends JTable implements Runnable
                 JPanel btnpanel1 = new JPanel();
                 btnpanel1.add(button1);
                 btnpanel1.add(button2);
-                panel.add(addInfo(info),BorderLayout.CENTER);
+                panel.add(addInfo(info), BorderLayout.CENTER);
                 panel.add(btnpanel1, BorderLayout.SOUTH);
                 instructFrame.getContentPane().add(panel);
-                instructFrame.setBounds(600,100,350,350);
+                instructFrame.setBounds(600, 100, 350, 350);
 
                 /* Print Button */
                 final JButton printButton = new JButton("Print");
@@ -144,9 +144,9 @@ public class PrintManualTest_FitWidthMultiple extends JTable implements Runnable
                 /* Light Weight Panel for holding Print and other buttons */
                 JPanel btnpanel = new JPanel();
                 btnpanel.add(printButton);
-                fr.getContentPane().add(btnpanel,BorderLayout.SOUTH);
-                fr.setBounds(0,0,400,400);
-                fr.setSize(500,500);
+                fr.getContentPane().add(btnpanel, BorderLayout.SOUTH);
+                fr.setBounds(0, 0, 400, 400);
+                fr.setSize(500, 500);
 
                 /* Binding the KeyStroke to Print Button Action */
                 fr.getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("ctrl P"), "printButton");
@@ -175,7 +175,7 @@ public class PrintManualTest_FitWidthMultiple extends JTable implements Runnable
                     @Override
                     public void actionPerformed(ActionEvent ae) {
                         try {
-                            table.print(JTable.PrintMode.FIT_WIDTH, header,footer,true,prattr,true);
+                            table.print(JTable.PrintMode.FIT_WIDTH, header, footer, true, prattr, true);
                         } catch(Exception e){}
                     }
                 });
@@ -191,7 +191,7 @@ public class PrintManualTest_FitWidthMultiple extends JTable implements Runnable
     }
 
     public JScrollPane addInfo(String info) {
-        JTextArea jta = new JTextArea(info,8,20);
+        JTextArea jta = new JTextArea(info, 8, 20);
         jta.setEditable(false);
         jta.setLineWrap(true);
         JScrollPane sp = new JScrollPane(jta);
