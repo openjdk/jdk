@@ -4033,6 +4033,8 @@ void os::win32::initialize_windows_version() {
   _minor_version = LOWORD(file_info->dwProductVersionMS);
   _build_number  = HIWORD(file_info->dwProductVersionLS);
   _build_minor   = LOWORD(file_info->dwProductVersionLS);
+
+  os::free(version_info);
 }
 
 bool os::win32::is_windows_11_or_greater() {
