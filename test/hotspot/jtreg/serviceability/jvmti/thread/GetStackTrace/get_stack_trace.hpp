@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef GET_STACK_TRACE_H
-#define GET_STACK_TRACE_H
+#ifndef GET_STACK_TRACE_HPP
+#define GET_STACK_TRACE_HPP
 #include "jvmti.h"
 
 typedef struct {
@@ -81,18 +81,18 @@ int compare_stack_trace(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread,
         lambda_idx = lambda - expected_frames[exp_idx].cls;
         printf("Comparing only first %zu chars in classname.\n", lambda_idx);
       }
-      if (class_signature == NULL || strncmp(class_signature, expected_frames[exp_idx].cls, lambda_idx) != 0) {
+      if (class_signature == nullptr || strncmp(class_signature, expected_frames[exp_idx].cls, lambda_idx) != 0) {
         printf("(frame#%d) wrong class sig: \"%s\", expected: \"%s\"\n",
                exp_idx, class_signature, expected_frames[exp_idx].cls);
         result = JNI_FALSE;
       }
 
-      if (name == NULL || strcmp(name, expected_frames[exp_idx].name) != 0) {
+      if (name == nullptr || strcmp(name, expected_frames[exp_idx].name) != 0) {
         printf("(frame#%d) wrong method name: \"%s\", expected: \"%s\"\n",
                exp_idx, name, expected_frames[exp_idx].name);
         result = JNI_FALSE;
       }
-      if (sig == NULL || strcmp(sig, expected_frames[exp_idx].sig) != 0) {
+      if (sig == nullptr || strcmp(sig, expected_frames[exp_idx].sig) != 0) {
         printf("(frame#%d) wrong method sig: \"%s\", expected: \"%s\"\n",
                exp_idx, sig, expected_frames[exp_idx].sig);
         result = JNI_FALSE;
@@ -103,4 +103,4 @@ int compare_stack_trace(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread,
 }
 
 
-#endif //GET_STACK_TRACE_H
+#endif //GET_STACK_TRACE_HPP
