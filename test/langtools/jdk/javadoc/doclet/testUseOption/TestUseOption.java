@@ -26,13 +26,14 @@
  * @bug 4496290 4985072 7006178 7068595 8016328 8050031 8048351 8081854 8071982 8162363 8175200 8186332
  *      8182765 8196202 8202626 8261976 8323698
  * @summary A simple test to ensure class-use files are correct.
- * @library ../../lib
+ * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build javadoc.tester.*
  * @run main TestUseOption
  */
 
 import javadoc.tester.JavadocTester;
+import toolbox.ToolBox;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -44,6 +45,8 @@ public class TestUseOption extends JavadocTester {
         var tester = new TestUseOption();
         tester.runTests();
     }
+
+    private final ToolBox tb = new ToolBox();
 
     @Test
     public void test1() {
@@ -198,58 +201,59 @@ public class TestUseOption extends JavadocTester {
 
     @Test
     public void testSuperclassAndInterfaceTypeArgument(Path base) throws IOException {
-        Files.createDirectories(base);
-        Path out = base.resolve("out");
         Path src = base.resolve("src");
 
-        Files.createDirectories(out);
         Files.createDirectories(src);
-        Path one = src.resolve("One.java");
-        Files.writeString(one, """
-            public class One {}
-            """);
-        Path two = src.resolve("Two.java");
-        Files.writeString(two, """
-            import java.util.*;
-            public class Two extends ArrayList<One> implements Comparator<One> {
-            }
-            """);
+        tb.writeJavaFiles(src,
+                """
+                    public class One {}
+                    """,
+                """
+                    import java.util.*;
+                    public class Two extends ArrayList<One> implements Comparator<One> {
+                    }
+                    """);
 
         javadoc(
                 "-use",
-                "-d", out.toString(),
-                one.toString(), two.toString()
+                "-d", base.resolve("out").toString(),
+                src.resolve("One.java").toString(),
+                src.resolve("Two.java").toString()
         );
         checkExit(Exit.OK);
 
-        checkOrder("class-use/One.html", """
-                <div class="caption"><span>Classes in <a href="../package-summary.html">Unnamed Package</a> \
-                that extend classes with type arguments of type <a href="../One.html" title="class in Unnamed Package">\
-                One</a></span></div>
-                """, """
-                <div class="summary-table three-column-summary">
-                <div class="table-header col-first">Modifier and Type</div>
-                <div class="table-header col-second">Class</div>
-                <div class="table-header col-last">Description</div>
-                <div class="col-first even-row-color"><code>class&nbsp;</code></div>
-                <div class="col-second even-row-color"><code><a href="../Two.html" class="type-name-link" \
-                title="class in Unnamed Package">Two</a></code></div>
-                <div class="col-last even-row-color">&nbsp;</div>
-                </div>
-                """, """
-                <div class="caption"><span>Classes in <a href="../package-summary.html">Unnamed Package</a> \
-                that implement interfaces with type arguments of type <a href="../One.html" title="class in Unnamed \
-                Package">One</a></span></div>
-                """, """
-                <div class="summary-table three-column-summary">
-                <div class="table-header col-first">Modifier and Type</div>
-                <div class="table-header col-second">Class</div>
-                <div class="table-header col-last">Description</div>
-                <div class="col-first even-row-color"><code>class&nbsp;</code></div>
-                <div class="col-second even-row-color"><code><a href="../Two.html" class="type-name-link" \
-                title="class in Unnamed Package">Two</a></code></div>
-                <div class="col-last even-row-color">&nbsp;</div>
-                </div>
-                """);
+        checkOrder("class-use/One.html",
+                """
+                    <div class="caption"><span>Classes in <a href="../package-summary.html">Unnamed Package</a> \
+                    that extend classes with type arguments of type <a href="../One.html" title="class in Unnamed Package">\
+                    One</a></span></div>
+                    """,
+                """
+                    <div class="summary-table three-column-summary">
+                    <div class="table-header col-first">Modifier and Type</div>
+                    <div class="table-header col-second">Class</div>
+                    <div class="table-header col-last">Description</div>
+                    <div class="col-first even-row-color"><code>class&nbsp;</code></div>
+                    <div class="col-second even-row-color"><code><a href="../Two.html" class="type-name-link" \
+                    title="class in Unnamed Package">Two</a></code></div>
+                    <div class="col-last even-row-color">&nbsp;</div>
+                    </div>
+                    """,
+                """
+                    <div class="caption"><span>Classes in <a href="../package-summary.html">Unnamed Package</a> \
+                    that implement interfaces with type arguments of type <a href="../One.html" title="class in Unnamed \
+                    Package">One</a></span></div>
+                    """,
+                """
+                    <div class="summary-table three-column-summary">
+                    <div class="table-header col-first">Modifier and Type</div>
+                    <div class="table-header col-second">Class</div>
+                    <div class="table-header col-last">Description</div>
+                    <div class="col-first even-row-color"><code>class&nbsp;</code></div>
+                    <div class="col-second even-row-color"><code><a href="../Two.html" class="type-name-link" \
+                    title="class in Unnamed Package">Two</a></code></div>
+                    <div class="col-last even-row-color">&nbsp;</div>
+                    </div>
+                    """);
     }
 }
