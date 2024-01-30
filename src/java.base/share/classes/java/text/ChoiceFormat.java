@@ -126,7 +126,10 @@ import java.util.Arrays;
  *
  * <i>Note:The relation &le; is not equivalent to &lt;&equals;</i>
  *
- * <p> Use two single quotes in a row to produce a literal single quote. For example,
+ * <p> To use a reserved special pattern character within a <i>Format</i> pattern,
+ * it must be single quoted. For example, {@code new ChoiceFormat("1#'|'foo'|'").format(1)}
+ * returns {@code "|foo|"}.
+ * Use two single quotes in a row to produce a literal single quote. For example,
  * {@code new ChoiceFormat("1# ''one'' ").format(1)} returns {@code " 'one' "}.
  *
  * <h2>Usage Information</h2>
