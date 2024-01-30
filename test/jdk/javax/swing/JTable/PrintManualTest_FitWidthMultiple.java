@@ -27,7 +27,6 @@
  * @summary  Verify if printed content is within border and all columns are
  *           printed for PrintMode.FIT_WIDTH
  * @run main/othervm/manual -Dswing.defaultlaf=javax.swing.plaf.nimbus.NimbusLookAndFeel PrintManualTest_FitWidthMultiple
-Merg
  */
 
 import java.awt.BorderLayout;
