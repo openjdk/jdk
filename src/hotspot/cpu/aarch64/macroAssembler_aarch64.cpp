@@ -1001,7 +1001,11 @@ address MacroAssembler::ic_call(address entry, jint method_index) {
 }
 
 int MacroAssembler::ic_check_size() {
-  return NativeInstruction::instruction_size * 7;
+  if (target_needs_far_branch(CAST_FROM_FN_PTR(address, SharedRuntime::get_ic_miss_stub()))) {
+    return NativeInstruction::instruction_size * 7;
+  } else {
+    return NativeInstruction::instruction_size * 5;
+  }
 }
 
 int MacroAssembler::ic_check(int end_alignment) {
