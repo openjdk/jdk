@@ -165,9 +165,15 @@ private:
   HeapWord* try_allocate_in(ShenandoahHeapRegion* region, ShenandoahAllocRequest& req, bool& in_new_region);
 
   // While holding the heap lock, allocate memory for a single object or LAB  which is to be entirely contained
-  // within a single HeapRegion as characterized by req.  The req.size() value is known to be less than or
-  // equal to ShenandoahHeapRegion::humongous_threshold_words().
+  // within a single HeapRegion as characterized by req.
+  //
+  // Precondition: req.size() <= ShenandoahHeapRegion::humongous_threshold_words().
   HeapWord* allocate_single(ShenandoahAllocRequest& req, bool& in_new_region);
+
+  // While holding the heap lock, allocate memory for a humongous object which will span multiple contiguous heap
+  // regions.
+  //
+  // Precondition: req.size() > ShenandoahHeapRegion::humongous_threshold_words().
   HeapWord* allocate_contiguous(ShenandoahAllocRequest& req);
 
   void flip_to_gc(ShenandoahHeapRegion* r);
