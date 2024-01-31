@@ -45,7 +45,10 @@ public class FreeTypeScalerJNICheck {
         } else {
             ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder("-Xcheck:jni", FreeTypeScalerJNICheck.class.getName(), "runtest");
             OutputAnalyzer oa = ProcessTools.executeProcess(pb);
-            oa.shouldContain("Done").shouldNotContain("WARNING").shouldNotContain("AWT Assertion").shouldHaveExitValue(0);
+            oa.shouldContain("Done")
+                .shouldNotContain("WARNING")
+                .shouldNotContain("AWT Assertion")
+                .shouldHaveExitValue(0);
         }
     }
 
