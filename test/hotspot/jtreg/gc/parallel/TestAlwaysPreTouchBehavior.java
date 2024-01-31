@@ -26,7 +26,7 @@ package gc.parallel;
 /**
  * @test TestAlwaysPreTouchBehavior
  * @summary Tests AlwaysPreTouch Bahavior, pages of java heap should be pretouched with AlwaysPreTouch enabled. This test reads RSS of test process, which should be bigger than heap size(1g) with AlwaysPreTouch enabled.
- * @requires os.family == "linux"
+ * @requires vm.gc.Serial & os.family == "linux" & os.maxMemory > 2G
  * @library /test/lib
  * @run main/othervm -Xmx1g -Xms1g -XX:+UseParallelGC -XX:+AlwaysPreTouch gc.parallel.TestAlwaysPreTouchBehavior
  */
@@ -76,7 +76,6 @@ public class TestAlwaysPreTouchBehavior {
     long rss = 0;
     Runtime runtime = Runtime.getRuntime();
     long committedMemory = (runtime.totalMemory()) / 1024; // in kb
-    long base = (long)(committedMemory * 0.9);
     try {
        rss = getProcessRssInKb();
        System.out.println("RSS = " + rss);
@@ -86,12 +85,12 @@ public class TestAlwaysPreTouchBehavior {
     if (rss == EXCEPTION_VALUE) {
         System.out.println("cannot get RSS, just skip");
         return; // Did not get avaiable RSS, just ignore this test
-    } else if (rss < base) {
+    } else if (rss < committedMemory) {
         System.out.println("RSS = " + rss + " smaller than committed heap memory");
     } else {
-        System.out.println("Passed RSS = " + rss + " base value " + base);
+        System.out.println("Passed RSS = " + rss + " committed memory " + committedMemory);
     }
-    Asserts.assertTrue(rss >= base, "heap rss should be bigger than committed heap mem");
+    Asserts.assertTrue(rss >= committedMemory, "heap rss should not be smaller than committed heap mem");
    }
 }
 
