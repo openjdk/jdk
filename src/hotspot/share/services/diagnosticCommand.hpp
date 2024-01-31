@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -574,6 +574,33 @@ public:
     return p;
   }
   virtual void execute(DCmdSource source, TRAPS);
+};
+
+class VMDebugDCmd: public DCmdWithParser {
+protected:
+  DCmdArgument<char*> _subcommand;
+  DCmdArgument<char*> _arg1;
+  DCmdArgument<char*> _arg2;
+  DCmdArgument<char*> _arg3;
+  DCmdArgument<bool> _verbose;
+public:
+  static int num_arguments() { return 5; }
+  VMDebugDCmd(outputStream* output, bool heap);
+  static const char* name() {
+    return "VM.debug";
+  }
+  static const char* description() {
+    return "Debug utilities. Subcommands: events, threads, find ADDRESS, findclass CLASS_PATTERN FLAGS, findmethod CLASS_PATTERN METHOD_PATTERN FLAGS";
+  }
+  static const char* impact() {
+      return "High: not recommended for live production use.";
+  }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission", "monitor", nullptr};
+    return p;
+  }
+  virtual void execute(DCmdSource source, TRAPS);
+  void find(DCmdSource source);
 };
 
 #ifdef LINUX
