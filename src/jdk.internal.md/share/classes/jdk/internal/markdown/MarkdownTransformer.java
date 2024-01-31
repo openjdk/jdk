@@ -97,11 +97,10 @@ public class MarkdownTransformer implements DocTrees.DocCommentTreeTransformer {
      * A fast scanner for detecting Markdown nodes in documentation comment nodes.
      * The scanner returns as soon as any Markdown node is found.
      */
-    private static final DocTreeVisitor<Boolean, Void> isMarkdownVisitor = new DocTreeScanner<Boolean,Void>() {
+    private static final DocTreeVisitor<Boolean, Void> isMarkdownVisitor = new DocTreeScanner<>() {
         @Override
         public Boolean scan(Iterable<? extends DocTree> nodes, Void ignore) {
             if (nodes != null) {
-                boolean first = true;
                 for (DocTree node : nodes) {
                     Boolean b = scan(node, ignore);
                     if (b == Boolean.TRUE) {
@@ -128,6 +127,10 @@ public class MarkdownTransformer implements DocTrees.DocCommentTreeTransformer {
     private static class DCTransformer {
         private final DocTreeMaker m;
         private final ReferenceParser refParser;
+
+        // a dynamically generated scheme for the URLs of automatically generated references;
+        // to allow user-generated code URLs, change this to just "code:"
+        private final String autorefScheme = "code-" + Integer.toHexString(hashCode()) + ":";
 
         DCTransformer(JavacTrees t) {
             m = t.getDocTreeFactory();
@@ -239,7 +242,7 @@ public class MarkdownTransformer implements DocTrees.DocCommentTreeTransformer {
                 String source = sourceBuilder.toString();
                 Parser parser = Parser.builder()
                         .extensions(List.of(TablesExtension.create()))
-                        .inlineParserFactory(new AutoRefInlineParserFactory(refParser))
+                        .inlineParserFactory(new AutoRefInlineParserFactory(refParser, autorefScheme))
                         .includeSourceSpans(IncludeSourceSpans.BLOCKS_AND_INLINES)
                         .build();
                 Node document = parser.parse(source);
@@ -250,7 +253,7 @@ public class MarkdownTransformer implements DocTrees.DocCommentTreeTransformer {
                  *         DocTree nodes, as well as any new nodes created by converting
                  *         parts of the Markdown tree into nodes for old-style javadoc tags.
                  */
-                Lower v = new Lower(m, document, source, replacements);
+                Lower v = new Lower(m, document, source, replacements, autorefScheme);
                 document.accept(v);
 
                 return v.getTrees();
@@ -482,8 +485,6 @@ public class MarkdownTransformer implements DocTrees.DocCommentTreeTransformer {
         }
     }
 
-    private static final String AUTOREF_PREFIX = "code:";
-
     /**
      * An {@code InlineParserFactory} that checks any unresolved link references in
      * reference links. If an unresolved link reference appears to be a reference to a
@@ -503,9 +504,12 @@ public class MarkdownTransformer implements DocTrees.DocCommentTreeTransformer {
      */
     private static class AutoRefInlineParserFactory implements InlineParserFactory {
         private final ReferenceParser refParser;
+        private final String autorefScheme;
 
-        AutoRefInlineParserFactory(ReferenceParser refParser) {
+        AutoRefInlineParserFactory(ReferenceParser refParser,
+                                   String autorefScheme) {
             this.refParser = refParser;
+            this.autorefScheme = autorefScheme;
         }
 
         /**
@@ -531,7 +535,7 @@ public class MarkdownTransformer implements DocTrees.DocCommentTreeTransformer {
                  * If the given label does not match any explicitly defined
                  * link reference definition, but does match a reference
                  * to a program element, a synthetic link reference definition
-                 * is returned, with the label prefixed by {@code code:}.
+                 * is returned, with the label prefixed by the {@code autorefScheme}.
                  *
                  * @param label the link label to look up
                  * @return the link reference definition for the label, or {@code null}
@@ -541,7 +545,7 @@ public class MarkdownTransformer implements DocTrees.DocCommentTreeTransformer {
                     var l = label.replace("\\[\\]", "[]");
                     var d = inlineParserContext.getLinkReferenceDefinition(l);
                     return d == null && isReference(l)
-                            ? new LinkReferenceDefinition("", AUTOREF_PREFIX + l, "")
+                            ? new LinkReferenceDefinition("", autorefScheme + l, "")
                             : d;
                 }
             });
@@ -633,6 +637,7 @@ public class MarkdownTransformer implements DocTrees.DocCommentTreeTransformer {
     // leverage the idea of a heading followed by a list.
     private static class Lower extends AbstractVisitor {
         private final DocTreeMaker m;
+        private final String autorefScheme;
 
         /**
          * The Markdown document being processed.
@@ -715,11 +720,14 @@ public class MarkdownTransformer implements DocTrees.DocCommentTreeTransformer {
          * @param document the document to be converted
          * @param source the source of the document to be converted
          * @param replacements the objects to be substituted when U+FFFC is encountered
+         * @param autorefScheme the scheme used for auto-generated references
          */
-        public Lower(DocTreeMaker docTreeMaker, Node document, String source, List<?> replacements) {
+        public Lower(DocTreeMaker docTreeMaker, Node document, String source, List<?> replacements,
+                     String autorefScheme) {
             this.m = docTreeMaker;
             this.document = document;
             this.source = source;
+            this.autorefScheme = autorefScheme;
 
             var offsets = new ArrayList<Integer>();
             offsets.add(0);
@@ -747,7 +755,7 @@ public class MarkdownTransformer implements DocTrees.DocCommentTreeTransformer {
         /**
          * Visits a CommonMark {@code Link} node.
          *
-         * If the destination for the link begins with {@code code:}
+         * If the destination for the link begins with the {@code autorefScheme}
          * convert it to {@code {@link ...}} or {@code {@linkplain ...}} DocTree node.
          * {@code {@link ...}} will be used if the content (label) for
          * the link is the same as the reference found after the {@code code:};
@@ -762,7 +770,7 @@ public class MarkdownTransformer implements DocTrees.DocCommentTreeTransformer {
         @Override
         public void visit(Link link) {
             String dest = link.getDestination();
-            if (dest.startsWith(AUTOREF_PREFIX)) {
+            if (dest.startsWith(autorefScheme)) {
                 // copy the source text up to the start of the node
                 copyTo(getStartPos(link));
                 // push temporary value for {@code trees} while handling the content of the node
@@ -775,7 +783,7 @@ public class MarkdownTransformer implements DocTrees.DocCommentTreeTransformer {
 
                     // determine whether to use {@link ... } or {@linkplain ...}
                     // based on whether the "link text" is the same as the "link destination"
-                    String ref = dest.substring(AUTOREF_PREFIX.length());
+                    String ref = dest.substring(autorefScheme.length());
                     int refPos = sourcePosToTreePos(getRefPos(ref, link));
                     var newRefTree = m.at(refPos).newReferenceTree(ref).setEndPos(refPos + ref.length());
 
