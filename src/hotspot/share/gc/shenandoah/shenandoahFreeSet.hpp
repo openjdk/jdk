@@ -63,15 +63,12 @@ private:
   inline void shrink_bounds_if_touched(ShenandoahFreeSetPartitionId partition, size_t idx);
   inline void expand_bounds_maybe(ShenandoahFreeSetPartitionId partition, size_t idx, size_t capacity);
 
-  // Restore all state variables to initial default state.
-  void clear_internal();
-
 public:
   ShenandoahRegionPartition(size_t max_regions, ShenandoahFreeSet* free_set);
   ~ShenandoahRegionPartition();
 
   // Make all regions NotFree and reset all bounds
-  void clear_all();
+  void make_all_regions_unavailable();
 
   // Retire region idx from within its partition.  Requires that region idx is in in Mutator or Collector partitions.
   // Moves this region to the NotFree partition.  Any remnant of available memory at the time of retirement is added to the

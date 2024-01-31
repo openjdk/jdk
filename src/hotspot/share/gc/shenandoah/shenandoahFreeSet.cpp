@@ -48,7 +48,7 @@ ShenandoahRegionPartition::ShenandoahRegionPartition(size_t max_regions, Shenand
     _free_set(free_set),
     _membership(NEW_C_HEAP_ARRAY(ShenandoahFreeSetPartitionId, max_regions, mtGC))
 {
-  clear_internal();
+  make_all_regions_unavailable();
 }
 
 ShenandoahRegionPartition::~ShenandoahRegionPartition() {
@@ -85,27 +85,22 @@ inline bool ShenandoahFreeSet::has_alloc_capacity(ShenandoahHeapRegion *r) const
   return alloc_capacity(r) > 0;
 }
 
-void ShenandoahRegionPartition::clear_internal() {
+void ShenandoahRegionPartition::make_all_regions_unavailable() {
   for (size_t idx = 0; idx < _max; idx++) {
     _membership[idx] = NotFree;
   }
 
-  for (size_t idx = 0; idx < NumPartitions; idx++) {
-    _leftmosts[idx] = _max;
-    _rightmosts[idx] = 0;
-    _leftmosts_empty[idx] = _max;
-    _rightmosts_empty[idx] = 0;
-    _capacity_of[idx] = 0;
-    _used_by[idx] = 0;
+  for (size_t partition_id = 0; partition_id < NumPartitions; partition_id++) {
+    _leftmosts[partition_id] = _max;
+    _rightmosts[partition_id] = 0;
+    _leftmosts_empty[partition_id] = _max;
+    _rightmosts_empty[partition_id] = 0;
+    _capacity_of[partition_id] = 0;
+    _used_by[partition_id] = 0;
   }
 
-  _region_counts[Mutator] = 0;
-  _region_counts[Collector] = 0;
+  _region_counts[Mutator] = _region_counts[Collector] = 0;
   _region_counts[NotFree] = _max;
-}
-
-void ShenandoahRegionPartition::clear_all() {
-  clear_internal();
 }
 
 void ShenandoahRegionPartition::increase_used(ShenandoahFreeSetPartitionId which_partition, size_t bytes) {
@@ -676,7 +671,7 @@ void ShenandoahFreeSet::clear() {
 }
 
 void ShenandoahFreeSet::clear_internal() {
-  _partitions.clear_all();
+  _partitions.make_all_regions_unavailable();
 }
 
 // This function places all regions that have allocation capacity into the mutator_partition.  Subsequently, we will
