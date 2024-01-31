@@ -97,7 +97,8 @@ closeDescriptors(void)
 
     if ((dp = opendir(FD_DIR)) == NULL) {
         ERROR_MESSAGE(("failed to open dir %s while determining"
-                  " file descriptors to close for process %d", FD_DIR, getpid()));
+                       " file descriptors to close for process %d",
+                       FD_DIR, getpid()));
         return 0; // failure
     }
 
@@ -135,8 +136,8 @@ forkedChildProcess(const char *file, char *const argv[])
         /* leave out standard input/output/error file descriptors */
         rlim_t i = STDERR_FILENO + 1;
         ERROR_MESSAGE(("failed to close file descriptors of"
-                  " child process optimally, falling back to closing"
-                  " %d file descriptors sequentially", (max_fd - i + 1)));
+                       " child process optimally, falling back to closing"
+                       " %d file descriptors sequentially", (max_fd - i + 1)));
         for (; i < max_fd; i++) {
             (void)close(i);
         }
