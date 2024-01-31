@@ -435,8 +435,7 @@ HeapWord* ShenandoahFreeSet::allocate_single(ShenandoahAllocRequest& req, bool& 
       break;
     }
     case ShenandoahAllocRequest::_alloc_gclab:
-      // GCLABs are for evacuation so we must be in evacuation phase.  If this allocation is successful, increment
-      // the relevant evac_expended rather than used value.
+      // GCLABs are for evacuation so we must be in evacuation phase.
 
     case ShenandoahAllocRequest::_alloc_shared_gc: {
       // size_t is unsigned, need to dodge underflow when _leftmost = 0
