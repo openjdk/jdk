@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.io.FileDescriptor;
 import java.lang.foreign.MemorySegment;
 import java.lang.ref.Reference;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.misc.ScopedMemoryAccess.ScopedAccessError;
 import jdk.internal.misc.VM;
@@ -75,14 +76,18 @@ class Direct$Type$Buffer$RW$$BO$
 
 #if[byte]
 
-    private record Deallocator(long address, long size, int capacity) implements Runnable {
+    private record Deallocator(long address, long size, int capacity, AtomicBoolean invoked) implements Runnable {
+
         private Deallocator {
             assert address != 0;
         }
 
         public void run() {
-            UNSAFE.freeMemory(address);
-            Bits.unreserveMemory(size, capacity);
+            // Ensure idempotency (paranoia)
+            if (invoked.compareAndSet(false, true)) {
+                UNSAFE.freeMemory(address);
+                Bits.unreserveMemory(size, capacity);
+            }
         }
     }
 
@@ -125,7 +130,7 @@ class Direct$Type$Buffer$RW$$BO$
             address = base;
         }
         try {
-            cleaner = Cleaner.create(this, new Deallocator(base, size, cap));
+            cleaner = Cleaner.create(this, new Deallocator(base, size, cap, new AtomicBoolean()));
         } catch (Throwable t) {
             // Prevent leak if the Deallocator or Cleaner fail for any reason
             UNSAFE.freeMemory(base);

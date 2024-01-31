@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.WritableByteChannel;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 import jdk.internal.access.JavaIOFileDescriptorAccess;
 import jdk.internal.access.SharedSecrets;
@@ -1156,11 +1157,15 @@ public class FileChannelImpl
     private abstract static sealed class Unmapper
         implements Runnable, UnmapperProxy
     {
+        private static final AtomicIntegerFieldUpdater<Unmapper> UPDATER =
+                AtomicIntegerFieldUpdater.newUpdater(Unmapper.class, "invoked");
+
         private final long address;
         protected final long size;
         protected final long cap;
         private final FileDescriptor fd;
         private final int pagePosition;
+        private volatile int invoked;
 
         private Unmapper(long address, long size, long cap,
                          FileDescriptor fd, int pagePosition)
@@ -1171,40 +1176,44 @@ public class FileChannelImpl
             this.cap = cap;
             this.fd = fd;
             this.pagePosition = pagePosition;
+            this.invoked = 0;
         }
 
         @Override
-        public long address() {
+        public final long address() {
             return address + pagePosition;
         }
 
         @Override
-        public FileDescriptor fileDescriptor() {
+        public final FileDescriptor fileDescriptor() {
             return fd;
         }
 
         @Override
-        public void run() {
+        public final void run() {
             unmap();
         }
 
-        public long capacity() {
+        public final long capacity() {
             return cap;
         }
 
-        public void unmap() {
-            nd.unmap(address, size);
+        public final void unmap() {
+            // Ensure idempotency (paranoia)
+            if (UPDATER.compareAndSet(this, 0, 1)) {
+                nd.unmap(address, size);
 
-            // if this mapping has a valid file descriptor then we close it
-            if (fd.valid()) {
-                try {
-                    nd.close(fd);
-                } catch (IOException ignore) {
-                    // nothing we can do
+                // if this mapping has a valid file descriptor then we close it
+                if (fd.valid()) {
+                    try {
+                        nd.close(fd);
+                    } catch (IOException ignore) {
+                        // nothing we can do
+                    }
                 }
-            }
 
-            decrementStats();
+                decrementStats();
+            }
         }
         protected abstract void incrementStats();
         protected abstract void decrementStats();
