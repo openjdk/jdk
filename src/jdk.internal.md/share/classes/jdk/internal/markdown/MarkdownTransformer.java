@@ -542,6 +542,13 @@ public class MarkdownTransformer implements DocTrees.DocCommentTreeTransformer {
                  */
                 @Override
                 public LinkReferenceDefinition getLinkReferenceDefinition(String label) {
+                    // In CommonMark, square brackets characters need to be escaped within a link label.
+                    // See https://spec.commonmark.org/0.30/#link-label
+                    //   Unescaped square bracket characters are not allowed inside the opening
+                    //   and closing square brackets of link labels.
+                    // The escape characters are still present here in the label,
+                    // so we remove them before creating the autoref URL.
+                    // Note that the characters always appear together as a pair in API references.
                     var l = label.replace("\\[\\]", "[]");
                     var d = inlineParserContext.getLinkReferenceDefinition(l);
                     return d == null && isReference(l)

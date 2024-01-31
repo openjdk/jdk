@@ -966,4 +966,57 @@ public class TestMarkdown extends JavadocTester {
                     <p>Lorem ipsum.</p>
                     </div>""");
     }
+
+    @Test
+    public void testReferenceWithArrays(Path base) throws Exception {
+        Path src = base.resolve("src");
+
+        // in the following,
+        //
+        // * Link 0 is a simple control for a shortcut reference link (without any arrays)
+        // * Link 1a and Link 2a are negative controls, in that they are _not_ valid links
+        //   because of the unescaped [] pair
+        // * Link 1b and 2b are the positive tests, showing that the square brackets
+        //   need to be escaped in the source code, and that they are not escaped in
+        //   the generated HTML
+
+        tb.writeJavaFiles(src,
+                """
+                    package p;
+                    /// First sentence.
+                    /// * Link 0 to [util.Arrays]
+                    /// * Link 1a to [Arrays-equals][util.Arrays#equals(Object[],Object[])]
+                    /// * Link 1b to [Arrays-equals][util.Arrays#equals(Object\\[\\],Object\\[\\])]
+                    /// * Link 2a to [util.Arrays#equals(Object[],Object[])]
+                    /// * Link 2b to [util.Arrays#equals(Object\\[\\],Object\\[\\])]
+                    public class C { }""",
+                // simulate java.util.Arrays.equals, to avoid links to platform references
+                """
+                    package util;
+                    public class Arrays {
+                        public boolean equals(Object[] a, Object[] a2);
+                    }""");
+
+        javadoc("-d", base.resolve("api").toString(),
+                "-Xdoclint:none",
+                "--source-path", src.toString(),
+                "p", "util");
+
+        checkExit(Exit.OK);
+        checkOutput("p/C.html", true,
+                """
+                    Link 0 to <a href="../util/Arrays.html" title="class in util"><code>Arrays</code></a>""",
+                """
+                    Link 1a to [Arrays-equals][util.Arrays#equals(Object[],Object[])]""",
+                """
+                    Link 1b to <a href="../util/Arrays.html#equals(java.lang.Object%5B%5D,\
+                    java.lang.Object%5B%5D)">Arrays-equals</a>""",
+                """
+                    Link 2a to [util.Arrays#equals(Object[],Object[])]""",
+                """
+                    Link 2b to <a href="../util/Arrays.html#equals(java.lang.Object%5B%5D,\
+                    java.lang.Object%5B%5D)"><code>Arrays.equals(Object[],Object[])</code></a>"""
+                );
+
+    }
 }
