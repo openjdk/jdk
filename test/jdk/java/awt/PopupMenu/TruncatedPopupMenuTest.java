@@ -28,7 +28,8 @@ import java.awt.PopupMenu;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
-/* @test
+/*
+ * @test
  * @bug 5090643
  * @key headful
  * @library /java/awt/regtesthelpers
