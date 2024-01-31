@@ -1058,7 +1058,6 @@ C2V_END
 C2V_VMENTRY_0(jlong, getMaxCallTargetOffset, (JNIEnv* env, jobject, jlong addr))
   address target_addr = (address) addr;
   if (target_addr != 0x0) {
-    // Make sure we compute these without overflows.
     jlong off_low = (jlong)target_addr - ((jlong)CodeCache::low_bound() + sizeof(int));
     jlong off_high = (jlong)target_addr - ((jlong)CodeCache::high_bound() + sizeof(int));
     return MAX2(uabs(off_low), uabs(off_high));
