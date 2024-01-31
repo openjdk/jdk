@@ -50,8 +50,17 @@ private:
   const ShenandoahFreeSet* _free_set;
   ShenandoahFreeSetPartitionId* const _membership;
 
+  // For each type, we track an interval outside of which a region affiliated with that partition is guaranteed
+  // not to be found. This makes searches for free space more efficient.  For each partition p, _leftmosts[p]
+  // represents its least index, and its _rightmosts[p] its greatest index. Empty intervals are indicated by the
+  // canonical [_max, 0].
   size_t _leftmosts[NumPartitions];
   size_t _rightmosts[NumPartitions];
+
+  // Allocation for humongous objects needs to find regions that are entirely empty.  For each partion p, _leftmosts[p]
+  // represents the first region belonging to this partition that is completely empty and _rightmosts[p] represents the
+  // last region that is completely empty.  If there are no completely empty regions in this partition, this is represented
+  // by canonical [_max, 0].
   size_t _leftmosts_empty[NumPartitions];
   size_t _rightmosts_empty[NumPartitions];
 
