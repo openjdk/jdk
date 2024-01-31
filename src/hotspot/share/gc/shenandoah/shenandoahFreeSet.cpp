@@ -401,17 +401,15 @@ HeapWord* ShenandoahFreeSet::allocate_single(ShenandoahAllocRequest& req, bool& 
 
   // Scan the bitmap looking for a first fit.
   //
-  // Leftmost and rightmost bounds provide enough caching to walk bitmap efficiently. Normally,
-  // we would find the region to allocate at right away.
+  // Leftmost and rightmost bounds provide enough caching to quickly find a region from which to allocate.
   //
-  // Allocations are biased: new application allocs go to beginning of the heap, and GC allocs
-  // go to the end. This makes application allocation faster, because we would clear lots
-  // of regions from the beginning most of the time.
+  // Allocations are biased: GC allocations are taken from the high end of the heap.  Regular (and TLAB)
+  // mutator allocations are taken from the middle of heap, below the memory reserved for Collector.
+  // Humongous mutator allocations are taken from the bottom of the heap.
   //
-  // Free partition maintains mutator and collector views, and normally they allocate in their views only,
-  // unless we special cases for stealing and mixed allocations.
-
-  // Overwrite with non-zero (non-NULL) values only if necessary for allocation bookkeeping.
+  // Free set maintains mutator and collector partitions.  Mutator can only allocate from the
+  // Mutator partition.  Collector prefers to allocate from the Collector partition, but may steal
+  // regions from the Mutator partition if the Collector partition has been depleted.
 
   switch (req.type()) {
     case ShenandoahAllocRequest::_alloc_tlab:
