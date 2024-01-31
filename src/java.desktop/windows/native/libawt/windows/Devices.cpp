@@ -95,6 +95,7 @@ HMONITOR* g_hmpMonitors;
 // Callback for CountMonitors below
 BOOL WINAPI clb_fCountMonitors(HMONITOR hMon, HDC hDC, LPRECT rRect, LPARAM lP)
 {
+    // Ignore monitors where CreateDC fails
     MONITORINFOEX mieInfo;
     memset((void*)(&mieInfo), 0, sizeof(MONITORINFOEX));
     mieInfo.cbSize = sizeof(MONITORINFOEX);
@@ -124,6 +125,7 @@ int WINAPI CountMonitors(void)
 BOOL WINAPI clb_fCollectMonitors(HMONITOR hMon, HDC hDC, LPRECT rRect, LPARAM lP)
 {
     if (g_nMonitorCounter < g_nMonitorLimit) {
+        // Ignore monitors where CreateDC fails
         MONITORINFOEX mieInfo;
         memset((void*)(&mieInfo), 0, sizeof(MONITORINFOEX));
         mieInfo.cbSize = sizeof(MONITORINFOEX);
