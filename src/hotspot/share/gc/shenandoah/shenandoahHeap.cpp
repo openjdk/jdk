@@ -2074,7 +2074,7 @@ private:
       size_t cset_regions = _heap->collection_set()->count();
       // We cannot transfer any more regions than will be reclaimed when the existing collection set is recycled because
       // we need the reclaimed collection set regions to replenish the collector reserves
-      _heap->free_set()->move_collector_sets_to_mutator(cset_regions);
+      _heap->free_set()->move_regions_from_collector_to_mutator_partition(cset_regions);
     }
     // If !CONCURRENT, there's no value in expanding Mutator free set
 
