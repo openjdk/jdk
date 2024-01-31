@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,9 @@
 package sun.security.pkcs;
 
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.util.*;
-import java.util.function.Function;
 import java.util.function.BiFunction;
-import java.util.Arrays;
-import java.util.List;
-import java.util.ArrayList;
 
 import sun.security.x509.CertificateExtensions;
 import sun.security.util.*;
@@ -81,63 +78,64 @@ public class PKCS9Attribute implements DerEncoder {
      * Contains information for encoding and getting the value
      * of a given PKCS9 attribute
      */
-    private record AttributeInfo(boolean singleValued, Class<?> valueClass,
-                                 Function<DerValue[], Object> getValue,
-                                 BiFunction<Object, DerOutputStream, DerOutputStream> encoder,
-                                 byte... valueTags) {}
+    private record AttributeInfo<T>(boolean singleValued, Class<?> valueClass,
+                                 Decoder<T> decoder,
+                                 Encoder<T> encoder,
+                                 byte... valueTags) {
+
+        @SuppressWarnings("unchecked")
+        DerOutputStream encode(Object o) {
+            var d = new DerOutputStream();
+            //This type is checked in the PKCS9Attribute constructor
+            encoder.encode(d, (T)o);
+            return d;
+        }
+
+        T decode(DerValue d) throws IOException {
+            return decoder.decode(d);
+        }
+    }
+
+    @FunctionalInterface
+    public interface Decoder<R> {
+        R decode(DerValue t) throws IOException;
+    }
+
+    @FunctionalInterface
+    public interface Encoder<R> {
+        void encode(DerOutputStream t, R r);
+    }
 
     /**
      * Map containing the AttributeInfo for supported OIDs
      */
-    private static final Map<ObjectIdentifier, AttributeInfo> infoMap = new HashMap<>();
+    private static final Map<ObjectIdentifier, AttributeInfo<?>> infoMap = new HashMap<>();
 
     /* Helper function for building infoMap */
-    private static void add(ObjectIdentifier oid, boolean singleValued,
-                            Class<?> valueClass, Function<DerValue[], Object> getValue,
-                            BiFunction<Object, DerOutputStream, DerOutputStream> encoder,
-                            byte... valueTags) {
+    private static <T> void add(ObjectIdentifier oid, boolean singleValued,
+                                Class<T> valueClass,
+                                Decoder<T> decoder,
+                                Encoder<T> encoder,
+                                byte... valueTags) {
 
-        AttributeInfo info =
-            new AttributeInfo(singleValued, valueClass, getValue, encoder, valueTags);
+        AttributeInfo<T> info =
+            new AttributeInfo<T>(singleValued, valueClass, decoder, encoder, valueTags);
 
         if (infoMap.put(oid, info) != null) {
             throw new RuntimeException("Duplicate oid: " + oid);
         }
     }
 
-    /* Interface for handling errors within lambda expression */
-    @FunctionalInterface
-    public interface Throws<T, R, E extends Throwable> {
-        R apply(T t) throws E;
-
-        static <T, R, E extends Throwable> Function<T, R> unchecked(Throws<T, R, E> f) {
-            return t -> {
-                try {
-                    return f.apply(t);
-                } catch (Throwable e) {
-                    throw new RuntimeException(e);
-                }
-            };
-        }
-    }
-
-    /* Simplifies lambda expressions when setting AttributeInfo */
-    private static DerOutputStream mkDerStream(DerOutputStream t, DerOutputStream r) {
-        return t.write(DerValue.tag_Set, r.toByteArray());
-    }
-
     /* Set AttributeInfo for supported PKCS9 attributes */
     static {
-        add(EMAIL_ADDRESS_OID, false, String[].class,
-            a -> Arrays.stream(a).map(
-                Throws.unchecked(DerValue::getAsString)).toArray(),
-            (v,t) -> t.putIA5String((String) v),
+        add(EMAIL_ADDRESS_OID, false, String.class,
+            DerValue::getAsString,
+            DerOutputStream::putIA5String,
             DerValue.tag_IA5String);
 
-        add(UNSTRUCTURED_NAME_OID, false, String[].class,
-            a -> Arrays.stream(a).map(
-                Throws.unchecked(DerValue::getAsString)).toArray(),
-            (v,t) -> t.putIA5String((String) v),
+        add(UNSTRUCTURED_NAME_OID, false, String.class,
+            DerValue::getAsString,
+            DerOutputStream::putIA5String,
             DerValue.tag_IA5String,
             DerValue.tag_PrintableString,
             DerValue.tag_T61String,
@@ -146,40 +144,38 @@ public class PKCS9Attribute implements DerEncoder {
             DerValue.tag_UTF8String);
 
         add(CONTENT_TYPE_OID, true, sun.security.util.ObjectIdentifier.class,
-            Throws.unchecked(a -> a[0].getOID()),
-            (v,t) -> mkDerStream(t, new DerOutputStream().putOID((ObjectIdentifier) v)),
+            DerValue::getOID,
+            DerOutputStream::putOID,
             DerValue.tag_ObjectId);
 
         add(MESSAGE_DIGEST_OID, true, byte[].class,
-            Throws.unchecked(a -> a[0].getOctetString()),
-            (v,t) -> mkDerStream(t, new DerOutputStream().putOctetString((byte[]) v)),
+            DerValue::getOctetString,
+            DerOutputStream::putOctetString,
             DerValue.tag_OctetString);
 
         add(SIGNING_TIME_OID, true, java.util.Date.class,
-            Throws.unchecked(a -> new DerInputStream(a[0].toByteArray()).getTime()),
-            (v,t) -> mkDerStream(t, new DerOutputStream().putTime((Date) v)),
+            DerValue::getTime,
+            DerOutputStream::putTime,
             DerValue.tag_UtcTime,
             DerValue.tag_GeneralizedTime);
 
-        add(COUNTERSIGNATURE_OID, false, sun.security.pkcs.SignerInfo[].class,
-            a -> Arrays.stream(a).map(Throws.unchecked(
-                e -> new SignerInfo(e.toDerInputStream()))).toArray(),
-            (v,t) -> t.putOrderedSetOf(DerValue.tag_Set, (DerEncoder[]) v),
+        add(COUNTERSIGNATURE_OID, false, sun.security.pkcs.SignerInfo.class,
+            e -> new SignerInfo(e.toDerInputStream()),
+            DerOutputStream::write,
             DerValue.tag_Sequence);
 
         add(CHALLENGE_PASSWORD_OID, true, String.class,
-            Throws.unchecked(a -> a[0].getAsString()),
-            (v,t) -> mkDerStream(t, new DerOutputStream().putPrintableString((String) v)),
+            DerValue::getAsString,
+            DerOutputStream::putPrintableString,
             DerValue.tag_PrintableString,
             DerValue.tag_T61String,
             DerValue.tag_BMPString,
             DerValue.tag_UniversalString,
             DerValue.tag_UTF8String);
 
-        add(UNSTRUCTURED_ADDRESS_OID, false, String[].class,
-            a -> Arrays.stream(a).map(
-                Throws.unchecked(DerValue::getAsString)).toArray(String[]::new),
-            (v,t) -> t.putPrintableString((String) v),
+        add(UNSTRUCTURED_ADDRESS_OID, false, String.class,
+            DerValue::getAsString,
+            DerOutputStream::putPrintableString,
             DerValue.tag_PrintableString,
             DerValue.tag_T61String,
             DerValue.tag_BMPString,
@@ -187,32 +183,23 @@ public class PKCS9Attribute implements DerEncoder {
             DerValue.tag_UTF8String);
 
         add(EXTENSION_REQUEST_OID, true, sun.security.x509.CertificateExtensions.class,
-            Throws.unchecked(a -> new CertificateExtensions(
-                new DerInputStream(a[0].toByteArray()))),
-            (v,t) -> {
-                DerOutputStream temp = new DerOutputStream();
-                CertificateExtensions exts = (CertificateExtensions) v;
-                exts.encode(temp, true);
-                return mkDerStream(t, temp);},
+            a -> new CertificateExtensions(new DerInputStream(a.toByteArray())),
+            (t, v) -> v.encode(t, true),
             DerValue.tag_Sequence);
 
         add(SIGNING_CERTIFICATE_OID, true, sun.security.pkcs.SigningCertificateInfo.class,
-            Throws.unchecked(a -> new SigningCertificateInfo(a[0].toByteArray())),
-            (v,t) -> {
-                DerOutputStream temp = new DerOutputStream();
-                SigningCertificateInfo info = (SigningCertificateInfo) v;
-                temp.writeBytes(info.toByteArray());
-                return mkDerStream(t, temp);},
+            a -> new SigningCertificateInfo(a.toByteArray()),
+            (t, v) -> t.writeBytes(v.toByteArray()),
             DerValue.tag_Sequence);
 
         add(SIGNATURE_TIMESTAMP_TOKEN_OID, true, byte[].class,
-            a -> a[0].toByteArray(),
-            (v,t) -> t.write(DerValue.tag_Set, (byte[]) v),
+            DerValue::toByteArray,
+            (t, v) -> t.writeBytes(v),
             DerValue.tag_Sequence);
 
         add(CMS_ALGORITHM_PROTECTION_OID, true, byte[].class,
-            a -> a[0].toByteArray(),
-            (v,t) -> t.write(DerValue.tag_Set, (byte[]) v),
+            DerValue::toByteArray,
+            (t, v) -> t.writeBytes(v),
             DerValue.tag_Sequence);
     }
 
@@ -224,7 +211,7 @@ public class PKCS9Attribute implements DerEncoder {
     /**
      * The AttributeInfo of this attribute. Can be null if oid is unknown.
      */
-    private final AttributeInfo info;
+    private final AttributeInfo<?> info;
 
     /**
      * Value set of this attribute.  Its class is given by
@@ -252,7 +239,9 @@ public class PKCS9Attribute implements DerEncoder {
 
         this.oid = oid;
         this.info = infoMap.get(oid);
-        Class<?> clazz = info == null ? byte[].class : info.valueClass();
+        Class<?> clazz = info == null
+            ? byte[].class
+            : info.singleValued ? info.valueClass() : info.valueClass.arrayType();
         if (!clazz.isInstance(value)) {
             throw new IllegalArgumentException(
                 "Wrong value class " +
@@ -308,7 +297,14 @@ public class PKCS9Attribute implements DerEncoder {
                 throwTagException(tag);
         }
 
-        value = info.getValue.apply(elems);
+        if (info.singleValued) {
+            value = info.decode(elems[0]);
+        } else {
+            value = Array.newInstance(info.valueClass, elems.length);
+            for (int i = 0; i < elems.length; i++) {
+                Array.set(value, i, info.decode(elems[i]));
+            }
+        }
     }
 
     /**
@@ -331,15 +327,14 @@ public class PKCS9Attribute implements DerEncoder {
         }
 
         if (info.singleValued) {
-            info.encoder.apply(value, temp);
+            temp.write(DerValue.tag_Set, info.encode(value));
         } else {
             Object[] values = (Object[]) value;
             DerOutputStream[] temps = new
                 DerOutputStream[values.length];
 
             for (int i=0; i < values.length; i++) {
-                temps[i] = new DerOutputStream();
-                info.encoder.apply((String) values[i], temps[i]);
+                temps[i] = info.encode(values[i]);
             }
             temp.putOrderedSetOf(DerValue.tag_Set, temps);
         }
