@@ -60,7 +60,6 @@ public class TruncatedPopupMenuTest {
                       .testUI(TruncatedPopupMenuTest::createTestUI)
                       .build()
                       .awaitAndCheck();
-
     }
 
     private static Frame createTestUI() {
