@@ -129,6 +129,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         }
 
         document.getChangedEvent().addListener(g -> documentChanged());
+        loadState();
     }
 
     private void documentChanged() {
@@ -280,8 +281,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         }
     }
 
-    @Override
-    public void readExternal(ObjectInput objectInput) throws IOException, ClassNotFoundException {
+    private void loadState() {
         ((BeanTreeView) this.treeView).setRootVisible(false);
 
         String graphsPath = getGraphsPath();
@@ -360,7 +360,10 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
                 throw new RuntimeException(e);
             }
         });
+    }
 
+    @Override
+    public void readExternal(ObjectInput objectInput) throws IOException, ClassNotFoundException {
         super.readExternal(objectInput);
     }
 
@@ -387,7 +390,10 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     @Override
     public void writeExternal(ObjectOutput objectOutput) throws IOException {
         super.writeExternal(objectOutput);
+        saveState();
+    }
 
+    private void saveState() throws IOException {
         String graphsPath = getGraphsPath();
         if (graphsPath.isEmpty()) {
             return;
