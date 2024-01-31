@@ -1968,22 +1968,19 @@ void C2_MacroAssembler::expand_bits_l_v(Register dst, Register src, Register mas
 //    NaN,
 //    float >= Integer.MAX_VALUE,
 //    float <= Integer.MIN_VALUE.
-void C2_MacroAssembler::java_round_float_v(VectorRegister dst, VectorRegister src, FloatRegister ftmp, FloatRegister ftmp2) {
-  Label done;
-  mv(t0, jint_cast(0.5f));
+void C2_MacroAssembler::java_round_float_v(VectorRegister dst, VectorRegister src, FloatRegister ftmp) {
+  mv(t0, jint_cast(0.0f));
   fmv_w_x(ftmp, t0);
-  mv(t0, jint_cast(0.0));
-  fmv_w_x(ftmp2, t0); // ??
 
   // For special case of NaN, the result is 0, we handle it explicitly.
   // Here, use vmfeq as a perf optimization of vfclass in which case we
   // need one more instruction to set the mask register v0.
-  vfmv_v_f(dst, ftmp2);
-  vmfne_vv(v0, src, src);
-  vfadd_vf(src, dst, ftmp2, v0_t); // 0.0f -> src when NaN, ??
+  vfmv_v_f(dst, ftmp);
+  vmfeq_vv(v0, src, src);
+  vfadd_vf(dst, src, ftmp, v0_t); // 0.0f -> src when NaN
 
   // in riscv, there is no corresponding rounding mode to satisfy the behaviour defined in java api spec.
-  //  RNE is the closed one, but it ties to "even", which means 1.5/2.5 both will be converted
+  //  RNE is the closest one, but it ties to "even", which means 1.5/2.5 both will be converted
   //    to 2, instead of 2 and 3 respectively.
   //  RUP does not work either, although java api requires "rounding to positive infinity", but both 1.3/1.8
   //    will be converted to 2, instead of 1 and 2 respectively.
@@ -1996,55 +1993,55 @@ void C2_MacroAssembler::java_round_float_v(VectorRegister dst, VectorRegister sr
   // and, this solution works as expected for float >= Integer.MAX_VALUE and float <= Integer.MIN_VALUE.
   //
   // but, for vector instructions, all rounding modes are dynamic, except of rtz.
-  // to avoid the usage of dynamic rounding mode, we use another solution instead:
+  // to avoid the usage of dynamic rounding mode, we use another solution instead,
   // this solution introduce the more instructions but with static rounding mode(rtz).
-  vmfge_vf(v0, src, ftmp2, v0_t);
+  vmflt_vf(v0, dst, ftmp, v0_t);
 
-  mv(t0, jint_cast(0.499999f));
-  fmv_w_x(ftmp2, t0);
+  // prepare for converting float when < 0.0f
+  mv(t0, jint_cast(-0.4999999f));
+  fmv_w_x(ftmp, t0);
+  vfadd_vf(dst, dst, ftmp, v0_t);
 
-  // convert float when >= 0.0f
-  vfadd_vf(dst, src, ftmp, v0_t); // rtz ??
-  vfcvt_rtz_x_f_v(dst, dst, v0_t);
-
-  // convert float when < 0.0f
+  // prepare for converting float when >= 0.0f
+  mv(t0, jint_cast(0.49999997f));
+  fmv_w_x(ftmp, t0);
   vmnot_m(v0, v0);
-  vfadd_vf(dst, src, ftmp2, v0_t); // rtz ??
-  vfcvt_rtz_x_f_v(dst, dst, v0_t);
+  vfadd_vf(dst, dst, ftmp, v0_t);
+
+  // actually convert
+  vfcvt_rtz_x_f_v(dst, dst);
 }
 
 // j.l.Math.round(double)
 //  Similar as j.l.Math.round(float), except of long/double instead of int/float
-void C2_MacroAssembler::java_round_double_v(VectorRegister dst, VectorRegister src, FloatRegister ftmp, FloatRegister ftmp2) {
-  Label done;
-  mv(t0, jlong_cast(0.5));
-  fmv_w_x(ftmp, t0);
+void C2_MacroAssembler::java_round_double_v(VectorRegister dst, VectorRegister src, FloatRegister ftmp) {
   mv(t0, jlong_cast(0.0));
-  fmv_w_x(ftmp2, t0); // ??
+  fmv_d_x(ftmp, t0);
 
   // For special case of NaN, the result is 0, we handle it explicitly.
   // Here, use vmfeq as a perf optimization of vfclass in which case we
   // need one more instruction to set the mask register v0.
-  vfmv_v_f(dst, ftmp2);
-  vmfne_vv(v0, src, src);
-  vfadd_vf(src, dst, ftmp2, v0_t); // 0.0 -> src when NaN, ??
+  vfmv_v_f(dst, ftmp);
+  vmfeq_vv(v0, src, src);
+  vfadd_vf(dst, src, ftmp, v0_t); // 0.0d -> src when NaN
 
+  // we prefer to use static rounding mode instead of dynamic rounding mode,
   // for vector instructions, all rounding modes are dynamic, except of rtz.
-  // to avoid the usage of dynamic rounding mode, we prefer to use static rounding
-  // mode instead, the only static rounding mode for vector is rtz.
-  vmfge_vf(v0, src, ftmp2, v0_t);
+  vmflt_vf(v0, dst, ftmp, v0_t);
 
-  mv(t0, jint_cast(0.499999f));
-  fmv_w_x(ftmp2, t0);
+  // prepare for converting double when < 0.0d
+  mv(t0, jlong_cast(-0.49999999999999983));
+  fmv_d_x(ftmp, t0);
+  vfadd_vf(dst, dst, ftmp, v0_t);
 
-  // convert float when >= 0.0f
-  vfadd_vf(dst, src, ftmp, v0_t); // rtz ??
-  vfcvt_rtz_x_f_v(dst, dst, v0_t);
-
-  // convert float when < 0.0f
+  // prepare for converting double when >= 0.0d
+  mv(t0, jlong_cast(0.49999999999999994));
+  fmv_d_x(ftmp, t0);
   vmnot_m(v0, v0);
-  vfadd_vf(dst, src, ftmp2, v0_t); // rtz ??
-  vfcvt_rtz_x_f_v(dst, dst, v0_t);
+  vfadd_vf(dst, dst, ftmp, v0_t);
+
+  // actually convert
+  vfcvt_rtz_x_f_v(dst, dst);
 }
 
 void C2_MacroAssembler::element_compare(Register a1, Register a2, Register result, Register cnt, Register tmp1, Register tmp2,

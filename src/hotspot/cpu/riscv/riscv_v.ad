@@ -3679,28 +3679,28 @@ instruct vsignum_reg(vReg dst, vReg zero, vReg one, vRegMask_V0 v0) %{
 
 // ---------------- Convert Half Floating to Floating Vector Operations ----------------
 
-instruct vround_f(vReg dst, vReg src, fRegF tmp1, fRegF tmp2, vRegMask_V0 v0) %{
+instruct vround_f(vReg dst, vReg src, fRegF tmp, vRegMask_V0 v0) %{
   match(Set dst (RoundVF src));
-  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2);
+  effect(TEMP_DEF dst, TEMP tmp);
   format %{ "java_round_float_v $dst, $src\t" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
     __ java_round_float_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg),
-                          as_FloatRegister($tmp1$$reg), as_FloatRegister($tmp2$$reg));
+                          as_FloatRegister($tmp$$reg));
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vround_d(vReg dst, vReg src, fRegD tmp1, fRegD tmp2, vRegMask_V0 v0) %{
+instruct vround_d(vReg dst, vReg src, fRegD tmp, vRegMask_V0 v0) %{
   match(Set dst (RoundVD src));
-  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2);
+  effect(TEMP_DEF dst, TEMP tmp);
   format %{ "java_round_double_v $dst, $src\t" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
     __ java_round_double_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg),
-                          as_FloatRegister($tmp1$$reg), as_FloatRegister($tmp2$$reg));
+                          as_FloatRegister($tmp$$reg));
   %}
   ins_pipe(pipe_slow);
 %}

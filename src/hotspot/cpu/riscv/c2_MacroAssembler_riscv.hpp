@@ -187,8 +187,8 @@
   void expand_bits_i_v(Register dst, Register src, Register mask);
   void expand_bits_l_v(Register dst, Register src, Register mask);
 
-  void java_round_float_v(VectorRegister dst, VectorRegister src, FloatRegister ftmp, FloatRegister ftmp2);
-  void java_round_double_v(VectorRegister dst, VectorRegister src, FloatRegister ftmp, FloatRegister ftmp2);
+  void java_round_float_v(VectorRegister dst, VectorRegister src, FloatRegister ftmp);
+  void java_round_double_v(VectorRegister dst, VectorRegister src, FloatRegister ftmp);
 
   void string_equals_v(Register r1, Register r2,
                        Register result, Register cnt1,
