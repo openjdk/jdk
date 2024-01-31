@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,19 +19,17 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
-
-package sun.net.www.protocol.jar;
-
-import java.io.*;
-import java.net.*;
-import java.util.jar.*;
-
 
 /*
- * This interface is used to call back to sun.plugin package.
+ * Loading the java.text.SimpleDateFormat class will in turn load the
+ * sun.util.locale.provider.LocaleProviderAdapter$$Lambda/0x... lambda proxy class
+ * which will also load its interface java.util.function.IntFunction.
+ * By default, all of the above classes should be in the default CDS archive.
  */
-public interface URLJarFileCallBack
-{
-        public JarFile retrieve (URL url) throws IOException;
+public class SimpleTest {
+    public static void main(String[] args) throws Exception {
+        new java.text.SimpleDateFormat();
+    }
 }

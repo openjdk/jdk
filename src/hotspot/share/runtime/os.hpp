@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,7 +191,7 @@ class os: AllStatic {
   static PageSizes          _page_sizes;
 
   // The default value for os::vm_min_address() unless the platform knows better. This value
-  // is chosen to give us reasonable protection against NULL pointer dereferences while being
+  // is chosen to give us reasonable protection against null pointer dereferences while being
   // low enough to leave most of the valuable low-4gb address space open.
   static constexpr size_t _vm_min_address_default = 16 * M;
 
@@ -223,6 +223,10 @@ class os: AllStatic {
   static bool   pd_unmap_memory(char *addr, size_t bytes);
   static void   pd_free_memory(char *addr, size_t bytes, size_t alignment_hint);
   static void   pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint);
+
+  // Returns 0 if pretouch is done via platform dependent method, or otherwise
+  // returns page_size that should be used for the common method.
+  static size_t pd_pretouch_memory(void* first, void* last, size_t page_size);
 
   static char*  pd_reserve_memory_special(size_t size, size_t alignment, size_t page_size,
 
