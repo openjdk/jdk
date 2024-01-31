@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,17 +73,6 @@ public:
   inline oop xchg(oop new_value);
 
   oop* ptr_raw() const { return _obj; }
-};
-
-// Convert OopHandle to oop*
-
-template<>
-struct PrimitiveConversions::Translate<OopHandle> : public std::true_type {
-  typedef OopHandle Value;
-  typedef oop* Decayed;
-
-  static Decayed decay(Value x) { return x.ptr_raw(); }
-  static Value recover(Decayed x) { return OopHandle(x); }
 };
 
 #endif // SHARE_OOPS_OOPHANDLE_HPP

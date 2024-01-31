@@ -1699,7 +1699,7 @@ static inline bool is_pop_count_instr_target(BasicType bt) {
          (is_non_subword_integral_type(bt) && VM_Version::supports_avx512_vpopcntdq());
 }
 
-bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
+bool Matcher::match_rule_supported_auto_vectorization(int opcode, int vlen, BasicType bt) {
   return match_rule_supported_vector(opcode, vlen, bt);
 }
 
@@ -2280,7 +2280,7 @@ int Matcher::min_vector_size(const BasicType bt) {
   return MIN2(size,max_size);
 }
 
-int Matcher::superword_max_vector_size(const BasicType bt) {
+int Matcher::max_vector_size_auto_vectorization(const BasicType bt) {
   // Limit the max vector size for auto vectorization to 256 bits (32 bytes)
   // by default on Cascade Lake
   if (VM_Version::is_default_intel_cascade_lake()) {
