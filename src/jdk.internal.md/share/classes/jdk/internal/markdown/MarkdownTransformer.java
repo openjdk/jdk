@@ -218,16 +218,14 @@ public class MarkdownTransformer implements DocTrees.DocCommentTreeTransformer {
                             throw new IllegalStateException(t.getKind().toString());
                         }
                         String code = t.getContent();
-                        // handle the (unlikely) case of FFFC characters existing in the code
+                        // handle the (unlikely) case of any U+FFFC characters existing in the code
                         int start = 0;
                         int pos;
                         while ((pos = code.indexOf(PLACEHOLDER, start)) != -1) {
-                            sourceBuilder.append(code, start, pos);
-                            sourceBuilder.append(PLACEHOLDER);
                             replacements.add(PLACEHOLDER);
                             start = pos + 1;
                         }
-                        sourceBuilder.append(code.substring(start));
+                        sourceBuilder.append(code);
                     } else {
                         replacements.add(transform(tree));
                         sourceBuilder.append(PLACEHOLDER);
@@ -556,7 +554,7 @@ public class MarkdownTransformer implements DocTrees.DocCommentTreeTransformer {
          */
         private boolean isReference(String s) {
             try {
-                var ref = refParser.parse(s, ReferenceParser.Mode.MEMBER_OPTIONAL);
+                refParser.parse(s, ReferenceParser.Mode.MEMBER_OPTIONAL);
                 return true;
             } catch (ReferenceParser.ParseException e) {
                 return false;
@@ -747,12 +745,12 @@ public class MarkdownTransformer implements DocTrees.DocCommentTreeTransformer {
         }
 
         /**
-         * Visits a {@code Link} node.
+         * Visits a CommonMark {@code Link} node.
          *
          * If the destination for the link begins with {@code code:}
-         * convert it to {@code {@link ...}} or {@linkplain ...}} node.
+         * convert it to {@code {@link ...}} or {@code {@linkplain ...}} DocTree node.
          * {@code {@link ...}} will be used if the content (label) for
-         * the link is the same as the reference found after the {@code code:}};
+         * the link is the same as the reference found after the {@code code:};
          * otherwise, {@code {@linkplain ...}} will be used.
          *
          * The label will be left blank for {@code {@link ...}} nodes,
@@ -775,7 +773,7 @@ public class MarkdownTransformer implements DocTrees.DocCommentTreeTransformer {
                     visitChildren(link);
                     copyTo(getEndPos(link.getLastChild()));
 
-                    // determine whether to use {@link... } or {@linkplain ...}
+                    // determine whether to use {@link ... } or {@linkplain ...}
                     // based on whether the "link text" is the same as the "link destination"
                     String ref = dest.substring(AUTOREF_PREFIX.length());
                     int refPos = sourcePosToTreePos(getRefPos(ref, link));
@@ -837,7 +835,7 @@ public class MarkdownTransformer implements DocTrees.DocCommentTreeTransformer {
         }
 
         /**
-         * Process a node and any children.
+         * Processes a node and any children.
          *
          * If the node has children, the children are each visited by
          * calling their {@code accept} method, and then finally, if this
@@ -879,7 +877,7 @@ public class MarkdownTransformer implements DocTrees.DocCommentTreeTransformer {
          */
         private int getStartPos(Node node) {
             var spans = node.getSourceSpans();
-            var firstSpan = spans.get(0);
+            var firstSpan = spans.getFirst();
             return toSourcePos(firstSpan.getLineIndex(), firstSpan.getColumnIndex());
         }
 
@@ -891,7 +889,7 @@ public class MarkdownTransformer implements DocTrees.DocCommentTreeTransformer {
          */
         private int getEndPos(Node node) {
             var spans = node.getSourceSpans();
-            var lastSpan = spans.get(spans.size() - 1);
+            var lastSpan = spans.getLast();
             return toSourcePos(lastSpan.getLineIndex(), lastSpan.getColumnIndex() + lastSpan.getLength());
         }
 
@@ -946,6 +944,4 @@ public class MarkdownTransformer implements DocTrees.DocCommentTreeTransformer {
             }
         }
     }
-
-
 }

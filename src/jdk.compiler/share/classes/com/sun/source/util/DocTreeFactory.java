@@ -300,7 +300,7 @@ public interface DocTreeFactory {
      *
      * @since 23
      */
-    RawTextTree newRawTextTree(DocTree.Kind kind, String code) throws IllegalArgumentException;
+    RawTextTree newRawTextTree(DocTree.Kind kind, String code);
 
     /**
      * Creates a new {@code ReferenceTree} object, to represent a reference to an API element.

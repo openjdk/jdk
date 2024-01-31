@@ -27,7 +27,6 @@ package com.sun.tools.javac.parser;
 
 import java.util.Locale;
 
-import com.sun.source.util.DocTrees;
 import com.sun.tools.javac.api.JavacTrees;
 import com.sun.tools.javac.code.Preview;
 import com.sun.tools.javac.code.Source;

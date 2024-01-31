@@ -32,7 +32,6 @@ import java.util.List;
 
 import com.sun.source.doctree.*;
 import com.sun.source.doctree.AttributeTree.ValueKind;
-import com.sun.source.util.DocTreeScanner;
 import com.sun.tools.javac.util.Convert;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;

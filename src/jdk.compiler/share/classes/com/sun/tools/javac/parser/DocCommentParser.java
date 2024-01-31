@@ -78,6 +78,17 @@ public class DocCommentParser {
         }
     }
 
+    /**
+     * An indication of the part of documentation comment or file being read.
+     * A documentation comment and a Markdown file just have a {@code BODY}.
+     * An HTML file has a {@code PREAMBLE}, {@code BODY} and {@code POSTAMBLE}.
+     * While parsing a {@code BODY}, text within {@code {@tag ... }} may be
+     * read as {@code INLINE}.
+     * One of the primary characteristics of each "phase" is the termination
+     * condition, indicating when the current phase is complete, and either
+     * the previous one resumed (in the case of {@code INLINE}) or the
+     * next phase started.
+     */
     private enum Phase {
         /** The initial part of an HTML file up to and including the {@code body} and possible {@code <main>} tag. */
         PREAMBLE,
@@ -175,7 +186,7 @@ public class DocCommentParser {
         List<DCTree> tags = blockTags();
         List<DCTree> postamble = isHtmlFile ? content(Phase.POSTAMBLE) : List.nil();
 
-        int pos = textKind == DocTree.Kind.MARKDOWN  ? 0
+        int pos = textKind == DocTree.Kind.MARKDOWN ? 0
                 : !preamble.isEmpty() ? preamble.head.pos
                 : !body.isEmpty() ? body.head.pos
                 : !tags.isEmpty() ? tags.head.pos
@@ -220,7 +231,14 @@ public class DocCommentParser {
     }
 
     protected List<DCTree> blockContent() {
-        while (ch == ' ' && bp < buflen) {
+        // The whitespace after a tag name is typically problematic:
+        // should it be included in the content or not?
+        // The problem is made worse by Markdown, in which leading
+        // whitespace in Markdown content may be significant.
+        // While generally in traditional comments, whitespace
+        // after a tag name is skipped, to allow for Markdown we just
+        // skip horizontal whitespace.
+        while (isHorizontalWhitespace(ch) && bp < buflen) {
             nextChar();
         }
         return content(Phase.BODY);
@@ -238,15 +256,12 @@ public class DocCommentParser {
      * <ul>
      * <li>{@code PREAMBLE}: the appearance of {@code <body>} (or {@code <main>}),
      *      as determined by {@link #isEndPreamble()}
-     * <li>{@code BODY}: the beginning of a block tag, or when readung from
+     * <li>{@code BODY}: the beginning of a block tag, or when reading from
      *      an HTML file, the appearance of {@code </main>} (or {@code </body>},
-     *       as determined by {@link #isEndBody()}
+     *      as determined by {@link #isEndBody()}
      * <li>{@code INLINE}: '}', after skipping any matching {@code { }}
      * <li>{@code PREAMBLE}: end of file
      * </ul>
-     *
-     *
-     *
      */
     protected List<DCTree> content(Phase phase) {
         ListBuffer<DCTree> trees = new ListBuffer<>();
@@ -265,10 +280,6 @@ public class DocCommentParser {
                 case '\n', '\r' -> {
                     nextChar();
                     if (textKind == DocTree.Kind.MARKDOWN) {
-//                        // FIXME?
-//                        if (textStart == -1) {
-//                            textStart = bp;
-//                        }
                         int indent = readIndent();
                         // in the following, the evaluation of INDENTED_CODE_BLOCK is
                         // inductively a sequence of indented lines following any
@@ -997,7 +1008,6 @@ public class DocCommentParser {
      * <li>doctype: {@code <!doctype ... >}
      * <li>cdata: {@code <![CDATA[ ... ]]>}
      * </ul>
-     *  or
      */
     private DCTree html() {
         int p = bp;
@@ -1161,7 +1171,6 @@ public class DocCommentParser {
             default  -> nextChar();
         }
     }
-
 
     protected void addPendingText(ListBuffer<DCTree> list, int textEnd) {
         addPendingText(list, textEnd, textKind);
@@ -1333,7 +1342,7 @@ public class DocCommentParser {
                             : LineKind.OTHER;
                     switch (initialLineKind) {
                         case CODE_FENCE -> {
-                            if (lineKind == LineKind.CODE_FENCE && ch == term && count(ch) == count) {
+                            if (lineKind == LineKind.CODE_FENCE && ch == term && count(ch) >= count) {
                                 return bp;
                             }
                         }
@@ -1367,25 +1376,46 @@ public class DocCommentParser {
         return -1;
     }
 
+    /**
+     * The kinds of line, used when reading a Markdown documentation comment.
+     * The values are loosely ordered by a combination of the specificity of
+     * the associated pattern, and the likelihood of use in a doc comment.
+     *
+     * Note that some of the patterns overlap, such as SETEXT_UNDERLINE and
+     * THEMATIC_BREAK. The CommonMark spec resolves the ambiguities with
+     * priority rules, such as the following:
+     *
+     * * If a line of dashes that meets the above conditions for being a
+     *   thematic break could also be interpreted as the underline of a
+     *   setext heading, the interpretation as a setext heading takes precedence.
+     *
+     * * When both a thematic break and a list item are possible interpretations
+     *   of a line, the thematic break takes precedence.
+     *
+     * Here in this context, the primary purpose of these kinds is to help
+     * determine when a block boundary terminates literal text, such as a
+     * code span, and so the exact nature of the line kind does not matter.
+     */
     enum LineKind {
         BLANK(Pattern.compile("[ \t]*")),
 
         /**
-         * ATX header: starts with 1 to 6 # characters, followed by space or end of line.
+         * ATX header: starts with 1 to 6 # characters, followed by space or tab or end of line.
          * @see <a href="https://spec.commonmark.org/0.30/#atx-headings">ATX Headings</a>
          */
-        ATX_HEADER(Pattern.compile("#{1,6}( .*|$)")),
-
-        /** Setext header: underline is sequence of = or - followed by optional spaces and tabs.
-         *  @see <a href="https://spec.commonmark.org/0.30/#setext-headings">Setext Headings</a>
-         */
-        SETEXT_UNDERLINE(Pattern.compile("[=-]+[ \t]*")),
+        ATX_HEADER(Pattern.compile("#{1,6}([ \t].*|$)")),
 
         /**
-         * Thematic break: a line of + - _ interspersed with optional spaces and tabs
+         * Setext header: underline is sequence of = or - followed by optional spaces and tabs.
+         * @see <a href="https://spec.commonmark.org/0.30/#setext-headings">Setext Headings</a>
+         */
+        SETEXT_UNDERLINE(Pattern.compile("(=+|-+)[ \t]*")),
+
+        /**
+         * Thematic break: a line of * - _ interspersed with optional spaces and tabs
          * @see <a href="https://spec.commonmark.org/0.30/#thematic-breaks">Thematic Break</a>
          */
-        THEMATIC_BREAK(Pattern.compile("((\\+[ \t]*+){3,})|((-[ \t]*+){3,})|((_[ \t]*+){3,})")),
+        THEMATIC_BREAK(Pattern.compile("((\\*[ \t]*+){3,})|((-[ \t]*+){3,})|((_[ \t]*+){3,})")),
 
         /**
          * Code fence: 3 or more back ticks or tildes; back tick fence cannot have back ticks
@@ -1404,6 +1434,8 @@ public class DocCommentParser {
 
         /**
          * Everything else...
+         *
+         * This entry must come last, since it matches "none of the above".
          */
         OTHER(Pattern.compile(".*"));
 

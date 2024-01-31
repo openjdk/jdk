@@ -94,14 +94,14 @@ public abstract class DocTrees extends Trees {
      * @since 23
      */
     public enum CommentKind {
-        /** The style of comments whose lines are prefixed by{@code ///}. */
+        /** The style of comments whose lines are prefixed by {@code ///}. */
         LINE,
         /** The style of comments that begin with {@code /**}. */
         BLOCK
     }
 
     /**
-     * {@return the style of the documentation comment associated with a tree node.}
+     * {@return the style of the documentation comment associated with a tree node}
      *
      * @param path the path for the tree node
      *

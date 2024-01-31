@@ -1062,7 +1062,7 @@ public class JavaTokenizer extends UnicodeReader {
                     next();
 
                     if (accept('/')) { // (Spec. 3.7)
-                        if (accept('/')) { // Markdown comment
+                        if (accept('/')) { // JavaDoc line comment
                             int endPos;
                             do {
                                 skipToEOLN();
@@ -1434,7 +1434,7 @@ public class JavaTokenizer extends UnicodeReader {
         /**
          * Style of comment
          */
-        CommentStyle cs;
+        final CommentStyle cs;
 
         /**
          * true if comment contains @deprecated at beginning of a line.
@@ -1527,7 +1527,7 @@ public class JavaTokenizer extends UnicodeReader {
         }
 
         /**
-         * Trim the first part of the JavaDoc comment.
+         * Trim the first part of the JavaDoc block comment.
          *
          * @param line line reader
          *
@@ -1550,11 +1550,11 @@ public class JavaTokenizer extends UnicodeReader {
         }
 
         /**
-         * Determine how much indent to remove from markdown comment.
+         * Determine how much indent to remove from a JavaDoc line comment.
          *
          * @return minimum indent to remove
          */
-        int getMarkdownIndent() {
+        int getJavadocLineCommentIndent() {
             int result = Integer.MAX_VALUE;
             UnicodeReader fullReader = lineReader(position(), position() + length());
 
@@ -1574,15 +1574,14 @@ public class JavaTokenizer extends UnicodeReader {
         }
 
         /**
-         * Trim the first part of the Markdown comment.
+         * Trim the first part of a JavaDoc line comment.
          *
          * @param indent how much indentation to remove
          * @param line line reader
          *
          * @return modified line reader
          */
-        UnicodeReader trimMarkdownComment(UnicodeReader line, int indent) {
-            int pos = line.position();
+        UnicodeReader trimJavadocLineComment(UnicodeReader line, int indent) {
             line.skipWhitespace();
             line.accept("///");
 
@@ -1609,11 +1608,12 @@ public class JavaTokenizer extends UnicodeReader {
             if (!scanned) {
                 deprecatedFlag = false;
                 scanned = true;
-                boolean isMarkdown = false;
+                CommentStyle style;
                 int indent = 0;
                 int start = position();
 
                 if (accept("/**")) {
+                    style = CommentStyle.JAVADOC_BLOCK;
                     if (skip('*') != 0 && is('/')) {
                         return ;
                     }
@@ -1625,16 +1625,18 @@ public class JavaTokenizer extends UnicodeReader {
                         accept('\n');
                     }
                 } else if (accept("///")) {
-                    isMarkdown = true;
+                    style = CommentStyle.JAVADOC_LINE;
                     reset(start);
-                    indent = getMarkdownIndent();
+                    indent = getJavadocLineCommentIndent();
                 } else {
                     return;
                 }
 
                 while (isAvailable()) {
                     UnicodeReader line = lineReader();
-                    line = isMarkdown ? trimMarkdownComment(line, indent) : trimJavadocComment(line);
+                    line = (style == CommentStyle.JAVADOC_LINE)
+                            ? trimJavadocLineComment(line, indent)
+                            : trimJavadocComment(line);
 
                     if (cs == CommentStyle.JAVADOC_BLOCK) {
                         // If standalone @deprecated tag
