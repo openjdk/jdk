@@ -62,16 +62,27 @@ class ICStub: public Stub {
   // General info
   int     size() const                           { return _size; }
 
-  // ICStub_from_destination_address looks up Stub* address from code entry address,
-  // which unfortunately means the stub head should be at the same alignment as the code.
-  static  int alignment()                        { return CodeEntryAlignment; }
+  // To be cautious, we want to make sure that each ICStub is in a separate instruction
+  // cache line. This would allow for piggybacking on instruction cache coherency on
+  // some architectures to order the updates to ICStub and setting the destination to
+  // the ICStub. Note that cache line size might be larger than CodeEntryAlignment
+  // that is normal alignment for CodeBlobs.
+  static int alignment()                         { return DEFAULT_CACHE_LINE_SIZE; }
+
+  // Aligning the code section is normally done for performance reasons, which is not
+  // required for ICStubs, as these stubs are transitional. Setting code alignment
+  // to CodeEntryAlignment would waste a lot of memory in ICBuffer. Aligning to
+  // word size should be enough. This also offsets the costs of aligning the entire
+  // ICStub to cache line (see above), as smaller code alignment would allow ICStub
+  // to fit a _single_ cache line.
+  static int code_alignment()                    { return HeapWordSize; }
 
  public:
   // Creation
   void set_stub(CompiledIC *ic, void* cached_value, address dest_addr);
 
   // Code info
-  address code_begin() const                     { return align_up((address)this + sizeof(ICStub), CodeEntryAlignment); }
+  address code_begin() const                     { return align_up((address)this + sizeof(ICStub), code_alignment()); }
   address code_end() const                       { return (address)this + size(); }
 
   // Call site info
@@ -88,17 +99,14 @@ class ICStub: public Stub {
   void    print()             PRODUCT_RETURN;
 
   // Creation
-  friend ICStub* ICStub_from_destination_address(address destination_address);
+  static inline ICStub* from_destination_address(address destination_address) {
+    ICStub* stub = (ICStub*) align_down(destination_address - sizeof(ICStub), alignment());
+#ifdef ASSERT
+    stub->verify();
+#endif
+    return stub;
+  }
 };
-
-// ICStub Creation
-inline ICStub* ICStub_from_destination_address(address destination_address) {
-  ICStub* stub = (ICStub*) (destination_address - align_up(sizeof(ICStub), CodeEntryAlignment));
-  #ifdef ASSERT
-  stub->verify();
-  #endif
-  return stub;
-}
 
 #ifdef ASSERT
 // The ICRefillVerifier class is a stack allocated RAII object used to
@@ -150,8 +158,6 @@ class InlineCacheBuffer: public AllStatic {
   static volatile int _pending_count;
 
   static StubQueue* buffer()                         { return _buffer;         }
-
-  static ICStub* new_ic_stub();
 
   // Machine-dependent implementation of ICBuffer
   static void    assemble_ic_buffer_code(address code_begin, void* cached_value, address entry_point);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -240,7 +240,7 @@ public:
   virtual void print_on(outputStream* st) const;
   virtual void print_value_on(outputStream* st) const;
   void dump_for_addr(address addr, outputStream* st, bool verbose) const;
-  void print_code();
+  void print_code_on(outputStream* st);
 
   // Print to stream, any comments associated with offset.
   virtual void print_block_comment(outputStream* stream, address block_begin) const {

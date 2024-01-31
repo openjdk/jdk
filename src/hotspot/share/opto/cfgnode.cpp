@@ -2170,7 +2170,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
               cast = phase->transform(cast);
               n = cast;
             }
-            cast = new CheckCastPPNode(r, uin, phi_type, ConstraintCastNode::StrongDependency, extra_types);
+            cast = new CheckCastPPNode(r, n, phi_type, ConstraintCastNode::StrongDependency, extra_types);
           }
           if (cast == nullptr) {
             cast = new CastPPNode(r, uin, phi_type, ConstraintCastNode::StrongDependency, extra_types);
