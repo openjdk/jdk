@@ -31,7 +31,7 @@ import java.io.FileDescriptor;
 import java.lang.foreign.MemorySegment;
 import java.lang.ref.Reference;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.misc.ScopedMemoryAccess.ScopedAccessError;
 import jdk.internal.misc.VM;
@@ -76,19 +76,32 @@ class Direct$Type$Buffer$RW$$BO$
 
 #if[byte]
 
-    private record Deallocator(long address, long size, int capacity, AtomicBoolean invoked) implements Runnable {
+    private static final class Deallocator implements Runnable {
 
-        private Deallocator {
+        private static final AtomicIntegerFieldUpdater<Deallocator> UPDATER =
+                AtomicIntegerFieldUpdater.newUpdater(Deallocator.class, "invoked");
+
+        private final long address;
+        private final long size;
+        private final int capacity;
+        private volatile int invoked;
+
+        private Deallocator(long address, long size, int capacity) {
             assert address != 0;
+            this.address = address;
+            this.size = size;
+            this.capacity = capacity;
+            this.invoked = 0;
         }
 
         public void run() {
             // Ensure idempotency (paranoia)
-            if (invoked.compareAndSet(false, true)) {
+            if (UPDATER.compareAndSet(this, 0, 1)) {
                 UNSAFE.freeMemory(address);
                 Bits.unreserveMemory(size, capacity);
             }
         }
+
     }
 
     private final Cleaner cleaner;
@@ -130,7 +143,7 @@ class Direct$Type$Buffer$RW$$BO$
             address = base;
         }
         try {
-            cleaner = Cleaner.create(this, new Deallocator(base, size, cap, new AtomicBoolean()));
+            cleaner = Cleaner.create(this, new Deallocator(base, size, cap));
         } catch (Throwable t) {
             // Prevent leak if the Deallocator or Cleaner fail for any reason
             UNSAFE.freeMemory(base);
