@@ -44,7 +44,7 @@ public class SummaryAPIListBuilder {
      * List of summary type Lists.
      */
     private final Map<SummaryElementKind, SortedSet<Element>> summaryMap;
-    private final BaseConfiguration configuration;
+    protected final BaseConfiguration configuration;
     protected final Utils utils;
     private final Predicate<Element> belongsToSummary;
 
@@ -62,7 +62,7 @@ public class SummaryAPIListBuilder {
         CONSTRUCTOR,
         ENUM_CONSTANT,
         ANNOTATION_TYPE_MEMBER // no ElementKind mapping
-    };
+    }
 
     /**
      * Constructor.
@@ -180,10 +180,10 @@ public class SummaryAPIListBuilder {
     }
 
     /**
-     * Return the list of summary elements of a given type.
+     * Return the set of summary elements of a given type.
      *
      * @param kind the SummaryElementKind
-     * @return
+     * @return the set
      */
     public SortedSet<Element> getSet(SummaryElementKind kind) {
         return summaryMap.get(kind);
@@ -211,6 +211,6 @@ public class SummaryAPIListBuilder {
      * @return a summary set
      */
     protected final SortedSet<Element> createSummarySet() {
-        return new TreeSet<>(utils.comparators.makeSummaryComparator());
+        return new TreeSet<>(utils.comparators.summaryComparator());
     }
 }

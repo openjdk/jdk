@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,14 @@
 #ifndef OS_BSD_OS_BSD_INLINE_HPP
 #define OS_BSD_OS_BSD_INLINE_HPP
 
-// os_bsd.hpp included by os.hpp
+#include "os_bsd.hpp"
 
 #include "runtime/os.hpp"
 #include "os_posix.inline.hpp"
+
+inline bool os::zero_page_read_protected() {
+  return true;
+}
 
 inline bool os::uses_stack_guard_pages() {
   return true;
@@ -50,5 +54,9 @@ inline bool os::must_commit_stack_guard_pages() {
 // Bang the shadow pages if they need to be touched to be mapped.
 inline void os::map_stack_shadow_pages(address sp) {
 }
+
+// Trim-native support, stubbed out for now, may be enabled later
+inline bool os::can_trim_native_heap() { return false; }
+inline bool os::trim_native_heap(os::size_change_t* rss_change) { return false; }
 
 #endif // OS_BSD_OS_BSD_INLINE_HPP

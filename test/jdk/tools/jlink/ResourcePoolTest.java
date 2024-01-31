@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,9 @@
  * @run main ResourcePoolTest
  */
 
-import java.io.ByteArrayInputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -44,7 +42,6 @@ import java.util.function.Function;
 import jdk.tools.jlink.internal.ResourcePoolManager;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolModule;
-import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
 
 public class ResourcePoolTest {
@@ -139,7 +136,7 @@ public class ResourcePoolTest {
             try {
                 resources.add(ResourcePoolManager.
                         newCompressedResource(ResourcePoolEntry.create(path, new byte[0]),
-                                ByteBuffer.allocate(99), "bitcruncher", null,
+                                ByteBuffer.allocate(99), "bitcruncher",
                                 ((ResourcePoolManager)resources).getStringTable(), ByteOrder.nativeOrder()));
             } catch (Exception ex) {
                 throw new RuntimeException(ex);
@@ -207,7 +204,7 @@ public class ResourcePoolTest {
         ResourcePoolEntry res3 = ResourcePoolEntry.create("/module2/toto1", new byte[7]);
         resources2.add(res3);
         resources2.add(ResourcePoolManager.newCompressedResource(res1,
-                ByteBuffer.allocate(7), "zip", null, resources1.getStringTable(),
+                ByteBuffer.allocate(7), "zip", resources1.getStringTable(),
                 ByteOrder.nativeOrder()));
         checkResources(resources2, res1, res2);
     }

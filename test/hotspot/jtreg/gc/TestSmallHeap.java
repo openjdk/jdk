@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,8 @@ package gc;
  * @summary Verify that starting the VM with a small heap works
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI gc.TestSmallHeap
  */
 
@@ -62,8 +62,8 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 import jtreg.SkippedException;
-import sun.hotspot.WhiteBox;
-import sun.hotspot.gc.GC;
+import jdk.test.whitebox.WhiteBox;
+import jdk.test.whitebox.gc.GC;
 
 public class TestSmallHeap {
 
@@ -96,12 +96,11 @@ public class TestSmallHeap {
 
     private static void verifySmallHeapSize(String gc, long expectedMaxHeap) throws Exception {
         long minMaxHeap = 4 * 1024 * 1024;
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        OutputAnalyzer analyzer = ProcessTools.executeLimitedTestJava(
             gc,
             "-Xmx" + minMaxHeap,
             "-XX:+PrintFlagsFinal",
             VerifyHeapSize.class.getName());
-        OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
         analyzer.shouldHaveExitValue(0);
 
         expectedMaxHeap = Math.max(expectedMaxHeap, minMaxHeap);

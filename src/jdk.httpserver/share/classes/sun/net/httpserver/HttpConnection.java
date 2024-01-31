@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,6 @@ import javax.net.ssl.*;
 import java.nio.channels.*;
 import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
-import com.sun.net.httpserver.*;
-import com.sun.net.httpserver.spi.*;
 
 /**
  * encapsulates all the connection specific state for a HTTP/S connection
@@ -55,14 +53,14 @@ class HttpConnection {
     SocketChannel chan;
     SelectionKey selectionKey;
     String protocol;
-    long time;
-    volatile long creationTime; // time this connection was created
+    long idleStartTime; // absolute time in milli seconds, starting when the connection was marked idle
+    volatile long reqStartedTime; // time when the request was initiated
     volatile long rspStartedTime; // time we started writing the response
     int remaining;
     boolean closed = false;
     Logger logger;
 
-    public enum State {IDLE, REQUEST, RESPONSE};
+    public enum State {IDLE, REQUEST, RESPONSE, NEWLY_ACCEPTED};
     volatile State state;
 
     public String toString() {

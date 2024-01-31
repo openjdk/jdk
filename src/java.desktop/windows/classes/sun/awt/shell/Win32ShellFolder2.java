@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,9 @@
 
 package sun.awt.shell;
 
+import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.RenderingHints;
 import java.awt.image.AbstractMultiResolutionImage;
 import java.awt.image.BufferedImage;
 import java.awt.image.ImageObserver;
@@ -854,10 +856,18 @@ final class Win32ShellFolder2 extends ShellFolder {
 
     /**
      * @return Whether this shell folder is a link
+     * @implNote Returns {@code true} for {@code .lnk} shortcuts only.
+     * For <i>symbolic links</i> and <i>junctions</i>, it returns
+     * {@code false} even though {@code IShellFolder} returns
+     * {@code true} now. It is a workaround for easier handling of
+     * symbolic links and junctions.
      */
+
     public boolean isLink() {
         if (cachedIsLink == null) {
-            cachedIsLink = hasAttribute(ATTRIB_LINK);
+            cachedIsLink = hasAttribute(ATTRIB_LINK)
+                           && (!isFileSystem()
+                               || getPath().toLowerCase().endsWith(".lnk"));
         }
 
         return cachedIsLink;
@@ -899,7 +909,7 @@ final class Win32ShellFolder2 extends ShellFolder {
                         location =
                                 Win32ShellFolderManager2.createShellFolderFromRelativePIDL(getDesktop(),
                                         linkLocationPIDL);
-                    } catch (InterruptedException e) {
+                    } catch (InterruptedException | FileNotFoundException e) {
                         // Return null
                     } catch (InternalError e) {
                         // Could be a link to a non-bindable object, such as a network connection
@@ -1115,7 +1125,10 @@ final class Win32ShellFolder2 extends ShellFolder {
 
                         if (hiResIconAvailable(getParentIShellFolder(), getRelativePIDL()) || newIcon == null) {
                             int size = getLargeIcon ? LARGE_ICON_SIZE : SMALL_ICON_SIZE;
-                            newIcon = getIcon(size, size);
+                            newIcon2 = getIcon(size, size);
+                            if (newIcon2 != null) {
+                                newIcon = newIcon2;
+                            }
                         }
 
                         if (newIcon == null) {
@@ -1127,6 +1140,14 @@ final class Win32ShellFolder2 extends ShellFolder {
         }
         return icon;
     }
+
+    /**
+     * The data is not available yet.
+     * @see
+     * <a href="https://learn.microsoft.com/en-us/windows/win32/com/com-error-codes-1">COM
+     * Error Codes</a>.
+     */
+    private static final long E_PENDING = 0x8000000AL;
 
     /**
      * @return The icon image of specified size used to display this shell folder
@@ -1153,10 +1174,10 @@ final class Win32ShellFolder2 extends ShellFolder {
                             getRelativePIDL(), s, false);
 
                     // E_PENDING: loading can take time so get the default
-                    if (hIcon <= 0) {
+                    if (hIcon == E_PENDING || hIcon == 0) {
                         hIcon = extractIcon(getParentIShellFolder(),
                                 getRelativePIDL(), s, true);
-                        if (hIcon <= 0) {
+                        if (hIcon == 0) {
                             if (isDirectory()) {
                                 newIcon = getShell32Icon(FOLDER_ICON_ID, size);
                             } else {
@@ -1174,6 +1195,9 @@ final class Win32ShellFolder2 extends ShellFolder {
                     newIcon = makeIcon(hIcon);
                     disposeIcon(hIcon);
 
+                    if (newIcon == null) {
+                        return null;
+                    }
                     multiResolutionIcon.put(s, newIcon);
                     if (size < MIN_QUALITY_ICON || size > MAX_QUALITY_ICON) {
                         break;
@@ -1393,11 +1417,14 @@ final class Win32ShellFolder2 extends ShellFolder {
         final Map<Integer, Image> resolutionVariants = new HashMap<>();
 
         public MultiResolutionIconImage(int baseSize, Map<Integer, Image> resolutionVariants) {
+            assert !resolutionVariants.containsValue(null)
+                   : "There are null icons in the MRI variants map";
             this.baseSize = baseSize;
             this.resolutionVariants.putAll(resolutionVariants);
         }
 
         public MultiResolutionIconImage(int baseSize, Image image) {
+            assert image != null : "Null icon passed as the base image for MRI";
             this.baseSize = baseSize;
             this.resolutionVariants.put(baseSize, image);
         }
@@ -1421,7 +1448,7 @@ final class Win32ShellFolder2 extends ShellFolder {
         public Image getResolutionVariant(double width, double height) {
             int dist = 0;
             Image retVal = null;
-            // We only care about width since we don't support non-rectangular icons
+            // We only care about width since we don't support non-square icons
             int w = (int) width;
             int retindex = 0;
             for (Integer i : resolutionVariants.keySet()) {
@@ -1434,6 +1461,15 @@ final class Win32ShellFolder2 extends ShellFolder {
                         break;
                     }
                 }
+            }
+            if (retVal.getWidth(null) != w) {
+                BufferedImage newVariant = new BufferedImage(w, w, BufferedImage.TYPE_INT_ARGB);
+                Graphics2D g2d = newVariant.createGraphics();
+                g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+                g2d.drawImage(retVal, 0,0, w, w, null);
+                g2d.dispose();
+                resolutionVariants.put(w, newVariant);
+                retVal = newVariant;
             }
             return retVal;
         }

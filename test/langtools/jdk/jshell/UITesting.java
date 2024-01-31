@@ -93,7 +93,8 @@ public class UITesting {
                         .promptCapture(true)
                         .persistence(new HashMap<>())
                         .locale(Locale.US)
-                        .run("--no-startup");
+                        .run("--no-startup",
+                             "--execution", Presets.TEST_DEFAULT_EXECUTION);
             } catch (Exception ex) {
                 throw new IllegalStateException(ex);
             }
@@ -120,12 +121,9 @@ public class UITesting {
             waitOutput(out, PROMPT);
             test.test(inputSink, out);
         } finally {
-            inputSink.write(INTERRUPT + INTERRUPT + "/exit");
+            inputSink.write(INTERRUPT + INTERRUPT + "/exit\n");
 
-            runner.join(1000);
-            if (runner.isAlive()) {
-                runner.stop();
-            }
+            runner.join();
         }
     }
 

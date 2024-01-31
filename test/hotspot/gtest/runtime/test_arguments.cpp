@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "runtime/flags/jvmFlag.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
+
 #include <errno.h>
 
 class ArgumentsTest : public ::testing::Test {
@@ -153,7 +154,7 @@ static const intx no_value = 4711;
 
 inline intx ArgumentsTest::parse_xss_inner_annotated(const char* str, jint expected_err, const char* file, int line_number) {
   intx value = no_value;
-  jint err = parse_xss(NULL /* Silence error messages */, str, &value);
+  jint err = parse_xss(nullptr /* Silence error messages */, str, &value);
   EXPECT_EQ(err, expected_err) << "Failure from: " << file << ":" << line_number;
   return value;
 }
@@ -200,7 +201,7 @@ TEST_VM_F(ArgumentsTest, parse_xss) {
   // Test value aligned both to K and vm_page_size.
   {
     EXPECT_TRUE(is_aligned(32 * M, K));
-    EXPECT_TRUE(is_aligned(32 * M, (size_t)os::vm_page_size()));
+    EXPECT_TRUE(is_aligned(32 * M, os::vm_page_size()));
     EXPECT_EQ(parse_xss_inner(to_string(32 * M), JNI_OK), (intx)(32 * M / K));
   }
 
@@ -230,7 +231,7 @@ struct NumericArgument {
 static void check_invalid_numeric_string(JVMFlag* flag,  const char** invalid_strings) {
   for (uint i = 0; ; i++) {
     const char* str = invalid_strings[i];
-    if (str == NULL) {
+    if (str == nullptr) {
       return;
     }
     ASSERT_FALSE(ArgumentsTest::parse_argument(flag->name(), str))
@@ -272,7 +273,7 @@ void check_numeric_flag(JVMFlag* flag, T getvalue(JVMFlag* flag),
       "0x800000000000m", "0x800000000000000k",
       "-0x8000000t", "-0x800000000g",
       "-0x800000000000m", "-0x800000000000000k",
-      NULL,
+      nullptr,
     };
     check_invalid_numeric_string(flag, invalid_strings);
   }
@@ -282,7 +283,7 @@ void check_numeric_flag(JVMFlag* flag, T getvalue(JVMFlag* flag),
       "INF", "Inf", "Infinity", "INFINITY",
       "-INF", "-Inf", "-Infinity", "-INFINITY",
       "nan", "NAN", "NaN",
-      NULL,
+      nullptr,
     };
     check_invalid_numeric_string(flag, invalid_strings_for_double);
   } else {
@@ -292,7 +293,7 @@ void check_numeric_flag(JVMFlag* flag, T getvalue(JVMFlag* flag),
       "0x10000000000000000", "18446744073709551616",
       "-0x10000000000000000", "-18446744073709551616",
       "-0x8000000000000001", "-9223372036854775809",
-      NULL,
+      nullptr,
     };
     check_invalid_numeric_string(flag, invalid_strings_for_integers);
   }
@@ -448,7 +449,7 @@ void check_numeric_flag(JVMFlag* flag, T getvalue(JVMFlag* flag),
 template <typename T, ENABLE_IF(std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 4)>
 void check_flag(const char* f, T getvalue(JVMFlag* flag)) {
   JVMFlag* flag = JVMFlag::find_flag(f);
-  if (flag == NULL) { // not available in product builds
+  if (flag == nullptr) { // not available in product builds
     return;
   }
 
@@ -463,7 +464,7 @@ void check_flag(const char* f, T getvalue(JVMFlag* flag)) {
 template <typename T, ENABLE_IF(!std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 4)>
 void check_flag(const char* f, T getvalue(JVMFlag* flag)) {
   JVMFlag* flag = JVMFlag::find_flag(f);
-  if (flag == NULL) { // not available in product builds
+  if (flag == nullptr) { // not available in product builds
     return;
   }
 
@@ -478,7 +479,7 @@ void check_flag(const char* f, T getvalue(JVMFlag* flag)) {
 template <typename T, ENABLE_IF(std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 8)>
 void check_flag(const char* f, T getvalue(JVMFlag* flag)) {
   JVMFlag* flag = JVMFlag::find_flag(f);
-  if (flag == NULL) { // not available in product builds
+  if (flag == nullptr) { // not available in product builds
     return;
   }
 
@@ -494,7 +495,7 @@ void check_flag(const char* f, T getvalue(JVMFlag* flag)) {
 template <typename T, ENABLE_IF(!std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 8)>
 void check_flag(const char* f, T getvalue(JVMFlag* flag)) {
   JVMFlag* flag = JVMFlag::find_flag(f);
-  if (flag == NULL) { // not available in product builds
+  if (flag == nullptr) { // not available in product builds
     return;
   }
 
@@ -554,7 +555,7 @@ TEST_VM_F(ArgumentsTest, set_numeric_flag_size_t) {
 
 TEST_VM_F(ArgumentsTest, set_numeric_flag_double) {
   JVMFlag* flag = JVMFlag::find_flag("TestFlagFor_double");
-  if (flag == NULL) { // not available in product builds
+  if (flag == nullptr) { // not available in product builds
     return;
   }
 
@@ -596,7 +597,7 @@ TEST_VM_F(ArgumentsTest, set_numeric_flag_double) {
     char* end;
     errno = 0;
     double expected = strtod(str, &end);
-    if (errno == 0 && end != NULL && *end == '\0') {
+    if (errno == 0 && end != nullptr && *end == '\0') {
       ASSERT_TRUE(ArgumentsTest::parse_argument(flag->name(), str))
         << "Test string '" <<
         str << "' did not parse for type " << flag->type_string() << ". (Expected value = " << expected << ")";

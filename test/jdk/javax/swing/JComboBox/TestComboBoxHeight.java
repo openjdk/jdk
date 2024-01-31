@@ -24,7 +24,7 @@
 /*
  * @test
  * @key headful
- * @bug 4517214
+ * @bug 4517214 8218474
  * @summary Tests that comboBox is not doubleheight if editable and has TitledBorder
 */
 

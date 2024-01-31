@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE filesystem PUBLIC "-//NetBeans//DTD Filesystem 1.1//EN" "http://www.netbeans.org/dtds/filesystem-1_1.dtd">
+<!DOCTYPE filesystem PUBLIC "-//NetBeans//DTD Filesystem 1.1//EN" "https://www.netbeans.org/dtds/filesystem-1_1.dtd">
 <filesystem>
     <folder name="Actions">
         <folder name="Window">
@@ -10,6 +10,7 @@
         <folder name="Window">
             <file name="ControlFlowAction.shadow">
                 <attr name="originalFile" stringvalue="Actions/Window/com-sun-hotspot-igv-controlflow-ControlFlowAction.instance"/>
+                <attr name="position" intvalue="2"/>
             </file>
         </folder>
     </folder>

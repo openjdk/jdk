@@ -27,20 +27,25 @@
 
 #include "runtime/continuationEntry.hpp"
 
-// TODO: Implement
+#include "code/codeCache.hpp"
+#include "oops/method.inline.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/registerMap.hpp"
 
 inline frame ContinuationEntry::to_frame() const {
-  Unimplemented();
-  return frame();
+  static CodeBlob* cb = CodeCache::find_blob_fast(entry_pc());
+  assert(cb != nullptr, "");
+  assert(cb->as_compiled_method()->method()->is_continuation_enter_intrinsic(), "");
+  return frame(entry_sp(), entry_sp(), entry_fp(), entry_pc(), cb);
 }
 
 inline intptr_t* ContinuationEntry::entry_fp() const {
-  Unimplemented();
-  return nullptr;
+  return (intptr_t*)((address)this + size()) + 2;
 }
 
 inline void ContinuationEntry::update_register_map(RegisterMap* map) const {
-  Unimplemented();
+  intptr_t** fp = (intptr_t**)(bottom_sender_sp() - 2);
+  frame::update_map_with_saved_link(map, fp);
 }
 
 #endif // CPU_RISCV_CONTINUATIONENTRY_RISCV_INLINE_HPP

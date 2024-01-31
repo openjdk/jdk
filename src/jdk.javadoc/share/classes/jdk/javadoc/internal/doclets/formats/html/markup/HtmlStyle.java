@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,13 @@ public enum HtmlStyle {
     //<editor-fold desc="navigation bar">
     //
     // The following constants are used for the main navigation bar that appears in the
-    // {@code header} and {@code footer} elements on each page.
+    // {@code header} element on each page, as well as the side navigation bar that displays
+    // the table of contents on some pages.
+
+    /**
+     * The class for the link representing the current element in breadcrumb navigation and table of contents.
+     */
+    currentSelection,
 
     /**
      * The class for the overall {@code div} element containing the {@code header} element for the page.
@@ -66,6 +72,21 @@ public enum HtmlStyle {
      * provided by the {@code -header} or {@code -footer} command line option.
      */
     aboutLanguage,
+
+    /**
+     * The class for the {@code input} element to filter items in the table of contents.
+     */
+    filterInput,
+
+    /**
+     * The class for the {@code button} element to hide the sidebar.
+     */
+    hideSidebar,
+
+    /**
+     * The class for the {@code div} element containing the sidebar and main content.
+     */
+    mainGrid,
 
     /**
      * The class for the highlighted item in the list of navigation links, indicating
@@ -80,6 +101,16 @@ public enum HtmlStyle {
     navBarToggleIcon,
 
     /**
+     * The class for the {@code div} element containing navigation elements.
+     */
+    navContent,
+
+    /**
+     * The class for the {@code div} element containing the button to show or hide the menu.
+     */
+    navMenuButton,
+
+    /**
      * The class for the primary list of navigation links.
      */
     navList,
@@ -88,6 +119,16 @@ public enum HtmlStyle {
      * The class for the {@code div} element containing the "Search" control.
      */
     navListSearch,
+
+    /**
+     * The class for the reset button in the sidebar filter input element.
+     */
+    resetFilter,
+
+    /**
+     * The class for the {@code button} element to show the sidebar.
+     */
+    showSidebar,
 
     /**
      * The class for a {@code div} element containing a link to skip the navigation header.
@@ -107,9 +148,19 @@ public enum HtmlStyle {
     subNavList,
 
     /**
-     * The class for the list of subsidiary navigation links for smaller displays.
+     * The class for a {@code nav} element containing a table of contents.
      */
-    subNavListSmall,
+    toc,
+
+    /**
+     * The class for the {@code div} element representing the header of the table of contents.
+     */
+    tocHeader,
+
+    /**
+     * The class used for list elements in the table of contents.
+     */
+    tocList,
 
     //</editor-fold>
 
@@ -123,21 +174,6 @@ public enum HtmlStyle {
      * The class for the element that contains all of the main heading for the page.
      */
     header,
-
-    /**
-     * The class for the "module" label in the heading for a package declaration.
-     */
-    moduleLabelInPackage,
-
-    /**
-     * The class for the "module" label in the heading for a type declaration.
-     */
-    moduleLabelInType,
-
-    /**
-     * The class for the "package" label in the heading for a type declaration.
-     */
-    packageLabelInType,
 
     /**
      * The class for the element containing the label and name for the module
@@ -245,6 +281,19 @@ public enum HtmlStyle {
      * the class for the {@code section} element for the enum constants of an enum class.
      */
     constantsSummary,
+
+    /**
+     * The class for a {@code ul} element in various summary pages containing links to the
+     * contents of the page.
+     */
+    contentsList,
+
+    /**
+     * The class for a {@code ul} element in the preview summary page containing information
+     * about the preview features in the current release.
+     */
+    previewFeatureList,
+
     //</editor-fold>
 
     //<editor-fold desc="details">
@@ -370,15 +419,31 @@ public enum HtmlStyle {
     previewLabel,
 
     /**
-     * The class for the list containing the {@code @see} tags of an element.
+     * The class for a block describing the "restricted" status of a declaration.
      */
-    seeList,
+    restrictedBlock,
 
     /**
-     * The class for the list containing the {@code @see} tags of an element
-     * when some of the tags have longer labels.
+     * The class for the details in a block describing the "restricted" status of a declaration.
      */
-    seeListLong,
+    restrictedComment,
+
+    /**
+     * The class for the "Restricted" label in a block describing the "restricted" status
+     * of a declaration.
+     */
+    restrictedLabel,
+
+    /**
+     * The class for a list containing the tags of an element.
+     */
+    tagList,
+
+    /**
+     * The class for a list containing the tags of an element
+     * when some tags have longer labels or contain commas.
+     */
+    tagListLong,
 
     //</editor-fold>
 
@@ -550,29 +615,6 @@ public enum HtmlStyle {
     notes,
     //</editor-fold>
 
-    //<editor-fold desc="flex layout">
-    //
-    // The following constants are used for the components of the top-level structures for "flex" layout.
-
-    /**
-     * The class of the top-level {@code div} element used to arrange for "flex" layout in
-     * a browser window. The element should contain two child elements: one with class
-     * {@link #flexHeader flex-header} and one with class {@link #flexContent flex-content}.
-     */
-    flexBox,
-
-    /**
-     * The class of the {@code header} element within a {@link #flexBox flex-box} container.
-     * The element is always displayed at the top of the viewport.
-     */
-    flexHeader,
-
-    /**
-     * The class of the {@code div} element within a {@link #flexBox flex-box} container
-     * This element appears below the header and can be scrolled if too big for the available height.
-     */
-    flexContent,
-    //</editor-fold>
 
     //<editor-fold desc="signatures">
     //
@@ -744,6 +786,11 @@ public enum HtmlStyle {
     docFilePage,
 
     /**
+     * The class of the {@code body} element for the "external specifications" page.
+     */
+    externalSpecsPage,
+
+    /**
      * The class of the {@code body} element for the "help" page.
      */
     helpPage,
@@ -797,6 +844,11 @@ public enum HtmlStyle {
      * The class of the {@code body} element for the page listing any preview items.
      */
     previewListPage,
+
+    /**
+     * The class of the {@code body} element for the page listing restricted methods.
+     */
+    restrictedListPage,
 
     /**
      * The class of the {@code body} element for the search page.
@@ -899,6 +951,8 @@ public enum HtmlStyle {
      */
     highlighted,
 
+    //</editor-fold>
+
     //<editor-fold desc="miscellaneous">
     //
     // The following constants are used in various places across a variety of pages.
@@ -943,6 +997,11 @@ public enum HtmlStyle {
      * The class of a {@code ul} element with horizontal (inline) display style.
      */
     horizontal,
+
+    /**
+     * The class of a {@code div} element that allows its horizontal overflow to be scrolled.
+     */
+    horizontalScroll,
 
     /**
      * The class of a {@code span} element containing implementation details of
@@ -1006,6 +1065,11 @@ public enum HtmlStyle {
      * the package uses page.
      */
     packageUses,
+
+    /**
+     * The class for the list of references to an external specification.
+     */
+    refList,
 
     /**
      * The class of a {@code section} element for a package in the serialized

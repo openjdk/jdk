@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018, 2020, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,8 @@
 #include "gc/shared/taskqueue.hpp"
 #include "logging/log.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/thread.hpp"
 
 TaskTerminator::DelayContext::DelayContext() {
   _yield_count = 0;
@@ -73,14 +73,14 @@ TaskTerminator::TaskTerminator(uint n_threads, TaskQueueSetSuper* queue_set) :
   _queue_set(queue_set),
   _offered_termination(0),
   _blocker(Mutex::nosafepoint, "TaskTerminator_lock"),
-  _spin_master(NULL) { }
+  _spin_master(nullptr) { }
 
 TaskTerminator::~TaskTerminator() {
   if (_offered_termination != 0) {
     assert(_offered_termination == _n_threads, "Must be terminated or aborted");
   }
 
-  assert(_spin_master == NULL, "Should have been reset");
+  assert(_spin_master == nullptr, "Should have been reset");
 }
 
 #ifdef ASSERT
@@ -93,7 +93,7 @@ void TaskTerminator::reset_for_reuse() {
   if (_offered_termination != 0) {
     assert(_offered_termination == _n_threads,
            "Only %u of %u threads offered termination", _offered_termination, _n_threads);
-    assert(_spin_master == NULL, "Leftover spin master " PTR_FORMAT, p2i(_spin_master));
+    assert(_spin_master == nullptr, "Leftover spin master " PTR_FORMAT, p2i(_spin_master));
     _offered_termination = 0;
   }
 }
@@ -104,7 +104,7 @@ void TaskTerminator::reset_for_reuse(uint n_threads) {
 }
 
 bool TaskTerminator::exit_termination(size_t tasks, TerminatorTerminator* terminator) {
-  return tasks > 0 || (terminator != NULL && terminator->should_exit_termination());
+  return tasks > 0 || (terminator != nullptr && terminator->should_exit_termination());
 }
 
 size_t TaskTerminator::tasks_in_queue_set() const {
@@ -117,7 +117,7 @@ void TaskTerminator::prepare_for_return(Thread* this_thread, size_t tasks) {
   assert(_offered_termination >= 1, "must be");
 
   if (_spin_master == this_thread) {
-    _spin_master = NULL;
+    _spin_master = nullptr;
   }
 
   if (tasks >= _offered_termination - 1) {
@@ -152,7 +152,7 @@ bool TaskTerminator::offer_termination(TerminatorTerminator* terminator) {
   }
 
   for (;;) {
-    if (_spin_master == NULL) {
+    if (_spin_master == nullptr) {
       _spin_master = the_thread;
       DelayContext delay_context;
 
@@ -179,7 +179,7 @@ bool TaskTerminator::offer_termination(TerminatorTerminator* terminator) {
         }
       }
       // Give up spin master before sleeping.
-      _spin_master = NULL;
+      _spin_master = nullptr;
     }
     bool timed_out = x.wait(WorkStealingSleepMillis);
 

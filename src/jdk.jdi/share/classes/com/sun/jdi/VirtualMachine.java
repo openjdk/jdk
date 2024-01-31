@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,7 +144,7 @@ public interface VirtualMachine extends Mirror {
      *
      * @return a list of {@link ReferenceType} objects, each mirroring
      * a loaded type in the target VM.
-     * @see <a href="{@docRoot}/../specs/jvmti/jvmti.html#GetLoadedClasses">
+     * @see <a href="{@docRoot}/../specs/jvmti.html#GetLoadedClasses">
      * JVM TI GetLoadedClasses</a> regarding how class and interface creation can be triggered
      */
     List<ReferenceType> allClasses();
@@ -277,13 +277,13 @@ public interface VirtualMachine extends Mirror {
      * Suspends the execution of the application running in this
      * virtual machine. All threads currently running will be suspended.
      * <p>
-     * Unlike {@link java.lang.Thread#suspend Thread.suspend()},
-     * suspends of both the virtual machine and individual threads are
+     * Suspends of both the virtual machine and individual threads are
      * counted. Before a thread will run again, it must be resumed
      * (through {@link #resume} or {@link ThreadReference#resume})
      * the same number of times it has been suspended.
      *
-     * @throws VMCannotBeModifiedException if the VirtualMachine is read-only - see {@link VirtualMachine#canBeModified()}.
+     * @throws VMCannotBeModifiedException if the VirtualMachine is read-only
+     * @see #canBeModified()
      */
     void suspend();
 
@@ -292,9 +292,9 @@ public interface VirtualMachine extends Mirror {
      * virtual machine. All threads are resumed as documented in
      * {@link ThreadReference#resume}.
      *
-     * @throws VMCannotBeModifiedException if the VirtualMachine is read-only - see {@link VirtualMachine#canBeModified()}.
-     *
-     * @see #suspend
+     * @throws VMCannotBeModifiedException if the VirtualMachine is read-only
+     * @see #suspend()
+     * @see #canBeModified()
      */
     void resume();
 
@@ -427,7 +427,7 @@ public interface VirtualMachine extends Mirror {
      * @return a {@link StringReference} that mirrors the newly created
      * string in the target VM.
      * @throws VMCannotBeModifiedException if the VirtualMachine is read-only
-     * -see {@link VirtualMachine#canBeModified()}.
+     * - see {@link VirtualMachine#canBeModified()}.
      */
     StringReference mirrorOf(String value);
 
@@ -448,7 +448,7 @@ public interface VirtualMachine extends Mirror {
      * @return the {@link java.lang.Process} object for this virtual
      * machine, or null if it was not launched by a {@link LaunchingConnector}.
      * @throws VMCannotBeModifiedException if the VirtualMachine is read-only
-     * -see {@link VirtualMachine#canBeModified()}.
+     * - see {@link VirtualMachine#canBeModified()}.
      */
     Process process();
 
@@ -678,7 +678,8 @@ public interface VirtualMachine extends Mirror {
      * Determines if the target VM supports the filtering of
      * class prepare events by source name.
      *
-     * see {@link ClassPrepareRequest#addSourceNameFilter}.
+     * @see ClassPrepareRequest#addSourceNameFilter
+     *
      * @return <code>true</code> if the feature is supported,
      * <code>false</code> otherwise.
      *

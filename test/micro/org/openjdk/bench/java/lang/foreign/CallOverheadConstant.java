@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,6 @@
  */
 package org.openjdk.bench.java.lang.foreign;
 
-import java.lang.foreign.Addressable;
-import java.lang.foreign.MemoryAddress;
 import java.lang.foreign.MemorySegment;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -43,7 +41,7 @@ import static org.openjdk.bench.java.lang.foreign.CallOverheadHelper.*;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(value = 3, jvmArgsAppend = { "--enable-native-access=ALL-UNNAMED", "--enable-preview" })
+@Fork(value = 3, jvmArgsAppend = { "--enable-native-access=ALL-UNNAMED", "-Djava.library.path=micro/native" })
 public class CallOverheadConstant {
 
     @Benchmark
@@ -57,6 +55,11 @@ public class CallOverheadConstant {
     }
 
     @Benchmark
+    public void panama_blank_critical() throws Throwable {
+        func_critical.invokeExact();
+    }
+
+    @Benchmark
     public int jni_identity() throws Throwable {
         return identity(10);
     }
@@ -64,6 +67,11 @@ public class CallOverheadConstant {
     @Benchmark
     public int panama_identity() throws Throwable {
         return (int) identity.invokeExact(10);
+    }
+
+    @Benchmark
+    public int panama_identity_critical() throws Throwable {
+        return (int) identity_critical.invokeExact(10);
     }
 
     @Benchmark
@@ -87,53 +95,38 @@ public class CallOverheadConstant {
     }
 
     @Benchmark
-    public MemoryAddress panama_identity_memory_address_shared() throws Throwable {
-        return (MemoryAddress) identity_memory_address.invokeExact((Addressable)sharedPoint.address());
+    public MemorySegment panama_identity_memory_address_shared() throws Throwable {
+        return (MemorySegment) identity_memory_address.invokeExact(sharedPoint);
     }
 
     @Benchmark
-    public MemoryAddress panama_identity_memory_address_confined() throws Throwable {
-        return (MemoryAddress) identity_memory_address.invokeExact((Addressable)confinedPoint.address());
+    public MemorySegment panama_identity_memory_address_confined() throws Throwable {
+        return (MemorySegment) identity_memory_address.invokeExact(confinedPoint);
     }
 
     @Benchmark
-    public MemoryAddress panama_identity_memory_address_shared_3() throws Throwable {
-        return (MemoryAddress) identity_memory_address_3.invokeExact((Addressable)sharedPoint.address(), (Addressable)sharedPoint.address(), (Addressable)sharedPoint.address());
+    public MemorySegment panama_identity_memory_address_shared_3() throws Throwable {
+        return (MemorySegment) identity_memory_address_3.invokeExact(sharedPoint, sharedPoint, sharedPoint);
     }
 
     @Benchmark
-    public MemoryAddress panama_identity_memory_address_confined_3() throws Throwable {
-        return (MemoryAddress) identity_memory_address_3.invokeExact((Addressable)confinedPoint.address(), (Addressable)confinedPoint.address(), (Addressable)confinedPoint.address());
+    public MemorySegment panama_identity_memory_address_confined_3() throws Throwable {
+        return (MemorySegment) identity_memory_address_3.invokeExact(confinedPoint, confinedPoint, confinedPoint);
     }
 
     @Benchmark
-    public MemoryAddress panama_identity_struct_ref_shared() throws Throwable {
-        return (MemoryAddress) identity_memory_address.invokeExact((Addressable)sharedPoint);
+    public MemorySegment panama_identity_memory_address_null() throws Throwable {
+        return (MemorySegment) identity_memory_address.invokeExact(MemorySegment.NULL);
     }
 
     @Benchmark
-    public MemoryAddress panama_identity_struct_ref_confined() throws Throwable {
-        return (MemoryAddress) identity_memory_address.invokeExact((Addressable)confinedPoint);
+    public MemorySegment panama_identity_memory_address_null_3() throws Throwable {
+        return (MemorySegment) identity_memory_address_3.invokeExact(MemorySegment.NULL, MemorySegment.NULL, MemorySegment.NULL);
     }
 
     @Benchmark
-    public MemoryAddress panama_identity_struct_ref_shared_3() throws Throwable {
-        return (MemoryAddress) identity_memory_address_3.invokeExact((Addressable)sharedPoint, (Addressable)sharedPoint, (Addressable)sharedPoint);
-    }
-
-    @Benchmark
-    public MemoryAddress panama_identity_struct_ref_confined_3() throws Throwable {
-        return (MemoryAddress) identity_memory_address_3.invokeExact((Addressable)confinedPoint, (Addressable)confinedPoint, (Addressable)confinedPoint);
-    }
-
-    @Benchmark
-    public MemoryAddress panama_identity_memory_address_null() throws Throwable {
-        return (MemoryAddress) identity_memory_address.invokeExact((Addressable)MemoryAddress.NULL);
-    }
-
-    @Benchmark
-    public MemoryAddress panama_identity_memory_address_null_non_exact() throws Throwable {
-        return (MemoryAddress) identity_memory_address.invoke(MemoryAddress.NULL);
+    public MemorySegment panama_identity_memory_address_null_non_exact() throws Throwable {
+        return (MemorySegment) identity_memory_address.invoke(MemorySegment.NULL);
     }
 
     @Benchmark

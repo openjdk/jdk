@@ -41,9 +41,9 @@ import sun.security.util.Debug;
  * <p>Key generators are constructed using one of the {@code getInstance}
  * class methods of this class.
  *
- * <p>KeyGenerator objects are reusable, i.e., after a key has been
- * generated, the same KeyGenerator object can be re-used to generate further
- * keys.
+ * <p>{@code KeyGenerator} objects are reusable, i.e., after a key has been
+ * generated, the same {@code KeyGenerator} object can be re-used
+ * to generate further keys.
  *
  * <p>There are two ways to generate a key: in an algorithm-independent
  * manner, and in an algorithm-specific manner.
@@ -55,9 +55,9 @@ import sun.security.util.Debug;
  * <i>source of randomness</i>.
  * There is an
  * {@link #init(int, java.security.SecureRandom) init}
- * method in this KeyGenerator class that takes these two universally
+ * method in this {@code KeyGenerator} class that takes these two universally
  * shared types of arguments. There is also one that takes just a
- * {@code keysize} argument, and uses the SecureRandom implementation
+ * {@code keysize} argument, and uses the {@code SecureRandom} implementation
  * of the highest-priority installed provider as the source of randomness
  * (or a system-provided source of randomness if none of the installed
  * providers supply a SecureRandom implementation), and one that takes just a
@@ -80,17 +80,17 @@ import sun.security.util.Debug;
  * providers supply a SecureRandom implementation).
  * </ul>
  *
- * <p>In case the client does not explicitly initialize the KeyGenerator
+ * <p>In case the client does not explicitly initialize the {@code KeyGenerator}
  * (via a call to an {@code init} method), each provider must
  * supply (and document) a default initialization.
  * See the Keysize Restriction sections of the
  * {@extLink security_guide_jdk_providers JDK Providers}
- * document for information on the KeyGenerator defaults used by
+ * document for information on the {@code KeyGenerator} defaults used by
  * JDK providers.
  * However, note that defaults may vary across different providers.
  * Additionally, the default value for a provider may change in a future
  * version. Therefore, it is recommended to explicitly initialize the
- * KeyGenerator instead of relying on provider-specific defaults.
+ * {@code KeyGenerator} instead of relying on provider-specific defaults.
  *
  * <p> Every implementation of the Java platform is required to support the
  * following standard {@code KeyGenerator} algorithms with the keysizes in
@@ -147,7 +147,7 @@ public class KeyGenerator {
     private SecureRandom initRandom;
 
     /**
-     * Creates a KeyGenerator object.
+     * Creates a {@code KeyGenerator} object.
      *
      * @param keyGenSpi the delegate
      * @param provider the provider
@@ -204,11 +204,11 @@ public class KeyGenerator {
      * Returns a {@code KeyGenerator} object that generates secret keys
      * for the specified algorithm.
      *
-     * <p> This method traverses the list of registered security Providers,
-     * starting with the most preferred Provider.
-     * A new KeyGenerator object encapsulating the
-     * KeyGeneratorSpi implementation from the first
-     * Provider that supports the specified algorithm is returned.
+     * <p> This method traverses the list of registered security providers,
+     * starting with the most preferred provider.
+     * A new {@code KeyGenerator} object encapsulating the
+     * {@code KeyGeneratorSpi} implementation from the first
+     * provider that supports the specified algorithm is returned.
      *
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
@@ -247,8 +247,8 @@ public class KeyGenerator {
      * Returns a {@code KeyGenerator} object that generates secret keys
      * for the specified algorithm.
      *
-     * <p> A new KeyGenerator object encapsulating the
-     * KeyGeneratorSpi implementation from the specified provider
+     * <p> A new {@code KeyGenerator} object encapsulating the
+     * {@code KeyGeneratorSpi} implementation from the specified provider
      * is returned.  The specified provider must be registered
      * in the security provider list.
      *
@@ -293,9 +293,9 @@ public class KeyGenerator {
      * Returns a {@code KeyGenerator} object that generates secret keys
      * for the specified algorithm.
      *
-     * <p> A new KeyGenerator object encapsulating the
-     * KeyGeneratorSpi implementation from the specified Provider
-     * object is returned.  Note that the specified Provider object
+     * <p> A new {@code KeyGenerator} object encapsulating the
+     * {@code KeyGeneratorSpi} implementation from the specified provider
+     * object is returned.  Note that the specified provider object
      * does not have to be registered in the provider list.
      *
      * @param algorithm the standard name of the requested key algorithm.
@@ -343,8 +343,8 @@ public class KeyGenerator {
     /**
      * Update the active spi of this class and return the next
      * implementation for failover. If no more implementations are
-     * available, this method returns null. However, the active spi of
-     * this class is never set to null.
+     * available, this method returns {@code null}. However, the active spi of
+     * this class is never set to {@code null}.
      */
     private KeyGeneratorSpi nextSpi(KeyGeneratorSpi oldSpi,
             boolean reinit) {

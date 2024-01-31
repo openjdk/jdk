@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,16 +79,16 @@ public class CodeSource implements java.io.Serializable {
     private transient CertificateFactory factory = null;
 
     /**
-     * A String form of the URL for use as a key in HashMaps/Sets. The String
-     * form should be behave in the same manner as the URL when compared for
-     * equality in a HashMap/Set, except that no nameservice lookup is done
-     * on the hostname (only string comparison), and the fragment is not
-     * considered.
+     * A {@code String} form of the URL for use as a key in HashMaps/Sets.
+     * The {@code String} form should behave in the same manner as the URL
+     * when compared for equality in a HashMap/Set, except that no nameservice
+     * lookup is done on the hostname (only string comparison), and the
+     * fragment is not considered.
      */
     private transient String locationNoFragString;
 
     /**
-     * Constructs a CodeSource and associates it with the specified
+     * Constructs a {@code CodeSource} and associates it with the specified
      * location and set of certificates.
      *
      * @param url the location (URL).  It may be {@code null}.
@@ -108,7 +108,7 @@ public class CodeSource implements java.io.Serializable {
     }
 
     /**
-     * Constructs a CodeSource and associates it with the specified
+     * Constructs a {@code CodeSource} and associates it with the specified
      * location and set of code signers.
      *
      * @param url the location (URL).  It may be {@code null}.
@@ -130,28 +130,24 @@ public class CodeSource implements java.io.Serializable {
     }
 
     /**
-     * Returns the hash code value for this object.
-     *
-     * @return a hash code value for this object.
+     * {@return the hash code value for this object}
      */
     @Override
     public int hashCode() {
-        if (location != null)
-            return location.hashCode();
-        else
-            return 0;
+        return Objects.hashCode(location);
     }
 
     /**
      * Tests for equality between the specified object and this
-     * object. Two CodeSource objects are considered equal if their
+     * object. Two {@code CodeSource} objects are considered equal if their
      * locations are of identical value and if their signer certificate
      * chains are of identical value. It is not required that
      * the certificate chains be in the same order.
      *
      * @param obj the object to test for equality with this object.
      *
-     * @return true if the objects are considered equal, false otherwise.
+     * @return {@code true} if the objects are considered equal,
+     * {@code false} otherwise.
      */
     @Override
     public boolean equals(Object obj) {
@@ -165,7 +161,7 @@ public class CodeSource implements java.io.Serializable {
     }
 
     /**
-     * Returns the location associated with this CodeSource.
+     * Returns the location associated with this {@code CodeSource}.
      *
      * @return the location (URL), or {@code null} if no URL was supplied
      * during construction.
@@ -177,20 +173,21 @@ public class CodeSource implements java.io.Serializable {
     }
 
     /**
-     * Returns a String form of the URL for use as a key in HashMaps/Sets.
+     * Returns a {@code String} form of the URL for use as a key in
+     * HashMaps/Sets.
      */
     String getLocationNoFragString() {
         return locationNoFragString;
     }
 
     /**
-     * Returns the certificates associated with this CodeSource.
+     * Returns the certificates associated with this {@code CodeSource}.
      * <p>
-     * If this CodeSource object was created using the
+     * If this {@code CodeSource} object was created using the
      * {@link #CodeSource(URL url, CodeSigner[] signers)}
      * constructor then its certificate chains are extracted and used to
-     * create an array of Certificate objects. Each signer certificate is
-     * followed by its supporting certificate chain (which may be empty).
+     * create an array of {@code Certificate} objects. Each signer certificate
+     * is followed by its supporting certificate chain (which may be empty).
      * Each signer certificate and its supporting certificate chain is ordered
      * bottom-to-top (i.e., with the signer certificate first and the (root)
      * certificate authority last).
@@ -211,7 +208,7 @@ public class CodeSource implements java.io.Serializable {
                     signers[i].getSignerCertPath().getCertificates());
             }
             certs = certChains.toArray(
-                        new java.security.cert.Certificate[certChains.size()]);
+                    new java.security.cert.Certificate[0]);
             return certs.clone();
 
         } else {
@@ -220,13 +217,13 @@ public class CodeSource implements java.io.Serializable {
     }
 
     /**
-     * Returns the code signers associated with this CodeSource.
+     * Returns the code signers associated with this {@code CodeSource}.
      * <p>
-     * If this CodeSource object was created using the
+     * If this {@code CodeSource} object was created using the
      * {@link #CodeSource(URL url, java.security.cert.Certificate[] certs)}
      * constructor then its certificate chains are extracted and used to
-     * create an array of CodeSigner objects. Note that only X.509 certificates
-     * are examined - all other certificate types are ignored.
+     * create an array of {@code CodeSigner} objects. Note that only X.509
+     * certificates are examined - all other certificate types are ignored.
      *
      * @return a copy of the code signer array, or {@code null} if there
      * is none.
@@ -248,10 +245,12 @@ public class CodeSource implements java.io.Serializable {
     }
 
     /**
-     * Returns true if this CodeSource object "implies" the specified CodeSource.
+     * Returns true if this {@code CodeSource} object "implies" the specified
+     * {@code CodeSource}.
      * <p>
      * More specifically, this method makes the following checks.
-     * If any fail, it returns false. If they all succeed, it returns true.
+     * If any fail, it returns {@code false}. If they all succeed, it returns
+     * {@code true}.
      * <ul>
      * <li> <i>codesource</i> must not be null.
      * <li> If this object's certificates are not null, then all
@@ -298,9 +297,9 @@ public class CodeSource implements java.io.Serializable {
      * </ul>
      * <p>
      * For example, the codesource objects with the following locations
-     * and null certificates all imply
-     * the codesource with the location "http://www.example.com/classes/foo.jar"
-     * and null certificates:
+     * and {@code null} certificates all imply the codesource with the location
+     * {@code http://www.example.com/classes/foo.jar}
+     * and {@code null} certificates:
      * <pre>
      *     http:
      *     http://*.example.com/classes/*
@@ -308,13 +307,14 @@ public class CodeSource implements java.io.Serializable {
      *     http://www.example.com/classes/foo.jar
      * </pre>
      *
-     * Note that if this CodeSource has a null location and a null
-     * certificate chain, then it implies every other CodeSource.
+     * Note that if this {@code CodeSource} has a {@code null} location and a
+     * {@code null} certificate chain, then it implies every other
+     * {@code CodeSource}.
      *
-     * @param codesource CodeSource to compare against.
+     * @param codesource {@code CodeSource} to compare against.
      *
-     * @return true if the specified codesource is implied by this codesource,
-     * false if not.
+     * @return {@code true} if the specified codesource is implied by this
+     * codesource, {@code false} if not.
      */
     public boolean implies(CodeSource codesource)
     {
@@ -325,12 +325,12 @@ public class CodeSource implements java.io.Serializable {
     }
 
     /**
-     * Returns true if all the certs in this
-     * CodeSource are also in <i>that</i>.
+     * Returns {@code true} if all the certs in this
+     * {@code CodeSource} are also in <i>that</i>.
      *
-     * @param that the CodeSource to check against.
-     * @param strict if true then a strict equality match is performed.
-     *               Otherwise a subset match is performed.
+     * @param that the {@code CodeSource} to check against.
+     * @param strict if {@code true} then a strict equality match is performed.
+     *               Otherwise, a subset match is performed.
      */
     boolean matchCerts(CodeSource that, boolean strict)
     {
@@ -383,9 +383,9 @@ public class CodeSource implements java.io.Serializable {
 
 
     /**
-     * Returns true if two CodeSource's have the "same" location.
+     * Returns {@code true} if two CodeSource's have the "same" location.
      *
-     * @param that CodeSource to compare against
+     * @param that {@code CodeSource} to compare against
      */
     private boolean matchLocation(CodeSource that) {
         if (location == null)
@@ -461,9 +461,7 @@ public class CodeSource implements java.io.Serializable {
                 if (that.sp == null) {
                     that.sp = new SocketPermission(thatHost, "resolve");
                 }
-                if (!this.sp.implies(that.sp)) {
-                    return false;
-                }
+                return this.sp.implies(that.sp);
             }
         }
         // everything matches
@@ -471,10 +469,10 @@ public class CodeSource implements java.io.Serializable {
     }
 
     /**
-     * Returns a string describing this CodeSource, telling its
+     * Returns a string describing this {@code CodeSource}, telling its
      * URL and certificates.
      *
-     * @return information about this CodeSource.
+     * @return information about this {@code CodeSource}.
      */
     @Override
     public String toString() {
@@ -570,7 +568,7 @@ public class CodeSource implements java.io.Serializable {
             // we know of 3 different cert types: X.509, PGP, SDSI, which
             // could all be present in the stream at the same time
             cfs = new Hashtable<>(3);
-            certList = new ArrayList<>(size > 20 ? 20 : size);
+            certList = new ArrayList<>(Math.min(size, 20));
         } else if (size < 0) {
             throw new IOException("size cannot be negative");
         }
@@ -625,7 +623,7 @@ public class CodeSource implements java.io.Serializable {
      * The array of certificates is a concatenation of certificate chains
      * where the initial certificate in each chain is the end-entity cert.
      *
-     * @return an array of code signers or null if none are generated.
+     * @return an array of code signers or {@code null} if none are generated.
      */
     private CodeSigner[] convertCertArrayToSignerArray(
         java.security.cert.Certificate[] certs) {
@@ -665,7 +663,7 @@ public class CodeSource implements java.io.Serializable {
             if (signers.isEmpty()) {
                 return null;
             } else {
-                return signers.toArray(new CodeSigner[signers.size()]);
+                return signers.toArray(new CodeSigner[0]);
             }
 
         } catch (CertificateException e) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 
 /**
@@ -156,66 +157,66 @@ import java.util.Locale;
  * </thead>
  * <tbody>
  *    <tr>
- *       <th scope="row" style="text-weight: normal"><i>(none)</i>
- *       <th scope="row" style="text-weight: normal"><i>(none)</i>
+ *       <th scope="row" style="font-weight:normal"><i>(none)</i>
+ *       <th scope="row" style="font-weight:normal"><i>(none)</i>
  *       <td>{@code null}
  *    <tr>
- *       <th scope="row" style="text-weight: normal" rowspan=5>{@code number}
- *       <th scope="row" style="text-weight: normal"><i>(none)</i>
+ *       <th scope="row" style="font-weight:normal" rowspan=5>{@code number}
+ *       <th scope="row" style="font-weight:normal"><i>(none)</i>
  *       <td>{@link NumberFormat#getInstance(Locale) NumberFormat.getInstance}{@code (getLocale())}
  *    <tr>
- *       <th scope="row" style="text-weight: normal">{@code integer}
+ *       <th scope="row" style="font-weight:normal">{@code integer}
  *       <td>{@link NumberFormat#getIntegerInstance(Locale) NumberFormat.getIntegerInstance}{@code (getLocale())}
  *    <tr>
- *       <th scope="row" style="text-weight: normal">{@code currency}
+ *       <th scope="row" style="font-weight:normal">{@code currency}
  *       <td>{@link NumberFormat#getCurrencyInstance(Locale) NumberFormat.getCurrencyInstance}{@code (getLocale())}
  *    <tr>
- *       <th scope="row" style="text-weight: normal">{@code percent}
+ *       <th scope="row" style="font-weight:normal">{@code percent}
  *       <td>{@link NumberFormat#getPercentInstance(Locale) NumberFormat.getPercentInstance}{@code (getLocale())}
  *    <tr>
- *       <th scope="row" style="text-weight: normal"><i>SubformatPattern</i>
+ *       <th scope="row" style="font-weight:normal"><i>SubformatPattern</i>
  *       <td>{@code new} {@link DecimalFormat#DecimalFormat(String,DecimalFormatSymbols) DecimalFormat}{@code (subformatPattern,} {@link DecimalFormatSymbols#getInstance(Locale) DecimalFormatSymbols.getInstance}{@code (getLocale()))}
  *    <tr>
- *       <th scope="row" style="text-weight: normal" rowspan=6>{@code date}
- *       <th scope="row" style="text-weight: normal"><i>(none)</i>
+ *       <th scope="row" style="font-weight:normal" rowspan=6>{@code date}
+ *       <th scope="row" style="font-weight:normal"><i>(none)</i>
  *       <td>{@link DateFormat#getDateInstance(int,Locale) DateFormat.getDateInstance}{@code (}{@link DateFormat#DEFAULT}{@code , getLocale())}
  *    <tr>
- *       <th scope="row" style="text-weight: normal">{@code short}
+ *       <th scope="row" style="font-weight:normal">{@code short}
  *       <td>{@link DateFormat#getDateInstance(int,Locale) DateFormat.getDateInstance}{@code (}{@link DateFormat#SHORT}{@code , getLocale())}
  *    <tr>
- *       <th scope="row" style="text-weight: normal">{@code medium}
+ *       <th scope="row" style="font-weight:normal">{@code medium}
  *       <td>{@link DateFormat#getDateInstance(int,Locale) DateFormat.getDateInstance}{@code (}{@link DateFormat#DEFAULT}{@code , getLocale())}
  *    <tr>
- *       <th scope="row" style="text-weight: normal">{@code long}
+ *       <th scope="row" style="font-weight:normal">{@code long}
  *       <td>{@link DateFormat#getDateInstance(int,Locale) DateFormat.getDateInstance}{@code (}{@link DateFormat#LONG}{@code , getLocale())}
  *    <tr>
- *       <th scope="row" style="text-weight: normal">{@code full}
+ *       <th scope="row" style="font-weight:normal">{@code full}
  *       <td>{@link DateFormat#getDateInstance(int,Locale) DateFormat.getDateInstance}{@code (}{@link DateFormat#FULL}{@code , getLocale())}
  *    <tr>
- *       <th scope="row" style="text-weight: normal"><i>SubformatPattern</i>
+ *       <th scope="row" style="font-weight:normal"><i>SubformatPattern</i>
  *       <td>{@code new} {@link SimpleDateFormat#SimpleDateFormat(String,Locale) SimpleDateFormat}{@code (subformatPattern, getLocale())}
  *    <tr>
- *       <th scope="row" style="text-weight: normal" rowspan=6>{@code time}
- *       <th scope="row" style="text-weight: normal"><i>(none)</i>
+ *       <th scope="row" style="font-weight:normal" rowspan=6>{@code time}
+ *       <th scope="row" style="font-weight:normal"><i>(none)</i>
  *       <td>{@link DateFormat#getTimeInstance(int,Locale) DateFormat.getTimeInstance}{@code (}{@link DateFormat#DEFAULT}{@code , getLocale())}
  *    <tr>
- *       <th scope="row" style="text-weight: normal">{@code short}
+ *       <th scope="row" style="font-weight:normal">{@code short}
  *       <td>{@link DateFormat#getTimeInstance(int,Locale) DateFormat.getTimeInstance}{@code (}{@link DateFormat#SHORT}{@code , getLocale())}
  *    <tr>
- *       <th scope="row" style="text-weight: normal">{@code medium}
+ *       <th scope="row" style="font-weight:normal">{@code medium}
  *       <td>{@link DateFormat#getTimeInstance(int,Locale) DateFormat.getTimeInstance}{@code (}{@link DateFormat#DEFAULT}{@code , getLocale())}
  *    <tr>
- *       <th scope="row" style="text-weight: normal">{@code long}
+ *       <th scope="row" style="font-weight:normal">{@code long}
  *       <td>{@link DateFormat#getTimeInstance(int,Locale) DateFormat.getTimeInstance}{@code (}{@link DateFormat#LONG}{@code , getLocale())}
  *    <tr>
- *       <th scope="row" style="text-weight: normal">{@code full}
+ *       <th scope="row" style="font-weight:normal">{@code full}
  *       <td>{@link DateFormat#getTimeInstance(int,Locale) DateFormat.getTimeInstance}{@code (}{@link DateFormat#FULL}{@code , getLocale())}
  *    <tr>
- *       <th scope="row" style="text-weight: normal"><i>SubformatPattern</i>
+ *       <th scope="row" style="font-weight:normal"><i>SubformatPattern</i>
  *       <td>{@code new} {@link SimpleDateFormat#SimpleDateFormat(String,Locale) SimpleDateFormat}{@code (subformatPattern, getLocale())}
  *    <tr>
- *       <th scope="row" style="text-weight: normal">{@code choice}
- *       <th scope="row" style="text-weight: normal"><i>SubformatPattern</i>
+ *       <th scope="row" style="font-weight:normal">{@code choice}
+ *       <th scope="row" style="font-weight:normal"><i>SubformatPattern</i>
  *       <td>{@code new} {@link ChoiceFormat#ChoiceFormat(String) ChoiceFormat}{@code (subformatPattern)}
  * </tbody>
  * </table>
@@ -230,14 +231,14 @@ import java.util.Locale;
  * <p>
  * The first example uses the static method {@code MessageFormat.format},
  * which internally creates a {@code MessageFormat} for one-time use:
- * <blockquote><pre>
+ * {@snippet lang=java :
  * int planet = 7;
  * String event = "a disturbance in the Force";
  *
  * String result = MessageFormat.format(
  *     "At {1,time} on {1,date}, there was {2} on planet {0,number,integer}.",
  *     planet, new Date(), event);
- * </pre></blockquote>
+ * }
  * The output is:
  * <blockquote><pre>
  * At 12:30 PM on Jul 3, 2053, there was a disturbance in the Force on planet 7.
@@ -246,16 +247,16 @@ import java.util.Locale;
  * <p>
  * The following example creates a {@code MessageFormat} instance that
  * can be used repeatedly:
- * <blockquote><pre>
+ * {@snippet lang=java :
  * int fileCount = 1273;
  * String diskName = "MyDisk";
- * Object[] testArgs = {new Long(fileCount), diskName};
+ * Object[] testArgs = {Long.valueOf(fileCount), diskName};
  *
  * MessageFormat form = new MessageFormat(
  *     "The disk \"{1}\" contains {0} file(s).");
  *
  * System.out.println(form.format(testArgs));
- * </pre></blockquote>
+ * }
  * The output with different values for {@code fileCount}:
  * <blockquote><pre>
  * The disk "MyDisk" contains 0 file(s).
@@ -264,21 +265,17 @@ import java.util.Locale;
  * </pre></blockquote>
  *
  * <p>
- * For more sophisticated patterns, you can use a {@code ChoiceFormat}
- * to produce correct forms for singular and plural:
- * <blockquote><pre>
- * MessageFormat form = new MessageFormat("The disk \"{1}\" contains {0}.");
- * double[] filelimits = {0,1,2};
- * String[] filepart = {"no files","one file","{0,number} files"};
- * ChoiceFormat fileform = new ChoiceFormat(filelimits, filepart);
- * form.setFormatByArgumentIndex(0, fileform);
- *
- * int fileCount = 1273;
- * String diskName = "MyDisk";
- * Object[] testArgs = {new Long(fileCount), diskName};
- *
- * System.out.println(form.format(testArgs));
- * </pre></blockquote>
+ * For more sophisticated patterns, {@link ChoiceFormat} can be used with
+ * {@code MessageFormat} to produce accurate forms for singular and plural:
+ * {@snippet lang=java :
+ * MessageFormat msgFmt = new MessageFormat("The disk \"{0}\" contains {1}.");
+ * double[] fileLimits = {0,1,2};
+ * String[] filePart = {"no files","one file","{1,number} files"};
+ * ChoiceFormat fileChoices = new ChoiceFormat(fileLimits, filePart);
+ * msgFmt.setFormatByArgumentIndex(1, fileChoices);
+ * Object[] args = {"MyDisk", 1273};
+ * System.out.println(msgFmt.format(args));
+ * }
  * The output with different values for {@code fileCount}:
  * <blockquote><pre>
  * The disk "MyDisk" contains no files.
@@ -290,41 +287,45 @@ import java.util.Locale;
  * You can create the {@code ChoiceFormat} programmatically, as in the
  * above example, or by using a pattern. See {@link ChoiceFormat}
  * for more information.
- * <blockquote><pre>{@code
- * form.applyPattern(
- *    "There {0,choice,0#are no files|1#is one file|1<are {0,number,integer} files}.");
- * }</pre></blockquote>
+ * {@snippet lang=java :
+ * msgFmt.applyPattern(
+ *    "There {0,choice,0#are no files|1#is one file|1<are {1,number,integer} files}.");
+ * }
  *
  * <p>
- * <strong>Note:</strong> As we see above, the string produced
- * by a {@code ChoiceFormat} in {@code MessageFormat} is treated as special;
- * occurrences of '{' are used to indicate subformats, and cause recursion.
+ * <strong id="pattern_caveats">Notes:</strong> As seen in the previous snippet,
+ * the string produced by a {@code ChoiceFormat} in {@code MessageFormat} is
+ * treated as special; occurrences of '{' are used to indicate subformats, and
+ * cause recursion. If a {@code FormatElement} is defined in the {@code ChoiceFormat}
+ * pattern, it will only be formatted according to the {@code FormatType} and
+ * {@code FormatStyle} pattern provided. The associated subformats of the
+ * top level {@code MessageFormat} will not be applied to the {@code FormatElement}
+ * defined in the {@code ChoiceFormat} pattern.
  * If you create both a {@code MessageFormat} and {@code ChoiceFormat}
  * programmatically (instead of using the string patterns), then be careful not to
  * produce a format that recurses on itself, which will cause an infinite loop.
  * <p>
  * When a single argument is parsed more than once in the string, the last match
  * will be the final result of the parsing.  For example,
- * <blockquote><pre>
+ * {@snippet lang=java :
  * MessageFormat mf = new MessageFormat("{0,number,#.##}, {0,number,#.#}");
- * Object[] objs = {new Double(3.1415)};
+ * Object[] objs = {Double.valueOf(3.1415)};
  * String result = mf.format( objs );
  * // result now equals "3.14, 3.1"
- * objs = null;
  * objs = mf.parse(result, new ParsePosition(0));
- * // objs now equals {new Double(3.1)}
- * </pre></blockquote>
+ * // objs now equals {Double.valueOf(3.1)}
+ * }
  *
  * <p>
  * Likewise, parsing with a {@code MessageFormat} object using patterns containing
  * multiple occurrences of the same argument would return the last match.  For
  * example,
- * <blockquote><pre>
+ * {@snippet lang=java :
  * MessageFormat mf = new MessageFormat("{0}, {0}, {0}");
  * String forParsing = "x, y, z";
  * Object[] objs = mf.parse(forParsing, new ParsePosition(0));
- * // result now equals {new String("z")}
- * </pre></blockquote>
+ * // objs now equals {new String("z")}
+ * }
  *
  * <h3><a id="synchronization">Synchronization</a></h3>
  *
@@ -359,7 +360,7 @@ public class MessageFormat extends Format {
      * The constructor first sets the locale, then parses the pattern and
      * creates a list of subformats for the format elements contained in it.
      * Patterns and their interpretation are specified in the
-     * <a href="#patterns">class description</a>.
+     * {@linkplain ##patterns class description}.
      *
      * @param pattern the pattern for this message format
      * @throws    IllegalArgumentException if the pattern is invalid
@@ -368,7 +369,7 @@ public class MessageFormat extends Format {
      */
     public MessageFormat(String pattern) {
         this.locale = Locale.getDefault(Locale.Category.FORMAT);
-        applyPattern(pattern);
+        applyPatternImpl(pattern);
     }
 
     /**
@@ -377,18 +378,26 @@ public class MessageFormat extends Format {
      * The constructor first sets the locale, then parses the pattern and
      * creates a list of subformats for the format elements contained in it.
      * Patterns and their interpretation are specified in the
-     * <a href="#patterns">class description</a>.
+     * {@linkplain ##patterns class description}.
+     *
+     * @implSpec The default implementation throws a
+     * {@code NullPointerException} if {@code locale} is {@code null}
+     * either during the creation of the {@code MessageFormat} object or later
+     * when {@code format()} is called by a {@code MessageFormat}
+     * instance with a null locale and the implementation utilizes a
+     * locale-dependent subformat.
      *
      * @param pattern the pattern for this message format
      * @param locale the locale for this message format
      * @throws    IllegalArgumentException if the pattern is invalid
      * @throws    NullPointerException if {@code pattern} is
-     *            {@code null}
+     *            {@code null} or {@code locale} is {@code null} and the
+     *            implementation uses a locale-dependent subformat.
      * @since 1.4
      */
     public MessageFormat(String pattern, Locale locale) {
         this.locale = locale;
-        applyPattern(pattern);
+        applyPatternImpl(pattern);
     }
 
     /**
@@ -427,15 +436,29 @@ public class MessageFormat extends Format {
      * The method parses the pattern and creates a list of subformats
      * for the format elements contained in it.
      * Patterns and their interpretation are specified in the
-     * <a href="#patterns">class description</a>.
+     * {@linkplain ##patterns class description}.
      *
      * @param pattern the pattern for this message format
      * @throws    IllegalArgumentException if the pattern is invalid
      * @throws    NullPointerException if {@code pattern} is
      *            {@code null}
      */
-    @SuppressWarnings("fallthrough") // fallthrough in switch is expected, suppress it
     public void applyPattern(String pattern) {
+        applyPatternImpl(pattern);
+    }
+
+    /**
+     * Implementation of applying a pattern to this MessageFormat.
+     * This method processes a String pattern in accordance with the MessageFormat
+     * pattern syntax and sets the internal {@code pattern} variable as well as
+     * populating the {@code formats} array with the subformats defined in the
+     * pattern. See the {@linkplain ##patterns} section for further understanding
+     * of certain special characters: "{", "}", ",". See {@linkplain
+     * ##makeFormat(int, int, StringBuilder[])} for the implementation of setting
+     * a subformat.
+     */
+    @SuppressWarnings("fallthrough") // fallthrough in switch is expected, suppress it
+    private void applyPatternImpl(String pattern) {
             StringBuilder[] segments = new StringBuilder[4];
             // Allocate only segments[SEG_RAW] here. The rest are
             // allocated on demand.
@@ -489,6 +512,7 @@ public class MessageFormat extends Format {
                         case '}':
                             if (braceStack == 0) {
                                 part = SEG_RAW;
+                                // Set the subformat
                                 makeFormat(i, formatNumber, segments);
                                 formatNumber++;
                                 // throw away other segments
@@ -787,34 +811,34 @@ public class MessageFormat extends Format {
      * </thead>
      * <tbody>
      *    <tr>
-     *       <th scope="row" style="text-weight-normal" rowspan=2><i>any</i>
-     *       <th scope="row" style="text-weight-normal"><i>unavailable</i>
+     *       <th scope="row" style="font-weight:normal" rowspan=2><i>any</i>
+     *       <th scope="row" style="font-weight:normal"><i>unavailable</i>
      *       <td><code>"{" + argumentIndex + "}"</code>
      *    <tr>
-     *       <th scope="row" style="text-weight-normal">{@code null}
+     *       <th scope="row" style="font-weight:normal">{@code null}
      *       <td>{@code "null"}
      *    <tr>
-     *       <th scope="row" style="text-weight-normal">{@code instanceof ChoiceFormat}
-     *       <th scope="row" style="text-weight-normal"><i>any</i>
+     *       <th scope="row" style="font-weight:normal">{@code instanceof ChoiceFormat}
+     *       <th scope="row" style="font-weight:normal"><i>any</i>
      *       <td><code>subformat.format(argument).indexOf('{') &gt;= 0 ?<br>
      *           (new MessageFormat(subformat.format(argument), getLocale())).format(argument) :
      *           subformat.format(argument)</code>
      *    <tr>
-     *       <th scope="row" style="text-weight-normal">{@code != null}
-     *       <th scope="row" style="text-weight-normal"><i>any</i>
+     *       <th scope="row" style="font-weight:normal">{@code != null}
+     *       <th scope="row" style="font-weight:normal"><i>any</i>
      *       <td>{@code subformat.format(argument)}
      *    <tr>
-     *       <th scope="row" style="text-weight-normal" rowspan=4>{@code null}
-     *       <th scope="row" style="text-weight-normal">{@code instanceof Number}
+     *       <th scope="row" style="font-weight:normal" rowspan=4>{@code null}
+     *       <th scope="row" style="font-weight:normal">{@code instanceof Number}
      *       <td>{@code NumberFormat.getInstance(getLocale()).format(argument)}
      *    <tr>
-     *       <th scope="row" style="text-weight-normal">{@code instanceof Date}
+     *       <th scope="row" style="font-weight:normal">{@code instanceof Date}
      *       <td>{@code DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT, getLocale()).format(argument)}
      *    <tr>
-     *       <th scope="row" style="text-weight-normal">{@code instanceof String}
+     *       <th scope="row" style="font-weight:normal">{@code instanceof String}
      *       <td>{@code argument}
      *    <tr>
-     *       <th scope="row" style="text-weight-normal"><i>any</i>
+     *       <th scope="row" style="font-weight:normal"><i>any</i>
      *       <td>{@code argument.toString()}
      * </tbody>
      * </table>
@@ -832,7 +856,10 @@ public class MessageFormat extends Format {
      * @throws    IllegalArgumentException if an argument in the
      *            {@code arguments} array is not of the type
      *            expected by the format element(s) that use it.
-     * @throws    NullPointerException if {@code result} is {@code null}
+     * @throws    NullPointerException if {@code result} is {@code null} or
+     *            if the {@code MessageFormat} instance that calls this method
+     *            has locale set to null, and the implementation
+     *            uses a locale-dependent subformat.
      */
     public final StringBuffer format(Object[] arguments, StringBuffer result,
                                      FieldPosition pos)
@@ -878,7 +905,10 @@ public class MessageFormat extends Format {
      * @throws    IllegalArgumentException if an argument in the
      *            {@code arguments} array is not of the type
      *            expected by the format element(s) that use it.
-     * @throws    NullPointerException if {@code result} is {@code null}
+     * @throws    NullPointerException if {@code result} is {@code null} or
+     *            if the {@code MessageFormat} instance that calls this method
+     *            has locale set to null, and the implementation
+     *            uses a locale-dependent subformat.
      */
     public final StringBuffer format(Object arguments, StringBuffer result,
                                      FieldPosition pos)
@@ -922,20 +952,16 @@ public class MessageFormat extends Format {
      * @since 1.4
      */
     public AttributedCharacterIterator formatToCharacterIterator(Object arguments) {
+        Objects.requireNonNull(arguments, "arguments must not be null");
         StringBuffer result = new StringBuffer();
         ArrayList<AttributedCharacterIterator> iterators = new ArrayList<>();
 
-        if (arguments == null) {
-            throw new NullPointerException(
-                   "formatToCharacterIterator must be passed non-null object");
-        }
         subformat((Object[]) arguments, result, null, iterators);
         if (iterators.size() == 0) {
             return createAttributedCharacterIterator("");
         }
         return createAttributedCharacterIterator(
-                     iterators.toArray(
-                     new AttributedCharacterIterator[iterators.size()]));
+                iterators.toArray(new AttributedCharacterIterator[0]));
     }
 
     /**
@@ -1119,8 +1145,19 @@ public class MessageFormat extends Format {
     }
 
     /**
-     * Equality comparison between two message format objects
+     * Compares the specified object with this {@code MessageFormat} for equality.
+     * Returns true if the object is also a {@code MessageFormat} and the
+     * two formats would format any value the same.
+     *
+     * @implSpec This method performs an equality check with a notion of class
+     * identity based on {@code getClass()}, rather than {@code instanceof}.
+     * Therefore, in the equals methods in subclasses, no instance of this class
+     * should compare as equal to an instance of a subclass.
+     * @param  obj object to be compared for equality
+     * @return {@code true} if the specified object is equal to this {@code MessageFormat}
+     * @see Object#equals(Object)
      */
+    @Override
     public boolean equals(Object obj) {
         if (this == obj)                      // quick check
             return true;
@@ -1129,18 +1166,33 @@ public class MessageFormat extends Format {
         MessageFormat other = (MessageFormat) obj;
         return (maxOffset == other.maxOffset
                 && pattern.equals(other.pattern)
-                && ((locale != null && locale.equals(other.locale))
-                 || (locale == null && other.locale == null))
+                && Objects.equals(locale,other.locale)
                 && Arrays.equals(offsets,other.offsets)
                 && Arrays.equals(argumentNumbers,other.argumentNumbers)
                 && Arrays.equals(formats,other.formats));
     }
 
     /**
-     * Generates a hash code for the message format object.
+     * {@return the hash code value for this {@code MessageFormat}}
+     *
+     * @implSpec This method calculates the hash code value using the value returned by
+     * {@link #toPattern()}.
+     * @see Object#hashCode()
      */
+    @Override
     public int hashCode() {
         return pattern.hashCode(); // enough for reasonable distribution
+    }
+
+    /**
+     * {@return a string identifying this {@code MessageFormat}, for debugging}
+     */
+    @Override
+    public String toString() {
+        return
+            """
+            MessageFormat [locale: %s, pattern: "%s"]
+            """.formatted(locale == null ? null : '"' + locale.getDisplayName() + '"', toPattern());
     }
 
 
@@ -1555,7 +1607,7 @@ public class MessageFormat extends Format {
         formats[offsetNumber] = newFormat;
     }
 
-    private static final int findKeyword(String s, String[] list) {
+    private static int findKeyword(String s, String[] list) {
         for (int i = 0; i < list.length; ++i) {
             if (s.equals(list[i]))
                 return i;
@@ -1572,8 +1624,8 @@ public class MessageFormat extends Format {
         return -1;
     }
 
-    private static final void copyAndFixQuotes(String source, int start, int end,
-                                               StringBuilder target) {
+    private static void copyAndFixQuotes(String source, int start, int end,
+                                         StringBuilder target) {
         boolean quoted = false;
 
         for (int i = start; i < end; ++i) {

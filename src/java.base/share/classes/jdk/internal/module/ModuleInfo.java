@@ -401,6 +401,10 @@ public final class ModuleInfo {
             }
 
             if (dn.equals("java.base")) {
+                if (mods.contains(Requires.Modifier.SYNTHETIC)) {
+                    throw invalidModuleDescriptor("The requires entry for java.base"
+                                                  + " has ACC_SYNTHETIC set");
+                }
                 if (major >= 54
                     && (mods.contains(Requires.Modifier.TRANSITIVE)
                         || mods.contains(Requires.Modifier.STATIC))) {

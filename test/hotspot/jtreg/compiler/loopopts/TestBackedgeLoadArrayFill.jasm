@@ -1,0 +1,178 @@
+/*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ *
+ */
+
+super public class TestBackedgeLoadArrayFill
+{
+    public Method "<init>":"()V"
+    stack 2 locals 1
+    {
+        aload_0;
+        invokespecial  Method java/lang/Object."<init>":"()V";
+        return;
+    }
+
+    static Method test_101:"()V"
+    stack 20 locals 20
+    {
+        // test_002 in jasm: using try-catch
+        ldc 6;
+        istore_0; // i = 6
+        ldc 25;
+        newarray int;
+        astore_1; // arr = new int[25]
+    HEAD:
+        aload_1;
+        iload_0;
+        iconst_1;
+        iastore; // arr[i] = 1
+        // second block - the only one -> head block can be copied: one before, one on backedge
+        try t0;
+        aload_1;
+        iload_0;
+        aload_1;
+        iload_0;
+        iaload;
+        iastore; // arr[i] = arr[i]
+        goto FINALLY;
+        endtry t0;
+        catch t0 java/lang/Exception;
+        pop; // exception
+    FINALLY:
+        iinc 0, 1; // i++
+        iload_0;
+        ldc 21;
+        if_icmplt HEAD; // if i < 21
+        // write array
+        aload_1;
+        putstatic Field TestBackedgeLoadArrayFillMain.intA:"[I";
+        return;
+    }
+
+    static Method test_102:"()V"
+    stack 20 locals 20
+    {
+        // test_002 in jasm: without try-catch
+        ldc 5;
+        istore_0; // i = 5
+        ldc 25;
+        newarray int;
+        astore_1; // arr = new int[25]
+    HEAD:
+        aload_1;
+        iload_0;
+        iconst_1;
+        iastore; // arr[i] = 1
+        goto SECOND;
+        // second block - the only one -> head block can be copied: one before, one on backedge
+        // must have some material before inc, else it is partial peeled away
+        // And if we set -XX:-PartialPeelLoop, then the counted loop is never detected
+    SECOND:
+        aload_1;
+        iload_0;
+        aload_1;
+        iload_0;
+        iaload;
+        iastore; // arr[i] = arr[i]
+        iinc 0, 1; // i++
+        iload_0;
+        ldc 21;
+        if_icmplt HEAD; // if i < 21
+        // write array
+        aload_1;
+        putstatic Field TestBackedgeLoadArrayFillMain.intA:"[I";
+        return;
+    }
+
+    static Method test_103:"()V"
+    stack 20 locals 20
+    {
+        // test_002 in jasm: without try-catch, and second array
+        ldc 7;
+        istore_0; // i = 7
+        ldc 25;
+        newarray int;
+        astore_1; // arr = new int[25]
+        ldc 25;
+        newarray int;
+        astore_2; // arr2 = new int[25]
+    HEAD:
+        aload_1;
+        iload_0;
+        iconst_1;
+        iastore; // arr[i] = 1
+        goto SECOND;
+        // second block - the only one -> head block can be copied: one before, one on backedge
+    SECOND:
+        // we can also do the identity read-write on another array - it just has to eventually disappear
+        aload_2;
+        iload_0;
+        aload_2;
+        iload_0;
+        iaload;
+        iastore; // arr2[i] = arr2[i]
+
+        iinc 0, 1; // i++
+        iload_0;
+        ldc 21;
+        if_icmplt HEAD; // if i < 21
+        // write array
+        aload_1;
+        putstatic Field TestBackedgeLoadArrayFillMain.intA:"[I";
+        return;
+    }
+
+    static Method test_104:"()V"
+    stack 20 locals 20
+    {
+        ldc 9;
+        istore_0; // i = 9
+        ldc 25;
+        newarray int;
+        astore_1; // arr = new int[25]
+    HEAD:
+        aload_1;
+        iload_0;
+        iconst_1;
+        iastore; // arr[i] = 1
+        goto SECOND;
+        // second block - the only one -> head block can be copied: one before, one on backedge
+    SECOND:
+        // CFG leads to partial peel -> load moved into loop body, then intrinsified
+        iload_0;
+        ldc 2;
+        irem;
+        ifeq SKIP;
+
+    SKIP:
+
+        iinc 0, 1; // i++
+        iload_0;
+        ldc 21;
+        if_icmplt HEAD; // if i < 21
+        // write array
+        aload_1;
+        putstatic Field TestBackedgeLoadArrayFillMain.intA:"[I";
+        return;
+    }
+}

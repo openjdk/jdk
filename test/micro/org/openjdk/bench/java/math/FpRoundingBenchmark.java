@@ -29,9 +29,12 @@ import org.openjdk.jmh.annotations.*;
 
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
+@Warmup(iterations = 5, time = 1)
+@Measurement(iterations = 5, time = 1)
+@Fork(value = 3)
 public class FpRoundingBenchmark {
 
-  @Param({"1024", "2048"})
+  @Param({"2048"})
   public int TESTSIZE;
 
   public double[] DargV1;

@@ -54,7 +54,7 @@ final class Printer {
      * And in fact if should be implemented as an assertion, but for
      * compatibility reason it just print an error only in case of "internal"
      * build. In time its usage should be replaced by some kind of assertion or
-     * dropped completly.
+     * dropped completely.
      */
     public static void err(String str) {
         if (err) {

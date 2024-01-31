@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,41 +56,33 @@ public class Basic {
         File testDir = new File(System.getProperty("test.classes", "."));
         // test a .class file
         test(new File(testDir, "Test.class"),
-             new String[] {"java.lang", "p"},
-             new String[] {"compact1", "not found"});
+             new String[] {"java.lang", "p"});
         // test a directory
         test(new File(testDir, "p"),
              new String[] {"java.lang", "java.util", "java.lang.management", "javax.crypto"},
-             new String[] {"compact1", "compact1", "compact3", "compact1"},
              new String[] {"-classpath", testDir.getPath()});
         // test class-level dependency output
         test(new File(testDir, "Test.class"),
              new String[] {"java.lang.Object", "java.lang.String", "p.Foo", "p.Bar"},
-             new String[] {"compact1", "compact1", "not found", "not found"},
              new String[] {"-verbose:class"});
         // test -filter:none option
         test(new File(testDir, "p"),
              new String[] {"java.lang", "java.util", "java.lang.management", "javax.crypto", "p"},
-             new String[] {"compact1", "compact1", "compact3", "compact1", "p"},
              new String[] {"-classpath", testDir.getPath(), "-verbose:package", "-filter:none"});
         // test -filter:archive option
         test(new File(testDir, "p"),
              new String[] {"java.lang", "java.util", "java.lang.management", "javax.crypto"},
-             new String[] {"compact1", "compact1", "compact3", "compact1"},
              new String[] {"-classpath", testDir.getPath(), "-verbose:package", "-filter:archive"});
         // test -p option
         test(new File(testDir, "Test.class"),
              new String[] {"p.Foo", "p.Bar"},
-             new String[] {"not found", "not found"},
              new String[] {"-verbose:class", "-p", "p"});
         // test -e option
         test(new File(testDir, "Test.class"),
              new String[] {"p.Foo", "p.Bar"},
-             new String[] {"not found", "not found"},
              new String[] {"-verbose:class", "-e", "p\\..*"});
         test(new File(testDir, "Test.class"),
              new String[] {"java.lang"},
-             new String[] {"compact1"},
              new String[] {"-verbose:package", "-e", "java\\.lang\\..*"});
 
         // parse p.C, p.SubClass and q.*
@@ -98,22 +90,18 @@ public class Basic {
         // q.Gee depends on p.SubClass that should be found
         test(testDir,
              new String[] {"java.lang", "p"},
-             new String[] {"compact1", testDir.getName()},
              new String[] {"-include", "p.C|p.SubClass|q\\..*"});
         test(testDir,
              new String[] {"java.lang", "p"},
-             new String[] {"compact1", testDir.getName()},
              new String[] {"-classpath", testDir.getPath(), "-include", "p.C|p.SubClass|q\\..*"});
 
         // test -classpath and -include options
         test(null,
              new String[] {"java.lang", "java.util", "java.lang.management",
                            "javax.crypto"},
-             new String[] {"compact1", "compact1", "compact3", "compact1"},
              new String[] {"-classpath", testDir.getPath(), "-include", "p.+|Test.class"});
         test(new File(testDir, "Test.class"),
              new String[] {"java.lang.Object", "java.lang.String", "p.Foo", "p.Bar"},
-             new String[] {"compact1", "compact1", testDir.getName(), testDir.getName()},
              new String[] {"-v", "-classpath", testDir.getPath(), "Test.class"});
 
         // split package p - move p/Foo.class to dir1 and p/Bar.class to dir2
@@ -134,40 +122,31 @@ public class Basic {
         cpath.append(File.pathSeparator).append(dir2.toString());
         test(new File(testDir, "Test.class"),
              new String[] {"java.lang.Object", "java.lang.String", "p.Foo", "p.Bar"},
-             new String[] {"compact1", "compact1", dir1.toFile().getName(), dir2.toFile().getName()},
              new String[] {"-v", "-classpath", cpath.toString(), "Test.class"});
 
         // tests --missing-deps option
         test(new File(testDir, "Test.class"),
              new String[] {"p.Foo", "p.Bar"},
-             new String[] {"not found", "not found"},
              new String[] {"--missing-deps"});
 
         // no missing dependence
         test(new File(testDir, "Test.class"),
-             new String[0],
              new String[0],
              new String[] {"--missing-deps", "-classpath", cpath.toString()});
 
         return errors;
     }
 
-    void test(File file, String[] expect, String[] profiles) {
-        test(file, expect, profiles, new String[0]);
+    void test(File file, String[] expect) {
+        test(file, expect, new String[0]);
     }
 
-    void test(File file, String[] expect, String[] profiles, String[] options) {
+    void test(File file, String[] expect, String[] options) {
         List<String> args = new ArrayList<>(Arrays.asList(options));
         if (file != null) {
             args.add(file.getPath());
         }
-        List<String> argsWithDashP = new ArrayList<>();
-        argsWithDashP.add("-P");
-        argsWithDashP.addAll(args);
-        // test without -P
         checkResult("dependencies", expect, jdeps(args.toArray(new String[0])).keySet());
-        // test with -P
-        checkResult("profiles", expect, profiles, jdeps(argsWithDashP.toArray(new String[0])));
     }
 
     Map<String,String> jdeps(String... args) {
@@ -214,21 +193,6 @@ public class Basic {
         List<String> list = Arrays.asList(expect);
         if (!isEqual(list, found))
             error("Unexpected " + label + " found: '" + found + "', expected: '" + list + "'");
-    }
-
-    void checkResult(String label, String[] expect, String[] profiles, Map<String,String> result) {
-        if (expect.length != profiles.length)
-            error("Invalid expected names and profiles");
-
-        // check the dependencies
-        checkResult(label, expect, result.keySet());
-        // check profile information
-        checkResult(label, profiles, result.values());
-        for (int i=0; i < expect.length; i++) {
-            String profile = result.get(expect[i]);
-            if (!profile.equals(profiles[i]))
-                error("Unexpected profile: '" + profile + "', expected: '" + profiles[i] + "'");
-        }
     }
 
     boolean isEqual(List<String> expected, Collection<String> found) {

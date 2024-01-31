@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 4880220
+ * @bug 4880220 8285935
  * @summary Add a warning when accessing a static method via an reference
  *
  * @compile/ref=T4880220.empty.out                                                   T4880220.java
@@ -29,6 +29,15 @@ public class T4880220 {
     void m2() {
         Class<?> good_1 = C.class;
         Class<?> good_2 = C[].class;
+    }
+
+    void m3() {
+        var obj = new Object() {
+            static void foo() {}
+            static int i = 0;
+        };
+        obj.foo();
+        int j = obj.i;
     }
 
     C c() {

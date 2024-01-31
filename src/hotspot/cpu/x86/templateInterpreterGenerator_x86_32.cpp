@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,48 +53,46 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
  *   int java.util.zip.CRC32.update(int crc, int b)
  */
 address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
-  if (UseCRC32Intrinsics) {
-    address entry = __ pc();
+  assert(UseCRC32Intrinsics, "this intrinsic is not supported");
+  address entry = __ pc();
 
-    // rbx: Method*
-    // rsi: senderSP must preserved for slow path, set SP to it on fast path
-    // rdx: scratch
-    // rdi: scratch
+  // rbx: Method*
+  // rsi: senderSP must preserved for slow path, set SP to it on fast path
+  // rdx: scratch
+  // rdi: scratch
 
-    Label slow_path;
-    // If we need a safepoint check, generate full interpreter entry.
-    __ get_thread(rdi);
-    __ safepoint_poll(slow_path, rdi, false /* at_return */, false /* in_nmethod */);
+  Label slow_path;
+  // If we need a safepoint check, generate full interpreter entry.
+  __ get_thread(rdi);
+  __ safepoint_poll(slow_path, rdi, false /* at_return */, false /* in_nmethod */);
 
-    // We don't generate local frame and don't align stack because
-    // we call stub code and there is no safepoint on this path.
+  // We don't generate local frame and don't align stack because
+  // we call stub code and there is no safepoint on this path.
 
-    // Load parameters
-    const Register crc = rax;  // crc
-    const Register val = rdx;  // source java byte value
-    const Register tbl = rdi;  // scratch
+  // Load parameters
+  const Register crc = rax;  // crc
+  const Register val = rdx;  // source java byte value
+  const Register tbl = rdi;  // scratch
 
-    // Arguments are reversed on java expression stack
-    __ movl(val, Address(rsp,   wordSize)); // byte value
-    __ movl(crc, Address(rsp, 2*wordSize)); // Initial CRC
+  // Arguments are reversed on java expression stack
+  __ movl(val, Address(rsp,   wordSize)); // byte value
+  __ movl(crc, Address(rsp, 2*wordSize)); // Initial CRC
 
-    __ lea(tbl, ExternalAddress(StubRoutines::crc_table_addr()));
-    __ notl(crc); // ~crc
-    __ update_byte_crc32(crc, val, tbl);
-    __ notl(crc); // ~crc
-    // result in rax
+  __ lea(tbl, ExternalAddress(StubRoutines::crc_table_addr()));
+  __ notl(crc); // ~crc
+  __ update_byte_crc32(crc, val, tbl);
+  __ notl(crc); // ~crc
+  // result in rax
 
-    // _areturn
-    __ pop(rdi);                // get return address
-    __ mov(rsp, rsi);           // set sp to sender sp
-    __ jmp(rdi);
+  // _areturn
+  __ pop(rdi);                // get return address
+  __ mov(rsp, rsi);           // set sp to sender sp
+  __ jmp(rdi);
 
-    // generate a vanilla native entry as the slow path
-    __ bind(slow_path);
-    __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
-    return entry;
-  }
-  return NULL;
+  // generate a vanilla native entry as the slow path
+  __ bind(slow_path);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
+  return entry;
 }
 
 /**
@@ -103,62 +101,60 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
  *   int java.util.zip.CRC32.updateByteBuffer(int crc, long buf, int off, int len)
  */
 address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
-  if (UseCRC32Intrinsics) {
-    address entry = __ pc();
+  assert(UseCRC32Intrinsics, "this intrinsic is not supported");
+  address entry = __ pc();
 
-    // rbx,: Method*
-    // rsi: senderSP must preserved for slow path, set SP to it on fast path
-    // rdx: scratch
-    // rdi: scratch
+  // rbx,: Method*
+  // rsi: senderSP must preserved for slow path, set SP to it on fast path
+  // rdx: scratch
+  // rdi: scratch
 
-    Label slow_path;
-    // If we need a safepoint check, generate full interpreter entry.
-    __ get_thread(rdi);
-    __ safepoint_poll(slow_path, rdi, false /* at_return */, false /* in_nmethod */);
+  Label slow_path;
+  // If we need a safepoint check, generate full interpreter entry.
+  __ get_thread(rdi);
+  __ safepoint_poll(slow_path, rdi, false /* at_return */, false /* in_nmethod */);
 
-    // We don't generate local frame and don't align stack because
-    // we call stub code and there is no safepoint on this path.
+  // We don't generate local frame and don't align stack because
+  // we call stub code and there is no safepoint on this path.
 
-    // Load parameters
-    const Register crc = rax;  // crc
-    const Register buf = rdx;  // source java byte array address
-    const Register len = rdi;  // length
+  // Load parameters
+  const Register crc = rax;  // crc
+  const Register buf = rdx;  // source java byte array address
+  const Register len = rdi;  // length
 
-    // value              x86_32
-    // interp. arg ptr    ESP + 4
-    // int java.util.zip.CRC32.updateBytes(int crc, byte[] b, int off, int len)
-    //                                         3           2      1        0
-    // int java.util.zip.CRC32.updateByteBuffer(int crc, long buf, int off, int len)
-    //                                              4         2,3      1        0
+  // value              x86_32
+  // interp. arg ptr    ESP + 4
+  // int java.util.zip.CRC32.updateBytes(int crc, byte[] b, int off, int len)
+  //                                         3           2      1        0
+  // int java.util.zip.CRC32.updateByteBuffer(int crc, long buf, int off, int len)
+  //                                              4         2,3      1        0
 
-    // Arguments are reversed on java expression stack
-    __ movl(len,   Address(rsp,   4 + 0)); // Length
-    // Calculate address of start element
-    if (kind == Interpreter::java_util_zip_CRC32_updateByteBuffer) {
-      __ movptr(buf, Address(rsp, 4 + 2 * wordSize)); // long buf
-      __ addptr(buf, Address(rsp, 4 + 1 * wordSize)); // + offset
-      __ movl(crc,   Address(rsp, 4 + 4 * wordSize)); // Initial CRC
-    } else {
-      __ movptr(buf, Address(rsp, 4 + 2 * wordSize)); // byte[] array
-      __ addptr(buf, arrayOopDesc::base_offset_in_bytes(T_BYTE)); // + header size
-      __ addptr(buf, Address(rsp, 4 + 1 * wordSize)); // + offset
-      __ movl(crc,   Address(rsp, 4 + 3 * wordSize)); // Initial CRC
-    }
-
-    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, StubRoutines::updateBytesCRC32()), crc, buf, len);
-    // result in rax
-
-    // _areturn
-    __ pop(rdi);                // get return address
-    __ mov(rsp, rsi);           // set sp to sender sp
-    __ jmp(rdi);
-
-    // generate a vanilla native entry as the slow path
-    __ bind(slow_path);
-    __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
-    return entry;
+  // Arguments are reversed on java expression stack
+  __ movl(len,   Address(rsp,   4 + 0)); // Length
+  // Calculate address of start element
+  if (kind == Interpreter::java_util_zip_CRC32_updateByteBuffer) {
+    __ movptr(buf, Address(rsp, 4 + 2 * wordSize)); // long buf
+    __ addptr(buf, Address(rsp, 4 + 1 * wordSize)); // + offset
+    __ movl(crc,   Address(rsp, 4 + 4 * wordSize)); // Initial CRC
+  } else {
+    __ movptr(buf, Address(rsp, 4 + 2 * wordSize)); // byte[] array
+    __ addptr(buf, arrayOopDesc::base_offset_in_bytes(T_BYTE)); // + header size
+    __ addptr(buf, Address(rsp, 4 + 1 * wordSize)); // + offset
+    __ movl(crc,   Address(rsp, 4 + 3 * wordSize)); // Initial CRC
   }
-  return NULL;
+
+  __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, StubRoutines::updateBytesCRC32()), crc, buf, len);
+  // result in rax
+
+  // _areturn
+  __ pop(rdi);                // get return address
+  __ mov(rsp, rsi);           // set sp to sender sp
+  __ jmp(rdi);
+
+  // generate a vanilla native entry as the slow path
+  __ bind(slow_path);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
+  return entry;
 }
 
 /**
@@ -167,45 +163,43 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
 *   int java.util.zip.CRC32C.updateByteBuffer(int crc, long address, int off, int end)
 */
 address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
-  if (UseCRC32CIntrinsics) {
-    address entry = __ pc();
-    // Load parameters
-    const Register crc = rax;  // crc
-    const Register buf = rcx;  // source java byte array address
-    const Register len = rdx;  // length
-    const Register end = len;
+  assert(UseCRC32CIntrinsics, "this intrinsic is not supported");
+  address entry = __ pc();
+  // Load parameters
+  const Register crc = rax;  // crc
+  const Register buf = rcx;  // source java byte array address
+  const Register len = rdx;  // length
+  const Register end = len;
 
-    // value              x86_32
-    // interp. arg ptr    ESP + 4
-    // int java.util.zip.CRC32.updateBytes(int crc, byte[] b, int off, int end)
-    //                                         3           2      1        0
-    // int java.util.zip.CRC32.updateByteBuffer(int crc, long address, int off, int end)
-    //                                              4         2,3          1        0
+  // value              x86_32
+  // interp. arg ptr    ESP + 4
+  // int java.util.zip.CRC32.updateBytes(int crc, byte[] b, int off, int end)
+  //                                         3           2      1        0
+  // int java.util.zip.CRC32.updateByteBuffer(int crc, long address, int off, int end)
+  //                                              4         2,3          1        0
 
-    // Arguments are reversed on java expression stack
-    __ movl(end, Address(rsp, 4 + 0)); // end
-    __ subl(len, Address(rsp, 4 + 1 * wordSize));  // end - offset == length
-    // Calculate address of start element
-    if (kind == Interpreter::java_util_zip_CRC32C_updateDirectByteBuffer) {
-      __ movptr(buf, Address(rsp, 4 + 2 * wordSize)); // long address
-      __ addptr(buf, Address(rsp, 4 + 1 * wordSize)); // + offset
-      __ movl(crc, Address(rsp, 4 + 4 * wordSize)); // Initial CRC
-    } else {
-      __ movptr(buf, Address(rsp, 4 + 2 * wordSize)); // byte[] array
-      __ addptr(buf, arrayOopDesc::base_offset_in_bytes(T_BYTE)); // + header size
-      __ addptr(buf, Address(rsp, 4 + 1 * wordSize)); // + offset
-      __ movl(crc, Address(rsp, 4 + 3 * wordSize)); // Initial CRC
-    }
-    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, StubRoutines::updateBytesCRC32C()), crc, buf, len);
-    // result in rax
-    // _areturn
-    __ pop(rdi);                // get return address
-    __ mov(rsp, rsi);           // set sp to sender sp
-    __ jmp(rdi);
-
-    return entry;
+  // Arguments are reversed on java expression stack
+  __ movl(end, Address(rsp, 4 + 0)); // end
+  __ subl(len, Address(rsp, 4 + 1 * wordSize));  // end - offset == length
+  // Calculate address of start element
+  if (kind == Interpreter::java_util_zip_CRC32C_updateDirectByteBuffer) {
+    __ movptr(buf, Address(rsp, 4 + 2 * wordSize)); // long address
+    __ addptr(buf, Address(rsp, 4 + 1 * wordSize)); // + offset
+    __ movl(crc, Address(rsp, 4 + 4 * wordSize)); // Initial CRC
+  } else {
+    __ movptr(buf, Address(rsp, 4 + 2 * wordSize)); // byte[] array
+    __ addptr(buf, arrayOopDesc::base_offset_in_bytes(T_BYTE)); // + header size
+    __ addptr(buf, Address(rsp, 4 + 1 * wordSize)); // + offset
+    __ movl(crc, Address(rsp, 4 + 3 * wordSize)); // Initial CRC
   }
-  return NULL;
+  __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, StubRoutines::updateBytesCRC32C()), crc, buf, len);
+  // result in rax
+  // _areturn
+  __ pop(rdi);                // get return address
+  __ mov(rsp, rsi);           // set sp to sender sp
+  __ jmp(rdi);
+
+  return entry;
 }
 
 /**
@@ -231,7 +225,7 @@ address TemplateInterpreterGenerator::generate_Float_intBitsToFloat_entry() {
     return entry;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 /**
@@ -257,7 +251,7 @@ address TemplateInterpreterGenerator::generate_Float_floatToRawIntBits_entry() {
     return entry;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 
@@ -284,7 +278,7 @@ address TemplateInterpreterGenerator::generate_Double_longBitsToDouble_entry() {
      return entry;
    }
 
-   return NULL;
+   return nullptr;
 }
 
 /**
@@ -311,7 +305,49 @@ address TemplateInterpreterGenerator::generate_Double_doubleToRawLongBits_entry(
     return entry;
   }
 
-  return NULL;
+  return nullptr;
+}
+
+/**
+ * Method entry for static method:
+ *    java.lang.Float.float16ToFloat(short floatBinary16)
+ */
+address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() {
+  assert(VM_Version::supports_float16(), "this intrinsic is not supported");
+  address entry = __ pc();
+
+  // rsi: the sender's SP
+
+  // Load value into xmm0 and convert
+  __ movswl(rax, Address(rsp, wordSize));
+  __ flt16_to_flt(xmm0, rax);
+
+  // Return
+  __ pop(rdi); // get return address
+  __ mov(rsp, rsi); // set rsp to the sender's SP
+  __ jmp(rdi);
+  return entry;
+}
+
+/**
+ * Method entry for static method:
+ *    java.lang.Float.floatToFloat16(float value)
+ */
+address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() {
+  assert(VM_Version::supports_float16(), "this intrinsic is not supported");
+  address entry = __ pc();
+
+  // rsi: the sender's SP
+
+  // Load value into xmm0, convert and put result into rax
+  __ movflt(xmm0, Address(rsp, wordSize));
+  __ flt_to_flt16(rax, xmm0, xmm1);
+
+  // Return
+  __ pop(rdi); // get return address
+  __ mov(rsp, rsi); // set rsp to the sender's SP
+  __ jmp(rdi);
+  return entry;
 }
 
 address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKind kind) {
@@ -319,8 +355,6 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
   // rbx,: Method*
   // rcx: scratrch
   // rsi: sender sp
-
-  if (!InlineIntrinsics) return NULL; // Generate a vanilla entry
 
   address entry_point = __ pc();
 
@@ -341,7 +375,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
   //
   if (kind == Interpreter::java_lang_math_fmaD) {
     if (!UseFMA) {
-      return NULL; // Generate a vanilla entry
+      return nullptr; // Generate a vanilla entry
     }
     __ movdbl(xmm2, Address(rsp, 5 * wordSize));
     __ movdbl(xmm1, Address(rsp, 3 * wordSize));
@@ -354,7 +388,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     return entry_point;
   } else if (kind == Interpreter::java_lang_math_fmaF) {
     if (!UseFMA) {
-      return NULL; // Generate a vanilla entry
+      return nullptr; // Generate a vanilla entry
     }
     __ movflt(xmm2, Address(rsp, 3 * wordSize));
     __ movflt(xmm1, Address(rsp, 2 * wordSize));
@@ -372,7 +406,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     case Interpreter::java_lang_math_sin :
         __ subptr(rsp, 2 * wordSize);
         __ fstp_d(Address(rsp, 0));
-        if (VM_Version::supports_sse2() && StubRoutines::dsin() != NULL) {
+        if (VM_Version::supports_sse2() && StubRoutines::dsin() != nullptr) {
           __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dsin())));
         } else {
           __ call_VM_leaf0(CAST_FROM_FN_PTR(address, SharedRuntime::dsin));
@@ -382,7 +416,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     case Interpreter::java_lang_math_cos :
         __ subptr(rsp, 2 * wordSize);
         __ fstp_d(Address(rsp, 0));
-        if (VM_Version::supports_sse2() && StubRoutines::dcos() != NULL) {
+        if (VM_Version::supports_sse2() && StubRoutines::dcos() != nullptr) {
           __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dcos())));
         } else {
           __ call_VM_leaf0(CAST_FROM_FN_PTR(address, SharedRuntime::dcos));
@@ -392,7 +426,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     case Interpreter::java_lang_math_tan :
         __ subptr(rsp, 2 * wordSize);
         __ fstp_d(Address(rsp, 0));
-        if (StubRoutines::dtan() != NULL) {
+        if (StubRoutines::dtan() != nullptr) {
           __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dtan())));
         } else {
           __ call_VM_leaf0(CAST_FROM_FN_PTR(address, SharedRuntime::dtan));
@@ -408,7 +442,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     case Interpreter::java_lang_math_log:
         __ subptr(rsp, 2 * wordSize);
         __ fstp_d(Address(rsp, 0));
-        if (StubRoutines::dlog() != NULL) {
+        if (StubRoutines::dlog() != nullptr) {
           __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dlog())));
         } else {
           __ call_VM_leaf0(CAST_FROM_FN_PTR(address, SharedRuntime::dlog));
@@ -418,7 +452,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     case Interpreter::java_lang_math_log10:
         __ subptr(rsp, 2 * wordSize);
         __ fstp_d(Address(rsp, 0));
-        if (StubRoutines::dlog10() != NULL) {
+        if (StubRoutines::dlog10() != nullptr) {
           __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dlog10())));
         } else {
           __ call_VM_leaf0(CAST_FROM_FN_PTR(address, SharedRuntime::dlog10));
@@ -430,7 +464,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       __ subptr(rsp, 4 * wordSize);
       __ fstp_d(Address(rsp, 0));
       __ fstp_d(Address(rsp, 2 * wordSize));
-      if (StubRoutines::dpow() != NULL) {
+      if (StubRoutines::dpow() != nullptr) {
         __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dpow())));
       } else {
         __ call_VM_leaf0(CAST_FROM_FN_PTR(address, SharedRuntime::dpow));
@@ -440,7 +474,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     case Interpreter::java_lang_math_exp:
       __ subptr(rsp, 2*wordSize);
       __ fstp_d(Address(rsp, 0));
-      if (StubRoutines::dexp() != NULL) {
+      if (StubRoutines::dexp() != nullptr) {
         __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dexp())));
       } else {
         __ call_VM_leaf0(CAST_FROM_FN_PTR(address, SharedRuntime::dexp));
@@ -466,3 +500,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
 
   return entry_point;
 }
+
+// Not supported
+address TemplateInterpreterGenerator::generate_currentThread() { return nullptr; }
+

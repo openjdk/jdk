@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,6 @@ public class BreakIteratorInfo extends ListResourceBundle {
             // built-in type of BreakIterator
             {"BreakIteratorClasses",
                 new String[] {
-                    "RuleBasedBreakIterator",  // character-break iterator class
                     "RuleBasedBreakIterator",  // word-break iterator class
                     "RuleBasedBreakIterator",  // line-break iterator class
                     "RuleBasedBreakIterator"   // sentence-break iterator class
@@ -58,7 +57,6 @@ public class BreakIteratorInfo extends ListResourceBundle {
             },
 
             // Rules filename for each break-iterator
-            {"CharacterData", "CharacterBreakIteratorData"},
             {"WordData",      "WordBreakIteratorData"},
             {"LineData",      "LineBreakIteratorData"},
             {"SentenceData",  "SentenceBreakIteratorData"},

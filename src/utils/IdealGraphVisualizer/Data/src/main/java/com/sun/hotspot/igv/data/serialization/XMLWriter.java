@@ -36,8 +36,8 @@ import java.util.Stack;
  */
 public class XMLWriter extends Writer {
 
-    private Writer inner;
-    private Stack<String> elementStack;
+    private final Writer inner;
+    private final Stack<String> elementStack;
 
     public XMLWriter(Writer inner) {
         this.inner = inner;
@@ -114,7 +114,7 @@ public class XMLWriter extends Writer {
     }
 
     public void writeProperties(Properties props) throws IOException {
-        if (props.iterator().hasNext() == false) {
+        if (!props.iterator().hasNext()) {
             return;
         }
 

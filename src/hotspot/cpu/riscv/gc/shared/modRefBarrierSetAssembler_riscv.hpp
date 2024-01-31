@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020, 2021, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ protected:
                                                 Register start, Register count, Register tmp, RegSet saved_regs) {}
 
   virtual void oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
-                            Address dst, Register val, Register tmp1, Register tmp2) = 0;
+                            Address dst, Register val, Register tmp1, Register tmp2, Register tmp3) = 0;
 
 public:
   virtual void arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
@@ -49,7 +49,7 @@ public:
   virtual void arraycopy_epilogue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
                                   Register start, Register count, Register tmp, RegSet saved_regs);
   virtual void store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
-                        Address dst, Register val, Register tmp1, Register tmp2);
+                        Address dst, Register val, Register tmp1, Register tmp2, Register tmp3);
 };
 
 #endif // CPU_RISCV_GC_SHARED_MODREFBARRIERSETASSEMBLER_RISCV_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,9 @@
 #include "jfr/leakprofiler/utilities/unifiedOopRef.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/synchronizer.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/threads.hpp"
 #include "services/management.hpp"
 #include "utilities/align.hpp"
 
@@ -45,16 +46,16 @@ RootSetClosure<Delegate>::RootSetClosure(Delegate* delegate) : _delegate(delegat
 
 template <typename Delegate>
 void RootSetClosure<Delegate>::do_oop(oop* ref) {
-  assert(ref != NULL, "invariant");
+  assert(ref != nullptr, "invariant");
   assert(is_aligned(ref, HeapWordSize), "invariant");
-  if (*ref != NULL) {
+  if (NativeAccess<>::oop_load(ref) != nullptr) {
     _delegate->do_root(UnifiedOopRef::encode_in_native(ref));
   }
 }
 
 template <typename Delegate>
 void RootSetClosure<Delegate>::do_oop(narrowOop* ref) {
-  assert(ref != NULL, "invariant");
+  assert(ref != nullptr, "invariant");
   assert(is_aligned(ref, sizeof(narrowOop)), "invariant");
   if (!CompressedOops::is_null(*ref)) {
     _delegate->do_root(UnifiedOopRef::encode_in_native(ref));
@@ -64,13 +65,41 @@ void RootSetClosure<Delegate>::do_oop(narrowOop* ref) {
 class RootSetClosureMarkScope : public MarkScope {};
 
 template <typename Delegate>
+class RawRootClosure : public OopClosure {
+  Delegate* _delegate;
+
+public:
+  RawRootClosure(Delegate* delegate) : _delegate(delegate) {}
+
+  void do_oop(oop* ref) {
+    assert(ref != nullptr, "invariant");
+    assert(is_aligned(ref, HeapWordSize), "invariant");
+    if (*ref != nullptr) {
+      _delegate->do_root(UnifiedOopRef::encode_as_raw(ref));
+    }
+  }
+
+  void do_oop(narrowOop* ref) {
+    assert(ref != nullptr, "invariant");
+    assert(is_aligned(ref, sizeof(narrowOop)), "invariant");
+    if (!CompressedOops::is_null(*ref)) {
+      _delegate->do_root(UnifiedOopRef::encode_as_raw(ref));
+    }
+  }
+};
+
+template <typename Delegate>
 void RootSetClosure<Delegate>::process() {
   RootSetClosureMarkScope mark_scope;
+
   CLDToOopClosure cldt_closure(this, ClassLoaderData::_claim_none);
   ClassLoaderDataGraph::always_strong_cld_do(&cldt_closure);
-  // We don't follow code blob oops, because they have misaligned oops.
-  Threads::oops_do(this, NULL);
+
   OopStorageSet::strong_oops_do(this);
+
+  // We don't follow code blob oops, because they have misaligned oops.
+  RawRootClosure<Delegate> rrc(_delegate);
+  Threads::oops_do(&rrc, nullptr);
 }
 
 template class RootSetClosure<BFSClosure>;

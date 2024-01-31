@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ public class TestBadOverride extends JavadocTester {
      * @param args the array of command line arguments.
      */
     public static void main(String... args) throws Exception {
-        TestBadOverride tester = new TestBadOverride();
+        var tester = new TestBadOverride();
         tester.runTests();
     }
 
@@ -49,15 +49,7 @@ public class TestBadOverride extends JavadocTester {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
                 "pkg4");
-        checkExit(Exit.OK);
-
-        checkOutput("pkg4/Foo.html", true,
-                """
-                    <section class="detail" id="toString()">
-                    <h3>toString</h3>
-                    <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
-                    lass="return-type">void</span>&nbsp;<span class="element-name">toString</span>()</div>
-                    <div class="block">Why can't I do this ?</div>
-                    </section>""");
+        // explicitly configure "no crash" check, which is the main interest of this test
+        setAutomaticCheckNoStacktrace(true);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -173,7 +173,6 @@
  * each {@code XAConnection} object creates an {@code XAResource} object
  * that the transaction manager uses to manage the connection.
  *
- *
  * <H2>Rowsets</H2>
  * The {@code RowSet} interface works with various other classes and
  * interfaces behind the scenes. These can be grouped into three categories.
@@ -248,7 +247,6 @@
  * for its rowset.  The rowset's internal state is also updated, either by the
  * reader or directly by the method {@code RowSet.execute}.
  *
- *
  * <LI>{@code RowSetWriter}<br>
  * A disconnected {@code RowSet} object that has implemented the
  * {@code RowSetInternal} interface can call on its writer (the
@@ -265,14 +263,12 @@
  * <LI>Close the connection
  * </UL>
  *
- *
  * </UL>
  * </OL>
  * <p>
  * The {@code RowSet} interface may be implemented in any number of
  * ways, and anyone may write an implementation. Developers are encouraged
  * to use their imaginations in coming up with new ways to use rowsets.
- *
  *
  * <h2>Package Specification</h2>
  *
@@ -289,5 +285,6 @@
  * <ul>
  * <li>&ldquo;<i>JDBC&#8482;API Tutorial and Reference, Third Edition</i>&rdquo;
  * </ul>
+ * @since 1.4
  */
 package javax.sql;

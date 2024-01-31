@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ public class BreakpointInfo extends VMObject {
   public long getNameIndex()      { return nameIndexField.getValue(addr);            }
   public long getSignatureIndex() { return signatureIndexField.getValue(addr);       }
   public BreakpointInfo getNext() {
-    return (BreakpointInfo) VMObjectFactory.newObject(BreakpointInfo.class, nextField.getValue(addr));
+    return VMObjectFactory.newObject(BreakpointInfo.class, nextField.getValue(addr));
   }
 
   public boolean match(Method m, int bci) {

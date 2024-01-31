@@ -23,16 +23,19 @@
 
 /**
  * @test
- * @bug 8282711
- * @summary Accelerate Math.signum function for AVX and AVX512.
+ * @bug 8282711 8290249
+ * @summary Accelerate Math.signum function for AVX, AVX512, aarch64 (Neon and SVE)
+ *          and riscv64 (vector)
  * @requires vm.compiler2.enabled
- * @requires vm.cpu.features ~= ".*avx.*"
- * @requires os.simpleArch == "x64"
+ * @requires (os.simpleArch == "x64" & vm.cpu.features ~= ".*avx.*") | os.arch == "aarch64" |
+ *           (os.arch == "riscv64" & vm.cpu.features ~= ".*v,.*")
  * @library /test/lib /
  * @run driver compiler.vectorization.TestSignumVector
  */
 
 package compiler.vectorization;
+
+import java.util.Random;
 
 import compiler.lib.ir_framework.*;
 
@@ -46,13 +49,13 @@ public class TestSignumVector {
   private static float  [] fout;
 
   public static void main(String args[]) {
-      TestFramework.runWithFlags("-XX:-TieredCompilation",
-                                  "-XX:CompileThresholdScaling=0.3");
+      TestFramework.runWithFlags("-XX:-TieredCompilation", "-XX:+UnlockDiagnosticVMOptions",
+                                 "-XX:+UseSignumIntrinsic", "-XX:CompileThresholdScaling=0.3");
       System.out.println("PASSED");
   }
 
   @Test
-  @IR(counts = {"SignumVD" , " > 0 "})
+  @IR(counts = {IRNode.SIGNUM_VD, "> 0"})
   public void test_signum_double(double[] dout, double[] dinp) {
       for (int i = 0; i < dout.length; i+=1) {
           dout[i] = Math.signum(dinp[i]);
@@ -63,16 +66,26 @@ public class TestSignumVector {
   public void kernel_test_signum_double() {
       dinp = new double[ARRLEN];
       dout = new double[ARRLEN];
+      Random rnd = new Random(20);
       for(int i = 0 ; i < ARRLEN; i++) {
-          dinp[i] = (double)i*1.4;
+          dinp[i] = (i-ARRLEN/2)*rnd.nextDouble();
       }
       for (int i = 0; i < ITERS; i++) {
           test_signum_double(dout , dinp);
       }
+      for(int i = 0 ; i < ARRLEN; i++) {
+        if (i-ARRLEN/2<0) {
+            if (dout[i] != -1.0)  throw new RuntimeException("Expected negative numbers in first half of array: " + java.util.Arrays.toString(dout));
+        } else if (i-ARRLEN/2==0) {
+            if (dout[i] != 0)     throw new RuntimeException("Expected zero in the middle of array: " + java.util.Arrays.toString(dout));
+        } else {
+            if (dout[i] != 1.0)   throw new RuntimeException("Expected positive numbers in second half of array: " + java.util.Arrays.toString(dout));
+        }
+    }
   }
 
   @Test
-  @IR(counts = {"SignumVF" , " > 0 "})
+  @IR(counts = {IRNode.SIGNUM_VF, "> 0"})
   public void test_signum_float(float[] fout, float[] finp) {
       for (int i = 0; i < finp.length; i+=1) {
           fout[i] = Math.signum(finp[i]);
@@ -83,11 +96,21 @@ public class TestSignumVector {
   public void kernel_test_round() {
       finp = new float[ARRLEN];
       fout = new float[ARRLEN];
+      Random rnd = new Random(20);
       for(int i = 0 ; i < ARRLEN; i++) {
-          finp[i] = (float)i*1.4f;
+          finp[i] = (i-ARRLEN/2)*rnd.nextFloat();
       }
       for (int i = 0; i < ITERS; i++) {
           test_signum_float(fout , finp);
       }
+      for(int i = 0 ; i < ARRLEN; i++) {
+        if (i-ARRLEN/2<0) {
+            if (fout[i] != -1.0)  throw new RuntimeException("Expected negative numbers in first half of array: " + java.util.Arrays.toString(fout));
+        } else if (i-ARRLEN/2==0) {
+            if (fout[i] != 0)     throw new RuntimeException("Expected zero in the middle of array: " + java.util.Arrays.toString(fout));
+        } else {
+            if (fout[i] != 1.0)   throw new RuntimeException("Expected positive numbers in second half of array: " + java.util.Arrays.toString(fout));
+        }
+    }
   }
 }

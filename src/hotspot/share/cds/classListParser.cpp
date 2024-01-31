@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
-#include "jimage.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/classListParser.hpp"
 #include "cds/lambdaFormInvokers.hpp"
@@ -40,24 +38,27 @@
 #include "interpreter/bytecode.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "jimage.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/constantPool.hpp"
+#include "oops/constantPool.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "utilities/defaultStream.hpp"
-#include "utilities/hashtable.inline.hpp"
 #include "utilities/macros.hpp"
 
-volatile Thread* ClassListParser::_parsing_thread = NULL;
-ClassListParser* ClassListParser::_instance = NULL;
+volatile Thread* ClassListParser::_parsing_thread = nullptr;
+ClassListParser* ClassListParser::_instance = nullptr;
 
-ClassListParser::ClassListParser(const char* file) : _id2klass_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE) {
+ClassListParser::ClassListParser(const char* file, ParseMode parse_mode) : _id2klass_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE) {
+  log_info(cds)("Parsing %s%s", file,
+                (parse_mode == _parse_lambda_forms_invokers_only) ? " (lambda form invokers only)" : "");
   _classlist_file = file;
-  _file = NULL;
+  _file = nullptr;
   // Use os::open() because neither fopen() nor os::fopen()
   // can handle long path name on Windows.
   int fd = os::open(file, O_RDONLY, S_IREAD);
@@ -66,17 +67,19 @@ ClassListParser::ClassListParser(const char* file) : _id2klass_table(INITIAL_TAB
     // can be used in parse_one_line()
     _file = os::fdopen(fd, "r");
   }
-  if (_file == NULL) {
+  if (_file == nullptr) {
     char errmsg[JVM_MAXPATHLEN];
     os::lasterror(errmsg, JVM_MAXPATHLEN);
     vm_exit_during_initialization("Loading classlist failed", errmsg);
   }
   _line_no = 0;
-  _interfaces = new (ResourceObj::C_HEAP, mtClass) GrowableArray<int>(10, mtClass);
-  _indy_items = new (ResourceObj::C_HEAP, mtClass) GrowableArray<const char*>(9, mtClass);
+  _token = _line;
+  _interfaces = new (mtClass) GrowableArray<int>(10, mtClass);
+  _indy_items = new (mtClass) GrowableArray<const char*>(9, mtClass);
+  _parse_mode = parse_mode;
 
   // _instance should only be accessed by the thread that created _instance.
-  assert(_instance == NULL, "must be singleton");
+  assert(_instance == nullptr, "must be singleton");
   _instance = this;
   Atomic::store(&_parsing_thread, Thread::current());
 }
@@ -86,13 +89,13 @@ bool ClassListParser::is_parsing_thread() {
 }
 
 ClassListParser::~ClassListParser() {
-  if (_file != NULL) {
+  if (_file != nullptr) {
     fclose(_file);
   }
-  Atomic::store(&_parsing_thread, (Thread*)NULL);
+  Atomic::store(&_parsing_thread, (Thread*)nullptr);
   delete _indy_items;
   delete _interfaces;
-  _instance = NULL;
+  _instance = nullptr;
 }
 
 int ClassListParser::parse(TRAPS) {
@@ -102,6 +105,10 @@ int ClassListParser::parse(TRAPS) {
     if (lambda_form_line()) {
       // The current line is "@lambda-form-invoker ...". It has been recorded in LambdaFormInvokers,
       // and will be processed later.
+      continue;
+    }
+
+    if (_parse_mode == _parse_lambda_forms_invokers_only) {
       continue;
     }
 
@@ -124,7 +131,7 @@ int ClassListParser::parse(TRAPS) {
       ResourceMark rm(THREAD);
       char* ex_msg = (char*)"";
       oop message = java_lang_Throwable::message(PENDING_EXCEPTION);
-      if (message != NULL) {
+      if (message != nullptr) {
         ex_msg = java_lang_String::as_utf8_string(message);
       }
       log_warning(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(), ex_msg);
@@ -135,7 +142,7 @@ int ClassListParser::parse(TRAPS) {
       continue;
     }
 
-    assert(klass != NULL, "sanity");
+    assert(klass != nullptr, "sanity");
     if (log_is_enabled(Trace, cds)) {
       ResourceMark rm(THREAD);
       log_trace(cds)("Shared spaces preloaded: %s", klass->external_name());
@@ -159,7 +166,7 @@ int ClassListParser::parse(TRAPS) {
 
 bool ClassListParser::parse_one_line() {
   for (;;) {
-    if (fgets(_line, sizeof(_line), _file) == NULL) {
+    if (fgets(_line, sizeof(_line), _file) == nullptr) {
       return false;
     }
     ++ _line_no;
@@ -201,7 +208,7 @@ bool ClassListParser::parse_one_line() {
   _id = _unspecified;
   _super = _unspecified;
   _interfaces->clear();
-  _source = NULL;
+  _source = nullptr;
   _interfaces_specified = false;
   _indy_items->clear();
   _lambda_form_line = false;
@@ -210,7 +217,7 @@ bool ClassListParser::parse_one_line() {
     return parse_at_tags();
   }
 
-  if ((_token = strchr(_line, ' ')) == NULL) {
+  if ((_token = strchr(_line, ' ')) == nullptr) {
     // No optional arguments are specified.
     return true;
   }
@@ -236,7 +243,7 @@ bool ClassListParser::parse_one_line() {
       skip_whitespaces();
       _source = _token;
       char* s = strchr(_token, ' ');
-      if (s == NULL) {
+      if (s == nullptr) {
         break; // end of input line
       } else {
         *s = '\0'; // mark the end of _source
@@ -278,7 +285,7 @@ void ClassListParser::split_tokens_by_whitespace(int offset) {
 int ClassListParser::split_at_tag_from_line() {
   _token = _line;
   char* ptr;
-  if ((ptr = strchr(_line, ' ')) == NULL) {
+  if ((ptr = strchr(_line, ' ')) == nullptr) {
     error("Too few items following the @ tag \"%s\" line #%d", _line, _line_no);
     return 0;
   }
@@ -407,7 +414,7 @@ void ClassListParser::print_actual_interfaces(InstanceKlass* ik) {
 void ClassListParser::error(const char* msg, ...) {
   va_list ap;
   va_start(ap, msg);
-  int error_index = _token - _line;
+  int error_index = pointer_delta_as_int(_token, _line);
   if (error_index >= _line_len) {
     error_index = _line_len - 1;
   }
@@ -439,7 +446,7 @@ void ClassListParser::error(const char* msg, ...) {
     jio_fprintf(defaultStream::error_stream(), "^\n");
   }
 
-  vm_exit_during_initialization("class list format error.", NULL);
+  vm_exit_during_initialization("class list format error.", nullptr);
   va_end(ap);
 }
 
@@ -538,7 +545,7 @@ void ClassListParser::resolve_indy(JavaThread* current, Symbol* class_name_symbo
     ResourceMark rm(current);
     char* ex_msg = (char*)"";
     oop message = java_lang_Throwable::message(PENDING_EXCEPTION);
-    if (message != NULL) {
+    if (message != nullptr) {
       ex_msg = java_lang_String::as_utf8_string(message);
     }
     log_warning(cds)("resolve_indy for class %s has encountered exception: %s %s",
@@ -564,31 +571,31 @@ void ClassListParser::resolve_indy_impl(Symbol* class_name_symbol, TRAPS) {
     ConstantPool* cp = ik->constants();
     ConstantPoolCache* cpcache = cp->cache();
     bool found = false;
-    for (int cpcindex = 0; cpcindex < cpcache->length(); cpcindex ++) {
-      int indy_index = ConstantPool::encode_invokedynamic_index(cpcindex);
-      ConstantPoolCacheEntry* cpce = cpcache->entry_at(cpcindex);
-      int pool_index = cpce->constant_pool_index();
+    for (int indy_index = 0; indy_index < cpcache->resolved_indy_entries_length(); indy_index++) {
+      int pool_index = cpcache->resolved_indy_entry_at(indy_index)->constant_pool_index();
       constantPoolHandle pool(THREAD, cp);
-      if (pool->tag_at(pool_index).is_invoke_dynamic()) {
-        BootstrapInfo bootstrap_specifier(pool, pool_index, indy_index);
-        Handle bsm = bootstrap_specifier.resolve_bsm(CHECK);
-        if (!SystemDictionaryShared::is_supported_invokedynamic(&bootstrap_specifier)) {
-          log_debug(cds, lambda)("is_supported_invokedynamic check failed for cp_index %d", pool_index);
-          continue;
+      BootstrapInfo bootstrap_specifier(pool, pool_index, indy_index);
+      Handle bsm = bootstrap_specifier.resolve_bsm(CHECK);
+      if (!SystemDictionaryShared::is_supported_invokedynamic(&bootstrap_specifier)) {
+        log_debug(cds, lambda)("is_supported_invokedynamic check failed for cp_index %d", pool_index);
+        continue;
+      }
+      bool matched = is_matching_cp_entry(pool, pool_index, CHECK);
+      if (matched) {
+        found = true;
+        CallInfo info;
+        bool is_done = bootstrap_specifier.resolve_previously_linked_invokedynamic(info, CHECK);
+        if (!is_done) {
+          // resolve it
+          Handle recv;
+          LinkResolver::resolve_invoke(info,
+                                       recv,
+                                       pool,
+                                       ConstantPool::encode_invokedynamic_index(indy_index),
+                                       Bytecodes::_invokedynamic, CHECK);
+          break;
         }
-        bool matched = is_matching_cp_entry(pool, pool_index, CHECK);
-        if (matched) {
-          found = true;
-          CallInfo info;
-          bool is_done = bootstrap_specifier.resolve_previously_linked_invokedynamic(info, CHECK);
-          if (!is_done) {
-            // resolve it
-            Handle recv;
-            LinkResolver::resolve_invoke(info, recv, pool, indy_index, Bytecodes::_invokedynamic, CHECK);
-            break;
-          }
-          cpce->set_dynamic_call(pool, info);
-        }
+        cpcache->set_dynamic_call(info, indy_index);
       }
     }
     if (!found) {
@@ -634,7 +641,7 @@ Klass* ClassListParser::load_current_class(Symbol* class_name_symbol, TRAPS) {
 
     assert(result.get_type() == T_OBJECT, "just checking");
     oop obj = result.get_oop();
-    assert(obj != NULL, "jdk.internal.loader.BuiltinClassLoader::loadClass never returns null");
+    assert(obj != nullptr, "jdk.internal.loader.BuiltinClassLoader::loadClass never returns null");
     klass = java_lang_Class::as_Klass(obj);
   } else {
     // If "source:" tag is specified, all super class and super interfaces must be specified in the
@@ -642,7 +649,7 @@ Klass* ClassListParser::load_current_class(Symbol* class_name_symbol, TRAPS) {
     klass = load_class_from_source(class_name_symbol, CHECK_NULL);
   }
 
-  assert(klass != NULL, "exception should have been thrown");
+  assert(klass != nullptr, "exception should have been thrown");
   assert(klass->is_instance_klass(), "array classes should have been filtered out");
 
   if (is_id_specified()) {
@@ -663,22 +670,22 @@ Klass* ClassListParser::load_current_class(Symbol* class_name_symbol, TRAPS) {
 }
 
 bool ClassListParser::is_loading_from_source() {
-  return (_source != NULL);
+  return (_source != nullptr);
 }
 
 InstanceKlass* ClassListParser::lookup_class_by_id(int id) {
   InstanceKlass** klass_ptr = id2klass_table()->get(id);
-  if (klass_ptr == NULL) {
+  if (klass_ptr == nullptr) {
     error("Class ID %d has not been defined", id);
   }
-  assert(*klass_ptr != NULL, "must be");
+  assert(*klass_ptr != nullptr, "must be");
   return *klass_ptr;
 }
 
 
 InstanceKlass* ClassListParser::lookup_super_for_current_class(Symbol* super_name) {
   if (!is_loading_from_source()) {
-    return NULL;
+    return nullptr;
   }
 
   InstanceKlass* k = lookup_class_by_id(super());
@@ -692,7 +699,7 @@ InstanceKlass* ClassListParser::lookup_super_for_current_class(Symbol* super_nam
 
 InstanceKlass* ClassListParser::lookup_interface_for_current_class(Symbol* interface_name) {
   if (!is_loading_from_source()) {
-    return NULL;
+    return nullptr;
   }
 
   const int n = _interfaces->length();
@@ -715,5 +722,5 @@ InstanceKlass* ClassListParser::lookup_interface_for_current_class(Symbol* inter
   error("The interface %s implemented by class %s does not match any of the specified interface IDs",
         interface_name->as_klass_external_name(), _class_name);
   ShouldNotReachHere();
-  return NULL;
+  return nullptr;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7106773 8180570
+ * @bug 7106773 8180570 8314148
  * @summary 512 bits RSA key cannot work with SHA384 and SHA512
  * @requires os.family == "windows"
  * @modules java.base/sun.security.util

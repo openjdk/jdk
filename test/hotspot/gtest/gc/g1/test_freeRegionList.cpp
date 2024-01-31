@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  */
 
 #include "precompiled.hpp"
-
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
 #include "gc/g1/g1CardSet.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
@@ -45,7 +44,7 @@ TEST_VM(FreeRegionList, length) {
 
   // Create a fake heap. It does not need to be valid, as the HeapRegion constructor
   // does not access it.
-  MemRegion heap(NULL, num_regions_in_test * HeapRegion::GrainWords);
+  MemRegion heap(nullptr, num_regions_in_test * HeapRegion::GrainWords);
 
   // Allocate a fake BOT because the HeapRegion constructor initializes
   // the BOT.

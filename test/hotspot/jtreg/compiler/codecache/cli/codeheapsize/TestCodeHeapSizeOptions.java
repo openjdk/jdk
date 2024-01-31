@@ -26,6 +26,7 @@
  * @key randomness
  * @bug 8015774
  * @summary Verify processing of options related to code heaps sizing.
+ * @requires vm.flagless
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.compiler
@@ -40,7 +41,7 @@ package compiler.codecache.cli.codeheapsize;
 import compiler.codecache.cli.common.CodeCacheCLITestBase;
 import compiler.codecache.cli.common.CodeCacheCLITestCase;
 import jdk.test.lib.Platform;
-import sun.hotspot.code.BlobType;
+import jdk.test.whitebox.code.BlobType;
 
 import java.util.EnumSet;
 

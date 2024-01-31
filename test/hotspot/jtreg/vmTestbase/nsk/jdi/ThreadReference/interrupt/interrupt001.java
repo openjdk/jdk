@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,11 +47,9 @@ import java.io.*;
  * The test is passed if both 'interrupted status" are equal,           <BR>
  * otherwise the test failed.                                           <BR>
  *                                                                      <BR>
- * The test consists of two cases as follows:                           <BR>
+ * The test consists of one test case as follows:                       <BR>
  * - both debuggee's threads are locked up at synchronized block and    <BR>
  *   are not suspended;                                                 <BR>
- * - both debuggee's threads are locked up at synchronized block and    <BR>
- *   are suspended by java.lang.Thread.suspend() method;                <BR>
  */
 
 public class interrupt001 {
@@ -133,8 +131,6 @@ public class interrupt001 {
 
     static final String EQUALS_NOT_INTERRUPTED = "Statuses of threads are equal: not interrupted";
 
-    static final int MAX_CASE = 2;
-
     //------------------------------------------------------ methods
 
     private int runThis(String argv[], PrintStream out) {
@@ -169,29 +165,19 @@ public class interrupt001 {
 
         log1("      TESTING BEGINS");
 
-        for (int i = 0; i < MAX_CASE; i++) {
 
-            debuggee.sendSignal("newcheck");
-            try {
-                debuggee.receiveExpectedSignal("checkready");
-            } catch (Failure e) {
-                debuggee.quit();
-                throw e;
-            }
-
-            log1("BEGIN OF CASE #" + i);
-
-            //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ variable part
-            switch (i) {
-            case 0:
-                executeCase(i, "Thread02");
-                break;
-
-            case 1:
-                executeCase(i, "Thread12");
-                break;
-            }
+        debuggee.sendSignal("newcheck");
+        try {
+            debuggee.receiveExpectedSignal("checkready");
+        } catch (Failure e) {
+            debuggee.quit();
+            throw e;
         }
+
+        log1("BEGIN OF CASE #0");
+
+        executeCase(0, "Thread02");
+
         log1("      TESTING ENDS");
 
         //--------------------------------------------------   test summary section
@@ -223,7 +209,9 @@ public class interrupt001 {
             throw new TestBug("ERROR: Not found ThreadReference for name :" + threadName2);
         }
 
-        log2("......interrupting the thread2");
+        log2("......thread2 is " + (thread2.isVirtual() ? "" : "not ") + "a virtual thread");
+
+        log2("......interrupting thread2");
         thread2.interrupt();
 
         log2("......instructing main thread to check up threads' interrupted statuses");

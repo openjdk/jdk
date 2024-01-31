@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -224,7 +224,9 @@ public final class SplashScreen {
                     String jarName = _getImageJarName(splashPtr);
                     if (fileName != null) {
                         if (jarName != null) {
-                            imageURL = new URL("jar:"+(new File(jarName).toURL().toString())+"!/"+fileName);
+                            @SuppressWarnings("deprecation")
+                            var _unused = imageURL =
+                                    new URL("jar:"+(new File(jarName).toURL().toString())+"!/"+fileName);
                         } else {
                             imageURL = new File(fileName).toURL();
                         }

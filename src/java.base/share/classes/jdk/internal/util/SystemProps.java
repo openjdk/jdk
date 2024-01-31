@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package jdk.internal.util;
 import java.lang.annotation.Native;
 import java.util.HashMap;
 import java.util.Map;
+import java.io.File;
 
 /**
  * System Property initialization for internal use only
@@ -39,6 +40,18 @@ public final class SystemProps {
 
     // no instances
     private SystemProps() {}
+
+    // Custom java.io.tmpdir via command line.
+    private static String customTmpdir;
+
+    /**
+     * Check if warning for custom java.io.tmpdir is required.
+     *
+     * @return a boolean value
+     */
+    public static boolean isBadIoTmpdir() {
+        return customTmpdir != null && !(new File(customTmpdir).isDirectory());
+    }
 
     /**
      * Create and initialize the system properties from the native properties
@@ -95,6 +108,8 @@ public final class SystemProps {
         putIfAbsent(props, "line.separator", raw.propDefault(Raw._line_separator_NDX));
         putIfAbsent(props, "file.separator", raw.propDefault(Raw._file_separator_NDX));
         putIfAbsent(props, "path.separator", raw.propDefault(Raw._path_separator_NDX));
+
+        customTmpdir = props.get("java.io.tmpdir");
         putIfAbsent(props, "java.io.tmpdir", raw.propDefault(Raw._java_io_tmpdir_NDX));
         putIfAbsent(props, "http.proxyHost", raw.propDefault(Raw._http_proxyHost_NDX));
         putIfAbsent(props, "http.proxyPort", raw.propDefault(Raw._http_proxyPort_NDX));

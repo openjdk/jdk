@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,10 +59,9 @@
  *       - rearranged synchronization of tested thread
  *       - enhanced descripton
  *
- * @requires vm.continuations
  * @library /test/lib
- * @compile --enable-preview -source ${jdk.version} contmon01.java
- * @run main/othervm/native --enable-preview -agentlib:contmon01 contmon01
+ * @compile contmon01.java
+ * @run main/othervm/native -agentlib:contmon01 contmon01
  */
 
 public class contmon01 {

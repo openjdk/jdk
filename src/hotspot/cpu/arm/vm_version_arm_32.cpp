@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "asm/macroAssembler.inline.hpp"
+#include "jvm.h"
 #include "memory/resourceArea.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals_extension.hpp"
@@ -128,10 +128,16 @@ void VM_Version::early_initialize() {
   // use proper dmb instruction
   get_os_cpu_info();
 
+  // Future cleanup: if SUPPORTS_NATIVE_CX8 is defined then we should not need
+  // any alternative solutions. At present this allows for the theoretical
+  // possibility of building for ARMv7 and then running on ARMv5 or 6. If that
+  // is impossible then the ARM port folk should clean this up.
   _kuser_helper_version = *(int*)KUSER_HELPER_VERSION_ADDR;
+#ifndef SUPPORTS_NATIVE_CX8
   // armv7 has the ldrexd instruction that can be used to implement cx8
   // armv5 with linux >= 3.1 can use kernel helper routine
   _supports_cx8 = (supports_ldrexd() || supports_kuser_cmpxchg64());
+#endif
 }
 
 void VM_Version::initialize() {
@@ -140,7 +146,7 @@ void VM_Version::initialize() {
   // Making this stub must be FIRST use of assembler
   const int stub_size = 128;
   BufferBlob* stub_blob = BufferBlob::create("get_cpu_info", stub_size);
-  if (stub_blob == NULL) {
+  if (stub_blob == nullptr) {
     vm_exit_during_initialization("Unable to allocate get_cpu_info stub");
   }
 
@@ -278,7 +284,7 @@ void VM_Version::initialize() {
   _supports_atomic_getadd8 = supports_ldrexd();
 
 #ifdef COMPILER2
-  assert(_supports_cx8 && _supports_atomic_getset4 && _supports_atomic_getadd4
+  assert(supports_cx8() && _supports_atomic_getset4 && _supports_atomic_getadd4
          && _supports_atomic_getset8 && _supports_atomic_getadd8, "C2: atomic operations must be supported");
 #endif
   char buf[512];

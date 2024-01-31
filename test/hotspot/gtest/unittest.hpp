@@ -48,24 +48,14 @@
 #undef F1
 #undef F2
 
+#include "utilities/vmassert_uninstall.hpp"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "utilities/vmassert_reinstall.hpp"
 
 #ifdef UNDEFINED_Log
   #define Log(...)  LogImpl<LOG_TAGS(__VA_ARGS__)> // copied from logging/log.hpp
   #undef UNDEFINED_Log
-#endif
-
-// gtest/gtest.h includes assert.h which will define the assert macro, but hotspot has its
-// own standards incompatible assert macro that takes two parameters.
-// The workaround is to undef assert and then re-define it. The re-definition
-// must unfortunately be copied since debug.hpp might already have been
-// included and a second include wouldn't work due to the header guards in debug.hpp.
-#ifdef assert
-  #undef assert
-  #ifdef vmassert
-    #define assert(p, ...) vmassert(p, __VA_ARGS__)
-  #endif
 #endif
 
 // Wrapper around os::exit so we don't need to include os.hpp here.

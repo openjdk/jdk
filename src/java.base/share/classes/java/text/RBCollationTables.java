@@ -243,7 +243,7 @@ final class RBCollationTables {
      */
     //shemran/Note: this is used for secondary order value reverse, no
     //              need to consider supplementary pair.
-    static void reverse (StringBuffer result, int from, int to)
+    static void reverse (StringBuilder result, int from, int to)
     {
         int i = from;
         char swap;

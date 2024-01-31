@@ -603,11 +603,15 @@ public class JViewport extends JComponent implements Accessible
 
 
     private Graphics getBackingStoreGraphics(Graphics g) {
-        Graphics bsg = backingStoreImage.getGraphics();
-        bsg.setColor(g.getColor());
-        bsg.setFont(g.getFont());
-        bsg.setClip(g.getClipBounds());
-        return bsg;
+        if (!SwingUtilities2.isPrinting(g)) {
+            Graphics bsg = backingStoreImage.getGraphics();
+            bsg.setColor(g.getColor());
+            bsg.setFont(g.getFont());
+            bsg.setClip(g.getClipBounds());
+            return bsg;
+        } else {
+            return g;
+        }
     }
 
 
@@ -1695,7 +1699,7 @@ public class JViewport extends JComponent implements Accessible
     // NOTE: the code below uses paintForceDoubleBuffered for historical
     // reasons.  If we're going to allow a blit we've already accounted for
     // everything that paintImmediately and _paintImmediately does, for that
-    // reason we call into paintForceDoubleBuffered to diregard whether or
+    // reason we call into paintForceDoubleBuffered to disregard whether or
     // not setDoubleBuffered(true) was invoked on the view.
     //
 

@@ -26,6 +26,7 @@
 #define SHARE_GC_SHARED_BARRIERSETNMETHOD_HPP
 
 #include "memory/allocation.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/sizes.hpp"
 
@@ -41,18 +42,24 @@ public:
   bool supports_entry_barrier(nmethod* nm);
 
   virtual bool nmethod_entry_barrier(nmethod* nm);
-  virtual ByteSize thread_disarmed_offset() const;
-  virtual int* disarmed_value_address() const;
+  virtual ByteSize thread_disarmed_guard_value_offset() const;
+  virtual int* disarmed_guard_value_address() const;
 
-  int disarmed_value() const;
+  int disarmed_guard_value() const;
 
   static int nmethod_stub_entry_barrier(address* return_address_ptr);
   bool nmethod_osr_entry_barrier(nmethod* nm);
   bool is_armed(nmethod* nm);
   void disarm(nmethod* nm);
-  void arm(nmethod* nm, int arm_value);
+
+  int guard_value(nmethod* nm);
+  void set_guard_value(nmethod* nm, int value);
 
   void arm_all_nmethods();
+
+#if INCLUDE_JVMCI
+  bool verify_barrier(nmethod* nm, FormatBuffer<>& msg);
+#endif
 };
 
 

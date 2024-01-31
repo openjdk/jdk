@@ -63,14 +63,13 @@ langtools_jdeps = \
     tools/all \
     tools/jdeps
 
-langtools_sjavac = \
-    tools/all \
-    tools/sjavac
+# All tests
+
+all = \
+    :langtools_all
 
 langtools_all = \
-    jdk \
-    lib \
-    tools
+    /
 
 # Tiered testing definitions
 

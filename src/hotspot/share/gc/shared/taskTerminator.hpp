@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018, 2020, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,9 +72,9 @@ class TaskTerminator : public CHeapObj<mtGC> {
   uint _n_threads;
   TaskQueueSetSuper* _queue_set;
 
-  DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, 0);
+  DEFINE_PAD_MINUS_SIZE(0, DEFAULT_PADDING_SIZE, 0);
   volatile uint _offered_termination;
-  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, sizeof(volatile uint));
+  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_PADDING_SIZE, sizeof(volatile uint));
 
   Monitor _blocker;
   Thread* _spin_master;
@@ -91,9 +91,6 @@ class TaskTerminator : public CHeapObj<mtGC> {
 
   size_t tasks_in_queue_set() const;
 
-  // Perform one iteration of spin-master work.
-  void do_delay_step(DelayContext& delay_context);
-
   NONCOPYABLE(TaskTerminator);
 
 public:
@@ -105,12 +102,12 @@ public:
   // "false", available work has been observed in one of the task queues,
   // so the global task is not complete.
   bool offer_termination() {
-    return offer_termination(NULL);
+    return offer_termination(nullptr);
   }
 
   // As above, but it also terminates if the should_exit_termination()
   // method of the terminator parameter returns true. If terminator is
-  // NULL, then it is ignored.
+  // null, then it is ignored.
   bool offer_termination(TerminatorTerminator* terminator);
 
   // Reset the terminator, so that it may be reused again.

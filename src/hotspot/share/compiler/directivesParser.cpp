@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "opto/phasetype.hpp"
+#include "opto/traceAutoVectorizationTag.hpp"
 #include "runtime/os.hpp"
 #include <string.h>
 
@@ -38,27 +39,27 @@ void DirectivesParser::push_tmp(CompilerDirectives* dir) {
 }
 
 CompilerDirectives* DirectivesParser::pop_tmp() {
-  if (_tmp_top == NULL) {
-    return NULL;
+  if (_tmp_top == nullptr) {
+    return nullptr;
   }
   CompilerDirectives* tmp = _tmp_top;
   _tmp_top = _tmp_top->next();
-  tmp->set_next(NULL);
+  tmp->set_next(nullptr);
   _tmp_depth--;
   return tmp;
 }
 
 void DirectivesParser::clean_tmp() {
   CompilerDirectives* tmp = pop_tmp();
-  while (tmp != NULL) {
+  while (tmp != nullptr) {
     delete tmp;
     tmp = pop_tmp();
   }
   assert(_tmp_depth == 0, "Consistency");
 }
 
-int DirectivesParser::parse_string(const char* text, outputStream* st) {
-  DirectivesParser cd(text, st, false);
+int DirectivesParser::parse_string(const char* text, outputStream* st, bool silent) {
+  DirectivesParser cd(text, st, silent);
   if (cd.valid()) {
     return cd.install_directives();
   } else {
@@ -70,23 +71,23 @@ int DirectivesParser::parse_string(const char* text, outputStream* st) {
 }
 
 bool DirectivesParser::has_file() {
-  return CompilerDirectivesFile != NULL;
+  return CompilerDirectivesFile != nullptr;
 }
 
 bool DirectivesParser::parse_from_flag() {
   return parse_from_file(CompilerDirectivesFile, tty);
 }
 
-bool DirectivesParser::parse_from_file(const char* filename, outputStream* st) {
-  assert(filename != NULL, "Test before calling this");
-  if (!parse_from_file_inner(filename, st)) {
+bool DirectivesParser::parse_from_file(const char* filename, outputStream* st, bool silent) {
+  assert(filename != nullptr, "Test before calling this");
+  if (!parse_from_file_inner(filename, st, silent)) {
     st->print_cr("Could not load file: %s", filename);
     return false;
   }
   return true;
 }
 
-bool DirectivesParser::parse_from_file_inner(const char* filename, outputStream* stream) {
+bool DirectivesParser::parse_from_file_inner(const char* filename, outputStream* stream, bool silent) {
   struct stat st;
   ResourceMark rm;
   if (os::stat(filename, &st) == 0) {
@@ -96,11 +97,10 @@ bool DirectivesParser::parse_from_file_inner(const char* filename, outputStream*
       // read contents into resource array
       char* buffer = NEW_RESOURCE_ARRAY(char, st.st_size+1);
       ssize_t num_read = ::read(file_handle, (char*) buffer, st.st_size);
+      ::close(file_handle);
       if (num_read >= 0) {
         buffer[num_read] = '\0';
-        // close file
-        ::close(file_handle);
-        return parse_string(buffer, stream) > 0;
+        return parse_string(buffer, stream, silent) > 0;
       }
     }
   }
@@ -117,7 +117,7 @@ int DirectivesParser::install_directives() {
   // Pop from internal temporary stack and push to compileBroker.
   CompilerDirectives* tmp = pop_tmp();
   int i = 0;
-  while (tmp != NULL) {
+  while (tmp != nullptr) {
     i++;
     DirectivesStack::push(tmp);
     tmp = pop_tmp();
@@ -136,7 +136,7 @@ int DirectivesParser::install_directives() {
 }
 
 DirectivesParser::DirectivesParser(const char* text, outputStream* st, bool silent)
-: JSON(text, silent, st), depth(0), current_directive(NULL), current_directiveset(NULL), _tmp_top(NULL), _tmp_depth(0) {
+: JSON(text, silent, st), depth(0), current_directive(nullptr), current_directiveset(nullptr), _tmp_top(nullptr), _tmp_depth(0) {
 #ifndef PRODUCT
   memset(stack, 0, MAX_DEPTH * sizeof(stack[0]));
 #endif
@@ -144,16 +144,16 @@ DirectivesParser::DirectivesParser(const char* text, outputStream* st, bool sile
 }
 
 DirectivesParser::~DirectivesParser() {
-  assert(_tmp_top == NULL, "Consistency");
+  assert(_tmp_top == nullptr, "Consistency");
   assert(_tmp_depth == 0, "Consistency");
 }
 
 const DirectivesParser::key DirectivesParser::keys[] = {
     // name, keytype, allow_array, allowed_mask, set_function
-    { "c1",     type_c1,     0, mask(type_directives), NULL, UnknownFlagType },
-    { "c2",     type_c2,     0, mask(type_directives), NULL, UnknownFlagType },
-    { "match",  type_match,  1, mask(type_directives), NULL, UnknownFlagType },
-    { "inline", type_inline, 1, mask(type_directives) | mask(type_c1) | mask(type_c2), NULL, UnknownFlagType },
+    { "c1",     type_c1,     0, mask(type_directives), nullptr, UnknownFlagType },
+    { "c2",     type_c2,     0, mask(type_directives), nullptr, UnknownFlagType },
+    { "match",  type_match,  1, mask(type_directives), nullptr, UnknownFlagType },
+    { "inline", type_inline, 1, mask(type_directives) | mask(type_c1) | mask(type_c2), nullptr, UnknownFlagType },
 
     // Global flags
     #define common_flag_key(name, type, dvalue, compiler) \
@@ -180,7 +180,7 @@ const DirectivesParser::key* DirectivesParser::lookup_key(const char* str, size_
       return &keys[i];
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 uint DirectivesParser::mask(keytype kt) {
@@ -191,7 +191,7 @@ bool DirectivesParser::push_key(const char* str, size_t len) {
   bool result = true;
   const key* k = lookup_key(str, len);
 
-  if (k == NULL) {
+  if (k == nullptr) {
     // os::strdup
     char* s = NEW_C_HEAP_ARRAY(char, len + 1, mtCompiler);
     strncpy(s, str, len);
@@ -215,7 +215,7 @@ bool DirectivesParser::push_key(const key* k) {
     return false;
   }
 
-  assert(stack[depth] == NULL, "element not nulled, something is wrong");
+  assert(stack[depth] == nullptr, "element not nulled, something is wrong");
 
   if (depth == 0 && !(k->allowedmask & 1)) {
     error(KEY_ERROR, "Key '%s' not allowed at top level.", k->name);
@@ -238,7 +238,7 @@ bool DirectivesParser::push_key(const key* k) {
 const DirectivesParser::key* DirectivesParser::current_key() {
   assert(depth > 0, "getting key from empty stack");
   if (depth == 0) {
-    return NULL;
+    return nullptr;
   }
   return stack[depth - 1];
 }
@@ -247,13 +247,13 @@ const DirectivesParser::key* DirectivesParser::pop_key() {
   assert(depth > 0, "popping empty stack");
   if (depth == 0) {
     error(INTERNAL_ERROR, "Popping empty stack.");
-    return NULL;
+    return nullptr;
   }
   depth--;
 
   const key* k = stack[depth];
 #ifndef PRODUCT
-  stack[depth] = NULL;
+  stack[depth] = nullptr;
 #endif
 
   return k;
@@ -316,35 +316,54 @@ bool DirectivesParser::set_option_flag(JSON_TYPE t, JSON_VAL* v, const key* opti
         error(VALUE_ERROR, "Cannot use string value for a %s flag", flag_type_names[option_key->flag_type]);
         return false;
       } else {
-        char* s = NEW_C_HEAP_ARRAY(char, v->str.length+1,  mtCompiler);
+        char* s = NEW_C_HEAP_ARRAY(char, v->str.length + 1, mtCompiler);
         strncpy(s, v->str.start, v->str.length + 1);
         s[v->str.length] = '\0';
-        (set->*test)((void *)&s);
+
+        bool valid = true;
 
         if (strncmp(option_key->name, "ControlIntrinsic", 16) == 0) {
           ControlIntrinsicValidator validator(s, false/*disabled_all*/);
 
-          if (!validator.is_valid()) {
+          valid = validator.is_valid();
+          if (!valid) {
             error(VALUE_ERROR, "Unrecognized intrinsic detected in ControlIntrinsic: %s", validator.what());
-            return false;
           }
         } else if (strncmp(option_key->name, "DisableIntrinsic", 16) == 0) {
           ControlIntrinsicValidator validator(s, true/*disabled_all*/);
 
-          if (!validator.is_valid()) {
+          valid = validator.is_valid();
+          if (!valid) {
             error(VALUE_ERROR, "Unrecognized intrinsic detected in DisableIntrinsic: %s", validator.what());
-            return false;
+          }
+        }
+#if !defined(PRODUCT) && defined(COMPILER2)
+        else if (strncmp(option_key->name, "TraceAutoVectorization", 22) == 0) {
+          TraceAutoVectorizationTagValidator validator(s, false);
+
+          valid = validator.is_valid();
+          if (valid) {
+            set->set_trace_auto_vectorization_tags(validator.tags());
+          } else {
+            error(VALUE_ERROR, "Unrecognized tag name detected in TraceAutoVectorization: %s", validator.what());
           }
         } else if (strncmp(option_key->name, "PrintIdealPhase", 15) == 0) {
-          uint64_t mask = 0;
-          PhaseNameValidator validator(s, mask);
+          PhaseNameValidator validator(s);
 
-          if (!validator.is_valid()) {
+          valid = validator.is_valid();
+          if (valid) {
+            set->set_ideal_phase_name_set(validator.phase_name_set());
+          } else {
             error(VALUE_ERROR, "Unrecognized phase name detected in PrintIdealPhase: %s", validator.what());
-            return false;
           }
-          set->set_ideal_phase_mask(mask);
         }
+#endif
+
+        if (!valid) {
+          FREE_C_HEAP_ARRAY(char, s);
+          return false;
+        }
+        (set->*test)((void *)&s);  // Takes ownership.
       }
       break;
 
@@ -374,7 +393,7 @@ bool DirectivesParser::set_option(JSON_TYPE t, JSON_VAL* v) {
   switch (option_key->type) {
   case type_flag:
   {
-    if (current_directiveset == NULL) {
+    if (current_directiveset == nullptr) {
       assert(depth == 2, "Must not have active directive set");
 
       if (!set_option_flag(t, v, option_key, current_directive->_c1_store)) {
@@ -406,9 +425,9 @@ bool DirectivesParser::set_option(JSON_TYPE t, JSON_VAL* v) {
       strncpy(s, v->str.start, v->str.length);
       s[v->str.length] = '\0';
 
-      const char* error_msg = NULL;
+      const char* error_msg = nullptr;
       if (!current_directive->add_match(s, error_msg)) {
-        assert (error_msg != NULL, "Must have valid error message");
+        assert (error_msg != nullptr, "Must have valid error message");
         error(VALUE_ERROR, "Method pattern error: %s", error_msg);
       }
       FREE_C_HEAP_ARRAY(char, s);
@@ -426,20 +445,20 @@ bool DirectivesParser::set_option(JSON_TYPE t, JSON_VAL* v) {
       strncpy(s, v->str.start, v->str.length);
       s[v->str.length] = '\0';
 
-      const char* error_msg = NULL;
-      if (current_directiveset == NULL) {
+      const char* error_msg = nullptr;
+      if (current_directiveset == nullptr) {
         if (current_directive->_c1_store->parse_and_add_inline(s, error_msg)) {
           if (!current_directive->_c2_store->parse_and_add_inline(s, error_msg)) {
-            assert (error_msg != NULL, "Must have valid error message");
+            assert (error_msg != nullptr, "Must have valid error message");
             error(VALUE_ERROR, "Method pattern error: %s", error_msg);
           }
         } else {
-          assert (error_msg != NULL, "Must have valid error message");
+          assert (error_msg != nullptr, "Must have valid error message");
           error(VALUE_ERROR, "Method pattern error: %s", error_msg);
         }
       } else {
         if (!current_directiveset->parse_and_add_inline(s, error_msg)) {
-          assert (error_msg != NULL, "Must have valid error message");
+          assert (error_msg != nullptr, "Must have valid error message");
           error(VALUE_ERROR, "Method pattern error: %s", error_msg);
         }
       }
@@ -536,18 +555,18 @@ bool DirectivesParser::callback(JSON_TYPE t, JSON_VAL* v, uint rlimit) {
       case type_c1:
       case type_c2:
         // This is how we now if options apply to a single or both directive sets
-        current_directiveset = NULL;
+        current_directiveset = nullptr;
         break;
 
       case type_directives:
         // Check, finish and push to stack!
-        if (current_directive->match() == NULL) {
+        if (current_directive->match() == nullptr) {
           error(INTERNAL_ERROR, "Directive missing required match.");
           return false;
         }
         current_directive->finalize(_st);
         push_tmp(current_directive);
-        current_directive = NULL;
+        current_directive = nullptr;
         break;
 
       default:

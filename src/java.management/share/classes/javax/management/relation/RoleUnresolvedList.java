@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,7 +151,7 @@ public class RoleUnresolvedList extends ArrayList<Object> {
     /**
      * Adds the RoleUnresolved specified as the last element of the list.
      *
-     * @param role - the unresolved role to be added.
+     * @param role the unresolved role to be added.
      *
      * @exception IllegalArgumentException  if the unresolved role is null.
      */
@@ -171,9 +171,9 @@ public class RoleUnresolvedList extends ArrayList<Object> {
      * Elements with an index greater than or equal to the current position are
      * shifted up.
      *
-     * @param index - The position in the list where the new
+     * @param index The position in the list where the new
      * RoleUnresolved object is to be inserted.
-     * @param role - The RoleUnresolved object to be inserted.
+     * @param role The RoleUnresolved object to be inserted.
      *
      * @exception IllegalArgumentException  if the unresolved role is null.
      * @exception IndexOutOfBoundsException if index is out of range
@@ -197,8 +197,8 @@ public class RoleUnresolvedList extends ArrayList<Object> {
      * specified.
      * The previous element at that position is discarded.
      *
-     * @param index - The position specified.
-     * @param role - The value to which the unresolved role element
+     * @param index The position specified.
+     * @param role The value to which the unresolved role element
      * should be set.
      *
      * @exception IllegalArgumentException   if the unresolved role is null.
@@ -223,7 +223,7 @@ public class RoleUnresolvedList extends ArrayList<Object> {
      * of the list, in the order in which they are returned by the Iterator of
      * the RoleUnresolvedList specified.
      *
-     * @param roleList - Elements to be inserted into the list
+     * @param roleList Elements to be inserted into the list
      * (can be null).
      *
      * @return true if this list changed as a result of the call.
@@ -246,9 +246,9 @@ public class RoleUnresolvedList extends ArrayList<Object> {
      * this list, starting at the specified position, in the order in which
      * they are returned by the Iterator of the RoleUnresolvedList specified.
      *
-     * @param index - Position at which to insert the first element from the
+     * @param index Position at which to insert the first element from the
      * RoleUnresolvedList specified.
-     * @param roleList - Elements to be inserted into the list.
+     * @param roleList Elements to be inserted into the list.
      *
      * @return true if this list changed as a result of the call.
      *

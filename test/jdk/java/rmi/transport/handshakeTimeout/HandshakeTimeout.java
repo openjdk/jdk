@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4322806
+ * @bug 4322806 8189338
  * @summary When an RMI (JRMP) connection is made to a TCP address that is
  * listening, so the connection is accepted, but the server never responds
  * to the initial JRMP handshake (nor does it terminate the connection),
@@ -37,98 +37,51 @@
  *          java.rmi/sun.rmi.server
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
- * @run main/othervm HandshakeTimeout
+ * @run main/othervm/timeout=10 -Dsun.rmi.transport.tcp.handshakeTimeout=1
+ *                              HandshakeTimeout
+ * @run main/othervm/timeout=10 -Dsun.rmi.transport.tcp.handshakeTimeout=1
+ *                              HandshakeTimeout SSL
  */
 
+import javax.rmi.ssl.SslRMIClientSocketFactory;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.rmi.ConnectException;
 import java.rmi.ConnectIOException;
-import java.rmi.MarshalException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 
 public class HandshakeTimeout {
 
-    private static final int TIMEOUT = 10000;
-
     public static void main(String[] args) throws Exception {
-
-        System.setProperty("sun.rmi.transport.tcp.handshakeTimeout",
-                           String.valueOf(TIMEOUT / 2));
 
         /*
          * Listen on port, but never process connections made to it.
          */
         ServerSocket serverSocket = new ServerSocket(0);
-        int port = serverSocket.getLocalPort();
+        InetSocketAddress address = (InetSocketAddress) serverSocket.getLocalSocketAddress();
 
         /*
          * Attempt RMI call to port in separate thread.
          */
-        Registry registry = LocateRegistry.getRegistry(port);
-        Connector connector = new Connector(registry);
-        Thread t = new Thread(connector);
-        t.setDaemon(true);
-        t.start();
+        Registry registry;
+        if (args.length == 0) {
+            registry = LocateRegistry.getRegistry(address.getPort());
+        } else {
+            registry = LocateRegistry.getRegistry(address.getHostString(),
+                    address.getPort(), new SslRMIClientSocketFactory());
+        }
 
-        /*
-         * Wait for call attempt to finished, and analyze result.
-         */
-        t.join(TIMEOUT);
-        synchronized (connector) {
-            if (connector.success) {
-                throw new RuntimeException(
+        try {
+            registry.lookup("Dale Cooper");
+            throw new RuntimeException(
                     "TEST FAILED: remote call succeeded??");
-            }
-            if (connector.exception == null) {
-                throw new RuntimeException(
-                    "TEST FAILED: remote call did not time out");
-            } else {
-                System.err.println("remote call failed with exception:");
-                connector.exception.printStackTrace();
-                System.err.println();
-
-                if (connector.exception instanceof MarshalException) {
-                    throw new RuntimeException(
-                        "TEST FAILED: MarshalException thrown, expecting " +
-                        "java.rmi.ConnectException or ConnectIOException");
-                } else if (connector.exception instanceof ConnectException ||
-                           connector.exception instanceof ConnectIOException)
-                {
-                    System.err.println(
-                        "TEST PASSED: java.rmi.ConnectException or " +
-                        "ConnectIOException thrown");
-                } else {
-                    throw new RuntimeException(
-                        "TEST FAILED: unexpected Exception thrown",
-                        connector.exception);
-                }
-            }
-        }
-    }
-
-    private static class Connector implements Runnable {
-
-        private final Registry registry;
-
-        boolean success = false;
-        Exception exception = null;
-
-        Connector(Registry registry) {
-            this.registry = registry;
-        }
-
-        public void run() {
-            try {
-                registry.lookup("Dale Cooper");
-                synchronized (this) {
-                    success = true;
-                }
-            } catch (Exception e) {
-                synchronized (this) {
-                    exception = e;
-                }
-            }
+        } catch (ConnectException | ConnectIOException e) {
+            System.err.println("Got expected exception:");
+            e.printStackTrace();
+            System.err.println(
+                    "TEST PASSED: java.rmi.ConnectException or " +
+                            "ConnectIOException thrown");
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,10 @@
 
 package sun.management;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Field;
 import java.lang.management.ManagementPermission;
-import java.lang.management.ThreadInfo;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.List;
 import javax.management.ObjectName;
 import javax.management.MalformedObjectNameException;
-
 
 public class Util {
     private Util() {}  // there are no instances of this class
@@ -87,56 +80,4 @@ public class Util {
     public static void checkControlAccess() throws SecurityException {
         checkAccess(controlPermission);
     }
-
-    /**
-     * Returns true if the given Thread is a virtual thread.
-     *
-     * @implNote This method uses reflection because Thread::isVirtual is a preview API
-     * and the java.management module cannot be compiled with --enable-preview.
-     */
-    public static boolean isVirtual(Thread thread) {
-        try {
-            return (boolean) THREAD_IS_VIRTUAL.invoke(thread);
-        } catch (Exception e) {
-            throw new InternalError(e);
-        }
-    }
-
-    /**
-     * Returns true if the given ThreadInfo is for a virtual thread.
-     */
-    public static boolean isVirtual(ThreadInfo threadInfo) {
-        try {
-            return (boolean) THREADINFO_VIRTUAL.get(threadInfo);
-        } catch (Exception e) {
-            throw new InternalError(e);
-        }
-    }
-
-    @SuppressWarnings("removal")
-    private static Method threadIsVirtual() {
-        PrivilegedExceptionAction<Method> pa = () -> Thread.class.getMethod("isVirtual");
-        try {
-            return AccessController.doPrivileged(pa);
-        } catch (PrivilegedActionException e) {
-            throw new InternalError(e);
-        }
-    }
-
-    @SuppressWarnings("removal")
-    private static Field threadInfoVirtual() {
-        PrivilegedExceptionAction<Field> pa = () -> {
-            Field f = ThreadInfo.class.getDeclaredField("virtual");
-            f.setAccessible(true);
-            return f;
-        };
-        try {
-            return AccessController.doPrivileged(pa);
-        } catch (PrivilegedActionException e) {
-            throw new InternalError(e);
-        }
-    }
-
-    private static final Method THREAD_IS_VIRTUAL = threadIsVirtual();
-    private static final Field THREADINFO_VIRTUAL = threadInfoVirtual();
 }

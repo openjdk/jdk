@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,23 +39,8 @@ $(function() {
         copy[0].onmouseenter();
     }
     function copyLink(e) {
-        var textarea = document.createElement("textarea");
-        textarea.style.height = 0;
-        document.body.appendChild(textarea);
-        textarea.value = this.previousSibling.innerText;
-        textarea.select();
-        document.execCommand("copy");
-        document.body.removeChild(textarea);
-        var span = this.lastElementChild;
-        var copied = span.getAttribute("data-copied");
-        if (span.innerHTML !== copied) {
-            var initialLabel = span.innerHTML;
-            span.innerHTML = copied;
-            var parent = this.parentElement.parentElement;
-            parent.onmouseleave = parent.ontouchend = copy[0].onmouseenter = function() {
-                span.innerHTML = initialLabel;
-            };
-        }
+        copyToClipboard(this.previousSibling.innerText);
+        switchCopyLabel(this, this.lastElementChild);
     }
     copy.click(copyLink);
     copy[0].onmouseenter = function() {};

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -215,18 +215,14 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
 
     public String toString(int start, int end) {
         Objects.checkFromToIndex(start, end, limit());
-        try {
-            int len = end - start;
-            char[] ca = new char[len];
-            CharBuffer cb = CharBuffer.wrap(ca);
-            CharBuffer db = this.duplicate();
-            db.position(start);
-            db.limit(end);
-            cb.put(db);
-            return new String(ca);
-        } catch (StringIndexOutOfBoundsException x) {
-            throw new IndexOutOfBoundsException();
-        }
+        int len = end - start;
+        char[] ca = new char[len];
+        CharBuffer cb = CharBuffer.wrap(ca);
+        CharBuffer db = this.duplicate();
+        db.position(start);
+        db.limit(end);
+        cb.put(db);
+        return new String(ca);
     }
 
 

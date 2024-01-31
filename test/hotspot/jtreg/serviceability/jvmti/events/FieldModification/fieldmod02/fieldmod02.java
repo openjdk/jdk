@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,6 @@
  * questions.
  */
 
-import java.io.PrintStream;
-
-
 /*
  * @test
  *
@@ -38,24 +35,16 @@ import java.io.PrintStream;
  *     Fixed according to 4669812 bug.
  *     Ported from JVMDI.
  *
- * @requires vm.continuations
  * @library /test/lib
- * @compile --enable-preview -source ${jdk.version} fieldmod02.java
- * @run main/othervm/native --enable-preview -agentlib:fieldmod02 fieldmod02
+ * @compile fieldmod02.java
+ * @run main/othervm/native -agentlib:fieldmod02 fieldmod02
  */
 
 
 public class fieldmod02 {
 
     static {
-        try {
-            System.loadLibrary("fieldmod02");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load fieldmod02 library");
-            System.err.println("java.library.path:"
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
+        System.loadLibrary("fieldmod02");
     }
 
     static volatile int result;

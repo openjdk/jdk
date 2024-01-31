@@ -248,16 +248,27 @@ JNIEXPORT int sigaction(int sig, const struct sigaction *act, struct sigaction *
     signal_unlock();
     return 0;
   } else if (jvm_signal_installing) {
-    /* jvm is installing its signal handlers. Install the new
-     * handlers and save the old ones. */
+    /* jvm is installing its signal handlers.
+     * - if this is a modifying sigaction call, we install a new signal handler and store the old one
+     *   as chained signal handler.
+     * - if this is a non-modifying sigaction call, we don't change any state; we just return the existing
+     *   signal handler in the system (not the stored one).
+     * This works under the assumption that there is only one modifying sigaction call for a specific signal
+     * within the JVM_begin_signal_setting-JVM_end_signal_setting-window. There can be any number of non-modifying
+     * calls, but they will only return the expected preexisting handler if executed before the modifying call.
+     */
     res = call_os_sigaction(sig, act, &oldAct);
-    sact[sig] = oldAct;
-    if (oact != NULL) {
-      *oact = oldAct;
+    if (res == 0) {
+      if (act != NULL) {
+        /* store pre-existing handler as chained handler */
+        sact[sig] = oldAct;
+        /* Record the signals used by jvm. */
+        sigaddset(&jvmsigs, sig);
+      }
+      if (oact != NULL) {
+        *oact = oldAct;
+      }
     }
-
-    /* Record the signals used by jvm. */
-    sigaddset(&jvmsigs, sig);
 
     signal_unlock();
     return res;

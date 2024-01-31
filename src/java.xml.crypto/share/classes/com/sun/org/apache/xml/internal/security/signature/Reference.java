@@ -193,10 +193,12 @@ public class Reference extends SignatureElementProxy {
 
         // Create DigestMethod Element without actually instantiating a MessageDigest Object
         Algorithm digestAlgorithm = new Algorithm(getDocument(), messageDigestAlgorithm) {
+            @Override
             public String getBaseNamespace() {
                 return Constants.SignatureSpecNS;
             }
 
+            @Override
             public String getBaseLocalName() {
                 return Constants._TAG_DIGESTMETHOD;
             }
@@ -612,6 +614,7 @@ public class Reference extends SignatureElementProxy {
             try {
                 final Set<Node> s = input.getNodeSet();
                 referenceData = new ReferenceNodeSetData() {
+                    @Override
                     public Iterator<Node> iterator() {
                         return new Iterator<Node>() {
 
@@ -808,6 +811,7 @@ public class Reference extends SignatureElementProxy {
      * Method getBaseLocalName
      * {@inheritDoc}
      */
+    @Override
     public String getBaseLocalName() {
         return Constants._TAG_REFERENCE;
     }

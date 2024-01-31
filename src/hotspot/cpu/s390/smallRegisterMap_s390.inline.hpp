@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ class SmallRegisterMap {
 public:
   static constexpr SmallRegisterMap* instance = nullptr;
 private:
-  static void assert_is_rfp(VMReg r) PRODUCT_RETURN
+  static void assert_is_rfp(VMReg r) NOT_DEBUG_RETURN
                                      DEBUG_ONLY({ Unimplemented(); })
 public:
   // as_RegisterMap is used when we didn't want to templatize and abstract over RegisterMap type to support SmallRegisterMap
@@ -54,7 +54,7 @@ public:
 
   inline address location(VMReg reg, intptr_t* sp) const {
     Unimplemented();
-    return NULL;
+    return nullptr;
   }
 
   inline void set_location(VMReg reg, address loc) { assert_is_rfp(reg); }
@@ -77,7 +77,7 @@ public:
   bool should_skip_missing() const  { return false; }
   VMReg find_register_spilled_here(void* p, intptr_t* sp) {
     Unimplemented();
-    return NULL;
+    return nullptr;
   }
   void print() const { print_on(tty); }
   void print_on(outputStream* st) const { st->print_cr("Small register map"); }

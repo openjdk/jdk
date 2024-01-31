@@ -41,8 +41,7 @@
   void store_parameter(jint     c, int param_num);
 
   void check_reserved_argument_area(int bytes) {
-    assert(bytes + FrameMap::first_available_sp_in_frame <= frame_map()->reserved_argument_area_size(),
-           "reserved_argument_area too small");
+    assert(bytes <= frame_map()->reserved_argument_area_size(), "reserved_argument_area too small");
   }
 
   enum {

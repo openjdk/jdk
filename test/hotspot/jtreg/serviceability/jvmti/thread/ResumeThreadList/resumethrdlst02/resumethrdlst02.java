@@ -39,8 +39,6 @@
 
 import jdk.test.lib.jvmti.DebugeeClass;
 
-import java.io.PrintStream;
-
 public class resumethrdlst02 extends DebugeeClass {
 
     // load native library if required
@@ -48,14 +46,11 @@ public class resumethrdlst02 extends DebugeeClass {
         System.loadLibrary("resumethrdlst02");
     }
 
-    // run test from command line
     public static void main(String argv[]) {
-        System.exit(run(argv, System.out) + 95);
-    }
-
-    // run test from JCK-compatible environment
-    public static int run(String argv[], PrintStream out) {
-        return new resumethrdlst02().runIt(argv, out);
+        int result = new resumethrdlst02().runIt();
+        if (result != 0) {
+            throw new RuntimeException("check failed with result " + result);
+        }
     }
 
     /* =================================================================== */
@@ -71,7 +66,7 @@ public class resumethrdlst02 extends DebugeeClass {
     int threads_count = 0;
 
     // run debuggee
-    public int runIt(String argv[], PrintStream out) {
+    public int runIt() {
         timeout = 60 * 1000; // milliseconds
 
         // create tested threads

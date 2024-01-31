@@ -722,10 +722,10 @@ public class JTabbedPane extends JComponent
      * @param component the component to be displayed when this tab is clicked.
      * @param tip the tooltip to be displayed for this tab
      * @param index the position to insert this new tab
-     *       ({@code > 0 and <= getTabCount()})
+     *       {@code (index >= 0 && index <= getTabCount())}
      *
      * @throws IndexOutOfBoundsException if the index is out of range
-     *         ({@code < 0 or > getTabCount()})
+     *         {@code (index < 0 || index > getTabCount())}
      *
      * @see #addTab
      * @see #removeTabAt
@@ -1598,6 +1598,11 @@ public class JTabbedPane extends JComponent
             boolean selectedPage = (getSelectedIndex() == index);
 
             if (selectedPage) {
+                if (this.visComp != null && this.visComp.isVisible()
+                        && !this.visComp.equals(component)) {
+                    // previous component visibility is set to false
+                    this.visComp.setVisible(false);
+                }
                 this.visComp = component;
             }
 

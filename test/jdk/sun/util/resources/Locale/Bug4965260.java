@@ -22,7 +22,7 @@
  */
 /*
  * @test
- * @bug 4965260 8008577
+ * @bug 4965260 8008577 8287868
  * @modules jdk.localedata
  * @summary Verifies the language name of "nl" for supported locales
  * @run main/othervm -Djava.locale.providers=JRE,SPI Bug4965260
@@ -45,7 +45,7 @@ public class Bug4965260  {
         "Niederl\u00e4ndisch",
         "neerland\u00e9s",
         "n\u00e9erlandais",
-        "neerlandese",
+        "olandese",
         "nederl\u00e4ndska"
     };
 

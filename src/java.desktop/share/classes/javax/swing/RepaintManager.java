@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,7 +122,7 @@ public class RepaintManager
     DoubleBufferInfo standardDoubleBuffer;
 
     /**
-     * Object responsible for hanlding core paint functionality.
+     * Object responsible for handling core paint functionality.
      */
     private PaintManager paintManager;
 
@@ -1085,7 +1085,7 @@ public class RepaintManager
 
         // If the window is non-opaque, it's double-buffered at peer's level
         Window w = (c instanceof Window) ? (Window)c : SwingUtilities.getWindowAncestor(c);
-        if (!w.isOpaque()) {
+        if (w != null && !w.isOpaque()) {
             Toolkit tk = Toolkit.getDefaultToolkit();
             if ((tk instanceof SunToolkit) && (((SunToolkit)tk).needUpdateWindow())) {
                 return null;
@@ -1865,7 +1865,7 @@ public class RepaintManager
      * Runnable used to process all repaint/revalidate requests.
      */
     private final class ProcessingRunnable implements Runnable {
-        // If true, we're wainting on the EventQueue.
+        // If true, we're waiting on the EventQueue.
         private boolean pending;
 
         /**

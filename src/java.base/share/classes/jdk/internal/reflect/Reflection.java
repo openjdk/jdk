@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
 import jdk.internal.module.ModuleBootstrap;
@@ -115,33 +116,10 @@ public class Reflection {
         Module module = currentClass != null ?
                 currentClass.getModule() :
                 ClassLoader.getSystemClassLoader().getUnnamedModule();
-        boolean isNativeAccessEnabled = SharedSecrets.getJavaLangAccess().isEnableNativeAccess(module);
-        if (!isNativeAccessEnabled) {
-            synchronized(module) {
-                isNativeAccessEnabled = SharedSecrets.getJavaLangAccess().isEnableNativeAccess(module);
-                if (isNativeAccessEnabled) {
-                    // some other thread got to it, do nothing
-                } else if (ModuleBootstrap.hasEnableNativeAccessFlag()) {
-                    throw new IllegalCallerException("Illegal native access from: " + module);
-                } else {
-                    // warn and set flag, so that only one warning is reported per module
-                    String cls = owner.getName();
-                    String mtd = cls + "::" + methodName;
-                    String mod = module.isNamed() ? "module " + module.getName() : "the unnamed module";
-                    String modflag = module.isNamed() ? module.getName() : "ALL-UNNAMED";
-                    System.err.printf("""
-                            WARNING: A restricted method in %s has been called
-                            WARNING: %s has been called by %s
-                            WARNING: Use --enable-native-access=%s to avoid a warning for this module
-                            %n""", cls, mtd, mod, modflag);
-                    if (module.isNamed()) {
-                        SharedSecrets.getJavaLangAccess().addEnableNativeAccess(module);
-                    } else {
-                        SharedSecrets.getJavaLangAccess().addEnableNativeAccessAllUnnamed();
-                    }
-                }
-            }
+        class Holder {
+            static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
         }
+        Holder.JLA.ensureNativeAccess(module, owner, methodName, currentClass);
     }
 
     /**

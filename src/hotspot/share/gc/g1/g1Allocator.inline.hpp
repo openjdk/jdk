@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,28 +55,18 @@ inline HeapWord* G1Allocator::attempt_allocation(size_t min_word_size,
   uint node_index = current_node_index();
 
   HeapWord* result = mutator_alloc_region(node_index)->attempt_retained_allocation(min_word_size, desired_word_size, actual_word_size);
-  if (result != NULL) {
+  if (result != nullptr) {
     return result;
   }
 
   return mutator_alloc_region(node_index)->attempt_allocation(min_word_size, desired_word_size, actual_word_size);
 }
 
-inline HeapWord* G1Allocator::attempt_allocation_using_new_region(size_t word_size) {
-  uint node_index = current_node_index();
-  size_t temp;
-  HeapWord* result = mutator_alloc_region(node_index)->attempt_allocation_using_new_region(word_size, word_size, &temp);
-  assert(result != NULL || mutator_alloc_region(node_index)->get() == NULL,
-         "Must not have a mutator alloc region if there is no memory, but is " PTR_FORMAT,
-         p2i(mutator_alloc_region(node_index)->get()));
-  return result;
-}
-
 inline HeapWord* G1Allocator::attempt_allocation_locked(size_t word_size) {
   uint node_index = current_node_index();
   HeapWord* result = mutator_alloc_region(node_index)->attempt_allocation_locked(word_size);
 
-  assert(result != NULL || mutator_alloc_region(node_index)->get() == NULL,
+  assert(result != nullptr || mutator_alloc_region(node_index)->get() == nullptr,
          "Must not have a mutator alloc region if there is no memory, but is " PTR_FORMAT, p2i(mutator_alloc_region(node_index)->get()));
   return result;
 }
@@ -89,8 +79,8 @@ inline HeapWord* G1Allocator::attempt_allocation_force(size_t word_size) {
 inline PLAB* G1PLABAllocator::alloc_buffer(G1HeapRegionAttr dest, uint node_index) const {
   assert(dest.is_valid(),
          "Allocation buffer index out of bounds: %s", dest.get_type_str());
-  assert(_alloc_buffers[dest.type()] != NULL,
-         "Allocation buffer is NULL: %s", dest.get_type_str());
+  assert(_dest_data[dest.type()]._alloc_buffer != nullptr,
+         "Allocation buffer is null: %s", dest.get_type_str());
   return alloc_buffer(dest.type(), node_index);
 }
 
@@ -101,9 +91,9 @@ inline PLAB* G1PLABAllocator::alloc_buffer(region_type_t dest, uint node_index) 
   if (dest == G1HeapRegionAttr::Young) {
     assert(node_index < alloc_buffers_length(dest),
            "Allocation buffer index out of bounds: %u, %u", dest, node_index);
-    return _alloc_buffers[dest][node_index];
+    return _dest_data[dest]._alloc_buffer[node_index];
   } else {
-    return _alloc_buffers[dest][0];
+    return _dest_data[dest]._alloc_buffer[0];
   }
 }
 
@@ -127,7 +117,7 @@ inline HeapWord* G1PLABAllocator::allocate(G1HeapRegionAttr dest,
                                            bool* refill_failed,
                                            uint node_index) {
   HeapWord* const obj = plab_allocate(dest, word_sz, node_index);
-  if (obj != NULL) {
+  if (obj != nullptr) {
     return obj;
   }
   return allocate_direct_or_new_plab(dest, word_sz, refill_failed, node_index);

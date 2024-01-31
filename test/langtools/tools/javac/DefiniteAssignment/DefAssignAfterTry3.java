@@ -11,7 +11,7 @@ class E1 extends Exception {}
 class E2 extends Exception {}
 
 public class DefAssignAfterTry3 {
-    public static void main(String argv[]) {
+    public static void meth() {
         boolean t = true;
         E1 se1 = new E1();
         E2 se2 = new E2();

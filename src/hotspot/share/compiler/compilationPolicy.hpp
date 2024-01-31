@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,11 +34,20 @@ class CompileTask;
 class CompileQueue;
 /*
  *  The system supports 5 execution levels:
- *  * level 0 - interpreter
+ *  * level 0 - interpreter (Profiling is tracked by a MethodData object, or MDO in short)
  *  * level 1 - C1 with full optimization (no profiling)
  *  * level 2 - C1 with invocation and backedge counters
- *  * level 3 - C1 with full profiling (level 2 + MDO)
- *  * level 4 - C2
+ *  * level 3 - C1 with full profiling (level 2 + All other MDO profiling information)
+ *  * level 4 - C2 with full profile guided optimization
+ *
+ * The MethodData object is created by both the interpreter or either compiler to store any
+ * profiling information collected on a method (ciMethod::ensure_method_data() for C1 and C2
+ * and CompilationPolicy::create_mdo() for the interpreter). Both the interpreter and code
+ * compiled by C1 at level 3 will constantly update profiling information in the MDO during
+ * execution. The information in the MDO is then used by C1 and C2 during compilation, via
+ * the compiler interface (ciMethodXXX).
+ * See ciMethod.cpp and ciMethodData.cpp for information transfer from an MDO to the compilers
+ * through the compiler interface.
  *
  * Levels 0, 2 and 3 periodically notify the runtime about the current value of the counters
  * (invocation counters and backedge counters). The frequency of these notifications is
@@ -252,13 +261,12 @@ public:
   static bool can_be_osr_compiled(const methodHandle& m, int comp_level = CompLevel_any);
   static bool is_compilation_enabled();
 
-  static void do_safepoint_work() { }
   static CompileTask* select_task_helper(CompileQueue* compile_queue);
   // Return initial compile level to use with Xcomp (depends on compilation mode).
   static void reprofile(ScopeDesc* trap_scope, bool is_osr);
   static nmethod* event(const methodHandle& method, const methodHandle& inlinee,
                  int branch_bci, int bci, CompLevel comp_level, CompiledMethod* nm, TRAPS);
-  // Select task is called by CompileBroker. We should return a task or NULL.
+  // Select task is called by CompileBroker. We should return a task or nullptr.
   static CompileTask* select_task(CompileQueue* compile_queue);
   // Tell the runtime if we think a given method is adequately profiled.
   static bool is_mature(Method* method);

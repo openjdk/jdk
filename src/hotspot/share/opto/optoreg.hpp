@@ -152,7 +152,7 @@ class OptoReg {
   }
 
   static OptoReg::Name stack0() {
-    return VMRegImpl::stack0->value();
+    return VMRegImpl::stack_0()->value();
   }
 
   static const char* regname(OptoReg::Name n) {

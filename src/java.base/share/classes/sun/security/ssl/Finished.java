@@ -143,11 +143,12 @@ final class Finished {
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                    "\"Finished\": '{'\n" +
-                    "  \"verify data\": '{'\n" +
-                    "{0}\n" +
-                    "  '}'\n" +
-                    "'}'",
+                    """
+                            "Finished": '{'
+                              "verify data": '{'
+                            {0}
+                              '}'
+                            '}'""",
                     Locale.ENGLISH);
 
             HexDumpEncoder hexEncoder = new HexDumpEncoder();
@@ -214,7 +215,6 @@ final class Finished {
             HandshakeHash handshakeHash = context.handshakeHash;
             SecretKey masterSecretKey =
                     context.handshakeSession.getMasterSecret();
-
             boolean useClientLabel =
                     (context.sslConfig.isClientMode && !isValidation) ||
                     (!context.sslConfig.isClientMode && isValidation);
@@ -1146,15 +1146,16 @@ final class Finished {
     private static void recordEvent(SSLSessionImpl session) {
         TLSHandshakeEvent event = new TLSHandshakeEvent();
         if (event.shouldCommit() || EventHelper.isLoggingSecurity()) {
-            int peerCertificateId = 0;
+            int hash = 0;
             try {
                 // use hash code for Id
-                peerCertificateId = session
+                hash = session
                         .getCertificateChain()[0]
                         .hashCode();
             } catch (SSLPeerUnverifiedException e) {
                  // not verified msg
             }
+            long peerCertificateId = Integer.toUnsignedLong(hash);
             if (event.shouldCommit()) {
                 event.peerHost = session.getPeerHost();
                 event.peerPort = session.getPeerPort();

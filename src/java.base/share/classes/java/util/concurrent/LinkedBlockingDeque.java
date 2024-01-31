@@ -628,7 +628,9 @@ public class LinkedBlockingDeque<E>
     }
 
     /**
+     * {@inheritDoc BlockingDeque}
      * @throws NullPointerException if the specified element is null
+     * @return {@inheritDoc BlockingDeque}
      */
     public boolean offer(E e) {
         return offerLast(e);
@@ -665,6 +667,10 @@ public class LinkedBlockingDeque<E>
         return removeFirst();
     }
 
+    /**
+     * {@inheritDoc BlockingDeque}
+     * @return {@inheritDoc BlockingDeque}
+     */
     public E poll() {
         return pollFirst();
     }
@@ -691,6 +697,10 @@ public class LinkedBlockingDeque<E>
         return getFirst();
     }
 
+    /**
+     * {@inheritDoc BlockingDeque}
+     * @return {@inheritDoc BlockingDeque}
+     */
     public E peek() {
         return peekFirst();
     }

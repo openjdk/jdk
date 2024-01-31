@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,19 @@
 
 /**
  * @test
+ * @key randomness
  * @bug 7119644
  * @summary Increase superword's vector size up to 256 bits
- *
+ * @library /test/lib
  * @run main/othervm/timeout=300 -Xbatch -XX:+IgnoreUnrecognizedVMOptions
  *    -XX:-TieredCompilation -XX:-OptimizeFill
  *    compiler.codegen.TestFloatDoubleVect
  */
 
 package compiler.codegen;
+
+import java.util.Random;
+import jdk.test.lib.Utils;
 
 public class TestFloatDoubleVect {
   private static final int ARRLEN = 997;
@@ -40,6 +44,46 @@ public class TestFloatDoubleVect {
   private static final int SCALE = 2;
   private static final int ALIGN_OFF = 8;
   private static final int UNALIGN_OFF = 5;
+
+  private static float[] fspecial = {
+    0.0f,
+    -0.0f,
+    Float.MAX_VALUE,
+    Float.MIN_VALUE,
+    -Float.MAX_VALUE,
+    -Float.MIN_VALUE,
+    Float.NaN,
+    Float.POSITIVE_INFINITY,
+    Float.NEGATIVE_INFINITY,
+    Integer.MAX_VALUE,
+    Integer.MIN_VALUE,
+    Long.MAX_VALUE,
+    Long.MIN_VALUE,
+    -Integer.MAX_VALUE,
+    -Integer.MIN_VALUE,
+    -Long.MIN_VALUE,
+    -Long.MAX_VALUE
+  };
+
+  private static double[] dspecial = {
+    0.0,
+    -0.0,
+    Double.MAX_VALUE,
+    Double.MIN_VALUE,
+    -Double.MAX_VALUE,
+    -Double.MIN_VALUE,
+    Double.NaN,
+    Double.POSITIVE_INFINITY,
+    Double.NEGATIVE_INFINITY,
+    Integer.MAX_VALUE,
+    Integer.MIN_VALUE,
+    Long.MIN_VALUE,
+    Long.MAX_VALUE,
+    -Integer.MAX_VALUE,
+    -Integer.MIN_VALUE,
+    -Long.MIN_VALUE,
+    -Long.MAX_VALUE
+  };
 
   public static void main(String args[]) {
     System.out.println("Testing Float + Double vectors");
@@ -75,6 +119,8 @@ public class TestFloatDoubleVect {
       test_vi_unaln(a1, b1, 123.f, 103.);
       test_cp_unalndst(a1, a2, b1, b2);
       test_cp_unalnsrc(a1, a2, b1, b2);
+      test_conv_f2d(a1, b1);
+      test_conv_d2f(a1, b1);
     }
     // Initialize
     for (int i=0; i<ARRLEN; i++) {
@@ -338,6 +384,41 @@ public class TestFloatDoubleVect {
         errn += verify("test_cp_unalnsrc_overlap: a1", i, a1[i], (float)v);
         errn += verify("test_cp_unalnsrc_overlap: b1", i, b1[i], (double)v);
       }
+      for (int j = 0; j < fspecial.length; j++) {
+        float floatValue = fspecial[j];
+        for (int i = 0; i < ARRLEN; i++) {
+          a1[i] = floatValue;
+        }
+        test_conv_f2d(a1, b1);
+        for (int i = 0; i < ARRLEN; i++) {
+          errn += verify("test_conv_f2d: b1", i, b1[i], (double)floatValue);
+        }
+      }
+      for (int j = 0; j < dspecial.length; j++) {
+        double doubleValue = dspecial[j];
+        for (int i = 0; i < ARRLEN; i++) {
+          b1[i] = doubleValue;
+        }
+        test_conv_d2f(a1, b1);
+        for (int i = 0; i < ARRLEN; i++) {
+          errn += verify("test_conv_d2f: a1", i, a1[i], (float)(doubleValue));
+        }
+      }
+      Random r = Utils.getRandomInstance();
+      for (int i = 0; i < ARRLEN; i++) {
+        a1[i] = r.nextFloat();
+      }
+      test_conv_f2d(a1, b1);
+      for (int i = 0; i < ARRLEN; i++) {
+        errn += verify("test_conv_f2d: b1", i, b1[i], (double)a1[i]);
+      }
+      for (int i = 0; i < ARRLEN; i++) {
+        b1[i] = r.nextDouble();
+      }
+      test_conv_d2f(a1, b1);
+      for (int i = 0; i < ARRLEN; i++) {
+        errn += verify("test_conv_d2f: a1", i, a1[i], (float)b1[i]);
+      }
 
     }
 
@@ -448,6 +529,18 @@ public class TestFloatDoubleVect {
     }
     end = System.currentTimeMillis();
     System.out.println("test_cp_unalnsrc: " + (end - start));
+    start = System.currentTimeMillis();
+    for (int i = 0; i < ITERS; i++) {
+      test_conv_f2d(a1, b1);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_conv_f2d: " + (end - start));
+    start = System.currentTimeMillis();
+    for (int i = 0; i < ITERS; i++) {
+      test_conv_d2f(a1, b1);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_conv_d2f: " + (end - start));
     return errn;
   }
 
@@ -557,15 +650,27 @@ public class TestFloatDoubleVect {
     }
   }
 
+  static void test_conv_f2d(float[] a, double[] b) {
+    for (int i = 0; i < a.length; i++) {
+      b[i] = (double) a[i];
+    }
+  }
+
+  static void test_conv_d2f(float[] a, double[] b) {
+    for (int i = 0; i < a.length; i++) {
+      a[i] = (float) b[i];
+    }
+  }
+
   static int verify(String text, int i, float elem, float val) {
-    if (elem != val) {
+    if (elem != val && !(Float.isNaN(elem) && Float.isNaN(val))) {
       System.err.println(text + "[" + i + "] = " + elem + " != " + val);
       return 1;
     }
     return 0;
   }
   static int verify(String text, int i, double elem, double val) {
-    if (elem != val) {
+    if (elem != val && !(Double.isNaN(elem) && Double.isNaN(val))) {
       System.err.println(text + "[" + i + "] = " + elem + " != " + val);
       return 1;
     }

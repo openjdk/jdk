@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.Collections;
 import java.util.HashMap;
@@ -51,7 +52,11 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import java.util.function.BiPredicate;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
 
+import jdk.internal.util.OperatingSystem;
 import jdk.tools.jlink.internal.BasicImageWriter;
 import jdk.tools.jlink.internal.ExecutableImage;
 import jdk.tools.jlink.internal.Platform;
@@ -59,7 +64,6 @@ import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
 import jdk.tools.jlink.plugin.ResourcePoolEntry.Type;
-import jdk.tools.jlink.plugin.ResourcePoolModule;
 
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
@@ -140,16 +144,21 @@ public final class DefaultImageBuilder implements ImageBuilder {
     private final Map<String, String> launchers;
     private final Path mdir;
     private final Set<String> modules = new HashSet<>();
-    private Platform platform;
+    private final Platform platform;
 
     /**
      * Default image builder constructor.
      *
      * @param root The image root directory.
+     * @param launchers mapping of launcher command name to their module/main class
+     * @param targetPlatform target platform of the image
      * @throws IOException
+     * @throws NullPointerException If any of the params is null
      */
-    public DefaultImageBuilder(Path root, Map<String, String> launchers) throws IOException {
+    public DefaultImageBuilder(Path root, Map<String, String> launchers, Platform targetPlatform)
+            throws IOException {
         this.root = Objects.requireNonNull(root);
+        this.platform = Objects.requireNonNull(targetPlatform);
         this.launchers = Objects.requireNonNull(launchers);
         this.mdir = root.resolve("lib");
         Files.createDirectories(mdir);
@@ -163,15 +172,6 @@ public final class DefaultImageBuilder implements ImageBuilder {
     @Override
     public void storeFiles(ResourcePool files) {
         try {
-            String value = files.moduleView()
-                                .findModule("java.base")
-                                .map(ResourcePoolModule::targetPlatform)
-                                .orElse(null);
-            if (value == null) {
-                throw new PluginException("ModuleTarget attribute is missing for java.base module");
-            }
-            this.platform = Platform.parsePlatform(value);
-
             checkResourcePool(files);
 
             Path bin = root.resolve(BIN_DIRNAME);
@@ -202,26 +202,26 @@ public final class DefaultImageBuilder implements ImageBuilder {
                 // launchers in the bin directory need execute permission.
                 // On Windows, "bin" also subdirectories containing jvm.dll.
                 if (Files.isDirectory(bin)) {
-                    Files.find(bin, 2, (path, attrs) -> {
-                        return attrs.isRegularFile() && !path.toString().endsWith(".diz");
-                    }).forEach(this::setExecutable);
+                    forEachPath(bin,
+                        (path, attrs) -> attrs.isRegularFile() && !path.toString().endsWith(".diz"),
+                        this::setExecutable);
                 }
 
                 // jspawnhelper is in lib or lib/<arch>
                 Path lib = root.resolve(LIB_DIRNAME);
                 if (Files.isDirectory(lib)) {
-                    Files.find(lib, 2, (path, attrs) -> {
-                        return path.getFileName().toString().equals("jspawnhelper")
-                                || path.getFileName().toString().equals("jexec");
-                    }).forEach(this::setExecutable);
+                    forEachPath(lib,
+                        (path, attrs) -> path.getFileName().toString().equals("jspawnhelper")
+                                      || path.getFileName().toString().equals("jexec"),
+                        this::setExecutable);
                 }
 
                 // read-only legal notices/license files
                 Path legal = root.resolve(LEGAL_DIRNAME);
                 if (Files.isDirectory(legal)) {
-                    Files.find(legal, 2, (path, attrs) -> {
-                        return attrs.isRegularFile();
-                    }).forEach(this::setReadOnly);
+                    forEachPath(legal,
+                        (path, attrs) -> attrs.isRegularFile(),
+                        this::setReadOnly);
                 }
             }
 
@@ -486,7 +486,7 @@ public final class DefaultImageBuilder implements ImageBuilder {
     }
 
     private boolean isWindows() {
-        return platform.os() == Platform.OperatingSystem.WINDOWS;
+        return platform.os() == OperatingSystem.WINDOWS;
     }
 
     /**
@@ -528,68 +528,41 @@ public final class DefaultImageBuilder implements ImageBuilder {
     private static void patchScripts(ExecutableImage img, List<String> args) throws IOException {
         Objects.requireNonNull(args);
         if (!args.isEmpty()) {
-            Files.find(img.getHome().resolve(BIN_DIRNAME), 2, (path, attrs) -> {
-                return img.getModules().contains(path.getFileName().toString());
-            }).forEach((p) -> {
-                try {
-                    String pattern = "JLINK_VM_OPTIONS=";
-                    byte[] content = Files.readAllBytes(p);
-                    String str = new String(content, StandardCharsets.UTF_8);
-                    int index = str.indexOf(pattern);
-                    StringBuilder builder = new StringBuilder();
-                    if (index != -1) {
-                        builder.append(str.substring(0, index)).
-                                append(pattern);
-                        for (String s : args) {
-                            builder.append(s).append(" ");
+            forEachPath(img.getHome().resolve(BIN_DIRNAME),
+                (path, attrs) -> img.getModules().contains(path.getFileName().toString()),
+                p -> {
+                    try {
+                        String pattern = "JLINK_VM_OPTIONS=";
+                        byte[] content = Files.readAllBytes(p);
+                        String str = new String(content, StandardCharsets.UTF_8);
+                        int index = str.indexOf(pattern);
+                        StringBuilder builder = new StringBuilder();
+                        if (index != -1) {
+                            builder.append(str.substring(0, index)).
+                                    append(pattern);
+                            for (String s : args) {
+                                builder.append(s).append(" ");
+                            }
+                            String remain = str.substring(index + pattern.length());
+                            builder.append(remain);
+                            str = builder.toString();
+                            try (BufferedWriter writer = Files.newBufferedWriter(p,
+                                    StandardCharsets.ISO_8859_1,
+                                    StandardOpenOption.WRITE)) {
+                                writer.write(str);
+                            }
                         }
-                        String remain = str.substring(index + pattern.length());
-                        builder.append(remain);
-                        str = builder.toString();
-                        try (BufferedWriter writer = Files.newBufferedWriter(p,
-                                StandardCharsets.ISO_8859_1,
-                                StandardOpenOption.WRITE)) {
-                            writer.write(str);
-                        }
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
                     }
-                } catch (IOException ex) {
-                    throw new RuntimeException(ex);
-                }
-            });
+                });
         }
     }
 
-    public static ExecutableImage getExecutableImage(Path root) {
-        Path binDir = root.resolve(BIN_DIRNAME);
-        if (Files.exists(binDir.resolve("java")) ||
-            Files.exists(binDir.resolve("java.exe"))) {
-            // It may be possible to extract the platform info from the given image.
-            // --post-process-path is a hidden option and pass unknown platform for now.
-            // --generate-cds-archive plugin cannot be used with --post-process-path option.
-            return new DefaultExecutableImage(root, retrieveModules(root), Platform.UNKNOWN);
+    // finds subpaths matching the given criteria (up to 2 levels deep) and applies the given lambda
+    private static void forEachPath(Path dir, BiPredicate<Path, BasicFileAttributes> matcher, Consumer<Path> consumer) throws IOException {
+        try (Stream<Path> stream = Files.find(dir, 2, matcher)) {
+            stream.forEach(consumer);
         }
-        return null;
-    }
-
-    private static Set<String> retrieveModules(Path root) {
-        Path releaseFile = root.resolve("release");
-        Set<String> modules = new HashSet<>();
-        if (Files.exists(releaseFile)) {
-            Properties release = new Properties();
-            try (FileInputStream fi = new FileInputStream(releaseFile.toFile())) {
-                release.load(fi);
-            } catch (IOException ex) {
-                System.err.println("Can't read release file " + ex);
-            }
-            String mods = release.getProperty("MODULES");
-            if (mods != null) {
-                String[] arr = mods.substring(1, mods.length() - 1).split(" ");
-                for (String m : arr) {
-                    modules.add(m.trim());
-                }
-
-            }
-        }
-        return modules;
     }
 }

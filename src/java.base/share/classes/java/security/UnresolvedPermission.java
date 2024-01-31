@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,9 +35,10 @@ import java.util.Hashtable;
 import java.lang.reflect.*;
 import java.security.cert.*;
 import java.util.List;
+import java.util.Objects;
 
 /**
- * The UnresolvedPermission class is used to hold Permissions that
+ * The {@code UnresolvedPermission} class is used to hold Permissions that
  * were "unresolved" when the Policy was initialized.
  * An unresolved permission is one whose actual Permission class
  * does not yet exist at the time the Policy is initialized (see below).
@@ -60,33 +61,33 @@ import java.util.List;
  * <p>Other permission classes may not yet exist during Policy
  * initialization. For example, a referenced permission class may
  * be in a JAR file that will later be loaded.
- * For each such class, an UnresolvedPermission is instantiated.
- * Thus, an UnresolvedPermission is essentially a "placeholder"
+ * For each such class, an {@code UnresolvedPermission} is instantiated.
+ * Thus, an {@code UnresolvedPermission} is essentially a "placeholder"
  * containing information about the permission.
  *
- * <p>Later, when code calls AccessController.checkPermission
+ * <p>Later, when code calls {@link AccessController#checkPermission}
  * on a permission of a type that was previously unresolved,
  * but whose class has since been loaded, previously-unresolved
  * permissions of that type are "resolved". That is,
- * for each such UnresolvedPermission, a new object of
+ * for each such {@code UnresolvedPermission}, a new object of
  * the appropriate class type is instantiated, based on the
- * information in the UnresolvedPermission.
+ * information in the {@code UnresolvedPermission}.
  *
- * <p> To instantiate the new class, UnresolvedPermission assumes
+ * <p> To instantiate the new class, {@code UnresolvedPermission} assumes
  * the class provides a zero, one, and/or two-argument constructor.
  * The zero-argument constructor would be used to instantiate
  * a permission without a name and without actions.
  * A one-arg constructor is assumed to take a {@code String}
  * name as input, and a two-arg constructor is assumed to take a
  * {@code String} name and {@code String} actions
- * as input.  UnresolvedPermission may invoke a
+ * as input.  {@code UnresolvedPermission} may invoke a
  * constructor with a {@code null} name and/or actions.
  * If an appropriate permission constructor is not available,
- * the UnresolvedPermission is ignored and the relevant permission
+ * the {@code UnresolvedPermission} is ignored and the relevant permission
  * will not be granted to executing code.
  *
  * <p> The newly created permission object replaces the
- * UnresolvedPermission, which is removed.
+ * {@code UnresolvedPermission}, which is removed.
  *
  * <p> Note that the {@code getName} method for an
  * {@code UnresolvedPermission} returns the
@@ -120,26 +121,26 @@ implements java.io.Serializable
      *
      * @serial
      */
-    private String type;
+    private final String type;
 
     /**
      * The permission name.
      *
      * @serial
      */
-    private String name;
+    private final String name;
 
     /**
      * The actions of the permission.
      *
      * @serial
      */
-    private String actions;
+    private final String actions;
 
     private transient java.security.cert.Certificate[] certs;
 
     /**
-     * Creates a new UnresolvedPermission containing the permission
+     * Creates a new {@code UnresolvedPermission} containing the permission
      * information needed later to actually create a Permission of the
      * specified class, when the permission is resolved.
      *
@@ -153,7 +154,7 @@ implements java.io.Serializable
      * Each chain is ordered bottom-to-top (i.e., with the signer certificate
      * first and the (root) certificate authority last). The signer
      * certificates are copied from the array. Subsequent changes to
-     * the array will not affect this UnsolvedPermission.
+     * the array will not affect this UnresolvedPermission.
      */
     public UnresolvedPermission(String type,
                                 String name,
@@ -165,59 +166,63 @@ implements java.io.Serializable
         if (type == null)
                 throw new NullPointerException("type can't be null");
 
+        // Perform a defensive copy and reassign certs if we have a non-null
+        // reference
+        if (certs != null) {
+            certs = certs.clone();
+        }
+
         this.type = type;
         this.name = name;
         this.actions = actions;
+
         if (certs != null) {
             // Extract the signer certs from the list of certificates.
-            for (int i=0; i<certs.length; i++) {
+            for (int i = 0; i < certs.length; i++) {
                 if (!(certs[i] instanceof X509Certificate)) {
                     // there is no concept of signer certs, so we store the
-                    // entire cert array
-                    this.certs = certs.clone();
-                    break;
+                    // entire cert array.  No further processing is necessary.
+                    this.certs = certs;
+                    return;
                 }
             }
 
-            if (this.certs == null) {
-                // Go through the list of certs and see if all the certs are
-                // signer certs.
-                int i = 0;
-                int count = 0;
-                while (i < certs.length) {
-                    count++;
-                    while (((i+1) < certs.length) &&
-                           ((X509Certificate)certs[i]).getIssuerX500Principal().equals(
-                               ((X509Certificate)certs[i+1]).getSubjectX500Principal())) {
-                        i++;
-                    }
+            // Go through the list of certs and see if all the certs are
+            // signer certs.
+            int i = 0;
+            int count = 0;
+            while (i < certs.length) {
+                count++;
+                while (((i + 1) < certs.length) &&
+                       ((X509Certificate)certs[i]).getIssuerX500Principal().equals(
+                           ((X509Certificate)certs[i + 1]).getSubjectX500Principal())) {
                     i++;
                 }
-                if (count == certs.length) {
-                    // All the certs are signer certs, so we store the entire
-                    // array
-                    this.certs = certs.clone();
-                }
-
-                if (this.certs == null) {
-                    // extract the signer certs
-                    ArrayList<java.security.cert.Certificate> signerCerts =
-                        new ArrayList<>();
-                    i = 0;
-                    while (i < certs.length) {
-                        signerCerts.add(certs[i]);
-                        while (((i+1) < certs.length) &&
-                            ((X509Certificate)certs[i]).getIssuerX500Principal().equals(
-                              ((X509Certificate)certs[i+1]).getSubjectX500Principal())) {
-                            i++;
-                        }
-                        i++;
-                    }
-                    this.certs =
-                        new java.security.cert.Certificate[signerCerts.size()];
-                    signerCerts.toArray(this.certs);
-                }
+                i++;
             }
+            if (count == certs.length) {
+                // All the certs are signer certs, so we store the entire
+                // array.  No further processing is needed.
+                this.certs = certs;
+                return;
+            }
+
+            // extract the signer certs
+            ArrayList<java.security.cert.Certificate> signerCerts =
+                new ArrayList<>();
+            i = 0;
+            while (i < certs.length) {
+                signerCerts.add(certs[i]);
+                while (((i + 1) < certs.length) &&
+                    ((X509Certificate)certs[i]).getIssuerX500Principal().equals(
+                      ((X509Certificate)certs[i + 1]).getSubjectX500Principal())) {
+                    i++;
+                }
+                i++;
+            }
+            this.certs =
+                new java.security.cert.Certificate[signerCerts.size()];
+            signerCerts.toArray(this.certs);
         }
     }
 
@@ -261,11 +266,11 @@ implements java.io.Serializable
                     try {
                         Constructor<?> c = pc.getConstructor(PARAMS1);
                         return (Permission) c.newInstance(
-                              new Object[] { name});
+                              new Object[] {null});
                     } catch (NoSuchMethodException ne1) {
                         Constructor<?> c = pc.getConstructor(PARAMS2);
                         return (Permission) c.newInstance(
-                              new Object[] { name, actions });
+                              new Object[] {null, null});
                     }
                 }
             } else {
@@ -277,7 +282,7 @@ implements java.io.Serializable
                     } catch (NoSuchMethodException ne) {
                         Constructor<?> c = pc.getConstructor(PARAMS2);
                         return (Permission) c.newInstance(
-                              new Object[] { name, actions });
+                              new Object[] { name, null});
                     }
                 } else {
                     Constructor<?> c = pc.getConstructor(PARAMS2);
@@ -302,21 +307,22 @@ implements java.io.Serializable
     }
 
     /**
-     * This method always returns false for unresolved permissions.
-     * That is, an UnresolvedPermission is never considered to
+     * This method always returns {@code false} for unresolved permissions.
+     * That is, an {@code UnresolvedPermission} is never considered to
      * imply another permission.
      *
      * @param p the permission to check against.
      *
-     * @return false.
+     * @return {@code false}.
      */
+    @Override
     public boolean implies(Permission p) {
         return false;
     }
 
     /**
-     * Checks two UnresolvedPermission objects for equality.
-     * Checks that {@code obj} is an UnresolvedPermission, and has
+     * Checks two {@code UnresolvedPermission} objects for equality.
+     * Checks that {@code obj} is an {@code UnresolvedPermission}, and has
      * the same type (class) name, permission name, actions, and
      * certificates as this object.
      *
@@ -326,10 +332,11 @@ implements java.io.Serializable
      *
      * @param obj the object we are testing for equality with this object.
      *
-     * @return true if obj is an UnresolvedPermission, and has the same
-     * type (class) name, permission name, actions, and
+     * @return true if {@code obj} is an {@code UnresolvedPermission},
+     * and has the same type (class) name, permission name, actions, and
      * certificates as this object.
      */
+    @Override
     public boolean equals(Object obj) {
         if (obj == this)
             return true;
@@ -343,30 +350,20 @@ implements java.io.Serializable
         }
 
         // check name
-        if (this.name == null) {
-            if (that.name != null) {
-                return false;
-            }
-        } else if (!this.name.equals(that.name)) {
+        if (!Objects.equals(this.name, that.name)) {
             return false;
         }
 
         // check actions
-        if (this.actions == null) {
-            if (that.actions != null) {
-                return false;
-            }
-        } else {
-            if (!this.actions.equals(that.actions)) {
-                return false;
-            }
+        if (!Objects.equals(this.actions, that.actions)) {
+            return false;
         }
 
         // check certs
-        if ((this.certs == null && that.certs != null) ||
-            (this.certs != null && that.certs == null) ||
-            (this.certs != null && that.certs != null &&
-                this.certs.length != that.certs.length)) {
+        if (this.certs == null && that.certs != null ||
+            this.certs != null && that.certs == null ||
+            this.certs != null &&
+               this.certs.length != that.certs.length) {
             return false;
         }
 
@@ -398,30 +395,24 @@ implements java.io.Serializable
     }
 
     /**
-     * Returns the hash code value for this object.
-     *
-     * @return a hash code value for this object.
+     * {@return the hash code value for this object}
      */
-
+    @Override
     public int hashCode() {
-        int hash = type.hashCode();
-        if (name != null)
-            hash ^= name.hashCode();
-        if (actions != null)
-            hash ^= actions.hashCode();
-        return hash;
+        return Objects.hash(type, name, actions);
     }
 
     /**
      * Returns the canonical string representation of the actions,
      * which currently is the empty string "", since there are no actions for
-     * an UnresolvedPermission. That is, the actions for the
-     * permission that will be created when this UnresolvedPermission
-     * is resolved may be non-null, but an UnresolvedPermission
+     * an {@code UnresolvedPermission}. That is, the actions for the
+     * permission that will be created when this {@code UnresolvedPermission}
+     * is resolved may be non-null, but an {@code UnresolvedPermission}
      * itself is never considered to have any actions.
      *
      * @return the empty string "".
      */
+    @Override
     public String getActions()
     {
         return "";
@@ -473,7 +464,8 @@ implements java.io.Serializable
      * for the underlying permission that has not been resolved.
      *
      * @return the signer certificates for the underlying permission that
-     * has not been resolved, or null, if there are no signer certificates.
+     * has not been resolved, or {@code null}, if there are no signer
+     * certificates.
      * Returns a new array each time this method is called.
      *
      * @since 1.5
@@ -483,24 +475,26 @@ implements java.io.Serializable
     }
 
     /**
-     * Returns a string describing this UnresolvedPermission.  The convention
-     * is to specify the class name, the permission name, and the actions, in
-     * the following format: '(unresolved "ClassName" "name" "actions")'.
+     * Returns a string describing this {@code UnresolvedPermission}.
+     * The convention is to specify the class name, the permission name,
+     * and the actions, in the following format:
+     * '(unresolved "ClassName" "name" "actions")'.
      *
-     * @return information about this UnresolvedPermission.
+     * @return information about this {@code UnresolvedPermission}.
      */
+    @Override
     public String toString() {
         return "(unresolved " + type + " " + name + " " + actions + ")";
     }
 
     /**
      * Returns a new PermissionCollection object for storing
-     * UnresolvedPermission  objects.
+     * {@code UnresolvedPermission} objects.
      *
      * @return a new PermissionCollection object suitable for
-     * storing UnresolvedPermissions.
+     * storing {@code UnresolvedPermissions}.
      */
-
+    @Override
     public PermissionCollection newPermissionCollection() {
         return new UnresolvedPermissionCollection();
     }
@@ -576,7 +570,7 @@ implements java.io.Serializable
             // we know of 3 different cert types: X.509, PGP, SDSI, which
             // could all be present in the stream at the same time
             cfs = new Hashtable<>(3);
-            certList = new ArrayList<>(size > 20 ? 20 : size);
+            certList = new ArrayList<>(Math.min(size, 20));
         } else if (size < 0) {
             throw new IOException("size cannot be negative");
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,23 +29,25 @@
  *          java.base/jdk.internal.vm.annotation
  * @library /test/lib /
  * @compile Utils.java
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
  * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+PrintCompilation -XX:+PrintInlining -XX:+TraceDependencies -verbose:class -XX:CompileCommand=quiet
+ *                   -XX:+PrintCompilation -XX:+PrintInlining -Xlog:dependencies=debug -verbose:class -XX:CompileCommand=quiet
  *                   -XX:CompileCommand=compileonly,*::m
  *                   -XX:CompileCommand=compileonly,*::test -XX:CompileCommand=dontinline,*::test
  *                   -Xbatch -Xmixed -XX:+WhiteBoxAPI
  *                   -XX:-TieredCompilation
+ *                   -XX:-StressMethodHandleLinkerInlining
  *                      compiler.cha.AbstractRootMethod
  *
  * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+PrintCompilation -XX:+PrintInlining -XX:+TraceDependencies -verbose:class -XX:CompileCommand=quiet
+ *                   -XX:+PrintCompilation -XX:+PrintInlining -Xlog:dependencies=debug -verbose:class -XX:CompileCommand=quiet
  *                   -XX:CompileCommand=compileonly,*::m
  *                   -XX:CompileCommand=compileonly,*::test -XX:CompileCommand=dontinline,*::test
  *                   -Xbatch -Xmixed -XX:+WhiteBoxAPI
  *                   -XX:+TieredCompilation -XX:TieredStopAtLevel=1
+ *                   -XX:-StressMethodHandleLinkerInlining
  *                      compiler.cha.AbstractRootMethod
  */
 package compiler.cha;
@@ -61,7 +63,7 @@ public class AbstractRootMethod {
         run(AbstractInterface.class);
 
         // Implementation limitation: CHA is not performed by C1 during inlining through MH linkers.
-        if (!sun.hotspot.code.Compiler.isC1Enabled()) {
+        if (!jdk.test.whitebox.code.Compiler.isC1Enabled()) {
             run(AbstractClass.TestMH.class, AbstractClass.class);
             run(AbstractInterface.TestMH.class, AbstractInterface.class);
         }

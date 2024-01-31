@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,28 +20,35 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
  * @test
  * @bug 4944561
  * @summary Test hashCode() to have less than 10% of hash code conflicts.
  * @modules jdk.localedata
+ * @run junit HashCodeTest
  */
 
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+
 public class HashCodeTest {
 
-    public static void main(String[] args) {
+    // Ensure Locale.hashCode() has less than 10% conflicts
+    @Test
+    public void hashConflictsTest() {
         Locale[] locales = Locale.getAvailableLocales();
         int min = Integer.MAX_VALUE;
         int max = Integer.MIN_VALUE;
         Map<Integer, Locale> map = new HashMap<>(locales.length);
         int conflicts = 0;
 
-        for (int i = 0; i < locales.length; i++) {
-            Locale loc = locales[i];
+        for (Locale loc : locales) {
             int hc = loc.hashCode();
             min = Math.min(hc, min);
             max = Math.max(hc, max);
@@ -55,9 +62,7 @@ public class HashCodeTest {
         }
         System.out.println(locales.length + " locales: conflicts=" + conflicts
                 + ", min=" + min + ", max=" + max + ", diff=" + (max - min));
-        if (conflicts >= (locales.length / 10)) {
-            throw new RuntimeException("too many conflicts: " + conflicts
-                    + " per " + locales.length + " locales");
-        }
+        assertFalse(conflicts >= (locales.length / 10),
+                String.format("%s conflicts per %s locales", conflicts, locales.length));
     }
 }

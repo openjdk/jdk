@@ -24,12 +24,14 @@ package jdk.vm.ci.code.test;
 
 import jdk.vm.ci.aarch64.AArch64;
 import jdk.vm.ci.amd64.AMD64;
+import jdk.vm.ci.riscv64.RISCV64;
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.CodeCacheProvider;
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.code.test.aarch64.AArch64TestAssembler;
 import jdk.vm.ci.code.test.amd64.AMD64TestAssembler;
+import jdk.vm.ci.code.test.riscv64.RISCV64TestAssembler;
 import jdk.vm.ci.hotspot.HotSpotCodeCacheProvider;
 import jdk.vm.ci.hotspot.HotSpotCompiledCode;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
@@ -76,6 +78,8 @@ public class CodeInstallationTest {
             return new AMD64TestAssembler(codeCache, config);
         } else if (arch instanceof AArch64) {
             return new AArch64TestAssembler(codeCache, config);
+        } else if (arch instanceof RISCV64) {
+            return new RISCV64TestAssembler(codeCache, config);
         } else {
             Assert.fail("unsupported architecture");
             return null;

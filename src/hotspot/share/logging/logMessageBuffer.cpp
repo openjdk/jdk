@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 #include "precompiled.hpp"
 #include "logging/logMessageBuffer.hpp"
 #include "memory/allocation.inline.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
 
 template <typename T>
 static void grow(T*& buffer, size_t& capacity, size_t minimum_length = 0) {
@@ -38,13 +38,13 @@ static void grow(T*& buffer, size_t& capacity, size_t minimum_length = 0) {
 
 LogMessageBuffer::LogMessageBuffer() : _message_buffer_size(0),
                                        _message_buffer_capacity(0),
-                                       _message_buffer(NULL),
+                                       _message_buffer(nullptr),
                                        _line_count(0),
                                        _line_capacity(0),
-                                       _lines(NULL),
+                                       _lines(nullptr),
                                        _allocated(false),
                                        _least_detailed_level(LogLevel::Off),
-                                       _prefix_fn(NULL) {
+                                       _prefix_fn(nullptr) {
 }
 
 LogMessageBuffer::~LogMessageBuffer() {
@@ -98,7 +98,7 @@ void LogMessageBuffer::vwrite(LogLevelType level, const char* fmt, va_list args)
     size_t remaining_buffer_length = _message_buffer_capacity - _message_buffer_size;
     char* current_buffer_position = _message_buffer + _message_buffer_size;
 
-    if (_prefix_fn != NULL) {
+    if (_prefix_fn != nullptr) {
       written += _prefix_fn(current_buffer_position, remaining_buffer_length);
       current_buffer_position += written;
       if (remaining_buffer_length < written) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -203,12 +203,11 @@ public class      BeanContextSupport extends BeanContextChildSupport
     }
 
     /**
-     * Reports whether or not this
-     * {@code BeanContext} is empty.
-     * A {@code BeanContext} is considered
-     * empty when it contains zero
-     * nested children.
-     * @return if there are not children
+     * Reports whether or not this {@code BeanContext} is empty. A
+     * {@code BeanContext} is considered empty when it contains zero nested
+     * children.
+     *
+     * @return {@code true} if there are no children, otherwise {@code false}
      */
     public boolean isEmpty() {
         synchronized(children) {
@@ -217,10 +216,11 @@ public class      BeanContextSupport extends BeanContextChildSupport
     }
 
     /**
-     * Determines whether or not the specified object
-     * is currently a child of this {@code BeanContext}.
-     * @param o the Object in question
-     * @return if this object is a child
+     * Determines whether or not the specified object is currently a child of
+     * this {@code BeanContext}.
+     *
+     * @param  o the Object in question
+     * @return {@code true} if this object is a child, otherwise {@code false}
      */
     public boolean contains(Object o) {
         synchronized(children) {
@@ -229,10 +229,11 @@ public class      BeanContextSupport extends BeanContextChildSupport
     }
 
     /**
-     * Determines whether or not the specified object
-     * is currently a child of this {@code BeanContext}.
-     * @param o the Object in question
-     * @return if this object is a child
+     * Determines whether or not the specified object is currently a child of
+     * this {@code BeanContext}.
+     *
+     * @param  o the Object in question
+     * @return {@code true} if this object is a child, otherwise {@code false}
      */
     public boolean containsKey(Object o) {
         synchronized(children) {
@@ -839,10 +840,10 @@ public class      BeanContextSupport extends BeanContextChildSupport
     }
 
     /**
-     * Is this {@code BeanContext} in the
-     * process of being serialized?
-     * @return if this {@code BeanContext} is
-     * currently being serialized
+     * Is this {@code BeanContext} in the process of being serialized?
+     *
+     * @return {@code true} if this {@code BeanContext} is currently being
+     *         serialized, otherwise {@code false}
      */
     public boolean isSerializing() { return serializing; }
 
@@ -1121,16 +1122,22 @@ public class      BeanContextSupport extends BeanContextChildSupport
         String propertyName = pce.getPropertyName();
         Object source       = pce.getSource();
 
-        synchronized(children) {
-            if ("beanContext".equals(propertyName) &&
-                containsKey(source)                    &&
-                children.get(source).isRemovePending()) {
-                BeanContext bc = getBeanContextPeer();
+        if ("beanContext".equals(propertyName)) {
+            synchronized (BeanContext.globalHierarchyLock) {
+                synchronized (children) {
+                    if (containsKey(source)
+                            && children.get(source).isRemovePending())
+                    {
+                        BeanContext bc = getBeanContextPeer();
 
-                if (bc.equals(pce.getOldValue()) && !bc.equals(pce.getNewValue())) {
-                    remove(source, false);
-                } else {
-                    children.get(source).setRemovePending(false);
+                        if (bc.equals(pce.getOldValue())
+                                && !bc.equals(pce.getNewValue()))
+                        {
+                            remove(source, false);
+                        } else {
+                            children.get(source).setRemovePending(false);
+                        }
+                    }
                 }
             }
         }
@@ -1280,7 +1287,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
     }
 
     /**
-     * Fire a BeanContextshipEvent on the BeanContextMembershipListener interface
+     * Fire a BeanContextMembershipEvent on the BeanContextMembershipListener interface
      * @param bcme the event to fire
      */
 
@@ -1294,7 +1301,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
     }
 
     /**
-     * Fire a BeanContextshipEvent on the BeanContextMembershipListener interface
+     * Fire a BeanContextMembershipEvent on the BeanContextMembershipListener interface
      * @param bcme the event to fire
      */
 
@@ -1327,7 +1334,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
             /*
              * this adaptor is used by the BeanContextSupport class to forward
              * property changes from a child to the BeanContext, avoiding
-             * accidential serialization of the BeanContext by a badly
+             * accidental serialization of the BeanContext by a badly
              * behaved Serializable child.
              */
 
@@ -1341,7 +1348,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
             /*
              * this adaptor is used by the BeanContextSupport class to forward
              * vetoable changes from a child to the BeanContext, avoiding
-             * accidential serialization of the BeanContext by a badly
+             * accidental serialization of the BeanContext by a badly
              * behaved Serializable child.
              */
 

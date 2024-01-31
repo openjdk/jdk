@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2009, 2010, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -36,7 +36,7 @@ void Relocation::pd_set_data_value(address x, intptr_t o, bool verify_only) {
 
 address Relocation::pd_call_destination(address orig_addr) {
   ShouldNotCallThis();
-  return NULL;
+  return nullptr;
 }
 
 void Relocation::pd_set_call_destination(address x) {
@@ -45,7 +45,7 @@ void Relocation::pd_set_call_destination(address x) {
 
 address Relocation::pd_get_address_from_code() {
   ShouldNotCallThis();
-  return NULL;
+  return nullptr;
 }
 
 address* Relocation::pd_address_in_code() {

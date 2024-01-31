@@ -32,15 +32,15 @@
 
 #if INCLUDE_JVMCI
 JVMCICleaningTask::JVMCICleaningTask() :
-  _cleaning_claimed(0) {
+  _cleaning_claimed(false) {
 }
 
 bool JVMCICleaningTask::claim_cleaning_task() {
-  if (_cleaning_claimed) {
+  if (Atomic::load(&_cleaning_claimed)) {
     return false;
   }
 
-  return Atomic::cmpxchg(&_cleaning_claimed, 0, 1) == 0;
+  return !Atomic::cmpxchg(&_cleaning_claimed, false, true);
 }
 
 void JVMCICleaningTask::work(bool unloading_occurred) {
@@ -51,12 +51,11 @@ void JVMCICleaningTask::work(bool unloading_occurred) {
 }
 #endif // INCLUDE_JVMCI
 
-G1ParallelCleaningTask::G1ParallelCleaningTask(BoolObjectClosure* is_alive,
-                                               uint num_workers,
+G1ParallelCleaningTask::G1ParallelCleaningTask(uint num_workers,
                                                bool unloading_occurred) :
   WorkerTask("G1 Parallel Cleaning"),
   _unloading_occurred(unloading_occurred),
-  _code_cache_task(num_workers, is_alive, unloading_occurred),
+  _code_cache_task(num_workers, unloading_occurred),
   JVMCI_ONLY(_jvmci_cleaning_task() COMMA)
   _klass_cleaning_task() {
 }

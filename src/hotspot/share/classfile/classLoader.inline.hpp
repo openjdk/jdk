@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@
 
 #include "classfile/classLoader.hpp"
 
+#include "cds/cdsConfig.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/arguments.hpp"
 
 // Next entry in class path
 inline ClassPathEntry* ClassPathEntry::next() const { return Atomic::load_acquire(&_next); }
@@ -51,16 +51,10 @@ inline ClassPathEntry* ClassLoader::classpath_entry(int n) {
     // class path vs. the shared archive class path.
     ClassPathEntry* e = first_append_entry();
     while (--n >= 1) {
-      assert(e != NULL, "Not that many classpath entries.");
+      assert(e != nullptr, "Not that many classpath entries.");
       e = e->next();
     }
     return e;
-  }
-}
-
-inline void ClassLoader::load_zip_library_if_needed() {
-  if (Atomic::load_acquire(&_libzip_loaded) == 0) {
-    release_load_zip_library();
   }
 }
 
@@ -70,11 +64,11 @@ inline void ClassLoader::load_zip_library_if_needed() {
 // entries during shared classpath setup time.
 
 inline int ClassLoader::num_boot_classpath_entries() {
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
   assert(has_jrt_entry(), "must have a java runtime image");
   int num_entries = 1; // count the runtime image
   ClassPathEntry* e = first_append_entry();
-  while (e != NULL) {
+  while (e != nullptr) {
     num_entries ++;
     e = e->next();
   }
@@ -92,10 +86,10 @@ inline ClassPathEntry* ClassLoader::get_next_boot_classpath_entry(ClassPathEntry
 // Helper function used by CDS code to get the number of app classpath
 // entries during shared classpath setup time.
 inline int ClassLoader::num_app_classpath_entries() {
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
   int num_entries = 0;
   ClassPathEntry* e= ClassLoader::_app_classpath_entries;
-  while (e != NULL) {
+  while (e != nullptr) {
     num_entries ++;
     e = e->next();
   }

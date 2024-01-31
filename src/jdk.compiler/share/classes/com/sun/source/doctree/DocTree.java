@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,6 +102,14 @@ public interface DocTree {
          * representing some invalid text.
          */
         ERRONEOUS,
+
+        /**
+         * Used for instances of {@link EscapeTree}
+         * representing some escaped documentation text.
+         *
+         * @since 21
+         */
+        ESCAPE,
 
         /**
          * Used for instances of {@link ThrowsTree}
@@ -219,7 +227,15 @@ public interface DocTree {
         SNIPPET("snippet"),
 
         /**
-         * Used for instances of {@link EndElementTree}
+         * Used for instances of {@link SpecTree}
+         * representing an {@code @spec} tag.
+         *
+         * @since 20
+         */
+        SPEC("spec"),
+
+        /**
+         * Used for instances of {@link StartElementTree}
          * representing the start of an HTML element.
          */
         START_ELEMENT,
@@ -242,7 +258,7 @@ public interface DocTree {
 
         /**
          * Used for instances of {@link TextTree}
-         * representing some documentation text.
+         * representing some plain documentation text.
          */
         TEXT,
 

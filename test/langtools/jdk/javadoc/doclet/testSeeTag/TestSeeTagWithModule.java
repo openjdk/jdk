@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,8 +50,8 @@ public class TestSeeTagWithModule extends JavadocTester {
     private final Path src;
 
     public static void main(String... args) throws Exception {
-        TestSeeTagWithModule tester = new TestSeeTagWithModule();
-        tester.runTests(m -> new Object[]{Paths.get(m.getName())});
+        var tester = new TestSeeTagWithModule();
+        tester.runTests();
     }
 
     TestSeeTagWithModule() throws Exception {
@@ -74,7 +74,7 @@ public class TestSeeTagWithModule extends JavadocTester {
                 """
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list">
+                    <ul class="tag-list">
                     <li><a href="../../../../m1/module-summary.html"><code>m1</code></a></li>
                     <li><a href="../../../../m1/module-summary.html"><code>m1</code></a></li>
                     <li><a href="../../../../m1/com/m1/lib/package-summary.html"><code>com.m1.lib</code></a></li>
@@ -109,7 +109,7 @@ public class TestSeeTagWithModule extends JavadocTester {
                 """
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list">
+                    <ul class="tag-list">
                     <li><a href="../../../../../out1/m1/module-summary.html" class="external-link"><code>m1</code></a></li>
                     <li><a href="../../../../../out1/m1/module-summary.html" class="external-link"><code>m1</code></a></li>
                     <li><a href="../../../../../out1/m1/com/m1/lib/package-summary.html" class="external-link"><code>m1/com.m1.lib</code></a></li>
@@ -142,7 +142,7 @@ public class TestSeeTagWithModule extends JavadocTester {
                 """
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list">
+                    <ul class="tag-list">
                     <li><a href="../../../com.ex1/com/ex1/package-summary.html"><code>com.ex1</code></a></li>
                     <li><a href="../../../com.ex1/module-summary.html"><code>com.ex1</code></a></li>
                     <li><a href="../../../com.ex1/com/ex1/package-summary.html"><code>com.ex1</code></a></li>
@@ -171,7 +171,7 @@ public class TestSeeTagWithModule extends JavadocTester {
                 """
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list">
+                    <ul class="tag-list">
                     <li><a href="../../../../out1/com.ex1/com/ex1/package-summary.html" class="external-link"><code>com.ex1</code></a></li>
                     <li><a href="../../../../out1/com.ex1/module-summary.html" class="external-link"><code>com.ex1</code></a></li>
                     <li><a href="../../../../out1/com.ex1/com/ex1/package-summary.html" class="external-link"><code>com.ex1/com.ex1</code></a></li>

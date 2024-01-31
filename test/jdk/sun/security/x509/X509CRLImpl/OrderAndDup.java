@@ -55,9 +55,10 @@ public class OrderAndDup {
                     new Date(System.currentTimeMillis()+i*1000));
         }
         X500Name owner = new X500Name("CN=CA");
-        X509CRLImpl crl = new X509CRLImpl(owner, new Date(), new Date(), badCerts);
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
-        crl.sign(kpg.genKeyPair().getPrivate(), "SHA1withRSA");
+        X509CRLImpl crl = X509CRLImpl.newSigned(
+                new X509CRLImpl.TBSCertList(owner, new Date(), new Date(), badCerts),
+                kpg.genKeyPair().getPrivate(), "SHA1withRSA");
         byte[] data = crl.getEncodedInternal();
 
         // Check the encoding

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,10 @@
 
 private:
   void pd_initialize() {}
+  bool pd_finalize_stubs();
 
 public:
   void flush_bundle(bool start_new_bundle) {}
+  static constexpr bool supports_shared_stubs() { return true; }
 
 #endif // CPU_X86_CODEBUFFER_X86_HPP

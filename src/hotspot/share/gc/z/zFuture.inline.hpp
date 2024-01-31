@@ -26,12 +26,12 @@
 
 #include "gc/z/zFuture.hpp"
 
+#include "runtime/javaThread.hpp"
 #include "runtime/semaphore.inline.hpp"
-#include "runtime/thread.hpp"
 
 template <typename T>
-inline ZFuture<T>::ZFuture() :
-    _value() {}
+inline ZFuture<T>::ZFuture()
+  : _value() {}
 
 template <typename T>
 inline void ZFuture<T>::set(T value) {

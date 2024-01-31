@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,18 +27,16 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "logging/log.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
-#include "services/memTracker.hpp"
-
-
 
 //////////////////////////////////////////////////////////////////////
 // G1BlockOffsetTable
 //////////////////////////////////////////////////////////////////////
 
 G1BlockOffsetTable::G1BlockOffsetTable(MemRegion heap, G1RegionToSpaceMapper* storage) :
-  _reserved(heap), _offset_array(NULL) {
+  _reserved(heap), _offset_array(nullptr) {
 
   MemRegion bot_reserved = storage->reserved();
 
@@ -47,12 +45,6 @@ G1BlockOffsetTable::G1BlockOffsetTable(MemRegion heap, G1RegionToSpaceMapper* st
   log_trace(gc, bot)("G1BlockOffsetTable::G1BlockOffsetTable: ");
   log_trace(gc, bot)("    rs.base(): " PTR_FORMAT "  rs.size(): " SIZE_FORMAT "  rs end(): " PTR_FORMAT,
                      p2i(bot_reserved.start()), bot_reserved.byte_size(), p2i(bot_reserved.end()));
-}
-
-bool G1BlockOffsetTable::is_card_boundary(HeapWord* p) const {
-  assert(p >= _reserved.start(), "just checking");
-  size_t delta = pointer_delta(p, _reserved.start());
-  return (delta & right_n_bits((int)BOTConstants::log_card_size_in_words())) == (size_t)NoBits;
 }
 
 #ifdef ASSERT
@@ -77,19 +69,6 @@ G1BlockOffsetTablePart::G1BlockOffsetTablePart(G1BlockOffsetTable* array, HeapRe
   _bot(array),
   _hr(hr)
 {
-}
-
-void G1BlockOffsetTablePart::update() {
-  HeapWord* next_addr = _hr->bottom();
-  HeapWord* const limit = _hr->top();
-
-  HeapWord* prev_addr;
-  while (next_addr < limit) {
-    prev_addr = next_addr;
-    next_addr  = prev_addr + block_size(prev_addr);
-    update_for_block(prev_addr, next_addr);
-  }
-  assert(next_addr == limit, "Should stop the scan at the limit.");
 }
 
 // Write the backskip value for each region.
@@ -147,9 +126,10 @@ void G1BlockOffsetTablePart::set_remainder_to_point_to_start_incl(size_t start_c
     start_card_for_region = reach + 1;
   }
   assert(start_card_for_region > end_card, "Sanity check");
-  DEBUG_ONLY(check_all_cards(start_card, end_card);)
+  check_all_cards(start_card, end_card);
 }
 
+#ifdef ASSERT
 // The card-interval [start_card, end_card] is a closed interval; this
 // is an expensive check -- use with care and only under protection of
 // suitable flag.
@@ -187,6 +167,7 @@ void G1BlockOffsetTablePart::check_all_cards(size_t start_card, size_t end_card)
     }
   }
 }
+#endif
 
 //
 //              cur_card_boundary
@@ -203,7 +184,7 @@ void G1BlockOffsetTablePart::update_for_block_work(HeapWord* blk_start,
   HeapWord* const cur_card_boundary = align_up_by_card_size(blk_start);
   size_t const index =  _bot->index_for_raw(cur_card_boundary);
 
-  assert(blk_start != NULL && blk_end > blk_start,
+  assert(blk_start != nullptr && blk_end > blk_start,
          "phantom block");
   assert(blk_end > cur_card_boundary, "should be past cur_card_boundary");
   assert(blk_start <= cur_card_boundary, "blk_start should be at or before cur_card_boundary");
@@ -275,7 +256,7 @@ void G1BlockOffsetTablePart::verify() const {
       HeapWord* obj_end = card_address - entry;
       while (obj_end < card_address) {
         HeapWord* obj = obj_end;
-        size_t obj_size = block_size(obj);
+        size_t obj_size = _hr->block_size(obj);
         obj_end = obj + obj_size;
         guarantee(obj_end > obj && obj_end <= _hr->top(),
                   "Invalid object end. obj: " PTR_FORMAT " obj_size: " SIZE_FORMAT " obj_end: " PTR_FORMAT " top: " PTR_FORMAT,

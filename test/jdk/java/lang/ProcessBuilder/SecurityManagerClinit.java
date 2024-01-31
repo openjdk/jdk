@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @bug 6980747
+ * @bug 6980747 8297451
  * @summary Check that Process-related classes have the proper
  *     doPrivileged blocks, and can be initialized with an adversarial
  *     security manager.
@@ -52,6 +52,17 @@ public class SecurityManagerClinit {
         }
     }
 
+    // Security manager that unconditionally performs Thread Modify Access checks.
+    @SuppressWarnings("removal")
+    private static class TMACSecurityManager extends SecurityManager {
+        static final RuntimePermission MODIFY_THREAD_PERMISSION =
+                new RuntimePermission("modifyThread");
+        @Override
+        public void checkAccess(Thread thread) {
+            checkPermission(MODIFY_THREAD_PERMISSION);
+        }
+    }
+
     public static void main(String[] args) throws Throwable {
         String javaExe =
             System.getProperty("java.home") +
@@ -60,10 +71,11 @@ public class SecurityManagerClinit {
         final SimplePolicy policy =
             new SimplePolicy
             (new FilePermission("<<ALL FILES>>", "execute"),
-             new RuntimePermission("setSecurityManager"));
+             new RuntimePermission("setSecurityManager"),
+             new RuntimePermission("modifyThread"));
         Policy.setPolicy(policy);
 
-        System.setSecurityManager(new SecurityManager());
+        System.setSecurityManager(new TMACSecurityManager());
 
         try {
             String[] cmd = { javaExe, "-version" };

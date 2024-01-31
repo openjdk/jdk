@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ public class OtherName implements GeneralNameInterface {
     private int myhash = -1;
 
     /**
-     * Create the OtherName object from a passed ObjectIdentfier and
+     * Create the OtherName object from a passed ObjectIdentifier and
      * byte array name value
      *
      * @param oid ObjectIdentifier of this OtherName object
@@ -128,7 +128,6 @@ public class OtherName implements GeneralNameInterface {
             if (extClass == null) {   // Unsupported OtherName
                 return null;
             }
-            Class<?>[] params = { Object.class };
             Constructor<?> cons;
             try {
                 cons = extClass.getConstructor(Object.class);
@@ -152,13 +151,12 @@ public class OtherName implements GeneralNameInterface {
      * Encode the Other name into the DerOutputStream.
      *
      * @param out the DER stream to encode the Other-Name to.
-     * @exception IOException on encoding errors.
      */
-    public void encode(DerOutputStream out) throws IOException {
+    @Override
+    public void encode(DerOutputStream out) {
         if (gni != null) {
             // This OtherName has a supported class
             gni.encode(out);
-            return;
         } else {
             // This OtherName has no supporting class
             DerOutputStream tmp = new DerOutputStream();
@@ -173,18 +171,18 @@ public class OtherName implements GeneralNameInterface {
      *
      * @return true iff the names are identical.
      */
+    @Override
     public boolean equals(Object other) {
         if (this == other) {
             return true;
         }
-        if (!(other instanceof OtherName)) {
+        if (!(other instanceof OtherName otherOther)) {
             return false;
         }
-        OtherName otherOther = (OtherName)other;
         if (!(otherOther.oid.equals(oid))) {
             return false;
         }
-        GeneralNameInterface otherGNI = null;
+        GeneralNameInterface otherGNI;
         try {
             otherGNI = getGNI(otherOther.oid, otherOther.nameValue);
         } catch (IOException ioe) {
@@ -206,16 +204,12 @@ public class OtherName implements GeneralNameInterface {
     }
 
     /**
-     * Returns the hash code for this OtherName.
-     *
-     * @return a hash code value.
+     * {@return the hash code for this OtherName}
      */
+    @Override
     public int hashCode() {
         if (myhash == -1) {
-            myhash = 37 + oid.hashCode();
-            for (int i = 0; i < nameValue.length; i++) {
-                myhash = 37 * myhash + nameValue[i];
-            }
+            myhash = oid.hashCode() + Arrays.hashCode(nameValue);
         }
         return myhash;
     }

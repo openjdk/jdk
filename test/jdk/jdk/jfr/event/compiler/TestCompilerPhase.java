@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import jdk.jfr.consumer.RecordedEvent;
 import jdk.test.lib.Utils;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 /**
  * @test
@@ -39,8 +39,8 @@ import sun.hotspot.WhiteBox;
  * @requires vm.hasJFR
  * @requires vm.compMode!="Xint" & vm.flavor == "server" & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  * @library /test/lib
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:CompileOnly=jdk.jfr.event.compiler.TestCompilerPhase::dummyMethod
@@ -78,7 +78,7 @@ public class TestCompilerPhase {
             System.out.println("Event:" + event);
             Events.assertField(event, "phase").notEmpty();
             Events.assertField(event, "compileId").atLeast(0);
-            Events.assertField(event, "phaseLevel").atLeast((short)0).atMost((short)4);
+            Events.assertField(event, "phaseLevel").atLeast((short)0).atMost((short)5);
             Events.assertEventThread(event);
         }
     }

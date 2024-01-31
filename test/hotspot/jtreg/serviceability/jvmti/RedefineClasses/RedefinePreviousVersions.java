@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8165246 8010319
- * @summary Test has_previous_versions flag and processing during class unloading.
+ * @summary Test clean_previous_versions flag and processing during class unloading.
  * @requires vm.jvmti
  * @requires vm.opt.final.ClassUnloading
  * @requires vm.flagless
@@ -84,12 +84,12 @@ public class RedefinePreviousVersions {
         if (args.length > 0) {
 
             // java -javaagent:redefineagent.jar -Xlog:stuff RedefinePreviousVersions
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder( "-javaagent:redefineagent.jar",
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder( "-javaagent:redefineagent.jar",
                "-Xlog:redefine+class+iklass+add=trace,redefine+class+iklass+purge=trace",
                "RedefinePreviousVersions");
             new OutputAnalyzer(pb.start())
-              .shouldContain("Class unloading: has_previous_versions = false")
-              .shouldContain("Class unloading: has_previous_versions = true")
+              .shouldContain("Class unloading: should_clean_previous_versions = false")
+              .shouldContain("Class unloading: should_clean_previous_versions = true")
               .shouldHaveExitValue(0);
             return;
         }
@@ -99,7 +99,7 @@ public class RedefinePreviousVersions {
 
         // Redefine a class and create some garbage
         // Since there are no methods running, the previous version is never added to the
-        // previous_version_list and the flag _has_previous_versions should stay false
+        // previous_version_list and the flag _should_clean_previous_versions should stay false
         RedefineClassHelper.redefineClass(RedefinePreviousVersions_B.class, newB);
 
         for (int i = 0; i < 10 ; i++) {
@@ -119,7 +119,7 @@ public class RedefinePreviousVersions {
         }
 
         // Since a method of newRunning is running, this class should be added to the previous_version_list
-        // of Running, and _has_previous_versions should return true at class unloading.
+        // of Running, and _should_clean_previous_versions should return true at class unloading.
         RedefineClassHelper.redefineClass(RedefinePreviousVersions_Running.class, newRunning);
 
         for (int i = 0; i < 10 ; i++) {

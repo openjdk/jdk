@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,23 +25,23 @@
 #ifndef SHARE_COMPILER_COMPILERTHREAD_HPP
 #define SHARE_COMPILER_COMPILERTHREAD_HPP
 
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 
-class BufferBlob;
 class AbstractCompiler;
+class ArenaStatCounter;
+class BufferBlob;
 class ciEnv;
-class CompileThread;
+class CompilerThread;
 class CompileLog;
 class CompileTask;
 class CompileQueue;
 class CompilerCounters;
 class IdealGraphPrinter;
-class JVMCIEnv;
-class JVMCIPrimitiveArray;
 
 // A thread used for Compilation.
 class CompilerThread : public JavaThread {
   friend class VMStructs;
+  JVMCI_ONLY(friend class CompilerThreadCanCallJava;)
  private:
   CompilerCounters* _counters;
 
@@ -50,9 +50,12 @@ class CompilerThread : public JavaThread {
   CompileTask* volatile _task;  // print_threads_compiling can read this concurrently.
   CompileQueue*         _queue;
   BufferBlob*           _buffer_blob;
+  bool                  _can_call_java;
 
   AbstractCompiler*     _compiler;
   TimeStamp             _idle_time;
+
+  ArenaStatCounter*     _arena_stat;
 
  public:
 
@@ -70,16 +73,18 @@ class CompilerThread : public JavaThread {
 
   bool is_Compiler_thread() const                { return true; }
 
-  virtual bool can_call_java() const;
+  virtual bool can_call_java() const             { return _can_call_java; }
 
-  // Hide native compiler threads from external view.
-  bool is_hidden_from_external_view() const      { return !can_call_java(); }
+  // Returns true if this CompilerThread is hidden from JVMTI and FlightRecorder.  C1 and C2 are
+  // always hidden but JVMCI compiler threads might be hidden.
+  virtual bool is_hidden_from_external_view() const;
 
-  void set_compiler(AbstractCompiler* c)         { _compiler = c; }
+  void set_compiler(AbstractCompiler* c);
   AbstractCompiler* compiler() const             { return _compiler; }
 
   CompileQueue* queue()        const             { return _queue; }
   CompilerCounters* counters() const             { return _counters; }
+  ArenaStatCounter* arena_stat() const           { return _arena_stat; }
 
   // Get/set the thread's compilation environment.
   ciEnv*        env()                            { return _env; }
@@ -92,7 +97,7 @@ class CompilerThread : public JavaThread {
   CompileLog*   log()                            { return _log; }
   void          init_log(CompileLog* log) {
     // Set once, for good.
-    assert(_log == NULL, "set only once");
+    assert(_log == nullptr, "set only once");
     _log = log;
   }
 
@@ -115,30 +120,5 @@ class CompilerThread : public JavaThread {
 
   static void thread_entry(JavaThread* thread, TRAPS);
 };
-
-// Dedicated thread to sweep the code cache
-class CodeCacheSweeperThread : public JavaThread {
-  CompiledMethod*       _scanned_compiled_method; // nmethod being scanned by the sweeper
-
-  static void thread_entry(JavaThread* thread, TRAPS);
-
- public:
-  CodeCacheSweeperThread();
-  // Track the nmethod currently being scanned by the sweeper
-  void set_scanned_compiled_method(CompiledMethod* cm) {
-    assert(_scanned_compiled_method == NULL || cm == NULL, "should reset to NULL before writing a new value");
-    _scanned_compiled_method = cm;
-  }
-
-  // Hide sweeper thread from external view.
-  bool is_hidden_from_external_view() const { return true; }
-
-  bool is_Code_cache_sweeper_thread() const { return true; }
-
-  // Prevent GC from unloading _scanned_compiled_method
-  void oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf);
-  void nmethods_do(CodeBlobClosure* cf);
-};
-
 
 #endif  // SHARE_COMPILER_COMPILERTHREAD_HPP

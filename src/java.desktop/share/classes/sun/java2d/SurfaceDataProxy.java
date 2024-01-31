@@ -368,7 +368,7 @@ public abstract class SurfaceDataProxy
      * It relies on the subclass to determine if the cached version will
      * be useful given the operational parameters.
      * This method checks any preexisting cached copy for being "up to date"
-     * and tries to update it if it is stale or non-existant and the
+     * and tries to update it if it is stale or non-existent and the
      * appropriate number of accesses have occurred since it last was stale.
      * <p>
      * An outline of the process is as follows:

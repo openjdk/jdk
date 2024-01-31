@@ -29,7 +29,7 @@
 
 #if INCLUDE_JVMCI
 class JVMCICleaningTask : public StackObj {
-  volatile int       _cleaning_claimed;
+  volatile bool _cleaning_claimed;
 
 public:
   JVMCICleaningTask();
@@ -54,8 +54,7 @@ private:
 
 public:
   // The constructor is run in the VMThread.
-  G1ParallelCleaningTask(BoolObjectClosure* is_alive,
-                         uint num_workers,
+  G1ParallelCleaningTask(uint num_workers,
                          bool unloading_occurred);
 
   void work(uint worker_id);

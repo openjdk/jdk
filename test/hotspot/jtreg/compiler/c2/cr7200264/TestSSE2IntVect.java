@@ -28,7 +28,8 @@
  * @requires vm.cpu.features ~= ".*sse2.*" & vm.debug & vm.flavor == "server"
  * @requires !vm.emulatedClient & !vm.graal.enabled
  * @library /test/lib /
- * @run driver compiler.c2.cr7200264.TestSSE2IntVect
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:StressLongCountedLoop=0
+ *                   compiler.c2.cr7200264.TestSSE2IntVect
  */
 
 package compiler.c2.cr7200264;

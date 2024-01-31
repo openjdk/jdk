@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ class JavaThread;
 //      values of the callee-saved registers does not matter, e.g., if you
 //      only need the static properties such as frame type, pc, and such.
 //      Updating of the RegisterMap can be turned off by instantiating the
-//      register map as: RegisterMap map(thread, false);
+//      register map with RegisterMap::UpdateMap::skip
 
 class RegisterMap : public StackObj {
  public:
@@ -70,6 +70,9 @@ class RegisterMap : public StackObj {
     location_valid_type_size = sizeof(LocationValidType)*8,
     location_valid_size = (reg_count+location_valid_type_size-1)/location_valid_type_size
   };
+  enum class UpdateMap { skip, include };
+  enum class ProcessFrames { skip, include };
+  enum class WalkContinuation { skip, include };
  private:
   intptr_t*         _location[reg_count];     // Location of registers (intptr_t* looks better than address in the debugger)
   LocationValidType _location_valid[location_valid_size];
@@ -94,8 +97,8 @@ class RegisterMap : public StackObj {
 
  public:
   DEBUG_ONLY(intptr_t* _update_for_id;) // Assert that RegisterMap is not updated twice for same frame
-  RegisterMap(JavaThread *thread, bool update_map = true, bool process_frames = true, bool walk_cont = false);
-  RegisterMap(oop continuation, bool update_map = true);
+  RegisterMap(JavaThread *thread, UpdateMap update_map, ProcessFrames process_frames, WalkContinuation walk_cont);
+  RegisterMap(oop continuation, UpdateMap update_map);
   RegisterMap(const RegisterMap* map);
 
   address location(VMReg reg, intptr_t* sp) const {
@@ -114,16 +117,6 @@ class RegisterMap : public StackObj {
       return pd_location(base_reg, slot_idx);
     } else {
       return location(base_reg, nullptr);
-    }
-  }
-
-  address trusted_location(VMReg reg) const {
-    return (address) _location[reg->value()];
-  }
-
-  void verify(RegisterMap& other) {
-    for (int i = 0; i < reg_count; ++i) {
-      assert(_location[i] == other._location[i], "");
     }
   }
 
@@ -150,7 +143,7 @@ class RegisterMap : public StackObj {
 
   void set_walk_cont(bool value) { _walk_cont = value; }
 
-  bool in_cont()        const { return _chunk() != NULL; } // Whether we are currently on the hstack; if true, frames are relativized
+  bool in_cont()        const { return _chunk() != nullptr; } // Whether we are currently on the hstack; if true, frames are relativized
   oop cont() const;
   stackChunkHandle stack_chunk() const { return _chunk; }
   void set_stack_chunk(stackChunkOop chunk);

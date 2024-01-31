@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@
  * @library /test/lib /
  * @requires vm.flagless
  *
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
  *                   compiler.intrinsics.sha.cli.TestUseMD5IntrinsicsOptionOnUnsupportedCPU
@@ -39,6 +39,7 @@ package compiler.intrinsics.sha.cli;
 
 import compiler.intrinsics.sha.cli.testcases.GenericTestCaseForOtherCPU;
 import compiler.intrinsics.sha.cli.testcases.GenericTestCaseForUnsupportedAArch64CPU;
+import compiler.intrinsics.sha.cli.testcases.GenericTestCaseForUnsupportedRISCV64CPU;
 import compiler.intrinsics.sha.cli.testcases.GenericTestCaseForUnsupportedX86CPU;
 import compiler.intrinsics.sha.cli.testcases.UseSHAIntrinsicsSpecificTestCaseForUnsupportedCPU;
 
@@ -48,6 +49,8 @@ public class TestUseMD5IntrinsicsOptionOnUnsupportedCPU {
                 new GenericTestCaseForUnsupportedX86CPU(
                         DigestOptionsBase.USE_MD5_INTRINSICS_OPTION, /* checkUseSHA = */ false),
                 new GenericTestCaseForUnsupportedAArch64CPU(
+                        DigestOptionsBase.USE_MD5_INTRINSICS_OPTION, /* checkUseSHA = */ false),
+                new GenericTestCaseForUnsupportedRISCV64CPU(
                         DigestOptionsBase.USE_MD5_INTRINSICS_OPTION, /* checkUseSHA = */ false),
                 new GenericTestCaseForOtherCPU(
                         DigestOptionsBase.USE_MD5_INTRINSICS_OPTION, /* checkUseSHA = */ false)).test();

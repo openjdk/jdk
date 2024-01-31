@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
  * @bug 8207317
  * @summary SSLEngine negotiation fail Exception behavior changed from
  *          fail-fast to fail-lazy
+ * @library /javax/net/ssl/templates
  * @run main/othervm SSLEngineFailedALPN
  */
 /**
@@ -68,11 +69,8 @@
  */
 import javax.net.ssl.*;
 import javax.net.ssl.SSLEngineResult.*;
-import java.io.*;
-import java.security.*;
-import java.nio.*;
 
-public class SSLEngineFailedALPN {
+public class SSLEngineFailedALPN extends SSLEngineTemplate {
 
     /*
      * Enables logging of the SSLEngine operations.
@@ -89,39 +87,6 @@ public class SSLEngineFailedALPN {
      * after gaining some familiarity with this application.
      */
     private static final boolean debug = false;
-
-    private final SSLContext sslc;
-
-    private SSLEngine clientEngine;     // client Engine
-    private ByteBuffer clientOut;       // write side of clientEngine
-    private ByteBuffer clientIn;        // read side of clientEngine
-
-    private SSLEngine serverEngine;     // server Engine
-    private ByteBuffer serverOut;       // write side of serverEngine
-    private ByteBuffer serverIn;        // read side of serverEngine
-
-    /*
-     * For data transport, this example uses local ByteBuffers.  This
-     * isn't really useful, but the purpose of this example is to show
-     * SSLEngine concepts, not how to do network transport.
-     */
-    private ByteBuffer cTOs;            // "reliable" transport client->server
-    private ByteBuffer sTOc;            // "reliable" transport server->client
-
-    /*
-     * The following is to set up the keystores.
-     */
-    private static final String pathToStores = "../../../../javax/net/ssl/etc";
-    private static final String keyStoreFile = "keystore";
-    private static final String trustStoreFile = "truststore";
-    private static final char[] passphrase = "passphrase".toCharArray();
-
-    private static final String keyFilename =
-            System.getProperty("test.src", ".") + "/" + pathToStores +
-                "/" + keyStoreFile;
-    private static final String trustFilename =
-            System.getProperty("test.src", ".") + "/" + pathToStores +
-                "/" + trustStoreFile;
 
     /*
      * Main entry point for this test.
@@ -141,24 +106,7 @@ public class SSLEngineFailedALPN {
      * Create an initialized SSLContext to use for these tests.
      */
     public SSLEngineFailedALPN() throws Exception {
-
-        KeyStore ks = KeyStore.getInstance("JKS");
-        KeyStore ts = KeyStore.getInstance("JKS");
-
-        ks.load(new FileInputStream(keyFilename), passphrase);
-        ts.load(new FileInputStream(trustFilename), passphrase);
-
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-        kmf.init(ks, passphrase);
-
-        TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
-        tmf.init(ts);
-
-        SSLContext sslCtx = SSLContext.getInstance("TLS");
-
-        sslCtx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-
-        sslc = sslCtx;
+        super();
     }
 
     /*
@@ -180,9 +128,6 @@ public class SSLEngineFailedALPN {
      */
     private void runTest() throws Exception {
         boolean dataDone = false;
-
-        createSSLEngines();
-        createBuffers();
 
         // results from client's last operation
         SSLEngineResult clientResult;
@@ -309,111 +254,31 @@ public class SSLEngineFailedALPN {
         log("\tisOutboundDone(): " + engine.isOutboundDone());
     }
 
-    /*
-     * Using the SSLContext created during object creation,
-     * create/configure the SSLEngines we'll use for this test.
-     */
-    private void createSSLEngines() throws Exception {
-        /*
-         * Configure the serverEngine to act as a server in the SSL/TLS
-         * handshake.  Also, require SSL client authentication.
-         */
-        serverEngine = sslc.createSSLEngine();
-        serverEngine.setUseClientMode(false);
-        serverEngine.setNeedClientAuth(true);
+    @Override
+    protected SSLEngine configureServerEngine(SSLEngine engine) {
+        engine.setUseClientMode(false);
+        engine.setNeedClientAuth(true);
 
         // Get/set parameters if needed
-        SSLParameters paramsServer = serverEngine.getSSLParameters();
+        SSLParameters paramsServer = engine.getSSLParameters();
         paramsServer.setApplicationProtocols(new String[]{"one"});
-        serverEngine.setSSLParameters(paramsServer);
+        engine.setSSLParameters(paramsServer);
+        return engine;
+    }
 
-        /*
-         * Similar to above, but using client mode instead.
-         */
-        clientEngine = sslc.createSSLEngine("client", 80);
-        clientEngine.setUseClientMode(true);
+    @Override
+    protected SSLEngine configureClientEngine(SSLEngine engine) {
+        engine.setUseClientMode(true);
 
         // Get/set parameters if needed
-        SSLParameters paramsClient = clientEngine.getSSLParameters();
+        SSLParameters paramsClient = engine.getSSLParameters();
         paramsClient.setApplicationProtocols(new String[]{"two"});
-        clientEngine.setSSLParameters(paramsClient);
-    }
-
-    /*
-     * Create and size the buffers appropriately.
-     */
-    private void createBuffers() {
-
-        /*
-         * We'll assume the buffer sizes are the same
-         * between client and server.
-         */
-        SSLSession session = clientEngine.getSession();
-        int appBufferMax = session.getApplicationBufferSize();
-        int netBufferMax = session.getPacketBufferSize();
-
-        /*
-         * We'll make the input buffers a bit bigger than the max needed
-         * size, so that unwrap()s following a successful data transfer
-         * won't generate BUFFER_OVERFLOWS.
-         *
-         * We'll use a mix of direct and indirect ByteBuffers for
-         * tutorial purposes only.  In reality, only use direct
-         * ByteBuffers when they give a clear performance enhancement.
-         */
-        clientIn = ByteBuffer.allocate(appBufferMax + 50);
-        serverIn = ByteBuffer.allocate(appBufferMax + 50);
-
-        cTOs = ByteBuffer.allocateDirect(netBufferMax);
-        sTOc = ByteBuffer.allocateDirect(netBufferMax);
-
-        clientOut = ByteBuffer.wrap("Hi Server, I'm Client".getBytes());
-        serverOut = ByteBuffer.wrap("Hello Client, I'm Server".getBytes());
-    }
-
-    /*
-     * If the result indicates that we have outstanding tasks to do,
-     * go ahead and run them in this thread.
-     */
-    private static void runDelegatedTasks(SSLEngine engine) throws Exception {
-
-        if (engine.getHandshakeStatus() == HandshakeStatus.NEED_TASK) {
-            Runnable runnable;
-            while ((runnable = engine.getDelegatedTask()) != null) {
-                log("    running delegated task...");
-                runnable.run();
-            }
-            HandshakeStatus hsStatus = engine.getHandshakeStatus();
-            if (hsStatus == HandshakeStatus.NEED_TASK) {
-                throw new Exception(
-                    "handshake shouldn't need additional tasks");
-            }
-            logEngineStatus(engine);
-        }
+        engine.setSSLParameters(paramsClient);
+        return engine;
     }
 
     private static boolean isEngineClosed(SSLEngine engine) {
         return (engine.isOutboundDone() && engine.isInboundDone());
-    }
-
-    /*
-     * Simple check to make sure everything came across as expected.
-     */
-    private static void checkTransfer(ByteBuffer a, ByteBuffer b)
-            throws Exception {
-        a.flip();
-        b.flip();
-
-        if (!a.equals(b)) {
-            throw new Exception("Data didn't transfer cleanly");
-        } else {
-            log("\tData transferred cleanly");
-        }
-
-        a.position(a.limit());
-        b.position(b.limit());
-        a.limit(a.capacity());
-        b.limit(b.capacity());
     }
 
     /*

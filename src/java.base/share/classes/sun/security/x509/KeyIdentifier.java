@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.security.PublicKey;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 
 import sun.security.util.HexDumpEncoder;
 import sun.security.util.*;
@@ -40,7 +41,7 @@ import sun.security.util.*;
  * @author Hemma Prafullchandra
  */
 public class KeyIdentifier {
-    private byte[] octetString;
+    private final byte[] octetString;
 
     /**
      * Create a KeyIdentifier with the passed bit settings.
@@ -90,7 +91,7 @@ public class KeyIdentifier {
         AlgorithmId algid = AlgorithmId.parse(algAndKey.data.getDerValue());
         byte[] key = algAndKey.data.getUnalignedBitString().toByteArray();
 
-        MessageDigest md = null;
+        MessageDigest md;
         try {
             md = MessageDigest.getInstance("SHA1");
         } catch (NoSuchAlgorithmException e3) {
@@ -125,7 +126,7 @@ public class KeyIdentifier {
      * @param out the DerOutputStream to write the object to.
      * @exception IOException
      */
-    void encode(DerOutputStream out) throws IOException {
+    void encode(DerOutputStream out) {
         out.putOctetString(octetString);
     }
 
@@ -133,22 +134,19 @@ public class KeyIdentifier {
      * Returns a hash code value for this object.
      * Objects that are equal will also have the same hashcode.
      */
+    @Override
     public int hashCode () {
-        int retval = 0;
-        for (int i = 0; i < octetString.length; i++)
-            retval += octetString[i] * i;
-        return retval;
+        return Arrays.hashCode(octetString);
     }
 
     /**
      * Indicates whether some other object is "equal to" this one.
      */
-    public boolean equals(Object other) {
-        if (this == other)
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
             return true;
-        if (!(other instanceof KeyIdentifier))
-            return false;
-        byte[] otherString = ((KeyIdentifier)other).octetString;
-        return java.util.Arrays.equals(octetString, otherString);
+        return obj instanceof KeyIdentifier other
+                && Arrays.equals(octetString, other.octetString);
     }
 }

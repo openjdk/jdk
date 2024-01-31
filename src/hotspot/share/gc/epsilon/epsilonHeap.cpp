@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2017, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,10 +75,6 @@ jint EpsilonHeap::initialize() {
   return JNI_OK;
 }
 
-void EpsilonHeap::post_initialize() {
-  CollectedHeap::post_initialize();
-}
-
 void EpsilonHeap::initialize_serviceability() {
   _pool = new EpsilonMemoryPool(this);
   _memory_manager.add_pool(_pool);
@@ -108,11 +105,11 @@ EpsilonHeap* EpsilonHeap::heap() {
 HeapWord* EpsilonHeap::allocate_work(size_t size, bool verbose) {
   assert(is_object_aligned(size), "Allocation size should be aligned: " SIZE_FORMAT, size);
 
-  HeapWord* res = NULL;
+  HeapWord* res = nullptr;
   while (true) {
     // Try to allocate, assume space is available
     res = _space->par_allocate(size);
-    if (res != NULL) {
+    if (res != nullptr) {
       break;
     }
 
@@ -122,7 +119,7 @@ HeapWord* EpsilonHeap::allocate_work(size_t size, bool verbose) {
 
       // Try to allocate under the lock, assume another thread was able to expand
       res = _space->par_allocate(size);
-      if (res != NULL) {
+      if (res != nullptr) {
         break;
       }
 
@@ -141,7 +138,7 @@ HeapWord* EpsilonHeap::allocate_work(size_t size, bool verbose) {
         assert(expand, "Should be able to expand");
       } else {
         // No space left:
-        return NULL;
+        return nullptr;
       }
 
       _space->set_end((HeapWord *) _virtual_space.high());
@@ -239,7 +236,7 @@ HeapWord* EpsilonHeap::allocate_new_tlab(size_t min_size,
   // All prepared, let's do it!
   HeapWord* res = allocate_work(size);
 
-  if (res != NULL) {
+  if (res != nullptr) {
     // Allocation successful
     *actual_size = size;
     if (EpsilonElasticTLABDecay) {
@@ -301,7 +298,7 @@ void EpsilonHeap::print_on(outputStream *st) const {
 
   _virtual_space.print_on(st);
 
-  if (_space != NULL) {
+  if (_space != nullptr) {
     st->print_cr("Allocation space:");
     _space->print_on(st);
   }

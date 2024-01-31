@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,13 +36,16 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.function.IntFunction;
+import java.util.function.Predicate;
 
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.NestingKind;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 
+import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.comp.Annotate;
 import com.sun.tools.javac.comp.Annotate.AnnotationTypeCompleter;
@@ -62,8 +65,10 @@ import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.ByteBuffer.UnderflowException;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
+import com.sun.tools.javac.util.JCDiagnostic.Fragment;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
@@ -116,6 +121,10 @@ public class ClassReader {
    /** Lint option: warn about classfile issues
      */
     boolean lintClassfile;
+
+    /** Switch: warn (instead of error) on illegal UTF-8
+     */
+    boolean warnOnIllegalUtf8;
 
     /** Switch: preserve parameter names from the variable table.
      */
@@ -189,10 +198,19 @@ public class ClassReader {
     /** The minor version number of the class file being read. */
     int minorVersion;
 
+    /** UTF-8 validation level */
+    Convert.Validation utf8validation;
+
     /** A table to hold the constant pool indices for method parameter
      * names, as given in LocalVariableTable attributes.
      */
-    int[] parameterNameIndices;
+    int[] parameterNameIndicesLvt;
+
+    /**
+     * A table to hold the constant pool indices for method parameter
+     * names, as given in the MethodParameters attribute.
+     */
+    int[] parameterNameIndicesMp;
 
     /**
      * A table to hold the access flags of the method parameters.
@@ -220,31 +238,19 @@ public class ClassReader {
     }
 
     /**
-     * Whether or not any parameter names have been found.
-     */
-    boolean haveParameterNameIndices;
-
-    /** Set this to false every time we start reading a method
-     * and are saving parameter names.  Set it to true when we see
-     * MethodParameters, if it's set when we see a LocalVariableTable,
-     * then we ignore the parameter names from the LVT.
-     */
-    boolean sawMethodParameters;
-
-    /**
      * The set of attribute names for which warnings have been generated for the current class
      */
     Set<Name> warnedAttrs = new HashSet<>();
 
     /**
      * The prototype @Target Attribute.Compound if this class is an annotation annotated with
-     * @Target
+     * {@code @Target}
      */
     CompoundAnnotationProxy target;
 
     /**
      * The prototype @Repeatable Attribute.Compound if this class is an annotation annotated with
-     * @Repeatable
+     * {@code @Repeatable}
      */
     CompoundAnnotationProxy repeatable;
 
@@ -257,6 +263,7 @@ public class ClassReader {
     }
 
     /** Construct a new class reader. */
+    @SuppressWarnings("this-escape")
     protected ClassReader(Context context) {
         context.put(classReaderKey, this);
         annotate = Annotate.instance(context);
@@ -279,6 +286,7 @@ public class ClassReader {
         allowModules     = Feature.MODULES.allowedInSource(source);
         allowRecords = Feature.RECORDS.allowedInSource(source);
         allowSealedTypes = Feature.SEALED_CLASSES.allowedInSource(source);
+        warnOnIllegalUtf8 = Feature.WARN_ON_ILLEGAL_UTF8.allowedInSource(source);
 
         saveParameterNames = options.isSet(PARAMETERS);
 
@@ -305,10 +313,18 @@ public class ClassReader {
  ***********************************************************************/
 
     public ClassFinder.BadClassFile badClassFile(String key, Object... args) {
+        return badClassFile(diagFactory.fragment(key, args));
+    }
+
+    public ClassFinder.BadClassFile badClassFile(Fragment fragment) {
+        return badClassFile(diagFactory.fragment(fragment));
+    }
+
+    public ClassFinder.BadClassFile badClassFile(JCDiagnostic diagnostic) {
         return new ClassFinder.BadClassFile (
             currentOwner.enclClass(),
             currentClassFile,
-            diagFactory.fragment(key, args),
+            diagnostic,
             diagFactory,
             dcfh);
     }
@@ -329,7 +345,12 @@ public class ClassReader {
     /** Read a character.
      */
     char nextChar() {
-        char res = buf.getChar(bp);
+        char res;
+        try {
+            res = buf.getChar(bp);
+        } catch (UnderflowException e) {
+            throw badClassFile(Fragments.BadClassTruncatedAtOffset(e.getLength()));
+        }
         bp += 2;
         return res;
     }
@@ -337,13 +358,22 @@ public class ClassReader {
     /** Read a byte.
      */
     int nextByte() {
-        return buf.getByte(bp++) & 0xFF;
+        try {
+            return buf.getByte(bp++) & 0xFF;
+        } catch (UnderflowException e) {
+            throw badClassFile(Fragments.BadClassTruncatedAtOffset(e.getLength()));
+        }
     }
 
     /** Read an integer.
      */
     int nextInt() {
-        int res = buf.getInt(bp);
+        int res;
+        try {
+            res = buf.getInt(bp);
+        } catch (UnderflowException e) {
+            throw badClassFile(Fragments.BadClassTruncatedAtOffset(e.getLength()));
+        }
         bp += 4;
         return res;
     }
@@ -439,7 +469,7 @@ public class ClassReader {
             sigp++;
             return sigEnterPhase
                 ? Type.noType
-                : findTypeVar(names.fromUtf(signature, start, sigp - 1 - start));
+                : findTypeVar(readName(signature, start, sigp - 1 - start));
         case '+': {
             sigp++;
             Type t = sigToType();
@@ -523,8 +553,7 @@ public class ClassReader {
             typevars = typevars.leave();
             return poly;
         default:
-            throw badClassFile("bad.signature",
-                               Convert.utf2string(signature, sigp, 10));
+            throw badClassFile("bad.signature", quoteBadSignature());
         }
     }
 
@@ -534,8 +563,7 @@ public class ClassReader {
      */
     Type classSigToType() {
         if (signature[sigp] != 'L')
-            throw badClassFile("bad.class.signature",
-                               Convert.utf2string(signature, sigp, 10));
+            throw badClassFile("bad.class.signature", quoteBadSignature());
         sigp++;
         Type outer = Type.noType;
         int startSbp = sbp;
@@ -545,7 +573,7 @@ public class ClassReader {
             switch (c) {
 
             case ';': {         // end
-                ClassSymbol t = enterClass(names.fromUtf(signatureBuffer,
+                ClassSymbol t = enterClass(readName(signatureBuffer,
                                                          startSbp,
                                                          sbp - startSbp));
 
@@ -559,7 +587,7 @@ public class ClassReader {
             }
 
             case '<':           // generic arguments
-                ClassSymbol t = enterClass(names.fromUtf(signatureBuffer,
+                ClassSymbol t = enterClass(readName(signatureBuffer,
                                                          startSbp,
                                                          sbp - startSbp));
                 outer = new ClassType(outer, sigToTypes('>'), t) {
@@ -622,7 +650,7 @@ public class ClassReader {
             case '.':
                 //we have seen an enclosing non-generic class
                 if (outer != Type.noType) {
-                    t = enterClass(names.fromUtf(signatureBuffer,
+                    t = enterClass(readName(signatureBuffer,
                                                  startSbp,
                                                  sbp - startSbp));
                     outer = new ClassType(outer, List.nil(), t);
@@ -637,6 +665,20 @@ public class ClassReader {
                 continue;
             }
         }
+    }
+
+    /** Quote a bogus signature for display inside an error message.
+     */
+    String quoteBadSignature() {
+        String sigString;
+        try {
+            sigString = Convert.utf2string(signature, sigp, siglimit - sigp, Convert.Validation.NONE);
+        } catch (InvalidUtfException e) {
+            throw new AssertionError(e);
+        }
+        if (sigString.length() > 32)
+            sigString = sigString.substring(0, 32) + "...";
+        return "\"" + sigString + "\"";
     }
 
     /** Convert (implicit) signature to list of types
@@ -685,7 +727,7 @@ public class ClassReader {
     Type sigToTypeParam() {
         int start = sigp;
         while (signature[sigp] != ':') sigp++;
-        Name name = names.fromUtf(signature, start, sigp - start);
+        Name name = readName(signature, start, sigp - start);
         TypeVar tvar;
         if (sigEnterPhase) {
             tvar = new TypeVar(name, currentOwner, syms.botType);
@@ -733,6 +775,19 @@ public class ClassReader {
                 return t;
             }
             throw badClassFile("undecl.type.var", name);
+        }
+    }
+
+    private Name readName(byte[] buf, int off, int len) {
+        try {
+            return names.fromUtf(buf, off, len, utf8validation);
+        } catch (InvalidUtfException e) {
+            if (warnOnIllegalUtf8) {
+                log.warning(Warnings.InvalidUtf8InClassfile(currentClassFile,
+                    Fragments.BadUtf8ByteSequenceAt(sigp)));
+                return names.fromUtfLax(buf, off, len);
+            }
+            throw badClassFile(Fragments.BadUtf8ByteSequenceAt(sigp));
         }
     }
 
@@ -880,7 +935,7 @@ public class ClassReader {
             new AttributeReader(names.LocalVariableTable, V45_3, CLASS_OR_MEMBER_ATTRIBUTE) {
                 protected void read(Symbol sym, int attrLen) {
                     int newbp = bp + attrLen;
-                    if (saveParameterNames && !sawMethodParameters) {
+                    if (saveParameterNames) {
                         // Pick up parameter names from the variable table.
                         // Parameter names are not explicitly identified as such,
                         // but all parameter name entries in the LocalVariableTable
@@ -899,14 +954,13 @@ public class ClassReader {
                             int register = nextChar();
                             if (start_pc == 0) {
                                 // ensure array large enough
-                                if (register >= parameterNameIndices.length) {
+                                if (register >= parameterNameIndicesLvt.length) {
                                     int newSize =
-                                            Math.max(register + 1, parameterNameIndices.length + 8);
-                                    parameterNameIndices =
-                                            Arrays.copyOf(parameterNameIndices, newSize);
+                                            Math.max(register + 1, parameterNameIndicesLvt.length + 8);
+                                    parameterNameIndicesLvt =
+                                            Arrays.copyOf(parameterNameIndicesLvt, newSize);
                                 }
-                                parameterNameIndices[register] = nameIndex;
-                                haveParameterNameIndices = true;
+                                parameterNameIndicesLvt[register] = nameIndex;
                             }
                         }
                     }
@@ -1057,11 +1111,9 @@ public class ClassReader {
                 protected void read(Symbol sym, int attrlen) {
                     int newbp = bp + attrlen;
                     if (saveParameterNames) {
-                        sawMethodParameters = true;
                         int numEntries = nextByte();
-                        parameterNameIndices = new int[numEntries];
+                        parameterNameIndicesMp = new int[numEntries];
                         parameterAccessFlags = new int[numEntries];
-                        haveParameterNameIndices = true;
                         int index = 0;
                         for (int i = 0; i < numEntries; i++) {
                             int nameIndex = nextChar();
@@ -1069,7 +1121,7 @@ public class ClassReader {
                             if ((flags & (Flags.MANDATED | Flags.SYNTHETIC)) != 0) {
                                 continue;
                             }
-                            parameterNameIndices[index] = nameIndex;
+                            parameterNameIndicesMp[index] = nameIndex;
                             parameterAccessFlags[index] = flags;
                             index++;
                         }
@@ -1090,7 +1142,7 @@ public class ClassReader {
                         ModuleSymbol msym = (ModuleSymbol) sym.owner;
                         ListBuffer<Directive> directives = new ListBuffer<>();
 
-                        Name moduleName = poolReader.peekModuleName(nextChar(), names::fromUtf);
+                        Name moduleName = poolReader.peekModuleName(nextChar(), ClassReader.this::readName);
                         if (currentModule.name != moduleName) {
                             throw badClassFile("module.name.mismatch", moduleName, currentModule.name);
                         }
@@ -1185,8 +1237,18 @@ public class ClassReader {
                     }
                 }
 
-                private Name classNameMapper(byte[] arr, int offset, int length) {
-                    return names.fromUtf(ClassFile.internalize(arr, offset, length));
+                private Name classNameMapper(byte[] arr, int offset, int length) throws InvalidUtfException {
+                    byte[] buf = ClassFile.internalize(arr, offset, length);
+                    try {
+                        return names.fromUtf(buf, 0, buf.length, utf8validation);
+                    } catch (InvalidUtfException e) {
+                        if (warnOnIllegalUtf8) {
+                            log.warning(Warnings.InvalidUtf8InClassfile(currentClassFile,
+                                Fragments.BadUtf8ByteSequenceAt(e.getOffset())));
+                            return names.fromUtfLax(buf, 0, buf.length);
+                        }
+                        throw e;
+                    }
                 }
             },
 
@@ -1236,7 +1298,7 @@ public class ClassReader {
                         for (int i = 0; i < numberOfPermittedSubtypes; i++) {
                             subtypes.add(poolReader.getClass(nextChar()));
                         }
-                        ((ClassSymbol)sym).permitted = subtypes.toList();
+                        ((ClassSymbol)sym).setPermittedSubclasses(subtypes.toList());
                     }
                 }
             },
@@ -1449,6 +1511,9 @@ public class ClassReader {
             } else if (proxy.type.tsym.flatName() == syms.valueBasedInternalType.tsym.flatName()) {
                 Assert.check(sym.kind == TYP);
                 sym.flags_field |= VALUE_BASED;
+            } else if (proxy.type.tsym.flatName() == syms.restrictedType.tsym.flatName()) {
+                Assert.check(sym.kind == MTH);
+                sym.flags_field |= RESTRICTED;
             } else {
                 if (proxy.type.tsym == syms.annotationTargetType.tsym) {
                     target = proxy;
@@ -1462,6 +1527,9 @@ public class ClassReader {
                     setFlagIfAttributeTrue(proxy, sym, names.reflective, PREVIEW_REFLECTIVE);
                 }  else if (proxy.type.tsym == syms.valueBasedType.tsym && sym.kind == TYP) {
                     sym.flags_field |= VALUE_BASED;
+                }  else if (proxy.type.tsym == syms.restrictedType.tsym) {
+                    Assert.check(sym.kind == MTH);
+                    sym.flags_field |= RESTRICTED;
                 }
                 proxies.append(proxy);
             }
@@ -1482,7 +1550,12 @@ public class ClassReader {
     /** Read parameter annotations.
      */
     void readParameterAnnotations(Symbol meth) {
-        int numParameters = buf.getByte(bp++) & 0xFF;
+        int numParameters;
+        try {
+            numParameters = buf.getByte(bp++) & 0xFF;
+        } catch (UnderflowException e) {
+            throw badClassFile(Fragments.BadClassTruncatedAtOffset(e.getLength()));
+        }
         if (parameterAnnotations == null) {
             parameterAnnotations = new ParameterAnnotations[numParameters];
         } else if (parameterAnnotations.length != numParameters) {
@@ -1771,7 +1844,12 @@ public class ClassReader {
     }
 
     Attribute readAttributeValue() {
-        char c = (char) buf.getByte(bp++);
+        char c;
+        try {
+            c = (char)buf.getByte(bp++);
+        } catch (UnderflowException e) {
+            throw badClassFile(Fragments.BadClassTruncatedAtOffset(e.getLength()));
+        }
         switch (c) {
         case 'B':
             return new Attribute.Constant(syms.byteType, poolReader.getConstant(nextChar()));
@@ -2185,12 +2263,321 @@ public class ClassReader {
                 currentClassFile = classFile;
                 List<Attribute.TypeCompound> newList = deproxyTypeCompoundList(proxies);
                 sym.setTypeAttributes(newList.prependList(sym.getRawTypeAttributes()));
+                addTypeAnnotationsToSymbol(sym, newList);
             } finally {
                 currentClassFile = previousClassFile;
             }
         }
     }
 
+    /**
+     * Rewrites types in the given symbol to include type annotations.
+     *
+     * <p>The list of type annotations includes annotations for all types in the signature of the
+     * symbol. Associating the annotations with the correct type requires interpreting the JVMS
+     * 4.7.20-A target_type to locate the correct type to rewrite, and then interpreting the JVMS
+     * 4.7.20.2 type_path to associate the annotation with the correct contained type.
+     */
+    private static void addTypeAnnotationsToSymbol(
+            Symbol s, List<Attribute.TypeCompound> attributes) {
+        new TypeAnnotationSymbolVisitor(attributes).visit(s, null);
+    }
+
+    private static class TypeAnnotationSymbolVisitor
+            extends Types.DefaultSymbolVisitor<Void, Void> {
+
+        private final List<Attribute.TypeCompound> attributes;
+
+        private TypeAnnotationSymbolVisitor(List<Attribute.TypeCompound> attributes) {
+            this.attributes = attributes;
+        }
+
+        @Override
+        public Void visitClassSymbol(Symbol.ClassSymbol s, Void unused) {
+            ClassType t = (ClassType) s.type;
+            int i = 0;
+            ListBuffer<Type> interfaces = new ListBuffer<>();
+            for (Type itf : t.interfaces_field) {
+                interfaces.add(addTypeAnnotations(itf, classExtends(i++)));
+            }
+            t.interfaces_field = interfaces.toList();
+            t.supertype_field = addTypeAnnotations(t.supertype_field, classExtends(65535));
+            if (t.typarams_field != null) {
+                t.typarams_field =
+                        rewriteTypeParameters(
+                                t.typarams_field, TargetType.CLASS_TYPE_PARAMETER_BOUND);
+            }
+            return null;
+        }
+
+        @Override
+        public Void visitMethodSymbol(Symbol.MethodSymbol s, Void unused) {
+            Type t = s.type;
+            if (t.hasTag(TypeTag.FORALL)) {
+                Type.ForAll fa = (Type.ForAll) t;
+                fa.tvars = rewriteTypeParameters(fa.tvars, TargetType.METHOD_TYPE_PARAMETER_BOUND);
+                t = fa.qtype;
+            }
+            MethodType mt = (MethodType) t;
+            ListBuffer<Type> argtypes = new ListBuffer<>();
+            int i = 0;
+            for (Symbol.VarSymbol param : s.params) {
+                param.type = addTypeAnnotations(param.type, methodFormalParameter(i++));
+                argtypes.add(param.type);
+            }
+            mt.argtypes = argtypes.toList();
+            ListBuffer<Type> thrown = new ListBuffer<>();
+            i = 0;
+            for (Type thrownType : mt.thrown) {
+                thrown.add(addTypeAnnotations(thrownType, thrownType(i++)));
+            }
+            mt.thrown = thrown.toList();
+            /* possible information loss if the type of the method is void then we can't add type
+             * annotations to it
+             */
+            if (!mt.restype.hasTag(TypeTag.VOID)) {
+                mt.restype = addTypeAnnotations(mt.restype, TargetType.METHOD_RETURN);
+            }
+
+            Type recvtype = mt.recvtype != null ? mt.recvtype : s.implicitReceiverType();
+            if (recvtype != null) {
+                Type annotated = addTypeAnnotations(recvtype, TargetType.METHOD_RECEIVER);
+                if (annotated != recvtype) {
+                    mt.recvtype = annotated;
+                }
+            }
+            return null;
+        }
+
+        @Override
+        public Void visitVarSymbol(Symbol.VarSymbol s, Void unused) {
+            s.type = addTypeAnnotations(s.type, TargetType.FIELD);
+            return null;
+        }
+
+        @Override
+        public Void visitSymbol(Symbol s, Void unused) {
+            return null;
+        }
+
+        private List<Type> rewriteTypeParameters(List<Type> tvars, TargetType boundType) {
+            ListBuffer<Type> tvarbuf = new ListBuffer<>();
+            int typeVariableIndex = 0;
+            for (Type tvar : tvars) {
+                Type bound = tvar.getUpperBound();
+                if (bound.isCompound()) {
+                    ClassType ct = (ClassType) bound;
+                    int boundIndex = 0;
+                    if (ct.supertype_field != null) {
+                        ct.supertype_field =
+                                addTypeAnnotations(
+                                        ct.supertype_field,
+                                        typeParameterBound(
+                                                boundType, typeVariableIndex, boundIndex++));
+                    }
+                    ListBuffer<Type> itfbuf = new ListBuffer<>();
+                    for (Type itf : ct.interfaces_field) {
+                        itfbuf.add(
+                                addTypeAnnotations(
+                                        itf,
+                                        typeParameterBound(
+                                                boundType, typeVariableIndex, boundIndex++)));
+                    }
+                    ct.interfaces_field = itfbuf.toList();
+                } else {
+                    bound =
+                            addTypeAnnotations(
+                                    bound,
+                                    typeParameterBound(
+                                            boundType,
+                                            typeVariableIndex,
+                                            bound.isInterface() ? 1 : 0));
+                }
+                ((TypeVar) tvar).setUpperBound(bound);
+                tvarbuf.add(tvar);
+                typeVariableIndex++;
+            }
+            return tvarbuf.toList();
+        }
+
+        private Type addTypeAnnotations(Type type, TargetType targetType) {
+            return addTypeAnnotations(type, pos -> pos.type == targetType);
+        }
+
+        private Type addTypeAnnotations(Type type, Predicate<TypeAnnotationPosition> filter) {
+            Assert.checkNonNull(type);
+
+            // Find type annotations that match the given target type
+            ListBuffer<Attribute.TypeCompound> filtered = new ListBuffer<>();
+            for (Attribute.TypeCompound attribute : this.attributes) {
+                if (filter.test(attribute.position)) {
+                    filtered.add(attribute);
+                }
+            }
+            if (filtered.isEmpty()) {
+                return type;
+            }
+
+            // Group the matching annotations by their type path. Each group of annotations will be
+            // added to a type at that location.
+            Map<List<TypeAnnotationPosition.TypePathEntry>, ListBuffer<Attribute.TypeCompound>>
+                    attributesByPath = new HashMap<>();
+            for (Attribute.TypeCompound attribute : filtered.toList()) {
+                attributesByPath
+                        .computeIfAbsent(attribute.position.location, k -> new ListBuffer<>())
+                        .add(attribute);
+            }
+
+            // Search the structure of the type to find the contained types at each type path
+            Map<Type, List<Attribute.TypeCompound>> attributesByType = new HashMap<>();
+            new TypeAnnotationLocator(attributesByPath, attributesByType).visit(type, List.nil());
+
+            // Rewrite the type and add the annotations
+            type = new TypeAnnotationTypeMapping(attributesByType).visit(type, null);
+            Assert.check(attributesByType.isEmpty(), "Failed to apply annotations to types");
+
+            return type;
+        }
+
+        private static Predicate<TypeAnnotationPosition> typeParameterBound(
+                TargetType targetType, int parameterIndex, int boundIndex) {
+            return pos ->
+                    pos.type == targetType
+                            && pos.parameter_index == parameterIndex
+                            && pos.bound_index == boundIndex;
+        }
+
+        private static Predicate<TypeAnnotationPosition> methodFormalParameter(int index) {
+            return pos ->
+                    pos.type == TargetType.METHOD_FORMAL_PARAMETER && pos.parameter_index == index;
+        }
+
+        private static Predicate<TypeAnnotationPosition> thrownType(int index) {
+            return pos -> pos.type == TargetType.THROWS && pos.type_index == index;
+        }
+
+        private static Predicate<TypeAnnotationPosition> classExtends(int index) {
+            return pos -> pos.type == TargetType.CLASS_EXTENDS && pos.type_index == index;
+        }
+    }
+
+    /**
+     * Visit all contained types, assembling a type path to represent the current location, and
+     * record the types at each type path that need to be annotated.
+     */
+    private static class TypeAnnotationLocator
+            extends Types.DefaultTypeVisitor<Void, List<TypeAnnotationPosition.TypePathEntry>> {
+        private final Map<List<TypeAnnotationPosition.TypePathEntry>,
+                          ListBuffer<Attribute.TypeCompound>> attributesByPath;
+        private final Map<Type, List<Attribute.TypeCompound>> attributesByType;
+
+        private TypeAnnotationLocator(
+                Map<List<TypeAnnotationPosition.TypePathEntry>, ListBuffer<Attribute.TypeCompound>>
+                        attributesByPath,
+                Map<Type, List<Attribute.TypeCompound>> attributesByType) {
+            this.attributesByPath = attributesByPath;
+            this.attributesByType = attributesByType;
+        }
+
+        @Override
+        public Void visitClassType(ClassType t, List<TypeAnnotationPosition.TypePathEntry> path) {
+            // As described in JVMS 4.7.20.2, type annotations on nested types are located with
+            // 'left-to-right' steps starting on 'the outermost part of the type for which a type
+            // annotation is admissible'. So the current path represents the outermost containing
+            // type of the type being visited, and we add type path steps for every contained nested
+            // type.
+            List<ClassType> enclosing = List.nil();
+            for (Type curr = t;
+                    curr != null && curr != Type.noType;
+                    curr = curr.getEnclosingType()) {
+                enclosing = enclosing.prepend((ClassType) curr);
+            }
+            for (ClassType te : enclosing) {
+                if (te.typarams_field != null) {
+                    int i = 0;
+                    for (Type typaram : te.typarams_field) {
+                        visit(typaram, path.append(new TypeAnnotationPosition.TypePathEntry(
+                                TypeAnnotationPosition.TypePathEntryKind.TYPE_ARGUMENT, i++)));
+                    }
+                }
+                visitType(te, path);
+                path = path.append(TypeAnnotationPosition.TypePathEntry.INNER_TYPE);
+            }
+            return null;
+        }
+
+        @Override
+        public Void visitWildcardType(
+                WildcardType t, List<TypeAnnotationPosition.TypePathEntry> path) {
+            visit(t.type, path.append(TypeAnnotationPosition.TypePathEntry.WILDCARD));
+            return super.visitWildcardType(t, path);
+        }
+
+        @Override
+        public Void visitArrayType(ArrayType t, List<TypeAnnotationPosition.TypePathEntry> path) {
+            visit(t.elemtype, path.append(TypeAnnotationPosition.TypePathEntry.ARRAY));
+            return super.visitArrayType(t, path);
+        }
+
+        @Override
+        public Void visitType(Type t, List<TypeAnnotationPosition.TypePathEntry> path) {
+            ListBuffer<Attribute.TypeCompound> attributes = attributesByPath.remove(path);
+            if (attributes != null) {
+                attributesByType.put(t, attributes.toList());
+            }
+            return null;
+        }
+    }
+
+    /** A type mapping that rewrites the type to include type annotations. */
+    private static class TypeAnnotationTypeMapping extends Type.StructuralTypeMapping<Void> {
+
+        private final Map<Type, List<Attribute.TypeCompound>> attributesByType;
+
+        private TypeAnnotationTypeMapping(
+                Map<Type, List<Attribute.TypeCompound>> attributesByType) {
+            this.attributesByType = attributesByType;
+        }
+
+        private <T extends Type> Type reannotate(T t, BiFunction<T, Void, Type> f) {
+            // We're relying on object identify of Type instances to record where the annotations
+            // need to be added, so we have to retrieve the annotations for each type before
+            // rewriting it, and then add them after its contained types have been rewritten.
+            List<Attribute.TypeCompound> attributes = attributesByType.remove(t);
+            Type mapped = f.apply(t, null);
+            if (attributes == null) {
+                return mapped;
+            }
+            // Runtime-visible and -invisible annotations are completed separately, so if the same
+            // type has annotations from both it will get annotated twice.
+            TypeMetadata.Annotations existing = mapped.getMetadata(TypeMetadata.Annotations.class);
+            if (existing != null) {
+                existing.annotationBuffer().addAll(attributes);
+                return mapped;
+            }
+            return mapped.annotatedType(attributes);
+        }
+
+        @Override
+        public Type visitClassType(ClassType t, Void unused) {
+            return reannotate(t, super::visitClassType);
+        }
+
+        @Override
+        public Type visitWildcardType(WildcardType t, Void unused) {
+            return reannotate(t, super::visitWildcardType);
+        }
+
+        @Override
+        public Type visitArrayType(ArrayType t, Void unused) {
+            return reannotate(t, super::visitArrayType);
+        }
+
+        @Override
+        public Type visitType(Type t, Void unused) {
+            return reannotate(t, (x, u) -> x);
+        }
+    }
 
 /************************************************************************
  * Reading Symbols
@@ -2199,18 +2586,23 @@ public class ClassReader {
     /** Read a field.
      */
     VarSymbol readField() {
-        long flags = adjustFieldFlags(nextChar());
+        char rawFlags = nextChar();
+        long flags = adjustFieldFlags(rawFlags);
         Name name = poolReader.getName(nextChar());
         Type type = poolReader.getType(nextChar());
         VarSymbol v = new VarSymbol(flags, name, type, currentOwner);
         readMemberAttrs(v);
+        if (Integer.bitCount(rawFlags & (PUBLIC | PRIVATE | PROTECTED)) > 1 ||
+            Integer.bitCount(rawFlags & (FINAL | VOLATILE)) > 1)
+            throw badClassFile("illegal.flag.combo", Flags.toString((long)rawFlags), "field", v);
         return v;
     }
 
     /** Read a method.
      */
     MethodSymbol readMethod() {
-        long flags = adjustMethodFlags(nextChar());
+        char rawFlags = nextChar();
+        long flags = adjustMethodFlags(rawFlags);
         Name name = poolReader.getName(nextChar());
         Type type = poolReader.getType(nextChar());
         if (currentOwner.isInterface() &&
@@ -2259,6 +2651,8 @@ public class ClassReader {
         validateMethodType(name, m.type);
         setParameters(m, type);
 
+        if (Integer.bitCount(rawFlags & (PUBLIC | PRIVATE | PROTECTED)) > 1)
+            throw badClassFile("illegal.flag.combo", Flags.toString((long)rawFlags), "method", m);
         if ((flags & VARARGS) != 0) {
             final Type last = type.getParameterTypes().last();
             if (last == null || !last.hasTag(ARRAY)) {
@@ -2310,13 +2704,11 @@ public class ClassReader {
         final int excessSlots = 4;
         int expectedParameterSlots =
                 Code.width(sym.type.getParameterTypes()) + excessSlots;
-        if (parameterNameIndices == null
-                || parameterNameIndices.length < expectedParameterSlots) {
-            parameterNameIndices = new int[expectedParameterSlots];
+        if (parameterNameIndicesLvt == null
+                || parameterNameIndicesLvt.length < expectedParameterSlots) {
+            parameterNameIndicesLvt = new int[expectedParameterSlots];
         } else
-            Arrays.fill(parameterNameIndices, 0);
-        haveParameterNameIndices = false;
-        sawMethodParameters = false;
+            Arrays.fill(parameterNameIndicesLvt, 0);
     }
 
     /**
@@ -2331,46 +2723,47 @@ public class ClassReader {
      * anonymous synthetic parameters.
      */
     void setParameters(MethodSymbol sym, Type jvmType) {
-        // If we get parameter names from MethodParameters, then we
-        // don't need to skip.
-        int firstParam = 0;
-        if (!sawMethodParameters) {
-            firstParam = ((sym.flags() & STATIC) == 0) ? 1 : 0;
-            // the code in readMethod may have skipped the first
-            // parameter when setting up the MethodType. If so, we
-            // make a corresponding allowance here for the position of
-            // the first parameter.  Note that this assumes the
-            // skipped parameter has a width of 1 -- i.e. it is not
-            // a double width type (long or double.)
-            if (sym.name == names.init && currentOwner.hasOuterInstance()) {
-                // Sometimes anonymous classes don't have an outer
-                // instance, however, there is no reliable way to tell so
-                // we never strip this$n
-                if (!currentOwner.name.isEmpty())
-                    firstParam += 1;
-            }
+        int firstParamLvt = ((sym.flags() & STATIC) == 0) ? 1 : 0;
+        // the code in readMethod may have skipped the first
+        // parameter when setting up the MethodType. If so, we
+        // make a corresponding allowance here for the position of
+        // the first parameter.  Note that this assumes the
+        // skipped parameter has a width of 1 -- i.e. it is not
+        // a double width type (long or double.)
+        if (sym.name == names.init && currentOwner.hasOuterInstance()) {
+            // Sometimes anonymous classes don't have an outer
+            // instance, however, there is no reliable way to tell so
+            // we never strip this$n
+            if (!currentOwner.name.isEmpty())
+                firstParamLvt += 1;
+        }
 
-            if (sym.type != jvmType) {
-                // reading the method attributes has caused the
-                // symbol's type to be changed. (i.e. the Signature
-                // attribute.)  This may happen if there are hidden
-                // (synthetic) parameters in the descriptor, but not
-                // in the Signature.  The position of these hidden
-                // parameters is unspecified; for now, assume they are
-                // at the beginning, and so skip over them. The
-                // primary case for this is two hidden parameters
-                // passed into Enum constructors.
-                int skip = Code.width(jvmType.getParameterTypes())
-                        - Code.width(sym.type.getParameterTypes());
-                firstParam += skip;
-            }
+        if (sym.type != jvmType) {
+            // reading the method attributes has caused the
+            // symbol's type to be changed. (i.e. the Signature
+            // attribute.)  This may happen if there are hidden
+            // (synthetic) parameters in the descriptor, but not
+            // in the Signature.  The position of these hidden
+            // parameters is unspecified; for now, assume they are
+            // at the beginning, and so skip over them. The
+            // primary case for this is two hidden parameters
+            // passed into Enum constructors.
+            int skip = Code.width(jvmType.getParameterTypes())
+                    - Code.width(sym.type.getParameterTypes());
+            firstParamLvt += skip;
         }
         Set<Name> paramNames = new HashSet<>();
         ListBuffer<VarSymbol> params = new ListBuffer<>();
-        int nameIndex = firstParam;
+        // we maintain two index pointers, one for the LocalVariableTable attribute
+        // and the other for the MethodParameters attribute.
+        // This is needed as the MethodParameters attribute may contain
+        // name_index = 0 in which case we want to fall back to the LocalVariableTable.
+        // In such case, we still want to read the flags from the MethodParameters with that index.
+        int nameIndexLvt = firstParamLvt;
+        int nameIndexMp = 0;
         int annotationIndex = 0;
         for (Type t: sym.type.getParameterTypes()) {
-            VarSymbol param = parameter(nameIndex, t, sym, paramNames);
+            VarSymbol param = parameter(nameIndexMp, nameIndexLvt, t, sym, paramNames);
             params.append(param);
             if (parameterAnnotations != null) {
                 ParameterAnnotations annotations = parameterAnnotations[annotationIndex];
@@ -2379,7 +2772,8 @@ public class ClassReader {
                     annotate.normal(new AnnotationCompleter(param, annotations.proxies));
                 }
             }
-            nameIndex += sawMethodParameters ? 1 : Code.width(t);
+            nameIndexLvt += Code.width(t);
+            nameIndexMp++;
             annotationIndex++;
         }
         if (parameterAnnotations != null && parameterAnnotations.length != annotationIndex) {
@@ -2388,24 +2782,34 @@ public class ClassReader {
         Assert.checkNull(sym.params);
         sym.params = params.toList();
         parameterAnnotations = null;
-        parameterNameIndices = null;
+        parameterNameIndicesLvt = null;
+        parameterNameIndicesMp = null;
         parameterAccessFlags = null;
     }
 
-
-    // Returns the name for the parameter at position 'index', either using
-    // names read from the MethodParameters, or by synthesizing a name that
-    // is not on the 'exclude' list.
-    private VarSymbol parameter(int index, Type t, MethodSymbol owner, Set<Name> exclude) {
+    /**
+     * Creates the parameter at the position {@code mpIndex} in the parameter list of the owning method.
+     * Flags are optionally read from the MethodParameters attribute.
+     * Names are optionally read from the MethodParameters attribute. If the constant pool index
+     * of the name is 0, then the name is optionally read from the LocalVariableTable attribute.
+     * @param mpIndex the index of the parameter in the MethodParameters attribute
+     * @param lvtIndex the index of the parameter in the LocalVariableTable attribute
+     */
+    private VarSymbol parameter(int mpIndex, int lvtIndex, Type t, MethodSymbol owner, Set<Name> exclude) {
         long flags = PARAMETER;
         Name argName;
-        if (parameterAccessFlags != null && index < parameterAccessFlags.length
-                && parameterAccessFlags[index] != 0) {
-            flags |= parameterAccessFlags[index];
+        if (parameterAccessFlags != null && mpIndex < parameterAccessFlags.length
+                && parameterAccessFlags[mpIndex] != 0) {
+            flags |= parameterAccessFlags[mpIndex];
         }
-        if (parameterNameIndices != null && index < parameterNameIndices.length
-                && parameterNameIndices[index] != 0) {
-            argName = optPoolEntry(parameterNameIndices[index], poolReader::getName, names.empty);
+        if (parameterNameIndicesMp != null && mpIndex < parameterNameIndicesMp.length
+                // if name_index is 0, then we might still get a name from the LocalVariableTable
+                && parameterNameIndicesMp[mpIndex] != 0) {
+            argName = optPoolEntry(parameterNameIndicesMp[mpIndex], poolReader::getName, names.empty);
+            flags |= NAME_FILLED;
+        } else if (parameterNameIndicesLvt != null && lvtIndex < parameterNameIndicesLvt.length
+                && parameterNameIndicesLvt[lvtIndex] != 0) {
+            argName = optPoolEntry(parameterNameIndicesLvt[lvtIndex], poolReader::getName, names.empty);
             flags |= NAME_FILLED;
         } else {
             String prefix = "arg";
@@ -2526,7 +2930,7 @@ public class ClassReader {
         for (int i = 0; i < methodCount; i++) skipMember();
         readClassAttrs(c);
 
-        if (c.permitted != null && !c.permitted.isEmpty()) {
+        if (!c.getPermittedSubclasses().isEmpty()) {
             c.flags_field |= SEALED;
         }
 
@@ -2591,7 +2995,7 @@ public class ClassReader {
                     if (member.erasure_field != null)
                         ((ClassType)member.erasure_field).setEnclosingType(types.erasure(outer.type));
                 }
-                if (c == outer) {
+                if (c == outer && member.owner == c) {
                     member.flags_field = flags;
                     enterMember(c, member);
                 }
@@ -2626,6 +3030,7 @@ public class ClassReader {
                                    Integer.toString(maxMajor),
                                    Integer.toString(maxMinor));
         }
+        utf8validation = majorVersion < V48.major ? Convert.Validation.PREJDK14 : Convert.Validation.STRICT;
 
         if (previewClassFile) {
             if (!preview.isEnabled()) {
@@ -2654,7 +3059,9 @@ public class ClassReader {
         try {
             bp = 0;
             buf.reset();
-            buf.appendStream(c.classfile.openInputStream());
+            try (InputStream input = c.classfile.openInputStream()) {
+                buf.appendStream(input);
+            }
             readClassBuffer(c);
             if (!missingTypeVariables.isEmpty() && !foundTypeVariables.isEmpty()) {
                 List<Type> missing = missingTypeVariables;
@@ -2893,18 +3300,13 @@ public class ClassReader {
         private final Name name;
 
         public ProxyType(int index) {
-            super(syms.noSymbol, TypeMetadata.EMPTY);
+            super(syms.noSymbol, List.nil());
             this.name = poolReader.getName(index);
         }
 
         @Override
         public TypeTag getTag() {
             return TypeTag.NONE;
-        }
-
-        @Override
-        public Type cloneWithMetadata(TypeMetadata metadata) {
-            throw new UnsupportedOperationException();
         }
 
         public Type resolve() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,14 @@
 
 package sun.nio.fs;
 
-import java.nio.file.*;
 import java.io.IOException;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.CopyOption;
+import java.nio.file.DirectoryNotEmptyException;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.LinkOption;
+import java.nio.file.LinkPermission;
+import java.nio.file.StandardCopyOption;
 import java.util.concurrent.ExecutionException;
 
 import static sun.nio.fs.WindowsNativeDispatcher.*;
@@ -37,6 +43,9 @@ import static sun.nio.fs.WindowsConstants.*;
  */
 
 class WindowsFileCopy {
+    // file size above which copying uses unbuffered I/O
+    private static final long UNBUFFERED_IO_THRESHOLD = 314572800; // 300 MiB
+
     private WindowsFileCopy() {
     }
 
@@ -72,7 +81,7 @@ class WindowsFileCopy {
             }
             if (option == null)
                 throw new NullPointerException();
-            throw new UnsupportedOperationException("Unsupported copy option");
+            throw new UnsupportedOperationException("Unsupported copy option: " + option);
         }
 
         // check permissions. If the source file is a symbolic link then
@@ -174,7 +183,9 @@ class WindowsFileCopy {
 
         // Use CopyFileEx if the file is not a directory or junction
         if (!sourceAttrs.isDirectory() && !sourceAttrs.isDirectoryLink()) {
-            final int flags = (!followLinks) ? COPY_FILE_COPY_SYMLINK : 0;
+            boolean isBuffering = sourceAttrs.size() <= UNBUFFERED_IO_THRESHOLD;
+            final int flags = (followLinks ? 0 : COPY_FILE_COPY_SYMLINK) |
+                              (isBuffering ? 0 : COPY_FILE_NO_BUFFERING);
 
             if (interruptible) {
                 // interruptible copy
@@ -227,9 +238,9 @@ class WindowsFileCopy {
             } else {
                 String linkTarget = WindowsLinkSupport.readLink(source);
                 int flags = SYMBOLIC_LINK_FLAG_DIRECTORY;
-                CreateSymbolicLink(targetPath,
-                                   WindowsPath.addPrefixIfNeeded(linkTarget),
-                                   flags);
+                WindowsLinkSupport.createSymbolicLink(targetPath,
+                                                      WindowsPath.addPrefixIfNeeded(linkTarget),
+                                                      flags);
             }
         } catch (WindowsException x) {
             x.rethrowAsIOException(target);
@@ -290,7 +301,7 @@ class WindowsFileCopy {
                 continue;
             }
             if (option == null) throw new NullPointerException();
-            throw new UnsupportedOperationException("Unsupported copy option");
+            throw new UnsupportedOperationException("Unsupported option: " + option);
         }
 
         @SuppressWarnings("removal")
@@ -430,9 +441,9 @@ class WindowsFileCopy {
                 CreateDirectory(targetPath, 0L);
             } else {
                 String linkTarget = WindowsLinkSupport.readLink(source);
-                CreateSymbolicLink(targetPath,
-                                   WindowsPath.addPrefixIfNeeded(linkTarget),
-                                   SYMBOLIC_LINK_FLAG_DIRECTORY);
+                WindowsLinkSupport.createSymbolicLink(targetPath,
+                                                      WindowsPath.addPrefixIfNeeded(linkTarget),
+                                                      SYMBOLIC_LINK_FLAG_DIRECTORY);
             }
         } catch (WindowsException x) {
             x.rethrowAsIOException(target);
@@ -503,17 +514,12 @@ class WindowsFileCopy {
         try {
             int request = (DACL_SECURITY_INFORMATION |
                 OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION);
-            NativeBuffer buffer =
-                WindowsAclFileAttributeView.getFileSecurity(path, request);
-            try {
-                try {
-                    SetFileSecurity(target.getPathForWin32Calls(), request,
+            try (NativeBuffer buffer =
+                 WindowsAclFileAttributeView.getFileSecurity(path, request)) {
+                SetFileSecurity(target.getPathForWin32Calls(), request,
                         buffer.address());
-                } catch (WindowsException x) {
-                    x.rethrowAsIOException(target);
-                }
-            } finally {
-                buffer.release();
+            } catch (WindowsException x) {
+                x.rethrowAsIOException(target);
             }
         } finally {
             priv.drop();

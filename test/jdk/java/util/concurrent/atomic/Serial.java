@@ -64,8 +64,8 @@ public class Serial {
     }
 
     static void testDoubleAccumulator() {
-        DoubleBinaryOperator plus = (DoubleBinaryOperator & Serializable) (x, y) -> x + y;
-        DoubleAccumulator a = new DoubleAccumulator(plus, 13.9d);
+        DoubleBinaryOperator op = (DoubleBinaryOperator & Serializable) (x, y) -> Math.max(x, y);
+        DoubleAccumulator a = new DoubleAccumulator(op, Double.NEGATIVE_INFINITY);
         a.accumulate(17.5d);
         DoubleAccumulator result = echo(a);
         if (result.get() != a.get())
@@ -89,8 +89,8 @@ public class Serial {
     }
 
     static void testLongAccumulator() {
-        LongBinaryOperator plus = (LongBinaryOperator & Serializable) (x, y) -> x + y;
-        LongAccumulator a = new LongAccumulator(plus, -2);
+        LongBinaryOperator op = (LongBinaryOperator & Serializable) (x, y) -> Math.max(x, y);
+        LongAccumulator a = new LongAccumulator(op, Long.MIN_VALUE);
         a.accumulate(34);
         LongAccumulator result = echo(a);
         if (result.get() != a.get())

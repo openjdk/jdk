@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import java.util.Optional;
 public class TestLangProperties extends SnippetTester {
 
     public static void main(String... args) throws Exception {
-        new TestLangProperties().runTests(m -> new Object[]{Paths.get(m.getName())});
+        new TestLangProperties().runTests();
     }
 
     @Test

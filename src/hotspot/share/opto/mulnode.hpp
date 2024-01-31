@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ class PhaseTransform;
 class MulNode : public Node {
   virtual uint hash() const;
 public:
-  MulNode(Node *in1, Node *in2): Node(NULL,in1,in2) {
+  MulNode(Node *in1, Node *in2): Node(nullptr,in1,in2) {
     init_class_id(Class_Mul);
   }
 
@@ -95,6 +95,7 @@ public:
   virtual int Opcode() const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type *mul_ring( const Type *, const Type * ) const;
+  static bool does_overflow(const TypeInt* type_left, const TypeInt* type_right);
   const Type *mul_id() const { return TypeInt::ONE; }
   const Type *add_id() const { return TypeInt::ZERO; }
   int add_opcode() const { return Op_AddI; }
@@ -130,6 +131,7 @@ class MulFNode : public MulNode {
 public:
   MulFNode( Node *in1, Node *in2 ) : MulNode(in1,in2) {}
   virtual int Opcode() const;
+  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type *mul_ring( const Type *, const Type * ) const;
   const Type *mul_id() const { return TypeF::ONE; }
   const Type *add_id() const { return TypeF::ZERO; }
@@ -147,6 +149,7 @@ class MulDNode : public MulNode {
 public:
   MulDNode( Node *in1, Node *in2 ) : MulNode(in1,in2) {}
   virtual int Opcode() const;
+  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type *mul_ring( const Type *, const Type * ) const;
   const Type *mul_id() const { return TypeD::ONE; }
   const Type *add_id() const { return TypeD::ZERO; }
@@ -225,7 +228,7 @@ public:
 
 class LShiftNode : public Node {
 public:
-  LShiftNode(Node *in1, Node *in2) : Node(NULL,in1,in2) {
+  LShiftNode(Node *in1, Node *in2) : Node(nullptr,in1,in2) {
     init_class_id(Class_LShift);
   }
 
@@ -355,24 +358,34 @@ public:
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 
+//------------------------------FmaNode--------------------------------------
+// fused-multiply-add
+class FmaNode : public Node {
+public:
+  FmaNode(Node* c, Node* in1, Node* in2, Node* in3) : Node(c, in1, in2, in3) {
+    assert(UseFMA, "Needs FMA instructions support.");
+  }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+};
+
 //------------------------------FmaDNode--------------------------------------
 // fused-multiply-add double
-class FmaDNode : public Node {
+class FmaDNode : public FmaNode {
 public:
-  FmaDNode(Node *c, Node *in1, Node *in2, Node *in3) : Node(c, in1, in2, in3) {}
+  FmaDNode(Node* c, Node* in1, Node* in2, Node* in3) : FmaNode(c, in1, in2, in3) {}
   virtual int Opcode() const;
-  const Type *bottom_type() const { return Type::DOUBLE; }
+  const Type* bottom_type() const { return Type::DOUBLE; }
   virtual uint ideal_reg() const { return Op_RegD; }
   virtual const Type* Value(PhaseGVN* phase) const;
 };
 
 //------------------------------FmaFNode--------------------------------------
 // fused-multiply-add float
-class FmaFNode : public Node {
+class FmaFNode : public FmaNode {
 public:
-  FmaFNode(Node *c, Node *in1, Node *in2, Node *in3) : Node(c, in1, in2, in3) {}
+  FmaFNode(Node* c, Node* in1, Node* in2, Node* in3) : FmaNode(c, in1, in2, in3) {}
   virtual int Opcode() const;
-  const Type *bottom_type() const { return Type::FLOAT; }
+  const Type* bottom_type() const { return Type::FLOAT; }
   virtual uint ideal_reg() const { return Op_RegF; }
   virtual const Type* Value(PhaseGVN* phase) const;
 };

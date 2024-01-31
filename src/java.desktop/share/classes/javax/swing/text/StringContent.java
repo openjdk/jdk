@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -336,7 +336,7 @@ public final class StringContent implements AbstractDocument.Content, Serializab
     /**
      * This really wants to be a weak reference but
      * in 1.1 we don't have a 100% pure solution for
-     * this... so this class trys to hack a solution
+     * this... so this class tries to hack a solution
      * to causing the marks to be collected.
      */
     final class StickyPosition implements Position {
@@ -382,7 +382,7 @@ public final class StringContent implements AbstractDocument.Content, Serializab
             rec.offset = undoLocation;
         }
 
-        /** Location to reset to when resetLocatino is invoked. */
+        /** Location to reset to when resetLocation is invoked. */
         protected int undoLocation;
         /** Position to reset offset. */
         protected PosRec rec;

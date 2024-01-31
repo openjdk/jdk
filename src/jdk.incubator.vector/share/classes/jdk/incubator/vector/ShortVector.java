@@ -57,7 +57,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
 
     static final int FORBID_OPCODE_KIND = VO_ONLYFP;
 
-    static final ValueLayout.OfShort ELEMENT_LAYOUT = ValueLayout.JAVA_SHORT.withBitAlignment(8);
+    static final ValueLayout.OfShort ELEMENT_LAYOUT = ValueLayout.JAVA_SHORT.withByteAlignment(1);
 
     @ForceInline
     static int opCode(Operator op) {
@@ -759,11 +759,9 @@ public abstract class ShortVector extends AbstractVector<Short> {
 
         if (opKind(op, VO_SPECIAL  | VO_SHIFT)) {
             if (op == FIRST_NONZERO) {
-                // FIXME: Support this in the JIT.
-                VectorMask<Short> thisNZ
-                    = this.viewAsIntegralLanes().compare(NE, (short) 0);
-                that = that.blend((short) 0, thisNZ.cast(vspecies()));
-                op = OR_UNCHECKED;
+                VectorMask<Short> mask
+                    = this.compare(EQ, (short) 0);
+                return this.blend(that, mask);
             }
             if (opKind(op, VO_SHIFT)) {
                 // As per shift specification for Java, mask the shift count.
@@ -809,11 +807,9 @@ public abstract class ShortVector extends AbstractVector<Short> {
 
         if (opKind(op, VO_SPECIAL  | VO_SHIFT)) {
             if (op == FIRST_NONZERO) {
-                // FIXME: Support this in the JIT.
-                VectorMask<Short> thisNZ
-                    = this.viewAsIntegralLanes().compare(NE, (short) 0);
-                that = that.blend((short) 0, thisNZ.cast(vspecies()));
-                op = OR_UNCHECKED;
+                VectorMask<Short> mask
+                    = this.compare(EQ, (short) 0, m);
+                return this.blend(that, mask);
             }
             if (opKind(op, VO_SHIFT)) {
                 // As per shift specification for Java, mask the shift count.
@@ -2850,7 +2846,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
      *
      * @param i the lane index
      * @return the lane element at lane index {@code i}
-     * @throws IllegalArgumentException if the index is is out of range
+     * @throws IllegalArgumentException if the index is out of range
      * ({@code < 0 || >= length()})
      */
     public abstract short lane(int i);
@@ -2868,7 +2864,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
      * @param e the value to be placed
      * @return the result of replacing the lane element of this vector at lane
      * index {@code i} with value {@code e}.
-     * @throws IllegalArgumentException if the index is is out of range
+     * @throws IllegalArgumentException if the index is out of range
      * ({@code < 0 || >= length()})
      */
     public abstract ShortVector withLane(int i, short e);
@@ -3279,8 +3275,6 @@ public abstract class ShortVector extends AbstractVector<Short> {
      *         if {@code offset+N*2 < 0}
      *         or {@code offset+N*2 >= ms.byteSize()}
      *         for any lane {@code N} in the vector
-     * @throws IllegalArgumentException if the memory segment is a heap segment that is
-     *         not backed by a {@code byte[]} array.
      * @throws IllegalStateException if the memory segment's session is not alive,
      *         or if access occurs from a thread other than the thread owning the session.
      * @since 19
@@ -3312,7 +3306,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
      * short[] ar = new short[species.length()];
      * for (int n = 0; n < ar.length; n++) {
      *     if (m.laneIsSet(n)) {
-     *         ar[n] = slice.getAtIndex(ValuaLayout.JAVA_SHORT.withBitAlignment(8), n);
+     *         ar[n] = slice.getAtIndex(ValuaLayout.JAVA_SHORT.withByteAlignment(1), n);
      *     }
      * }
      * ShortVector r = ShortVector.fromArray(species, ar, 0);
@@ -3336,8 +3330,6 @@ public abstract class ShortVector extends AbstractVector<Short> {
      *         or {@code offset+N*2 >= ms.byteSize()}
      *         for any lane {@code N} in the vector
      *         where the mask is set
-     * @throws IllegalArgumentException if the memory segment is a heap segment that is
-     *         not backed by a {@code byte[]} array.
      * @throws IllegalStateException if the memory segment's session is not alive,
      *         or if access occurs from a thread other than the thread owning the session.
      * @since 19
@@ -3380,7 +3372,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         ShortSpecies vsp = vspecies();
         VectorSupport.store(
             vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
-            a, arrayAddress(a, offset),
+            a, arrayAddress(a, offset), false,
             this,
             a, offset,
             (arr, off, v)
@@ -3528,7 +3520,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         ShortSpecies vsp = vspecies();
         VectorSupport.store(
             vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
-            a, charArrayAddress(a, offset),
+            a, charArrayAddress(a, offset), false,
             this,
             a, offset,
             (arr, off, v)
@@ -3731,7 +3723,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         ShortSpecies vsp = vspecies();
         return VectorSupport.load(
             vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
-            a, arrayAddress(a, offset),
+            a, arrayAddress(a, offset), false,
             a, offset, vsp,
             (arr, off, s) -> s.ldOp(arr, (int) off,
                                     (arr_, off_, i) -> arr_[off_ + i]));
@@ -3748,7 +3740,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         ShortSpecies vsp = vspecies();
         return VectorSupport.loadMasked(
             vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-            a, arrayAddress(a, offset), m, offsetInRange,
+            a, arrayAddress(a, offset), false, m, offsetInRange,
             a, offset, vsp,
             (arr, off, s, vm) -> s.ldOp(arr, (int) off, vm,
                                         (arr_, off_, i) -> arr_[off_ + i]));
@@ -3764,7 +3756,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         ShortSpecies vsp = vspecies();
         return VectorSupport.load(
             vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
-            a, charArrayAddress(a, offset),
+            a, charArrayAddress(a, offset), false,
             a, offset, vsp,
             (arr, off, s) -> s.ldOp(arr, (int) off,
                                     (arr_, off_, i) -> (short) arr_[off_ + i]));
@@ -3781,7 +3773,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         ShortSpecies vsp = vspecies();
         return VectorSupport.loadMasked(
                 vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-                a, charArrayAddress(a, offset), m, offsetInRange,
+                a, charArrayAddress(a, offset), false, m, offsetInRange,
                 a, offset, vsp,
                 (arr, off, s, vm) -> s.ldOp(arr, (int) off, vm,
                                             (arr_, off_, i) -> (short) arr_[off_ + i]));
@@ -3830,7 +3822,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         ShortSpecies vsp = vspecies();
         VectorSupport.store(
             vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
-            a, arrayAddress(a, offset),
+            a, arrayAddress(a, offset), false,
             this, a, offset,
             (arr, off, v)
             -> v.stOp(arr, (int) off,
@@ -3847,7 +3839,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         ShortSpecies vsp = vspecies();
         VectorSupport.storeMasked(
             vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-            a, arrayAddress(a, offset),
+            a, arrayAddress(a, offset), false,
             this, m, a, offset,
             (arr, off, v, vm)
             -> v.stOp(arr, (int) off, vm,
@@ -3897,7 +3889,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         ShortSpecies vsp = vspecies();
         VectorSupport.storeMasked(
             vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-            a, charArrayAddress(a, offset),
+            a, charArrayAddress(a, offset), false,
             this, m, a, offset,
             (arr, off, v, vm)
             -> v.stOp(arr, (int) off, vm,

@@ -14,30 +14,30 @@ define zpo
     set $obj = (oopDesc*)($arg0)
 
     printf "Oop:   0x%016llx\tState: ", (uintptr_t)$obj
-    if ((uintptr_t)$obj & (uintptr_t)ZAddressGoodMask)
+    if ((uintptr_t)$obj & (uintptr_t)ZPointerStoreGoodMask)
         printf "Good "
-        if ((uintptr_t)$obj & (uintptr_t)ZAddressMetadataRemapped)
+        if ((uintptr_t)$obj & (uintptr_t)ZPointerRemapped)
             printf "(Remapped)"
         else
-            if ((uintptr_t)$obj & (uintptr_t)ZAddressMetadataMarked)
-                printf "(Marked)"
+            if ((uintptr_t)$obj & (uintptr_t)ZPointerMarkedOld)
+                printf "(MarkedOld)"
             else
                 printf "(Unknown)"
             end
         end
     else
         printf "Bad "
-        if ((uintptr_t)ZAddressGoodMask & (uintptr_t)ZAddressMetadataMarked)
+        if ((uintptr_t)ZPointerStoreGoodMask & (uintptr_t)ZPointerMarkedOld)
             # Should be marked
-            if ((uintptr_t)$obj & (uintptr_t)ZAddressMetadataRemapped)
+            if ((uintptr_t)$obj & (uintptr_t)ZPointerRemapped)
                 printf "(Not Marked, Remapped)"
             else
                 printf "(Not Marked, Not Remapped)"
             end
         else
-            if ((uintptr_t)ZAddressGoodMask & (uintptr_t)ZAddressMetadataRemapped)
+            if ((uintptr_t)ZPointerStoreGoodMask & (uintptr_t)ZPointerRemapped)
                 # Should be remapped
-                if ((uintptr_t)$obj & (uintptr_t)ZAddressMetadataMarked)
+                if ((uintptr_t)$obj & (uintptr_t)ZPointerMarkedOld)
                     printf "(Marked, Not Remapped)"
                 else
                     printf "(Not Marked, Not Remapped)"
@@ -51,7 +51,7 @@ define zpo
     printf "\t Page: %llu\n", ((uintptr_t)$obj & ZAddressOffsetMask) >> ZGranuleSizeShift
     x/16gx $obj
     if (UseCompressedClassPointers)
-        set $klass = (Klass*)(void*)((uintptr_t)CompressedKlassPointers::_narrow_klass._base +((uintptr_t)$obj->_metadata->_compressed_klass << CompressedKlassPointers::_narrow_klass._shift))
+        set $klass = (Klass*)(void*)((uintptr_t)CompressedKlassPointers::_base +((uintptr_t)$obj->_metadata->_compressed_klass << CompressedKlassPointers::_shift))
     else
         set $klass = $obj->_metadata->_klass
     end
@@ -129,20 +129,99 @@ define zmarked
     end
 end
 
+# For some reason gdb doesn't like ZGeneration::ZPhase::Mark etc.
+# Use hard-coded values instead.
+define z_print_phase
+  if $arg0 == 0
+    printf "Mark"
+  else
+    if $arg0 == 1
+      printf "MarkComplete"
+    else
+      if $arg0 == 2
+        printf "Relocate"
+      else
+	printf "Unknown"
+      end
+    end
+  end
+end
+
+define z_print_generation
+  printf "%u", $arg0->_seqnum
+  printf "/"
+  z_print_phase $arg0->_phase
+end
+
+define zz
+  printf "Old: "
+  z_print_generation ZHeap::_heap->_old
+
+  printf " | "
+
+  printf "Young: "
+  z_print_generation ZHeap::_heap->_young
+
+  printf "\n"
+end
+
 # Print heap information
 define zph
     printf "Heap\n"
-    printf "     GlobalPhase:       %u\n", ZGlobalPhase
-    printf "     GlobalSeqNum:      %u\n", ZGlobalSeqNum
+    printf "     Young Phase:       %u\n", ZHeap::_heap->_young->_phase
+    printf "     Old Phase:         %u\n", ZHeap::_heap->_old->_phase
+    printf "     Young SeqNum:      %u\n", ZHeap::_heap->_young->_seqnum
+    printf "     Old SeqNum:        %u\n", ZHeap::_heap->_old->_seqnum
     printf "     Offset Max:        %-15llu (0x%llx)\n", ZAddressOffsetMax, ZAddressOffsetMax
     printf "     Page Size Small:   %-15llu (0x%llx)\n", ZPageSizeSmall, ZPageSizeSmall
     printf "     Page Size Medium:  %-15llu (0x%llx)\n", ZPageSizeMedium, ZPageSizeMedium
     printf "Metadata Bits\n"
-    printf "     Good:              0x%016llx\n", ZAddressGoodMask
-    printf "     Bad:               0x%016llx\n", ZAddressBadMask
-    printf "     WeakBad:           0x%016llx\n", ZAddressWeakBadMask
-    printf "     Marked:            0x%016llx\n", ZAddressMetadataMarked
-    printf "     Remapped:          0x%016llx\n", ZAddressMetadataRemapped
+    printf "     Good:              0x%016llx\n", ZPointerStoreGoodMask
+    printf "     Bad:               0x%016llx\n", ZPointerStoreBadMask
+    printf "     MarkedYoung:       0x%016llx\n", ZPointerMarkedYoung
+    printf "     MarkedOld:         0x%016llx\n", ZPointerMarkedOld
+    printf "     Remapped:          0x%016llx\n", ZPointerRemapped
+end
+
+define print_bits
+  set $value=$arg0
+  set $bits=$arg1
+
+  set $bit=0
+    while ($bit < $bits)
+	set $bit_pos = (1ull << ($bits - 1 - $bit))
+	printf "%d", ($arg0 & $bit_pos) != 0
+  	set $bit = $bit + 1
+  end
+
+  printf " <%lX>", $value
+end
+
+define print_bits8
+  print_bits $arg0 8
+end
+
+define print_s_bits8
+  printf $arg0
+  print_bits8 $arg1
+end
+
+# Print metadata information
+define zpm
+    printf          "Metadata Load Bits  "
+    print_s_bits8 "\n     Mask:          " ZPointerLoadMetadataMask
+    print_s_bits8 "\n     Good:          " ZPointerLoadGoodMask
+    print_s_bits8 "\n     Remapped:      " ZPointerRemapped
+    print_s_bits8 "\n     Bad:           " ZPointerLoadBadMask
+    printf        "\n                    "
+    printf        "\nMetadata Store Bits "
+    print_s_bits8 "\n     Mask:          " ZPointerStoreMetadataMask
+    print_s_bits8 "\n     Good:          " ZPointerStoreGoodMask
+    print_s_bits8 "\n     Bad:           " ZPointerStoreBadMask
+    print_s_bits8 "\n     MarkedYoung:   " ZPointerMarkedYoung
+    print_s_bits8 "\n     MarkedOld:     " ZPointerMarkedOld
+    print_s_bits8 "\n     Finalizable:   " ZPointerFinalizable
+    printf        "\n"
 end
 
 # End of file

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,6 +85,7 @@ public class Thread extends VMObject {
   public boolean   isWatcherThread()             { return false; }
   public boolean   isServiceThread()             { return false; }
   public boolean   isMonitorDeflationThread()    { return false; }
+  public boolean   isAttachListenerThread()      { return false; }
 
   /** Memory operations */
   public void oopsDo(AddressVisitor oopVisitor) {

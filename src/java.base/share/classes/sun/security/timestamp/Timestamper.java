@@ -48,5 +48,5 @@ public interface Timestamper {
      * @throws IOException The exception is thrown if a problem occurs while
      *         communicating with the TSA.
      */
-    public TSResponse generateTimestamp(TSRequest tsQuery) throws IOException;
+    TSResponse generateTimestamp(TSRequest tsQuery) throws IOException;
 }

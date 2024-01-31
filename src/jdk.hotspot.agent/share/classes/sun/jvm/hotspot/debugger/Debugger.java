@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,7 +132,4 @@ public interface Debugger extends SymbolLookup, ThreadAccess {
 
   public ReadResult readBytesFromProcess(long address, long numBytes)
     throws DebuggerException;
-
-  public void writeBytesToProcess(long address, long numBytes, byte[] data)
-    throws UnmappedAddressException, DebuggerException;
 }

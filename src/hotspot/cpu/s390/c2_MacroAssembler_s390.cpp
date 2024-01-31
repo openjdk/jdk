@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1016,7 +1016,7 @@ unsigned int C2_MacroAssembler::array_equals(bool is_array_equ, Register ary1, R
       // Return true if the same array.
       compareU64_and_branch(ary1, ary2, Assembler::bcondEqual, Ldone_true);
 
-      // Return false if one of them is NULL.
+      // Return false if one of them is null.
       compareU64_and_branch(ary1, (intptr_t)0, Assembler::bcondEqual, Ldone_false);
       compareU64_and_branch(ary2, (intptr_t)0, Assembler::bcondEqual, Ldone_false);
 

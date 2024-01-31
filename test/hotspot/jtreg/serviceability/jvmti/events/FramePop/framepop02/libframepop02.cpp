@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ typedef struct thr {
   item_t tos;
 } thr;
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiEventCallbacks callbacks;
 static jrawMonitorID event_lock;
 static jboolean printdump = JNI_TRUE;
@@ -57,7 +57,7 @@ static int thr_count = 0;
 static int max_depth = 0;
 static thr threads[MAX_THREADS];
 
-static volatile int callbacksEnabled = NSK_FALSE;
+static volatile int callbacksEnabled = JNI_FALSE;
 static jrawMonitorID agent_lock;
 
 void print_current_time() {
@@ -69,11 +69,15 @@ void print_current_time() {
 }
 
 static
-int isTestThread(JNIEnv *jni, jvmtiEnv *jvmti, jthread thr) {
+bool isTestThread(JNIEnv *jni, jvmtiEnv *jvmti, jthread thr) {
   jvmtiThreadInfo inf;
   const char* TEST_THREAD_NAME_BASE = "Test Thread";
   check_jvmti_status(jni, jvmti->GetThreadInfo(thr, &inf), "Error in GetThreadInfo.");
-  return strncmp(inf.name, TEST_THREAD_NAME_BASE, strlen(TEST_THREAD_NAME_BASE)) == 0;
+
+  bool result = strncmp(inf.name, TEST_THREAD_NAME_BASE, strlen(TEST_THREAD_NAME_BASE)) == 0;
+  jvmti->Deallocate((unsigned char *)inf.name);
+
+  return result;
 }
 
 static
@@ -112,7 +116,7 @@ void pop(jvmtiEnv *jvmti, JNIEnv *jni, jthread thr, jmethodID method, int depth)
     fatal(jni, "Unknown thread:\n");
   }
 
-  if (threads[i].tos == NULL) {
+  if (threads[i].tos == nullptr) {
     watch_events = JNI_FALSE;
     printInfo(jni, jvmti, thr, method, depth);
     fatal(jni, "Stack underflow:\n");
@@ -127,7 +131,7 @@ void pop(jvmtiEnv *jvmti, JNIEnv *jni, jthread thr, jmethodID method, int depth)
       return;
     }
     free(old);
-  } while (threads[i].tos != NULL);
+  } while (threads[i].tos != nullptr);
 
   watch_events = JNI_FALSE;
   printInfo(jni, jvmti, thr, method, depth);
@@ -151,11 +155,11 @@ void push(JNIEnv *jni, jthread thr, jmethodID method, int depth) {
       fatal(jni, "Out of threads\n");
     }
     threads[i].thread = jni->NewGlobalRef(thr);
-    threads[i].tos = NULL;
+    threads[i].tos = nullptr;
   }
 
   new_item = (item_t)malloc(sizeof(item));
-  if (new_item == NULL) {
+  if (new_item == nullptr) {
     fatal(jni, "Out of memory\n");
   }
 
@@ -174,6 +178,10 @@ void JNICALL MethodEntry(jvmtiEnv *jvmti, JNIEnv *jni,
 
   if (watch_events == JNI_FALSE) return;
 
+  if (!isTestThread(jni, jvmti, thr)) {
+    return; // not a tested thread
+  }
+
   RawMonitorLocker rml(jvmti, jni, agent_lock);
 
   if (!callbacksEnabled) {
@@ -183,7 +191,7 @@ void JNICALL MethodEntry(jvmtiEnv *jvmti, JNIEnv *jni,
   check_jvmti_status(jni, jvmti->GetFrameCount(thr, &frameCount), "Error in GetFrameCount");
   check_jvmti_status(jni, jvmti->IsMethodNative(method, &isNative), "Error in IsMethodNative.");
 
-  if (isTestThread(jni, jvmti, thr)) {
+  {
     if (printdump == JNI_TRUE) {
       print_current_time();
       fflush(0);
@@ -200,13 +208,13 @@ void JNICALL MethodEntry(jvmtiEnv *jvmti, JNIEnv *jni,
 
 void JNICALL VMStart(jvmtiEnv *jvmti, JNIEnv* jni) {
   RawMonitorLocker rml(jvmti, jni, agent_lock);
-  callbacksEnabled = NSK_TRUE;
+  callbacksEnabled = JNI_TRUE;
 }
 
 
 void JNICALL VMDeath(jvmtiEnv *jvmti, JNIEnv* jni) {
   RawMonitorLocker rml(jvmti, jni, agent_lock);
-  callbacksEnabled = NSK_FALSE;
+  callbacksEnabled = JNI_FALSE;
 }
 
 void JNICALL FramePop(jvmtiEnv *jvmti, JNIEnv *jni,
@@ -220,7 +228,7 @@ void JNICALL FramePop(jvmtiEnv *jvmti, JNIEnv *jni,
   }
   check_jvmti_status(jni, jvmti->GetFrameCount(thr, &frameCount), "Error in GetFrameCount.");
 
-  if (isTestThread(jni, jvmti, thr)) {
+  {
     if (printdump == JNI_TRUE) {
       print_current_time();
       fflush(0);
@@ -238,7 +246,7 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jvmtiError err;
 
   jint res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     LOG("Wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }
@@ -272,11 +280,11 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
     LOG("(SetEventCallbacks) unexpected error: %s (%d)\n", TranslateError(err), err);
     return JNI_ERR;
   }
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_START, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_START, nullptr);
   if (err != JVMTI_ERROR_NONE) {
     return JNI_ERR;
   }
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, nullptr);
   if (err != JVMTI_ERROR_NONE) {
     return JNI_ERR;
   }
@@ -287,18 +295,18 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
 }
 
 JNIEXPORT void JNICALL Java_framepop02_getReady(JNIEnv *jni, jclass cls) {
-  check_jvmti_status(jni, jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_METHOD_ENTRY, NULL),
+  check_jvmti_status(jni, jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_METHOD_ENTRY, nullptr),
                      "Error in SetEventNotificationMode");
-  check_jvmti_status(jni, jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_FRAME_POP, NULL),
+  check_jvmti_status(jni, jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_FRAME_POP, nullptr),
                      "Error in SetEventNotificationMode");
   watch_events = JNI_TRUE;
 }
 
 JNIEXPORT void JNICALL Java_framepop02_check(JNIEnv *jni, jclass cls) {
   watch_events = JNI_FALSE;
-  check_jvmti_status(jni, jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_FRAME_POP, NULL),
+  check_jvmti_status(jni, jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_FRAME_POP, nullptr),
                      "Error in SetEventNotificationMode");
-  check_jvmti_status(jni, jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_METHOD_ENTRY, NULL),
+  check_jvmti_status(jni, jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_METHOD_ENTRY, nullptr),
                      "Error in SetEventNotificationMode");
 
   if (printdump == JNI_TRUE) {

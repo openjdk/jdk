@@ -25,7 +25,7 @@
  * @bug 4287596
  * @summary Unit test for "Pluggable Connectors and Transports" feature.
  *
- * When a transport service is deployed the virtual machine machine
+ * When a transport service is deployed the virtual machine
  * is required to create an AttachingConnector and ListeningConnector
  * to encapsulate the transport. This tests that the connectors are
  * created and that they have an "address" argument.

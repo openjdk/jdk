@@ -25,9 +25,11 @@
 #ifndef SHARE_PRIMS_METHODCOMPARATOR_HPP
 #define SHARE_PRIMS_METHODCOMPARATOR_HPP
 
-#include "interpreter/bytecodeStream.hpp"
-#include "oops/constantPool.hpp"
-#include "oops/method.hpp"
+#include "interpreter/bytecodes.hpp"
+
+class BytecodeStream;
+class ConstantPool;
+class Method;
 
 // methodComparator provides an interface for determining if methods of
 // different versions of classes are equivalent or switchable

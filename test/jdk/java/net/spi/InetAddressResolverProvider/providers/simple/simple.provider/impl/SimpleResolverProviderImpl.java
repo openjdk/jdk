@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.net.spi.InetAddressResolverProvider;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
@@ -41,6 +42,8 @@ public class SimpleResolverProviderImpl extends InetAddressResolverProvider {
     public static ResolutionRegistry registry = new ResolutionRegistry();
     private static List<LookupPolicy> LOOKUP_HISTORY = Collections.synchronizedList(new ArrayList<>());
     private static volatile long LAST_LOOKUP_TIMESTAMP;
+    private static volatile boolean unreachableServer;
+    private static volatile CountDownLatch blocker;
     private static Logger LOGGER = Logger.getLogger(SimpleResolverProviderImpl.class.getName());
 
     @Override
@@ -51,14 +54,27 @@ public class SimpleResolverProviderImpl extends InetAddressResolverProvider {
             public Stream<InetAddress> lookupByName(String host, LookupPolicy lookupPolicy) throws UnknownHostException {
                 LOGGER.info("Looking-up addresses for '" + host + "'. Lookup characteristics:" +
                         Integer.toString(lookupPolicy.characteristics(), 2));
+                if (blocker != null) {
+                    try {
+                        blocker.await();
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
                 LOOKUP_HISTORY.add(lookupPolicy);
                 LAST_LOOKUP_TIMESTAMP = System.nanoTime();
+                if (unreachableServer) {
+                    throw new UnknownHostException("unreachableServer");
+                }
                 return registry.lookupHost(host, lookupPolicy);
             }
 
             @Override
             public String lookupByAddress(byte[] addr) throws UnknownHostException {
                 LOGGER.info("Looking host name for the following address:" + ResolutionRegistry.addressBytesToString(addr));
+                if (unreachableServer) {
+                    throw new UnknownHostException("unreachableServer");
+                }
                 return registry.lookupAddress(addr);
             }
         };
@@ -71,6 +87,14 @@ public class SimpleResolverProviderImpl extends InetAddressResolverProvider {
 
     public static long getLastLookupTimestamp() {
         return LAST_LOOKUP_TIMESTAMP;
+    }
+
+    public static void setUnreachableServer(boolean unreachableServer) {
+        SimpleResolverProviderImpl.unreachableServer = unreachableServer;
+    }
+
+    public static void setBlocker(CountDownLatch blocker) {
+        SimpleResolverProviderImpl.blocker = blocker;
     }
 
     public static LookupPolicy lookupPolicyHistory(int position) {

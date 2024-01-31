@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,16 +48,19 @@ class JdbStopThreadidTestTarg {
 
     private static void test() {
         JdbStopThreadidTestTarg test = new JdbStopThreadidTestTarg();
-        MyThread myThread1 = test.new MyThread("MYTHREAD-1");
-        MyThread myThread2 = test.new MyThread("MYTHREAD-2");
-        MyThread myThread3 = test.new MyThread("MYTHREAD-3");
+        MyTask myTask1 = test.new MyTask();
+        MyTask myTask2 = test.new MyTask();
+        MyTask myTask3 = test.new MyTask();
+        Thread myThread1 = DebuggeeWrapper.newThread(myTask1, "MYTHREAD-1");
+        Thread myThread2 = DebuggeeWrapper.newThread(myTask2, "MYTHREAD-2");
+        Thread myThread3 = DebuggeeWrapper.newThread(myTask3, "MYTHREAD-3");
 
         synchronized (lockObj) {
             myThread1.start();
             myThread2.start();
             myThread3.start();
             // Wait for all threads to have started. Note they all block on lockObj after starting.
-            while (!myThread1.started || !myThread2.started || !myThread3.started) {
+            while (!myTask1.started || !myTask2.started || ! myTask3.started) {
                 try {
                     Thread.sleep(50);
                 } catch (InterruptedException e) {
@@ -83,12 +86,8 @@ class JdbStopThreadidTestTarg {
         System.out.println(obj);
     }
 
-    class MyThread extends Thread {
+    class MyTask implements Runnable {
         volatile boolean started = false;
-
-        public MyThread(String name) {
-            super(name);
-        }
 
         public void run() {
             started = true;
@@ -112,8 +111,8 @@ public class JdbStopThreadidTest extends JdbTest {
     }
 
     private static final String DEBUGGEE_CLASS = JdbStopThreadidTestTarg.class.getName();
-    private static final String DEBUGGEE_THREAD_CLASS = JdbStopThreadidTestTarg.class.getName() + "$MyThread";
-    private static Pattern threadidPattern = Pattern.compile("MyThread\\)(\\S+)\\s+MYTHREAD-2");
+    private static final String DEBUGGEE_THREAD_CLASS = JdbStopThreadidTestTarg.class.getName() + "$MyTask";
+    private static Pattern threadidPattern = Pattern.compile("Thread\\)(\\S+)\\s+MYTHREAD-2");
 
     @Override
     protected void runCases() {
@@ -136,7 +135,7 @@ public class JdbStopThreadidTest extends JdbTest {
 
         // Continue until MYTHREAD-2 breakpoint is hit. If we hit any other breakpoint before
         // then (we aren't suppose to), then this test will fail.
-        jdb.command(JdbCommand.cont().waitForPrompt("Breakpoint hit: \"thread=MYTHREAD-2\", \\S+MyThread.brkMethod", true));
+        jdb.command(JdbCommand.cont().waitForPrompt("Breakpoint hit: \"thread=MYTHREAD-2\", \\S+MyTask.brkMethod", true));
         // Continue until the application exits. Once again, hitting a breakpoint will cause
         // a failure because we are not suppose to hit one.
         jdb.contToExit(1);

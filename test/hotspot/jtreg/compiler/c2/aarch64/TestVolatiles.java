@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018, 2020, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ import jdk.test.lib.Asserts;
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 // runner class that spawns a new JVM to exercises a combination of
 // volatile MemOp and GC. The ops are compiled with the dmb -->
@@ -132,7 +132,7 @@ public class TestVolatiles {
 
 
     public void runtest(String classname, String testType, boolean useCompressedOops, String[] procArgs) throws Throwable {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(procArgs);
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(procArgs);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
         output.stderrShouldBeEmptyIgnoreVMWarnings();

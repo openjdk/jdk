@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,25 +40,23 @@ inline HeapRegion* HeapRegionManager::addr_to_region(HeapWord* addr) const {
         "addr: " PTR_FORMAT " end: " PTR_FORMAT, p2i(addr), p2i(heap_end()));
   assert(addr >= heap_bottom(),
         "addr: " PTR_FORMAT " bottom: " PTR_FORMAT, p2i(addr), p2i(heap_bottom()));
-
-  HeapRegion* hr = _regions.get_by_address(addr);
-  return hr;
+  return _regions.get_by_address(addr);
 }
 
 inline HeapRegion* HeapRegionManager::at(uint index) const {
   assert(is_available(index), "pre-condition");
   HeapRegion* hr = _regions.get_by_index(index);
-  assert(hr != NULL, "sanity");
+  assert(hr != nullptr, "sanity");
   assert(hr->hrm_index() == index, "sanity");
   return hr;
 }
 
 inline HeapRegion* HeapRegionManager::at_or_null(uint index) const {
   if (!is_available(index)) {
-    return NULL;
+    return nullptr;
   }
   HeapRegion* hr = _regions.get_by_index(index);
-  assert(hr != NULL, "All available regions must have a HeapRegion but index %u has not.", index);
+  assert(hr != nullptr, "All available regions must have a HeapRegion but index %u has not.", index);
   assert(hr->hrm_index() == index, "sanity");
   return hr;
 }
@@ -71,7 +69,7 @@ inline HeapRegion* HeapRegionManager::next_region_in_humongous(HeapRegion* hr) c
   if (index < reserved_length() && is_available(index) && at(index)->is_continues_humongous()) {
     return at(index);
   } else {
-    return NULL;
+    return nullptr;
   }
 }
 

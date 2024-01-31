@@ -27,7 +27,7 @@ import compiler.lib.ir_framework.*;
 import compiler.lib.ir_framework.shared.TestFormat;
 import compiler.lib.ir_framework.shared.TestFrameworkException;
 import compiler.lib.ir_framework.shared.TestRunException;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 import java.lang.reflect.Method;
 import java.util.List;
@@ -133,11 +133,11 @@ class CustomRunTest extends AbstractTest {
         executor.shutdown();
         int timeout;
         if (anyCompileMethod && anyWaitForCompilation) {
-            timeout = Math.max(WAIT_FOR_COMPILATION_TIMEOUT, TEST_COMPILATION_TIMEOUT) + 5000;
+            timeout = Math.max(WAIT_FOR_COMPILATION_TIMEOUT_MS, TEST_COMPILATION_TIMEOUT_MS) + 5000;
         } else if (anyWaitForCompilation) {
-            timeout = WAIT_FOR_COMPILATION_TIMEOUT + 5000;
+            timeout = WAIT_FOR_COMPILATION_TIMEOUT_MS + 5000;
         } else {
-            timeout = TEST_COMPILATION_TIMEOUT + 5000;
+            timeout = TEST_COMPILATION_TIMEOUT_MS + 5000;
         }
         try {
             executor.awaitTermination(timeout, TimeUnit.MILLISECONDS);

@@ -31,7 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.formats.html.Content;
 
 /**
  * A sequence of Content nodes.
@@ -76,9 +76,9 @@ public class ContentBuilder extends Content {
     }
 
     @Override
-    public boolean write(Writer writer, boolean atNewline) throws IOException {
+    public boolean write(Writer writer, String newline, boolean atNewline) throws IOException {
         for (Content content: contents) {
-            atNewline = content.write(writer, atNewline);
+            atNewline = content.write(writer, newline, atNewline);
         }
         return atNewline;
     }

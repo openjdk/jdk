@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ public class TestCheckedTests {
         TestFramework.run();
         try {
             TestFramework.run(BadIRAndRuntimeCheckedTests.class);
-            Utils.shouldHaveThrownException(baos.toString());
+            Asserts.fail("Should have thrown exception");
         } catch (TestVMException e) {
             System.setOut(oldOut);
             Asserts.assertTrue(e.getExceptionInfo().contains("Test Failures (2)"));
@@ -64,7 +64,7 @@ public class TestCheckedTests {
         System.setOut(ps);
         try {
             TestFramework.run(BadIRCheckedTests.class);
-            Utils.shouldHaveThrownException(baos.toString());
+            Asserts.fail("Should have thrown exception");
         } catch (IRViolationException e) {
             System.setOut(oldOut);
             Asserts.assertTrue(e.getExceptionInfo().contains("Failed IR Rules (3)"));

@@ -1,2 +1,2 @@
-SwitchNullDisabled.java:13:18: compiler.err.preview.feature.disabled: (compiler.misc.feature.case.null)
+SwitchNullDisabled.java:12:18: compiler.err.feature.not.supported.in.source: (compiler.misc.feature.case.null), 20, 21
 1 error

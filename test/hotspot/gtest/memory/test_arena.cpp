@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021 SAP SE. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -57,17 +57,13 @@ TEST_VM(Arena, alloc_size_0) {
   void* p = ar.Amalloc(0);
   ASSERT_NOT_NULL(p);
   ASSERT_ALIGN_AMALLOC(p);
-  if (!UseMallocOnly) {
-    // contains works differently for malloced mode (and there its broken anyway)
-    ASSERT_FALSE(ar.contains(p));
-  }
+
+  ASSERT_FALSE(ar.contains(p));
   // Allocate again. The new allocations should have the same position as the 0-sized
   // first one.
-  if (!UseMallocOnly) {
-    void* p2 = ar.Amalloc(1);
-    ASSERT_AMALLOC(ar, p2);
-    ASSERT_EQ(p2, p);
-  }
+  void* p2 = ar.Amalloc(1);
+  ASSERT_AMALLOC(ar, p2);
+  ASSERT_EQ(p2, p);
 }
 
 // Test behavior for Arealloc(p, 0)
@@ -81,10 +77,8 @@ TEST_VM(Arena, realloc_size_0) {
   ASSERT_NULL(p2);
 
   // a subsequent allocation should get the same pointer
-  if (!UseMallocOnly) {
-    void* p3 = ar.Amalloc(0x20);
-    ASSERT_EQ(p3, p1);
-  }
+  void* p3 = ar.Amalloc(0x20);
+  ASSERT_EQ(p3, p1);
 }
 
 // Realloc equal sizes is a noop
@@ -96,21 +90,19 @@ TEST_VM(Arena, realloc_same_size) {
 
   void* p2 = ar.Arealloc(p1, 0x200, 0x200);
 
-  if (!UseMallocOnly) {
-    ASSERT_EQ(p2, p1);
-  }
+  ASSERT_EQ(p2, p1);
   ASSERT_RANGE_IS_MARKED(p2, 0x200);
 }
 
-// Test behavior for Afree(NULL) and Arealloc(NULL, x)
+// Test behavior for Afree(nullptr) and Arealloc(nullptr, x)
 TEST_VM(Arena, free_null) {
   Arena ar(mtTest);
-  ar.Afree(NULL, 10); // should just be ignored
+  ar.Afree(nullptr, 10); // should just be ignored
 }
 
 TEST_VM(Arena, realloc_null) {
   Arena ar(mtTest);
-  void* p = ar.Arealloc(NULL, 0, 20); // equivalent to Amalloc(20)
+  void* p = ar.Arealloc(nullptr, 0, 20); // equivalent to Amalloc(20)
   ASSERT_AMALLOC(ar, p);
 }
 
@@ -157,29 +149,26 @@ TEST_VM(Arena, free_top) {
   DEBUG_ONLY(ASSERT_RANGE_IS_MARKED_WITH(p, 0x10, badResourceValue);)
 
   // a subsequent allocation should get the same pointer
-  if (!UseMallocOnly) {
-    void* p2 = ar.Amalloc(0x20);
-    ASSERT_EQ(p2, p);
-  }
+  void* p2 = ar.Amalloc(0x20);
+  ASSERT_EQ(p2, p);
 }
+
 
 // In-place shrinking.
 TEST_VM(Arena, realloc_top_shrink) {
-  if (!UseMallocOnly) {
-    Arena ar(mtTest);
+  Arena ar(mtTest);
 
-    void* p1 = ar.Amalloc(0x200);
-    ASSERT_AMALLOC(ar, p1);
-    GtestUtils::mark_range(p1, 0x200);
+  void* p1 = ar.Amalloc(0x200);
+  ASSERT_AMALLOC(ar, p1);
+  GtestUtils::mark_range(p1, 0x200);
 
-    void* p2 = ar.Arealloc(p1, 0x200, 0x100);
-    ASSERT_EQ(p1, p2);
-    ASSERT_RANGE_IS_MARKED(p2, 0x100); // realloc should preserve old content
+  void* p2 = ar.Arealloc(p1, 0x200, 0x100);
+  ASSERT_EQ(p1, p2);
+  ASSERT_RANGE_IS_MARKED(p2, 0x100); // realloc should preserve old content
 
-    // A subsequent allocation should be placed right after the end of the first, shrunk, allocation
-    void* p3 = ar.Amalloc(1);
-    ASSERT_EQ(p3, ((char*)p1) + 0x100);
-  }
+  // A subsequent allocation should be placed right after the end of the first, shrunk, allocation
+  void* p3 = ar.Amalloc(1);
+  ASSERT_EQ(p3, ((char*)p1) + 0x100);
 }
 
 // not-in-place shrinking.
@@ -193,9 +182,7 @@ TEST_VM(Arena, realloc_nontop_shrink) {
   void* p_other = ar.Amalloc(20); // new top, p1 not top anymore
 
   void* p2 = ar.Arealloc(p1, 200, 100);
-  if (!UseMallocOnly) {
-    ASSERT_EQ(p1, p2); // should still shrink in place
-  }
+  ASSERT_EQ(p1, p2); // should still shrink in place
   ASSERT_RANGE_IS_MARKED(p2, 100); // realloc should preserve old content
 }
 
@@ -208,9 +195,7 @@ TEST_VM(Arena, realloc_top_grow) {
   GtestUtils::mark_range(p1, 0x10);
 
   void* p2 = ar.Arealloc(p1, 0x10, 0x20);
-  if (!UseMallocOnly) {
-    ASSERT_EQ(p1, p2);
-  }
+  ASSERT_EQ(p1, p2);
   ASSERT_RANGE_IS_MARKED(p2, 0x10); // realloc should preserve old content
 }
 
@@ -253,7 +238,7 @@ TEST_VM(Arena, random_allocs) {
   for (int i = 0; i < num_allocs; i ++) {
     size_t size = os::random() % (avg_alloc_size * 2); // Note: size==0 is okay; we want to test that too
     size_t alignment = 0;
-    void* p = NULL;
+    void* p = nullptr;
     if (os::random() % 2) { // randomly switch between Amalloc and AmallocWords
       p = ar.Amalloc(size);
       alignment = BytesPerLong;
@@ -312,7 +297,7 @@ TEST_VM(Arena, random_allocs) {
       ar.Afree(ptrs[i], sizes[i]);
       // In debug builds the freed space should be filled the space with badResourceValue
       DEBUG_ONLY(ASSERT_RANGE_IS_MARKED_WITH(ptrs[i], sizes[i], badResourceValue));
-      ptrs[i] = NULL;
+      ptrs[i] = nullptr;
     }
   }
 
@@ -344,7 +329,7 @@ TEST_VM(Arena, mixed_alignment_allocation) {
 TEST_VM(Arena, Arena_with_crooked_initial_size) {
   // Test that an arena with a crooked, not 64-bit aligned initial size
   // works
-  Arena ar(mtTest, 4097);
+  Arena ar(mtTest, Arena::Tag::tag_other, 4097);
   void* p1 = ar.AmallocWords(BytesPerWord);
   void* p2 = ar.Amalloc(BytesPerLong);
   ASSERT_TRUE(is_aligned(p1, BytesPerWord));
@@ -357,7 +342,7 @@ TEST_VM(Arena, Arena_grows_large_unaligned) {
   // (only possible on 32-bit when allocating with word alignment).
   // Then we alloc some more. If Arena::grow() does not correctly align, on 32-bit
   // something should assert at some point.
-  Arena ar(mtTest, 100); // first chunk is small
+  Arena ar(mtTest, Arena::Tag::tag_other, 100); // first chunk is small
   void* p = ar.AmallocWords(Chunk::size + BytesPerWord); // if Arena::grow() misaligns, this asserts
   // some more allocations for good measure
   for (int i = 0; i < 100; i ++) {
@@ -387,13 +372,13 @@ TEST_VM(Arena, different_chunk_sizes) {
   for (int i = 0; i < 1000; i ++) {
     // Unfortunately, Arenas cannot be newed,
     // so we are left with awkwardly placing a few on the stack.
-    Arena ar0(mtTest, random_arena_chunk_size());
-    Arena ar1(mtTest, random_arena_chunk_size());
-    Arena ar2(mtTest, random_arena_chunk_size());
-    Arena ar3(mtTest, random_arena_chunk_size());
-    Arena ar4(mtTest, random_arena_chunk_size());
-    Arena ar5(mtTest, random_arena_chunk_size());
-    Arena ar6(mtTest, random_arena_chunk_size());
-    Arena ar7(mtTest, random_arena_chunk_size());
+    Arena ar0(mtTest, Arena::Tag::tag_other, random_arena_chunk_size());
+    Arena ar1(mtTest, Arena::Tag::tag_other, random_arena_chunk_size());
+    Arena ar2(mtTest, Arena::Tag::tag_other, random_arena_chunk_size());
+    Arena ar3(mtTest, Arena::Tag::tag_other, random_arena_chunk_size());
+    Arena ar4(mtTest, Arena::Tag::tag_other, random_arena_chunk_size());
+    Arena ar5(mtTest, Arena::Tag::tag_other, random_arena_chunk_size());
+    Arena ar6(mtTest, Arena::Tag::tag_other, random_arena_chunk_size());
+    Arena ar7(mtTest, Arena::Tag::tag_other, random_arena_chunk_size());
   }
 }

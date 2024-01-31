@@ -24,12 +24,11 @@
 #ifndef SHARE_COMPILER_COMPILEREVENT_HPP
 #define SHARE_COMPILER_COMPILEREVENT_HPP
 
-#include "jni.h"
 #include "compiler/compilerDefinitions.hpp"
+#include "jni.h"
 #include "memory/allStatic.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ticks.hpp"
-
 #if INCLUDE_JFR
 #include "jfr/utilities/jfrTime.hpp"
 #endif

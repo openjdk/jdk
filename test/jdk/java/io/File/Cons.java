@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
-   @bug 4131169 4168988
+   @bug 4131169 4168988 8290499
    @summary Basic File constructor tests
  */
 
@@ -251,11 +251,17 @@ public class Cons {
         /* Two-arg constructors cases, string parent */
         if (!old) {
             ck2("//foo", "bar", "/foo", "bar", "/foo/bar");
+            ck2("/foo", "/", "/", "foo", "/foo");
+            ck2("//foo", "/", "/", "foo", "/foo");
+            ck2("/foo", "//", "/", "foo", "/foo");
         }
 
         /* Two-arg constructor cases, File parent */
         if (!old) {
             ck2f("//foo", "bar", "/foo", "bar", "/foo/bar");
+            ck2f("/foo", "/", "/", "foo", "/foo");
+            ck2f("//foo", "/", "/", "foo", "/foo");
+            ck2f("/foo", "//", "/", "foo", "/foo");
         }
 
         File f = new File("/foo");
@@ -296,10 +302,17 @@ public class Cons {
             ck2("z:/", "//foo", "z:/", "foo", "z:/foo");
             ck2("z:/", "foo/", "z:/", "foo", "z:/foo");
             ck2("//foo", "bar", "//foo", "bar", "//foo/bar");
+            ck2("z:", "", null, "", "z:");
+            ck2("z:/", "/", null, "", "z:/");
+            ck2("z:/", "a/b/c", "z:/a/b", "c", "z:/a/b/c");
+            ck2("z:/", "a/b/c/", "z:/a/b", "c", "z:/a/b/c");
 
             /* Two-arg constructor cases, File parent */
             ck2f("//foo", "bar", "//foo", "bar", "//foo/bar");
-
+            ck2f("z:", "", null, "", "z:");
+            ck2f("z:/", "/", null, "", "z:/");
+            ck2f("z:/", "a/b/c", "z:/a/b", "c", "z:/a/b/c");
+            ck2f("z:/", "a/b/c/", "z:/a/b", "c", "z:/a/b/c");
         }
     }
 

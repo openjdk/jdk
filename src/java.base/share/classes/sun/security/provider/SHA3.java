@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,13 @@
 
 package sun.security.provider;
 
+import java.security.ProviderException;
+import java.util.Arrays;
+import java.util.Objects;
+
 import jdk.internal.vm.annotation.IntrinsicCandidate;
-import static sun.security.provider.ByteArrayAccess.*;
-import java.nio.*;
-import java.util.*;
-import java.security.*;
+import static sun.security.provider.ByteArrayAccess.b2lLittle;
+import static sun.security.provider.ByteArrayAccess.l2bLittle;
 
 /**
  * This class implements the Secure Hash Algorithm SHA-3 developed by
@@ -106,7 +108,15 @@ abstract class SHA3 extends DigestBase {
             throw new ProviderException("Incorrect pad size: " + numOfPadding);
         }
         implCompress(buffer, 0);
-        System.arraycopy(state, 0, out, ofs, engineGetDigestLength());
+        int availableBytes = buffer.length;
+        int numBytes = engineGetDigestLength();
+        while (numBytes > availableBytes) {
+            System.arraycopy(state, 0, out, ofs, availableBytes);
+            numBytes -= availableBytes;
+            ofs += availableBytes;
+            keccak();
+        }
+        System.arraycopy(state, 0, out, ofs, numBytes);
     }
 
     /**
@@ -160,7 +170,7 @@ abstract class SHA3 extends DigestBase {
 
     /**
      * The function Keccak as defined in section 5.2 with
-     * rate r = 1600 and capacity c = (digest length x 2).
+     * rate r = 1600 and capacity c.
      */
     private void keccak() {
         // convert the 200-byte state into 25 lanes
@@ -194,7 +204,7 @@ abstract class SHA3 extends DigestBase {
             a15 ^= d0; a16 ^= d1; a17 ^= d2; a18 ^= d3; a19 ^= d4;
             a20 ^= d0; a21 ^= d1; a22 ^= d2; a23 ^= d3; a24 ^= d4;
 
-            /**
+            /*
              * Merged Step mapping Rho (section 3.2.2) and Pi (section 3.2.3).
              * for performance. Optimization is achieved by precalculating
              * shift constants for the following loop

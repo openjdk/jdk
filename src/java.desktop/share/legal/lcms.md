@@ -1,10 +1,11 @@
-## Little Color Management System (LCMS) v2.12
+## Little Color Management System (LCMS) v2.16
 
 ### LCMS License
 <pre>
 
-Little Color Management System
-Copyright (c) 1998-2020 Marti Maria Saguer
+MIT License
+
+Copyright (C) 1998-2023 Marti Maria Saguer
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the "Software"),
@@ -24,4 +25,79 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+---------------------------------
+The below license applies to the following files:
+liblcms/cmssm.c
+
+Copyright 2001, softSurfer (www.softsurfer.com)
+
+This code may be freely used and modified for any purpose
+providing that this copyright notice is included with it.
+SoftSurfer makes no warranty for this code, and cannot be held
+liable for any real or imagined damage resulting from its use.
+Users of this code must verify correctness for their application.
+
 </pre>
+
+### AUTHORS File Information
+```
+
+Main Author
+------------
+Marti Maria
+
+
+Contributors
+------------
+Bob Friesenhahn
+Kai-Uwe Behrmann
+Stuart Nixon
+Jordi Vilar
+Richard Hughes
+Auke Nauta
+Chris Evans (Google)
+Lorenzo Ridolfi
+Robin Watts (Artifex)
+Shawn Pedersen
+Andrew Brygin
+Samuli Suominen
+Florian Hˆch
+Aurelien Jarno
+Claudiu Cebuc
+Michael Vhrel (Artifex)
+Michal Cihar
+Daniel Kaneider
+Mateusz Jurczyk (Google)
+Paul Miller
+SÈbastien LÈon
+Christian Schmitz
+XhmikosR
+Stanislav Brabec (SuSe)
+Leonhard Gruenschloss (Google)
+Patrick Noffke
+Christopher James Halse Rogers
+John Hein
+Thomas Weber (Debian)
+Mark Allen
+Noel Carboni
+Sergei Trofimovic
+Philipp Knechtges
+Amyspark
+Lovell Fuller
+Eli Schwartz
+Diogo Teles Sant'Anna
+
+Special Thanks
+--------------
+Artifex software
+AlienSkin software
+libVIPS
+Jan Morovic
+Jos Vernon (WebSupergoo)
+Harald Schneider (Maxon)
+Christian Albrecht
+Dimitrios Anastassakis
+Lemke Software
+Tim Zaman
+
+```

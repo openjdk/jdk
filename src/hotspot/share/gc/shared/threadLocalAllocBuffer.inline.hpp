@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,8 @@
 #include "gc/shared/tlab_globals.hpp"
 #include "memory/universe.hpp"
 #include "logging/log.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/osThread.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/copy.hpp"
 
 inline HeapWord* ThreadLocalAllocBuffer::allocate(size_t size) {
@@ -54,7 +54,7 @@ inline HeapWord* ThreadLocalAllocBuffer::allocate(size_t size) {
     invariants();
     return obj;
   }
-  return NULL;
+  return nullptr;
 }
 
 inline size_t ThreadLocalAllocBuffer::compute_size(size_t obj_size) {
@@ -91,7 +91,7 @@ void ThreadLocalAllocBuffer::record_slow_allocation(size_t obj_size) {
 
   _slow_allocations++;
 
-  log_develop_trace(gc, tlab)("TLAB: %s thread: " INTPTR_FORMAT " [id: %2d]"
+  log_develop_trace(gc, tlab)("TLAB: %s thread: " PTR_FORMAT " [id: %2d]"
                               " obj: " SIZE_FORMAT
                               " free: " SIZE_FORMAT
                               " waste: " SIZE_FORMAT,

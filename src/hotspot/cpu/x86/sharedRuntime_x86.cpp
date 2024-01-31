@@ -24,7 +24,9 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "vmreg_x86.inline.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
@@ -49,7 +51,7 @@ void SharedRuntime::inline_check_hashcode_from_object_header(MacroAssembler* mas
   if (method->intrinsic_id() == vmIntrinsics::_identityHashCode) {
     Label Continue;
     // return 0 for null reference input
-    __ cmpptr(obj_reg, (int32_t)NULL_WORD);
+    __ cmpptr(obj_reg, NULL_WORD);
     __ jcc(Assembler::notEqual, Continue);
     __ xorptr(result, result);
     __ ret(0);
@@ -58,9 +60,16 @@ void SharedRuntime::inline_check_hashcode_from_object_header(MacroAssembler* mas
 
   __ movptr(result, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
 
-  // check if locked
-  __ testptr(result, markWord::unlocked_value);
-  __ jcc(Assembler::zero, slowCase);
+
+  if (LockingMode == LM_LIGHTWEIGHT) {
+    // check if monitor
+    __ testptr(result, markWord::monitor_value);
+    __ jcc(Assembler::notZero, slowCase);
+  } else {
+    // check if locked
+    __ testptr(result, markWord::unlocked_value);
+    __ jcc(Assembler::zero, slowCase);
+  }
 
   // get hash
 #ifdef _LP64
@@ -83,3 +92,18 @@ void SharedRuntime::inline_check_hashcode_from_object_header(MacroAssembler* mas
 }
 #endif //COMPILER1
 
+JRT_LEAF(jfloat, SharedRuntime::frem(jfloat x, jfloat y))
+  assert(StubRoutines::fmod() != nullptr, "");
+  jdouble (*addr)(jdouble, jdouble) = (double (*)(double, double))StubRoutines::fmod();
+  jdouble dx = (jdouble) x;
+  jdouble dy = (jdouble) y;
+
+  return (jfloat) (*addr)(dx, dy);
+JRT_END
+
+JRT_LEAF(jdouble, SharedRuntime::drem(jdouble x, jdouble y))
+  assert(StubRoutines::fmod() != nullptr, "");
+  jdouble (*addr)(jdouble, jdouble) = (double (*)(double, double))StubRoutines::fmod();
+
+  return (*addr)(x, y);
+JRT_END

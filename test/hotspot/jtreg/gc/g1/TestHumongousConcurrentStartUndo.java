@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,16 +32,16 @@ package gc.g1;
  * @library /test/lib /testlibrary /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
- *             sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ *             jdk.test.whitebox.WhiteBox$WhiteBoxPermission
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                   gc.g1.TestHumongousConcurrentStartUndo
  */
 
 import gc.testlibrary.Helpers;
 
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -56,7 +56,7 @@ public class TestHumongousConcurrentStartUndo {
     private static final int YoungSize                      = HeapSize / 8;
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
             "-Xbootclasspath/a:.",
             "-XX:+UseG1GC",
             "-Xms" + HeapSize + "m",
@@ -70,7 +70,6 @@ public class TestHumongousConcurrentStartUndo {
             "-Xlog:gc*",
             EdenObjectAllocatorWithHumongousAllocation.class.getName());
 
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("Pause Young (Concurrent Start) (G1 Humongous Allocation)");
         output.shouldContain("Concurrent Undo Cycle");
         output.shouldContain("Concurrent Mark Cycle");
@@ -141,4 +140,3 @@ public class TestHumongousConcurrentStartUndo {
         }
     }
 }
-

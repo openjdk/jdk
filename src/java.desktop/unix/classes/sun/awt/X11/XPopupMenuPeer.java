@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,25 @@
  */
 package sun.awt.X11;
 
-import java.awt.*;
-import java.awt.peer.*;
-import java.awt.event.*;
+import java.awt.AWTEvent;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Event;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.MenuItem;
+import java.awt.Point;
+import java.awt.PopupMenu;
+import java.awt.Rectangle;
+import java.awt.Toolkit;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
 
+import java.awt.peer.PopupMenuPeer;
 import java.util.Vector;
 import sun.awt.AWTAccessor;
+import sun.awt.SunToolkit;
 import sun.util.logging.PlatformLogger;
 
 public class XPopupMenuPeer extends XMenuWindow implements PopupMenuPeer {
@@ -125,6 +138,9 @@ public class XPopupMenuPeer extends XMenuWindow implements PopupMenuPeer {
             //near the periphery of the screen, XToolkit
             Rectangle bounds = getWindowBounds(pt, dim);
             reshape(bounds);
+            if (Toolkit.getDefaultToolkit() instanceof SunToolkit sunToolkit) {
+                sunToolkit.dismissPopupOnFocusLostIfNeeded(getMenuTarget());
+            }
             xSetVisible(true);
             toFront();
             selectItem(null, false);
@@ -214,13 +230,13 @@ public class XPopupMenuPeer extends XMenuWindow implements PopupMenuPeer {
 
     /************************************************
      *
-     * Overriden XMenuWindow caption-painting functions
+     * Overridden XMenuWindow caption-painting functions
      * Necessary to fix 6267144: PIT: Popup menu label is not shown, XToolkit
      *
      ************************************************/
     /**
      * Returns height of menu window's caption.
-     * Can be overriden for popup menus and tear-off menus
+     * Can be overridden for popup menus and tear-off menus
      */
     @Override
     protected Dimension getCaptionSize() {
@@ -247,7 +263,7 @@ public class XPopupMenuPeer extends XMenuWindow implements PopupMenuPeer {
 
     /**
      * Paints menu window's caption.
-     * Can be overriden for popup menus and tear-off menus.
+     * Can be overridden for popup menus and tear-off menus.
      * Default implementation does nothing
      */
     @Override
@@ -270,7 +286,7 @@ public class XPopupMenuPeer extends XMenuWindow implements PopupMenuPeer {
 
     /************************************************
      *
-     * Overriden XBaseMenuWindow functions
+     * Overridden XBaseMenuWindow functions
      *
      ************************************************/
     @Override
@@ -303,7 +319,7 @@ public class XPopupMenuPeer extends XMenuWindow implements PopupMenuPeer {
 
     /************************************************
      *
-     * Overriden XWindow general-purpose functions
+     * Overridden XWindow general-purpose functions
      *
      ************************************************/
     @Override
@@ -313,7 +329,7 @@ public class XPopupMenuPeer extends XMenuWindow implements PopupMenuPeer {
 
     /************************************************
      *
-     * Overriden XWindow keyboard processing
+     * Overridden XWindow keyboard processing
      *
      ************************************************/
 

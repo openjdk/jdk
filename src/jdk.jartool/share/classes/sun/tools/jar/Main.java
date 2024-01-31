@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.FileTime;
 import java.text.MessageFormat;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.jar.Attributes;
@@ -60,7 +61,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
-import java.util.concurrent.TimeUnit;
+
 import jdk.internal.module.Checks;
 import jdk.internal.module.ModuleHashes;
 import jdk.internal.module.ModuleHashesBuilder;
@@ -68,14 +69,12 @@ import jdk.internal.module.ModuleInfo;
 import jdk.internal.module.ModuleInfoExtender;
 import jdk.internal.module.ModuleResolution;
 import jdk.internal.module.ModuleTarget;
-import jdk.internal.util.jar.JarIndex;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import jdk.internal.opt.CommandLine;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.util.jar.JarFile.MANIFEST_NAME;
 import static java.util.stream.Collectors.joining;
-import static jdk.internal.util.jar.JarIndex.INDEX_NAME;
+import static sun.tools.jar.JarIndex.INDEX_NAME;
 
 /**
  * This class implements a simple utility for creating files in the JAR
@@ -293,6 +292,9 @@ public class Main {
                     }
                 }
                 expand();
+                if (!ok) {
+                    return false;
+                }
                 if (!moduleInfos.isEmpty()) {
                     // All actual file entries (excl manifest and module-info.class)
                     Set<String> jentries = new HashSet<>();
@@ -339,6 +341,9 @@ public class Main {
                     tmpFile = createTemporaryFile("tmpjar", ".jar");
                 }
                 expand();
+                if (!ok) {
+                    return false;
+                }
                 try (FileInputStream in = (fname != null) ? new FileInputStream(inputFile)
                         : new FileInputStream(FileDescriptor.in);
                      FileOutputStream out = new FileOutputStream(tmpFile);
@@ -396,6 +401,10 @@ public class Main {
                     }
                 }
             } else if (iflag) {
+                if (!suppressDeprecateMsg) {
+                    warn(getMsg("warn.index.is.ignored"));
+                    warn(formatMsg("warn.flag.is.deprecated", "--generate-index/-i"));
+                }
                 String[] files = filesMap.get(BASE_VERSION);  // base entries only, can be null
                 genIndex(rootjar, files);
             } else if (dflag) {
@@ -874,6 +883,7 @@ public class Main {
                 }
                 ZipEntry e = new ZipEntry(MANIFEST_DIR);
                 setZipEntryTime(e);
+                e.setMethod(ZipEntry.STORED);
                 e.setSize(0);
                 e.setCrc(0);
                 zos.putNextEntry(e);

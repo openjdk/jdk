@@ -42,7 +42,6 @@ final class FileInputStreamInstrumentor {
 
     private String path;
 
-    @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
     public int read() throws IOException {
         EventConfiguration eventConfiguration = EventConfigurations.FILE_READ;
@@ -70,7 +69,6 @@ final class FileInputStreamInstrumentor {
         return result;
     }
 
-    @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
     public int read(byte b[]) throws IOException {
         EventConfiguration eventConfiguration = EventConfigurations.FILE_READ;
@@ -95,7 +93,6 @@ final class FileInputStreamInstrumentor {
         return bytesRead;
     }
 
-    @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
     public int read(byte b[], int off, int len) throws IOException {
         EventConfiguration eventConfiguration = EventConfigurations.FILE_READ;

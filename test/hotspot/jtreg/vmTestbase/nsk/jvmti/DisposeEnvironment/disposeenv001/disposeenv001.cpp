@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,13 +44,13 @@ JNIEXPORT jint JNI_OnLoad_disposeenv001(JavaVM *jvm, char *options, void *reserv
 }
 #endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
-    jvmtiEnv* jvmti = NULL;
+    jvmtiEnv* jvmti = nullptr;
 
     if (!NSK_VERIFY(nsk_jvmti_parseOptions(options)))
         return JNI_ERR;
 
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     NSK_DISPLAY0(">>> Testcase #1: Dispose JVMTI environment in Agent_OnLoad()\n");

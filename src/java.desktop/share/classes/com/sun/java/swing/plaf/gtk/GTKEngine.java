@@ -291,7 +291,7 @@ class GTKEngine {
         } else if (c instanceof JSeparator) {
             JSeparator separator = (JSeparator)c;
 
-            /* We should return correrct WidgetType if the seperator is inserted
+            /* We should return correct WidgetType if the separator is inserted
              * in Menu/PopupMenu/ToolBar. BugID: 6465603
              */
             if (separator.getParent() instanceof JPopupMenu) {
@@ -337,7 +337,8 @@ class GTKEngine {
                 return widgets[0];
             }
         } else if (id == Region.ARROW_BUTTON) {
-            if (c.getParent() instanceof JScrollBar) {
+            if (c.getParent() instanceof JScrollBar
+                || c.getParent() instanceof JTabbedPane) {
                 Integer prop = (Integer)
                     c.getClientProperty("__arrow_direction__");
                 int dir = (prop != null) ?

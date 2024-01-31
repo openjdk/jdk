@@ -27,8 +27,8 @@ package com.sun.tools.javac.util;
 
 import java.io.*;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.EnumMap;
-import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Queue;
@@ -115,6 +115,7 @@ public class Log extends AbstractLog {
      * A DiagnosticHandler that discards all diagnostics.
      */
     public static class DiscardDiagnosticHandler extends DiagnosticHandler {
+        @SuppressWarnings("this-escape")
         public DiscardDiagnosticHandler(Log log) {
             install(log);
         }
@@ -138,6 +139,7 @@ public class Log extends AbstractLog {
             this(log, null);
         }
 
+        @SuppressWarnings("this-escape")
         public DeferredDiagnosticHandler(Log log, Predicate<JCDiagnostic> filter) {
             this.filter = filter;
             install(log);
@@ -168,6 +170,16 @@ public class Log extends AbstractLog {
             while ((d = deferred.poll()) != null) {
                 if (accepter.test(d))
                     prev.report(d);
+            }
+            deferred = null; // prevent accidental ongoing use
+        }
+
+        /** Report selected deferred diagnostics. */
+        public void reportDeferredDiagnostics(Comparator<JCDiagnostic> order) {
+            JCDiagnostic[] diags = deferred.toArray(s -> new JCDiagnostic[s]);
+            Arrays.sort(diags, order);
+            for (JCDiagnostic d : diags) {
+                prev.report(d);
             }
             deferred = null; // prevent accidental ongoing use
         }
@@ -252,6 +264,7 @@ public class Log extends AbstractLog {
      * it will be used for all output.
      * Otherwise, the log will be initialized to use both streams found in the context.
      */
+    @SuppressWarnings("this-escape")
     protected Log(Context context) {
         this(context, initWriters(context));
     }
@@ -279,6 +292,7 @@ public class Log extends AbstractLog {
     /**
      * Construct a log with all output sent to a single output stream.
      */
+    @SuppressWarnings("this-escape")
     protected Log(Context context, PrintWriter writer) {
         this(context, initWriters(writer, writer));
     }
@@ -288,6 +302,7 @@ public class Log extends AbstractLog {
      * The log will be initialized to use stdOut for normal output, and stdErr
      * for all diagnostic output.
      */
+    @SuppressWarnings("this-escape")
     protected Log(Context context, PrintWriter out, PrintWriter err) {
         this(context, initWriters(out, err));
     }
@@ -670,6 +685,11 @@ public class Log extends AbstractLog {
         public void report(JCDiagnostic diagnostic) {
             if (expectDiagKeys != null)
                 expectDiagKeys.remove(diagnostic.getCode());
+
+            if (diagnostic.hasRewriter()) {
+                JCDiagnostic rewrittenDiag = diagnostic.rewrite();
+                diagnostic = rewrittenDiag != null ? rewrittenDiag : diagnostic;
+            }
 
             switch (diagnostic.getType()) {
             case FRAGMENT:

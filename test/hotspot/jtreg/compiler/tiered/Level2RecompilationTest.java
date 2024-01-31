@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,10 @@
  * @comment the test can't be run w/ TieredStopAtLevel < 4
  * @requires vm.flavor == "server" & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4) & vm.compMode != "Xcomp"
  *
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+TieredCompilation
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseCounterDecay
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCaseHelper::*
  *                   -XX:CompileCommand=print,compiler.whitebox.SimpleTestCaseHelper::*
  *                   compiler.tiered.Level2RecompilationTest

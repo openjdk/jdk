@@ -4,7 +4,7 @@
  *
  * @summary javac fails to substitute type variables into a constructor's throws clause
  * @author Mark Mahieu
- * @compile/fail/ref=T6723444_1.out -Xlint:-options -source 7 -XDrawDiagnostics T6723444.java
+ *
  * @compile/fail/ref=T6723444_2.out -XDrawDiagnostics T6723444.java
  *
  */
@@ -23,7 +23,7 @@ public class T6723444 {
     <X1 extends Throwable, X2 extends Throwable> T6723444(Foo<X1> foo, int i)
         throws X1, X2 {}
 
-    public static void main(String[] args) throws Exception {
+    public static void meth() throws Exception {
 
         // the following 8 statements should compile without error
 

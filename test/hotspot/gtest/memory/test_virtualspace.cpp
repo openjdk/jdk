@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
 
 #include "precompiled.hpp"
 #include "memory/virtualspace.hpp"
-#include "runtime/os.hpp"
 #include "oops/oop.hpp"
+#include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "concurrentTestRunner.inline.hpp"
 #include "unittest.hpp"
@@ -67,7 +67,7 @@ namespace {
     ReservedSpace rs(size);
     MemoryReleaser releaser(&rs);
 
-    EXPECT_TRUE(rs.base() != NULL) << "rs.special: " << rs.special();
+    EXPECT_TRUE(rs.base() != nullptr) << "rs.special: " << rs.special();
     EXPECT_EQ(size, rs.size()) << "rs.special: " << rs.special();
 
     if (rs.special()) {
@@ -78,9 +78,9 @@ namespace {
   static void test_reserved_size_alignment(size_t size, size_t alignment) {
     ASSERT_PRED2(is_size_aligned, size, alignment) << "Incorrect input parameters";
     size_t page_size = UseLargePages ? os::large_page_size() : os::vm_page_size();
-    ReservedSpace rs(size, alignment, page_size, (char *) NULL);
+    ReservedSpace rs(size, alignment, page_size, (char *) nullptr);
 
-    ASSERT_TRUE(rs.base() != NULL) << "rs.special = " << rs.special();
+    ASSERT_TRUE(rs.base() != nullptr) << "rs.special = " << rs.special();
     ASSERT_EQ(size, rs.size()) << "rs.special = " << rs.special();
 
     EXPECT_PRED2(is_ptr_aligned, rs.base(), alignment)
@@ -96,7 +96,7 @@ namespace {
   static void test_reserved_size_alignment_page_type(size_t size, size_t alignment, bool maybe_large) {
     if (size < alignment) {
       // Tests might set -XX:LargePageSizeInBytes=<small pages> and cause unexpected input arguments for this test.
-      ASSERT_EQ((size_t) os::vm_page_size(), os::large_page_size()) << "Test needs further refinement";
+      ASSERT_EQ(os::vm_page_size(), os::large_page_size()) << "Test needs further refinement";
       return;
     }
 
@@ -109,7 +109,7 @@ namespace {
     ReservedSpace rs(size, alignment, page_size);
     MemoryReleaser releaser(&rs);
 
-    EXPECT_TRUE(rs.base() != NULL) << "rs.special: " << rs.special();
+    EXPECT_TRUE(rs.base() != nullptr) << "rs.special: " << rs.special();
     EXPECT_EQ(size, rs.size()) << "rs.special: " << rs.special();
 
     if (rs.special()) {
@@ -369,9 +369,9 @@ class TestReservedSpace : AllStatic {
     ReservedSpace rs(size,          // size
                      alignment,     // alignment
                      page_size, // page size
-                     (char *)NULL); // requested_address
+                     (char *)nullptr); // requested_address
 
-    EXPECT_TRUE(rs.base() != NULL);
+    EXPECT_TRUE(rs.base() != nullptr);
     EXPECT_EQ(rs.size(), size) <<  "rs.size: " << rs.size();
 
     EXPECT_TRUE(is_aligned(rs.base(), alignment)) << "aligned sizes should always give aligned addresses";
@@ -389,7 +389,7 @@ class TestReservedSpace : AllStatic {
 
     ReservedSpace rs(size);
 
-    EXPECT_TRUE(rs.base() != NULL);
+    EXPECT_TRUE(rs.base() != nullptr);
     EXPECT_EQ(rs.size(), size) <<  "rs.size: " << rs.size();
 
     if (rs.special()) {
@@ -402,7 +402,7 @@ class TestReservedSpace : AllStatic {
   static void test_reserved_space3(size_t size, size_t alignment, bool maybe_large) {
     if (size < alignment) {
       // Tests might set -XX:LargePageSizeInBytes=<small pages> and cause unexpected input arguments for this test.
-      ASSERT_EQ((size_t)os::vm_page_size(), os::large_page_size()) << "Test needs further refinement";
+      ASSERT_EQ(os::vm_page_size(), os::large_page_size()) << "Test needs further refinement";
       return;
     }
 
@@ -414,7 +414,7 @@ class TestReservedSpace : AllStatic {
 
     ReservedSpace rs(size, alignment, page_size);
 
-    EXPECT_TRUE(rs.base() != NULL);
+    EXPECT_TRUE(rs.base() != nullptr);
     EXPECT_EQ(rs.size(), size) <<  "rs.size: " << rs.size();
 
     if (rs.special()) {

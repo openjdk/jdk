@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -298,7 +298,6 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
                            char jvmcfg[],  jint so_jvmcfg) {
 
     char * jvmtype = NULL;
-    int argc = *pargc;
     char **argv = *pargv;
 
 #ifdef SETENV_REQUIRED
@@ -388,7 +387,7 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
                 if (lastslash)
                     *lastslash = '\0';
 
-                sprintf(new_runpath, LD_LIBRARY_PATH "="
+                snprintf(new_runpath, new_runpath_size, LD_LIBRARY_PATH "="
                         "%s:"
                         "%s/lib:"
                         "%s/../lib",

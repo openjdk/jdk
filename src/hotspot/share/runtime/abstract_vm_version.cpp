@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm_io.h"
 #include "compiler/compilerDefinitions.hpp"
+#include "jvm_io.h"
 #include "runtime/arguments.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -34,8 +34,11 @@ const char* Abstract_VM_Version::_s_internal_vm_info_string = Abstract_VM_Versio
 
 uint64_t Abstract_VM_Version::_features = 0;
 const char* Abstract_VM_Version::_features_string = "";
+uint64_t Abstract_VM_Version::_cpu_features = 0;
 
+#ifndef SUPPORTS_NATIVE_CX8
 bool Abstract_VM_Version::_supports_cx8 = false;
+#endif
 bool Abstract_VM_Version::_supports_atomic_getset4 = false;
 bool Abstract_VM_Version::_supports_atomic_getset8 = false;
 bool Abstract_VM_Version::_supports_atomic_getadd4 = false;
@@ -72,6 +75,10 @@ VirtualizationType Abstract_VM_Version::_detected_virtualization = NoDetectedVir
 
 #ifndef DEBUG_LEVEL
   #error DEBUG_LEVEL must be defined
+#endif
+
+#ifndef HOTSPOT_BUILD_TIME
+  #error HOTSPOT_BUILD_TIME must be defined
 #endif
 
 #define VM_RELEASE HOTSPOT_VERSION_STRING
@@ -112,13 +119,17 @@ const char* Abstract_VM_Version::vm_name() {
   return VMNAME;
 }
 
+#ifndef VENDOR_PADDING
+# define VENDOR_PADDING 64
+#endif
+#ifndef VENDOR
+# define VENDOR  "Oracle Corporation"
+#endif
+
+static const char vm_vendor_string[sizeof(VENDOR) < VENDOR_PADDING ? VENDOR_PADDING : sizeof(VENDOR)] = VENDOR;
 
 const char* Abstract_VM_Version::vm_vendor() {
-#ifdef VENDOR
-  return VENDOR;
-#else
-  return "Oracle Corporation";
-#endif
+  return vm_vendor_string;
 }
 
 
@@ -157,13 +168,6 @@ const char* Abstract_VM_Version::vm_release() {
   return VM_RELEASE;
 }
 
-// NOTE: do *not* use stringStream. this function is called by
-//       fatal error handlers. if the crash is in native thread,
-//       stringStream cannot get resource allocated and will SEGV.
-const char* Abstract_VM_Version::jre_release_version() {
-  return VERSION_STRING;
-}
-
 #define OS       LINUX_ONLY("linux")             \
                  WINDOWS_ONLY("windows")         \
                  AIX_ONLY("aix")                 \
@@ -199,11 +203,7 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
 
   #ifndef HOTSPOT_BUILD_COMPILER
     #ifdef _MSC_VER
-      #if _MSC_VER == 1800
-        #define HOTSPOT_BUILD_COMPILER "MS VC++ 12.0 (VS2013)"
-      #elif _MSC_VER == 1900
-        #define HOTSPOT_BUILD_COMPILER "MS VC++ 14.0 (VS2015)"
-      #elif _MSC_VER == 1911
+      #if _MSC_VER == 1911
         #define HOTSPOT_BUILD_COMPILER "MS VC++ 15.3 (VS2017)"
       #elif _MSC_VER == 1912
         #define HOTSPOT_BUILD_COMPILER "MS VC++ 15.5 (VS2017)"
@@ -239,6 +239,20 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
         #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.0 (VS2022)"
       #elif _MSC_VER == 1931
         #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.1 (VS2022)"
+      #elif _MSC_VER == 1932
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.2 (VS2022)"
+      #elif _MSC_VER == 1933
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.3 (VS2022)"
+      #elif _MSC_VER == 1934
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.4 (VS2022)"
+      #elif _MSC_VER == 1935
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.5 (VS2022)"
+      #elif _MSC_VER == 1936
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.6 (VS2022)"
+      #elif _MSC_VER == 1937
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.7 (VS2022)"
+      #elif _MSC_VER == 1938
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.8 (VS2022)"
       #else
         #define HOTSPOT_BUILD_COMPILER "unknown MS VC++:" XSTR(_MSC_VER)
       #endif
@@ -267,10 +281,6 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
     #define LIBC_STR ""
   #endif
 
-  #ifndef HOTSPOT_BUILD_TIME
-    #define HOTSPOT_BUILD_TIME __DATE__ " " __TIME__
-  #endif
-
   #define INTERNAL_VERSION_SUFFIX VM_RELEASE ")" \
          " for " OS "-" CPU FLOAT_ARCH_STR LIBC_STR \
          " JRE (" VERSION_STRING "), built on " HOTSPOT_BUILD_TIME \
@@ -279,10 +289,6 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
   return strcmp(DEBUG_LEVEL, "release") == 0
       ? VMNAME " (" INTERNAL_VERSION_SUFFIX
       : VMNAME " (" DEBUG_LEVEL " " INTERNAL_VERSION_SUFFIX;
-}
-
-const char *Abstract_VM_Version::vm_build_user() {
-  return HOTSPOT_BUILD_USER;
 }
 
 const char *Abstract_VM_Version::jdk_debug_level() {
@@ -320,14 +326,14 @@ void Abstract_VM_Version::insert_features_names(char* buf, size_t buflen, const 
 bool Abstract_VM_Version::print_matching_lines_from_file(const char* filename, outputStream* st, const char* keywords_to_match[]) {
   char line[500];
   FILE* fp = os::fopen(filename, "r");
-  if (fp == NULL) {
+  if (fp == nullptr) {
     return false;
   }
 
   st->print_cr("Virtualization information:");
-  while (fgets(line, sizeof(line), fp) != NULL) {
+  while (fgets(line, sizeof(line), fp) != nullptr) {
     int i = 0;
-    while (keywords_to_match[i] != NULL) {
+    while (keywords_to_match[i] != nullptr) {
       if (strncmp(line, keywords_to_match[i], strlen(keywords_to_match[i])) == 0) {
         st->print("%s", line);
         break;
@@ -365,8 +371,8 @@ int Abstract_VM_Version::number_of_sockets(void) {
 const char* Abstract_VM_Version::cpu_name(void) {
   assert(_initialized, "should be initialized");
   char* tmp = NEW_C_HEAP_ARRAY_RETURN_NULL(char, CPU_TYPE_DESC_BUF_SIZE, mtTracing);
-  if (NULL == tmp) {
-    return NULL;
+  if (nullptr == tmp) {
+    return nullptr;
   }
   strncpy(tmp, _cpu_name, CPU_TYPE_DESC_BUF_SIZE);
   return tmp;
@@ -375,8 +381,8 @@ const char* Abstract_VM_Version::cpu_name(void) {
 const char* Abstract_VM_Version::cpu_description(void) {
   assert(_initialized, "should be initialized");
   char* tmp = NEW_C_HEAP_ARRAY_RETURN_NULL(char, CPU_DETAILED_DESC_BUF_SIZE, mtTracing);
-  if (NULL == tmp) {
-    return NULL;
+  if (nullptr == tmp) {
+    return nullptr;
   }
   strncpy(tmp, _cpu_desc, CPU_DETAILED_DESC_BUF_SIZE);
   return tmp;

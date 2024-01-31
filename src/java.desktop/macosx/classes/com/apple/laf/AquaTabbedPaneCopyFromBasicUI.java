@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,7 +111,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
     @Deprecated
     protected KeyStroke rightKey;
 
-// Transient variables (recalculated each time TabbedPane is layed out)
+// Transient variables (recalculated each time TabbedPane is laid out)
 
     protected int[] tabRuns = new int[10];
     protected int runCount = 0;
@@ -1051,7 +1051,6 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
             case TOP:
             default:
                 nudge = isSelected ? -1 : 1;
-                ;
         }
         return nudge;
     }
@@ -2243,7 +2242,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
 
             // In order to allow programs to use a single component
             // as the display for multiple tabs, we will not change
-            // the visible compnent if the currently selected tab
+            // the visible component if the currently selected tab
             // has a null component.  This is a bit dicey, as we don't
             // explicitly state we support this in the spec, but since
             // programs are now depending on this, we're making it work.
@@ -2742,7 +2741,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
 
             // In order to allow programs to use a single component
             // as the display for multiple tabs, we will not change
-            // the visible compnent if the currently selected tab
+            // the visible component if the currently selected tab
             // has a null component.  This is a bit dicey, as we don't
             // explicitly state we support this in the spec, but since
             // programs are now depending on this, we're making it work.
@@ -3808,12 +3807,8 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
                     method.invoke(klass, new Object[] { this });
                 } catch (final NoSuchMethodException nsme) {
                     assert false : "LazyActionMap unable to load actions " + klass;
-                } catch (final IllegalAccessException iae) {
-                    assert false : "LazyActionMap unable to load actions " + iae;
-                } catch (final InvocationTargetException ite) {
-                    assert false : "LazyActionMap unable to load actions " + ite;
-                } catch (final IllegalArgumentException iae) {
-                    assert false : "LazyActionMap unable to load actions " + iae;
+                } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                    assert false : "LazyActionMap unable to load actions " + e;
                 }
             }
         }

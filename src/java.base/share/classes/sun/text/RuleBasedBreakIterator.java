@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,8 @@ import java.text.BreakIterator;
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
 import java.util.MissingResourceException;
+import java.util.Objects;
+
 import sun.text.CompactByteArray;
 import sun.text.SupplementaryCharacterData;
 
@@ -498,24 +500,9 @@ public class RuleBasedBreakIterator extends BreakIterator {
      */
     @Override
     public boolean equals(Object that) {
-        try {
-            if (that == null) {
-                return false;
-            }
-
-            RuleBasedBreakIterator other = (RuleBasedBreakIterator) that;
-            if (checksum != other.checksum) {
-                return false;
-            }
-            if (text == null) {
-                return other.text == null;
-            } else {
-                return text.equals(other.text);
-            }
-        }
-        catch(ClassCastException e) {
-            return false;
-        }
+        return that instanceof RuleBasedBreakIterator other
+                && checksum == other.checksum
+                && Objects.equals(text, other.text);
     }
 
     /**
@@ -527,8 +514,7 @@ public class RuleBasedBreakIterator extends BreakIterator {
     }
 
     /**
-     * Compute a hashcode for this BreakIterator
-     * @return A hash code
+     * {@return hashcode for this BreakIterator}
      */
     @Override
     public int hashCode() {

@@ -26,6 +26,7 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHBARRIERSET_HPP
 
 #include "gc/shared/barrierSet.hpp"
+#include "gc/shared/bufferNode.hpp"
 #include "gc/shenandoah/shenandoahSATBMarkQueueSet.hpp"
 
 class ShenandoahHeap;
@@ -133,6 +134,10 @@ public:
   class AccessBarrier: public BarrierSet::AccessBarrier<decorators, BarrierSetT> {
     typedef BarrierSet::AccessBarrier<decorators, BarrierSetT> Raw;
 
+  private:
+    template <typename T>
+    static void oop_store_common(T* addr, oop value);
+
   public:
     // Heap oop accesses. These accessors get resolved when
     // IN_HEAP is set (e.g. when using the HeapAccess API), it is
@@ -174,7 +179,6 @@ public:
 
     template <typename T>
     static oop oop_atomic_xchg_not_in_heap(T* addr, oop new_value);
-
   };
 
 };

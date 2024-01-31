@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -603,12 +603,18 @@ public abstract class SocketChannel
     /**
      * @throws  NotYetConnectedException
      *          If this channel is not yet connected
+     * @throws  ClosedChannelException      {@inheritDoc}
+     * @throws  AsynchronousCloseException  {@inheritDoc}
+     * @throws  ClosedByInterruptException  {@inheritDoc}
      */
     public abstract int read(ByteBuffer dst) throws IOException;
 
     /**
      * @throws  NotYetConnectedException
      *          If this channel is not yet connected
+     * @throws  ClosedChannelException      {@inheritDoc}
+     * @throws  AsynchronousCloseException  {@inheritDoc}
+     * @throws  ClosedByInterruptException  {@inheritDoc}
      */
     public abstract long read(ByteBuffer[] dsts, int offset, int length)
         throws IOException;
@@ -616,6 +622,9 @@ public abstract class SocketChannel
     /**
      * @throws  NotYetConnectedException
      *          If this channel is not yet connected
+     * @throws  ClosedChannelException      {@inheritDoc}
+     * @throws  AsynchronousCloseException  {@inheritDoc}
+     * @throws  ClosedByInterruptException  {@inheritDoc}
      */
     public final long read(ByteBuffer[] dsts) throws IOException {
         return read(dsts, 0, dsts.length);
@@ -624,12 +633,18 @@ public abstract class SocketChannel
     /**
      * @throws  NotYetConnectedException
      *          If this channel is not yet connected
+     * @throws  ClosedChannelException      {@inheritDoc}
+     * @throws  AsynchronousCloseException  {@inheritDoc}
+     * @throws  ClosedByInterruptException  {@inheritDoc}
      */
     public abstract int write(ByteBuffer src) throws IOException;
 
     /**
      * @throws  NotYetConnectedException
      *          If this channel is not yet connected
+     * @throws  ClosedChannelException      {@inheritDoc}
+     * @throws  AsynchronousCloseException  {@inheritDoc}
+     * @throws  ClosedByInterruptException  {@inheritDoc}
      */
     public abstract long write(ByteBuffer[] srcs, int offset, int length)
         throws IOException;
@@ -637,6 +652,9 @@ public abstract class SocketChannel
     /**
      * @throws  NotYetConnectedException
      *          If this channel is not yet connected
+     * @throws  ClosedChannelException      {@inheritDoc}
+     * @throws  AsynchronousCloseException  {@inheritDoc}
+     * @throws  ClosedByInterruptException  {@inheritDoc}
      */
     public final long write(ByteBuffer[] srcs) throws IOException {
         return write(srcs, 0, srcs.length);

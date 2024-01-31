@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,27 +33,27 @@
 #include "gc/shared/gcWhen.hpp"
 #include "jfr/leakprofiler/leakProfiler.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointWriter.hpp"
-#include "jfr/recorder/checkpoint/types/jfrType.hpp"
-#include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/checkpoint/types/jfrThreadGroup.hpp"
 #include "jfr/recorder/checkpoint/types/jfrThreadState.hpp"
+#include "jfr/recorder/checkpoint/types/jfrType.hpp"
+#include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
-#include "jfr/writers/jfrJavaEventWriter.hpp"
 #include "jfr/utilities/jfrThreadIterator.hpp"
+#include "jfr/writers/jfrJavaEventWriter.hpp"
 #include "memory/iterator.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/referenceType.hpp"
 #include "memory/universe.hpp"
+#include "nmt/nmtCommon.hpp"
 #include "oops/compressedOops.hpp"
 #include "runtime/flags/jvmFlag.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/synchronizer.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/vmOperations.hpp"
-
 #ifdef COMPILER2
 #include "opto/compile.hpp"
 #include "opto/node.hpp"
@@ -90,14 +90,14 @@ class JfrCheckpointThreadClosure : public ThreadClosure {
 
 // Only static thread ids, virtual threads are handled dynamically.
 void JfrCheckpointThreadClosure::do_thread(Thread* t) {
-  assert(t != NULL, "invariant");
+  assert(t != nullptr, "invariant");
   ++_count;
   const traceid tid = JfrThreadId::jfr_id(t);
   assert(tid != 0, "invariant");
   _writer.write_key(tid);
   int length = -1;
   const char* const name = JfrThreadName::name(t, length);
-  assert(name != NULL, "invariant");
+  assert(name != nullptr, "invariant");
   _writer.write(name);
   _writer.write<traceid>(JfrThreadId::os_id(t));
   if (!t->is_Java_thread()) {
@@ -219,14 +219,13 @@ void MetaspaceObjectTypeConstant::serialize(JfrCheckpointWriter& writer) {
 static const char* reference_type_to_string(ReferenceType rt) {
   switch (rt) {
     case REF_NONE: return "None reference";
-    case REF_OTHER: return "Other reference";
     case REF_SOFT: return "Soft reference";
     case REF_WEAK: return "Weak reference";
     case REF_FINAL: return "Final reference";
     case REF_PHANTOM: return "Phantom reference";
     default:
       ShouldNotReachHere();
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -249,11 +248,11 @@ void NarrowOopModeConstant::serialize(JfrCheckpointWriter& writer) {
 }
 
 void CodeBlobTypeConstant::serialize(JfrCheckpointWriter& writer) {
-  static const u4 nof_entries = CodeBlobType::NumTypes;
+  static const u4 nof_entries = static_cast<u4>(CodeBlobType::NumTypes);
   writer.write_count(nof_entries);
   for (u4 i = 0; i < nof_entries; ++i) {
     writer.write_key(i);
-    writer.write(CodeCache::get_code_heap_name(i));
+    writer.write(CodeCache::get_code_heap_name(static_cast<CodeBlobType>(i)));
   }
 };
 
@@ -270,40 +269,48 @@ void ThreadStateConstant::serialize(JfrCheckpointWriter& writer) {
   JfrThreadState::serialize(writer);
 }
 
-void JfrThreadConstant::write_name(JfrCheckpointWriter& writer, const char* name, int length) {
-  if (length == 0) {
+void JfrThreadConstant::write_name(JfrCheckpointWriter& writer) {
+  if (_length == 0) {
     writer.write_empty_string();
     return;
   }
-  writer.write(name);
+  writer.write(_name);
+}
+
+void JfrThreadConstant::write_os_name(JfrCheckpointWriter& writer, bool is_vthread) {
+  if (is_vthread) {
+    // Write the null string categorically as the os name for virtual threads.
+    writer.write((const char*)nullptr);
+    return;
+  }
+  write_name(writer);
 }
 
 void JfrThreadConstant::serialize(JfrCheckpointWriter& writer) {
-  assert(_thread != NULL, "invariant");
-  const bool vthread = _vthread != nullptr;
+  assert(_thread != nullptr, "invariant");
+  const bool is_vthread = _vthread != nullptr;
   writer.write_key(JfrThreadId::jfr_id(_thread, _tid));
-  int length = -1;
-  const char* const name = JfrThreadName::name(_thread, length, _vthread);
-  write_name(writer, name, length);
-  writer.write(_vthread != nullptr ? static_cast<traceid>(0) : JfrThreadId::os_id(_thread));
+  _name = JfrThreadName::name(_thread, _length, _vthread);
+  write_os_name(writer, is_vthread);
+  writer.write(is_vthread ? static_cast<traceid>(0) : JfrThreadId::os_id(_thread));
   if (!_thread->is_Java_thread()) {
-    write_name(writer, nullptr, 0); // java name
+    writer.write((const char*)nullptr); // java name
     writer.write<traceid>(0); // java thread id
     writer.write<traceid>(0); // java thread group
     writer.write<bool>(false); // isVirtual
-  } else {
-    write_name(writer, name, length);
-    writer.write(JfrThreadId::jfr_id(_thread, _tid));
-    // java thread group - VirtualThread threadgroup reserved id 1
-    const traceid thread_group_id = vthread ? 1 :
-      JfrThreadGroup::thread_group_id(JavaThread::cast(_thread), Thread::current());
-    writer.write(thread_group_id);
-    writer.write<bool>(vthread); // isVirtual
-    if (!vthread) {
-      JfrThreadGroup::serialize(&writer, thread_group_id);
-    }
-    // VirtualThread threadgroup already serialized invariant.
+    return;
   }
+  write_name(writer);
+  writer.write(JfrThreadId::jfr_id(_thread, _tid));
+  // java thread group - VirtualThread threadgroup reserved id 1
+  const traceid thread_group_id = is_vthread ? 1 :
+    JfrThreadGroup::thread_group_id(JavaThread::cast(_thread), Thread::current());
+  writer.write(thread_group_id);
+  writer.write<bool>(is_vthread); // isVirtual
+  if (!is_vthread) {
+    JfrThreadGroup::serialize(&writer, thread_group_id);
+  }
+  // VirtualThread threadgroup already serialized invariant.
 }
 
 void BytecodeConstant::serialize(JfrCheckpointWriter& writer) {
@@ -321,5 +328,14 @@ void CompilerTypeConstant::serialize(JfrCheckpointWriter& writer) {
   for (u4 i = 0; i < nof_entries; ++i) {
     writer.write_key(i);
     writer.write(compilertype2name((CompilerType)i));
+  }
+}
+
+void NMTTypeConstant::serialize(JfrCheckpointWriter& writer) {
+  writer.write_count(mt_number_of_types);
+  for (int i = 0; i < mt_number_of_types; ++i) {
+    writer.write_key(i);
+    MEMFLAGS flag = NMTUtil::index_to_flag(i);
+    writer.write(NMTUtil::flag_to_name(flag));
   }
 }

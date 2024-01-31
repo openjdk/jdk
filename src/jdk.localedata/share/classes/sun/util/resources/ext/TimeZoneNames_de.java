@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -427,7 +427,8 @@ public final class TimeZoneNames_de extends TimeZoneNamesBundle {
                                               "Franz\u00f6sisch-Guiana Sommerzeit", "GFST",
                                               "Franz\u00F6sisch-Guiana Zeit", "GFT"}},
             {"America/Cayman", EST},
-            {"America/Chihuahua", MST},
+            {"America/Chihuahua", CST},
+            {"America/Ciudad_Juarez", MST},
             {"America/Creston", MST},
             {"America/Coral_Harbour", EST},
             {"America/Cordoba", AGT},
@@ -516,7 +517,7 @@ public final class TimeZoneNames_de extends TimeZoneNamesBundle {
             {"America/North_Dakota/Center", CST},
             {"America/North_Dakota/New_Salem", CST},
             {"America/Nuuk", WGT},
-            {"America/Ojinaga", MST},
+            {"America/Ojinaga", CST},
             {"America/Panama", EST},
             {"America/Pangnirtung", EST},
             {"America/Paramaribo", new String[] {"Suriname Zeit", "SRT",

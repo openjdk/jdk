@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3687,7 +3687,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
 
         /**
          * Returns the <code>Rectangle</code> enclosing the text between
-         * two indicies.
+         * two indices.
          *
          * @param startIndex the start index in the text
          * @param endIndex the end index in the text
@@ -3958,7 +3958,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
 
     /**
      * Maps from class name to Boolean indicating if
-     * <code>processInputMethodEvent</code> has been overriden.
+     * <code>processInputMethodEvent</code> has been overridden.
      */
     @SuppressWarnings("removal")
     private static Cache<Class<?>,Boolean> METHOD_OVERRIDDEN
@@ -4071,8 +4071,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
 
                         ((JTextComponent)comp).replaceSelection(data);
                         return true;
-                    } catch (UnsupportedFlavorException ufe) {
-                    } catch (IOException ioe) {
+                    } catch (UnsupportedFlavorException | IOException e) {
                     }
                 }
             }
@@ -4318,7 +4317,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * Action is returned, if not and the KeyStroke represents a
      * KeyTyped event and the Keymap has a defaultAction,
      * <code>DefaultActionKey</code> is returned.
-     * <p>KeymapActionMap is then able to transate the object passed in
+     * <p>KeymapActionMap is then able to translate the object passed in
      * to either message the Keymap, or message its default implementation.
      */
     static class KeymapWrapper extends InputMap {

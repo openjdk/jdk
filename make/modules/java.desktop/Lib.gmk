@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -89,8 +89,8 @@ ifeq ($(call isTargetOs, macosx), true)
       NAME := osxapp, \
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKLIB), \
-      DISABLED_WARNINGS_clang := objc-method-access objc-root-class \
-          deprecated-declarations format-nonliteral, \
+      DISABLED_WARNINGS_clang_NSApplicationAWT.m := deprecated-declarations format-nonliteral, \
+      DISABLED_WARNINGS_clang_QueuingApplicationDelegate.m := objc-method-access, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LIBS := \
@@ -119,7 +119,7 @@ ifeq ($(call isTargetOs, macosx), true)
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKLIB), \
       EXTRA_HEADER_DIRS := libosxapp, \
-      DISABLED_WARNINGS_clang := deprecated-declarations, \
+      DISABLED_WARNINGS_clang_CFileManager.m := deprecated-declarations, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           -L$(SUPPORT_OUTPUTDIR)/modules_libs/java.desktop \
           $(call SET_SHARED_LIBRARY_ORIGIN), \

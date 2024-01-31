@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,9 @@
  */
 package org.openjdk.bench.java.lang.foreign;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -38,14 +39,14 @@ import sun.misc.Unsafe;
 
 import java.util.concurrent.TimeUnit;
 
-import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.*;
 
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@Fork(value = 3, jvmArgsAppend = "--enable-preview")
+@Fork(3)
 public class LoopOverPollutedSegments extends JavaLayouts {
 
     static final int ELEM_SIZE = 1_000_000;
@@ -55,7 +56,7 @@ public class LoopOverPollutedSegments extends JavaLayouts {
     static final Unsafe unsafe = Utils.unsafe;
 
 
-    MemorySession session;
+    Arena confinedArena, sharedArena;
     MemorySegment nativeSegment, nativeSharedSegment, heapSegmentBytes, heapSegmentFloats;
     byte[] arr;
     long addr;
@@ -67,8 +68,12 @@ public class LoopOverPollutedSegments extends JavaLayouts {
             unsafe.putInt(addr + (i * 4), i);
         }
         arr = new byte[ALLOC_SIZE];
-        nativeSegment = MemorySegment.allocateNative(ALLOC_SIZE, 4, session = MemorySession.openConfined());
-        nativeSharedSegment = MemorySegment.allocateNative(ALLOC_SIZE, 4, session);
+        confinedArena = Arena.ofConfined();
+        sharedArena = Arena.ofShared();
+        Arena scope1 = confinedArena;
+        nativeSegment = scope1.allocate(ALLOC_SIZE, 4);
+        Arena scope = sharedArena;
+        nativeSharedSegment = scope.allocate(ALLOC_SIZE, 4);
         heapSegmentBytes = MemorySegment.ofArray(new byte[ALLOC_SIZE]);
         heapSegmentFloats = MemorySegment.ofArray(new float[ELEM_SIZE]);
 
@@ -92,7 +97,8 @@ public class LoopOverPollutedSegments extends JavaLayouts {
 
     @TearDown
     public void tearDown() {
-        session.close();
+        confinedArena.close();
+        sharedArena.close();
         heapSegmentBytes = null;
         heapSegmentFloats = null;
         arr = null;

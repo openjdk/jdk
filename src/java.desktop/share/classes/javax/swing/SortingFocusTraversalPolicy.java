@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ public class SortingFocusTraversalPolicy
      * Used by getComponentAfter and getComponentBefore for efficiency. In
      * order to maintain compliance with the specification of
      * FocusTraversalPolicy, if traversal wraps, we should invoke
-     * getFirstComponent or getLastComponent. These methods may be overriden in
+     * getFirstComponent or getLastComponent. These methods may be overridden in
      * subclasses to behave in a non-generic way. However, in the generic case,
      * these methods will simply return the first or last Components of the
      * sorted list, respectively. Since getComponentAfter and
@@ -225,7 +225,7 @@ public class SortingFocusTraversalPolicy
                     retComp = cont.getFocusTraversalPolicy().getDefaultComponent(cont);
 
                     if (retComp != null && log.isLoggable(PlatformLogger.Level.FINE)) {
-                        log.fine("### Transfered focus down-cycle to " + retComp +
+                        log.fine("### Transferred focus down-cycle to " + retComp +
                                  " in the focus cycle root " + cont);
                     }
                 } else {
@@ -237,7 +237,7 @@ public class SortingFocusTraversalPolicy
                            cont.getFocusTraversalPolicy().getLastComponent(cont));
 
                 if (retComp != null && log.isLoggable(PlatformLogger.Level.FINE)) {
-                    log.fine("### Transfered focus to " + retComp + " in the FTP provider " + cont);
+                    log.fine("### Transferred focus to " + retComp + " in the FTP provider " + cont);
                 }
             }
         }
@@ -281,8 +281,8 @@ public class SortingFocusTraversalPolicy
             throw new IllegalArgumentException("aContainer is not a focus cycle root of aComponent");
         }
 
-        // Before all the ckecks below we first see if it's an FTP provider or a focus cycle root.
-        // If it's the case just go down cycle (if it's set to "implicit").
+        // Before all the checks below we first see if it's an FTP provider or a focus cycle root.
+        // If it's the case, just go down cycle (if it's set to "implicit").
         Component comp = getComponentDownCycle(aComponent, FORWARD_TRAVERSAL);
         if (comp != null) {
             return comp;

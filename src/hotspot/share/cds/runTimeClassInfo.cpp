@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,14 @@
 
 #include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
+#include "cds/dumpTimeClassInfo.hpp"
 #include "cds/runTimeClassInfo.hpp"
+#include "classfile/systemDictionaryShared.hpp"
 
 void RunTimeClassInfo::init(DumpTimeClassInfo& info) {
   ArchiveBuilder* builder = ArchiveBuilder::current();
-  assert(builder->is_in_buffer_space(info._klass), "must be");
-  _klass = info._klass;
+  builder->write_pointer_in_buffer(&_klass, info._klass);
+
   if (!SystemDictionaryShared::is_builtin(_klass)) {
     CrcInfo* c = crc();
     c->_clsfile_size = info._clsfile_size;
@@ -42,8 +44,8 @@ void RunTimeClassInfo::init(DumpTimeClassInfo& info) {
     RTVerifierConstraint* vf_constraints = verifier_constraints();
     char* flags = verifier_constraint_flags();
     for (i = 0; i < _num_verifier_constraints; i++) {
-      vf_constraints[i]._name      = builder->any_to_offset_u4(info._verifier_constraints->at(i)._name);
-      vf_constraints[i]._from_name = builder->any_to_offset_u4(info._verifier_constraints->at(i)._from_name);
+      vf_constraints[i]._name      = builder->any_to_offset_u4(info._verifier_constraints->at(i).name());
+      vf_constraints[i]._from_name = builder->any_to_offset_u4(info._verifier_constraints->at(i).from_name());
     }
     for (i = 0; i < _num_verifier_constraints; i++) {
       flags[i] = info._verifier_constraint_flags->at(i);
@@ -53,15 +55,14 @@ void RunTimeClassInfo::init(DumpTimeClassInfo& info) {
   if (_num_loader_constraints > 0) {
     RTLoaderConstraint* ld_constraints = loader_constraints();
     for (i = 0; i < _num_loader_constraints; i++) {
-      ld_constraints[i]._name = builder->any_to_offset_u4(info._loader_constraints->at(i)._name);
-      ld_constraints[i]._loader_type1 = info._loader_constraints->at(i)._loader_type1;
-      ld_constraints[i]._loader_type2 = info._loader_constraints->at(i)._loader_type2;
+      ld_constraints[i]._name = builder->any_to_offset_u4(info._loader_constraints->at(i).name());
+      ld_constraints[i]._loader_type1 = info._loader_constraints->at(i).loader_type1();
+      ld_constraints[i]._loader_type2 = info._loader_constraints->at(i).loader_type2();
     }
   }
 
   if (_klass->is_hidden()) {
-    InstanceKlass* n_h = info.nest_host();
-    set_nest_host(n_h);
+    builder->write_pointer_in_buffer(nest_host_addr(), info.nest_host());
   }
   if (_klass->has_archived_enum_objs()) {
     int num = info.num_enum_klass_static_fields();
@@ -71,8 +72,6 @@ void RunTimeClassInfo::init(DumpTimeClassInfo& info) {
       set_enum_klass_static_field_root_index_at(i, root_index);
     }
   }
-
-  ArchivePtrMarker::mark_pointer(&_klass);
 }
 
 size_t RunTimeClassInfo::crc_size(InstanceKlass* klass) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,7 +166,7 @@ public class BasicType implements Type {
                         boolean throwExceptionIfNotFound) {
     Field field = null;
     if (nameToFieldMap != null) {
-      field = (Field) nameToFieldMap.get(fieldName);
+      field = nameToFieldMap.get(fieldName);
 
       if (field != null) {
         return field;
@@ -274,7 +274,7 @@ public class BasicType implements Type {
   }
 
   public NarrowOopField getNarrowOopField(String fieldName) throws WrongTypeException {
-    return (NarrowOopField) new BasicNarrowOopField(getOopField(fieldName));
+    return new BasicNarrowOopField(getOopField(fieldName));
   }
 
   public AddressField getAddressField(String fieldName) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "gc/parallel/psGenerationCounters.hpp"
 #include "gc/parallel/psVirtualspace.hpp"
 #include "gc/parallel/spaceCounters.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
 
 class PSOldGen : public CHeapObj<mtGC> {
@@ -50,29 +51,11 @@ class PSOldGen : public CHeapObj<mtGC> {
   // Block size for parallel iteration
   static const size_t IterateBlockSize = 1024 * 1024;
 
-#ifdef ASSERT
-  void assert_block_in_covered_region(MemRegion new_memregion) {
-    // Explicitly capture current covered_region in a local
-    MemRegion covered_region = this->start_array()->covered_region();
-    assert(covered_region.contains(new_memregion),
-           "new region is not in covered_region [ " PTR_FORMAT ", " PTR_FORMAT " ], "
-           "new region [ " PTR_FORMAT ", " PTR_FORMAT " ], "
-           "object space [ " PTR_FORMAT ", " PTR_FORMAT " ]",
-           p2i(covered_region.start()),
-           p2i(covered_region.end()),
-           p2i(new_memregion.start()),
-           p2i(new_memregion.end()),
-           p2i(this->object_space()->used_region().start()),
-           p2i(this->object_space()->used_region().end()));
-  }
-#endif
-
   HeapWord* cas_allocate_noexpand(size_t word_size) {
     assert_locked_or_safepoint(Heap_lock);
     HeapWord* res = object_space()->cas_allocate(word_size);
-    if (res != NULL) {
-      DEBUG_ONLY(assert_block_in_covered_region(MemRegion(res, word_size)));
-      _start_array.allocate_block(res);
+    if (res != nullptr) {
+      _start_array.update_for_block(res, res + word_size);
     }
     return res;
   }
@@ -100,6 +83,11 @@ class PSOldGen : public CHeapObj<mtGC> {
   MemRegion reserved() const {
     return MemRegion((HeapWord*)(_virtual_space->low_boundary()),
                      (HeapWord*)(_virtual_space->high_boundary()));
+  }
+
+  MemRegion committed() const {
+    return MemRegion((HeapWord*)(_virtual_space->low()),
+                     (HeapWord*)(_virtual_space->high()));
   }
 
   size_t max_gen_size() const { return _max_gen_size; }

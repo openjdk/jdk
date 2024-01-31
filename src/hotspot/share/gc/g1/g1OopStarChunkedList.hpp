@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ class G1OopStarChunkedList : public CHeapObj<mtGC> {
   inline void push(ChunkedList<T*, mtGC>** field, T* p);
 
  public:
-  G1OopStarChunkedList() : _used_memory(0), _roots(NULL), _croots(NULL), _oops(NULL), _coops(NULL) {}
+  G1OopStarChunkedList() : _used_memory(0), _roots(nullptr), _croots(nullptr), _oops(nullptr), _coops(nullptr) {}
   ~G1OopStarChunkedList();
 
   size_t used_memory() { return _used_memory; }

@@ -277,13 +277,10 @@ public abstract class FileLock implements AutoCloseable {
         if (size < 0)
             return false;
 
-        // Test whether this is below that
-        try {
-            if (Math.addExact(this.position, this.size) <= position)
-                return false;
-        } catch (ArithmeticException ignored) {
-            // the sum of this.position and this.size overflows the range of
-            // long hence their mathematical sum is greater than position
+        // Test whether this is below that. The sum cannot overflow as the
+        // size and position are immutable and were checked at construction.
+        if (this.position + this.size <= position) {
+            return false;
         }
 
         // if size == 0 then the specified lock range is unbounded and

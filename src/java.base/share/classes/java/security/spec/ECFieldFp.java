@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 package java.security.spec;
 
 import java.math.BigInteger;
-import java.util.Arrays;
 
 /**
  * This immutable class defines an elliptic curve (EC) prime
@@ -39,7 +38,7 @@ import java.util.Arrays;
  */
 public class ECFieldFp implements ECField {
 
-    private BigInteger p;
+    private final BigInteger p;
 
     /**
      * Creates an elliptic curve prime finite field
@@ -63,7 +62,7 @@ public class ECFieldFp implements ECField {
      */
     public int getFieldSize() {
         return p.bitLength();
-    };
+    }
 
     /**
      * Returns the prime {@code p} of this prime finite field.
@@ -80,6 +79,7 @@ public class ECFieldFp implements ECField {
      * @return true if {@code obj} is an instance
      * of ECFieldFp and the prime value match, false otherwise.
      */
+    @Override
     public boolean equals(Object obj) {
         if (this == obj)  return true;
 
@@ -88,9 +88,9 @@ public class ECFieldFp implements ECField {
     }
 
     /**
-     * Returns a hash code value for this prime finite field.
-     * @return a hash code value.
+     * {@return a hash code value for this prime finite field}
      */
+    @Override
     public int hashCode() {
         return p.hashCode();
     }

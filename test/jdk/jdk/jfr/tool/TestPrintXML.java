@@ -52,6 +52,7 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import jdk.jfr.Timespan;
 import jdk.jfr.Timestamp;
+import jdk.jfr.Unsigned;
 import jdk.jfr.ValueDescriptor;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordedObject;
@@ -131,6 +132,8 @@ public class TestPrintXML {
             Map<String, Object> xmlMap = (Map<String, Object>) xmlObject;
             List<ValueDescriptor> fields = re.getFields();
             if (fields.size() != xmlMap.size()) {
+                System.err.println("Size of fields of recorded object (" + fields.size() +
+                                   ") and reference (" + xmlMap.size() + ") differ");
                 return false;
             }
             for (ValueDescriptor v : fields) {
@@ -149,7 +152,11 @@ public class TestPrintXML {
                 if (v.getAnnotation(Timespan.class) != null) {
                     expectedValue = re.getDuration(name);
                 }
+                if (expectedValue instanceof Number && v.getAnnotation(Unsigned.class) != null) {
+                    expectedValue = Long.toUnsignedString(re.getLong(name));
+                }
                 if (!compare(expectedValue, xmlValue)) {
+                    System.err.println("Expcted value " + expectedValue + " differs from " + xmlValue);
                     return false;
                 }
             }
@@ -159,10 +166,14 @@ public class TestPrintXML {
             Object[] array = (Object[]) eventObject;
             Object[] xmlArray = (Object[]) xmlObject;
             if (array.length != xmlArray.length) {
+                System.err.println("Array length " + array.length + " differs from length " +
+                                   xmlArray.length);
                 return false;
             }
             for (int i = 0; i < array.length; i++) {
                 if (!compare(array[i], xmlArray[i])) {
+                    System.err.println("Array element " + i + "(" + array[i] +
+                                       ") differs from element " + xmlArray[i]);
                     return false;
                 }
             }
@@ -170,7 +181,11 @@ public class TestPrintXML {
         }
         String s1 = String.valueOf(eventObject);
         String s2 = (String) xmlObject;
-        return s1.equals(s2);
+        boolean res = s1.equals(s2);
+        if (! res) {
+            System.err.println("Event object string " + s1 + " differs from " + s2);
+        }
+        return res;
     }
 
     static class XMLEvent {

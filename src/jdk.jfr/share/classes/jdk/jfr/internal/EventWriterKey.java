@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,13 +40,12 @@ public final class EventWriterKey {
     }
 
     private static long createKey() {
-        JVM jvm = JVM.getJVM();
         long r = mixMurmur64(System.identityHashCode(new Object()));
-        r = 31 * r + mixMurmur64(jvm.getPid().hashCode());
+        r = 31 * r + mixMurmur64(JVM.getPid().hashCode());
         r = 31 * r + mixMurmur64(System.nanoTime());
         r = 31 * r + mixMurmur64(Thread.currentThread().threadId());
         r = 31 * r + mixMurmur64(System.currentTimeMillis());
-        r = 31 * r + mixMurmur64(jvm.getTypeId(JVM.class));
+        r = 31 * r + mixMurmur64(JVM.getTypeId(JVM.class));
         r = 31 * r + mixMurmur64(JVM.counterTime());
         return mixMurmur64(r);
     }

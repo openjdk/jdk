@@ -48,7 +48,6 @@ public:
 };
 
 class VM_G1TryInitiateConcMark : public VM_GC_Operation {
-  double _target_pause_time_ms;
   bool _transient_failure;
   bool _cycle_already_in_progress;
   bool _whitebox_attached;
@@ -57,8 +56,7 @@ class VM_G1TryInitiateConcMark : public VM_GC_Operation {
 
 public:
   VM_G1TryInitiateConcMark(uint gc_count_before,
-                           GCCause::Cause gc_cause,
-                           double target_pause_time_ms);
+                           GCCause::Cause gc_cause);
   virtual VMOp_Type type() const { return VMOp_G1TryInitiateConcMark; }
   virtual bool doit_prologue();
   virtual void doit();
@@ -71,19 +69,14 @@ public:
 
 class VM_G1CollectForAllocation : public VM_CollectForAllocation {
   bool _gc_succeeded;
-  double _target_pause_time_ms;
 
 public:
   VM_G1CollectForAllocation(size_t         word_size,
                             uint           gc_count_before,
-                            GCCause::Cause gc_cause,
-                            double         target_pause_time_ms);
+                            GCCause::Cause gc_cause);
   virtual VMOp_Type type() const { return VMOp_G1CollectForAllocation; }
   virtual void doit();
   bool gc_succeeded() const { return _gc_succeeded; }
-
-private:
-  bool should_try_allocation_before_gc();
 };
 
 // Concurrent G1 stop-the-world operations such as remark and cleanup.

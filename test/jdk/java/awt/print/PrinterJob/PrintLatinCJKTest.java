@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @library ../../regtesthelpers
  * @build PassFailJFrame
  * @summary JDK7 Printing: CJK and Latin Text in string overlap
+ * @key printer
  * @run main/manual PrintLatinCJKTest
  */
 
@@ -74,15 +75,14 @@ public class PrintLatinCJKTest implements Printable {
             });
             frame.getContentPane().add(b, BorderLayout.SOUTH);
             frame.pack();
-            frame.setLocationRelativeTo(null);
-            frame.setVisible(true);
 
             // add the test frame to dispose
-            PassFailJFrame.addTestFrame(frame);
+            PassFailJFrame.addTestWindow(frame);
 
             // Arrange the test instruction frame and test frame side by side
-            PassFailJFrame.positionTestFrame(frame,
+            PassFailJFrame.positionTestWindow(frame,
                     PassFailJFrame.Position.HORIZONTAL);
+            frame.setVisible(true);
         });
     }
 
@@ -99,8 +99,13 @@ public class PrintLatinCJKTest implements Printable {
     }
 
     public static void main(String[] args) throws InterruptedException, InvocationTargetException {
-        PassFailJFrame passFailJFrame = new PassFailJFrame("Test Instruction" +
-                "Frame", info, 10, 40, 5);
+        PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
+                .title("Test Instructions Frame")
+                .instructions(info)
+                .testTimeOut(10)
+                .rows(10)
+                .columns(45)
+                .build();
         showFrame();
         passFailJFrame.awaitAndCheck();
     }

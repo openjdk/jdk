@@ -46,7 +46,7 @@ public class TestAutoVecCountingDownLoop {
 
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR,  " >0 "})
+    @IR(counts = {IRNode.LOAD_VECTOR_I,  " >0 "})
     @IR(counts = {IRNode.STORE_VECTOR, " >0 "})
     private static void testCountingDown(int[] a, int[] b) {
         for (int i = 2000; i > 0; i--) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ public class PrivateTransportTest {
         String libName = transportLib.getFileName().toString().replace("dt_socket", "private_dt_socket");
         Files.copy(transportLib, Paths.get(Utils.TEST_CLASSES).resolve(libName));
 
-        ProcessBuilder pb = ProcessTools.createTestJvm(
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                 "-agentlib:jdwp=transport=private_dt_socket,server=y,suspend=n",
                 "-classpath", Utils.TEST_CLASSES,
                 "HelloWorld");

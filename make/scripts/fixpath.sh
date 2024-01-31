@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -148,14 +148,13 @@ function import_path() {
   if [[ "$path" != "" ]]; then
     # Store current unix path
     unixpath="$path"
-    # Now turn it into a windows path
-    winpath="$($PATHTOOL -w "$path" 2>/dev/null)"
-    # If it fails, try again with an added .exe (needed on WSL)
-    if [[ $? -ne 0 ]]; then
+    # If $unixpath does not exist, add .exe (needed on WSL)
+    if [[ ! -e "$unixpath" ]]; then
       unixpath="$unixpath.exe"
-      winpath="$($PATHTOOL -w "$unixpath" 2>/dev/null)"
     fi
-    if [[ $? -eq 0 ]]; then
+    # Now turn it into a windows path
+    winpath="$($PATHTOOL -w "$unixpath" 2>/dev/null)"
+    if [[ $? -eq 0 && -e "$unixpath" ]]; then
       if [[ ! "$winpath" =~ ^"$ENVROOT"\\.*$ ]] ; then
         # If it is not in envroot, it's a generic windows path
         if [[ ! $winpath =~ ^[-_.:\\a-zA-Z0-9]*$ ]] ; then
@@ -327,7 +326,9 @@ function convert_path() {
     suffix="${BASH_REMATCH[6]}"
 
     # We only believe this is a path if the first part is an existing directory
-    if [[ -d "/$firstdir" ]];  then
+    # and the prefix is not a subdirectory in the current working directory. Remove
+    # any part leading up to a : or = in the prefix before checking.
+    if [[ -d "/$firstdir" && ! -d "${prefix##*:}" && ! -d "${prefix##*=}" ]];  then
       if [[ $ENVROOT == "" ]]; then
         if [[ $QUIET != true ]]; then
           echo fixpath: failure: Path "'"$pathmatch"'" cannot be converted to Windows path >&2
@@ -351,6 +352,21 @@ function convert_path() {
     # Return the arg unchanged
     result="$arg"
   fi
+}
+
+# Treat $1 as name of a file containing paths. Convert those paths to Windows style,
+# and output them to the file specified by $2.
+# If the output file already exists, it is overwritten.
+function convert_file() {
+  infile="$1"
+  outfile="$2"
+  if [[ -e $outfile ]] ; then
+    rm $outfile
+  fi
+  while read line; do
+    convert_path "$line"
+    echo "$result" >> $outfile
+  done < $infile
 }
 
 # Treat $1 as name of a file containing paths. Convert those paths to Windows style,
@@ -499,6 +515,8 @@ if [[ "$ACTION" == "import" ]] ; then
 elif [[ "$ACTION" == "print" ]] ; then
   print_command_line "$@"
   echo "$result"
+elif [[ "$ACTION" == "convert" ]] ; then
+  convert_file "$@"
 elif [[ "$ACTION" == "exec" ]] ; then
   exec_command_line "$@"
   # Propagate exit code

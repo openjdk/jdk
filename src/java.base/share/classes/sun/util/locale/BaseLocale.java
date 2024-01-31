@@ -33,8 +33,8 @@
 package sun.util.locale;
 
 import jdk.internal.misc.CDS;
+import jdk.internal.util.StaticProperty;
 import jdk.internal.vm.annotation.Stable;
-import sun.security.action.GetPropertyAction;
 
 import java.lang.ref.SoftReference;
 import java.util.StringJoiner;
@@ -101,9 +101,10 @@ public final class BaseLocale {
 
     /**
      * Boolean for the old ISO language code compatibility.
+     * The system property "java.locale.useOldISOCodes" is not security sensitive,
+     * so no need to ensure privileged access here.
      */
-    private static final boolean OLD_ISO_CODES = GetPropertyAction.privilegedGetProperties()
-            .getProperty("java.locale.useOldISOCodes", "false")
+    private static final boolean OLD_ISO_CODES = StaticProperty.javaLocaleUseOldISOCodes()
             .equalsIgnoreCase("true");
 
     // This method must be called with normalize = false only when creating the

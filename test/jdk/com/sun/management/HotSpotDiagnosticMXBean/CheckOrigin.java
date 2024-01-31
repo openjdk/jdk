@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 8028994
  * @author Staffan Larsen
+ * @requires vm.flagless
  * @library /test/lib
  * @modules jdk.attach/sun.tools.attach
  *          jdk.management
@@ -59,10 +60,10 @@ public class CheckOrigin {
             }
 
             ProcessBuilder pb = ProcessTools.
-                createJavaProcessBuilder(
+                createLimitedTestJavaProcessBuilder(
                     "--add-exports", "jdk.attach/sun.tools.attach=ALL-UNNAMED",
                     "-XX:+UseG1GC",  // this will cause MaxNewSize to be FLAG_SET_ERGO
-                    "-XX:+UseCodeAging",
+                    "-XX:+UseCodeCacheFlushing",
                     "-XX:+UseCerealGC",         // Should be ignored.
                     "-XX:Flags=" + flagsFile.getAbsolutePath(),
                     "-Djdk.attach.allowAttachSelf",
@@ -97,7 +98,7 @@ public class CheckOrigin {
             // Not set, so should be default
             checkOrigin("ManagementServer", Origin.DEFAULT);
             // Set on the command line
-            checkOrigin("UseCodeAging", Origin.VM_CREATION);
+            checkOrigin("UseCodeCacheFlushing", Origin.VM_CREATION);
             // Set in _JAVA_OPTIONS
             checkOrigin("CheckJNICalls", Origin.ENVIRON_VAR);
             // Set in JAVA_TOOL_OPTIONS

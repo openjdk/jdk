@@ -98,7 +98,7 @@ static int iterateRawmidiDevices(snd_rawmidi_stream_t direction,
             // try to get card info
             card = snd_rawmidi_info_get_card(rawmidi_info);
             if (card >= 0) {
-                sprintf(devname, ALSA_HARDWARE_CARD, card);
+                snprintf(devname, sizeof(devname), ALSA_HARDWARE_CARD, card);
                 if (snd_ctl_open(&handle, devname, SND_CTL_NONBLOCK) >= 0) {
                     if (snd_ctl_card_info(handle, card_info) >= 0) {
                         defcardinfo = card_info;
@@ -106,7 +106,7 @@ static int iterateRawmidiDevices(snd_rawmidi_stream_t direction,
                     snd_ctl_close(handle);
                 }
             }
-            // call calback function for the device
+            // call callback function for the device
             if (iterator != NULL) {
                 doContinue = (*iterator)(ALSA_DEFAULT_DEVICE_ID, rawmidi_info,
                                          defcardinfo, userData);
@@ -121,7 +121,7 @@ static int iterateRawmidiDevices(snd_rawmidi_stream_t direction,
     if (snd_card_next(&card) >= 0) {
         TRACE1("Found card %d\n", card);
         while (doContinue && (card >= 0)) {
-            sprintf(devname, ALSA_HARDWARE_CARD, card);
+            snprintf(devname, sizeof(devname), ALSA_HARDWARE_CARD, card);
             TRACE1("Opening control for alsa rawmidi device \"%s\"...\n", devname);
             err = snd_ctl_open(&handle, devname, SND_CTL_NONBLOCK);
             if (err < 0) {
@@ -230,7 +230,7 @@ static int deviceInfoIterator(UINT32 deviceID, snd_rawmidi_info_t *rawmidi_info,
 
         buffer[0]=' '; buffer[1]='[';
         // buffer[300] is enough to store the actual device string w/o overrun
-        getDeviceStringFromDeviceID(&buffer[2], deviceID, usePlugHw, ALSA_RAWMIDI);
+        getDeviceStringFromDeviceID(&buffer[2], sizeof(buffer) - 2, deviceID, usePlugHw, ALSA_RAWMIDI);
         strncat(buffer, "]", sizeof(buffer) - strlen(buffer) - 1);
         strncpy(desc->name,
                 (cardinfo != NULL)
@@ -392,7 +392,7 @@ INT32 openMidiDevice(snd_rawmidi_stream_t direction, INT32 deviceIndex,
     // TODO: iterate to get dev ID from index
     err = getMidiDeviceID(direction, deviceIndex, &deviceID);
     TRACE1("  openMidiDevice(): deviceID: %d\n", (int) deviceID);
-    getDeviceStringFromDeviceID(devicename, deviceID,
+    getDeviceStringFromDeviceID(devicename, sizeof(devicename), deviceID,
                                 usePlugHw, ALSA_RAWMIDI);
     TRACE1("  openMidiDevice(): deviceString: %s\n", devicename);
 

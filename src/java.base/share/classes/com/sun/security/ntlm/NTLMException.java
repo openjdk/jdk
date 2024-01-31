@@ -65,6 +65,11 @@ public final class NTLMException extends GeneralSecurityException {
      */
     public static final int PROTOCOL = 6;
 
+    /**
+     * If an invalid input is provided.
+     */
+    public static final int INVALID_INPUT = 7;
+
     private int errorCode;
 
     /**

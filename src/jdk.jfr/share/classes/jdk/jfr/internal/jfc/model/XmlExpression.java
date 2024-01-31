@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
  */
 package jdk.jfr.internal.jfc.model;
 
-import java.text.ParseException;
 import java.util.List;
 
 // Base class for <condition>, <or>, <not>, <and> and <test>
@@ -45,9 +44,9 @@ abstract class XmlExpression extends XmlElement {
     }
 
     @Override
-    protected void validateChildConstraints() throws ParseException {
+    protected void validateChildConstraints() throws JFCModelException {
         if (getExpressions().size() < 2) {
-            throw new ParseException("Expected + <" + getElementName() + "> to have at least two children", 0);
+            throw new JFCModelException("Expected + <" + getElementName() + "> to have at least two children");
         }
     }
 }

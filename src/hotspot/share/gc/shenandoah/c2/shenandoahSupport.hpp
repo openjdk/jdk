@@ -49,7 +49,7 @@ private:
   };
 
   static bool verify_helper(Node* in, Node_Stack& phis, VectorSet& visited, verify_type t, bool trace, Unique_Node_List& barriers_used);
-  static void report_verify_failure(const char* msg, Node* n1 = NULL, Node* n2 = NULL);
+  static void report_verify_failure(const char* msg, Node* n1 = nullptr, Node* n2 = nullptr);
 #endif
   static Node* dom_mem(Node* mem, Node* ctrl, int alias, Node*& mem_ctrl, PhaseIdealLoop* phase);
   static Node* no_branches(Node* c, Node* dom, bool allow_one_proj, PhaseIdealLoop* phase);
@@ -132,6 +132,8 @@ public:
   int alias() const { return _alias; }
 
   Node* collect_memory_for_infinite_loop(const Node* in);
+
+  void record_new_ctrl(Node* ctrl, Node* region, Node* mem, Node* mem_for_ctrl);
 };
 
 class ShenandoahCompareAndSwapPNode : public CompareAndSwapPNode {
@@ -140,10 +142,10 @@ public:
     : CompareAndSwapPNode(c, mem, adr, val, ex, mem_ord) { }
 
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape) {
-    if (in(ExpectedIn) != NULL && phase->type(in(ExpectedIn)) == TypePtr::NULL_PTR) {
+    if (in(ExpectedIn) != nullptr && phase->type(in(ExpectedIn)) == TypePtr::NULL_PTR) {
       return new CompareAndSwapPNode(in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address), in(MemNode::ValueIn), in(ExpectedIn), order());
     }
-    return NULL;
+    return nullptr;
   }
 
   virtual int Opcode() const;
@@ -155,10 +157,10 @@ public:
     : CompareAndSwapNNode(c, mem, adr, val, ex, mem_ord) { }
 
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape) {
-    if (in(ExpectedIn) != NULL && phase->type(in(ExpectedIn)) == TypeNarrowOop::NULL_PTR) {
+    if (in(ExpectedIn) != nullptr && phase->type(in(ExpectedIn)) == TypeNarrowOop::NULL_PTR) {
       return new CompareAndSwapNNode(in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address), in(MemNode::ValueIn), in(ExpectedIn), order());
     }
-    return NULL;
+    return nullptr;
   }
 
   virtual int Opcode() const;
@@ -170,10 +172,10 @@ public:
     : WeakCompareAndSwapPNode(c, mem, adr, val, ex, mem_ord) { }
 
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape) {
-    if (in(ExpectedIn) != NULL && phase->type(in(ExpectedIn)) == TypePtr::NULL_PTR) {
+    if (in(ExpectedIn) != nullptr && phase->type(in(ExpectedIn)) == TypePtr::NULL_PTR) {
       return new WeakCompareAndSwapPNode(in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address), in(MemNode::ValueIn), in(ExpectedIn), order());
     }
-    return NULL;
+    return nullptr;
   }
 
   virtual int Opcode() const;
@@ -185,10 +187,10 @@ public:
     : WeakCompareAndSwapNNode(c, mem, adr, val, ex, mem_ord) { }
 
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape) {
-    if (in(ExpectedIn) != NULL && phase->type(in(ExpectedIn)) == TypeNarrowOop::NULL_PTR) {
+    if (in(ExpectedIn) != nullptr && phase->type(in(ExpectedIn)) == TypeNarrowOop::NULL_PTR) {
       return new WeakCompareAndSwapNNode(in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address), in(MemNode::ValueIn), in(ExpectedIn), order());
     }
-    return NULL;
+    return nullptr;
   }
 
   virtual int Opcode() const;
@@ -200,10 +202,10 @@ public:
     : CompareAndExchangePNode(c, mem, adr, val, ex, at, t, mem_ord) { }
 
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape) {
-    if (in(ExpectedIn) != NULL && phase->type(in(ExpectedIn)) == TypePtr::NULL_PTR) {
+    if (in(ExpectedIn) != nullptr && phase->type(in(ExpectedIn)) == TypePtr::NULL_PTR) {
       return new CompareAndExchangePNode(in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address), in(MemNode::ValueIn), in(ExpectedIn), adr_type(), bottom_type(), order());
     }
-    return NULL;
+    return nullptr;
   }
 
   virtual int Opcode() const;
@@ -215,10 +217,10 @@ public:
     : CompareAndExchangeNNode(c, mem, adr, val, ex, at, t, mem_ord) { }
 
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape) {
-    if (in(ExpectedIn) != NULL && phase->type(in(ExpectedIn)) == TypeNarrowOop::NULL_PTR) {
+    if (in(ExpectedIn) != nullptr && phase->type(in(ExpectedIn)) == TypeNarrowOop::NULL_PTR) {
       return new CompareAndExchangeNNode(in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address), in(MemNode::ValueIn), in(ExpectedIn), adr_type(), bottom_type(), order());
     }
-    return NULL;
+    return nullptr;
   }
 
   virtual int Opcode() const;

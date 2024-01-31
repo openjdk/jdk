@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,7 +20,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import java.io.PrintStream;
 
 /*
  * @test
@@ -37,26 +36,16 @@ import java.io.PrintStream;
  * COMMENTS
  *     Ported from JVMDI.
  *
- * @requires vm.continuations
  * @library /test/lib
- * @compile --enable-preview -source ${jdk.version} fieldacc04.java
- * @run main/othervm/native --enable-preview -agentlib:fieldacc04 fieldacc04
+ * @compile fieldacc04.java
+ * @run main/othervm/native -agentlib:fieldacc04 fieldacc04
  */
 
 
 public class fieldacc04 {
 
-    final static int JCK_STATUS_BASE = 95;
-
     static {
-        try {
-            System.loadLibrary("fieldacc04");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load fieldacc04 library");
-            System.err.println("java.library.path:"
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
+        System.loadLibrary("fieldacc04");
     }
 
     static volatile int result;

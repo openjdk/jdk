@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
  * @author Eric Wang <yiming.wang@oracle.com>
  * @summary tests java.util.Base64
  * @library /test/lib /
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
  * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true
  *       -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
@@ -46,12 +46,15 @@ import java.nio.file.Paths;
 import java.util.Base64;
 import java.util.Base64.Decoder;
 import java.util.Base64.Encoder;
+import java.util.HexFormat;
 import java.util.Objects;
 import java.util.Random;
 import java.util.Arrays;
 
+import static java.lang.String.format;
+
 import compiler.whitebox.CompilerWhiteBoxTest;
-import sun.hotspot.code.Compiler;
+import jdk.test.whitebox.code.Compiler;
 import jtreg.SkippedException;
 import jdk.test.lib.Utils;
 
@@ -68,6 +71,8 @@ public class TestBase64 {
         initNonBase64Arrays();
 
         warmup();
+
+        length_checks();
 
         test0(FileType.ASCII, Base64Type.BASIC, Base64.getEncoder(), Base64.getDecoder(),"plain.txt", "baseEncode.txt", iters);
         test0(FileType.ASCII, Base64Type.URLSAFE, Base64.getUrlEncoder(), Base64.getUrlDecoder(),"plain.txt", "urlEncode.txt", iters);
@@ -301,5 +306,119 @@ public class TestBase64 {
         default:
             throw new InternalError("Internal test error: getBadBase64Char called with unknown Base64Type value");
         }
+    }
+
+    static final int POSITIONS = 30_000;
+    static final int BASE_LENGTH = 256;
+    static final HexFormat HEX_FORMAT = HexFormat.of().withUpperCase().withDelimiter(" ");
+
+    static int[] plainOffsets = new int[POSITIONS + 1];
+    static byte[] plainBytes;
+    static int[] base64Offsets = new int[POSITIONS + 1];
+    static byte[] base64Bytes;
+
+    static {
+        // Set up ByteBuffer with characters to be encoded
+        int plainLength = 0;
+        for (int i = 0; i < plainOffsets.length; i++) {
+            plainOffsets[i] = plainLength;
+            int positionLength = (BASE_LENGTH + i) % 2048;
+            plainLength += positionLength;
+        }
+        // Put one of each possible byte value into ByteBuffer
+        plainBytes = new byte[plainLength];
+        for (int i = 0; i < plainBytes.length; i++) {
+            plainBytes[i] = (byte) i;
+        }
+
+        // Grab various slices of the ByteBuffer and encode them
+        ByteBuffer plainBuffer = ByteBuffer.wrap(plainBytes);
+        int base64Length = 0;
+        for (int i = 0; i < POSITIONS; i++) {
+            base64Offsets[i] = base64Length;
+            int offset = plainOffsets[i];
+            int length = plainOffsets[i + 1] - offset;
+            ByteBuffer plainSlice = plainBuffer.slice(offset, length);
+            base64Length += Base64.getEncoder().encode(plainSlice).remaining();
+        }
+
+        // Decode the slices created above and ensure lengths match
+        base64Offsets[base64Offsets.length - 1] = base64Length;
+        base64Bytes = new byte[base64Length];
+        for (int i = 0; i < POSITIONS; i++) {
+            int plainOffset = plainOffsets[i];
+            ByteBuffer plainSlice = plainBuffer.slice(plainOffset, plainOffsets[i + 1] - plainOffset);
+            ByteBuffer encodedBytes = Base64.getEncoder().encode(plainSlice);
+            int base64Offset = base64Offsets[i];
+            int expectedLength = base64Offsets[i + 1] - base64Offset;
+            if (expectedLength != encodedBytes.remaining()) {
+                throw new IllegalStateException(format("Unexpected length: %s <> %s", encodedBytes.remaining(), expectedLength));
+            }
+            encodedBytes.get(base64Bytes, base64Offset, expectedLength);
+        }
+    }
+
+    public static void length_checks() {
+        decodeAndCheck();
+        encodeDecode();
+        System.out.println("Test complete, no invalid decodes detected");
+    }
+
+    // Use ByteBuffer to cause decode() to use the base + offset form of decode
+    // Checks for bug reported in JDK-8321599 where padding characters appear
+    // within the beginning of the ByteBuffer *before* the offset.  This caused
+    // the decoded string length to be off by 1 or 2 bytes.
+    static void decodeAndCheck() {
+        for (int i = 0; i < POSITIONS; i++) {
+            ByteBuffer encodedBytes = base64BytesAtPosition(i);
+            ByteBuffer decodedBytes = Base64.getDecoder().decode(encodedBytes);
+
+            if (!decodedBytes.equals(plainBytesAtPosition(i))) {
+                String base64String = base64StringAtPosition(i);
+                String plainHexString = plainHexStringAtPosition(i);
+                String decodedHexString = HEX_FORMAT.formatHex(decodedBytes.array(), decodedBytes.arrayOffset() + decodedBytes.position(), decodedBytes.arrayOffset() + decodedBytes.limit());
+                throw new IllegalStateException(format("Mismatch for %s\n\nExpected:\n%s\n\nActual:\n%s", base64String, plainHexString, decodedHexString));
+            }
+        }
+    }
+
+    // Encode strings of lengths 1-1K, decode, and ensure length and contents correct.
+    // This checks that padding characters are properly handled by decode.
+    static void encodeDecode() {
+        String allAs = "A(=)".repeat(128);
+        for (int i = 1; i <= 512; i++) {
+            String encStr = Base64.getEncoder().encodeToString(allAs.substring(0, i).getBytes());
+            String decStr = new String(Base64.getDecoder().decode(encStr));
+
+            if ((decStr.length() != allAs.substring(0, i).length()) ||
+                (!Objects.equals(decStr, allAs.substring(0, i)))
+               ) {
+                throw new IllegalStateException(format("Mismatch: Expected: %s\n          Actual: %s\n", allAs.substring(0, i), decStr));
+            }
+        }
+    }
+
+    static ByteBuffer plainBytesAtPosition(int position) {
+        int offset = plainOffsets[position];
+        int length = plainOffsets[position + 1] - offset;
+        return ByteBuffer.wrap(plainBytes, offset, length);
+    }
+
+    static String plainHexStringAtPosition(int position) {
+        int offset = plainOffsets[position];
+        int length = plainOffsets[position + 1] - offset;
+        return HEX_FORMAT.formatHex(plainBytes, offset, offset + length);
+    }
+
+    static String base64StringAtPosition(int position) {
+        int offset = base64Offsets[position];
+        int length = base64Offsets[position + 1] - offset;
+        return new String(base64Bytes, offset, length, StandardCharsets.UTF_8);
+    }
+
+    static ByteBuffer base64BytesAtPosition(int position) {
+        int offset = base64Offsets[position];
+        int length = base64Offsets[position + 1] - offset;
+        return ByteBuffer.wrap(base64Bytes, offset, length);
     }
 }

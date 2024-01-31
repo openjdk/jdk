@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -252,7 +252,7 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
     }
 
     /**
-     * Gets the text editor component that this caret is
+     * Gets the text editor component that this caret
      * is bound to.
      *
      * @return the component
@@ -366,6 +366,8 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
         }
     }
 
+    private int savedBlinkRate = 0;
+    private boolean isBlinkRateSaved = false;
     // --- FocusListener methods --------------------------
 
     /**
@@ -379,8 +381,21 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
     public void focusGained(FocusEvent e) {
         if (component.isEnabled()) {
             if (component.isEditable()) {
-                setVisible(true);
+                if (isBlinkRateSaved) {
+                    setBlinkRate(savedBlinkRate);
+                    savedBlinkRate = 0;
+                    isBlinkRateSaved = false;
+                }
+            } else {
+                if (getBlinkRate() != 0) {
+                    if (!isBlinkRateSaved) {
+                        savedBlinkRate = getBlinkRate();
+                        isBlinkRateSaved = true;
+                    }
+                    setBlinkRate(0);
+                }
             }
+            setVisible(true);
             setSelectionVisible(true);
             updateSystemSelection();
         }
@@ -567,10 +582,10 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
         if ((component != null) && component.isEnabled() &&
                                    component.isRequestFocusEnabled()) {
             if (inWindow) {
-                component.requestFocusInWindow();
+                component.requestFocusInWindow(FocusEvent.Cause.MOUSE_EVENT);
             }
             else {
-                component.requestFocus();
+                component.requestFocus(FocusEvent.Cause.MOUSE_EVENT);
             }
         }
     }
@@ -1031,16 +1046,28 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
      * @see Caret#setBlinkRate
      */
     public void setBlinkRate(int rate) {
+        if (rate < 0) {
+            throw new IllegalArgumentException("Invalid blink rate: " + rate);
+        }
         if (rate != 0) {
-            if (flasher == null) {
-                flasher = new Timer(rate, handler);
+            if (component != null && component.isEditable()) {
+                if (flasher == null) {
+                    flasher = new Timer(rate, handler);
+                }
+                flasher.setDelay(rate);
+            } else {
+                savedBlinkRate = rate;
+                isBlinkRateSaved = true;
             }
-            flasher.setDelay(rate);
         } else {
             if (flasher != null) {
                 flasher.stop();
                 flasher.removeActionListener(handler);
                 flasher = null;
+            }
+            if ((component == null || component.isEditable()) && isBlinkRateSaved) {
+                savedBlinkRate = 0;
+                isBlinkRateSaved = false;
             }
         }
     }
@@ -1053,6 +1080,9 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
      * @see Caret#getBlinkRate
      */
     public int getBlinkRate() {
+        if (isBlinkRateSaved) {
+            return savedBlinkRate;
+        }
         return (flasher == null) ? 0 : flasher.getDelay();
     }
 
@@ -1257,12 +1287,12 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
 
     Position.Bias guessBiasForOffset(int offset, Position.Bias lastBias,
                                      boolean lastLTR) {
-        // There is an abiguous case here. That if your model looks like:
+        // There is an ambiguous case here. If your model looks like:
         // abAB with the cursor at abB]A (visual representation of
         // 3 forward) deleting could either become abB] or
-        // ab[B. I'ld actually prefer abB]. But, if I implement that
-        // a delete at abBA] would result in aBA] vs a[BA which I
-        // think is totally wrong. To get this right we need to know what
+        // ab[B. I'd actually prefer abB]. But, if I implement that,
+        // a delete at abBA] would result in aBA] vs a[BA which, I
+        // think, is totally wrong. To get this right we need to know what
         // was deleted. And we could get this from the bidi structure
         // in the change event. So:
         // PENDING: base this off what was deleted.

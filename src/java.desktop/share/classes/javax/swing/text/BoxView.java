@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,10 +134,10 @@ public class BoxView extends CompositeView {
 
     /**
      * Determines if the layout is valid along the given axis.
-     * @return if the layout is valid along the given axis
      *
-     * @param axis either <code>View.X_AXIS</code> or <code>View.Y_AXIS</code>
-     *
+     * @param  axis either {@code View.X_AXIS} or {@code View.Y_AXIS}
+     * @return {@code true} if the layout is valid along the given axis,
+     *         otherwise {@code false}
      * @since 1.4
      */
     protected boolean isLayoutValid(int axis) {
@@ -751,7 +751,7 @@ public class BoxView extends CompositeView {
      *
      * @param targetSpan the total span given to the view, which
      *  would be used to layout the children
-     * @param axis the axis being layed out
+     * @param axis the axis being laid out
      * @param offsets the offsets from the origin of the view for
      *  each of the child views; this is a return value and is
      *  filled in by the implementation of this method
@@ -824,7 +824,7 @@ public class BoxView extends CompositeView {
      *
      * @param targetSpan the total span given to the view, which
      *  would be used to layout the children
-     * @param axis the axis being layed out
+     * @param axis the axis being laid out
      * @param offsets the offsets from the origin of the view for
      *  each of the child views; this is a return value and is
      *  filled in by the implementation of this method
@@ -1116,7 +1116,7 @@ public class BoxView extends CompositeView {
     /**
      * Determines in which direction the next view lays.
      * Consider the View at index n. Typically the <code>View</code>s
-     * are layed out from left to right, so that the <code>View</code>
+     * are laid out from left to right, so that the <code>View</code>
      * to the EAST will be at index n + 1, and the <code>View</code>
      * to the WEST will be at index n - 1. In certain situations,
      * such as with bidirectional text, it is possible
@@ -1124,9 +1124,9 @@ public class BoxView extends CompositeView {
      * but rather at index n - 1, or that the <code>View</code>
      * to the WEST is not at index n - 1, but index n + 1.
      * In this case this method would return true,
-     * indicating the <code>View</code>s are layed out in
+     * indicating the <code>View</code>s are laid out in
      * descending order. Otherwise the method would return false
-     * indicating the <code>View</code>s are layed out in ascending order.
+     * indicating the <code>View</code>s are laid out in ascending order.
      * <p>
      * If the receiver is laying its <code>View</code>s along the
      * <code>Y_AXIS</code>, this will return the value from
@@ -1140,7 +1140,7 @@ public class BoxView extends CompositeView {
      * @return true if the <code>View</code>s surrounding the
      *          <code>View</code> responding for rendering
      *          <code>position</code> and <code>bias</code>
-     *          are layed out in descending order; otherwise false
+     *          are laid out in descending order; otherwise false
      */
     protected boolean flipEastAndWestAtEnds(int position,
                                             Position.Bias bias) {

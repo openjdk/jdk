@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -157,9 +157,9 @@ void VM_Version::get_os_cpu_info() {
   if (FILE *f = os::fopen("/proc/cpuinfo", "r")) {
     // need a large buffer as the flags line may include lots of text
     char buf[1024], *p;
-    while (fgets(buf, sizeof (buf), f) != NULL) {
-      if ((p = strchr(buf, ':')) != NULL) {
-        long v = strtol(p+1, NULL, 0);
+    while (fgets(buf, sizeof (buf), f) != nullptr) {
+      if ((p = strchr(buf, ':')) != nullptr) {
+        long v = strtol(p+1, nullptr, 0);
         if (strncmp(buf, "CPU implementer", sizeof "CPU implementer" - 1) == 0) {
           _cpu = v;
         } else if (strncmp(buf, "CPU variant", sizeof "CPU variant" - 1) == 0) {
@@ -181,7 +181,7 @@ void VM_Version::get_os_cpu_info() {
 }
 
 static bool read_fully(const char *fname, char *buf, size_t buflen) {
-  assert(buf != NULL, "invalid argument");
+  assert(buf != nullptr, "invalid argument");
   assert(buflen >= 1, "invalid argument");
   int fd = os::open(fname, O_RDONLY, 0);
   if (fd != -1) {
@@ -211,10 +211,10 @@ void VM_Version::get_compatible_board(char *buf, int buflen) {
     "/proc/device-tree/compatible",
     "/sys/devices/virtual/dmi/id/board_name",
     "/sys/devices/virtual/dmi/id/product_name",
-    NULL
+    nullptr
   };
 
-  for (const char **fname = board_name_file_list; *fname != NULL; fname++) {
+  for (const char **fname = board_name_file_list; *fname != nullptr; fname++) {
     if (read_fully(*fname, buf, buflen)) {
       return;
     }

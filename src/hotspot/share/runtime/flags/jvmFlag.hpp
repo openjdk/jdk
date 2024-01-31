@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -279,8 +279,6 @@ public:
   void print_kind(outputStream* st, unsigned int width) const;
   void print_origin(outputStream* st, unsigned int width) const;
   void print_as_flag(outputStream* st) const;
-
-  static const char* flag_error_str(JVMFlag::Error error);
 
 private:
   // type checking - the following functions make sure you access *_addr as

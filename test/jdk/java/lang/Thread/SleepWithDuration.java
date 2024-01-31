@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,22 +24,22 @@
 /**
  * @test
  * @summary Test Thread.sleep(Duration)
- * @run testng SleepWithDuration
+ * @run junit SleepWithDuration
  */
 
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class SleepWithDuration {
+class SleepWithDuration {
 
     /**
      * Basic test for sleep(Duration).
      */
     @Test
-    public void testSleep() throws Exception {
+    void testSleep() throws Exception {
         // sleep for 2 seconds
         long start = millisTime();
         Thread.sleep(Duration.ofMillis(2000));
@@ -56,7 +56,7 @@ public class SleepWithDuration {
      * Test Thread.sleep with interrupt status set.
      */
     @Test
-    public void testSleepWithInterruptStatusSet() throws Exception {
+    void testSleepWithInterruptStatusSet() throws Exception {
         Thread.currentThread().interrupt();
         try {
             Thread.sleep(Duration.ofNanos(0));
@@ -78,8 +78,8 @@ public class SleepWithDuration {
      * Test interrupting Thread.sleep.
      */
     @Test
-    public void testInterruptSleep() throws Exception {
-        // schedule current thread to interrupted after 1s
+    void testInterruptSleep() throws Exception {
+        // schedule current thread to be interrupted after 1s
         Thread targetThread = Thread.currentThread();
         Thread wakerThread = new Thread(() -> {
             try {
@@ -97,7 +97,7 @@ public class SleepWithDuration {
             // interrupt status should be cleared
             assertFalse(Thread.interrupted());
         } finally {
-            wakerThread.interrupt();
+            wakerThread.join();
         }
     }
 

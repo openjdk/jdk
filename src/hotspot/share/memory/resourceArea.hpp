@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,8 @@
 #define SHARE_MEMORY_RESOURCEAREA_HPP
 
 #include "memory/allocation.hpp"
-#include "runtime/thread.hpp"
+#include "memory/arena.hpp"
+#include "runtime/javaThread.hpp"
 
 // The resource area holds temporary data structures in the VM.
 // The actual allocation areas are thread local. Typical usage:
@@ -51,10 +52,11 @@ class ResourceArea: public Arena {
 
 public:
   ResourceArea(MEMFLAGS flags = mtThread) :
-    Arena(flags) DEBUG_ONLY(COMMA _nesting(0)) {}
+    Arena(flags, Arena::Tag::tag_ra) DEBUG_ONLY(COMMA _nesting(0)) {}
 
   ResourceArea(size_t init_size, MEMFLAGS flags = mtThread) :
-    Arena(flags, init_size) DEBUG_ONLY(COMMA _nesting(0)) {}
+    Arena(flags, Arena::Tag::tag_ra, init_size) DEBUG_ONLY(COMMA _nesting(0)) {
+  }
 
   char* allocate_bytes(size_t size, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
 
@@ -105,10 +107,6 @@ public:
     assert(_nesting > state._nesting, "rollback to inactive mark");
     assert((_nesting - state._nesting) == 1, "rollback across another mark");
 
-    if (UseMallocOnly) {
-      free_malloced_objects(state._chunk, state._hwm, state._max, _hwm);
-    }
-
     if (state._chunk->next() != nullptr) { // Delete later chunks.
       // Reset size before deleting chunks.  Otherwise, the total
       // size could exceed the total chunk size.
@@ -116,17 +114,35 @@ public:
              "size: " SIZE_FORMAT ", saved size: " SIZE_FORMAT,
              size_in_bytes(), state._size_in_bytes);
       set_size_in_bytes(state._size_in_bytes);
-      state._chunk->next_chop();
+      Chunk::next_chop(state._chunk);
+      assert(_hwm != state._hwm, "Sanity check: HWM moves when we have later chunks");
     } else {
       assert(size_in_bytes() == state._size_in_bytes, "Sanity check");
     }
-    _chunk = state._chunk;      // Roll back to saved chunk.
-    _hwm = state._hwm;
-    _max = state._max;
 
-    // Clear out this chunk (to detect allocation bugs)
-    if (ZapResourceArea) {
-      memset(state._hwm, badResourceValue, state._max - state._hwm);
+    if (_hwm != state._hwm) {
+      // HWM moved: resource area was used. Roll back!
+
+      char* replaced_hwm = _hwm;
+
+      _chunk = state._chunk;
+      _hwm = state._hwm;
+      _max = state._max;
+
+      // Clear out this chunk (to detect allocation bugs).
+      // If current chunk contains the replaced HWM, this means we are
+      // doing the rollback within the same chunk, and we only need to
+      // clear up to replaced HWM.
+      if (ZapResourceArea) {
+        char* limit = _chunk->contains(replaced_hwm) ? replaced_hwm : _max;
+        assert(limit >= _hwm, "Sanity check: non-negative memset size");
+        memset(_hwm, badResourceValue, limit - _hwm);
+      }
+    } else {
+      // No allocations. Nothing to rollback. Check it.
+      assert(_chunk == state._chunk, "Sanity check: idempotence");
+      assert(_hwm == state._hwm,     "Sanity check: idempotence");
+      assert(_max == state._max,     "Sanity check: idempotence");
     }
   }
 };
@@ -177,17 +193,7 @@ class ResourceMark: public StackObj {
 #ifndef ASSERT
   ResourceMark(ResourceArea* area, Thread* thread) : _impl(area) {}
 #else
-  ResourceMark(ResourceArea* area, Thread* thread) :
-    _impl(area),
-    _thread(thread),
-    _previous_resource_mark(nullptr)
-  {
-    if (_thread != nullptr) {
-      assert(_thread == Thread::current(), "not the current thread");
-      _previous_resource_mark = _thread->current_resource_mark();
-      _thread->set_current_resource_mark(this);
-    }
-  }
+  ResourceMark(ResourceArea* area, Thread* thread);
 #endif // ASSERT
 
 public:

@@ -445,7 +445,7 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
         }
     }
 
-    // overriden in XCanvasPeer
+    // overridden in XCanvasPeer
     protected boolean doEraseBackground() {
         return true;
     }
@@ -532,7 +532,7 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
 
     void paintPeer(final Graphics g) {
     }
-    //used by Peers to avoid flickering withing paint()
+    //used by Peers to avoid flickering within paint()
     protected void flush(){
         XToolkit.awtLock();
         try {

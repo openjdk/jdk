@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,20 +24,23 @@
 /*
  * @test
  * @bug 8025636
- * @summary Synthetic frames should be hidden in exceptions
+ * @library /test/lib/
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          jdk.compiler
- * @compile -XDignore.symbol.file LUtils.java LambdaStackTrace.java
+ * @compile LambdaStackTrace.java
  * @run main LambdaStackTrace
+ * @summary Synthetic frames should be hidden in exceptions
  */
 
 import jdk.internal.org.objectweb.asm.ClassWriter;
+import jdk.test.lib.compiler.CompilerUtils;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 
 import static jdk.internal.org.objectweb.asm.Opcodes.ACC_ABSTRACT;
@@ -47,7 +50,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.V1_7;
 
 public class LambdaStackTrace {
 
-    static File classes = new File(System.getProperty("test.classes"));
+    static Path CLASSES = Path.of(System.getProperty("test.classes", "."));
 
     public static void main(String[] args) throws Exception {
         testBasic();
@@ -66,7 +69,7 @@ public class LambdaStackTrace {
         } catch (Exception ex) {
             // Before 8025636 the stacktrace would look like:
             //  at LambdaStackTrace.lambda$main$0(LambdaStackTrace.java:37)
-            //  at LambdaStackTrace$$Lambda$1/1937396743.run(<Unknown>:1000000)
+            //  at LambdaStackTrace$$Lambda/1937396743.run(<Unknown>:1000000)
             //  at LambdaStackTrace.testBasic(LambdaStackTrace.java:40)
             //  at ...
             //
@@ -121,12 +124,8 @@ public class LambdaStackTrace {
         // We can't let javac compile these interfaces because in > 1.8 it will insert
         // bridge methods into the interfaces - we want code that looks like <= 1.7,
         // so we generate it.
-        try (FileOutputStream fw = new FileOutputStream(new File(classes, "Maker.class"))) {
-            fw.write(generateMaker());
-        }
-        try (FileOutputStream fw = new FileOutputStream(new File(classes, "StringMaker.class"))) {
-            fw.write(generateStringMaker());
-        }
+        Files.write(CLASSES.resolve("Maker.class"), generateMaker());
+        Files.write(CLASSES.resolve("StringMaker.class"), generateStringMaker());
     }
 
     private static byte[] generateMaker() {
@@ -154,7 +153,7 @@ public class LambdaStackTrace {
     }
 
 
-    static void emitCode(File f) {
+    static void emitCode(Path file) throws IOException {
         ArrayList<String> scratch = new ArrayList<>();
         scratch.add("public class Caller {");
         scratch.add("    public static void callStringMaker() {");
@@ -166,13 +165,17 @@ public class LambdaStackTrace {
         scratch.add("        ((Maker) sm).make();");  // <-- This will call the bridge method
         scratch.add("    }");
         scratch.add("}");
-        LUtils.createFile(f, scratch);
+
+        Files.write(file, scratch, Charset.defaultCharset());
     }
 
-    static void compileCaller() {
-        File caller = new File(classes, "Caller.java");
+    static void compileCaller() throws IOException {
+        Path src = Path.of("src");
+        Files.createDirectories(src);
+
+        Path caller = src.resolve("Caller.java");
         emitCode(caller);
-        LUtils.compile("-cp", classes.getAbsolutePath(), "-d", classes.getAbsolutePath(), caller.getAbsolutePath());
+        CompilerUtils.compile(src, CLASSES, "-cp", CLASSES.toAbsolutePath().toString());
     }
 
     private static void verifyFrames(StackTraceElement[] stack, String... patterns) throws Exception {

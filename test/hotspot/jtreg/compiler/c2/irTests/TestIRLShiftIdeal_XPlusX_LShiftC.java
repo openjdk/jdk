@@ -28,7 +28,7 @@ import compiler.lib.ir_framework.*;
 
 /*
  * @test
- * @bug 8278114
+ * @bug 8278114 8288564
  * @summary Test that transformation from (x + x) >> c to x >> (c + 1) works as intended.
  * @library /test/lib /
  * @requires vm.compiler2.enabled
@@ -148,5 +148,35 @@ public class TestIRLShiftIdeal_XPlusX_LShiftC {
             // C2 compilation happens
             Asserts.assertTrue(info.isTestC2Compiled());
         }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.MUL_I})
+    @IR(counts = {IRNode.LSHIFT_I, "1",
+                  IRNode.ADD_I, "1"})
+    public int testIntRandom(int x) {
+        return (x + x) << 31;
+    }
+
+    @Run(test = "testIntRandom")
+    public void runTestIntRandom() {
+        int random = RunInfo.getRandom().nextInt();
+        int interpreterResult = (random + random) << 31;
+        Asserts.assertEQ(testIntRandom(random), interpreterResult);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.MUL_L})
+    @IR(counts = {IRNode.LSHIFT_L, "1",
+                  IRNode.ADD_L, "1"})
+    public long testLongRandom(long x) {
+        return (x + x) << 63;
+    }
+
+    @Run(test = "testLongRandom")
+    public void runTestLongRandom() {
+        long random = RunInfo.getRandom().nextLong();
+        long interpreterResult = (random + random) << 63;
+        Asserts.assertEQ(testLongRandom(random), interpreterResult);
     }
 }

@@ -243,8 +243,11 @@ public class SpNegoContext implements GSSContextSpi {
     }
 
     public final void dispose() throws GSSException {
-        mechContext = null;
         state = STATE_DELETED;
+        if (mechContext != null) {
+            mechContext.dispose();
+            mechContext = null;
+        }
     }
 
     /**

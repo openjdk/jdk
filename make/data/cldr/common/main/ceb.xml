@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -14,34 +14,28 @@ the LDML specification (http://unicode.org/reports/tr35/)
 		<language type="ceb"/>
 	</identity>
 	<localeDisplayNames>
-		<localeDisplayPattern>
-			<localePattern>{0} ({1})</localePattern>
-			<localeSeparator>{0}, {1}</localeSeparator>
-			<localeKeyTypePattern>{0}: {1}</localeKeyTypePattern>
-		</localeDisplayPattern>
 		<languages>
 			<language type="ar">Arabic</language>
-			<language type="ar_001">Modernong Tamdanang Arabic</language>
+			<language type="ar_001">Modernong Standard nga Arabic</language>
 			<language type="bn">Bangla</language>
-			<language type="ceb">Binisaya</language>
-			<language type="de">Aleman</language>
-			<language type="de_AT">Austriano nga Aleman</language>
-			<language type="de_CH">Taas nga Aleman sa Switzerland</language>
-			<language type="en">Ingles</language>
-			<language type="en_AU">Ingles sa Australia</language>
-			<language type="en_CA">Ingles sa Canada</language>
-			<language type="en_GB">Britanikong Ingles</language>
-			<language type="en_GB" alt="short">Ingles sa UK</language>
-			<language type="en_US">Ingles sa Amerika</language>
-			<language type="en_US" alt="short">Ingles sa US</language>
+			<language type="ceb">Cebuano</language>
+			<language type="de">German</language>
+			<language type="de_AT">Austrian German</language>
+			<language type="de_CH">Swiss High German</language>
+			<language type="en">English</language>
+			<language type="en_AU">English sa Australia</language>
+			<language type="en_CA">English sa Canada</language>
+			<language type="en_GB">Britanikong English</language>
+			<language type="en_GB" alt="short">English sa UK</language>
+			<language type="en_US">English sa America</language>
+			<language type="en_US" alt="short">English sa US</language>
 			<language type="es">Espanyol</language>
-			<language type="es_419">Espanyol sa Latin Amerika</language>
-			<language type="es_ES">Espanyol sa Europe</language>
-			<language type="es_MX">Espanyol sa Mexico</language>
+			<language type="es_ES">Espanyol (Europa)</language>
 			<language type="fr">Pranses</language>
 			<language type="fr_CA">Pranses sa Canada</language>
 			<language type="fr_CH">Pranses sa Switzerland</language>
 			<language type="hi">Hindi</language>
+			<language type="hi_Latn" alt="variant">Hinglish</language>
 			<language type="id">Indonesian</language>
 			<language type="it">Italiano</language>
 			<language type="ja">Hinapon</language>
@@ -52,16 +46,16 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<language type="pt">Portuguese</language>
 			<language type="pt_BR">Brazilyanong Portuguese</language>
 			<language type="pt_PT">Portuguese sa Europe</language>
-			<language type="ru">Ruso</language>
+			<language type="ru">Russian</language>
 			<language type="th">Thai</language>
 			<language type="tr">Turkish</language>
-			<language type="und">Wala Mailhing Lengguwahe</language>
+			<language type="und">Wala Mailhing Pinulongan</language>
 			<language type="zh">Inintsik</language>
-			<language type="zh" alt="menu">Inintsik, Mandarin</language>
-			<language type="zh_Hans">Pinasimpleng Inintsik</language>
-			<language type="zh_Hans" alt="long">Pinasimpleng Mandarin nga Inintsik</language>
-			<language type="zh_Hant">Tradisyonal nga Ininstsik</language>
-			<language type="zh_Hant" alt="long">Tradisyonal nga Mandarin nga Inintsik</language>
+			<language type="zh" alt="menu">Chinese, Mandarin</language>
+			<language type="zh_Hans">Pinasimpleng Chinese</language>
+			<language type="zh_Hans" alt="long">Pinasimpleng Mandarin Chinese</language>
+			<language type="zh_Hant">Tradisyonal nga Chinese</language>
+			<language type="zh_Hant" alt="long">Tradisyonal nga Mandarin Chinese</language>
 		</languages>
 		<scripts>
 			<script type="Arab">Arabo</script>
@@ -70,7 +64,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<script type="Hans" alt="stand-alone">Pinasimpleng Han</script>
 			<script type="Hant">Tradisyonal</script>
 			<script type="Hant" alt="stand-alone">Tradisyonal nga Han</script>
-			<script type="Jpan">Hinapon</script>
+			<script type="Jpan">Japanese</script>
 			<script type="Kore">Korean</script>
 			<script type="Latn">Latin</script>
 			<script type="Zxxx">Dili Sinulat</script>
@@ -79,7 +73,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 		<territories>
 			<territory type="001">kalibutan</territory>
 			<territory type="002">Africa</territory>
-			<territory type="003">Amihanang Amerika</territory>
+			<territory type="003">North America</territory>
 			<territory type="005">South America</territory>
 			<territory type="009">Oceania</territory>
 			<territory type="011">Western Africa</territory>
@@ -88,7 +82,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<territory type="015">Northern Africa</territory>
 			<territory type="017">Middle Africa</territory>
 			<territory type="018">Southern Africa</territory>
-			<territory type="019">Mga Amerika</territory>
+			<territory type="019">Americas</territory>
 			<territory type="021">Northern America</territory>
 			<territory type="029">Caribbean</territory>
 			<territory type="030">Eastern Asia</territory>
@@ -99,7 +93,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<territory type="054">Melanesia</territory>
 			<territory type="057">Micronesian Region</territory>
 			<territory type="061">Polynesia</territory>
-			<territory type="142">Asya</territory>
+			<territory type="142">Asia</territory>
 			<territory type="143">Central Asia</territory>
 			<territory type="145">Western Asia</territory>
 			<territory type="150">Europe</territory>
@@ -159,7 +153,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<territory type="CK">Cook Islands</territory>
 			<territory type="CL">Chile</territory>
 			<territory type="CM">Cameroon</territory>
-			<territory type="CN">Tsina</territory>
+			<territory type="CN">China</territory>
 			<territory type="CO">Colombia</territory>
 			<territory type="CP">Clipperton Island</territory>
 			<territory type="CR">Costa Rica</territory>
@@ -170,7 +164,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<territory type="CY">Cyprus</territory>
 			<territory type="CZ">Czechia</territory>
 			<territory type="CZ" alt="variant">Czech Republic</territory>
-			<territory type="DE">Alemanya</territory>
+			<territory type="DE">Germany</territory>
 			<territory type="DG">Diego Garcia</territory>
 			<territory type="DJ">Djibouti</territory>
 			<territory type="DK">Denmark</territory>
@@ -193,7 +187,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<territory type="FK" alt="variant">Falkland Islands (Islas Malvinas)</territory>
 			<territory type="FM">Micronesia</territory>
 			<territory type="FO">Faroe Islands</territory>
-			<territory type="FR">Pransya</territory>
+			<territory type="FR">France</territory>
 			<territory type="GA">Gabon</territory>
 			<territory type="GB">United Kingdom</territory>
 			<territory type="GB" alt="short">UK</territory>
@@ -227,7 +221,8 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<territory type="IL">Israel</territory>
 			<territory type="IM">Isle of Man</territory>
 			<territory type="IN">India</territory>
-			<territory type="IO">British Indian Ocean Territory</territory>
+			<territory type="IO">Teritoryo sa British Indian Ocean</territory>
+			<territory type="IO" alt="chagos">Chagos Archipelago</territory>
 			<territory type="IQ">Iraq</territory>
 			<territory type="IR">Iran</territory>
 			<territory type="IS">Iceland</territory>
@@ -294,6 +289,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<territory type="NR">Nauru</territory>
 			<territory type="NU">Niue</territory>
 			<territory type="NZ">New Zealand</territory>
+			<territory type="NZ" alt="variant">Aotearoa New Zealand</territory>
 			<territory type="OM">Oman</territory>
 			<territory type="PA">Panama</territory>
 			<territory type="PE">Peru</territory>
@@ -384,41 +380,29 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<territory type="ZW">Zimbabwe</territory>
 			<territory type="ZZ">Wala Mailhing Rehiyon</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">Inglatera</subdivision>
+			<subdivision type="gbsct">Scotland</subdivision>
+			<subdivision type="gbwls">Wales (apil sa nasod)</subdivision>
+		</subdivisions>
 		<types>
 			<type key="calendar" type="gregorian">Gregorian nga Kalendaryo</type>
 			<type key="calendar" type="iso8601">Kalendaryo sa ISO-8601</type>
-			<type key="collation" type="standard">Tamdanang Paagi sa Paghan-ay</type>
+			<type key="collation" type="standard">Standard nga Paagi sa Paghan-ay</type>
 			<type key="numbers" type="latn">Mga Western Digit</type>
 		</types>
-		<measurementSystemNames>
-			<measurementSystemName type="metric">Metric</measurementSystemName>
-			<measurementSystemName type="UK">UK</measurementSystemName>
-			<measurementSystemName type="US">US</measurementSystemName>
-		</measurementSystemNames>
 		<codePatterns>
-			<codePattern type="language">Lengguwahe: {0}</codePattern>
+			<codePattern type="language">Pinulongan: {0}</codePattern>
 			<codePattern type="script">Script: {0}</codePattern>
 			<codePattern type="territory">Rehiyon: {0}</codePattern>
 		</codePatterns>
 	</localeDisplayNames>
-	<layout>
-		<orientation>
-			<characterOrder>left-to-right</characterOrder>
-			<lineOrder>top-to-bottom</lineOrder>
-		</orientation>
-	</layout>
 	<characters>
 		<exemplarCharacters>[a b d e g h i k l m n o p r s t u w y]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[c f j ñ q v x z]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
-		<exemplarCharacters type="punctuation" draft="contributed">[\- ‑ , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] @ * / \&amp; # ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="contributed">[\- ‑ , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] @ * / \&amp; # ′ ″]</exemplarCharacters>
 	</characters>
-	<delimiters>
-		<quotationStart>“</quotationStart>
-		<quotationEnd>”</quotationEnd>
-		<alternateQuotationStart>‘</alternateQuotationStart>
-		<alternateQuotationEnd>’</alternateQuotationEnd>
-	</delimiters>
 	<dates>
 		<calendars>
 			<calendar type="generic">
@@ -426,19 +410,16 @@ the LDML specification (http://unicode.org/reports/tr35/)
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, MMMM d, y G</pattern>
-							<datetimeSkeleton>GyMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>MMMM d, y G</pattern>
-							<datetimeSkeleton>GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>MMM d, y G</pattern>
-							<datetimeSkeleton>GyMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
@@ -451,11 +432,17 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} 'sa' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} 'sa' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -470,10 +457,9 @@ the LDML specification (http://unicode.org/reports/tr35/)
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
-						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="Ed">d E</dateFormatItem>
-						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
-						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMd">M/d/y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
@@ -495,103 +481,101 @@ the LDML specification (http://unicode.org/reports/tr35/)
 						<dateFormatItem id="yyyyQQQQ">QQQQ y G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="d">
-							<greatestDifference id="d">d – d</greatestDifference>
+							<greatestDifference id="d">d – d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Gy">
-							<greatestDifference id="G">y G – y G</greatestDifference>
-							<greatestDifference id="y">y – y G</greatestDifference>
+							<greatestDifference id="G">y G – y G</greatestDifference>
+							<greatestDifference id="y">y – y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyM">
-							<greatestDifference id="G">M/y GGGGG – M/y GGGGG</greatestDifference>
-							<greatestDifference id="M">M/y – M/y GGGGG</greatestDifference>
-							<greatestDifference id="y">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="G">M/y GGGGG – M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">M/y – M/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMd">
-							<greatestDifference id="d">M/d/y – M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="G">M/d/y GGGGG – M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="M">M/d/y – M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="y">M/d/y – M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="d">M/d/y – M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="G">M/d/y GGGGG – M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="M">M/d/y – M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="y">M/d/y – M/d/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMEd">
-							<greatestDifference id="d">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="G">E, M/d/y GGGGG – E, M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="M">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="y">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="d">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="G">E, M/d/y GGGGG – E, M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="M">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="y">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMM">
-							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
-							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
-							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMd">
-							<greatestDifference id="d">MMM d – d, y G</greatestDifference>
-							<greatestDifference id="G">MMM d, y G – MMM d, y G</greatestDifference>
-							<greatestDifference id="M">MMM d – MMM d, y G</greatestDifference>
-							<greatestDifference id="y">MMM d, y – MMM d, y G</greatestDifference>
+							<greatestDifference id="d">MMM d – d, y G</greatestDifference>
+							<greatestDifference id="G">MMM d, y G – MMM d, y G</greatestDifference>
+							<greatestDifference id="M">MMM d – MMM d, y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMEd">
-							<greatestDifference id="d">E, MMM d – E, MMM d, y G</greatestDifference>
-							<greatestDifference id="G">E, MMM d, y G – E, MMM d, y G</greatestDifference>
-							<greatestDifference id="M">E, MMM d – E, MMM d, y G</greatestDifference>
-							<greatestDifference id="y">E, MMM d, y – E, MMM d, y G</greatestDifference>
+							<greatestDifference id="d">E, MMM d – E, MMM d, y G</greatestDifference>
+							<greatestDifference id="G">E, MMM d, y G – E, MMM d, y G</greatestDifference>
+							<greatestDifference id="M">E, MMM d – E, MMM d, y G</greatestDifference>
+							<greatestDifference id="y">E, MMM d, y – E, MMM d, y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
-							<greatestDifference id="M">M – M</greatestDifference>
+							<greatestDifference id="M">M – M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d">M/d – M/d</greatestDifference>
-							<greatestDifference id="M">M/d – M/d</greatestDifference>
+							<greatestDifference id="d">M/d – M/d</greatestDifference>
+							<greatestDifference id="M">M/d – M/d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E, M/d – E, M/d</greatestDifference>
-							<greatestDifference id="M">E, M/d – E, M/d</greatestDifference>
+							<greatestDifference id="d">E, M/d – E, M/d</greatestDifference>
+							<greatestDifference id="M">E, M/d – E, M/d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
-							<greatestDifference id="M">MMM – MMM</greatestDifference>
+							<greatestDifference id="M">MMM – MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
-							<greatestDifference id="d">MMM d – d</greatestDifference>
+							<greatestDifference id="d">MMM d – d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d">E, MMM d – E, MMM d</greatestDifference>
-							<greatestDifference id="M">E, MMM d – E, MMM d</greatestDifference>
+							<greatestDifference id="d">E, MMM d – E, MMM d</greatestDifference>
+							<greatestDifference id="M">E, MMM d – E, MMM d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
-							<greatestDifference id="y">y – y G</greatestDifference>
+							<greatestDifference id="y">y – y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M">M/y – M/y GGGGG</greatestDifference>
-							<greatestDifference id="y">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">M/y – M/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d">M/d/y – M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="M">M/d/y – M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="y">M/d/y – M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="d">M/d/y – M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="M">M/d/y – M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="y">M/d/y – M/d/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="M">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="y">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="d">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="M">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="y">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
-							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
-							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
-							<greatestDifference id="d">MMM d – d, y G</greatestDifference>
-							<greatestDifference id="M">MMM d – MMM d, y G</greatestDifference>
-							<greatestDifference id="y">MMM d, y – MMM d, y G</greatestDifference>
+							<greatestDifference id="d">MMM d – d, y G</greatestDifference>
+							<greatestDifference id="M">MMM d – MMM d, y G</greatestDifference>
+							<greatestDifference id="y">MMM d, y – MMM d, y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">E, MMM d – E, MMM d, y G</greatestDifference>
-							<greatestDifference id="M">E, MMM d – E, MMM d, y G</greatestDifference>
-							<greatestDifference id="y">E, MMM d, y – E, MMM d, y G</greatestDifference>
+							<greatestDifference id="d">E, MMM d – E, MMM d, y G</greatestDifference>
+							<greatestDifference id="M">E, MMM d – E, MMM d, y G</greatestDifference>
+							<greatestDifference id="y">E, MMM d, y – E, MMM d, y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
-							<greatestDifference id="M">MMMM – MMMM y G</greatestDifference>
-							<greatestDifference id="y">MMMM y – MMMM y G</greatestDifference>
+							<greatestDifference id="M">MMMM – MMMM y G</greatestDifference>
+							<greatestDifference id="y">MMMM y – MMMM y G</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -608,24 +592,10 @@ the LDML specification (http://unicode.org/reports/tr35/)
 							<month type="6">Hun</month>
 							<month type="7">Hul</month>
 							<month type="8">Ago</month>
-							<month type="9">Set</month>
+							<month type="9">Sep</month>
 							<month type="10">Okt</month>
 							<month type="11">Nob</month>
 							<month type="12">Dis</month>
-						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1">E</month>
-							<month type="2">P</month>
-							<month type="3">M</month>
-							<month type="4">A</month>
-							<month type="5">M</month>
-							<month type="6">H</month>
-							<month type="7">H</month>
-							<month type="8">A</month>
-							<month type="9">S</month>
-							<month type="10">O</month>
-							<month type="11">N</month>
-							<month type="12">D</month>
 						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">Enero</month>
@@ -636,27 +606,13 @@ the LDML specification (http://unicode.org/reports/tr35/)
 							<month type="6">Hunyo</month>
 							<month type="7">Hulyo</month>
 							<month type="8">Agosto</month>
-							<month type="9">Setyembre</month>
+							<month type="9">Septiyembre</month>
 							<month type="10">Oktubre</month>
 							<month type="11">Nobyembre</month>
 							<month type="12">Disyembre</month>
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1">Ene</month>
-							<month type="2">Peb</month>
-							<month type="3">Mar</month>
-							<month type="4">Abr</month>
-							<month type="5">May</month>
-							<month type="6">Hun</month>
-							<month type="7">Hul</month>
-							<month type="8">Ago</month>
-							<month type="9">Set</month>
-							<month type="10">Okt</month>
-							<month type="11">Nob</month>
-							<month type="12">Dis</month>
-						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1">E</month>
 							<month type="2">P</month>
@@ -671,43 +627,11 @@ the LDML specification (http://unicode.org/reports/tr35/)
 							<month type="11">N</month>
 							<month type="12">D</month>
 						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1">Enero</month>
-							<month type="2">Pebrero</month>
-							<month type="3">Marso</month>
-							<month type="4">Abril</month>
-							<month type="5">Mayo</month>
-							<month type="6">Hunyo</month>
-							<month type="7">Hulyo</month>
-							<month type="8">Agosto</month>
-							<month type="9">Setyembre</month>
-							<month type="10">Oktubre</month>
-							<month type="11">Nobyembre</month>
-							<month type="12">Disyembre</month>
-						</monthWidth>
 					</monthContext>
 				</months>
 				<days>
 					<dayContext type="format">
 						<dayWidth type="abbreviated">
-							<day type="sun">Dom</day>
-							<day type="mon">Lun</day>
-							<day type="tue">Mar</day>
-							<day type="wed">Miy</day>
-							<day type="thu">Huw</day>
-							<day type="fri">Biy</day>
-							<day type="sat">Sab</day>
-						</dayWidth>
-						<dayWidth type="narrow">
-							<day type="sun">D</day>
-							<day type="mon">L</day>
-							<day type="tue">M</day>
-							<day type="wed">M</day>
-							<day type="thu">H</day>
-							<day type="fri">B</day>
-							<day type="sat">S</day>
-						</dayWidth>
-						<dayWidth type="short">
 							<day type="sun">Dom</day>
 							<day type="mon">Lun</day>
 							<day type="tue">Mar</day>
@@ -727,15 +651,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
-						<dayWidth type="abbreviated">
-							<day type="sun">Dom</day>
-							<day type="mon">Lun</day>
-							<day type="tue">Mar</day>
-							<day type="wed">Miy</day>
-							<day type="thu">Huw</day>
-							<day type="fri">Biy</day>
-							<day type="sat">Sab</day>
-						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun">D</day>
 							<day type="mon">L</day>
@@ -762,20 +677,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 							<quarter type="4">ika-4 nga quarter</quarter>
 						</quarterWidth>
 					</quarterContext>
-					<quarterContext type="stand-alone">
-						<quarterWidth type="abbreviated">
-							<quarter type="1">Q1</quarter>
-							<quarter type="2">Q2</quarter>
-							<quarter type="3">Q3</quarter>
-							<quarter type="4">Q4</quarter>
-						</quarterWidth>
-						<quarterWidth type="wide">
-							<quarter type="1">unang quarter</quarter>
-							<quarter type="2">ika-2 nga quarter</quarter>
-							<quarter type="3">ika-3 nga quarter</quarter>
-							<quarter type="4">ika-4 nga quarter</quarter>
-						</quarterWidth>
-					</quarterContext>
 				</quarters>
 				<dayPeriods>
 					<dayPeriodContext type="format">
@@ -783,16 +684,12 @@ the LDML specification (http://unicode.org/reports/tr35/)
 							<dayPeriod type="am">a</dayPeriod>
 							<dayPeriod type="pm">p</dayPeriod>
 						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
 				<eras>
 					<eraNames>
 						<era type="0">Sa Wala Pa Si Kristo</era>
-						<era type="0" alt="variant">Wala Pa ang Komong Panahon</era>
+						<era type="0" alt="variant">Wala Pa ang Common Era</era>
 						<era type="1">Anno Domini</era>
 						<era type="1" alt="variant">Komong Panahon</era>
 					</eraNames>
@@ -807,19 +704,16 @@ the LDML specification (http://unicode.org/reports/tr35/)
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, MMMM d, y</pattern>
-							<datetimeSkeleton>yMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>MMMM d, y</pattern>
-							<datetimeSkeleton>yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>MMM d, y</pattern>
-							<datetimeSkeleton>yMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
@@ -832,25 +726,25 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<timeFormats>
 					<timeFormatLength type="full">
 						<timeFormat>
-							<pattern>h:mm:ss a zzzz</pattern>
+							<pattern>h:mm:ss a zzzz</pattern>
 							<datetimeSkeleton>ahmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
-							<pattern>h:mm:ss a z</pattern>
+							<pattern>h:mm:ss a z</pattern>
 							<datetimeSkeleton>ahmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
-							<pattern>h:mm:ss a</pattern>
+							<pattern>h:mm:ss a</pattern>
 							<datetimeSkeleton>ahmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
-							<pattern>h:mm a</pattern>
+							<pattern>h:mm a</pattern>
 							<datetimeSkeleton>ahmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
@@ -858,11 +752,17 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} 'sa' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} 'sa' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -877,44 +777,24 @@ the LDML specification (http://unicode.org/reports/tr35/)
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
-						<dateFormatItem id="Bh">h B</dateFormatItem>
-						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
-						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
-						<dateFormatItem id="d">d</dateFormatItem>
-						<dateFormatItem id="E">ccc</dateFormatItem>
-						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
-						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">d E</dateFormatItem>
-						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
-						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
-						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMd">M/d/y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">MMM d, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, MMM d, y G</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
-						<dateFormatItem id="H">HH</dateFormatItem>
-						<dateFormatItem id="hm">h:mm a</dateFormatItem>
-						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
-						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
-						<dateFormatItem id="Hmsv">HH:mm:ss v</dateFormatItem>
-						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
-						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
-						<dateFormatItem id="M">L</dateFormatItem>
+						<dateFormatItem id="h">h a</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
+						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
 						<dateFormatItem id="Md">M/d</dateFormatItem>
 						<dateFormatItem id="MEd">E, M/d</dateFormatItem>
-						<dateFormatItem id="MMM">LLL</dateFormatItem>
-						<dateFormatItem id="MMMd">MMM d</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, MMM d</dateFormatItem>
-						<dateFormatItem id="MMMMd">MMMM d</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="one">'semana' W 'sa' MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">'semana' W 'sa' MMMM</dateFormatItem>
-						<dateFormatItem id="ms">mm:ss</dateFormatItem>
-						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">M/y</dateFormatItem>
 						<dateFormatItem id="yMd">M/d/y</dateFormatItem>
 						<dateFormatItem id="yMEd">E, M/d/y</dateFormatItem>
@@ -928,131 +808,130 @@ the LDML specification (http://unicode.org/reports/tr35/)
 						<dateFormatItem id="yw" count="other">'semana' w 'sa' Y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="d">
-							<greatestDifference id="d">d – d</greatestDifference>
+							<greatestDifference id="d">d – d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Gy">
-							<greatestDifference id="G">y G – y G</greatestDifference>
-							<greatestDifference id="y">y – y G</greatestDifference>
+							<greatestDifference id="G">y G – y G</greatestDifference>
+							<greatestDifference id="y">y – y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyM">
-							<greatestDifference id="G">M/y GGGGG – M/y GGGGG</greatestDifference>
-							<greatestDifference id="M">M/y – M/y GGGGG</greatestDifference>
-							<greatestDifference id="y">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="G">M/y GGGGG – M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">M/y – M/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMd">
-							<greatestDifference id="d">M/d/y – M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="G">M/d/y GGGGG – M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="M">M/d/y – M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="y">M/d/y – M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="d">M/d/y – M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="G">M/d/y GGGGG – M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="M">M/d/y – M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="y">M/d/y – M/d/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMEd">
-							<greatestDifference id="d">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="G">E, M/d/y GGGGG – E, M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="M">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="y">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="d">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="G">E, M/d/y GGGGG – E, M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="M">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="y">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMM">
-							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
-							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
-							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMd">
-							<greatestDifference id="d">MMM d – d, y G</greatestDifference>
-							<greatestDifference id="G">MMM d, y G – MMM d, y G</greatestDifference>
-							<greatestDifference id="M">MMM d – MMM d, y G</greatestDifference>
-							<greatestDifference id="y">MMM d, y – MMM d, y G</greatestDifference>
+							<greatestDifference id="d">MMM d – d, y G</greatestDifference>
+							<greatestDifference id="G">MMM d, y G – MMM d, y G</greatestDifference>
+							<greatestDifference id="M">MMM d – MMM d, y G</greatestDifference>
+							<greatestDifference id="y">MMM d, y – MMM d, y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMEd">
-							<greatestDifference id="d">E, MMM d – E, MMM d, y G</greatestDifference>
-							<greatestDifference id="G">E, MMM d, y G – E, MMM d, y G</greatestDifference>
-							<greatestDifference id="M">E, MMM d – E, MMM d, y G</greatestDifference>
-							<greatestDifference id="y">E, MMM d, y – E, MMM d, y G</greatestDifference>
+							<greatestDifference id="d">E, MMM d – E, MMM d, y G</greatestDifference>
+							<greatestDifference id="G">E, MMM d, y G – E, MMM d, y G</greatestDifference>
+							<greatestDifference id="M">E, MMM d – E, MMM d, y G</greatestDifference>
+							<greatestDifference id="y">E, MMM d, y – E, MMM d, y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="h">h – h a</greatestDifference>
+							<greatestDifference id="h">h – h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
-							<greatestDifference id="H">HH – HH</greatestDifference>
+							<greatestDifference id="H">HH – HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="h">h:mm – h:mm a</greatestDifference>
-							<greatestDifference id="m">h:mm – h:mm a</greatestDifference>
+							<greatestDifference id="h">h:mm – h:mm a</greatestDifference>
+							<greatestDifference id="m">h:mm – h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
-							<greatestDifference id="H">HH:mm – HH:mm</greatestDifference>
-							<greatestDifference id="m">HH:mm – HH:mm</greatestDifference>
+							<greatestDifference id="H">HH:mm – HH:mm</greatestDifference>
+							<greatestDifference id="m">HH:mm – HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="h">h:mm – h:mm a v</greatestDifference>
-							<greatestDifference id="m">h:mm – h:mm a v</greatestDifference>
+							<greatestDifference id="h">h:mm – h:mm a v</greatestDifference>
+							<greatestDifference id="m">h:mm – h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
-							<greatestDifference id="H">HH:mm – HH:mm v</greatestDifference>
-							<greatestDifference id="m">HH:mm – HH:mm v</greatestDifference>
+							<greatestDifference id="H">HH:mm – HH:mm v</greatestDifference>
+							<greatestDifference id="m">HH:mm – HH:mm v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="h">h – h a v</greatestDifference>
+							<greatestDifference id="h">h – h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
-							<greatestDifference id="H">HH – HH v</greatestDifference>
+							<greatestDifference id="H">HH – HH v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
-							<greatestDifference id="M">M – M</greatestDifference>
+							<greatestDifference id="M">M – M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d">M/d – M/d</greatestDifference>
-							<greatestDifference id="M">M/d – M/d</greatestDifference>
+							<greatestDifference id="d">M/d – M/d</greatestDifference>
+							<greatestDifference id="M">M/d – M/d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E, M/d – E, M/d</greatestDifference>
-							<greatestDifference id="M">E, M/d – E, M/d</greatestDifference>
+							<greatestDifference id="d">E, M/d – E, M/d</greatestDifference>
+							<greatestDifference id="M">E, M/d – E, M/d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
-							<greatestDifference id="M">MMM – MMM</greatestDifference>
+							<greatestDifference id="M">MMM – MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
-							<greatestDifference id="d">MMM d – d</greatestDifference>
+							<greatestDifference id="d">MMM d – d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d">E, MMM d – E, MMM d</greatestDifference>
-							<greatestDifference id="M">E, MMM d – E, MMM d</greatestDifference>
+							<greatestDifference id="d">E, MMM d – E, MMM d</greatestDifference>
+							<greatestDifference id="M">E, MMM d – E, MMM d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
-							<greatestDifference id="y">y – y</greatestDifference>
+							<greatestDifference id="y">y – y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M">M/y – M/y</greatestDifference>
-							<greatestDifference id="y">M/y – M/y</greatestDifference>
+							<greatestDifference id="M">M/y – M/y</greatestDifference>
+							<greatestDifference id="y">M/y – M/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d">M/d/y – M/d/y</greatestDifference>
-							<greatestDifference id="M">M/d/y – M/d/y</greatestDifference>
-							<greatestDifference id="y">M/d/y – M/d/y</greatestDifference>
+							<greatestDifference id="d">M/d/y – M/d/y</greatestDifference>
+							<greatestDifference id="M">M/d/y – M/d/y</greatestDifference>
+							<greatestDifference id="y">M/d/y – M/d/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">E, M/d/y – E, M/d/y</greatestDifference>
-							<greatestDifference id="M">E, M/d/y – E, M/d/y</greatestDifference>
-							<greatestDifference id="y">E, M/d/y – E, M/d/y</greatestDifference>
+							<greatestDifference id="d">E, M/d/y – E, M/d/y</greatestDifference>
+							<greatestDifference id="M">E, M/d/y – E, M/d/y</greatestDifference>
+							<greatestDifference id="y">E, M/d/y – E, M/d/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
-							<greatestDifference id="M">MMM – MMM y</greatestDifference>
-							<greatestDifference id="y">MMM y – MMM y</greatestDifference>
+							<greatestDifference id="M">MMM – MMM y</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
-							<greatestDifference id="d">MMM d – d, y</greatestDifference>
-							<greatestDifference id="M">MMM d – MMM d, y</greatestDifference>
-							<greatestDifference id="y">MMM d, y – MMM d, y</greatestDifference>
+							<greatestDifference id="d">MMM d – d, y</greatestDifference>
+							<greatestDifference id="M">MMM d – MMM d, y</greatestDifference>
+							<greatestDifference id="y">MMM d, y – MMM d, y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">E, MMM d – E, MMM d, y</greatestDifference>
-							<greatestDifference id="M">E, MMM d – E, MMM d, y</greatestDifference>
-							<greatestDifference id="y">E, MMM d, y – E, MMM d, y</greatestDifference>
+							<greatestDifference id="d">E, MMM d – E, MMM d, y</greatestDifference>
+							<greatestDifference id="M">E, MMM d – E, MMM d, y</greatestDifference>
+							<greatestDifference id="y">E, MMM d, y – E, MMM d, y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
-							<greatestDifference id="M">MMMM – MMMM y</greatestDifference>
-							<greatestDifference id="y">MMMM y – MMMM y</greatestDifference>
+							<greatestDifference id="M">MMMM – MMMM y</greatestDifference>
+							<greatestDifference id="y">MMMM y – MMMM y</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -1068,38 +947,13 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<relative type="0">karong tuiga</relative>
 				<relative type="1">sunod nga tuig</relative>
 			</field>
-			<field type="year-short">
-				<relative type="-1">miaging tuig</relative>
-				<relative type="0">karong tuiga</relative>
-				<relative type="1">sunod nga tuig</relative>
-			</field>
-			<field type="year-narrow">
-				<relative type="-1">miaging tuig</relative>
-				<relative type="0">karong tuiga</relative>
-				<relative type="1">sunod nga tuig</relative>
-			</field>
 			<field type="quarter">
 				<displayName>quarter</displayName>
 			</field>
 			<field type="quarter-short">
 				<displayName>qtr.</displayName>
 			</field>
-			<field type="quarter-narrow">
-				<displayName>qtr.</displayName>
-			</field>
 			<field type="month">
-				<displayName>buwan</displayName>
-				<relative type="-1">miaging buwan</relative>
-				<relative type="0">karong buwana</relative>
-				<relative type="1">sunod nga buwan</relative>
-			</field>
-			<field type="month-short">
-				<displayName>buwan</displayName>
-				<relative type="-1">miaging buwan</relative>
-				<relative type="0">karong buwana</relative>
-				<relative type="1">sunod nga buwan</relative>
-			</field>
-			<field type="month-narrow">
 				<displayName>buwan</displayName>
 				<relative type="-1">miaging buwan</relative>
 				<relative type="0">karong buwana</relative>
@@ -1112,33 +966,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<relative type="1">sunod nga semana</relative>
 				<relativePeriod>ang semana sa {0}</relativePeriod>
 			</field>
-			<field type="week-short">
-				<displayName>semana</displayName>
-				<relative type="-1">miaging semana</relative>
-				<relative type="0">karong semanaha</relative>
-				<relative type="1">sunod nga semana</relative>
-				<relativePeriod>ang semana sa {0}</relativePeriod>
-			</field>
-			<field type="week-narrow">
-				<displayName>semana</displayName>
-				<relative type="-1">miaging semana</relative>
-				<relative type="0">karong semanaha</relative>
-				<relative type="1">sunod nga semana</relative>
-				<relativePeriod>ang semana sa {0}</relativePeriod>
-			</field>
 			<field type="day">
-				<displayName>adlaw</displayName>
-				<relative type="-1">gahapon</relative>
-				<relative type="0">karong adlawa</relative>
-				<relative type="1">ugma</relative>
-			</field>
-			<field type="day-short">
-				<displayName>adlaw</displayName>
-				<relative type="-1">gahapon</relative>
-				<relative type="0">karong adlawa</relative>
-				<relative type="1">ugma</relative>
-			</field>
-			<field type="day-narrow">
 				<displayName>adlaw</displayName>
 				<relative type="-1">gahapon</relative>
 				<relative type="0">karong adlawa</relative>
@@ -1153,41 +981,24 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<field type="hour">
 				<displayName>oras</displayName>
 			</field>
-			<field type="hour-short">
-				<displayName>oras</displayName>
-			</field>
-			<field type="hour-narrow">
-				<displayName>oras</displayName>
-			</field>
 			<field type="minute">
-				<displayName>minuto</displayName>
-			</field>
-			<field type="minute-short">
-				<displayName>minuto</displayName>
-			</field>
-			<field type="minute-narrow">
 				<displayName>minuto</displayName>
 			</field>
 			<field type="second">
 				<displayName>segundo</displayName>
 			</field>
 			<field type="second-short">
-				<displayName>segundo</displayName>
-			</field>
-			<field type="second-narrow">
-				<displayName>segundo</displayName>
+				<displayName>seg.</displayName>
 			</field>
 			<field type="zone">
 				<displayName>time zone</displayName>
 			</field>
 		</fields>
 		<timeZoneNames>
-			<hourFormat>+HH:mm;-HH:mm</hourFormat>
 			<gmtFormat>GMT {0}</gmtFormat>
-			<gmtZeroFormat>GMT</gmtZeroFormat>
-			<regionFormat>{0} Oras</regionFormat>
-			<regionFormat type="daylight">{0} Oras sa Tag-init</regionFormat>
-			<regionFormat type="standard">{0} Tamdanang Oras</regionFormat>
+			<regionFormat>Oras sa {0}</regionFormat>
+			<regionFormat type="daylight">Daylight Time sa {0}</regionFormat>
+			<regionFormat type="standard">Tamdanang Oras sa {0}</regionFormat>
 			<fallbackFormat>{1} {0}</fallbackFormat>
 			<zone type="Etc/UTC">
 				<long>
@@ -1241,7 +1052,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<long>
 					<generic>Oras sa Alaska</generic>
 					<standard>Tamdanang Oras sa Alaska</standard>
-					<daylight>Oras sa Tag-init sa Alaska</daylight>
+					<daylight>Daylight Time sa Alaska</daylight>
 				</long>
 			</metazone>
 			<metazone type="Amazon">
@@ -1253,37 +1064,37 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			</metazone>
 			<metazone type="America_Central">
 				<long>
-					<generic>Sentrong Oras</generic>
-					<standard>Sentong Tamdanan nga Oras</standard>
-					<daylight>Sentrong Oras sa Tag-init</daylight>
+					<generic>Central Time</generic>
+					<standard>Central Standard Time</standard>
+					<daylight>Central Daylight Time</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Eastern">
 				<long>
-					<generic>Oras sa Sidlakan</generic>
-					<standard>Tamdanan nga Oras sa Sidlakan</standard>
-					<daylight>Oras sa Tag-init sa Sidlakan</daylight>
+					<generic>Eastern Time</generic>
+					<standard>Eastern Standard Time</standard>
+					<daylight>Eastern Daylight Time</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Mountain">
 				<long>
-					<generic>Oras sa Kabukiran</generic>
-					<standard>Tamdanang Oras sa Kabukiran</standard>
-					<daylight>Oras sa Tag-init sa Kabukiran</daylight>
+					<generic>Mountain Time</generic>
+					<standard>Mountain Standard Time</standard>
+					<daylight>Mountain Daylight Time</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Pacific">
 				<long>
-					<generic>Oras sa Pasipiko</generic>
-					<standard>Tamdanang Oras sa Pasipiko</standard>
-					<daylight>Oras sa Tag-init sa Pasipiko</daylight>
+					<generic>Pacific Time</generic>
+					<standard>Pacific Standard Time</standard>
+					<daylight>Pacific Daylight Time</daylight>
 				</long>
 			</metazone>
 			<metazone type="Apia">
 				<long>
 					<generic>Oras sa Apia</generic>
 					<standard>Tamdanang Oras sa Apia</standard>
-					<daylight>Oras sa Tag-init sa Apia</daylight>
+					<daylight>Daylight Time sa Apia</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
@@ -1316,9 +1127,9 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			</metazone>
 			<metazone type="Atlantic">
 				<long>
-					<generic>Oras sa Atlantiko</generic>
-					<standard>Tamdanang Oras sa Atlantiko</standard>
-					<daylight>Oras sa Tag-init sa Atlantiko</daylight>
+					<generic>Atlantic Time</generic>
+					<standard>Atlantic Standard Time</standard>
+					<daylight>Atlantic Daylight Time</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_Central">
@@ -1943,7 +1754,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<long>
 					<generic>Oras sa Samoa</generic>
 					<standard>Tamdanang Oras sa Samoa</standard>
-					<daylight>Oras sa Tag-init sa Samoa</daylight>
+					<daylight>Daylight Time sa Samoa</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -2099,49 +1910,31 @@ the LDML specification (http://unicode.org/reports/tr35/)
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<symbols numberSystem="latn">
-			<decimal>.</decimal>
-			<group>,</group>
-			<percentSign>%</percentSign>
-			<plusSign>+</plusSign>
-			<minusSign>-</minusSign>
-		</symbols>
-		<decimalFormats numberSystem="latn">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern>#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<scientificFormats numberSystem="latn">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern>#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤#,##0.00</pattern>
+					<pattern alt="alphaNextToNumber" draft="provisional">¤ #,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>¤#,##0.00;(¤#,##0.00)</pattern>
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="one">{1} {0}</unitPattern>
+			<unitPattern count="one">{0} {1}</unitPattern>
 			<unitPattern count="other">{1} {0}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="AED">
 				<displayName>United Arab Emirates Dirham</displayName>
 				<displayName count="one">UAE dirham</displayName>
-				<displayName count="other">Mga UAE dirham</displayName>
+				<displayName count="other">UAE dirhams</displayName>
 			</currency>
 			<currency type="AFN">
 				<displayName>Afghan Afghani</displayName>
 				<displayName count="one">Afghan Afghani</displayName>
-				<displayName count="other">Mga Afghan Afghani</displayName>
+				<displayName count="other">Afghan Afghanis</displayName>
 			</currency>
 			<currency type="ALL">
 				<displayName>Albanian Lek</displayName>
@@ -2151,7 +1944,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<currency type="AMD">
 				<displayName>Armenian Dram</displayName>
 				<displayName count="one">Armenian dram</displayName>
-				<displayName count="other">Mga Armenian dram</displayName>
+				<displayName count="other">Armenian drams</displayName>
 			</currency>
 			<currency type="ANG">
 				<displayName>Netherlands Antillean Guilder</displayName>
@@ -2161,17 +1954,17 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<currency type="AOA">
 				<displayName>Angolan Kwanza</displayName>
 				<displayName count="one">Angolan kwanza</displayName>
-				<displayName count="other">Mga Angolan kwanza</displayName>
+				<displayName count="other">Angolan kwanzas</displayName>
 			</currency>
 			<currency type="ARS">
 				<displayName>Argentine Peso</displayName>
 				<displayName count="one">Argentine peso</displayName>
-				<displayName count="other">Mga Argentine peso</displayName>
+				<displayName count="other">Argentine pesos</displayName>
 			</currency>
 			<currency type="AUD">
 				<displayName>Australian Dollar</displayName>
 				<displayName count="one">Australian dollar</displayName>
-				<displayName count="other">Mga Australian dollar</displayName>
+				<displayName count="other">Australian dollars</displayName>
 			</currency>
 			<currency type="AWG">
 				<displayName>Aruban Florin</displayName>
@@ -2181,12 +1974,12 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<currency type="AZN">
 				<displayName>Azerbaijani Manat</displayName>
 				<displayName count="one">Azerbaijani manat</displayName>
-				<displayName count="other">Mga Azerbaijani manat</displayName>
+				<displayName count="other">Azerbaijani manats</displayName>
 			</currency>
 			<currency type="BAM">
 				<displayName>Bosnia-Herzegovina Convertible Mark</displayName>
 				<displayName count="one">Bosnia-Herzegovina convertible mark</displayName>
-				<displayName count="other">Mga Bosnia-Herzegovina convertible mark</displayName>
+				<displayName count="other">Bosnia-Herzegovina convertible marks</displayName>
 			</currency>
 			<currency type="BBD">
 				<displayName>Barbadian Dollar</displayName>
@@ -2196,7 +1989,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<currency type="BDT">
 				<displayName>Bangladeshi Taka</displayName>
 				<displayName count="one">Bangladeshi taka</displayName>
-				<displayName count="other">Mga Bangladeshi taka</displayName>
+				<displayName count="other">Bangladeshi takas</displayName>
 			</currency>
 			<currency type="BGN">
 				<displayName>Bulgarian Lev</displayName>
@@ -2206,12 +1999,12 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<currency type="BHD">
 				<displayName>Bahraini Dinar</displayName>
 				<displayName count="one">Bahraini dinar</displayName>
-				<displayName count="other">Mga Bahraini dinar</displayName>
+				<displayName count="other">Bahraini dinars</displayName>
 			</currency>
 			<currency type="BIF">
 				<displayName>Burundian Franc</displayName>
 				<displayName count="one">Burundian franc</displayName>
-				<displayName count="other">Mga Burundian franc</displayName>
+				<displayName count="other">Burundian francs</displayName>
 			</currency>
 			<currency type="BMD">
 				<displayName>Bermudan Dollar</displayName>
@@ -2221,17 +2014,17 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<currency type="BND">
 				<displayName>Brunei Dollar</displayName>
 				<displayName count="one">Brunei dollar</displayName>
-				<displayName count="other">Mga Brunei dollar</displayName>
+				<displayName count="other">Brunei dollars</displayName>
 			</currency>
 			<currency type="BOB">
 				<displayName>Bolivian Boliviano</displayName>
 				<displayName count="one">Bolivian boliviano</displayName>
-				<displayName count="other">Mga Bolivian boliviano</displayName>
+				<displayName count="other">Bolivian bolivianos</displayName>
 			</currency>
 			<currency type="BRL">
 				<displayName>Brazilian Real</displayName>
 				<displayName count="one">Brazilian real</displayName>
-				<displayName count="other">Mga Brazilian real</displayName>
+				<displayName count="other">Brazilian reals</displayName>
 			</currency>
 			<currency type="BSD">
 				<displayName>Bahamian Dollar</displayName>
@@ -2241,17 +2034,17 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<currency type="BTN">
 				<displayName>Bhutanese Ngultrum</displayName>
 				<displayName count="one">Bhutanese ngultrum</displayName>
-				<displayName count="other">Mga Bhutanese ngultrum</displayName>
+				<displayName count="other">Bhutanese ngultrums</displayName>
 			</currency>
 			<currency type="BWP">
 				<displayName>Botswanan Pula</displayName>
 				<displayName count="one">Botswanan pula</displayName>
-				<displayName count="other">Mga Botswanan pula</displayName>
+				<displayName count="other">Botswanan pulas</displayName>
 			</currency>
 			<currency type="BYN">
 				<displayName>Belarusian Ruble</displayName>
 				<displayName count="one">Belarusian ruble</displayName>
-				<displayName count="other">Mga Belarusian ruble</displayName>
+				<displayName count="other">Belarusian rubles</displayName>
 			</currency>
 			<currency type="BZD">
 				<displayName>Belize Dollar</displayName>
@@ -2266,22 +2059,22 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<currency type="CDF">
 				<displayName>Congolese Franc</displayName>
 				<displayName count="one">Congolese franc</displayName>
-				<displayName count="other">Mga Congolese franc</displayName>
+				<displayName count="other">Congolese francs</displayName>
 			</currency>
 			<currency type="CHF">
 				<displayName>Swiss Franc</displayName>
 				<displayName count="one">Swiss franc</displayName>
-				<displayName count="other">Mga Swiss franc</displayName>
+				<displayName count="other">Swiss francs</displayName>
 			</currency>
 			<currency type="CLP">
 				<displayName>Chilean Peso</displayName>
 				<displayName count="one">Chilean peso</displayName>
-				<displayName count="other">Mga Chilean peso</displayName>
+				<displayName count="other">Chilean pesos</displayName>
 			</currency>
 			<currency type="CNH">
-				<displayName>Chinese Yuan (layo sa baybayon)</displayName>
-				<displayName count="one">Chinese yuan (layo sa baybayon)</displayName>
-				<displayName count="other">Chinese yuan (layo sa baybayon)</displayName>
+				<displayName>Chinese Yuan (offshore)</displayName>
+				<displayName count="one">Chinese yuan (offshore)</displayName>
+				<displayName count="other">Chinese yuan (offshore)</displayName>
 			</currency>
 			<currency type="CNY">
 				<displayName>Chinese Yuan</displayName>
@@ -2291,7 +2084,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<currency type="COP">
 				<displayName>Colombian Peso</displayName>
 				<displayName count="one">Colombian peso</displayName>
-				<displayName count="other">Mga Colombian peso</displayName>
+				<displayName count="other">Colombian pesos</displayName>
 			</currency>
 			<currency type="CRC">
 				<displayName>Costa Rican Colon</displayName>
@@ -2311,17 +2104,17 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<currency type="CVE">
 				<displayName>Cape Verdean Escudo</displayName>
 				<displayName count="one">Cape Verdean escudo</displayName>
-				<displayName count="other">Mga Cape Verdean escudo</displayName>
+				<displayName count="other">Cape Verdean escudos</displayName>
 			</currency>
 			<currency type="CZK">
 				<displayName>Czech Koruna</displayName>
 				<displayName count="one">Czech koruna</displayName>
-				<displayName count="other">Mga Czech koruna</displayName>
+				<displayName count="other">Czech korunas</displayName>
 			</currency>
 			<currency type="DJF">
 				<displayName>Djiboutian Franc</displayName>
 				<displayName count="one">Djiboutian franc</displayName>
-				<displayName count="other">Mga Djiboutian franc</displayName>
+				<displayName count="other">Djiboutian francs</displayName>
 			</currency>
 			<currency type="DKK">
 				<displayName>Danish Krone</displayName>
@@ -2336,67 +2129,67 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<currency type="DZD">
 				<displayName>Algerian Dinar</displayName>
 				<displayName count="one">Algerian dinar</displayName>
-				<displayName count="other">Mga Algerian dinar</displayName>
+				<displayName count="other">Algerian dinars</displayName>
 			</currency>
 			<currency type="EGP">
 				<displayName>Egyptian Pound</displayName>
 				<displayName count="one">Egyptian pound</displayName>
-				<displayName count="other">Mga Egyptian pound</displayName>
+				<displayName count="other">Egyptian pounds</displayName>
 			</currency>
 			<currency type="ERN">
 				<displayName>Eritrean Nakfa</displayName>
 				<displayName count="one">Eritrean nakfa</displayName>
-				<displayName count="other">Mga Eritrean nakfa</displayName>
+				<displayName count="other">Eritrean nakfas</displayName>
 			</currency>
 			<currency type="ETB">
 				<displayName>Ethiopian Birr</displayName>
 				<displayName count="one">Ethiopian birr</displayName>
-				<displayName count="other">Mga Ethiopian birr</displayName>
+				<displayName count="other">Ethiopian birrs</displayName>
 			</currency>
 			<currency type="EUR">
 				<displayName>Euro</displayName>
 				<displayName count="one">euro</displayName>
-				<displayName count="other">mga euro</displayName>
+				<displayName count="other">euros</displayName>
 			</currency>
 			<currency type="FJD">
 				<displayName>Fijian Dollar</displayName>
 				<displayName count="one">Fijian dollar</displayName>
-				<displayName count="other">Mga Fijian dollar</displayName>
+				<displayName count="other">Fijian dollars</displayName>
 			</currency>
 			<currency type="FKP">
 				<displayName>Falkland Islands Pound</displayName>
 				<displayName count="one">Falkland Islands pound</displayName>
-				<displayName count="other">Mga Falkland Islands pound</displayName>
+				<displayName count="other">Falkland Islands pounds</displayName>
 			</currency>
 			<currency type="GBP">
 				<displayName>British Pound</displayName>
 				<displayName count="one">British pound</displayName>
-				<displayName count="other">Mga British pound</displayName>
+				<displayName count="other">British pounds</displayName>
 			</currency>
 			<currency type="GEL">
 				<displayName>Georgian Lari</displayName>
 				<displayName count="one">Georgian lari</displayName>
-				<displayName count="other">Mga Georgian lari</displayName>
+				<displayName count="other">Georgian laris</displayName>
 			</currency>
 			<currency type="GHS">
 				<displayName>Ghanaian Cedi</displayName>
 				<displayName count="one">Ghanaian cedi</displayName>
-				<displayName count="other">Mga Ghanaian cedi</displayName>
+				<displayName count="other">Ghanaian cedis</displayName>
 			</currency>
 			<currency type="GIP">
 				<displayName>Gibraltar Pound</displayName>
 				<displayName count="one">Gibraltar pound</displayName>
-				<displayName count="other">Mga Gibraltar pound</displayName>
+				<displayName count="other">Gibraltar pounds</displayName>
 			</currency>
 			<currency type="GMD">
 				<displayName>Gambian Dalasi</displayName>
 				<displayName count="one">Gambian dalasi</displayName>
-				<displayName count="other">Mga Gambian dalasi</displayName>
+				<displayName count="other">Gambian dalasis</displayName>
 			</currency>
 			<currency type="GNF">
 				<displayName>Guinean Franc</displayName>
 				<displayName count="one">Guinean franc</displayName>
-				<displayName count="other">Mga Guinean franc</displayName>
+				<displayName count="other">Guinean francs</displayName>
 			</currency>
 			<currency type="GTQ">
 				<displayName>Guatemalan Quetzal</displayName>
@@ -2406,12 +2199,12 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<currency type="GYD">
 				<displayName>Guyanaese Dollar</displayName>
 				<displayName count="one">Guyanaese dollar</displayName>
-				<displayName count="other">Mga Guyanaese dollar</displayName>
+				<displayName count="other">Guyanaese dollars</displayName>
 			</currency>
 			<currency type="HKD">
 				<displayName>Hong Kong Dollar</displayName>
 				<displayName count="one">Hong Kong dollar</displayName>
-				<displayName count="other">Mga Hong Kong dollar</displayName>
+				<displayName count="other">Hong Kong dollars</displayName>
 			</currency>
 			<currency type="HNL">
 				<displayName>Honduran Lempira</displayName>
@@ -2421,7 +2214,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<currency type="HRK">
 				<displayName>Croatian Kuna</displayName>
 				<displayName count="one">Croatian kuna</displayName>
-				<displayName count="other">Mga Croatian kuna</displayName>
+				<displayName count="other">Croatian kunas</displayName>
 			</currency>
 			<currency type="HTG">
 				<displayName>Haitian Gourde</displayName>
@@ -2431,32 +2224,32 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<currency type="HUF">
 				<displayName>Hungarian Forint</displayName>
 				<displayName count="one">Hungarian forint</displayName>
-				<displayName count="other">Mga Hungarian forint</displayName>
+				<displayName count="other">Hungarian forints</displayName>
 			</currency>
 			<currency type="IDR">
 				<displayName>Indonesian Rupiah</displayName>
 				<displayName count="one">Indonesian rupiah</displayName>
-				<displayName count="other">Mga Indonesian rupiah</displayName>
+				<displayName count="other">Indonesian rupiahs</displayName>
 			</currency>
 			<currency type="ILS">
 				<displayName>Israeli New Shekel</displayName>
 				<displayName count="one">Israeli new shekel</displayName>
-				<displayName count="other">Mga Israeli new shekel</displayName>
+				<displayName count="other">Israeli new shekels</displayName>
 			</currency>
 			<currency type="INR">
 				<displayName>Indian Rupee</displayName>
 				<displayName count="one">Indian rupee</displayName>
-				<displayName count="other">Mga Indian rupee</displayName>
+				<displayName count="other">Indian rupees</displayName>
 			</currency>
 			<currency type="IQD">
 				<displayName>Iraqi Dinar</displayName>
 				<displayName count="one">Iraqi dinar</displayName>
-				<displayName count="other">Mga Iraqi dinar</displayName>
+				<displayName count="other">Iraqi dinars</displayName>
 			</currency>
 			<currency type="IRR">
 				<displayName>Iranian Rial</displayName>
 				<displayName count="one">Iranian rial</displayName>
-				<displayName count="other">Mga Iranian rial</displayName>
+				<displayName count="other">Iranian rials</displayName>
 			</currency>
 			<currency type="ISK">
 				<displayName>Icelandic Krona</displayName>
@@ -2471,7 +2264,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<currency type="JOD">
 				<displayName>Jordanian Dinar</displayName>
 				<displayName count="one">Jordanian dinar</displayName>
-				<displayName count="other">Mga Jordanian dinar</displayName>
+				<displayName count="other">Jordanian dinars</displayName>
 			</currency>
 			<currency type="JPY">
 				<displayName>Japanese Yen</displayName>
@@ -2481,22 +2274,22 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<currency type="KES">
 				<displayName>Kenyan Shilling</displayName>
 				<displayName count="one">Kenyan shilling</displayName>
-				<displayName count="other">Mga Kenyan shilling</displayName>
+				<displayName count="other">Kenyan shillings</displayName>
 			</currency>
 			<currency type="KGS">
 				<displayName>Kyrgystani Som</displayName>
 				<displayName count="one">Kyrgystani som</displayName>
-				<displayName count="other">Mga Kyrgystani som</displayName>
+				<displayName count="other">Kyrgystani soms</displayName>
 			</currency>
 			<currency type="KHR">
 				<displayName>Cambodian Riel</displayName>
 				<displayName count="one">Cambodian riel</displayName>
-				<displayName count="other">Mga Cambodian riel</displayName>
+				<displayName count="other">Cambodian riels</displayName>
 			</currency>
 			<currency type="KMF">
 				<displayName>Comorian Franc</displayName>
 				<displayName count="one">Comorian franc</displayName>
-				<displayName count="other">Mga Comorian franc</displayName>
+				<displayName count="other">Comorian francs</displayName>
 			</currency>
 			<currency type="KPW">
 				<displayName>North Korean Won</displayName>
@@ -2511,7 +2304,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<currency type="KWD">
 				<displayName>Kuwaiti Dinar</displayName>
 				<displayName count="one">Kuwaiti dinar</displayName>
-				<displayName count="other">Mga Kuwaiti dinar</displayName>
+				<displayName count="other">Kuwaiti dinars</displayName>
 			</currency>
 			<currency type="KYD">
 				<displayName>Cayman Islands Dollar</displayName>
@@ -2521,42 +2314,42 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<currency type="KZT">
 				<displayName>Kazakhstani Tenge</displayName>
 				<displayName count="one">Kazakhstani tenge</displayName>
-				<displayName count="other">Mga Kazakhstani tenge</displayName>
+				<displayName count="other">Kazakhstani tenges</displayName>
 			</currency>
 			<currency type="LAK">
 				<displayName>Laotian Kip</displayName>
 				<displayName count="one">Laotian kip</displayName>
-				<displayName count="other">Mga Laotian kip</displayName>
+				<displayName count="other">Laotian kips</displayName>
 			</currency>
 			<currency type="LBP">
 				<displayName>Lebanese Pound</displayName>
 				<displayName count="one">Lebanese pound</displayName>
-				<displayName count="other">Mga Lebanese pound</displayName>
+				<displayName count="other">Lebanese pounds</displayName>
 			</currency>
 			<currency type="LKR">
 				<displayName>Sri Lankan Rupee</displayName>
 				<displayName count="one">Sri Lankan rupee</displayName>
-				<displayName count="other">Mga Sri Lankan rupee</displayName>
+				<displayName count="other">Sri Lankan rupees</displayName>
 			</currency>
 			<currency type="LRD">
 				<displayName>Liberian Dollar</displayName>
 				<displayName count="one">Liberian dollar</displayName>
-				<displayName count="other">Mga Liberian dollar</displayName>
+				<displayName count="other">Liberian dollars</displayName>
 			</currency>
 			<currency type="LSL">
 				<displayName>Lesotho Loti</displayName>
 				<displayName count="one">Lesotho loti</displayName>
-				<displayName count="other">Mga Lesotho loti</displayName>
+				<displayName count="other">Lesotho lotis</displayName>
 			</currency>
 			<currency type="LYD">
 				<displayName>Libyan Dinar</displayName>
 				<displayName count="one">Libyan dinar</displayName>
-				<displayName count="other">Mga Libyan dinar</displayName>
+				<displayName count="other">Libyan dinars</displayName>
 			</currency>
 			<currency type="MAD">
 				<displayName>Moroccan Dirham</displayName>
 				<displayName count="one">Moroccan dirham</displayName>
-				<displayName count="other">Mga Moroccan dirham</displayName>
+				<displayName count="other">Moroccan dirhams</displayName>
 			</currency>
 			<currency type="MDL">
 				<displayName>Moldovan Leu</displayName>
@@ -2566,7 +2359,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<currency type="MGA">
 				<displayName>Malagasy Ariary</displayName>
 				<displayName count="one">Malagasy ariary</displayName>
-				<displayName count="other">Mga Malagasy ariary</displayName>
+				<displayName count="other">Malagasy ariaries</displayName>
 			</currency>
 			<currency type="MKD">
 				<displayName>Macedonian Denar</displayName>
@@ -2576,37 +2369,37 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<currency type="MMK">
 				<displayName>Myanmar Kyat</displayName>
 				<displayName count="one">Myanmar kyat</displayName>
-				<displayName count="other">Mga Myanmar kyat</displayName>
+				<displayName count="other">Myanmar kyats</displayName>
 			</currency>
 			<currency type="MNT">
 				<displayName>Mongolian Tugrik</displayName>
 				<displayName count="one">Mongolian tugrik</displayName>
-				<displayName count="other">Mga Mongolian tugrik</displayName>
+				<displayName count="other">Mongolian tugriks</displayName>
 			</currency>
 			<currency type="MOP">
 				<displayName>Macanese Pataca</displayName>
 				<displayName count="one">Macanese pataca</displayName>
-				<displayName count="other">Mga Macanese pataca</displayName>
+				<displayName count="other">Macanese patacas</displayName>
 			</currency>
 			<currency type="MRU">
 				<displayName>Mauritanian Ouguiya</displayName>
 				<displayName count="one">Mauritanian ouguiya</displayName>
-				<displayName count="other">Mga Mauritanian ouguiya</displayName>
+				<displayName count="other">Mauritanian ouguiyas</displayName>
 			</currency>
 			<currency type="MUR">
 				<displayName>Mauritian Rupee</displayName>
 				<displayName count="one">Mauritian rupee</displayName>
-				<displayName count="other">Mga Mauritian rupee</displayName>
+				<displayName count="other">Mauritian rupees</displayName>
 			</currency>
 			<currency type="MVR">
 				<displayName>Maldivian Rufiyaa</displayName>
 				<displayName count="one">Maldivian rufiyaa</displayName>
-				<displayName count="other">Mga Maldivian rufiyaa</displayName>
+				<displayName count="other">Maldivian rufiyaas</displayName>
 			</currency>
 			<currency type="MWK">
 				<displayName>Malawian Kwacha</displayName>
 				<displayName count="one">Malawian kwacha</displayName>
-				<displayName count="other">Mga Malawian kwacha</displayName>
+				<displayName count="other">Malawian kwachas</displayName>
 			</currency>
 			<currency type="MXN">
 				<displayName>Mexican Peso</displayName>
@@ -2615,23 +2408,23 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			</currency>
 			<currency type="MYR">
 				<displayName>Malaysian Ringgit</displayName>
-				<displayName count="one">Mga Malaysian ringgit</displayName>
-				<displayName count="other">Mga Malaysian ringgit</displayName>
+				<displayName count="one">Malaysian ringgit</displayName>
+				<displayName count="other">Malaysian ringgits</displayName>
 			</currency>
 			<currency type="MZN">
 				<displayName>Mozambican Metical</displayName>
 				<displayName count="one">Mozambican metical</displayName>
-				<displayName count="other">Mga Mozambican metical</displayName>
+				<displayName count="other">Mozambican meticals</displayName>
 			</currency>
 			<currency type="NAD">
 				<displayName>Namibian Dollar</displayName>
 				<displayName count="one">Namibian dollar</displayName>
-				<displayName count="other">Mga Namibian dollar</displayName>
+				<displayName count="other">Namibian dollars</displayName>
 			</currency>
 			<currency type="NGN">
 				<displayName>Nigerian Naira</displayName>
 				<displayName count="one">Nigerian naira</displayName>
-				<displayName count="other">Mga Nigerian naira</displayName>
+				<displayName count="other">Nigerian nairas</displayName>
 			</currency>
 			<currency type="NIO">
 				<displayName>Nicaraguan Cordoba</displayName>
@@ -2646,17 +2439,17 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<currency type="NPR">
 				<displayName>Nepalese Rupee</displayName>
 				<displayName count="one">Nepalese rupee</displayName>
-				<displayName count="other">Mga Nepalese rupee</displayName>
+				<displayName count="other">Nepalese rupees</displayName>
 			</currency>
 			<currency type="NZD">
 				<displayName>New Zealand Dollar</displayName>
 				<displayName count="one">New Zealand dollar</displayName>
-				<displayName count="other">Mga New Zealand dollar</displayName>
+				<displayName count="other">New Zealand dollars</displayName>
 			</currency>
 			<currency type="OMR">
 				<displayName>Omani Rial</displayName>
 				<displayName count="one">Omani rial</displayName>
-				<displayName count="other">Mga Omani rial</displayName>
+				<displayName count="other">Omani rials</displayName>
 			</currency>
 			<currency type="PAB">
 				<displayName>Panamanian Balboa</displayName>
@@ -2666,7 +2459,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<currency type="PEN">
 				<displayName>Peruvian Sol</displayName>
 				<displayName count="one">Peruvian sol</displayName>
-				<displayName count="other">Mga Peruvian sole</displayName>
+				<displayName count="other">Peruvian soles</displayName>
 			</currency>
 			<currency type="PGK">
 				<displayName>Papua New Guinean Kina</displayName>
@@ -2674,30 +2467,29 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<displayName count="other">Papua New Guinean kina</displayName>
 			</currency>
 			<currency type="PHP">
-				<displayName>Philippine Piso</displayName>
-				<displayName count="one">Philippine piso</displayName>
-				<displayName count="other">Mga Philippine piso</displayName>
-				<symbol draft="contributed">₱</symbol>
+				<displayName>Philippine Peso</displayName>
+				<displayName count="one">Philippine peso</displayName>
+				<displayName count="other">Philippine pesos</displayName>
 			</currency>
 			<currency type="PKR">
 				<displayName>Pakistani Rupee</displayName>
 				<displayName count="one">Pakistani rupee</displayName>
-				<displayName count="other">Mga Pakistani rupee</displayName>
+				<displayName count="other">Pakistani rupees</displayName>
 			</currency>
 			<currency type="PLN">
 				<displayName>Polish Zloty</displayName>
 				<displayName count="one">Polish zloty</displayName>
-				<displayName count="other">Mga Polish zloty</displayName>
+				<displayName count="other">Polish zlotys</displayName>
 			</currency>
 			<currency type="PYG">
 				<displayName>Paraguayan Guarani</displayName>
 				<displayName count="one">Paraguayan guarani</displayName>
-				<displayName count="other">Mga Paraguayan guarani</displayName>
+				<displayName count="other">Paraguayan guaranis</displayName>
 			</currency>
 			<currency type="QAR">
 				<displayName>Qatari Rial</displayName>
 				<displayName count="one">Qatari rial</displayName>
-				<displayName count="other">Mga Qatari rial</displayName>
+				<displayName count="other">Qatari riyals</displayName>
 			</currency>
 			<currency type="RON">
 				<displayName>Romanian Leu</displayName>
@@ -2707,37 +2499,37 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<currency type="RSD">
 				<displayName>Serbian Dinar</displayName>
 				<displayName count="one">Serbian dinar</displayName>
-				<displayName count="other">Mga Serbian dinar</displayName>
+				<displayName count="other">Serbian dinars</displayName>
 			</currency>
 			<currency type="RUB">
 				<displayName>Russian Ruble</displayName>
 				<displayName count="one">Russian ruble</displayName>
-				<displayName count="other">Mga Russian ruble</displayName>
+				<displayName count="other">Russian rubles</displayName>
 			</currency>
 			<currency type="RWF">
 				<displayName>Rwandan Franc</displayName>
 				<displayName count="one">Rwandan franc</displayName>
-				<displayName count="other">Mga Rwandan franc</displayName>
+				<displayName count="other">Rwandan francs</displayName>
 			</currency>
 			<currency type="SAR">
 				<displayName>Saudi Riyal</displayName>
 				<displayName count="one">Saudi riyal</displayName>
-				<displayName count="other">Mga Saudi riyal</displayName>
+				<displayName count="other">Saudi riyals</displayName>
 			</currency>
 			<currency type="SBD">
 				<displayName>Solomon Islands Dollar</displayName>
 				<displayName count="one">Solomon Islands dollar</displayName>
-				<displayName count="other">Mga Solomon Islands dollar</displayName>
+				<displayName count="other">Solomon Islands dollars</displayName>
 			</currency>
 			<currency type="SCR">
 				<displayName>Seychellois Rupee</displayName>
 				<displayName count="one">Seychellois rupee</displayName>
-				<displayName count="other">Mga Seychellois rupee</displayName>
+				<displayName count="other">Seychellois rupees</displayName>
 			</currency>
 			<currency type="SDG">
 				<displayName>Sudanese Pound</displayName>
 				<displayName count="one">Sudanese pound</displayName>
-				<displayName count="other">Mga Sudanese pound</displayName>
+				<displayName count="other">Sudanese pounds</displayName>
 			</currency>
 			<currency type="SEK">
 				<displayName>Swedish Krona</displayName>
@@ -2747,42 +2539,47 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<currency type="SGD">
 				<displayName>Singapore Dollar</displayName>
 				<displayName count="one">Singapore dollar</displayName>
-				<displayName count="other">Mga Singapore dollar</displayName>
+				<displayName count="other">Singapore dollars</displayName>
 			</currency>
 			<currency type="SHP">
 				<displayName>St. Helena Pound</displayName>
 				<displayName count="one">St. Helena pound</displayName>
-				<displayName count="other">Mga St. Helena pound</displayName>
+				<displayName count="other">St. Helena pounds</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Sierra Leonean Leone</displayName>
 				<displayName count="one">Sierra Leonean leone</displayName>
-				<displayName count="other">Mga Sierra Leonean leone</displayName>
+				<displayName count="other">Sierra Leonean leones</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Sierra Leonean Leone (1964—2022)</displayName>
+				<displayName count="one">Sierra Leonean leone (1964—2022)</displayName>
+				<displayName count="other">Sierra Leonean leones (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Somali Shilling</displayName>
 				<displayName count="one">Somali shilling</displayName>
-				<displayName count="other">Mga Somali shilling</displayName>
+				<displayName count="other">Somali shillings</displayName>
 			</currency>
 			<currency type="SRD">
 				<displayName>Surinamese Dollar</displayName>
 				<displayName count="one">Surinamese dollar</displayName>
-				<displayName count="other">Mga Surinamese dollar</displayName>
+				<displayName count="other">Surinamese dollars</displayName>
 			</currency>
 			<currency type="SSP">
 				<displayName>South Sudanese Pound</displayName>
 				<displayName count="one">South Sudanese pound</displayName>
-				<displayName count="other">Mga South Sudanese pound</displayName>
+				<displayName count="other">South Sudanese pounds</displayName>
 			</currency>
 			<currency type="STN">
 				<displayName>Sao Tome &amp; Principe Dobra</displayName>
 				<displayName count="one">Sao Tome &amp; Principe dobra</displayName>
-				<displayName count="other">Mga Sao Tome &amp; Principe dobra</displayName>
+				<displayName count="other">São Tomé &amp; Príncipe dobras</displayName>
 			</currency>
 			<currency type="SYP">
 				<displayName>Syrian Pound</displayName>
 				<displayName count="one">Syrian pound</displayName>
-				<displayName count="other">Mga Syrian pound</displayName>
+				<displayName count="other">Syrian pounds</displayName>
 			</currency>
 			<currency type="SZL">
 				<displayName>Swazi Lilangeni</displayName>
@@ -2797,7 +2594,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<currency type="TJS">
 				<displayName>Tajikistani Somoni</displayName>
 				<displayName count="one">Tajikistani somoni</displayName>
-				<displayName count="other">Mga Tajikistani somoni</displayName>
+				<displayName count="other">Tajikistani somonis</displayName>
 			</currency>
 			<currency type="TMT">
 				<displayName>Turkmenistani Manat</displayName>
@@ -2807,7 +2604,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<currency type="TND">
 				<displayName>Tunisian Dinar</displayName>
 				<displayName count="one">Tunisian dinar</displayName>
-				<displayName count="other">Mga Tunisian dinar</displayName>
+				<displayName count="other">Tunisian dinars</displayName>
 			</currency>
 			<currency type="TOP">
 				<displayName>Tongan Paʻanga</displayName>
@@ -2827,22 +2624,22 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<currency type="TWD">
 				<displayName>New Taiwan Dollar</displayName>
 				<displayName count="one">New Taiwan dollar</displayName>
-				<displayName count="other">Mga New Taiwan dollar</displayName>
+				<displayName count="other">New Taiwan dollars</displayName>
 			</currency>
 			<currency type="TZS">
 				<displayName>Tanzanian Shilling</displayName>
 				<displayName count="one">Tanzanian shilling</displayName>
-				<displayName count="other">Mga Tanzanian shilling</displayName>
+				<displayName count="other">Tanzanian shillings</displayName>
 			</currency>
 			<currency type="UAH">
 				<displayName>Ukrainian Hryvnia</displayName>
 				<displayName count="one">Ukrainian hryvnia</displayName>
-				<displayName count="other">Mga Ukrainian hryvnia</displayName>
+				<displayName count="other">Ukrainian hryvnias</displayName>
 			</currency>
 			<currency type="UGX">
 				<displayName>Ugandan Shilling</displayName>
 				<displayName count="one">Ugandan shilling</displayName>
-				<displayName count="other">Mga Ugandan shilling</displayName>
+				<displayName count="other">Ugandan shillings</displayName>
 			</currency>
 			<currency type="USD">
 				<displayName>US Dollar</displayName>
@@ -2853,7 +2650,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<currency type="UYU">
 				<displayName>Uruguayan Peso</displayName>
 				<displayName count="one">Uruguayan peso</displayName>
-				<displayName count="other">Mga Uruguayan peso</displayName>
+				<displayName count="other">Uruguayan pesos</displayName>
 			</currency>
 			<currency type="UZS">
 				<displayName>Uzbekistani Som</displayName>
@@ -2863,7 +2660,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<currency type="VES">
 				<displayName>Venezuelan Bolivar</displayName>
 				<displayName count="one">Venezuelan bolivar</displayName>
-				<displayName count="other">Mga Venezuelan bolivar</displayName>
+				<displayName count="other">Venezuelan bolívars</displayName>
 			</currency>
 			<currency type="VND">
 				<displayName>Vietnamese Dong</displayName>
@@ -2873,7 +2670,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<currency type="VUV">
 				<displayName>Vanuatu Vatu</displayName>
 				<displayName count="one">Vanuatu vatu</displayName>
-				<displayName count="other">Mga Vanuatu vatu</displayName>
+				<displayName count="other">Vanuatu vatus</displayName>
 			</currency>
 			<currency type="WST">
 				<displayName>Samoan Tala</displayName>
@@ -2883,7 +2680,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<currency type="XAF">
 				<displayName>Central African CFA Franc</displayName>
 				<displayName count="one">Central African CFA franc</displayName>
-				<displayName count="other">Mga Central African CFA franc</displayName>
+				<displayName count="other">Central African CFA francs</displayName>
 			</currency>
 			<currency type="XCD">
 				<displayName>East Caribbean Dollar</displayName>
@@ -2893,12 +2690,12 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<currency type="XOF">
 				<displayName>West African CFA Franc</displayName>
 				<displayName count="one">West African CFA franc</displayName>
-				<displayName count="other">Mga West African CFA franc</displayName>
+				<displayName count="other">West African CFA francs</displayName>
 			</currency>
 			<currency type="XPF">
 				<displayName>CFP Franc</displayName>
 				<displayName count="one">CFP franc</displayName>
-				<displayName count="other">Mga CFP franc</displayName>
+				<displayName count="other">CFP francs</displayName>
 			</currency>
 			<currency type="XXX">
 				<displayName>Wala Nailhi nga Kwarta</displayName>
@@ -2908,7 +2705,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<currency type="YER">
 				<displayName>Yemeni Rial</displayName>
 				<displayName count="one">Yemeni rial</displayName>
-				<displayName count="other">Mga Yemeni rial</displayName>
+				<displayName count="other">Yemeni rials</displayName>
 			</currency>
 			<currency type="ZAR">
 				<displayName>South African Rand</displayName>
@@ -2918,7 +2715,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<currency type="ZMW">
 				<displayName>Zambian Kwacha</displayName>
 				<displayName count="one">Zambian kwacha</displayName>
-				<displayName count="other">Mga Zambian kwacha</displayName>
+				<displayName count="other">Zambian kwachas</displayName>
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
@@ -3044,12 +2841,10 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="other">{0} ka mga rebolusyon</unitPattern>
 			</unit>
 			<unit type="angle-radian">
-				<displayName>mga radian</displayName>
 				<unitPattern count="one">{0} ka radian</unitPattern>
 				<unitPattern count="other">{0} ka mga radian</unitPattern>
 			</unit>
 			<unit type="angle-degree">
-				<displayName>mga degree</displayName>
 				<unitPattern count="one">{0} ka degree</unitPattern>
 				<unitPattern count="other">{0} ka mga degree</unitPattern>
 			</unit>
@@ -3070,7 +2865,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<perUnitPattern>{0} kada kilometro kwadrado</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
-				<displayName>mga ektarya</displayName>
 				<unitPattern count="one">{0} ka ektarya</unitPattern>
 				<unitPattern count="other">{0} ka mga ektarya</unitPattern>
 			</unit>
@@ -3087,13 +2881,11 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<perUnitPattern>{0} kada sentimetro kwadrado</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
-				<displayName>mga milya kwadrado</displayName>
 				<unitPattern count="one">{0} ka milya kwadrado</unitPattern>
 				<unitPattern count="other">{0} ka mga milya kwadrado</unitPattern>
 				<perUnitPattern>{0} kada milya kwadrado</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
-				<displayName>mga acre</displayName>
 				<unitPattern count="one">{0} ka acre</unitPattern>
 				<unitPattern count="other">{0} ka mga acre</unitPattern>
 			</unit>
@@ -3114,12 +2906,10 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<perUnitPattern>{0} kada square inch</perUnitPattern>
 			</unit>
 			<unit type="area-dunam">
-				<displayName>mga dunam</displayName>
 				<unitPattern count="one">{0} ka dunam</unitPattern>
 				<unitPattern count="other">{0} ka mga dunam</unitPattern>
 			</unit>
 			<unit type="concentr-karat">
-				<displayName>mga karat</displayName>
 				<unitPattern count="one">{0} ka karat</unitPattern>
 				<unitPattern count="other">{0} ka mga karat</unitPattern>
 			</unit>
@@ -3139,17 +2929,14 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="other">{0} ka mga part per million</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
-				<displayName>porsyento</displayName>
 				<unitPattern count="one">{0} ka porsyento</unitPattern>
 				<unitPattern count="other">{0} ka porsyento</unitPattern>
 			</unit>
 			<unit type="concentr-permille">
-				<displayName>permille</displayName>
 				<unitPattern count="one">{0} ka permille</unitPattern>
 				<unitPattern count="other">{0} ka permille</unitPattern>
 			</unit>
 			<unit type="concentr-permyriad">
-				<displayName>permyriad</displayName>
 				<unitPattern count="one">{0} ka permyriad</unitPattern>
 				<unitPattern count="other">{0} ka permyriad</unitPattern>
 			</unit>
@@ -3244,43 +3031,36 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="other">{0} ka mga dekada</unitPattern>
 			</unit>
 			<unit type="duration-year">
-				<displayName>mga tuig</displayName>
 				<unitPattern count="one">{0} ka tuig</unitPattern>
 				<unitPattern count="other">{0} ka mga tuig</unitPattern>
 				<perUnitPattern>{0} kada tuig</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
-				<displayName>mga buwan</displayName>
 				<unitPattern count="one">{0} ka buwan</unitPattern>
 				<unitPattern count="other">{0} ka mga buwan</unitPattern>
 				<perUnitPattern>{0} kada buwan</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
-				<displayName>mga semana</displayName>
 				<unitPattern count="one">{0} ka semana</unitPattern>
 				<unitPattern count="other">{0} ka mga semana</unitPattern>
 				<perUnitPattern>{0} kada semana</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
-				<displayName>mga adlaw</displayName>
 				<unitPattern count="one">{0} ka adlaw</unitPattern>
 				<unitPattern count="other">{0} ka mga adlaw</unitPattern>
 				<perUnitPattern>{0} kada adlaw</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
-				<displayName>mga oras</displayName>
 				<unitPattern count="one">{0} ka oras</unitPattern>
 				<unitPattern count="other">{0} ka mga oras</unitPattern>
 				<perUnitPattern>{0} kada oras</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
-				<displayName>mga minuto</displayName>
 				<unitPattern count="one">{0} ka minuto</unitPattern>
 				<unitPattern count="other">{0} ka mga minuto</unitPattern>
 				<perUnitPattern>{0} kada minuto</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
-				<displayName>mga segundo</displayName>
 				<unitPattern count="one">{0} ka segundo</unitPattern>
 				<unitPattern count="other">{0} ka mga segundo</unitPattern>
 				<perUnitPattern>{0} kada segundo</perUnitPattern>
@@ -3311,12 +3091,10 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="other">{0} ka mga milliampere</unitPattern>
 			</unit>
 			<unit type="electric-ohm">
-				<displayName>mga ohm</displayName>
 				<unitPattern count="one">{0} ka ohm</unitPattern>
 				<unitPattern count="other">{0} ka mga ohm</unitPattern>
 			</unit>
 			<unit type="electric-volt">
-				<displayName>mga boltahe</displayName>
 				<unitPattern count="one">{0} ka boltahe</unitPattern>
 				<unitPattern count="other">{0} ka mga boltahe</unitPattern>
 			</unit>
@@ -3331,9 +3109,9 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="other">{0} ka mga calorie</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>mga Calorie</displayName>
-				<unitPattern count="one">{0} ka Calorie</unitPattern>
-				<unitPattern count="other">{0} ka mga Calorie</unitPattern>
+				<displayName draft="provisional">mga Calorie</displayName>
+				<unitPattern count="one" draft="provisional">{0} ka Calorie</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ka mga Calorie</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>mga kilojoule</displayName>
@@ -3341,7 +3119,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="other">{0} ka mga kilojoule</unitPattern>
 			</unit>
 			<unit type="energy-joule">
-				<displayName>mga joule</displayName>
 				<unitPattern count="one">{0} ka joule</unitPattern>
 				<unitPattern count="other">{0} ka mga joule</unitPattern>
 			</unit>
@@ -3362,8 +3139,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			</unit>
 			<unit type="energy-therm-us">
 				<displayName>Mga US therm</displayName>
-				<unitPattern count="one">{0} ka US therm</unitPattern>
-				<unitPattern count="other">{0} ka mga US therm</unitPattern>
 			</unit>
 			<unit type="force-pound-force">
 				<displayName>mga pound sa puwersa</displayName>
@@ -3401,12 +3176,10 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="other">{0} ka mga em</unitPattern>
 			</unit>
 			<unit type="graphics-pixel">
-				<displayName>mga pixel</displayName>
 				<unitPattern count="one">{0} ka pixel</unitPattern>
 				<unitPattern count="other">{0} ka mga pixel</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
-				<displayName>mga megapixel</displayName>
 				<unitPattern count="one">{0} ka megapixel</unitPattern>
 				<unitPattern count="other">{0} ka mga megapixel</unitPattern>
 			</unit>
@@ -3421,18 +3194,18 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="other">{0} ka mga pixel kada pulgada</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>mga dot kada sentimetro</displayName>
-				<unitPattern count="one">{0} ka dot kada sentimetro</unitPattern>
-				<unitPattern count="other">{0} ka mga dot kada sentimetro</unitPattern>
+				<displayName draft="provisional">mga dot kada sentimetro</displayName>
+				<unitPattern count="one" draft="provisional">{0} ka dot kada sentimetro</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ka mga dot kada sentimetro</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>mga dot kada pulgada</displayName>
-				<unitPattern count="one">{0} ka dot kada pulgada</unitPattern>
-				<unitPattern count="other">{0} ka mga dot kada pulgada</unitPattern>
+				<displayName draft="provisional">mga dot kada pulgada</displayName>
+				<unitPattern count="one" draft="provisional">{0} ka dot kada pulgada</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ka mga dot kada pulgada</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<unitPattern count="one">{0} dot</unitPattern>
-				<unitPattern count="other">{0} px</unitPattern>
+				<unitPattern count="one" draft="provisional">{0} dot</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} px</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>radyus sa yuta</displayName>
@@ -3483,29 +3256,24 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="other">{0} ka mga picometer</unitPattern>
 			</unit>
 			<unit type="length-mile">
-				<displayName>mga milya</displayName>
 				<unitPattern count="one">{0} ka milya</unitPattern>
 				<unitPattern count="other">{0} ka mga milya</unitPattern>
 			</unit>
 			<unit type="length-yard">
-				<displayName>mga yarda</displayName>
 				<unitPattern count="one">{0} ka yarda</unitPattern>
 				<unitPattern count="other">{0} ka mga yarda</unitPattern>
 			</unit>
 			<unit type="length-foot">
-				<displayName>mga piye</displayName>
 				<unitPattern count="one">{0} ka piye</unitPattern>
 				<unitPattern count="other">{0} ka mga piye</unitPattern>
 				<perUnitPattern>{0} kada piye</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
-				<displayName>mga pulgada</displayName>
 				<unitPattern count="one">{0} ka pulgada</unitPattern>
 				<unitPattern count="other">{0} ka pulgada</unitPattern>
 				<perUnitPattern>{0} kada pulgada</perUnitPattern>
 			</unit>
 			<unit type="length-parsec">
-				<displayName>mga parsec</displayName>
 				<unitPattern count="one">{0} ka parsec</unitPattern>
 				<unitPattern count="other">{0} ka mga parsec</unitPattern>
 			</unit>
@@ -3530,17 +3298,14 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="other">{0} ka mile-scandinavian</unitPattern>
 			</unit>
 			<unit type="length-point">
-				<displayName>mga point</displayName>
 				<unitPattern count="one">{0} ka point</unitPattern>
 				<unitPattern count="other">{0} ka mga point</unitPattern>
 			</unit>
 			<unit type="length-solar-radius">
-				<displayName>mga solar radius</displayName>
 				<unitPattern count="one">{0} ka solar radius</unitPattern>
 				<unitPattern count="other">{0} ka mga solar radius</unitPattern>
 			</unit>
 			<unit type="light-lux">
-				<displayName>lux</displayName>
 				<unitPattern count="one">{0} lux</unitPattern>
 				<unitPattern count="other">{0} lux</unitPattern>
 			</unit>
@@ -3555,11 +3320,10 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="other">{0} ka lumen</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
-				<displayName>mga solar luminosity</displayName>
 				<unitPattern count="one">{0} ka solar luminosity</unitPattern>
 				<unitPattern count="other">{0}ka mga solar luminosity</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>mga metrikong tonelada</displayName>
 				<unitPattern count="one">{0} ka metrikong tonelada</unitPattern>
 				<unitPattern count="other">{0} ka mga metrikong tonelada</unitPattern>
@@ -3571,7 +3335,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<perUnitPattern>{0} kada kilogramo</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
-				<displayName>mga gramo</displayName>
 				<unitPattern count="one">{0} ka gramo</unitPattern>
 				<unitPattern count="other">{0} ka mga gramo</unitPattern>
 				<perUnitPattern>{0} kada gramo</perUnitPattern>
@@ -3587,12 +3350,10 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="other">{0} ka mga microgram</unitPattern>
 			</unit>
 			<unit type="mass-ton">
-				<displayName>mga tonelada</displayName>
 				<unitPattern count="one">{0} ka tonelada</unitPattern>
 				<unitPattern count="other">{0} ka mga tonelada</unitPattern>
 			</unit>
 			<unit type="mass-pound">
-				<displayName>mga pound</displayName>
 				<unitPattern count="one">{0} ka pound</unitPattern>
 				<unitPattern count="other">{0} ka mga pound</unitPattern>
 				<perUnitPattern>{0} kada pound</perUnitPattern>
@@ -3609,22 +3370,18 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="other">{0} ka mga troy ounce</unitPattern>
 			</unit>
 			<unit type="mass-carat">
-				<displayName>mga carat</displayName>
 				<unitPattern count="one">{0} ka carat</unitPattern>
 				<unitPattern count="other">{0} ka mga carat</unitPattern>
 			</unit>
 			<unit type="mass-dalton">
-				<displayName>mga dalton</displayName>
 				<unitPattern count="one">{0} ka dalton</unitPattern>
 				<unitPattern count="other">{0} ka mga dalton</unitPattern>
 			</unit>
 			<unit type="mass-earth-mass">
-				<displayName>mga mass sa Earth</displayName>
 				<unitPattern count="one">{0} ka mass sa Earth</unitPattern>
 				<unitPattern count="other">{0} ka mga mass sa Earth</unitPattern>
 			</unit>
 			<unit type="mass-solar-mass">
-				<displayName>mga solar mass</displayName>
 				<unitPattern count="one">{0} ka solar mass</unitPattern>
 				<unitPattern count="other">{0} ka mga solar mass</unitPattern>
 			</unit>
@@ -3648,7 +3405,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="other">{0} ka mga kilowatt</unitPattern>
 			</unit>
 			<unit type="power-watt">
-				<displayName>mga watt</displayName>
 				<unitPattern count="one">{0} ka watt</unitPattern>
 				<unitPattern count="other">{0} ka mga watt</unitPattern>
 			</unit>
@@ -3805,7 +3561,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="other">{0} ka mga hectoliter</unitPattern>
 			</unit>
 			<unit type="volume-liter">
-				<displayName>mga litro</displayName>
 				<unitPattern count="one">{0} ka litro</unitPattern>
 				<unitPattern count="other">{0} ka mga litro</unitPattern>
 				<perUnitPattern>{0} kada litro</perUnitPattern>
@@ -3858,12 +3613,10 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="other">{0} ka mga quart</unitPattern>
 			</unit>
 			<unit type="volume-pint">
-				<displayName>mga pint</displayName>
 				<unitPattern count="one">{0} ka pint</unitPattern>
 				<unitPattern count="other">{0} ka mga pint</unitPattern>
 			</unit>
 			<unit type="volume-cup">
-				<displayName>mga tasa</displayName>
 				<unitPattern count="one">{0} ka tasa</unitPattern>
 				<unitPattern count="other">{0} ka mga tasa</unitPattern>
 			</unit>
@@ -3902,22 +3655,10 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="one">{0} ka Imp. nga kutsarang panghinam-is</unitPattern>
 				<unitPattern count="other">{0} ka Imp. nga kutsarang panghinam-is</unitPattern>
 			</unit>
-			<unit type="volume-drop">
-				<unitPattern count="one">{0} ka drop</unitPattern>
-				<unitPattern count="other">{0} ka drop</unitPattern>
-			</unit>
 			<unit type="volume-dram">
 				<displayName>dram</displayName>
 				<unitPattern count="one">{0} ka dram</unitPattern>
 				<unitPattern count="other">{0} ka dram</unitPattern>
-			</unit>
-			<unit type="volume-jigger">
-				<unitPattern count="one">{0} ka jigger</unitPattern>
-				<unitPattern count="other">{0} ka jigger</unitPattern>
-			</unit>
-			<unit type="volume-pinch">
-				<unitPattern count="one">{0} ka pinch</unitPattern>
-				<unitPattern count="other">{0} ka pinch</unitPattern>
 			</unit>
 			<unit type="volume-quart-imperial">
 				<displayName>Imp. quart</displayName>
@@ -3987,10 +3728,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<unit type="concentr-karat">
 				<displayName>mga karat</displayName>
 			</unit>
-			<unit type="concentr-milligram-ofglucose-per-deciliter">
-				<unitPattern count="one">{0} mg/dL</unitPattern>
-				<unitPattern count="other">{0} mg/dL</unitPattern>
-			</unit>
 			<unit type="concentr-millimole-per-liter">
 				<displayName>millimol/litro</displayName>
 			</unit>
@@ -4008,8 +3745,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			</unit>
 			<unit type="concentr-mole">
 				<displayName>mole</displayName>
-				<unitPattern count="one">{0} mol</unitPattern>
-				<unitPattern count="other">{0} mol</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>mga litro/km</displayName>
@@ -4026,8 +3761,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			</unit>
 			<unit type="consumption-mile-per-gallon-imperial">
 				<displayName>mga milya/gal Imp.</displayName>
-				<unitPattern count="one">{0} mpg Imp.</unitPattern>
-				<unitPattern count="other">{0} mpg Imp.</unitPattern>
 			</unit>
 			<unit type="digital-petabyte">
 				<displayName>PByte</displayName>
@@ -4120,13 +3853,9 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			</unit>
 			<unit type="electric-milliampere">
 				<displayName>mga milliamp</displayName>
-				<unitPattern count="one">{0} mA</unitPattern>
-				<unitPattern count="other">{0} mA</unitPattern>
 			</unit>
 			<unit type="electric-ohm">
 				<displayName>mga ohm</displayName>
-				<unitPattern count="one">{0} Ω</unitPattern>
-				<unitPattern count="other">{0} Ω</unitPattern>
 			</unit>
 			<unit type="electric-volt">
 				<displayName>mga boltahe</displayName>
@@ -4155,9 +3884,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			</unit>
 			<unit type="force-newton">
 				<displayName>newton</displayName>
-			</unit>
-			<unit type="frequency-megahertz">
-				<displayName>MHz</displayName>
 			</unit>
 			<unit type="graphics-em">
 				<unitPattern count="one">{0} ka em</unitPattern>
@@ -4284,7 +4010,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<displayName>gal</displayName>
 				<unitPattern count="one">{0} gal</unitPattern>
 				<unitPattern count="other">{0} gal</unitPattern>
-				<perUnitPattern>{0}/gal US</perUnitPattern>
 			</unit>
 			<unit type="volume-quart">
 				<displayName>qts</displayName>
@@ -4299,11 +4024,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<displayName>fl oz</displayName>
 				<unitPattern count="one">{0} fl oz</unitPattern>
 				<unitPattern count="other">{0} fl oz</unitPattern>
-			</unit>
-			<unit type="volume-fluid-ounce-imperial">
-				<displayName>Imp. fl oz</displayName>
-				<unitPattern count="one">{0} fl oz Imp.</unitPattern>
-				<unitPattern count="other">{0} fl oz Imp.</unitPattern>
 			</unit>
 			<unit type="volume-teaspoon">
 				<displayName>kutsarita</displayName>
@@ -4348,8 +4068,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			</unit>
 			<unit type="duration-year">
 				<displayName>tuig</displayName>
-				<unitPattern count="one">{0} ka tuig</unitPattern>
-				<unitPattern count="other">{0} ka tuig</unitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>buwan</displayName>
@@ -4368,8 +4086,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			</unit>
 			<unit type="duration-hour">
 				<displayName>oras</displayName>
-				<unitPattern count="one">{0} ka oras</unitPattern>
-				<unitPattern count="other">{0} ka oras</unitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName>minuto</displayName>
@@ -4378,8 +4094,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			</unit>
 			<unit type="duration-second">
 				<displayName>segundo</displayName>
-				<unitPattern count="one">{0}segundo</unitPattern>
-				<unitPattern count="other">{0}segundo</unitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>msec</displayName>
@@ -4391,7 +4105,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="other">{0}km</unitPattern>
 			</unit>
 			<unit type="length-meter">
-				<displayName>m</displayName>
 				<unitPattern count="one">{0}m</unitPattern>
 				<unitPattern count="other">{0}m</unitPattern>
 			</unit>
@@ -4424,27 +4137,15 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="other">{0}L</unitPattern>
 			</unit>
 			<coordinateUnit>
-				<displayName>direksyon</displayName>
 				<coordinateUnitPattern type="east">{0}E</coordinateUnitPattern>
 				<coordinateUnitPattern type="north">{0}N</coordinateUnitPattern>
 				<coordinateUnitPattern type="south">{0}S</coordinateUnitPattern>
 				<coordinateUnitPattern type="west">{0}W</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
-		<durationUnit type="hm">
-			<durationUnitPattern>h:mm</durationUnitPattern>
-		</durationUnit>
-		<durationUnit type="hms">
-			<durationUnitPattern>h:mm:ss</durationUnitPattern>
-		</durationUnit>
-		<durationUnit type="ms">
-			<durationUnitPattern>m:ss</durationUnitPattern>
-		</durationUnit>
 	</units>
 	<listPatterns>
 		<listPattern>
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0}, ug {1}</listPatternPart>
 			<listPatternPart type="2">{0} ug {1}</listPatternPart>
 		</listPattern>
@@ -4452,23 +4153,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<listPatternPart type="end">{0}, o {1}</listPatternPart>
 			<listPatternPart type="2">{0} o {1}</listPatternPart>
 		</listPattern>
-		<listPattern type="or-narrow">
-			<listPatternPart type="end">{0}, o {1}</listPatternPart>
-			<listPatternPart type="2">{0} o {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="or-short">
-			<listPatternPart type="end">{0}, o {1}</listPatternPart>
-			<listPatternPart type="2">{0} o {1}</listPatternPart>
-		</listPattern>
 		<listPattern type="standard-narrow">
-			<listPatternPart type="end">{0}, {1}</listPatternPart>
-			<listPatternPart type="2">{0}, {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="standard-short">
-			<listPatternPart type="end">{0}, ug {1}</listPatternPart>
-			<listPatternPart type="2">{0} ug {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="unit">
 			<listPatternPart type="end">{0}, {1}</listPatternPart>
 			<listPatternPart type="2">{0}, {1}</listPatternPart>
 		</listPattern>
@@ -4489,4 +4174,8 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<nostr>dili:d</nostr>
 		</messages>
 	</posix>
+	<personNames>
+		<nameOrderLocales order="givenFirst">und ceb</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
+	</personNames>
 </ldml>

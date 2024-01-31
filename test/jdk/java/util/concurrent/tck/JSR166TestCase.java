@@ -35,19 +35,28 @@
  */
 
 /*
- * @test
- * @summary JSR-166 tck tests, in a number of variations.
- *          The first is the conformance testing variant,
- *          while others also test implementation details.
+ * @test id=default
+ * @summary Conformance testing variant of JSR-166 tck tests.
  * @build *
  * @modules java.management
  * @run junit/othervm/timeout=1000 JSR166TestCase
+ */
+
+/*
+ * @test id=security-manager
+ * @summary Conformance testing variant of JSR-166 tck tests
+ *          with java security manager set to allow.
+ * @build *
+ * @modules java.management
  * @run junit/othervm/timeout=1000 -Djava.security.manager=allow JSR166TestCase
- * @run junit/othervm/timeout=1000
- *      --add-opens java.base/java.util.concurrent=ALL-UNNAMED
- *      --add-opens java.base/java.lang=ALL-UNNAMED
- *      -Djsr166.testImplementationDetails=true
- *      JSR166TestCase
+ */
+
+/*
+ * @test id=forkjoinpool-common-parallelism
+ * @summary Test implementation details variant of JSR-166
+ *          tck tests with ForkJoinPool common parallelism.
+ * @build *
+ * @modules java.management
  * @run junit/othervm/timeout=1000
  *      --add-opens java.base/java.util.concurrent=ALL-UNNAMED
  *      --add-opens java.base/java.lang=ALL-UNNAMED
@@ -60,6 +69,20 @@
  *      -Djsr166.testImplementationDetails=true
  *      -Djava.util.concurrent.ForkJoinPool.common.parallelism=1
  *      -Djava.util.secureRandomSeed=true
+ *      JSR166TestCase
+ */
+
+/*
+ * @test id=others
+ * @summary Remaining test implementation details variant of
+ *          JSR-166 tck tests apart from ForkJoinPool common
+ *          parallelism.
+ * @build *
+ * @modules java.management
+ * @run junit/othervm/timeout=1000
+ *      --add-opens java.base/java.util.concurrent=ALL-UNNAMED
+ *      --add-opens java.base/java.lang=ALL-UNNAMED
+ *      -Djsr166.testImplementationDetails=true
  *      JSR166TestCase
  * @run junit/othervm/timeout=1000/policy=tck.policy
  *      --add-opens java.base/java.util.concurrent=ALL-UNNAMED
@@ -106,6 +129,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutionException;
@@ -287,7 +311,7 @@ public class JSR166TestCase extends TestCase {
      * May be initialized from any of:
      * - the "jsr166.delay.factor" system property
      * - the "test.timeout.factor" system property (as used by jtreg)
-     *   See: http://openjdk.java.net/jtreg/tag-spec.html
+     *   See: https://openjdk.org/jtreg/tag-spec.html
      * - hard-coded fuzz factor when using a known slowpoke VM
      */
     private static final float delayFactor = delayFactor();
@@ -513,7 +537,8 @@ public class JSR166TestCase extends TestCase {
     public static boolean atLeastJava14() { return JAVA_CLASS_VERSION >= 58.0; }
     public static boolean atLeastJava15() { return JAVA_CLASS_VERSION >= 59.0; }
     public static boolean atLeastJava16() { return JAVA_CLASS_VERSION >= 60.0; }
-    public static boolean atLeastJava17() { return JAVA_CLASS_VERSION >= 61.0; }
+    public static boolean atLeastJava19() { return JAVA_CLASS_VERSION >= 63.0; }
+    public static boolean atLeastJava20() { return JAVA_CLASS_VERSION >= 64.0; }
 
     /**
      * Collects all JSR166 unit tests as one suite.
@@ -633,12 +658,20 @@ public class JSR166TestCase extends TestCase {
             addNamedTestClasses(suite, java9TestClassNames);
         }
 
-        if (atLeastJava17()) {
-            String[] java17TestClassNames = {
+        if (atLeastJava19()) {
+            String[] java19TestClassNames = {
                 "ForkJoinPool19Test",
             };
-            addNamedTestClasses(suite, java17TestClassNames);
+            addNamedTestClasses(suite, java19TestClassNames);
         }
+
+        if (atLeastJava20()) {
+            String[] java20TestClassNames = {
+                "ForkJoinPool20Test",
+            };
+            addNamedTestClasses(suite, java20TestClassNames);
+        }
+
         return suite;
     }
 
@@ -769,7 +802,7 @@ public class JSR166TestCase extends TestCase {
      * Returns the shortest timed delay. This can be scaled up for
      * slow machines using the jsr166.delay.factor system property,
      * or via jtreg's -timeoutFactor: flag.
-     * http://openjdk.java.net/jtreg/command-help.html
+     * https://openjdk.org/jtreg/command-help.html
      */
     protected long getShortDelay() {
         return (long) (50 * delayFactor);
@@ -1637,11 +1670,20 @@ public class JSR166TestCase extends TestCase {
         checkTimedGet(f, expectedValue, LONG_DELAY_MS);
     }
 
+    // Avoids unwanted interrupts when run inder jtreg
+    static ThreadGroup topThreadGroup() {
+        for (ThreadGroup g = Thread.currentThread().getThreadGroup(), p; ; g = p)
+            if ((p = g.getParent()) == null)
+                return g;
+    }
+    static final ThreadGroup jsr166TestThreadGroup =
+        new ThreadGroup(topThreadGroup(), "jsr1666TestThreadGroup");
+
     /**
      * Returns a new started daemon Thread running the given runnable.
      */
     Thread newStartedThread(Runnable runnable) {
-        Thread t = new Thread(runnable);
+        Thread t = new Thread(jsr166TestThreadGroup, runnable);
         t.setDaemon(true);
         t.start();
         return t;
@@ -1661,10 +1703,12 @@ public class JSR166TestCase extends TestCase {
      * the thread (in the hope that it may terminate later) and fails.
      */
     void awaitTermination(Thread thread, long timeoutMillis) {
-        try {
-            thread.join(timeoutMillis);
-        } catch (InterruptedException fail) {
-            threadUnexpectedException(fail);
+        for (;;) { // ignore stray interrupts by test harness
+            try {
+                thread.join(timeoutMillis);
+                break;
+            } catch (InterruptedException ignore) {
+            }
         }
         if (thread.getState() != Thread.State.TERMINATED) {
             String detail = String.format(
@@ -1908,6 +1952,8 @@ public class JSR166TestCase extends TestCase {
         @Override protected final void compute() {
             try {
                 realCompute();
+            } catch (CancellationException ex) {
+                throw ex; // expected by some tests
             } catch (Throwable fail) {
                 threadUnexpectedException(fail);
             }
@@ -1923,6 +1969,8 @@ public class JSR166TestCase extends TestCase {
         @Override protected final T compute() {
             try {
                 return realCompute();
+            } catch (CancellationException ex) {
+                throw ex;
             } catch (Throwable fail) {
                 threadUnexpectedException(fail);
             }

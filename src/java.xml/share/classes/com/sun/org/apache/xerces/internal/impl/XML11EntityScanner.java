@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  */
 
 /*
@@ -27,10 +27,10 @@ import com.sun.org.apache.xerces.internal.impl.msg.XMLMessageFormatter;
 import com.sun.org.apache.xerces.internal.util.XML11Char;
 import com.sun.org.apache.xerces.internal.util.XMLChar;
 import com.sun.org.apache.xerces.internal.util.XMLStringBuffer;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager.Limit;
 import com.sun.org.apache.xerces.internal.xni.QName;
 import com.sun.org.apache.xerces.internal.xni.XMLString;
 import java.io.IOException;
+import jdk.xml.internal.XMLSecurityManager.Limit;
 
 /**
  * Implements the entity scanner methods in
@@ -41,7 +41,7 @@ import java.io.IOException;
  * @author Michael Glavassevich, IBM
  * @author Neil Graham, IBM
  *
- * @LastModified: Aug 2021
+ * @LastModified: July 2023
  */
 
 public class XML11EntityScanner

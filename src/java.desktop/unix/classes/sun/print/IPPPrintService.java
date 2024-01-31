@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -406,7 +407,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
         defaultMediaIndex = -1;
         try {
             myURL =
-                new URL(uriStr.replaceFirst("ipp", "http"));
+                newURL(uriStr.replaceFirst("ipp", "http"));
         } catch (Exception e) {
             IPPPrintService.debug_println(debugPrefix+
                                           " IPPPrintService, myURL="+
@@ -455,12 +456,14 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                 // IPP currently does not support it but PPD does.
 
                 try {
-                    cps = new CUPSPrinter(printer);
-                    mediaSizeNames = cps.getMediaSizeNames();
-                    mediaTrays = cps.getMediaTrays();
-                    customMediaSizeNames = cps.getCustomMediaSizeNames();
-                    defaultMediaIndex = cps.getDefaultMediaIndex();
-                    rawResolutions = cps.getRawResolutions();
+                    if (cps == null) {
+                        cps = new CUPSPrinter(printer);
+                        mediaSizeNames = cps.getMediaSizeNames();
+                        mediaTrays = cps.getMediaTrays();
+                        customMediaSizeNames = cps.getCustomMediaSizeNames();
+                        defaultMediaIndex = cps.getDefaultMediaIndex();
+                        rawResolutions = cps.getRawResolutions();
+                    }
                     urlConnection.disconnect();
                     init = true;
                     return;
@@ -1010,15 +1013,15 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
      * Returns the matching standard Media using string comparison of names.
      */
     private Media getIPPMedia(String mediaName) {
-        CustomMediaSizeName sampleSize = new CustomMediaSizeName("sample", "",
-                                                                 0, 0);
+        CustomMediaSizeName sampleSize =
+                CustomMediaSizeName.create("sample", "", 0, 0);
         Media[] sizes = sampleSize.getSuperEnumTable();
         for (int i=0; i<sizes.length; i++) {
             if (mediaName.equals(""+sizes[i])) {
                 return sizes[i];
             }
         }
-        CustomMediaTray sampleTray = new CustomMediaTray("sample", "");
+        CustomMediaTray sampleTray = CustomMediaTray.create("sample", "");
         Media[] trays = sampleTray.getSuperEnumTable();
         for (int i=0; i<trays.length; i++) {
             if (mediaName.equals(""+trays[i])) {
@@ -1224,9 +1227,17 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
 
 
     public synchronized PrintServiceAttributeSet getAttributes() {
-        // update getAttMap by sending again get-attributes IPP request
-        init = false;
-        initAttributes();
+        if (!init) {
+            // get all attributes for the first time.
+            initAttributes();
+        } else {
+            // only need service attributes updated.
+            // update getAttMap by sending again get-attributes IPP request
+            if ((urlConnection = getIPPConnection(myURL)) != null) {
+                opGetAttributes();
+                urlConnection.disconnect();
+            }
+        }
 
         HashPrintServiceAttributeSet attrs =
             new HashPrintServiceAttributeSet();
@@ -1762,7 +1773,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
             if (isCupsPrinter) {
                 try {
                     urlConnection = getIPPConnection(
-                                             new URL(myURL+".ppd"));
+                                             newURL(myURL+".ppd"));
 
                    InputStream is = urlConnection.getInputStream();
                    if (is != null) {
@@ -2075,5 +2086,10 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
 
     public int hashCode() {
         return this.getClass().hashCode()+getName().hashCode();
+    }
+
+    @SuppressWarnings("deprecation")
+    private static URL newURL(String spec) throws MalformedURLException {
+        return new URL(spec);
     }
 }

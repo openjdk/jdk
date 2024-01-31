@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, BELLSOFT. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,6 +25,8 @@
 #include <stdio.h>
 #include "jni.h"
 
+static volatile jobject ref = NULL;
+
 JNIEXPORT jint JNICALL
 JNI_OnLoad(JavaVM *vm, void *reserved)
 {
@@ -40,9 +42,25 @@ JNI_OnLoad(JavaVM *vm, void *reserved)
     return JNI_VERSION_1_2;
 }
 
+JNIEXPORT void JNICALL Java_p_Class1_setRef(JNIEnv *env, jobject this, jobject obj) {
+    if (ref == NULL) {
+        // Only create a single GlobalRef
+        ref = (*env)->NewGlobalRef(env, obj);
+        printf("GlobalRef created\n");
+    }
+}
+
 JNIEXPORT void JNICALL
 JNI_OnUnload(JavaVM *vm, void *reserved) {
 
+    if (ref != NULL) {
+        JNIEnv *env = NULL;
+        if ((*vm)->GetEnv(vm, (void**) &env, JNI_VERSION_1_2) != JNI_OK) {
+            return; /* JNI version not supported */
+        }
+        (*env)->DeleteGlobalRef(env, ref);
+        printf("GlobalRef deleted\n");
+    }
     printf("Native library unloaded.\n");
     fflush(stdout);
 }

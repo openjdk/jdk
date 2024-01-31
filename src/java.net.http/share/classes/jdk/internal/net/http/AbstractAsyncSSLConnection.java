@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,12 @@ import java.util.ArrayDeque;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import javax.net.ssl.SNIHostName;
+import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
 
+import jdk.internal.net.http.common.Alpns;
 import jdk.internal.net.http.common.SSLTube;
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Utils;
@@ -61,8 +63,8 @@ import static jdk.internal.net.http.common.Utils.ServerName;
 abstract class AbstractAsyncSSLConnection extends HttpConnection
 {
     protected final SSLEngine engine;
-    protected final String serverName;
     protected final SSLParameters sslParameters;
+    private final List<SNIServerName> sniServerNames;
 
     // Setting this property disables HTTPS hostname verification. Use with care.
     private static final boolean disableHostnameVerification
@@ -73,11 +75,11 @@ abstract class AbstractAsyncSSLConnection extends HttpConnection
                                ServerName serverName, int port,
                                String[] alpn) {
         super(addr, client);
-        this.serverName = serverName.getName();
+        this.sniServerNames = formSNIServerNames(serverName);
         SSLContext context = client.theSSLContext();
-        sslParameters = createSSLParameters(client, serverName, alpn);
+        sslParameters = createSSLParameters(client, this.sniServerNames, alpn);
         Log.logParams(sslParameters);
-        engine = createEngine(context, serverName.getName(), port, sslParameters);
+        engine = createEngine(context, serverName.name(), port, sslParameters);
     }
 
     abstract SSLTube getConnectionFlow();
@@ -88,6 +90,11 @@ abstract class AbstractAsyncSSLConnection extends HttpConnection
 
     final SSLEngine getEngine() { return engine; }
 
+    @Override
+    public final List<SNIServerName> getSNIServerNames() {
+        return this.sniServerNames;
+    }
+
     private static boolean contains(String[] rr, String target) {
         for (String s : rr)
             if (target.equalsIgnoreCase(s))
@@ -96,12 +103,12 @@ abstract class AbstractAsyncSSLConnection extends HttpConnection
     }
 
     private static SSLParameters createSSLParameters(HttpClientImpl client,
-                                                     ServerName serverName,
+                                                     List<SNIServerName> sniServerNames,
                                                      String[] alpn) {
         SSLParameters sslp = client.sslParameters();
         SSLParameters sslParameters = Utils.copySSLParameters(sslp);
         // filter out unwanted protocols, if h2 only
-        if (alpn != null && alpn.length != 0 && !contains(alpn, "http/1.1")) {
+        if (alpn != null && alpn.length != 0 && !contains(alpn, Alpns.HTTP_1_1)) {
             ArrayDeque<String> l = new ArrayDeque<>();
             for (String proto : sslParameters.getProtocols()) {
                 if (!proto.startsWith("SSL") && !proto.endsWith("v1.1") && !proto.endsWith("v1")) {
@@ -116,20 +123,27 @@ abstract class AbstractAsyncSSLConnection extends HttpConnection
             sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
         if (alpn != null) {
             Log.logSSL("AbstractAsyncSSLConnection: Setting application protocols: {0}",
-                       Arrays.toString(alpn));
+                    Arrays.toString(alpn));
             sslParameters.setApplicationProtocols(alpn);
         } else {
             Log.logSSL("AbstractAsyncSSLConnection: no applications set!");
         }
-        if (!serverName.isLiteral()) {
-            String name = serverName.getName();
-            if (name != null && name.length() > 0) {
-                sslParameters.setServerNames(List.of(new SNIHostName(name)));
-            }
-        }
+        sslParameters.setServerNames(sniServerNames);
         return sslParameters;
     }
 
+    private static List<SNIServerName> formSNIServerNames(final ServerName serverName) {
+        if (serverName == null) {
+            return List.of();
+        }
+        if (!serverName.isLiteral()) {
+            String name = serverName.name();
+            if (name != null && name.length() > 0) {
+                return List.of(new SNIHostName(name));
+            }
+        }
+        return List.of();
+    }
 
     private static SSLEngine createEngine(SSLContext context, String serverName, int port,
                                           SSLParameters sslParameters) {

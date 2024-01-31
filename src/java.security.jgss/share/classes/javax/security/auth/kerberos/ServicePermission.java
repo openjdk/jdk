@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -240,9 +240,7 @@ public final class ServicePermission extends Permission
     }
 
     /**
-     * Returns the hash code value for this object.
-     *
-     * @return a hash code value for this object.
+     * {@return the hash code value for this object}
      */
     @Override
     public int hashCode() {
@@ -567,26 +565,20 @@ final class KrbServicePermissionCollection extends PermissionCollection
         String princName = sp.getName();
 
         // Add permission to map if it is absent, or replace with new
-        // permission if applicable. NOTE: cannot use lambda for
-        // remappingFunction parameter until JDK-8076596 is fixed.
-        perms.merge(princName, sp,
-            new java.util.function.BiFunction<>() {
-                @Override
-                public Permission apply(Permission existingVal,
-                                        Permission newVal) {
-                    int oldMask = ((ServicePermission) existingVal).getMask();
-                    int newMask = ((ServicePermission) newVal).getMask();
-                    if (oldMask != newMask) {
-                        int effective = oldMask | newMask;
-                        if (effective == newMask) {
-                            return newVal;
-                        }
-                        if (effective != oldMask) {
-                            return new ServicePermission(princName, effective);
-                        }
+        // permission if applicable.
+        perms.merge(princName, sp, (existingVal, newVal) -> {
+                int oldMask = ((ServicePermission) existingVal).getMask();
+                int newMask = ((ServicePermission) newVal).getMask();
+                if (oldMask != newMask) {
+                    int effective = oldMask | newMask;
+                    if (effective == newMask) {
+                        return newVal;
                     }
-                    return existingVal;
+                    if (effective != oldMask) {
+                        return new ServicePermission(princName, effective);
+                    }
                 }
+                return existingVal;
             }
         );
     }

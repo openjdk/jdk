@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@ package jdk.jfr.startupargs;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 /**
  * @test
@@ -38,8 +38,8 @@ import sun.hotspot.WhiteBox;
  *          java.management
  *          jdk.jfr
  *
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI jdk.jfr.startupargs.TestBadOptionValues
  */
 public class TestBadOptionValues {
@@ -54,7 +54,7 @@ public class TestBadOptionValues {
         Asserts.assertGreaterThan(options.length, 0);
 
         for (String option : options) {
-            pb = ProcessTools.createJavaProcessBuilder(prepend + option, "-version");
+            pb = ProcessTools.createLimitedTestJavaProcessBuilder(prepend + option, "-version");
             output = new OutputAnalyzer(pb.start());
             output.shouldContain(expectedOutput);
         }

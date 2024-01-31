@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,16 +37,19 @@
 #define ARENA_AMALLOC_ALIGNMENT BytesPerLong
 #define ARENA_ALIGN(x) (align_up((x), ARENA_AMALLOC_ALIGNMENT))
 
-//------------------------------Chunk------------------------------------------
+
 // Linked list of raw memory chunks
-class Chunk: CHeapObj<mtChunk> {
+class Chunk {
 
  private:
   Chunk*       _next;     // Next Chunk in list
   const size_t _len;      // Size of this Chunk
- public:
-  void* operator new(size_t size, AllocFailType alloc_failmode, size_t length) throw();
-  void  operator delete(void* p);
+public:
+  NONCOPYABLE(Chunk);
+
+  void operator delete(void*) = delete;
+  void* operator new(size_t) = delete;
+
   Chunk(size_t length);
 
   enum {
@@ -67,8 +70,8 @@ class Chunk: CHeapObj<mtChunk> {
     non_pool_size = init_size + 32 // An initial size which is not one of above
   };
 
-  void chop();                  // Chop this chunk
-  void next_chop();             // Chop next chunk
+  static void chop(Chunk* chunk);                  // Chop this chunk
+  static void next_chop(Chunk* chunk);             // Chop next chunk
   static size_t aligned_overhead_size(void) { return ARENA_ALIGN(sizeof(Chunk)); }
   static size_t aligned_overhead_size(size_t byte_size) { return ARENA_ALIGN(byte_size); }
 
@@ -79,29 +82,33 @@ class Chunk: CHeapObj<mtChunk> {
   char* bottom() const          { return ((char*) this) + aligned_overhead_size();  }
   char* top()    const          { return bottom() + _len; }
   bool contains(char* p) const  { return bottom() <= p && p <= top(); }
-
-  // Start the chunk_pool cleaner task
-  static void start_chunk_pool_cleaner_task();
 };
 
-//------------------------------Arena------------------------------------------
 // Fast allocation of memory
-class Arena : public CHeapObj<mtNone> {
+class Arena : public CHeapObjBase {
+public:
+
+  enum class Tag {
+    tag_other = 0,
+    tag_ra,   // resource area
+    tag_ha,   // handle area
+    tag_node  // C2 Node arena
+  };
+
 protected:
   friend class HandleMark;
   friend class NoHandleMark;
   friend class VMStructs;
 
   MEMFLAGS    _flags;           // Memory tracking flags
-
-  Chunk *_first;                // First chunk
-  Chunk *_chunk;                // current chunk
-  char *_hwm, *_max;            // High water mark and max in current chunk
+  const Tag _tag;
+  Chunk* _first;                // First chunk
+  Chunk* _chunk;                // current chunk
+  char* _hwm;                   // High water mark
+  char* _max;                   // and max in current chunk
   // Get a new Chunk of at least size x
   void* grow(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
   size_t _size_in_bytes;        // Size of arena (used for native memory tracking)
-
-  debug_only(void* malloc(size_t size);)
 
   void* internal_amalloc(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM)  {
     assert(is_aligned(x, BytesPerWord), "misaligned size");
@@ -115,26 +122,18 @@ protected:
   }
 
  public:
-  Arena(MEMFLAGS memflag);
-  Arena(MEMFLAGS memflag, size_t init_size);
+  // Start the chunk_pool cleaner task
+  static void start_chunk_pool_cleaner_task();
+  Arena(MEMFLAGS memflag, Tag tag = Tag::tag_other);
+  Arena(MEMFLAGS memflag, Tag tag, size_t init_size);
   ~Arena();
   void  destruct_contents();
   char* hwm() const             { return _hwm; }
-
-  // new operators
-  void* operator new (size_t size) throw();
-  void* operator new (size_t size, const std::nothrow_t& nothrow_constant) throw();
-
-  // dynamic memory type tagging
-  void* operator new(size_t size, MEMFLAGS flags) throw();
-  void* operator new(size_t size, const std::nothrow_t& nothrow_constant, MEMFLAGS flags) throw();
-  void  operator delete(void* p);
 
   // Fast allocate in the arena.  Common case aligns to the size of jlong which is 64 bits
   // on both 32 and 64 bit platforms. Required for atomic jlong operations on 32 bits.
   void* Amalloc(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
     x = ARENA_ALIGN(x);  // note for 32 bits this should align _hwm as well.
-    debug_only(if (UseMallocOnly) return malloc(x);)
     // Amalloc guarantees 64-bit alignment and we need to ensure that in case the preceding
     // allocation was AmallocWords. Only needed on 32-bit - on 64-bit Amalloc and AmallocWords are
     // identical.
@@ -147,18 +146,16 @@ protected:
   // is 4 bytes on 32 bits, hence the name.
   void* AmallocWords(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
     assert(is_aligned(x, BytesPerWord), "misaligned size");
-    debug_only(if (UseMallocOnly) return malloc(x);)
     return internal_amalloc(x, alloc_failmode);
   }
 
   // Fast delete in area.  Common case is: NOP (except for storage reclaimed)
   bool Afree(void *ptr, size_t size) {
-    if (ptr == NULL) {
-      return true; // as with free(3), freeing NULL is a noop.
+    if (ptr == nullptr) {
+      return true; // as with free(3), freeing null is a noop.
     }
 #ifdef ASSERT
     if (ZapResourceArea) memset(ptr, badResourceValue, size); // zap freed memory
-    if (UseMallocOnly) return true;
 #endif
     if (((char*)ptr) + size == _hwm) {
       _hwm = (char*)ptr;
@@ -172,9 +169,6 @@ protected:
   void *Arealloc( void *old_ptr, size_t old_size, size_t new_size,
       AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
 
-  // Move contents of this arena into an empty arena
-  Arena *move_contents(Arena *empty_arena);
-
   // Determine if pointer belongs to this Arena or not.
   bool contains( const void *ptr ) const;
 
@@ -185,14 +179,13 @@ protected:
   size_t size_in_bytes() const         {  return _size_in_bytes; };
   void set_size_in_bytes(size_t size);
 
-  static void free_malloced_objects(Chunk* chunk, char* hwm, char* max, char* hwm2)  PRODUCT_RETURN;
-  static void free_all(char** start, char** end)                                     PRODUCT_RETURN;
+  Tag get_tag() const { return _tag; }
 
 private:
   // Reset this Arena to empty, access will trigger grow if necessary
-  void   reset(void) {
-    _first = _chunk = NULL;
-    _hwm = _max = NULL;
+  void reset(void) {
+    _first = _chunk = nullptr;
+    _hwm = _max = nullptr;
     set_size_in_bytes(0);
   }
 };

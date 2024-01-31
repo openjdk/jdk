@@ -71,7 +71,7 @@ JNI_COCOA_ENTER(env);
 
     NSURL *url = [NSURL fileURLWithPath:(NSString *)path];
 
-    // This byzantine workaround is necesary, or else directories won't open in Finder
+    // This byzantine workaround is necessary, or else directories won't open in Finder
     url = (NSURL *)CFURLCreateWithFileSystemPath(NULL, (CFStringRef)[url path], kCFURLPOSIXPathStyle, false);
 
     LSLaunchFlags flags = kLSLaunchDefaults;

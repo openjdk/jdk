@@ -31,17 +31,10 @@
 #include "runtime/handshake.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/stackWatermarkSet.hpp"
-#include "runtime/thread.inline.hpp"
 
 // Caller is responsible for using a memory barrier if needed.
 inline void SafepointMechanism::ThreadData::set_polling_page(uintptr_t poll_value) {
   Atomic::store(&_polling_page, poll_value);
-}
-
-// The acquire makes sure reading of polling page is done before
-// the reading the handshake operation or the global state
-inline uintptr_t SafepointMechanism::ThreadData::get_polling_page() {
-  return Atomic::load_acquire(&_polling_page);
 }
 
 // Caller is responsible for using a memory barrier if needed.
@@ -79,10 +72,6 @@ bool SafepointMechanism::should_process(JavaThread* thread, bool allow_suspend) 
   // 2: We have a suspend or async exception handshake, which cannot be processed.
   // We update the poll value in case of a disarm, to reduce false positives.
   update_poll_values(thread);
-
-  // We are now about to avoid processing and thus no cross modify fence will be executed.
-  // In case a safepoint happened, while being blocked, we execute it here.
-  OrderAccess::cross_modify_fence();
   return false;
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,7 +27,7 @@
 #include "prims/jvmtiDeferredUpdates.hpp"
 
 void JvmtiDeferredUpdates::create_for(JavaThread* thread) {
-  assert(thread->deferred_updates() == NULL, "already allocated");
+  assert(thread->deferred_updates() == nullptr, "already allocated");
   thread->set_deferred_updates(new JvmtiDeferredUpdates());
 }
 
@@ -40,7 +40,7 @@ JvmtiDeferredUpdates::~JvmtiDeferredUpdates() {
 }
 
 void JvmtiDeferredUpdates::inc_relock_count_after_wait(JavaThread* thread) {
-  if (thread->deferred_updates() == NULL) {
+  if (thread->deferred_updates() == nullptr) {
     create_for(thread);
   }
   thread->deferred_updates()->inc_relock_count_after_wait();
@@ -49,11 +49,11 @@ void JvmtiDeferredUpdates::inc_relock_count_after_wait(JavaThread* thread) {
 int JvmtiDeferredUpdates::get_and_reset_relock_count_after_wait(JavaThread* jt) {
   JvmtiDeferredUpdates* updates = jt->deferred_updates();
   int result = 0;
-  if (updates != NULL) {
+  if (updates != nullptr) {
     result = updates->get_and_reset_relock_count_after_wait();
     if (updates->count() == 0) {
       delete updates;
-      jt->set_deferred_updates(NULL);
+      jt->set_deferred_updates(nullptr);
     }
   }
   return result;
@@ -61,7 +61,7 @@ int JvmtiDeferredUpdates::get_and_reset_relock_count_after_wait(JavaThread* jt) 
 
 void JvmtiDeferredUpdates::delete_updates_for_frame(JavaThread* jt, intptr_t* frame_id) {
   JvmtiDeferredUpdates* updates = jt->deferred_updates();
-  if (updates != NULL) {
+  if (updates != nullptr) {
     GrowableArray<jvmtiDeferredLocalVariableSet*>* list = updates->deferred_locals();
     assert(list->length() > 0, "Updates holder not deleted");
     int i = 0;
@@ -78,7 +78,7 @@ void JvmtiDeferredUpdates::delete_updates_for_frame(JavaThread* jt, intptr_t* fr
       }
     } while ( i < list->length() );
     if (updates->count() == 0) {
-      jt->set_deferred_updates(NULL);
+      jt->set_deferred_updates(nullptr);
       // Free deferred updates.
       // Note, the 'list' of local variable updates is embedded in 'updates'.
       delete updates;

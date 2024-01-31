@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,11 @@ AC_DEFUN_ONCE([BASIC_INIT],
 [
   # Save the original command line. This is passed to us by the wrapper configure script.
   AC_SUBST(CONFIGURE_COMMAND_LINE)
+  # We might have the original command line if the wrapper was called by some
+  # other script.
+  AC_SUBST(REAL_CONFIGURE_COMMAND_EXEC_SHORT)
+  AC_SUBST(REAL_CONFIGURE_COMMAND_EXEC_FULL)
+  AC_SUBST(REAL_CONFIGURE_COMMAND_LINE)
   # AUTOCONF might be set in the environment by the user. Preserve for "make reconfigure".
   AC_SUBST(AUTOCONF)
   # Save the path variable before it gets changed
@@ -55,6 +60,7 @@ AC_DEFUN([BASIC_CHECK_LEFTOVER_OVERRIDDEN],
 
 ###############################################################################
 # Setup basic configuration paths, and platform-specific stuff related to PATHs.
+# Make sure to only use tools set up in BASIC_SETUP_FUNDAMENTAL_TOOLS.
 AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
 [
   # Save the current directory this script was started from
@@ -94,6 +100,29 @@ AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
 
   # Locate the directory of this script.
   AUTOCONF_DIR=$TOPDIR/make/autoconf
+])
+
+###############################################################################
+# Setup what kind of build environment type we have (CI or local developer)
+AC_DEFUN_ONCE([BASIC_SETUP_BUILD_ENV],
+[
+  if test "x$CI" = "xtrue"; then
+    DEFAULT_BUILD_ENV="ci"
+    AC_MSG_NOTICE([CI environment variable set to $CI])
+  else
+    DEFAULT_BUILD_ENV="dev"
+  fi
+
+  UTIL_ARG_WITH(NAME: build-env, TYPE: literal,
+      RESULT: BUILD_ENV,
+      VALID_VALUES: [auto dev ci], DEFAULT: auto,
+      CHECKING_MSG: [for build environment type],
+      DESC: [select build environment type (affects certain default values)],
+      IF_AUTO: [
+        RESULT=$DEFAULT_BUILD_ENV
+      ]
+  )
+  AC_SUBST(BUILD_ENV)
 ])
 
 ###############################################################################
@@ -138,6 +167,15 @@ AC_DEFUN([BASIC_SETUP_XCODE_SYSROOT],
     XCODEBUILD_OUTPUT=`"$XCODEBUILD" -version 2>&1`
     if test $? -ne 0; then
       AC_MSG_ERROR([The xcodebuild tool in the devkit reports an error: $XCODEBUILD_OUTPUT])
+    fi
+  elif test "x$TOOLCHAIN_PATH" != x; then
+    UTIL_LOOKUP_PROGS(XCODEBUILD, xcodebuild, $TOOLCHAIN_PATH)
+    if test "x$XCODEBUILD" != x; then
+      XCODEBUILD_OUTPUT=`"$XCODEBUILD" -version 2>&1`
+      if test $? -ne 0; then
+        AC_MSG_WARN([Ignoring the located xcodebuild tool $XCODEBUILD due to an error: $XCODEBUILD_OUTPUT])
+        XCODEBUILD=
+      fi
     fi
   else
     UTIL_LOOKUP_PROGS(XCODEBUILD, xcodebuild)
@@ -288,6 +326,22 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
       [UTIL_PREPEND_TO_PATH([TOOLCHAIN_PATH],$with_toolchain_path)]
   )
 
+  AC_ARG_WITH([xcode-path], [AS_HELP_STRING([--with-xcode-path],
+      [set up toolchain on Mac OS using a path to an Xcode installation])])
+
+  if test "x$with_xcode_path" != x; then
+    if test "x$OPENJDK_BUILD_OS" = "xmacosx"; then
+      UTIL_PREPEND_TO_PATH([TOOLCHAIN_PATH],
+          $with_xcode_path/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin:$with_xcode_path/Contents/Developer/usr/bin)
+    else
+      AC_MSG_WARN([Option --with-xcode-path is only valid on Mac OS, ignoring.])
+    fi
+  fi
+
+  AC_MSG_CHECKING([for toolchain path])
+  AC_MSG_RESULT([$TOOLCHAIN_PATH])
+  AC_SUBST(TOOLCHAIN_PATH)
+
   AC_ARG_WITH([extra-path], [AS_HELP_STRING([--with-extra-path],
       [prepend these directories to the default path])],
       [UTIL_PREPEND_TO_PATH([EXTRA_PATH],$with_extra_path)]
@@ -300,13 +354,11 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
   # Prepend the extra path to the global path
   UTIL_PREPEND_TO_PATH([PATH],$EXTRA_PATH)
 
+  UTIL_FIXUP_PATH([SYSROOT])
+
   AC_MSG_CHECKING([for sysroot])
   AC_MSG_RESULT([$SYSROOT])
   AC_SUBST(SYSROOT)
-
-  AC_MSG_CHECKING([for toolchain path])
-  AC_MSG_RESULT([$TOOLCHAIN_PATH])
-  AC_SUBST(TOOLCHAIN_PATH)
 
   AC_MSG_CHECKING([for extra path])
   AC_MSG_RESULT([$EXTRA_PATH])
@@ -354,9 +406,9 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
     # WARNING: This might be a bad thing to do. You need to be sure you want to
     # have a configuration in this directory. Do some sanity checks!
 
-    if test ! -e "$OUTPUTDIR/spec.gmk"; then
-      # If we have a spec.gmk, we have run here before and we are OK. Otherwise, check for
-      # other files
+    if test ! -e "$OUTPUTDIR/spec.gmk" && test ! -e "$OUTPUTDIR/configure-support/generated-configure.sh"; then
+      # If we have a spec.gmk or configure-support/generated-configure.sh,
+      # we have run here before and we are OK. Otherwise, check for other files
       files_present=`$LS $OUTPUTDIR`
       # Configure has already touched config.log and confdefs.h in the current dir when this check
       # is performed.
@@ -371,8 +423,9 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
         AC_MSG_NOTICE([Current directory is $CONFIGURE_START_DIR.])
         AC_MSG_NOTICE([Since this is not the source root, configure will output the configuration here])
         AC_MSG_NOTICE([(as opposed to creating a configuration in <src_root>/build/<conf-name>).])
-        AC_MSG_NOTICE([However, this directory is not empty. This is not allowed, since it could])
-        AC_MSG_NOTICE([seriously mess up just about everything.])
+        AC_MSG_NOTICE([However, this directory is not empty, additionally to some allowed files])
+        AC_MSG_NOTICE([it contains $filtered_files.])
+        AC_MSG_NOTICE([This is not allowed, since it could seriously mess up just about everything.])
         AC_MSG_NOTICE([Try 'cd $TOPDIR' and restart configure])
         AC_MSG_NOTICE([(or create a new empty directory and cd to it).])
         AC_MSG_ERROR([Will not continue creating configuration in $CONFIGURE_START_DIR])
@@ -395,17 +448,17 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
   AC_SUBST(CONFIGURESUPPORT_OUTPUTDIR)
 
   # The spec.gmk file contains all variables for the make system.
-  AC_CONFIG_FILES([$OUTPUTDIR/spec.gmk:$AUTOCONF_DIR/spec.gmk.in])
+  AC_CONFIG_FILES([$OUTPUTDIR/spec.gmk:$AUTOCONF_DIR/spec.gmk.template])
   # The bootcycle-spec.gmk file contains support for boot cycle builds.
-  AC_CONFIG_FILES([$OUTPUTDIR/bootcycle-spec.gmk:$AUTOCONF_DIR/bootcycle-spec.gmk.in])
+  AC_CONFIG_FILES([$OUTPUTDIR/bootcycle-spec.gmk:$AUTOCONF_DIR/bootcycle-spec.gmk.template])
   # The buildjdk-spec.gmk file contains support for building a buildjdk when cross compiling.
-  AC_CONFIG_FILES([$OUTPUTDIR/buildjdk-spec.gmk:$AUTOCONF_DIR/buildjdk-spec.gmk.in])
+  AC_CONFIG_FILES([$OUTPUTDIR/buildjdk-spec.gmk:$AUTOCONF_DIR/buildjdk-spec.gmk.template])
   # The compare.sh is used to compare the build output to other builds.
-  AC_CONFIG_FILES([$OUTPUTDIR/compare.sh:$AUTOCONF_DIR/compare.sh.in])
+  AC_CONFIG_FILES([$OUTPUTDIR/compare.sh:$AUTOCONF_DIR/compare.sh.template])
   # The generated Makefile knows where the spec.gmk is and where the source is.
   # You can run make from the OUTPUTDIR, or from the top-level Makefile
   # which will look for generated configurations
-  AC_CONFIG_FILES([$OUTPUTDIR/Makefile:$AUTOCONF_DIR/Makefile.in])
+  AC_CONFIG_FILES([$OUTPUTDIR/Makefile:$AUTOCONF_DIR/Makefile.template])
 ])
 
 ###############################################################################
@@ -426,7 +479,11 @@ AC_DEFUN([BASIC_CHECK_DIR_ON_LOCAL_DISK],
     # df on AIX does not understand -l. On modern AIXes it understands "-T local" which
     # is the same. On older AIXes we just continue to live with a "not local build" warning.
     if test "x$OPENJDK_TARGET_OS" = xaix; then
-      DF_LOCAL_ONLY_OPTION='-T local'
+      if $DF -T local > /dev/null 2>&1; then
+        DF_LOCAL_ONLY_OPTION='-T local'
+      else # AIX may use GNU-utils instead
+        DF_LOCAL_ONLY_OPTION='-l'
+      fi
     elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl1"; then
       # In WSL1, we can only build on a drvfs file system (that is, a mounted real Windows drive)
       DF_LOCAL_ONLY_OPTION='-t drvfs'
@@ -451,7 +508,7 @@ AC_DEFUN_ONCE([BASIC_CHECK_SRC_PERMS],
     # in the source tree when configure runs
     file_to_test="$TOPDIR/Makefile"
     if test `$STAT -c '%a' "$file_to_test"` -lt 400; then
-      AC_MSG_ERROR([Bad file permissions on src files. This is usually caused by cloning the repositories with a non cygwin hg in a directory not created in cygwin.])
+      AC_MSG_ERROR([Bad file permissions on src files. This is usually caused by cloning the repositories with non cygwin tools in a directory not created in cygwin.])
     fi
   fi
 ])

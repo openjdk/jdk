@@ -28,7 +28,7 @@
 #include "jlong.h"
 #include "JNICB.h"
 
-#ifdef _WIN64
+#ifdef _WIN32
 #define THREAD_LOCAL __declspec(thread)
 #else
 #define THREAD_LOCAL __thread
@@ -56,7 +56,7 @@ JNIEXPORT void JNICALL Java_org_openjdk_bench_java_lang_foreign_QSort_jni_1qsort
     jint* ints = (*env)->GetIntArrayElements(env, arr, NULL);
     jsize length = (*env)->GetArrayLength(env, arr);
 
-    qsort(ints, length, sizeof(jint), &comparator);
+    qsort(ints, (size_t) length, sizeof(jint), &comparator);
 
     (*env)->ReleaseIntArrayElements(env, arr, ints, 0);
 }
@@ -68,7 +68,7 @@ int java_cmp(const void *a, const void *b) {
    int v2 = *((int*)b);
 
    JNIEnv* env;
-   (*VM)->GetEnv(VM, (void**) &env, JNI_VERSION_10);
+   (*VM)->GetEnv(VM, (void**) &env, JNI_VERSION_19);
 
    jclass qsortClass = (*env)->FindClass(env, "org/openjdk/bench/java/lang/foreign/QSort");
    jmethodID methodId = (*env)->GetStaticMethodID(env, qsortClass, "jni_upcall_compar", "(II)I");
@@ -84,6 +84,6 @@ JNIEXPORT void JNICALL Java_org_openjdk_bench_java_lang_foreign_QSort_jni_1qsort
 
     jint* carr = (*env)->GetIntArrayElements(env, arr, 0);
     jsize length = (*env)->GetArrayLength(env, arr);
-    qsort(carr, length, sizeof(jint), java_cmp);
+    qsort(carr, (size_t) length, sizeof(jint), java_cmp);
     (*env)->ReleaseIntArrayElements(env, arr, carr, 0);
 }

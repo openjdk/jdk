@@ -47,10 +47,10 @@ import org.openjdk.jmh.annotations.Warmup;
  */
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
-@Warmup(iterations = 5, time = 2, timeUnit = TimeUnit.SECONDS)
-@Measurement(iterations = 5, time = 2, timeUnit = TimeUnit.SECONDS)
+@Warmup(iterations = 5, time = 1)
+@Measurement(iterations = 5, time = 1)
 @Fork(3)
-@State(Scope.Benchmark)
+@State(Scope.Thread)
 public class InstantBench {
 
     private Instant[] INSTANTS;

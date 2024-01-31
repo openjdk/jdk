@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -784,7 +784,7 @@ public class JFileChooser extends JComponent implements Accessible {
      * Creates and returns a new <code>JDialog</code> wrapping
      * <code>this</code> centered on the <code>parent</code>
      * in the <code>parent</code>'s frame.
-     * This method can be overriden to further manipulate the dialog,
+     * This method can be overridden to further manipulate the dialog,
      * to disable resizing, set the location, etc. Example:
      * <pre>
      *     class MyFileChooser extends JFileChooser {
@@ -1665,7 +1665,7 @@ public class JFileChooser extends JComponent implements Accessible {
      * @see FileSystemView
      */
     @BeanProperty(expert = true, description
-            = "Sets the FileSytemView used to get filesystem information.")
+            = "Sets the FileSystemView used to get filesystem information.")
     public void setFileSystemView(FileSystemView fsv) {
         FileSystemView oldValue = fileSystemView;
         fileSystemView = fsv;
@@ -2078,4 +2078,24 @@ public class JFileChooser extends JComponent implements Accessible {
             }
         }
     }
+
+    /**
+     * {@inheritDoc}
+     * @param enabled {@inheritDoc}
+     */
+    @Override
+    public void setEnabled(boolean enabled) {
+        super.setEnabled(enabled);
+        setEnabled(this, enabled);
+    }
+
+    private static void setEnabled(Container container, boolean enabled) {
+        for (Component component : container.getComponents()) {
+            component.setEnabled(enabled);
+            if (component instanceof Container) {
+                setEnabled((Container) component, enabled);
+            }
+        }
+    }
+
 }

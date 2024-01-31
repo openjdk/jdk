@@ -1059,7 +1059,7 @@ public class SubmissionPublisher<T> implements Publisher<T>,
         final Subscriber<? super T> subscriber;
         final BiConsumer<? super Subscriber<? super T>, ? super Throwable> onNextHandler;
         Executor executor;                 // null on error
-        Thread waiter;                     // blocked producer thread
+        volatile Thread waiter;            // blocked producer thread
         Throwable pendingError;            // holds until onError issued
         BufferedSubscription<T> next;      // used only by publisher
         BufferedSubscription<T> nextRetry; // used only by publisher
@@ -1517,7 +1517,7 @@ public class SubmissionPublisher<T> implements Publisher<T>,
             }
 
             // Reduce the risk of rare disastrous classloading in first call to
-            // LockSupport.park: https://bugs.openjdk.java.net/browse/JDK-8074773
+            // LockSupport.park: https://bugs.openjdk.org/browse/JDK-8074773
             Class<?> ensureLoaded = LockSupport.class;
         }
     }

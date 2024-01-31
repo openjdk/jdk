@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,9 +111,10 @@ final class KeyUpdate {
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                    "\"KeyUpdate\": '{'\n" +
-                    "  \"request_update\": {0}\n" +
-                    "'}'",
+                    """
+                            "KeyUpdate": '{'
+                              "request_update": {0}
+                            '}'""",
                     Locale.ENGLISH);
 
             Object[] messageFields = {
@@ -131,7 +132,7 @@ final class KeyUpdate {
         final byte id;
         final String name;
 
-        private KeyUpdateRequest(byte id, String name) {
+        KeyUpdateRequest(byte id, String name) {
             this.id = id;
             this.name = name;
         }
@@ -169,7 +170,9 @@ final class KeyUpdate {
         public byte[] produce(ConnectionContext context) throws IOException {
             PostHandshakeContext hc = (PostHandshakeContext)context;
             return handshakeProducer.produce(context,
-                    new KeyUpdateMessage(hc, KeyUpdateRequest.REQUESTED));
+                    new KeyUpdateMessage(hc, hc.conContext.isInboundClosed() ?
+                            KeyUpdateRequest.NOTREQUESTED :
+                            KeyUpdateRequest.REQUESTED));
         }
     }
 

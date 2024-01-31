@@ -134,7 +134,7 @@ epilogue: check-bad-file-names
 	$(ECHO) '* The build README (doc/building.md) is a great source of information,'
 	$(ECHO) 'especially the chapter "Fixing Unexpected Build Failures". Check it out!'
 	$(ECHO)
-	$(ECHO) '* If you still need assistance please contact build-dev@openjdk.java.net.'
+	$(ECHO) '* If you still need assistance please contact build-dev@openjdk.org.'
 	$(ECHO)
 
 TARGETS += epilogue

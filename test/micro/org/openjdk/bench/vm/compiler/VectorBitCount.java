@@ -31,6 +31,8 @@ import java.util.random.RandomGeneratorFactory;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
+@Warmup(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
 public abstract class VectorBitCount {
     @Param({"1024"})
     public int SIZE;
@@ -70,14 +72,14 @@ public abstract class VectorBitCount {
     }
 
 
-    @Fork(value = 1, jvmArgsPrepend = {
+    @Fork(value = 2, jvmArgsPrepend = {
         "-XX:+UseSuperWord"
     })
     public static class WithSuperword extends VectorBitCount {
 
     }
 
-    @Fork(value = 1, jvmArgsPrepend = {
+    @Fork(value = 2, jvmArgsPrepend = {
         "-XX:-UseSuperWord"
     })
     public static class NoSuperword extends VectorBitCount {

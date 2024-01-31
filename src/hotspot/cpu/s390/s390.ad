@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2017, 2022 SAP SE. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -810,6 +810,8 @@ void MachConstantBaseNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
 
 //=============================================================================
 
+#include "gc/shared/barrierSetAssembler.hpp"
+
 #if !defined(PRODUCT)
 void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   Compile* C = ra_->C;
@@ -817,11 +819,6 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   st->print("\t");
   for (int i = 0; i < OptoPrologueNops; i++) {
     st->print_cr("NOP"); st->print("\t");
-  }
-
-  if (VerifyThread) {
-    st->print_cr("Verify_Thread");
-    st->print("\t");
   }
 
   long framesize = C->output()->frame_size_in_bytes();
@@ -837,14 +834,16 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   }
   st->print_cr("push_frame %d", (int)-framesize);
   st->print("\t");
+
+  if (C->stub_function() == NULL) {
+    st->print("nmethod entry barrier\n\t");
+  }
 }
 #endif
 
 void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   Compile* C = ra_->C;
   C2_MacroAssembler _masm(&cbuf);
-
-  __ verify_thread();
 
   size_t framesize = C->output()->frame_size_in_bytes();
   size_t bangsize  = C->output()->bang_size_in_bytes();
@@ -890,6 +889,13 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     ConstantTable& constant_table = C->output()->constant_table();
     constant_table.set_table_base_offset(constant_table.calculate_table_base_offset());
   }
+
+  if (C->stub_function() == NULL) {
+    BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+    bs->nmethod_entry_barrier(&_masm);
+  }
+
+  C->output()->set_frame_complete(cbuf.insts_size());
 }
 
 uint MachPrologNode::size(PhaseRegAlloc *ra_) const {
@@ -918,7 +924,6 @@ void MachEpilogNode::format(PhaseRegAlloc *ra_, outputStream *os) const {
 void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   C2_MacroAssembler _masm(&cbuf);
   Compile* C = ra_->C;
-  __ verify_thread();
 
   // If this does safepoint polling, then do it here.
   bool need_polling = do_polling() && C->is_method_compilation();
@@ -1487,7 +1492,7 @@ static Register reg_to_register_object(int register_encoding) {
   return as_Register(register_encoding);
 }
 
-const bool Matcher::match_rule_supported(int opcode) {
+bool Matcher::match_rule_supported(int opcode) {
   if (!has_match_rule(opcode)) {
     return false; // no match rule present
   }
@@ -1500,19 +1505,30 @@ const bool Matcher::match_rule_supported(int opcode) {
     case Op_PopCountL:
       // PopCount supported by H/W from z/Architecture G5 (z196) on.
       return (UsePopCountInstruction && VM_Version::has_PopCount());
+    case Op_FmaF:
+    case Op_FmaD:
+      return UseFMA;
   }
 
   return true; // Per default match rules are supported.
 }
 
-const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
+bool Matcher::match_rule_supported_auto_vectorization(int opcode, int vlen, BasicType bt) {
+  return match_rule_supported_vector(opcode, vlen, bt);
+}
+
+bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
   if (!match_rule_supported(opcode) || !vector_size_supported(bt, vlen)) {
     return false;
   }
   return true; // Per default match rules are supported.
 }
 
-const bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt) {
+bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt) {
+  return false;
+}
+
+bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
   return false;
 }
 
@@ -1525,7 +1541,7 @@ const TypeVectMask* Matcher::predicate_reg_type(const Type* elemTy, int length) 
 }
 
 // Vector calling convention not yet implemented.
-const bool Matcher::supports_vector_calling_convention(void) {
+bool Matcher::supports_vector_calling_convention(void) {
   return false;
 }
 
@@ -1537,28 +1553,32 @@ OptoRegPair Matcher::vector_return_value(uint ideal_reg) {
 //----------SUPERWORD HELPERS----------------------------------------
 
 // Vector width in bytes.
-const int Matcher::vector_width_in_bytes(BasicType bt) {
+int Matcher::vector_width_in_bytes(BasicType bt) {
   assert(MaxVectorSize == 8, "");
   return 8;
 }
 
 // Vector ideal reg.
-const uint Matcher::vector_ideal_reg(int size) {
+uint Matcher::vector_ideal_reg(int size) {
   assert(MaxVectorSize == 8 && size == 8, "");
   return Op_RegL;
 }
 
 // Limits on vector size (number of elements) loaded into vector.
-const int Matcher::max_vector_size(const BasicType bt) {
+int Matcher::max_vector_size(const BasicType bt) {
   assert(is_java_primitive(bt), "only primitive type vectors");
   return vector_width_in_bytes(bt)/type2aelembytes(bt);
 }
 
-const int Matcher::min_vector_size(const BasicType bt) {
+int Matcher::min_vector_size(const BasicType bt) {
   return max_vector_size(bt); // Same as max.
 }
 
-const int Matcher::scalable_vector_reg_size(const BasicType bt) {
+int Matcher::max_vector_size_auto_vectorization(const BasicType bt) {
+  return Matcher::max_vector_size(bt);
+}
+
+int Matcher::scalable_vector_reg_size(const BasicType bt) {
   return -1;
 }
 
@@ -2170,7 +2190,7 @@ encode %{
       __ load_klass(Z_method, Z_R2);
 
       int entry_offset = in_bytes(Klass::vtable_start_offset()) + vtable_index * vtableEntry::size_in_bytes();
-      int v_off        = entry_offset + vtableEntry::method_offset_in_bytes();
+      int v_off        = entry_offset + in_bytes(vtableEntry::method_offset());
 
       if (Displacement::is_validDisp(v_off) ) {
         // Can use load instruction with large offset.
@@ -5282,54 +5302,6 @@ instruct castVV(iRegL dst) %{
   ins_pipe(pipe_class_dummy);
 %}
 
-//----------Conditional_store--------------------------------------------------
-// Conditional-store of the updated heap-top.
-// Used during allocation of the shared heap.
-// Sets flags (EQ) on success.
-
-// Implement LoadPLocked. Must be ordered against changes of the memory location
-// by storePConditional.
-// Don't know whether this is ever used.
-instruct loadPLocked(iRegP dst, memory mem) %{
-  match(Set dst (LoadPLocked mem));
-  ins_cost(MEMORY_REF_COST);
-  size(Z_DISP3_SIZE);
-  format %{ "LG      $dst,$mem\t # LoadPLocked" %}
-  opcode(LG_ZOPC, LG_ZOPC);
-  ins_encode(z_form_rt_mem_opt(dst, mem));
-  ins_pipe(pipe_class_dummy);
-%}
-
-// As compareAndSwapP, but return flag register instead of boolean value in
-// int register.
-// This instruction is matched if UseTLAB is off. Needed to pass
-// option tests.  Mem_ptr must be a memory operand, else this node
-// does not get Flag_needs_anti_dependence_check set by adlc. If this
-// is not set this node can be rematerialized which leads to errors.
-instruct storePConditional(indirect mem_ptr, rarg5RegP oldval, iRegP_N2P newval, flagsReg cr) %{
-  match(Set cr (StorePConditional mem_ptr (Binary oldval newval)));
-  effect(KILL oldval);
-  // TODO: s390 port size(FIXED_SIZE);
-  format %{ "storePConditional $oldval,$newval,$mem_ptr" %}
-  ins_encode(z_enc_casL(oldval, newval, mem_ptr));
-  ins_pipe(pipe_class_dummy);
-%}
-
-// As compareAndSwapL, but return flag register instead of boolean value in
-// int register.
-// Used by sun/misc/AtomicLongCSImpl.java. Mem_ptr must be a memory
-// operand, else this node does not get
-// Flag_needs_anti_dependence_check set by adlc. If this is not set
-// this node can be rematerialized which leads to errors.
-instruct storeLConditional(indirect mem_ptr, rarg5RegL oldval, iRegL newval, flagsReg cr) %{
-  match(Set cr (StoreLConditional mem_ptr (Binary oldval newval)));
-  effect(KILL oldval);
-  // TODO: s390 port size(FIXED_SIZE);
-  format %{ "storePConditional $oldval,$newval,$mem_ptr" %}
-  ins_encode(z_enc_casL(oldval, newval, mem_ptr));
-  ins_pipe(pipe_class_dummy);
-%}
-
 // No flag versions for CompareAndSwap{P,I,L,N} because matcher can't match them.
 
 instruct compareAndSwapI_bool(iRegP mem_ptr, rarg5RegI oldval, iRegI newval, iRegI res, flagsReg cr) %{
@@ -7191,6 +7163,7 @@ instruct maddF_reg_reg(regF dst, regF src1, regF src2) %{
   size(4);
   format %{ "MAEBR    $dst, $src1, $src2" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ z_maebr($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_class_dummy);
@@ -7204,6 +7177,7 @@ instruct maddD_reg_reg(regD dst, regD src1, regD src2) %{
   size(4);
   format %{ "MADBR    $dst, $src1, $src2" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ z_madbr($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_class_dummy);
@@ -7217,6 +7191,7 @@ instruct msubF_reg_reg(regF dst, regF src1, regF src2) %{
   size(4);
   format %{ "MSEBR    $dst, $src1, $src2" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ z_msebr($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_class_dummy);
@@ -7230,6 +7205,7 @@ instruct msubD_reg_reg(regD dst, regD src1, regD src2) %{
   size(4);
   format %{ "MSDBR    $dst, $src1, $src2" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ z_msdbr($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_class_dummy);
@@ -7243,6 +7219,7 @@ instruct maddF_reg_mem(regF dst, regF src1, memoryRX src2) %{
   size(6);
   format %{ "MAEB     $dst, $src1, $src2" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ z_maeb($dst$$FloatRegister, $src1$$FloatRegister,
               Address(reg_to_register_object($src2$$base), $src2$$index$$Register, $src2$$disp));
   %}
@@ -7257,6 +7234,7 @@ instruct maddD_reg_mem(regD dst, regD src1, memoryRX src2) %{
   size(6);
   format %{ "MADB     $dst, $src1, $src2" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ z_madb($dst$$FloatRegister, $src1$$FloatRegister,
               Address(reg_to_register_object($src2$$base), $src2$$index$$Register, $src2$$disp));
   %}
@@ -7271,6 +7249,7 @@ instruct msubF_reg_mem(regF dst, regF src1, memoryRX src2) %{
   size(6);
   format %{ "MSEB     $dst, $src1, $src2" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ z_mseb($dst$$FloatRegister, $src1$$FloatRegister,
               Address(reg_to_register_object($src2$$base), $src2$$index$$Register, $src2$$disp));
   %}
@@ -7285,6 +7264,7 @@ instruct msubD_reg_mem(regD dst, regD src1, memoryRX src2) %{
   size(6);
   format %{ "MSDB    $dst, $src1, $src2" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ z_msdb($dst$$FloatRegister, $src1$$FloatRegister,
               Address(reg_to_register_object($src2$$base), $src2$$index$$Register, $src2$$disp));
   %}
@@ -7299,6 +7279,7 @@ instruct maddF_mem_reg(regF dst, memoryRX src1, regF src2) %{
   size(6);
   format %{ "MAEB     $dst, $src1, $src2" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ z_maeb($dst$$FloatRegister, $src2$$FloatRegister,
               Address(reg_to_register_object($src1$$base), $src1$$index$$Register, $src1$$disp));
   %}
@@ -7313,6 +7294,7 @@ instruct maddD_mem_reg(regD dst, memoryRX src1, regD src2) %{
   size(6);
   format %{ "MADB     $dst, $src1, $src2" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ z_madb($dst$$FloatRegister, $src2$$FloatRegister,
               Address(reg_to_register_object($src1$$base), $src1$$index$$Register, $src1$$disp));
   %}
@@ -7327,6 +7309,7 @@ instruct msubF_mem_reg(regF dst, memoryRX src1, regF src2) %{
   size(6);
   format %{ "MSEB     $dst, $src1, $src2" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ z_mseb($dst$$FloatRegister, $src2$$FloatRegister,
               Address(reg_to_register_object($src1$$base), $src1$$index$$Register, $src1$$disp));
   %}
@@ -7341,6 +7324,7 @@ instruct msubD_mem_reg(regD dst, memoryRX src1, regD src2) %{
   size(6);
   format %{ "MSDB    $dst, $src1, $src2" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ z_msdb($dst$$FloatRegister, $src2$$FloatRegister,
               Address(reg_to_register_object($src1$$base), $src1$$index$$Register, $src1$$disp));
   %}
@@ -10206,7 +10190,7 @@ instruct string_compress(iRegP src, iRegP dst, iRegI result, iRegI len, iRegI tm
   format %{ "String Compress $src->$dst($len) -> $result" %}
   ins_encode %{
     __ string_compress($result$$Register, $src$$Register, $dst$$Register, $len$$Register,
-                       $tmp$$Register, false, false);
+                       $tmp$$Register, true, false);
   %}
   ins_pipe(pipe_class_dummy);
 %}
@@ -10462,9 +10446,9 @@ instruct expand_Repl2I_reg(iRegL dst, iRegL src) %{
 // Exploit rotate_then_insert, if available
 // Replicate scalar byte to packed byte values (8 Bytes).
 instruct Repl8B_reg_risbg(iRegL dst, iRegI src, flagsReg cr) %{
-  match(Set dst (ReplicateB src));
+  match(Set dst (Replicate src));
   effect(KILL cr);
-  predicate((n->as_Vector()->length() == 8));
+  predicate(n->as_Vector()->length() == 8 && Matcher::vector_element_basic_type(n) == T_BYTE);
   format %{ "REPLIC8B $dst,$src\t # pack8B" %}
   ins_encode %{
     if ($dst$$Register != $src$$Register) {
@@ -10479,8 +10463,8 @@ instruct Repl8B_reg_risbg(iRegL dst, iRegI src, flagsReg cr) %{
 
 // Replicate scalar byte to packed byte values (8 Bytes).
 instruct Repl8B_imm(iRegL dst, immB_n0m1 src) %{
-  match(Set dst (ReplicateB src));
-  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 8 && Matcher::vector_element_basic_type(n) == T_BYTE);
   ins_should_rematerialize(true);
   format %{ "REPLIC8B $dst,$src\t # pack8B imm" %}
   ins_encode %{
@@ -10497,8 +10481,8 @@ instruct Repl8B_imm(iRegL dst, immB_n0m1 src) %{
 
 // Replicate scalar byte to packed byte values (8 Bytes).
 instruct Repl8B_imm0(iRegL dst, immI_0 src) %{
-  match(Set dst (ReplicateB src));
-  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 8 && Matcher::vector_element_basic_type(n) == T_BYTE);
   ins_should_rematerialize(true);
   format %{ "REPLIC8B $dst,$src\t # pack8B imm0" %}
   ins_encode %{ __ z_laz($dst$$Register, 0, Z_R0); %}
@@ -10507,8 +10491,8 @@ instruct Repl8B_imm0(iRegL dst, immI_0 src) %{
 
 // Replicate scalar byte to packed byte values (8 Bytes).
 instruct Repl8B_immm1(iRegL dst, immB_minus1 src) %{
-  match(Set dst (ReplicateB src));
-  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 8 && Matcher::vector_element_basic_type(n) == T_BYTE);
   ins_should_rematerialize(true);
   format %{ "REPLIC8B $dst,$src\t # pack8B immm1" %}
   ins_encode %{ __ z_lghi($dst$$Register, -1); %}
@@ -10518,9 +10502,9 @@ instruct Repl8B_immm1(iRegL dst, immB_minus1 src) %{
 // Exploit rotate_then_insert, if available
 // Replicate scalar short to packed short values (8 Bytes).
 instruct Repl4S_reg_risbg(iRegL dst, iRegI src, flagsReg cr) %{
-  match(Set dst (ReplicateS src));
+  match(Set dst (Replicate src));
   effect(KILL cr);
-  predicate((n->as_Vector()->length() == 4));
+  predicate((n->as_Vector()->length() == 4) && Matcher::vector_element_basic_type(n) == T_SHORT);
   format %{ "REPLIC4S $dst,$src\t # pack4S" %}
   ins_encode %{
     if ($dst$$Register != $src$$Register) {
@@ -10534,8 +10518,8 @@ instruct Repl4S_reg_risbg(iRegL dst, iRegI src, flagsReg cr) %{
 
 // Replicate scalar short to packed short values (8 Bytes).
 instruct Repl4S_imm(iRegL dst, immS_n0m1 src) %{
-  match(Set dst (ReplicateS src));
-  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 4 && Matcher::vector_element_basic_type(n) == T_SHORT);
   ins_should_rematerialize(true);
   format %{ "REPLIC4S $dst,$src\t # pack4S imm" %}
   ins_encode %{
@@ -10552,8 +10536,8 @@ instruct Repl4S_imm(iRegL dst, immS_n0m1 src) %{
 
 // Replicate scalar short to packed short values (8 Bytes).
 instruct Repl4S_imm0(iRegL dst, immI_0 src) %{
-  match(Set dst (ReplicateS src));
-  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 4 && Matcher::vector_element_basic_type(n) == T_SHORT);
   ins_should_rematerialize(true);
   format %{ "REPLIC4S $dst,$src\t # pack4S imm0" %}
   ins_encode %{ __ z_laz($dst$$Register, 0, Z_R0); %}
@@ -10562,8 +10546,8 @@ instruct Repl4S_imm0(iRegL dst, immI_0 src) %{
 
 // Replicate scalar short to packed short values (8 Bytes).
 instruct Repl4S_immm1(iRegL dst, immS_minus1 src) %{
-  match(Set dst (ReplicateS src));
-  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 4 && Matcher::vector_element_basic_type(n) == T_SHORT);
   ins_should_rematerialize(true);
   format %{ "REPLIC4S $dst,$src\t # pack4S immm1" %}
   ins_encode %{ __ z_lghi($dst$$Register, -1); %}
@@ -10573,9 +10557,9 @@ instruct Repl4S_immm1(iRegL dst, immS_minus1 src) %{
 // Exploit rotate_then_insert, if available.
 // Replicate scalar int to packed int values (8 Bytes).
 instruct Repl2I_reg_risbg(iRegL dst, iRegI src, flagsReg cr) %{
-  match(Set dst (ReplicateI src));
+  match(Set dst (Replicate src));
   effect(KILL cr);
-  predicate((n->as_Vector()->length() == 2));
+  predicate((n->as_Vector()->length() == 2) && Matcher::vector_element_basic_type(n) == T_INT);
   format %{ "REPLIC2I $dst,$src\t # pack2I" %}
   ins_encode %{
     if ($dst$$Register != $src$$Register) {
@@ -10588,8 +10572,8 @@ instruct Repl2I_reg_risbg(iRegL dst, iRegI src, flagsReg cr) %{
 
 // Replicate scalar int to packed int values (8 Bytes).
 instruct Repl2I_imm(iRegL dst, immI_n0m1 src) %{
-  match(Set dst (ReplicateI src));
-  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 2 && Matcher::vector_element_basic_type(n) == T_INT);
   ins_should_rematerialize(true);
   format %{ "REPLIC2I $dst,$src\t # pack2I imm" %}
   ins_encode %{
@@ -10604,8 +10588,8 @@ instruct Repl2I_imm(iRegL dst, immI_n0m1 src) %{
 
 // Replicate scalar int to packed int values (8 Bytes).
 instruct Repl2I_imm0(iRegL dst, immI_0 src) %{
-  match(Set dst (ReplicateI src));
-  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 2 && Matcher::vector_element_basic_type(n) == T_INT);
   ins_should_rematerialize(true);
   format %{ "REPLIC2I $dst,$src\t # pack2I imm0" %}
   ins_encode %{ __ z_laz($dst$$Register, 0, Z_R0); %}
@@ -10614,8 +10598,8 @@ instruct Repl2I_imm0(iRegL dst, immI_0 src) %{
 
 // Replicate scalar int to packed int values (8 Bytes).
 instruct Repl2I_immm1(iRegL dst, immI_minus1 src) %{
-  match(Set dst (ReplicateI src));
-  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 2 && Matcher::vector_element_basic_type(n) == T_INT);
   ins_should_rematerialize(true);
   format %{ "REPLIC2I $dst,$src\t # pack2I immm1" %}
   ins_encode %{ __ z_lghi($dst$$Register, -1); %}
@@ -10625,9 +10609,10 @@ instruct Repl2I_immm1(iRegL dst, immI_minus1 src) %{
 //
 
 instruct Repl2F_reg_indirect(iRegL dst, regF src, flagsReg cr) %{
-  match(Set dst (ReplicateF src));
+  match(Set dst (Replicate src));
   effect(KILL cr);
-  predicate(!VM_Version::has_FPSupportEnhancements() && n->as_Vector()->length() == 2);
+  predicate(!VM_Version::has_FPSupportEnhancements() && n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_FLOAT);
   format %{ "REPLIC2F $dst,$src\t # pack2F indirect" %}
   expand %{
     stackSlotF tmp;
@@ -10640,9 +10625,10 @@ instruct Repl2F_reg_indirect(iRegL dst, regF src, flagsReg cr) %{
 
 // Replicate scalar float to packed float values in GREG (8 Bytes).
 instruct Repl2F_reg_direct(iRegL dst, regF src, flagsReg cr) %{
-  match(Set dst (ReplicateF src));
+  match(Set dst (Replicate src));
   effect(KILL cr);
-  predicate(VM_Version::has_FPSupportEnhancements() && n->as_Vector()->length() == 2);
+  predicate(VM_Version::has_FPSupportEnhancements() && n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_FLOAT);
   format %{ "REPLIC2F $dst,$src\t # pack2F direct" %}
   ins_encode %{
     assert(VM_Version::has_FPSupportEnhancements(), "encoder should never be called on old H/W");
@@ -10657,8 +10643,8 @@ instruct Repl2F_reg_direct(iRegL dst, regF src, flagsReg cr) %{
 
 // Replicate scalar float immediate to packed float values in GREG (8 Bytes).
 instruct Repl2F_imm(iRegL dst, immF src) %{
-  match(Set dst (ReplicateF src));
-  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 2 && Matcher::vector_element_basic_type(n) == T_FLOAT);
   ins_should_rematerialize(true);
   format %{ "REPLIC2F $dst,$src\t # pack2F imm" %}
   ins_encode %{
@@ -10676,8 +10662,8 @@ instruct Repl2F_imm(iRegL dst, immF src) %{
 // Replicate scalar float immediate zeroes to packed float values in GREG (8 Bytes).
 // Do this only for 'real' zeroes, especially don't loose sign of negative zeroes.
 instruct Repl2F_imm0(iRegL dst, immFp0 src) %{
-  match(Set dst (ReplicateF src));
-  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 2 && Matcher::vector_element_basic_type(n) == T_FLOAT);
   ins_should_rematerialize(true);
   format %{ "REPLIC2F $dst,$src\t # pack2F imm0" %}
   ins_encode %{ __ z_laz($dst$$Register, 0, Z_R0); %}

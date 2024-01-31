@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,12 +71,14 @@ public class JShellHeapDumpTest {
             launcher.addToolArg("--pid=" + Long.toString(jShellPID));
 
             ProcessBuilder processBuilder = SATestUtils.createProcessBuilder(launcher);
+            long startTime = System.currentTimeMillis();
             OutputAnalyzer output = ProcessTools.executeProcess(processBuilder);
             System.out.println("jhsdb jmap stdout:");
             System.out.println(output.getStdout());
             System.out.println("jhsdb jmap stderr:");
             System.out.println(output.getStderr());
-            System.out.println("###### End of all output:");
+            long elapsedTime = System.currentTimeMillis() - startTime;
+            System.out.println("###### End of all output which took " + elapsedTime + "ms");
             output.shouldHaveExitValue(0);
         } catch (Exception ex) {
             throw new RuntimeException("Test ERROR " + ex, ex);
@@ -148,7 +150,17 @@ public class JShellHeapDumpTest {
         System.out.println("Starting Jshell");
         long startTime = System.currentTimeMillis();
         try {
-            ProcessBuilder pb = new ProcessBuilder(JDKToolFinder.getTestJDKTool("jshell"));
+            JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jshell");
+            if (doSleep) {
+                launcher.addVMArgs(Utils.getTestJavaOpts());
+            } else {
+                // Don't allow use of SerialGC. See JDK-8313655.
+                launcher.addVMArgs(Utils.getFilteredTestJavaOpts("-XX:\\+UseSerialGC"));
+            }
+            ProcessBuilder pb = new ProcessBuilder(launcher.getCommand());
+            // Needed so we can properly parse the "Welcome to JShell" output.
+            pb.command().add("-J-Duser.language=en");
+            pb.command().add("-J-Duser.country=US");
             jShellProcess = ProcessTools.startProcess("JShell", pb,
                                                       s -> {  // warm-up predicate
                                                           return s.contains("Welcome to JShell");

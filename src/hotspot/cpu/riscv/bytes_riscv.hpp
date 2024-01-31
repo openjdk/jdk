@@ -28,16 +28,12 @@
 #define CPU_RISCV_BYTES_RISCV_HPP
 
 #include "memory/allStatic.hpp"
+#include "utilities/byteswap.hpp"
 
 class Bytes: AllStatic {
  public:
   // Efficient reading and writing of unaligned unsigned data in platform-specific byte ordering
   // RISCV needs to check for alignment.
-
-  // Forward declarations of the compiler-dependent implementation
-  static inline u2 swap_u2(u2 x);
-  static inline u4 swap_u4(u4 x);
-  static inline u8 swap_u8(u8 x);
 
   static inline u2 get_native_u2(address p) {
     if ((intptr_t(p) & 1) == 0) {
@@ -75,6 +71,7 @@ class Bytes: AllStatic {
                ((u8)(((u4*)p)[0]));
 
       case 2:
+      case 6:
         return ((u8)(((u2*)p)[3]) << 48) |
                ((u8)(((u2*)p)[2]) << 32) |
                ((u8)(((u2*)p)[1]) << 16) |
@@ -133,6 +130,7 @@ class Bytes: AllStatic {
         break;
 
       case 2:
+      case 6:
         ((u2*)p)[3] = x >> 48;
         ((u2*)p)[2] = x >> 32;
         ((u2*)p)[1] = x >> 16;
@@ -152,16 +150,18 @@ class Bytes: AllStatic {
     }
   }
 
+#ifndef VM_LITTLE_ENDIAN
+#error RISC-V is little endian, the preprocessor macro VM_LITTLE_ENDIAN should be defined.
+#endif
+
   // Efficient reading and writing of unaligned unsigned data in Java byte ordering (i.e. big-endian ordering)
-  static inline u2 get_Java_u2(address p) { return swap_u2(get_native_u2(p)); }
-  static inline u4 get_Java_u4(address p) { return swap_u4(get_native_u4(p)); }
-  static inline u8 get_Java_u8(address p) { return swap_u8(get_native_u8(p)); }
+  static inline u2 get_Java_u2(address p) { return byteswap(get_native_u2(p)); }
+  static inline u4 get_Java_u4(address p) { return byteswap(get_native_u4(p)); }
+  static inline u8 get_Java_u8(address p) { return byteswap(get_native_u8(p)); }
 
-  static inline void put_Java_u2(address p, u2 x) { put_native_u2(p, swap_u2(x)); }
-  static inline void put_Java_u4(address p, u4 x) { put_native_u4(p, swap_u4(x)); }
-  static inline void put_Java_u8(address p, u8 x) { put_native_u8(p, swap_u8(x)); }
+  static inline void put_Java_u2(address p, u2 x) { put_native_u2(p, byteswap(x)); }
+  static inline void put_Java_u4(address p, u4 x) { put_native_u4(p, byteswap(x)); }
+  static inline void put_Java_u8(address p, u8 x) { put_native_u8(p, byteswap(x)); }
 };
-
-#include OS_CPU_HEADER(bytes)
 
 #endif // CPU_RISCV_BYTES_RISCV_HPP

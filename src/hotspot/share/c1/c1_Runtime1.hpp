@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,24 +94,24 @@ class Runtime1: public AllStatic {
 
   // statistics
 #ifndef PRODUCT
-  static int _generic_arraycopystub_cnt;
-  static int _arraycopy_slowcase_cnt;
-  static int _arraycopy_checkcast_cnt;
-  static int _arraycopy_checkcast_attempt_cnt;
-  static int _new_type_array_slowcase_cnt;
-  static int _new_object_array_slowcase_cnt;
-  static int _new_instance_slowcase_cnt;
-  static int _new_multi_array_slowcase_cnt;
-  static int _monitorenter_slowcase_cnt;
-  static int _monitorexit_slowcase_cnt;
-  static int _patch_code_slowcase_cnt;
-  static int _throw_range_check_exception_count;
-  static int _throw_index_exception_count;
-  static int _throw_div0_exception_count;
-  static int _throw_null_pointer_exception_count;
-  static int _throw_class_cast_exception_count;
-  static int _throw_incompatible_class_change_error_count;
-  static int _throw_count;
+  static uint _generic_arraycopystub_cnt;
+  static uint _arraycopy_slowcase_cnt;
+  static uint _arraycopy_checkcast_cnt;
+  static uint _arraycopy_checkcast_attempt_cnt;
+  static uint _new_type_array_slowcase_cnt;
+  static uint _new_object_array_slowcase_cnt;
+  static uint _new_instance_slowcase_cnt;
+  static uint _new_multi_array_slowcase_cnt;
+  static uint _monitorenter_slowcase_cnt;
+  static uint _monitorexit_slowcase_cnt;
+  static uint _patch_code_slowcase_cnt;
+  static uint _throw_range_check_exception_count;
+  static uint _throw_index_exception_count;
+  static uint _throw_div0_exception_count;
+  static uint _throw_null_pointer_exception_count;
+  static uint _throw_class_cast_exception_count;
+  static uint _throw_incompatible_class_change_error_count;
+  static uint _throw_count;
 #endif
 
  private:
@@ -190,6 +190,8 @@ class Runtime1: public AllStatic {
   static int  is_instance_of(oopDesc* mirror, oopDesc* obj);
 
   static void predicate_failed_trap(JavaThread* current);
+
+  static void check_abort_on_vm_exception(oopDesc* ex);
 
   static void print_statistics()                 PRODUCT_RETURN;
 };

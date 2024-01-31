@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,9 @@
 #ifndef SHARE_GC_Z_ZLIVEMAP_HPP
 #define SHARE_GC_Z_ZLIVEMAP_HPP
 
+#include "gc/z/zAddress.hpp"
 #include "gc/z/zBitMap.hpp"
+#include "gc/z/zGenerationId.hpp"
 #include "memory/allocation.hpp"
 
 class ObjectClosure;
@@ -63,28 +65,36 @@ private:
 
   bool claim_segment(BitMap::idx_t segment);
 
-  void reset(size_t index);
+  void reset(ZGenerationId id);
   void reset_segment(BitMap::idx_t segment);
 
-  void iterate_segment(ObjectClosure* cl, BitMap::idx_t segment, uintptr_t page_start, size_t page_object_alignment_shift);
+  size_t do_object(ObjectClosure* cl, zaddress addr) const;
+
+  template <typename Function>
+  void iterate_segment(BitMap::idx_t segment, Function function);
 
 public:
   ZLiveMap(uint32_t size);
+  ZLiveMap(const ZLiveMap& other) = delete;
 
   void reset();
   void resize(uint32_t size);
 
-  bool is_marked() const;
+  bool is_marked(ZGenerationId id) const;
 
   uint32_t live_objects() const;
   size_t live_bytes() const;
 
-  bool get(size_t index) const;
-  bool set(size_t index, bool finalizable, bool& inc_live);
+  bool get(ZGenerationId id, BitMap::idx_t index) const;
+  bool set(ZGenerationId id, BitMap::idx_t index, bool finalizable, bool& inc_live);
 
   void inc_live(uint32_t objects, size_t bytes);
 
-  void iterate(ObjectClosure* cl, uintptr_t page_start, size_t page_object_alignment_shift);
+  template <typename Function>
+  void iterate(ZGenerationId id, Function function);
+
+  BitMap::idx_t find_base_bit(BitMap::idx_t index);
+  BitMap::idx_t find_base_bit_in_segment(BitMap::idx_t start, BitMap::idx_t index);
 };
 
 #endif // SHARE_GC_Z_ZLIVEMAP_HPP

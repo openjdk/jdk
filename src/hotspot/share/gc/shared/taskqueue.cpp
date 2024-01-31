@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@
 #include "oops/oop.inline.hpp"
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
-#include "runtime/thread.inline.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/stack.inline.hpp"
 
@@ -118,7 +118,7 @@ void TaskQueueStats::verify() const
 
 #ifdef ASSERT
 bool ObjArrayTask::is_valid() const {
-  return _obj != NULL && _obj->is_objArray() && _index >= 0 &&
+  return _obj != nullptr && _obj->is_objArray() && _index >= 0 &&
       _index < objArrayOop(_obj)->length();
 }
 #endif // ASSERT

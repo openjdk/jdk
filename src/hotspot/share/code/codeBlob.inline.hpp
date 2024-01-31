@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,8 @@
 #include "utilities/globalDefinitions.hpp"
 
 inline const ImmutableOopMap* CodeBlob::oop_map_for_slot(int slot, address return_address) const {
-  assert(_oop_maps != NULL, "nope");
-  return _oop_maps->find_map_at_slot(slot, (intptr_t) return_address - (intptr_t) code_begin());
+  assert(_oop_maps != nullptr, "nope");
+  return _oop_maps->find_map_at_slot(slot, pointer_delta_as_int(return_address, code_begin()));
 }
 
 #endif // SHARE_CODE_CODEBLOB_INLINE_HPP

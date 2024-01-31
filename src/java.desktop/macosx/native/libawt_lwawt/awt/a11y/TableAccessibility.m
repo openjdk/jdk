@@ -88,28 +88,20 @@ static jmethodID sjm_getAccessibleName = NULL;
 
 - (int)accessibleRowAtIndex:(int)index
 {
-    JNIEnv *env = [ThreadUtilities getJNIEnv];
-    jobject axContext = [self axContextWithEnv:env];
-    if (axContext == NULL) return 0;
-    jclass clsInfo = (*env)->GetObjectClass(env, axContext);
-    DECLARE_METHOD_RETURN(jm_getAccessibleRowAtIndex, clsInfo, "getAccessibleRowAtIndex", "(I)I", -1);
-    jint rowAtIndex = (*env)->CallIntMethod(env, axContext, jm_getAccessibleRowAtIndex, (jint)index);
-    CHECK_EXCEPTION();
-    (*env)->DeleteLocalRef(env, axContext);
-    return (int)rowAtIndex;
+    int columnCount = [self accessibilityColumnCount];
+    if (columnCount != 0) {
+        return index / columnCount;
+    }
+    return -1;
 }
 
 - (int)accessibleColumnAtIndex:(int)index
 {
-    JNIEnv *env = [ThreadUtilities getJNIEnv];
-    jobject axContext = [self axContextWithEnv:env];
-    if (axContext == NULL) return 0;
-    jclass clsInfo = (*env)->GetObjectClass(env, axContext);
-    DECLARE_METHOD_RETURN(jm_getAccessibleColumnAtIndex, clsInfo, "getAccessibleColumnAtIndex", "(I)I", -1);
-    jint columnAtIndex = (*env)->CallIntMethod(env, axContext, jm_getAccessibleColumnAtIndex, (jint)index);
-    CHECK_EXCEPTION();
-    (*env)->DeleteLocalRef(env, axContext);
-    return (int)columnAtIndex;
+    int columnCount = [self accessibilityColumnCount];
+    if (columnCount != 0) {
+        return index % columnCount;
+    }
+    return -1;
 }
 
 - (BOOL) isAccessibleChildSelectedFromIndex:(int)index

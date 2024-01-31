@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,12 @@
 
 /*
  * @test
- * @run testng AsyncShutdownNow
- * @summary Test invoking shutdownNow with threads blocked in Future.get,
- *          invokeAll, and invokeAny
+ * @summary Test ForkJoinPool.shutdownNow with threads blocked in invokeXXX and Future.get
+ * @run junit AsyncShutdownNow
  */
 
-// TODO: this test is far too slow
-
+import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
@@ -38,141 +37,148 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
+import static java.lang.Thread.State.*;
 
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class AsyncShutdownNow {
+class AsyncShutdownNow {
 
     // long running interruptible task
     private static final Callable<Void> SLEEP_FOR_A_DAY = () -> {
-        Thread.sleep(86400_000);
+        Thread.sleep(Duration.ofDays(1));
         return null;
     };
 
-    private ScheduledExecutorService scheduledExecutor;
-
-    @BeforeClass
-    public void setup() {
-        scheduledExecutor = Executors.newScheduledThreadPool(1);
-    }
-
-    @AfterClass
-    public void teardown() {
-        scheduledExecutor.shutdown();
+    static Stream<ForkJoinPool> pools() {
+        return Stream.of(
+                new ForkJoinPool(),
+                new ForkJoinPool(1)
+        );
     }
 
     /**
-     * Schedule the given executor service to be shutdown abruptly after the given
-     * delay, in seconds.
+     * Test shutdownNow with a running task and main thread blocked in Future::get.
      */
-    private void scheduleShutdownNow(ExecutorService executor, int delayInSeconds) {
-        scheduledExecutor.schedule(() -> {
-            executor.shutdownNow();
-            return null;
-        }, delayInSeconds, TimeUnit.SECONDS);
-    }
+    @ParameterizedTest
+    @MethodSource("pools")
+    void testFutureGet(ForkJoinPool pool) throws Exception {
+        try (pool) {
+            Future<?> future = pool.submit(SLEEP_FOR_A_DAY);
 
-    /**
-     * The executors to test.
-     */
-    @DataProvider(name = "executors")
-    public Object[][] executors() {
-        return new Object[][] {
-                { new ForkJoinPool() },
-                { new ForkJoinPool(1) },
-        };
-    }
-
-    /**
-     * Test shutdownNow with running task and thread blocked in Future::get.
-     */
-    @Test(dataProvider = "executors")
-    public void testFutureGet(ExecutorService executor) throws Exception {
-        System.out.format("testFutureGet: %s%n", executor);
-        scheduleShutdownNow(executor, 5);
-        try {
-            // submit long running task, the task should be cancelled
-            Future<?> future = executor.submit(SLEEP_FOR_A_DAY);
+            // shutdownNow when main thread waits in ForkJoinTask.awaitDone
+            onWait("java.util.concurrent.ForkJoinTask.awaitDone", pool::shutdownNow);
             try {
                 future.get();
-                assertTrue(false);
-            } catch (ExecutionException | RejectedExecutionException e) {
+                fail();
+            } catch (ExecutionException | CancellationException e) {
                 // expected
             }
-        } finally {
-            executor.shutdown();
         }
     }
 
     /**
-     * Test shutdownNow with running task and thread blocked in a timed Future::get.
+     * Test shutdownNow with a running task and main thread blocked in a timed Future::get.
      */
-    @Test(dataProvider = "executors")
-    public void testTimedFutureGet(ExecutorService executor) throws Exception {
-        System.out.format("testTimedFutureGet: %s%n", executor);
-        scheduleShutdownNow(executor, 5);
-        try {
-            // submit long running task, the task should be cancelled
-            Future<?> future = executor.submit(SLEEP_FOR_A_DAY);
+    @ParameterizedTest
+    @MethodSource("pools")
+    void testTimedFutureGet(ForkJoinPool pool) throws Exception {
+        try (pool) {
+            Future<?> future = pool.submit(SLEEP_FOR_A_DAY);
+
+            // shutdownNow when main thread waits in ForkJoinTask.awaitDone
+            onWait("java.util.concurrent.ForkJoinTask.awaitDone", pool::shutdownNow);
             try {
                 future.get(1, TimeUnit.HOURS);
-                assertTrue(false);
-            } catch (ExecutionException | RejectedExecutionException e) {
+                fail();
+            } catch (ExecutionException | CancellationException e) {
                 // expected
             }
-        } finally {
-            executor.shutdown();
         }
     }
 
     /**
-     * Test shutdownNow with thread blocked in invokeAll.
+     * Test shutdownNow with running tasks and main thread blocked in invokeAll.
      */
-    @Test(dataProvider = "executors")
-    public void testInvokeAll(ExecutorService executor) throws Exception {
-        System.out.format("testInvokeAll: %s%n", executor);
-        scheduleShutdownNow(executor, 5);
-        try {
-            // execute long running tasks
-            List<Future<Void>> futures = executor.invokeAll(List.of(SLEEP_FOR_A_DAY, SLEEP_FOR_A_DAY));
+    @ParameterizedTest
+    @MethodSource("pools")
+    void testInvokeAll(ForkJoinPool pool) throws Exception {
+        try (pool) {
+            // shutdownNow when main thread waits in ForkJoinTask.awaitDone
+            onWait("java.util.concurrent.ForkJoinTask.awaitDone", pool::shutdownNow);
+            List<Future<Void>> futures = pool.invokeAll(List.of(SLEEP_FOR_A_DAY, SLEEP_FOR_A_DAY));
             for (Future<Void> f : futures) {
                 assertTrue(f.isDone());
                 try {
                     Object result = f.get();
-                    assertTrue(false);
+                    fail();
                 } catch (ExecutionException | CancellationException e) {
                     // expected
                 }
             }
-        } finally {
-            executor.shutdown();
         }
     }
 
     /**
-     * Test shutdownNow with thread blocked in invokeAny.
+     * Test shutdownNow with running tasks and main thread blocked in invokeAny.
      */
-    @Test(dataProvider = "executors")
-    public void testInvokeAny(ExecutorService executor) throws Exception {
-        System.out.format("testInvokeAny: %s%n", executor);
-        scheduleShutdownNow(executor, 5);
-        try {
+    @ParameterizedTest
+    @MethodSource("pools")
+    void testInvokeAny(ForkJoinPool pool) throws Exception {
+        try (pool) {
+            // shutdownNow when main thread waits in ForkJoinTask.get
+            onWait("java.util.concurrent.ForkJoinTask.get", pool::shutdownNow);
             try {
-                // execute long running tasks
-                executor.invokeAny(List.of(SLEEP_FOR_A_DAY, SLEEP_FOR_A_DAY));
-                assertTrue(false);
-            } catch (ExecutionException | RejectedExecutionException e) {
+                pool.invokeAny(List.of(SLEEP_FOR_A_DAY, SLEEP_FOR_A_DAY));
+                fail();
+            } catch (ExecutionException e) {
                 // expected
             }
-        } finally {
-            executor.shutdown();
         }
+    }
+
+    /**
+     * Runs the given action when the current thread is sampled as waiting (timed or
+     * untimed) at the given location. The location takes the form "{@code c.m}" where
+     * {@code c} is the fully qualified class name and {@code m} is the method name.
+     */
+    private void onWait(String location, Runnable action) {
+        int index = location.lastIndexOf('.');
+        String className = location.substring(0, index);
+        String methodName = location.substring(index + 1);
+        Thread target = Thread.currentThread();
+        var thread = new Thread(() -> {
+            try {
+                boolean found = false;
+                while (!found) {
+                    Thread.State state = target.getState();
+                    assertTrue(state != TERMINATED);
+                    if ((state == WAITING || state == TIMED_WAITING)
+                            && contains(target.getStackTrace(), className, methodName)) {
+                        found = true;
+                    } else {
+                        Thread.sleep(20);
+                    }
+                }
+                action.run();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+        thread.setDaemon(true);
+        thread.start();
+    }
+
+    /**
+     * Returns true if the given stack trace contains an element for the given class
+     * and method name.
+     */
+    private boolean contains(StackTraceElement[] stack, String className, String methodName) {
+        return Arrays.stream(stack)
+                .anyMatch(e -> className.equals(e.getClassName())
+                        && methodName.equals(e.getMethodName()));
     }
 }

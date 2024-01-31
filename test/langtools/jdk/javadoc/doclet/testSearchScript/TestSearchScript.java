@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8178982 8220497 8210683 8241982
+ * @bug 8178982 8220497 8210683 8241982 8297216 8303056
  * @summary Test the search feature of javadoc.
  * @library ../../lib
  * @library /test/lib
@@ -55,18 +55,21 @@ import jtreg.SkippedException;
 public class TestSearchScript extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestSearchScript tester = new TestSearchScript();
+        var tester = new TestSearchScript();
         tester.runTests();
     }
 
     private Invocable getEngine() throws ScriptException, IOException, NoSuchMethodException {
+        // For installing and using GraalVM JS on stock JDK see
+        // https://github.com/oracle/graaljs/blob/master/docs/user/RunOnJDK.md
+        // and https://github.com/graalvm/graal-js-jdk11-maven-demo
         ScriptEngineManager engineManager = new ScriptEngineManager();
         // Use "js" engine name to use any available JavaScript engine.
         ScriptEngine engine = engineManager.getEngineByName("js");
         if (engine == null) {
             throw new SkippedException("JavaScript engine is not available.");
         }
-        // For GraalJS set Nashorn compatibility mode via Bindings,
+        // Set Nashorn compatibility mode via Bindings for use with GraalVM JS,
         // see https://github.com/graalvm/graaljs/blob/master/docs/user/ScriptEngine.md
         Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
         bindings.put("polyglot.js.nashorn-compat", true);
@@ -332,6 +335,68 @@ public class TestSearchScript extends JavadocTester {
         checkSearch(inv, "with map", List.of(
                 "listpkg.Nolist.withTypeParams(Map<String, ? extends Collection>)"));
 
+        // search for numeric strings
+        checkSearch(inv, "1", List.of("listpkg.MyList.abc123xyz()"));
+        checkSearch(inv, "12", List.of("listpkg.MyList.abc123xyz()"));
+        checkSearch(inv, "12 x", List.of("listpkg.MyList.abc123xyz()"));
+        checkSearch(inv, "123 x", List.of("listpkg.MyList.abc123xyz()"));
+        checkSearch(inv, "1 x", List.of("listpkg.MyList.abc123xyz()"));
+        checkSearch(inv, "2 x", List.of());
+        checkSearch(inv, "3", List.of("listpkg.MyList.M_3X"));
+        checkSearch(inv, "3x", List.of("listpkg.MyList.M_3X"));
+        checkSearch(inv, "_3", List.of("listpkg.MyList.M_3X"));
+        checkSearch(inv, "3 x", List.of("listpkg.MyList.M_3X"));
+
+        // Unicode camel-case tests
+        checkSearch(inv, "νέα λίστα", List.of("listpkg.ListProvider.δημιουργήστεΝέαΛίστα()"));
+        checkSearch(inv, "δημ νέα λίσ", List.of("listpkg.ListProvider.δημιουργήστεΝέαΛίστα()"));
+        checkSearch(inv, "δ ν λ", List.of("listpkg.ListProvider.δημιουργήστεΝέαΛίστα()"));
+        checkSearch(inv, "ν λ", List.of("listpkg.ListProvider.δημιουργήστεΝέαΛίστα()"));
+        checkSearch(inv, "δημιουργήστεΝέαΛίστα", List.of("listpkg.ListProvider.δημιουργήστεΝέαΛίστα()"));
+        checkSearch(inv, "δηΝέΛίσ", List.of("listpkg.ListProvider.δημιουργήστεΝέαΛίστα()"));
+        checkSearch(inv, "δΝΛ", List.of("listpkg.ListProvider.δημιουργήστεΝέαΛίστα()"));
+        checkSearch(inv, "ΝΛ", List.of("listpkg.ListProvider.δημιουργήστεΝέαΛίστα()"));
+        checkSearch(inv, "δημ λίστα", List.of("listpkg.ListProvider.δημιουργήστεΝέαΛίστα()"));
+        checkSearch(inv, "сделать новый список", List.of("listpkg.ListProvider.сделатьНовыйСписок()"));
+        checkSearch(inv, "сде нов спи", List.of("listpkg.ListProvider.сделатьНовыйСписок()"));
+        checkSearch(inv, "с н с", List.of("listpkg.ListProvider.сделатьНовыйСписок()"));
+        checkSearch(inv, "н с", List.of("listpkg.ListProvider.сделатьНовыйСписок()"));
+        checkSearch(inv, "сделатьНовыйСписок", List.of("listpkg.ListProvider.сделатьНовыйСписок()"));
+        checkSearch(inv, "сдеНовСпис", List.of("listpkg.ListProvider.сделатьНовыйСписок()"));
+        checkSearch(inv, "сНС", List.of("listpkg.ListProvider.сделатьНовыйСписок()"));
+        checkSearch(inv, "сН", List.of("listpkg.ListProvider.сделатьНовыйСписок()"));
+        checkSearch(inv, "сдеН Спи", List.of("listpkg.ListProvider.сделатьНовыйСписок()"));
+
+        // Negative Unicode camel-case tests
+        checkSearch(inv, "Νέα ίστα", List.of());
+        checkSearch(inv, "α λίστα", List.of());
+        checkSearch(inv, "ηΝΛ", List.of());
+        checkSearch(inv, "овый", List.of());
+        checkSearch(inv, "д н с", List.of());
+        checkSearch(inv, "пи", List.of());
+        checkSearch(inv, "НОВЫЙС ПИСОК", List.of());
+    }
+
+    @Test
+    public void testChannelSearch() throws ScriptException, IOException, NoSuchMethodException {
+        javadoc("-d", "out-channel",
+                "-Xdoclint:none",
+                "-use",
+                "-sourcepath", testSrc,
+                "channels");
+        checkExit(Exit.OK);
+
+        Invocable inv = getEngine();
+
+        checkSearch(inv, "FileChannel", List.of("channels.FileChannel", "channels.FileChannel.Map",
+                "channels.FileChannel.FileChannel()"));
+        checkSearch(inv, "FileChannel.", List.of("channels.FileChannel.Map",
+                "channels.FileChannel.FileChannel()", "channels.FileChannel.map(FileChannel.Map, int)"));
+        checkSearch(inv, "filechannel.M", List.of("channels.FileChannel.Map",
+                "channels.FileChannel.map(FileChannel.Map, int)"));
+        checkSearch(inv, "FileChannel.map", List.of("channels.FileChannel.Map",
+                "channels.FileChannel.map(FileChannel.Map, int)"));
+        checkSearch(inv, "FileChannel.map(", List.of("channels.FileChannel.map(FileChannel.Map, int)"));
     }
 
     void checkSearch(Invocable inv, String query, List<String> results) throws ScriptException, NoSuchMethodException {
@@ -339,7 +404,7 @@ public class TestSearchScript extends JavadocTester {
     }
 
     void checkList(String query, List<?> result, List<?> expected) {
-        checking("Checking resut for query \"" + query + "\"");
+        checking("Checking result for query \"" + query + "\"");
         if (!expected.equals(result)) {
             failed("Expected: " + expected + ", got: " + result);
         } else {

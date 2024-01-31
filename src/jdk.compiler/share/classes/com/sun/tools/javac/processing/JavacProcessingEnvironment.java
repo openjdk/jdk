@@ -310,6 +310,10 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                  * If the "-processor" option is used, search the appropriate
                  * path for the named class.  Otherwise, use a service
                  * provider mechanism to create the processor iterator.
+                 *
+                 * Note: if an explicit processor path is not set,
+                 * only the class path and _not_ the module path are
+                 * searched for processors.
                  */
                 String processorNames = options.get(Option.PROCESSOR);
                 if (fileManager.hasLocation(ANNOTATION_PROCESSOR_MODULE_PATH)) {
@@ -383,8 +387,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             handleException(key, e);
         }
 
-        java.util.List<Processor> pl = Collections.emptyList();
-        return pl.iterator();
+        return Collections.emptyIterator();
     }
 
     /**
@@ -1265,9 +1268,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                 // we're specifically expecting Abort here, but if any Throwable
                 // comes by, we should flush all deferred diagnostics, rather than
                 // drop them on the ground.
-                deferredDiagnosticHandler.reportDeferredDiagnostics();
-                log.popDiagnosticHandler(deferredDiagnosticHandler);
-                compiler.setDeferredDiagnosticHandler(null);
+                compiler.reportDeferredDiagnosticAndClearHandler();
                 throw t;
             } finally {
                 if (!taskListener.isEmpty())
@@ -1640,14 +1641,14 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                         originalAnnos.forEach(a -> visitAnnotation(a));
                     }
                     // we should empty the list of permitted subclasses for next round
-                    node.sym.permitted = List.nil();
+                    node.sym.clearPermittedSubclasses();
                 }
                 node.sym = null;
             }
             public void visitMethodDef(JCMethodDecl node) {
                 // remove super constructor call that may have been added during attribution:
                 if (TreeInfo.isConstructor(node) && node.sym != null && node.sym.owner.isEnum() &&
-                    node.body.stats.nonEmpty() && TreeInfo.isSuperCall(node.body.stats.head) &&
+                    node.body != null && node.body.stats.nonEmpty() && TreeInfo.isSuperCall(node.body.stats.head) &&
                     node.body.stats.head.pos == node.body.pos) {
                     node.body.stats = node.body.stats.tail;
                 }

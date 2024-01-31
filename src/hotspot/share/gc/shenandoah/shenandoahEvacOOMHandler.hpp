@@ -27,8 +27,33 @@
 
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "memory/allocation.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 #include "utilities/globalDefinitions.hpp"
+
+/**
+ * Striped counter used to implement the OOM protocol described below.
+ */
+class ShenandoahEvacOOMCounter {
+private:
+  // Combination of a 31-bit counter and 1-bit OOM marker.
+  volatile jint _bits;
+
+  // This class must be at least a cache line in size to prevent false sharing.
+  shenandoah_padding_minus_size(0, sizeof(jint));
+
+public:
+  static const jint OOM_MARKER_MASK;
+
+  ShenandoahEvacOOMCounter();
+
+  void decrement();
+  bool try_increment();
+  void clear();
+  void set_oom_bit(bool decrement);
+
+  inline jint unmasked_count();
+  inline jint load_acquire();
+};
 
 /**
  * Provides safe handling of out-of-memory situations during evacuation.
@@ -57,7 +82,9 @@
  * allocation, copying and CASing of the copy object, and is protected by this
  * OOM-during-evac-handler. The handler allows multiple threads to enter and exit
  * evacuation path, but on OOME it requires all threads that experienced OOME to wait
- * for current threads to leave, and blocks other threads from entering.
+ * for current threads to leave, and blocks other threads from entering. The counter state
+ * is striped across multiple cache lines to reduce contention when many threads attempt
+ * to enter or leave the protocol at the same time.
  *
  * Detailed state change:
  *
@@ -81,14 +108,18 @@
  */
 class ShenandoahEvacOOMHandler {
 private:
-  static const jint OOM_MARKER_MASK;
+  const int _num_counters;
 
   shenandoah_padding(0);
-  volatile jint _threads_in_evac;
-  shenandoah_padding(1);
+  ShenandoahEvacOOMCounter* _threads_in_evac;
+
+  ShenandoahEvacOOMCounter* counter_for_thread(Thread* t);
 
   void wait_for_no_evac_threads();
+  void wait_for_one_counter(ShenandoahEvacOOMCounter* ptr);
 
+  static uint64_t hash_pointer(const void* p);
+  static int calc_num_counters();
 public:
   ShenandoahEvacOOMHandler();
 

@@ -35,6 +35,7 @@ public abstract class AbstractGenerator {
     protected final boolean dumpClasses;
     protected final boolean executeTests;
     private static int testNum = 0;
+    private static int classesBeforeGC = 0;
 
     protected AbstractGenerator(String[] args) {
         List<String> params = new ArrayList<String>(Arrays.asList(args));
@@ -96,6 +97,14 @@ public abstract class AbstractGenerator {
 
         testNum++;
 
+        // Every N-th classes, force a GC to kick out the loaded classes from previous tests.
+        // Different tests come in with different number of classes, so testNum is not reliable.
+        classesBeforeGC -= classes.size();
+        if (classesBeforeGC <= 0) {
+            System.gc();
+            classesBeforeGC = 3000;
+        }
+
         String caseDescription = String.format("%4d| %s", testNum, description);
 
         // Create test executor for a single case
@@ -121,50 +130,44 @@ public abstract class AbstractGenerator {
         Class targetClass;
         Checker checker;
 
+        System.out.printf(caseDescription);
+
         try {
             paramClass = loader.loadClass(calleeClassName);
             targetClass = loader.loadClass(classNameC);
 
             checker = getChecker(paramClass, targetClass);
+
+            if (executeTests) {
+                // Check runtime behavior
+                Caller caller = new Caller(loader, checker, paramClass, targetClass);
+                for (String site : callSites) {
+                    String callResult = caller.call(site);
+                    System.out.printf(" %7s", callResult);
+
+                    if (!caller.isPassed()) {
+                        String result = checker.check(loader.loadClass(site));
+                        System.out.printf("/%s", Checker.abbreviateResult(result));
+                        isPassed = false;
+                    }
+                }
+                if (!caller.isPassed()) {
+                    System.out.print(" |   FAILED");
+                }
+            } else {
+                for (String site : callSites) {
+                    String result = checker.check(loader.loadClass(site));
+                    System.out.printf(" %7s", Checker.abbreviateResult(result));
+                }
+            }
         } catch (Throwable e) {
             String result = Checker.abbreviateResult(e.getClass().getName());
-
-            System.out.printf(caseDescription);
 
             for (String site : callSites) {
                 System.out.printf(" %7s", result);
             }
-
-            System.out.println("");
-
-            return true;
         }
-
-        if (executeTests) {
-            // Check runtime behavior
-            Caller caller = new Caller(loader, checker, paramClass, targetClass);
-            boolean printedCaseDes = false;
-            for (String site : callSites) {
-                String callResult = caller.call(site);
-
-                if (!caller.isPassed()) {
-                    isPassed = false;
-                    if (!printedCaseDes) {
-                        System.out.printf(caseDescription);
-                        printedCaseDes = true;
-                    }
-                    System.out.printf(" %7s", callResult);
-                }
-            }
-            if (!caller.isPassed()) {
-                System.out.println(" |   FAILED");
-            }
-        } else {
-            for (String site : callSites) {
-                String result = checker.check(loader.loadClass(site));
-                System.out.printf(" %7s", Checker.abbreviateResult(result));
-            }
-        }
+        System.out.println();
 
         return isPassed;
     }

@@ -729,7 +729,6 @@ JNIEXPORT struct ps_prochandle* JNICALL
 Pgrab_core(const char* exec_file, const char* core_file) {
   ELF_EHDR core_ehdr;
   ELF_EHDR exec_ehdr;
-  ELF_EHDR lib_ehdr;
 
   struct ps_prochandle* ph = (struct ps_prochandle*) calloc(1, sizeof(struct ps_prochandle));
   if (ph == NULL) {

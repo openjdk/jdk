@@ -88,55 +88,49 @@ public class NegTokenInit extends SpNegoToken {
         parseToken(in);
     }
 
-    final byte[] encode() throws GSSException {
-        try {
-            // create negInitToken
-            DerOutputStream initToken = new DerOutputStream();
+    final byte[] encode() {
+        // create negInitToken
+        DerOutputStream initToken = new DerOutputStream();
 
-            // DER-encoded mechTypes with CONTEXT 00
-            if (mechTypes != null) {
-                initToken.write(DerValue.createTag(DerValue.TAG_CONTEXT,
-                                                true, (byte) 0x00), mechTypes);
-            }
-
-            // write context flags with CONTEXT 01
-            if (reqFlags != null) {
-                DerOutputStream flags = new DerOutputStream();
-                flags.putUnalignedBitString(reqFlags);
-                initToken.write(DerValue.createTag(DerValue.TAG_CONTEXT,
-                                                true, (byte) 0x01), flags);
-            }
-
-            // mechToken with CONTEXT 02
-            if (mechToken != null) {
-                DerOutputStream dataValue = new DerOutputStream();
-                dataValue.putOctetString(mechToken);
-                initToken.write(DerValue.createTag(DerValue.TAG_CONTEXT,
-                                                true, (byte) 0x02), dataValue);
-            }
-
-            // mechListMIC with CONTEXT 03
-            if (mechListMIC != null) {
-                if (DEBUG) {
-                    System.out.println("SpNegoToken NegTokenInit: " +
-                                        "sending MechListMIC");
-                }
-                DerOutputStream mic = new DerOutputStream();
-                mic.putOctetString(mechListMIC);
-                initToken.write(DerValue.createTag(DerValue.TAG_CONTEXT,
-                                                true, (byte) 0x03), mic);
-            }
-
-            // insert in a SEQUENCE
-            DerOutputStream out = new DerOutputStream();
-            out.write(DerValue.tag_Sequence, initToken);
-
-            return out.toByteArray();
-
-        } catch (IOException e) {
-            throw new GSSException(GSSException.DEFECTIVE_TOKEN, -1,
-                "Invalid SPNEGO NegTokenInit token : " + e.getMessage());
+        // DER-encoded mechTypes with CONTEXT 00
+        if (mechTypes != null) {
+            initToken.write(DerValue.createTag(DerValue.TAG_CONTEXT,
+                    true, (byte) 0x00), mechTypes);
         }
+
+        // write context flags with CONTEXT 01
+        if (reqFlags != null) {
+            DerOutputStream flags = new DerOutputStream();
+            flags.putUnalignedBitString(reqFlags);
+            initToken.write(DerValue.createTag(DerValue.TAG_CONTEXT,
+                    true, (byte) 0x01), flags);
+        }
+
+        // mechToken with CONTEXT 02
+        if (mechToken != null) {
+            DerOutputStream dataValue = new DerOutputStream();
+            dataValue.putOctetString(mechToken);
+            initToken.write(DerValue.createTag(DerValue.TAG_CONTEXT,
+                    true, (byte) 0x02), dataValue);
+        }
+
+        // mechListMIC with CONTEXT 03
+        if (mechListMIC != null) {
+            if (DEBUG) {
+                System.out.println("SpNegoToken NegTokenInit: " +
+                        "sending MechListMIC");
+            }
+            DerOutputStream mic = new DerOutputStream();
+            mic.putOctetString(mechListMIC);
+            initToken.write(DerValue.createTag(DerValue.TAG_CONTEXT,
+                    true, (byte) 0x03), mic);
+        }
+
+        // insert in a SEQUENCE
+        DerOutputStream out = new DerOutputStream();
+        out.write(DerValue.tag_Sequence, initToken);
+
+        return out.toByteArray();
     }
 
     private void parseToken(byte[] in) throws GSSException {

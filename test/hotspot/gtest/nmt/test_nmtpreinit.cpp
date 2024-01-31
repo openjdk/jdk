@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2021, 2022 SAP SE. All rights reserved.
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,9 @@
 
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
+#include "nmt/memTracker.hpp"
+#include "nmt/nmtPreInit.hpp"
 #include "runtime/os.hpp"
-#include "services/nmtPreInit.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
 #include "unittest.hpp"
@@ -74,7 +75,7 @@ public:
   }
   void test_pre() {
     // Note that this part will run every time a gtestlauncher execs (so, for every TEST_OTHER_VM).
-    assert(NMTPreInit::in_preinit_phase(),
+    assert(!MemTracker::is_initialized(),
            "This should be run in pre-init phase (as part of C++ dyn. initialization)");
     LOG("corner cases, pre-init (%d)", os::current_process_id());
     log_state();
@@ -83,17 +84,36 @@ public:
     os::free(os_malloc(0));              // 0-sized allocation, should be free-able
     p2 = os_realloc(os_malloc(10), 20);  // realloc, growing
     p3 = os_realloc(os_malloc(20), 10);  // realloc, shrinking
-    p4 = os_realloc(NULL, 10);           // realloc with NULL pointer
+    p4 = os_realloc(nullptr, 10);        // realloc with null pointer
     os_realloc(os_realloc(os_malloc(20), 0), 30);  // realloc to size 0 and back up again
     os::free(os_malloc(20));             // malloc, free
     os::free(os_realloc(os_malloc(20), 30));  // malloc, realloc, free
-    os::free(NULL);                      // free(null)
+    os::free(nullptr);                      // free(null)
     DEBUG_ONLY(NMTPreInit::verify();)
+
+    // This should result in a fatal native oom error from NMT preinit with a clear error message.
+    // It should not result in a SEGV or anything similar. Unfortunately difficult to test
+    // automatically.
+    // Uncomment to test manually.
+
+    // case 1: overflow
+    // os_malloc(SIZE_MAX);
+
+    // case 2: failing malloc
+    // os_malloc(SIZE_MAX - M);
+
+    // case 3: overflow in realloc
+    // void* p = os_malloc(10);
+    // p = os_realloc(p, SIZE_MAX);
+
+    // case 4: failing realloc
+    // void* p = os_malloc(10);
+    // p = os_realloc(p, SIZE_MAX - M);
 
     log_state();
   }
   void test_post() {
-    assert(NMTPreInit::in_preinit_phase() == false,
+    assert(MemTracker::is_initialized(),
            "This should be run in post-init phase (from inside a TEST_VM test)");
     LOG("corner cases, post-init (%d)", os::current_process_id());
     log_state();
@@ -107,7 +127,7 @@ public:
     log_state();
   }
   void free_all() {
-    assert(NMTPreInit::in_preinit_phase() == false,
+    assert(MemTracker::is_initialized(),
            "This should be run in post-init phase (from inside a TEST_VM test)");
     LOG("corner cases, free-all (%d)", os::current_process_id());
     log_state();

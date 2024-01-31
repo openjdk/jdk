@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,22 +26,22 @@
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/stackWatermark.inline.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/preserveException.hpp"
 #include "utilities/vmError.hpp"
 
 StackWatermarks::StackWatermarks() :
-    _head(NULL) {}
+    _head(nullptr) {}
 
 StackWatermarks::~StackWatermarks() {
   StackWatermark* current = _head;
-  while (current != NULL) {
+  while (current != nullptr) {
     StackWatermark* next = current->next();
     delete current;
     current = next;
@@ -81,7 +81,7 @@ static void verify_processing_context() {
 void StackWatermarkSet::before_unwind(JavaThread* jt) {
   verify_processing_context();
   assert(jt->has_last_Java_frame(), "must have a Java frame");
-  for (StackWatermark* current = head(jt); current != NULL; current = current->next()) {
+  for (StackWatermark* current = head(jt); current != nullptr; current = current->next()) {
     current->before_unwind();
   }
   SafepointMechanism::update_poll_values(jt);
@@ -90,7 +90,7 @@ void StackWatermarkSet::before_unwind(JavaThread* jt) {
 void StackWatermarkSet::after_unwind(JavaThread* jt) {
   verify_processing_context();
   assert(jt->has_last_Java_frame(), "must have a Java frame");
-  for (StackWatermark* current = head(jt); current != NULL; current = current->next()) {
+  for (StackWatermark* current = head(jt); current != nullptr; current = current->next()) {
     current->after_unwind();
   }
   SafepointMechanism::update_poll_values(jt);
@@ -102,7 +102,7 @@ void StackWatermarkSet::on_iteration(JavaThread* jt, const frame& fr) {
     return;
   }
   verify_processing_context();
-  for (StackWatermark* current = head(jt); current != NULL; current = current->next()) {
+  for (StackWatermark* current = head(jt); current != nullptr; current = current->next()) {
     current->on_iteration(fr);
   }
   // We don't call SafepointMechanism::update_poll_values here, because the thread
@@ -111,7 +111,7 @@ void StackWatermarkSet::on_iteration(JavaThread* jt, const frame& fr) {
 
 void StackWatermarkSet::on_safepoint(JavaThread* jt) {
   StackWatermark* watermark = get(jt, StackWatermarkKind::gc);
-  if (watermark != NULL) {
+  if (watermark != nullptr) {
     watermark->on_safepoint();
   }
 }
@@ -120,7 +120,7 @@ void StackWatermarkSet::start_processing(JavaThread* jt, StackWatermarkKind kind
   verify_processing_context();
   assert(!jt->is_terminated(), "Poll after termination is a bug");
   StackWatermark* watermark = get(jt, kind);
-  if (watermark != NULL) {
+  if (watermark != nullptr) {
     watermark->start_processing();
   }
   // We don't call SafepointMechanism::update_poll_values here, because the thread
@@ -129,7 +129,7 @@ void StackWatermarkSet::start_processing(JavaThread* jt, StackWatermarkKind kind
 }
 
 bool StackWatermarkSet::processing_started(JavaThread* jt) {
-  for (StackWatermark* current = head(jt); current != NULL; current = current->next()) {
+  for (StackWatermark* current = head(jt); current != nullptr; current = current->next()) {
     if (!current->processing_started()) {
       return false;
     }
@@ -139,7 +139,7 @@ bool StackWatermarkSet::processing_started(JavaThread* jt) {
 
 void StackWatermarkSet::finish_processing(JavaThread* jt, void* context, StackWatermarkKind kind) {
   StackWatermark* watermark = get(jt, kind);
-  if (watermark != NULL) {
+  if (watermark != nullptr) {
     watermark->finish_processing(context);
   }
   // We don't call SafepointMechanism::update_poll_values here, because the thread
@@ -149,7 +149,7 @@ void StackWatermarkSet::finish_processing(JavaThread* jt, void* context, StackWa
 uintptr_t StackWatermarkSet::lowest_watermark(JavaThread* jt) {
   uintptr_t max_watermark = uintptr_t(0) - 1;
   uintptr_t watermark = max_watermark;
-  for (StackWatermark* current = head(jt); current != NULL; current = current->next()) {
+  for (StackWatermark* current = head(jt); current != nullptr; current = current->next()) {
     watermark = MIN2(watermark, current->watermark());
   }
   if (watermark == max_watermark) {

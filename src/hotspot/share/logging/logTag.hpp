@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,12 +39,14 @@ class outputStream;
   LOG_TAG(alloc) \
   LOG_TAG(annotation) \
   LOG_TAG(arguments) \
+  LOG_TAG(array) \
   LOG_TAG(attach) \
   LOG_TAG(barrier) \
   LOG_TAG(blocks) \
   LOG_TAG(bot) \
   LOG_TAG(breakpoint) \
   LOG_TAG(bytecode) \
+  LOG_TAG(cause) \
   LOG_TAG(cds) \
   LOG_TAG(census) \
   LOG_TAG(class) \
@@ -67,6 +69,8 @@ class outputStream;
   LOG_TAG(dcmd) \
   LOG_TAG(decoder) \
   LOG_TAG(defaultmethods) \
+  LOG_TAG(deoptimization) \
+  LOG_TAG(dependencies) \
   LOG_TAG(director) \
   NOT_PRODUCT(LOG_TAG(downcall)) \
   LOG_TAG(dump) \
@@ -75,6 +79,7 @@ class outputStream;
   LOG_TAG(event) \
   LOG_TAG(exceptions) \
   LOG_TAG(exit) \
+  LOG_TAG(fastlock) \
   LOG_TAG(finalizer) \
   LOG_TAG(fingerprint) \
   NOT_PRODUCT(LOG_TAG(foreign)) \
@@ -85,12 +90,14 @@ class outputStream;
   LOG_TAG(handshake) \
   LOG_TAG(hashtables) \
   LOG_TAG(heap) \
+  LOG_TAG(heapdump) \
   NOT_PRODUCT(LOG_TAG(heapsampling)) \
   LOG_TAG(humongous) \
   LOG_TAG(ihop) \
   LOG_TAG(iklass) \
   LOG_TAG(indy) \
   LOG_TAG(init) \
+  LOG_TAG(inlinecache)\
   LOG_TAG(inlining) \
   LOG_TAG(install) \
   LOG_TAG(interpreter) \
@@ -121,6 +128,7 @@ class outputStream;
   LOG_TAG(module) \
   LOG_TAG(monitorinflation) \
   LOG_TAG(monitormismatch) \
+  LOG_TAG(native) \
   LOG_TAG(nestmates) \
   LOG_TAG(nmethod) \
   LOG_TAG(nmt) \
@@ -135,6 +143,7 @@ class outputStream;
   LOG_TAG(oopstorage) \
   LOG_TAG(os) \
   LOG_TAG(owner) \
+  LOG_TAG(page) \
   LOG_TAG(pagesize) \
   LOG_TAG(parser) \
   LOG_TAG(patch) \
@@ -177,6 +186,7 @@ class outputStream;
   LOG_TAG(streaming) \
   LOG_TAG(stringdedup) \
   LOG_TAG(stringtable) \
+  LOG_TAG(stubs) \
   LOG_TAG(subclass) \
   LOG_TAG(survivor) \
   LOG_TAG(suspend) \
@@ -191,7 +201,9 @@ class outputStream;
   LOG_TAG(timer) \
   LOG_TAG(tlab) \
   LOG_TAG(tracking) \
+  LOG_TAG(trimnative) /* trim native heap */ \
   LOG_TAG(unload) /* Trace unloading of classes */ \
+  LOG_TAG(unmap) \
   LOG_TAG(unshareable) \
   NOT_PRODUCT(LOG_TAG(upcall)) \
   LOG_TAG(update) \

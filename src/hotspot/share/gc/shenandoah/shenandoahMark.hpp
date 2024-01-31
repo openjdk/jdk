@@ -30,14 +30,10 @@
 #include "gc/shenandoah/shenandoahOopClosures.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 
-class ShenandoahCMDrainMarkingStackClosure;
-
 // Base class for mark
 // Mark class does not maintain states. Instead, mark states are
 // maintained by task queues, mark bitmap and SATB buffers (concurrent mark)
 class ShenandoahMark: public StackObj {
-  friend class ShenandoahCMDrainMarkingStackClosure;
-
 protected:
   ShenandoahObjToScanQueueSet* const _task_queues;
 
@@ -85,4 +81,3 @@ protected:
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHMARK_HPP
-

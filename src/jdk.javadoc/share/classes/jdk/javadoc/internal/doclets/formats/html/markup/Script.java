@@ -28,8 +28,7 @@ package jdk.javadoc.internal.doclets.formats.html.markup;
 import java.io.IOException;
 import java.io.Writer;
 
-import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
+import jdk.javadoc.internal.doclets.formats.html.Content;
 
 /**
  * A builder for HTML script elements.
@@ -165,7 +164,7 @@ public class Script  {
                     sb.append("\\\"");
                     break;
                 case '\'':
-                    sb.append("\\\'");
+                    sb.append("\\'");
                     break;
                 case '\\':
                     sb.append("\\\\");
@@ -197,9 +196,9 @@ public class Script  {
         }
 
         @Override
-        public boolean write(Writer writer, boolean atNewline) throws IOException {
+        public boolean write(Writer writer, String newline, boolean atNewline) throws IOException {
             String s = sb.toString();
-            writer.write(s.replace("\n", DocletConstants.NL));
+            writer.write(s.replace("\n", newline));
             return s.endsWith("\n");
         }
 

@@ -61,7 +61,7 @@ public class TestInliningProtectionDomain extends InliningBase {
         boolean inlineFails = testClass == ProtectionDomainTestNoOtherCompilationPrivate.class;
         int inlineeCount = inlineFails ? 1 : 5;
 
-        List<InlineEntry> inlineesNormal = parseLogFile(LOG_FILE_NORMAL, entryString, "compile_id='" + getCompileIdFromFile(getReplayFileName()), inlineeCount);
+        List<InlineEntry> inlineesNormal = parseLogFile(LOG_FILE_NORMAL, entryString, "compile_id='" + getCompileIdFromFile(getReplayFileName()) + "'", inlineeCount);
         List<InlineEntry> inlineesReplay = parseLogFile(LOG_FILE_REPLAY, entryString, "test ()V", inlineeCount);
         verifyLists(inlineesNormal, inlineesReplay, inlineeCount);
 
@@ -70,7 +70,7 @@ public class TestInliningProtectionDomain extends InliningBase {
             Asserts.assertTrue(inlineesReplay.get(0).compare("compiler.ciReplay.ProtectionDomainTestNoOtherCompilationPrivate", "bar", inlineesReplay.get(0).isDisallowedByReplay()));
         } else {
             Asserts.assertTrue(inlineesNormal.get(4).compare("compiler.ciReplay.InliningBar", "bar2", inlineesNormal.get(4).isNormalInline()));
-            Asserts.assertTrue(inlineesReplay.get(4).compare("compiler.ciReplay.InliningBar", "bar2", inlineesReplay.get(4).isForcedByReplay()));
+            Asserts.assertTrue(inlineesReplay.get(4).compare("compiler.ciReplay.InliningBar", "bar2", inlineesReplay.get(4).isForcedByReplay() || inlineesReplay.get(4).isForcedIncrementalInlineByReplay()));
         }
     }
 }

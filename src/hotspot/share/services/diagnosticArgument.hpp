@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@
 
 #include "classfile/vmSymbols.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/exceptions.hpp"
 
 class StringArrayArgument : public CHeapObj<mtInternal> {
@@ -71,7 +71,7 @@ protected:
   bool             _allow_multiple;
   GenDCmdArgument(const char* name, const char* description, const char* type,
                   const char* default_string, bool mandatory)
-    : _next(NULL), _name(name), _description(description), _type(type),
+    : _next(nullptr), _name(name), _description(description), _type(type),
       _default_string(default_string), _is_set(false), _is_mandatory(mandatory),
       _allow_multiple(false) {}
 public:
@@ -83,8 +83,8 @@ public:
   void set_is_set(bool b)         { _is_set = b; }
   bool allow_multiple() const     { return _allow_multiple; }
   bool is_mandatory() const       { return _is_mandatory; }
-  bool has_value() const          { return _is_set || _default_string != NULL; }
-  bool has_default() const        { return _default_string != NULL; }
+  bool has_value() const          { return _is_set || _default_string != nullptr; }
+  bool has_default() const        { return _default_string != nullptr; }
   void read_value(const char* str, size_t len, TRAPS);
   virtual void parse_value(const char* str, size_t len, TRAPS) = 0;
   virtual void init_value(TRAPS) = 0;
@@ -112,7 +112,7 @@ private:
 public:
   DCmdArgument(const char* name, const char* description, const char* type,
                bool mandatory) :
-               GenDCmdArgument(name, description, type, NULL, mandatory) { }
+               GenDCmdArgument(name, description, type, nullptr, mandatory) { }
   DCmdArgument(const char* name, const char* description, const char* type,
                bool mandatory, const char* defaultvalue) :
                GenDCmdArgument(name, description, type, defaultvalue, mandatory)

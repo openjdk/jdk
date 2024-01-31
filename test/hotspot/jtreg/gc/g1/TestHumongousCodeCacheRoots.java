@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,15 +30,15 @@ package gc.g1;
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @summary Humongous objects may have references from the code cache
  * @run driver gc.g1.TestHumongousCodeCacheRoots
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -106,8 +106,7 @@ public class TestHumongousCodeCacheRoots {
     finalargs.add(classname);
     finalargs.addAll(Arrays.asList(arguments));
 
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(finalargs);
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
+    OutputAnalyzer output = ProcessTools.executeLimitedTestJava(finalargs);
     output.shouldHaveExitValue(0);
     return output;
   }
@@ -123,4 +122,3 @@ public class TestHumongousCodeCacheRoots {
     runWhiteBoxTest(baseArguments, TestHumongousCodeCacheRootsHelper.class.getName(), new String[] { });
   }
 }
-

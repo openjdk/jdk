@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -329,7 +329,7 @@ public abstract class AbstractRegionPainter implements Painter<JComponent> {
             NimbusLookAndFeel laf = (NimbusLookAndFeel) UIManager.getLookAndFeel();
             return laf.getDerivedColor(key, hOffset, sOffset, bOffset, aOffset, true);
         } else {
-            // can not give a right answer as painter sould not be used outside
+            // cannot give the right answer as painter should not be used outside
             // of nimbus laf but do the best we can
             return Color.getHSBColor(hOffset,sOffset,bOffset);
         }
@@ -457,7 +457,7 @@ public abstract class AbstractRegionPainter implements Painter<JComponent> {
                     color = (Color) MethodUtil.invoke(method, c, null);
                 } catch (Exception e) {
                     //don't do anything, it just didn't work, that's all.
-                    //This could be a normal occurance if you use a property
+                    //This could be a normal occurrence if you use a property
                     //name referring to a key in clientProperties instead of
                     //a real property
                 }
@@ -645,7 +645,7 @@ public abstract class AbstractRegionPainter implements Painter<JComponent> {
             VolatileImage img = getImage(g.getDeviceConfiguration(), c, canvas.width, canvas.height, extendedCacheKeys);
             if (img != null) {
                 // calculate dst inserts
-                // todo: destination inserts need to take into acount scale factor for high dpi. Note: You can use f for this, I think
+                // todo: destination inserts need to take into account scale factor for high dpi. Note: You can use f for this, I think
                 Insets dstInsets;
                 if (ctx.inverted){
                     int leftRight = (w-(canvas.width-(insets.left+insets.right)))/2;
@@ -655,12 +655,12 @@ public abstract class AbstractRegionPainter implements Painter<JComponent> {
                     dstInsets = insets;
                 }
                 // paint 9 square scaled
-                Object oldScaleingHints = g.getRenderingHint(RenderingHints.KEY_INTERPOLATION);
+                Object oldScalingHints = g.getRenderingHint(RenderingHints.KEY_INTERPOLATION);
                 g.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_INTERPOLATION_BILINEAR);
                 ImageScalingHelper.paint(g, 0, 0, w, h, img, insets, dstInsets,
                         ImageScalingHelper.PaintType.PAINT9_STRETCH, ImageScalingHelper.PAINT_ALL);
                 g.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
-                    oldScaleingHints!=null?oldScaleingHints:RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+                    oldScalingHints!=null?oldScalingHints:RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
             } else {
                 // render directly
                 paint0(g, c, w, h, extendedCacheKeys);

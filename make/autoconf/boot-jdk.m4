@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -382,7 +382,7 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK],
   # Finally, set some other options...
 
   # Determine if the boot jdk jar supports the --date option
-  if $JAR --help 2>&1 | $GREP -q "\-\-date=TIMESTAMP"; then
+  if $JAR --help 2>&1 | $GREP -q -e "--date=TIMESTAMP"; then
     BOOT_JDK_JAR_SUPPORTS_DATE=true
   else
     BOOT_JDK_JAR_SUPPORTS_DATE=false
@@ -520,8 +520,8 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK_ARGUMENTS],
 
   # Don't presuppose SerialGC is present in the buildjdk. Also, we cannot test
   # the buildjdk, but on the other hand we know what it will support.
-  BUILDJDK_JAVA_FLAGS_SMALL="-Xms32M -Xmx512M -XX:TieredStopAtLevel=1"
-  AC_SUBST(BUILDJDK_JAVA_FLAGS_SMALL)
+  BUILD_JAVA_FLAGS_SMALL="-Xms32M -Xmx512M -XX:TieredStopAtLevel=1"
+  AC_SUBST(BUILD_JAVA_FLAGS_SMALL)
 
   JAVA_TOOL_FLAGS_SMALL=""
   for f in $JAVA_FLAGS_SMALL; do

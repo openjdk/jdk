@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -82,11 +82,11 @@ public:
   // Given a chunk, attempt to merge it recursively with its neighboring chunks.
   //
   // If successful (merged at least once), returns address of
-  // the merged chunk; NULL otherwise.
+  // the merged chunk; null otherwise.
   //
   // The merged chunks are removed from the freelists.
   //
-  // !!! Please note that if this method returns a non-NULL value, the
+  // !!! Please note that if this method returns a non-null value, the
   // original chunk will be invalid and should not be accessed anymore! !!!
   Metachunk* merge(Metachunk* c, FreeChunkListVector* freelists);
 

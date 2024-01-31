@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,7 +149,7 @@ final class SocketTube implements FlowTube {
     //                           Events                                      //
     // ======================================================================//
 
-    void signalClosed() {
+    void signalClosed(Throwable cause) {
         // Ensures that the subscriber will be terminated and that future
         // subscribers will be notified when the connection is closed.
         if (Log.channel()) {
@@ -157,7 +157,7 @@ final class SocketTube implements FlowTube {
                     channelDescr());
         }
         readPublisher.subscriptionImpl.signalError(
-                new IOException("connection closed locally"));
+                new IOException("connection closed locally", cause));
     }
 
     /**
@@ -210,10 +210,10 @@ final class SocketTube implements FlowTube {
             long wd = wdemand == null ? 0 : wdemand.get();
 
             state.append(when).append(" Reading: [ops=")
-                    .append(rops).append(", demand=").append(rd)
+                    .append(Utils.describeOps(rops)).append(", demand=").append(rd)
                     .append(", stopped=")
                     .append((sub == null ? false : sub.readScheduler.isStopped()))
-                    .append("], Writing: [ops=").append(wops)
+                    .append("], Writing: [ops=").append(Utils.describeOps(wops))
                     .append(", demand=").append(wd)
                     .append("]");
             debug.log(state.toString());
@@ -495,9 +495,9 @@ final class SocketTube implements FlowTube {
             }
 
             void dropSubscription() {
+                if (debug.on()) debug.log("write: resetting demand to 0");
                 synchronized (InternalWriteSubscriber.this) {
                     cancelled = true;
-                    if (debug.on()) debug.log("write: resetting demand to 0");
                     writeDemand.reset();
                 }
             }
@@ -1263,7 +1263,7 @@ final class SocketTube implements FlowTube {
     private void resumeEvent(SocketFlowEvent event,
                              Consumer<Throwable> errorSignaler) {
         boolean registrationRequired;
-        synchronized(lock) {
+        synchronized (lock) {
             registrationRequired = !event.registered();
             event.resume();
         }
@@ -1280,7 +1280,7 @@ final class SocketTube implements FlowTube {
 
     private void pauseEvent(SocketFlowEvent event,
                             Consumer<Throwable> errorSignaler) {
-        synchronized(lock) {
+        synchronized (lock) {
             event.pause();
         }
         try {

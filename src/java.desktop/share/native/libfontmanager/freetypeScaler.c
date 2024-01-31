@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,7 @@ typedef struct FTScalerContext {
 
 #ifdef DEBUG
 /* These are referenced in the freetype sources if DEBUG macro is defined.
-   To simplify work with debuging version of freetype we define
+   To simplify work with debugging version of freetype we define
    them here. */
 int z_verbose;
 void z_error(char *s) {}
@@ -525,10 +525,10 @@ Java_sun_font_FreetypeFontScaler_createScalerContextNative(
         ptsz = 1.0;
     }
     context->ptsz = (int)(ptsz * 64);
-    context->transform.xx =  FloatToFTFixed((float)dmat[0]/ptsz);
-    context->transform.yx = -FloatToFTFixed((float)dmat[1]/ptsz);
-    context->transform.xy = -FloatToFTFixed((float)dmat[2]/ptsz);
-    context->transform.yy =  FloatToFTFixed((float)dmat[3]/ptsz);
+    context->transform.xx =  FloatToFTFixed((float)(dmat[0]/ptsz));
+    context->transform.yx = -FloatToFTFixed((float)(dmat[1]/ptsz));
+    context->transform.xy = -FloatToFTFixed((float)(dmat[2]/ptsz));
+    context->transform.yy =  FloatToFTFixed((float)(dmat[3]/ptsz));
     context->aaType = aa;
     context->fmType = fm;
 
@@ -548,7 +548,8 @@ Java_sun_font_FreetypeFontScaler_createScalerContextNative(
     if ((aa != TEXT_AA_ON) && (fm != TEXT_FM_ON) &&
         !context->doBold && !context->doItalize &&
         (context->transform.yx == 0) && (context->transform.xy == 0) &&
-        (context->transform.xx > 0) && (context->transform.yy > 0))
+        (context->transform.xx > 0) && (context->transform.yy > 0) &&
+        (context->transform.xx == context->transform.yy))
     {
         context->useSbits = 1;
     }
@@ -1275,7 +1276,7 @@ static int allocateSpaceForGP(GPData* gpdata, int npoints, int ncontours) {
     maxCoords = 4*(npoints + 2*ncontours); //we may need to insert
                                            //up to n-1 intermediate points
 
-    /* first usage - allocate space and intialize all fields */
+    /* first usage - allocate space and initialize all fields */
     if (gpdata->pointTypes == NULL || gpdata->pointCoords == NULL) {
         gpdata->lenTypes  = maxTypes;
         gpdata->lenCoords = maxCoords;

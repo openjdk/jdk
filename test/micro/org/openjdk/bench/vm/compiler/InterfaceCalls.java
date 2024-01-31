@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,15 @@ package org.openjdk.bench.vm.compiler;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.CompilerControl;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 
 import java.util.concurrent.TimeUnit;
@@ -36,252 +40,245 @@ import java.util.concurrent.TimeUnit;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
+@Warmup(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
+@Fork(value = 3)
 public class InterfaceCalls {
 
-    interface AnInterface {
-        public int getInt();
+    interface FirstInterface {
+        public int getIntFirst();
     }
 
     interface SecondInterface {
-        public int get1();
+        public int getIntSecond();
     }
 
-    interface OnlyHasOneImplInterface {
-        public int getLong();
+    interface FirstInterfaceExt extends FirstInterface {
+        default int getIntFirst() { return 44; }
     }
 
-    interface AloneInterface {
-        public int getNumber();
+    interface FirstInterfaceExtExt extends FirstInterfaceExt {
+        default int getIntFirst() { return 45; }
     }
 
-    class SingleImplementor implements OnlyHasOneImplInterface {
-        public int getLong() {
+    class FirstClass implements FirstInterface, SecondInterface {
+        public int getIntFirst() {
+            return 1;
+        }
+
+        public int getIntSecond() {
             return 1;
         }
     }
 
-    class Extender1 extends SingleImplementor {
-    }
-
-    class FirstClass implements AnInterface {
-        public int getInt() {
-            return 1;
-        }
-    }
-
-    class SecondClass implements AnInterface {
-        public int getInt() {
+    class SecondClass implements FirstInterface, SecondInterface {
+        public int getIntFirst() {
             return 2;
         }
+
+        public int getIntSecond() {
+            return 1;
+        }
     }
 
-    class ThirdClass implements AnInterface {
-        public int getInt() {
+    class ThirdClass implements FirstInterface, SecondInterface {
+        public int getIntFirst() {
             return -3;
         }
-    }
 
-    class FourthClass implements AnInterface {
-        public int getInt() {
-            return -4;
-        }
-    }
-
-    class FifthClass implements AnInterface {
-        public int getInt() {
-            return -5;
-        }
-    }
-
-    class MultiClass1 implements AnInterface, SecondInterface {
-        public int get1() {
+        public int getIntSecond() {
             return 1;
         }
+    }
 
-        public int getInt() {
-            return 2;
+    class FourthClass implements FirstInterface, SecondInterface {
+        public int getIntFirst() {
+            return -4;
+        }
+
+        public int getIntSecond() {
+            return 1;
         }
     }
 
-    class MultiClass2 implements AnInterface, SecondInterface {
-        public int get1() {
-            return -1;
+    class FifthClass implements FirstInterface, SecondInterface {
+        public int getIntFirst() {
+            return -5;
         }
 
-        public int getInt() {
+        public int getIntSecond() {
+            return 1;
+        }
+    }
+
+    class FirstClassDontInline implements FirstInterface {
+        @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+        public int getIntFirst() {
+            return -1;
+        }
+    }
+
+    class SecondClassDontInline implements FirstInterface {
+        @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+        public int getIntFirst() {
             return -2;
         }
     }
 
-    class Aloner implements AloneInterface {
-        public int getNumber() {
-            return 7;
+    class ThirdClassDontInline implements FirstInterface {
+        @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+        public int getIntFirst() {
+            return -3;
         }
     }
 
-    public Object dummy1;
+    class FourthClassDontInline implements FirstInterface {
+        @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+        public int getIntFirst() {
+            return -4;
+        }
+    }
 
-    public Object dummy2;
+    class FifthClassDontInline implements FirstInterface {
+        @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+        public int getIntFirst() {
+            return -5;
+        }
+    }
 
-    public Object dummy3;
+    class FirstClassDontInlineExtExt implements FirstInterfaceExtExt {
+        @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+        public int getIntFirst() {
+            return -1;
+        }
+    }
 
-    public AnInterface multi1a, multi2a;
+    class SecondClassDontInlineExtExt implements FirstInterfaceExtExt {
+        @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+        public int getIntFirst() {
+            return -2;
+        }
+    }
 
-    public SecondInterface multi1b, multi2b;
+    class ThirdClassDontInlineExtExt implements FirstInterfaceExtExt {
+        @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+        public int getIntFirst() {
+            return -3;
+        }
+    }
 
-    public Object multic, multic2;
+    class FourthClassDontInlineExtExt implements FirstInterfaceExtExt {
+        @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+        public int getIntFirst() {
+            return -4;
+        }
+    }
 
-    public AnInterface[] as = new AnInterface[5];
+    class FifthClassDontInlineExtExt implements FirstInterfaceExtExt {
+        @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+        public int getIntFirst() {
+            return -5;
+        }
+    }
 
-    public AnInterface multi;
+    final int asLength = 5;
+    public FirstInterface[] as = new FirstInterface[asLength];
+    public FirstInterface[] noninlined = new FirstInterface[asLength];
+    public FirstInterfaceExtExt[] noninlinedextext = new FirstInterfaceExtExt[asLength];
 
-    public OnlyHasOneImplInterface single1;
-
-    public OnlyHasOneImplInterface single2;
-
-    public AloneInterface alone;
-
-    int count;
 
     @Setup
     public void setupSubclass() {
-        dummy1 = new FirstClass();
-        dummy2 = new SecondClass();
-        dummy3 = new ThirdClass();
         as[0] = new FirstClass();
         as[1] = new SecondClass();
         as[2] = new ThirdClass();
         as[3] = new FourthClass();
         as[4] = new FifthClass();
-        MultiClass1 mc1 = new MultiClass1();
-        multi1a = mc1;
-        multi1b = mc1;
-        multic = mc1;
-        MultiClass2 mc2 = new MultiClass2();
-        multi2a = mc2;
-        multi2b = mc2;
-        multic2 = mc2;
-        single1 = new SingleImplementor();
-        single2 = new Extender1();
-        alone = new Aloner();
-    }
 
-    private void swapMultiParts() {
-        AnInterface tmpa = multi1a;
-        SecondInterface tmpb = multi1b;
-        multi1a = multi2a;
-        multi2a = tmpa;
-        multi1b = multi2b;
-        multi2b = tmpb;
-    }
+        noninlined[0] = new FirstClassDontInline();
+        noninlined[1] = new SecondClassDontInline();
+        noninlined[2] = new ThirdClassDontInline();
+        noninlined[3] = new FourthClassDontInline();
+        noninlined[4] = new FifthClassDontInline();
 
-    @SuppressWarnings("unused")
-    private void swapMulti() {
-        Object tmp = multic;
-        multic = multic2;
-        multic2 = tmp;
+        noninlinedextext[0] = new FirstClassDontInlineExtExt();
+        noninlinedextext[1] = new SecondClassDontInlineExtExt();
+        noninlinedextext[2] = new ThirdClassDontInlineExtExt();
+        noninlinedextext[3] = new FourthClassDontInlineExtExt();
+        noninlinedextext[4] = new FifthClassDontInlineExtExt();
     }
 
     /**
-     * Tests a call where there are multiple implementors but only one of the implementors is every used here so the
-     * call-site is monomorphic
+     * Tests a call where there are multiple implementors but only one of the
+     * implementors is every used here so the call-site is monomorphic
      */
     @Benchmark
     public int testMonomorphic() {
-        return as[0].getInt();
+        return as[0].getIntFirst();
     }
 
-    /** Tests a interface call that only has one single implementation */
+    int l = 0;
+
+    /** Tests single base interface method call */
     @Benchmark
-    public int testSingle() {
-        return alone.getNumber();
+    public int testIfaceCall(Blackhole bh) {
+        FirstInterface ai = noninlined[l];
+        l = ++ l % asLength;
+        return ai.getIntFirst();
     }
 
-    /**
-     * Tests a call where there is a single implementation but multiple classes that inherit that implementation and both
-     * these implementors are used.
-     */
+    /** Tests extended interface method call */
     @Benchmark
-    public int testSingle2() {
-        OnlyHasOneImplInterface oi;
-        if ((count & 1) == 0) {
-            oi = single1;
-        } else {
-            oi = single2;
-        }
-        count++;
-        return oi.getLong();
+    public int testIfaceExtCall(Blackhole bh) {
+        FirstInterfaceExtExt ai = noninlinedextext[l];
+        l = ++ l % asLength;
+        return ai.getIntFirst();
     }
 
     /**
-     * Tests calling two different interface methods in two different interfaces on the same receiver. Make sure to switch
-     * between two different types of receivers to achieve polymorhpism
+     * Interface call address computation within loop but the receiver preexists
+     * the loop and the ac can be moved outside of the loop
      */
     @Benchmark
-    public void testCall2Poly2(Blackhole bh) {
-        bh.consume(multi1a.getInt());
-        bh.consume(multi1b.get1());
-        swapMultiParts();
-    }
-
-    @Benchmark
-    public int testCallMulti1Poly2NoSwap() {
-        return multi1a.getInt();
-    }
-
-    /**
-     * This test goes together with Multi2 below It tests if a class implements multiple interfaces if the different
-     * interfaces take different amounts of time (They do for hotspot)
-     */
-    @Benchmark
-    public int testCallMulti1Poly2() {
-        swapMultiParts();
-        return multi1a.getInt();
-    }
-
-    /**
-     * This test goes together with Multi2 below It tests if a class implements multiple interfaces if the different
-     * interfaces take different amounts of time (They do for hotspot)
-     */
-    @Benchmark
-    public int testCallMulti2Poly2() {
-        swapMultiParts();
-        return multi1b.get1();
-    }
-
-    /** Interface call with three different receivers */
-    @Benchmark
-    public void testCallPoly3(Blackhole bh) {
-        for (int kk = 0; kk < 3; kk++) {
-            bh.consume(as[kk].getInt());
-        }
-    }
-
-    /** Interface call with five different receivers. */
-    @Benchmark
-    public void testCallPoly5(Blackhole bh) {
-        for (int kk = 0; kk < 5; kk++) {
-            bh.consume(as[kk].getInt());
-        }
-    }
-
-    int l;
-
-    /**
-     * Interface call address computation within loop but the receiver preexists the loop and the ac can be moved outside
-     * of the loop
-     */
-    @Benchmark
-    public int testAC1() {
-        AnInterface ai = as[l];
+    public int test1stInt2Types() {
+        FirstInterface ai = as[l];
         l = 1 - l;
-        return ai.getInt();
+        return ai.getIntFirst();
     }
 
-    /** Tests an interface cast followed by an interface call. */
     @Benchmark
-    public int testInterfaceCastAndCall() throws Exception {
-        return ((AnInterface) dummy1).getInt() + ((AnInterface) dummy2).getInt()
-                + ((AnInterface) dummy3).getInt();
+    public int test1stInt3Types() {
+        FirstInterface ai = as[l];
+        l = ++ l % 3;
+        return ai.getIntFirst();
     }
+
+    @Benchmark
+    public int test1stInt5Types() {
+        FirstInterface ai = as[l];
+        l = ++ l % asLength;
+        return ai.getIntFirst();
+    }
+
+    @Benchmark
+    public int test2ndInt2Types() {
+        SecondInterface ai = (SecondInterface) as[l];
+        l = 1 - l;
+        return ai.getIntSecond();
+    }
+
+    @Benchmark
+    public int test2ndInt3Types() {
+        SecondInterface ai = (SecondInterface) as[l];
+        l = ++ l % 3;
+        return ai.getIntSecond();
+    }
+
+    @Benchmark
+    public int test2ndInt5Types() {
+        SecondInterface ai = (SecondInterface) as[l];
+        l = ++ l % asLength;
+        return ai.getIntSecond();
+    }
+
 }

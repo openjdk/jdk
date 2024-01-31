@@ -1,10 +1,11 @@
 /*
  * @test /nodynamiccopyright/
  * @summary Verify behavior of total patterns in instanceof
- * @compile/fail/ref=InstanceofTotalPattern-15.out -source 15 -Xlint:-options -XDrawDiagnostics InstanceofTotalPattern.java
- * @compile/fail/ref=InstanceofTotalPattern-16.out -source 16 -Xlint:-options -XDrawDiagnostics InstanceofTotalPattern.java
- * @compile/ref=InstanceofTotalPattern-preview.out --enable-preview -source ${jdk.version} -Xlint:-options,preview -XDrawDiagnostics InstanceofTotalPattern.java
- * @run main/othervm --enable-preview InstanceofTotalPattern
+ * @compile/fail/ref=InstanceofTotalPattern-15.out --release 15 -XDrawDiagnostics InstanceofTotalPattern.java
+ * @compile/fail/ref=InstanceofTotalPattern-16.out --release 16 -XDrawDiagnostics InstanceofTotalPattern.java
+ * @compile/fail/ref=InstanceofTotalPattern-20.out --release 20 -XDrawDiagnostics InstanceofTotalPattern.java
+ * @compile InstanceofTotalPattern.java
+ * @run main InstanceofTotalPattern
  */
 
 public class InstanceofTotalPattern {

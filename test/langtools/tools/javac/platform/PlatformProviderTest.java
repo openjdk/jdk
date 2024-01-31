@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -192,13 +192,13 @@ public class PlatformProviderTest implements PlatformProvider {
         @Override
         public String getSourceVersion() {
             System.err.println("getSourceVersion");
-            return "8";
+            return "11";
         }
 
         @Override
         public String getTargetVersion() {
             System.err.println("getTargetVersion");
-            return "8";
+            return "11";
         }
 
         @Override
@@ -239,7 +239,7 @@ public class PlatformProviderTest implements PlatformProvider {
 
         @Override
         public List<String> getAdditionalOptions() {
-            return Arrays.asList("-Xlint:rawtypes", "-XDrawDiagnostics");
+            return Arrays.asList("-Xlint:rawtypes", "-XDrawDiagnostics", "-proc:full");
         }
 
         @Override

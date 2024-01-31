@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
@@ -105,7 +104,7 @@ final class WixUiFragmentBuilder extends WixFragmentBuilder {
         }
 
         // Only needed if we using CA dll, so Wix can find it
-        if (withInstallDirChooserDlg) {
+        if (withCustomActionsDll) {
             wixPipeline.addLightOptions("-b",
                     getConfigRoot().toAbsolutePath().toString());
         }
@@ -119,7 +118,7 @@ final class WixUiFragmentBuilder extends WixFragmentBuilder {
     void addFilesToConfigRoot() throws IOException {
         super.addFilesToConfigRoot();
 
-        if (withInstallDirChooserDlg) {
+        if (withCustomActionsDll) {
             String fname = "wixhelper.dll"; // CA dll
             try (InputStream is = OverridableResource.readDefault(fname)) {
                 Files.copy(is, getConfigRoot().resolve(fname));
@@ -481,6 +480,7 @@ final class WixUiFragmentBuilder extends WixFragmentBuilder {
     private boolean withInstallDirChooserDlg;
     private boolean withShortcutPromptDlg;
     private boolean withLicenseDlg;
+    private boolean withCustomActionsDll = true;
     private List<CustomDialog> customDialogs;
 
     private static final BundlerParamInfo<Boolean> INSTALLDIR_CHOOSER

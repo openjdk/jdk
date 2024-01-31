@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,12 +34,16 @@ public class CompileCommand {
     public final Scenario.Compiler compiler;
     public final Scenario.Type type;
     public final String argument;
+    public final boolean isValid;
+
 
     public CompileCommand(Command command,
+                          boolean isValid,
                           MethodDescriptor methodDescriptor,
                           Scenario.Compiler compiler,
                           Scenario.Type type) {
         this.command = command;
+        this.isValid = isValid;
         this.methodDescriptor = methodDescriptor;
         this.compiler = compiler;
         this.type = type;
@@ -47,11 +51,13 @@ public class CompileCommand {
     }
 
     public CompileCommand(Command command,
+                          boolean isValid,
                           MethodDescriptor methodDescriptor,
                           Scenario.Compiler compiler,
                           Scenario.Type type,
                           String argument) {
         this.command = command;
+        this.isValid = isValid;
         this.methodDescriptor = methodDescriptor;
         this.compiler = compiler;
         this.type = type;
@@ -65,6 +71,9 @@ public class CompileCommand {
      * @return true if this is a valid command
      */
     public boolean isValid() {
+        if (!isValid) {
+            return false;
+        }
         if (command == Command.NONEXISTENT) {
             return false;
         }

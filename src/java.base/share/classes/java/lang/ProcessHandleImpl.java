@@ -54,7 +54,7 @@ final class ProcessHandleImpl implements ProcessHandle {
     /**
      * Default size of stack for reaper processes.
      */
-    private static long REAPER_DEFAULT_STACKSIZE = 128 * 1024;
+    private static final long REAPER_DEFAULT_STACKSIZE = 128 * 1024;
 
     /**
      * Return value from waitForProcessExit0 indicating the process is not a child.
@@ -100,7 +100,7 @@ final class ProcessHandleImpl implements ProcessHandle {
                 ThreadFactory threadFactory = grimReaper -> {
                     Thread t = InnocuousThread.newSystemThread("process reaper", grimReaper,
                             stackSize, Thread.MAX_PRIORITY);
-                    t.setDaemon(true);
+                    privilegedThreadSetDaemon(t, true);
                     return t;
                 };
 
@@ -113,6 +113,22 @@ final class ProcessHandleImpl implements ProcessHandle {
         ExitCompletion(boolean isReaping) {
             this.isReaping = isReaping;
         }
+    }
+
+    @SuppressWarnings("removal")
+    private static void privilegedThreadSetName(Thread thread, String name) {
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            thread.setName(name);
+            return null;
+        });
+    }
+
+    @SuppressWarnings("removal")
+    private static void privilegedThreadSetDaemon(Thread thread, boolean on) {
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            thread.setDaemon(on);
+            return null;
+        });
     }
 
     /**
@@ -140,8 +156,9 @@ final class ProcessHandleImpl implements ProcessHandle {
                 processReaperExecutor.execute(new Runnable() {
                     // Use inner class to avoid lambda stack overhead
                     public void run() {
-                        String threadName = Thread.currentThread().getName();
-                        Thread.currentThread().setName("process reaper (pid " + pid + ")");
+                        Thread t = Thread.currentThread();
+                        String threadName = t.getName();
+                        privilegedThreadSetName(t, "process reaper (pid " + pid + ")");
                         try {
                             int exitValue = waitForProcessExit0(pid, shouldReap);
                             if (exitValue == NOT_A_CHILD) {
@@ -172,7 +189,7 @@ final class ProcessHandleImpl implements ProcessHandle {
                             completions.remove(pid, newCompletion);
                         } finally {
                             // Restore thread name
-                            Thread.currentThread().setName(threadName);
+                            privilegedThreadSetName(t, threadName);
                         }
                     }
                 });
@@ -218,10 +235,10 @@ final class ProcessHandleImpl implements ProcessHandle {
      * Typically, this is because the OS can not supply it.
      * The process is known to exist but not the exact start time.
      */
-    private final long STARTTIME_ANY = 0L;
+    private static final long STARTTIME_ANY = 0L;
 
     /* The start time of a Process that does not exist. */
-    private final long STARTTIME_PROCESS_UNKNOWN = -1;
+    private static final long STARTTIME_PROCESS_UNKNOWN = -1;
 
     /**
      * Private constructor.  Instances are created by the {@code get(long)} factory.

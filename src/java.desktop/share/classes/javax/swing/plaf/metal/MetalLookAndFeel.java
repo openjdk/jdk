@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,9 +118,7 @@ public class MetalLookAndFeel extends BasicLookAndFeel
      */
     static boolean isWindows() {
         if (!checkedWindows) {
-            @SuppressWarnings("removal")
-            OSInfo.OSType osType = AccessController.doPrivileged(OSInfo.getOSTypeAction());
-            if (osType == OSInfo.OSType.WINDOWS) {
+            if (OSInfo.getOSType() == OSInfo.OSType.WINDOWS) {
                 isWindows = true;
                 @SuppressWarnings("removal")
                 String systemFonts = AccessController.doPrivileged(
@@ -272,6 +270,7 @@ public class MetalLookAndFeel extends BasicLookAndFeel
               "FileChooserUI", metalPackageName + "MetalFileChooserUI",
             "InternalFrameUI", metalPackageName + "MetalInternalFrameUI",
                     "LabelUI", metalPackageName + "MetalLabelUI",
+                  "MenuBarUI", metalPackageName + "MetalMenuBarUI",
        "PopupMenuSeparatorUI", metalPackageName + "MetalPopupMenuSeparatorUI",
               "ProgressBarUI", metalPackageName + "MetalProgressBarUI",
               "RadioButtonUI", metalPackageName + "MetalRadioButtonUI",
@@ -1188,7 +1187,7 @@ public class MetalLookAndFeel extends BasicLookAndFeel
                               "KP_DOWN", "selectNextRow",
                            "shift DOWN", "selectNextRowExtendSelection",
                         "shift KP_DOWN", "selectNextRowExtendSelection",
-                      "ctrl shift DOWN", "selectNextRowExtendSelection",
+                      "ctrl shift DOWN", "selectLastRowExtendSelection",
                    "ctrl shift KP_DOWN", "selectNextRowExtendSelection",
                             "ctrl DOWN", "selectNextRowChangeLead",
                          "ctrl KP_DOWN", "selectNextRowChangeLead",
@@ -1196,7 +1195,7 @@ public class MetalLookAndFeel extends BasicLookAndFeel
                                 "KP_UP", "selectPreviousRow",
                              "shift UP", "selectPreviousRowExtendSelection",
                           "shift KP_UP", "selectPreviousRowExtendSelection",
-                        "ctrl shift UP", "selectPreviousRowExtendSelection",
+                        "ctrl shift UP", "selectFirstRowExtendSelection",
                      "ctrl shift KP_UP", "selectPreviousRowExtendSelection",
                               "ctrl UP", "selectPreviousRowChangeLead",
                            "ctrl KP_UP", "selectPreviousRowChangeLead",
@@ -2140,8 +2139,7 @@ public class MetalLookAndFeel extends BasicLookAndFeel
 
     /**
      * Returns a {@code LayoutStyle} implementing the Java look and feel
-     * design guidelines as specified at
-     * <a href="http://www.oracle.com/technetwork/java/hig-136467.html">http://www.oracle.com/technetwork/java/hig-136467.html</a>.
+     * design guidelines.
      *
      * @return LayoutStyle implementing the Java look and feel design
      *         guidelines

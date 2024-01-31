@@ -27,8 +27,8 @@
 #include "runtime/timer.hpp"
 #include "utilities/ticks.hpp"
 
-ZMetronome::ZMetronome(uint64_t hz) :
-    _monitor(Monitor::nosafepoint, "ZMetronome_lock"),
+ZMetronome::ZMetronome(uint64_t hz)
+  : _monitor(Monitor::nosafepoint, "ZMetronome_lock"),
     _interval_ms(MILLIUNITS / hz),
     _start_ms(0),
     _nticks(0),

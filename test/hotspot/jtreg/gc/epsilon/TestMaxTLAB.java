@@ -48,29 +48,36 @@ package gc.epsilon;
  *                   -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
  *                   -XX:EpsilonMaxTLABSize=12345
  *                   gc.epsilon.TestMaxTLAB
- *
+ */
+
+/**
+ * @test TestMaxTLAB
+ * @requires vm.gc.Epsilon
+ * @requires vm.bits == "64"
+ * @summary Check EpsilonMaxTLAB options
+ * @bug 8212177
  * @run main/othervm -Xmx64m
  *                   -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
  *                   -XX:EpsilonMaxTLABSize=1
- *                   -XX:+IgnoreUnrecognizedVMOptions -XX:ObjectAlignmentInBytes=16
+ *                   -XX:ObjectAlignmentInBytes=16
  *                   gc.epsilon.TestMaxTLAB
  *
  * @run main/othervm -Xmx64m
  *                   -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
  *                   -XX:EpsilonMaxTLABSize=1K
- *                   -XX:+IgnoreUnrecognizedVMOptions -XX:ObjectAlignmentInBytes=16
+ *                   -XX:ObjectAlignmentInBytes=16
  *                   gc.epsilon.TestMaxTLAB
  *
  * @run main/othervm -Xmx64m
  *                   -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
  *                   -XX:EpsilonMaxTLABSize=1M
- *                   -XX:+IgnoreUnrecognizedVMOptions -XX:ObjectAlignmentInBytes=16
+ *                   -XX:ObjectAlignmentInBytes=16
  *                   gc.epsilon.TestMaxTLAB
  *
  * @run main/othervm -Xmx64m
  *                   -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
  *                   -XX:EpsilonMaxTLABSize=12345
- *                   -XX:+IgnoreUnrecognizedVMOptions -XX:ObjectAlignmentInBytes=16
+ *                   -XX:ObjectAlignmentInBytes=16
  *                   gc.epsilon.TestMaxTLAB
  */
 

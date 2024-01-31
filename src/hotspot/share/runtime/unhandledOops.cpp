@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/unhandledOops.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -35,7 +35,7 @@ const int free_list_size = 256;
 
 UnhandledOops::UnhandledOops(Thread* thread) {
   _thread = thread;
-  _oop_list = new (ResourceObj::C_HEAP, mtThread)
+  _oop_list = new (mtThread)
                     GrowableArray<UnhandledOopEntry>(free_list_size, mtThread);
   _level = 0;
 }
@@ -55,7 +55,7 @@ void UnhandledOops::dump_oops(UnhandledOops *list) {
 
 // For debugging unhandled oop detector _in the debugger_
 // You don't want to turn it on in compiled code here.
-static Thread* unhandled_oop_print = NULL;
+static Thread* unhandled_oop_print = nullptr;
 
 void UnhandledOops::register_unhandled_oop(oop* op) {
   if (!_thread->is_in_live_stack((address)op)) {
@@ -71,11 +71,6 @@ void UnhandledOops::register_unhandled_oop(oop* op) {
   _oop_list->push(entry);
 }
 
-
-bool match_oop_entry(void *op, UnhandledOopEntry e) {
-  return (e.oop_ptr() == op);
-}
-
 // Mark unhandled oop as okay for GC - the containing struct has an oops_do and
 // for some reason the oop has to be on the stack.
 // May not be called for the current thread, as in the case of
@@ -83,7 +78,9 @@ bool match_oop_entry(void *op, UnhandledOopEntry e) {
 void UnhandledOops::allow_unhandled_oop(oop* op) {
   assert (CheckUnhandledOops, "should only be called with checking option");
 
-  int i = _oop_list->find_from_end(op, match_oop_entry);
+  int i = _oop_list->find_from_end_if([&](const UnhandledOopEntry& e) {
+    return e.match_oop_entry(op);
+  });
   assert(i!=-1, "safe for gc oop not in unhandled_oop_list");
 
   UnhandledOopEntry entry = _oop_list->at(i);
@@ -105,7 +102,9 @@ void UnhandledOops::unregister_unhandled_oop(oop* op) {
   }
   _level--;
 
-  int i = _oop_list->find_from_end(op, match_oop_entry);
+  int i = _oop_list->find_from_end_if([&](const UnhandledOopEntry& e) {
+    return e.match_oop_entry(op);
+  });
   assert(i!=-1, "oop not in unhandled_oop_list");
   _oop_list->remove_at(i);
 }

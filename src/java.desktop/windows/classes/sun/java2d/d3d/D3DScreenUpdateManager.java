@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,7 +124,7 @@ public class D3DScreenUpdateManager extends ScreenUpdateManager
      * Note that this method is called from a synchronized block in
      * WComponentPeer, so we don't need to synchronize
      *
-     * Note that we only create a substibute d3dw surface if certain conditions
+     * Note that we only create a substitute d3dw surface if certain conditions
      * are met
      * <ul>
      *  <li>the fake d3d rendering on screen is not disabled via flag
@@ -258,7 +258,7 @@ public class D3DScreenUpdateManager extends ScreenUpdateManager
     {
         if (!done && sd instanceof D3DWindowSurfaceData) {
             D3DWindowSurfaceData d3dw = (D3DWindowSurfaceData)sd;
-            if (!d3dw.isSurfaceLost() || validate(d3dw, false)) {
+            if (!d3dw.isSurfaceLost() || validate(d3dw)) {
                 trackScreenSurface(d3dw);
                 return new SunGraphics2D(sd, fgColor, bgColor, font);
             }
@@ -452,7 +452,7 @@ public class D3DScreenUpdateManager extends ScreenUpdateManager
                         } finally {
                             rq.unlock();
                         }
-                    } else if (!validate(sd, true)) {
+                    } else if (!validate(sd)) {
                         // it is possible that the validation may never
                         // succeed, we need to detect this and replace
                         // the d3dw surface with gdi; the replacement of
@@ -474,7 +474,7 @@ public class D3DScreenUpdateManager extends ScreenUpdateManager
      * @return true if surface wasn't lost or if restoration was successful,
      * false otherwise
      */
-    private boolean validate(D3DWindowSurfaceData sd, boolean postEvent) {
+    private boolean validate(D3DWindowSurfaceData sd) {
         if (sd.isSurfaceLost()) {
             try {
                 sd.restoreSurface();
@@ -491,9 +491,7 @@ public class D3DScreenUpdateManager extends ScreenUpdateManager
                 sd.markClean();
                 // since the surface was successfully restored we need to
                 // repaint whole window to repopulate the back-buffer
-                if (postEvent) {
-                    repaintPeerTarget(sd.getPeer());
-                }
+                repaintPeerTarget(sd.getPeer());
             } catch (InvalidPipeException ipe) {
                 return false;
             }

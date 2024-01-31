@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ ShenandoahOnStackCodeBlobClosure::ShenandoahOnStackCodeBlobClosure() :
 
 void ShenandoahOnStackCodeBlobClosure::do_code_blob(CodeBlob* cb) {
   nmethod* const nm = cb->as_nmethod_or_null();
-  if (nm != NULL) {
+  if (nm != nullptr) {
     const bool result = _bs_nm->nmethod_entry_barrier(nm);
     assert(result, "NMethod on-stack must be alive");
   }
@@ -68,7 +68,7 @@ ShenandoahStackWatermark::ShenandoahStackWatermark(JavaThread* jt) :
   _cb_cl() {}
 
 OopClosure* ShenandoahStackWatermark::closure_from_context(void* context) {
-  if (context != NULL) {
+  if (context != nullptr) {
     assert(_heap->is_concurrent_weak_root_in_progress() ||
            _heap->is_concurrent_mark_in_progress(),
            "Only these two phases");
@@ -82,7 +82,7 @@ OopClosure* ShenandoahStackWatermark::closure_from_context(void* context) {
       return &_evac_update_oop_cl;
     } else {
       ShouldNotReachHere();
-      return NULL;
+      return nullptr;
     }
   }
 }
@@ -130,7 +130,7 @@ void ShenandoahStackWatermark::retire_tlab() {
 
 void ShenandoahStackWatermark::process(const frame& fr, RegisterMap& register_map, void* context) {
   OopClosure* oops = closure_from_context(context);
-  assert(oops != NULL, "Should not get to here");
+  assert(oops != nullptr, "Should not get to here");
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   assert((heap->is_concurrent_weak_root_in_progress() && heap->is_evacuation_in_progress()) ||
          heap->is_concurrent_mark_in_progress(),

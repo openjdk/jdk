@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,6 +82,8 @@ static JNINativeMethod methods[] = {
     {"getRecordComponents0", "()[" RC,      (void *)&JVM_GetRecordComponents},
     {"isRecord0",            "()Z",         (void *)&JVM_IsRecord},
     {"getPermittedSubclasses0", "()[" CLS,  (void *)&JVM_GetPermittedSubclasses},
+    {"getClassFileVersion0", "()I",         (void *)&JVM_GetClassFileVersion},
+    {"getClassAccessFlagsRaw0", "()I",      (void *)&JVM_GetClassAccessFlags},
 };
 
 #undef OBJ

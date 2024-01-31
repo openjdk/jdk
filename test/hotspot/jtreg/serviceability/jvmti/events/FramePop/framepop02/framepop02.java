@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,22 +38,20 @@
  *     4504077 java: dbx should not hold on to a frameid after thread suspension
  *     Ported from JVMDI.
  *
- * @requires vm.continuations
  * @library /test/lib
- * @compile --enable-preview -source ${jdk.version} framepop02.java
- * @run main/othervm/native --enable-preview -agentlib:framepop02 framepop02 platform
+ * @compile framepop02.java
+ * @run main/othervm/native -agentlib:framepop02 framepop02 platform
  */
 /*
  * @test
- * @requires vm.continuations
  * @library /test/lib
- * @compile --enable-preview -source ${jdk.version} framepop02.java
- * @run main/othervm/native --enable-preview -agentlib:framepop02 framepop02 virtual
+ * @compile framepop02.java
+ * @run main/othervm/native -agentlib:framepop02 framepop02 virtual
  */
 
 public class framepop02 {
 
-    final static int MAX_THREADS_LIMIT = 32;
+    final static int MAX_THREADS_LIMIT = 20;
     final static int NESTING_DEPTH = 20;
     final static String TEST_THREAD_NAME_BASE = "Test Thread #";
 

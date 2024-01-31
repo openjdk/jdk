@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -956,12 +956,9 @@ public class BasicPopupMenuUI extends PopupMenuUI {
                     popup.putClientProperty("JPopupMenu.firePopupMenuCanceled", Boolean.TRUE);
                 }
                 MenuSelectionManager.defaultManager().clearSelectedPath();
-            } catch (RuntimeException ex) {
+            } catch (RuntimeException | Error e) {
                 realUngrabWindow();
-                throw ex;
-            } catch (Error err) {
-                realUngrabWindow();
-                throw err;
+                throw e;
             }
         }
 
@@ -1029,8 +1026,8 @@ public class BasicPopupMenuUI extends PopupMenuUI {
         void removeItems() {
             if (lastFocused != null) {
                 if(!lastFocused.requestFocusInWindow()) {
-                    // Workarounr for 4810575.
-                    // If lastFocused is not in currently focused window
+                    // Workaround for 4810575.
+                    // If lastFocused is not in currently focused window,
                     // requestFocusInWindow will fail. In this case we must
                     // request focus by requestFocus() if it was not
                     // transferred from our popup.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,15 @@ import jdk.jshell.execution.RemoteExecutionControl;
 import jdk.jshell.spi.ExecutionControlProvider;
 
 /**
- * Hang for three minutes (long enough to cause a timeout).
+ * HangingRemoteAgent main() runs in its loop for 2X the timeout
+ * we give the launcher to fail to attach.
  */
 class HangingRemoteAgent extends RemoteExecutionControl {
 
-    private static final long DELAY = 4000L;
-    private static final int TIMEOUT = 2000;
+    private static float timeoutFactor = Float.parseFloat(System.getProperty("test.timeout.factor", "1.0"));
+
+    private static final int TIMEOUT = (int)(2000 * timeoutFactor);
+    private static final long DELAY = TIMEOUT * 2L;
     private static final boolean INFRA_VERIFY = false;
 
     public static void main(String[] args) throws Exception {

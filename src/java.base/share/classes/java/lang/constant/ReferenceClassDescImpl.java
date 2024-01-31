@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,7 @@ package java.lang.constant;
 
 import java.lang.invoke.MethodHandles;
 
-import static java.lang.constant.ConstantUtils.dropFirstAndLastChar;
-import static java.lang.constant.ConstantUtils.internalToBinary;
+import static java.lang.constant.ConstantUtils.*;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -40,7 +39,7 @@ final class ReferenceClassDescImpl implements ClassDesc {
 
     /**
      * Creates a {@linkplain ClassDesc} from a descriptor string for a class or
-     * interface type
+     * interface type or an array type.
      *
      * @param descriptor a field descriptor string for a class or interface type
      * @throws IllegalArgumentException if the descriptor string is not a valid
@@ -64,19 +63,28 @@ final class ReferenceClassDescImpl implements ClassDesc {
     @Override
     public Class<?> resolveConstantDesc(MethodHandles.Lookup lookup)
             throws ReflectiveOperationException {
-        ClassDesc c = this;
-        int depth = ConstantUtils.arrayDepth(descriptorString());
-        for (int i=0; i<depth; i++)
-            c = c.componentType();
-
-        if (c.isPrimitive())
-            return lookup.findClass(descriptorString());
-        else {
-            Class<?> clazz = lookup.findClass(internalToBinary(dropFirstAndLastChar(c.descriptorString())));
+        if (isArray()) {
+            if (isPrimitiveArray()) {
+                return lookup.findClass(descriptor);
+            }
+            // Class.forName is slow on class or interface arrays
+            int depth = ConstantUtils.arrayDepth(descriptor);
+            Class<?> clazz = lookup.findClass(internalToBinary(descriptor.substring(depth + 1, descriptor.length() - 1)));
             for (int i = 0; i < depth; i++)
                 clazz = clazz.arrayType();
             return clazz;
         }
+        return lookup.findClass(internalToBinary(dropFirstAndLastChar(descriptor)));
+    }
+
+    /**
+     * Whether the descriptor is one of a primitive array, given this is
+     * already a valid reference type descriptor.
+     */
+    private boolean isPrimitiveArray() {
+        // All L-type descriptors must end with a semicolon; same for reference
+        // arrays, leaving primitive arrays the only ones without a final semicolon
+        return descriptor.charAt(descriptor.length() - 1) != ';';
     }
 
     /**

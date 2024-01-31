@@ -385,7 +385,6 @@ public class DefaultDesktopManager implements DesktopManager, java.io.Serializab
               if (!sData.isSurfaceLost()) {
                   currentLoc = new Point (newX, newY);
               }
-;
               g.dispose();
             }
         } else if (dragMode == FASTER_DRAG_MODE) {
@@ -726,7 +725,7 @@ public class DefaultDesktopManager implements DesktopManager, java.io.Serializab
           } else {
               dirtyRects = new Rectangle[1];
               dirtyRects[0] = previousBounds;
-          };
+          }
 
           // Fix the damage
           for (int i = 0; i < dirtyRects.length; i++) {

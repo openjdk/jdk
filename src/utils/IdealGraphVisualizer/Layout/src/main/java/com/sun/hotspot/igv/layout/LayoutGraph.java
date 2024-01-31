@@ -31,14 +31,14 @@ import java.util.*;
  */
 public class LayoutGraph {
 
-    private Set<? extends Link> links;
-    private SortedSet<Vertex> vertices;
-    private HashMap<Vertex, Set<Port>> inputPorts;
-    private HashMap<Vertex, Set<Port>> outputPorts;
-    private HashMap<Port, Set<Link>> portLinks;
+    private final Set<? extends Link> links;
+    private final SortedSet<Vertex> vertices;
+    private final HashMap<Vertex, Set<Port>> inputPorts;
+    private final HashMap<Vertex, Set<Port>> outputPorts;
+    private final HashMap<Port, Set<Link>> portLinks;
 
     public LayoutGraph(Set<? extends Link> links) {
-        this(links, new HashSet<Vertex>());
+        this(links, new HashSet<>());
     }
 
     public LayoutGraph(Set<? extends Link> links, Set<? extends Vertex> additionalVertices) {
@@ -61,8 +61,8 @@ public class LayoutGraph {
 
             if (!vertices.contains(v1)) {
 
-                outputPorts.put(v1, new HashSet<Port>(1));
-                inputPorts.put(v1, new HashSet<Port>(3));
+                outputPorts.put(v1, new HashSet<>(1));
+                inputPorts.put(v1, new HashSet<>(3));
                 vertices.add(v1);
                 assert vertices.contains(v1);
             }
@@ -70,8 +70,8 @@ public class LayoutGraph {
             if (!vertices.contains(v2)) {
                 vertices.add(v2);
                 assert vertices.contains(v2);
-                outputPorts.put(v2, new HashSet<Port>(1));
-                inputPorts.put(v2, new HashSet<Port>(3));
+                outputPorts.put(v2, new HashSet<>(1));
+                inputPorts.put(v2, new HashSet<>(3));
             }
 
             if (!portLinks.containsKey(p)) {
@@ -80,7 +80,7 @@ public class LayoutGraph {
             }
 
             if (!portLinks.containsKey(p2)) {
-                portLinks.put(p2, new HashSet<Link>(3));
+                portLinks.put(p2, new HashSet<>(3));
             }
 
             outputPorts.get(v1).add(p);
@@ -92,10 +92,9 @@ public class LayoutGraph {
 
         for (Vertex v : additionalVertices) {
             if (!vertices.contains(v)) {
-                outputPorts.put(v, new HashSet<Port>(1));
-                inputPorts.put(v, new HashSet<Port>(3));
+                outputPorts.put(v, new HashSet<>(1));
+                inputPorts.put(v, new HashSet<>(3));
                 vertices.add(v);
-                vertices.contains(v);
             }
         }
     }
@@ -184,12 +183,12 @@ public class LayoutGraph {
     }
 
     public Set<Vertex> findRootVertices() {
-        return findRootVertices(new HashSet<Vertex>());
+        return findRootVertices(new HashSet<>());
     }
 
     public SortedSet<Cluster> getClusters() {
 
-        SortedSet<Cluster> clusters = new TreeSet<Cluster>();
+        SortedSet<Cluster> clusters = new TreeSet<>();
         for (Vertex v : getVertices()) {
             if (v.getCluster() != null) {
                 clusters.add(v.getCluster());

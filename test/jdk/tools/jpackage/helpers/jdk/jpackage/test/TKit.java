@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,10 +178,6 @@ final public class TKit {
 
     public static boolean isOSX() {
         return (OS.contains("mac"));
-    }
-
-    public static boolean isArmMac() {
-        return (isOSX() && "aarch64".equals(System.getProperty("os.arch")));
     }
 
     public static boolean isLinux() {
@@ -697,6 +693,12 @@ final public class TKit {
         assertPathExists(path, true);
         assertTrue(path.toFile().isDirectory(), String.format(
                 "Check [%s] is a directory", path));
+    }
+
+    public static void assertSymbolicLinkExists(Path path) {
+        assertPathExists(path, true);
+        assertTrue(Files.isSymbolicLink(path), String.format
+                ("Check [%s] is a symbolic link", path));
     }
 
     public static void assertFileExists(Path path) {

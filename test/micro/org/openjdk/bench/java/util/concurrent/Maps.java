@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,16 @@ package org.openjdk.bench.java.util.concurrent;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Threads;
+import org.openjdk.jmh.annotations.Warmup;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,9 +43,13 @@ import java.util.concurrent.atomic.AtomicLong;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Benchmark)
+@Warmup(iterations = 5, time = 1)
+@Measurement(iterations = 5, time = 1)
+@Fork(3)
 public class Maps {
     private SimpleRandom rng;
     private Map<Integer, Integer> map;
+    private Map<Integer, Integer> staticMap;
     private Integer[] key;
 
     private int removesPerMaxRandom;
@@ -49,9 +57,11 @@ public class Maps {
     private int total;
     private int position;
 
+    @Param("10000")
+    private int nkeys;
+
     @Setup
     public void initTest() {
-        int nkeys = 10000;
         int pRemove = 10;
         int pInsert = 90;
         removesPerMaxRandom = (int) ((pRemove / 100.0 * 0x7FFFFFFFL));
@@ -59,10 +69,12 @@ public class Maps {
 
         rng = new SimpleRandom();
         map = new ConcurrentHashMap<>();
+        staticMap = new ConcurrentHashMap<>();
         total = 0;
         key = new Integer[nkeys];
         for (int i = 0; i < key.length; ++i) {
             key[i] = rng.next();
+            staticMap.put(rng.next(), rng.next());
         }
         position = key.length / 2;
     }
@@ -98,6 +110,21 @@ public class Maps {
         }
         total += r;
         position = pos;
+    }
+
+    @Benchmark
+    public ConcurrentHashMap<Integer, Integer> testConcurrentHashMapCopyConstructor() {
+        return new ConcurrentHashMap<>(staticMap);
+    }
+
+    @Benchmark
+    public ConcurrentHashMap<Integer, Integer> testConcurrentHashMapPutAll() {
+        ConcurrentHashMap<Integer, Integer> map = new ConcurrentHashMap<>(nkeys);
+        for (int i = 0; i < nkeys; ++i) {
+            map.put(rng.next(), rng.next());
+        }
+        map.putAll(staticMap);
+        return map;
     }
 
     private static class SimpleRandom {

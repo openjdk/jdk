@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamException;
 import java.io.ObjectStreamField;
+import java.util.Locale;
 
 /**
  *
@@ -53,13 +54,13 @@ public class InetSocketAddress
     extends SocketAddress
 {
     // Private implementation class pointed to by all public methods.
-    private static class InetSocketAddressHolder {
+    private static final class InetSocketAddressHolder {
         // The hostname of the Socket Address
-        private String hostname;
+        private final String hostname;
         // The IP address of the Socket Address
-        private InetAddress addr;
+        private final InetAddress addr;
         // The port number of the Socket Address
-        private int port;
+        private final int port;
 
         private InetSocketAddressHolder(String hostname, InetAddress addr, int port) {
             this.hostname = hostname;
@@ -137,7 +138,7 @@ public class InetSocketAddress
             if (addr != null)
                 return addr.hashCode() + port;
             if (hostname != null)
-                return hostname.toLowerCase().hashCode() + port;
+                return hostname.toLowerCase(Locale.ROOT).hashCode() + port;
             return port;
         }
     }

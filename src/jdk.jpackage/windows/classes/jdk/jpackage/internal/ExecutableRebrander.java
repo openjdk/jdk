@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,7 @@ final class ExecutableRebrander {
                     createSubstituteData(
                             params), target);
             if (icon != null) {
-                iconSwap(resourceLock, icon.toString());
+                iconSwapWrapper(resourceLock, icon.toString());
             }
         });
     }
@@ -131,17 +131,25 @@ final class ExecutableRebrander {
                     I18N.getString("error.lock-resource"), target));
             }
 
+            final boolean resourceUnlockedSuccess;
             try {
                 action.editResource(resourceLock);
                 if (extraActions != null) {
-                    for (UpdateResourceAction extraAction: extraActions) {
+                    for (UpdateResourceAction extraAction : extraActions) {
                         extraAction.editResource(resourceLock);
                     }
                 }
             } finally {
-                if (resourceLock != 0) {
-                    unlockResource(resourceLock);
+                if (resourceLock == 0) {
+                    resourceUnlockedSuccess = true;
+                } else {
+                    resourceUnlockedSuccess = unlockResource(resourceLock);
                 }
+            }
+
+            if (!resourceUnlockedSuccess) {
+                throw new RuntimeException(MessageFormat.format(I18N.getString(
+                        "error.unlock-resource"), target));
             }
         } finally {
             target.toFile().setReadOnly();
@@ -208,10 +216,8 @@ final class ExecutableRebrander {
             });
         }
 
-        if (versionSwap(resourceLock, propList.toArray(String[]::new)) != 0) {
-            throw new RuntimeException(MessageFormat.format(
-                    I18N.getString("error.version-swap"), target));
-        }
+        versionSwapWrapper(resourceLock, propList.toArray(String[]::new),
+                target.toString());
     }
 
     private static void validateValueAndPut(
@@ -228,6 +234,22 @@ final class ExecutableRebrander {
         data.put(key, value);
     }
 
+    private static void iconSwapWrapper(long resourceLock,
+            String iconTarget) {
+        if (iconSwap(resourceLock, iconTarget) != 0) {
+            throw new RuntimeException(MessageFormat.format(I18N.getString(
+                    "error.icon-swap"), iconTarget));
+        }
+    }
+
+    private static void versionSwapWrapper(long resourceLock,
+            String[] executableProperties, String target) {
+        if (versionSwap(resourceLock, executableProperties) != 0) {
+            throw new RuntimeException(MessageFormat.format(I18N.getString(
+                    "error.version-swap"), target));
+        }
+    }
+
     private List<UpdateResourceAction> extraActions;
 
     static {
@@ -236,7 +258,7 @@ final class ExecutableRebrander {
 
     private static native long lockResource(String executable);
 
-    private static native void unlockResource(long resourceLock);
+    private static native boolean unlockResource(long resourceLock);
 
     private static native int iconSwap(long resourceLock, String iconTarget);
 

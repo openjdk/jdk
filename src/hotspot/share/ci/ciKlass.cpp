@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ ciKlass::ciKlass(Klass* k) : ciType(k) {
   Klass* klass = get_Klass();
   _layout_helper = klass->layout_helper();
   Symbol* klass_name = klass->name();
-  assert(klass_name != NULL, "wrong ciKlass constructor");
+  assert(klass_name != nullptr, "wrong ciKlass constructor");
   _name = CURRENT_ENV->get_symbol(klass_name);
 }
 
@@ -136,7 +136,7 @@ ciKlass* ciKlass::super_of_depth(juint i) {
   VM_ENTRY_MARK;
   Klass* this_klass = get_Klass();
   Klass* super = this_klass->primary_super_of_depth(i);
-  return (super != NULL) ? CURRENT_THREAD_ENV->get_klass(super) : NULL;
+  return (super != nullptr) ? CURRENT_THREAD_ENV->get_klass(super) : nullptr;
 }
 
 // ------------------------------------------------------------------
@@ -233,6 +233,7 @@ jint ciKlass::access_flags() {
 void ciKlass::print_impl(outputStream* st) {
   st->print(" name=");
   print_name_on(st);
+  st->print(" loaded=%s", (is_loaded() ? "true" : "false"));
 }
 
 // ------------------------------------------------------------------

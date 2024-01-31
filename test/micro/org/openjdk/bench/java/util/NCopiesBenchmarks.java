@@ -7,7 +7,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @see <a href="https://bugs.openjdk.java.net/browse/JDK-8274715">JDK-8274715</a>
+ * @see <a href="https://bugs.openjdk.org/browse/JDK-8274715">JDK-8274715</a>
  */
 @Fork(value = 3)
 @State(Scope.Thread)

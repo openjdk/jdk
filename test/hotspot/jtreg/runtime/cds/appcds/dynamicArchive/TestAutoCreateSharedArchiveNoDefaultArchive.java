@@ -102,21 +102,18 @@ public class TestAutoCreateSharedArchiveNoDefaultArchive {
             }
         }
 
-        // Now rename classes.jsa to old-classes.jsa
-        String dstDir = java_home_dst + File.separator + "lib" + File.separator + "server";
-        CDSTestUtils.rename(new File(dstDir + File.separator +  "classes.jsa"),
-                            new File(dstDir + File.separator +  "old-classes.jsa"));
-        System.out.println("======= renamed classes.jsa to old-classes.jsa");
-
+        // Remove all possible default archives
+        removeDefaultArchives(java_home_dst, "zero");
+        removeDefaultArchives(java_home_dst, "server");
+        removeDefaultArchives(java_home_dst, "client");
         {
             ProcessBuilder pb = CDSTestUtils.makeBuilder(dstJava,
                                                          "-Xlog:cds",
                                                          "-version");
             TestCommon.executeAndLog(pb, "show-version")
                       .shouldHaveExitValue(0)
-                      .shouldContain("UseSharedSpaces: Initialize static archive failed")
-                      .shouldContain("UseSharedSpaces: Unable to map shared spaces")
-                      .shouldContain("mixed mode")
+                      .shouldContain("Initialize static archive failed")
+                      .shouldContain("Unable to map shared spaces")
                       .shouldNotContain("sharing");
         }
         // delete existing jsa file
@@ -135,13 +132,26 @@ public class TestAutoCreateSharedArchiveNoDefaultArchive {
                                                          mainClass);
             TestCommon.executeAndLog(pb, "no-default-archive")
                       .shouldHaveExitValue(0)
-                      .shouldContain("UseSharedSpaces: Initialize static archive failed")
-                      .shouldContain("UseSharedSpaces: Unable to map shared spaces")
+                      .shouldContain("Initialize static archive failed")
+                      .shouldContain("Unable to map shared spaces")
                       .shouldNotContain("Dumping shared data to file");
             if (jsaFile.exists()) {
                 throw new RuntimeException("Archive file " + jsaFileName + " should not be created at exit");
             }
         }
+    }
 
+    private static void removeDefaultArchives(String java_home_dst, String variant) {
+        removeDefaultArchive(java_home_dst, variant, "");
+        removeDefaultArchive(java_home_dst, variant, "_nocoops");
+    }
+
+    private static void removeDefaultArchive(String java_home_dst, String variant, String suffix) {
+        String fileName = java_home_dst + File.separator + "lib" + File.separator + variant +
+                          File.separator +  "classes" + suffix + ".jsa";
+        File f = new File(fileName);
+        if (f.delete()) {
+            System.out.println("======= removed " + fileName);
+        }
     }
 }

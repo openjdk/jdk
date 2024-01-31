@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,8 @@ import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -55,7 +55,7 @@ public final class MultipleContextsFunctionalTest {
     private static final int CHECK_LAPSE = 100;
     private static final int MAX_COUNT = MAX_TIME / INTERVAL;
     private static final int EXPECTED = MAX_COUNT * NUM_WINDOW;
-    private static final List<TestWindow> WINDOWS = new ArrayList<TestWindow>();
+    private static final List<TestWindow> WINDOWS = new CopyOnWriteArrayList<>();
 
     public static void main(String[] args) {
         for (int i = 0; i < NUM_WINDOW; i++) {
@@ -126,7 +126,7 @@ public final class MultipleContextsFunctionalTest {
     private static final class TestWindow extends JFrame implements ActionListener {
 
         private final JButton btn;
-        private int counter = 0;
+        private volatile int counter = 0;
         private final Timer t;
 
         TestWindow(final int num) {

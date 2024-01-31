@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,9 @@ import javax.net.ssl.TrustManagerFactory;
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.SECONDS)
 @State(Scope.Benchmark)
+@Warmup(iterations = 5, time = 5)
+@Measurement(iterations = 5, time = 5)
+@Fork(value = 3)
 public class SSLHandshake {
 
     private SSLContext sslc;
@@ -77,11 +80,12 @@ public class SSLHandshake {
         KeyStore ks = TestCertificates.getKeyStore();
         KeyStore ts = TestCertificates.getTrustStore();
 
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance(
+                KeyManagerFactory.getDefaultAlgorithm());
         kmf.init(ks, new char[0]);
 
-        TrustManagerFactory tmf =
-                TrustManagerFactory.getInstance("SunX509");
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance(
+                TrustManagerFactory.getDefaultAlgorithm());
         tmf.init(ts);
 
         SSLContext sslCtx = SSLContext.getInstance(tlsVersion);
@@ -109,9 +113,6 @@ public class SSLHandshake {
      * The client and the server both operate on the same thread.
      */
     @Benchmark
-    @Warmup(iterations = 5, time = 5, timeUnit = TimeUnit.SECONDS)
-    @Measurement(iterations = 5, time = 5, timeUnit = TimeUnit.SECONDS)
-    @Fork(3)
     public SSLSession doHandshake() throws Exception {
 
         createSSLEngines();

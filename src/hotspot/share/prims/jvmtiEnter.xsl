@@ -49,6 +49,8 @@
 # include "prims/jvmtiUtil.hpp"
 # include "runtime/fieldDescriptor.inline.hpp"
 # include "runtime/jniHandles.hpp"
+# include "runtime/thread.inline.hpp"
+# include "runtime/threads.hpp"
 # include "runtime/threadSMR.hpp"
 
 </xsl:text>
@@ -172,7 +174,7 @@ jint </xsl:text>
   <xsl:text>
 
 // Check Event Capabilities
-const bool JvmtiUtil::has_event_capability(jvmtiEvent event_type, const jvmtiCapabilities* capabilities_ptr) {
+bool JvmtiUtil::has_event_capability(jvmtiEvent event_type, const jvmtiCapabilities* capabilities_ptr) {
   switch (event_type) {
 </xsl:text>
   <xsl:for-each select="//eventsection/event">
@@ -1233,7 +1235,7 @@ static jvmtiError JNICALL
   <xsl:param name="name"/>
   <xsl:text> </xsl:text>
   <xsl:value-of select="$name"/>
-  <xsl:text>=" SIZE_FORMAT_HEX "</xsl:text>
+  <xsl:text>=" SIZE_FORMAT_X "</xsl:text>
 </xsl:template>
 
 <xsl:template match="jfloat|jdouble" mode="traceInFormat">

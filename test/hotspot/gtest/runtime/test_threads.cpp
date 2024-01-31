@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,9 @@
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -146,18 +147,17 @@ public:
     ASSERT_EQ(max_uintx, thread_claim_token());
 
     CountThreads count2(thread_claim_token(), false); // Claimed by PPTD below
-    possibly_parallel_threads_do(true, &count2);
+    possibly_parallel_threads_do(true /* is_par */, &count2);
     ASSERT_EQ(count1.java_threads_count(), count2.java_threads_count());
-    ASSERT_EQ(1u, count2.non_java_threads_count()); // Only VM thread
+    ASSERT_EQ(count1.non_java_threads_count(), count2.non_java_threads_count());
 
     CheckClaims check2(thread_claim_token());
     threads_do(&check2);
     ASSERT_EQ(count2.java_threads_count(), check2.java_threads_claimed());
     ASSERT_EQ(0u, check2.java_threads_unclaimed());
-    ASSERT_EQ(1u, check2.non_java_threads_claimed()); // Only VM thread
+    ASSERT_EQ(0u, check2.non_java_threads_unclaimed());
     ASSERT_EQ(count1.non_java_threads_count(),
-              check2.non_java_threads_claimed() +
-              check2.non_java_threads_unclaimed());
+              check2.non_java_threads_claimed());
 
     change_thread_claim_token(); // Expect overflow.
     ASSERT_EQ(uintx(1), thread_claim_token());
@@ -185,7 +185,7 @@ TEST_VM(ThreadsTest, fast_jni_in_vm) {
   // DirectByteBuffer is an easy way to trigger GetIntField,
   // see JDK-8262896
   jlong capacity = 0x10000;
-  jobject buffer = env->NewDirectByteBuffer(NULL, (jlong)capacity);
-  ASSERT_NE((void*)NULL, buffer);
+  jobject buffer = env->NewDirectByteBuffer(nullptr, (jlong)capacity);
+  ASSERT_NE((void*)nullptr, buffer);
   ASSERT_EQ(capacity, env->GetDirectBufferCapacity(buffer));
 }

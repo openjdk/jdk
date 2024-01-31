@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,6 +78,7 @@ import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.time.DateTimeException;
 import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.Chronology;
 import java.time.format.ResolverStyle;
@@ -293,6 +294,14 @@ public final class WeekFields implements Serializable {
      * those extensions. If both "fw" and "rg" are specified, the value from
      * the "fw" extension supersedes the implicit one from the "rg" extension.
      *
+     * <p>For example, users who are interested in using an English locale,
+     * but want the first day of the week that corresponds with the ISO-8601
+     * standard can call
+     * {@snippet lang=java :
+     * Locale enIsoLoc = Locale.forLanguageTag("en-u-fw-mon");
+     * WeekFields.of(enIsoLoc).getFirstDayOfWeek(); // returns MONDAY
+     * }
+     *
      * @param locale  the locale to use, not null
      * @return the week-definition, not null
      */
@@ -330,8 +339,10 @@ public final class WeekFields implements Serializable {
         WeekFields rules = CACHE.get(key);
         if (rules == null) {
             rules = new WeekFields(firstDayOfWeek, minimalDaysInFirstWeek);
-            CACHE.putIfAbsent(key, rules);
-            rules = CACHE.get(key);
+            WeekFields prev = CACHE.putIfAbsent(key, rules);
+            if (prev != null) {
+                rules = prev;
+            }
         }
         return rules;
     }
@@ -1029,7 +1040,7 @@ public final class WeekFields implements Serializable {
                 long weeks = Math.subtractExact(wowby, 1);
                 date = date.plus(weeks, WEEKS);
             } else {
-                int wowby = weekDef.weekOfWeekBasedYear.range().checkValidIntValue(
+                int wowby = weekDef.weekOfWeekBasedYear.rangeRefinedBy(LocalDate.of(yowby, 7, 2)).checkValidIntValue(
                         fieldValues.get(weekDef.weekOfWeekBasedYear), weekDef.weekOfWeekBasedYear);  // validate
                 date = ofWeekBasedYear(chrono, yowby, wowby, localDow);
                 if (resolverStyle == ResolverStyle.STRICT && localizedWeekBasedYear(date) != yowby) {

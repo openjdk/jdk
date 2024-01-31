@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,12 +151,13 @@ public class Threads {
         virtualConstructor.addMapping("JavaThread", JavaThread.class);
         if (!VM.getVM().isCore()) {
             virtualConstructor.addMapping("CompilerThread", CompilerThread.class);
-            virtualConstructor.addMapping("CodeCacheSweeperThread", CodeCacheSweeperThread.class);
         }
         virtualConstructor.addMapping("JvmtiAgentThread", JvmtiAgentThread.class);
         virtualConstructor.addMapping("ServiceThread", ServiceThread.class);
         virtualConstructor.addMapping("MonitorDeflationThread", MonitorDeflationThread.class);
         virtualConstructor.addMapping("NotificationThread", NotificationThread.class);
+        virtualConstructor.addMapping("StringDedupThread", StringDedupThread.class);
+        virtualConstructor.addMapping("AttachListenerThread", AttachListenerThread.class);
     }
 
     public Threads() {
@@ -164,14 +165,15 @@ public class Threads {
     }
 
     /** NOTE: this returns objects of type JavaThread, CompilerThread,
-      JvmtiAgentThread, NotificationThread, MonitorDeflationThread and ServiceThread.
-      The latter four are subclasses of the former. Most operations
+      JvmtiAgentThread, NotificationThread, MonitorDeflationThread,
+      StringDedupThread, AttachListenerThread and ServiceThread.
+      The latter seven subclasses of the former. Most operations
       (fetching the top frame, etc.) are only allowed to be performed on
       a "pure" JavaThread. For this reason, {@link
       sun.jvm.hotspot.runtime.JavaThread#isJavaThread} has been
       changed from the definition in the VM (which returns true for
       all of these thread types) to return true for JavaThreads and
-      false for the four subclasses. FIXME: should reconsider the
+      false for the seven subclasses. FIXME: should reconsider the
       inheritance hierarchy; see {@link
       sun.jvm.hotspot.runtime.JavaThread#isJavaThread}. */
     public JavaThread getJavaThreadAt(int i) {
@@ -195,7 +197,8 @@ public class Threads {
             return thread;
         } catch (Exception e) {
             throw new RuntimeException("Unable to deduce type of thread from address " + threadAddr +
-            " (expected type JavaThread, CompilerThread, MonitorDeflationThread, ServiceThread, JvmtiAgentThread or CodeCacheSweeperThread)", e);
+            " (expected type JavaThread, CompilerThread, MonitorDeflationThread, AttachListenerThread," +
+            " StringDedupThread, NotificationThread, ServiceThread or JvmtiAgentThread)", e);
         }
     }
 
@@ -211,6 +214,7 @@ public class Threads {
 
     // refer to Threads::owning_thread_from_monitor_owner
     public JavaThread owningThreadFromMonitor(Address o) {
+        assert(VM.getVM().getCommandLineFlag("LockingMode").getInt() != LockingMode.getLightweight());
         if (o == null) return null;
         for (int i = 0; i < getNumberOfThreads(); i++) {
             JavaThread thread = getJavaThreadAt(i);
@@ -228,7 +232,28 @@ public class Threads {
     }
 
     public JavaThread owningThreadFromMonitor(ObjectMonitor monitor) {
-        return owningThreadFromMonitor(monitor.owner());
+        if (VM.getVM().getCommandLineFlag("LockingMode").getInt() == LockingMode.getLightweight()) {
+            if (monitor.isOwnedAnonymous()) {
+                OopHandle object = monitor.object();
+                for (int i = 0; i < getNumberOfThreads(); i++) {
+                    JavaThread thread = getJavaThreadAt(i);
+                    if (thread.isLockOwned(object)) {
+                        return thread;
+                     }
+                }
+                // We should have found the owner, however, as the VM could be in any state, including the middle
+                // of performing GC, it is not always possible to do so. Just return null if we can't locate it.
+                System.out.println("Warning: We failed to find a thread that owns an anonymous lock. This is likely");
+                System.out.println("due to the JVM currently running a GC. Locking information may not be accurate.");
+                return null;
+            }
+            // Owner can only be threads at this point.
+            Address o = monitor.owner();
+            if (o == null) return null;
+            return new JavaThread(o);
+        } else {
+            return owningThreadFromMonitor(monitor.owner());
+        }
     }
 
     // refer to Threads::get_pending_threads

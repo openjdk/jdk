@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.IOUtils;
 import jdk.jpackage.internal.AppImageFile;
 import jdk.jpackage.internal.ApplicationLayout;
 import jdk.jpackage.internal.PackageFile;
@@ -298,6 +299,42 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         return this;
     }
 
+    public void createJPackageXMLFile(String mainLauncher, String mainClass)
+            throws IOException {
+        Path jpackageXMLFile = AppImageFile.getPathInAppImage(
+                Optional.ofNullable(getArgumentValue("--app-image")).map(
+                        Path::of).orElseThrow(() -> {
+                            return new RuntimeException(
+                                    "Error: --app-image expected");
+                        }));
+
+        IOUtils.createXml(jpackageXMLFile, xml -> {
+                xml.writeStartElement("jpackage-state");
+                xml.writeAttribute("version", AppImageFile.getVersion());
+                xml.writeAttribute("platform", AppImageFile.getPlatform());
+
+                xml.writeStartElement("app-version");
+                xml.writeCharacters("1.0");
+                xml.writeEndElement();
+
+                xml.writeStartElement("main-launcher");
+                xml.writeCharacters(mainLauncher);
+                xml.writeEndElement();
+
+                xml.writeStartElement("main-class");
+                xml.writeCharacters(mainClass);
+                xml.writeEndElement();
+
+                xml.writeStartElement("signed");
+                xml.writeCharacters("false");
+                xml.writeEndElement();
+
+                xml.writeStartElement("app-store");
+                xml.writeCharacters("false");
+                xml.writeEndElement();
+            });
+    }
+
     JPackageCommand addPrerequisiteAction(ThrowingConsumer<JPackageCommand> action) {
         verifyMutable();
         prerequisiteActions.add(action);
@@ -358,10 +395,16 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
      * Returns path to output bundle of configured jpackage command.
      *
      * If this is build image command, returns path to application image directory.
+     *
+     * Special case for masOS. If this is sign app image command, returns value
+     * of "--app-image".
      */
     public Path outputBundle() {
         final String bundleName;
         if (isImagePackageType()) {
+            if (TKit.isOSX() && hasArgument("--app-image")) {
+                return Path.of(getArgumentValue("--app-image", () -> null));
+            }
             String dirName = name();
             if (TKit.isOSX()) {
                 dirName = dirName + ".app";
@@ -378,6 +421,14 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         }
 
         return outputDir().resolve(bundleName);
+    }
+
+    Optional<Path> nullableOutputBundle() {
+        try {
+            return Optional.ofNullable(outputBundle());
+        } catch (Exception ex) {
+            return Optional.empty();
+        }
     }
 
     /**
@@ -706,11 +757,15 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         if (hasArgument("--dest")) {
             if (isImagePackageType()) {
                 TKit.deleteDirectoryContentsRecursive(outputDir());
-            } else if (ThrowingSupplier.toSupplier(() -> TKit.deleteIfExists(
-                    outputBundle())).get()) {
-                TKit.trace(
-                        String.format("Deleted [%s] file before running jpackage",
-                                outputBundle()));
+            } else {
+                nullableOutputBundle().ifPresent(path -> {
+                    if (ThrowingSupplier.toSupplier(() -> TKit.deleteIfExists(
+                            path)).get()) {
+                        TKit.trace(String.format(
+                                "Deleted [%s] file before running jpackage",
+                                path));
+                    }
+                });
             }
         }
 
@@ -781,12 +836,38 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     private void assertAppImageFile() {
-        final Path lookupPath = AppImageFile.getPathInAppImage(Path.of(""));
+        Path appImageDir = Path.of("");
+        if (isImagePackageType() && hasArgument("--app-image")) {
+            appImageDir = Path.of(getArgumentValue("--app-image", () -> null));
+        }
 
-        if (isRuntime() || !isImagePackageType()) {
+        final Path lookupPath = AppImageFile.getPathInAppImage(appImageDir);
+        if (isRuntime() || (!isImagePackageType() && !TKit.isOSX())) {
             assertFileInAppImage(lookupPath, null);
+        } else if (!TKit.isOSX()) {
+            assertFileInAppImage(lookupPath, lookupPath);
         } else {
             assertFileInAppImage(lookupPath, lookupPath);
+
+            // If file exist validated important values based on arguments
+            // Exclude validation when we generating packages from predefined
+            // app images, since we do not know if image is signed or not.
+            if (isImagePackageType() || !hasArgument("--app-image")) {
+                final Path rootDir = isImagePackageType() ? outputBundle() :
+                        pathToUnpackedPackageFile(appInstallationDirectory());
+
+                AppImageFile aif = AppImageFile.load(rootDir);
+
+                boolean expectedValue = hasArgument("--mac-sign");
+                boolean actualValue = aif.isSigned();
+                TKit.assertEquals(Boolean.toString(expectedValue), Boolean.toString(actualValue),
+                    "Check for unexptected value in app image file for <signed>");
+
+                expectedValue = hasArgument("--mac-app-store");
+                actualValue = aif.isAppStore();
+                TKit.assertEquals(Boolean.toString(expectedValue), Boolean.toString(actualValue),
+                    "Check for unexptected value in app image file for <app-store>");
+            }
         }
     }
 
@@ -796,7 +877,17 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         if (isRuntime() || isImagePackageType() || TKit.isLinux()) {
             assertFileInAppImage(lookupPath, null);
         } else {
-            assertFileInAppImage(lookupPath, lookupPath);
+            if (TKit.isOSX() && hasArgument("--app-image")) {
+                String appImage = getArgumentValue("--app-image",
+                        () -> null);
+                if (AppImageFile.load(Path.of(appImage)).isSigned()) {
+                    assertFileInAppImage(lookupPath, null);
+                } else {
+                    assertFileInAppImage(lookupPath, lookupPath);
+                }
+            } else {
+                assertFileInAppImage(lookupPath, lookupPath);
+            }
         }
     }
 
@@ -809,10 +900,17 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         final Path rootDir = isImagePackageType() ? outputBundle() : pathToUnpackedPackageFile(
                 appInstallationDirectory());
 
-        try ( Stream<Path> walk = ThrowingSupplier.toSupplier(() -> Files.walk(
-                rootDir)).get()) {
-            List<String> files = walk.filter(path -> path.getFileName().equals(
-                    filename)).map(Path::toString).toList();
+        try ( Stream<Path> walk = ThrowingSupplier.toSupplier(() -> {
+            if (TKit.isLinux() && rootDir.equals(Path.of("/"))) {
+                // Installed package with split app image on Linux. Iterate
+                // through package file list instead of the entire file system.
+                return LinuxHelper.getPackageFiles(this);
+            } else {
+                return Files.walk(rootDir);
+            }
+        }).get()) {
+            List<String> files = walk.filter(path -> filename.equals(
+                    path.getFileName())).map(Path::toString).toList();
 
             if (expectedPath == null) {
                 TKit.assertStringListEquals(List.of(), files, String.format(

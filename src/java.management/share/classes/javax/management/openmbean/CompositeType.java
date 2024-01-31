@@ -26,16 +26,10 @@
 
 package javax.management.openmbean;
 
-
-// java import
-//
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.Collections;
 import java.util.Iterator;
-
-// jmx import
-//
 
 
 /**
@@ -144,8 +138,8 @@ public class CompositeType extends OpenType<CompositeData> {
         // Initialize internal "names to descriptions" and "names to types" sorted maps,
         // and, by doing so, check there are no duplicate item names
         //
-        nameToDescription = new TreeMap<String,String>();
-        nameToType        = new TreeMap<String,OpenType<?>>();
+        nameToDescription = new TreeMap<>();
+        nameToType        = new TreeMap<>();
         String key;
         for (int i=0; i<itemNames.length; i++) {
             key = itemNames[i].trim();

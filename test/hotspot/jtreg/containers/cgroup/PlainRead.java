@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,15 +27,15 @@
  * @requires os.family == "linux"
  * @requires vm.flagless
  * @library /testlibrary /test/lib
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI PlainRead
  */
 
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Platform;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 public class PlainRead {
 
@@ -67,7 +67,7 @@ public class PlainRead {
 
     public static void main(String[] args) throws Exception {
         WhiteBox wb = WhiteBox.getWhiteBox();
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:os+container=trace", "-version");
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:os+container=trace", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
         if (wb.isContainerized()) {

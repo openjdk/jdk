@@ -93,7 +93,7 @@ public class MetaspaceTestManyArenasManyThreads extends MetaspaceTestWithThreads
         //  frees their metaspace arenas. All within CLDG::purge(). But since this test isolates the metaspace
         //  context and does test it separately, GC and CLDG are not involved here. We need to purge manually.
         //
-        // Purging uncommits all free chunks >= 64K/16K (MetaspaceReclaimPolicy=standard/aggressive).
+        // Purging uncommits all free chunks >= 64K
         context.purge();
 
         context.updateTotals();

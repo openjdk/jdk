@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,11 +24,13 @@
  */
 
 #include "precompiled.hpp"
+#include "memory/metaspace/chunkManager.hpp"
 #include "memory/metaspace/metaspaceArena.hpp"
 #include "memory/metaspace/metaspaceArenaGrowthPolicy.hpp"
 #include "memory/metaspace/metaspaceContext.hpp"
 #include "memory/metaspace/testHelpers.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
@@ -43,15 +45,20 @@ MetaspaceTestArena::MetaspaceTestArena(Mutex* lock, MetaspaceArena* arena) :
 {}
 
 MetaspaceTestArena::~MetaspaceTestArena() {
-  delete _arena;
+  {
+    MutexLocker fcl(_lock, Mutex::_no_safepoint_check_flag);
+    delete _arena;
+  }
   delete _lock;
 }
 
 MetaWord* MetaspaceTestArena::allocate(size_t word_size) {
+  MutexLocker fcl(_lock, Mutex::_no_safepoint_check_flag);
   return _arena->allocate(word_size);
 }
 
 void MetaspaceTestArena::deallocate(MetaWord* p, size_t word_size) {
+  MutexLocker fcl(_lock, Mutex::_no_safepoint_check_flag);
   return _arena->deallocate(p, word_size);
 }
 
@@ -61,7 +68,7 @@ MetaspaceTestContext::MetaspaceTestContext(const char* name, size_t commit_limit
   _name(name),
   _reserve_limit(reserve_limit),
   _commit_limit(commit_limit),
-  _context(NULL),
+  _context(nullptr),
   _commit_limiter(commit_limit == 0 ? max_uintx : commit_limit), // commit_limit == 0 -> no limit
   _used_words_counter(),
   _rs()
@@ -93,10 +100,10 @@ MetaspaceTestContext::~MetaspaceTestContext() {
 MetaspaceTestArena* MetaspaceTestContext::create_arena(Metaspace::MetaspaceType type) {
   const ArenaGrowthPolicy* growth_policy = ArenaGrowthPolicy::policy_for_space_type(type, false);
   Mutex* lock = new Mutex(Monitor::nosafepoint, "MetaspaceTestArea_lock");
-  MetaspaceArena* arena = NULL;
+  MetaspaceArena* arena = nullptr;
   {
     MutexLocker ml(lock,  Mutex::_no_safepoint_check_flag);
-    arena = new MetaspaceArena(_context->cm(), growth_policy, lock, &_used_words_counter, _name);
+    arena = new MetaspaceArena(_context->cm(), growth_policy, &_used_words_counter, _name);
   }
   return new MetaspaceTestArena(lock, arena);
 }
@@ -107,7 +114,7 @@ void MetaspaceTestContext::purge_area() {
 
 #ifdef ASSERT
 void MetaspaceTestContext::verify() const {
-  if (_context != NULL) {
+  if (_context != nullptr) {
     _context->verify();
   }
 }

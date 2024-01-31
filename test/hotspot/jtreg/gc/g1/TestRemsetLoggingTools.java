@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ package gc.g1;
  * Common helpers for TestRemsetLogging* tests
  */
 
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -77,8 +77,7 @@ public class TestRemsetLoggingTools {
         finalargs.add(VerifySummaryOutput.class.getName());
         finalargs.add(String.valueOf(numGCs));
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(finalargs);
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava(finalargs);
 
         output.shouldHaveExitValue(0);
 
@@ -109,7 +108,7 @@ public class TestRemsetLoggingTools {
     }
 
     public static void expectRSetSummaries(String result, int expectedCumulative, int expectedPeriodic) throws Exception {
-        int actualTotal = result.split("Concurrent refinement threads times").length - 1;
+        int actualTotal = result.split("Current rem set statistics").length - 1;
         int actualCumulative = result.split("Cumulative RS summary").length - 1;
 
         if (expectedCumulative != actualCumulative) {

@@ -31,9 +31,9 @@
  *          should be loaded from the dynamic archive.
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
- * @build OldSuperApp sun.hotspot.WhiteBox OldSuper ChildOldSuper GChild
+ * @build OldSuperApp jdk.test.whitebox.WhiteBox OldSuper ChildOldSuper GChild
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar old-class-base-archive.jar OldSuperApp OldSuper ChildOldSuper GChild
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. OldClassInBaseArchive
  */
 

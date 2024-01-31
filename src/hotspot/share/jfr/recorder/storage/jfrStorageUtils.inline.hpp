@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 #include "jfr/recorder/storage/jfrStorageUtils.hpp"
 
 #include "runtime/atomic.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
 
 template <typename T>
 inline bool UnBufferedWriteToChunk<T>::write(T* t, const u1* data, size_t size) {
@@ -48,7 +48,7 @@ inline bool DefaultDiscarder<T>::discard(T* t, const u1* data, size_t size) {
 
 template <typename Type>
 inline size_t get_unflushed_size(const u1* top, Type* t) {
-  assert(t != NULL, "invariant");
+  assert(t != nullptr, "invariant");
   return Atomic::load_acquire(t->pos_address()) - top;
 }
 
@@ -78,7 +78,7 @@ inline bool ConcurrentWriteOp<Operation>::process(typename Operation::Type* t) {
 
 template <typename Operation>
 inline bool MutexedWriteOp<Operation>::process(typename Operation::Type* t) {
-  assert(t != NULL, "invariant");
+  assert(t != nullptr, "invariant");
   const u1* const top = t->top();
   const size_t unflushed_size = get_unflushed_size(top, t);
   assert((intptr_t)unflushed_size >= 0, "invariant");
@@ -91,12 +91,13 @@ inline bool MutexedWriteOp<Operation>::process(typename Operation::Type* t) {
 }
 
 template <typename Type>
-static void retired_sensitive_acquire(Type* t) {
-  assert(t != NULL, "invariant");
+static void retired_sensitive_acquire(Type* t, Thread* thread) {
+  assert(t != nullptr, "invariant");
+  assert(thread != nullptr, "invariant");
+  assert(thread == Thread::current(), "invariant");
   if (t->retired()) {
     return;
   }
-  Thread* const thread = Thread::current();
   while (!t->try_acquire(thread)) {
     if (t->retired()) {
       return;
@@ -105,16 +106,19 @@ static void retired_sensitive_acquire(Type* t) {
 }
 
 template <typename Operation>
+inline ExclusiveOp<Operation>::ExclusiveOp(Operation& operation) : MutexedWriteOp<Operation>(operation), _thread(Thread::current()) {}
+
+template <typename Operation>
 inline bool ExclusiveOp<Operation>::process(typename Operation::Type* t) {
-  retired_sensitive_acquire(t);
+  retired_sensitive_acquire(t, _thread);
   assert(t->acquired_by_self() || t->retired(), "invariant");
-  // User is required to ensure proper release of the acquisition
+  // The user is required to ensure proper release of the acquisition.
   return MutexedWriteOp<Operation>::process(t);
 }
 
 template <typename Operation>
 inline bool DiscardOp<Operation>::process(typename Operation::Type* t) {
-  assert(t != NULL, "invariant");
+  assert(t != nullptr, "invariant");
   const u1* const top = _mode == concurrent ? t->acquire_critical_section_top() : t->top();
   const size_t unflushed_size = get_unflushed_size(top, t);
   assert((intptr_t)unflushed_size >= 0, "invariant");
@@ -134,16 +138,19 @@ inline bool DiscardOp<Operation>::process(typename Operation::Type* t) {
 }
 
 template <typename Operation>
+inline ExclusiveDiscardOp<Operation>::ExclusiveDiscardOp(jfr_operation_mode mode) : DiscardOp<Operation>(mode), _thread(Thread::current()) {}
+
+template <typename Operation>
 inline bool ExclusiveDiscardOp<Operation>::process(typename Operation::Type* t) {
-  retired_sensitive_acquire(t);
+  retired_sensitive_acquire(t, _thread);
   assert(t->acquired_by_self() || t->retired(), "invariant");
-  // User is required to ensure proper release of the acquisition
+  // The user is required to ensure proper release of the acquisition.
   return DiscardOp<Operation>::process(t);
 }
 
 template <typename Operation>
 inline bool EpochDispatchOp<Operation>::process(typename Operation::Type* t) {
-  assert(t != NULL, "invariant");
+  assert(t != nullptr, "invariant");
   const u1* const current_top = _previous_epoch ? t->start() : t->top();
   const size_t unflushed_size = Atomic::load_acquire(t->pos_address()) - current_top;
   assert((intptr_t)unflushed_size >= 0, "invariant");
@@ -157,7 +164,7 @@ inline bool EpochDispatchOp<Operation>::process(typename Operation::Type* t) {
 
 template <typename Operation>
 size_t EpochDispatchOp<Operation>::dispatch(bool previous_epoch, const u1* element, size_t size) {
-  assert(element != NULL, "invariant");
+  assert(element != nullptr, "invariant");
   const u1* const limit = element + size;
   size_t elements = 0;
   while (element < limit) {
@@ -166,6 +173,15 @@ size_t EpochDispatchOp<Operation>::dispatch(bool previous_epoch, const u1* eleme
   }
   assert(element == limit, "invariant");
   return elements;
+}
+
+template <typename T>
+bool ReinitializationOp<T>::process(T* t) {
+  assert(t != nullptr, "invariant");
+  assert(t->identity() != nullptr, "invariant");
+  t->reinitialize();
+  t->release();
+  return true;
 }
 
 #endif // SHARE_JFR_RECORDER_STORAGE_JFRSTORAGEUTILS_INLINE_HPP

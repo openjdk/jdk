@@ -1,8 +1,8 @@
 /**
  * @test
- * @compile/fail/ref=SimpleDeconstructionPatternNoPreview.out -XDrawDiagnostics SimpleDeconstructionPattern.java
- * @compile --enable-preview -source ${jdk.version} SimpleDeconstructionPattern.java
- * @run main/othervm --enable-preview SimpleDeconstructionPattern
+ * @compile/fail/ref=SimpleDeconstructionPatternOld.out --release 20 -XDrawDiagnostics SimpleDeconstructionPattern.java
+ * @compile SimpleDeconstructionPattern.java
+ * @run main SimpleDeconstructionPattern
  */
 
 import java.util.ArrayList;
@@ -91,9 +91,6 @@ public class SimpleDeconstructionPattern {
         if (!testC(new P6(new P3("")))) {
             throw new IllegalStateException();
         }
-        if (!testD(new P4("test"))) {
-            throw new IllegalStateException();
-        }
         if (!testE(new P6(new P3(null)))) {
             throw new IllegalStateException();
         }
@@ -169,10 +166,6 @@ public class SimpleDeconstructionPattern {
 
     private static boolean testC(Object o) throws Throwable {
         return o instanceof P6(P3(String s)) && s.isEmpty();
-    }
-
-    private static boolean testD(Object o) throws Throwable {
-        return o instanceof P4(String s) p && (s.isEmpty() || "test".equals(p.o()));
     }
 
     private static boolean testE(Object o) throws Throwable {

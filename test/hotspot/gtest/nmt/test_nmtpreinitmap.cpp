@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2021, 2022 SAP SE. All rights reserved.
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 #include "precompiled.hpp"
 #include "jvm_io.h"
 #include "memory/allocation.hpp"
+#include "nmt/nmtPreInit.hpp"
 #include "runtime/os.hpp"
-#include "services/nmtPreInit.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
 #include "unittest.hpp"
@@ -78,7 +78,7 @@ TEST_VM(NMTPreInit, stress_test_map) {
 
   // look them all up
   for (int i = 0; i < num_allocs; i++) {
-    const NMTPreInitAllocation* a = table.find(allocations[i]->payload());
+    const NMTPreInitAllocation* a = table.find(allocations[i]->payload);
     ASSERT_EQ(a, allocations[i]);
   }
 
@@ -86,7 +86,7 @@ TEST_VM(NMTPreInit, stress_test_map) {
   for (int j = 0; j < num_allocs/2; j++) {
     int pos = os::random() % num_allocs;
     NMTPreInitAllocation* a1 = allocations[pos];
-    NMTPreInitAllocation* a2 = table.find_and_remove(a1->payload());
+    NMTPreInitAllocation* a2 = table.find_and_remove(a1->payload);
     ASSERT_EQ(a1, a2);
     NMTPreInitAllocation* a3 = NMTPreInitAllocation::do_reallocate(a2, small_random_nonzero_size());
     table.add(a3);
@@ -97,16 +97,16 @@ TEST_VM(NMTPreInit, stress_test_map) {
 
   // look them all up
   for (int i = 0; i < num_allocs; i++) {
-    const NMTPreInitAllocation* a = table.find(allocations[i]->payload());
+    const NMTPreInitAllocation* a = table.find(allocations[i]->payload);
     ASSERT_EQ(a, allocations[i]);
   }
 
   // free all
   for (int i = 0; i < num_allocs; i++) {
-    NMTPreInitAllocation* a = table.find_and_remove(allocations[i]->payload());
+    NMTPreInitAllocation* a = table.find_and_remove(allocations[i]->payload);
     ASSERT_EQ(a, allocations[i]);
     NMTPreInitAllocation::do_free(a);
-    allocations[i] = NULL;
+    allocations[i] = nullptr;
   }
 
   print_and_check_table(table, 0);

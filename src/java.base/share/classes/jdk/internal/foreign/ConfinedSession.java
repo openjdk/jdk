@@ -27,7 +27,6 @@ package jdk.internal.foreign;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
-import java.lang.ref.Cleaner;
 
 import jdk.internal.vm.annotation.ForceInline;
 
@@ -51,21 +50,16 @@ final class ConfinedSession extends MemorySessionImpl {
         }
     }
 
-    public ConfinedSession(Thread owner, Cleaner cleaner) {
-        super(owner, new ConfinedResourceList(), cleaner);
-    }
-
-    @Override
-    public boolean isAlive() {
-        return state != CLOSED;
+    public ConfinedSession(Thread owner) {
+        super(owner, new ConfinedResourceList());
     }
 
     @Override
     @ForceInline
     public void acquire0() {
-        checkValidStateSlow();
+        checkValidState();
         if (state == MAX_FORKS) {
-            throw new IllegalStateException("Session keep alive limit exceeded");
+            throw tooManyAcquires();
         }
         state++;
     }
@@ -85,11 +79,13 @@ final class ConfinedSession extends MemorySessionImpl {
     }
 
     void justClose() {
-        checkValidStateSlow();
-        if (state == 0 || state - ((int)ASYNC_RELEASE_COUNT.getVolatile(this)) == 0) {
+        checkValidState();
+        int asyncCount = (int)ASYNC_RELEASE_COUNT.getVolatile(this);
+        if ((state == 0 && asyncCount == 0)
+                || ((state - asyncCount) == 0)) {
             state = CLOSED;
         } else {
-            throw new IllegalStateException("Session is acquired by " + state + " clients");
+            throw alreadyAcquired(state - asyncCount);
         }
     }
 
@@ -103,7 +99,7 @@ final class ConfinedSession extends MemorySessionImpl {
                 cleanup.next = fst;
                 fst = cleanup;
             } else {
-                throw new IllegalStateException("Already closed!");
+                throw alreadyClosed();
             }
         }
 
@@ -114,7 +110,7 @@ final class ConfinedSession extends MemorySessionImpl {
                 fst = ResourceCleanup.CLOSED_LIST;
                 cleanup(prev);
             } else {
-                throw new IllegalStateException("Attempt to cleanup an already closed resource list");
+                throw alreadyClosed();
             }
         }
     }

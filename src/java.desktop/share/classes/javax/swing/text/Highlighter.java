@@ -151,4 +151,4 @@ public interface Highlighter {
         public HighlightPainter getPainter();
 
     }
-};
+}

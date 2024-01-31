@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,9 +43,9 @@ public class TestJavaFxMode extends JavadocTester {
     final ToolBox tb;
 
     public static void main(String... args) throws Exception {
-        TestJavaFxMode tester = new TestJavaFxMode();
+        var tester = new TestJavaFxMode();
         if (tester.sanity()) {
-            tester.runTests(m -> new Object[]{Paths.get(m.getName())});
+            tester.runTests();
         }
     }
 
@@ -77,13 +77,16 @@ public class TestJavaFxMode extends JavadocTester {
         checkExit(Exit.OK);
         checkOrder("pkg/A.html",
                 "Property Summary",
-                "javafx.beans.property.Property", "<a href=\"#propProperty\">prop</a>",
-                "Field Summary",
-                "javafx.beans.property.Property", "<a href=\"#prop\">prop</a></span>",
-                "Method Summary",
-                "<a href=\"#getProp()\">getProp</a>", "Gets the value of the property prop.",
                 """
-                    <a href="#propProperty()">propProperty</a>""", "Sets the value of the property prop.");
+                    <a href="#propProperty" class="member-name-link">prop</a>""",
+                "Field Summary",
+                """
+                    <a href="#prop" class="member-name-link">prop</a>""",
+                "Method Summary",
+                """
+                    <a href="#getProp()" class="member-name-link">getProp</a>""",
+                """
+                    <a href="#propProperty()" class="member-name-link">propProperty</a>""");
     }
 
     void createTestClass(Path src) throws Exception {

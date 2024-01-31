@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @library /
  * @requires vm.jvmci
  * @modules jdk.internal.vm.ci/jdk.vm.ci.hotspot
  *          jdk.internal.vm.ci/jdk.vm.ci.code
@@ -30,13 +31,13 @@
  *          jdk.internal.vm.ci/jdk.vm.ci.meta
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *          jdk.internal.vm.ci/jdk.vm.ci.common
- * @compile CodeInstallerTest.java
  * @run junit/othervm -da:jdk.vm.ci... -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
  *              -XX:-UseJVMCICompiler compiler.jvmci.errors.TestInvalidDebugInfo
  */
 
 package compiler.jvmci.errors;
 
+import compiler.jvmci.common.CodeInstallerTest;
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.BytecodeFrame;
 import jdk.vm.ci.code.DebugInfo;
@@ -97,7 +98,7 @@ public class TestInvalidDebugInfo extends CodeInstallerTest {
         BytecodeFrame frame = new BytecodeFrame(null, dummyMethod, 0, false, false, values, slotKinds, locals, stack, locks);
         DebugInfo info = new DebugInfo(frame, vobj);
         info.setReferenceMap(new HotSpotReferenceMap(new Location[0], new Location[0], new int[0], 8));
-        installEmptyCode(new Site[]{new Infopoint(0, info, InfopointReason.SAFEPOINT)}, new Assumption[0], new Comment[0], 16, new DataPatch[0], deoptRescueSlot);
+        installEmptyCode(new Site[]{new Infopoint(0, info, InfopointReason.SAFEPOINT)}, new Assumption[0], new Comment[0], 8, new DataPatch[0], deoptRescueSlot);
     }
 
     @Test(expected = NullPointerException.class)

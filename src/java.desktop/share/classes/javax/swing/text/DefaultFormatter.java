@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ public class DefaultFormatter extends JFormattedTextField.AbstractFormatter
     /** Indicates if the value being edited must match the mask. */
     private boolean allowsInvalid;
 
-    /** If true, editing mode is in overwrite (or strikethough). */
+    /** If true, overwrite mode is enabled. */
     private boolean overwriteMode;
 
     /** If true, any time a valid edit happens commitEdit is invoked. */
@@ -159,7 +159,7 @@ public class DefaultFormatter extends JFormattedTextField.AbstractFormatter
      * <code>overwriteMode</code> is true (the default), new characters
      * overwrite existing characters in the model.
      *
-     * @param overwriteMode Indicates if overwrite or overstrike mode is used
+     * @param overwriteMode Indicates if overwrite mode is used
      */
     public void setOverwriteMode(boolean overwriteMode) {
         this.overwriteMode = overwriteMode;
@@ -346,7 +346,7 @@ public class DefaultFormatter extends JFormattedTextField.AbstractFormatter
      * Subclasses should override this if they want cursor navigation
      * to skip certain characters. A return value of false indicates
      * the character at <code>offset</code> should be skipped when
-     * navigating throught the field.
+     * navigating through the field.
      */
     boolean isNavigatable(int offset) {
         return true;
@@ -660,7 +660,7 @@ public class DefaultFormatter extends JFormattedTextField.AbstractFormatter
         /** Position the cursor should be adjusted from.  If this is -1
          * the cursor position will be adjusted based on the direction of
          * the replace (-1: offset, 1: offset + text.length()), otherwise
-         * the cursor position is adusted from this position.
+         * the cursor position is adjusted from this position.
          */
         int cursorPosition;
 
