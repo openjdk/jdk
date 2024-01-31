@@ -74,7 +74,6 @@ private:
   void service_concurrent_normal_cycle(GCCause::Cause cause);
   void service_stw_full_cycle(GCCause::Cause cause);
   void service_stw_degenerated_cycle(GCCause::Cause cause, ShenandoahGC::ShenandoahDegenPoint point);
-  void service_uncommit(double shrink_before, size_t shrink_until);
 
   // Return true if setting the flag which indicates allocation failure succeeds.
   bool try_set_alloc_failure_gc(bool is_humongous);
@@ -96,8 +95,6 @@ private:
   void handle_requested_gc(GCCause::Cause cause);
 
   bool is_explicit_gc(GCCause::Cause cause) const;
-
-  bool check_soft_max_changed() const;
 
 public:
   // Constructor
