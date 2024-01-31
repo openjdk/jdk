@@ -95,8 +95,8 @@ void ShenandoahRegionPartition::make_all_regions_unavailable() {
     _rightmosts[partition_id] = 0;
     _leftmosts_empty[partition_id] = _max;
     _rightmosts_empty[partition_id] = 0;
-    _capacity_of[partition_id] = 0;
-    _used_by[partition_id] = 0;
+    _capacity[partition_id] = 0;
+    _used[partition_id] = 0;
   }
 
   _region_counts[Mutator] = _region_counts[Collector] = 0;
@@ -105,10 +105,10 @@ void ShenandoahRegionPartition::make_all_regions_unavailable() {
 
 void ShenandoahRegionPartition::increase_used(ShenandoahFreeSetPartitionId which_partition, size_t bytes) {
   assert (which_partition > NotFree && which_partition < NumPartitions, "Partition must be valid");
-  _used_by[which_partition] += bytes;
-  assert (_used_by[which_partition] <= _capacity_of[which_partition],
+  _used[which_partition] += bytes;
+  assert (_used[which_partition] <= _capacity[which_partition],
           "Must not use (" SIZE_FORMAT ") more than capacity (" SIZE_FORMAT ") after increase by " SIZE_FORMAT,
-          _used_by[which_partition], _capacity_of[which_partition], bytes);
+          _used[which_partition], _capacity[which_partition], bytes);
 }
 
 inline void ShenandoahRegionPartition::shrink_interval_if_boundary_modified(ShenandoahFreeSetPartitionId partition, size_t idx) {
@@ -178,8 +178,8 @@ void ShenandoahRegionPartition::make_free(size_t idx, ShenandoahFreeSetPartition
   assert (available <= _region_size_bytes, "Available cannot exceed region size");
 
   _membership[idx] = which_partition;
-  _capacity_of[which_partition] += _region_size_bytes;
-  _used_by[which_partition] += _region_size_bytes - available;
+  _capacity[which_partition] += _region_size_bytes;
+  _used[which_partition] += _region_size_bytes - available;
   expand_interval_if_boundary_modified(which_partition, idx, available);
 
   _region_counts[NotFree]--;
@@ -207,12 +207,12 @@ void ShenandoahRegionPartition::move_to_partition(size_t idx, ShenandoahFreeSetP
 
   size_t used = _region_size_bytes - available;
   _membership[idx] = new_partition;
-  _capacity_of[orig_partition] -= _region_size_bytes;
-  _used_by[orig_partition] -= used;
+  _capacity[orig_partition] -= _region_size_bytes;
+  _used[orig_partition] -= used;
   shrink_interval_if_boundary_modified(orig_partition, idx);
 
-  _capacity_of[new_partition] += _region_size_bytes;;
-  _used_by[new_partition] += used;
+  _capacity[new_partition] += _region_size_bytes;;
+  _used[new_partition] += used;
   expand_interval_if_boundary_modified(new_partition, idx, available);
 
   _region_counts[orig_partition]--;

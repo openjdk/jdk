@@ -64,9 +64,14 @@ private:
   size_t _leftmosts_empty[NumPartitions];
   size_t _rightmosts_empty[NumPartitions];
 
-  // _capacity_of and _used_by are denoted in bytes
-  size_t _capacity_of[NumPartitions];
-  size_t _used_by[NumPartitions];
+  // For each partition p, _capacity[p] represents the total amount of memory within the partition at the time
+  // of the most recent rebuild, _used[p] represents the total amount of memory that has been consumed within this
+  // partition (either already consumed as of the rebuild, or consumed since the rebuild).  _capacity[p] and _used[p]
+  // are denoted in bytes.  Note that some regions that had been assigned to a particular partition at rebuild time
+  // may have been retired following the rebuild.  The tallies for these regions are still reflected in _capacity[p]
+  // and _used[p], even though the region may have been removed from the free set.
+  size_t _capacity[NumPartitions];
+  size_t _used[NumPartitions];
   size_t _region_counts[NumPartitions];
 
   inline void shrink_interval_if_boundary_modified(ShenandoahFreeSetPartitionId partition, size_t idx);
@@ -90,8 +95,8 @@ public:
   // Place region idx into free partition new_partition.  Requires that idx is currently not NotFree.
   void move_to_partition(size_t idx, ShenandoahFreeSetPartitionId new_partition, size_t region_capacity);
 
-  // Returns the ShenandoahFreeSetPartitionId affiliation of region idx, or NotFree if this region is not currently free.  This does
-  // not enforce that free_set membership implies allocation capacity.
+  // Returns the ShenandoahFreeSetPartitionId affiliation of region idx, NotFree if this region is not currently free.
+  // This does not enforce that free_set membership implies allocation capacity.
   inline ShenandoahFreeSetPartitionId membership(size_t idx) const;
 
   // Returns true iff region idx is in the test_set free_set.  Before returning true, asserts that the free
@@ -118,22 +123,22 @@ public:
 
   inline size_t capacity_of(ShenandoahFreeSetPartitionId which_partition) const {
     assert (which_partition > NotFree && which_partition < NumPartitions, "selected free set must be valid");
-    return _capacity_of[which_partition];
+    return _capacity[which_partition];
   }
 
   inline size_t used_by(ShenandoahFreeSetPartitionId which_partition) const {
     assert (which_partition > NotFree && which_partition < NumPartitions, "selected free set must be valid");
-    return _used_by[which_partition];
+    return _used[which_partition];
   }
 
   inline void set_capacity_of(ShenandoahFreeSetPartitionId which_partition, size_t value) {
     assert (which_partition > NotFree && which_partition < NumPartitions, "selected free set must be valid");
-    _capacity_of[which_partition] = value;
+    _capacity[which_partition] = value;
   }
 
   inline void set_used_by(ShenandoahFreeSetPartitionId which_partition, size_t value) {
     assert (which_partition > NotFree && which_partition < NumPartitions, "selected free set must be valid");
-    _used_by[which_partition] = value;
+    _used[which_partition] = value;
   }
 
   inline size_t max() const { return _max; }
