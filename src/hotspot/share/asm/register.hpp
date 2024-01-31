@@ -184,10 +184,17 @@ public:
     return *this;
   }
 
+  RegSetIterator operator++(int) {
+    auto result(*this);
+    operator++();
+    return result;
+  }
+
   RegSetIterator<RegImpl>& operator=(const RegSetIterator<RegImpl>& mit) {
     _regs= mit._regs;
     return *this;
   }
+
   bool operator==(const RegSetIterator& rhs) const {
     return _regs.bits() == rhs._regs.bits();
   }

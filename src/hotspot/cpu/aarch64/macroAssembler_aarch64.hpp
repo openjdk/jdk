@@ -34,7 +34,99 @@
 #include "runtime/vm_version.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+class AsmGenerator {
+public:
+
+  class WrapperNode: public ResourceObj {
+  public:
+    WrapperNode * _next;
+    virtual void operator()() = 0;
+  };
+
+  template <typename T>
+  class LambdaWrapper : public WrapperNode {
+  public:
+    T _t;
+    LambdaWrapper(T t): _t(t) {}
+    virtual void operator()() {
+      _t();
+    }
+  };
+
+  WrapperNode *_holder_list_head, *_last;
+  int _count;
+
+  AsmGenerator()
+    : _holder_list_head(nullptr), _last(nullptr), _count(0) {}
+
+  WrapperNode *last() {
+    return _last;
+  }
+
+  template<typename T>
+  WrapperNode *operator<<(T t) {
+    auto vv = new LambdaWrapper<decltype(t)>(t);
+    if (_count > 0)
+      last()->_next = vv;
+    else
+      _holder_list_head = vv;
+    vv->_next = nullptr;
+    _count++;
+    _last = vv;
+    return vv;
+  }
+
+  virtual int length() { return _count; }
+
+  struct Iterator {
+    WrapperNode *_next;
+    Iterator(AsmGenerator *gen): _next(gen->_holder_list_head) { }
+    Iterator(): _next(nullptr) { }
+
+    Iterator& operator++() {
+      if (_next)
+        _next = _next->_next;
+      return *this;
+    }
+
+    Iterator operator++(int) {
+      auto result(*this);
+      operator++();
+      return result;
+    }
+
+    WrapperNode *operator*() { return _next; }
+
+    void operator()() {
+      if (_next)
+        (*_next)();
+    }
+  };
+
+  Iterator iterator() {
+    return Iterator(this);
+  }
+
+  void gen() {
+    for (auto it = iterator(); *it; it++) {
+      it();
+    }
+  }
+};
+
 class OopMap;
+
+class RegPair {
+public:
+  Register _lo, _hi;
+  RegPair() : _lo(noreg), _hi(noreg) { }
+  RegPair(Register r1, Register r2) : _lo(r1), _hi(r2) { }
+  RegPair(const RegPair &pair) : _lo(pair._lo), _hi(pair._hi) { }
+  RegPair& operator=(const RegPair &other) {
+    _lo = other._lo, _hi = other._hi;
+    return *this;
+  };
+};
 
 // MacroAssembler extends Assembler by frequently used macros.
 //
@@ -47,6 +139,7 @@ class MacroAssembler: public Assembler {
  public:
   using Assembler::mov;
   using Assembler::movi;
+  using Assembler::umull;
 
  protected:
 
@@ -154,9 +247,10 @@ class MacroAssembler: public Assembler {
 
   void membar(Membar_mask_bits order_constraint);
 
+  // using Assembler::add;
   using Assembler::ldr;
-  using Assembler::str;
   using Assembler::ldrw;
+  using Assembler::str;
   using Assembler::strw;
 
   void ldr(Register Rx, const Address &adr);
@@ -241,6 +335,13 @@ class MacroAssembler: public Assembler {
   }
   inline void bfi(Register Rd, Register Rn, unsigned lsb, unsigned width) {
     bfm(Rd, Rn, ((64 - lsb) & 63), (width - 1));
+  }
+
+  inline void bfc(Register Rd, unsigned lsb, unsigned width) {
+    bfi(Rd, zr, lsb, width);
+  }
+  inline void bfcw(Register Rd, unsigned lsb, unsigned width) {
+    bfiw(Rd, zr, lsb, width);
   }
 
   inline void bfxilw(Register Rd, Register Rn, unsigned lsb, unsigned width) {
@@ -1603,7 +1704,111 @@ public:
   void lightweight_lock(Register obj, Register hdr, Register t1, Register t2, Label& slow);
   void lightweight_unlock(Register obj, Register hdr, Register t1, Register t2, Label& slow);
 
-private:
+  // Poly1305
+
+  void pack_26(Register dest0, Register dest1, Register dest2, Register src);
+  void wide_mul(RegPair prod, Register n, Register m);
+  void wide_madd(RegPair sum, Register n, Register m);
+  void clear_above(const RegPair d, int shift);
+  void shifted_add128(const RegPair d, const RegPair s, unsigned int shift,
+                      Register scratch = rscratch1);
+  // Widening multiply s * r -> u
+  void poly1305_multiply(AsmGenerator &acc,
+                         const RegPair u[], const Register s[], const Register r[],
+                         Register RR2, RegSetIterator<Register> scratch);
+  // Multiply mod 2**130-5
+  void poly1305_field_multiply(AsmGenerator &acc,
+                               const RegPair u[], const Register s[],
+                               const Register r[],
+                               Register RR2, RegSetIterator<Register> scratch);
+  void poly1305_field_multiply(const RegPair u[], const Register s[],
+                               const Register r[],
+                               Register RR2, RegSetIterator<Register> scratch) {
+    AsmGenerator acc;
+    poly1305_field_multiply(acc, u, s, r, RR2, scratch);
+    acc.gen();
+  }
+
+  void poly1305_multiply_vec(AsmGenerator &acc,
+                             const FloatRegister u[], const FloatRegister m[],
+                             const FloatRegister r[], const FloatRegister rr[]);
+  void poly1305_multiply(const RegPair u[], const Register s[], const Register r[],
+                         Register RR2, RegSetIterator<Register> scratch) {
+    AsmGenerator acc;
+    poly1305_multiply(acc, u, s, r, RR2, scratch);
+    acc.gen();
+  }
+  void poly1305_multiply_vec(const FloatRegister u[], const FloatRegister m[],
+                             const FloatRegister r[], const FloatRegister rr[]) {
+    AsmGenerator acc;
+    poly1305_multiply_vec(acc, u, m, r, rr);
+    acc.gen();
+  }
+
+  void poly1305_step_vec(AsmGenerator &acc,
+                         const FloatRegister s[], const FloatRegister u[],
+                         const FloatRegister zero, Register input_start);
+  void poly1305_multiply_vec(AsmGenerator &acc,
+                           const FloatRegister u_v[],
+                           AbstractRegSet<FloatRegister> remaining,
+                           const FloatRegister s_v[],
+                           const FloatRegister r_v[],
+                           const FloatRegister rr_v[]);
+  void poly1305_reduce_vec(AsmGenerator &acc,
+                           const FloatRegister u[],
+                           const FloatRegister upper_bits,
+                           AbstractRegSet<FloatRegister> scratch);
+  void poly1305_field_multiply (AsmGenerator &acc,
+                                const FloatRegister u[],
+                                const FloatRegister s[],
+                                const FloatRegister r[],
+                                const FloatRegister rr[],
+                                const FloatRegister zero,
+                                AbstractRegSet<FloatRegister> scratch) {
+    poly1305_multiply_vec(acc, u, s, r, rr);
+    poly1305_reduce_vec(acc, u, zero, scratch);
+  }
+
+  void poly1305_load(AsmGenerator &acc, const Register s[],
+                     const Register input_start);
+  void poly1305_load(const Register s[], const Register input_start) {
+    AsmGenerator acc;
+    poly1305_load(acc, s, input_start);
+    acc.gen();
+  }
+  void poly1305_step(AsmGenerator &acc, const Register s[], const RegPair u[], const Register input_start);
+  void poly1305_step(const Register s[], const RegPair u[], const Register input_start) {
+    AsmGenerator acc;
+    poly1305_step(acc, s, u, input_start);
+    acc.gen();
+  }
+  void poly1305_add(const Register dest[], const RegPair src[]);
+  void poly1305_add(AsmGenerator &acc,
+                    const Register dest[], const RegPair src[]);
+
+  void mov26(FloatRegister d, Register s, int lsb);
+  void expand26(Register d, Register r);
+  void split26(const FloatRegister d[], Register s);
+  void copy_3_to_5_regs(const FloatRegister d[],
+                        const Register s0, const Register s1, const Register s2);
+  void copy_3_regs_to_5_elements(const FloatRegister d[],
+                                 const Register s0, const Register s1, const Register s2);
+
+  void poly1305_reduce(AsmGenerator &acc, const RegPair u[], const char *s = nullptr);
+  void poly1305_reduce(const RegPair u[]) {
+    AsmGenerator acc;
+    poly1305_reduce(acc, u, "redc");
+    acc.gen();
+  }
+  void poly1305_reduce_step(AsmGenerator &acc,
+                            FloatRegister d, FloatRegister s, FloatRegister upper_bits, FloatRegister scratch);
+  void poly1305_fully_reduce(Register dest[], const RegPair u[]);
+  void poly1305_transfer(const RegPair d[], const FloatRegister s[],
+                         int lane, FloatRegister vscratch);
+  void copy_3_regs(const Register dest[], const Register src[]);
+  void add_3_reg_pairs(const RegPair dest[], const RegPair src[]);
+
+ private:
   // Check the current thread doesn't need a cross modify fence.
   void verify_cross_modify_fence_not_required() PRODUCT_RETURN;
 

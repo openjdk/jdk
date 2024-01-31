@@ -2541,6 +2541,11 @@ template<typename R, typename... Rx>
   INSN3(st3, 0b001101000, 0b0010);
   INSN4(st4, 0b001101001, 0b0010);
 
+  INSN1(ld1, 0b001101010, 0b0000);
+  INSN2(ld2, 0b001101011, 0b0000);
+  INSN3(ld3, 0b001101010, 0b0010);
+  INSN4(ld4, 0b001101011, 0b0010);
+
 #undef INSN1
 #undef INSN2
 #undef INSN3
@@ -2699,6 +2704,8 @@ template<typename R, typename... Rx>
   INSN(fmin, 0, 1, 0b111101);
   INSN(facgt, 1, 1, 0b111011);
 
+  INSN(add, 0, 1, 0b100001);
+  INSN(sub, 1, 1, 0b100001);
 #undef INSN
 
   // AdvSIMD vector compare
@@ -2842,7 +2849,9 @@ template<typename R, typename... Rx>
 
 #undef INSN
 
-#define INSN(NAME, op1, op2) \
+  // Advanced SIMD vector x indexed element
+
+#define INSN(NAME, op1, op2)                                                               \
   void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, FloatRegister Vm, int index = 0) { \
     starti;                                                                                            \
     assert(T == T2S || T == T4S || T == T2D, "invalid arrangement");                                   \
@@ -2858,6 +2867,40 @@ template<typename R, typename... Rx>
   INSN(fmlsvs, 0, 0b0101);
   // FMULX - Vector - Scalar
   INSN(fmulxvs, 1, 0b1001);
+
+#undef INSN
+
+// NB: When using Arrangement T4S, Vm is restricted to v0-v15
+#define INSN(NAME, opc, upper, U)                                                          \
+  void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, FloatRegister Vm, int index) { \
+    starti;                                                                                \
+    f(0, 31); f(upper, 30); f(U, 29); f(0b01111,28, 24);                                   \
+    switch(T) {                                                                            \
+      case T4S: {                                                                          \
+        f(0b01, 23, 22);                                                                   \
+        int H = index >> 2, L = (index >> 1) & 1, M = index & 1;                           \
+        f(H, 11); f(L, 21); f(M, 20);                                                      \
+        f(Vm->encoding(), 19, 16);                                                         \
+        break;                                                                             \
+      }                                                                                    \
+      case T2D: {                                                                          \
+        f(0b10, 23, 22);                                                                   \
+        int H = index >> 1, L = index & 1;                                                 \
+        f(H, 11); f(L, 21);                                                                \
+        rf(Vm, 16);                                                                        \
+        break;                                                                             \
+      }                                                                                    \
+      default:                                                                             \
+        ShouldNotReachHere();                                                              \
+    }                                                                                      \
+    f(opc, 15, 12); f(0, 10);                                                              \
+    rf(Vn, 5); rf(Vd, 0);                                                                  \
+  }
+
+  INSN(umull, 0b1010, false, 1);
+  INSN(umull2, 0b1010, true, 1);
+  INSN(umlal, 0b0010, false, 1);
+  INSN(umlal2, 0b0010, true, 1);
 
 #undef INSN
 

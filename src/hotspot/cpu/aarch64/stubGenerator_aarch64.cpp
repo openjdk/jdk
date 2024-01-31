@@ -1,4 +1,4 @@
-/*
+g/*
  * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2022, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -53,6 +53,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "utilities/align.hpp"
 #include "utilities/checkedCast.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 #ifdef COMPILER2
@@ -7237,6 +7238,349 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+
+  // Poly1305, vectorized
+
+  // Vectorizing Poly1305 is quite tricky. We already have a highly-
+  // efficient scalar Poly1305 implementation that runs on the core integer
+  // unit, but it's highly serialized, so it does not make make good use of
+  // the parallelism available.
+
+  // The scalar implementation takes advantage of some particular features
+  // of the Poly1305 keys. In particular, certain bits of r, the secret
+  // key, are required to be 0. These make it possible to use a full
+  // 64-bit-wide multiply-accumulate operation without needing to process
+  // carries between partial products,
+
+  // While this works well for a serial implementation, a parallel
+  // implementation cannot do this because rather than multiplying by r,
+  // each step multiplies by some integer power of r, modulo
+  // 2^130-5. Here we process six message blocks in parallel.
+
+  // In order to avoid processing carries between partial products we use a
+  // redundant representation, in which each 130-bit integer is encoded
+  // either as a 5-digit integer in base 2^26 or as a 3-digit integer in
+  // base 2^52, depending on whether we are using a 64- or 32-bit
+  // multiply-accumulate.
+
+  // In AArch64 Advanced SIMD, there is no 64-bit multiply-accumulate
+  // operation available to us, so we must use 32*32 -> 64-bit operations.
+
+  // In order to achieve maximum performance we'd like to get close to the
+  // processor's decode bandwidth, so that every clock cycle does something
+  // useful. In a typical high-end AArch64 implementation, the core integer
+  // unit has a fast 64-bit multiplier pipeline and the ASIMD unit has a
+  // fast(ish) two-way 32-bit multiplier, which may be slower than than the
+  // core integer unit's. It is not at all obvious whether it's best to use
+  // ASIMD or core instructions.
+
+  // Fortunately, if we have a wide-bandwidth instruction decode, we can do
+  // both at the same time, by feeding alternating instructions to the core
+  // and the ASIMD units. This also allows us to make good use of all of
+  // the available core and ASIMD registers, in parallel.
+
+  // To do this we use generators, which here are a kind of iterator that
+  // emits a group of instructions each time it is called. In this case we
+  // 4 parallel generators, and by calling them alternately we interleave
+  // the ASIMD and the core instructions. We also take care to ensure that
+  // each generator finishes at about the same time, to maximize the
+  // distance between instructions which generate and consume data.
+
+  // See Goll and Gueron, ‘Vectorization of Poly1305 message
+  // authentication code’. 2015 12th Int. Conf. on Information
+  // Technology – New Generations, Las Vegas, NV, USA, April 2015,
+  // pp. 145–150, doi: 10.1109/ITNG.2015.28
+
+  typedef AbstractRegSet<FloatRegister> vRegSet;
+
+  template <typename RegType>
+  class Regs {
+  public:
+    RegType _regs[5];
+    Regs(RegSetIterator<RegType> &it, int n) {
+      for (int i = 0; i < n; i++) {
+        _regs[i] = *it++;
+      }
+    }
+    Regs(RegType R0, RegType R1, RegType R2) {
+      _regs[0] = R0, _regs[1] = R1, _regs[2] = R2;
+    }
+
+    RegType operator[](int n) { return _regs[n]; }
+    RegType *operator *() { return _regs; }
+
+    operator RegType*() { return _regs; }
+  };
+
+  class RegPairs {
+  public:
+    RegPair _reg_pairs[3];
+    RegPairs(RegSetIterator<Register> &it, int n) {
+      for (int i = 0; i < n; i++) {
+        RegPair r(*it++, *it++);
+        _reg_pairs[i] = r;
+      }
+    }
+    operator RegPair*() { return _reg_pairs; }
+  };
+
+  typedef Regs<Register> CoreRegs;
+  typedef Regs<FloatRegister> VectorRegs;
+
+  address generate_poly1305_processBlocks2() {
+    static constexpr int POLY1305_BLOCK_LENGTH = 16;
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "poly1305_processBlocks2");
+    address start = __ pc();
+    Label here;
+
+    // __ set_last_Java_frame(sp, rfp, lr, rscratch1);
+    __ enter();
+    RegSet callee_saved = RegSet::range(r19, r28);
+    __ push(callee_saved, sp);
+
+    // Arguments
+    const Register input_start = c_rarg0, length = c_rarg1, acc_start = c_rarg2, r_start = c_rarg3;
+
+    auto regs = (RegSet::range(c_rarg4, r28) - r18_tls - rscratch1 - rscratch2 + lr).begin();
+    auto vregs = (vRegSet::range(v0, v7) + vRegSet::range(v16, v31)).begin();
+
+    // Rn is the key, packed into three registers
+    CoreRegs R(regs, 3);
+    __ pack_26(R[0], R[1], R[2], r_start);
+
+    // Sn is to be the sum of Un and the next block of data
+    CoreRegs S0(regs, 3), S1(regs, 3);
+
+    // Un is the current checksum
+    RegPairs u0(regs, 3), u1(regs, 3);
+
+    Register RR2 = *regs++;
+    __ lsl(RR2, R[2], 26);
+    __ add(RR2, RR2, RR2, __ LSL, 2);
+
+    int BLOCKS_PER_ITERATION = 6;
+
+    // Just one block?
+    Label SMALL;
+    {
+      Label LARGE;
+      __ subs(zr, length, POLY1305_BLOCK_LENGTH * BLOCKS_PER_ITERATION * 2);
+      __ br(__ GT, LARGE);
+
+      // Load the initial state
+      __ pack_26(u0[0]._lo, u0[1]._lo, u0[2]._lo, acc_start);
+      __ b(SMALL);
+
+      __ bind(LARGE);
+    }
+
+    // We're going to use R**6
+    {
+      // The low halves of u0 and u1
+      CoreRegs u0_lo(u0[0]._lo, u0[1]._lo, u0[2]._lo);
+      CoreRegs u1_lo(u1[0]._lo, u1[1]._lo, u1[2]._lo);
+
+      __ poly1305_field_multiply(u0, R, R, RR2, regs);
+      // u0_lo = R**2
+
+      __ poly1305_field_multiply(u1, u0_lo, R, RR2, regs);
+      // u1_lo = R**3
+
+      // RR2 = 5 * (R[2] << 26)
+      __ copy_3_regs(R, u1_lo);
+      __ lsl(RR2, R[2], 26);
+      __ add(RR2, RR2, RR2, __ LSL, 2);
+
+      __ poly1305_field_multiply(u1, R, R, RR2, regs);
+      // u1_lo = R**6
+
+      __ copy_3_regs(R, u1_lo);
+      __ lsl(RR2, R[2], 26);
+      __ add(RR2, RR2, RR2, __ LSL, 2);
+    }
+
+    // Load the initial state
+    __ pack_26(u0[0]._lo, u0[1]._lo, u0[2]._lo, acc_start);
+
+    // u0 contains the initial state. Clear the others.
+    for (int i = 0; i < 3; i++) {
+      __ mov(u0[i]._hi, 0);
+      __ mov(u1[i]._lo, 0); __ mov(u1[i]._hi, 0);
+    }
+
+    VectorRegs v_u0(vregs, 5);
+    VectorRegs v_s0(vregs, 3);
+    VectorRegs v_u1(vregs, 5);
+    VectorRegs v_s1(vregs, 3);
+
+    const FloatRegister zero = *vregs++;
+
+    __ movi(zero, __ T16B, 0);
+
+    // rr_v = r_v * 5
+    VectorRegs r_v(vregs, 2);
+    VectorRegs rr_v(vregs, 2);
+    __ copy_3_regs_to_5_elements(r_v, R[0], R[1], R[2]);
+    {
+      FloatRegister vtmp = *vregs;
+      __ shl(vtmp, __ T4S, r_v[0], 2);
+      __ addv(rr_v[0], __ T4S, r_v[0], vtmp);
+      __ shl(vtmp, __ T4S, r_v[1], 2);
+      __ addv(rr_v[1], __ T4S, r_v[1], vtmp);
+    }
+
+    for (int i = 0; i < 5; i++) {
+      __ movi(v_u0[i], __ T16B, 0);
+      __ movi(v_u1[i], __ T16B, 0);
+    }
+
+    {
+      Label DONE, LOOP;
+
+      __ subsw(rscratch1, length, POLY1305_BLOCK_LENGTH * BLOCKS_PER_ITERATION * 2);
+      __ br(Assembler::LT, DONE);
+
+      __ align(OptoLoopAlignment);
+      __ bind(LOOP);
+      {
+        constexpr int COLS = 4;
+        AsmGenerator gen[COLS];
+
+        __ poly1305_step(gen[0], S0, u0, input_start);
+        __ poly1305_field_multiply(gen[0], u0, S0, R, RR2, regs);
+
+        __ poly1305_step(gen[1], S1, u1, input_start);
+        __ poly1305_field_multiply(gen[1], u1, S1, R, RR2, regs);
+
+        __ poly1305_step_vec(gen[2], v_s0, v_u0, zero, input_start);
+        __ poly1305_field_multiply(gen[2], v_u0, v_s0, r_v, rr_v, zero,
+                                   vregs.remaining());
+
+        __ poly1305_step_vec(gen[3], v_s1, v_u1, zero, input_start);
+        __ poly1305_field_multiply(gen[3], v_u1, v_s1, r_v, rr_v, zero,
+                                   vregs.remaining());
+
+        AsmGenerator::Iterator it[COLS];
+        int len[COLS];
+
+        int l_max = INT_MIN;
+        for (int col = 0; col < COLS; col++) {
+          it[col] = gen[col].iterator();
+          len[col] = gen[col].length();
+          l_max = MAX2(l_max, len[col]);
+        }
+
+        int err[COLS];
+        for (int col = 0; col < COLS; col++) {
+          err[col] = 0;
+        }
+
+        for (int i = 0; i < l_max; i++) {
+          for (int col = 0; col < COLS; col++) {
+            err[col] -= len[col];
+            if (err[col] < 0) {
+              err[col] += l_max;
+              (it[col]++)();
+            }
+          }
+        }
+
+        for (int col = 0; col < COLS; col++) {
+          assert(*(it[col]) == nullptr, "Make sure all generators are exhausted");
+        }
+      }
+
+      __ subw(length, length, POLY1305_BLOCK_LENGTH * BLOCKS_PER_ITERATION);
+      __ subsw(rscratch1, length, POLY1305_BLOCK_LENGTH * BLOCKS_PER_ITERATION * 2);
+      __ br(Assembler::GE, LOOP);
+
+      __ bind(DONE);
+    }
+
+    // Last six parallel blocks
+    {
+      // Load R**1
+      __ pack_26(R[0], R[1], R[2], r_start);
+      __ lsl(RR2, R[2], 26);
+      __ add(RR2, RR2, RR2, __ LSL, 2);
+
+      __ poly1305_load(S0, input_start);
+      __ poly1305_add(S0, u0);
+      __ poly1305_field_multiply(u0, S0, R, RR2, regs);
+
+      __ poly1305_load(S0, input_start);
+      __ poly1305_add(S0, u0);
+      __ poly1305_add(S0, u1);
+      __ poly1305_field_multiply(u0, S0, R, RR2, regs);
+
+      __ poly1305_load(S0, input_start);
+      __ poly1305_add(S0, u0);
+      __ poly1305_transfer(u1, v_u0, 0, *vregs);
+      __ poly1305_add(S0, u1);
+      __ poly1305_field_multiply(u0, S0, R, RR2, regs);
+
+      __ poly1305_load(S0, input_start);
+      __ poly1305_add(S0, u0);
+      __ poly1305_transfer(u1, v_u0, 1, *vregs);
+      __ poly1305_add(S0, u1);
+      __ poly1305_field_multiply(u0, S0, R, RR2, regs);
+
+      __ poly1305_load(S0, input_start);
+      __ poly1305_add(S0, u0);
+      __ poly1305_transfer(u1, v_u1, 0, *vregs);
+      __ poly1305_add(S0, u1);
+      __ poly1305_field_multiply(u0, S0, R, RR2, regs);
+
+      __ poly1305_load(S0, input_start);
+      __ poly1305_add(S0, u0);
+      __ poly1305_transfer(u1, v_u1, 1, *vregs);
+      __ poly1305_add(S0, u1);
+      __ poly1305_field_multiply(u0, S0, R, RR2, regs);
+
+      __ subw(length, length, POLY1305_BLOCK_LENGTH * BLOCKS_PER_ITERATION);
+    }
+
+    // Maybe some last blocks
+    __ bind(SMALL);
+    {
+      Label DONE, LOOP;
+
+      __ bind(LOOP);
+      __ subsw(length, length, POLY1305_BLOCK_LENGTH);
+      __ br(__ LT, DONE);
+
+      __ poly1305_step(S0, u0, input_start);
+      __ poly1305_field_multiply(u0, S0, R, RR2, regs);
+
+      __ b(LOOP);
+      __ bind(DONE);
+    }
+    __ poly1305_fully_reduce(S0, u0);
+
+    // And store it all back
+    __ ubfiz(rscratch1, S0[0], 0, 26);
+    __ ubfx(rscratch2, S0[0], 26, 26);
+    __ stp(rscratch1, rscratch2, Address(acc_start));
+
+    __ ubfx(rscratch1, S0[0], 52, 12);
+    __ bfi(rscratch1, S0[1], 12, 14);
+    __ ubfx(rscratch2, S0[1], 14, 26);
+    __ stp(rscratch1, rscratch2, Address(acc_start, 2 * sizeof (jlong)));
+
+    __ extr(rscratch1, S0[2], S0[1], 40);
+    __ str(rscratch1, Address(acc_start, 4 * sizeof (jlong)));
+
+    __ pop(callee_saved, sp);
+
+    __ leave();
+    __ ret(lr);
+
+    return start;
+  }
+
+
 #if INCLUDE_JFR
 
   static void jfr_prologue(address the_pc, MacroAssembler* _masm, Register thread) {
@@ -8381,7 +8725,7 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::aarch64::_spin_wait = generate_spin_wait();
 
     if (UsePoly1305Intrinsics) {
-      StubRoutines::_poly1305_processBlocks = generate_poly1305_processBlocks();
+      StubRoutines::_poly1305_processBlocks = generate_poly1305_processBlocks2();
     }
 
 #if defined (LINUX) && !defined (__ARM_FEATURE_ATOMICS)
