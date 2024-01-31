@@ -29,6 +29,11 @@
  */
 
 import java.awt.Component;
+import java.lang.ref.PhantomReference;
+import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 import javax.swing.JFrame;
@@ -43,12 +48,7 @@ import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 
-import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-
-public class TreeCellRendererLeakTest {
-
-    static int smCount = 0;
+public final class TreeCellRendererLeakTest {
 
     private static JFrame frame;
     private JPanel jPanel1;
@@ -57,12 +57,15 @@ public class TreeCellRendererLeakTest {
     private JTabbedPane jTabbedPane1;
     private JTree jTree1;
 
-    static CountDownLatch testDone;
+    private static final CountDownLatch testDone = new CountDownLatch(1);
 
-    ArrayList<WeakReference<JLabel>> weakRefArrLabel = new ArrayList(50);
+    // Access to referenceList and referenceQueue is guarded by referenceList
+    private static final List<Reference<JLabel>> referenceList = new ArrayList<>(50);
+    private static final ReferenceQueue<JLabel> referenceQueue = new ReferenceQueue<>();
+
 
     // Custom TreeCellRenderer
-    public class TreeCellRenderer extends DefaultTreeCellRenderer {
+    public static final class TreeCellRenderer extends DefaultTreeCellRenderer {
 
         public TreeCellRenderer() {}
 
@@ -83,7 +86,9 @@ public class TreeCellRendererLeakTest {
                 label.setBackground(getBackgroundNonSelectionColor());
             }
 
-            weakRefArrLabel.add(smCount++, new WeakReference<JLabel>(label));
+            synchronized (referenceList) {
+                referenceList.add(new PhantomReference<>(label, referenceQueue));
+            }
             return label;
         }
     }
@@ -129,9 +134,8 @@ public class TreeCellRendererLeakTest {
         frame.setVisible(true);
     }// </editor-fold>
 
-    public static void main(String args[]) throws Exception {
+    public static void main(String[] args) throws Exception {
         try {
-            testDone = new CountDownLatch(1);
             SwingUtilities.invokeAndWait(() -> {
                 TreeCellRendererLeakTest tf = new TreeCellRendererLeakTest();
             });
@@ -177,32 +181,39 @@ public class TreeCellRendererLeakTest {
 
     // Print number of uncollected JLabels
     public void runInfo() {
-        long time = System.currentTimeMillis();
-        long initialCnt = smCount;
+        final long time = System.currentTimeMillis();
+        long removedLabels = 0;
         while ((System.currentTimeMillis() - time) < (15 * 1000)) {
             System.gc();
-            System.out.println("Live JLabels:" + smCount);
+
+            int start;
+            int removed = 0;
+            int left;
+            // Remove dead references
+            synchronized (referenceList) {
+                start = referenceList.size();
+                Reference<?> ref;
+                while ((ref = referenceQueue.poll()) != null) {
+                    referenceList.remove(ref);
+                    removed++;
+                }
+                left = referenceList.size();
+            }
+            removedLabels += removed;
+            System.out.println("Live JLabels: " + start + " - " + removed + " = " + left);
+            System.out.println("All time removed: " + removedLabels);
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException ex) {
                 ex.printStackTrace();
+                break;
             }
         }
 
-        System.out.println("\ncleanedup LabelCount " + getCleanedUpLabelCount());
-        if (getCleanedUpLabelCount() == 0) {
+        System.out.println("\nCleaned up labels: " + removedLabels);
+        if (removedLabels == 0) {
             throw new RuntimeException("TreeCellRenderer component leaked");
         }
     }
-
-    private int getCleanedUpLabelCount() {
-        int count = 0;
-        for (WeakReference<JLabel> ref : weakRefArrLabel) {
-            if (ref.get() == null) {
-                count++;
-            }
-        }
-        return count;
-    }
-
 }
+
