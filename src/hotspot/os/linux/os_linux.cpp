@@ -3607,14 +3607,14 @@ static char* anon_mmap_aligned(char* req_addr, size_t bytes, size_t alignment) {
         if (::munmap(start, start_aligned - start) != 0) {
           ErrnoPreserver ep;
           size_t size = start_aligned - start;
-          log_trace(os,map)("munmap failed: " RANGEFMT " errno=(%s)", RANGEFMTARGS(start, size), os::strerror(ep.saved()));
+          log_trace(os,map)("munmap failed: " RANGEFMT " errno=(%s)", RANGEFMTARGS(start, start_aligned - start), os::strerror(ep.saved()));
         }
       }
       if (end_aligned < end) {
         if (::munmap(end_aligned, end - end_aligned) != 0) {
           ErrnoPreserver ep;
           size_t size = end - end_aligned;
-          log_trace(os,map)("munmap failed: " RANGEFMT " errno=(%s)", RANGEFMTARGS(end_aligned, size), os::strerror(ep.saved()));
+          log_trace(os,map)("munmap failed: " RANGEFMT " errno=(%s)", RANGEFMTARGS(end_aligned, end - end_aligned), os::strerror(ep.saved()));
         }
       }
       start = start_aligned;

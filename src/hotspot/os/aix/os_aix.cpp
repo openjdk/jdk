@@ -1470,8 +1470,8 @@ struct vmembk_t {
   void assert_is_valid_subrange(char* p, size_t s) const {
     if (!contains_range(p, s)) {
       log_trace(os,map)(RANGEFMT " is not a sub "
-                "range of " RANGEFMT, RANGEFMTARGS(p, s),
-                RANGEFMTARGS(addr, size));
+              "range of " RANGEFMT, RANGEFMTARGS(p, s),
+              RANGEFMTARGS(addr, size));
       guarantee0(false);
     }
     if (!is_aligned_to(p, pagesize) || !is_aligned_to(p + s, pagesize)) {
