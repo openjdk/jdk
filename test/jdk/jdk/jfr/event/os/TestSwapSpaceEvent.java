@@ -34,8 +34,18 @@ import jdk.test.lib.jfr.Events;
  * @test
  * @key jfr
  * @requires vm.hasJFR
+ * @requires (os.family != "linux")
  * @library /test/lib
  * @run main/othervm jdk.jfr.event.os.TestSwapSpaceEvent
+ */
+
+/**
+ * @test
+ * @key jfr
+ * @requires vm.hasJFR
+ * @requires (os.family == "linux")
+ * @library /test/lib
+ * @run main/othervm -XX:-UseContainerSupport jdk.jfr.event.os.TestSwapSpaceEvent
  */
 public class TestSwapSpaceEvent {
     private final static String EVENT_NAME = EventNames.SwapSpace;
@@ -50,7 +60,7 @@ public class TestSwapSpaceEvent {
         for (RecordedEvent event : events) {
             System.out.println("Event: " + event);
             long totalSize = Events.assertField(event, "totalSize").atLeast(0L).getValue();
-            Events.assertField(event, "freeSize").atLeast(-1L); // we still get on Linux -1 in container envs
+            Events.assertField(event, "freeSize").atLeast(0L);
             Events.assertField(event, "freeSize").atMost(totalSize);
         }
     }
