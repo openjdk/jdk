@@ -45,7 +45,7 @@
 class VirtualMemoryView {
   friend class NmtVirtualMemoryViewTest;
 
-  using Id = uint32_t;
+  using Id = int32_t;
 public:
    struct PhysicalMemorySpace {
     Id id; // Uniquely identifies the device

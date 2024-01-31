@@ -300,7 +300,8 @@ void VirtualMemoryView::merge_memregions(RegionStorage& ranges) {
         // There's overlap, known because of pre-condition
         merging_range.end() >= potential_range.start
         && merging_range.flag == potential_range.flag
-        && equal_stacks(merging_range.stack_idx, potential_range.stack_idx)) {
+        && equal_stacks(merging_range.stack_idx, potential_range.stack_idx)
+        ) {
       // Merge it
       merging_range.size = potential_range.end() - merging_range.start;
     } else {
