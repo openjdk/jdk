@@ -1157,15 +1157,15 @@ public class FileChannelImpl
     private abstract static sealed class Unmapper
         implements Runnable, UnmapperProxy
     {
-        private static final AtomicIntegerFieldUpdater<Unmapper> UPDATER =
-                AtomicIntegerFieldUpdater.newUpdater(Unmapper.class, "invoked");
+        private static final long INVOKED_OFFSET = Unsafe.getUnsafe()
+                .objectFieldOffset(Unmapper.class, "invoked");
 
         private final long address;
         protected final long size;
         protected final long cap;
         private final FileDescriptor fd;
         private final int pagePosition;
-        private volatile int invoked;
+        private int invoked;
 
         private Unmapper(long address, long size, long cap,
                          FileDescriptor fd, int pagePosition)
@@ -1176,7 +1176,6 @@ public class FileChannelImpl
             this.cap = cap;
             this.fd = fd;
             this.pagePosition = pagePosition;
-            this.invoked = 0;
         }
 
         @Override
@@ -1200,7 +1199,7 @@ public class FileChannelImpl
 
         public final void unmap() {
             // Ensure idempotency (paranoia)
-            if (UPDATER.compareAndSet(this, 0, 1)) {
+            if (Unsafe.getUnsafe().compareAndSetInt(this, INVOKED_OFFSET, 0, 1)) {
                 nd.unmap(address, size);
 
                 // if this mapping has a valid file descriptor then we close it

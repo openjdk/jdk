@@ -31,9 +31,10 @@ import java.io.FileDescriptor;
 import java.lang.foreign.MemorySegment;
 import java.lang.ref.Reference;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+
 import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.misc.ScopedMemoryAccess.ScopedAccessError;
+import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
 import jdk.internal.ref.Cleaner;
 import sun.nio.ch.DirectBuffer;
@@ -78,25 +79,24 @@ class Direct$Type$Buffer$RW$$BO$
 
     private static final class Deallocator implements Runnable {
 
-        private static final AtomicIntegerFieldUpdater<Deallocator> UPDATER =
-                AtomicIntegerFieldUpdater.newUpdater(Deallocator.class, "invoked");
+        private static final long INVOKED_OFFSET = Unsafe.getUnsafe()
+                .objectFieldOffset(Deallocator.class, "invoked");
 
         private final long address;
         private final long size;
         private final int capacity;
-        private volatile int invoked;
+        private int invoked;
 
         private Deallocator(long address, long size, int capacity) {
             assert address != 0;
             this.address = address;
             this.size = size;
             this.capacity = capacity;
-            this.invoked = 0;
         }
 
         public void run() {
             // Ensure idempotency (paranoia)
-            if (UPDATER.compareAndSet(this, 0, 1)) {
+            if (Unsafe.getUnsafe().compareAndSetInt(this, INVOKED_OFFSET, 0, 1)) {
                 UNSAFE.freeMemory(address);
                 Bits.unreserveMemory(size, capacity);
             }
