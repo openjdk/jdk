@@ -47,8 +47,6 @@ class TenuredGeneration: public Generation {
 
   MemRegion _prev_used_region;
 
-protected:
-
   // This is shared with other generations.
   CardTableRS* _rs;
   // This is local to this generation.
