@@ -635,6 +635,10 @@ $(foreach m, $(ALL_MODULES), \
   ) \
 )
 
+# Customization for specific files
+
+jdk.javadoc_doc-comment-spec.md_TOC := --toc
+
 ifeq ($(ENABLE_PANDOC), true)
   # For all markdown files in $module/share/specs directories, convert them to
   # html, if we have pandoc (otherwise we'll just skip this).
@@ -655,7 +659,7 @@ ifeq ($(ENABLE_PANDOC), true)
             FILES := $f, \
             DEST := $(DOCS_OUTPUTDIR)/specs/, \
             CSS := $(GLOBAL_SPECS_DEFAULT_CSS_FILE), \
-            OPTIONS := -V include-before='$(SPECS_TOP)' -V include-after='$(SPECS_BOTTOM_$($m_$f_NOF_SUBDIRS))', \
+            OPTIONS := $($m_$(notdir $f)_TOC) -V include-before='$(SPECS_TOP)' -V include-after='$(SPECS_BOTTOM_$($m_$f_NOF_SUBDIRS))', \
             REPLACEMENTS := \
 		@@VERSION_SPECIFICATION@@ => $(VERSION_SPECIFICATION) ; \
 		@@VERSION_STRING@@ => $(VERSION_STRING), \
