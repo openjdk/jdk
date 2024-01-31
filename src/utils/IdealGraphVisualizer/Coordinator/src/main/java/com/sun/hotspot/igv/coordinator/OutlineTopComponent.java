@@ -291,6 +291,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         try {
             loadFile(graphsPath);
         } catch (IOException ex) {
+            Exceptions.printStackTrace(ex);
             return;
         }
 
@@ -356,8 +357,8 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
                     });
                 }
                 in.close();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+            } catch (IOException ex) {
+                Exceptions.printStackTrace(ex);
             }
         });
     }
@@ -456,16 +457,13 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
             File file = new File(absolutePath);
 
             final FileChannel channel;
-            try {
-                channel = FileChannel.open(file.toPath(), StandardOpenOption.READ);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
             final long start;
             try {
+                channel = FileChannel.open(file.toPath(), StandardOpenOption.READ);
                 start = channel.size();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+            } catch (Exception ex) {
+                Exceptions.printStackTrace(ex);
+                return;
             }
 
             final ProgressHandle handle = ProgressHandleFactory.createHandle("Opening file " + file.getName());
