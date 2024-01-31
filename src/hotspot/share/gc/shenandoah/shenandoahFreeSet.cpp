@@ -111,7 +111,7 @@ void ShenandoahRegionPartition::increase_used(ShenandoahFreeSetPartitionId which
           _used_by[which_partition], _capacity_of[which_partition], bytes);
 }
 
-inline void ShenandoahRegionPartition::shrink_range_if_boundary_modified(ShenandoahFreeSetPartitionId partition, size_t idx) {
+inline void ShenandoahRegionPartition::shrink_interval_if_boundary_modified(ShenandoahFreeSetPartitionId partition, size_t idx) {
   if (idx == _leftmosts[partition]) {
     while ((_leftmosts[partition] < _max) && !in_partition(_leftmosts[partition], partition)) {
       _leftmosts[partition]++;
@@ -132,7 +132,8 @@ inline void ShenandoahRegionPartition::shrink_range_if_boundary_modified(Shenand
   }
 }
 
-inline void ShenandoahRegionPartition::expand_bounds_maybe(ShenandoahFreeSetPartitionId partition, size_t idx, size_t region_available) {
+inline void ShenandoahRegionPartition::expand_interval_if_boundary_modified(ShenandoahFreeSetPartitionId partition,
+                                                           size_t idx, size_t region_available) {
   if (region_available == _region_size_bytes) {
     if (_leftmosts_empty[partition] > idx) {
       _leftmosts_empty[partition] = idx;
@@ -164,7 +165,7 @@ void ShenandoahRegionPartition::retire_within_partition(size_t idx, size_t used_
   }
 
   _membership[idx] = NotFree;
-  shrink_range_if_boundary_modified(orig_partition, idx);
+  shrink_interval_if_boundary_modified(orig_partition, idx);
 
   _region_counts[orig_partition]--;
   _region_counts[NotFree]++;
@@ -179,7 +180,7 @@ void ShenandoahRegionPartition::make_free(size_t idx, ShenandoahFreeSetPartition
   _membership[idx] = which_partition;
   _capacity_of[which_partition] += _region_size_bytes;
   _used_by[which_partition] += _region_size_bytes - available;
-  expand_bounds_maybe(which_partition, idx, available);
+  expand_interval_if_boundary_modified(which_partition, idx, available);
 
   _region_counts[NotFree]--;
   _region_counts[which_partition]++;
@@ -208,11 +209,11 @@ void ShenandoahRegionPartition::move_to_partition(size_t idx, ShenandoahFreeSetP
   _membership[idx] = new_partition;
   _capacity_of[orig_partition] -= _region_size_bytes;
   _used_by[orig_partition] -= used;
-  shrink_range_if_boundary_modified(orig_partition, idx);
+  shrink_interval_if_boundary_modified(orig_partition, idx);
 
   _capacity_of[new_partition] += _region_size_bytes;;
   _used_by[new_partition] += used;
-  expand_bounds_maybe(new_partition, idx, available);
+  expand_interval_if_boundary_modified(new_partition, idx, available);
 
   _region_counts[orig_partition]--;
   _region_counts[new_partition]++;
@@ -343,7 +344,8 @@ void ShenandoahRegionPartition::assert_bounds() {
   assert (leftmost(Mutator) == _max || in_partition(rightmost(Mutator), Mutator),
           "rightmost region should be free: " SIZE_FORMAT, rightmost(Mutator));
 
-  // If Mutator partition is empty, leftmosts will both equal max, rightmosts will both equal zero.  Likewise for empty region partitions.
+  // If Mutator partition is empty, leftmosts will both equal max, rightmosts will both equal zero.
+  // Likewise for empty region partitions.
   size_t beg_off = leftmosts[Mutator];
   size_t end_off = rightmosts[Mutator];
   assert (beg_off >= leftmost(Mutator),
@@ -367,7 +369,8 @@ void ShenandoahRegionPartition::assert_bounds() {
   assert (leftmost(Collector) == _max || in_partition(rightmost(Collector), Collector),
           "rightmost region should be free: " SIZE_FORMAT, rightmost(Collector));
 
-  // If Collector partition is empty, leftmosts will both equal max, rightmosts will both equal zero.  Likewise for empty region partitions.
+  // If Collector partition is empty, leftmosts will both equal max, rightmosts will both equal zero.
+  // Likewise for empty region partitions.
   beg_off = leftmosts[Collector];
   end_off = rightmosts[Collector];
   assert (beg_off >= leftmost(Collector),
@@ -735,7 +738,8 @@ void ShenandoahFreeSet::move_regions_from_collector_to_mutator_partition(size_t 
   // If there are any non-empty regions within Collector partition, we can also move them to the Mutator free partition
   if ((max_xfer_regions > 0) && (_partitions.leftmost(Collector) <= _partitions.rightmost(Collector))) {
     ShenandoahHeapLocker locker(_heap->lock());
-    for (size_t idx = _partitions.leftmost(Collector); (max_xfer_regions > 0) && (idx <= _partitions.rightmost(Collector)); idx++) {
+    for (size_t idx = _partitions.leftmost(Collector);
+         (max_xfer_regions > 0) && (idx <= _partitions.rightmost(Collector)); idx++) {
       size_t alloc_capacity = this->alloc_capacity(idx);
       if (_partitions.in_partition(idx, Collector) && (alloc_capacity > 0)) {
         _partitions.move_to_partition(idx, Mutator, alloc_capacity);
@@ -923,9 +927,9 @@ void ShenandoahFreeSet::log_status() {
       size_t max_humongous = max_contig * ShenandoahHeapRegion::region_size_bytes();
       size_t free = capacity() - used();
 
-      // Since certain regions that belonged to the Mutator free partition at the time of most recent rebuild may have been retired,
-      // the sum of used and capacities within regions that are still in the Mutator free partition may not match my internally tracked
-      // values of used() and free().
+      // Since certain regions that belonged to the Mutator free partition at the time of most recent rebuild may have been
+      // retired, the sum of used and capacities within regions that are still in the Mutator free partition may not match
+      // my internally tracked values of used() and free().
       assert(free == total_free, "Free memory should match");
 
       ls.print("Free: " SIZE_FORMAT "%s, Max: " SIZE_FORMAT "%s regular, " SIZE_FORMAT "%s humongous, ",
