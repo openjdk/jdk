@@ -100,6 +100,7 @@ public class EncodeDecode {
         test(CMS_ALGORITHM_PROTECTION_OID, onev,
             "301b06092a864886f70d010934310e300c040a00000000000000000000");
 
+        //Test whether unsupported OIDs are handled properly
         test(AlgorithmId.SHA_oid,
             new DerOutputStream().write(DerValue.tag_Set, new DerOutputStream().putBoolean(true)).toByteArray(),
             "300c06052b0e03021a31030101ff");
