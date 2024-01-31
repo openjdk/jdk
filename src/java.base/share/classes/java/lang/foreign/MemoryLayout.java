@@ -864,7 +864,8 @@ public sealed interface MemoryLayout
         static PathElement groupElement(String name) {
             Objects.requireNonNull(name);
             return new LayoutPath.PathElementImpl(PathKind.GROUP_ELEMENT,
-                                                  path -> path.groupElement(name));
+                                                  path -> path.groupElement(name),
+                                                  "groupElement(\"" + name + "\")");
         }
 
         /**
@@ -879,7 +880,8 @@ public sealed interface MemoryLayout
                 throw new IllegalArgumentException("Index < 0");
             }
             return new LayoutPath.PathElementImpl(PathKind.GROUP_ELEMENT,
-                    path -> path.groupElement(index));
+                                                  path -> path.groupElement(index),
+                                                  "groupElement(" + index + ")");
         }
 
         /**
@@ -894,7 +896,8 @@ public sealed interface MemoryLayout
                 throw new IllegalArgumentException("Index must be positive: " + index);
             }
             return new LayoutPath.PathElementImpl(PathKind.SEQUENCE_ELEMENT_INDEX,
-                                                  path -> path.sequenceElement(index));
+                                                  path -> path.sequenceElement(index),
+                                                  "sequenceElement(" + index + ")");
         }
 
         /**
@@ -927,7 +930,8 @@ public sealed interface MemoryLayout
                 throw new IllegalArgumentException("Step must be != 0: " + step);
             }
             return new LayoutPath.PathElementImpl(PathKind.SEQUENCE_RANGE,
-                                                  path -> path.sequenceElement(start, step));
+                                                  path -> path.sequenceElement(start, step),
+                                                  "sequenceElement(" + start + ", " + step + ")");
         }
 
         /**
@@ -940,7 +944,8 @@ public sealed interface MemoryLayout
          */
         static PathElement sequenceElement() {
             return new LayoutPath.PathElementImpl(PathKind.SEQUENCE_ELEMENT,
-                                                  LayoutPath::sequenceElement);
+                                                  LayoutPath::sequenceElement,
+                                                  "sequenceElement()");
         }
 
         /**
@@ -949,7 +954,8 @@ public sealed interface MemoryLayout
          */
         static PathElement dereferenceElement() {
             return new LayoutPath.PathElementImpl(PathKind.DEREF_ELEMENT,
-                    LayoutPath::derefElement);
+                                                  LayoutPath::derefElement,
+                                                  "dereferenceElement()");
         }
     }
 
