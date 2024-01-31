@@ -48,6 +48,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -166,13 +167,15 @@ public class TemporalSubFormats {
     public void badApplyPatternTest() {
         // Not a supported FormatStyle
         assertThrows(IllegalArgumentException.class, () ->
-                new MessageFormat("{0,dtf_date,longer"));
-        // Not a legal SubformatPattern
+                new MessageFormat("{0,dtf_date,longer}"));
+
+        // Not a legal SubformatPattern, catch the underlying exception
         assertThrows(IllegalArgumentException.class, () ->
-                new MessageFormat("{0,dtf_date,d MMM uuuu xx"));
-        // Pre-defined ISO style does not exist
-        assertThrows(IllegalArgumentException.class, () ->
-                new MessageFormat("{0,basic_iso_date_foo"));
+                new MessageFormat("{0,dtf_date,VVV}"));
+
+        // Pre-defined ISO style does not exist and should be ignored
+        assertDoesNotThrow(() -> new MessageFormat("{0,BASIC_ISO_DATE,foo}"),
+                "Style on a pre-defined formatter should be ignored, instead of throwing an exception");
     }
 
     // DateTimeFormatters cannot be recognized when toPattern() is invoked

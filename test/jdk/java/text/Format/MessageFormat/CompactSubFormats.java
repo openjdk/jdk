@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
  */
 
 import java.text.CompactNumberFormat;
+import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.MessageFormat;
 import java.text.NumberFormat;
@@ -58,8 +59,10 @@ public class CompactSubFormats {
     // Ensure that only 'compact_short' and 'compact_long' are recognized
     @Test
     public void badApplyPatternTest() {
-        assertThrows(IllegalArgumentException.class, () ->
-                new MessageFormat("{0,number,compact_regular"));
+        // An exception won't be thrown since 'compact_regular' will be interpreted as a
+        // subformatPattern.
+        assertEquals(new DecimalFormat("compact_regular"),
+                new MessageFormat("{0,number,compact_regular}").getFormatsByArgumentIndex()[0]);
     }
 
     // SHORT and LONG CompactNumberFormats should produce correct patterns

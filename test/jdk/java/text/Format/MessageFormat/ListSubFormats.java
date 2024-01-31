@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,10 +62,10 @@ public class ListSubFormats {
     public void badApplyPatternTest() {
         // Wrong FormatStyle
         assertThrows(IllegalArgumentException.class, () ->
-                new MessageFormat("{0,list,standard"));
+                new MessageFormat("{0,list,standard}"));
         // Wrong FormatType
         assertThrows(IllegalArgumentException.class, () ->
-                new MessageFormat("{0,listt,or"));
+                new MessageFormat("{0,listt,or}"));
     }
 
     // STANDARD, OR, UNIT ListFormats (with FULL style) should
