@@ -107,7 +107,7 @@ void ShenandoahControlThread::run_service() {
       _degen_point = ShenandoahGC::_degenerated_outside_cycle;
 
       // If a humongous allocation has failed, then the heap is likely in need of compaction, so run
-      // a full gc (which compacts regions) instead of a degenerated gc (which does not compatct regions).
+      // a full gc (which compacts regions) instead of a degenerated gc (which does not compact regions).
       if (ShenandoahDegeneratedGC && heuristics->should_degenerate_cycle() && !humongous_alloc_failure_pending) {
         heuristics->record_allocation_failure_gc();
         policy->record_alloc_failure_to_degenerated(degen_point);
