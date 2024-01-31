@@ -27,6 +27,7 @@
 #include "gc/serial/cardTableRS.hpp"
 #include "gc/serial/generation.hpp"
 #include "gc/serial/serialHeap.hpp"
+#include "gc/serial/tenuredGeneration.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "memory/iterator.inline.hpp"
 #include "utilities/align.hpp"
@@ -54,9 +55,8 @@ void CardTableRS::verify_used_region_at_save_marks(Space* sp) const {
 }
 #endif
 
-void CardTableRS::maintain_old_to_young_invariant(Generation* old_gen, bool is_young_gen_empty) {
-  assert(SerialHeap::heap()->is_old_gen(old_gen), "precondition");
-
+void CardTableRS::maintain_old_to_young_invariant(TenuredGeneration* old_gen,
+                                                  bool is_young_gen_empty) {
   if (is_young_gen_empty) {
     clear_MemRegion(old_gen->prev_used_region());
   } else {
