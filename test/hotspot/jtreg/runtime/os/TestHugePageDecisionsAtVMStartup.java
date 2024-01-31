@@ -128,11 +128,11 @@ public class TestHugePageDecisionsAtVMStartup {
             long thpPageSize = configuration.getThpPageSize();
             if (thpPageSize == 0) {
                 thpPageSize = configuration.getStaticDefaultHugePageSize();
-                if (thpPageSize == 0) {
+                if (thpPageSize == 0 || thpPageSize > 16 * 1024 * 1024) {
                     out.shouldContain("[info][pagesize] Large page support disabled");
                     return;
                 }
-                thpPageSize = Math.min(thpPageSize, 16 * 1024 * 1024);
+                thpPageSize = thpPageSize;
             }
             String thpPageSizeString = buildSizeString(thpPageSize);
             // We expect to see exactly two "Usable page sizes" :  the system page size and the THP page size. The system

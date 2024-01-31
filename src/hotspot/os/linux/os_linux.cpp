@@ -3876,13 +3876,17 @@ void os::Linux::large_page_init() {
     // - os::pagesizes() has two members, the THP page size and the system page size
     _large_page_size = HugePages::thp_pagesize();
     if (_large_page_size == 0) {
-        // Unknown THP page size => falback to default static hugepage size
-        if (!HugePages::supports_static_hugepages()) {
+        // Older kernels won't publish the THP page size. Fall back to default static huge page size,
+        // since that is likely to be the THP page size as well. Don't do it if the page size is considered
+        // too large to avoid large alignment waste.
+        log_info(pagesize) ("Cannot determine THP page size (kernel < 4.10 ?)");
+        if (!HugePages::supports_static_hugepages()
+            || HugePages::default_static_hugepage_size() > 16 * M) {
             warn_no_large_pages_configured();
-            UseLargePages = false;
+            UseLargePages = UseTransparentHugePages = false;
             return;
         }
-        _large_page_size = MIN2(HugePages::default_static_hugepage_size(), 16 * M);
+        _large_page_size = HugePages::default_static_hugepage_size();
     }
     _page_sizes.add(_large_page_size);
     _page_sizes.add(os::vm_page_size());
