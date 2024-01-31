@@ -214,33 +214,30 @@ public class DocTreeMaker implements DocTreeFactory {
         lb.addAll(cast(fullBody));
         List<DCTree> fBody = lb.toList();
 
-        // A dummy comment to keep the diagnostics logic happy.
+        // A dummy comment that returns Position.NOPOS for any source position.
+        // A different solution would be to replace the Comment field
+        // in DCDocComment with a narrower type equivalent to Function<int,int>
+        // so that here in this code we can just supply a lambda as follows:
+        //   i -> Position.NOPOS
         Comment c = new Comment() {
-            @Override
-            public String getText() {
-                return null;
-            }
-
             @Override
             public int getSourcePos(int index) {
                 return Position.NOPOS;
             }
 
-            // Currently, the style for a synthetic comment is not user-visible
-            // through the {@link DocTrees} API. Nevertheless, we heuristically
-            // infer a suitable style, based on the {@code preamble}, {@code postamble},
-            // and {@code fullBody}.
+            @Override
+            public String getText() {
+                throw new UnsupportedOperationException(getClass() + ".getText");
+            }
+
             @Override
             public CommentStyle getStyle() {
-                return preamble.isEmpty()
-                        && postamble.isEmpty()
-                        && fullBody.stream().anyMatch(t -> t.getKind() == Kind.MARKDOWN)
-                        ? CommentStyle.JAVADOC_LINE : CommentStyle.JAVADOC_BLOCK;
+                throw new UnsupportedOperationException(getClass() + ".getStyle");
             }
 
             @Override
             public boolean isDeprecated() {
-                return false;
+                throw new UnsupportedOperationException(getClass() + ".isDeprecated");
             }
         };
         Pair<List<DCTree>, List<DCTree>> pair = splitBody(fullBody);
