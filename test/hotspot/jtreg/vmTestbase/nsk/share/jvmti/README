@@ -27,7 +27,7 @@ which provides support for JVMTI tests and accessing JVMTI environment.
     Source files:
         jvmti_tools.hpp
         jvmti_tools.cpp
-        agent_tools.c
+        agent_tools.cpp
         Injector.hpp
         Injector.cpp
         JVMTITools.hpp
