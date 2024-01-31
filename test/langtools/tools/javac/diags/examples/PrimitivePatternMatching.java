@@ -21,12 +21,12 @@
  * questions.
  */
 
-// key: compiler.err.selector.type.not.allowed
+// key: compiler.misc.feature.primitive.patterns
+// key: compiler.warn.preview.feature.use.plural
+// options: --enable-preview -source ${jdk.version} -Xlint:preview
 
-public class SelectorTypeNotAllowed {
-    private void noLong(long sel) {
-        switch (sel) {
-            default -> {}
-        }
+class PrimitivePatternMatching {
+    boolean m(Object o) {
+        return o instanceof int s;
     }
 }
