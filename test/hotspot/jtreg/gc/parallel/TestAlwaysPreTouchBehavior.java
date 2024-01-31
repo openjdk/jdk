@@ -78,19 +78,14 @@ public class TestAlwaysPreTouchBehavior {
     long committedMemory = (runtime.totalMemory()) / 1024; // in kb
     try {
        rss = getProcessRssInKb();
-       System.out.println("RSS = " + rss);
     } catch (Exception e) {
        rss = EXCEPTION_VALUE;
     }
     if (rss == EXCEPTION_VALUE) {
         System.out.println("cannot get RSS, just skip");
         return; // Did not get avaiable RSS, just ignore this test
-    } else if (rss < committedMemory) {
-        System.out.println("RSS = " + rss + " smaller than committed heap memory " + committedMemory);
-    } else {
-        System.out.println("Passed RSS = " + rss + " committed memory " + committedMemory);
     }
-    Asserts.assertTrue(rss >= committedMemory, "heap rss should not be smaller than committed heap mem");
+    Asserts.assertGreaterThanOrEqual(rss, committedMemory, "RSS of this process(" + rss + "kb) should be bigger than or equal to committed heap mem(" + committedMemory + "kb)");
    }
 }
 
