@@ -1856,11 +1856,11 @@ public class MessageFormat extends Format {
         // This method returns a FormatType that matches the passed String.
         // If no matching FormatType is found, an IllegalArgumentException is thrown.
         private static FormatType fromString(String text) {
-            for (FormatType type : values()) {
+            for (FormatType other : values()) {
                 // Also check trimmed lower case for historical reasons
-                if (text.equals(type.text)
-                        || text.trim().toLowerCase(Locale.ROOT).equals(type.text)) {
-                    return type;
+                if (text.trim().toLowerCase(Locale.ROOT)
+                        .equals(other.text.trim().toLowerCase(Locale.ROOT))) {
+                    return other;
                 }
             }
             throw new IllegalArgumentException();

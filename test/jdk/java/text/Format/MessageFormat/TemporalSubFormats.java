@@ -78,21 +78,22 @@ public class TemporalSubFormats {
     }
 
     // Provides String patterns and the associated (standalone) FormatType
+    // Values should be case-insensitive
     private static Stream<Arguments> preDefinedTypes() {
         return Stream.of(
             Arguments.of("BASIC_ISO_DATE", DateTimeFormatter.BASIC_ISO_DATE.toFormat()),
             Arguments.of("ISO_LOCAL_DATE", DateTimeFormatter.ISO_LOCAL_DATE.toFormat()),
             Arguments.of("ISO_OFFSET_DATE", DateTimeFormatter.ISO_OFFSET_DATE.toFormat()),
             Arguments.of("ISO_DATE", DateTimeFormatter.ISO_DATE.toFormat()),
-            Arguments.of("ISO_LOCAL_TIME", DateTimeFormatter.ISO_LOCAL_TIME.toFormat()),
+            Arguments.of("iso_local_time", DateTimeFormatter.ISO_LOCAL_TIME.toFormat()),
             Arguments.of("ISO_OFFSET_TIME", DateTimeFormatter.ISO_OFFSET_TIME.toFormat()),
-            Arguments.of("ISO_TIME", DateTimeFormatter.ISO_TIME.toFormat()),
+            Arguments.of("iso_time", DateTimeFormatter.ISO_TIME.toFormat()),
             Arguments.of("ISO_LOCAL_DATE_TIME", DateTimeFormatter.ISO_LOCAL_DATE_TIME.toFormat()),
             Arguments.of("ISO_OFFSET_DATE_TIME", DateTimeFormatter.ISO_OFFSET_DATE_TIME.toFormat()),
             Arguments.of("ISO_ZONED_DATE_TIME", DateTimeFormatter.ISO_ZONED_DATE_TIME.toFormat()),
             Arguments.of("ISO_DATE_TIME", DateTimeFormatter.ISO_DATE_TIME.toFormat()),
             Arguments.of("ISO_ORDINAL_DATE", DateTimeFormatter.ISO_ORDINAL_DATE.toFormat()),
-            Arguments.of("ISO_WEEK_DATE", DateTimeFormatter.ISO_WEEK_DATE.toFormat()),
+            Arguments.of("iso_week_date", DateTimeFormatter.ISO_WEEK_DATE.toFormat()),
             Arguments.of("ISO_INSTANT", DateTimeFormatter.ISO_INSTANT.toFormat()),
             Arguments.of("RFC_1123_DATE_TIME", DateTimeFormatter.RFC_1123_DATE_TIME.toFormat())
         );
