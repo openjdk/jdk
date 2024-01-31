@@ -63,7 +63,7 @@ public class ShapeNotSetSometimes {
     public ShapeNotSetSometimes() throws Exception {
         EventQueue.invokeAndWait(this::initializeGUI);
         robot.waitForIdle();
-        robot.delay(1000);
+        robot.delay(500);
     }
 
     private void initializeGUI() {
@@ -172,6 +172,10 @@ public class ShapeNotSetSometimes {
     private void colorCheck(int x, int y, Color expectedColor, boolean mustBeExpectedColor) {
         int screenX = window.getX() + x;
         int screenY = window.getY() + y;
+
+        robot.mouseMove(screenX, screenY);
+        robot.waitForIdle();
+        robot.delay(50);
 
         Color actualColor = robot.getPixelColor(screenX, screenY);
 
