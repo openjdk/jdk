@@ -3020,10 +3020,10 @@ bool SuperWord::construct_bb() {
         // Bailout if the loop has LoadStore, MergeMem or data Proj
         // nodes. Superword optimization does not work with them.
 #ifndef PRODUCT
-      if (is_trace_superword_any()) {
-        tty->print_cr("SuperWord::construct_bb: fails because of unhandled node:");
-        n->dump();
-      }
+        if (is_trace_superword_any()) {
+          tty->print_cr("SuperWord::construct_bb: fails because of unhandled node:");
+          n->dump();
+        }
 #endif
         return false;
       }
@@ -3061,7 +3061,7 @@ bool SuperWord::construct_bb() {
       // forward arc in graph
     } else if (!post_visited.test(bb_idx(n))) {
       // cross or back arc
-      int old_length = stack.length();
+      const int old_length = stack.length();
       for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
         Node* use = n->fast_out(i);
         if (in_bb(use) && !visited.test(bb_idx(use)) &&
