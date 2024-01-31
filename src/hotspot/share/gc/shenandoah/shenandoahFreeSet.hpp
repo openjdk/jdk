@@ -60,7 +60,7 @@ private:
   size_t _used_by[NumPartitions];
   size_t _region_counts[NumPartitions];
 
-  inline void shrink_bounds_if_touched(ShenandoahFreeSetPartitionId partition, size_t idx);
+  inline void shrink_range_if_boundary_modified(ShenandoahFreeSetPartitionId partition, size_t idx);
   inline void expand_bounds_maybe(ShenandoahFreeSetPartitionId partition, size_t idx, size_t capacity);
 
 public:

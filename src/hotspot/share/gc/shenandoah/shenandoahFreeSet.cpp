@@ -111,7 +111,7 @@ void ShenandoahRegionPartition::increase_used(ShenandoahFreeSetPartitionId which
           _used_by[which_partition], _capacity_of[which_partition], bytes);
 }
 
-inline void ShenandoahRegionPartition::shrink_bounds_if_touched(ShenandoahFreeSetPartitionId partition, size_t idx) {
+inline void ShenandoahRegionPartition::shrink_range_if_boundary_modified(ShenandoahFreeSetPartitionId partition, size_t idx) {
   if (idx == _leftmosts[partition]) {
     while ((_leftmosts[partition] < _max) && !in_partition(_leftmosts[partition], partition)) {
       _leftmosts[partition]++;
@@ -164,7 +164,7 @@ void ShenandoahRegionPartition::retire_within_partition(size_t idx, size_t used_
   }
 
   _membership[idx] = NotFree;
-  shrink_bounds_if_touched(orig_partition, idx);
+  shrink_range_if_boundary_modified(orig_partition, idx);
 
   _region_counts[orig_partition]--;
   _region_counts[NotFree]++;
@@ -208,7 +208,7 @@ void ShenandoahRegionPartition::move_to_partition(size_t idx, ShenandoahFreeSetP
   _membership[idx] = new_partition;
   _capacity_of[orig_partition] -= _region_size_bytes;
   _used_by[orig_partition] -= used;
-  shrink_bounds_if_touched(orig_partition, idx);
+  shrink_range_if_boundary_modified(orig_partition, idx);
 
   _capacity_of[new_partition] += _region_size_bytes;;
   _used_by[new_partition] += used;
