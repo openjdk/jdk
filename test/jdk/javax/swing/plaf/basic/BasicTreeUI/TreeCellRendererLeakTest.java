@@ -56,6 +56,8 @@ public final class TreeCellRendererLeakTest {
     private JScrollPane jScrollPane1;
     private JTabbedPane jTabbedPane1;
     private JTree jTree1;
+    private DefaultMutableTreeNode defTreeNode;
+    private DefaultTreeModel model;
 
     private static final CountDownLatch testDone = new CountDownLatch(1);
 
@@ -126,6 +128,10 @@ public final class TreeCellRendererLeakTest {
 
         jTabbedPane1.setSelectedIndex(1);
 
+        model = (DefaultTreeModel) jTree1.getModel();
+        TreeNode root = (TreeNode) model.getRoot();
+        defTreeNode = (DefaultMutableTreeNode) model.getChild(root, 0);
+
         frame = new JFrame();
         frame.getContentPane().add(jTabbedPane1, java.awt.BorderLayout.CENTER);
 
@@ -137,7 +143,7 @@ public final class TreeCellRendererLeakTest {
     public static void main(String[] args) throws Exception {
         try {
             SwingUtilities.invokeAndWait(() -> {
-                TreeCellRendererLeakTest tf = new TreeCellRendererLeakTest();
+                new TreeCellRendererLeakTest();
             });
             testDone.await();
         } finally {
@@ -157,14 +163,9 @@ public final class TreeCellRendererLeakTest {
         while ((tm - time) < (15 * 1000)) {
             final long currentCount = count;
             try {
-                SwingUtilities.invokeAndWait(new Runnable( ) {
-                    public void run( ) {
-                        DefaultTreeModel model = (DefaultTreeModel) jTree1.getModel();
-                        TreeNode root = (TreeNode) model.getRoot();
-                        DefaultMutableTreeNode n = (DefaultMutableTreeNode) model.getChild(root, 0);
-                        n.setUserObject("runcount " + currentCount);
-                        model.nodeChanged(n);
-                    }
+                SwingUtilities.invokeAndWait(() -> {
+                    defTreeNode.setUserObject("runcount " + currentCount);
+                    model.nodeChanged(defTreeNode);
                 });
                 count++;
                 Thread.sleep(1000);
