@@ -44,13 +44,12 @@ public class TestRoundVectFloat {
 
   public static void main(String args[]) {
       TestFramework.runWithFlags("-XX:-TieredCompilation",
-                                 "-XX:UseAVX=1",
                                  "-XX:CompileThresholdScaling=0.3");
       System.out.println("PASSED");
   }
 
   @Test
-  @IR(applyIf = {"UseAVX", " > 1"}, counts = {"RoundVF" , " > 0 "})
+  @IR(applyIf = {"UseAVX", " > 1"}, counts = {IRNode.ROUND_VF , " > 0 "})
   public void test_round_float(int[] iout, float[] finp) {
       for (int i = 0; i < finp.length; i+=1) {
           iout[i] = Math.round(finp[i]);
