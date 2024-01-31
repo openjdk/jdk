@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,19 +21,16 @@
  * questions.
  */
 
-// key: compiler.misc.type.req.class.array
-// key: compiler.err.type.found.req
-
-import java.util.*;
-
-class TypeReqClassArray {
-    interface Sig {
-        void m(int s);
-    }
-
-    Sig consume(Sig s) { return s; }
-
-    public void meth() {
-        Sig s = consume(int::new);
+// key: compiler.err.default.and.both.boolean.values
+// key: compiler.note.preview.filename
+// key: compiler.note.preview.recompile
+// options: --enable-preview --source 23
+public class DefaultAndBothBoolean {
+    private int test(boolean sel) {
+        return switch (sel) {
+            case true -> 1;
+            case false -> 2;
+            default -> 3;
+        };
     }
 }

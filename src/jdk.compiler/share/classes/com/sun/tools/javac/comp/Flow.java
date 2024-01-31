@@ -757,9 +757,14 @@ public class Flow {
                     }
                 }
             }
-            tree.isExhaustive = tree.hasUnconditionalPattern ||
-                                TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases) ||
-                                exhausts(tree.selector, tree.cases);
+
+            if (tree.hasUnconditionalPattern ||
+                TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases)) {
+                tree.isExhaustive = true;
+            } else {
+                tree.isExhaustive = exhausts(tree.selector, tree.cases);
+            }
+
             if (!tree.isExhaustive) {
                 log.error(tree, Errors.NotExhaustive);
             }
@@ -770,6 +775,7 @@ public class Flow {
         private boolean exhausts(JCExpression selector, List<JCCase> cases) {
             Set<PatternDescription> patternSet = new HashSet<>();
             Map<Symbol, Set<Symbol>> enum2Constants = new HashMap<>();
+            Set<Object> booleanLiterals = new HashSet<>();
             for (JCCase c : cases) {
                 if (!TreeInfo.unguardedCase(c))
                     continue;
@@ -780,19 +786,29 @@ public class Flow {
                             patternSet.add(makePatternDescription(component, patternLabel.pat));
                         }
                     } else if (l instanceof JCConstantCaseLabel constantLabel) {
-                        Symbol s = TreeInfo.symbol(constantLabel.expr);
-                        if (s != null && s.isEnum()) {
-                            enum2Constants.computeIfAbsent(s.owner, x -> {
-                                Set<Symbol> result = new HashSet<>();
-                                s.owner.members()
-                                       .getSymbols(sym -> sym.kind == Kind.VAR && sym.isEnum())
-                                       .forEach(result::add);
-                                return result;
-                            }).remove(s);
+                        if (types.unboxedTypeOrType(selector.type).hasTag(TypeTag.BOOLEAN)) {
+                            Object value = ((JCLiteral) constantLabel.expr).value;
+                            booleanLiterals.add(value);
+                        } else {
+                            Symbol s = TreeInfo.symbol(constantLabel.expr);
+                            if (s != null && s.isEnum()) {
+                                enum2Constants.computeIfAbsent(s.owner, x -> {
+                                    Set<Symbol> result = new HashSet<>();
+                                    s.owner.members()
+                                            .getSymbols(sym -> sym.kind == Kind.VAR && sym.isEnum())
+                                            .forEach(result::add);
+                                    return result;
+                                }).remove(s);
+                            }
                         }
                     }
                 }
             }
+
+            if (types.unboxedTypeOrType(selector.type).hasTag(TypeTag.BOOLEAN) && booleanLiterals.size() == 2) {
+                return true;
+            }
+
             for (Entry<Symbol, Set<Symbol>> e : enum2Constants.entrySet()) {
                 if (e.getValue().isEmpty()) {
                     patternSet.add(new BindingPattern(e.getKey().type));
@@ -823,8 +839,7 @@ public class Flow {
         private boolean checkCovered(Type seltype, Iterable<PatternDescription> patterns) {
             for (Type seltypeComponent : components(seltype)) {
                 for (PatternDescription pd : patterns) {
-                    if (pd instanceof BindingPattern bp &&
-                        types.isSubtype(seltypeComponent, types.erasure(bp.type))) {
+                    if(isBpCovered(seltypeComponent, pd)) {
                         return true;
                     }
                 }
@@ -1104,8 +1119,7 @@ public class Flow {
                         reducedNestedPatterns[i] = newNested;
                     }
 
-                    covered &= newNested instanceof BindingPattern bp &&
-                               types.isSubtype(types.erasure(componentType[i]), types.erasure(bp.type));
+                    covered &= isBpCovered(componentType[i], newNested);
                 }
                 if (covered) {
                     return new BindingPattern(rpOne.recordType);
@@ -1279,6 +1293,30 @@ public class Flow {
                 Flow.this.make = null;
             }
         }
+    }
+
+    private boolean isBpCovered(Type componentType, PatternDescription newNested) {
+        if (newNested instanceof BindingPattern bp) {
+            var seltype = types.erasure(componentType);
+
+            if (seltype.isPrimitive()) {
+                if (types.isSameType(bp.type, types.boxedClass(seltype).type)) {
+                    return true;
+                }
+
+                // if the target is unconditionally exact to the pattern, target is covered
+                if (types.isUnconditionallyExact(seltype, bp.type)) {
+                    return true;
+                }
+            } else if (seltype.isReference() && bp.type.isPrimitive() && types.isCastable(seltype, bp.type)) {
+                return true;
+            } else {
+                if (types.isSubtype(seltype, types.erasure(bp.type))) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**
@@ -3462,7 +3500,7 @@ public class Flow {
     sealed interface PatternDescription { }
     public PatternDescription makePatternDescription(Type selectorType, JCPattern pattern) {
         if (pattern instanceof JCBindingPattern binding) {
-            Type type = types.isSubtype(selectorType, binding.type)
+            Type type = !selectorType.isPrimitive() && types.isSubtype(selectorType, binding.type)
                     ? selectorType : binding.type;
             return new BindingPattern(type);
         } else if (pattern instanceof JCRecordPattern record) {
