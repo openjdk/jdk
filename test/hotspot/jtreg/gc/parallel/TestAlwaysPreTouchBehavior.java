@@ -86,7 +86,7 @@ public class TestAlwaysPreTouchBehavior {
         System.out.println("cannot get RSS, just skip");
         return; // Did not get avaiable RSS, just ignore this test
     } else if (rss < committedMemory) {
-        System.out.println("RSS = " + rss + " smaller than committed heap memory");
+        System.out.println("RSS = " + rss + " smaller than committed heap memory " + committedMemory);
     } else {
         System.out.println("Passed RSS = " + rss + " committed memory " + committedMemory);
     }
