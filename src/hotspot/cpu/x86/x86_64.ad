@@ -2179,7 +2179,7 @@ operand immP()
   interface(CONST_INTER);
 %}
 
-// nullptr Pointer Immediate
+// Null Pointer Immediate
 operand immP0()
 %{
   predicate(n->get_ptr() == 0);
@@ -2207,7 +2207,7 @@ operand immNKlass() %{
   interface(CONST_INTER);
 %}
 
-// nullptr Pointer Immediate
+// Null Pointer Immediate
 operand immN0() %{
   predicate(n->get_narrowcon() == 0);
   match(ConN);
@@ -4902,7 +4902,7 @@ instruct loadConF(regF dst, immF con) %{
 instruct loadConN0(rRegN dst, immN0 src, rFlagsReg cr) %{
   match(Set dst src);
   effect(KILL cr);
-  format %{ "xorq    $dst, $src\t# compressed null ptr" %}
+  format %{ "xorq    $dst, $src\t# compressed null pointer" %}
   ins_encode %{
     __ xorq($dst$$Register, $dst$$Register);
   %}
@@ -5169,7 +5169,7 @@ instruct storeImmP0(memory mem, immP0 zero)
   ins_pipe(ialu_mem_reg);
 %}
 
-// Store nullptr Pointer, mark word, or other simple pointer constant.
+// Store Null Pointer, mark word, or other simple pointer constant.
 instruct storeImmP(memory mem, immP31 src)
 %{
   predicate(n->as_Store()->barrier_data() == 0);

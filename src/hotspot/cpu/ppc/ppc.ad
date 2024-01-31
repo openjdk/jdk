@@ -4110,7 +4110,7 @@ operand immN() %{
   interface(CONST_INTER);
 %}
 
-// nullptr Pointer Immediate
+// Null Pointer Immediate
 operand immN_0() %{
   predicate(n->get_narrowcon() == 0);
   match(ConN);

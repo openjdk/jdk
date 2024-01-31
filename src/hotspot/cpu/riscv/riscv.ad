@@ -2894,7 +2894,7 @@ operand immP()
   interface(CONST_INTER);
 %}
 
-// nullptr Pointer Immediate
+// Null Pointer Immediate
 operand immP0()
 %{
   predicate(n->get_ptr() == 0);
@@ -3015,7 +3015,7 @@ operand immN()
   interface(CONST_INTER);
 %}
 
-// Narrow nullptr Pointer Immediate
+// Narrow Null Pointer Immediate
 operand immN0()
 %{
   predicate(n->get_narrowcon() == 0);
@@ -4893,7 +4893,7 @@ instruct loadConP0(iRegPNoSp dst, immP0 con)
   match(Set dst con);
 
   ins_cost(ALU_COST);
-  format %{ "mv  $dst, $con\t# null ptr, #@loadConP0" %}
+  format %{ "mv  $dst, $con\t# null pointer, #@loadConP0" %}
 
   ins_encode(riscv_enc_mov_zero(dst));
 
@@ -4944,7 +4944,7 @@ instruct loadConN0(iRegNNoSp dst, immN0 con)
   match(Set dst con);
 
   ins_cost(ALU_COST);
-  format %{ "mv  $dst, $con\t# compressed null ptr, #@loadConN0" %}
+  format %{ "mv  $dst, $con\t# compressed null pointer, #@loadConN0" %}
 
   ins_encode(riscv_enc_mov_zero(dst));
 

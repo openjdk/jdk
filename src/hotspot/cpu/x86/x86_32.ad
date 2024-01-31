@@ -3396,7 +3396,7 @@ operand immP() %{
   interface(CONST_INTER);
 %}
 
-// nullptr Pointer Immediate
+// Null Pointer Immediate
 operand immP0() %{
   predicate( n->get_ptr() == 0 );
   match(ConP);

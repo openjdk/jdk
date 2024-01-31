@@ -2966,7 +2966,7 @@ operand immN8() %{
   interface(CONST_INTER);
 %}
 
-// Narrow nullptr Pointer Immediate
+// Narrow Null Pointer Immediate
 operand immN0() %{
   predicate(n->get_narrowcon() == 0);
   match(ConN);
@@ -4314,7 +4314,7 @@ instruct loadConP0(iRegP dst, immP0 src, flagsReg cr) %{
   match(Set dst src);
   effect(KILL cr);
   size(4);
-  format %{ "XGR     $dst,$dst\t # null ptr" %}
+  format %{ "XGR     $dst,$dst\t # null pointer" %}
   opcode(XGR_ZOPC);
   ins_encode(z_rreform(dst, dst));
   ins_pipe(pipe_class_dummy);
