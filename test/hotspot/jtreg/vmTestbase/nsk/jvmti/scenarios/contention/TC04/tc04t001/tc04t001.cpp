@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,12 +35,12 @@ extern "C" {
 static jlong timeout = 0;
 
 /* test objects */
-static jclass object_M = NULL;
+static jclass object_M = nullptr;
 static volatile int waitEventsCount = 0;
 static volatile int waitedEventsCount = 0;
 static volatile int enterEventsCount = 0;
 static volatile int enteredEventsCount = 0;
-static jrawMonitorID syncLock = NULL;
+static jrawMonitorID syncLock = nullptr;
 
 
 static jboolean lockSyncLock(jvmtiEnv* jvmti) {
@@ -62,12 +62,12 @@ void JNICALL
 MonitorWait(jvmtiEnv *jvmti, JNIEnv* jni,
         jthread thr, jobject obj, jlong tout) {
 
-    if (!NSK_VERIFY(thr != NULL)) {
+    if (!NSK_VERIFY(thr != nullptr)) {
         nsk_jvmti_setFailStatus();
         return;
     }
 
-    if (!NSK_VERIFY(obj != NULL)) {
+    if (!NSK_VERIFY(obj != nullptr)) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -85,12 +85,12 @@ void JNICALL
 MonitorWaited(jvmtiEnv *jvmti, JNIEnv* jni,
         jthread thr, jobject obj, jboolean timed_out) {
 
-    if (!NSK_VERIFY(thr != NULL)) {
+    if (!NSK_VERIFY(thr != nullptr)) {
         nsk_jvmti_setFailStatus();
         return;
     }
 
-    if (!NSK_VERIFY(obj != NULL)) {
+    if (!NSK_VERIFY(obj != nullptr)) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -107,12 +107,12 @@ MonitorWaited(jvmtiEnv *jvmti, JNIEnv* jni,
 void JNICALL
 MonitorContendedEnter(jvmtiEnv *jvmti, JNIEnv* jni, jthread thr, jobject obj) {
 
-    if (!NSK_VERIFY(thr != NULL)) {
+    if (!NSK_VERIFY(thr != nullptr)) {
         nsk_jvmti_setFailStatus();
         return;
     }
 
-    if (!NSK_VERIFY(obj != NULL)) {
+    if (!NSK_VERIFY(obj != nullptr)) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -129,12 +129,12 @@ MonitorContendedEnter(jvmtiEnv *jvmti, JNIEnv* jni, jthread thr, jobject obj) {
 void JNICALL
 MonitorContendedEntered(jvmtiEnv *jvmti, JNIEnv* jni, jthread thr, jobject obj) {
 
-    if (!NSK_VERIFY(thr != NULL)) {
+    if (!NSK_VERIFY(thr != nullptr)) {
         nsk_jvmti_setFailStatus();
         return;
     }
 
-    if (!NSK_VERIFY(obj != NULL)) {
+    if (!NSK_VERIFY(obj != nullptr)) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -155,10 +155,10 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
 
     NSK_DISPLAY0("Obtain tested object from debugee thread class\n");
 
-    if (!NSK_JNI_VERIFY(jni, (object_M = jni->FindClass(CLASS_NAME)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (object_M = jni->FindClass(CLASS_NAME)) != nullptr))
         return NSK_FALSE;
 
-    if (!NSK_JNI_VERIFY(jni, (object_M = (jclass)jni->NewGlobalRef(object_M)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (object_M = (jclass)jni->NewGlobalRef(object_M)) != nullptr))
         return NSK_FALSE;
 
     if (!NSK_JVMTI_VERIFY(jvmti->CreateRawMonitor("_syncLock", &syncLock)))
@@ -166,24 +166,24 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
 
     /* enable MonitorWait event */
     if (!NSK_JVMTI_VERIFY(
-            jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_MONITOR_WAIT, NULL)))
+            jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_MONITOR_WAIT, nullptr)))
         nsk_jvmti_setFailStatus();
 
     /* enable MonitorWaited event */
     if (!NSK_JVMTI_VERIFY(
-            jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_MONITOR_WAITED, NULL)))
+            jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_MONITOR_WAITED, nullptr)))
         nsk_jvmti_setFailStatus();
 
     /* enable MonitorContendedEnter event */
     if (!NSK_JVMTI_VERIFY(
             jvmti->SetEventNotificationMode(
-                JVMTI_ENABLE, JVMTI_EVENT_MONITOR_CONTENDED_ENTER, NULL)))
+                JVMTI_ENABLE, JVMTI_EVENT_MONITOR_CONTENDED_ENTER, nullptr)))
         nsk_jvmti_setFailStatus();
 
     /* enable MonitorContendedEntered event */
     if (!NSK_JVMTI_VERIFY(
             jvmti->SetEventNotificationMode(
-                JVMTI_ENABLE, JVMTI_EVENT_MONITOR_CONTENDED_ENTERED, NULL)))
+                JVMTI_ENABLE, JVMTI_EVENT_MONITOR_CONTENDED_ENTERED, nullptr)))
         nsk_jvmti_setFailStatus();
 
     return NSK_TRUE;
@@ -193,24 +193,24 @@ static int clean(jvmtiEnv* jvmti, JNIEnv* jni) {
 
     /* disable MonitorWait event */
     if (!NSK_JVMTI_VERIFY(
-            jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_MONITOR_WAIT, NULL)))
+            jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_MONITOR_WAIT, nullptr)))
         nsk_jvmti_setFailStatus();
 
     /* disable MonitorWaited event */
     if (!NSK_JVMTI_VERIFY(
-            jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_MONITOR_WAITED, NULL)))
+            jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_MONITOR_WAITED, nullptr)))
         nsk_jvmti_setFailStatus();
 
     /* disable MonitorContendedEnter event */
     if (!NSK_JVMTI_VERIFY(
             jvmti->SetEventNotificationMode(
-                JVMTI_DISABLE, JVMTI_EVENT_MONITOR_CONTENDED_ENTER, NULL)))
+                JVMTI_DISABLE, JVMTI_EVENT_MONITOR_CONTENDED_ENTER, nullptr)))
         nsk_jvmti_setFailStatus();
 
     /* disable MonitorContendedEntered event */
     if (!NSK_JVMTI_VERIFY(
             jvmti->SetEventNotificationMode(
-                JVMTI_DISABLE, JVMTI_EVENT_MONITOR_CONTENDED_ENTERED, NULL)))
+                JVMTI_DISABLE, JVMTI_EVENT_MONITOR_CONTENDED_ENTERED, nullptr)))
         nsk_jvmti_setFailStatus();
 
     if (!NSK_JVMTI_VERIFY(jvmti->DestroyRawMonitor(syncLock)))
@@ -296,7 +296,7 @@ JNIEXPORT jint JNI_OnLoad_tc04t001(JavaVM *jvm, char *options, void *reserved) {
 }
 #endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
-    jvmtiEnv* jvmti = NULL;
+    jvmtiEnv* jvmti = nullptr;
     jvmtiCapabilities caps;
     jvmtiEventCallbacks callbacks;
 
@@ -309,7 +309,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     /* create JVMTI environment */
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     /* add capabilities */
@@ -329,7 +329,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         return JNI_ERR;
 
     /* register agent proc and arg */
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     return JNI_OK;

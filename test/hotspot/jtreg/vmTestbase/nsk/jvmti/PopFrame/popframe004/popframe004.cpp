@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -219,7 +219,7 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jvmtiError err;
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
     }
@@ -286,10 +286,10 @@ Java_nsk_jvmti_PopFrame_popframe004_getResult(JNIEnv *env, jclass cls) {
 
 void nativeMeth2(JNIEnv *env, jobject obj, jobject frameThr) {
     jclass cls = env->GetObjectClass(frameThr);
-    jmethodID mid = NULL;
+    jmethodID mid = nullptr;
 
     mid = env->GetMethodID(cls, "activeMethod", "()V");
-    if (mid == NULL) {
+    if (mid == nullptr) {
         printf("TEST FAILURE: nativeMeth2(): Unable to get method ID\n");
         tot_result = STATUS_FAILED;
         return;

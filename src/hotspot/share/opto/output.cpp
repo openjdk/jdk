@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -775,7 +775,7 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
     SafePointScalarMergeNode* smerge = local->as_SafePointScalarMerge();
     ObjectMergeValue* mv = (ObjectMergeValue*) sv_for_node_id(objs, smerge->_idx);
 
-    if (mv == NULL) {
+    if (mv == nullptr) {
       GrowableArray<ScopeValue*> deps;
 
       int merge_pointer_idx = smerge->merge_pointer_idx(sfpt->jvms());
@@ -783,7 +783,7 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
       assert(deps.length() == 1, "missing value");
 
       int selector_idx = smerge->selector_idx(sfpt->jvms());
-      (void)FillLocArray(1, NULL, sfpt->in(selector_idx), &deps, NULL);
+      (void)FillLocArray(1, nullptr, sfpt->in(selector_idx), &deps, nullptr);
       assert(deps.length() == 2, "missing value");
 
       mv = new ObjectMergeValue(smerge->_idx, deps.at(0), deps.at(1));
@@ -1085,6 +1085,30 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
           }
           scval = sv;
         }
+      } else if (obj_node->is_SafePointScalarMerge()) {
+        SafePointScalarMergeNode* smerge = obj_node->as_SafePointScalarMerge();
+        ObjectMergeValue* mv = (ObjectMergeValue*) sv_for_node_id(objs, smerge->_idx);
+
+        if (mv == nullptr) {
+          GrowableArray<ScopeValue*> deps;
+
+          int merge_pointer_idx = smerge->merge_pointer_idx(youngest_jvms);
+          FillLocArray(0, sfn, sfn->in(merge_pointer_idx), &deps, objs);
+          assert(deps.length() == 1, "missing value");
+
+          int selector_idx = smerge->selector_idx(youngest_jvms);
+          FillLocArray(1, nullptr, sfn->in(selector_idx), &deps, nullptr);
+          assert(deps.length() == 2, "missing value");
+
+          mv = new ObjectMergeValue(smerge->_idx, deps.at(0), deps.at(1));
+          set_sv_for_object_node(objs, mv);
+
+          for (uint i = 1; i < smerge->req(); i++) {
+            Node* obj_node = smerge->in(i);
+            FillLocArray(mv->possible_objects()->length(), sfn, obj_node, mv->possible_objects(), objs);
+          }
+        }
+        scval = mv;
       } else if (!obj_node->is_Con()) {
         OptoReg::Name obj_reg = C->regalloc()->get_reg_first(obj_node);
         if( obj_node->bottom_type()->base() == Type::NarrowOop ) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ extern "C" {
 
 // Deallocate memory region allocated by VM
 #define DEALLOCATE(p) \
-    if (p != NULL)                 \
+    if (p != nullptr)                 \
         if (!NSK_JVMTI_VERIFY(jvmti->Deallocate(p)))        \
         {                          \
             NSK_COMPLAIN0("Failed to deallocate: ##p##\n"); \
@@ -106,12 +106,12 @@ MethodExit(
                 break;
             }
 
-            if (!NSK_JVMTI_VERIFY(jvmti->GetClassSignature(klass, &class_signature, NULL)))
+            if (!NSK_JVMTI_VERIFY(jvmti->GetClassSignature(klass, &class_signature, nullptr)))
             {
                 break;
             }
 
-            if (!NSK_JVMTI_VERIFY(jvmti->GetMethodName(method, &entry_name, &entry_sig, NULL)))
+            if (!NSK_JVMTI_VERIFY(jvmti->GetMethodName(method, &entry_name, &entry_sig, nullptr)))
             {
                 break;
             }
@@ -119,7 +119,7 @@ MethodExit(
             failure = 0;
             NSK_COMPLAIN5("#### MethodExit event occurred: (tid: %d), thread: %s, %s %s %s\n"
                     , thread
-                    , thr_info.name == NULL ? "<Unnamed>" : thr_info.name
+                    , thr_info.name == nullptr ? "<Unnamed>" : thr_info.name
                     , class_signature
                     , entry_name
                     , entry_sig
@@ -254,7 +254,7 @@ jint Agent_Initialize(JavaVM *vm, char *options, void *reserved)
     }
 
     if (!NSK_VERIFY(
-            (jvmti = nsk_jvmti_createJVMTIEnv(vm, reserved)) != NULL
+            (jvmti = nsk_jvmti_createJVMTIEnv(vm, reserved)) != nullptr
             ))
     {
         return JNI_ERR;
