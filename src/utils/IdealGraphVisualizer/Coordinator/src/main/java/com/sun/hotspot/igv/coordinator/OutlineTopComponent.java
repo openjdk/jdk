@@ -78,6 +78,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     private GraphNode[] selectedGraphs = new GraphNode[0];
     private final Set<FolderNode> selectedFolders = new HashSet<>();
     private static final int WORKUNITS = 10000;
+    private static final int STATE_FORMAT_VERSION = 1;
     private static final RequestProcessor RP = new RequestProcessor("OutlineTopComponent", 1);
 
     private OutlineTopComponent() {
@@ -302,6 +303,10 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
             try {
                 FileInputStream fis = new FileInputStream(openedPath);
                 ObjectInputStream in = new ObjectInputStream(fis);
+
+                int formatVersion = in.readInt();
+                assert formatVersion <= STATE_FORMAT_VERSION;
+
                 final GraphViewer viewer = Lookup.getDefault().lookup(GraphViewer.class);
                 assert viewer != null;
                 int tabCount = in.readInt();
@@ -407,6 +412,8 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
                 }
             }
         }
+
+        out.writeInt(STATE_FORMAT_VERSION);
 
         int tabCount = editorTabs.size();
         out.writeInt(tabCount);
