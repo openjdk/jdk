@@ -120,10 +120,14 @@
 // c * d - m is the intersection of (0, m / v_neg] and (0, m / v_pos). Which is (0, m / v_pos)
 // if v_pos >= v_neg and (0, m / v_neg] otherwise.
 //
-// Given v = max(v_neg, v_pos). The function inductively calculates c, rc, qv, rv such that:
+// Given v = max(v_neg, v_pos). For each value of s, the function inductively calculates
+// c, rc, qv, rv such that:
 //
-// c * d - rc = 2**s with 0 < rc <= d
-// qv * v + rv = 2**s with 0 <= rv < v
+// c = floor(2**s / d) + 1 (c is the smallest integer such that c * d > 2**s)
+// rc = c * d - 2**s
+// qv = floor(2**s / v)
+// rv = 2**s - qv * v (qv and rv are the quotient and the remainder of the floor division of
+//                     2**s by v)
 template <class T>
 void magic_divide_constants(T d, T N_neg, T N_pos, juint min_s, T& c, bool& c_ovf, juint& s) {
   static_assert(std::is_unsigned<T>::value, "calculations must be done in the unsigned domain");
