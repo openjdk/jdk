@@ -150,7 +150,7 @@ a null-terminated character string:
 
 ---------------------------------------------------------------------------------
 
-Injector.h
+Injector.hpp
 
 Provides class file format constants and the function which inject some
 profiling bytecodes into Java class files:
