@@ -30,9 +30,9 @@
 #include <unistd.h>
 #include <string.h>
 #include <ctype.h>
-#include "log_messages.h"
 #include "sys.h"
 #include "util.h"
+#include "error_messages.h"
 
 static char *skipWhitespace(char *p) {
     while ((*p != '\0') && isspace(*p)) {
@@ -96,7 +96,7 @@ closeDescriptors(void)
 #endif
 
     if ((dp = opendir(FD_DIR)) == NULL) {
-        LOG_MISC(("warning: failed to open dir %s while determining"
+        ERROR_MESSAGE(("failed to open dir %s while determining"
                   " file descriptors to close for process %d", FD_DIR, getpid()));
         return 0; // failure
     }
@@ -134,7 +134,7 @@ forkedChildProcess(const char *file, char *const argv[])
         JDI_ASSERT(max_fd <= INT_MAX);
         /* leave out standard input/output/error file descriptors */
         rlim_t i = STDERR_FILENO + 1;
-        LOG_MISC(("warning: failed to close file descriptors of"
+        ERROR_MESSAGE(("failed to close file descriptors of"
                   " child process optimally, falling back to closing"
                   " %d file descriptors sequentially", (max_fd - i + 1)));
         for (; i < max_fd; i++) {
