@@ -53,9 +53,6 @@ private:
   uint32_t _top;
   oop _base[CAPACITY];
 
-  // Get the owning thread of this lock-stack.
-  inline JavaThread* get_thread() const;
-
   // Tests if the calling thread is the thread that owns this lock-stack.
   bool is_owning_thread() const;
 
@@ -70,6 +67,9 @@ public:
   static ByteSize base_offset() { return byte_offset_of(LockStack, _base); }
 
   LockStack(JavaThread* jt);
+
+  // Get the owning thread of this lock-stack.
+  inline JavaThread* get_thread() const;
 
   // The boundary indicies of the lock-stack.
   static uint32_t start_offset();
