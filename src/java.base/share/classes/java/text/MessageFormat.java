@@ -1884,6 +1884,7 @@ public class MessageFormat extends Format {
         SUBFORMATPATTERN(null);
 
         private final String text;
+
         FormatStyle(String text){
             this.text = text;
         }
