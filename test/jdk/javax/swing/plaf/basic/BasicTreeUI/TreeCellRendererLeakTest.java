@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 6507038
+ * @key headful
  * @summary Verifies memory leak in BasicTreeUI TreeCellRenderer
  * @run main TreeCellRendererLeakTest
  */
