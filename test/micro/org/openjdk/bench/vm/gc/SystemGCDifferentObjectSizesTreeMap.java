@@ -36,7 +36,7 @@ import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode(Mode.SingleShotTime)
-@Fork(25)
+@Fork(value=25, jvmArgsAppend={"-Xmx5g", "-Xms5g", "-Xmn3g"})
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
 public class SystemGCDifferentObjectSizesTreeMap {
@@ -46,9 +46,10 @@ public class SystemGCDifferentObjectSizesTreeMap {
     @Setup(Level.Iteration)
     public void generateGarbage() {
         largeMap = SystemGCHelper.generateAndFillTreeMap(false);
-        // Remove every third object in the array, this will give remove
-        // different sizes equally many times.
-        for (int i = 0; i < largeMap.size(); i++) {
+        int numberOfObjects = largeMap.size();
+        // Removing a third of the objects and keeping a good
+        // distribution of sizes.
+        for (int i = 0; i < numberOfObjects; i++) {
             if (i%3 == 0) {
                 largeMap.remove(i);
             }

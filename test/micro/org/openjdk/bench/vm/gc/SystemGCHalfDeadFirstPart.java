@@ -36,7 +36,7 @@ import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode(Mode.SingleShotTime)
-@Fork(25)
+@Fork(value=25, jvmArgsAppend={"-Xmx5g", "-Xms5g", "-Xmn3g"})
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
 public class SystemGCHalfDeadFirstPart {
