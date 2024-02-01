@@ -2153,7 +2153,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
          * because we do not want it adjusted by the page orientation.
          */
         Paper paper = page.getPaper();
-        // if non-portrait status and 270 degree landscape rotation
+        // if non-portrait and 270 degree landscape rotation
         if (page.getOrientation() != PageFormat.PORTRAIT &&
             landscapeRotates270) {
 
@@ -2435,7 +2435,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
                         painterGraphics.setDelegate((Graphics2D) bandGraphics.create());
                         painter.print(painterGraphics, origPage, pageIndex);
                         painterGraphics.dispose();
-                        printBand(data, bandX, bandTop+bandY, bandWidth, bandHeight);
+                        printBand(data, bandX, bandTop + bandY, bandWidth, bandHeight);
                     }
                 }
 
