@@ -4194,7 +4194,8 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         @ForceInline
         @Override final
         public ByteVector fromArray(Object a, int offset) {
-            // User entry point:  Be careful with inputs.
+            // User entry point
+            // Defer only to the equivalent method on the vector class, using the same inputs
             return ByteVector
                 .fromArray(this, (byte[]) a, offset);
         }
@@ -4202,7 +4203,8 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         @ForceInline
         @Override final
         public ByteVector fromMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
-            // User entry point:  Be careful with inputs.
+            // User entry point
+            // Defer only to the equivalent method on the vector class, using the same inputs
             return ByteVector
                 .fromMemorySegment(this, ms, offset, bo);
         }

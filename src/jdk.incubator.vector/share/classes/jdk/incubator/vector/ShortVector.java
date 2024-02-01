@@ -4188,7 +4188,8 @@ public abstract class ShortVector extends AbstractVector<Short> {
         @ForceInline
         @Override final
         public ShortVector fromArray(Object a, int offset) {
-            // User entry point:  Be careful with inputs.
+            // User entry point
+            // Defer only to the equivalent method on the vector class, using the same inputs
             return ShortVector
                 .fromArray(this, (short[]) a, offset);
         }
@@ -4196,7 +4197,8 @@ public abstract class ShortVector extends AbstractVector<Short> {
         @ForceInline
         @Override final
         public ShortVector fromMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
-            // User entry point:  Be careful with inputs.
+            // User entry point
+            // Defer only to the equivalent method on the vector class, using the same inputs
             return ShortVector
                 .fromMemorySegment(this, ms, offset, bo);
         }

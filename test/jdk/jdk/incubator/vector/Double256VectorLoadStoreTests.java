@@ -248,6 +248,7 @@ public class Double256VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @DontInline
     static DoubleVector fromArray(double[] a, int i) {
+        // Tests the species method and the equivalent vector method it defers to
         return (DoubleVector) SPECIES.fromArray(a, i);
     }
 
@@ -268,6 +269,7 @@ public class Double256VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @DontInline
     static DoubleVector fromMemorySegment(MemorySegment a, int i, ByteOrder bo) {
+        // Tests the species method and the equivalent vector method it defers to
         return (DoubleVector) SPECIES.fromMemorySegment(a, i, bo);
     }
 

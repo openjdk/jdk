@@ -255,6 +255,7 @@ public class ShortMaxVectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @DontInline
     static ShortVector fromArray(short[] a, int i) {
+        // Tests the species method and the equivalent vector method it defers to
         return (ShortVector) SPECIES.fromArray(a, i);
     }
 
@@ -275,6 +276,7 @@ public class ShortMaxVectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @DontInline
     static ShortVector fromMemorySegment(MemorySegment a, int i, ByteOrder bo) {
+        // Tests the species method and the equivalent vector method it defers to
         return (ShortVector) SPECIES.fromMemorySegment(a, i, bo);
     }
 

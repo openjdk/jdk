@@ -255,6 +255,7 @@ public class LongMaxVectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @DontInline
     static LongVector fromArray(long[] a, int i) {
+        // Tests the species method and the equivalent vector method it defers to
         return (LongVector) SPECIES.fromArray(a, i);
     }
 
@@ -275,6 +276,7 @@ public class LongMaxVectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @DontInline
     static LongVector fromMemorySegment(MemorySegment a, int i, ByteOrder bo) {
+        // Tests the species method and the equivalent vector method it defers to
         return (LongVector) SPECIES.fromMemorySegment(a, i, bo);
     }
 

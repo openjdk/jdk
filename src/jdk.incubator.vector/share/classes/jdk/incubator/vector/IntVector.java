@@ -3903,7 +3903,8 @@ public abstract class IntVector extends AbstractVector<Integer> {
         @ForceInline
         @Override final
         public IntVector fromArray(Object a, int offset) {
-            // User entry point:  Be careful with inputs.
+            // User entry point
+            // Defer only to the equivalent method on the vector class, using the same inputs
             return IntVector
                 .fromArray(this, (int[]) a, offset);
         }
@@ -3911,7 +3912,8 @@ public abstract class IntVector extends AbstractVector<Integer> {
         @ForceInline
         @Override final
         public IntVector fromMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
-            // User entry point:  Be careful with inputs.
+            // User entry point
+            // Defer only to the equivalent method on the vector class, using the same inputs
             return IntVector
                 .fromMemorySegment(this, ms, offset, bo);
         }

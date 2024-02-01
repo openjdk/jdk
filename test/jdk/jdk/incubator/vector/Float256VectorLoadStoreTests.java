@@ -248,6 +248,7 @@ public class Float256VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @DontInline
     static FloatVector fromArray(float[] a, int i) {
+        // Tests the species method and the equivalent vector method it defers to
         return (FloatVector) SPECIES.fromArray(a, i);
     }
 
@@ -268,6 +269,7 @@ public class Float256VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @DontInline
     static FloatVector fromMemorySegment(MemorySegment a, int i, ByteOrder bo) {
+        // Tests the species method and the equivalent vector method it defers to
         return (FloatVector) SPECIES.fromMemorySegment(a, i, bo);
     }
 

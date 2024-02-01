@@ -3829,7 +3829,8 @@ public abstract class LongVector extends AbstractVector<Long> {
         @ForceInline
         @Override final
         public LongVector fromArray(Object a, int offset) {
-            // User entry point:  Be careful with inputs.
+            // User entry point
+            // Defer only to the equivalent method on the vector class, using the same inputs
             return LongVector
                 .fromArray(this, (long[]) a, offset);
         }
@@ -3837,7 +3838,8 @@ public abstract class LongVector extends AbstractVector<Long> {
         @ForceInline
         @Override final
         public LongVector fromMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
-            // User entry point:  Be careful with inputs.
+            // User entry point
+            // Defer only to the equivalent method on the vector class, using the same inputs
             return LongVector
                 .fromMemorySegment(this, ms, offset, bo);
         }

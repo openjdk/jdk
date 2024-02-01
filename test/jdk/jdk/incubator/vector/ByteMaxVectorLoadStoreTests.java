@@ -255,6 +255,7 @@ public class ByteMaxVectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @DontInline
     static ByteVector fromArray(byte[] a, int i) {
+        // Tests the species method and the equivalent vector method it defers to
         return (ByteVector) SPECIES.fromArray(a, i);
     }
 
@@ -275,6 +276,7 @@ public class ByteMaxVectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @DontInline
     static ByteVector fromMemorySegment(MemorySegment a, int i, ByteOrder bo) {
+        // Tests the species method and the equivalent vector method it defers to
         return (ByteVector) SPECIES.fromMemorySegment(a, i, bo);
     }
 

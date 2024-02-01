@@ -5453,7 +5453,8 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         @ForceInline
         @Override final
         public $abstractvectortype$ fromArray(Object a, int offset) {
-            // User entry point:  Be careful with inputs.
+            // User entry point
+            // Defer only to the equivalent method on the vector class, using the same inputs
             return $abstractvectortype$
                 .fromArray(this, ($type$[]) a, offset);
         }
@@ -5461,7 +5462,8 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         @ForceInline
         @Override final
         public $abstractvectortype$ fromMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
-            // User entry point:  Be careful with inputs.
+            // User entry point
+            // Defer only to the equivalent method on the vector class, using the same inputs
             return $abstractvectortype$
                 .fromMemorySegment(this, ms, offset, bo);
         }
