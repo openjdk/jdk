@@ -25,7 +25,7 @@
 #include <string.h>
 #include "jvmti.h"
 #include "jvmti_common.h"
-#include "../get_stack_trace.h"
+#include "../get_stack_trace.hpp"
 
 extern "C" {
 

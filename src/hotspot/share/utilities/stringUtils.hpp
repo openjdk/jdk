@@ -27,7 +27,10 @@
 
 #include "memory/allStatic.hpp"
 
-#include <string.h>
+#ifdef _WINDOWS
+  // strtok_s is the Windows thread-safe equivalent of POSIX strtok_r
+# define strtok_r strtok_s
+#endif
 
 class StringUtils : AllStatic {
 public:

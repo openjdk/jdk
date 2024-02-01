@@ -85,11 +85,10 @@ public abstract class MarkdownTransformer implements DocTrees.DocCommentTreeTran
      * A fast scanner for detecting Markdown nodes in documentation comment nodes.
      * The scanner returns as soon as any Markdown node is found.
      */
-    private static final DocTreeVisitor<Boolean, Void> isMarkdownVisitor = new DocTreeScanner<Boolean,Void>() {
+    private static final DocTreeVisitor<Boolean, Void> isMarkdownVisitor = new DocTreeScanner<>() {
         @Override
         public Boolean scan(Iterable<? extends DocTree> nodes, Void ignore) {
             if (nodes != null) {
-                boolean first = true;
                 for (DocTree node : nodes) {
                     Boolean b = scan(node, ignore);
                     if (b == Boolean.TRUE) {
@@ -116,6 +115,10 @@ public abstract class MarkdownTransformer implements DocTrees.DocCommentTreeTran
     protected abstract static class DCTransformer {
         protected final DocTreeMaker m;
         private final ReferenceParser refParser;
+
+        // a dynamically generated scheme for the URLs of automatically generated references;
+        // to allow user-generated code URLs, change this to just "code:"
+        private final String autorefScheme = "code-" + Integer.toHexString(hashCode()) + ":";
 
         DCTransformer(JavacTrees t) {
             m = t.getDocTreeFactory();
@@ -227,7 +230,7 @@ public abstract class MarkdownTransformer implements DocTrees.DocCommentTreeTran
                 String source = sourceBuilder.toString();
                 Parser parser = Parser.builder()
                         .extensions(List.of(TablesExtension.create()))
-                        .inlineParserFactory(new AutoRefInlineParserFactory(refParser))
+                        .inlineParserFactory(new AutoRefInlineParserFactory(refParser, autorefScheme))
                         .includeSourceSpans(IncludeSourceSpans.BLOCKS_AND_INLINES)
                         .build();
                 Node document = parser.parse(source);
@@ -235,7 +238,7 @@ public abstract class MarkdownTransformer implements DocTrees.DocCommentTreeTran
                 /*
                  * Step 3: Perform the replacements.
                  */
-                return convert(document, source, replacements);
+                return convert(document, source, replacements, autorefScheme);
 
             } else {
                 var list2 = trees.stream()
@@ -245,7 +248,7 @@ public abstract class MarkdownTransformer implements DocTrees.DocCommentTreeTran
             }
         }
 
-        protected abstract List<DCTree> convert(Node document, String source, List<Object> replacements);
+        protected abstract List<DCTree> convert(Node document, String source, List<Object> replacements, String autorefScheme);
 
         //-----------------------------------------------------------------------------
         //
@@ -466,8 +469,6 @@ public abstract class MarkdownTransformer implements DocTrees.DocCommentTreeTran
         }
     }
 
-    protected static final String AUTOREF_PREFIX = "code:";
-
     /**
      * An {@code InlineParserFactory} that checks any unresolved link references in
      * reference links. If an unresolved link reference appears to be a reference to a
@@ -487,9 +488,12 @@ public abstract class MarkdownTransformer implements DocTrees.DocCommentTreeTran
      */
     private static class AutoRefInlineParserFactory implements InlineParserFactory {
         private final ReferenceParser refParser;
+        private final String autorefScheme;
 
-        AutoRefInlineParserFactory(ReferenceParser refParser) {
+        AutoRefInlineParserFactory(ReferenceParser refParser,
+                                   String autorefScheme) {
             this.refParser = refParser;
+            this.autorefScheme = autorefScheme;
         }
 
         /**
@@ -515,17 +519,24 @@ public abstract class MarkdownTransformer implements DocTrees.DocCommentTreeTran
                  * If the given label does not match any explicitly defined
                  * link reference definition, but does match a reference
                  * to a program element, a synthetic link reference definition
-                 * is returned, with the label prefixed by {@code code:}.
+                 * is returned, with the label prefixed by the {@code autorefScheme}.
                  *
                  * @param label the link label to look up
                  * @return the link reference definition for the label, or {@code null}
                  */
                 @Override
                 public LinkReferenceDefinition getLinkReferenceDefinition(String label) {
+                    // In CommonMark, square brackets characters need to be escaped within a link label.
+                    // See https://spec.commonmark.org/0.30/#link-label
+                    //   Unescaped square bracket characters are not allowed inside the opening
+                    //   and closing square brackets of link labels.
+                    // The escape characters are still present here in the label,
+                    // so we remove them before creating the autoref URL.
+                    // Note that the characters always appear together as a pair in API references.
                     var l = label.replace("\\[\\]", "[]");
                     var d = inlineParserContext.getLinkReferenceDefinition(l);
                     return d == null && isReference(l)
-                            ? new LinkReferenceDefinition("", AUTOREF_PREFIX + l, "")
+                            ? new LinkReferenceDefinition("", autorefScheme + l, "")
                             : d;
                 }
             });

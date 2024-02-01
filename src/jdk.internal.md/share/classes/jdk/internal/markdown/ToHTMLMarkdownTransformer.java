@@ -64,7 +64,7 @@ public class ToHTMLMarkdownTransformer extends MarkdownTransformer {
     protected DCTransformer createTransformer(JavacTrees trees, DCTree.DCDocComment dc) {
         return new DCTransformer(trees) {
             @Override
-            protected List<DCTree> convert(Node document, String source, List<Object> replacements) {
+            protected List<DCTree> convert(Node document, String source, List<Object> replacements, String autorefScheme) {
                 String htmlWithPlaceHolders = stripParagraphs(HtmlRenderer.builder().build().render(document));
 
                 List<DCTree> result = new ArrayList<>();

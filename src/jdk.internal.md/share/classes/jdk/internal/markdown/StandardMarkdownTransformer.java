@@ -28,7 +28,9 @@ package jdk.internal.markdown;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import com.sun.source.doctree.DocTree;
 
@@ -63,14 +65,14 @@ public class StandardMarkdownTransformer extends MarkdownTransformer {
     protected DCTransformer createTransformer(JavacTrees t, DCTree.DCDocComment dc) {
         return new DCTransformer(t) {
             @Override
-            protected List<DCTree> convert(Node document, String source, List<Object> replacements) {
+            protected List<DCTree> convert(Node document, String source, List<Object> replacements, String autorefScheme) {
                 /*
                  * Step 3: Analyze the parsed tree, converting it back to a list of DocTree nodes,
                  *         consisting of Markdown text interspersed with any pre-existing
                  *         DocTree nodes, as well as any new nodes created by converting
                  *         parts of the Markdown tree into nodes for old-style javadoc tags.
                  */
-                Lower v = new Lower(m, document, source, replacements);
+                Lower v = new Lower(m, document, source, replacements, autorefScheme);
                 document.accept(v);
 
                 return v.getTrees();
@@ -149,6 +151,7 @@ public class StandardMarkdownTransformer extends MarkdownTransformer {
     // leverage the idea of a heading followed by a list.
     private static class Lower extends AbstractVisitor {
         private final DocTreeMaker m;
+        private final String autorefScheme;
 
         /**
          * The Markdown document being processed.
@@ -179,7 +182,7 @@ public class StandardMarkdownTransformer extends MarkdownTransformer {
          * The replacement objects may be either {@code DCTree} objects or
          * U+FFFC characters that were found in the original document.
          */
-        Iterator<?> replaceIter;
+        private final Iterator<?> replaceIter;
 
         /**
          * The list of trees being built.
@@ -231,19 +234,21 @@ public class StandardMarkdownTransformer extends MarkdownTransformer {
          * @param document the document to be converted
          * @param source the source of the document to be converted
          * @param replacements the objects to be substituted when U+FFFC is encountered
+         * @param autorefScheme the scheme used for auto-generated references
          */
-        public Lower(DocTreeMaker docTreeMaker, Node document, String source, List<?> replacements) {
+        public Lower(DocTreeMaker docTreeMaker, Node document, String source, List<?> replacements,
+                     String autorefScheme) {
             this.m = docTreeMaker;
             this.document = document;
             this.source = source;
+            this.autorefScheme = autorefScheme;
 
-            var offsets = new ArrayList<Integer>();
-            offsets.add(0);
-            var m = lineBreak.matcher(source);
-            while (m.find()) {
-                offsets.add(m.end());
-            }
-            sourceLineOffsets = offsets.stream().mapToInt(Integer::intValue).toArray();
+            sourceLineOffsets = Stream.concat(
+                            Stream.of(0),
+                            lineBreak.matcher(source).results().map(MatchResult::end))
+                    .mapToInt(Integer::intValue)
+                    .toArray();
+
 
             replaceIter = replacements.iterator();
 
@@ -263,7 +268,7 @@ public class StandardMarkdownTransformer extends MarkdownTransformer {
         /**
          * Visits a CommonMark {@code Link} node.
          *
-         * If the destination for the link begins with {@code code:}
+         * If the destination for the link begins with the {@code autorefScheme}
          * convert it to {@code {@link ...}} or {@code {@linkplain ...}} DocTree node.
          * {@code {@link ...}} will be used if the content (label) for
          * the link is the same as the reference found after the {@code code:};
@@ -278,7 +283,7 @@ public class StandardMarkdownTransformer extends MarkdownTransformer {
         @Override
         public void visit(Link link) {
             String dest = link.getDestination();
-            if (dest.startsWith(AUTOREF_PREFIX)) {
+            if (dest.startsWith(autorefScheme)) {
                 // copy the source text up to the start of the node
                 copyTo(getStartPos(link));
                 // push temporary value for {@code trees} while handling the content of the node
@@ -291,7 +296,7 @@ public class StandardMarkdownTransformer extends MarkdownTransformer {
 
                     // determine whether to use {@link ... } or {@linkplain ...}
                     // based on whether the "link text" is the same as the "link destination"
-                    String ref = dest.substring(AUTOREF_PREFIX.length());
+                    String ref = dest.substring(autorefScheme.length());
                     int refPos = sourcePosToTreePos(getRefPos(ref, link));
                     var newRefTree = m.at(refPos).newReferenceTree(ref).setEndPos(refPos + ref.length());
 
@@ -342,7 +347,7 @@ public class StandardMarkdownTransformer extends MarkdownTransformer {
 
         /**
          * {@return the position in the original comment for a position in {@code source},
-         * using {@link #replaceAdjustPos}}.
+         * using {@link #replaceAdjustPos}}
          *
          * @param pos the position in {@code source}
          */
@@ -450,7 +455,7 @@ public class StandardMarkdownTransformer extends MarkdownTransformer {
         }
 
         /**
-         * Flush any text in the {@code text} buffer, by creating a new
+         * Flushes any text in the {@code text} buffer, by creating a new
          * Markdown source text node and adding it to the list of trees.
          */
         private void flushText(int pos) {

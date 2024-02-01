@@ -271,11 +271,8 @@ public class DocCommentParser {
         int pos = bp;                   // only used when phase is INLINE
         LineKind lineKind = textKind == DocTree.Kind.MARKDOWN ? peekLineKind() : null;
 
-        if (DEBUG) System.err.println("starting content " + showPos(bp) + " " + newline);
-
         loop:
         while (bp < buflen) {
-            if (DEBUG) System.err.println("   in content " + showPos(bp) + " " + newline);
             switch (ch) {
                 case '\n', '\r' -> {
                     nextChar();
@@ -382,16 +379,13 @@ public class DocCommentParser {
                 }
 
                 case '@' -> {
-                    if (DEBUG) System.err.println("  content @");
                     // check for context-sensitive escape sequences:
                     //   newline whitespace @@
                     //   newline whitespace @*
                     //   *@/
                     if (newline) {
-                        if (DEBUG) System.err.println("  content @ newline");
                         char peek = peekChar();
                         if (peek == '@' || peek == '*') {
-                            if (DEBUG) System.err.println("  content @ newline escape1 " + peek);
                             addPendingText(trees, bp - 1);
                             nextChar();
                             trees.add(m.at(bp - 1).newEscapeTree(ch));
@@ -400,12 +394,10 @@ public class DocCommentParser {
                             textStart = bp;
                             break;
                         } else if (phase == Phase.BODY) {
-                            if (DEBUG) System.err.println("  content @ newline BODY will break loop");
                             addPendingText(trees, lastNonWhite);
                             break loop;
                         }
                     } else if (textStart != -1 && buf[bp - 1] == '*' && peekChar() == '/') {
-                        if (DEBUG) System.err.println("  content @ newline escape2");
                         addPendingText(trees, bp - 1);
                         nextChar();
                         trees.add(m.at(bp - 1).newEscapeTree('/'));
@@ -414,7 +406,6 @@ public class DocCommentParser {
                         textStart = bp;
                         break;
                     }
-                    if (DEBUG) System.err.println("  content @ final default");
                     defaultContentCharacter();
                 }
 
@@ -499,7 +490,6 @@ public class DocCommentParser {
                     List<DCTree> content = blockContent();
                     return m.at(p).newUnknownBlockTagTree(name, content);
                 } else {
-                    if (DEBUG) System.err.println("blockTag " + tp + " " + showPos(bp) + " " + textStart);
                     if (tp.allowsBlock()) {
                         return tp.parse(p, TagParser.Kind.BLOCK);
                     } else {
@@ -517,10 +507,8 @@ public class DocCommentParser {
         }
     }
 
-    private static final boolean DEBUG = false;
-
-    //DEBUG
-    String showPos(int p) {
+    // unused, but useful when debugging
+    private String showPos(int p) {
         var sb = new StringBuilder();
         sb.append("[").append(p).append("] ");
         if (p >= 0) {
