@@ -28,7 +28,9 @@ package jdk.internal.markdown;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
@@ -736,13 +738,12 @@ public class MarkdownTransformer implements DocTrees.DocCommentTreeTransformer {
             this.source = source;
             this.autorefScheme = autorefScheme;
 
-            var offsets = new ArrayList<Integer>();
-            offsets.add(0);
-            var m = lineBreak.matcher(source);
-            while (m.find()) {
-                offsets.add(m.end());
-            }
-            sourceLineOffsets = offsets.stream().mapToInt(Integer::intValue).toArray();
+            sourceLineOffsets = Stream.concat(
+                            Stream.of(0),
+                            lineBreak.matcher(source).results().map(MatchResult::end))
+                    .mapToInt(Integer::intValue)
+                    .toArray();
+
 
             replaceIter = replacements.iterator();
 
