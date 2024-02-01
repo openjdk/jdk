@@ -43,10 +43,8 @@ import jtreg.SkippedException;
  * @bug 4671634 6506286
  * @summary Invalid page format can crash win32 JRE
  * @key printer
- * @library /java/awt/regtesthelpers
- * @library /test/lib
- * @build PassFailJFrame
- * @build jtreg.SkippedException
+ * @library /test/lib /java/awt/regtesthelpers
+ * @build PassFailJFrame jtreg.SkippedException
  * @run main/manual InvalidPage
  */
 public class InvalidPage extends Frame implements Printable {
@@ -65,12 +63,13 @@ public class InvalidPage extends Frame implements Printable {
         Panel panel = new Panel();
         Button printButton = new Button("Print");
         printButton.addActionListener(e -> {
-            try {
-                if (pJob.printDialog()) {
-                    pJob.setPrintable(InvalidPage.this, pf);
+            if (pJob.printDialog()) {
+                pJob.setPrintable(InvalidPage.this, pf);
+                try {
                     pJob.print();
+                } catch (PrinterException pe) {
+                    pe.printStackTrace();
                 }
-            } catch (PrinterException pe) {
             }
         });
         panel.add(printButton);
@@ -105,6 +104,7 @@ public class InvalidPage extends Frame implements Printable {
                 (int) pageFormat.getImageableHeight());
         g2d.drawLine((int) pageFormat.getImageableWidth(), 0,
                 0, (int) pageFormat.getImageableHeight());
+        g2d.dispose();
         return Printable.PAGE_EXISTS;
     }
 

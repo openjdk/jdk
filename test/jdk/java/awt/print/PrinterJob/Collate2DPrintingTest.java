@@ -50,8 +50,7 @@ import java.io.Reader;
  * @bug 6362683 8012381
  * @summary Collation should work.
  * @key printer
- * @library /java/awt/regtesthelpers
- * @library /test/lib
+ * @library /java/awt/regtesthelpers /test/lib
  * @build PassFailJFrame
  * @run main/manual Collate2DPrintingTest
  */

@@ -35,10 +35,8 @@ import jtreg.SkippedException;
  * @bug 4258003
  * @summary Checks the right number of copies are printed
  * @key printer
- * @library /java/awt/regtesthelpers
- * @library /test/lib
- * @build PassFailJFrame
- * @build jtreg.SkippedException
+ * @library /test/lib /java/awt/regtesthelpers
+ * @build PassFailJFrame jtreg.SkippedException
  * @run main/manual NumCopies
  */
 public class NumCopies implements Printable {

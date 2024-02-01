@@ -32,7 +32,6 @@ import java.awt.image.BufferedImageOp;
 import java.awt.image.RescaleOp;
 import java.awt.print.PageFormat;
 import java.awt.print.Printable;
-import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
 
 import jtreg.SkippedException;
@@ -42,10 +41,8 @@ import jtreg.SkippedException;
  * @bug 4329866
  * @key printer
  * @summary Confirm that no printing exception is generated.
- * @library /java/awt/regtesthelpers
- * @library /test/lib
- * @build PassFailJFrame
- * @build jtreg.SkippedException
+ * @library /java/awt/regtesthelpers /test/lib
+ * @build PassFailJFrame jtreg.SkippedException
  * @run main/manual DrawImage
  */
 public class DrawImage {
@@ -63,6 +60,7 @@ public class DrawImage {
     }
 
     protected int printImage(Graphics g, PageFormat pf, BufferedImage image) {
+
         Graphics2D g2D = (Graphics2D) g;
         g2D.transform(new AffineTransform(_pageFormat.getMatrix()));
 
@@ -72,19 +70,15 @@ public class DrawImage {
         int x = (int) pf.getImageableX(), y = (int) pf.getImageableY();
         g2D.setClip(x, y, paperW, paperH);
 
-        // print images
-        if (image != null) {
-            int imageH = image.getHeight(), imageW = image.getWidth();
-            // make slightly smaller (25) than max possible width
-            float scaleFactor = ((float) ((paperW - 25) - _objectBorder -
-                    _objectBorder) / (float) (imageW));
+        // make slightly smaller (25) than max possible width
+        float scaleFactor = ((float) ((paperW - 25) - _objectBorder -
+                _objectBorder) / (float) (image.getWidth()));
 
-            BufferedImageOp scaleOp = new RescaleOp(scaleFactor, 0, null);
-            g2D.drawImage(image, scaleOp, x + _objectBorder, y + _objectBorder);
-            return Printable.PAGE_EXISTS;
-        } else {
-            return Printable.NO_SUCH_PAGE;
-        }
+        BufferedImageOp scaleOp = new RescaleOp(scaleFactor, 0, null);
+        g2D.drawImage(image, scaleOp, x + _objectBorder, y + _objectBorder);
+
+        g2D.dispose();
+        return Printable.PAGE_EXISTS;
     }
 
     public void print() {
@@ -93,21 +87,17 @@ public class DrawImage {
             pj.setJobName("Print Image");
             pj.setPrintable((g, pf, pageIndex) -> {
                 int result = Printable.NO_SUCH_PAGE;
-                if (pageIndex == 0) {
+                if (pageIndex == 0 && _image != null) {
                     result = printImage(g, _pageFormat, _image);
                 }
                 return result;
             });
             if (pj.printDialog()) {
-                try {
-                    pj.print();
-                } catch (PrinterException e) {
-                    System.out.println(e);
-                }
+                pj.print();
             }
 
         } catch (Exception e) {
-            e.printStackTrace(System.out);
+            e.printStackTrace();
         }
     }
 
@@ -151,9 +141,8 @@ public class DrawImage {
 
         g2D.setColor(Color.white);
 
-        AffineTransform original = g2D.getTransform();
         AffineTransform originXform = AffineTransform.getTranslateInstance(w /
-                5, h / 5);
+                5.0, h / 5.0);
         g2D.transform(originXform);
 
         g2D.drawString("Front Side", 20, h / 2);

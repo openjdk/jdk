@@ -32,10 +32,8 @@ import java.awt.print.PrinterJob;
  * @bug 4205601
  * @summary setJobName should be used by PrinterJob
  * @key printer
- * @library /java/awt/regtesthelpers
- * @library /test/lib
- * @build PassFailJFrame
- * @build jtreg.SkippedException
+ * @library /test/lib /java/awt/regtesthelpers
+ * @build PassFailJFrame jtreg.SkippedException
  * @run main/manual PrinterJobName
  */
 public class PrinterJobName implements Printable {
@@ -74,6 +72,7 @@ public class PrinterJobName implements Printable {
         Graphics2D g2d = (Graphics2D) g;
         g2d.translate(pgFmt.getImageableX(), pgFmt.getImageableY());
         g2d.drawString("Name is: " + theName, 20, 20);
+        g2d.dispose();
         return Printable.PAGE_EXISTS;
     }
 }
