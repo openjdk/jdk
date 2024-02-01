@@ -39,6 +39,7 @@
 #include "prims/jvmtiDeferredUpdates.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
@@ -53,6 +54,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "services/threadService.hpp"
 #include "utilities/dtrace.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/preserveException.hpp"
 #if INCLUDE_JFR
@@ -342,9 +344,18 @@ bool ObjectMonitor::enter_for(JavaThread* locking_thread) {
         // contentions, seen contention > 0 and seen a DEFLATER_MARKER.
         // success will only be false if this races with something other than
         // deflation.
-        success = try_set_owner_from(nullptr, locking_thread) == nullptr;
+        prev_owner = try_set_owner_from(nullptr, locking_thread);
+        success = prev_owner == nullptr;
       }
+    } else if (LockingMode == LM_LEGACY && locking_thread->is_lock_owned((address)prev_owner)) {
+      assert(_recursions == 0, "must be");
+      _recursions = 1;
+      set_owner_from_BasicLock(prev_owner, locking_thread);
+      success = true;
     }
+    assert(success, "Failed to enter_for: locking_thread=" INTPTR_FORMAT
+           ", this=" INTPTR_FORMAT "{owner=" INTPTR_FORMAT "}, observed owner: " INTPTR_FORMAT,
+           p2i(locking_thread), p2i(this), p2i(owner_raw()), p2i(prev_owner));
   } else {
     // Async deflation is in progress and our contentions increment
     // above lost the race to async deflation. Undo the work and
