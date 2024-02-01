@@ -670,7 +670,25 @@ extern "C" bool dbg_is_safe(const void* p, intptr_t errvalue) {
 }
 
 extern "C" bool dbg_is_good_oop(oopDesc* o) {
-  return dbg_is_safe(o, -1) && dbg_is_safe(o->klass(), -1) && oopDesc::is_oop(o) && o->klass()->is_klass();
+  bool good = dbg_is_safe(o, -1)
+              && *(long*) o != 0
+              && *((long*)o + 1) != 0;
+
+  if (good) {
+    if (!UseCompressedClassPointers) {
+      good = dbg_is_safe(o->klass(), -1)
+             && o->klass()->is_klass();
+    } else {
+      // Fetch compressed class pointer (no accessor for o._metadata._compressed_klass)
+      uintptr_t* ccp = (uintptr_t*) CompressedKlassPointers::decode_raw((narrowKlass) *((juint*) o + 2));
+      good = dbg_is_safe(ccp, -1)
+             && dbg_is_safe((void*) *ccp, -1);
+    }
+  }
+  if (good) {
+    good = good && oopDesc::is_oop(o);
+  }
+  return good;
 }
 
 //////////////////////////////////////////////////////////////////////////////

@@ -1203,11 +1203,13 @@ void VMDebugDCmd::find(DCmdSource source) {
     if (!os::is_readable_pointer((intptr_t*) x)) {
       output()->print_cr("address not safe");
     } else {
-      // Misaligned oops fail to print, but don't force alignment of
-      // other values such as pointers into code.
       if (Universe::heap()->is_in((oopDesc*) x)) {
         if (x != align_down(x, ObjectAlignmentInBytes)) {
           output()->print_cr("misaligned oop");
+          return;
+        }
+        if (!dbg_is_good_oop((oopDesc*) x)) {
+          output()->print_cr("bad oop");
           return;
         }
       }
