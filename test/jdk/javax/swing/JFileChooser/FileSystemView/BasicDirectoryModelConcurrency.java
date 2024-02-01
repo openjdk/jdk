@@ -1,6 +1,7 @@
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
@@ -28,8 +29,8 @@ public final class BasicDirectoryModelConcurrency {
             new AtomicReference<>();
 
     public static void main(String[] args) throws Throwable {
-        long timeStart = System.currentTimeMillis();
-        final Path temp = Files.createTempDirectory("fileChooser-concurrency");
+        final long timeStart = System.currentTimeMillis();
+        final Path temp = Files.createDirectory(Paths.get("fileChooser-concurrency-" + timeStart));
         final CyclicBarrier start = new CyclicBarrier(NUMBER_OF_THREADS);
         final CyclicBarrier end = new CyclicBarrier(NUMBER_OF_THREADS + 1);
 
