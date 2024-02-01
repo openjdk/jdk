@@ -27,8 +27,6 @@ import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Panel;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.print.PageFormat;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
@@ -41,13 +39,11 @@ import jtreg.SkippedException;
  * @bug 4396835
  * @summary Compound font string not printing.
  * @key printer
- * @library /java/awt/regtesthelpers
- * @library /test/lib
- * @build PassFailJFrame
- * @build jtreg.SkippedException
+ * @library /test/lib /java/awt/regtesthelpers
+ * @build PassFailJFrame jtreg.SkippedException
  * @run main/manual PrintCompoundString
  */
-public class PrintCompoundString extends Frame implements ActionListener {
+public class PrintCompoundString extends Frame {
 
     private final TextCanvas c;
 
@@ -83,26 +79,20 @@ public class PrintCompoundString extends Frame implements ActionListener {
         add("Center", c);
 
         Button printButton = new Button("Print");
-        printButton.addActionListener(this);
         add("South", printButton);
+        printButton.addActionListener(e -> {
+            PrinterJob pj = PrinterJob.getPrinterJob();
+            if (pj.printDialog()) {
+                pj.setPrintable(c);
+                try {
+                    pj.print();
+                } catch (PrinterException pe) {
+                    pe.printStackTrace();
+                }
+            }
+        });
 
         pack();
-    }
-
-    public void actionPerformed(ActionEvent e) {
-
-        PrinterJob pj = PrinterJob.getPrinterJob();
-
-        if (pj != null && pj.printDialog()) {
-
-            pj.setPrintable(c);
-            try {
-                pj.print();
-            } catch (PrinterException pe) {
-            } finally {
-                System.err.println("PRINT RETURNED");
-            }
-        }
     }
 
     class TextCanvas extends Panel implements Printable {
@@ -115,16 +105,11 @@ public class PrintCompoundString extends Frame implements ActionListener {
             Graphics2D g2d = (Graphics2D) g;
             g2d.translate(pgFmt.getImageableX(), pgFmt.getImageableY());
 
-            paint(g);
-
-            return Printable.PAGE_EXISTS;
-        }
-
-        public void paint(Graphics g1) {
-            Graphics2D g = (Graphics2D) g1;
-
             String str = "Test string compound printing \u2203\u2200\u2211";
-            g.drawString(str, 20, 40);
+            g2d.drawString(str, 20, 40);
+
+            g2d.dispose();
+            return Printable.PAGE_EXISTS;
         }
 
         public Dimension getPreferredSize() {

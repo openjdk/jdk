@@ -35,10 +35,8 @@ import jtreg.SkippedException;
  * @test
  * @bug 4956397
  * @key printer
- * @library /java/awt/regtesthelpers
- * @library /test/lib
- * @build PassFailJFrame
- * @build jtreg.SkippedException
+ * @library /test/lib /java/awt/regtesthelpers
+ * @build PassFailJFrame jtreg.SkippedException
  * @run main/manual PageDlgPrnButton
  */
 public class PageDlgPrnButton implements Printable
@@ -108,6 +106,7 @@ public class PageDlgPrnButton implements Printable
         // Paint the scaled component on the printer
         g2d.fillRect(rect.x, rect.y, rect.width, rect.height);
 
+        g2d.dispose();
         return(PAGE_EXISTS);
     }
 }

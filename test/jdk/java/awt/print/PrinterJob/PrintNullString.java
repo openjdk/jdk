@@ -27,8 +27,6 @@ import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Panel;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.print.PageFormat;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
@@ -43,13 +41,11 @@ import jtreg.SkippedException;
  * @bug 4223328
  * @summary Printer graphics must behave the same as screen graphics
  * @key printer
- * @library /java/awt/regtesthelpers
- * @library /test/lib
- * @build PassFailJFrame
- * @build jtreg.SkippedException
+ * @library /test/lib /java/awt/regtesthelpers
+ * @build PassFailJFrame jtreg.SkippedException
  * @run main/manual PrintNullString
  */
-public class PrintNullString extends Frame implements ActionListener {
+public class PrintNullString extends Frame {
 
     private final TextCanvas c;
 
@@ -87,26 +83,20 @@ public class PrintNullString extends Frame implements ActionListener {
         add("Center", c);
 
         Button printButton = new Button("Print");
-        printButton.addActionListener(this);
         add("South", printButton);
+        printButton.addActionListener(e -> {
+            PrinterJob pj = PrinterJob.getPrinterJob();
+            if (pj.printDialog()) {
+                pj.setPrintable(c);
+                try {
+                    pj.print();
+                } catch (PrinterException pe) {
+                    pe.printStackTrace();
+                }
+            }
+        });
 
         pack();
-    }
-
-    public void actionPerformed(ActionEvent e) {
-
-        PrinterJob pj = PrinterJob.getPrinterJob();
-
-        if (pj != null && pj.printDialog()) {
-
-            pj.setPrintable(c);
-            try {
-                pj.print();
-            } catch (PrinterException pe) {
-            } finally {
-                System.out.println("PRINT RETURNED");
-            }
-        }
     }
 
     static class TextCanvas extends Panel implements Printable {
@@ -126,7 +116,7 @@ public class PrintNullString extends Frame implements ActionListener {
             g2d.translate(pgFmt.getImageableX(), pgFmt.getImageableY());
 
             paint(g);
-
+            g2d.dispose();
             return Printable.PAGE_EXISTS;
         }
 
@@ -139,18 +129,10 @@ public class PrintNullString extends Frame implements ActionListener {
                 g.drawString("FAILURE: No NPE for null String, int", 20, 40);
             } catch (NullPointerException e) {
                 g.drawString("caught expected NPE for null String, int", 20, 40);
-            }/* catch (Exception e) {
-          g.drawString("FAILURE: unexpected exception for null String, int",
-                        20, 40);
-        }*/
+            }
 
-            //try {
             g.drawString(emptyStr, 20, 60);
             g.drawString("OK for empty String, int", 20, 60);
-        /*} catch (Exception e) {
-          g.drawString("FAILURE: unexpected exception for empty String, int",
-                        20, 60);
-        }*/
 
             // API 2: null & empty drawString(String, float, float);
             try {
@@ -158,17 +140,10 @@ public class PrintNullString extends Frame implements ActionListener {
                 g.drawString("FAILURE: No NPE for null String, float", 20, 80);
             } catch (NullPointerException e) {
                 g.drawString("caught expected NPE for null String, float", 20, 80);
-            } /*catch (Exception e) {
-          g.drawString("FAILURE: unexpected exception for null String, float",
-                        20, 80);
-        }*/
-            //try {
+            }
+
             g.drawString(emptyStr, 20.0f, 100.0f);
             g.drawString("OK for empty String, float", 20.0f, 100.f);
-        /* } catch (Exception e) {
-          g.drawString("FAILURE: unexpected exception for empty String, float",
-                        20, 100);
-        }*/
 
             // API 3: null & empty drawString(Iterator, int, int);
             try {
@@ -176,21 +151,14 @@ public class PrintNullString extends Frame implements ActionListener {
                 g.drawString("FAILURE: No NPE for null iterator, float", 20, 120);
             } catch (NullPointerException e) {
                 g.drawString("caught expected NPE for null iterator, int", 20, 120);
-            } /*catch (Exception e) {
-          g.drawString("FAILURE: unexpected exception for null iterator, int",
-                       20, 120);
-        } */
+            }
+
             try {
                 g.drawString(emptyIterator, 20, 140);
-                g.drawString("FAILURE: No IAE for empty iterator, int",
-                        20, 140);
+                g.drawString("FAILURE: No IAE for empty iterator, int", 20, 140);
             } catch (IllegalArgumentException e) {
-                g.drawString("caught expected IAE for empty iterator, int",
-                        20, 140);
-            } /*catch (Exception e) {
-          g.drawString("FAILURE: unexpected exception for empty iterator, int",
-                       20, 140);
-        } */
+                g.drawString("caught expected IAE for empty iterator, int", 20, 140);
+            }
 
             // API 4: null & empty drawString(Iterator, float, int);
             try {
@@ -198,22 +166,15 @@ public class PrintNullString extends Frame implements ActionListener {
                 g.drawString("FAILURE: No NPE for null iterator, float", 20, 160);
             } catch (NullPointerException e) {
                 g.drawString("caught expected NPE for null iterator, float", 20, 160);
-            } /*catch (Exception e) {
-          g.drawString("FAILURE: unexpected exception for null iterator, float",
-                        20, 160);
-        } */
+            }
 
             try {
                 g.drawString(emptyIterator, 20, 180);
-                g.drawString("FAILURE: No IAE for empty iterator, float",
-                        20, 180);
+                g.drawString("FAILURE: No IAE for empty iterator, float", 20, 180);
             } catch (IllegalArgumentException e) {
-                g.drawString("caught expected IAE for empty iterator, float",
-                        20, 180);
-            } /*catch (Exception e) {
-          g.drawString("FAILURE: unexpected exception for empty iterator, float",
-                       20, 180);
-        } */
+                g.drawString("caught expected IAE for empty iterator, float", 20, 180);
+            }
+            g.dispose();
         }
 
         public Dimension getPreferredSize() {

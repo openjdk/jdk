@@ -29,8 +29,6 @@ import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Panel;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.geom.AffineTransform;
 import java.awt.print.PageFormat;
 import java.awt.print.Printable;
@@ -43,14 +41,12 @@ import jtreg.SkippedException;
  * @test
  * @bug 6359734
  * @key printer
- * @library /java/awt/regtesthelpers
- * @library /test/lib
- * @build PassFailJFrame
- * @build jtreg.SkippedException
+ * @library /test/lib /java/awt/regtesthelpers
+ * @build PassFailJFrame jtreg.SkippedException
  * @summary Test that fonts with a translation print where they should.
  * @run main/manual PrintTranslatedFont
  */
-public class PrintTranslatedFont extends Frame implements ActionListener {
+public class PrintTranslatedFont extends Frame {
 
     private final TextCanvas c;
 
@@ -87,27 +83,20 @@ public class PrintTranslatedFont extends Frame implements ActionListener {
         add("Center", c);
 
         Button printButton = new Button("Print");
-        printButton.addActionListener(this);
         add("South", printButton);
+        printButton.addActionListener(e -> {
+            PrinterJob pj = PrinterJob.getPrinterJob();
+            if (pj.printDialog()) {
+                pj.setPrintable(c);
+                try {
+                    pj.print();
+                } catch (PrinterException pe) {
+                    pe.printStackTrace();
+                }
+            }
+        });
 
         pack();
-    }
-
-    public void actionPerformed(ActionEvent e) {
-
-        PrinterJob pj = PrinterJob.getPrinterJob();
-
-        if (pj != null && pj.printDialog()) {
-
-            pj.setPrintable(c);
-            try {
-                pj.print();
-            } catch (PrinterException pe) {
-                pe.printStackTrace();
-            } finally {
-                System.out.println("PRINT RETURNED");
-            }
-        }
     }
 
     static class TextCanvas extends Panel implements Printable {
@@ -120,34 +109,36 @@ public class PrintTranslatedFont extends Frame implements ActionListener {
             Graphics2D g2d = (Graphics2D) g;
             g2d.translate(pgFmt.getImageableX(), pgFmt.getImageableY());
 
-            paint(g);
+            paint(g2d);
 
+            g2d.dispose();
             return Printable.PAGE_EXISTS;
         }
 
-        public void paint(Graphics g1) {
-            Graphics2D g = (Graphics2D) g1;
+        public void paint(Graphics2D g2d) {
 
             Font f = new Font("Dialog", Font.PLAIN, 20);
             int tx = 20;
             int ty = 20;
             AffineTransform at = AffineTransform.getTranslateInstance(tx, ty);
             f = f.deriveFont(at);
-            g.setFont(f);
+            g2d.setFont(f);
 
-            FontMetrics fm = g.getFontMetrics();
+            FontMetrics fm = g2d.getFontMetrics();
             String str = "Basic ascii string";
             int sw = fm.stringWidth(str);
             int posx = 20, posy = 40;
-            g.drawString(str, posx, posy);
-            g.drawLine(posx + tx, posy + ty + 2, posx + tx + sw, posy + ty + 2);
+            g2d.drawString(str, posx, posy);
+            g2d.drawLine(posx + tx, posy + ty + 2, posx + tx + sw, posy + ty + 2);
 
             posx = 20;
             posy = 70;
             str = "Test string compound printing \u2203\u2200";
             sw = fm.stringWidth(str);
-            g.drawString(str, posx, posy);
-            g.drawLine(posx + tx, posy + ty + 2, posx + tx + sw, posy + ty + 2);
+            g2d.drawString(str, posx, posy);
+            g2d.drawLine(posx + tx, posy + ty + 2, posx + tx + sw, posy + ty + 2);
+
+            g2d.dispose();
         }
 
         public Dimension getPreferredSize() {

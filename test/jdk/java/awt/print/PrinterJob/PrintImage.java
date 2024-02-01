@@ -44,10 +44,8 @@ import jtreg.SkippedException;
  * @bug 4298489
  * @summary Confirm that output is same as screen.
  * @key printer
- * @library /java/awt/regtesthelpers
- * @library /test/lib
- * @build PassFailJFrame
- * @build jtreg.SkippedException
+ * @library /test/lib /java/awt/regtesthelpers
+ * @build PassFailJFrame jtreg.SkippedException
  * @run main/manual PrintImage
  */
 public class PrintImage extends Frame implements ActionListener {
