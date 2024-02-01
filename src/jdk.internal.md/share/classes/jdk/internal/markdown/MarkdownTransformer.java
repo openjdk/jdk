@@ -842,7 +842,7 @@ public class MarkdownTransformer implements DocTrees.DocCommentTreeTransformer {
 
         /**
          * {@return the position in the original comment for a position in {@code source},
-         * using {@link #replaceAdjustPos}}.
+         * using {@link #replaceAdjustPos}}
          *
          * @param pos the position in {@code source}
          */
@@ -950,7 +950,7 @@ public class MarkdownTransformer implements DocTrees.DocCommentTreeTransformer {
         }
 
         /**
-         * Flush any text in the {@code text} buffer, by creating a new
+         * Flushes any text in the {@code text} buffer, by creating a new
          * Markdown source text node and adding it to the list of trees.
          */
         private void flushText(int pos) {
