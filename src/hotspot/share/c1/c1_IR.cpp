@@ -307,21 +307,10 @@ void IR::eliminate_null_checks() {
 }
 
 
-static int sort_pairs(BlockPair** a, BlockPair** b) {
-  if ((*a)->from() == (*b)->from()) {
-    return (*a)->to()->block_id() - (*b)->to()->block_id();
-  } else {
-    return (*a)->from()->block_id() - (*b)->from()->block_id();
-  }
-}
-
-
 class CriticalEdgeFinder: public BlockClosure {
   BlockPairList blocks;
-  IR*       _ir;
 
  public:
-  CriticalEdgeFinder(IR* ir): _ir(ir) {}
   void block_do(BlockBegin* bb) {
     BlockEnd* be = bb->end();
     int nos = be->number_of_sux();
@@ -329,20 +318,22 @@ class CriticalEdgeFinder: public BlockClosure {
       for (int i = 0; i < nos; i++) {
         BlockBegin* sux = be->sux_at(i);
         if (sux->number_of_preds() >= 2) {
-          blocks.append(new BlockPair(bb, sux));
+          blocks.append(new BlockPair(bb, sux, i));
         }
       }
     }
   }
 
   void split_edges() {
-    BlockPair* last_pair = nullptr;
-    blocks.sort(sort_pairs);
     for (int i = 0; i < blocks.length(); i++) {
       BlockPair* pair = blocks.at(i);
-      if (last_pair != nullptr && pair->is_same(last_pair)) continue;
       BlockBegin* from = pair->from();
       BlockBegin* to = pair->to();
+      int index = pair->index();
+      if (to != from->end()->sux_at(index)) {
+        // inserted
+        continue;
+      }
       BlockBegin* split = from->insert_block_between(to);
 #ifndef PRODUCT
       if ((PrintIR || PrintIR1) && Verbose) {
@@ -350,13 +341,12 @@ class CriticalEdgeFinder: public BlockClosure {
                       from->block_id(), to->block_id(), split->block_id());
       }
 #endif
-      last_pair = pair;
     }
   }
 };
 
 void IR::split_critical_edges() {
-  CriticalEdgeFinder cef(this);
+  CriticalEdgeFinder cef;
 
   iterate_preorder(&cef);
   cef.split_edges();

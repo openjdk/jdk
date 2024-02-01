@@ -2424,14 +2424,12 @@ class BlockPair: public CompilationResourceObj {
  private:
   BlockBegin* _from;
   BlockBegin* _to;
+  int _index;
  public:
-  BlockPair(BlockBegin* from, BlockBegin* to): _from(from), _to(to) {}
+  BlockPair(BlockBegin* from, BlockBegin* to, int index): _from(from), _to(to), _index(index) {}
   BlockBegin* from() const { return _from; }
   BlockBegin* to() const   { return _to;   }
-  bool is_same(BlockBegin* from, BlockBegin* to) const { return  _from == from && _to == to; }
-  bool is_same(BlockPair* p) const { return  _from == p->from() && _to == p->to(); }
-  void set_to(BlockBegin* b)   { _to = b; }
-  void set_from(BlockBegin* b) { _from = b; }
+  int index() const        { return _index; }
 };
 
 typedef GrowableArray<BlockPair*> BlockPairList;
