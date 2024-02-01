@@ -22,14 +22,14 @@
  *
  */
 
-#ifndef SHARE_GC_G1_HEAPREGIONMANAGER_INLINE_HPP
-#define SHARE_GC_G1_HEAPREGIONMANAGER_INLINE_HPP
+#ifndef SHARE_GC_G1_G1HEAPREGIONMANAGER_INLINE_HPP
+#define SHARE_GC_G1_G1HEAPREGIONMANAGER_INLINE_HPP
 
-#include "gc/g1/heapRegionManager.hpp"
+#include "gc/g1/g1HeapRegionManager.hpp"
 
 #include "gc/g1/g1CommittedRegionMap.inline.hpp"
-#include "gc/g1/heapRegion.hpp"
-#include "gc/g1/heapRegionSet.inline.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
+#include "gc/g1/g1HeapRegionSet.inline.hpp"
 
 inline bool HeapRegionManager::is_available(uint region) const {
   return _committed_map.active(region);
@@ -83,4 +83,4 @@ inline HeapRegion* HeapRegionManager::allocate_free_regions_starting_at(uint fir
   return start;
 }
 
-#endif // SHARE_GC_G1_HEAPREGIONMANAGER_INLINE_HPP
+#endif // SHARE_GC_G1_G1HEAPREGIONMANAGER_INLINE_HPP

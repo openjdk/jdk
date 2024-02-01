@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/g1/g1Arguments.hpp"
 #include "gc/g1/g1YoungGenSizer.hpp"
-#include "gc/g1/heapRegion.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #include "logging/log.hpp"
 #include "runtime/globals_extension.hpp"
 

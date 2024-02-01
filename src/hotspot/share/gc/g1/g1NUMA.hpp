@@ -26,7 +26,7 @@
 #define SHARE_VM_GC_G1_NUMA_HPP
 
 #include "gc/g1/g1NUMAStats.hpp"
-#include "gc/g1/heapRegion.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/os.hpp"
 

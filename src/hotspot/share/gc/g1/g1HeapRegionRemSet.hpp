@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_GC_G1_HEAPREGIONREMSET_HPP
-#define SHARE_GC_G1_HEAPREGIONREMSET_HPP
+#ifndef SHARE_GC_G1_G1HEAPREGIONREMSET_HPP
+#define SHARE_GC_G1_G1HEAPREGIONREMSET_HPP
 
 #include "gc/g1/g1CardSet.hpp"
 #include "gc/g1/g1CardSetMemory.hpp"
@@ -185,4 +185,4 @@ public:
 #endif
 };
 
-#endif // SHARE_GC_G1_HEAPREGIONREMSET_HPP
+#endif // SHARE_GC_G1_G1HEAPREGIONREMSET_HPP

@@ -29,7 +29,7 @@
 #include "gc/g1/g1OopClosures.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1RemSetSummary.hpp"
-#include "gc/g1/heapRegion.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
 #include "utilities/ticks.hpp"

@@ -28,7 +28,7 @@
 #include "gc/g1/g1CardSetMemory.hpp"
 #include "gc/g1/g1MonotonicArenaFreePool.hpp"
 #include "gc/g1/g1ServiceThread.hpp"
-#include "gc/g1/heapRegionRemSet.hpp"
+#include "gc/g1/g1HeapRegionRemSet.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/ticks.hpp"
 

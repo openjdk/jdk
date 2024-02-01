@@ -29,7 +29,7 @@
 #include "gc/g1/g1FullGCScope.hpp"
 #include "gc/g1/g1FullGCTask.hpp"
 #include "gc/g1/g1RootProcessor.hpp"
-#include "gc/g1/heapRegionManager.hpp"
+#include "gc/g1/g1HeapRegionManager.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "utilities/ticks.hpp"
 

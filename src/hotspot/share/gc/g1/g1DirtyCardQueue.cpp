@@ -33,7 +33,7 @@
 #include "gc/g1/g1RedirtyCardsQueue.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
-#include "gc/g1/heapRegionRemSet.inline.hpp"
+#include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "gc/shared/bufferNode.hpp"
 #include "gc/shared/bufferNodeList.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"

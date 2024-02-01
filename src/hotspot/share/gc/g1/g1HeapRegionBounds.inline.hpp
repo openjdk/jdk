@@ -22,10 +22,10 @@
  *
  */
 
-#ifndef SHARE_GC_G1_HEAPREGIONBOUNDS_INLINE_HPP
-#define SHARE_GC_G1_HEAPREGIONBOUNDS_INLINE_HPP
+#ifndef SHARE_GC_G1_G1HEAPREGIONBOUNDS_INLINE_HPP
+#define SHARE_GC_G1_G1HEAPREGIONBOUNDS_INLINE_HPP
 
-#include "gc/g1/heapRegionBounds.hpp"
+#include "gc/g1/g1HeapRegionBounds.hpp"
 
 size_t HeapRegionBounds::min_size() {
   return MIN_REGION_SIZE;
@@ -43,4 +43,4 @@ size_t HeapRegionBounds::target_number() {
   return TARGET_REGION_NUMBER;
 }
 
-#endif // SHARE_GC_G1_HEAPREGIONBOUNDS_INLINE_HPP
+#endif // SHARE_GC_G1_G1HEAPREGIONBOUNDS_INLINE_HPP
