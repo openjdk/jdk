@@ -322,14 +322,14 @@ char* os::map_memory_to_file(char* base, size_t size, int fd) {
   if (base != nullptr) {
     flags |= MAP_FIXED;
   }
-  char* addr = (char*)mmap(base, size, prot, flags, fd, 0);
+  char* addr = (char*)::mmap(base, size, prot, flags, fd, 0);
 
   if (addr == MAP_FAILED) {
     warning("Failed mmap to file. (%s)", os::strerror(errno));
     return nullptr;
   }
   if (base != nullptr && addr != base) {
-    if (!os::release_memory(addr, size)) {
+    if (::munmap(addr, size) != 0) {
       warning("Could not release memory on unsuccessful file mapping");
     }
     return nullptr;
