@@ -292,6 +292,7 @@ class EATestsTarget {
         new EARelockingRecursiveTarget()                                                    .run();
         new EARelockingNestedInflatedTarget()                                               .run();
         new EARelockingNestedInflated_02Target()                                            .run();
+        new EARelockingNestedInflated_03Target()                                            .run();
         new EARelockingArgEscapeLWLockedInCalleeFrameTarget()                               .run();
         new EARelockingArgEscapeLWLockedInCalleeFrame_2Target()                             .run();
         new EARelockingArgEscapeLWLockedInCalleeFrameNoRecursiveTarget()                    .run();
@@ -415,6 +416,7 @@ public class EATests extends TestScaffold {
         new EARelockingRecursive()                                                    .run(this);
         new EARelockingNestedInflated()                                               .run(this);
         new EARelockingNestedInflated_02()                                            .run(this);
+        new EARelockingNestedInflated_03()                                            .run(this);
         new EARelockingArgEscapeLWLockedInCalleeFrame()                               .run(this);
         new EARelockingArgEscapeLWLockedInCalleeFrame_2()                             .run(this);
         new EARelockingArgEscapeLWLockedInCalleeFrameNoRecursive()                    .run(this);
@@ -1961,6 +1963,74 @@ class EARelockingNestedInflated_02Target extends EATestCaseBaseTarget {
     public void testMethod_inlined(XYVal l2) {
         synchronized (l2) {                 // eliminated nested locking
             dontinline_brkpt();
+        }
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Like {@link EARelockingNestedInflated_02} with the difference that the
+ * inflation of the lock happens because of contention.
+ */
+class EARelockingNestedInflated_03 extends EATestCaseBaseDebugger {
+
+    public void runTestCase() throws Exception {
+        BreakpointEvent bpe = resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
+        printStack(bpe.thread());
+        @SuppressWarnings("unused")
+        ObjectReference o = getLocalRef(bpe.thread().frame(2), XYVAL_NAME, "l1");
+    }
+}
+
+class EARelockingNestedInflated_03Target extends EATestCaseBaseTarget {
+
+    public XYVal lockInflatedByContention;
+    public volatile boolean doLockNow;
+
+    @Override
+    public void setUp() {
+        super.setUp();
+        testMethodDepth = 2;
+        lockInflatedByContention = new XYVal(1, 1);
+        Thread contendingThread = DebuggeeWrapper.newThread(() -> {
+            while(!doLockNow) {
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException e) { /* ignored */ }
+            }
+            doLockNow = false; // reset for main thread
+            synchronized(lockInflatedByContention) { // will block and trigger inflation
+                msg(Thread.currentThread().getName() + ": acquired lockInflatedByContention");
+            }
+            }, testCaseName + ": Lock Contender (test thread)");
+        contendingThread.setDaemon(true);
+        contendingThread.start();
+    }
+
+    public void dontinline_testMethod() {
+        @SuppressWarnings("unused")
+        XYVal xy = new XYVal(1, 1);            // scalar replaced
+        XYVal l1 = lockInflatedByContention;   // read by debugger
+        synchronized (l1) {
+            testMethod_inlined(l1);
+        }
+    }
+
+    public void testMethod_inlined(XYVal l2) {
+        synchronized (l2) {                 // eliminated nested locking
+            dontinline_setDoLockNow();
+            dontinline_brkpt();
+        }
+    }
+
+    public void dontinline_setDoLockNow() {
+        doLockNow = warmupDone;
+        // wait for other thread to reset doLockNow
+        while(doLockNow) {
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) { /* ignored */ }
         }
     }
 }
