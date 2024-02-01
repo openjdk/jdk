@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -275,7 +275,6 @@ void JVMFlag::print_on(outputStream* st, bool withComments, bool printRanges) co
     //
     //  Sample output:
     //       intx MinPassesBeforeFlush                               [ 0                         ...       9223372036854775807 ]                         {diagnostic} {default}
-    //      uintx MinRAMFraction                                     [ 1                         ...      18446744073709551615 ]                            {product} {default}
     //     double MinRAMPercentage                                   [ 0.000                     ...                   100.000 ]                            {product} {default}
     //      uintx MinSurvivorRatio                                   [ 3                         ...      18446744073709551615 ]                            {product} {default}
     //     size_t MinTLABSize                                        [ 1                         ...       9223372036854775807 ]                            {product} {default}

@@ -391,7 +391,8 @@ static void restore_eliminated_locks(JavaThread* thread, GrowableArray<compiledV
 #ifndef PRODUCT
   bool first = true;
 #endif // !PRODUCT
-  for (int i = 0; i < chunk->length(); i++) {
+  // Start locking from outermost/oldest frame
+  for (int i = (chunk->length() - 1); i >= 0; i--) {
     compiledVFrame* cvf = chunk->at(i);
     assert (cvf->scope() != nullptr,"expect only compiled java frames");
     GrowableArray<MonitorInfo*>* monitors = cvf->monitors();
@@ -1724,7 +1725,8 @@ void Deoptimization::pop_frames_failed_reallocs(JavaThread* thread, vframeArray*
   for (int i = 0; i < array->frames(); i++) {
     MonitorChunk* monitors = array->element(i)->monitors();
     if (monitors != nullptr) {
-      for (int j = 0; j < monitors->number_of_monitors(); j++) {
+      // Unlock in reverse order starting from most nested monitor.
+      for (int j = (monitors->number_of_monitors() - 1); j >= 0; j--) {
         BasicObjectLock* src = monitors->at(j);
         if (src->obj() != nullptr) {
           ObjectSynchronizer::exit(src->obj(), src->lock(), thread);
