@@ -45,10 +45,8 @@ import jtreg.SkippedException;
  * @bug 4252108 6229507
  * @key printer
  * @summary PrinterJob.validatePage() is unimplemented.
- * @library /java/awt/regtesthelpers
- * @library /test/lib
- * @build PassFailJFrame
- * @build jtreg.SkippedException
+ * @library /test/lib /java/awt/regtesthelpers
+ * @build PassFailJFrame jtreg.SkippedException
  * @run main/manual ValidatePage
  */
 public class ValidatePage extends Frame implements Printable {
@@ -74,14 +72,14 @@ public class ValidatePage extends Frame implements Printable {
                 ("Format Left Margin = " + drnd(myPageFormat.getImageableX()));
         myImageableRightLabel.setText
                 ("Format Right Margin = " + drnd(myPageFormat.getWidth() -
-                        (myPageFormat.getImageableX() + myPageFormat.getImageableWidth())));
+                (myPageFormat.getImageableX() + myPageFormat.getImageableWidth())));
         myImageableWidthLabel.setText
                 ("Format ImageableWidth = " + drnd(myPageFormat.getImageableWidth()));
         myImageableYLabel.setText
                 ("Format Top Margin = " + drnd(myPageFormat.getImageableY()));
         myImageableBottomLabel.setText
                 ("Format Bottom Margin = " + drnd(myPageFormat.getHeight() -
-                        (myPageFormat.getImageableY() + myPageFormat.getImageableHeight())));
+                (myPageFormat.getImageableY() + myPageFormat.getImageableHeight())));
         myImageableHeightLabel.setText
                 ("Format ImageableHeight = " + drnd(myPageFormat.getImageableHeight()));
         int o = myPageFormat.getOrientation();
@@ -241,7 +239,7 @@ public class ValidatePage extends Frame implements Printable {
 
         ta.setEditable(false);
         add(ta);
-        setSize(500, 650);
+        setSize(700, 500);
     }
 
     public int print(Graphics graphics, PageFormat pageFormat, int pageIndex) {
@@ -272,6 +270,7 @@ public class ValidatePage extends Frame implements Printable {
         g2d.drawRect(1, 1, (int) pageFormat.getImageableWidth() - 2,
                 (int) pageFormat.getImageableHeight() - 2);
 
+        g2d.dispose();
         return Printable.PAGE_EXISTS;
     }
 

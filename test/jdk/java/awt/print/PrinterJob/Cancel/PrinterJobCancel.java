@@ -37,10 +37,8 @@ import jtreg.SkippedException;
  * @bug 4245280
  * @key printer
  * @summary PrinterJob not cancelled when PrinterJob.cancel() is used
- * @library /java/awt/regtesthelpers
- * @library /test/lib
- * @build PassFailJFrame
- * @build jtreg.SkippedException
+ * @library /test/lib /java/awt/regtesthelpers
+ * @build PassFailJFrame jtreg.SkippedException
  * @run main/manual PrinterJobCancel
  */
 public class PrinterJobCancel extends Thread implements Printable {
@@ -124,6 +122,7 @@ public class PrinterJobCancel extends Thread implements Printable {
         g2d.setColor(Color.black);
 
         g2d.drawString(("This is page" + (pidx + 1)), 60, 80);
+        g2d.dispose();
         // Need to slow things down a bit .. important not to try this
         // on the event dispathching thread of course.
         try {
@@ -131,6 +130,6 @@ public class PrinterJobCancel extends Thread implements Printable {
         } catch (InterruptedException e) {
         }
 
-        return (Printable.PAGE_EXISTS);
+        return Printable.PAGE_EXISTS;
     }
 }

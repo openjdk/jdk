@@ -45,10 +45,8 @@ import jtreg.SkippedException;
  * @bug 4197377 4299145 6358747 6574633
  * @key printer
  * @summary Page setup dialog settings
- * @library /java/awt/regtesthelpers
- * @library /test/lib
- * @build PassFailJFrame
- * @build jtreg.SkippedException
+ * @library /test/lib /java/awt/regtesthelpers
+ * @build PassFailJFrame jtreg.SkippedException
  * @run main/manual PageSetupDialog
  */
 public class PageSetupDialog extends Frame implements Printable {
@@ -172,26 +170,26 @@ public class PageSetupDialog extends Frame implements Printable {
         });
         Button printButton = new Button("Print ...");
         printButton.addActionListener(e -> {
-            try {
-                if (myPrinterJob.printDialog()) {
-                    myPrinterJob.setPrintable(PageSetupDialog.this, myPageFormat);
-                    alpha = false;
+            if (myPrinterJob.printDialog()) {
+                myPrinterJob.setPrintable(PageSetupDialog.this, myPageFormat);
+                alpha = false;
+                try {
                     myPrinterJob.print();
+                } catch (PrinterException pe) {
+                    pe.printStackTrace();
                 }
-            } catch (PrinterException pe) {
-                pe.printStackTrace();
             }
         });
         Button printAlphaButton = new Button("Print w/Alpha...");
         printAlphaButton.addActionListener(e -> {
-            try {
-                if (myPrinterJob.printDialog()) {
-                    myPrinterJob.setPrintable(PageSetupDialog.this, myPageFormat);
-                    alpha = true;
+            if (myPrinterJob.printDialog()) {
+                myPrinterJob.setPrintable(PageSetupDialog.this, myPageFormat);
+                alpha = true;
+                try {
                     myPrinterJob.print();
+                } catch (PrinterException pe) {
+                    pe.printStackTrace();
                 }
-            } catch (PrinterException pe) {
-                pe.printStackTrace();
             }
         });
         panel.add(pageButton);
@@ -224,6 +222,7 @@ public class PageSetupDialog extends Frame implements Printable {
         g2d.drawRect(1, 1, (int) pageFormat.getImageableWidth() - 2,
                 (int) pageFormat.getImageableHeight() - 2);
 
+        g2d.dispose();
         return Printable.PAGE_EXISTS;
     }
 

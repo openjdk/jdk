@@ -44,10 +44,8 @@ import jtreg.SkippedException;
  * @bug 4242639
  * @summary Printing quality problem on Canon and NEC
  * @key printer
- * @library /java/awt/regtesthelpers
- * @library /test/lib
- * @build PassFailJFrame
- * @build jtreg.SkippedException
+ * @library /test/lib /java/awt/regtesthelpers
+ * @build PassFailJFrame jtreg.SkippedException
  * @run main/manual RasterTest
  */
 public class RasterTest extends Frame implements ActionListener {
@@ -120,6 +118,7 @@ public class RasterTest extends Frame implements ActionListener {
             Graphics2D g2d = (Graphics2D) g;
             g2d.translate(pgFmt.getImageableX(), pgFmt.getImageableY());
             doPaint(g2d);
+            g2d.dispose();
             return Printable.PAGE_EXISTS;
         }
 

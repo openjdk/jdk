@@ -35,10 +35,8 @@ import jtreg.SkippedException;
  * @test
  * @bug 4884389 7183516
  * @key printer
- * @library /java/awt/regtesthelpers
- * @library /test/lib
- * @build PassFailJFrame
- * @build jtreg.SkippedException
+ * @library /test/lib /java/awt/regtesthelpers
+ * @build PassFailJFrame jtreg.SkippedException
  * @summary Font specified with face name loses style on printing
  * @run main/manual PrintAllFonts
  */
