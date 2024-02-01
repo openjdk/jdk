@@ -45,10 +45,6 @@ typedef void * dmutex_t;
 #include "jni.h"
 #include "jni_util.h"
 #include "jvm.h"
-#include <stddef.h>
-#include <string.h>
-#include <assert.h>
-#include <limits.h>
 
 /* keep these after the other headers */
 #include "debug_mem.h"

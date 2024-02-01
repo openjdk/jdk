@@ -25,6 +25,9 @@
 
 #if defined(DEBUG)
 
+#include <assert.h>
+#include <string.h>
+
 #include "debug_util.h"
 
 enum {

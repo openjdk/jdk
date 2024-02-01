@@ -23,6 +23,8 @@
  * questions.
  */
 
+#include <string.h>
+
 #include "debug_util.h"
 
 #if defined(DEBUG)

@@ -26,6 +26,7 @@
 #if defined(DEBUG)
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "debug_util.h"
 
