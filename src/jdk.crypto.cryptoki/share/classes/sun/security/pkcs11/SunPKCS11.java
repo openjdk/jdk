@@ -1308,7 +1308,7 @@ public final class SunPKCS11 extends AuthProvider {
 
             if (brokenMechanisms.contains(longMech)) {
                 if (showInfo) {
-                    System.out.println("DISABLED due to broken provider");
+                    System.out.println("DISABLED due to known issue with NSS");
                 }
                 continue;
             }
