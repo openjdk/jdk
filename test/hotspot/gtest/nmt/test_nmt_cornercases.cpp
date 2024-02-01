@@ -30,6 +30,7 @@
 #include "runtime/os.hpp"
 #include "testutils.hpp"
 #include "unittest.hpp"
+#include <stdio.h>
 
 // Check NMT header for integrity, as well as expected type and size.
 static void check_expected_malloc_header(const void* payload, MEMFLAGS type, size_t size) {
@@ -155,3 +156,13 @@ TEST_VM(NMT, HeaderKeepsIntegrityAfterRevival) {
   hdr->revive();
   check_expected_malloc_header(p, mtTest, some_size);
 }
+
+#ifdef LINUX
+TEST_VM(NMT, FailingToMapMemoryToFileShouldNotCrash) {
+  FILE* file = tmpfile();
+  if (file != nullptr) {
+    // 0x123 is a completely bogus address on purpose.
+    os::map_memory_to_file((char*)0x123, 100, fileno(file));
+  }
+}
+#endif
