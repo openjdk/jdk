@@ -29,7 +29,6 @@
 #include "oops/markWord.hpp"
 #include "runtime/basicLock.hpp"
 #include "runtime/handles.hpp"
-#include "runtime/lockStack.hpp"
 #include "utilities/resourceHash.hpp"
 
 template <typename T> class GrowableArray;
@@ -93,9 +92,20 @@ class ObjectSynchronizer : AllStatic {
   // deoptimization at monitor exit. Hence, it does not take a Handle argument.
 
   // This is the "slow path" version of monitor enter and exit.
-  static void enter(Handle obj, BasicLock* lock, JavaThread* locking_thread);
+  static void enter(Handle obj, BasicLock* lock, JavaThread* current);
   static void exit(oop obj, BasicLock* lock, JavaThread* current);
+  // Used to enter a monitor for another thread. This requires that the
+  // that the locking_thread is suspended, and that entering on a potential
+  // inflated monitor may only contend with deflation. That is the obj being
+  // locked on is either already locked by the locking_thread or cannot
+  // escape the locking_thread.
+  static void enter_for(Handle obj, BasicLock* lock, JavaThread* locking_thread);
+private:
+  // Shared implementation for enter and enter_for. Preforms all but
+  // inflated monitor enter
+  static bool enter_fast_impl(Handle obj, BasicLock* lock, JavaThread* locking_thread);
 
+public:
   // Used only to handle jni locks or other unmatched monitor enter/exit
   // Internally they will use heavy weight monitor.
   static void jni_enter(Handle obj, JavaThread* current);
@@ -111,12 +121,12 @@ class ObjectSynchronizer : AllStatic {
 
   // Inflate light weight monitor to heavy weight monitor
   static ObjectMonitor* inflate(Thread* current, oop obj, const InflateCause cause);
-  // Used for LM_LIGHTWEIGHT to inflate a monitor as if it was done from the thread JavaThread.
+  // Used inflate a monitor as if it was done from the thread JavaThread.
   static ObjectMonitor* inflate_for(JavaThread* thread, oop obj, const InflateCause cause);
 
 private:
   // Shared implementation between the different LockingMode
-  static ObjectMonitor* inflate_impl(LockStack* lock_stack, oop obj, const InflateCause cause);
+  static ObjectMonitor* inflate_impl(JavaThread* thread, oop obj, const InflateCause cause);
 
 public:
   // This version is only for internal use

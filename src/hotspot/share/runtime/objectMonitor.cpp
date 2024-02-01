@@ -312,7 +312,60 @@ void ObjectMonitor::ClearSuccOnSuspend::operator()(JavaThread* current) {
 // -----------------------------------------------------------------------------
 // Enter support
 
+bool ObjectMonitor::enter_for(JavaThread* locking_thread) {
+  // Used by ObjectSynchronizer::enter_for to enter for another thread
+  // this code may only contend with deflation.
+  assert(locking_thread == Thread::current() || locking_thread->is_obj_deopt_suspend(), "must be");
+
+  // Block out deflation as soon as possible.
+  add_to_contentions(1);
+
+  bool success = false;
+  if (!is_being_async_deflated()) {
+    void* prev_owner = try_set_owner_from(nullptr, locking_thread);
+
+    if (prev_owner == nullptr) {
+      assert(_recursions == 0, "invariant");
+      success = true;
+    } else if (prev_owner == locking_thread) {
+      _recursions++;
+      success = true;
+    } else if (prev_owner == DEFLATER_MARKER) {
+      // Racing with deflation.
+      prev_owner = try_set_owner_from(DEFLATER_MARKER, locking_thread);
+      if (prev_owner == DEFLATER_MARKER) {
+        // Cancelled deflation. Increment contentions as part of the deflation protocol.
+        add_to_contentions(1);
+        success = true;
+      } else if (prev_owner == nullptr) {
+        // At this point we cannot race with deflation as we have both incremented
+        // contentions, seen contention > 0 and seen a DEFLATER_MARKER.
+        // success will only be false if this races with something other than
+        // deflation.
+        success = try_set_owner_from(nullptr, locking_thread) == nullptr;
+      }
+    }
+  } else {
+    // Async deflation is in progress and our contentions increment
+    // above lost the race to async deflation. Undo the work and
+    // force the caller to retry.
+    const oop l_object = object();
+    if (l_object != nullptr) {
+      // Attempt to restore the header/dmw to the object's header so that
+      // we only retry once if the deflater thread happens to be slow.
+      install_displaced_markword_in_object(l_object);
+    }
+  }
+
+  add_to_contentions(-1);
+
+  assert(!success || owner_raw() == locking_thread, "must be");
+
+  return success;
+}
+
 bool ObjectMonitor::enter(JavaThread* current) {
+  assert(current == JavaThread::current(), "must be");
   // The following code is ordered to check the most common cases first
   // and to reduce RTS->RTO cache line upgrades on SPARC and IA32 processors.
 
