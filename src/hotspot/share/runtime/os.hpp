@@ -166,7 +166,7 @@ class ErrnoPreserver {
             errno = _e;
         }
 
-        int saved() {
+        int saved_errno() {
           return _e;
         }
 };

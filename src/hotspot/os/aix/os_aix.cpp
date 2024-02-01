@@ -296,7 +296,7 @@ static bool my_disclaim64(char* addr, size_t size) {
   for (unsigned int i = 0; i < numFullDisclaimsNeeded; i ++) {
     if (::disclaim(p, maxDisclaimSize, DISCLAIM_ZEROMEM) != 0) {
       ErrnoPreserver ep;
-      log_trace(os,map)("disclaim failed: " RANGEFMT " errno=(%s)", RANGEFMTARGS(p, maxDisclaimSize), os::strerror(ep.saved()));
+      log_trace(os,map)("disclaim failed: " RANGEFMT " errno=(%s)", RANGEFMTARGS(p, maxDisclaimSize), os::strerror(ep.saved_errno()));
       return false;
     }
     p += maxDisclaimSize;
@@ -305,7 +305,7 @@ static bool my_disclaim64(char* addr, size_t size) {
   if (lastDisclaimSize > 0) {
     if (::disclaim(p, lastDisclaimSize, DISCLAIM_ZEROMEM) != 0) {
       ErrnoPreserver ep;
-      log_trace(os,map)("disclaim failed: " RANGEFMT " errno=(%s)", RANGEFMTARGS(p, lastDisclaimSize), os::strerror(ep.saved()));
+      log_trace(os,map)("disclaim failed: " RANGEFMT " errno=(%s)", RANGEFMTARGS(p, lastDisclaimSize), os::strerror(ep.saved_errno()));
       return false;
     }
   }
@@ -1564,7 +1564,7 @@ static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
   int shmid = shmget(IPC_PRIVATE, size, IPC_CREAT | S_IRUSR | S_IWUSR);
   if (shmid == -1) {
     ErrorPreserver ep;
-    log_trace(os,map)("shmget(.., " UINTX_FORMAT ", ..) failed (errno=%s).", size, os::strerror(ep.saved()));
+    log_trace(os,map)("shmget(.., " UINTX_FORMAT ", ..) failed (errno=%s).", size, os::strerror(ep.saved_errno()));
     return nullptr;
   }
 
@@ -1580,7 +1580,7 @@ static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
   if (shmctl(shmid, SHM_PAGESIZE, &shmbuf) != 0) {
     ErrorPreserver ep;
     log_trace(os,map)("Failed to set page size (need " UINTX_FORMAT " 64K pages) - shmctl failed. (errno=%s).",
-               size / (64*K), os::strerror(ep.saved()));
+               size / (64*K), os::strerror(ep.saved_errno()));
     // I want to know if this ever happens.
     assert(false, "failed to set page size for shmat");
   }
@@ -1598,14 +1598,14 @@ static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
   // (A) Right after shmat and before handing shmat errors delete the shm segment.
   if (::shmctl(shmid, IPC_RMID, nullptr) == -1) {
     ErrorPreserver ep;
-    log_trace(os,map)("shmctl(%u, IPC_RMID) failed (errno=%s)\n", shmid, os::strerror(ep.saved()));
+    log_trace(os,map)("shmctl(%u, IPC_RMID) failed (errno=%s)\n", shmid, os::strerror(ep.saved_errno()));
     assert(false, "failed to remove shared memory segment!");
   }
 
   // Handle shmat error. If we failed to attach, just return.
   if (addr == (char*)-1) {
     ErrorPreserver ep;
-    log_trace(os,map)("Failed to attach segment at " PTR_FORMAT " (errno=%s).", p2i(requested_addr), os::strerror(ep.saved()));
+    log_trace(os,map)("Failed to attach segment at " PTR_FORMAT " (errno=%s).", p2i(requested_addr), os::strerror(ep.saved_errno()));
     return nullptr;
   }
 
@@ -1644,7 +1644,7 @@ static bool release_shmated_memory(char* addr, size_t size) {
   // TODO: is there a way to verify shm size without doing bookkeeping?
   if (::shmdt(addr) != 0) {
     ErrnoPreserver ep;
-    log_trace(os,map)("shmdt failed: " RANGEFMT " errno=(%s)", RANGEFMTARGS(addr, size), os::strerror(ep.saved()));
+    log_trace(os,map)("shmdt failed: " RANGEFMT " errno=(%s)", RANGEFMTARGS(addr, size), os::strerror(ep.saved_errno()));
   } else {
     log_trace(os,map)("shmdt succeded: " RANGEFMT, RANGEFMTARGS(addr, size));
     rc = true;
@@ -1726,7 +1726,7 @@ static char* reserve_mmaped_memory(size_t bytes, char* requested_addr) {
 
   if (addr == MAP_FAILED) {
     ErrnoPreserver ep;
-    log_trace(os,map)("mmap failed: " RANGEFMT " errno=(%s)", RANGEFMTARGS(requested_addr, size), os::strerror(ep.saved()));
+    log_trace(os,map)("mmap failed: " RANGEFMT " errno=(%s)", RANGEFMTARGS(requested_addr, size), os::strerror(ep.saved_errno()));
     return nullptr;
   } else if (requested_addr != nullptr && addr != requested_addr) {
     log_trace(os,map)("mmap succeeded: " RANGEFMT ", but at a different address than requested (" PTR_FORMAT "), will unmap",
@@ -1770,7 +1770,7 @@ static bool release_mmaped_memory(char* addr, size_t size) {
 
   if (::munmap(addr, size) != 0) {
     ErrnoPreserver ep;
-    log_trace(os,map)("munmap failed: " RANGEFMT " errno=(%s)", RANGEFMTARGS(addr, size), os::strerror(ep.saved()));
+    log_trace(os,map)("munmap failed: " RANGEFMT " errno=(%s)", RANGEFMTARGS(addr, size), os::strerror(ep.saved_errno()));
     rc = false;
   } else {
     log_trace(os,map)("munmap succeeded: " RANGEFMT, RANGEFMTARGS(addr, size));
@@ -1792,7 +1792,7 @@ static bool uncommit_mmaped_memory(char* addr, size_t size) {
   // Uncommit mmap memory with msync MS_INVALIDATE.
   if (::msync(addr, size, MS_INVALIDATE) != 0) {
     ErrnoPreserver ep;
-    log_trace(os,map)("msync failed: " RANGEFMT " errno=(%s)", RANGEFMTARGS(addr, size), os::strerror(ep.saved()));
+    log_trace(os,map)("msync failed: " RANGEFMT " errno=(%s)", RANGEFMTARGS(addr, size), os::strerror(ep.saved_errno()));
     rc = false;
   } else {
     log_trace(os,map)("msync succeeded: " RANGEFMT, RANGEFMTARGS(addr, size));
