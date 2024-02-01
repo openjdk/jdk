@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -687,12 +687,15 @@ address CompiledMethod::continuation_for_implicit_exception(address pc, bool for
     ResourceMark rm(thread);
     CodeBlob* cb = CodeCache::find_blob(pc);
     assert(cb != nullptr && cb == this, "");
-    ttyLocker ttyl;
-    tty->print_cr("implicit exception happened at " INTPTR_FORMAT, p2i(pc));
-    print();
-    method()->print_codes();
-    print_code();
-    print_pcs();
+
+    // Keep tty output consistent. To avoid ttyLocker, we buffer in stream, and print all at once.
+    stringStream ss;
+    ss.print_cr("implicit exception happened at " INTPTR_FORMAT, p2i(pc));
+    print_on(&ss);
+    method()->print_codes_on(&ss);
+    print_code_on(&ss);
+    print_pcs_on(&ss);
+    tty->print("%s", ss.as_string()); // print all at once
   }
 #endif
   if (cont_offset == 0) {

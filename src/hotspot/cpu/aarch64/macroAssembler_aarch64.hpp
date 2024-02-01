@@ -1425,11 +1425,6 @@ public:
                         FloatRegister vtmp2, FloatRegister vtmp3,
                         FloatRegister vtmp4, FloatRegister vtmp5);
 
-  void fast_log(FloatRegister vtmp0, FloatRegister vtmp1, FloatRegister vtmp2,
-                FloatRegister vtmp3, FloatRegister vtmp4, FloatRegister vtmp5,
-                FloatRegister tmpC1, FloatRegister tmpC2, FloatRegister tmpC3,
-                FloatRegister tmpC4, Register tmp1, Register tmp2,
-                Register tmp3, Register tmp4, Register tmp5);
   void generate_dsin_dcos(bool isCos, address npio2_hw, address two_over_pi,
       address pio2, address dsin_coef, address dcos_coef);
  private:

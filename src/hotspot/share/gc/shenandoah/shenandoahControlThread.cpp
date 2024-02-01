@@ -50,31 +50,12 @@ ShenandoahControlThread::ShenandoahControlThread() :
   ConcurrentGCThread(),
   _alloc_failure_waiters_lock(Mutex::safepoint-2, "ShenandoahAllocFailureGC_lock", true),
   _gc_waiters_lock(Mutex::safepoint-2, "ShenandoahRequestedGC_lock", true),
-  _periodic_task(this),
   _requested_gc_cause(GCCause::_no_cause_specified),
   _degen_point(ShenandoahGC::_degenerated_outside_cycle),
   _allocs_seen(0) {
   set_name("Shenandoah Control Thread");
   reset_gc_id();
   create_and_start();
-  _periodic_task.enroll();
-  if (ShenandoahPacing) {
-    _periodic_pacer_notify_task.enroll();
-  }
-}
-
-ShenandoahControlThread::~ShenandoahControlThread() {
-  // This is here so that super is called.
-}
-
-void ShenandoahPeriodicTask::task() {
-  _thread->handle_force_counters_update();
-  _thread->handle_counters_update();
-}
-
-void ShenandoahPeriodicPacerNotify::task() {
-  assert(ShenandoahPacing, "Should not be here otherwise");
-  ShenandoahHeap::heap()->pacer()->notify_waiters();
 }
 
 void ShenandoahControlThread::run_service() {
@@ -103,11 +84,11 @@ void ShenandoahControlThread::run_service() {
     bool explicit_gc_requested = is_gc_requested && is_explicit_gc(requested_gc_cause);
     bool implicit_gc_requested = is_gc_requested && !is_explicit_gc(requested_gc_cause);
 
-    // This control loop iteration have seen this much allocations.
+    // This control loop iteration has seen this much allocation.
     size_t allocs_seen = Atomic::xchg(&_allocs_seen, (size_t)0, memory_order_relaxed);
 
     // Check if we have seen a new target for soft max heap size.
-    bool soft_max_changed = check_soft_max_changed();
+    bool soft_max_changed = heap->check_soft_max_changed();
 
     // Choose which GC mode to run in. The block below should select a single mode.
     GCMode mode = none;
@@ -195,7 +176,7 @@ void ShenandoahControlThread::run_service() {
 
       // If GC was requested, we are sampling the counters even without actual triggers
       // from allocation machinery. This captures GC phases more accurately.
-      set_forced_counters_update(true);
+      heap->set_forced_counters_update(true);
 
       // If GC was requested, we better dump freeset data for performance debugging
       {
@@ -236,16 +217,16 @@ void ShenandoahControlThread::run_service() {
         // Notify Universe about new heap usage. This has implications for
         // global soft refs policy, and we better report it every time heap
         // usage goes down.
-        Universe::heap()->update_capacity_and_used_at_gc();
+        heap->update_capacity_and_used_at_gc();
 
         // Signal that we have completed a visit to all live objects.
-        Universe::heap()->record_whole_heap_examined_timestamp();
+        heap->record_whole_heap_examined_timestamp();
       }
 
       // Disable forced counters update, and update counters one more time
       // to capture the state at the end of GC session.
-      handle_force_counters_update();
-      set_forced_counters_update(false);
+      heap->handle_force_counters_update();
+      heap->set_forced_counters_update(false);
 
       // Retract forceful part of soft refs policy
       heap->soft_ref_policy()->set_should_clear_all_soft_refs(false);
@@ -306,7 +287,7 @@ void ShenandoahControlThread::run_service() {
                              heap->soft_max_capacity() :
                              heap->min_capacity();
 
-      service_uncommit(shrink_before, shrink_until);
+      heap->maybe_uncommit(shrink_before, shrink_until);
       heap->phase_timings()->flush_cycle_to_global();
       last_shrink_time = current;
     }
@@ -327,25 +308,6 @@ void ShenandoahControlThread::run_service() {
   while (!should_terminate()) {
     os::naked_short_sleep(ShenandoahControlIntervalMin);
   }
-}
-
-bool ShenandoahControlThread::check_soft_max_changed() const {
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  size_t new_soft_max = Atomic::load(&SoftMaxHeapSize);
-  size_t old_soft_max = heap->soft_max_capacity();
-  if (new_soft_max != old_soft_max) {
-    new_soft_max = MAX2(heap->min_capacity(), new_soft_max);
-    new_soft_max = MIN2(heap->max_capacity(), new_soft_max);
-    if (new_soft_max != old_soft_max) {
-      log_info(gc)("Soft Max Heap Size: " SIZE_FORMAT "%s -> " SIZE_FORMAT "%s",
-                   byte_size_in_proper_unit(old_soft_max), proper_unit_for_byte_size(old_soft_max),
-                   byte_size_in_proper_unit(new_soft_max), proper_unit_for_byte_size(new_soft_max)
-      );
-      heap->set_soft_max_capacity(new_soft_max);
-      return true;
-    }
-  }
-  return false;
 }
 
 void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cause) {
@@ -396,7 +358,7 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
   if (gc.collect(cause)) {
     // Cycle is complete
     heap->heuristics()->record_success_concurrent();
-    heap->shenandoah_policy()->record_success_concurrent();
+    heap->shenandoah_policy()->record_success_concurrent(gc.abbreviated());
   } else {
     assert(heap->cancelled_gc(), "Must have been cancelled");
     check_cancellation_or_degen(gc.degen_point());
@@ -427,10 +389,6 @@ void ShenandoahControlThread::service_stw_full_cycle(GCCause::Cause cause) {
 
   ShenandoahFullGC gc;
   gc.collect(cause);
-
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  heap->heuristics()->record_success_full();
-  heap->shenandoah_policy()->record_success_full();
 }
 
 void ShenandoahControlThread::service_stw_degenerated_cycle(GCCause::Cause cause, ShenandoahGC::ShenandoahDegenPoint point) {
@@ -441,33 +399,6 @@ void ShenandoahControlThread::service_stw_degenerated_cycle(GCCause::Cause cause
 
   ShenandoahDegenGC gc(point);
   gc.collect(cause);
-
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  heap->heuristics()->record_success_degenerated();
-  heap->shenandoah_policy()->record_success_degenerated();
-}
-
-void ShenandoahControlThread::service_uncommit(double shrink_before, size_t shrink_until) {
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-
-  // Determine if there is work to do. This avoids taking heap lock if there is
-  // no work available, avoids spamming logs with superfluous logging messages,
-  // and minimises the amount of work while locks are taken.
-
-  if (heap->committed() <= shrink_until) return;
-
-  bool has_work = false;
-  for (size_t i = 0; i < heap->num_regions(); i++) {
-    ShenandoahHeapRegion *r = heap->get_region(i);
-    if (r->is_empty_committed() && (r->empty_time() < shrink_before)) {
-      has_work = true;
-      break;
-    }
-  }
-
-  if (has_work) {
-    heap->entry_uncommit(shrink_before, shrink_until);
-  }
 }
 
 bool ShenandoahControlThread::is_explicit_gc(GCCause::Cause cause) const {
@@ -581,28 +512,8 @@ void ShenandoahControlThread::notify_gc_waiters() {
   ml.notify_all();
 }
 
-void ShenandoahControlThread::handle_counters_update() {
-  if (_do_counters_update.is_set()) {
-    _do_counters_update.unset();
-    ShenandoahHeap::heap()->monitoring_support()->update_counters();
-  }
-}
-
-void ShenandoahControlThread::handle_force_counters_update() {
-  if (_force_counters_update.is_set()) {
-    _do_counters_update.unset(); // reset these too, we do update now!
-    ShenandoahHeap::heap()->monitoring_support()->update_counters();
-  }
-}
-
 void ShenandoahControlThread::notify_heap_changed() {
   // This is called from allocation path, and thus should be fast.
-
-  // Update monitoring counters when we took a new region. This amortizes the
-  // update costs on slow path.
-  if (_do_counters_update.is_unset()) {
-    _do_counters_update.set();
-  }
   // Notify that something had changed.
   if (_heap_changed.is_unset()) {
     _heap_changed.set();
@@ -612,10 +523,6 @@ void ShenandoahControlThread::notify_heap_changed() {
 void ShenandoahControlThread::pacing_notify_alloc(size_t words) {
   assert(ShenandoahPacing, "should only call when pacing is enabled");
   Atomic::add(&_allocs_seen, words, memory_order_relaxed);
-}
-
-void ShenandoahControlThread::set_forced_counters_update(bool value) {
-  _force_counters_update.set_cond(value);
 }
 
 void ShenandoahControlThread::reset_gc_id() {

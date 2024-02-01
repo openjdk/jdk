@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,10 @@ BoxLockNode::BoxLockNode( int slot ) : Node( Compile::current()->root() ),
   init_class_id(Class_BoxLock);
   init_flags(Flag_rematerialize);
   OptoReg::Name reg = OptoReg::stack2reg(_slot);
+  if (!RegMask::can_represent(reg, Compile::current()->sync_stack_slots())) {
+    Compile::current()->record_method_not_compilable("must be able to represent all monitor slots in reg mask");
+    return;
+  }
   _inmask.Insert(reg);
 }
 
@@ -179,8 +183,6 @@ void FastLockNode::create_rtm_lock_counter(JVMState* state) {
 void Parse::do_monitor_enter() {
   kill_dead_locals();
 
-  C->set_has_monitors(true);
-
   // Null check; get casted pointer.
   Node* obj = null_check(peek());
   // Check for locking null object
@@ -197,10 +199,6 @@ void Parse::do_monitor_enter() {
 //------------------------------do_monitor_exit--------------------------------
 void Parse::do_monitor_exit() {
   kill_dead_locals();
-
-  // need to set it for monitor exit as well.
-  // OSR compiled methods can start with lock taken
-  C->set_has_monitors(true);
 
   pop();                        // Pop oop to unlock
   // Because monitors are guaranteed paired (else we bail out), we know
