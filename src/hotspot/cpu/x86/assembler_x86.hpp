@@ -2764,6 +2764,7 @@ private:
   void vbroadcastsd(XMMRegister dst, XMMRegister src, int vector_len);
   void vbroadcastsd(XMMRegister dst, Address src, int vector_len);
   void vbroadcastf128(XMMRegister dst, Address src, int vector_len);
+  void evbroadcastf64x2(XMMRegister dst, Address src, int vector_len);
 
   // gpr sourced byte/word/dword/qword replicate
   void evpbroadcastb(XMMRegister dst, Register src, int vector_len);

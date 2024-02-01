@@ -10712,6 +10712,20 @@ void Assembler::vbroadcastf128(XMMRegister dst, Address src, int vector_len) {
   emit_operand(dst, src, 0);
 }
 
+void Assembler::evbroadcastf64x2(XMMRegister dst, Address src, int vector_len) {
+  assert(VM_Version::supports_avx512dq(), "");
+  assert(dst != xnoreg, "sanity");
+  InstructionMark im(this);
+  InstructionAttr attributes(vector_len, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
+  attributes.set_address_attributes(/* tuple_type */ EVEX_T2, /* input_size_in_bits */ EVEX_64bit);
+  attributes.set_is_evex_instruction();
+  // swap src<->dst for encoding
+  vex_prefix(src, 0, dst->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
+  emit_int8(0x1A);
+  emit_operand(dst, src, 0);
+}
+
+
 // gpr source broadcast forms
 
 // duplicate 1-byte integer data from src into programmed locations in dest : requires AVX512BW and AVX512VL
