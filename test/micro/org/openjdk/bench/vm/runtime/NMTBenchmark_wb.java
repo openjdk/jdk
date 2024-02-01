@@ -60,7 +60,7 @@ public abstract class NMTBenchmark_wb {
     @Param({"4", "8", "16", "32", "64"})
     public int SUB_REGIONS;
 
-    private static final int P = 1024 * 4;
+    private static final int PageSize = 1024 * 4;
 
     // Need to wrap WhiteBox in a holder class so that it doesn't get initialized on the host VM (which won't
     // have WB enabled.
@@ -83,13 +83,13 @@ public abstract class NMTBenchmark_wb {
         }
     }
 
-    private static long reserve (long size           ) { return WhiteBoxHolder.WB.NMTReserveMemory (size               ); }
-    private static void commit  (long base, int r    ) {        WhiteBoxHolder.WB.NMTCommitMemory  (base + r * P, P    ); }
-    private static void uncommit(long base, int r    ) {        WhiteBoxHolder.WB.NMTUncommitMemory(base + r * P, P    ); }
-    private static void release (long base, long size) {        WhiteBoxHolder.WB.NMTReleaseMemory (base        , size ); }
+    private static long reserve (long size           ) { return WhiteBoxHolder.WB.NMTReserveMemory (size                           ); }
+    private static void commit  (long base, int pno  ) {        WhiteBoxHolder.WB.NMTCommitMemory  (base + pno * PageSize, PageSize); }
+    private static void uncommit(long base, int pno  ) {        WhiteBoxHolder.WB.NMTUncommitMemory(base + pno * PageSize, PageSize); }
+    private static void release (long base, long size) {        WhiteBoxHolder.WB.NMTReleaseMemory (base                 , size    ); }
 
     public static void doAllMemoryOps(int nR, int region_count) {
-        long region_size = region_count * P;
+        long region_size = region_count * PageSize;
         long[] base_array = new long[nR];
         for (int i = 0; i < nR; i++)
           base_array[i] = reserve(region_size);
