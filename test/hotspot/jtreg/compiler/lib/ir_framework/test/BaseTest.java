@@ -81,7 +81,7 @@ class BaseTest extends AbstractTest {
         } catch (Exception e) {
             throw new TestRunException("There was an error while invoking @Test method " + testMethod +
                                        ". Target: " + invocationTarget +
-                                       ". Arguments: " + test.formatArguments(arguments) +
+                                       ". Arguments: " + test.formatArguments(arguments),
                                        e);
         }
     }
