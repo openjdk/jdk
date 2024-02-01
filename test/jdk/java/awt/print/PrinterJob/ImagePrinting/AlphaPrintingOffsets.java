@@ -74,10 +74,8 @@ public class AlphaPrintingOffsets {
             String instructionsHeader = "This test prints 6 pages with same image except text messages. \n";
             if (args.length > 0)
                 isAlphaTestModeSet = args[0].equals("testAlpha");
-            
             if(isAlphaTestModeSet)
                 instructionsHeader = "This test prints 2 pages with same image except text messages. \n";
-            
             PassFailJFrame.builder().instructions(instructionsHeader + INSTRUCTIONS)
                     .testUI(() -> createTestUI()).build().awaitAndCheck();
 
@@ -143,7 +141,6 @@ public class AlphaPrintingOffsets {
             printerJob.setPageable(bookAlphaTest);
         else
             printerJob.setPageable(bookNoAlphaTest);
-        
         PrintRequestAttributeSet aset = new HashPrintRequestAttributeSet();
         aset.add(Sides.ONE_SIDED);
 
