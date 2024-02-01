@@ -273,6 +273,22 @@ julong os::Aix::available_memory() {
   }
 }
 
+jlong os::total_swap_space() {
+  perfstat_memory_total_t memory_info;
+  if (libperfstat::perfstat_memory_total(NULL, &memory_info, sizeof(perfstat_memory_total_t), 1) == -1) {
+    return -1;
+  }
+  return (jlong)(memory_info.pgsp_total * 4 * K);
+}
+
+jlong os::free_swap_space() {
+  perfstat_memory_total_t memory_info;
+  if (libperfstat::perfstat_memory_total(NULL, &memory_info, sizeof(perfstat_memory_total_t), 1) == -1) {
+    return -1;
+  }
+  return (jlong)(memory_info.pgsp_free * 4 * K);
+}
+
 julong os::physical_memory() {
   return Aix::physical_memory();
 }
