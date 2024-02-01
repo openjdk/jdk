@@ -118,6 +118,8 @@ public class AKISerialNumber {
         PKIXBuilderParameters params = new PKIXBuilderParameters
             (Collections.singleton(anchor), sel);
         params.setRevocationEnabled(false);
+        // Set date to 2024-01-01 to satisfy cert constraints
+        params.setDate(new java.util.Date(1704067200000l));
 
         ArrayList<X509Certificate> certs = new ArrayList<>();
         certs.add(intCert);
