@@ -162,9 +162,6 @@ public:
   size_t capacity() const override;
   size_t used() const override;
 
-  // Save the "used_region" for both generations.
-  void save_used_regions();
-
   size_t max_capacity() const override;
 
   HeapWord* mem_allocate(size_t size, bool*  gc_overhead_limit_was_exceeded) override;
