@@ -5140,7 +5140,7 @@ void Compile::sort_macro_nodes() {
 
 void Compile::print_method(CompilerPhaseType cpt, int level, Node* n) {
   if (failing()) { return; }
-  EventCompilerPhase event;
+  EventCompilerPhase event(UNTIMED);
   if (event.should_commit()) {
     CompilerEvent::PhaseEvent::post(event, C->_latest_stage_start_counter, cpt, C->_compile_id, level);
   }
@@ -5179,7 +5179,7 @@ void Compile::begin_method() {
 
 // Only used from CompileWrapper
 void Compile::end_method() {
-  EventCompilerPhase event;
+  EventCompilerPhase event(UNTIMED);
   if (event.should_commit()) {
     CompilerEvent::PhaseEvent::post(event, C->_latest_stage_start_counter, PHASE_END, C->_compile_id, 1);
   }
