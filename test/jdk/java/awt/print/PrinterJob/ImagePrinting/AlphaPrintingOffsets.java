@@ -125,7 +125,6 @@ public class AlphaPrintingOffsets {
         pageFormatRL.setOrientation(REVERSE_LANDSCAPE);
 
         Printable printableTransparent = new CustomPrintable(254);
-        
         if (isAlphaTestModeSet) {
             Book bookAlphaTest = new Book();
             bookAlphaTest.append(printableTransparent, pageFormatL);
