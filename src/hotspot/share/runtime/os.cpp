@@ -2130,13 +2130,13 @@ void os::pretouch_memory(void* start, void* end, size_t page_size) {
   }
 }
 
-char* os::map_memory_to_file(size_t bytes, int file_desc) {
+char* os::map_memory_to_file(size_t bytes, int file_desc, MEMFLAGS flag) {
   // Could have called pd_reserve_memory() followed by replace_existing_mapping_with_file_mapping(),
   // but AIX may use SHM in which case its more trouble to detach the segment and remap memory to the file.
   // On all current implementations null is interpreted as any available address.
   char* result = os::map_memory_to_file(nullptr /* addr */, bytes, file_desc);
   if (result != nullptr) {
-    MemTracker::record_virtual_memory_reserve_and_commit(result, bytes, CALLER_PC);
+    MemTracker::record_virtual_memory_reserve_and_commit(result, bytes, CALLER_PC, flag);
   }
   return result;
 }

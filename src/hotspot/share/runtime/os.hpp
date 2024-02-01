@@ -494,7 +494,7 @@ class os: AllStatic {
   static int create_file_for_heap(const char* dir);
   // Map memory to the file referred by fd. This function is slightly different from map_memory()
   // and is added to be used for implementation of -XX:AllocateHeapAt
-  static char* map_memory_to_file(size_t size, int fd);
+  static char* map_memory_to_file(size_t size, int fd, MEMFLAGS flag = mtNone);
   static char* map_memory_to_file_aligned(size_t size, size_t alignment, int fd, MEMFLAGS flag = mtNone);
   static char* map_memory_to_file(char* base, size_t size, int fd);
   static char* attempt_map_memory_to_file_at(char* base, size_t size, int fd);
