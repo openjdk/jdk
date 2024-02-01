@@ -35,6 +35,14 @@ import java.util.concurrent.TimeUnit;
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 public class SystemGCNoObjects {
 
+    /*
+     * Test the System GC when there are no additionally allocate
+     * objects.
+     *
+     * The heap settings provided are the same as for the other
+     * test for consistency.
+     */
+
     @Benchmark
     public void bench() {
         System.gc();

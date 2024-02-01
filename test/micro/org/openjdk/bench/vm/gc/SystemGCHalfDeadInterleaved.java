@@ -41,12 +41,18 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Benchmark)
 public class SystemGCHalfDeadInterleaved {
 
+    /*
+     * Test the System GC when half of the objects are dead.
+     * In this test every other object is cleared.
+     *
+     * The jvmArgs are provided to avoid GCs during object creation.
+     */
+
     static ArrayList<Object[]> holder;
 
     @Setup(Level.Iteration)
     public void generateGarbage() {
         holder = SystemGCHelper.generateObjectArrays();
-        // Clearing every other object in the arrays
         for (Object[] objArray : holder) {
             for (int i=0; i < objArray.length; i++) {
                 if ((i & 1) == 1) {

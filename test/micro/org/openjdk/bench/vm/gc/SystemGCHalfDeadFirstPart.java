@@ -41,6 +41,13 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Benchmark)
 public class SystemGCHalfDeadFirstPart {
 
+    /*
+     * Test the System GC when half of the objects are dead.
+     * In this test the first half of the objects are cleared.
+     *
+     * The jvmArgs are provided to avoid GCs during object creation.
+     */
+
     static ArrayList<Object[]> holder;
 
     @Setup(Level.Iteration)

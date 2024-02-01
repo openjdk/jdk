@@ -40,13 +40,20 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Benchmark)
 public class SystemGCDifferentObjectSizesArray {
 
+    /*
+     * Test the System GC when 2/3 of the objects are live
+     * and kept reachable through an object array.
+     *
+     * The jvmArgs are provided to avoid GCs during object creation.
+     */
+
     static Object[] largeObjArray;
 
     @Setup(Level.Iteration)
     public void generateGarbage() {
         largeObjArray = SystemGCHelper.generateAndFillLargeObjArray(false);
-        // Remove every third object in the array, this will give remove
-        // different sizes equally many times.
+        // Removing a third of the objects and keeping a good
+        // distribution of sizes.
         for (int i = 0; i < largeObjArray.length; i++) {
             if (i%3 == 0) {
                 largeObjArray[i] = null;

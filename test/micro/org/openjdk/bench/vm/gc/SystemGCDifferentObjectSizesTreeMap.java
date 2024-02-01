@@ -41,6 +41,12 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Benchmark)
 public class SystemGCDifferentObjectSizesTreeMap {
 
+    /*
+     * Test the System GC when 2/3 of the objects are live
+     * and kept reachable through a TreeMap.
+     *
+     * The jvmArgs are provided to avoid GCs during object creation.
+     */
     static TreeMap<Integer, byte[]> largeMap;
 
     @Setup(Level.Iteration)

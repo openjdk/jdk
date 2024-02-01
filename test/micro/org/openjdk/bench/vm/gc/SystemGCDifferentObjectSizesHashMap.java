@@ -41,14 +41,22 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Benchmark)
 public class SystemGCDifferentObjectSizesHashMap {
 
+    /*
+     * Test the System GC when 2/3 of the objects are live
+     * and kept reachable through a HashMap.
+     *
+     * The jvmArgs are provided to avoid GCs during object creation.
+     */
+
     static HashMap<Integer, byte[]> largeMap;
 
     @Setup(Level.Iteration)
     public void generateGarbage() {
         largeMap = SystemGCHelper.generateAndFillHashMap(false);
-        // Remove every third object in the array, this will give remove
-        // different sizes equally many times.
-        for (int i = 0; i < largeMap.size(); i++) {
+        int numberOfObjects = largeMap.size();
+        // Removing a third of the objects and keeping a good
+        // distribution of sizes.
+        for (int i = 0; i < numberOfObjects; i++) {
             if (i%3 == 0) {
                 largeMap.remove(i);
             }

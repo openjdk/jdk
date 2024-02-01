@@ -40,6 +40,13 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Benchmark)
 public class SystemGCOneBig {
 
+    /*
+     * Test the System GC when there is a single large object.
+     *
+     * The heap settings provided are the same as for the other
+     * test for consistency.
+     */
+
     static Object[] holder;
 
     @Setup(Level.Iteration)

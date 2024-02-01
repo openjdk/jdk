@@ -41,6 +41,13 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Benchmark)
 public class SystemGCHalfHashedHalfDead {
 
+    /*
+     * Test the System GC when there is a big amount of objects
+     * with hash codes calculated.
+     *
+     * The jvmArgs are provided to avoid GCs during object creation.
+     */
+
     static ArrayList<Object[]> holder;
 
     @Setup(Level.Iteration)

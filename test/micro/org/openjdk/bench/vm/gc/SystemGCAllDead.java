@@ -41,6 +41,12 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Benchmark)
 public class SystemGCAllDead {
 
+    /*
+     * Test the System GC when all allocated objects are dead.
+     *
+     * The jvmArgs are provided to avoid GCs during object creation.
+     */
+
     static ArrayList<Object[]> holder;
 
     @Setup(Level.Iteration)
