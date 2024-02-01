@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -315,7 +315,6 @@ static bool matches_property_suffix(const char* option, const char* property, si
 // any of the reserved module properties.
 // property should be passed without the leading "-D".
 bool Arguments::is_internal_module_property(const char* property) {
-  assert((strncmp(property, "-D", 2) != 0), "Unexpected leading -D");
   if  (strncmp(property, MODULE_PROPERTY_PREFIX, MODULE_PROPERTY_PREFIX_LEN) == 0) {
     const char* property_suffix = property + MODULE_PROPERTY_PREFIX_LEN;
     if (matches_property_suffix(property_suffix, ADDEXPORTS, ADDEXPORTS_LEN) ||
@@ -495,10 +494,6 @@ void Arguments::init_version_specific_system_properties() {
 static SpecialFlag const special_jvm_flags[] = {
   // -------------- Deprecated Flags --------------
   // --- Non-alias flags - sorted by obsolete_in then expired_in:
-  { "MaxGCMinorPauseMillis",        JDK_Version::jdk(8), JDK_Version::undefined(), JDK_Version::undefined() },
-  { "MaxRAMFraction",               JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
-  { "MinRAMFraction",               JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
-  { "InitialRAMFraction",           JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "AllowRedefinitionToAddDeleteMethods", JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
   { "FlightRecorder",               JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
   { "DumpSharedSpaces",             JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
@@ -508,7 +503,6 @@ static SpecialFlag const special_jvm_flags[] = {
   { "RegisterFinalizersAtInit",     JDK_Version::jdk(22), JDK_Version::jdk(23), JDK_Version::jdk(24) },
 
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
-  { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "CreateMinidumpOnCrash",        JDK_Version::jdk(9),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "TLABStats",                    JDK_Version::jdk(12), JDK_Version::undefined(), JDK_Version::undefined() },
 
@@ -525,14 +519,13 @@ static SpecialFlag const special_jvm_flags[] = {
   { "G1ConcRSHotCardLimit",         JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
   { "RefDiscoveryPolicy",           JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
   { "MetaspaceReclaimPolicy",       JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
-  { "DoReserveCopyInSuperWord",     JDK_Version::undefined(), JDK_Version::jdk(22), JDK_Version::jdk(23) },
-  { "UseCounterDecay",              JDK_Version::undefined(), JDK_Version::jdk(22), JDK_Version::jdk(23) },
 
-#ifdef LINUX
-  { "UseHugeTLBFS",                 JDK_Version::undefined(), JDK_Version::jdk(22), JDK_Version::jdk(23) },
-  { "UseSHM",                       JDK_Version::undefined(), JDK_Version::jdk(22), JDK_Version::jdk(23) },
-#endif
-
+  { "AdaptiveSizePolicyCollectionCostMargin",   JDK_Version::undefined(), JDK_Version::jdk(23), JDK_Version::jdk(24) },
+  { "MaxGCMinorPauseMillis",        JDK_Version::jdk(8), JDK_Version::jdk(23), JDK_Version::jdk(24) },
+  { "MaxRAMFraction",               JDK_Version::jdk(10),  JDK_Version::jdk(23), JDK_Version::jdk(24) },
+  { "MinRAMFraction",               JDK_Version::jdk(10),  JDK_Version::jdk(23), JDK_Version::jdk(24) },
+  { "InitialRAMFraction",           JDK_Version::jdk(10),  JDK_Version::jdk(23), JDK_Version::jdk(24) },
+  { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::jdk(23), JDK_Version::jdk(24) },
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
 #endif
@@ -558,7 +551,6 @@ typedef struct {
 } AliasedFlag;
 
 static AliasedFlag const aliased_jvm_flags[] = {
-  { "DefaultMaxRAMFraction",    "MaxRAMFraction"    },
   { "CreateMinidumpOnCrash",    "CreateCoredumpOnCrash" },
   { nullptr, nullptr}
 };
@@ -1486,11 +1478,8 @@ void Arguments::set_heap_size() {
   // available os physical memory, not our MaxRAM limit,
   // unless MaxRAM is also specified.
   bool override_coop_limit = (!FLAG_IS_DEFAULT(MaxRAMPercentage) ||
-                           !FLAG_IS_DEFAULT(MaxRAMFraction) ||
                            !FLAG_IS_DEFAULT(MinRAMPercentage) ||
-                           !FLAG_IS_DEFAULT(MinRAMFraction) ||
                            !FLAG_IS_DEFAULT(InitialRAMPercentage) ||
-                           !FLAG_IS_DEFAULT(InitialRAMFraction) ||
                            !FLAG_IS_DEFAULT(MaxRAM));
   if (override_coop_limit) {
     if (FLAG_IS_DEFAULT(MaxRAM)) {
@@ -1503,20 +1492,6 @@ void Arguments::set_heap_size() {
     phys_mem = FLAG_IS_DEFAULT(MaxRAM) ? MIN2(os::physical_memory(), (julong)MaxRAM)
                                        : (julong)MaxRAM;
   }
-
-
-  // Convert deprecated flags
-  if (FLAG_IS_DEFAULT(MaxRAMPercentage) &&
-      !FLAG_IS_DEFAULT(MaxRAMFraction))
-    MaxRAMPercentage = 100.0 / (double)MaxRAMFraction;
-
-  if (FLAG_IS_DEFAULT(MinRAMPercentage) &&
-      !FLAG_IS_DEFAULT(MinRAMFraction))
-    MinRAMPercentage = 100.0 / (double)MinRAMFraction;
-
-  if (FLAG_IS_DEFAULT(InitialRAMPercentage) &&
-      !FLAG_IS_DEFAULT(InitialRAMFraction))
-    InitialRAMPercentage = 100.0 / (double)InitialRAMFraction;
 
   // If the maximum heap size has not been set with -Xmx,
   // then set it as fraction of the size of physical memory,
@@ -2222,10 +2197,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
     // -bootclasspath/a:
     } else if (match_option(option, "-Xbootclasspath/a:", &tail)) {
       Arguments::append_sysclasspath(tail);
-#if INCLUDE_CDS
-      MetaspaceShared::disable_optimized_module_handling();
-      log_info(cds)("optimized module handling: disabled because bootclasspath was appended");
-#endif
     // -bootclasspath/p:
     } else if (match_option(option, "-Xbootclasspath/p:", &tail)) {
         jio_fprintf(defaultStream::output_stream(),
@@ -2591,9 +2562,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
     // -Xdebug
     } else if (match_option(option, "-Xdebug")) {
       warning("Option -Xdebug was deprecated in JDK 22 and will likely be removed in a future release.");
-    // -Xnoagent
-    } else if (match_option(option, "-Xnoagent")) {
-      warning("Option -Xnoagent was deprecated in JDK 22 and will likely be removed in a future release.");
     } else if (match_option(option, "-Xloggc:", &tail)) {
       // Deprecated flag to redirect GC output to a file. -Xloggc:<filename>
       log_warning(gc)("-Xloggc is deprecated. Will use -Xlog:gc:%s instead.", tail);

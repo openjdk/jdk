@@ -114,28 +114,6 @@ class ClearArtifact<const Method*> {
   }
 };
 
-template <typename T>
-class SerializePredicate {
-  bool _class_unload;
- public:
-  SerializePredicate(bool class_unload) : _class_unload(class_unload) {}
-  bool operator()(T const& value) {
-    assert(value != nullptr, "invariant");
-    return _class_unload ? true : IS_NOT_SERIALIZED(value);
-  }
-};
-
-template <>
-class SerializePredicate<const Method*> {
-  bool _class_unload;
- public:
-  SerializePredicate(bool class_unload) : _class_unload(class_unload) {}
-  bool operator()(const Method* method) {
-    assert(method != nullptr, "invariant");
-    return _class_unload ? true : METHOD_IS_NOT_SERIALIZED(method);
-  }
-};
-
 template <typename T, bool leakp>
 class SymbolPredicate {
   bool _class_unload;
@@ -150,11 +128,23 @@ class SymbolPredicate {
   }
 };
 
+class KlassUsedPredicate {
+  bool _current_epoch;
+public:
+  KlassUsedPredicate(bool current_epoch) : _current_epoch(current_epoch) {}
+  bool operator()(const Klass* klass) {
+    return _current_epoch ? USED_THIS_EPOCH(klass) : USED_PREVIOUS_EPOCH(klass);
+  }
+};
+
 class MethodUsedPredicate {
   bool _current_epoch;
 public:
   MethodUsedPredicate(bool current_epoch) : _current_epoch(current_epoch) {}
   bool operator()(const Klass* klass) {
+    if (!klass->is_instance_klass()) {
+      return false;
+    }
     return _current_epoch ? METHOD_USED_THIS_EPOCH(klass) : METHOD_USED_PREVIOUS_EPOCH(klass);
   }
 };
@@ -210,7 +200,10 @@ class JfrArtifactSet : public JfrCHeapObj {
   JfrSymbolTable* _symbol_table;
   GrowableArray<const Klass*>* _klass_list;
   GrowableArray<const Klass*>* _klass_loader_set;
+  GrowableArray<const Klass*>* _klass_loader_leakp_set;
+  GrowableArray<const Klass*>* _unloading_set;
   size_t _total_count;
+  bool _class_unload;
 
  public:
   JfrArtifactSet(bool class_unload);
@@ -235,14 +228,20 @@ class JfrArtifactSet : public JfrCHeapObj {
   int entries() const;
   size_t total_count() const;
   void register_klass(const Klass* k);
-  bool should_do_loader_klass(const Klass* k);
+  bool should_do_cld_klass(const Klass* k, bool leakp);
+  bool should_do_unloading_artifact(const void* ptr);
   void increment_checkpoint_id();
 
   template <typename Functor>
   void iterate_klasses(Functor& functor) const {
     for (int i = 0; i < _klass_list->length(); ++i) {
       if (!functor(_klass_list->at(i))) {
-        break;
+        return;
+      }
+    }
+    for (int i = 0; i < _klass_loader_set->length(); ++i) {
+      if (!functor(_klass_loader_set->at(i))) {
+        return;
       }
     }
   }

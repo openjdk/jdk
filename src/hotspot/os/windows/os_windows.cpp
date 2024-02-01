@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2469,9 +2469,9 @@ LONG Handle_IDiv_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
 #elif defined(_M_AMD64)
   PCONTEXT ctx = exceptionInfo->ContextRecord;
   address pc = (address)ctx->Rip;
-  guarantee(pc[0] >= Assembler::REX && pc[0] <= Assembler::REX_WRXB && pc[1] == 0xF7 || pc[0] == 0xF7,
+  guarantee((pc[0] >= Assembler::REX && pc[0] <= Assembler::REX_WRXB && pc[1] == 0xF7) || pc[0] == 0xF7,
             "not an idiv opcode, pc[0] = 0x%x and pc[1] = 0x%x", pc[0], pc[1]);
-  guarantee(pc[0] >= Assembler::REX && pc[0] <= Assembler::REX_WRXB && (pc[2] & ~0x7) == 0xF8 || (pc[1] & ~0x7) == 0xF8,
+  guarantee((pc[0] >= Assembler::REX && pc[0] <= Assembler::REX_WRXB && (pc[2] & ~0x7) == 0xF8) || (pc[1] & ~0x7) == 0xF8,
             "cannot handle non-register operands, pc[0] = 0x%x, pc[1] = 0x%x and pc[2] = 0x%x", pc[0], pc[1], pc[2]);
   if (pc[0] == 0xF7) {
     // set correct result values and continue after idiv instruction
@@ -3436,10 +3436,6 @@ bool os::can_commit_large_page_memory() {
   return false;
 }
 
-bool os::can_execute_large_page_memory() {
-  return true;
-}
-
 static char* reserve_large_pages_individually(size_t size, char* req_addr, bool exec) {
   log_debug(pagesize)("Reserving large pages individually.");
 
@@ -3800,6 +3796,11 @@ bool os::unguard_memory(char* addr, size_t bytes) {
 
 void os::pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint) { }
 void os::pd_free_memory(char *addr, size_t bytes, size_t alignment_hint) { }
+
+size_t os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
+  return page_size;
+}
+
 void os::numa_make_global(char *addr, size_t bytes)    { }
 void os::numa_make_local(char *addr, size_t bytes, int lgrp_hint)    { }
 bool os::numa_topology_changed()                       { return false; }
@@ -5358,7 +5359,8 @@ int PlatformEvent::park(jlong Millis) {
       phri = new HighResolutionInterval(prd);
     }
     rv = ::WaitForSingleObject(_ParkHandle, prd);
-    assert(rv == WAIT_OBJECT_0 || rv == WAIT_TIMEOUT, "WaitForSingleObject failed");
+    assert(rv != WAIT_FAILED,   "WaitForSingleObject failed with error code: %lu", GetLastError());
+    assert(rv == WAIT_OBJECT_0 || rv == WAIT_TIMEOUT, "WaitForSingleObject failed with return value: %lu", rv);
     if (rv == WAIT_TIMEOUT) {
       Millis -= prd;
     }
@@ -5397,7 +5399,8 @@ void PlatformEvent::park() {
   // spin attempts by this thread.
   while (_Event < 0) {
     DWORD rv = ::WaitForSingleObject(_ParkHandle, INFINITE);
-    assert(rv == WAIT_OBJECT_0, "WaitForSingleObject failed");
+    assert(rv != WAIT_FAILED,   "WaitForSingleObject failed with error code: %lu", GetLastError());
+    assert(rv == WAIT_OBJECT_0, "WaitForSingleObject failed with return value: %lu", rv);
   }
 
   // Usually we'll find _Event == 0 at this point, but as
@@ -5460,16 +5463,25 @@ void Parker::park(bool isAbsolute, jlong time) {
   JavaThread* thread = JavaThread::current();
 
   // Don't wait if interrupted or already triggered
-  if (thread->is_interrupted(false) ||
-      WaitForSingleObject(_ParkHandle, 0) == WAIT_OBJECT_0) {
+  if (thread->is_interrupted(false)) {
     ResetEvent(_ParkHandle);
     return;
   } else {
-    ThreadBlockInVM tbivm(thread);
-    OSThreadWaitState osts(thread->osthread(), false /* not Object.wait() */);
+    DWORD rv = WaitForSingleObject(_ParkHandle, 0);
+    assert(rv != WAIT_FAILED,   "WaitForSingleObject failed with error code: %lu", GetLastError());
+    assert(rv == WAIT_OBJECT_0 || rv == WAIT_TIMEOUT, "WaitForSingleObject failed with return value: %lu", rv);
+    if (rv == WAIT_OBJECT_0) {
+      ResetEvent(_ParkHandle);
+      return;
+    } else {
+      ThreadBlockInVM tbivm(thread);
+      OSThreadWaitState osts(thread->osthread(), false /* not Object.wait() */);
 
-    WaitForSingleObject(_ParkHandle, time);
-    ResetEvent(_ParkHandle);
+      rv = WaitForSingleObject(_ParkHandle, time);
+      assert(rv != WAIT_FAILED,   "WaitForSingleObject failed with error code: %lu", GetLastError());
+      assert(rv == WAIT_OBJECT_0 || rv == WAIT_TIMEOUT, "WaitForSingleObject failed with return value: %lu", rv);
+      ResetEvent(_ParkHandle);
+    }
   }
 }
 
@@ -5545,7 +5557,9 @@ int os::fork_and_exec(const char* cmd) {
 
   if (rslt) {
     // Wait until child process exits.
-    WaitForSingleObject(pi.hProcess, INFINITE);
+    DWORD rv = WaitForSingleObject(pi.hProcess, INFINITE);
+    assert(rv != WAIT_FAILED,   "WaitForSingleObject failed with error code: %lu", GetLastError());
+    assert(rv == WAIT_OBJECT_0, "WaitForSingleObject failed with return value: %lu", rv);
 
     GetExitCodeProcess(pi.hProcess, &exit_code);
 

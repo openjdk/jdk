@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ extern "C" {
 #define PASSED  0
 #define STATUS_FAILED  2
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jint result = PASSED;
 static int verbose = 0;
 
@@ -53,15 +53,15 @@ typedef struct {   /* line numbers of a method */
 } methInfo;
 
 static methInfo meth_info[] = {
-    { 0, "statMeth", "(I)D", NULL, "statMeth_calls", NULL, 0, 0 },
-    { 1, "voidMeth", "()V", NULL, "voidMeth_calls", NULL, 0, 0 }
+    { 0, "statMeth", "(I)D", nullptr, "statMeth_calls", nullptr, 0, 0 },
+    { 1, "voidMeth", "()V", nullptr, "voidMeth_calls", nullptr, 0, 0 }
 };
 
 /* the original JNI function table */
-static jniNativeInterface *orig_jni_functions = NULL;
+static jniNativeInterface *orig_jni_functions = nullptr;
 
 /* the redirected JNI function table */
-static jniNativeInterface *redir_jni_functions = NULL;
+static jniNativeInterface *redir_jni_functions = nullptr;
 
 /** redirected JNI functions **/
 jdouble JNICALL MyCallStaticDoubleMethodV(JNIEnv *env, jclass cls, jmethodID mid, va_list args) {
@@ -127,7 +127,7 @@ void doRedirect(JNIEnv *env, jclass cls) {
             meth_info[i].mid = env->GetStaticMethodID(
                 cls, meth_info[i].m_name, meth_info[i].m_sign);
         }
-        if (meth_info[i].mid == NULL) {
+        if (meth_info[i].mid == nullptr) {
            result = STATUS_FAILED;
            printf("(%s,%d): TEST FAILURE: failed to get the ID for the method \"%s %s\"\n",
                 __FILE__, __LINE__, meth_info[i].m_name, meth_info[i].m_sign);
@@ -270,7 +270,7 @@ JNIEXPORT jint JNICALL
 Java_nsk_jvmti_scenarios_jni_1interception_JI03_ji03t002_check(JNIEnv *env, jobject obj) {
     jclass objCls;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("(%s,%d): TEST FAILURE: JVMTI client was not properly loaded\n",
             __FILE__, __LINE__);
         return STATUS_FAILED;
@@ -309,14 +309,14 @@ JNIEXPORT jint JNI_OnLoad_ji03t002(JavaVM *jvm, char *options, void *reserved) {
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jint res;
 
-    if (options != NULL && strcmp(options, "-verbose") == 0)
+    if (options != nullptr && strcmp(options, "-verbose") == 0)
         verbose = 1;
 
     if (verbose)
         printf("verbose mode on\n");
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("(%s,%d): Failed to call GetEnv\n", __FILE__, __LINE__);
         return JNI_ERR;
     }
