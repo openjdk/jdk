@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_GC_SHARED_GENMEMORYPOOLS_HPP
-#define SHARE_GC_SHARED_GENMEMORYPOOLS_HPP
+#ifndef SHARE_GC_SERIAL_SERIALMEMORYPOOLS_HPP
+#define SHARE_GC_SERIAL_SERIALMEMORYPOOLS_HPP
 
 #include "services/memoryPool.hpp"
 
@@ -62,14 +62,14 @@ public:
   size_t committed_in_bytes();
 };
 
-class GenerationPool : public CollectedMemoryPool {
+class TenuredGenerationPool : public CollectedMemoryPool {
 private:
-  Generation* _gen;
+  TenuredGeneration* _gen;
 public:
-  GenerationPool(Generation* gen, const char* name, bool support_usage_threshold);
+  TenuredGenerationPool(TenuredGeneration* gen, const char* name, bool support_usage_threshold);
 
   MemoryUsage get_memory_usage();
   size_t used_in_bytes();
 };
 
-#endif // SHARE_GC_SHARED_GENMEMORYPOOLS_HPP
+#endif // SHARE_GC_SERIAL_SERIALMEMORYPOOLS_HPP

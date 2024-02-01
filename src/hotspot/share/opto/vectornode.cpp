@@ -389,7 +389,7 @@ int VectorNode::scalar_opcode(int sopc, BasicType bt) {
 
 // Limits on vector size (number of elements) for auto-vectorization.
 bool VectorNode::vector_size_supported_superword(const BasicType bt, int size) {
-  return Matcher::superword_max_vector_size(bt) >= size &&
+  return Matcher::max_vector_size_auto_vectorization(bt) >= size &&
          Matcher::min_vector_size(bt) <= size;
 }
 
@@ -409,7 +409,7 @@ bool VectorNode::implemented(int opc, uint vlen, BasicType bt) {
     if (VectorNode::is_vector_integral_negate(vopc)) {
       return is_vector_integral_negate_supported(vopc, vlen, bt, false);
     }
-    return vopc > 0 && Matcher::match_rule_supported_superword(vopc, vlen, bt);
+    return vopc > 0 && Matcher::match_rule_supported_auto_vectorization(vopc, vlen, bt);
   }
   return false;
 }
@@ -1434,7 +1434,7 @@ bool VectorCastNode::implemented(int opc, uint vlen, BasicType src_type, BasicTy
       (vlen > 1) && is_power_of_2(vlen) &&
       VectorNode::vector_size_supported_superword(dst_type, vlen)) {
     int vopc = VectorCastNode::opcode(opc, src_type);
-    return vopc > 0 && Matcher::match_rule_supported_superword(vopc, vlen, dst_type);
+    return vopc > 0 && Matcher::match_rule_supported_auto_vectorization(vopc, vlen, dst_type);
   }
   return false;
 }
@@ -1528,7 +1528,7 @@ bool ReductionNode::implemented(int opc, uint vlen, BasicType bt) {
       (vlen > 1) && is_power_of_2(vlen) &&
       VectorNode::vector_size_supported_superword(bt, vlen)) {
     int vopc = ReductionNode::opcode(opc, bt);
-    return vopc != opc && Matcher::match_rule_supported_superword(vopc, vlen, bt);
+    return vopc != opc && Matcher::match_rule_supported_auto_vectorization(vopc, vlen, bt);
   }
   return false;
 }

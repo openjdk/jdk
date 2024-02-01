@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,10 @@ final class ConstantMap {
         if (value == null) {
             // unless id is 0 which is used to represent null
             if (id != 0) {
-                Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Missing object id=" + id + " in pool " + getName() + ". All ids should reference an object");
+                String msg = "Missing object ID " + id + " in pool " + getName() + ". All IDs should reference an object";
+                Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, msg);
+                // Disable assertion until JDK-8323883 is fixed
+                // assert false : msg;
             }
             return null;
         }

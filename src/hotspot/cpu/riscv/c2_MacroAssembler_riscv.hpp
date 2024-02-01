@@ -173,6 +173,7 @@
   void signum_fp(FloatRegister dst, FloatRegister one, bool is_double);
 
   void float16_to_float(FloatRegister dst, Register src, Register tmp);
+  void float_to_float16(Register dst, FloatRegister src, FloatRegister ftmp, Register xtmp);
 
   void signum_fp_v(VectorRegister dst, VectorRegister one, BasicType bt, int vlen);
 

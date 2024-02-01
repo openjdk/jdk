@@ -207,6 +207,15 @@ public:
 
   void set_soft_max_capacity(size_t v);
 
+// ---------- Periodic Tasks
+//
+private:
+  void notify_heap_changed();
+
+public:
+  void set_forced_counters_update(bool value);
+  void handle_force_counters_update();
+
 // ---------- Workers handling
 //
 private:
