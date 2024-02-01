@@ -674,7 +674,7 @@ extern "C" bool dbg_is_good_oop(oopDesc* o) {
   return dbg_is_safe(o, -1) && dbg_is_safe(o->klass(), -1) && oopDesc::is_oop(o) && o->klass()->is_klass();
 }
 
-// Additional "good oop" checks, separate method to no disturb existing asserts.
+// Additional "good oop" checks, separate method to not disturb existing asserts.
 extern "C" bool dbg_is_good_oop_detailed(oopDesc* o) {
   bool good = dbg_is_safe(o, -1)
               && *(long*) o != 0
