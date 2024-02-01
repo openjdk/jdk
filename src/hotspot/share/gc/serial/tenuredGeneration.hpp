@@ -92,8 +92,8 @@ class TenuredGeneration: public Generation {
   size_t capacity() const;
   size_t used() const;
   size_t free() const;
-  MemRegion used_region() const;
 
+  MemRegion used_region() const { return space()->used_region(); }
   MemRegion prev_used_region() const { return _prev_used_region; }
   void save_used_region()   { _prev_used_region = used_region(); }
 
