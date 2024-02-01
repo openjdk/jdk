@@ -214,11 +214,13 @@ public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
 
         CImage cimage = CImage.getCreator().createFromImage(image, observer);
         boolean imageAutoSize = target.isImageAutoSize();
-        cimage.execute(imagePtr -> {
-            execute(ptr -> {
-                setNativeImage(ptr, imagePtr, imageAutoSize, useTemplateImages);
+        if (cimage != null) {
+            cimage.execute(imagePtr -> {
+                execute(ptr -> {
+                    setNativeImage(ptr, imagePtr, imageAutoSize, useTemplateImages);
+                });
             });
-        });
+        }
     }
 
     private native void setNativeImage(final long model, final long nsimage, final boolean autosize, final boolean template);
@@ -363,7 +365,7 @@ public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
     class IconObserver implements ImageObserver {
         @Override
         public boolean imageUpdate(Image image, int flags, int x, int y, int width, int height) {
-            if (target == null || image != target.getImage()) //if the image has been changed
+            if (image != target.getImage()) //if the image has been changed
             {
                 return false;
             }
