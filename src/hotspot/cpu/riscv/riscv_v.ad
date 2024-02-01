@@ -3683,7 +3683,7 @@ instruct vsignum_reg(vReg dst, vReg zero, vReg one, vRegMask_V0 v0) %{
 
 // half precision -> single
 
-instruct vconvHF2F(vReg dst, vReg src, vRegMask_V0 v0) %{
+instruct vconvHF2F(vReg dst, vReg_V1 src, vRegMask_V0 v0) %{
   match(Set dst (VectorCastHF2F src));
   effect(TEMP_DEF dst, TEMP v0);
   format %{ "vfwcvt.f.f.v $dst, $src\t# convert half to single precision"
