@@ -30,6 +30,7 @@ import javax.swing.Action;
 import javax.swing.JOptionPane;
 import org.openide.nodes.Node;
 import org.openide.util.HelpCtx;
+import org.openide.util.ImageUtilities;
 import org.openide.util.NbBundle;
 import org.openide.util.actions.CookieAction;
 import org.openide.windows.WindowManager;
@@ -73,6 +74,7 @@ public final class RemoveFilterAction extends CookieAction {
 
     public RemoveFilterAction() {
         putValue(Action.SHORT_DESCRIPTION, "Remove selected filter");
+        putValue(Action.SMALL_ICON, ImageUtilities.loadImageIcon(iconResource(), true));
     }
 
     @Override

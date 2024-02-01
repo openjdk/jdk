@@ -48,7 +48,7 @@ public final class ZoomResetAction extends CallableSystemAction {
 
     public ZoomResetAction() {
         putValue(Action.SHORT_DESCRIPTION, getDescription());
-        putValue(Action.SMALL_ICON , ImageUtilities.loadImageIcon(iconResource(), true));
+        putValue(Action.SMALL_ICON, ImageUtilities.loadImageIcon(iconResource(), true));
     }
 
     @Override

@@ -28,6 +28,7 @@ import com.sun.hotspot.igv.filterwindow.FilterTopComponent;
 import javax.swing.Action;
 import org.openide.nodes.Node;
 import org.openide.util.HelpCtx;
+import org.openide.util.ImageUtilities;
 import org.openide.util.NbBundle;
 import org.openide.util.actions.CookieAction;
 
@@ -51,7 +52,7 @@ public final class MoveFilterDownAction extends CookieAction {
     }
 
     public MoveFilterDownAction() {
-
+        putValue(Action.SMALL_ICON, ImageUtilities.loadImageIcon(iconResource(), true));
         putValue(Action.SHORT_DESCRIPTION, "Move selected filter downwards");
     }
 

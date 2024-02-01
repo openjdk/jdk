@@ -26,6 +26,7 @@ package com.sun.hotspot.igv.filterwindow.actions;
 import com.sun.hotspot.igv.filterwindow.FilterTopComponent;
 import javax.swing.Action;
 import org.openide.util.HelpCtx;
+import org.openide.util.ImageUtilities;
 import org.openide.util.NbBundle;
 import org.openide.util.actions.CallableSystemAction;
 
@@ -47,6 +48,7 @@ public final class SaveFilterSettingsAction extends CallableSystemAction {
 
     public SaveFilterSettingsAction() {
         putValue(Action.SHORT_DESCRIPTION, "Save filter configuration as profile...");
+        putValue(Action.SMALL_ICON, ImageUtilities.loadImageIcon(iconResource(), true));
     }
 
     @Override

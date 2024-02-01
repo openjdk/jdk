@@ -28,6 +28,7 @@ import com.sun.hotspot.igv.coordinator.FolderNode;
 import javax.swing.Action;
 import org.openide.nodes.Node;
 import org.openide.util.HelpCtx;
+import org.openide.util.ImageUtilities;
 import org.openide.util.NbBundle;
 import org.openide.util.actions.NodeAction;
 
@@ -49,6 +50,7 @@ public final class RemoveAction extends NodeAction {
 
     public RemoveAction() {
         putValue(Action.SHORT_DESCRIPTION, getName());
+        putValue(Action.SMALL_ICON, ImageUtilities.loadImageIcon(iconResource(), true));
     }
 
     @Override

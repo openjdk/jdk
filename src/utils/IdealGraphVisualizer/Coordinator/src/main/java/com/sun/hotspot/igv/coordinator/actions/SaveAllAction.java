@@ -27,6 +27,7 @@ package com.sun.hotspot.igv.coordinator.actions;
 import com.sun.hotspot.igv.coordinator.OutlineTopComponent;
 import javax.swing.Action;
 import org.openide.util.HelpCtx;
+import org.openide.util.ImageUtilities;
 import org.openide.util.NbBundle;
 import org.openide.util.Utilities;
 import org.openide.util.actions.CallableSystemAction;
@@ -53,6 +54,7 @@ public final class SaveAllAction extends CallableSystemAction {
         putValue(Action.SHORT_DESCRIPTION, "Save all groups to XML file...");
         // D is the Control key on most platforms, the Command (meta) key on Macintosh
         putValue(Action.ACCELERATOR_KEY, Utilities.stringToKey("D-S"));
+        putValue(Action.SMALL_ICON, ImageUtilities.loadImageIcon(iconResource(), true));
     }
 
     @Override
