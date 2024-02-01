@@ -41,6 +41,7 @@
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.lang.foreign.MemorySegment;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.MappedByteBuffer;
@@ -60,6 +61,8 @@ public class InternalErrorTest {
     private static final String failureMsg1 = "InternalError not thrown";
     private static final String failureMsg2 = "Wrong InternalError: ";
 
+    private static final int NUM_TESTS = 4;
+
     public static void main(String[] args) throws Throwable {
         Unsafe unsafe = Unsafe.getUnsafe();
 
@@ -71,9 +74,9 @@ public class InternalErrorTest {
             s.append("1");
         }
         Files.write(file.toPath(), s.toString().getBytes());
-        FileChannel fileChannel = new RandomAccessFile(file, "r").getChannel();
+        FileChannel fileChannel = new RandomAccessFile(file, "rw").getChannel();
         MappedByteBuffer buffer =
-            fileChannel.map(FileChannel.MapMode.READ_ONLY, 0, fileChannel.size());
+            fileChannel.map(FileChannel.MapMode.READ_WRITE, 0, fileChannel.size());
 
         // Get address of mapped memory.
         long mapAddr = 0;
@@ -86,13 +89,13 @@ public class InternalErrorTest {
         }
         long allocMem = unsafe.allocateMemory(4000);
 
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < NUM_TESTS; i++) {
             test(buffer, unsafe, mapAddr, allocMem, i);
         }
 
         Files.write(file.toPath(), "2".getBytes());
         buffer.position(buffer.position() + pageSize);
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < NUM_TESTS; i++) {
             try {
                 test(buffer, unsafe, mapAddr, allocMem, i);
                 WhiteBox.getWhiteBox().forceSafepoint();
@@ -107,7 +110,7 @@ public class InternalErrorTest {
         Method m = InternalErrorTest.class.getMethod("test", MappedByteBuffer.class, Unsafe.class, long.class, long.class, int.class);
         WhiteBox.getWhiteBox().enqueueMethodForCompilation(m, 3);
 
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < NUM_TESTS; i++) {
             try {
                 test(buffer, unsafe, mapAddr, allocMem, i);
                 WhiteBox.getWhiteBox().forceSafepoint();
@@ -121,7 +124,7 @@ public class InternalErrorTest {
 
         WhiteBox.getWhiteBox().enqueueMethodForCompilation(m, 4);
 
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < NUM_TESTS; i++) {
             try {
                 test(buffer, unsafe, mapAddr, allocMem, i);
                 WhiteBox.getWhiteBox().forceSafepoint();
@@ -143,12 +146,17 @@ public class InternalErrorTest {
                 buffer.get(new byte[8]);
                 break;
             case 1:
-                // testing Unsafe.copySwapMemory, trying to access next  page after truncation.
+                // testing Unsafe.copySwapMemory, trying to access next page after truncation.
                 unsafe.copySwapMemory(null, mapAddr + pageSize, new byte[4000], 16, 2000, 2);
                 break;
             case 2:
-                // testing Unsafe.copySwapMemory, trying to access next  page after truncation.
+                // testing Unsafe.copySwapMemory, trying to access next page after truncation.
                 unsafe.copySwapMemory(null, mapAddr + pageSize, null, allocMem, 2000, 2);
+                break;
+            case 3:
+                MemorySegment segment = MemorySegment.ofBuffer(buffer);
+                // testing Unsafe.setMemory, trying to access next page after truncation.
+                segment.fill((byte) 0xF0);
                 break;
         }
     }

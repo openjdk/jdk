@@ -208,7 +208,7 @@ class CorpusTest {
                 ClassRecord.ofClassModel(classModel, CompatibilityFilter.By_ClassBuilder),
                 "ClassModel[%s] transformed by ClassBuilder (actual) vs ClassModel before transformation (expected)".formatted(path));
 
-        assertEmpty(newModel.verify(null));
+        assertEmpty(cc.verify(newModel));
 
         //testing maxStack and maxLocals are calculated identically by StackMapGenerator and StackCounter
         byte[] noStackMaps = ClassFile.of(ClassFile.StackMapsOption.DROP_STACK_MAPS)

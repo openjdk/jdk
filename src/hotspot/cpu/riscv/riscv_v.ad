@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2020, 2023, Arm Limited. All rights reserved.
 // Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -46,7 +46,7 @@ source %{
     }
   }
 
-  bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
+  bool Matcher::match_rule_supported_auto_vectorization(int opcode, int vlen, BasicType bt) {
     return match_rule_supported_vector(opcode, vlen, bt);
   }
 
@@ -3656,6 +3656,23 @@ instruct vexpand(vReg dst, vReg src, vRegMask_V0 v0, vReg tmp) %{
                as_VectorRegister($dst$$reg));
     __ vrgather_vv(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg),
                    as_VectorRegister($tmp$$reg), Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// ------------------------------ Vector signum --------------------------------
+
+// Vector Math.signum
+
+instruct vsignum_reg(vReg dst, vReg zero, vReg one, vRegMask_V0 v0) %{
+  match(Set dst (SignumVF dst (Binary zero one)));
+  match(Set dst (SignumVD dst (Binary zero one)));
+  effect(TEMP_DEF dst, TEMP v0);
+  format %{ "vsignum $dst, $dst\t" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ signum_fp_v(as_VectorRegister($dst$$reg), as_VectorRegister($one$$reg),
+                   bt, Matcher::vector_length(this));
   %}
   ins_pipe(pipe_slow);
 %}

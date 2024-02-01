@@ -491,19 +491,19 @@ PhiNode* PhaseIdealLoop::loop_iv_phi(Node* xphi, Node* phi_incr, Node* x, IdealL
   return phi;
 }
 
-static int check_stride_overflow(jlong stride_con, const TypeInteger* limit_t, BasicType bt) {
-  if (stride_con > 0) {
-    if (limit_t->lo_as_long() > (max_signed_integer(bt) - stride_con)) {
+static int check_stride_overflow(jlong final_correction, const TypeInteger* limit_t, BasicType bt) {
+  if (final_correction > 0) {
+    if (limit_t->lo_as_long() > (max_signed_integer(bt) - final_correction)) {
       return -1;
     }
-    if (limit_t->hi_as_long() > (max_signed_integer(bt) - stride_con)) {
+    if (limit_t->hi_as_long() > (max_signed_integer(bt) - final_correction)) {
       return 1;
     }
   } else {
-    if (limit_t->hi_as_long() < (min_signed_integer(bt) - stride_con)) {
+    if (limit_t->hi_as_long() < (min_signed_integer(bt) - final_correction)) {
       return -1;
     }
-    if (limit_t->lo_as_long() < (min_signed_integer(bt) - stride_con)) {
+    if (limit_t->lo_as_long() < (min_signed_integer(bt) - final_correction)) {
       return 1;
     }
   }
@@ -1773,49 +1773,204 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
   C->print_method(PHASE_BEFORE_CLOOPS, 3);
 
   // ===================================================
-  // Generate loop limit check to avoid integer overflow
-  // in cases like next (cyclic loops):
+  // We can only convert this loop to a counted loop if we can guarantee that the iv phi will never overflow at runtime.
+  // This is an implicit assumption taken by some loop optimizations. We therefore must ensure this property at all cost.
+  // At this point, we've already excluded some trivial cases where an overflow could have been proven statically.
+  // But even though we cannot prove that an overflow will *not* happen, we still want to speculatively convert this loop
+  // to a counted loop. This can be achieved by adding additional iv phi overflow checks before the loop. If they fail,
+  // we trap and resume execution before the loop without having executed any iteration of the loop, yet.
   //
-  // for (i=0; i <= max_jint; i++) {}
-  // for (i=0; i <  max_jint; i+=2) {}
+  // These additional iv phi overflow checks can be inserted as Loop Limit Check Predicates above the Loop Limit Check
+  // Parse Predicate which captures a JVM state just before the entry of the loop. If there is no such Parse Predicate,
+  // we cannot generate a Loop Limit Check Predicate and thus cannot speculatively convert the loop to a counted loop.
+  //
+  // In the following, we only focus on int loops with stride > 0 to keep things simple. The argumentation and proof
+  // for stride < 0 is analogously. For long loops, we would replace max_int with max_long.
   //
   //
-  // Limit check predicate depends on the loop test:
+  // The loop to be converted does not always need to have the often used shape:
   //
-  // for(;i != limit; i++)       --> limit <= (max_jint)
-  // for(;i <  limit; i+=stride) --> limit <= (max_jint - stride + 1)
-  // for(;i <= limit; i+=stride) --> limit <= (max_jint - stride    )
+  //                                                 i = init
+  //     i = init                                loop:
+  //     do {                                        ...
+  //         // ...               equivalent         i+=stride
+  //         i+=stride               <==>            if (i < limit)
+  //     } while (i < limit);                          goto loop
+  //                                             exit:
+  //                                                 ...
   //
+  // where the loop exit check uses the post-incremented iv phi and a '<'-operator.
+  //
+  // We could also have '<='-operator (or '>='-operator for negative strides) or use the pre-incremented iv phi value
+  // in the loop exit check:
+  //
+  //         i = init
+  //     loop:
+  //         ...
+  //         if (i <= limit)
+  //             i+=stride
+  //             goto loop
+  //     exit:
+  //         ...
+  //
+  // Let's define the following terms:
+  // - iv_pre_i: The pre-incremented iv phi before the i-th iteration.
+  // - iv_post_i: The post-incremented iv phi after the i-th iteration.
+  //
+  // The iv_pre_i and iv_post_i have the following relation:
+  //      iv_pre_i + stride = iv_post_i
+  //
+  // When converting a loop to a counted loop, we want to have a canonicalized loop exit check of the form:
+  //     iv_post_i < adjusted_limit
+  //
+  // If that is not the case, we need to canonicalize the loop exit check by using different values for adjusted_limit:
+  // (LE1) iv_post_i < limit: Already canonicalized. We can directly use limit as adjusted_limit.
+  //           -> adjusted_limit = limit.
+  // (LE2) iv_post_i <= limit:
+  //           iv_post_i < limit + 1
+  //           -> adjusted limit = limit + 1
+  // (LE3) iv_pre_i < limit:
+  //           iv_pre_i + stride < limit + stride
+  //           iv_post_i < limit + stride
+  //           -> adjusted_limit = limit + stride
+  // (LE4) iv_pre_i <= limit:
+  //           iv_pre_i < limit + 1
+  //           iv_pre_i + stride < limit + stride + 1
+  //           iv_post_i < limit + stride + 1
+  //           -> adjusted_limit = limit + stride + 1
+  //
+  // Note that:
+  //     (AL) limit <= adjusted_limit.
+  //
+  // The following loop invariant has to hold for counted loops with n iterations (i.e. loop exit check true after n-th
+  // loop iteration) and a canonicalized loop exit check to guarantee that no iv_post_i over- or underflows:
+  // (INV) For i = 1..n, min_int <= iv_post_i <= max_int
+  //
+  // To prove (INV), we require the following two conditions/assumptions:
+  // (i): adjusted_limit - 1 + stride <= max_int
+  // (ii): init < limit
+  //
+  // If we can prove (INV), we know that there can be no over- or underflow of any iv phi value. We prove (INV) by
+  // induction by assuming (i) and (ii).
+  //
+  // Proof by Induction
+  // ------------------
+  // > Base case (i = 1): We show that (INV) holds after the first iteration:
+  //     min_int <= iv_post_1 = init + stride <= max_int
+  // Proof:
+  //     First, we note that (ii) implies
+  //         (iii) init <= limit - 1
+  //     max_int >= adjusted_limit - 1 + stride   [using (i)]
+  //             >= limit - 1 + stride            [using (AL)]
+  //             >= init + stride                 [using (iii)]
+  //             >= min_int                       [using stride > 0, no underflow]
+  // Thus, no overflow happens after the first iteration and (INV) holds for i = 1.
+  //
+  // Note that to prove the base case we need (i) and (ii).
+  //
+  // > Induction Hypothesis (i = j, j > 1): Assume that (INV) holds after the j-th iteration:
+  //     min_int <= iv_post_j <= max_int
+  // > Step case (i = j + 1): We show that (INV) also holds after the j+1-th iteration:
+  //     min_int <= iv_post_{j+1} = iv_post_j + stride <= max_int
+  // Proof:
+  // If iv_post_j >= adjusted_limit:
+  //     We exit the loop after the j-th iteration, and we don't execute the j+1-th iteration anymore. Thus, there is
+  //     also no iv_{j+1}. Since (INV) holds for iv_j, there is nothing left to prove.
+  // If iv_post_j < adjusted_limit:
+  //     First, we note that:
+  //         (iv) iv_post_j <= adjusted_limit - 1
+  //     max_int >= adjusted_limit - 1 + stride    [using (i)]
+  //             >= iv_post_j + stride             [using (iv)]
+  //             >= min_int                        [using stride > 0, no underflow]
+  //
+  // Note that to prove the step case we only need (i).
+  //
+  // Thus, by assuming (i) and (ii), we proved (INV).
+  //
+  //
+  // It is therefore enough to add the following two Loop Limit Check Predicates to check assumptions (i) and (ii):
+  //
+  // (1) Loop Limit Check Predicate for (i):
+  //     Using (i): adjusted_limit - 1 + stride <= max_int
+  //
+  //     This condition is now restated to use limit instead of adjusted_limit:
+  //
+  //     To prevent an overflow of adjusted_limit -1 + stride itself, we rewrite this check to
+  //         max_int - stride + 1 >= adjusted_limit
+  //     We can merge the two constants into
+  //         canonicalized_correction = stride - 1
+  //     which gives us
+  //        max_int - canonicalized_correction >= adjusted_limit
+  //
+  //     To directly use limit instead of adjusted_limit in the predicate condition, we split adjusted_limit into:
+  //         adjusted_limit = limit + limit_correction
+  //     Since stride > 0 and limit_correction <= stride + 1, we can restate this with no over- or underflow into:
+  //         max_int - canonicalized_correction - limit_correction >= limit
+  //     Since canonicalized_correction and limit_correction are both constants, we can replace them with a new constant:
+  //         final_correction = canonicalized_correction + limit_correction
+  //     which gives us:
+  //
+  //     Final predicate condition:
+  //         max_int - final_correction >= limit
+  //
+  // (2) Loop Limit Check Predicate for (ii):
+  //     Using (ii): init < limit
+  //
+  //     This Loop Limit Check Predicate is not required if we can prove at compile time that either:
+  //        (2.1) type(init) < type(limit)
+  //             In this case, we know:
+  //                 all possible values of init < all possible values of limit
+  //             and we can skip the predicate.
+  //
+  //        (2.2) init < limit is already checked before (i.e. found as a dominating check)
+  //            In this case, we do not need to re-check the condition and can skip the predicate.
+  //            This is often found for while- and for-loops which have the following shape:
+  //
+  //                if (init < limit) { // Dominating test. Do not need the Loop Limit Check Predicate below.
+  //                    i = init;
+  //                    if (init >= limit) { trap(); } // Here we would insert the Loop Limit Check Predicate
+  //                    do {
+  //                        i += stride;
+  //                    } while (i < limit);
+  //                }
+  //
+  //        (2.3) init + stride <= max_int
+  //            In this case, there is no overflow of the iv phi after the first loop iteration.
+  //            In the proof of the base case above we showed that init + stride <= max_int by using assumption (ii):
+  //                init < limit
+  //            In the proof of the step case above, we did not need (ii) anymore. Therefore, if we already know at
+  //            compile time that init + stride <= max_int then we have trivially proven the base case and that
+  //            there is no overflow of the iv phi after the first iteration. In this case, we don't need to check (ii)
+  //            again and can skip the predicate.
 
-  // Check if limit is excluded to do more precise int overflow check.
-  bool incl_limit = (bt == BoolTest::le || bt == BoolTest::ge);
-  jlong stride_m  = stride_con - (incl_limit ? 0 : (stride_con > 0 ? 1 : -1));
 
-  // If compare points directly to the phi we need to adjust
-  // the compare so that it points to the incr. Limit have
-  // to be adjusted to keep trip count the same and the
-  // adjusted limit should be checked for int overflow.
-  Node* adjusted_limit = limit;
-  if (phi_incr != nullptr) {
-    stride_m  += stride_con;
-  }
+  // Accounting for (LE3) and (LE4) where we use pre-incremented phis in the loop exit check.
+  const jlong limit_correction_for_pre_iv_exit_check = (phi_incr != nullptr) ? stride_con : 0;
 
-  Node *init_control = x->in(LoopNode::EntryControl);
+  // Accounting for (LE2) and (LE4) where we use <= or >= in the loop exit check.
+  const bool includes_limit = (bt == BoolTest::le || bt == BoolTest::ge);
+  const jlong limit_correction_for_le_ge_exit_check = (includes_limit ? (stride_con > 0 ? 1 : -1) : 0);
 
-  int sov = check_stride_overflow(stride_m, limit_t, iv_bt);
+  const jlong limit_correction = limit_correction_for_pre_iv_exit_check + limit_correction_for_le_ge_exit_check;
+  const jlong canonicalized_correction = stride_con + (stride_con > 0 ? -1 : 1);
+  const jlong final_correction = canonicalized_correction + limit_correction;
+
+  int sov = check_stride_overflow(final_correction, limit_t, iv_bt);
+  Node* init_control = x->in(LoopNode::EntryControl);
+
   // If sov==0, limit's type always satisfies the condition, for
   // example, when it is an array length.
   if (sov != 0) {
     if (sov < 0) {
       return false;  // Bailout: integer overflow is certain.
     }
+    // (1) Loop Limit Check Predicate is required because we could not statically prove that
+    //     limit + final_correction = adjusted_limit - 1 + stride <= max_int
     assert(!x->as_Loop()->is_loop_nest_inner_loop(), "loop was transformed");
-    // Generate loop's limit check.
-    // Loop limit check predicate should be near the loop.
     const Predicates predicates(init_control);
     const PredicateBlock* loop_limit_check_predicate_block = predicates.loop_limit_check_predicate_block();
     if (!loop_limit_check_predicate_block->has_parse_predicate()) {
-      // The limit check predicate is not generated if this method trapped here before.
+      // The Loop Limit Check Parse Predicate is not generated if this method trapped here before.
 #ifdef ASSERT
       if (TraceLoopLimitCheck) {
         tty->print("Missing Loop Limit Check Parse Predicate:");
@@ -1835,67 +1990,81 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
     Node* bol;
 
     if (stride_con > 0) {
-      cmp_limit = CmpNode::make(limit, _igvn.integercon(max_signed_integer(iv_bt) - stride_m, iv_bt), iv_bt);
+      cmp_limit = CmpNode::make(limit, _igvn.integercon(max_signed_integer(iv_bt) - final_correction, iv_bt), iv_bt);
       bol = new BoolNode(cmp_limit, BoolTest::le);
     } else {
-      cmp_limit = CmpNode::make(limit, _igvn.integercon(min_signed_integer(iv_bt) - stride_m, iv_bt), iv_bt);
+      cmp_limit = CmpNode::make(limit, _igvn.integercon(min_signed_integer(iv_bt) - final_correction, iv_bt), iv_bt);
       bol = new BoolNode(cmp_limit, BoolTest::ge);
     }
 
     insert_loop_limit_check_predicate(init_control->as_IfTrue(), cmp_limit, bol);
   }
 
-  // Now we need to canonicalize loop condition.
-  if (bt == BoolTest::ne) {
-    assert(stride_con == 1 || stride_con == -1, "simple increment only");
-    if (stride_con > 0 && init_t->hi_as_long() < limit_t->lo_as_long()) {
-      // 'ne' can be replaced with 'lt' only when init < limit.
-      bt = BoolTest::lt;
-    } else if (stride_con < 0 && init_t->lo_as_long() > limit_t->hi_as_long()) {
-      // 'ne' can be replaced with 'gt' only when init > limit.
-      bt = BoolTest::gt;
-    } else {
-      const Predicates predicates(init_control);
-      const PredicateBlock* loop_limit_check_predicate_block = predicates.loop_limit_check_predicate_block();
-      if (!loop_limit_check_predicate_block->has_parse_predicate()) {
-        // The limit check predicate is not generated if this method trapped here before.
+  // (2.3)
+  const bool init_plus_stride_could_overflow =
+          (stride_con > 0 && init_t->hi_as_long() > max_signed_integer(iv_bt) - stride_con) ||
+          (stride_con < 0 && init_t->lo_as_long() < min_signed_integer(iv_bt) - stride_con);
+  // (2.1)
+  const bool init_gte_limit = (stride_con > 0 && init_t->hi_as_long() >= limit_t->lo_as_long()) ||
+                              (stride_con < 0 && init_t->lo_as_long() <= limit_t->hi_as_long());
+
+  if (init_gte_limit && // (2.1)
+     ((bt == BoolTest::ne || init_plus_stride_could_overflow) && // (2.3)
+      !has_dominating_loop_limit_check(init_trip, limit, stride_con, iv_bt, init_control))) { // (2.2)
+    // (2) Iteration Loop Limit Check Predicate is required because neither (2.1), (2.2), nor (2.3) holds.
+    // We use the following condition:
+    // - stride > 0: init < limit
+    // - stride < 0: init > limit
+    //
+    // This predicate is always required if we have a non-equal-operator in the loop exit check (where stride = 1 is
+    // a requirement). We transform the loop exit check by using a less-than-operator. By doing so, we must always
+    // check that init < limit. Otherwise, we could have a different number of iterations at runtime.
+
+    const Predicates predicates(init_control);
+    const PredicateBlock* loop_limit_check_predicate_block = predicates.loop_limit_check_predicate_block();
+    if (!loop_limit_check_predicate_block->has_parse_predicate()) {
+      // The Loop Limit Check Parse Predicate is not generated if this method trapped here before.
 #ifdef ASSERT
-        if (TraceLoopLimitCheck) {
-          tty->print("Missing Loop Limit Check Parse Predicate:");
-          loop->dump_head();
-          x->dump(1);
-        }
+      if (TraceLoopLimitCheck) {
+        tty->print("Missing Loop Limit Check Parse Predicate:");
+        loop->dump_head();
+        x->dump(1);
+      }
 #endif
-        return false;
-      }
+      return false;
+    }
 
-      ParsePredicateNode* loop_limit_check_parse_predicate = loop_limit_check_predicate_block->parse_predicate();
-      Node* parse_predicate_entry = loop_limit_check_parse_predicate->in(0);
-      if (!is_dominator(get_ctrl(limit), parse_predicate_entry) ||
-          !is_dominator(get_ctrl(init_trip), parse_predicate_entry)) {
-        return false;
-      }
+    ParsePredicateNode* loop_limit_check_parse_predicate = loop_limit_check_predicate_block->parse_predicate();
+    Node* parse_predicate_entry = loop_limit_check_parse_predicate->in(0);
+    if (!is_dominator(get_ctrl(limit), parse_predicate_entry) ||
+        !is_dominator(get_ctrl(init_trip), parse_predicate_entry)) {
+      return false;
+    }
 
-      Node* cmp_limit;
-      Node* bol;
+    Node* cmp_limit;
+    Node* bol;
 
-      if (stride_con > 0) {
-        cmp_limit = CmpNode::make(init_trip, limit, iv_bt);
-        bol = new BoolNode(cmp_limit, BoolTest::lt);
-      } else {
-        cmp_limit = CmpNode::make(init_trip, limit, iv_bt);
-        bol = new BoolNode(cmp_limit, BoolTest::gt);
-      }
+    if (stride_con > 0) {
+      cmp_limit = CmpNode::make(init_trip, limit, iv_bt);
+      bol = new BoolNode(cmp_limit, BoolTest::lt);
+    } else {
+      cmp_limit = CmpNode::make(init_trip, limit, iv_bt);
+      bol = new BoolNode(cmp_limit, BoolTest::gt);
+    }
 
-      insert_loop_limit_check_predicate(init_control->as_IfTrue(), cmp_limit, bol);
+    insert_loop_limit_check_predicate(init_control->as_IfTrue(), cmp_limit, bol);
+  }
 
-      if (stride_con > 0) {
-        // 'ne' can be replaced with 'lt' only when init < limit.
-        bt = BoolTest::lt;
-      } else if (stride_con < 0) {
-        // 'ne' can be replaced with 'gt' only when init > limit.
-        bt = BoolTest::gt;
-      }
+  if (bt == BoolTest::ne) {
+    // Now we need to canonicalize the loop condition if it is 'ne'.
+    assert(stride_con == 1 || stride_con == -1, "simple increment only - checked before");
+    if (stride_con > 0) {
+      // 'ne' can be replaced with 'lt' only when init < limit. This is ensured by the inserted predicate above.
+      bt = BoolTest::lt;
+    } else {
+      assert(stride_con < 0, "must be");
+      // 'ne' can be replaced with 'gt' only when init > limit. This is ensured by the inserted predicate above.
+      bt = BoolTest::gt;
     }
   }
 
@@ -1940,6 +2109,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
   }
 #endif
 
+  Node* adjusted_limit = limit;
   if (phi_incr != nullptr) {
     // If compare points directly to the phi we need to adjust
     // the compare so that it points to the incr. Limit have
@@ -1953,7 +2123,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
     adjusted_limit = gvn->transform(AddNode::make(limit, stride, iv_bt));
   }
 
-  if (incl_limit) {
+  if (includes_limit) {
     // The limit check guaranties that 'limit <= (max_jint - stride)' so
     // we can convert 'i <= limit' to 'i < limit+1' since stride != 0.
     //
@@ -2132,6 +2302,37 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
   }
 
   return true;
+}
+
+// Check if there is a dominating loop limit check of the form 'init < limit' starting at the loop entry.
+// If there is one, then we do not need to create an additional Loop Limit Check Predicate.
+bool PhaseIdealLoop::has_dominating_loop_limit_check(Node* init_trip, Node* limit, const jlong stride_con,
+                                                     const BasicType iv_bt, Node* loop_entry) {
+  // Eagerly call transform() on the Cmp and Bool node to common them up if possible. This is required in order to
+  // successfully find a dominated test with the If node below.
+  Node* cmp_limit;
+  Node* bol;
+  if (stride_con > 0) {
+    cmp_limit = _igvn.transform(CmpNode::make(init_trip, limit, iv_bt));
+    bol = _igvn.transform(new BoolNode(cmp_limit, BoolTest::lt));
+  } else {
+    cmp_limit = _igvn.transform(CmpNode::make(init_trip, limit, iv_bt));
+    bol = _igvn.transform(new BoolNode(cmp_limit, BoolTest::gt));
+  }
+
+  // Check if there is already a dominating init < limit check. If so, we do not need a Loop Limit Check Predicate.
+  IfNode* iff = new IfNode(loop_entry, bol, PROB_MIN, COUNT_UNKNOWN);
+  // Also add fake IfProj nodes in order to call transform() on the newly created IfNode.
+  IfFalseNode* if_false = new IfFalseNode(iff);
+  IfTrueNode* if_true = new IfTrueNode(iff);
+  Node* dominated_iff = _igvn.transform(iff);
+  // ConI node? Found dominating test (IfNode::dominated_by() returns a ConI node).
+  const bool found_dominating_test = dominated_iff != nullptr && dominated_iff->is_ConI();
+
+  // Kill the If with its projections again in the next IGVN round by cutting it off from the graph.
+  _igvn.replace_input_of(iff, 0, C->top());
+  _igvn.replace_input_of(iff, 1, C->top());
+  return found_dominating_test;
 }
 
 //----------------------exact_limit-------------------------------------------

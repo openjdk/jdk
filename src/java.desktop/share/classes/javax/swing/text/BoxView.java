@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,10 +134,10 @@ public class BoxView extends CompositeView {
 
     /**
      * Determines if the layout is valid along the given axis.
-     * @return if the layout is valid along the given axis
      *
-     * @param axis either <code>View.X_AXIS</code> or <code>View.Y_AXIS</code>
-     *
+     * @param  axis either {@code View.X_AXIS} or {@code View.Y_AXIS}
+     * @return {@code true} if the layout is valid along the given axis,
+     *         otherwise {@code false}
      * @since 1.4
      */
     protected boolean isLayoutValid(int axis) {

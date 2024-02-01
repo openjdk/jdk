@@ -75,7 +75,7 @@ class AdvancedTransformationsTest {
         try (var in = StackMapGenerator.class.getResourceAsStream("StackMapGenerator.class")) {
             var cc = ClassFile.of();
             var clm = cc.parse(in.readAllBytes());
-            var remapped = cc.parse(cc.transform(clm, (clb, cle) -> {
+            cc.verify(cc.transform(clm, (clb, cle) -> {
                 if (cle instanceof MethodModel mm) {
                     clb.transformMethod(mm, (mb, me) -> {
                         if (me instanceof CodeModel com) {
@@ -99,7 +99,6 @@ class AdvancedTransformationsTest {
                 else
                     clb.with(cle);
             }));
-            remapped.verify(null);
         }
     }
 
@@ -115,12 +114,12 @@ class AdvancedTransformationsTest {
             var cc = ClassFile.of();
             var clm = cc.parse(in.readAllBytes());
             var remapped = cc.parse(ClassRemapper.of(map).remapClass(cc, clm));
-            assertEmpty(remapped.verify(
+            assertEmpty(ClassFile.of(ClassFile.ClassHierarchyResolverOption.of(
                     ClassHierarchyResolver.of(Set.of(ClassDesc.of("remapped.List")), Map.of(
                             ClassDesc.of("remapped.RemappedBytecode"), ConstantDescs.CD_Object,
                             ClassDesc.ofDescriptor(RawBytecodeHelper.class.descriptorString()), ClassDesc.of("remapped.RemappedBytecode")))
                                           .orElse(ClassHierarchyResolver.defaultResolver())
-                    , null)); //System.out::print));
+                    )).verify(remapped));
             remapped.fields().forEach(f -> f.findAttribute(Attributes.SIGNATURE).ifPresent(sa ->
                     verifySignature(f.fieldTypeSymbol(), sa.asTypeSignature())));
             remapped.methods().forEach(m -> m.findAttribute(Attributes.SIGNATURE).ifPresent(sa -> {
@@ -239,7 +238,7 @@ class AdvancedTransformationsTest {
         var instrumentor = cc.parse(AdvancedTransformationsTest.class.getResourceAsStream("AdvancedTransformationsTest$InstrumentorClass.class").readAllBytes());
         var target = cc.parse(AdvancedTransformationsTest.class.getResourceAsStream("AdvancedTransformationsTest$TargetClass.class").readAllBytes());
         var instrumentedBytes = instrument(target, instrumentor, mm -> mm.methodName().stringValue().equals("instrumentedMethod"));
-        assertEmpty(cc.parse(instrumentedBytes).verify(null)); //System.out::print));
+        assertEmpty(cc.verify(instrumentedBytes));
         var targetClass = new ByteArrayClassLoader(AdvancedTransformationsTest.class.getClassLoader(), "AdvancedTransformationsTest$TargetClass", instrumentedBytes).loadClass("AdvancedTransformationsTest$TargetClass");
         assertEquals(targetClass.getDeclaredMethod("instrumentedMethod", Boolean.class).invoke(targetClass.getDeclaredConstructor().newInstance(), false), 34);
     }

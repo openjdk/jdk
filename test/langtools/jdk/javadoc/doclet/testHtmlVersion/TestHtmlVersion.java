@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,12 +189,11 @@ public class TestHtmlVersion extends JavadocTester {
                     <nav role="navigation">
                     <!-- ========= START OF TOP NAVBAR ======= -->""",
                 """
+                    <nav role="navigation" class="toc" aria-label="Table of contents">
+                    <div class="toc-header">Contents&nbsp;""",
+                """
                     <main role="main">
                     <div class="header">""",
-                """
-                    <section class="packages">
-                    <h2 title="Contents">Contents</h2>
-                    """,
                 """
                     <section class="constants-summary" id="pkg">
                     <h2 title="pkg.*">pkg.*</h2>
@@ -297,6 +296,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <!-- ========= START OF TOP NAVBAR ======= -->""",
                 """
                     </header>
+                    <div class="main-grid">
                     <main role="main">""",
                 """
                     <footer role="contentinfo">""",

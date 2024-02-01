@@ -2066,14 +2066,21 @@ void MacroAssembler::membar(Membar_mask_bits order_constraint) {
   address last = code()->last_insn();
   if (last != nullptr && nativeInstruction_at(last)->is_Membar() && prev == last) {
     NativeMembar *bar = NativeMembar_at(prev);
-    // We are merging two memory barrier instructions.  On AArch64 we
-    // can do this simply by ORing them together.
-    bar->set_kind(bar->get_kind() | order_constraint);
-    BLOCK_COMMENT("merged membar");
-  } else {
-    code()->set_last_insn(pc());
-    dmb(Assembler::barrier(order_constraint));
+    // Don't promote DMB ST|DMB LD to DMB (a full barrier) because
+    // doing so would introduce a StoreLoad which the caller did not
+    // intend
+    if (AlwaysMergeDMB || bar->get_kind() == order_constraint
+        || bar->get_kind() == AnyAny
+        || order_constraint == AnyAny) {
+      // We are merging two memory barrier instructions.  On AArch64 we
+      // can do this simply by ORing them together.
+      bar->set_kind(bar->get_kind() | order_constraint);
+      BLOCK_COMMENT("merged membar");
+      return;
+    }
   }
+  code()->set_last_insn(pc());
+  dmb(Assembler::barrier(order_constraint));
 }
 
 bool MacroAssembler::try_merge_ldst(Register rt, const Address &adr, size_t size_in_bytes, bool is_store) {
@@ -4425,6 +4432,23 @@ void MacroAssembler::load_klass(Register dst, Register src) {
     decode_klass_not_null(dst);
   } else {
     ldr(dst, Address(src, oopDesc::klass_offset_in_bytes()));
+  }
+}
+
+void MacroAssembler::restore_cpu_control_state_after_jni(Register tmp1, Register tmp2) {
+  if (RestoreMXCSROnJNICalls) {
+    Label OK;
+    get_fpcr(tmp1);
+    mov(tmp2, tmp1);
+    // Set FPCR to the state we need. We do want Round to Nearest. We
+    // don't want non-IEEE rounding modes or floating-point traps.
+    bfi(tmp1, zr, 22, 4); // Clear DN, FZ, and Rmode
+    bfi(tmp1, zr, 8, 5);  // Clear exception-control bits (8-12)
+    bfi(tmp1, zr, 0, 2);  // Clear AH:FIZ
+    eor(tmp2, tmp1, tmp2);
+    cbz(tmp2, OK);        // Only reset FPCR if it's wrong
+    set_fpcr(tmp1);
+    bind(OK);
   }
 }
 
