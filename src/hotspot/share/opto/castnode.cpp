@@ -281,6 +281,15 @@ void CastIINode::dump_spec(outputStream* st) const {
 }
 #endif
 
+CastIINode* CastIINode::pin_array_access_node() const {
+  assert(_dependency == RegularDependency, "already pinned");
+  if (has_range_check()) {
+    return new CastIINode(in(0), in(1), bottom_type(), StrongDependency, has_range_check());
+  }
+  return nullptr;
+}
+
+
 const Type* CastLLNode::Value(PhaseGVN* phase) const {
   const Type* res = ConstraintCastNode::Value(phase);
   if (res == Type::TOP) {
@@ -459,6 +468,7 @@ Node* ConstraintCastNode::make_cast_for_type(Node* c, Node* in, const Type* type
     return new CastPPNode(c, in, type, dependency, types);
   }
   fatal("unreachable. Invalid cast type.");
+  return nullptr;
 }
 
 Node* ConstraintCastNode::optimize_integer_cast(PhaseGVN* phase, BasicType bt) {

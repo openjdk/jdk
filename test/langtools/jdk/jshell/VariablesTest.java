@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8144903 8177466 8191842 8211694 8213725 8239536 8257236 8252409 8294431 8322532
+ * @bug 8144903 8177466 8191842 8211694 8213725 8239536 8257236 8252409 8294431 8322003 8322532
  * @summary Tests for EvaluationState.variables
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -625,6 +625,17 @@ public class VariablesTest extends KullaTesting {
         assertAnalyze("Func f = _ -> 0; int i;",
                       "Func f = _ -> 0;",
                       " int i;", true);
+    }
+
+    public void intersectionTypeAsTypeArgument() { //JDK-8322003
+        assertEval("interface Shape {}");
+        assertEval("record Square(int edge) implements Shape {}");
+        assertEval("record Circle(int radius) implements Shape {}");
+        assertEval("java.util.function.Consumer<Shape> printShape = System.out::println;");
+        assertEval("Square square = new Square(1);");
+        assertEval("Circle circle = new Circle(1);");
+        assertEval("var shapes = java.util.List.of(square, circle);");
+        assertEval("shapes.forEach(printShape);");
     }
 
 }
