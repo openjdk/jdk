@@ -154,6 +154,16 @@
     return (UseAVX >= 2);
   }
 
+  // Does target support predicated operation emulation.
+  static bool supports_vector_predicate_op_emulation(int vopc, int vlen, BasicType bt) {
+    switch(vopc) {
+      case Op_LoadVectorGatherMasked:
+        return is_subword_type(bt) && VM_Version::supports_avx2();
+      default:
+        return false;
+    }
+  }
+
   // Does the CPU supports vector variable rotate instructions?
   static constexpr bool supports_vector_variable_rotates(void) {
     return true;

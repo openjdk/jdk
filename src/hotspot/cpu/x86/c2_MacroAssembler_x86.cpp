@@ -1687,9 +1687,14 @@ void C2_MacroAssembler::vgather8b_offset(BasicType elem_bt, XMMRegister dst, Reg
  * gets right shifted by two lane position.
  *
  */
-void C2_MacroAssembler::vgather_subword(BasicType elem_ty, XMMRegister dst,  Register base, Register idx_base,
-                                        Register offset, Register mask, XMMRegister xtmp1, XMMRegister xtmp2, XMMRegister xtmp3,
-                                        Register rtmp, Register midx, Register length, int vector_len, int vlen_enc) {
+
+void C2_MacroAssembler::vgather_subword(BasicType elem_ty, XMMRegister dst,
+                                        Register base, Register idx_base,
+                                        Register offset, Register mask,
+                                        XMMRegister xtmp1, XMMRegister xtmp2,
+                                        XMMRegister xtmp3, Register rtmp,
+                                        Register midx, Register length,
+                                        int vector_len, int vlen_enc) {
   assert(is_subword_type(elem_ty), "");
   Label GATHER8_LOOP;
   movl(length, vector_len);

@@ -302,6 +302,7 @@ bool LibraryCallKit::arch_supports_vector(int sopc, int num_elem, BasicType type
         is_supported = Matcher::match_rule_supported_vector_masked(sopc, num_elem, type);
       }
     }
+    is_supported |= Matcher::supports_vector_predicate_op_emulation(sopc, num_elem, type);
 
     if (!is_supported) {
     #ifndef PRODUCT
