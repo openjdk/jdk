@@ -442,7 +442,7 @@ class os: AllStatic {
 
   // Attempts to reserve the virtual memory at [addr, addr + bytes).
   // Does not overwrite existing mappings.
-  static char*  attempt_reserve_memory_at(char* addr, size_t bytes, bool executable = false);
+  static char*  attempt_reserve_memory_at(char* addr, size_t bytes, bool executable = false, MEMFLAGS flag = mtNone);
 
   // Given an address range [min, max), attempts to reserve memory within this area, with the given alignment.
   // If randomize is true, the location will be randomized.
@@ -497,7 +497,7 @@ class os: AllStatic {
   static char* map_memory_to_file(size_t size, int fd, MEMFLAGS flag = mtNone);
   static char* map_memory_to_file_aligned(size_t size, size_t alignment, int fd, MEMFLAGS flag = mtNone);
   static char* map_memory_to_file(char* base, size_t size, int fd);
-  static char* attempt_map_memory_to_file_at(char* base, size_t size, int fd);
+  static char* attempt_map_memory_to_file_at(char* base, size_t size, int fd, MEMFLAGS flag = mtNone);
   // Replace existing reserved memory with file mapping
   static char* replace_existing_mapping_with_file_mapping(char* base, size_t size, int fd);
 

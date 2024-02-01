@@ -1816,10 +1816,10 @@ char* os::reserve_memory(size_t bytes, bool executable, MEMFLAGS flags) {
   return result;
 }
 
-char* os::attempt_reserve_memory_at(char* addr, size_t bytes, bool executable) {
+char* os::attempt_reserve_memory_at(char* addr, size_t bytes, bool executable, MEMFLAGS flag) {
   char* result = SimulateFullAddressSpace ? nullptr : pd_attempt_reserve_memory_at(addr, bytes, executable);
   if (result != nullptr) {
-    MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
+    MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC, flag);
     log_debug(os)("Reserved memory at " INTPTR_FORMAT " for " SIZE_FORMAT " bytes.", p2i(addr), bytes);
   } else {
     log_debug(os)("Attempt to reserve memory at " INTPTR_FORMAT " for "
@@ -2141,10 +2141,10 @@ char* os::map_memory_to_file(size_t bytes, int file_desc, MEMFLAGS flag) {
   return result;
 }
 
-char* os::attempt_map_memory_to_file_at(char* addr, size_t bytes, int file_desc) {
+char* os::attempt_map_memory_to_file_at(char* addr, size_t bytes, int file_desc, MEMFLAGS flag) {
   char* result = pd_attempt_map_memory_to_file_at(addr, bytes, file_desc);
   if (result != nullptr) {
-    MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC);
+    MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC, flag);
   }
   return result;
 }
