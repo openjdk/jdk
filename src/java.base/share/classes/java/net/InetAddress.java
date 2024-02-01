@@ -194,7 +194,7 @@ import static java.net.spi.InetAddressResolver.LookupPolicy.IPV6_FIRST;
  * caching. Likewise, a system admin can configure a different
  * negative caching TTL value when needed or extend the usage of the stale data.
  *
- * <p> Three Java {@link java.security.Security security} properties control
+ * <p> Three Java {@linkplain java.security.Security security} properties control
  * the TTL values used for positive and negative host name resolution caching:
  *
  * <dl style="margin-left:2em">
