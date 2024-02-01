@@ -80,7 +80,7 @@ static void verify_int_field(JNIEnv* env, jclass klass, jfieldID fid) {
 
     if (strcmp(sig, "I") != 0) {
         printf("ERROR: field '%s' is not int ('%s')\n", name, sig);
-        fflush(0);
+        fflush(nullptr);
         fatal(env, "unexpected field type");
     }
 
@@ -90,24 +90,25 @@ static void verify_int_field(JNIEnv* env, jclass klass, jfieldID fid) {
 
 
 /*
-Per jvmtiHeapReferenceInfoField spec:
+Per jvmtiHeapReferenceInfoField spec (reference information for
+JVMTI_HEAP_REFERENCE_FIELD and JVMTI_HEAP_REFERENCE_STATIC_FIELD references.):
 If the referrer object is not an interface, then the field indices are determined as follows:
-    make a list of all the fields in C and its superclasses,
-    starting with all the fields in java.lang.Object and ending with all the fields in C.
-    Within this list, put the fields for a given class in the order returned by GetClassFields.
-    Assign the fields in this list indices n, n+1, ..., in order,
-    where n is the count of the fields in all the interfaces implemented by C.
-    Note that C implements all interfaces directly implemented by its superclasses;
-    as well as all superinterfaces of these interfaces.
+- make a list of all the fields in C and its superclasses,
+  starting with all the fields in java.lang.Object and ending with all the fields in C.
+- Within this list, put the fields for a given class in the order returned by GetClassFields.
+- Assign the fields in this list indices n, n+1, ..., in order,
+  where n is the count of the fields in all the interfaces implemented by C.
+  Note that C implements all interfaces directly implemented by its superclasses;
+  as well as all superinterfaces of these interfaces.
 If the referrer object is an interface, then the field indices are determined as follows:
-    make a list of the fields directly declared in I.
-    Within this list, put the fields in the order returned by GetClassFields.
-    Assign the fields in this list indices n, n+1, ..., in order,
-    where n is the count of the fields in all the superinterfaces of I.
+- make a list of the fields directly declared in I.
+- Within this list, put the fields in the order returned by GetClassFields.
+- Assign the fields in this list indices n, n+1, ..., in order,
+  where n is the count of the fields in all the superinterfaces of I.
 
-'Klass' struct contains all required data to calculate field indeces.
+'Klass' struct contains all required data to calculate field indices.
 Also contains static field values.
-For each test class 'Klass' struct is created and pointer to it set as a tag for jclass object.
+For each test class, the 'Klass' struct is created and a pointer to it is set as the jclass's tag.
 */
 
 struct Klass {
@@ -150,7 +151,7 @@ private:
 };
 
 /*
-For each test object 'Object' struct is created and pointer to it set as a tag for jobject.
+For each test object, the 'Object' struct is created and a pointer to it is set as the jobject's tag.
 */
 struct Object {
     Klass* klass;
@@ -221,8 +222,8 @@ static jint get_max_interface_count(JNIEnv* env, jclass klass) {
     return result;
 }
 
-// Explores all interfaces implemented by 'klass' sorting out duplicates
-// and store them in the 'arr' starting from 'index'.
+// Explores all interfaces implemented by 'klass', sorts out duplicates,
+// and stores the interfaces in the 'arr' starting from 'index'.
 // Returns number of the interfaces added.
 static jint fill_interfaces(Klass** arr, jint index, JNIEnv* env, jclass klass) {
     jint interface_count;
@@ -345,9 +346,7 @@ Object* Object::explore(JNIEnv* env, jobject obj) {
     }
 
     jclass obj_klass = env->GetObjectClass(obj);
-
     Klass* klass = Klass::explore(env, obj_klass);
-
     jint* values = (jint*)allocate(env, sizeof(jint) * klass->field_count);
 
     for (jint i = 0; i < klass->field_count; i++) {
@@ -361,7 +360,6 @@ Object* Object::explore(JNIEnv* env, jobject obj) {
     }
 
     Object* result = (Object*)allocate(env, sizeof(Object));
-
     result->klass = klass;
     result->field_values = values;
 
@@ -377,7 +375,7 @@ JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) 
     jint res = jvm->GetEnv((void **)&jvmti, JVMTI_VERSION_1_1);
     if (res != JNI_OK || jvmti == nullptr) {
         printf("jvm->GetEnv failed\n");
-        fflush(0);
+        fflush(nullptr);
         return JNI_ERR;
     }
 
@@ -387,7 +385,7 @@ JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) 
     jvmtiError err = jvmti->AddCapabilities(&caps);
     if (err != JVMTI_ERROR_NONE) {
         printf("AddCapabilities failed: %s (%d)\n", TranslateError(err), err);
-        fflush(0);
+        fflush(nullptr);
         return JNI_ERR;
     }
 
@@ -481,7 +479,7 @@ jint JNICALL primitiveFieldCallback(
         test_failed = true;
     }
 
-    fflush(0);
+    fflush(nullptr);
     return 0;
 }
 
@@ -489,7 +487,7 @@ jint JNICALL primitiveFieldCallback(
 JNIEXPORT void JNICALL
 Java_FieldIndicesTest_prepare(JNIEnv *env, jclass cls, jobject testObj) {
     Object::explore(env, testObj);
-    fflush(0);
+    fflush(nullptr);
 }
 
 JNIEXPORT void JNICALL
@@ -506,7 +504,7 @@ Java_FieldIndicesTest_test(JNIEnv *env, jclass cls, jobject rootObject) {
                                 &heapCallbacks,
                                 nullptr),
         "FollowReferences failed");
-    fflush(0);
+    fflush(nullptr);
 }
 
 JNIEXPORT jboolean JNICALL
