@@ -173,7 +173,6 @@ public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
         }
 
         LWCToolkit.targetDisposedPeer(target, this);
-//        target = null;
 
         super.dispose();
     }
@@ -215,13 +214,11 @@ public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
 
         CImage cimage = CImage.getCreator().createFromImage(image, observer);
         boolean imageAutoSize = target.isImageAutoSize();
-        if (cimage != null) {
-            cimage.execute(imagePtr -> {
-                execute(ptr -> {
-                    setNativeImage(ptr, imagePtr, imageAutoSize, useTemplateImages);
-                });
+        cimage.execute(imagePtr -> {
+            execute(ptr -> {
+                setNativeImage(ptr, imagePtr, imageAutoSize, useTemplateImages);
             });
-        }
+        });
     }
 
     private native void setNativeImage(final long model, final long nsimage, final boolean autosize, final boolean template);
