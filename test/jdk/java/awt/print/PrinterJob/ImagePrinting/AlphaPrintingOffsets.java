@@ -40,37 +40,52 @@ import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.standard.Sides;
 import javax.swing.JFrame;
-
+import jtreg.SkippedException;
 
 /*
  * @test
  * @bug 8307246
  * @key printer
  * @library ../../../regtesthelpers
+ * @library /test/lib
  * @build PassFailJFrame
+ * @build jtreg.SkippedException
  * @summary Test for comparing offsets of images drawn with opaque and translucent colors printed in all orientations
- * @run main/manual AlphaPrintingOffsets
+ * @run main/manual AlphaPrintingOffsets testAlpha
  */
 
 public class AlphaPrintingOffsets {
     private static final String INSTRUCTIONS =
-            "This test prints 6 pages with same image except text messages. \n" +
                     "Tested bug occurs only on-paper printing so you mustn't use PDF printer\n" +
                     "1.Java print dialog should appear.\n" +
                     "2. Press the Print button on the Java Print dialog.\n" +
-                    "3. Check that 6 pages have the same image except text messages.\n" +
+                    "3. Please check the page margin rectangle are properly drawn and visible on all sides on all pages.\n" +
                     "If so, press PASS, else press FAIL.";
+
+    private static boolean isAlphaTestModeSet = false;
+
+    public static boolean getAlphaTestModeSet() {
+        return isAlphaTestModeSet;
+    }
 
     public static void main(String[] args) throws Exception {
         if (PrinterJob.lookupPrintServices().length > 0) {
 
-            PassFailJFrame.builder().instructions(INSTRUCTIONS)
+            String instructionsHeader = "This test prints 6 pages with same image except text messages. \n";
+            if (args.length > 0)
+                isAlphaTestModeSet = args[0].equals("testAlpha");
+            
+            if(isAlphaTestModeSet)
+                instructionsHeader = "This test prints 2 pages with same image except text messages. \n";
+            
+            PassFailJFrame.builder().instructions(instructionsHeader + INSTRUCTIONS)
                     .testUI(() -> createTestUI()).build().awaitAndCheck();
 
         } else {
             System.out.println("Printer not configured or available."
                     + " Test cannot continue.");
-            PassFailJFrame.forcePass();
+            throw new SkippedException("Printer not configured or available."
+                    + " Test cannot continue.");
         }
 
     }
@@ -112,15 +127,23 @@ public class AlphaPrintingOffsets {
         Printable printableOpaque = new CustomPrintable(255);
         Printable printableTransparent = new CustomPrintable(254);
 
-        Book book = new Book();
-        book.append(printableOpaque, pageFormatP);
-        book.append(printableTransparent, pageFormatP);
-        book.append(printableOpaque, pageFormatL);
-        book.append(printableTransparent, pageFormatL);
-        book.append(printableOpaque, pageFormatRL);
-        book.append(printableTransparent, pageFormatRL);
-        printerJob.setPageable(book);
+        Book bookNoAlphaTest = new Book();
+        bookNoAlphaTest.append(printableOpaque, pageFormatP);
+        bookNoAlphaTest.append(printableTransparent, pageFormatP);
+        bookNoAlphaTest.append(printableOpaque, pageFormatL);
+        bookNoAlphaTest.append(printableTransparent, pageFormatL);
+        bookNoAlphaTest.append(printableOpaque, pageFormatRL);
+        bookNoAlphaTest.append(printableTransparent, pageFormatRL);
 
+        Book bookAlphaTest = new Book();
+        bookAlphaTest.append(printableTransparent, pageFormatL);
+        bookAlphaTest.append(printableTransparent, pageFormatRL);
+
+        if(isAlphaTestModeSet)
+            printerJob.setPageable(bookAlphaTest);
+        else
+            printerJob.setPageable(bookNoAlphaTest);
+        
         PrintRequestAttributeSet aset = new HashPrintRequestAttributeSet();
         aset.add(Sides.ONE_SIDED);
 
@@ -171,8 +194,9 @@ class CustomPrintable implements Printable {
         drawRectangle(g, pageFormat.getImageableX(), pageFormat.getImageableY(),
                 pageFormat.getImageableWidth(), pageFormat.getImageableHeight());
 
-        drawSmallRectangle(g, pageFormat.getImageableX(), pageFormat.getImageableY(),
-                pageFormat.getImageableWidth(), pageFormat.getImageableHeight());
+        if(AlphaPrintingOffsets.getAlphaTestModeSet())
+            drawSmallRectangle(g, pageFormat.getImageableX(), pageFormat.getImageableY(),
+                    pageFormat.getImageableWidth(), pageFormat.getImageableHeight());
 
         drawMsg(g, 300, 300, pageFormat.getOrientation());
         return Printable.PAGE_EXISTS;
