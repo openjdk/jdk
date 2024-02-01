@@ -201,14 +201,14 @@ public class InvariantCodeMotionReassociateCmp {
     }
 
     @Check(test = "leDontReassociate")
-    public void checkLeDontReassociate(int returnValue, TestInfo info) {
+    public void checkLeDontReassociate(int returnValue) {
         if (returnValue != 0) {
             throw new RuntimeException("Illegal reassociation");
         }
     }
 
     @Test
-    @Arguments({Argument.NUMBER_42, Argument.MIN})
+    @Arguments({Argument.DEFAULT, Argument.NUMBER_42})
     @IR(failOn = {IRNode.SUB_I})
     public int gtDontReassociate(int inv1, int inv2) {
         int i = 0;
@@ -222,14 +222,14 @@ public class InvariantCodeMotionReassociateCmp {
     }
 
     @Check(test = "gtDontReassociate")
-    public void checkGtDontReassociate(int returnValue, TestInfo info) {
-        if (returnValue != 0) {
+    public void checkGtDontReassociate(int returnValue) {
+        if (returnValue != 43) {
             throw new RuntimeException("Illegal reassociation");
         }
     }
 
     @Test
-    @Arguments({Argument.NUMBER_42, Argument.MIN})
+    @Arguments({Argument.DEFAULT, Argument.NUMBER_42})
     @IR(failOn = {IRNode.SUB_I})
     public int geDontReassociate(int inv1, int inv2) {
         int i = 0;
@@ -243,11 +243,10 @@ public class InvariantCodeMotionReassociateCmp {
     }
 
     @Check(test = "geDontReassociate")
-    public void checkGeDontReassociate(int returnValue, TestInfo info) {
-        if (returnValue != 0) {
+    public void checkGeDontReassociate(int returnValue) {
+        if (returnValue != 42) {
             throw new RuntimeException("Illegal reassociation");
         }
     }
-
 }
 
