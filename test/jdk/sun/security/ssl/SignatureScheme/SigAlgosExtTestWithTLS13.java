@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -79,7 +80,7 @@ public class SigAlgosExtTestWithTLS13 extends SSLSocketTemplate {
             }
         } catch (SSLHandshakeException e) {
             if (expectFail && e.getMessage().equals(
-                    "No supported signature algorithm")) {
+                    "(handshake_failure) No supported signature algorithm")) {
                 System.out.println("Expected SSLHandshakeException");
             } else {
                 throw e;
