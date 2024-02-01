@@ -5031,28 +5031,26 @@ class StubGenerator: public StubCodeGenerator {
     address start = __ pc();
     __ enter();
 
+    RegSet saved_regs = RegSet::range(x18, x27);
+    if (multi_block) {
+      // use x9 as src below.
+      saved_regs += RegSet::of(x9);
+    }
+    __ push_reg(saved_regs, sp);
+
     // c_rarg0 - c_rarg3: x10 - x13
     Register buf    = c_rarg0;
     Register state  = c_rarg1;
     Register offset = c_rarg2;
-    // use src to contain the original start point of the array,
-    // reuse offset register here.
-    Register src    = offset;
     Register limit  = c_rarg3;
+    // use src to contain the original start point of the array.
+    Register src    = x9;
 
     if (multi_block) {
       __ sub(limit, limit, offset);
       __ add(limit, limit, buf);
       __ sub(src, buf, offset);
     }
-
-    RegSet saved_regs = RegSet::range(x18, x27);
-    if (multi_block) {
-      // put original start point of the array) on stack,
-      // as we run out of registers.
-      saved_regs += RegSet::of(src);
-    }
-    __ push_reg(saved_regs, sp);
 
     // [args-reg]:  x14 - x17
     // [temp-reg]:  x28 - x31
@@ -5142,12 +5140,12 @@ class StubGenerator: public StubCodeGenerator {
     __ sd(c, Address(state, 8));
     __ sw(e, Address(state, 16));
 
-    __ pop_reg(saved_regs, sp);
-
     // return offset
     if (multi_block) {
       __ sub(c_rarg0, buf, src);
     }
+
+    __ pop_reg(saved_regs, sp);
 
     __ leave();
     __ ret();
