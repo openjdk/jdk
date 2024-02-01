@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -351,7 +351,7 @@ class RevocationChecker extends PKIXRevocationChecker {
     {
         if (debug != null) {
             debug.println("RevocationChecker.check: checking cert" +
-                "\n  SN: " + Debug.toHexString(xcert.getSerialNumber()) +
+                "\n  SN: " + Debug.toString(xcert.getSerialNumber()) +
                 "\n  Subject: " + xcert.getSubjectX500Principal() +
                 "\n  Issuer: " + xcert.getIssuerX500Principal());
         }
@@ -642,7 +642,7 @@ class RevocationChecker extends PKIXRevocationChecker {
             debug.println("RevocationChecker.checkApprovedCRLs() " +
                           "starting the final sweep...");
             debug.println("RevocationChecker.checkApprovedCRLs()" +
-                          " cert SN: " + sn.toString());
+                          " cert SN: " + Debug.toString(sn));
         }
 
         CRLReason reasonCode = CRLReason.UNSPECIFIED;

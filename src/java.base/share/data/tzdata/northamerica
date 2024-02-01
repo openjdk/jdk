@@ -1,3 +1,4 @@
+#
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -1475,7 +1476,7 @@ Rule	StJohns	1989	2006	-	Apr	Sun>=1	0:01	1:00	D
 Rule	StJohns	2007	2011	-	Mar	Sun>=8	0:01	1:00	D
 Rule	StJohns	2007	2010	-	Nov	Sun>=1	0:01	0	S
 #
-# St John's has an apostrophe, but Posix file names can't have apostrophes.
+# St John's has an apostrophe, but POSIX file names can't have apostrophes.
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/St_Johns	-3:30:52 -	LMT	1884
 			-3:30:52 StJohns N%sT	1918

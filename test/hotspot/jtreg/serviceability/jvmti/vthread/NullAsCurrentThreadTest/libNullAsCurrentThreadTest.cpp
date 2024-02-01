@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 extern "C" {
 
 static const jint MAX_FRAME_CNT = 30;
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static int vt_support_enabled = 0;
 static jboolean failed_status = JNI_FALSE;
 
@@ -49,16 +49,16 @@ checkStackTraces(jvmtiEnv* jvmti, JNIEnv* jni, jvmtiFrameInfo* frames0, jvmtiFra
   for (int idx = 0; idx < cnt; idx++) {
     jmethodID method0 = frames0[idx].method;
     jmethodID method1 = frames1[idx].method;
-    char* name0 = NULL;
-    char* name1 = NULL;
-    char* sign0 = NULL;
-    char* sign1 = NULL;
+    char* name0 = nullptr;
+    char* name1 = nullptr;
+    char* sign0 = nullptr;
+    char* sign1 = nullptr;
 
-    err = jvmti->GetMethodName(method0, &name0, &sign0, NULL);
+    err = jvmti->GetMethodName(method0, &name0, &sign0, nullptr);
     check_jvmti_status(jni, err, "GetMethodName");
 
     if (method0 != method1) {
-      err = jvmti->GetMethodName(method1, &name1, &sign1, NULL);
+      err = jvmti->GetMethodName(method1, &name1, &sign1, nullptr);
       check_jvmti_status(jni, err, "GetMethodName");
 
       failed_status = JNI_TRUE;
@@ -80,13 +80,13 @@ testGetThreadInfo(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
   jvmtiThreadInfo inf0;
   jvmtiThreadInfo inf1;
 
-  err = jvmti->GetThreadInfo(NULL, &inf0);
+  err = jvmti->GetThreadInfo(nullptr, &inf0);
   check(jni, "GetThreadInfo", err);
 
   err = jvmti->GetThreadInfo(thread, &inf1);
   check(jni, "GetThreadInfo", err);
 
-  const char* name = (inf0.name == NULL) ? "<Unnamed thread>" : inf0.name;
+  const char* name = (inf0.name == nullptr) ? "<Unnamed thread>" : inf0.name;
   LOG("Agent: GetThreadInfo: current thread: %s\n", name);
 
   if (strcmp(inf0.name, inf1.name) != 0) {
@@ -121,7 +121,7 @@ testGetThreadState(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
   jint state0 = 0;
   jint state1 = 0;
 
-  err = jvmti->GetThreadState(NULL, &state0);
+  err = jvmti->GetThreadState(nullptr, &state0);
   check_jvmti_status(jni, err, "GetThreadState");
 
   err = jvmti->GetThreadState(thread, &state1);
@@ -145,7 +145,7 @@ testGetFrameCount(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
   err = jvmti->GetFrameCount(thread, &count0);
   check_jvmti_status(jni, err,"GetFrameCount");
 
-  err = jvmti->GetFrameCount(NULL, &count1);
+  err = jvmti->GetFrameCount(nullptr, &count1);
   check_jvmti_status(jni, err,"GetFrameCount");
 
   if (count0 != count1) {
@@ -163,24 +163,24 @@ testGetFrameLocation(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
   const jint DEPTH = 1;
   jlocation loc0 = 0;
   jlocation loc1 = 0;
-  jmethodID method0 = NULL;
-  jmethodID method1 = NULL;
-  char* name0 = NULL;
-  char* name1 = NULL;
-  char* sign0 = NULL;
-  char* sign1 = NULL;
+  jmethodID method0 = nullptr;
+  jmethodID method1 = nullptr;
+  char* name0 = nullptr;
+  char* name1 = nullptr;
+  char* sign0 = nullptr;
+  char* sign1 = nullptr;
 
-  err = jvmti->GetFrameLocation(NULL, DEPTH, &method0, &loc0);
+  err = jvmti->GetFrameLocation(nullptr, DEPTH, &method0, &loc0);
   check_jvmti_status(jni, err, "GetFrameLocation");
 
   err = jvmti->GetFrameLocation(thread, DEPTH, &method1, &loc1);
   check_jvmti_status(jni, err, "GetFrameLocation");
 
-  err = jvmti->GetMethodName(method0, &name0, &sign0, NULL);
+  err = jvmti->GetMethodName(method0, &name0, &sign0, nullptr);
   check_jvmti_status(jni, err, "GetMethodName");
 
   if (method0 != method1) {
-    err = jvmti->GetMethodName(method1, &name1, &sign1, NULL);
+    err = jvmti->GetMethodName(method1, &name1, &sign1, nullptr);
     check_jvmti_status(jni, err, "GetMethodName");
 
     failed_status = JNI_TRUE;
@@ -207,7 +207,7 @@ testGetStackTrace(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
   memset(frames0, 0, sizeof(frames0));
   memset(frames1, 0, sizeof(frames1));
 
-  err = jvmti->GetStackTrace(NULL, 0, MAX_FRAME_CNT, frames0, &count0);
+  err = jvmti->GetStackTrace(nullptr, 0, MAX_FRAME_CNT, frames0, &count0);
   check_jvmti_status(jni, err, "GetStackTrace");
 
   err = jvmti->GetStackTrace(thread, 0, MAX_FRAME_CNT, frames1, &count1);
@@ -226,8 +226,8 @@ testGetOwnedMonitorInfo(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
   jvmtiError err;
   jint count0 = 0;
   jint count1 = 0;
-  jobject* monitors0 = NULL;
-  jobject* monitors1 = NULL;
+  jobject* monitors0 = nullptr;
+  jobject* monitors1 = nullptr;
 
   err = jvmti->GetOwnedMonitorInfo(thread, &count0, &monitors0);
   check_jvmti_status(jni, err, "GetOwnedMonitorInfo");
@@ -263,10 +263,10 @@ testGetOwnedMonitorStackDepthInfo(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) 
   jvmtiError err;
   jint count0 = 0;
   jint count1 = 0;
-  jvmtiMonitorStackDepthInfo* inf0 = NULL;
-  jvmtiMonitorStackDepthInfo* inf1 = NULL;
+  jvmtiMonitorStackDepthInfo* inf0 = nullptr;
+  jvmtiMonitorStackDepthInfo* inf1 = nullptr;
 
-  err = jvmti->GetOwnedMonitorStackDepthInfo(NULL, &count0, &inf0);
+  err = jvmti->GetOwnedMonitorStackDepthInfo(nullptr, &count0, &inf0);
   check_jvmti_status(jni, err, "GetOwnedMonitorStackDepthInfo");
 
   err = jvmti->GetOwnedMonitorStackDepthInfo(thread, &count1, &inf1);
@@ -302,10 +302,10 @@ testGetOwnedMonitorStackDepthInfo(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) 
 static void
 testGetCurrentContendedMonitor(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
   jvmtiError err;
-  jobject monitor0 = NULL;
-  jobject monitor1 = NULL;
+  jobject monitor0 = nullptr;
+  jobject monitor1 = nullptr;
 
-  err = jvmti->GetCurrentContendedMonitor(NULL, &monitor0);
+  err = jvmti->GetCurrentContendedMonitor(nullptr, &monitor0);
   check_jvmti_status(jni, err, "GetCurrentContendedMonitor");
 
   err = jvmti->GetCurrentContendedMonitor(thread, &monitor1);
@@ -321,17 +321,17 @@ testGetCurrentContendedMonitor(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
 }
 
 /*
- * Execute JVMTI functions with NULL jthread and check the result is correct.
+ * Execute JVMTI functions with nullptr jthread and check the result is correct.
  */
 JNIEXPORT void JNICALL
 Java_NullAsCurrentThreadTest_testJvmtiFunctions(JNIEnv *jni, jclass cls) {
   jvmtiError err;
-  jthread cur_thr = NULL;
+  jthread cur_thr = nullptr;
 
   err = jvmti->GetCurrentThread(&cur_thr);
   check(jni, "GetCurrentThread", err);
 
-  LOG("Testing JMTI functions accepting NULL jthread as current thread\n");
+  LOG("Testing JMTI functions accepting null jthread as current thread\n");
 
   testGetThreadInfo(jvmti, jni, cur_thr);
   testGetThreadState(jvmti, jni, cur_thr);
@@ -395,7 +395,7 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
     if (err != JVMTI_ERROR_NONE) {
       LOG("Agent_OnLoad: error in JVMTI SetEventCallbacks: %d\n", err);
     }
-    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, EXT_EVENT_VIRTUAL_THREAD_MOUNT, NULL);
+    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, EXT_EVENT_VIRTUAL_THREAD_MOUNT, nullptr);
     if (err != JVMTI_ERROR_NONE) {
       LOG("Agent_OnLoad: error in JVMTI SetEventNotificationMode: %d\n", err);
     }

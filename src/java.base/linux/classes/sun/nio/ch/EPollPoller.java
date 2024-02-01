@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,8 +62,11 @@ class EPollPoller extends Poller {
     }
 
     @Override
-    void implDeregister(int fdVal) {
-        EPoll.ctl(epfd, EPOLL_CTL_DEL, fdVal, 0);
+    void implDeregister(int fdVal, boolean polled) {
+        // event is disabled if already polled
+        if (!polled) {
+            EPoll.ctl(epfd, EPOLL_CTL_DEL, fdVal, 0);
+        }
     }
 
     @Override

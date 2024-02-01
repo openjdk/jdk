@@ -29,9 +29,8 @@
 #include "memory/memRegion.hpp"
 #include "oops/oop.hpp"
 
-class DirtyCardToOopClosure;
-class Generation;
 class Space;
+class TenuredGeneration;
 class TenuredSpace;
 
 // This RemSet uses a card table both as shared data structure
@@ -41,9 +40,27 @@ class CardTableRS : public CardTable {
   friend class VMStructs;
   // Below are private classes used in impl.
   friend class VerifyCTSpaceClosure;
-  friend class ClearNoncleanCardWrapper;
 
   void verify_space(Space* s, HeapWord* gen_start);
+
+  static bool is_dirty(const CardValue* const v) {
+    return !is_clean(v);
+  }
+
+  static bool is_clean(const CardValue* const v) {
+    return *v == clean_card_val();
+  }
+
+  static void clear_cards(CardValue* start, CardValue* end);
+
+  static CardValue* find_first_dirty_card(CardValue* start_card,
+                                          CardValue* end_card);
+
+  template<typename Func>
+  CardValue* find_first_clean_card(CardValue* start_card,
+                                   CardValue* end_card,
+                                   CardTableRS* ct,
+                                   Func& object_start);
 
 public:
   CardTableRS(MemRegion whole_heap);
@@ -57,17 +74,13 @@ public:
     *byte = dirty_card_val();
   }
 
-  bool is_aligned(HeapWord* addr) {
-    return is_card_aligned(addr);
-  }
-
   void verify();
 
   // Update old gen cards to maintain old-to-young-pointer invariant: Clear
   // the old generation card table completely if the young generation had been
   // completely evacuated, otherwise dirties the whole old generation to
   // conservatively not loose any old-to-young pointer.
-  void maintain_old_to_young_invariant(Generation* old_gen, bool is_young_gen_empty);
+  void maintain_old_to_young_invariant(TenuredGeneration* old_gen, bool is_young_gen_empty);
 
   // Iterate over the portion of the card-table which covers the given
   // region mr in the given space and apply cl to any dirty sub-regions

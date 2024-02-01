@@ -51,12 +51,12 @@ import static java.util.zip.ZipUtils.*;
  * {@code ZipInputStream} read methods such
  * as {@link #read(byte[], int, int) read} or {@link #readAllBytes() readAllBytes()}.
  * For example:
- *    {@snippet :
+ *    {@snippet lang="java" :
  *      Path jar = Path.of("foo.jar");
  *      try (InputStream is = Files.newInputStream(jar);
  *           ZipInputStream zis = new ZipInputStream(is)) {
  *          ZipEntry ze;
- *          while((ze= zis.getNextEntry()) != null) {
+ *          while ((ze = zis.getNextEntry()) != null) {
  *             var bytes = zis.readAllBytes();
  *             System.out.printf("Entry: %s, bytes read: %s%n", ze.getName(),
  *                     bytes.length);

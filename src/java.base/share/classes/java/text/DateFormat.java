@@ -119,12 +119,14 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * different options to these factory methods to control the length of the
  * result; from {@link #SHORT} to {@link #MEDIUM} to {@link #LONG} to {@link #FULL}. The exact result depends
  * on the locale, but generally:
- * <ul><li>{@link #SHORT} is completely numeric, such as {@code 12.13.52} or {@code 3:30pm}
+ * <ul><li>{@link #SHORT} is the shortest and mainly numeric, such as {@code 12.13.52} or {@code 3:30pm}
  * <li>{@link #MEDIUM} is longer, such as {@code Jan 12, 1952}
- * <li>{@link #LONG} is longer, such as {@code January 12, 1952} or {@code 3:30:32pm}
- * <li>{@link #FULL} is pretty completely specified, such as
+ * <li>{@link #LONG} is even longer, such as {@code January 12, 1952} or {@code 3:30:32pm}
+ * <li>{@link #FULL} is the longest, such as
  * {@code Tuesday, April 12, 1952 AD or 3:30:42pm PST}.
  * </ul>
+ * For those fields with text, typically abbreviated text form is used with {@link #MEDIUM} option,
+ * and full text form is used with {@link #LONG} and {@link #FULL} options.
  *
  * <p>You can also set the time zone on the format if you wish.
  * If you want even more control over the format or parsing,

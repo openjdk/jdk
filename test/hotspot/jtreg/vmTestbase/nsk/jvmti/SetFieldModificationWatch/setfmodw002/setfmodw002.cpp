@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jvmtiError err;
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv !\n");
         return JNI_ERR;
     }
@@ -95,7 +95,7 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         }
 
         err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-                JVMTI_EVENT_FIELD_MODIFICATION, NULL);
+                JVMTI_EVENT_FIELD_MODIFICATION, nullptr);
         if (err != JVMTI_ERROR_NONE) {
             printf("Failed to enable JVMTI_EVENT_FIELD_MODIFICATION: %s (%d)\n",
                    TranslateError(err), err);
@@ -115,8 +115,8 @@ Java_nsk_jvmti_SetFieldModificationWatch_setfmodw002_check(JNIEnv *env,
     jfieldID fid;
 
     fid = env->GetStaticFieldID(cls, "fld1", "I");
-    if (fid == NULL) {
-      printf("(GetStaticFieldID) returns NULL");
+    if (fid == nullptr) {
+      printf("(GetStaticFieldID) returns null");
       result = STATUS_FAILED;
       return result;
     }
@@ -129,14 +129,14 @@ Java_nsk_jvmti_SetFieldModificationWatch_setfmodw002_check(JNIEnv *env,
             printf(" %s (%d)\n", TranslateError(err), err);
         }
     } else {
-        err = jvmti->SetFieldModificationWatch(NULL, fid);
+        err = jvmti->SetFieldModificationWatch(nullptr, fid);
         if (err != JVMTI_ERROR_INVALID_CLASS) {
             result = STATUS_FAILED;
             printf("Failed to return JVMTI_ERROR_INVALID_CLASS: %s (%d)\n",
                    TranslateError(err), err);
         }
 
-        err = jvmti->SetFieldModificationWatch(cls, NULL);
+        err = jvmti->SetFieldModificationWatch(cls, nullptr);
         if (err != JVMTI_ERROR_INVALID_FIELDID) {
             result = STATUS_FAILED;
             printf("Failed to return JVMTI_ERROR_INVALID_FIELDID: %s (%d)\n",

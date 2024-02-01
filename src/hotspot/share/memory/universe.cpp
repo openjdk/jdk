@@ -68,6 +68,7 @@
 #include "prims/resolvedMethodTable.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/cpuTimeCounters.hpp"
 #include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
@@ -240,7 +241,7 @@ void Universe::metaspace_pointers_do(MetaspaceClosure* it) {
 
 #if INCLUDE_CDS_JAVA_HEAP
 void Universe::set_archived_basic_type_mirror_index(BasicType t, int index) {
-  assert(DumpSharedSpaces, "dump-time only");
+  assert(CDSConfig::is_dumping_heap(), "sanity");
   assert(!is_reference_type(t), "sanity");
   _archived_basic_type_mirror_indices[t] = index;
 }
@@ -337,7 +338,7 @@ void Universe::genesis(TRAPS) {
       // Initialization of the fillerArrayKlass must come before regular
       // int-TypeArrayKlass so that the int-Array mirror points to the
       // int-TypeArrayKlass.
-      _fillerArrayKlassObj = TypeArrayKlass::create_klass(T_INT, "Ljdk/internal/vm/FillerArray;", CHECK);
+      _fillerArrayKlassObj = TypeArrayKlass::create_klass(T_INT, "[Ljdk/internal/vm/FillerElement;", CHECK);
       for (int i = T_BOOLEAN; i < T_LONG+1; i++) {
         _typeArrayKlassObjs[i] = TypeArrayKlass::create_klass((BasicType)i, CHECK);
       }
@@ -484,7 +485,7 @@ void Universe::initialize_basic_type_mirrors(TRAPS) {
         CDS_JAVA_HEAP_ONLY(_archived_basic_type_mirror_indices[i] = -1);
       }
     }
-    if (DumpSharedSpaces) {
+    if (CDSConfig::is_dumping_heap()) {
       HeapShared::init_scratch_objects(CHECK);
     }
 }
@@ -781,6 +782,9 @@ jint universe_init() {
 
   GCLogPrecious::initialize();
 
+  // Initialize CPUTimeCounters object, which must be done before creation of the heap.
+  CPUTimeCounters::initialize();
+
 #ifdef _LP64
   MetaspaceShared::adjust_heap_sizes_for_dumping();
 #endif // _LP64
@@ -804,8 +808,6 @@ jint universe_init() {
     return JNI_EINVAL;
   }
 
-  // Create memory for metadata.  Must be after initializing heap for
-  // DumpSharedSpaces.
   ClassLoaderData::init_null_class_loader_data();
 
   // We have a heap so create the Method* caches before

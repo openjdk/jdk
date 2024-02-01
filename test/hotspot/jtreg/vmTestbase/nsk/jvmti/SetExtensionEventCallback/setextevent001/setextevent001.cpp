@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ callbackExtensionEvent(jvmtiEnv* jvmti, ...) {
 static int checkExtensions(jvmtiEnv* jvmti, const char phase[]) {
     int success = NSK_TRUE;
     jint extCount = 0;
-    jvmtiExtensionEventInfo* extList = NULL;
+    jvmtiExtensionEventInfo* extList = nullptr;
     int i;
 
     NSK_DISPLAY0("Get extension events list\n");
@@ -58,7 +58,7 @@ static int checkExtensions(jvmtiEnv* jvmti, const char phase[]) {
         NSK_DISPLAY1("# WARNING: No extension events implemented to check: %d\n", extCount);
     } else {
 
-        if (!NSK_VERIFY(extList != NULL))
+        if (!NSK_VERIFY(extList != nullptr))
             return NSK_FALSE;
 
         NSK_DISPLAY1("Set/clear callback for each extension event: %d events\n", (int)extCount);
@@ -76,9 +76,9 @@ static int checkExtensions(jvmtiEnv* jvmti, const char phase[]) {
             }
             NSK_DISPLAY0("    ... done\n");
 
-            NSK_DISPLAY1("    ... clearing callback: 0x%p\n", (void*)NULL);
+            NSK_DISPLAY1("    ... clearing callback: 0x%p\n", nullptr);
             if (!NSK_JVMTI_VERIFY(
-                    jvmti->SetExtensionEventCallback(extList[i].extension_event_index, NULL))) {
+                    jvmti->SetExtensionEventCallback(extList[i].extension_event_index, nullptr))) {
                 success = NSK_FALSE;
             }
             NSK_DISPLAY0("    ... done\n");
@@ -130,7 +130,7 @@ JNIEXPORT jint JNI_OnLoad_setextevent001(JavaVM *jvm, char *options, void *reser
 }
 #endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
-    jvmtiEnv* jvmti = NULL;
+    jvmtiEnv* jvmti = nullptr;
 
     if (!NSK_VERIFY(nsk_jvmti_parseOptions(options)))
         return JNI_ERR;
@@ -138,7 +138,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     timeout = nsk_jvmti_getWaitTime() * 60 * 1000;
 
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     NSK_DISPLAY0(">>> Testcase #1: Check setting extension event callbacks in OnLoad phase\n");
@@ -148,7 +148,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         }
     }
 
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     return JNI_OK;

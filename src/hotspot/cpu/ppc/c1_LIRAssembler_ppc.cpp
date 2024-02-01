@@ -2600,6 +2600,13 @@ void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
     Unimplemented();
   }
 
+  // There might be a volatile load before this Unsafe CAS.
+  if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
+    __ sync();
+  } else {
+    __ lwsync();
+  }
+
   if (is_64bit) {
     __ cmpxchgd(BOOL_RESULT, /*current_value=*/R0, cmp_value, new_value, addr,
                 MacroAssembler::MemBarNone,
@@ -2855,6 +2862,7 @@ void LIR_Assembler::rt_call(LIR_Opr result, address dest,
   if (info != nullptr) {
     add_call_info_here(info);
   }
+  assert(__ last_calls_return_pc() == __ pc(), "pcn not at return pc");
   __ post_call_nop();
 }
 
@@ -2961,9 +2969,24 @@ void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr 
   assert(addr->disp() == 0 && addr->index()->is_illegal(), "use leal!");
   const Register Rptr = addr->base()->as_pointer_register(),
                  Rtmp = tmp->as_register();
-  Register Rco = noreg;
-  if (UseCompressedOops && data->is_oop()) {
-    Rco = __ encode_heap_oop(Rtmp, data->as_register());
+  Register Robj = noreg;
+  if (data->is_oop()) {
+    if (UseCompressedOops) {
+      Robj = __ encode_heap_oop(Rtmp, data->as_register());
+    } else {
+      Robj = data->as_register();
+      if (Robj == dest->as_register()) { // May happen with ZGC.
+        __ mr(Rtmp, Robj);
+        Robj = Rtmp;
+      }
+    }
+  }
+
+  // There might be a volatile load before this Unsafe OP.
+  if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
+    __ sync();
+  } else {
+    __ lwsync();
   }
 
   Label Lretry;
@@ -2983,18 +3006,11 @@ void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr 
   } else if (data->is_oop()) {
     assert(code == lir_xchg, "xadd for oops");
     const Register Rold = dest->as_register();
+    assert_different_registers(Rptr, Rold, Robj);
     if (UseCompressedOops) {
-      assert_different_registers(Rptr, Rold, Rco);
       __ lwarx(Rold, Rptr, MacroAssembler::cmpxchgx_hint_atomic_update());
-      __ stwcx_(Rco, Rptr);
+      __ stwcx_(Robj, Rptr);
     } else {
-      Register Robj = data->as_register();
-      assert_different_registers(Rptr, Rold, Rtmp);
-      assert_different_registers(Rptr, Robj, Rtmp);
-      if (Robj == Rold) { // May happen with ZGC.
-        __ mr(Rtmp, Robj);
-        Robj = Rtmp;
-      }
       __ ldarx(Rold, Rptr, MacroAssembler::cmpxchgx_hint_atomic_update());
       __ stdcx_(Robj, Rptr);
     }
@@ -3021,6 +3037,12 @@ void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr 
 
   if (UseCompressedOops && data->is_oop()) {
     __ decode_heap_oop(dest->as_register());
+  }
+
+  if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
+    __ isync();
+  } else {
+    __ sync();
   }
 }
 
@@ -3106,7 +3128,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
         // Klass seen before, nothing to do (regardless of unknown bit).
         //beq(CCR1, do_nothing);
 
-        __ andi_(R0, klass, TypeEntries::type_unknown);
+        __ andi_(R0, tmp, TypeEntries::type_unknown);
         // Already unknown. Nothing to do anymore.
         //bne(CCR0, do_nothing);
         __ crorc(CCR0, Assembler::equal, CCR1, Assembler::equal); // cr0 eq = cr1 eq or cr0 ne

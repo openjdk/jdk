@@ -100,7 +100,9 @@ public class KullaTesting {
     private Set<Snippet> allSnippets = new LinkedHashSet<>();
 
     static {
-        JShell js = JShell.create();
+        JShell js = JShell.builder()
+                          .executionEngine(Presets.TEST_DEFAULT_EXECUTION)
+                          .build();
         MAIN_SNIPPET = js.eval("MAIN_SNIPPET").get(0).snippet();
         js.close();
         assertTrue(MAIN_SNIPPET != null, "Bad MAIN_SNIPPET set-up -- must not be null");
@@ -192,7 +194,8 @@ public class KullaTesting {
         JShell.Builder builder = JShell.builder()
                 .in(in)
                 .out(new PrintStream(outStream))
-                .err(new PrintStream(errStream));
+                .err(new PrintStream(errStream))
+                .executionEngine(Presets.TEST_DEFAULT_EXECUTION);
         bc.accept(builder);
         state = builder.build();
         allSnippets = new LinkedHashSet<>();

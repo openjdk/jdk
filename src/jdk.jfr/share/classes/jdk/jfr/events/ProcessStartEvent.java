@@ -38,6 +38,7 @@ import jdk.jfr.internal.RemoveFields;
 @Description("Operating system process started")
 @MirrorEvent(className = "jdk.internal.event.ProcessStartEvent")
 @RemoveFields("duration")
+@StackFilter({"java.lang.ProcessBuilder", "java.lang.Runtime::exec"})
 public final class ProcessStartEvent extends AbstractJDKEvent {
     @Label("Process Id")
     public long pid;

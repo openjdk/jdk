@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include <jni.h>
 
+#include "jlong.h"
+
 JNIEXPORT void xor_op(jbyte *restrict src, jbyte *restrict dst, jint len) {
     for (int i = 0; i < len; ++i) {
         dst[i] ^= src[i];
@@ -69,7 +71,7 @@ JNIEXPORT void JNICALL Java_org_openjdk_bench_java_lang_foreign_xor_GetArrayRegi
 
 JNIEXPORT void JNICALL Java_org_openjdk_bench_java_lang_foreign_xor_GetArrayUnsafeXorOpImpl_xorOp
   (JNIEnv *env, jobject obj, jlong src, jlong dst, jint len) {
-    jbyte *sbuf = (jbyte*)(void*)src;
-    jbyte *dbuf = (jbyte*)(void*)dst;
+    jbyte *sbuf = (jbyte*)jlong_to_ptr(src);
+    jbyte *dbuf = (jbyte*)jlong_to_ptr(dst);
     xor_op(sbuf, dbuf, len);
 }

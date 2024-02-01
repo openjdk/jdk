@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -221,7 +221,7 @@ extern "C" {
 
         NSK_DISPLAY1("copying ConstantPool: %d\n", constantPoolSize);
         constantPool = (char**) malloc(constantPoolSize * sizeof(char*));
-        if (!NSK_VERIFY(constantPool != NULL)) {
+        if (!NSK_VERIFY(constantPool != nullptr)) {
             NSK_COMPLAIN0("out of memory\n");
             return NSK_FALSE;
         }
@@ -262,7 +262,7 @@ extern "C" {
             case CONSTANT_Utf8:
                 len = copy_u2();
                 utf8 = (char*) malloc(len + 1);
-                if (!NSK_VERIFY(utf8 != NULL)) {
+                if (!NSK_VERIFY(utf8 != nullptr)) {
                     NSK_COMPLAIN0("out of memory\n");
                     return NSK_FALSE;
                 }
@@ -295,7 +295,7 @@ extern "C" {
         u2 i;
 
         for (i = 1; i < constantPoolSize; i++) {
-            if (constantPool[i] != NULL) {
+            if (constantPool[i] != nullptr) {
                 free(constantPool[i]);
             }
         }
@@ -1138,7 +1138,7 @@ extern "C" {
         inputPos = (u1*) orig;
         endPos = orig + old_length;
         gen = (u1*) malloc(old_length * GROWTH_FACTOR);
-        if (!NSK_VERIFY(gen != NULL)) {
+        if (!NSK_VERIFY(gen != nullptr)) {
             NSK_COMPLAIN0("out of memory\n");
             return NSK_FALSE;
         }

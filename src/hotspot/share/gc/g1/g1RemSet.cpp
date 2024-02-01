@@ -43,9 +43,9 @@
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionManager.inline.hpp"
 #include "gc/g1/heapRegionRemSet.inline.hpp"
+#include "gc/shared/bufferNode.hpp"
 #include "gc/shared/bufferNodeList.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
-#include "gc/shared/ptrQueue.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
@@ -90,11 +90,6 @@ class G1RemSetScanState : public CHeapObj<mtGC> {
   class G1DirtyRegions;
 
   size_t _max_reserved_regions;
-
-  // Has this region that is part of the regions in the collection set been processed yet.
-  typedef bool G1RemsetIterState;
-
-  G1RemsetIterState volatile* _collection_set_iter_state;
 
   // Card table iteration claim for each heap region, from 0 (completely unscanned)
   // to (>=) HeapRegion::CardsPerRegion (completely scanned).

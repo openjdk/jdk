@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,6 +174,7 @@ public:
 
   void update_bot_for_block(HeapWord* start, HeapWord* end);
 
+  void prepare_for_full_gc();
   // Update heap region that has been compacted to be consistent after Full GC.
   void reset_compacted_after_full_gc(HeapWord* new_top);
   // Update skip-compacting heap region to be consistent after Full GC.
@@ -229,11 +230,17 @@ private:
   HeapWord* volatile _top_at_mark_start;
 
   // The area above this limit is fully parsable. This limit
-  // is equal to bottom except from Remark and until the region has been
-  // scrubbed concurrently. The scrubbing ensures that all dead objects (with
-  // possibly unloaded classes) have beenreplaced with filler objects that
-  // are parsable. Below this limit the marking bitmap must be used to
-  // determine size and liveness.
+  // is equal to bottom except
+  //
+  // * from Remark and until the region has been scrubbed concurrently. The
+  //   scrubbing ensures that all dead objects (with possibly unloaded classes)
+  //   have been replaced with filler objects that are parsable.
+  // * after the marking phase in the Full GC pause until the objects have been
+  //   moved. Some (debug) code iterates over the heap after marking but before
+  //   compaction.
+  //
+  // Below this limit the marking bitmap must be used to determine size and
+  // liveness.
   HeapWord* volatile _parsable_bottom;
 
   // Amount of dead data in the region.
@@ -248,6 +255,9 @@ private:
 
   // NUMA node.
   uint _node_index;
+
+  // Number of objects in this region that are currently pinned.
+  volatile size_t _pinned_object_count;
 
   void report_region_type_change(G1HeapRegionTraceType::Type to);
 
@@ -291,6 +301,10 @@ public:
 
   static uint   LogOfHRGrainBytes;
   static uint   LogCardsPerRegion;
+
+  // Atomically adjust the pinned object count by the given value. Value must not
+  // be zero.
+  inline void add_pinned_object_count(size_t value);
 
   static size_t GrainBytes;
   static size_t GrainWords;
@@ -394,6 +408,9 @@ public:
   bool is_old() const { return _type.is_old(); }
 
   bool is_old_or_humongous() const { return _type.is_old_or_humongous(); }
+
+  size_t pinned_count() const { return Atomic::load(&_pinned_object_count); }
+  bool has_pinned_objects() const { return pinned_count() > 0; }
 
   void set_free();
 

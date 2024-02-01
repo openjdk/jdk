@@ -32,7 +32,6 @@
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
-#include "gc/shared/generationSpec.hpp"
 #include "gc/shared/space.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
@@ -165,7 +164,7 @@ void TenuredGeneration::compute_new_size_inner() {
   const double min_tmp = used_after_gc / maximum_used_percentage;
   size_t minimum_desired_capacity = (size_t)MIN2(min_tmp, double(max_uintx));
   // Don't shrink less than the initial generation size
-  minimum_desired_capacity = MAX2(minimum_desired_capacity, initial_size());
+  minimum_desired_capacity = MAX2(minimum_desired_capacity, OldSize);
   assert(used_after_gc <= minimum_desired_capacity, "sanity check");
 
     const size_t free_after_gc = free();
@@ -204,7 +203,7 @@ void TenuredGeneration::compute_new_size_inner() {
     const double minimum_used_percentage = 1.0 - maximum_free_percentage;
     const double max_tmp = used_after_gc / minimum_used_percentage;
     size_t maximum_desired_capacity = (size_t)MIN2(max_tmp, double(max_uintx));
-    maximum_desired_capacity = MAX2(maximum_desired_capacity, initial_size());
+    maximum_desired_capacity = MAX2(maximum_desired_capacity, OldSize);
     log_trace(gc, heap)("    maximum_free_percentage: %6.2f  minimum_used_percentage: %6.2f",
                              maximum_free_percentage, minimum_used_percentage);
     log_trace(gc, heap)("    _capacity_at_prologue: %6.1fK  minimum_desired_capacity: %6.1fK  maximum_desired_capacity: %6.1fK",
@@ -234,7 +233,7 @@ void TenuredGeneration::compute_new_size_inner() {
       }
       assert(shrink_bytes <= max_shrink_bytes, "invalid shrink size");
       log_trace(gc, heap)("    shrinking:  initSize: %.1fK  maximum_desired_capacity: %.1fK",
-                               initial_size() / (double) K, maximum_desired_capacity / (double) K);
+                               OldSize / (double) K, maximum_desired_capacity / (double) K);
       log_trace(gc, heap)("    shrink_bytes: %.1fK  current_shrink_factor: " SIZE_FORMAT "  new shrink factor: " SIZE_FORMAT "  _min_heap_delta_bytes: %.1fK",
                                shrink_bytes / (double) K,
                                current_shrink_factor,
@@ -304,12 +303,8 @@ TenuredGeneration::TenuredGeneration(ReservedSpace rs,
   // If this wasn't true, a single card could span more than on generation,
   // which would cause problems when we commit/uncommit memory, and when we
   // clear and dirty cards.
-  guarantee(_rs->is_aligned(reserved_mr.start()), "generation must be card aligned");
-  if (reserved_mr.end() != SerialHeap::heap()->reserved_region().end()) {
-    // Don't check at the very end of the heap as we'll assert that we're probing off
-    // the end if we try.
-    guarantee(_rs->is_aligned(reserved_mr.end()), "generation must be card aligned");
-  }
+  guarantee(CardTable::is_card_aligned(reserved_mr.start()), "generation must be card aligned");
+  guarantee(CardTable::is_card_aligned(reserved_mr.end()), "generation must be card aligned");
   _min_heap_delta_bytes = MinHeapDeltaBytes;
   _capacity_at_prologue = initial_byte_size;
   _used_at_prologue = 0;
@@ -336,7 +331,7 @@ TenuredGeneration::TenuredGeneration(ReservedSpace rs,
                                        _the_space, _gen_counters);
 }
 
-void TenuredGeneration::gc_prologue(bool full) {
+void TenuredGeneration::gc_prologue() {
   _capacity_at_prologue = capacity();
   _used_at_prologue = used();
 }
@@ -455,10 +450,6 @@ TenuredGeneration::expand_and_allocate(size_t word_size, bool is_tlab) {
   return _the_space->allocate(word_size);
 }
 
-size_t TenuredGeneration::unsafe_max_alloc_nogc() const {
-  return _the_space->free();
-}
-
 size_t TenuredGeneration::contiguous_available() const {
   return _the_space->free() + _virtual_space.uncommitted_size();
 }
@@ -490,7 +481,7 @@ bool TenuredGeneration::no_allocs_since_save_marks() {
   return _the_space->saved_mark_at_top();
 }
 
-void TenuredGeneration::gc_epilogue(bool full) {
+void TenuredGeneration::gc_epilogue() {
   // update the generation and space performance counters
   update_counters();
   if (ZapUnusedHeapArea) {

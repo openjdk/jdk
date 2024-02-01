@@ -25,6 +25,7 @@
  * @test
  * @bug 6362683 8012381
  * @summary Collation should work.
+ * @key printer
  * @run main/manual Collate2DPrintingTest
  */
 import java.awt.*;

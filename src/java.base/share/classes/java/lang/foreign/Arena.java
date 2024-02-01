@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.ref.CleanerFactory;
 
 import java.lang.foreign.MemorySegment.Scope;
+import java.util.function.Consumer;
 
 /**
  * An arena controls the lifecycle of native memory segments, providing both flexible
@@ -218,6 +219,9 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      * Segments allocated with the returned arena can be
      * {@linkplain MemorySegment#isAccessibleBy(Thread) accessed} by any thread.
      * Calling {@link #close()} on the returned arena will result in an {@link UnsupportedOperationException}.
+     * <p>
+     * Memory segments {@linkplain #allocate(long, long) allocated} by the returned arena
+     * are zero-initialized.
      *
      * @return a new arena that is managed, automatically, by the garbage collector
      */
@@ -230,6 +234,9 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      *          {@linkplain MemorySegment#isAccessibleBy(Thread) accessed} by any thread.
      *          Calling {@link #close()} on the returned arena will result in
      *          an {@link UnsupportedOperationException}.
+     * <p>
+     * Memory segments {@linkplain #allocate(long, long) allocated} by the returned arena
+     * are zero-initialized.
      */
     static Arena global() {
         class Holder {
@@ -242,14 +249,20 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      * {@return a new confined arena} Segments allocated with the confined arena can be
      *          {@linkplain MemorySegment#isAccessibleBy(Thread) accessed} by the thread
      *          that created the arena, the arena's <em>owner thread</em>.
+     * <p>
+     * Memory segments {@linkplain #allocate(long, long) allocated} by the returned arena
+     * are zero-initialized.
      */
     static Arena ofConfined() {
         return MemorySessionImpl.createConfined(Thread.currentThread()).asArena();
     }
 
     /**
-     * {@return a new shared arena} Segments allocated with the global arena can be
+     * {@return a new shared arena} Segments allocated with the shared arena can be
      *          {@linkplain MemorySegment#isAccessibleBy(Thread) accessed} by any thread.
+     * <p>
+     * Memory segments {@linkplain #allocate(long, long) allocated} by the returned arena
+     * are zero-initialized.
      */
     static Arena ofShared() {
         return MemorySessionImpl.createShared().asArena();
@@ -317,8 +330,11 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      * @throws WrongThreadException if this arena is confined, and this method is called
      *         from a thread other than the arena's owner thread
      * @throws UnsupportedOperationException if this arena cannot be closed explicitly
+     * @throws RuntimeException if an exception is thrown while executing a custom cleanup action
+     *                          associated with this arena (e.g. as a result of calling
+     *                          {@link MemorySegment#reinterpret(long, Arena, Consumer)} or
+     *                          {@link MemorySegment#reinterpret(Arena, Consumer)}).
      */
     @Override
     void close();
-
 }

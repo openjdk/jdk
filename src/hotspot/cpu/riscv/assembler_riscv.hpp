@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -506,7 +506,7 @@ public:
   INSN(sllw,  0b0111011, 0b001, 0b0000000);
   INSN(sraw,  0b0111011, 0b101, 0b0100000);
   INSN(srlw,  0b0111011, 0b101, 0b0000000);
-  INSN(mul,   0b0110011, 0b000, 0b0000001);
+  INSN(_mul,  0b0110011, 0b000, 0b0000001);
   INSN(mulh,  0b0110011, 0b001, 0b0000001);
   INSN(mulhsu,0b0110011, 0b010, 0b0000001);
   INSN(mulhu, 0b0110011, 0b011, 0b0000001);
@@ -537,9 +537,9 @@ public:
   }
 
   INSN(lb,  0b0000011, 0b000);
-  INSN(lbu, 0b0000011, 0b100);
-  INSN(lh,  0b0000011, 0b001);
-  INSN(lhu, 0b0000011, 0b101);
+  INSN(_lbu, 0b0000011, 0b100);
+  INSN(_lh,  0b0000011, 0b001);
+  INSN(_lhu, 0b0000011, 0b101);
   INSN(_lw, 0b0000011, 0b010);
   INSN(lwu, 0b0000011, 0b110);
   INSN(_ld, 0b0000011, 0b011);
@@ -609,8 +609,8 @@ public:
     emit(insn);                                                                                             \
   }                                                                                                         \
 
-  INSN(sb,   Register,      0b0100011, 0b000);
-  INSN(sh,   Register,      0b0100011, 0b001);
+  INSN(_sb,   Register,      0b0100011, 0b000);
+  INSN(_sh,   Register,      0b0100011, 0b001);
   INSN(_sw,  Register,      0b0100011, 0b010);
   INSN(_sd,  Register,      0b0100011, 0b011);
   INSN(fsw,  FloatRegister, 0b0100111, 0b010);
@@ -758,6 +758,8 @@ enum Aqrl {relaxed = 0b00, rl = 0b01, aq = 0b10, aqrl = 0b11};
   INSN(amomax_d , 0b0101111, 0b011, 0b10100);
   INSN(amominu_d, 0b0101111, 0b011, 0b11000);
   INSN(amomaxu_d, 0b0101111, 0b011, 0b11100);
+  INSN(amocas_w,  0b0101111, 0b010, 0b00101);
+  INSN(amocas_d,  0b0101111, 0b011, 0b00101);
 #undef INSN
 
 enum operand_size { int8, int16, int32, uint32, int64 };
@@ -813,6 +815,8 @@ enum operand_size { int8, int16, int32, uint32, int64 };
 
   INSN(fsqrt_s,  0b1010011, 0b00000, 0b0101100);
   INSN(fsqrt_d,  0b1010011, 0b00000, 0b0101101);
+  INSN(fcvt_s_h, 0b1010011, 0b00010, 0b0100000);
+  INSN(fcvt_h_s, 0b1010011, 0b00000, 0b0100010);
   INSN(fcvt_s_d, 0b1010011, 0b00001, 0b0100000);
   INSN(fcvt_d_s, 0b1010011, 0b00000, 0b0100001);
 #undef INSN
@@ -1069,6 +1073,7 @@ enum operand_size { int8, int16, int32, uint32, int64 };
     emit(insn);                                      \
   }
 
+  INSN(fmv_h_x,  0b1010011, 0b000, 0b00000, 0b1111010);
   INSN(fmv_w_x,  0b1010011, 0b000, 0b00000, 0b1111000);
   INSN(fmv_d_x,  0b1010011, 0b000, 0b00000, 0b1111001);
 
@@ -1106,8 +1111,10 @@ enum fclass_mask {
     emit(insn);                                           \
   }
 
+  INSN(fclass_h, 0b1010011, 0b001, 0b00000, 0b1110010);
   INSN(fclass_s, 0b1010011, 0b001, 0b00000, 0b1110000);
   INSN(fclass_d, 0b1010011, 0b001, 0b00000, 0b1110001);
+  INSN(fmv_x_h,  0b1010011, 0b000, 0b00000, 0b1110010);
   INSN(fmv_x_w,  0b1010011, 0b000, 0b00000, 0b1110000);
   INSN(fmv_x_d,  0b1010011, 0b000, 0b00000, 0b1110001);
 
@@ -1154,10 +1161,8 @@ static Assembler::SEW elemtype_to_sew(BasicType etype) {
 }
 
 #define patch_vtype(hsb, lsb, vlmul, vsew, vta, vma, vill)   \
-    if (vill == 1) {                                         \
-      guarantee((vlmul | vsew | vta | vma == 0),             \
-                "the other bits in vtype shall be zero");    \
-    }                                                        \
+    /* If vill then other bits of vtype must be zero. */     \
+    guarantee(!vill, "vill not supported");                  \
     patch((address)&insn, lsb + 2, lsb, vlmul);              \
     patch((address)&insn, lsb + 5, lsb + 3, vsew);           \
     patch((address)&insn, lsb + 6, vta);                     \
@@ -1332,6 +1337,7 @@ enum VectorMask {
   INSN(vsll_vi,    0b1010111, 0b011, 0b100101);
 
   // Vector Slide Instructions
+  INSN(vslideup_vi,   0b1010111, 0b011, 0b001110);
   INSN(vslidedown_vi, 0b1010111, 0b011, 0b001111);
 
 #undef INSN
@@ -1417,6 +1423,7 @@ enum VectorMask {
   INSN(vmfeq_vv, 0b1010111, 0b001, 0b011000);
 
   // Vector Floating-Point Sign-Injection Instructions
+  INSN(vfsgnj_vv, 0b1010111, 0b001, 0b001000);
   INSN(vfsgnjx_vv, 0b1010111, 0b001, 0b001010);
   INSN(vfsgnjn_vv, 0b1010111, 0b001, 0b001001);
 
@@ -1686,7 +1693,6 @@ enum VectorMask {
   INSN(vmv_v_x, 0b1010111, 0b100, v0, 0b1, 0b010111);
 
 #undef INSN
-#undef patch_VArith
 
 #define INSN(NAME, op, funct13, funct6)                    \
   void NAME(VectorRegister Vd, VectorMask vm = unmasked) { \
@@ -1728,14 +1734,29 @@ enum Nf {
     patch_reg((address)&insn, 15, Rs1);                                  \
     emit(insn)
 
-#define INSN(NAME, op, lumop, vm, mop, nf)                                           \
-  void NAME(VectorRegister Vd, Register Rs1, uint32_t width = 0, bool mew = false) { \
+#define INSN(NAME, op, width, lumop, vm, mop, mew, nf)                               \
+  void NAME(VectorRegister Vd, Register Rs1) {                                       \
     guarantee(is_uimm3(width), "width is invalid");                                  \
     patch_VLdSt(op, Vd, width, Rs1, lumop, vm, mop, mew, nf);                        \
   }
 
   // Vector Load/Store Instructions
-  INSN(vl1re8_v, 0b0000111, 0b01000, 0b1, 0b00, g1);
+  INSN(vl1re8_v,  0b0000111, 0b000, 0b01000, 0b1, 0b00, 0b0, g1);
+  INSN(vl1re16_v, 0b0000111, 0b101, 0b01000, 0b1, 0b00, 0b0, g1);
+  INSN(vl1re32_v, 0b0000111, 0b110, 0b01000, 0b1, 0b00, 0b0, g1);
+  INSN(vl1re64_v, 0b0000111, 0b111, 0b01000, 0b1, 0b00, 0b0, g1);
+  INSN(vl2re8_v,  0b0000111, 0b000, 0b01000, 0b1, 0b00, 0b0, g2);
+  INSN(vl2re16_v, 0b0000111, 0b101, 0b01000, 0b1, 0b00, 0b0, g2);
+  INSN(vl2re32_v, 0b0000111, 0b110, 0b01000, 0b1, 0b00, 0b0, g2);
+  INSN(vl2re64_v, 0b0000111, 0b111, 0b01000, 0b1, 0b00, 0b0, g2);
+  INSN(vl4re8_v,  0b0000111, 0b000, 0b01000, 0b1, 0b00, 0b0, g4);
+  INSN(vl4re16_v, 0b0000111, 0b101, 0b01000, 0b1, 0b00, 0b0, g4);
+  INSN(vl4re32_v, 0b0000111, 0b110, 0b01000, 0b1, 0b00, 0b0, g4);
+  INSN(vl4re64_v, 0b0000111, 0b111, 0b01000, 0b1, 0b00, 0b0, g4);
+  INSN(vl8re8_v,  0b0000111, 0b000, 0b01000, 0b1, 0b00, 0b0, g8);
+  INSN(vl8re16_v, 0b0000111, 0b101, 0b01000, 0b1, 0b00, 0b0, g8);
+  INSN(vl8re32_v, 0b0000111, 0b110, 0b01000, 0b1, 0b00, 0b0, g8);
+  INSN(vl8re64_v, 0b0000111, 0b111, 0b01000, 0b1, 0b00, 0b0, g8);
 
 #undef INSN
 
@@ -1746,6 +1767,9 @@ enum Nf {
 
   // Vector Load/Store Instructions
   INSN(vs1r_v, 0b0100111, 0b000, 0b01000, 0b1, 0b00, 0b0, g1);
+  INSN(vs2r_v, 0b0100111, 0b000, 0b01000, 0b1, 0b00, 0b0, g2);
+  INSN(vs4r_v, 0b0100111, 0b000, 0b01000, 0b1, 0b00, 0b0, g4);
+  INSN(vs8r_v, 0b0100111, 0b000, 0b01000, 0b1, 0b00, 0b0, g8);
 
 #undef INSN
 
@@ -1791,9 +1815,11 @@ enum Nf {
   }
 
   // Vector unordered indexed load instructions
+  INSN( vluxei8_v, 0b0000111, 0b000, 0b01, 0b0);
   INSN(vluxei32_v, 0b0000111, 0b110, 0b01, 0b0);
 
   // Vector unordered indexed store instructions
+  INSN( vsuxei8_v, 0b0100111, 0b000, 0b01, 0b0);
   INSN(vsuxei32_v, 0b0100111, 0b110, 0b01, 0b0);
 
 #undef INSN
@@ -1816,6 +1842,55 @@ enum Nf {
 
 #undef INSN
 #undef patch_VLdSt
+
+// ====================================
+// RISC-V Vector Crypto Extension
+// ====================================
+
+#define INSN(NAME, op, funct3, funct6)                                                             \
+  void NAME(VectorRegister Vd, VectorRegister Vs2, VectorRegister Vs1, VectorMask vm = unmasked) { \
+    patch_VArith(op, Vd, funct3, Vs1->raw_encoding(), Vs2, vm, funct6);                            \
+  }
+
+  // Vector Bit-manipulation used in Cryptography (Zvkb) Extension
+  INSN(vandn_vv,   0b1010111, 0b000, 0b000001);
+  INSN(vandn_vx,   0b1010111, 0b100, 0b000001);
+  INSN(vandn_vi,   0b1010111, 0b011, 0b000001);
+  INSN(vclmul_vv,  0b1010111, 0b010, 0b001100);
+  INSN(vclmul_vx,  0b1010111, 0b110, 0b001100);
+  INSN(vclmulh_vv, 0b1010111, 0b010, 0b001101);
+  INSN(vclmulh_vx, 0b1010111, 0b110, 0b001101);
+  INSN(vror_vv,    0b1010111, 0b000, 0b010100);
+  INSN(vror_vx,    0b1010111, 0b100, 0b010100);
+  INSN(vrol_vv,    0b1010111, 0b000, 0b010101);
+  INSN(vrol_vx,    0b1010111, 0b100, 0b010101);
+
+#undef INSN
+
+#define INSN(NAME, op, funct3, Vs1, funct6)                                    \
+  void NAME(VectorRegister Vd, VectorRegister Vs2, VectorMask vm = unmasked) { \
+    patch_VArith(op, Vd, funct3, Vs1, Vs2, vm, funct6);                        \
+  }
+
+  // Vector Bit-manipulation used in Cryptography (Zvkb) Extension
+  INSN(vbrev8_v, 0b1010111, 0b010, 0b01000, 0b010010);
+  INSN(vrev8_v,  0b1010111, 0b010, 0b01001, 0b010010);
+
+#undef INSN
+
+#define INSN(NAME, op, funct3, vm, funct6)                                   \
+  void NAME(VectorRegister Vd, VectorRegister Vs2, VectorRegister Vs1) {     \
+    patch_VArith(op, Vd, funct3, Vs1->raw_encoding(), Vs2, vm, funct6);      \
+  }
+
+  // Vector SHA-2 Secure Hash (Zvknh[ab]) Extension
+  INSN(vsha2ms_vv,  0b1110111, 0b010, 0b1, 0b101101);
+  INSN(vsha2ch_vv,  0b1110111, 0b010, 0b1, 0b101110);
+  INSN(vsha2cl_vv,  0b1110111, 0b010, 0b1, 0b101111);
+
+#undef INSN
+
+#undef patch_VArith
 
 // ====================================
 // RISC-V Bit-Manipulation Extension
@@ -1866,9 +1941,9 @@ enum Nf {
   }
 
   INSN(rev8,   0b0010011, 0b101, 0b011010111000);
-  INSN(sext_b, 0b0010011, 0b001, 0b011000000100);
-  INSN(sext_h, 0b0010011, 0b001, 0b011000000101);
-  INSN(zext_h, 0b0111011, 0b100, 0b000010000000);
+  INSN(_sext_b, 0b0010011, 0b001, 0b011000000100);
+  INSN(_sext_h, 0b0010011, 0b001, 0b011000000101);
+  INSN(_zext_h, 0b0111011, 0b100, 0b000010000000);
   INSN(clz,    0b0010011, 0b001, 0b011000000000);
   INSN(clzw,   0b0011011, 0b001, 0b011000000000);
   INSN(ctz,    0b0010011, 0b001, 0b011000000001);
@@ -2580,6 +2655,15 @@ public:
     return UseRVC && in_compressible_region();
   }
 
+  bool do_compress_zcb(Register reg1 = noreg, Register reg2 = noreg) const {
+    return do_compress() && VM_Version::ext_Zcb.enabled() &&
+           (reg1 == noreg || reg1->is_compressed_valid()) && (reg2 == noreg || reg2->is_compressed_valid());
+  }
+
+  bool do_compress_zcb_zbb(Register reg1 = noreg, Register reg2 = noreg) const {
+    return do_compress_zcb(reg1, reg2) && UseZbb;
+  }
+
 // --------------------------
 // Load/store register
 // --------------------------
@@ -2914,6 +2998,238 @@ public:
 
 #undef INSN
 
+// --------------  ZCB Instruction Definitions  --------------
+// Zcb additional C instructions
+ private:
+  // Format CLH, c.lh/c.lhu
+  template <bool Unsigned>
+  void c_lh_if(Register Rd_Rs2, Register Rs1, uint32_t uimm) {
+    assert_cond(uimm == 0 || uimm == 2);
+    assert_cond(do_compress_zcb(Rd_Rs2, Rs1));
+    uint16_t insn = 0;
+    c_patch((address)&insn, 1, 0, 0b00);
+    c_patch_compressed_reg((address)&insn, 2, Rd_Rs2);
+    c_patch((address)&insn, 5, 5, (uimm & nth_bit(1)) >> 1);
+    c_patch((address)&insn, 6, 6, Unsigned ? 0 : 1);
+    c_patch_compressed_reg((address)&insn, 7, Rs1);
+    c_patch((address)&insn, 12, 10, 0b001);
+    c_patch((address)&insn, 15, 13, 0b100);
+    emit_int16(insn);
+  }
+
+  template <bool Unsigned>
+  void lh_c_mux(Register Rd_Rs2, Register Rs1, const int32_t uimm) {
+    if (do_compress_zcb(Rd_Rs2, Rs1) &&
+        (uimm == 0 || uimm == 2)) {
+      c_lh_if<Unsigned>(Rd_Rs2, Rs1, uimm);
+    } else {
+      if (Unsigned) {
+        _lhu(Rd_Rs2, Rs1, uimm);
+      } else {
+        _lh(Rd_Rs2, Rs1, uimm);
+      }
+    }
+  }
+
+  // Format CU, c.[sz]ext.*, c.not
+  template <uint8_t InstructionType>
+  void c_u_if(Register Rs1) {
+    assert_cond(do_compress_zcb(Rs1));
+    uint16_t insn = 0;
+    c_patch((address)&insn, 1, 0, 0b01);
+    c_patch((address)&insn, 4, 2, InstructionType);
+    c_patch((address)&insn, 6, 5, 0b11);
+    c_patch_compressed_reg((address)&insn, 7, Rs1);
+    c_patch((address)&insn, 12, 10, 0b111);
+    c_patch((address)&insn, 15, 13, 0b100);
+    emit_int16(insn);
+  }
+
+ public:
+
+  // Prerequisites: Zcb
+  void c_lh(Register Rd_Rs2, Register Rs1, const int32_t uimm)  {  c_lh_if<false>(Rd_Rs2, Rs1, uimm); }
+  void lh(Register Rd_Rs2, Register Rs1, const int32_t uimm)    { lh_c_mux<false>(Rd_Rs2, Rs1, uimm); }
+
+  // Prerequisites: Zcb
+  void c_lhu(Register Rd_Rs2, Register Rs1, const int32_t uimm) {  c_lh_if<true>(Rd_Rs2, Rs1, uimm); }
+  void lhu(Register Rd_Rs2, Register Rs1, const int32_t uimm)   { lh_c_mux<true>(Rd_Rs2, Rs1, uimm); }
+
+  // Prerequisites: Zcb
+  // Format CLB, single instruction
+  void c_lbu(Register Rd_Rs2, Register Rs1, uint32_t uimm) {
+    assert_cond(uimm <= 3);
+    assert_cond(do_compress_zcb(Rd_Rs2, Rs1));
+    uint16_t insn = 0;
+    c_patch((address)&insn, 1, 0, 0b00);
+    c_patch_compressed_reg((address)&insn, 2, Rd_Rs2);
+    c_patch((address)&insn, 5, 5, (uimm & nth_bit(1)) >> 1);
+    c_patch((address)&insn, 6, 6, (uimm & nth_bit(0)) >> 0);
+    c_patch_compressed_reg((address)&insn, 7, Rs1);
+    c_patch((address)&insn, 12, 10, 0b000);
+    c_patch((address)&insn, 15, 13, 0b100);
+    emit_int16(insn);
+  }
+
+  void lbu(Register Rd_Rs2, Register Rs1, const int32_t uimm) {
+    if (do_compress_zcb(Rd_Rs2, Rs1) &&
+        uimm >= 0 && uimm <= 3) {
+      c_lbu(Rd_Rs2, Rs1, uimm);
+    } else {
+      _lbu(Rd_Rs2, Rs1, uimm);
+    }
+  }
+
+  // Prerequisites: Zcb
+  // Format CSB, single instruction
+  void c_sb(Register Rd_Rs2, Register Rs1, uint32_t uimm) {
+    assert_cond(uimm <= 3);
+    assert_cond(do_compress_zcb(Rd_Rs2, Rs1));
+    uint16_t insn = 0;
+    c_patch((address)&insn, 1, 0, 0b00);
+    c_patch_compressed_reg((address)&insn, 2, Rd_Rs2);
+    c_patch((address)&insn, 5, 5, (uimm & nth_bit(1)) >> 1);
+    c_patch((address)&insn, 6, 6, (uimm & nth_bit(0)) >> 0);
+    c_patch_compressed_reg((address)&insn, 7, Rs1);
+    c_patch((address)&insn, 12, 10, 0b010);
+    c_patch((address)&insn, 15, 13, 0b100);
+    emit_int16(insn);
+  }
+
+  void sb(Register Rd_Rs2, Register Rs1, const int32_t uimm) {
+    if (do_compress_zcb(Rd_Rs2, Rs1) &&
+        uimm >= 0 && uimm <= 3) {
+      c_sb(Rd_Rs2, Rs1, uimm);
+    } else {
+      _sb(Rd_Rs2, Rs1, uimm);
+    }
+  }
+
+  // Prerequisites: Zcb
+  // Format CSH, single instruction
+  void c_sh(Register Rd_Rs2, Register Rs1, uint32_t uimm) {
+    assert_cond(uimm == 0 || uimm == 2);
+    assert_cond(do_compress_zcb(Rd_Rs2, Rs1));
+    uint16_t insn = 0;
+    c_patch((address)&insn, 1, 0, 0b00);
+    c_patch_compressed_reg((address)&insn, 2, Rd_Rs2);
+    c_patch((address)&insn, 5, 5, (uimm & nth_bit(1)) >> 1);
+    c_patch((address)&insn, 6, 6, 0);
+    c_patch_compressed_reg((address)&insn, 7, Rs1);
+    c_patch((address)&insn, 12, 10, 0b011);
+    c_patch((address)&insn, 15, 13, 0b100);
+    emit_int16(insn);
+  }
+
+  void sh(Register Rd_Rs2, Register Rs1, const int32_t uimm) {
+    if (do_compress_zcb(Rd_Rs2, Rs1) &&
+        (uimm == 0 || uimm == 2)) {
+      c_sh(Rd_Rs2, Rs1, uimm);
+    } else {
+      _sh(Rd_Rs2, Rs1, uimm);
+    }
+  }
+
+  // Prerequisites: Zcb
+  // Format CS
+  void c_zext_b(Register Rs1) {
+    assert_cond(do_compress_zcb(Rs1));
+    c_u_if<0b000>(Rs1);
+  }
+
+  // Prerequisites: Zbb
+  void sext_b(Register Rd_Rs2, Register Rs1) {
+    assert_cond(UseZbb);
+    if (do_compress_zcb_zbb(Rd_Rs2, Rs1) && (Rd_Rs2 == Rs1)) {
+      c_sext_b(Rd_Rs2);
+    } else {
+      _sext_b(Rd_Rs2, Rs1);
+    }
+  }
+
+  // Prerequisites: Zcb, Zbb
+  // Format CS
+  void c_sext_b(Register Rs1) {
+    c_u_if<0b001>(Rs1);
+  }
+
+  // Prerequisites: Zbb
+  void zext_h(Register Rd_Rs2, Register Rs1) {
+    assert_cond(UseZbb);
+    if (do_compress_zcb_zbb(Rd_Rs2, Rs1) && (Rd_Rs2 == Rs1)) {
+      c_zext_h(Rd_Rs2);
+    } else {
+      _zext_h(Rd_Rs2, Rs1);
+    }
+  }
+
+  // Prerequisites: Zcb, Zbb
+  // Format CS
+  void c_zext_h(Register Rs1) {
+    c_u_if<0b010>(Rs1);
+  }
+
+  // Prerequisites: Zbb
+  void sext_h(Register Rd_Rs2, Register Rs1) {
+    assert_cond(UseZbb);
+    if (do_compress_zcb_zbb(Rd_Rs2, Rs1) && (Rd_Rs2 == Rs1)) {
+      c_sext_h(Rd_Rs2);
+    } else {
+      _sext_h(Rd_Rs2, Rs1);
+    }
+  }
+
+  // Prerequisites: Zcb, Zbb
+  // Format CS
+  void c_sext_h(Register Rs1) {
+    c_u_if<0b011>(Rs1);
+  }
+
+  // Prerequisites: Zcb, Zba
+  // Format CS
+  void c_zext_w(Register Rs1) {
+    c_u_if<0b100>(Rs1);
+  }
+
+  // Prerequisites: Zcb
+  // Format CS
+  void c_not(Register Rs1) {
+    c_u_if<0b101>(Rs1);
+  }
+
+  // Prerequisites: Zcb (M or Zmmul)
+  // Format CA, c.mul
+  void c_mul(Register Rd_Rs1, Register Rs2) {
+    uint16_t insn = 0;
+    c_patch((address)&insn, 1, 0, 0b01);
+    c_patch_compressed_reg((address)&insn, 2, Rs2);
+    c_patch((address)&insn, 6, 5, 0b10);
+    c_patch_compressed_reg((address)&insn, 7, Rd_Rs1);
+    c_patch((address)&insn, 12, 10, 0b111);
+    c_patch((address)&insn, 15, 13, 0b100);
+    emit_int16(insn);
+  }
+
+  void mul(Register Rd, Register Rs1, Register Rs2) {
+    if (Rd != Rs1 && Rd != Rs2) {
+      // Three registers needed without a mv, emit uncompressed
+      _mul(Rd, Rs1, Rs2);
+      return;
+    }
+
+    // Rd is either Rs1 or Rs2
+    if (!do_compress_zcb(Rs2, Rs1)) {
+      _mul(Rd, Rs1, Rs2);
+    } else {
+      if (Rd == Rs2) {
+        Rs2 = Rs1;
+      } else {
+        assert(Rd == Rs1, "must be");
+      }
+      c_mul(Rd, Rs2);
+    }
+  }
+
   // Stack overflow checking
   virtual void bang_stack_with_offset(int offset) { Unimplemented(); }
 
@@ -2937,6 +3253,17 @@ public:
 
   static bool reachable_from_branch_at(address branch, address target) {
     return uabs(target - branch) < branch_range;
+  }
+
+  // Decode the given instruction, checking if it's a 16-bit compressed
+  // instruction and return the address of the next instruction.
+  static address locate_next_instruction(address inst) {
+    // Instruction wider than 16 bits has the two least-significant bits set.
+    if ((0x3 & *inst) == 0x3) {
+      return inst + instruction_size;
+    } else {
+      return inst + compressed_instruction_size;
+    }
   }
 
   Assembler(CodeBuffer* code) : AbstractAssembler(code), _in_compressible_region(true) {}

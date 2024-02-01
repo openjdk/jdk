@@ -28,7 +28,7 @@
  * @bug 6358747
  * @bug 6574633
  * @summary Page setup dialog settings
- * @author prr
+ * @key printer
  * @run main/manual PageSetupDialog
  */
 

@@ -1129,7 +1129,7 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, bool search_append_only, TR
     // Dynamic dumping requires UseSharedSpaces to be enabled. Since --patch-module
     // is not supported with UseSharedSpaces, we can never come here during dynamic dumping.
     assert(!CDSConfig::is_dumping_dynamic_archive(), "sanity");
-    if (!DumpSharedSpaces) {
+    if (!CDSConfig::is_dumping_static_archive()) {
       stream = search_module_entries(THREAD, _patch_mod_entries, class_name, file_name);
     }
   }
@@ -1490,8 +1490,7 @@ void ClassLoader::classLoader_init2(JavaThread* current) {
   // As more modules are defined during module system initialization, more
   // entries will be added to the exploded build array.
   if (!has_jrt_entry()) {
-    assert(!DumpSharedSpaces, "DumpSharedSpaces not supported with exploded module builds");
-    assert(!CDSConfig::is_dumping_dynamic_archive(), "not supported with exploded module builds");
+    assert(!CDSConfig::is_dumping_archive(), "not supported with exploded module builds");
     assert(!UseSharedSpaces, "UsedSharedSpaces not supported with exploded module builds");
     // Set up the boot loader's _exploded_entries list.  Note that this gets
     // done before loading any classes, by the same thread that will

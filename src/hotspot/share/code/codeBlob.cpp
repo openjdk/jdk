@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,7 +164,7 @@ RuntimeBlob::RuntimeBlob(
 void RuntimeBlob::free(RuntimeBlob* blob) {
   assert(blob != nullptr, "caller must check for nullptr");
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
-  blob->flush();
+  blob->purge(true /* free_code_cache_data */, true /* unregister_nmethod */);
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     CodeCache::free(blob);
@@ -173,7 +173,7 @@ void RuntimeBlob::free(RuntimeBlob* blob) {
   MemoryService::track_code_cache_memory_usage();
 }
 
-void CodeBlob::flush() {
+void CodeBlob::purge(bool free_code_cache_data, bool unregister_nmethod) {
   if (_oop_maps != nullptr) {
     delete _oop_maps;
     _oop_maps = nullptr;
@@ -236,9 +236,9 @@ const ImmutableOopMap* CodeBlob::oop_map_for_return_address(address return_addre
   return _oop_maps->find_map_at_offset((intptr_t) return_address - (intptr_t) code_begin());
 }
 
-void CodeBlob::print_code() {
+void CodeBlob::print_code_on(outputStream* st) {
   ResourceMark m;
-  Disassembler::decode(this, tty);
+  Disassembler::decode(this, st);
 }
 
 //----------------------------------------------------------------------------------------------------
@@ -249,7 +249,7 @@ BufferBlob::BufferBlob(const char* name, int size)
 : RuntimeBlob(name, sizeof(BufferBlob), size, CodeOffsets::frame_never_safe, /*locs_size:*/ 0)
 {}
 
-BufferBlob* BufferBlob::create(const char* name, int buffer_size) {
+BufferBlob* BufferBlob::create(const char* name, uint buffer_size) {
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
 
   BufferBlob* blob = nullptr;
@@ -759,6 +759,10 @@ UpcallStub* UpcallStub::create(const char* name, CodeBuffer* cb, jobject receive
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     blob = new (size) UpcallStub(name, cb, size, receiver, frame_data_offset);
   }
+  if (blob == nullptr) {
+    return nullptr; // caller must handle this
+  }
+
   // Track memory usage statistic after releasing CodeCache_lock
   MemoryService::track_code_cache_memory_usage();
 

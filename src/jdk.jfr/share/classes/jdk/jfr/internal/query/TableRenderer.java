@@ -28,11 +28,10 @@ import static jdk.jfr.internal.query.Configuration.MAX_PREFERRED_WIDTH;
 import static jdk.jfr.internal.query.Configuration.MIN_PREFERRED_WIDTH;
 import static jdk.jfr.internal.query.Configuration.PREFERRED_WIDTH;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.function.Predicate;
 
-import jdk.jfr.consumer.RecordedFrame;
-import jdk.jfr.consumer.RecordedMethod;
 import jdk.jfr.consumer.RecordedStackTrace;
 import jdk.jfr.internal.query.Configuration.Truncate;
 import jdk.jfr.internal.util.Output;
@@ -293,36 +292,38 @@ final class TableRenderer {
         if (cell.cellHeight > 1) {
             Object o = row.getValue(columnIndex);
             if (o instanceof RecordedStackTrace s) {
-                setStackTrace(cell, s);
+                o = s.getFrames();
+            }
+            if (o instanceof Collection<?> c) {
+                setMultiline(cell, c);
                 return;
             }
         }
 
         if (text.length() > cell.getContentSize()) {
             Object o = row.getValue(columnIndex);
-
             cell.setContent(FieldFormatter.formatCompact(cell.field, o));
             return;
         }
         cell.setContent(text);
     }
 
-    private void setStackTrace(TableCell cell, RecordedStackTrace s) {
+    private void setMultiline(TableCell cell, Collection<?> objects) {
         int row = 0;
         cell.clear();
-        for(RecordedFrame f : s.getFrames()) {
+        for(Object object : objects) {
             if (row == cell.cellHeight) {
                 return;
             }
-            if (f.isJavaFrame()) {
-                RecordedMethod method = f.getMethod();
-                String text = FieldFormatter.format(cell.field, method);
-                if (text.length() > cell.getContentWidth()) {
-                    text = FieldFormatter.formatCompact(cell.field, method);
-                }
-                cell.addLine(text);
+            String text = FieldFormatter.format(cell.field, object);
+            if (text.length() > cell.getContentWidth()) {
+                text = FieldFormatter.formatCompact(cell.field, object);
             }
+            cell.addLine(text);
             row++;
+        }
+        if (cell.field.lexicalSort) {
+            cell.sort();
         }
     }
 

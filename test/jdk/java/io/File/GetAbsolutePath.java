@@ -88,7 +88,10 @@ public class GetAbsolutePath {
             File f = new File(z + ":.");
             if (f.exists()) {
                 String zUSER_DIR = f.getCanonicalPath();
-                assertEquals(z + ":foo", zUSER_DIR + "\\foo");
+                File path = new File(z + ":foo");
+                String p = path.getAbsolutePath();
+                String ans = zUSER_DIR + "\\foo";
+                assertEquals(0, p.compareToIgnoreCase(ans));
             }
         }
     }
