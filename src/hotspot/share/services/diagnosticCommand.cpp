@@ -1208,7 +1208,7 @@ void VMDebugDCmd::find(DCmdSource source) {
           output()->print_cr("misaligned oop");
           return;
         }
-        if (!dbg_is_good_oop((oopDesc*) x)) {
+        if (!dbg_is_good_oop_detailed((oopDesc*) x)) {
           output()->print_cr("bad oop");
           return;
         }

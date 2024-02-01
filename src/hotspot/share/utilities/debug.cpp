@@ -669,7 +669,13 @@ extern "C" bool dbg_is_safe(const void* p, intptr_t errvalue) {
   return p != nullptr && SafeFetchN((intptr_t*)const_cast<void*>(p), errvalue) != errvalue;
 }
 
+
 extern "C" bool dbg_is_good_oop(oopDesc* o) {
+  return dbg_is_safe(o, -1) && dbg_is_safe(o->klass(), -1) && oopDesc::is_oop(o) && o->klass()->is_klass();
+}
+
+// Additional "good oop" checks, separate method to no disturb existing asserts.
+extern "C" bool dbg_is_good_oop_detailed(oopDesc* o) {
   bool good = dbg_is_safe(o, -1)
               && *(long*) o != 0
               && *((long*)o + 1) != 0;

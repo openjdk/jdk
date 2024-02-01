@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -294,5 +294,6 @@ void report_java_out_of_memory(const char* message);
 // Returns true iff the address p is readable and *(intptr_t*)p != errvalue
 extern "C" bool dbg_is_safe(const void* p, intptr_t errvalue);
 extern "C" bool dbg_is_good_oop(oopDesc* o);
+extern "C" bool dbg_is_good_oop_detailed(oopDesc* o);
 
 #endif // SHARE_UTILITIES_DEBUG_HPP
