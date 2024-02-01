@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -3744,7 +3744,7 @@ void MacroAssembler::compare_klass_ptr(Register Rop1, int64_t disp, Register Rba
       Register current = Rop1;
       Label    done;
 
-      if (maybenull) {       // null ptr must be preserved!
+      if (maybenull) {       // null pointer must be preserved!
         z_ltgr(Z_R0, current);
         z_bre(done);
         current = Z_R0;
@@ -3883,7 +3883,7 @@ void MacroAssembler::compare_heap_oop(Register Rop1, Address mem, bool maybenull
     Label done;
     int   pow2_offset = get_oop_base_complement(Z_R1, ((uint64_t)(intptr_t)base));
 
-    if (maybenull) {       // null ptr must be preserved!
+    if (maybenull) {       // null pointer must be preserved!
       z_ltgr(Z_R0, Rop1);
       z_bre(done);
     }
@@ -4123,7 +4123,7 @@ void MacroAssembler::oop_decoder(Register Rdst, Register Rsrc, bool maybenull, R
       Label done;
 
       // Rsrc contains a narrow oop. Thus we are sure the leftmost <oop_shift> bits will never be set.
-      if (maybenull) {  // null ptr must be preserved!
+      if (maybenull) {  // null pointer must be preserved!
         z_slag(Rdst, Rsrc, oop_shift);  // Arithmetic shift sets the condition code.
         z_bre(done);
       } else {
@@ -4185,7 +4185,7 @@ void MacroAssembler::oop_decoder(Register Rdst, Register Rsrc, bool maybenull, R
 
       // Scale oop and check for null.
       // Rsrc contains a narrow oop. Thus we are sure the leftmost <oop_shift> bits will never be set.
-      if (maybenull) {  // null ptr must be preserved!
+      if (maybenull) {  // null pointer must be preserved!
         z_slag(Rdst_tmp, Rsrc, oop_shift);  // Arithmetic shift sets the condition code.
         z_bre(done);
       } else {
