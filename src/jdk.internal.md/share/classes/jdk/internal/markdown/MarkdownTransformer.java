@@ -677,7 +677,7 @@ public class MarkdownTransformer implements DocTrees.DocCommentTreeTransformer {
          * The replacement objects may be either {@code DCTree} objects or
          * U+FFFC characters that were found in the original document.
          */
-        Iterator<?> replaceIter;
+        private final Iterator<?> replaceIter;
 
         /**
          * The list of trees being built.
