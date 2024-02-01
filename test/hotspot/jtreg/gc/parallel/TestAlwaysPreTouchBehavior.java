@@ -26,7 +26,8 @@ package gc.parallel;
 /**
  * @test TestAlwaysPreTouchBehavior
  * @summary Tests AlwaysPreTouch Bahavior, pages of java heap should be pretouched with AlwaysPreTouch enabled. This test reads RSS of test process, which should be bigger than heap size(1g) with AlwaysPreTouch enabled.
- * @requires vm.gc.Serial & os.family == "linux" & os.maxMemory > 2G
+ * @requires vm.gc.Parallel
+ * @requires os.family == "linux" & os.maxMemory > 2G
  * @library /test/lib
  * @run main/othervm -Xmx1g -Xms1g -XX:+UseParallelGC -XX:+AlwaysPreTouch gc.parallel.TestAlwaysPreTouchBehavior
  */
@@ -52,30 +53,25 @@ public class TestAlwaysPreTouchBehavior {
         String pid = ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
         // Read RSS from /proc/$pid/status. Only avaiable on Linux
         String processStatusFile = "/proc/" + pid + "/status";
-        try {
-            BufferedReader reader = new BufferedReader(new FileReader(processStatusFile));
-            StringBuilder stringBuilder = new StringBuilder();
-            String line = null;
-            while ((line = reader.readLine()) != null) {
-                if (line.startsWith("VmRSS:")) {
-                    stringBuilder.append(line);
-                    break;
-                }
+        BufferedReader reader = new BufferedReader(new FileReader(processStatusFile));
+        StringBuilder stringBuilder = new StringBuilder();
+        String line = null;
+        while ((line = reader.readLine()) != null) {
+            if (line.startsWith("VmRSS:")) {
+                stringBuilder.append(line);
+                break;
             }
-            stringBuilder.deleteCharAt(stringBuilder.length() - 1);
-            reader.close();
-
-            String content = stringBuilder.toString();
-            return Long.valueOf(content.split("\\s+")[1].trim());
-        } catch (Exception e) {
-           return EXCEPTION_VALUE;
         }
+        stringBuilder.deleteCharAt(stringBuilder.length() - 1);
+        reader.close();
 
+        String content = stringBuilder.toString();
+        return Long.valueOf(content.split("\\s+")[1].trim());
     }
     public static void main(String [] args) {
     long rss = 0;
     Runtime runtime = Runtime.getRuntime();
-    long committedMemory = (runtime.totalMemory()) / 1024; // in kb
+    long committedMemory = runtime.totalMemory() / 1024; // in kb
     try {
        rss = getProcessRssInKb();
     } catch (Exception e) {
