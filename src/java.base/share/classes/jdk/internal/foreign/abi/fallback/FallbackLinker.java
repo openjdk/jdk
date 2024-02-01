@@ -226,14 +226,14 @@ public final class FallbackLinker extends AbstractLinker {
         try (Arena upcallArena = Arena.ofConfined()) {
             MemorySegment argsSeg = argPtrs.reinterpret(numArgs * ADDRESS.byteSize(), upcallArena, null);
             MemorySegment retSeg = retLayout != null
-                ? retPtr.reinterpret(retLayout.byteSize(), upcallArena, null)
+                ? retPtr.reinterpret(retLayout.byteSize(), upcallArena, null) // restricted
                 : null;
 
             Object[] args = new Object[numArgs];
             for (int i = 0; i < numArgs; i++) {
                 MemoryLayout argLayout = argLayouts.get(i);
                 MemorySegment argPtr = argsSeg.getAtIndex(ADDRESS, i)
-                        .reinterpret(argLayout.byteSize(), upcallArena, null);
+                        .reinterpret(argLayout.byteSize(), upcallArena, null); // restricted
                 args[i] = readValue(argPtr, argLayout);
             }
 
