@@ -403,10 +403,6 @@ class ClassFieldMap: public CHeapObj<mtInternal> {
   // add a field
   void add(int index, char type, int offset);
 
-  // Adds instance fields of the class and all superclasses (superclass fields first).
-  // Returns total number of the fields in the class and its superclasses (static and instance).
-  int add_instance_fields(InstanceKlass* ik, int start_index);
-
  public:
   ~ClassFieldMap();
 
@@ -446,27 +442,8 @@ void ClassFieldMap::add(int index, char type, int offset) {
   _fields->append(field);
 }
 
-int ClassFieldMap::add_instance_fields(InstanceKlass* ik, int start_index) {
-  // add super fields first
-  InstanceKlass* super_klass = ik->java_super();
-  if (super_klass != nullptr) {
-    start_index += add_instance_fields(super_klass, start_index);
-  }
-
-  int count = 0;
-  for (FilteredJavaFieldStream fld(ik); !fld.done(); fld.next(), count++) {
-    // ignore static fields
-    if (fld.access_flags().is_static()) {
-      continue;
-    }
-    add(start_index + count, fld.signature()->char_at(0), fld.offset());
-  }
-  return count;
-}
-
 // Returns a heap allocated ClassFieldMap to describe the static fields
 // of the given class.
-//
 ClassFieldMap* ClassFieldMap::create_map_of_static_fields(Klass* k) {
   InstanceKlass* ik = InstanceKlass::cast(k);
 
@@ -501,8 +478,26 @@ ClassFieldMap* ClassFieldMap::create_map_of_instance_fields(oop obj) {
   // create the field map
   ClassFieldMap* field_map = new ClassFieldMap();
 
-  int index = interfaces_field_count(ik);
-  field_map->add_instance_fields(ik, index);
+  // fields of the superclasses are reported first, so need to know total field number to calculate field indices
+  int total_field_number = interfaces_field_count(ik);
+  for (InstanceKlass* klass = ik; klass != nullptr; klass = klass->java_super()) {
+    FilteredJavaFieldStream fld(klass);
+    total_field_number += fld.field_count();
+  }
+
+  for (InstanceKlass* klass = ik; klass != nullptr; klass = klass->java_super()) {
+    FilteredJavaFieldStream fld(klass);
+    int start_index = total_field_number - fld.field_count();
+    for (int index = 0; !fld.done(); fld.next(), index++) {
+      // ignore static fields
+      if (fld.access_flags().is_static()) {
+        continue;
+      }
+      field_map->add(start_index + index, fld.signature()->char_at(0), fld.offset());
+    }
+    // update total_field_number for superclass
+    total_field_number = start_index;
+  }
 
   return field_map;
 }
