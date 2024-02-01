@@ -81,6 +81,8 @@ import com.sun.source.util.DocSourcePositions;
 import com.sun.source.util.DocTreePath;
 import com.sun.source.util.DocTreeScanner;
 import com.sun.source.util.DocTrees;
+import com.sun.source.util.DocTrees.CommentKind;
+import com.sun.source.util.DocTrees.DocCommentTreeTransformer;
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.TreePathScanner;
@@ -90,6 +92,7 @@ import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.Pair;
+import java.util.ServiceLoader;
 
 /**Helper to find javadoc and resolve @inheritDoc.
  */
@@ -222,7 +225,8 @@ public abstract class JavadocHelper implements AutoCloseable {
             if (docComment == null)
                 return null;
 
-            Pair<DocCommentTree, Integer> parsed = parseDocComment(task, docComment);
+            CommentKind docCommentKind = trees.getDocCommentKind(el);
+            Pair<DocCommentTree, Integer> parsed = parseDocComment(task, docComment, docCommentKind);
             DocCommentTree docCommentTree = parsed.fst;
             int offset = parsed.snd;
             IOException[] exception = new IOException[1];
@@ -252,6 +256,10 @@ public abstract class JavadocHelper implements AutoCloseable {
                 private Map<DocTree, String> syntheticTrees = new IdentityHashMap<>();
                 /* Position on which the synthetic trees should be inserted.*/
                 private long insertPos = offset;
+                @Override
+                public Void scan(Iterable<? extends DocTree> nodes, Void p) {
+                    return super.scan(nodes, p); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/OverriddenMethodBody
+                }
                 @Override @DefinedBy(Api.COMPILER_TREE)
                 public Void visitDocComment(DocCommentTree node, Void p) {
                     dcTree = node;
@@ -260,7 +268,7 @@ public abstract class JavadocHelper implements AutoCloseable {
                         if (node.getFullBody().isEmpty()) {
                             //there is no body in the javadoc, add synthetic {@inheritDoc}, which
                             //will be automatically filled in visitInheritDoc:
-                            DocCommentTree dc = parseDocComment(task, "{@inheritDoc}").fst;
+                            DocCommentTree dc = parseDocComment(task, "{@inheritDoc}", CommentKind.BLOCK).fst; //XXX
                             syntheticTrees.put(dc, "*\n");
                             interestingParent.push(dc);
                             boolean prevInSynthetic = inSynthetic;
@@ -401,7 +409,7 @@ public abstract class JavadocHelper implements AutoCloseable {
                         return null;
                     }
                     Pair<DocCommentTree, Integer> parsed =
-                            parseDocComment(inheritedJavacTask, inherited);
+                            parseDocComment(inheritedJavacTask, inherited, CommentKind.BLOCK);
                     DocCommentTree inheritedDocTree = parsed.fst;
                     int offset = parsed.snd;
                     List<List<? extends DocTree>> inheritedText = new ArrayList<>();
@@ -555,20 +563,36 @@ public abstract class JavadocHelper implements AutoCloseable {
                 private final List<DocTree.Kind> tagOrder = Arrays.asList(DocTree.Kind.PARAM, DocTree.Kind.THROWS, DocTree.Kind.RETURN);
             }.scan(docCommentTree, null);
 
-            if (replace.isEmpty())
-                return docComment;
+            String newDocText;
 
-            //do actually replace {@inheritDoc} with the new text (as scheduled by the visitor
-            //above):
-            StringBuilder replacedInheritDoc = new StringBuilder(docComment);
+            if (!replace.isEmpty()) {
+                //do actually replace {@inheritDoc} with the new text (as scheduled by the visitor
+                //above):
+                StringBuilder replacedInheritDoc = new StringBuilder(docComment);
 
-            for (Entry<int[], List<String>> e : replace.entrySet()) {
-                replacedInheritDoc.delete(e.getKey()[0] - offset, e.getKey()[1] - offset);
-                replacedInheritDoc.insert(e.getKey()[0] - offset,
-                                          e.getValue().stream().collect(Collectors.joining("")));
+                for (Entry<int[], List<String>> e : replace.entrySet()) {
+                    replacedInheritDoc.delete(e.getKey()[0] - offset, e.getKey()[1] - offset);
+                    replacedInheritDoc.insert(e.getKey()[0] - offset,
+                                              e.getValue().stream().collect(Collectors.joining("")));
+                }
+
+                newDocText = replacedInheritDoc.toString();
+            } else {
+                newDocText = docComment;
             }
 
-            return replacedInheritDoc.toString();
+            if (docCommentKind == CommentKind.LINE) {
+                for (DocCommentTreeTransformer transformer : ServiceLoader.load(DocTree.class.getModule().getLayer(), DocCommentTreeTransformer.class)) {
+                    if ("markdown2html".equals(transformer.name())) {
+                        Pair<DocCommentTree, Integer> parsedNewDoc = parseDocComment(task, newDocText, CommentKind.LINE);
+                        DocCommentTree transformed = transformer.transform(trees, parsedNewDoc.fst);
+                        newDocText = transformed.toString();
+                        break;
+                    }
+                }
+            }
+
+            return newDocText;
         }
 
         /* Find methods from which the given method may inherit javadoc, in the proper order.*/
@@ -604,25 +628,35 @@ public abstract class JavadocHelper implements AutoCloseable {
             }
 
          private DocTree parseBlockTag(JavacTask task, String blockTag) {
-            DocCommentTree dc = parseDocComment(task, blockTag).fst;
+            DocCommentTree dc = parseDocComment(task, blockTag, CommentKind.BLOCK).fst;
 
             return dc.getBlockTags().get(0);
         }
 
-        private Pair<DocCommentTree, Integer> parseDocComment(JavacTask task, String javadoc) {
+        private Pair<DocCommentTree, Integer> parseDocComment(JavacTask task, String javadoc, CommentKind docCommentKind) {
             DocTrees trees = DocTrees.instance(task);
             try {
-                SimpleJavaFileObject fo =
-                        new SimpleJavaFileObject(new URI("mem://doc.html"), Kind.HTML) {
-                    @Override @DefinedBy(Api.COMPILER)
-                    public CharSequence getCharContent(boolean ignoreEncodingErrors)
-                            throws IOException {
-                        return "<body>" + javadoc + "</body>";
-                    }
-                };
-                DocCommentTree tree = trees.getDocCommentTree(fo);
+                SimpleJavaFileObject fo;
+                if (docCommentKind == CommentKind.BLOCK) {
+                    fo = new SimpleJavaFileObject(new URI("mem:///doc.html"), Kind.HTML) {
+                        @Override @DefinedBy(Api.COMPILER)
+                        public CharSequence getCharContent(boolean ignoreEncodingErrors)
+                                throws IOException {
+                            return "<body>" + javadoc + "</body>";
+                        }
+                    };
+                } else {
+                    fo = new SimpleJavaFileObject(new URI("mem:///doc.md"), Kind.OTHER) {
+                        @Override @DefinedBy(Api.COMPILER)
+                        public CharSequence getCharContent(boolean ignoreEncodingErrors)
+                                throws IOException {
+                            return javadoc;
+                        }
+                    };
+                }
+                DocCommentTree tree = /*trees.getDocCommentTreeTransformer().transform(trees, */trees.getDocCommentTree(fo)/*)*/;
                 int offset = (int) trees.getSourcePositions().getStartPosition(null, tree, tree);
-                offset += "<body>".length();
+                offset += docCommentKind == CommentKind.BLOCK ? "<body>".length() : 0;
                 return Pair.of(tree, offset);
             } catch (URISyntaxException ex) {
                 throw new IllegalStateException(ex);
@@ -767,6 +801,12 @@ public abstract class JavadocHelper implements AutoCloseable {
             Iterable<? extends CompilationUnitTree> cuts = task.parse();
 
             task.enter();
+            for (DocCommentTreeTransformer transformer : ServiceLoader.load(DocTree.class.getModule().getLayer(), DocCommentTreeTransformer.class)) {
+                if ("standard".equals(transformer.name())) {
+                    DocTrees.instance(task).setDocCommentTreeTransformer(transformer);
+                    break;
+                }
+            }
 
             return Pair.of(task, cuts.iterator().next());
         }

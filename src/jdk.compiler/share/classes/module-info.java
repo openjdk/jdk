@@ -270,6 +270,7 @@ module jdk.compiler {
         jdk.jshell;
 
     uses javax.annotation.processing.Processor;
+    uses com.sun.source.util.DocTrees.DocCommentTreeTransformer;
     uses com.sun.source.util.Plugin;
     uses com.sun.tools.doclint.DocLint;
     uses com.sun.tools.javac.platform.PlatformProvider;

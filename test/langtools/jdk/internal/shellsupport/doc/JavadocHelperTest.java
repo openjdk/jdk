@@ -90,12 +90,6 @@ public class JavadocHelperTest {
                       " @return value\n");
     }
 
-    private Element getFirstMethod(JavacTask task, String typeName) {
-        return ElementFilter.methodsIn(task.getElements().getTypeElement(typeName).getEnclosedElements()).get(0);
-    }
-
-    private Function<JavacTask, Element> getSubTest = t -> getFirstMethod(t, "test.Sub");
-
     public void testInheritNoJavadoc() throws Exception {
         doTestJavadoc("",
                       getSubTest,
@@ -298,6 +292,30 @@ public class JavadocHelperTest {
                       "@return value\n");
     }
 
+    public void testMarkdown() throws Exception {
+        doTestJavadoc("/// Prefix {@inheritDoc} suffix.\n" +
+                      "///\n" +
+                      "/// *Another* __paragraph__.\n" +
+                      "///\n" +
+                      "/// @param p1 prefix {@inheritDoc} suffix\n" +
+                      "/// @param p2 prefix {@inheritDoc} suffix\n" +
+                      "/// @param p3 prefix {@inheritDoc} suffix\n" +
+                      "/// @throws IllegalStateException prefix {@inheritDoc} suffix\n" +
+                      "/// @throws IllegalArgumentException prefix {@inheritDoc} suffix\n" +
+                      "/// @throws IllegalAccessException prefix {@inheritDoc} suffix\n" +
+                      "/// @return prefix {@inheritDoc} suffix\n",
+                      getSubTest,
+                      "Prefix javadoc1 suffix.\n" +
+                      "<p><em>Another</em> <strong>paragraph</strong>.\n" +
+                      "@param p1 prefix param1 suffix\n" +
+                      "@param p2 prefix param2 suffix\n" +
+                      "@param p3 prefix param3 suffix\n" +
+                      "@throws IllegalStateException prefix exc1 suffix\n" +
+                      "@throws IllegalArgumentException prefix exc2 suffix\n" +
+                      "@throws IllegalAccessException prefix exc3 suffix\n" +
+                      "@return prefix value suffix");
+    }
+
     private void doTestJavadoc(String origJavadoc, Function<JavacTask, Element> getElement, String expectedJavadoc) throws Exception {
         doTestJavadoc(origJavadoc,
                       "    /**\n" +
@@ -366,6 +384,12 @@ public class JavadocHelperTest {
             }
         }
     }
+
+    private Element getFirstMethod(JavacTask task, String typeName) {
+        return ElementFilter.methodsIn(task.getElements().getTypeElement(typeName).getEnclosedElements()).get(0);
+    }
+
+    private Function<JavacTask, Element> getSubTest = t -> getFirstMethod(t, "test.Sub");
 
     private static final class JFOImpl extends SimpleJavaFileObject {
 
