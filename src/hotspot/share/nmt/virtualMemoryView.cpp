@@ -191,14 +191,14 @@ void VirtualMemoryView::reserve_memory(address base_addr, size_t size, MEMFLAGS 
 }
 
 void VirtualMemoryView::commit_memory_into_space(const PhysicalMemorySpace& space,
-                                                       address offset, size_t size,
-                                                       const NativeCallStack& stack) {
+                                                 address offset, size_t size,
+                                                 const NativeCallStack& stack) {
   RegionStorage& crngs = _virt_mem->committed_regions.at(space.id);
   register_memory(crngs, offset, size, mtNone, stack);
 }
 
 void VirtualMemoryView::remove_view_into_space(const PhysicalMemorySpace& space,
-                                                     address base_addr, size_t size) {
+                                               address base_addr, size_t size) {
   Range range_to_remove{base_addr, size};
   OffsetRegionStorage& range_array = _virt_mem->mapped_regions.at(space.id);
   TrackedOffsetRange out[2];
