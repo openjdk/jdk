@@ -274,7 +274,7 @@ errOut:
     return ortn;
 }
 
-static void addIdentitiesToKeystore(JNIEnv *env, jobject keyStore)
+static void addIdentitiesToKeystore(JNIEnv *env, jobject keyStore, jmethodID jm_createKeyEntry)
 {
     // Search the user keychain list for all identities. Identities are a certificate/private key association that
     // can be chosen for a purpose such as signing or an SSL connection.
@@ -283,15 +283,6 @@ static void addIdentitiesToKeystore(JNIEnv *env, jobject keyStore)
     OSStatus err = SecIdentitySearchCreate(NULL, 0, &identitySearch);
     SecIdentityRef theIdentity = NULL;
     OSErr searchResult = noErr;
-
-    jclass jc_KeychainStore = (*env)->FindClass(env, "apple/security/KeychainStore");
-    if (jc_KeychainStore == NULL) {
-        goto errOut;
-    }
-    jmethodID jm_createKeyEntry = (*env)->GetMethodID(env, jc_KeychainStore, "createKeyEntry", "(Ljava/lang/String;JJ[J[[B)V");
-    if (jm_createKeyEntry == NULL) {
-        goto errOut;
-    }
 
     do {
         searchResult = SecIdentitySearchCopyNext(identitySearch, &theIdentity);
@@ -648,18 +639,16 @@ errOut:
 JNIEXPORT void JNICALL Java_apple_security_KeychainStore__1scanKeychain
 (JNIEnv *env, jobject this, jstring name)
 {
-    // Look for 'identities' -- private key and certificate chain pairs -- and add those.
-    // Search for these first, because a certificate that's found here as part of an identity will show up
-    // again later as a certificate.
-    addIdentitiesToKeystore(env, this);
-
-    JNU_CHECK_EXCEPTION(env);
-
     jboolean isCopy;
     const char *name_utf = (*env)->GetStringUTFChars(env, name, &isCopy);
     if (name_utf != NULL) {
         jclass jc_KeychainStore = (*env)->FindClass(env, "apple/security/KeychainStore");
         if (jc_KeychainStore == NULL) {
+            return;
+        }
+
+        jmethodID jm_createKeyEntry = (*env)->GetMethodID(env, jc_KeychainStore, "createKeyEntry", "(Ljava/lang/String;JJ[J[[B)V");
+        if (jm_createKeyEntry == NULL) {
             return;
         }
 
@@ -692,6 +681,13 @@ JNIEXPORT void JNICALL Java_apple_security_KeychainStore__1scanKeychain
                                           jm_arrayListCons,
                                           jm_listAdd);
         } else {
+            // Look for 'identities' -- private key and certificate chain pairs -- and add those.
+            // Search for these first, because a certificate that's found here as part of an identity will show up
+            // again later as a certificate.
+            addIdentitiesToKeystore(env, this, jm_createKeyEntry);
+
+            JNU_CHECK_EXCEPTION(env);
+
             // Scan current keychain for trusted certificates.
             addCertificatesToKeystore(env, this,
                                       jm_createTrustedCertEntry,
