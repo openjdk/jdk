@@ -117,6 +117,10 @@
 #include <sys/utsname.h>
 #include <sys/vminfo.h>
 
+#ifndef _LARGE_FILES
+#error Hotspot on AIX must be compiled with -D_LARGE_FILES
+#endif
+
 // Missing prototypes for various system APIs.
 extern "C"
 int mread_real_time(timebasestruct_t *t, size_t size_of_timebasestruct_t);
