@@ -72,6 +72,7 @@ public final class TreeCellRendererLeakTest {
         public TreeCellRenderer() {}
 
         // Create a new JLabel every time
+        @Override
         public Component getTreeCellRendererComponent(
                 JTree tree,
                 Object value,

@@ -3280,8 +3280,10 @@ public class BasicTreeUI extends TreeUI
                      expanded, treeModel.isLeaf(value), row,
                      false);
                 if(tree != null) {
+                    // Remove previously added components to prevent leak
+                    // and add the current component returned by cellrenderer for
+                    // painting and other measurements
                     rendererPane.removeAll();
-                    // Only ever removed when UI changes, this is OK!
                     rendererPane.add(aComponent);
                     aComponent.validate();
                 }
