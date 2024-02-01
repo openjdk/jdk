@@ -28,6 +28,7 @@
  * @summary Basic test of ThreadMXBean.getThreadCpuTime(long[]) and
  *          getThreadUserTime(long[]).
  * @author  Paul Hohensee
+ * @requires vm.compMode != "Xcomp"
  * @run main/othervm ThreadCpuTimeArray
  */
 
