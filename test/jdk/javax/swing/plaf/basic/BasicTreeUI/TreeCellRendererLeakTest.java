@@ -219,4 +219,3 @@ public final class TreeCellRendererLeakTest {
         }
     }
 }
-
