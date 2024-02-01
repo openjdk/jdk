@@ -88,8 +88,8 @@ public class TestContainerInfo {
     private static void checkContainerInfo(OutputAnalyzer out) throws Exception {
         String str = out.getOutput();
         if (str.contains("cgroupv2")) {
-            shouldMatchWithValue("memory_swap_max_limit_in_bytes", "0");
-            shouldMatchWithValue("memory_swap_current_in_bytes", "0");
+            shouldMatchWithValue(out, "memory_swap_max_limit_in_bytes", "0");
+            shouldMatchWithValue(out, "memory_swap_current_in_bytes", "0");
         } else {
             throw new SkippedException("This test is cgroups v2 specific, skipped on cgroups v1");
         }
