@@ -17,6 +17,7 @@ import javax.swing.JFileChooser;
 /*
  * @test
  * @bug 8323670 8307091 8240690
+ * @requires os.family == "mac" | os.family == "linux"
  * @summary Verifies thread-safety of BasicDirectoryModel (JFileChooser)
  */
 public final class BasicDirectoryModelConcurrency extends ThreadGroup {
