@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Verify MessageFormat.toPattern() is equivalent to original pattern
+ * @summary Verify that MessageFormat.toPattern() properly escapes special curly braces
  * @bug 8323699
  * @run junit MessageFormatToPatternTest
  */
