@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
  *          5. The rangecheck is still before the peeling, and is not copied to the peeled loop. Hence
  *             we do not statically realize that the peeled loop can never be entered.
  *
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+StressLCM -XX:+StressGCM -XX:+StressCCP -XX:+StressIGVN
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+StressLCM -XX:+StressGCM -XX:+StressCCP -XX:+StressIGVN -XX:+StressMacroExpansion
  *                   -Xcomp -XX:-TieredCompilation
  *                   -XX:LoopMaxUnroll=0 -XX:LoopUnrollLimit=0 -XX:-LoopUnswitching
  *                   -XX:CompileCommand=compileonly,compiler.loopopts.TestPeelingSkeletonPredicateInitialization::*

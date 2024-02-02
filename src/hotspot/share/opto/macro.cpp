@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2433,6 +2433,9 @@ bool PhaseMacroExpand::expand_macro_nodes() {
   // Last attempt to eliminate macro nodes.
   eliminate_macro_nodes();
   if (C->failing())  return true;
+  if (StressMacroExpansion) {
+    C->shuffle_macro_nodes();
+  }
 
   // Eliminate Opaque and LoopLimit nodes. Do it after all loop optimizations.
   bool progress = true;
@@ -2511,6 +2514,7 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       }
       assert(!success || (C->macro_count() == (old_macro_count - 1)), "elimination must have deleted one node from macro list");
       progress = progress || success;
+      if (success) { C->print_method(PHASE_AFTER_MACRO_EXPANSION_ELIMINATE, 4, n); }
     }
   }
 
@@ -2571,6 +2575,7 @@ bool PhaseMacroExpand::expand_macro_nodes() {
     }
     assert(C->macro_count() == (old_macro_count - 1), "expansion must have deleted one node from macro list");
     if (C->failing())  return true;
+    C->print_method(PHASE_AFTER_MACRO_EXPANSION_ARRAYCOPY, 4, n);
 
     // Clean up the graph so we're less likely to hit the maximum node
     // limit
@@ -2613,6 +2618,7 @@ bool PhaseMacroExpand::expand_macro_nodes() {
     }
     assert(C->macro_count() < macro_count, "must have deleted a node from macro list");
     if (C->failing())  return true;
+    C->print_method(PHASE_AFTER_MACRO_EXPANSION_ALLOCATE, 4, n);
 
     // Clean up the graph so we're less likely to hit the maximum node
     // limit
