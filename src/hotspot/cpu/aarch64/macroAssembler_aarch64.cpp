@@ -6381,6 +6381,7 @@ void MacroAssembler::lightweight_lock(Register obj, Register t1, Register t2, Re
 // - t1, t2, t3: temporary registers
 void MacroAssembler::lightweight_unlock(Register obj, Register t1, Register t2, Register t3, Label& slow) {
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
+  // cmpxchg clobbers rscratch1.
   assert_different_registers(obj, t1, t2, t3, rscratch1);
 
 #ifdef ASSERT
