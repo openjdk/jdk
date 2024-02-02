@@ -315,8 +315,8 @@ void ObjectMonitor::ClearSuccOnSuspend::operator()(JavaThread* current) {
 // Enter support
 
 bool ObjectMonitor::enter_for(JavaThread* locking_thread) {
-  // Used by ObjectSynchronizer::enter_for to enter for another thread
-  // this code may only contend with deflation.
+  // Used by ObjectSynchronizer::enter_for to enter for another thread.
+  // The monitor is private to locking_thread which must be suspended. So this code may only contend with deflation.
   assert(locking_thread == Thread::current() || locking_thread->is_obj_deopt_suspend(), "must be");
 
   // Block out deflation as soon as possible.
