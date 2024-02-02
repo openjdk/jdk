@@ -21,7 +21,7 @@ import javax.swing.JFileChooser;
  */
 public final class BasicDirectoryModelConcurrency extends ThreadGroup {
     /** Initial number of files. */
-    private static final long NUMBER_OF_FILES = 100;
+    private static final long NUMBER_OF_FILES = 1_000;
     /** Maximum number of files created on a timer tick. */
     private static final long LIMIT_FILES = 20;
 
@@ -31,9 +31,9 @@ public final class BasicDirectoryModelConcurrency extends ThreadGroup {
     /**
      * Number of threads running {@code fileChooser.rescanCurrentDirectory()}.
      */
-    private static final int NUMBER_OF_THREADS = 2;
+    private static final int NUMBER_OF_THREADS = 5;
     /** Number of repeated calls to {@code rescanCurrentDirectory}. */
-    private static final int NUMBER_OF_REPEATS = 5_000;
+    private static final int NUMBER_OF_REPEATS = 2_000;
     /** Maximum amount a thread waits before initiating rescan. */
     private static final long LIMIT_SLEEP = 100;
 
