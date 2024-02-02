@@ -144,8 +144,10 @@
  *                 -XX:+WhiteBoxAPI
  *                 -Xbatch
  *                 -XX:+DoEscapeAnalysis -XX:+EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
- *                 -XX:LockingMode=0
- *                 -Xlog:monitorinflation=trace
+ *                 -XX:LockingMode=2
+ *                 -Xlog:monitorinflation=trace:file=monitorinflation.log
+ *
+ * @comment Re-lock may race with deflation.
  * @run driver EATests
  *                 -XX:+UnlockDiagnosticVMOptions
  *                 -Xms256m -Xmx256m
@@ -154,8 +156,8 @@
  *                 -XX:+WhiteBoxAPI
  *                 -Xbatch
  *                 -XX:+DoEscapeAnalysis -XX:+EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
- *                 -XX:LockingMode=2
- *                 -Xlog:monitorinflation=trace
+ *                 -XX:LockingMode=0
+ *                 -XX:GuaranteedAsyncDeflationInterval=1000
  */
 
 /**
