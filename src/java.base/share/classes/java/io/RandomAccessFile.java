@@ -215,6 +215,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @see        java.lang.SecurityManager#checkWrite(java.lang.String)
      * @see        java.nio.channels.FileChannel#force(boolean)
      */
+    @SuppressWarnings("this-escape")
     public RandomAccessFile(File file, String mode)
         throws FileNotFoundException
     {

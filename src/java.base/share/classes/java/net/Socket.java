@@ -211,6 +211,7 @@ public class Socket implements java.io.Closeable {
      *
      * @since   1.5
      */
+    @SuppressWarnings("this-escape")
     public Socket(Proxy proxy) {
         // Create a copy of Proxy as a security measure
         if (proxy == null) {
@@ -319,6 +320,7 @@ public class Socket implements java.io.Closeable {
      * @see        java.net.SocketImpl
      * @see        SecurityManager#checkConnect
      */
+    @SuppressWarnings("this-escape")
     public Socket(String host, int port)
         throws UnknownHostException, IOException
     {
@@ -353,6 +355,7 @@ public class Socket implements java.io.Closeable {
      * @see        java.net.SocketImpl
      * @see        SecurityManager#checkConnect
      */
+    @SuppressWarnings("this-escape")
     public Socket(InetAddress address, int port) throws IOException {
         this(address != null ? new InetSocketAddress(address, port) : null,
              (SocketAddress) null, true);
@@ -394,6 +397,7 @@ public class Socket implements java.io.Closeable {
      * @see        SecurityManager#checkConnect
      * @since   1.1
      */
+    @SuppressWarnings("this-escape")
     public Socket(String host, int port, InetAddress localAddr,
                   int localPort) throws IOException {
         this(host != null ? new InetSocketAddress(host, port) :
@@ -436,6 +440,7 @@ public class Socket implements java.io.Closeable {
      * @see        SecurityManager#checkConnect
      * @since   1.1
      */
+    @SuppressWarnings("this-escape")
     public Socket(InetAddress address, int port, InetAddress localAddr,
                   int localPort) throws IOException {
         this(address != null ? new InetSocketAddress(address, port) : null,
@@ -483,6 +488,7 @@ public class Socket implements java.io.Closeable {
      * @deprecated Use DatagramSocket instead for UDP transport.
      */
     @Deprecated
+    @SuppressWarnings("this-escape")
     public Socket(String host, int port, boolean stream) throws IOException {
         this(host != null ? new InetSocketAddress(host, port) :
                new InetSocketAddress(InetAddress.getByName(null), port),
@@ -525,6 +531,7 @@ public class Socket implements java.io.Closeable {
      * @deprecated Use DatagramSocket instead for UDP transport.
      */
     @Deprecated
+    @SuppressWarnings("this-escape")
     public Socket(InetAddress host, int port, boolean stream) throws IOException {
         this(host != null ? new InetSocketAddress(host, port) : null,
              new InetSocketAddress(0), stream);

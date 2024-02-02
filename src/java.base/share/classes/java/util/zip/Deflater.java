@@ -196,6 +196,7 @@ public class Deflater {
      * @param level the compression level (0-9)
      * @param nowrap if true then use GZIP compatible compression
      */
+    @SuppressWarnings("this-escape")
     public Deflater(int level, boolean nowrap) {
         this.level = level;
         this.strategy = DEFAULT_STRATEGY;
