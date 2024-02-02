@@ -640,7 +640,7 @@ public:
   }
 
   //
-  // Feature identification
+  // Feature identification which can be affected by VM settings
   //
   static bool supports_cpuid()        { return _features  != 0; }
   static bool supports_cmov()         { return (_features & CPU_CMOV) != 0; }
@@ -702,6 +702,11 @@ public:
   static bool supports_ospke()        { return (_features & CPU_OSPKE) != 0; }
   static bool supports_cet_ss()       { return (_features & CPU_CET_SS) != 0; }
   static bool supports_cet_ibt()      { return (_features & CPU_CET_IBT) != 0; }
+
+  //
+  // Feature identification not affected by VM flags
+  //
+  static bool cpu_supports_evex()     { return (_cpu_features & CPU_AVX512F) != 0; }
 
   // Intel features
   static bool is_intel_family_core() { return is_intel() &&

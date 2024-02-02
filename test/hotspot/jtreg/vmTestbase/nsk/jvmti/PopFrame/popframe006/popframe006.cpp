@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ typedef struct {
     jlocation loc;
 } check_info;
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiCapabilities caps;
 static jvmtiEventCallbacks callbacks;
 static jint result = PASSED;
@@ -109,17 +109,17 @@ void check(jvmtiEnv *jvmti_env, jmethodID mid, jlocation loc, int i) {
         return;
     }
 
-    if (sigClass == NULL || strcmp(sigClass, checks[i].cls) != 0) {
+    if (sigClass == nullptr || strcmp(sigClass, checks[i].cls) != 0) {
         printf("(%s, %d) wrong class sig: \"%s\",\n", note, i, sigClass);
         printf(" expected: \"%s\"\n", checks[i].cls);
         result = STATUS_FAILED;
     }
-    if (name == NULL || strcmp(name, checks[i].name) != 0) {
+    if (name == nullptr || strcmp(name, checks[i].name) != 0) {
         printf("(%s, %d) wrong method name: \"%s\",", note, i, name);
         printf(" expected: \"%s\"\n", checks[i].name);
         result = STATUS_FAILED;
     }
-    if (sig == NULL || strcmp(sig, checks[i].sig) != 0) {
+    if (sig == nullptr || strcmp(sig, checks[i].sig) != 0) {
         printf("(%s, %d) wrong method sig: \"%s\",", note, i, sig);
         printf(" expected: \"%s\"\n", checks[i].sig);
         result = STATUS_FAILED;
@@ -349,12 +349,12 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jvmtiError err;
     jint res;
 
-    if (options != NULL && strcmp(options, "printdump") == 0) {
+    if (options != nullptr && strcmp(options, "printdump") == 0) {
         printdump = JNI_TRUE;
     }
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
     }
@@ -409,7 +409,7 @@ Java_nsk_jvmti_PopFrame_popframe006_getReady(JNIEnv *env,
     jvmtiError err;
     jclass clazz;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("JVMTI client was not properly loaded!\n");
         result = STATUS_FAILED;
         return;
@@ -424,35 +424,35 @@ Java_nsk_jvmti_PopFrame_popframe006_getReady(JNIEnv *env,
     }
 
     clazz = env->GetObjectClass(thr);
-    if (clazz == NULL) {
+    if (clazz == nullptr) {
         printf("Cannot get the class of thread object\n");
         result = STATUS_FAILED;
         return;
     }
 
     mid_run = env->GetMethodID(clazz, "run", "()V");
-    if (mid_run == NULL) {
+    if (mid_run == nullptr) {
         printf("Cannot find Method ID for method \"run\"\n");
         result = STATUS_FAILED;
         return;
     }
 
     mid_A = env->GetStaticMethodID(clazz, "A", "()V");
-    if (mid_A == NULL) {
+    if (mid_A == nullptr) {
         printf("Cannot find Method ID for method \"A\"\n");
         result = STATUS_FAILED;
         return;
     }
 
     mid_B = env->GetStaticMethodID(clazz, "B", "()V");
-    if (mid_B == NULL) {
+    if (mid_B == nullptr) {
         printf("Cannot find Method ID for method \"B\"\n");
         result = STATUS_FAILED;
         return;
     }
 
     mid_C = env->GetStaticMethodID(clazz, "C", "()V");
-    if (mid_C == NULL) {
+    if (mid_C == nullptr) {
         printf("Cannot find Method ID for method \"C\"\n");
         result = STATUS_FAILED;
         return;
@@ -467,7 +467,7 @@ Java_nsk_jvmti_PopFrame_popframe006_getReady(JNIEnv *env,
     }
 
     err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-        JVMTI_EVENT_BREAKPOINT, NULL);
+        JVMTI_EVENT_BREAKPOINT, nullptr);
     if (err != JVMTI_ERROR_NONE) {
         printf("Failed to enable BREAKPOINT event: %s (%d)\n",
                TranslateError(err), err);
@@ -481,7 +481,7 @@ Java_nsk_jvmti_PopFrame_popframe006_getReady(JNIEnv *env,
     }
 
     err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-        JVMTI_EVENT_FRAME_POP, NULL);
+        JVMTI_EVENT_FRAME_POP, nullptr);
     if (err != JVMTI_ERROR_NONE) {
         printf("Failed to enable FRAME_POP event: %s (%d)\n",
                TranslateError(err), err);

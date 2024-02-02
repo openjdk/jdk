@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -774,6 +774,10 @@ public:
   void prepare_for_mutator_after_young_collection();
 
   void retire_tlabs();
+
+  // Update all region's pin counts from the per-thread caches and resets them.
+  // Must be called before any decision based on pin counts.
+  void flush_region_pin_cache();
 
   void expand_heap_after_young_collection();
   // Update object copying statistics.
