@@ -16,7 +16,7 @@ import javax.swing.JFileChooser;
 
 /*
  * @test
- * @bug 4966171 8240690
+ * @bug 8323670 8307091 8240690
  * @summary concurrency of BasicDirectoryModel and JFileChooser
  */
 public final class BasicDirectoryModelConcurrency extends ThreadGroup {
