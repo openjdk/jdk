@@ -112,6 +112,10 @@ public class MessageFormatToPatternTest {
             Arguments.of("{0,choice,0.0#''{''curly''}'' braces}", "{curly} braces"),
             Arguments.of("{0,choice,0.0#'{0,choice,0.0#''{0,choice,0.0#''''{0,choice,0.0#foo}''''}''}'}", "foo"),
 
+            // Absurd double quote examples
+            Arguments.of("Foo '}''''''''}' {0,number,bar'}' '}' } baz ", "Foo }''''} bar} } 1 baz "),
+            Arguments.of("'''}''{'''}''''}'", "'}'{'}''}"),
+
             // An absurdly complicated example
             Arguments.of("{0,choice,0.0#text2887 [] '{'1,date,YYYY-MM-DD'}' text2888 [''*'']|1.0#found|2.0#'text2901 [oog'')!''] {2,choice,0.0#''text2897 ['''']''''wq1Q] {2,choice,0.0#''''text2891 [s''''''''&''''''''] {0,number,#0.##} text2892 [8''''''''|$'''''''''''''''''''''''']''''|1.0#''''text2893 [] {0,number,#0.##} text2894 [S'''''''']'''''''']''''|2.0#text2895 [''''''''.''''''''eB] {1,date,YYYY-MM-DD} text2896 [9Y]} text2898 []''|1.0#''text2899 [xk7] {0,number,#0.##} text2900 []''} text2902 [7'':$)''O]'}{0,choice,0.0#'text2903 [] {0,number,#0.##} text2904 [S'':'']'|1.0#'me'}", "foundme")
         );
