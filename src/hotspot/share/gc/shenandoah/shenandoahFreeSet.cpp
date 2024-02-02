@@ -42,7 +42,7 @@ static const char* partition_name(ShenandoahFreeSetPartitionId t) {
   }
 }
 
-ShenandoahRegionPartition::ShenandoahRegionPartition(size_t max_regions, ShenandoahFreeSet* free_set) :
+ShenandoahRegionPartitions::ShenandoahRegionPartitions(size_t max_regions, ShenandoahFreeSet* free_set) :
     _max(max_regions),
     _region_size_bytes(ShenandoahHeapRegion::region_size_bytes()),
     _free_set(free_set),
@@ -51,7 +51,7 @@ ShenandoahRegionPartition::ShenandoahRegionPartition(size_t max_regions, Shenand
   make_all_regions_unavailable();
 }
 
-ShenandoahRegionPartition::~ShenandoahRegionPartition() {
+ShenandoahRegionPartitions::~ShenandoahRegionPartitions() {
   FREE_C_HEAP_ARRAY(ShenandoahFreeSetPartitionId, _membership);
 }
 
@@ -85,7 +85,7 @@ inline bool ShenandoahFreeSet::has_alloc_capacity(ShenandoahHeapRegion *r) const
   return alloc_capacity(r) > 0;
 }
 
-void ShenandoahRegionPartition::make_all_regions_unavailable() {
+void ShenandoahRegionPartitions::make_all_regions_unavailable() {
   for (size_t idx = 0; idx < _max; idx++) {
     _membership[idx] = NotFree;
   }
@@ -103,7 +103,7 @@ void ShenandoahRegionPartition::make_all_regions_unavailable() {
   _region_counts[NotFree] = _max;
 }
 
-void ShenandoahRegionPartition::increase_used(ShenandoahFreeSetPartitionId which_partition, size_t bytes) {
+void ShenandoahRegionPartitions::increase_used(ShenandoahFreeSetPartitionId which_partition, size_t bytes) {
   assert (which_partition > NotFree && which_partition < NumPartitions, "Partition must be valid");
   _used[which_partition] += bytes;
   assert (_used[which_partition] <= _capacity[which_partition],
@@ -111,7 +111,7 @@ void ShenandoahRegionPartition::increase_used(ShenandoahFreeSetPartitionId which
           _used[which_partition], _capacity[which_partition], bytes);
 }
 
-inline void ShenandoahRegionPartition::shrink_interval_if_boundary_modified(ShenandoahFreeSetPartitionId partition, size_t idx) {
+inline void ShenandoahRegionPartitions::shrink_interval_if_boundary_modified(ShenandoahFreeSetPartitionId partition, size_t idx) {
   if (idx == _leftmosts[partition]) {
     while ((_leftmosts[partition] < _max) && !in_partition(_leftmosts[partition], partition)) {
       _leftmosts[partition]++;
@@ -132,7 +132,7 @@ inline void ShenandoahRegionPartition::shrink_interval_if_boundary_modified(Shen
   }
 }
 
-inline void ShenandoahRegionPartition::expand_interval_if_boundary_modified(ShenandoahFreeSetPartitionId partition,
+inline void ShenandoahRegionPartitions::expand_interval_if_boundary_modified(ShenandoahFreeSetPartitionId partition,
                                                            size_t idx, size_t region_available) {
   if (region_available == _region_size_bytes) {
     if (_leftmosts_empty[partition] > idx) {
@@ -152,7 +152,7 @@ inline void ShenandoahRegionPartition::expand_interval_if_boundary_modified(Shen
 
 // Remove this region from its free partition, but leave its capacity and used as part of the original free partition's totals.
 // When retiring a region, add any remnant of available memory within the region to the used total for the original free partition.
-void ShenandoahRegionPartition::retire_within_partition(size_t idx, size_t used_bytes) {
+void ShenandoahRegionPartitions::retire_within_partition(size_t idx, size_t used_bytes) {
   ShenandoahFreeSetPartitionId orig_partition = membership(idx);
 
   // Note: we may remove from free partition even if region is not entirely full, such as when available < PLAB::min_size()
@@ -171,7 +171,7 @@ void ShenandoahRegionPartition::retire_within_partition(size_t idx, size_t used_
   _region_counts[NotFree]++;
 }
 
-void ShenandoahRegionPartition::make_free(size_t idx, ShenandoahFreeSetPartitionId which_partition, size_t available) {
+void ShenandoahRegionPartitions::make_free(size_t idx, ShenandoahFreeSetPartitionId which_partition, size_t available) {
   assert (idx < _max, "index is sane: " SIZE_FORMAT " < " SIZE_FORMAT, idx, _max);
   assert (_membership[idx] == NotFree, "Cannot make free if already free");
   assert (which_partition > NotFree && which_partition < NumPartitions, "selected free partition must be valid");
@@ -186,7 +186,7 @@ void ShenandoahRegionPartition::make_free(size_t idx, ShenandoahFreeSetPartition
   _region_counts[which_partition]++;
 }
 
-void ShenandoahRegionPartition::move_to_partition(size_t idx, ShenandoahFreeSetPartitionId new_partition, size_t available) {
+void ShenandoahRegionPartitions::move_to_partition(size_t idx, ShenandoahFreeSetPartitionId new_partition, size_t available) {
   assert (idx < _max, "index is sane: " SIZE_FORMAT " < " SIZE_FORMAT, idx, _max);
   assert ((new_partition > NotFree) && (new_partition < NumPartitions), "New partition must be valid");
   assert (available <= _region_size_bytes, "Available cannot exceed region size");
@@ -219,14 +219,14 @@ void ShenandoahRegionPartition::move_to_partition(size_t idx, ShenandoahFreeSetP
   _region_counts[new_partition]++;
 }
 
-inline ShenandoahFreeSetPartitionId ShenandoahRegionPartition::membership(size_t idx) const {
+inline ShenandoahFreeSetPartitionId ShenandoahRegionPartitions::membership(size_t idx) const {
   assert (idx < _max, "index is sane: " SIZE_FORMAT " < " SIZE_FORMAT, idx, _max);
   return _membership[idx];
 }
 
   // Returns true iff region idx is in the test_partition free_partition.  Before returning true, asserts that the free
   // partition is not empty.  Requires that test_partition != NotFree or NumPartitions.
-inline bool ShenandoahRegionPartition::in_partition(size_t idx, ShenandoahFreeSetPartitionId test_partition) const {
+inline bool ShenandoahRegionPartitions::in_partition(size_t idx, ShenandoahFreeSetPartitionId test_partition) const {
   assert (idx < _max, "index is sane: " SIZE_FORMAT " < " SIZE_FORMAT, idx, _max);
   if (_membership[idx] == test_partition) {
     assert (test_partition == NotFree || _free_set->alloc_capacity(idx) > 0,
@@ -238,7 +238,7 @@ inline bool ShenandoahRegionPartition::in_partition(size_t idx, ShenandoahFreeSe
   }
 }
 
-inline size_t ShenandoahRegionPartition::leftmost(ShenandoahFreeSetPartitionId which_partition) const {
+inline size_t ShenandoahRegionPartitions::leftmost(ShenandoahFreeSetPartitionId which_partition) const {
   assert (which_partition > NotFree && which_partition < NumPartitions, "selected free partition must be valid");
   size_t idx = _leftmosts[which_partition];
   if (idx >= _max) {
@@ -249,19 +249,19 @@ inline size_t ShenandoahRegionPartition::leftmost(ShenandoahFreeSetPartitionId w
   }
 }
 
-inline size_t ShenandoahRegionPartition::rightmost(ShenandoahFreeSetPartitionId which_partition) const {
+inline size_t ShenandoahRegionPartitions::rightmost(ShenandoahFreeSetPartitionId which_partition) const {
   assert (which_partition > NotFree && which_partition < NumPartitions, "selected free partition must be valid");
   size_t idx = _rightmosts[which_partition];
   assert ((_leftmosts[which_partition] == _max) || in_partition(idx, which_partition), "right-most region must be free");
   return idx;
 }
 
-inline bool ShenandoahRegionPartition::is_empty(ShenandoahFreeSetPartitionId which_partition) const {
+inline bool ShenandoahRegionPartitions::is_empty(ShenandoahFreeSetPartitionId which_partition) const {
   assert (which_partition > NotFree && which_partition < NumPartitions, "selected free partition must be valid");
   return (leftmost(which_partition) > rightmost(which_partition));
 }
 
-size_t ShenandoahRegionPartition::leftmost_empty(ShenandoahFreeSetPartitionId which_partition) {
+size_t ShenandoahRegionPartitions::leftmost_empty(ShenandoahFreeSetPartitionId which_partition) {
   assert (which_partition > NotFree && which_partition < NumPartitions, "selected free partition must be valid");
   for (size_t idx = _leftmosts_empty[which_partition]; idx < _max; idx++) {
     if ((membership(idx) == which_partition) && (_free_set->alloc_capacity(idx) == _region_size_bytes)) {
@@ -274,7 +274,7 @@ size_t ShenandoahRegionPartition::leftmost_empty(ShenandoahFreeSetPartitionId wh
   return _max;
 }
 
-inline size_t ShenandoahRegionPartition::rightmost_empty(ShenandoahFreeSetPartitionId which_partition) {
+inline size_t ShenandoahRegionPartitions::rightmost_empty(ShenandoahFreeSetPartitionId which_partition) {
   assert (which_partition > NotFree && which_partition < NumPartitions, "selected free partition must be valid");
   for (intptr_t idx = _rightmosts_empty[which_partition]; idx >= 0; idx--) {
     if ((membership(idx) == which_partition) && (_free_set->alloc_capacity(idx) == _region_size_bytes)) {
@@ -288,7 +288,7 @@ inline size_t ShenandoahRegionPartition::rightmost_empty(ShenandoahFreeSetPartit
 }
 
 #ifdef ASSERT
-void ShenandoahRegionPartition::assert_bounds() {
+void ShenandoahRegionPartitions::assert_bounds() {
 
   size_t leftmosts[NumPartitions];
   size_t rightmosts[NumPartitions];

@@ -42,7 +42,7 @@ enum ShenandoahFreeSetPartitionId : uint8_t {
 
 // This class implements partitioning of regions into distinct sets.  Each ShenandoahHeapRegion is either in the Mutator free set,
 // the Collector free set, or in neither free set (NotFree).
-class ShenandoahRegionPartition {
+class ShenandoahRegionPartitions {
 
 private:
   const size_t _max;            // The maximum number of heap regions
@@ -78,8 +78,8 @@ private:
   inline void expand_interval_if_boundary_modified(ShenandoahFreeSetPartitionId partition, size_t idx, size_t capacity);
 
 public:
-  ShenandoahRegionPartition(size_t max_regions, ShenandoahFreeSet* free_set);
-  ~ShenandoahRegionPartition();
+  ShenandoahRegionPartitions(size_t max_regions, ShenandoahFreeSet* free_set);
+  ~ShenandoahRegionPartitions();
 
   // Make all regions NotFree and reset all bounds
   void make_all_regions_unavailable();
@@ -171,7 +171,7 @@ public:
 class ShenandoahFreeSet : public CHeapObj<mtGC> {
 private:
   ShenandoahHeap* const _heap;
-  ShenandoahRegionPartition _partitions;
+  ShenandoahRegionPartitions _partitions;
 
   HeapWord* try_allocate_in(ShenandoahHeapRegion* region, ShenandoahAllocRequest& req, bool& in_new_region);
 
@@ -206,7 +206,7 @@ private:
 public:
   ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions);
 
-  // Public because ShenandoahRegionPartition assertions require access.
+  // Public because ShenandoahRegionPartitions assertions require access.
   inline size_t alloc_capacity(ShenandoahHeapRegion *r) const;
   inline size_t alloc_capacity(size_t idx) const;
 
