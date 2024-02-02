@@ -56,7 +56,7 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register 
   Label object_has_monitor;
   Label count, no_count;
 
-  assert(LockingMode != LM_LIGHTWEIGHT, "uses fast_lock_lightweight");
+  assert(LockingMode != LM_LIGHTWEIGHT, "lightweight locking should use fast_lock_lightweight");
   assert_different_registers(oop, box, tmp, disp_hdr);
 
   // Load markWord from object into displaced_header.
@@ -155,7 +155,7 @@ void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg, Registe
   Label object_has_monitor;
   Label count, no_count;
 
-  assert(LockingMode != LM_LIGHTWEIGHT, "uses fast_unlock_lightweight");
+  assert(LockingMode != LM_LIGHTWEIGHT, "lightweight locking should use fast_unlock_lightweight");
   assert_different_registers(oop, box, tmp, disp_hdr);
 
   if (LockingMode == LM_LEGACY) {
@@ -231,7 +231,7 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register t1,
 
   // Handle inflated monitor.
   Label inflated;
-  // Finish fast lock successfully. MUST reach to with flag == EQ
+  // Finish fast lock successfully. MUST branch to with flag == EQ
   Label locked;
   // Finish fast lock unsuccessfully. MUST branch to with flag == NE
   Label slow_path;
@@ -247,7 +247,7 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register t1,
 
   { // Lightweight locking
 
-    // Push lock to the lock stack and finish successfully. MUST reach to with flag == EQ
+    // Push lock to the lock stack and finish successfully. MUST branch to with flag == EQ
     Label push;
 
     const Register top = t2;
@@ -338,7 +338,7 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register t1, Regis
 
   // Handle inflated monitor.
   Label inflated, inflated_load_monitor;
-  // Finish fast unlock successfully. MUST reach to with flag == EQ
+  // Finish fast unlock successfully. MUST branch to with flag == EQ
   Label unlocked;
   // Finish fast unlock unsuccessfully. MUST branch to with flag == NE
   Label slow_path;
