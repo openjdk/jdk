@@ -1671,8 +1671,9 @@ public class MessageFormat extends Format {
                 if (i + 1 < source.length() && source.charAt(i + 1) == '\'') {
                     qchars.add(new Qchar('\'', quoted));
                     i++;
-                } else
+                } else {
                     quoted = !quoted;
+                }
             } else {
                 boolean quotable = ch == '{' || ch == '}';
                 anyChangeNeeded |= quotable && !quoted;
@@ -1690,16 +1691,17 @@ public class MessageFormat extends Format {
         quoted = false;
         for (Qchar qchar : qchars) {
             char ch = qchar.ch;
-            if (ch == '\'')
+            if (ch == '\'') {
                 target.append(ch);          // doubling works whether quoted or not
-            else if (qchar.quoted() != quoted) {
+            } else if (qchar.quoted() != quoted) {
                 target.append('\'');
                 quoted = qchar.quoted();
             }
             target.append(ch);
         }
-        if (quoted)
+        if (quoted) {
             target.append('\'');
+        }
     }
 
     /**
