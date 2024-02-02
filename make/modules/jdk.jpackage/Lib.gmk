@@ -65,6 +65,7 @@ $(eval $(call SetupJdkExecutable, BUILD_JPACKAGE_APPLAUNCHEREXE, \
     INCLUDE_FILES := $(JPACKAGE_APPLAUNCHER_INCLUDE_FILES), \
     TOOLCHAIN := $(JPACKAGE_APPLAUNCHER_TOOLCHAIN), \
     OPTIMIZATION := LOW, \
+    DISABLED_WARNINGS_clang_LinuxLauncher.c := pedantic, \
     DISABLED_WARNINGS_clang_LinuxPackage.c := format-nonliteral, \
     DISABLED_WARNINGS_clang_JvmLauncherLib.c := format-nonliteral, \
     CXXFLAGS := $(call JpackageWithStaticCrt, $(CXXFLAGS_JDKEXE)) \

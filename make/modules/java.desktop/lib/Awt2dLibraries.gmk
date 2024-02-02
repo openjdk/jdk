@@ -254,13 +254,15 @@ ifeq ($(call isTargetOs, windows macosx), false)
         DISABLED_WARNINGS_gcc_XRBackendNative.c := maybe-uninitialized, \
         DISABLED_WARNINGS_gcc_XToolkit.c := unused-result, \
         DISABLED_WARNINGS_gcc_XWindow.c := unused-function, \
-        DISABLED_WARNINGS_clang_awt_Taskbar.c := parentheses, \
-        DISABLED_WARNINGS_clang_gtk2_interface.c := parentheses, \
-        DISABLED_WARNINGS_clang_gtk3_interface.c := parentheses, \
+        DISABLED_WARNINGS_clang_awt_Taskbar.c := parentheses pedantic, \
+        DISABLED_WARNINGS_clang_gtk2_interface.c := parentheses pedantic, \
+        DISABLED_WARNINGS_clang_gtk3_interface.c := parentheses pedantic, \
         DISABLED_WARNINGS_clang_OGLBufImgOps.c := format-nonliteral, \
         DISABLED_WARNINGS_clang_OGLPaints.c := format-nonliteral, \
-        DISABLED_WARNINGS_clang_screencast_pipewire.c := format-nonliteral, \
+        DISABLED_WARNINGS_clang_screencast_pipewire.c := format-nonliteral pedantic, \
+        DISABLED_WARNINGS_clang_screencast_portal.c := pedantic, \
         DISABLED_WARNINGS_clang_sun_awt_X11_GtkFileDialogPeer.c := parentheses, \
+        DISABLED_WARNINGS_clang_XRBackendNative.c := pedantic, \
         DISABLED_WARNINGS_clang_aix := deprecated-non-prototype, \
         DISABLED_WARNINGS_clang_aix_awt_Taskbar.c := parentheses, \
         DISABLED_WARNINGS_clang_aix_OGLPaints.c := format-nonliteral, \
@@ -321,6 +323,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBLCMS, \
     HEADERS_FROM_SRC := $(LIBLCMS_HEADERS_FROM_SRC), \
     DISABLED_WARNINGS_gcc := format-nonliteral type-limits stringop-truncation, \
     DISABLED_WARNINGS_clang := format-nonliteral, \
+    DISABLED_WARNINGS_clang_cmspcs.c := newline-eof, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_unix := -L$(INSTALL_LIBRARIES_HERE), \
@@ -415,6 +418,7 @@ ifeq ($(call isTargetOs, windows macosx), false)
       EXTRA_HEADER_DIRS := $(LIBAWT_HEADLESS_EXTRA_HEADER_DIRS), \
       DISABLED_WARNINGS_gcc_X11Renderer.c := unused-function, \
       DISABLED_WARNINGS_gcc_X11SurfaceData.c := unused-function, \
+      DISABLED_WARNINGS_clang := empty-translation-unit, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LDFLAGS_unix := -L$(INSTALL_LIBRARIES_HERE), \
@@ -508,7 +512,7 @@ else
    # maybe-uninitialized required for GCC 8 builds. Not required for GCC 9+.
    HARFBUZZ_DISABLED_WARNINGS_CXX_gcc := class-memaccess noexcept-type \
        expansion-to-defined dangling-reference maybe-uninitialized
-   HARFBUZZ_DISABLED_WARNINGS_clang := missing-field-initializers range-loop-analysis
+   HARFBUZZ_DISABLED_WARNINGS_clang := missing-field-initializers range-loop-analysis format-pedantic
    HARFBUZZ_DISABLED_WARNINGS_microsoft := 4267 4244
 
    LIBFONTMANAGER_CFLAGS += $(HARFBUZZ_CFLAGS)
@@ -570,6 +574,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBFONTMANAGER, \
     EXTRA_HEADER_DIRS := $(LIBFONTMANAGER_EXTRA_HEADER_DIRS), \
     EXTRA_SRC := $(LIBFONTMANAGER_EXTRA_SRC), \
     WARNINGS_AS_ERRORS_xlc := false, \
+    DISABLED_WARNINGS_clang_ColorGlyphSurfaceData.c := newline-eof, \
     DISABLED_WARNINGS_gcc := $(HARFBUZZ_DISABLED_WARNINGS_gcc), \
     DISABLED_WARNINGS_CXX_gcc := $(HARFBUZZ_DISABLED_WARNINGS_CXX_gcc), \
     DISABLED_WARNINGS_clang := $(HARFBUZZ_DISABLED_WARNINGS_clang), \
@@ -886,12 +891,18 @@ ifeq ($(call isTargetOs, macosx), true)
           objc-method-access incompatible-pointer-types extra-tokens sign-compare undef, \
       DISABLED_WARNINGS_clang_AWTWindow.m := bitwise-op-parentheses, \
       DISABLED_WARNINGS_clang_CFileDialog.m := semicolon-before-method-body, \
-      DISABLED_WARNINGS_clang_CGGlyphImages.m := pointer-arith, \
+      DISABLED_WARNINGS_clang_CGGlyphImages.m := pointer-arith newline-eof, \
       DISABLED_WARNINGS_clang_CGLLayer.m := semicolon-before-method-body, \
-      DISABLED_WARNINGS_clang_ImageSurfaceData.m := enum-conversion parentheses-equality, \
+      DISABLED_WARNINGS_clang_CommonComponentAccessibility.m := pedantic, \
+      DISABLED_WARNINGS_clang_ImageSurfaceData.m := enum-conversion parentheses-equality pedantic, \
+      DISABLED_WARNINGS_clang_JavaComponentAccessibility.m := pedantic, \
+      DISABLED_WARNINGS_clang_LWCToolkit.m := pedantic, \
       DISABLED_WARNINGS_clang_MTLBlitLoops.m := pointer-arith, \
+      DISABLED_WARNINGS_clang_MTLPaints.m := gnu-empty-initializer, \
       DISABLED_WARNINGS_clang_MTLPipelineStatesStorage.m := semicolon-before-method-body, \
       DISABLED_WARNINGS_clang_MTLRenderer.m := gnu-folding-constant, \
+      DISABLED_WARNINGS_clang_MTLRenderer.m := pedantic, \
+      DISABLED_WARNINGS_clang_MTLSurfaceData.m := format-pedantic, \
       DISABLED_WARNINGS_clang_MTLVertexCache.m := pointer-arith, \
       DISABLED_WARNINGS_clang_OGLBufImgOps.c := format-nonliteral, \
       DISABLED_WARNINGS_clang_OGLPaints.c := format-nonliteral, \
@@ -961,7 +972,7 @@ ifeq ($(call isTargetOs, macosx), true)
           libawt_lwawt/awt \
           libosxapp, \
       DISABLED_WARNINGS_clang_AquaFileView.m := deprecated-declarations sign-compare, \
-      DISABLED_WARNINGS_clang_ScreenMenu.m := deprecated-declarations, \
+      DISABLED_WARNINGS_clang_ScreenMenu.m := deprecated-declarations gnu-folding-constant, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN) \
           -Wl$(COMMA)-rpath$(COMMA)@loader_path \

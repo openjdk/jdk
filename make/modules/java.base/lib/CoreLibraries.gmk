@@ -176,6 +176,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJLI, \
     CFLAGS := $(CFLAGS_JDKLIB) $(LIBJLI_CFLAGS), \
     DISABLED_WARNINGS_gcc := unused-function, \
     DISABLED_WARNINGS_clang := format-nonliteral deprecated-non-prototype, \
+    DISABLED_WARNINGS_clang_java_md_macosx.m := pedantic, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_unix := $(LIBZ_LIBS), \

@@ -265,9 +265,9 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       # Additional warnings that are not activated by -Wall and -Wextra
       WARNINGS_ENABLE_ADDITIONAL="-Wpointer-arith -Wsign-compare -Wreorder \
           -Wunused-function -Wundef -Wunused-value -Woverloaded-virtual"
-      WARNINGS_ENABLE_ALL="-Wall -Wextra -Wformat=2 $WARNINGS_ENABLE_ADDITIONAL"
+      WARNINGS_ENABLE_ALL="-Wall -Wextra -Wpedantic -Wformat=2 $WARNINGS_ENABLE_ADDITIONAL"
 
-      DISABLED_WARNINGS="unknown-warning-option unused-parameter unused"
+      DISABLED_WARNINGS="unknown-warning-option unused-parameter unused extra-semi format-pedantic strict-prototypes"
       ;;
 
     xlc)
