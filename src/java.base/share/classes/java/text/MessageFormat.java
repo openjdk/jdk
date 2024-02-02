@@ -372,9 +372,7 @@ import java.util.Objects;
  *
  * <p>1) a <i>date</i> {@code FormatType} with a <i>full</i> {@code FormatStyle},
  * {@snippet lang=java :
- * Calendar cal = Calendar.getInstance();
- * cal.set(123 + 1900, 10, 16);
- * Object[] arg = {cal.getTime()};
+ * Object[] arg = {new GregorianCalendar(2023, Calendar.NOVEMBER, 16).getTime()};
  * var fmt = new MessageFormat("The date was {0,date,full}");
  * fmt.format(arg); // returns "The date was Thursday, November 16, 2023"
  * }
