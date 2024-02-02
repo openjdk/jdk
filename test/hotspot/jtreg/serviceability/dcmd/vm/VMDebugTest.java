@@ -27,8 +27,9 @@
  * @summary Test of diagnostic command VM.debug
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- *          java.management
- * @run testng/othervm -Dvmdebug.find=true -XX:+UnlockDiagnosticVMOptions VMDebugTest
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run testng/othervm/native -Dvmdebug.find=true -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. VMDebugTest
  */
 
 /*
@@ -37,7 +38,6 @@
  * @summary Test of diagnostic command VM.debug
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- *          java.management
  * @run testng/othervm -Dvmdebug.find=false VMDebugTest
  */
 
@@ -47,15 +47,12 @@ import org.testng.Assert;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.dcmd.CommandExecutor;
-import jdk.test.lib.dcmd.JMXExecutor;
 import jdk.test.lib.dcmd.PidJcmdExecutor;
+import jdk.test.whitebox.gc.GC;
+import jdk.test.whitebox.WhiteBox;
 
 import java.math.BigInteger;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.util.Iterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -149,7 +146,12 @@ public class VMDebugTest {
         ptr = findPointer(threadPrintOutput, waiting_on_mylock, 1);
         output = executor.execute("VM.debug find " + pointerText(ptr));
         System.out.println(output);
-        output.shouldContain(" is an oop: ");
+        WhiteBox wb = WhiteBox.getWhiteBox();
+        if (!GC.Z.isSelected()) {
+          output.shouldContain(" is an oop: ");
+        } else {
+          output.shouldMatch(" is a good oop|is a zaddress");
+        }
         output.shouldContain(" - ---- fields (total size");
         // " - private 'myInt' 'I' @12  12345 (0x00003039)"
         output.shouldContain(" - private 'myInt' 'I'");
@@ -175,7 +177,7 @@ public class VMDebugTest {
                 foundMatch = true;
                 String p = m.group(regexGroup);
                 ptr = new BigInteger(p, 16);
-                System.out.println("Found '" + pattern +"', using pointer: 0x" + ptr.toString(16));
+                System.out.println("Using pointer: 0x" + ptr.toString(16));
                 break;
             }
         }
@@ -194,11 +196,13 @@ public class VMDebugTest {
         run(new PidJcmdExecutor());
     }
 
-  /*@Test
-    public void jmx() throws ClassNotFoundException {
-        run(new JMXExecutor());
-    }
-   */
+   /**
+    * JMX Diagnostic intentionally not implemented.
+    */
+    //@Test
+    //public void jmx() throws ClassNotFoundException {
+    //    run(new JMXExecutor());
+    //}
 }
 
 
@@ -212,17 +216,16 @@ class DcmdTestClass {
 
     public void work() {{
         Runnable r = () -> {
-        System.out.println("Hello");
-        synchronized(lock) {
-          try {
+          System.out.println("Hello");
+          synchronized(lock) {
+            try {
               lock.wait();
-          } catch (Exception e) {
-        }
-        }
+            } catch (Exception e) { }
+          }
         };
         Thread t = new Thread(r);
         t.start();
-    }
+      }
     }
 }
 
