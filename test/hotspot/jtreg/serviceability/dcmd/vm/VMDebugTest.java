@@ -27,9 +27,7 @@
  * @summary Test of diagnostic command VM.debug
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run testng/othervm/native -Dvmdebug.find=true -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. VMDebugTest
+ * @run testng/othervm -Dvmdebug.find=true -XX:+UnlockDiagnosticVMOptions VMDebugTest
  */
 
 /*
@@ -48,8 +46,6 @@ import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.dcmd.CommandExecutor;
 import jdk.test.lib.dcmd.PidJcmdExecutor;
-import jdk.test.whitebox.gc.GC;
-import jdk.test.whitebox.WhiteBox;
 
 import java.math.BigInteger;
 import java.io.IOException;
@@ -117,6 +113,7 @@ public class VMDebugTest {
     }
 
     public void testFind(CommandExecutor executor) {
+        boolean testMisaligned = true;
         OutputAnalyzer output = executor.execute("VM.debug find");
         output.shouldContain("missing argument");
         // Find and test a thread id:
@@ -146,23 +143,36 @@ public class VMDebugTest {
         ptr = findPointer(threadPrintOutput, waiting_on_mylock, 1);
         output = executor.execute("VM.debug find " + pointerText(ptr));
         System.out.println(output);
-        WhiteBox wb = WhiteBox.getWhiteBox();
-        if (!GC.Z.isSelected()) {
-          output.shouldContain(" is an oop: ");
+        // Some tests put ZGC options in test.java.opts, not test.vm.opts
+        String testOpts = System.getProperty("test.vm.opts", "")
+                          + System.getProperty("test.java.opts", "");
+        if (!testOpts.contains("-XX:+UseZGC")) {
+            output.shouldContain(" is an oop: ");
         } else {
-          output.shouldMatch(" is a good oop|is a zaddress");
+            // ZGC has two variations:
+            if (testOpts.contains("-XX:+ZGenerational")) {
+                output.shouldContain("is a zaddress");
+                testMisaligned = false;
+            } else {
+                output.shouldContain("is a good oop");
+            }
         }
         output.shouldContain(" - ---- fields (total size");
         // " - private 'myInt' 'I' @12  12345 (0x00003039)"
         output.shouldContain(" - private 'myInt' 'I'");
         output.shouldContain(" 12345 (");
 
-        BigInteger badPtr = ptr.add(BigInteger.ONE);
-        output = executor.execute("VM.debug find " + pointerText(badPtr));
-        output.shouldContain("misaligned");
-        badPtr = badPtr.add(BigInteger.ONE);
-        output = executor.execute("VM.debug find " + pointerText(badPtr));
-        output.shouldContain("misaligned");
+        // ZGenerational will show the raw memory of our misaligned pointer, e.g.
+        // 0x0000040001852491 points into unknown readable memory: 0b 00 d8 57 14 00 00
+        // ...so don't check for that error.
+        if (testMisaligned) {
+            BigInteger badPtr = ptr.add(BigInteger.ONE);
+            output = executor.execute("VM.debug find " + pointerText(badPtr));
+            output.shouldContain("misaligned");
+            badPtr = badPtr.add(BigInteger.ONE);
+            output = executor.execute("VM.debug find " + pointerText(badPtr));
+            output.shouldContain("misaligned");
+        }
     }
 
     public BigInteger findPointer(OutputAnalyzer output, Pattern pattern, int regexGroup) {
