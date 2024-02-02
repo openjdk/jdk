@@ -314,11 +314,6 @@ final class StringLatin1 {
         if (!canEncode(ch)) {
             return -1;
         }
-        fromIndex = Math.max(fromIndex, 0);
-        toIndex = Math.min(toIndex, value.length);
-        if (fromIndex >= toIndex) {
-            return -1;
-        }
         return indexOfChar(value, ch, fromIndex, toIndex);
     }
 
