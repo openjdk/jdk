@@ -27,9 +27,26 @@
 
 #include "opto/node.hpp"
 #include "opto/loopnode.hpp"
+#include "opto/traceAutoVectorizationTag.hpp"
 
 // Code in this file and the vectorization.cpp contains shared logics and
 // utilities for C2's loop auto-vectorization.
+
+#ifndef PRODUCT
+// Access to TraceAutoVectorization tags
+class VTrace : public StackObj {
+private:
+  const CHeapBitMap &_trace_tags;
+
+public:
+  VTrace() : _trace_tags(Compile::current()->directive()->trace_auto_vectorization_tags()) {}
+  NONCOPYABLE(VTrace);
+
+  bool is_trace(TraceAutoVectorizationTag tag) const {
+    return _trace_tags.at(tag);
+  }
+};
+#endif
 
 // A vectorization pointer (VPointer) has information about an address for
 // dependence checking and vector alignment. It's usually bound to a memory

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -64,11 +64,11 @@ static void test_safefetchN_negative() {
   ASSERT_EQ(-1, a);
   a = SafeFetchN(bad_addressN, ~patternN);
   ASSERT_EQ(~patternN, a);
-  // Also test NULL, but not on AIX, where NULL is readable
+  // Also test nullptr, but not on AIX, where nullptr is readable
 #ifndef AIX
-  a = SafeFetchN(NULL, 0);
+  a = SafeFetchN(nullptr, 0);
   ASSERT_EQ(0, a);
-  a = SafeFetchN(NULL, ~patternN);
+  a = SafeFetchN(nullptr, ~patternN);
   ASSERT_EQ(~patternN, a);
 #endif
 }
@@ -80,11 +80,11 @@ static void test_safefetch32_negative() {
   ASSERT_EQ(-1, a);
   a = SafeFetch32(bad_address32, ~pattern32);
   ASSERT_EQ(~pattern32, a);
-  // Also test NULL, but not on AIX, where NULL is readable
+  // Also test nullptr, but not on AIX, where nullptr is readable
 #ifndef AIX
-  a = SafeFetch32(NULL, 0);
+  a = SafeFetch32(nullptr, 0);
   ASSERT_EQ(0, a);
-  a = SafeFetch32(NULL, ~pattern32);
+  a = SafeFetch32(nullptr, ~pattern32);
   ASSERT_EQ(~pattern32, a);
 #endif
 }
@@ -105,7 +105,7 @@ TEST_VM(os, safefetch32_negative) {
   test_safefetch32_negative();
 }
 
-// Try with Thread::current being NULL. SafeFetch should work then too.
+// Try with Thread::current being nullptr. SafeFetch should work then too.
 // See JDK-8282475
 
 class ThreadCurrentNullMark : public StackObj {
