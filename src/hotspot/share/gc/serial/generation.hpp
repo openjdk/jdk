@@ -58,9 +58,6 @@ class GCStats;
 class Generation: public CHeapObj<mtGC> {
   friend class VMStructs;
  private:
-  MemRegion _prev_used_region; // for collectors that want to "remember" a value for
-                               // used region at some specific point during collection.
-
   GCMemoryManager* _gc_manager;
 
  protected:
@@ -108,13 +105,6 @@ class Generation: public CHeapObj<mtGC> {
   // The largest number of contiguous free bytes in this or any higher generation.
   virtual size_t max_contiguous_available() const;
 
-  // Return an estimate of the maximum allocation that could be performed
-  // in the generation without triggering any collection or expansion
-  // activity.  It is "unsafe" because no locks are taken; the result
-  // should be treated as an approximation, not a guarantee, for use in
-  // heuristic resizing decisions.
-  virtual size_t unsafe_max_alloc_nogc() const = 0;
-
   // Returns true if this generation cannot be expanded further
   // without a GC. Override as appropriate.
   virtual bool is_maximal_no_gc() const {
@@ -126,16 +116,6 @@ class Generation: public CHeapObj<mtGC> {
   // Returns a region guaranteed to contain all the objects in the
   // generation.
   virtual MemRegion used_region() const { return _reserved; }
-
-  MemRegion prev_used_region() const { return _prev_used_region; }
-  virtual void  save_used_region()   { _prev_used_region = used_region(); }
-
-  // Returns "TRUE" iff "p" points into the committed areas in the generation.
-  // For some kinds of generations, this may be an expensive operation.
-  // To avoid performance problems stemming from its inadvertent use in
-  // product jvm's, we restrict its use to assertion checking or
-  // verification only.
-  virtual bool is_in(const void* p) const;
 
   /* Returns "TRUE" iff "p" points into the reserved area of the generation. */
   bool is_in_reserved(const void* p) const {
