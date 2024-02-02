@@ -1614,6 +1614,7 @@ enum VectorMask {
   INSN(vand_vi,   0b1010111, 0b011, 0b001001);
   INSN(vadd_vi,   0b1010111, 0b011, 0b000000);
   INSN(vrsub_vi,  0b1010111, 0b011, 0b000011);
+  INSN(vnsra_wi,  0b1010111, 0b011, 0b101101);
 
 #undef INSN
 

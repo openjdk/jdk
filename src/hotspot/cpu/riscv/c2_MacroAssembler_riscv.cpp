@@ -1962,12 +1962,11 @@ void C2_MacroAssembler::expand_bits_l_v(Register dst, Register src, Register mas
   expand_bits_v(dst, src, mask, /* is_long */ true);
 }
 
-static void float16_to_float_v_slow_path(C2_MacroAssembler& masm, C2GeneralStub<VectorRegister, VectorRegister, BasicType, uint>& stub) {
+static void float16_to_float_v_slow_path(C2_MacroAssembler& masm, C2GeneralStub<VectorRegister, VectorRegister, uint>& stub) {
 #define __ masm.
   VectorRegister dst = stub.data<0>();
   VectorRegister src = stub.data<1>();
-  BasicType bt = stub.data<2>();
-  uint length = stub.data<3>();
+  uint length = stub.data<2>();
   __ bind(stub.entry());
 
   // following instructions mainly focus on NaN, as riscv does not handle
@@ -1979,7 +1978,7 @@ static void float16_to_float_v_slow_path(C2_MacroAssembler& masm, C2GeneralStub<
   // widen and sign-extend src data.
   __ vwadd_vx(dst, src, zr, Assembler::v0_t);
   // adjust vector type to 2 * SEW.
-  __ vsetvli_helper(T_FLOAT, length, Assembler::m1, t0);
+  __ vsetvli_helper(T_FLOAT, length, Assembler::m1);
   __ mv(t0, 0x7f800000);
   // sign-bit was already set via sign-extension if necessary.
   __ vsll_vi(dst, dst, 13, Assembler::v0_t);
@@ -1990,9 +1989,9 @@ static void float16_to_float_v_slow_path(C2_MacroAssembler& masm, C2GeneralStub<
 }
 
 // j.l.Float.float16ToFloat
-void C2_MacroAssembler::float16_to_float_v(VectorRegister dst, VectorRegister src, BasicType bt, uint length) {
-  auto stub = C2CodeStub::make<VectorRegister, VectorRegister, BasicType, uint>
-              (dst, src, bt, length, 24, float16_to_float_v_slow_path);
+void C2_MacroAssembler::float16_to_float_v(VectorRegister dst, VectorRegister src, uint length) {
+  auto stub = C2CodeStub::make<VectorRegister, VectorRegister, uint>
+              (dst, src, length, 24, float16_to_float_v_slow_path);
 
   // in riscv, NaN needs a special process as vfwcvt_f_f_v does not work in that case.
   // in riscv, Inf does not need a special process as vfwcvt_f_f_v can handle it correctly.
@@ -2000,6 +1999,8 @@ void C2_MacroAssembler::float16_to_float_v(VectorRegister dst, VectorRegister sr
   // as both of them are rare cases, and if we try to get the slow path to handle
   // only NaN case it would sacrifise the performance for normal cases,
   // i.e. non-NaN and non-Inf cases.
+
+  vsetvli_helper(BasicType::T_SHORT, length, Assembler::mf2);
 
   // check whether there is a NaN or +/- Inf.
   mv(t0, 0x7c00);
@@ -2013,6 +2014,58 @@ void C2_MacroAssembler::float16_to_float_v(VectorRegister dst, VectorRegister sr
 
   // jump to stub processing NaN and Inf cases if there is any of them in the vector-wide.
   bgtz(t0, stub->entry());
+
+  bind(stub->continuation());
+}
+
+static void float_to_float16_v_slow_path(C2_MacroAssembler& masm,
+                                         C2GeneralStub<VectorRegister, VectorRegister, VectorRegister, uint>& stub) {
+#define __ masm.
+  VectorRegister dst = stub.data<0>();
+  VectorRegister src = stub.data<1>();
+  VectorRegister tmp = stub.data<2>();
+  uint length = stub.data<3>();
+  __ bind(stub.entry());
+
+  __ vsetvli_helper(BasicType::T_SHORT, length, Assembler::mf2);
+
+  // preserve the payloads of non-canonical NaNs.
+  __ vnsra_wi(dst, src, 13, Assembler::v0_t);
+
+  __ mv(t0, 26);
+  // preserve the sign bit.
+  __ vnsra_wx(tmp, src, t0, Assembler::v0_t);
+  __ vsll_vi(tmp, tmp, 10, Assembler::v0_t);
+  __ mv(t0, 0x3ff);
+  __ vor_vx(tmp, tmp, t0, Assembler::v0_t);
+
+  // get the result by merging sign bit and payloads of preserved non-canonical NaNs.
+  __ vand_vv(dst, dst, tmp, Assembler::v0_t);
+
+  __ j(stub.continuation());
+#undef __
+}
+
+// j.l.Float.float16ToFloat
+void C2_MacroAssembler::float_to_float16_v(VectorRegister dst, VectorRegister src, VectorRegister tmp, uint length) {
+  auto stub = C2CodeStub::make<VectorRegister, VectorRegister, VectorRegister, uint>
+              (dst, src, tmp, length, 36, float_to_float16_v_slow_path);
+
+  // in riscv, NaN needs a special process as vfncvt_f_f_w does not work in that case.
+
+  vsetvli_helper(BasicType::T_FLOAT, length, Assembler::m1);
+
+  // check whether there is a NaN.
+  // replace v_fclass with vmseq_vv as performance optimization.
+  vmfne_vv(v0, src, src);
+  vcpop_m(t0, v0);
+
+  vsetvli_helper(BasicType::T_SHORT, length, Assembler::mf2, zr);
+  // non-NaN cases, just use built-in instructions.
+  vfncvt_f_f_w(dst, src);
+
+  // jump to stub processing NaN cases.
+  bnez(t0, stub->entry());
 
   bind(stub->continuation());
 }
