@@ -1573,11 +1573,8 @@ char* FileMapInfo::write_bitmap_region(const CHeapBitMap* ptrmap, ArchiveHeapInf
 
   if (heap_info->is_used()) {
     // Remove leading zeros
-    header()->set_heap_oopmap_leading_zeros(heap_info->oopmap()->find_first_set_bit(0));
-    header()->set_heap_ptrmap_leading_zeros(heap_info->ptrmap()->find_first_set_bit(0));
-
-    size_t old_oop_zeros = header()->heap_oopmap_leading_zeros();
-    size_t old_ptr_zeros = header()->heap_ptrmap_leading_zeros();
+    size_t old_oop_zeros = heap_info->oopmap()->find_first_set_bit(0);
+    size_t old_ptr_zeros = heap_info->ptrmap()->find_first_set_bit(0);
 
     size_t old_oop_size = heap_info->oopmap()->size_in_bytes();
     size_t old_ptr_size = heap_info->ptrmap()->size_in_bytes();
