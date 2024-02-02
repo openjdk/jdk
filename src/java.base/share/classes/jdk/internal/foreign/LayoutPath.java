@@ -451,7 +451,7 @@ public class LayoutPath {
 
     }
 
-    public static final class SequenceElement
+    public record SequenceElement()
             implements MemoryLayout.PathElement, UnaryOperator<LayoutPath> {
 
         private static final SequenceElement INSTANCE = new SequenceElement();
@@ -477,7 +477,7 @@ public class LayoutPath {
 
     }
 
-    public static final class DereferenceElement
+    public record DereferenceElement()
             implements MemoryLayout.PathElement, UnaryOperator<LayoutPath> {
 
         private static final DereferenceElement INSTANCE = new DereferenceElement();
