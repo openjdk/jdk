@@ -748,7 +748,7 @@ public abstract class DateFormat extends Format {
      *
      * @implSpec A {@link Character#SPACE_SEPARATOR SPACE_SEPARATOR} in the input
      * text will match any other {@link Character#SPACE_SEPARATOR SPACE_SEPARATOR}s
-     * in the pattern with the lenient parsing; otherwise, it will not match.
+     * in the pattern with lenient parsing; otherwise, it will not match.
      *
      * @param lenient when {@code true}, parsing is lenient
      * @see java.util.Calendar#setLenient(boolean)
