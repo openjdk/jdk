@@ -747,8 +747,17 @@ public class TestPosix {
             Path path = fs.getPath("hello.txt");
             Files.createFile(path);
         }
+        // The CEN header is now as follows:
+        //
+        //   004A CENTRAL HEADER #1     02014B50
+        //   004E Created Zip Spec      14 '2.0'
+        //   004F Created OS            00 'MS-DOS'
+        //   0050 Extract Zip Spec      14 '2.0'
+        //   0051 Extract OS            00 'MS-DOS'
+        //   [...]
+        //   0070 Ext File Attributes   00000000
 
-        // Sanity check that all 'external file attributes' bits are zero
+        // Sanity check that all 'external file attributes' bits are all zero
         verifyExternalFileAttribute(Files.readAllBytes(ZIP_FILE), "0");
 
         // Convert to a UNIX entry by calling Files.setPosixFilePermissions
@@ -756,6 +765,17 @@ public class TestPosix {
             Path path = fs.getPath("hello.txt");
             Files.setPosixFilePermissions(path, EnumSet.of(OWNER_READ));
         }
+
+        // The CEN header should now be as follows:
+        //
+        // 004A CENTRAL HEADER #1     02014B50
+        // 004E Created Zip Spec      14 '2.0'
+        // 004F Created OS            03 'Unix'
+        // 0050 Extract Zip Spec      14 '2.0'
+        // 0051 Extract OS            00 'MS-DOS'
+        // [...]
+        // 0070 Ext File Attributes   01000000
+
         // The first of the nine trailing permission bits should be set
         verifyExternalFileAttribute(Files.readAllBytes(ZIP_FILE), "100000000");
     }
