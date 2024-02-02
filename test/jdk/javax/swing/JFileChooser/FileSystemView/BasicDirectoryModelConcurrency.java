@@ -152,7 +152,13 @@ public final class BasicDirectoryModelConcurrency extends ThreadGroup {
     }
 
     private static void createFiles(final Path parent) {
-        LongStream.range(0, NUMBER_OF_FILES)
+        createFiles(parent, 0, NUMBER_OF_FILES);
+    }
+
+    private static void createFiles(final Path parent,
+                                    final long start,
+                                    final long end) {
+        LongStream.range(start, end)
                   .forEach(n -> createFile(parent.resolve(n + ".file")));
     }
 
@@ -191,10 +197,9 @@ public final class BasicDirectoryModelConcurrency extends ThreadGroup {
         @Override
         public void run() {
             try {
-                int count = (int) (Math.random() * 20);
-                while (count-- > 0) {
-                    createFile(temp.resolve((++no) + ".file"));
-                }
+                long count = (long) (Math.random() * 20);
+                createFiles(temp, no, no + count);
+                no += count;
             } catch (Throwable t) {
                 handleException(t);
             }
