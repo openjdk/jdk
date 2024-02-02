@@ -57,10 +57,10 @@ private:
   size_t _leftmosts[NumPartitions];
   size_t _rightmosts[NumPartitions];
 
-  // Allocation for humongous objects needs to find regions that are entirely empty.  For each partion p, _leftmosts[p]
-  // represents the first region belonging to this partition that is completely empty and _rightmosts[p] represents the
-  // last region that is completely empty.  If there are no completely empty regions in this partition, this is represented
-  // by canonical [_max, 0].
+  // Allocation for humongous objects needs to find regions that are entirely empty.  For each partion p, _leftmosts_empty[p]
+  // represents the first region belonging to this partition that is completely empty and _rightmosts_empty[p] represents the
+  // last region that is completely empty.  If there is no completely empty region in this partition, this is represented
+  // by the canonical [_max, 0].
   size_t _leftmosts_empty[NumPartitions];
   size_t _rightmosts_empty[NumPartitions];
 
