@@ -673,7 +673,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      *
      * <p> In all cases, after this method returns, the file offset as returned
      * by the {@linkplain #getFilePointer getFilePointer} method will equal the
-     * minimum of {@code newLength} and the file offset before this method was
+     * minimum of the desired length and the file offset before this method was
      * called, even if the length is unchanged.  In other words, this method
      * constrains the file offset to the closed interval {@code [0,newLength]}.
      *
