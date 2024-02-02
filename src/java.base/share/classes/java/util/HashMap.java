@@ -500,7 +500,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * true (relayed to method afterNodeInsertion).
      */
     final void putMapEntries(Map<? extends K, ? extends V> m, boolean evict) {
-        int s = Math.max(size() + m.size(), m.size());
+        int msize = m.size();
+        int s = Math.max(size() + msize, msize);
         if (s > 0) {
             if (table == null) { // pre-size
                 double dt = Math.ceil(s / (double)loadFactor);
