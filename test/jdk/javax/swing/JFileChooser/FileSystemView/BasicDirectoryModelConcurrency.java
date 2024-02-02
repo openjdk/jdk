@@ -50,7 +50,9 @@ public final class BasicDirectoryModelConcurrency extends ThreadGroup {
     public static void main(String[] args) throws Throwable {
         try {
             ThreadGroup threadGroup = new BasicDirectoryModelConcurrency();
-            Thread runner = new Thread(threadGroup, BasicDirectoryModelConcurrency::wrapper);
+            Thread runner = new Thread(threadGroup,
+                                       BasicDirectoryModelConcurrency::wrapper,
+                                       "Test Runner");
             runner.start();
             runner.join();
         } catch (Throwable throwable) {
