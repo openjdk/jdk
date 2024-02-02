@@ -229,9 +229,9 @@ public interface Tree {
         PARENTHESIZED(ParenthesizedTree.class),
 
         /**
-         * Used for instances of {@link ReconstructionTree}.
+         * Used for instances of {@link DerivedInstanceTree}.
          */
-        RECONSTRUCTION(ReconstructionTree.class),
+        DERIVED_INSTANCE(DerivedInstanceTree.class),
 
         /**
          * Used for instances of {@link BindingPatternTree}.

@@ -4906,6 +4906,64 @@ public class Check {
             return false;
         }
 
+    void checkDerivedInstanceBlockStructure(JCDerivedInstance instance) {
+        new TreeScanner() {
+            private final Set<JCTree> seenTrees = Collections.newSetFromMap(new IdentityHashMap<>());
+            private final Set<VarSymbol> seenVariables = new HashSet<>(instance.outgoingBindings);
+            @Override
+            public void scan(JCTree tree) {
+                seenTrees.add(tree);
+                super.scan(tree);
+            }
+            @Override
+            public void visitClassDef(JCClassDecl tree) {
+                //no limits on inside of the class decl
+            }
+            @Override
+            public void visitReturn(JCReturn tree) {
+                log.error(tree.pos(), Errors.WithReturnNotAllowed);
+                super.visitReturn(tree);
+            }
+
+            @Override
+            public void visitBreak(JCBreak tree) {
+                if (!seenTrees.contains(tree.target)) {
+                    log.error(tree.pos(), Errors.WithBreakNotAllowed);
+                }
+                super.visitBreak(tree);
+            }
+
+            @Override
+            public void visitContinue(JCContinue tree) {
+                if (!seenTrees.contains(tree.target)) {
+                    log.error(tree.pos(), Errors.WithContinueNotAllowed);
+                }
+                super.visitContinue(tree);
+            }
+
+            @Override
+            public void visitYield(JCYield tree) {
+                if (!seenTrees.contains(tree.target)) {
+                    log.error(tree.pos(), Errors.WithYieldNotAllowed);
+                }
+                super.visitYield(tree);
+            }
+
+            @Override
+            public void visitVarDef(JCVariableDecl tree) {
+                seenVariables.add(tree.sym);
+                super.visitVarDef(tree);
+            }
+            @Override
+            public void visitAssign(JCAssign tree) {
+                if (tree.lhs instanceof JCIdent var && !seenVariables.contains(var.sym)) {
+                    log.error(var.pos(), Errors.WithAssignmentNotAllowed(var.sym));
+                }
+                super.visitAssign(tree);
+            }
+        }.scan(instance.block);
+    }
+
     /** check if a type is a subtype of Externalizable, if that is available. */
     boolean isExternalizable(Type t) {
         try {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package com.sun.source.tree;
 
 /**
- * A tree node for a reconstruction expression.
+ * A tree node for a derived record creation expression.
  *
  * For example:
  * <pre>
@@ -36,7 +36,7 @@ package com.sun.source.tree;
  * TODO: @jls 15.10.3 Array Access Expressions
  *
  */
-public interface ReconstructionTree extends ExpressionTree {
+public interface DerivedInstanceTree extends ExpressionTree {
     /**
      * Returns the expression for the array being accessed.
      * @return the array

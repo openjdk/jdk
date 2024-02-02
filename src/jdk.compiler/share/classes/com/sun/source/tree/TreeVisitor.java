@@ -385,7 +385,7 @@ public interface TreeVisitor<R,P> {
      * @param p a parameter value
      * @return a result value
      */
-    R visitReconstruction(ReconstructionTree node, P p);
+    R visitDerivedInstance(DerivedInstanceTree node, P p);
 
     /**
      * Visits a {@code ReturnTree} node.

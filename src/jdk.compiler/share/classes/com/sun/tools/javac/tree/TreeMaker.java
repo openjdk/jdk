@@ -449,8 +449,8 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
 
-    public JCReconstruction Reconstruction(JCExpression expr, JCBlock block) {
-        JCReconstruction tree = new JCReconstruction(expr, block);
+    public JCDerivedInstance DerivedInstance(JCExpression expr, JCBlock block) {
+        JCDerivedInstance tree = new JCDerivedInstance(expr, block);
         tree.pos = pos;
         return tree;
     }

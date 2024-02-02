@@ -325,7 +325,7 @@ public class TreeTranslator extends JCTree.Visitor {
     }
 
     @Override
-    public void visitReconstruction(JCReconstruction tree) {
+    public void visitReconstruction(JCDerivedInstance tree) {
         tree.expr = translate(tree.expr);
         tree.block = translate(tree.block);
         result = tree;

@@ -98,7 +98,7 @@ import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
 import com.sun.tools.javac.tree.JCTree.JCNewClass;
 import com.sun.tools.javac.tree.JCTree.JCPattern;
 import com.sun.tools.javac.tree.JCTree.JCPatternCaseLabel;
-import com.sun.tools.javac.tree.JCTree.JCReconstruction;
+import com.sun.tools.javac.tree.JCTree.JCDerivedInstance;
 import com.sun.tools.javac.tree.JCTree.JCRecordPattern;
 import com.sun.tools.javac.tree.JCTree.JCStatement;
 import com.sun.tools.javac.tree.JCTree.JCSwitchExpression;
@@ -1274,7 +1274,7 @@ public class TransPatterns extends TreeTranslator {
     }
 
     @Override
-    public void visitReconstruction(JCReconstruction tree) {
+    public void visitReconstruction(JCDerivedInstance tree) {
         List<BindingSymbol> newOutgoingBindings = tree.outgoingBindings.map(vs -> new BindingSymbol(0, vs.name, vs.type, vs.owner));
         Map<VarSymbol, BindingSymbol> old2New = new HashMap<>();
         List<VarSymbol> outgoingBindingsIt = tree.outgoingBindings;

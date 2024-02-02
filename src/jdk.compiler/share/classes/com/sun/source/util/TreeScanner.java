@@ -672,7 +672,7 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
      * @return the result of scanning
      */
     @Override
-    public R visitReconstruction(ReconstructionTree node, P p) {
+    public R visitDerivedInstance(DerivedInstanceTree node, P p) {
         R r = scan(node.getExpression(), p);
         r = scanAndReduce(node.getBlock(), p, r);
         return r;

@@ -1167,14 +1167,6 @@ public class JavacParser implements Parser {
                     }
                 }
                 odStack[top] = F.at(pos).TypeTest(odStack[top], pattern);
-            } else if (token.kind == IDENTIFIER && token.name().contentEquals("with")) {
-                int pos = token.pos;
-
-                nextToken();
-
-                JCBlock block = block();
-
-                odStack[top] = F.at(pos).Reconstruction(odStack[top], block);
             } else {
                 topOp = token;
                 nextToken();
@@ -1806,6 +1798,14 @@ public class JavacParser implements Parser {
                 if (typeArgs != null) return illegal();
                 accept(COLCOL);
                 t = memberReferenceSuffix(pos1, t);
+            } else if (isMode(EXPR) && token.kind == IDENTIFIER && token.name().contentEquals("with") && peekToken(LBRACE)) {
+                int pos = token.pos;
+
+                nextToken();
+
+                JCBlock block = block();
+
+                t = F.at(pos).DerivedInstance(t, block);
             } else {
                 if (!annos.isEmpty()) {
                     if (permitTypeAnnotationsPushBack)
@@ -5302,11 +5302,6 @@ public class JavacParser implements Parser {
             return MOD_ASG;
         case INSTANCEOF:
             return TYPETEST;
-        case IDENTIFIER:
-            if (token.name().contentEquals("with")) {
-                return RECONSTRUCTION;
-            }
-            break;
         default:
             break;
         }

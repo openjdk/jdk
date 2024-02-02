@@ -1155,7 +1155,7 @@ public class TreeInfo {
         case DIV:
         case MOD: return mulPrec;
         case TYPETEST:
-        case RECONSTRUCTION: return ordPrec;
+        case DERIVEDRECORDCREATION: return ordPrec;
         default: throw new AssertionError();
         }
     }

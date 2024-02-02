@@ -3950,7 +3950,7 @@ public class Attr extends JCTree.Visitor {
     }
 
     @Override
-    public void visitReconstruction(JCReconstruction tree) {
+    public void visitReconstruction(JCDerivedInstance tree) {
         Type owntype = attribExpr(tree.expr, env);
         Env<AttrContext> blockEnv =
             env.dup(tree, env.info.dup(env.info.scope.dup()));
@@ -3969,7 +3969,10 @@ public class Attr extends JCTree.Visitor {
             attribStat(tree.block, blockEnv);
 
             tree.outgoingBindings = outgoingBindings.toList();
-            tree.type = owntype;
+
+            chk.checkDerivedInstanceBlockStructure(tree);
+
+            result = check(tree, owntype, KindSelector.VAL, resultInfo);;
         } finally {
             blockEnv.info.scope.leave();
         }
