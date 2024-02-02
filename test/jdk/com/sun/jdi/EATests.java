@@ -1986,26 +1986,40 @@ class EARelockingNestedInflated_03 extends EATestCaseBaseDebugger {
 class EARelockingNestedInflated_03Target extends EATestCaseBaseTarget {
 
     public XYVal lockInflatedByContention;
-    public volatile boolean doLockNow;
+    public boolean doLockNow;
+    public EATestCaseBaseTarget testCase;
 
     @Override
     public void setUp() {
         super.setUp();
         testMethodDepth = 2;
         lockInflatedByContention = new XYVal(1, 1);
-        Thread contendingThread = DebuggeeWrapper.newThread(() -> {
-            while(!doLockNow) {
-                try {
-                    Thread.sleep(10);
-                } catch (InterruptedException e) { /* ignored */ }
+        testCase = this;
+    }
+
+    @Override
+    public void warmupDone() {
+        super.warmupDone();
+        // Use new lock. lockInflatedByContention might have been inflated because of recursion.
+        lockInflatedByContention = new XYVal(1, 1);
+        // Start thread that tries to enter lockInflatedByContention while the main thread owns it -> inflation
+        DebuggeeWrapper.newThread(() -> {
+            while(true) {
+                synchronized(testCase) {
+                    try {
+                        if (doLockNow) {
+                            doLockNow = false; // reset for main thread
+                            testCase.notify();
+                            break;
+                        }
+                        testCase.wait();
+                    } catch (InterruptedException e) { /* ignored */ }
+                }
             }
-            doLockNow = false; // reset for main thread
             synchronized(lockInflatedByContention) { // will block and trigger inflation
                 msg(Thread.currentThread().getName() + ": acquired lockInflatedByContention");
             }
-            }, testCaseName + ": Lock Contender (test thread)");
-        contendingThread.setDaemon(true);
-        contendingThread.start();
+            }, testCaseName + ": Lock Contender (test thread)").start();
     }
 
     public void dontinline_testMethod() {
@@ -2019,18 +2033,24 @@ class EARelockingNestedInflated_03Target extends EATestCaseBaseTarget {
 
     public void testMethod_inlined(XYVal l2) {
         synchronized (l2) {                 // eliminated nested locking
-            dontinline_setDoLockNow();
+            dontinline_notifyOtherThread();
             dontinline_brkpt();
         }
     }
 
-    public void dontinline_setDoLockNow() {
-        doLockNow = warmupDone;
-        // wait for other thread to reset doLockNow
-        while(doLockNow) {
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) { /* ignored */ }
+    public void dontinline_notifyOtherThread() {
+        if (!warmupDone) {
+            return;
+        }
+        synchronized(testCase) {
+            doLockNow = true;
+            testCase.notify();
+            // wait for other thread to reset doLockNow again
+            while(doLockNow) {
+                try {
+                    testCase.wait();
+                } catch (InterruptedException e) { /* ignored */ }
+            }
         }
     }
 }
