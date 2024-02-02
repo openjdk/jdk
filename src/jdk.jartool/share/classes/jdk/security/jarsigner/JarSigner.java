@@ -31,7 +31,6 @@ import sun.security.pkcs.PKCS7;
 import sun.security.pkcs.PKCS9Attribute;
 import sun.security.pkcs.PKCS9Attributes;
 import sun.security.timestamp.HttpTimestamper;
-import sun.security.tools.PathList;
 import sun.security.util.Event;
 import sun.security.util.ManifestDigester;
 import sun.security.util.SignatureFileVerifier;
@@ -39,11 +38,8 @@ import sun.security.util.SignatureUtil;
 import sun.security.x509.AlgorithmId;
 
 import java.io.*;
-import java.lang.reflect.InvocationTargetException;
 import java.net.SocketTimeoutException;
 import java.net.URI;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.security.*;
 import java.security.cert.CertPath;
 import java.security.cert.Certificate;
@@ -492,7 +488,7 @@ public final class JarSigner {
     private final String tSADigestAlg;
     private final boolean sectionsonly; // do not "sign" the whole manifest
     private final boolean internalsf; // include the .SF inside the PKCS7 block
-    private boolean externalAttrsDetected;
+    private boolean externalFileAttributesDetected;
 
     private JarSigner(JarSigner.Builder builder) {
 
@@ -936,12 +932,12 @@ public final class JarSigner {
         ze2.setTime(ze.getTime());
         ze2.setComment(ze.getComment());
         ze2.setExtra(ze.getExtra());
-        int externalAttrs = JUZFA.getExternalAttributes(ze);
-        if (!externalAttrsDetected && externalAttrs != -1) {
-            externalAttrsDetected = true;
+        int externalFileAttributes = JUZFA.getExternalFileAttributes(ze);
+        if (!externalFileAttributesDetected && externalFileAttributes != -1) {
+            externalFileAttributesDetected = true;
             Event.report(Event.ReporterCategory.ZIPFILEATTRS, "detected");
         }
-        JUZFA.setExternalAttributes(ze2, externalAttrs);
+        JUZFA.setExternalFileAttributes(ze2, externalFileAttributes);
         if (ze.getMethod() == ZipEntry.STORED) {
             ze2.setSize(ze.getSize());
             ze2.setCrc(ze.getCrc());

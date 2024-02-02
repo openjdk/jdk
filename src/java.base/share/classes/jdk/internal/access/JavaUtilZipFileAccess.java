@@ -42,7 +42,7 @@ public interface JavaUtilZipFileAccess {
     public Enumeration<JarEntry> entries(ZipFile zip);
     public Stream<JarEntry> stream(ZipFile zip);
     public Stream<String> entryNameStream(ZipFile zip);
-    public void setExternalAttributes(ZipEntry ze, int externalAttrs);
-    public int getExternalAttributes(ZipEntry ze);
+    public void setExternalFileAttributes(ZipEntry ze, int externalFileAttributes);
+    public int getExternalFileAttributes(ZipEntry ze);
 }
 
