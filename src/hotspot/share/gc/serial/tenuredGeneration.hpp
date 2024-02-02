@@ -45,7 +45,7 @@ class TenuredGeneration: public Generation {
   // Abstractly, this is a subtype that gets access to protected fields.
   friend class VM_PopulateDumpSharedSpace;
 
- protected:
+  MemRegion _prev_used_region;
 
   // This is shared with other generations.
   CardTableRS* _rs;
@@ -69,7 +69,6 @@ class TenuredGeneration: public Generation {
 
   GenerationCounters* _gen_counters;
   CSpaceCounters*     _space_counters;
-
 
   // Attempt to expand the generation by "bytes".  Expand by at a
   // minimum "expand_bytes".  Return true if some amount (not
@@ -95,6 +94,9 @@ class TenuredGeneration: public Generation {
   size_t free() const;
   MemRegion used_region() const;
 
+  MemRegion prev_used_region() const { return _prev_used_region; }
+  void save_used_region()   { _prev_used_region = used_region(); }
+
   void space_iterate(SpaceClosure* blk, bool usedOnly = false);
 
   void younger_refs_iterate(OopIterateClosure* blk);
@@ -111,7 +113,6 @@ class TenuredGeneration: public Generation {
   const char* name() const { return "tenured generation"; }
   const char* short_name() const { return "Tenured"; }
 
-  size_t unsafe_max_alloc_nogc() const;
   size_t contiguous_available() const;
 
   // Iteration
@@ -128,10 +129,6 @@ class TenuredGeneration: public Generation {
   void save_marks();
 
   bool no_allocs_since_save_marks();
-
-  // Requires "addr" to be the start of a block, and returns "TRUE" iff
-  // the block is an object.
-  inline bool block_is_obj(const HeapWord* addr) const;
 
   virtual void collect(bool full,
                        bool clear_all_soft_refs,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,22 +37,22 @@
 #define BODY(type)                                                          \
   int hash = 0;                                                             \
   jsize i, arraySize, stringSize;                                           \
-  jchar *nativeStr = NULL;                                                  \
-  type *nativeArray = NULL;                                                 \
+  jchar *nativeStr = nullptr;                                                  \
+  type *nativeArray = nullptr;                                                 \
                                                                             \
   arraySize = env->GetArrayLength(array); CE                                \
   stringSize = env->GetStringLength(str); CE                                \
                                                                             \
-  nativeArray = (type *)env->GetPrimitiveArrayCritical(array, NULL); CE     \
+  nativeArray = (type *)env->GetPrimitiveArrayCritical(array, nullptr); CE     \
   qsort(nativeArray, arraySize, sizeof(type), *type##comp);                 \
                                                                             \
-  nativeStr = (jchar *)env->GetStringCritical(str, NULL); CE                \
+  nativeStr = (jchar *)env->GetStringCritical(str, nullptr); CE                \
                                                                             \
   for (i = 0; i < stringSize; ++i)                                          \
     hash += (int)nativeStr[i];                                              \
   env->ReleaseStringCritical(str, nativeStr); CE                            \
                                                                             \
-  nativeStr = (jchar *)env->GetStringCritical(str, NULL); CE                \
+  nativeStr = (jchar *)env->GetStringCritical(str, nullptr); CE                \
                                                                             \
   env->ReleasePrimitiveArrayCritical(array, nativeArray, 0); CE             \
                                                                             \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,10 +65,10 @@ static volatile jboolean isVirtualExpected = JNI_FALSE;
 static int eventsExpected = 0;
 static int eventsCount = 0;
 static watch_info watches[] = {
-    { NULL, "Lfieldacc04a;", "run", "()I", 2,
+    { nullptr, "Lfieldacc04a;", "run", "()I", 2,
         "Lfieldacc04a;", "interfaceObject",
         "Ljava/lang/Object;", JNI_TRUE },
-    { NULL, "Lfieldacc04a;", "run", "()I", 12,
+    { nullptr, "Lfieldacc04a;", "run", "()I", 12,
         "Lfieldacc04a;", "interfaceArrInt",
         "[I", JNI_TRUE }
 };
@@ -87,7 +87,7 @@ void JNICALL FieldAccess(jvmtiEnv *jvmti, JNIEnv *jni,
 
   watch.fid = field;
   watch.loc = location;
-  watch.is_static = (obj == NULL) ? JNI_TRUE : JNI_FALSE;
+  watch.is_static = (obj == nullptr) ? JNI_TRUE : JNI_FALSE;
   err = jvmti->GetMethodDeclaringClass(method, &cls);
   if (err != JVMTI_ERROR_NONE) {
     LOG("(GetMethodDeclaringClass) unexpected error: %s (%d)\n", TranslateError(err), err);
@@ -129,16 +129,16 @@ void JNICALL FieldAccess(jvmtiEnv *jvmti, JNIEnv *jni,
 
   for (size_t i = 0; i < sizeof(watches)/sizeof(watch_info); i++) {
     if (watch.fid == watches[i].fid) {
-      if (watch.m_cls == NULL ||  strcmp(watch.m_cls, watches[i].m_cls) != 0) {
+      if (watch.m_cls == nullptr ||  strcmp(watch.m_cls, watches[i].m_cls) != 0) {
         LOG("(watch#%" PRIuPTR ") wrong class: \"%s\", expected: \"%s\"\n", i, watch.m_cls, watches[i].m_cls);
         result = STATUS_FAILED;
       }
-      if (watch.m_name == NULL || strcmp(watch.m_name, watches[i].m_name) != 0) {
+      if (watch.m_name == nullptr || strcmp(watch.m_name, watches[i].m_name) != 0) {
         LOG("(watch#%" PRIuPTR ") wrong method name: \"%s\"", i, watch.m_name);
         LOG(", expected: \"%s\"\n", watches[i].m_name);
         result = STATUS_FAILED;
       }
-      if (watch.m_sig == NULL || strcmp(watch.m_sig, watches[i].m_sig) != 0) {
+      if (watch.m_sig == nullptr || strcmp(watch.m_sig, watches[i].m_sig) != 0) {
         LOG("(watch#%" PRIuPTR ") wrong method sig: \"%s\"", i, watch.m_sig);
         LOG(", expected: \"%s\"\n", watches[i].m_sig);
         result = STATUS_FAILED;
@@ -148,12 +148,12 @@ void JNICALL FieldAccess(jvmtiEnv *jvmti, JNIEnv *jni,
         LOG(", expected: 0x%x%08x\n", (jint)(watches[i].loc >> 32), (jint)watches[i].loc);
         result = STATUS_FAILED;
       }
-      if (watch.f_name == NULL || strcmp(watch.f_name, watches[i].f_name) != 0) {
+      if (watch.f_name == nullptr || strcmp(watch.f_name, watches[i].f_name) != 0) {
         LOG("(watch#%" PRIuPTR ") wrong field name: \"%s\"", i, watch.f_name);
         LOG(", expected: \"%s\"\n", watches[i].f_name);
         result = STATUS_FAILED;
       }
-      if (watch.f_sig == NULL || strcmp(watch.f_sig, watches[i].f_sig) != 0) {
+      if (watch.f_sig == nullptr || strcmp(watch.f_sig, watches[i].f_sig) != 0) {
         LOG("(watch#%" PRIuPTR ") wrong field sig: \"%s\"", i, watch.f_sig);
         LOG(", expected: \"%s\"\n", watches[i].f_sig);
         result = STATUS_FAILED;
@@ -181,7 +181,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jint res;
 
   res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     LOG("Wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }
@@ -210,7 +210,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
       return JNI_ERR;
     }
 
-    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_FIELD_ACCESS, NULL);
+    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_FIELD_ACCESS, nullptr);
     if (err != JVMTI_ERROR_NONE) {
       LOG("Failed to enable JVMTI_EVENT_FIELD_ACCESS: %s (%d)\n", TranslateError(err), err);
       return JNI_ERR;
@@ -243,7 +243,7 @@ Java_fieldacc04_getReady(JNIEnv *jni, jclass klass) {
 
   for (size_t i = 0; i < sizeof(watches)/sizeof(watch_info); i++) {
     cls = jni->FindClass(watches[i].f_cls);
-    if (cls == NULL) {
+    if (cls == nullptr) {
       LOG("Cannot find %s class!\n", watches[i].f_cls);
       result = STATUS_FAILED;
       return;
@@ -253,7 +253,7 @@ Java_fieldacc04_getReady(JNIEnv *jni, jclass klass) {
     } else {
       watches[i].fid = jni->GetFieldID(cls, watches[i].f_name, watches[i].f_sig);
     }
-    if (watches[i].fid == NULL) {
+    if (watches[i].fid == nullptr) {
       LOG("Cannot get field ID for \"%s:%s\"\n", watches[i].f_name, watches[i].f_sig);
       result = STATUS_FAILED;
       return;
@@ -279,7 +279,7 @@ Java_fieldacc04_check(JNIEnv *jni, jclass clz) {
   }
   for (size_t i = 0; i < sizeof(watches)/sizeof(watch_info); i++) {
     jclass cls = jni->FindClass(watches[i].f_cls);
-    if (cls == NULL) {
+    if (cls == nullptr) {
       LOG("Cannot find %s class!\n", watches[i].f_cls);
       result = STATUS_FAILED;
       return result;
