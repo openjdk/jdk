@@ -1485,7 +1485,7 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
     // this object has a heavyweight monitor
     nWant = mon->contentions(); // # of threads contending for monitor
     nWait = mon->waiters();     // # of threads in Object.wait()
-    ret.waiter_count = nWant + nWait;
+    ret.waiter_count = nWant;
     ret.notify_waiter_count = nWait;
   } else {
     // this object has a lightweight monitor
@@ -1515,7 +1515,7 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
     memset(ret.waiters, 0, ret.waiter_count * sizeof(jthread *));
     memset(ret.notify_waiters, 0, ret.notify_waiter_count * sizeof(jthread *));
 
-    if (ret.waiter_count > 0) {
+    if (ret.waiter_count > 0 || ret.notify_waiter_count > 0) {
       // we have contending and/or waiting threads
       if (nWant > 0) {
         // we have contending threads
@@ -1549,8 +1549,13 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
             // it has not been notified. This thread can't change the
             // state of the monitor so it doesn't need to be suspended.
             Handle th(current_thread, get_vthread_or_thread_oop(w));
-            ret.waiters[offset + j] = (jthread)jni_reference(calling_thread, th);
-            ret.notify_waiters[j++] = (jthread)jni_reference(calling_thread, th);
+            if (java_lang_Thread::get_thread_status(w->threadObj()) ==
+                JavaThreadStatus::BLOCKED_ON_MONITOR_ENTER) {
+              // thread is re-entering the monitor in an Object.wait() call
+              ret.waiters[nWant++] = (jthread)jni_reference(calling_thread, th);
+            } else {
+              ret.notify_waiters[j++] = (jthread)jni_reference(calling_thread, th);
+            }
           }
           waiter = mon->next_waiter(waiter);
         }
@@ -1558,7 +1563,7 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
     } // ThreadsListHandle is destroyed here.
 
     // Adjust count. nWant and nWait count values may be less than original.
-    ret.waiter_count = nWant + nWait;
+    ret.waiter_count = nWant;
     ret.notify_waiter_count = nWait;
   } else {
     // this object has a lightweight monitor and we have nothing more

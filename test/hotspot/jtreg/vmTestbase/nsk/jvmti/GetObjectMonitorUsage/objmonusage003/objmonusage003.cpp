@@ -95,7 +95,7 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 JNIEXPORT void JNICALL
 Java_nsk_jvmti_GetObjectMonitorUsage_objmonusage003_check(JNIEnv *env,
         jclass cls, jobject obj, jthread owner,
-        jint entryCount, jint waiterCount) {
+        jint entryCount, jint notifyWaiterCount) {
     jvmtiError err;
     jvmtiMonitorUsage inf;
     jvmtiThreadInfo tinf;
@@ -146,9 +146,9 @@ Java_nsk_jvmti_GetObjectMonitorUsage_objmonusage003_check(JNIEnv *env,
         result = STATUS_FAILED;
     }
 
-    if (inf.waiter_count != waiterCount) {
+    if (inf.notify_waiter_count != notifyWaiterCount) {
         printf("(%d) waiter_count expected: %d, actually: %d\n",
-               count, waiterCount, inf.waiter_count);
+               count, notifyWaiterCount, inf.notify_waiter_count);
         result = STATUS_FAILED;
     }
 }
