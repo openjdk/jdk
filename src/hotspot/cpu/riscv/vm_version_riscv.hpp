@@ -105,6 +105,8 @@ class VM_Version : public Abstract_VM_Version {
   // Zbc Carry-less multiplication
   // Zbs Single-bit instructions
   //
+  // Zfh Half-Precision Floating-Point instructions
+  //
   // Zicsr Control and Status Register (CSR) Instructions
   // Zifencei Instruction-Fetch Fence
   // Zic64b Cache blocks must be 64 bytes in size, naturally aligned in the address space.
@@ -143,6 +145,7 @@ class VM_Version : public Abstract_VM_Version {
   decl(ext_Zbc         , "Zbc"         , RV_NO_FLAG_BIT, true , NO_UPDATE_DEFAULT)              \
   decl(ext_Zbs         , "Zbs"         , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZbs))         \
   decl(ext_Zcb         , "Zcb"         , RV_NO_FLAG_BIT, true , NO_UPDATE_DEFAULT)              \
+  decl(ext_Zfh         , "Zfh"         , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZfh))         \
   decl(ext_Zicsr       , "Zicsr"       , RV_NO_FLAG_BIT, true , NO_UPDATE_DEFAULT)              \
   decl(ext_Zifencei    , "Zifencei"    , RV_NO_FLAG_BIT, true , NO_UPDATE_DEFAULT)              \
   decl(ext_Zic64b      , "Zic64b"      , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZic64b))      \

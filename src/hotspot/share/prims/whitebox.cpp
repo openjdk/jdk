@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,7 @@
 #include "oops/constantPool.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
+#include "oops/methodData.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -1226,7 +1227,6 @@ WB_ENTRY(void, WB_ClearMethodState(JNIEnv* env, jobject o, jobject method))
     for (int i = 0; i < arg_count; i++) {
       mdo->set_arg_modified(i, 0);
     }
-    MutexLocker mu(THREAD, mdo->extra_data_lock());
     mdo->clean_method_data(/*always_clean*/true);
   }
 
@@ -1890,7 +1890,7 @@ WB_END
 WB_ENTRY(jint, WB_getFieldCPIndex(JNIEnv* env, jobject wb, jclass klass, jint index))
   InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
   ConstantPool* cp = ik->constants();
-  if (cp->cache() == NULL) {
+  if (cp->cache() == nullptr) {
       return -1;
   }
   return cp->resolved_field_entry_at(index)->constant_pool_index();
@@ -1908,7 +1908,7 @@ WB_END
 WB_ENTRY(jint, WB_getMethodCPIndex(JNIEnv* env, jobject wb, jclass klass, jint index))
   InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
   ConstantPool* cp = ik->constants();
-  if (cp->cache() == NULL) {
+  if (cp->cache() == nullptr) {
       return -1;
   }
   return cp->resolved_method_entry_at(index)->constant_pool_index();

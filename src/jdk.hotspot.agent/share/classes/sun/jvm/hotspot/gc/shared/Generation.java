@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,12 +53,6 @@ public abstract class Generation extends VMObject {
   private static Field         statRecordField;
   private static CIntegerField invocationField;
 
-  // constants from Name enum
-  private static int NAME_DEF_NEW;
-  private static int NAME_PAR_NEW;
-  private static int NAME_MARK_SWEEP_COMPACT;
-  private static int NAME_OTHER;
-
   static {
     VM.registerVMInitializedObserver(new Observer() {
         public void update(Observable o, Object data) {
@@ -76,46 +70,10 @@ public abstract class Generation extends VMObject {
     statRecordField         = type.getField("_stat_record");
     type                    = db.lookupType("Generation::StatRecord");
     invocationField         = type.getCIntegerField("invocations");
-
-    // constants from Generation::Name
-    NAME_DEF_NEW = db.lookupIntConstant("Generation::DefNew").intValue();
-    NAME_MARK_SWEEP_COMPACT = db.lookupIntConstant("Generation::MarkSweepCompact").intValue();
-    NAME_OTHER = db.lookupIntConstant("Generation::Other").intValue();
   }
 
   public Generation(Address addr) {
     super(addr);
-  }
-
-  public static class Name {
-    public static final Name DEF_NEW = new Name("DefNew");
-    public static final Name MARK_SWEEP_COMPACT = new Name("MarkSweepCompact");
-    public static final Name OTHER = new Name("Other");
-
-    private Name(String value) {
-      this.value = value;
-    }
-
-    private String value;
-    public String toString() {
-      return value;
-    }
-  }
-
-  public Generation.Name kind() {
-    return Generation.Name.OTHER;
-  }
-
-  static Generation.Name nameForEnum(int value) {
-     if (value == NAME_DEF_NEW) {
-        return Name.DEF_NEW;
-     } else if (value == NAME_MARK_SWEEP_COMPACT) {
-        return Name.MARK_SWEEP_COMPACT;
-     } else if (value == NAME_OTHER) {
-        return Name.OTHER;
-     } else {
-        throw new RuntimeException("should not reach here");
-     }
   }
 
   public int invocations() {

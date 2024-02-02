@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,8 @@
 
 extern "C" {
 
-static JNIEnv *jni = NULL;
-static jvmtiEnv *jvmti = NULL;
+static JNIEnv *jni = nullptr;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiEventCallbacks callbacks;
 static jvmtiCapabilities caps;
 static jlong timeout = 0;
@@ -446,7 +446,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     timeout = nsk_jvmti_getWaitTime() * 60 * 1000;
 
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     memset(&caps, 0, sizeof(caps));
@@ -477,11 +477,11 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     NSK_DISPLAY0("enabling JVMTI events ...\n");
     if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE,
                                                           JVMTI_EVENT_OBJECT_FREE,
-                                                          NULL)))
+                                                          nullptr)))
         return JNI_ERR;
     NSK_DISPLAY0("enabling the events done.\n");
 
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     return JNI_OK;

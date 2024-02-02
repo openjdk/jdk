@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -368,13 +368,13 @@ int tag_objects(jvmtiEnv *jvmti, JNIEnv *jni) {
   jobjectArray testObjects;
   int object;
 
-  if (!NSK_VERIFY(NULL != (debugee = jni->FindClass(className))))
+  if (!NSK_VERIFY(nullptr != (debugee = jni->FindClass(className))))
     return JNI_ERR;
 
-  if (!NSK_VERIFY(NULL != (testObjectsField = jni->GetStaticFieldID(debugee, fieldName, fieldSig))))
+  if (!NSK_VERIFY(nullptr != (testObjectsField = jni->GetStaticFieldID(debugee, fieldName, fieldSig))))
     return JNI_ERR;
 
-  if (!NSK_VERIFY(NULL != (testObjects = (jobjectArray)(jni->GetStaticObjectField(
+  if (!NSK_VERIFY(nullptr != (testObjects = (jobjectArray)(jni->GetStaticObjectField(
           debugee, testObjectsField)))))
     return JNI_ERR;
 
@@ -386,13 +386,13 @@ int tag_objects(jvmtiEnv *jvmti, JNIEnv *jni) {
     jint field;
 
     memset(&objects_info[object],0,sizeof(object_info_t));
-    if (!NSK_VERIFY(NULL != (target = jni->GetObjectArrayElement(testObjects, object))))
+    if (!NSK_VERIFY(nullptr != (target = jni->GetObjectArrayElement(testObjects, object))))
       return JNI_ERR;
 
-    if (!NSK_VERIFY(NULL != (targetClass = jni->GetObjectClass(target))))
+    if (!NSK_VERIFY(nullptr != (targetClass = jni->GetObjectClass(target))))
       return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(jvmti->GetClassSignature(targetClass, &(objects_info[object].name), NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetClassSignature(targetClass, &(objects_info[object].name), nullptr)))
       return JNI_ERR;
 
     if (!NSK_JVMTI_VERIFY(jvmti->GetClassFields(
@@ -407,7 +407,7 @@ int tag_objects(jvmtiEnv *jvmti, JNIEnv *jni) {
                                                 targetFields[field],
                                                 &objects_info[object].fields[field].name,
                                                 &objects_info[object].fields[field].signature,
-                                                NULL)))
+                                                nullptr)))
         return JNI_ERR;
       if (is_primitive_type(objects_info[object].fields[field].signature)) {
         objects_info[object].fields[field].primitive = 1;
@@ -420,12 +420,12 @@ int tag_objects(jvmtiEnv *jvmti, JNIEnv *jni) {
           return JNI_ERR;
         }
         if (modifiers & STATIC_FIELD) {
-          if (!NSK_VERIFY(NULL != (value = jni->GetStaticObjectField(targetClass,
+          if (!NSK_VERIFY(nullptr != (value = jni->GetStaticObjectField(targetClass,
                                                                      targetFields[field])))) {
             return JNI_ERR;
           }
         } else {
-          if (!NSK_VERIFY(NULL != (value = jni->GetObjectField(target, targetFields[field])))) {
+          if (!NSK_VERIFY(nullptr != (value = jni->GetObjectField(target, targetFields[field])))) {
             return JNI_ERR;
           }
         }
@@ -515,7 +515,7 @@ agent(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
   jvmtiHeapCallbacks primitive_callbacks;
 
   NSK_DISPLAY0("Waiting debugee.\n");
-  if (!NSK_VERIFY(nsk_jvmti_enableEvents(JVMTI_ENABLE, 1, &event, NULL))) {
+  if (!NSK_VERIFY(nsk_jvmti_enableEvents(JVMTI_ENABLE, 1, &event, nullptr))) {
     return;
   }
   if (!NSK_VERIFY(nsk_jvmti_waitForSync(timeout))) {
@@ -534,7 +534,7 @@ agent(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
   primitive_callbacks.heap_iteration_callback = &heap_callback;
 
   NSK_DISPLAY0("Iterating over reachable objects.\n");
-  if (!NSK_JVMTI_VERIFY(jvmti->IterateThroughHeap(0, NULL, &primitive_callbacks, NULL))) {
+  if (!NSK_JVMTI_VERIFY(jvmti->IterateThroughHeap(0, nullptr, &primitive_callbacks, nullptr))) {
     nsk_jvmti_setFailStatus();
     return;
   }
@@ -551,7 +551,7 @@ agent(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
   }
 
   NSK_DISPLAY0("Iterating over unreachable objects.\n");
-  if (!NSK_JVMTI_VERIFY(jvmti->IterateThroughHeap(0, NULL, &primitive_callbacks, NULL))) {
+  if (!NSK_JVMTI_VERIFY(jvmti->IterateThroughHeap(0, nullptr, &primitive_callbacks, nullptr))) {
     nsk_jvmti_setFailStatus();
     return;
   }
@@ -559,7 +559,7 @@ agent(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
   NSK_DISPLAY0("Verifying that all filds were found.\n");
   verify_objects();
 
-  if (!NSK_VERIFY(nsk_jvmti_enableEvents(JVMTI_DISABLE, 1, &event, NULL))) {
+  if (!NSK_VERIFY(nsk_jvmti_enableEvents(JVMTI_DISABLE, 1, &event, nullptr))) {
     return;
   }
 
@@ -586,7 +586,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jvmtiEventCallbacks event_callbacks;
 
   jvmti = nsk_jvmti_createJVMTIEnv(jvm, reserved);
-  if (!NSK_VERIFY(jvmti != NULL)) {
+  if (!NSK_VERIFY(jvmti != nullptr)) {
     return JNI_ERR;
   }
 
@@ -608,7 +608,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     return JNI_ERR;
   }
 
-  if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agent, NULL))) {
+  if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agent, nullptr))) {
     return JNI_ERR;
   }
 
