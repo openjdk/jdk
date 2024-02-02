@@ -366,13 +366,15 @@ import java.util.Objects;
  *
  * <h2>Formatting Date and Time</h2>
  *
- * MessageFormat provides patterns that support both the {@link java.time} package
- * and the {@link Date java.util.Date} type. Consider the following three examples,
+ * MessageFormat provides patterns that support the date/time formatters in the
+ * {@link java.time.format} and {@link java.text} packages. Consider the following three examples,
  * with a date of 11/16/2023:
  *
  * <p>1) a <i>date</i> {@code FormatType} with a <i>full</i> {@code FormatStyle},
  * {@snippet lang=java :
- * Object[] arg = {new Date(2023, 11, 16)};
+ * Calendar cal = Calendar.getInstance();
+ * cal.set(123 + 1900, 10, 16);
+ * Object[] arg = {cal.getTime()};
  * var fmt = new MessageFormat("The date was {0,date,full}");
  * fmt.format(arg); // returns "The date was Thursday, November 16, 2023"
  * }
@@ -1632,7 +1634,7 @@ public class MessageFormat extends Format {
         // Get the type, if it's valid
         FormatType fType;
         try {
-            fType = FormatType.fromString(type);
+            fType = FormatType.valueOf(type.trim().toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException iae) {
             // Invalid type throws exception
             throw new IllegalArgumentException("unknown format type: " + type);
@@ -1766,7 +1768,7 @@ public class MessageFormat extends Format {
      */
     private Format formatFromSubformatPattern(FormatType fType, String pattern) {
         // Modified for neater exception value if needed
-        String type = fType.text.substring(0,1).toUpperCase(Locale.ROOT) + fType.text.substring(1);
+        String type = fType.name().charAt(0) + fType.name().substring(1).toLowerCase(Locale.ROOT);
         try {
             return switch(fType) {
                 case NUMBER -> new DecimalFormat(pattern, DecimalFormatSymbols.getInstance(locale));
@@ -1821,50 +1823,31 @@ public class MessageFormat extends Format {
 
     // Corresponding to the FormatType pattern
     private enum FormatType {
-        NUMBER("number"),
-        DATE("date"),
-        TIME("time"),
-        DTF_DATE("dtf_date"),
-        DTF_TIME("dtf_time"),
-        DTF_DATETIME("dtf_datetime"),
-        CHOICE("choice"),
-        LIST("list"),
+        NUMBER,
+        DATE,
+        TIME,
+        DTF_DATE,
+        DTF_TIME,
+        DTF_DATETIME,
+        CHOICE,
+        LIST,
 
         // Pre-defined DateTimeFormatter types
-        BASIC_ISO_DATE("BASIC_ISO_DATE"),
-        ISO_LOCAL_DATE("ISO_LOCAL_DATE"),
-        ISO_OFFSET_DATE ("ISO_OFFSET_DATE"),
-        ISO_DATE("ISO_DATE"),
-        ISO_LOCAL_TIME("ISO_LOCAL_TIME"),
-        ISO_OFFSET_TIME("ISO_OFFSET_TIME"),
-        ISO_TIME("ISO_TIME"),
-        ISO_LOCAL_DATE_TIME("ISO_LOCAL_DATE_TIME"),
-        ISO_OFFSET_DATE_TIME("ISO_OFFSET_DATE_TIME"),
-        ISO_ZONED_DATE_TIME("ISO_ZONED_DATE_TIME"),
-        ISO_DATE_TIME("ISO_DATE_TIME"),
-        ISO_ORDINAL_DATE("ISO_ORDINAL_DATE"),
-        ISO_WEEK_DATE("ISO_WEEK_DATE"),
-        ISO_INSTANT("ISO_INSTANT"),
-        RFC_1123_DATE_TIME("RFC_1123_DATE_TIME");
-
-        private final String text;
-
-        FormatType(String text){
-            this.text = text;
-        }
-
-        // This method returns a FormatType that matches the passed String.
-        // If no matching FormatType is found, an IllegalArgumentException is thrown.
-        private static FormatType fromString(String text) {
-            for (FormatType other : values()) {
-                // Also check trimmed lower case for historical reasons
-                if (text.trim().toLowerCase(Locale.ROOT)
-                        .equals(other.text.trim().toLowerCase(Locale.ROOT))) {
-                    return other;
-                }
-            }
-            throw new IllegalArgumentException();
-        }
+        BASIC_ISO_DATE,
+        ISO_LOCAL_DATE,
+        ISO_OFFSET_DATE ,
+        ISO_DATE,
+        ISO_LOCAL_TIME,
+        ISO_OFFSET_TIME,
+        ISO_TIME,
+        ISO_LOCAL_DATE_TIME,
+        ISO_OFFSET_DATE_TIME,
+        ISO_ZONED_DATE_TIME,
+        ISO_DATE_TIME,
+        ISO_ORDINAL_DATE,
+        ISO_WEEK_DATE,
+        ISO_INSTANT,
+        RFC_1123_DATE_TIME;
     }
 
     // Corresponding to the FormatStyle pattern
@@ -1885,6 +1868,8 @@ public class MessageFormat extends Format {
 
         private final String text;
 
+        // Differs from FormatType in that the text String is
+        // not guaranteed to match the Enum name, thus a text field is used
         FormatStyle(String text){
             this.text = text;
         }
@@ -1893,9 +1878,8 @@ public class MessageFormat extends Format {
         // If no FormatStyle is found, IllegalArgumentException is thrown
         private static FormatStyle fromString(String text) {
             for (FormatStyle style : values()) {
-                // Also check trimmed lower case for historical reasons
-                if (text.equals(style.text)
-                        || text.trim().toLowerCase(Locale.ROOT).equals(style.text)) {
+                // Also check trimmed case-insensitive for historical reasons
+                if (text.trim().toLowerCase(Locale.ROOT).equals(style.text)) {
                     return style;
                 }
             }

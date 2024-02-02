@@ -39,7 +39,6 @@ import java.util.Locale;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class CompactSubFormats {
 
@@ -56,9 +55,11 @@ public class CompactSubFormats {
         assertEquals(mFmt.getFormatsByArgumentIndex()[1], compactLong);
     }
 
-    // Ensure that only 'compact_short' and 'compact_long' are recognized
+    // Ensure that only 'compact_short' and 'compact_long' are recognized as
+    // compact number modifiers. All other compact_XX should be interpreted as
+    // a subformatPattern for a DecimalFormat
     @Test
-    public void badApplyPatternTest() {
+    public void recognizedCompactStylesTest() {
         // An exception won't be thrown since 'compact_regular' will be interpreted as a
         // subformatPattern.
         assertEquals(new DecimalFormat("compact_regular"),
