@@ -600,7 +600,7 @@ public:
     return p;
   }
   virtual void execute(DCmdSource source, TRAPS);
-  void find(DCmdSource source);
+  void find();
 };
 
 #ifdef LINUX

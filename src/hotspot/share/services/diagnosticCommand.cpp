@@ -1195,7 +1195,7 @@ VMDebugDCmd::VMDebugDCmd(outputStream* output, bool heap) :
   _dcmdparser.add_dcmd_option(&_verbose);
 }
 
-void VMDebugDCmd::find(DCmdSource source) {
+void VMDebugDCmd::find() {
   if (!_arg1.has_value()) {
     output()->print_cr("missing argument");
   } else {
@@ -1245,7 +1245,7 @@ void VMDebugDCmd::execute(DCmdSource source, TRAPS) {
     if (!UnlockDiagnosticVMOptions) {
       output()->print_cr("find requires -XX:+UnlockDiagnosticVMOptions");
     } else {
-      find(source);
+      find();
     }
   } else {
     output()->print_cr("unknown sub-command");
