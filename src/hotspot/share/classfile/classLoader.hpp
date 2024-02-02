@@ -295,7 +295,7 @@ class ClassLoader: AllStatic {
   // Attempt load of individual class from either the patched or exploded modules build lists
   static ClassFileStream* search_module_entries(JavaThread* current,
                                                 const GrowableArray<ModuleClassPathList*>* const module_list,
-                                                const char* const class_name,
+                                                Symbol* name,
                                                 const char* const file_name);
 
   // Load individual .class file

@@ -1031,13 +1031,12 @@ ClassPathEntry* find_first_module_cpe(ModuleEntry* mod_entry,
 // Search either the patch-module or exploded build entries for class.
 ClassFileStream* ClassLoader::search_module_entries(JavaThread* current,
                                                     const GrowableArray<ModuleClassPathList*>* const module_list,
-                                                    const char* const class_name,
+                                                    Symbol* name,
                                                     const char* const file_name) {
   ClassFileStream* stream = nullptr;
 
   // Find the class' defining module in the boot loader's module entry table
-  TempNewSymbol class_name_symbol = SymbolTable::new_symbol(class_name);
-  TempNewSymbol pkg_name = package_from_class_name(class_name_symbol);
+  TempNewSymbol pkg_name = package_from_class_name(name);
   PackageEntry* pkg_entry = get_package_entry(pkg_name, ClassLoaderData::the_null_class_loader_data());
   ModuleEntry* mod_entry = (pkg_entry != nullptr) ? pkg_entry->module() : nullptr;
 
@@ -1130,7 +1129,7 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, bool search_append_only, TR
     // is not supported with UseSharedSpaces, we can never come here during dynamic dumping.
     assert(!CDSConfig::is_dumping_dynamic_archive(), "sanity");
     if (!CDSConfig::is_dumping_static_archive()) {
-      stream = search_module_entries(THREAD, _patch_mod_entries, class_name, file_name);
+      stream = search_module_entries(THREAD, _patch_mod_entries, name, file_name);
     }
   }
 
@@ -1142,7 +1141,7 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, bool search_append_only, TR
     } else {
       // Exploded build - attempt to locate class in its defining module's location.
       assert(_exploded_entries != nullptr, "No exploded build entries present");
-      stream = search_module_entries(THREAD, _exploded_entries, class_name, file_name);
+      stream = search_module_entries(THREAD, _exploded_entries, name, file_name);
     }
   }
 
