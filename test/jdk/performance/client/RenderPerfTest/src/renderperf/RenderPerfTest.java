@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2023, 2024, JetBrains s.r.o.. All rights reserved.
+ * Copyright (c) 2022, 2024, JetBrains s.r.o.. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,11 +63,15 @@ import java.awt.image.DataBufferInt;
 import java.awt.image.DataBufferShort;
 import java.awt.image.VolatileImage;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.charset.Charset;
+
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -83,6 +87,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.IntBinaryOperator;
+import java.util.regex.Pattern;
 
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
@@ -94,7 +99,8 @@ import javax.swing.WindowConstants;
 
 public final class RenderPerfTest {
 
-    private final static String VERSION = "Render_Perf_Test 2023.12";
+    private final static String VERSION = "Render_Perf_Test 2024.02";
+
     private static final HashSet<String> ignoredTests = new HashSet<>();
 
     static {
@@ -117,9 +123,11 @@ public final class RenderPerfTest {
 
     private static String GC_MODE = GC_MODE_DEF;
 
+    // System properties:
     private final static boolean CALIBRATION = "true".equalsIgnoreCase(System.getProperty("CALIBRATION", "false"));
     private final static boolean REPORT_OVERALL_FPS = "true".equalsIgnoreCase(System.getProperty("REPORT_OVERALL_FPS", "false"));
 
+    private final static boolean DUMP_SAMPLES = "true".equalsIgnoreCase(System.getProperty("DUMP_SAMPLES", "false"));
     private final static boolean TRACE = "true".equalsIgnoreCase(System.getProperty("TRACE", "false"));
     private final static boolean TRACE_CONFIGURE = "true".equalsIgnoreCase(System.getProperty("TRACE_CONFIGURE", "false"));
     private final static boolean TRACE_SYNC = "true".equalsIgnoreCase(System.getProperty("TRACE_SYNC", "false"));
@@ -132,7 +140,12 @@ public final class RenderPerfTest {
 
     private final static boolean TEXT_VERSION = "true".equalsIgnoreCase(System.getProperty("TEXT_VERSION", "true"));
 
+    // time scale multiplier to get more samples so refined metrics:
+    private final static int TIME_SCALE = Integer.getInteger("TIME_SCALE", 1);
+
+    // default settings:
     private static boolean VERBOSE = false;
+    private static boolean VERBOSE_FONT_CONFIG = false;
     private static boolean VERBOSE_GRAPHICS_CONFIG = false;
 
     private static int REPEATS = 1;
@@ -151,18 +164,25 @@ public final class RenderPerfTest {
     private final static int IMAGE_W = (int) (WIDTH + BW);
     private final static int IMAGE_H = (int) (HEIGHT + BH);
 
-    private final static String TEST_TEXT = TEXT_VERSION ? VERSION : "The quick brown fox jumps over the lazy dog";
+    // Test attributes:
+    private static String TEXT_STR = TEXT_VERSION ? VERSION : "The quick brown fox jumps over the lazy dog";
 
-    private final static int COUNT = 600;
+    private static String TEXT_FONT = "Dialog";
+    private static int TEXT_SIZE_DEFAULT = 12;
+    private static int TEXT_SIZE_LARGE = 32;
+
+    private final static int COUNT = 600 * TIME_SCALE;
     private final static int MIN_COUNT = 20;
-    private final static int WARMUP_COUNT = MIN_COUNT;
+    private final static int MAX_SAMPLE_COUNT = 2 * COUNT;
+
+    private static int WARMUP_COUNT = MIN_COUNT;
 
     private final static int DELAY = 1;
     private final static int CYCLE_DELAY = DELAY;
 
-    private final static long MIN_MEASURE_TIME_NS = 1000L * 1000 * 1000;
-    private final static long MAX_MEASURE_TIME_NS = 6000L * 1000 * 1000;
-    private final static int MAX_FRAME_CYCLES = 3000 / CYCLE_DELAY;
+    private final static long MIN_MEASURE_TIME_NS = 1000L * 1000 * 1000 * TIME_SCALE; // 1s min
+    private final static long MAX_MEASURE_TIME_NS = 6000L * 1000 * 1000 * TIME_SCALE; // 6s max
+    private final static int MAX_FRAME_CYCLES = 1000 * TIME_SCALE / CYCLE_DELAY;
 
     private final static int COLOR_TOLERANCE = 10;
 
@@ -200,7 +220,7 @@ public final class RenderPerfTest {
         public void configure(final Graphics2D g2d, final boolean enabled) {
             g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
                     enabled ? RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB
-                            : RenderingHints.VALUE_TEXT_ANTIALIAS_DEFAULT);
+                            : RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
         }
     }
 
@@ -405,10 +425,16 @@ public final class RenderPerfTest {
     }
 
     static class WhiteTextParticleRenderer implements ParticleRenderer {
-        float r;
+        final float r;
+        final Font font;
 
         WhiteTextParticleRenderer(float r) {
+            this(r, TEXT_SIZE_DEFAULT);
+        }
+
+        WhiteTextParticleRenderer(float r, int fontSize) {
             this.r = r;
+            font = new Font(TEXT_FONT, Font.PLAIN, fontSize);
         }
 
         void setPaint(Graphics2D g2d, int id) {
@@ -418,9 +444,10 @@ public final class RenderPerfTest {
         @Override
         public void render(Graphics2D g2d, int id, float[] x, float[] y, float[] vx, float[] vy) {
             setPaint(g2d, id);
-            g2d.drawString(TEST_TEXT, (int) (x[id] - r), (int) (y[id] - r));
-            g2d.drawString(TEST_TEXT, (int) (x[id] - r), (int) y[id]);
-            g2d.drawString(TEST_TEXT, (int) (x[id] - r), (int) (y[id] + r));
+            g2d.setFont(font);
+            g2d.drawString(TEXT_STR, (int) (x[id] - r), (int) (y[id] - r));
+            g2d.drawString(TEXT_STR, (int) (x[id] - r), (int) y[id]);
+            g2d.drawString(TEXT_STR, (int) (x[id] - r), (int) (y[id] + r));
         }
     }
 
@@ -430,7 +457,11 @@ public final class RenderPerfTest {
         float r;
 
         TextParticleRenderer(int n, float r) {
-            super(r);
+            this(n,r, TEXT_SIZE_DEFAULT);
+        }
+
+        TextParticleRenderer(int n, float r, int fontSize) {
+            super(r, fontSize);
             colors = new Color[n];
             this.r = r;
             for (int i = 0; i < n; i++) {
@@ -446,23 +477,14 @@ public final class RenderPerfTest {
 
     static class LargeTextParticleRenderer extends TextParticleRenderer {
 
-        private Font font = null;
-
         LargeTextParticleRenderer(int n, float r) {
-            super(n, r);
+            super(n, r, TEXT_SIZE_LARGE);
         }
 
         @Override
         public void render(Graphics2D g2d, int id, float[] x, float[] y, float[] vx, float[] vy) {
-            setPaint(g2d, id);
             if (id % 100 != 0) return;
-            if (font == null) {
-                font = new Font("LucidaGrande", Font.PLAIN, 32);
-            }
-            g2d.setFont(font);
-            g2d.drawString(TEST_TEXT, (int) (x[id] - r), (int) (y[id] - r));
-            g2d.drawString(TEST_TEXT, (int) (x[id] - r), (int) y[id]);
-            g2d.drawString(TEST_TEXT, (int) (x[id] - r), (int) (y[id] + r));
+            super.render(g2d, id, x, y, vx, vy);
         }
     }
 
@@ -979,25 +1001,49 @@ public final class RenderPerfTest {
 
     static abstract class PerfMeterExecutor {
 
+        protected final static int SCORE_MAIN = 0;
+        protected final static int SCORE_ERROR = 1;
+        protected final static int SCORE_OTHER = 2;
+
+        protected final static int PCT_00 = 0;
+        protected final static int PCT_10 = 1;
+        protected final static int PCT_25 = 2;
+        protected final static int PCT_50 = 3;
+        protected final static int PCT_75 = 4;
+        protected final static int PCT_90 = 5;
+        protected final static int PCT_100 = 6;
+
         private final static IntBinaryOperator INC_MOD_FUNC = new IntBinaryOperator() {
             public int applyAsInt(int x, int y) {
                 return (x + 1) % y;
             }
         };
 
+        private static final AtomicInteger headerMark = new AtomicInteger(1);
+
+        /* members */
         protected final FrameHandler fh;
+        protected final boolean skipWait;
+
+        protected final AtomicInteger paintIdx = new AtomicInteger(0);
         protected final AtomicInteger markerIdx = new AtomicInteger(0);
+        protected final AtomicLong markerStartTime = new AtomicLong(0);
         protected final AtomicLong markerPaintTime = new AtomicLong(0);
 
         protected String name = null;
         protected int skippedFrames = 0;
-        protected final ArrayList<Long> testTime = new ArrayList<>(COUNT);
 
-        protected final double[] scores = new double[3];
-        protected final double[] results = new double[4];
-        private int nData = 0;
+        protected int frames = 0;
+        // test timestamp data:
+        protected long[] testTimestamp = new long[MAX_SAMPLE_COUNT];
+        // test duration data (ns):
+        protected long[] testTime = new long[MAX_SAMPLE_COUNT];
 
-        protected PerfMeterExecutor(final FrameHandler fh) {
+        protected final double[] scores = new double[SCORE_OTHER + 1];
+        protected final double[] results = new double[PCT_100 + 1];
+
+        protected PerfMeterExecutor(final boolean skipWait, final FrameHandler fh) {
+            this.skipWait = skipWait;
             this.fh = fh;
         }
 
@@ -1008,7 +1054,9 @@ public final class RenderPerfTest {
         }
 
         protected void reset() {
+            paintIdx.set(0);
             markerIdx.set(0);
+            markerStartTime.set(0);
             markerPaintTime.set(0);
         }
 
@@ -1018,7 +1066,7 @@ public final class RenderPerfTest {
 
         protected final void exec(final String testName, final Renderable renderable) throws Exception {
             if (TRACE) System.out.print("\n!");
-            this.name = testName + "[" + fh.threadId + "]";
+            this.name = testName + (isMultiThreads() ? ("-" + fh.threadId) : "");
 
             SwingUtilities.invokeAndWait(new Runnable() {
                 @Override
@@ -1048,26 +1096,23 @@ public final class RenderPerfTest {
             // Reset before warmup:
             reset();
 
-            // Warmup to prepare frame synchronization:
-            for (int i = 0; i < WARMUP_COUNT; i++) {
-                updateMarkerIdx();
-                renderable.update();
-                fh.repaintFrame();
-                sleep(10);
-                while (markerPaintTime.get() == 0) {
-                    if (TRACE) System.out.print("-");
-                    sleep(1);
+            if (WARMUP_COUNT > 0) {
+                // Warmup to prepare frame synchronization:
+                for (int i = 0; i < WARMUP_COUNT; i++) {
+                    updateMarkerIdx();
+                    renderable.update();
+                    fh.repaintFrame();
+                    sleep(10);
+                    while (markerStartTime.get() == 0) {
+                        if (TRACE) System.out.print("-");
+                        sleep(1);
+                    }
+                    markerStartTime.set(0);
                 }
-                markerPaintTime.set(0);
+                // Reset before measurements:
+                reset();
             }
-            // Reset before measurements:
-            reset();
             if (TRACE) System.out.print(":>>");
-
-            int cycles = 0;
-            int frames = 0;
-            long paintTime = 0L;
-            long lastFrameTime = 0L;
 
             // signal thread is ready for test
             readyCount.countDown();
@@ -1078,6 +1123,12 @@ public final class RenderPerfTest {
             // Run Benchmark (all threads):
             if (TRACE_SYNC) traceSync(name + " benchmark started");
 
+            int cycles = 0;
+            frames = 0;
+            long paintStartTime = 0L;
+            long paintElapsedTime = 0L;
+            long lastFrameTime = 0L;
+
             final long startTime = System.nanoTime();
             final long minTime = startTime + MIN_MEASURE_TIME_NS;
             final long endTime = startTime + MAX_MEASURE_TIME_NS;
@@ -1087,29 +1138,34 @@ public final class RenderPerfTest {
 
             for (; ; ) {
                 long t;
-                if ((t = markerPaintTime.getAndSet(0L)) > 0L) {
-                    paintTime = t;
+                if ((t = markerStartTime.getAndSet(0L)) > 0L) {
+                    paintStartTime = t;
                     if (TRACE) System.out.print("|");
                 }
 
                 boolean wait = true;
 
-                if (paintTime > 0L) {
+                if (paintStartTime > 0L) {
+                    // get optional elapsed time:
+                    paintElapsedTime = markerPaintTime.get();
+
                     if (TRACE) System.out.print(".");
-                    wait = false;
+                    wait = !skipWait;
                     final Color c = getMarkerColor();
 
                     if (isAlmostEqual(c, MARKER[markerIdx.get()])) {
-                        final long duration = getElapsedTime(paintTime);
-                        if (duration > 0L) {
-                            testTime.add(duration);
+                        final long durationNs = getElapsedTime((paintElapsedTime != 0L) ? paintElapsedTime : paintStartTime);
+                        if ((durationNs > 0L) && (frames < MAX_SAMPLE_COUNT)) {
+                            testTimestamp[frames] = paintStartTime - startTime;
+                            testTime[frames] = durationNs;
                         }
                         if (REPORT_OVERALL_FPS) {
                             lastFrameTime = System.nanoTime();
                         }
                         if (TRACE) System.out.print("R");
                         frames++;
-                        paintTime = 0;
+                        paintStartTime = 0L;
+                        paintElapsedTime = 0L;
                         cycles = 0;
                         updateMarkerIdx();
                         renderable.update();
@@ -1117,7 +1173,8 @@ public final class RenderPerfTest {
                     } else if (cycles >= MAX_FRAME_CYCLES) {
                         if (TRACE) System.out.print("M");
                         skippedFrames++;
-                        paintTime = 0;
+                        paintStartTime = 0L;
+                        paintElapsedTime = 0L;
                         cycles = 0;
                         updateMarkerIdx();
                         fh.repaintFrame();
@@ -1160,11 +1217,15 @@ public final class RenderPerfTest {
                 System.err.println(frames + " in " + (elapsedTime / 1000000) + " ms: ~ " + elapsedFPS + " FPS");
             }
 
-            if (!testTime.isEmpty()) {
-                processTimes();
-            }
+            processTimes();
+
             if (TRACE) System.out.print("<<\n");
             afterExec();
+
+            // Log header once:
+            if (headerMark.getAndDecrement() == 1) {
+                System.err.println(getHeader());
+            }
 
             // Log report:
             System.err.println(getResults());
@@ -1192,43 +1253,105 @@ public final class RenderPerfTest {
         }
 
         protected void processTimes() {
-            nData = testTime.size();
+            if (frames != 0) {
+                frames = Math.min(frames, MAX_SAMPLE_COUNT);
 
-            if (!testTime.isEmpty()) {
-                // Ignore first 10% (warmup at the beginning):
-                final int thIdx = (int) Math.ceil(testTime.size() * 0.10);
+                if (DUMP_SAMPLES) {
+                    // Dump all results:
+                    final File file = new File("./rp-" + replaceNonFileNameChars(name) + "-samples.csv");
+                    System.out.println("Writing samples to : " + file.getAbsolutePath());
 
-                final ArrayList<Long> times = new ArrayList<>(nData - thIdx);
-                for (int i = thIdx; i < nData; i++) {
-                    times.add(testTime.get(i));
+                    try (final PrintWriter w = new PrintWriter(file, Charset.forName("UTF-8"))) {
+                        w.write("# ");
+                        w.write(VERSION);
+                        w.write(" - ");
+                        w.write("Test: ");
+                        w.write(name);
+                        w.write('\n');
+
+                        for (int i = 0; i < frames; i++) {
+                            w.write(Double.toString(millis(testTimestamp[i])));
+                            w.write(',');
+                            w.write(Double.toString(millis(testTime[i])));
+                            w.write('\n');
+                        }
+                    } catch (IOException ioe) {
+                        System.err.println("IO exception:");
+                        ioe.printStackTrace();
+                    }
                 }
+                // Ignore first 10% (warmup at the beginning):
+                final int first = (int) Math.floor(frames * 0.10);
+                final int last = frames - 1;
 
+                // free testTimestamp to avoid any future usage:
+                testTimestamp = null;
+
+                // note: testTime array is modified below:
                 // Sort values to get percentiles:
-                Collections.sort(times);
-                final int last = times.size() - 1;
+                Arrays.sort(testTime, first, frames);
+
+                final long[] pcts = getPercentiles(testTime, first, last);
+
+                final long median = pcts[PCT_50];
 
                 if (USE_FPS) {
-                    scores[0] = fps(times.get(pctIndex(last, 0.5000))); //    50% (median)
+                    scores[SCORE_MAIN] = fps(median);
 
-                    results[3] = fps(times.get(0)); // 0.0 (min)
-                    results[2] = fps(times.get(pctIndex(last, 0.1587))); // 15.87% (-1 stddev)
-                    results[1] = fps(times.get(pctIndex(last, 0.8413))); // 84.13% (+1 stddev)
-                    results[0] = fps(times.get(pctIndex(last, 1.0000))); // 100% (max)
+                    results[PCT_100] = fps(pcts[PCT_00]);
+                    results[PCT_90] = fps(pcts[PCT_10]);
+                    results[PCT_75] = fps(pcts[PCT_25]);
+                    results[PCT_50] = fps(pcts[PCT_50]);
+                    results[PCT_25] = fps(pcts[PCT_75]);
+                    results[PCT_10] = fps(pcts[PCT_90]);
+                    results[PCT_00] = fps(pcts[PCT_100]);
 
-                    scores[1] = (results[2] - results[1]) / 2.0;
-                    scores[2] = millis(times.get(pctIndex(last, 0.5000))); //    50% (median)
+                    // STDDEV = IQR / 1.35 = (Q3 - Q1) * 20 / 27
+                    scores[SCORE_ERROR] = (results[PCT_75] - results[PCT_25]) * 20L / 27L;
+                    scores[SCORE_OTHER] = millis(median);
                 } else {
-                    scores[0] = millis(times.get(pctIndex(last, 0.5000))); //    50% (median)
+                    scores[SCORE_MAIN] = millis(median);
 
-                    results[0] = millis(times.get(0)); // 0.0 (min)
-                    results[1] = millis(times.get(pctIndex(last, 0.1587))); // 15.87% (-1 stddev)
-                    results[2] = millis(times.get(pctIndex(last, 0.8413))); // 84.13% (+1 stddev)
-                    results[3] = millis(times.get(pctIndex(last, 1.0000))); // 100% (max)
+                    results[PCT_00] = millis(pcts[PCT_00]);
+                    results[PCT_10] = millis(pcts[PCT_10]);
+                    results[PCT_25] = millis(pcts[PCT_25]);
+                    results[PCT_50] = millis(pcts[PCT_50]);
+                    results[PCT_75] = millis(pcts[PCT_75]);
+                    results[PCT_90] = millis(pcts[PCT_90]);
+                    results[PCT_100] = millis(pcts[PCT_100]);
 
-                    scores[1] = (results[2] - results[1]) / 2.0;
-                    scores[2] = fps(times.get(pctIndex(last, 0.5000))); //    50% (median)
+                    // STDDEV = IQR / 1.35 = (Q3 - Q1) * 20 / 27 (normal distribution ?)
+                    scores[SCORE_ERROR] = (results[PCT_75] - results[PCT_25]) * 20L / 27L;
+                    scores[SCORE_OTHER] = fps(median);
+
+                    // System.out.println("stddev(IQR) = " + scores[SCORE_ERROR]);
+
+                    // MAD = Median Absolute Deviation:
+                    for (int i = first; i <= last; i++) {
+                        testTime[i] = Math.abs(testTime[i] - median);
+                    }
+                    // Sort values to get percentiles:
+                    Arrays.sort(testTime, first, frames);
+
+                    // STDDEV = 1.4826 * MAD (normal distribution ?)
+                    scores[SCORE_ERROR] = 1.4826 * millis(testTime[pctIndex(first, last, 0.50)]); // 50% (median)
+
+                    // System.out.println("stddev(MAD) = " + scores[SCORE_ERROR]);
                 }
+                // free testTime to avoid any future usage:
+                testTime = null;
             }
+        }
+
+        protected static String getHeader() {
+            if (VERBOSE) {
+                return String.format("%-25s : %s ± %s %s [%s] (p00: ... p10: ... p25: ... p50: ... p75: ... p90: ... p100: ... %s) (... frames)",
+                        "Test Name", (USE_FPS ? "Median(FPS)" : "Median(TimeMs)"), (USE_FPS ? "Stddev(FPS)" : "Stddev(TimeMs)"), "Unit",
+                        (!USE_FPS ? "Median(FPS)" : "Median(TimeMs)"), "Unit");
+            }
+            return String.format("%-25s : %s ± %s %s",
+                    "Test Name", (USE_FPS ? "Median(FPS)" : "Median(TimeMs)"), (USE_FPS ? "Stddev(FPS)" : "Stddev(TimeMs)"), "Unit");
+
         }
 
         protected String getResults() {
@@ -1236,14 +1359,15 @@ public final class RenderPerfTest {
                 System.err.println(name + " : " + skippedFrames + " frame(s) skipped");
             }
             if (VERBOSE) {
-                return String.format("%-25s : %.3f (%.3f) %s [%.3f %s] (p00: %.3f p15: %.3f p50: %.3f p85: %.3f p100: %.3f %s) (%d frames)",
-                        name, scores[0], scores[1], (USE_FPS ? "FPS" : "ms"),
-                        scores[2], (USE_FPS ? "ms" : "FPS"),
-                        results[0], results[1], scores[0], results[2], results[3],
-                        (USE_FPS ? "FPS" : "ms"),
-                        nData);
+                return String.format("%-25s : %.3f ± %.3f %s [%.3f %s] (p00: %.3f p10: %.3f p25: %.3f p50: %.3f p75: %.3f p90: %.3f p100: %.3f %s) (%d frames)",
+                    name, scores[SCORE_MAIN], scores[SCORE_ERROR], (USE_FPS ? "FPS" : "ms"),
+                    scores[SCORE_OTHER], (USE_FPS ? "ms" : "FPS"),
+                    results[PCT_00], results[PCT_10], results[PCT_25], results[PCT_50], results[PCT_75], results[PCT_90], results[PCT_100],
+                    (USE_FPS ? "FPS" : "ms"),
+                    frames);
             }
-            return String.format("%-25s : %.3f (%.3f) %s", name, scores[0], scores[1], (USE_FPS ? "FPS" : "ms"));
+            return String.format("%-25s : %.3f ± %.3f %s",
+                     name, scores[SCORE_MAIN], scores[SCORE_ERROR], (USE_FPS ? "FPS" : "ms"));
         }
 
         protected double fps(long timeNs) {
@@ -1254,24 +1378,38 @@ public final class RenderPerfTest {
             return 1e-6 * timeNs;
         }
 
-        protected int pctIndex(final int last, final double pct) {
-            return (int) Math.round(last * pct);
+        protected static long[] getPercentiles(final long[] data, final int first, final int last) {
+            final long[] pcts = new long[PCT_100 + 1];
+            pcts[PCT_00] = data[first]; // 0% (min)
+            pcts[PCT_10] = data[pctIndex(first, last, 0.10)]; //  10%
+            pcts[PCT_25] = data[pctIndex(first, last, 0.25)]; //  25% (Q1)
+            pcts[PCT_50] = data[pctIndex(first, last, 0.50)]; //  50% (Median)
+            pcts[PCT_75] = data[pctIndex(first, last, 0.75)]; //  75% (Q3)
+            pcts[PCT_90] = data[pctIndex(first, last, 0.90)]; //  90%
+            pcts[PCT_100] = data[pctIndex(first, last, 1.00)]; // 100% (max)
+            return pcts;
+        }
+
+        protected static int pctIndex(final int min, final int last, final double pct) {
+            return min + (int) Math.round((last - min) * pct);
         }
     }
 
     final static class PerfMeterRobot extends PerfMeterExecutor {
 
-        private final ArrayList<Long> robotTime = (fh.calibrate) ? new ArrayList<>(COUNT) : null;
+        private int nRobotTimes = 0;
+        private long[] robotTime = (fh.calibrate) ? new long[COUNT] : null;
 
-        private long lastPaintTime = 0;
-        private final ArrayList<Long> delayTime = new ArrayList<>(COUNT);
+        private int nDelayTimes = 0;
+        private long[] delayTime = (ROBOT_TIME_DELAY) ? null : new long[COUNT];
 
+        private long lastPaintTime = 0L;
         private int renderedMarkerIdx = -1;
 
         private Robot robot = null;
 
         PerfMeterRobot(final FrameHandler fh) {
-            super(fh);
+            super(true, fh);
         }
 
         protected void beforeExec() {
@@ -1284,6 +1422,9 @@ public final class RenderPerfTest {
 
         protected void reset() {
             super.reset();
+            nRobotTimes = 0;
+            nDelayTimes = 0;
+            lastPaintTime = 0L;
             renderedMarkerIdx = -1;
         }
 
@@ -1298,22 +1439,25 @@ public final class RenderPerfTest {
                 g2d.dispose();
             }
 
+            // Update paintIdx:
+            paintIdx.incrementAndGet();
+
             // publish start time:
             if (idx != renderedMarkerIdx) {
                 renderedMarkerIdx = idx;
-                markerPaintTime.set(start);
+                markerStartTime.set(start);
             }
         }
 
-        protected long getElapsedTime(long paintTime) {
+        protected long getElapsedTime(final long paintTime) {
             final long now = System.nanoTime();
             long duration = (!ROBOT_TIME_DELAY) ? roundDuration(now - paintTime) : 0L;
-            if (lastPaintTime != 0) {
+            if (lastPaintTime != 0L) {
                 final long delay = roundDuration(now - lastPaintTime);
                 if (ROBOT_TIME_DELAY) {
                     duration = delay;
-                } else {
-                    delayTime.add(delay);
+                } else if (nDelayTimes < COUNT) {
+                    delayTime[nDelayTimes++] = delay;
                 }
             }
             lastPaintTime = now;
@@ -1337,44 +1481,40 @@ public final class RenderPerfTest {
 
             final Color c = robot.getPixelColor(px, py);
 
-            if (fh.calibrate) {
-                robotTime.add((System.nanoTime() - beforeRobot));
+            if ((fh.calibrate) && (nRobotTimes < COUNT)) {
+                robotTime[nRobotTimes++] = System.nanoTime() - beforeRobot;
             }
             return c;
         }
 
         protected String getResults() {
-            if (fh.calibrate && !robotTime.isEmpty()) {
+            if (fh.calibrate && (nRobotTimes != 0)) {
                 fh.calibrate = false; // only first time
 
-                Collections.sort(robotTime);
-                final int last = robotTime.size() - 1;
+                Arrays.sort(robotTime);
 
-                final double[] robotStats = new double[5];
-                robotStats[0] = millis(robotTime.get(0)); // 0.0 (min)
-                robotStats[1] = millis(robotTime.get(pctIndex(last, 0.1587))); // 15.87% (-1 stddev)
-                robotStats[2] = millis(robotTime.get(pctIndex(last, 0.5000))); //    50% (median)
-                robotStats[3] = millis(robotTime.get(pctIndex(last, 0.8413))); // 84.13% (+1 stddev)
-                robotStats[4] = millis(robotTime.get(pctIndex(last, 1.0000))); //   100% (max)
+                final long[] pcts = getPercentiles(robotTime, 0, nRobotTimes - 1);
 
-                System.err.printf("%-25s : %.3f ms (p00: %.3f p15: %.3f p50: %.3f p85: %.3f p100: %.3f ms) (%d times)%n",
-                        "Robot [" + fh.threadId + "]", robotStats[2], robotStats[0], robotStats[1], robotStats[2], robotStats[3], robotStats[4], last + 1);
+                // free testTime to avoid any future usage:
+                testTime = null;
+
+                System.err.printf("%-25s : %.3f ms (p00: %.3f p10: %.3f p25: %.3f p50: %.3f p75: %.3f p90: %.3f p100: %.3f ms) (%d times)%n",
+                        "Robot" + (isMultiThreads() ? ("-" + fh.threadId) : ""), millis(pcts[PCT_50]),
+                        millis(pcts[PCT_00]), millis(pcts[PCT_10]), millis(pcts[PCT_25]), millis(pcts[PCT_50]),
+                        millis(pcts[PCT_75]), millis(pcts[PCT_90]), millis(pcts[PCT_100]), nRobotTimes);
             }
-            if (!delayTime.isEmpty()) {
-                Collections.sort(delayTime);
-                final int last = delayTime.size() - 1;
+            if (nDelayTimes != 0) {
+                Arrays.sort(delayTime);
 
-                final double[] delayStats = new double[5];
-                delayStats[0] = millis(delayTime.get(0)); // 0.0 (min)
-                delayStats[1] = millis(delayTime.get(pctIndex(last, 0.1587))); // 15.87% (-1 stddev)
-                delayStats[2] = millis(delayTime.get(pctIndex(last, 0.5000))); //    50% (median)
-                delayStats[3] = millis(delayTime.get(pctIndex(last, 0.8413))); // 84.13% (+1 stddev)
-                delayStats[4] = millis(delayTime.get(pctIndex(last, 1.0000))); //   100% (max)
+                final long[] pcts = getPercentiles(robotTime, 0, nDelayTimes - 1);
 
-                final double fps = fps(delayTime.get(pctIndex(last, 0.5000))); //    50% (median)
+                // free delayTime to avoid any future usage:
+                delayTime = null;
 
-                System.err.printf("%-25s : %.3f ms [%.3f FPS] (p00: %.3f p15: %.3f p50: %.3f p85: %.3f p100: %.3f ms) (%d times)%n",
-                        "DT-" + name, delayStats[2], fps, delayStats[0], delayStats[1], delayStats[2], delayStats[3], delayStats[4], last + 1);
+                System.err.printf("%-25s : %.3f ms [%.3f FPS] (p00: %.3f p10: %.3f p25: %.3f p50: %.3f p75: %.3f p90: %.3f p100: %.3f ms) (%d times)%n",
+                        "DelayTime-" + name + (isMultiThreads() ? ("-" + fh.threadId) : ""), millis(pcts[PCT_50]), fps(pcts[PCT_50]),
+                        millis(pcts[PCT_00]), millis(pcts[PCT_10]), millis(pcts[PCT_25]), millis(pcts[PCT_50]),
+                        millis(pcts[PCT_75]), millis(pcts[PCT_90]), millis(pcts[PCT_100]), nDelayTimes);
             }
             return super.getResults();
         }
@@ -1384,7 +1524,7 @@ public final class RenderPerfTest {
         private final ImageProvider imageProvider;
 
         PerfMeterImageProvider(final FrameHandler fh) {
-            super(fh);
+            super(false, fh);
             this.imageProvider = fh.imageProvider;
         }
 
@@ -1409,8 +1549,15 @@ public final class RenderPerfTest {
                 g2d.dispose();
             }
 
+            final long now = System.nanoTime();
+
+            // Update paintIdx:
+            paintIdx.incrementAndGet();
+
+            // publish start time:
+            markerStartTime.set(start);
             // publish elapsed time:
-            markerPaintTime.set(System.nanoTime() - start);
+            markerPaintTime.set(now - start);
 
             // Draw image on screen:
             g.drawImage(imageProvider.getImage(), 0, 0, null);
@@ -1797,6 +1944,7 @@ public final class RenderPerfTest {
         System.out.println("#");
         System.out.println("# -h         : display this help");
         System.out.println("# -v         : set verbose outputs");
+        System.out.println("#");
         System.out.println("# -e<mode>   : set execution mode (default: " + EXEC_MODE_DEFAULT + ") among " + EXEC_MODES);
         System.out.println("#");
         System.out.println("# -f         : use FPS unit (default)");
@@ -1805,10 +1953,12 @@ public final class RenderPerfTest {
         System.out.println("# -l         : list available graphics configurations");
         System.out.println("# -g=all|0:0,0:1... : use all or specific graphics configurations");
         System.out.println("#");
-        System.out.println("# -w<number> : use number of test frames (default: 1)");
+        System.out.println("# -w<number> : use number of test frames (default: 1) per screen");
         System.out.println("#");
         System.out.println("# -n<number> : set number of primitives (default: " + N_DEFAULT + ")");
         System.out.println("# -r<number> : set number of test repeats (default: 1)");
+        System.out.println("#");
+        System.out.println("# -u<number> : set number of warmup iterations (default: " + MIN_COUNT + ")");
         System.out.println("#");
         System.out.print("# Test arguments: ");
 
@@ -1843,34 +1993,76 @@ public final class RenderPerfTest {
                 if (arg.startsWith("-")) {
                     switch (arg.substring(1, 2)) {
                         case "e":
-                            EXEC_MODE = arg.substring(2).toLowerCase();
+                            if (arg.length() >= 3) {
+                                EXEC_MODE = arg.substring(3).toLowerCase();
+                            }
                             break;
                         case "f":
-                            USE_FPS = true;
+                            if (arg.length() == 2) {
+                                USE_FPS = true;
+                            } else {
+                                if ((arg.length() > 6) && "font=".equalsIgnoreCase(arg.substring(1, 6))) {
+                                    TEXT_FONT = arg.substring(6);
+                                    break;
+                                }
+                                if ((arg.length() > 10) && "fontSize=".equalsIgnoreCase(arg.substring(1, 10))) {
+                                    TEXT_SIZE_DEFAULT = Integer.parseInt(arg.substring(10));
+                                    break;
+                                }
+                                if ((arg.length() > 15) && "fontSizeLarge=".equalsIgnoreCase(arg.substring(1, 15))) {
+                                    TEXT_SIZE_LARGE = Integer.parseInt(arg.substring(15));
+                                    break;
+                                }
+                            }
                             break;
                         case "g":
-                            GC_MODE = arg.substring(3).toLowerCase();
+                            if (arg.length() >= 3) {
+                                GC_MODE = arg.substring(3).toLowerCase();
+                            }
                             break;
                         case "h":
                             help = true;
                             break;
                         case "l":
-                            VERBOSE_GRAPHICS_CONFIG = true;
+                            if (arg.length() == 3) {
+                                if ("f".equalsIgnoreCase(arg.substring(2, 3))) {
+                                    VERBOSE_FONT_CONFIG = true;
+                                } else if ("g".equalsIgnoreCase(arg.substring(2, 3))) {
+                                    VERBOSE_GRAPHICS_CONFIG = true;
+                                }
+                            }
                             break;
                         case "t":
-                            USE_FPS = false;
+                            if (arg.length() == 2) {
+                                USE_FPS = false;
+                            } else {
+                                if ((arg.length() > 6) && "text=".equalsIgnoreCase(arg.substring(1, 6))) {
+                                    TEXT_STR = arg.substring(6);
+                                }
+                            }
                             break;
                         case "n":
-                            N = Integer.parseInt(arg.substring(2));
+                            if (arg.length() >= 3) {
+                                N = Integer.parseInt(arg.substring(3));
+                            }
                             break;
                         case "r":
-                            REPEATS = Integer.parseInt(arg.substring(2));
+                            if (arg.length() >= 3) {
+                                REPEATS = Integer.parseInt(arg.substring(3));
+                            }
                             break;
                         case "v":
                             VERBOSE = true;
                             break;
                         case "w":
-                            NW = Integer.parseInt(arg.substring(2));
+                            if (arg.length() >= 3) {
+                                NW = Integer.parseInt(arg.substring(3));
+                            }
+                            break;
+                        case "u":
+                            if (arg.length() >= 3) {
+                                WARMUP_COUNT = Integer.parseInt(arg.substring(3));
+                            }
                             break;
                         default:
                             System.err.println("Unsupported argument '" + arg + "' !");
@@ -1908,18 +2100,45 @@ public final class RenderPerfTest {
             System.out.printf("# AWT Toolkit   :             %s \n", TOOLKIT.getClass().getSimpleName());
             System.out.printf("# Execution mode:             %s\n", EXEC_MODE);
             System.out.printf("# GraphicsConfiguration mode: %s\n", GC_MODE);
-            System.out.printf("# Repeats: %d\n", REPEATS);
-            System.out.printf("# NW:      %d\n", NW);
-            System.out.printf("# N:       %d\n", N);
+            System.out.print("##############################################################\n");
+            System.out.printf("# Repeats:      %d\n", REPEATS);
+            System.out.printf("# NW:           %d\n", NW);
+            System.out.printf("# N:            %d\n", N);
+            System.out.printf("# WARMUP_COUNT: %d\n", WARMUP_COUNT);
             System.out.printf("# Unit:    %s\n", USE_FPS ? "FPS" : "TIME(ms)");
+            System.out.print("##############################################################\n");
+            System.out.printf("# Font: '%s'\n", TEXT_FONT);
+            System.out.printf("# Text: '%s'\n", TEXT_STR);
+            System.out.printf("# FontSize:      %s\n", TEXT_SIZE_DEFAULT);
+            System.out.printf("# FontSizeLarge: %s\n", TEXT_SIZE_LARGE);
             System.out.print("##############################################################\n");
         }
 
         // Graphics Configuration handling:
+        final Set<String> fontNames = new LinkedHashSet<>();
         final Map<String, GraphicsConfiguration> gcByID = new LinkedHashMap<>();
         final Map<GraphicsConfiguration, String> idByGC = new HashMap<>();
 
         final GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+
+        for (Font f : ge.getAllFonts()) {
+            fontNames.add(f.getName());
+        }
+        // Check font:
+        if (!fontNames.contains(TEXT_FONT)) {
+            System.err.println("Bad font name: [" + TEXT_FONT + "] ! (available values: " + fontNames + ")");
+        }
+
+        if (VERBOSE_FONT_CONFIG) {
+            System.out.println("Available Fonts:");
+
+            for (String name : fontNames) {
+                System.out.print(name);
+                System.out.print(" ");
+            }
+            System.out.println();
+        }
+
         final GraphicsDevice[] gds = ge.getScreenDevices();
 
         if (VERBOSE_GRAPHICS_CONFIG) {
@@ -1936,7 +2155,7 @@ public final class RenderPerfTest {
 
             for (int gcIdx = 0; gcIdx < gcs.length; gcIdx++) {
                 final GraphicsConfiguration gc = gcs[gcIdx];
-                final String gcId = gdIdx + ":" + gcIdx;
+                final String gcId = gdIdx + "-" + gcIdx;
                 gcByID.put(gcId, gc);
                 idByGC.put(gc, gcId);
                 if (VERBOSE_GRAPHICS_CONFIG) {
@@ -1957,7 +2176,7 @@ public final class RenderPerfTest {
                         if (gc != null) {
                             gcSet.add(gc);
                         } else {
-                            System.err.println("Bad GraphicsConfiguration identifier [x:y] where x is GraphicsDevice ID " +
+                            System.err.println("Bad GraphicsConfiguration identifier 'x-y' where x is GraphicsDevice ID " +
                                     "and y GraphicsConfiguration ID : [" + gcKey + "] ! (available values: " + gcByID.keySet() + ")");
                         }
                     }
@@ -2026,8 +2245,7 @@ public final class RenderPerfTest {
                     if (TRACE_SYNC) traceSync("Waiting " + threadCount + " threads to be ready...");
                     readyCount.await();
 
-                    if (TRACE_SYNC)
-                        traceSync("Threads are ready => starting benchmark on " + threadCount + " threads now");
+                    if (TRACE_SYNC) traceSync("Threads are ready => starting benchmark on " + threadCount + " threads now");
                     triggerStart.countDown();
 
                     // reset done barrier (to be ready):
@@ -2036,8 +2254,7 @@ public final class RenderPerfTest {
                     if (TRACE_SYNC) traceSync("Waiting " + threadCount + " threads to complete benchmark...");
                     completedCount.await();
 
-                    if (TRACE_SYNC)
-                        traceSync("Test completed on " + threadCount + " threads => stopping benchmark on all threads now");
+                    if (TRACE_SYNC) traceSync("Test completed on " + threadCount + " threads => stopping benchmark on all threads now");
                     triggerStop.countDown();
 
                     // reset start barrier (to be ready):
@@ -2046,8 +2263,7 @@ public final class RenderPerfTest {
                     if (TRACE_SYNC) traceSync("Waiting " + threadCount + " threads to exit test...");
                     doneCount.await();
 
-                    if (TRACE_SYNC)
-                        traceSync("Test exited on " + threadCount + " threads => finalize benchmark on all threads now");
+                    if (TRACE_SYNC) traceSync("Test exited on " + threadCount + " threads => finalize benchmark on all threads now");
                     triggerExit.countDown();
                 }
 
@@ -2098,6 +2314,10 @@ public final class RenderPerfTest {
     private static void initThreads(int count) {
         threadCount = count;
         if (TRACE_SYNC) traceSync("initThreads(): threadCount: " + threadCount);
+    }
+
+    static boolean isMultiThreads() {
+        return threadCount > 1;
     }
 
     private static void initBarrierStart() {
@@ -2162,7 +2382,7 @@ public final class RenderPerfTest {
         };
     }
 
-    private static void sleep(long millis) {
+    private static void sleep(final long millis) {
         if (millis > 0) {
             try {
                 Thread.sleep(millis);
@@ -2170,5 +2390,12 @@ public final class RenderPerfTest {
                 ie.printStackTrace(System.err);
             }
         }
+    }
+
+    /** regular expression used to match characters different than alpha/numeric/_/-/. (1..n) */
+    private final static Pattern PATTERN_NON_FILE_NAME = Pattern.compile("[^a-zA-Z0-9\\-_\\.]");
+
+    private static String replaceNonFileNameChars(final String value) {
+        return PATTERN_NON_FILE_NAME.matcher(value).replaceAll("_");
     }
 }
