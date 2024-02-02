@@ -1505,6 +1505,9 @@ enum VectorMask {
   INSN(vmulh_vx,   0b1010111, 0b110, 0b100111);
   INSN(vmul_vx,    0b1010111, 0b110, 0b100101);
 
+  // Vector Widening Integer Add/Subtract
+  INSN(vwadd_vx, 0b1010111, 0b110, 0b110001);
+
   // Vector Integer Min/Max Instructions
   INSN(vmax_vx,  0b1010111, 0b100, 0b000111);
   INSN(vmaxu_vx, 0b1010111, 0b100, 0b000110);
@@ -1524,9 +1527,6 @@ enum VectorMask {
   // Vector Narrowing Integer Right Shift Instructions
   INSN(vnsra_wx, 0b1010111, 0b100, 0b101101);
   INSN(vnsrl_wx, 0b1010111, 0b100, 0b101100);
-
-  // Vector Widening Integer Add/Subtract
-  INSN(vwadd_vx, 0b1010111, 0b100, 0b110001);
 
   // Vector Single-Width Bit Shift Instructions
   INSN(vsra_vx, 0b1010111, 0b100, 0b101001);

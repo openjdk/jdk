@@ -1972,14 +1972,15 @@ static void float16_to_float_v_slow_path(C2_MacroAssembler& masm, C2GeneralStub<
 
   // following instructions mainly focus on NaN, as riscv does not handle
   // NaN well with vfwcvt_f_f_v, but the code also works for Inf at the same time.
-
+  //
   // construct NaN's in 32 bits from the NaN's in 16 bits,
   // we need the payloads of non-canonical NaNs to be preserved.
-  __ mv(t0, 0x7f800000);
+
   // widen and sign-extend src data.
   __ vwadd_vx(dst, src, zr, Assembler::v0_t);
   // adjust vector type to 2 * SEW.
-  __ vsetvli_helper(bt, length, Assembler::m2);
+  __ vsetvli_helper(T_FLOAT, length, Assembler::m1, t0);
+  __ mv(t0, 0x7f800000);
   // sign-bit was already set via sign-extension if necessary.
   __ vsll_vi(dst, dst, 13, Assembler::v0_t);
   __ vor_vx(dst, dst, t0, Assembler::v0_t);
@@ -2007,11 +2008,11 @@ void C2_MacroAssembler::float16_to_float_v(VectorRegister dst, VectorRegister sr
   vmseq_vx(v0, v0, t0);
   vcpop_m(t0, v0);
 
-  // jump to stub processing NaN and Inf cases if there is any of them in the vector-wide.
-  bgtz(t0, stub->entry());
-
   // non-NaN or non-Inf cases, just use built-in instructions.
   vfwcvt_f_f_v(dst, src);
+
+  // jump to stub processing NaN and Inf cases if there is any of them in the vector-wide.
+  bgtz(t0, stub->entry());
 
   bind(stub->continuation());
 }
