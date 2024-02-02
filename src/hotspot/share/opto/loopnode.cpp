@@ -4864,6 +4864,7 @@ void PhaseIdealLoop::build_and_optimize() {
 
   // Auto-vectorize main-loop
   if (C->do_superword() && C->has_loops() && !C->major_progress()) {
+    Compile::TracePhase tp("autoVectorize", &timers[_t_autoVectorize]);
     ResourceArea autovectorization_arena;
     for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
       IdealLoopTree* lpt = iter.current();
