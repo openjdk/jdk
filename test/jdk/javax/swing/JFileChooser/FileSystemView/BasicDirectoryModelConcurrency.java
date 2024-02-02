@@ -20,9 +20,23 @@ import javax.swing.JFileChooser;
  * @summary concurrency of BasicDirectoryModel and JFileChooser
  */
 public final class BasicDirectoryModelConcurrency extends ThreadGroup {
+    /** Initial number of files. */
     private static final long NUMBER_OF_FILES = 100;
+    /** Maximum number of files created on a timer tick. */
+    private static final long LIMIT_FILES = 20;
+
+    /** Timer period (delay) for creating new files. */
+    private static final long TIMER_PERIOD = 500;
+
+    /**
+     * Number of threads running {@code fileChooser.rescanCurrentDirectory()}.
+     */
     private static final int NUMBER_OF_THREADS = 2;
-    public static final int NUMBER_OF_REPEATS = 5_000;
+    /** Number of repeated calls to {@code rescanCurrentDirectory}. */
+    private static final int NUMBER_OF_REPEATS = 5_000;
+    /** Maximum amount a thread waits before initiating rescan. */
+    private static final long LIMIT_SLEEP = 100;
+
 
     private static final CyclicBarrier start = new CyclicBarrier(NUMBER_OF_THREADS);
     private static final CyclicBarrier end = new CyclicBarrier(NUMBER_OF_THREADS + 1);
@@ -78,7 +92,7 @@ public final class BasicDirectoryModelConcurrency extends ThreadGroup {
                      });
 
             timer.scheduleAtFixedRate(new CreateFilesTimerTask(temp),
-                                      0, 500);
+                                      0, TIMER_PERIOD);
 
             end.await();
         } catch (Throwable e) {
@@ -134,7 +148,7 @@ public final class BasicDirectoryModelConcurrency extends ThreadGroup {
                 try {
                     do {
                         fileChooser.rescanCurrentDirectory();
-                        Thread.sleep((long) (Math.random() * 100));
+                        Thread.sleep((long) (Math.random() * LIMIT_SLEEP));
                     } while (++counter < NUMBER_OF_REPEATS
                              && !Thread.interrupted());
                 } catch (InterruptedException e) {
@@ -198,7 +212,7 @@ public final class BasicDirectoryModelConcurrency extends ThreadGroup {
         @Override
         public void run() {
             try {
-                long count = (long) (Math.random() * 20);
+                long count = (long) (Math.random() * LIMIT_FILES);
                 createFiles(temp, no, no + count);
                 no += count;
             } catch (Throwable t) {
