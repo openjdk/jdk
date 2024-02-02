@@ -451,19 +451,19 @@ InstanceKlass* InstanceKlass::allocate_instance_klass(const ClassFileParser& par
   // Allocation
   if (parser.is_instance_ref_klass()) {
     // java.lang.ref.Reference
-    ik = new (loader_data, size, THREAD) InstanceRefKlass(parser);
+    ik = new (loader_data, size, MetaspaceObj::ClassType, THREAD) InstanceRefKlass(parser);
   } else if (class_name == vmSymbols::java_lang_Class()) {
     // mirror - java.lang.Class
-    ik = new (loader_data, size, THREAD) InstanceMirrorKlass(parser);
+    ik = new (loader_data, size, MetaspaceObj::ClassType, THREAD) InstanceMirrorKlass(parser);
   } else if (is_stack_chunk_class(class_name, loader_data)) {
     // stack chunk
-    ik = new (loader_data, size, THREAD) InstanceStackChunkKlass(parser);
+    ik = new (loader_data, size, MetaspaceObj::ClassType, THREAD) InstanceStackChunkKlass(parser);
   } else if (is_class_loader(class_name, parser)) {
     // class loader - java.lang.ClassLoader
-    ik = new (loader_data, size, THREAD) InstanceClassLoaderKlass(parser);
+    ik = new (loader_data, size, MetaspaceObj::ClassType, THREAD) InstanceClassLoaderKlass(parser);
   } else {
     // normal
-    ik = new (loader_data, size, THREAD) InstanceKlass(parser);
+    ik = new (loader_data, size, MetaspaceObj::ClassType, THREAD) InstanceKlass(parser);
   }
 
   // Check for pending exception before adding to the loader data and incrementing
@@ -1543,24 +1543,33 @@ void InstanceKlass::check_valid_for_instantiation(bool throwError, TRAPS) {
 }
 
 ArrayKlass* InstanceKlass::array_klass(int n, TRAPS) {
+  bool out_of_class_space;
+
   // Need load-acquire for lock-free read
   if (array_klasses_acquire() == nullptr) {
-    ResourceMark rm(THREAD);
-    JavaThread *jt = THREAD;
-    {
-      // Atomic creation of array_klasses
-      MutexLocker ma(THREAD, MultiArray_lock);
+    // Atomic creation of array_klasses
+    MutexLocker ma(THREAD, MultiArray_lock);
 
-      // Check if update has already taken place
-      if (array_klasses() == nullptr) {
-        ObjArrayKlass* k = ObjArrayKlass::allocate_objArray_klass(class_loader_data(), 1, this, CHECK_NULL);
-        // use 'release' to pair with lock-free load
-        release_set_array_klasses(k);
-      }
+    // Check if update has already taken place
+    if (array_klasses() == nullptr) {
+      ObjArrayKlass* k = ObjArrayKlass::allocate_objArray_klass(class_loader_data(), 1, this, &out_of_class_space, CHECK_NULL);
+      // use 'release' to pair with lock-free load
+      release_set_array_klasses(k);
     }
   }
-  // array_klasses() will always be set at this point
+
+  // array_klasses() will always be set at this point by the winner of the race above.
   ObjArrayKlass* oak = array_klasses();
+
+  if (oak == nullptr) {
+    // throw oom metaspace for the allocation above that failed.
+    Metaspace::report_metadata_oome(out_of_class_space, CHECK_NULL);
+  }
+
+  if (oak->java_mirror() == nullptr) {
+    ArrayKlass::create_array_mirror_and_link(oak, CHECK_NULL);
+  }
+
   return oak->array_klass(n, THREAD);
 }
 
@@ -2765,7 +2774,7 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
     MutexLocker ml(MultiArray_lock);
     assert(this == array_klasses()->bottom_klass(), "sanity");
     // Array classes have null protection domain.
-    // --> see ArrayKlass::complete_create_array_klass()
+    // --> see ArrayKlass::create_array_mirror_and_link()
     array_klasses()->restore_unshareable_info(class_loader_data(), Handle(), CHECK);
   }
 

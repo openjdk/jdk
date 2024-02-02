@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -119,6 +119,7 @@ public:
   // Free empty virtualspaces
   static void purge(bool classes_unloaded);
 
+  static void report_metadata_oome(bool out_of_compressed_class_space, TRAPS);
   static void report_metadata_oome(ClassLoaderData* loader_data, size_t word_size,
                                    MetaspaceObj::Type type, MetadataType mdtype, TRAPS);
 

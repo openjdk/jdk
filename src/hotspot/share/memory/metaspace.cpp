@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2021 SAP SE. All rights reserved.
  * Copyright (c) 2023, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -888,6 +888,30 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
   return result;
 }
 
+void Metaspace::report_metadata_oome(bool out_of_compressed_class_space, TRAPS) {
+  // -XX:+HeapDumpOnOutOfMemoryError and -XX:OnOutOfMemoryError support
+  const char* space_string = out_of_compressed_class_space ?
+    "Compressed class space" : "Metaspace";
+
+  report_java_out_of_memory(space_string);
+
+  if (JvmtiExport::should_post_resource_exhausted()) {
+    JvmtiExport::post_resource_exhausted(
+        JVMTI_RESOURCE_EXHAUSTED_OOM_ERROR,
+        space_string);
+  }
+
+  if (!is_init_completed()) {
+    vm_exit_during_initialization("OutOfMemoryError", space_string);
+  }
+
+  if (out_of_compressed_class_space) {
+    THROW_OOP(Universe::out_of_memory_error_class_metaspace());
+  } else {
+    THROW_OOP(Universe::out_of_memory_error_metaspace());
+  }
+}
+
 void Metaspace::report_metadata_oome(ClassLoaderData* loader_data, size_t word_size, MetaspaceObj::Type type, MetadataType mdtype, TRAPS) {
   tracer()->report_metadata_oom(loader_data, word_size, type, mdtype);
 
@@ -917,27 +941,7 @@ void Metaspace::report_metadata_oome(ClassLoaderData* loader_data, size_t word_s
       CompressedClassSpaceSize;
   }
 
-  // -XX:+HeapDumpOnOutOfMemoryError and -XX:OnOutOfMemoryError support
-  const char* space_string = out_of_compressed_class_space ?
-    "Compressed class space" : "Metaspace";
-
-  report_java_out_of_memory(space_string);
-
-  if (JvmtiExport::should_post_resource_exhausted()) {
-    JvmtiExport::post_resource_exhausted(
-        JVMTI_RESOURCE_EXHAUSTED_OOM_ERROR,
-        space_string);
-  }
-
-  if (!is_init_completed()) {
-    vm_exit_during_initialization("OutOfMemoryError", space_string);
-  }
-
-  if (out_of_compressed_class_space) {
-    THROW_OOP(Universe::out_of_memory_error_class_metaspace());
-  } else {
-    THROW_OOP(Universe::out_of_memory_error_metaspace());
-  }
+  report_metadata_oome(out_of_compressed_class_space, THREAD);
 }
 
 const char* Metaspace::metadata_type_name(Metaspace::MetadataType mdtype) {

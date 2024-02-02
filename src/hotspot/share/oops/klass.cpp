@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -187,10 +187,6 @@ Method* Klass::uncached_lookup_method(const Symbol* name, const Symbol* signatur
   return nullptr;
 }
 
-void* Klass::operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) throw() {
-  return Metaspace::allocate(loader_data, word_size, MetaspaceObj::ClassType, THREAD);
-}
-
 Klass::Klass() : _kind(UnknownKlassKind) {
   assert(CDSConfig::is_dumping_static_archive() || UseSharedSpaces, "only for cds");
 }
@@ -236,7 +232,7 @@ bool Klass::can_be_primary_super_slow() const {
     return true;
 }
 
-void Klass::initialize_supers(Klass* k, Array<InstanceKlass*>* transitive_interfaces, TRAPS) {
+bool Klass::initialize_supers(Klass* k, Array<InstanceKlass*>* transitive_interfaces) {
   if (k == nullptr) {
     set_super(nullptr);
     _primary_supers[0] = this;
@@ -296,13 +292,13 @@ void Klass::initialize_supers(Klass* k, Array<InstanceKlass*>* transitive_interf
       ++extras;
     }
 
-    ResourceMark rm(THREAD);  // need to reclaim GrowableArrays allocated below
+    ResourceMark rm;  // need to reclaim GrowableArrays allocated below
 
     // Compute the "real" non-extra secondaries.
     GrowableArray<Klass*>* secondaries = compute_secondary_supers(extras, transitive_interfaces);
     if (secondaries == nullptr) {
       // secondary_supers set by compute_secondary_supers
-      return;
+      return true;
     }
 
     GrowableArray<Klass*>* primaries = new GrowableArray<Klass*>(extras);
@@ -329,7 +325,12 @@ void Klass::initialize_supers(Klass* k, Array<InstanceKlass*>* transitive_interf
     // The primaries are added in the reverse order, then the secondaries.
     int new_length = primaries->length() + secondaries->length();
     Array<Klass*>* s2 = MetadataFactory::new_array<Klass*>(
-                                       class_loader_data(), new_length, CHECK);
+                                       class_loader_data(), new_length);
+    if (s2 == nullptr) {
+      // Caller throws OOM, since allocation failed.
+      return false;
+    }
+
     int fill_p = primaries->length();
     for (int j = 0; j < fill_p; j++) {
       s2->at_put(j, primaries->pop());  // add primaries in reverse order.
@@ -346,6 +347,14 @@ void Klass::initialize_supers(Klass* k, Array<InstanceKlass*>* transitive_interf
   #endif
 
     set_secondary_supers(s2);
+  }
+  return true;
+}
+
+void Klass::initialize_supers(Klass* k, Array<InstanceKlass*>* transitive_interfaces, TRAPS) {
+  if (!initialize_supers(k, transitive_interfaces)) {
+    // throw oom metaspace
+    THROW_OOP(Universe::out_of_memory_error_metaspace());
   }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,6 @@ ArrayKlass::ArrayKlass() {
 int ArrayKlass::static_size(int header_size) {
   // size of an array klass object
   assert(header_size <= InstanceKlass::header_size(), "bad header size");
-  // If this assert fails, see comments in base_create_array_klass.
   header_size = InstanceKlass::header_size();
   int vtable_len = Universe::base_vtable_size();
   int size = header_size + vtable_len;
@@ -92,6 +91,8 @@ Method* ArrayKlass::uncached_lookup_method(const Symbol* name,
 ArrayKlass::ArrayKlass(Symbol* name, KlassKind kind) :
   Klass(kind),
   _dimension(1),
+  _is_being_created(false),
+  _is_created(false),
   _higher_dimension(nullptr),
   _lower_dimension(nullptr) {
   // Arrays don't add any new methods, so their vtable is the same size as
@@ -106,19 +107,66 @@ ArrayKlass::ArrayKlass(Symbol* name, KlassKind kind) :
 }
 
 
-// Initialization of vtables and mirror object is done separately from base_create_array_klass,
-// since a GC can happen. At this point all instance variables of the ArrayKlass must be setup.
-void ArrayKlass::complete_create_array_klass(ArrayKlass* k, Klass* super_klass, ModuleEntry* module_entry, TRAPS) {
-  k->initialize_supers(super_klass, nullptr, CHECK);
-  k->vtable().initialize_vtable();
+// Completing creation is multithreaded, only allow one.
+bool ArrayKlass::claim_array_klass_creation() {
+
+  // Ensure atomic creation of array_klasses or higher dimensions
+  MonitorLocker ma(MultiArray_lock);
+  bool is_being_created = Atomic::load_acquire(&_is_being_created);
+  while (is_being_created) {
+    ma.wait();
+    is_being_created = Atomic::load_acquire(&_is_being_created);
+  }
+
+  // Check if update has already taken place
+  if (!Atomic::load_acquire(&_is_created)) {
+    Atomic::release_store(&_is_being_created, true);
+    return true;
+  } else {
+    return false;
+  }
+}
+
+void ArrayKlass::release_array_klass_creation() {
+  MonitorLocker ma(MultiArray_lock);
+  Atomic::release_store(&_is_created, true);
+  Atomic::release_store(&_is_being_created, false);
+  ma.notify_all();
+}
+
+// Initialization of mirror object is done separately since a GC can happen.
+// At this point all instance variables of the ArrayKlass are be set up.
+// The last step is linking the ArrayKlass into the CLD
+void ArrayKlass::create_array_mirror_and_link(ArrayKlass* k, TRAPS) {
+
+  // Wait if another thread is allocating the mirror or initializing supers, vtable.
+  if (!k->claim_array_klass_creation()) {
+    return; // already created
+  }
+
+  ModuleEntry* module_entry = k->module();
+  if (module_entry != nullptr) {
+    module_entry = ModuleEntryTable::javabase_moduleEntry();
+  }
+
+  HandleMark hm(THREAD);
 
   // During bootstrapping, before java.base is defined, the module_entry may not be present yet.
   // These classes will be put on a fixup list and their module fields will be patched once
   // java.base is defined.
   assert((module_entry != nullptr) || ((module_entry == nullptr) && !ModuleEntryTable::javabase_defined()),
          "module entry not available post " JAVA_BASE_NAME " definition");
-  oop module = (module_entry != nullptr) ? module_entry->module() : (oop)nullptr;
+  oop module = (module_entry != nullptr) ? module_entry->module() : nullptr;
   java_lang_Class::create_mirror(k, Handle(THREAD, k->class_loader()), Handle(THREAD, module), Handle(), Handle(), CHECK);
+
+  // Add all classes to our internal class loader list here,
+  // including classes in the bootstrap (null) class loader.
+  // Do this step after creating the mirror so that if the
+  // mirror creation fails, loaded_classes_do() doesn't find
+  // an array class without a mirror.
+  k->class_loader_data()->add_class(k);
+
+  k->release_array_klass_creation();
 }
 
 ArrayKlass* ArrayKlass::array_klass(int n, TRAPS) {
@@ -127,31 +175,40 @@ ArrayKlass* ArrayKlass::array_klass(int n, TRAPS) {
   int dim = dimension();
   if (dim == n) return this;
 
+  bool out_of_class_space;
+
   // lock-free read needs acquire semantics
   if (higher_dimension_acquire() == nullptr) {
 
-    ResourceMark rm(THREAD);
-    {
-      // Ensure atomic creation of higher dimensions
-      MutexLocker mu(THREAD, MultiArray_lock);
+    // Ensure atomic creation of higher dimensions
+    MutexLocker mu(THREAD, MultiArray_lock);
 
-      // Check if another thread beat us
-      if (higher_dimension() == nullptr) {
+    // Check if another thread beat us
+    if (higher_dimension() == nullptr) {
 
-        // Create multi-dim klass object and link them together
-        ObjArrayKlass* ak =
-          ObjArrayKlass::allocate_objArray_klass(class_loader_data(), dim + 1, this, CHECK_NULL);
-        ak->set_lower_dimension(this);
-        // use 'release' to pair with lock-free load
-        release_set_higher_dimension(ak);
-        assert(ak->is_objArray_klass(), "incorrect initialization of ObjArrayKlass");
-      }
+      // Create multi-dim klass object and link them together
+      ObjArrayKlass* ak =
+          ObjArrayKlass::allocate_objArray_klass(class_loader_data(), dim + 1, this, &out_of_class_space, CHECK_NULL);
+      // use 'release' to pair with lock-free load
+      release_set_higher_dimension(ak);
     }
   }
 
-  ObjArrayKlass *ak = higher_dimension();
-  THREAD->check_possible_safepoint();
-  return ak->array_klass(n, THREAD);
+  // higher_dimension() will always be set at this point by the winner of the locked region above, or
+  // null if OOM.
+  ObjArrayKlass *oak = higher_dimension();
+
+  if (oak == nullptr) {
+    // throw oom metaspace for the allocation above that failed.
+    Metaspace::report_metadata_oome(out_of_class_space, CHECK_NULL);
+  }
+
+  if (oak->java_mirror() == nullptr) {
+    // Call create_array_mirror_and_link after dropping the mutex.
+    create_array_mirror_and_link(oak, CHECK_NULL);
+  }
+
+  return oak->array_klass(n, THREAD);
 }
 
 ArrayKlass* ArrayKlass::array_klass_or_null(int n) {

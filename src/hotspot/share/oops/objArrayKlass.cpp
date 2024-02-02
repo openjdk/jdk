@@ -47,7 +47,7 @@
 
 // Metaspace allocation for ObjArrayKlass returns null rather than throws OOM, since the call is made while
 // holding a lock.  Callers much check for null and throw OOM.
-ObjArrayKlass* ObjArrayKlass::allocate(ClassLoaderData* loader_data, int n, Klass* k, Symbol* name) {
+ObjArrayKlass* ObjArrayKlass::allocate_klass(ClassLoaderData* loader_data, int n, Klass* k, Symbol* name) {
   assert(ObjArrayKlass::header_size() <= InstanceKlass::header_size(),
       "array klasses must be same size as InstanceKlass");
 
@@ -57,7 +57,8 @@ ObjArrayKlass* ObjArrayKlass::allocate(ClassLoaderData* loader_data, int n, Klas
 }
 
 ObjArrayKlass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_data,
-                                                      int n, Klass* element_klass, TRAPS) {
+                                                      int n, Klass* element_klass,
+                                                      bool* out_of_class_space, TRAPS) {
 
   // Eagerly allocate the direct array supertype.
   Klass* super_klass = nullptr;
@@ -87,7 +88,8 @@ ObjArrayKlass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_da
             Klass* elem_super = element_supers->at(i);
             elem_super->array_klass(CHECK_NULL);
           }
-          // Now retry from the beginning
+          // Now retry from the beginning. This is why the MutexUnlocker works,
+          // because it returns the first klass created.
           ek = element_klass->array_klass(n, CHECK_NULL);
         }  // re-lock
         return ObjArrayKlass::cast(ek);
@@ -119,23 +121,23 @@ ObjArrayKlass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_da
     name = SymbolTable::new_symbol(new_str);
   }
 
-  // Initialize instance variables
-  ObjArrayKlass* oak = ObjArrayKlass::allocate(loader_data, n, element_klass, name);
-  if (oak == nullptr) return nullptr;
+  ObjArrayKlass* oak = ObjArrayKlass::allocate_klass(loader_data, n, element_klass, name);
 
-  ModuleEntry* module = oak->module();
-  assert(module != nullptr, "No module entry for array");
+  // Return nulls for caller to throw OOM metaspace.
+  if (oak == nullptr) {
+    *out_of_class_space = true;
+    return nullptr;
+  }
 
-  // Call complete_create_array_klass after all instance variables has been initialized.
-  ArrayKlass::complete_create_array_klass(oak, super_klass, module, CHECK_NULL);
+  if (!oak->initialize_supers(super_klass, nullptr)) {
+    // TODO: There's a low probability memory leak here. If we create the ObjArrayKlass
+    // but fail and get OOM on the Array<Klass*> for supers, we need to deallocate the
+    // objArrayKlass. There's some refactoring necessary for this.
+    *out_of_class_space = false;
+    return nullptr;
+  }
 
-  // Add all classes to our internal class loader list here,
-  // including classes in the bootstrap (null) class loader.
-  // Do this step after creating the mirror so that if the
-  // mirror creation fails, loaded_classes_do() doesn't find
-  // an array class without a mirror.
-  loader_data->add_class(oak);
-
+  oak->vtable().initialize_vtable();
   return oak;
 }
 
@@ -152,6 +154,10 @@ ObjArrayKlass::ObjArrayKlass(int n, Klass* element_klass, Symbol* name) : ArrayK
   assert(bk != nullptr && (bk->is_instance_klass() || bk->is_typeArray_klass()), "invalid bottom klass");
   set_bottom_klass(bk);
   set_class_loader_data(bk->class_loader_data());
+
+  if (element_klass->is_array_klass()) {
+    set_lower_dimension(ArrayKlass::cast(element_klass));
+  }
 
   set_layout_helper(array_layout_helper(T_OBJECT));
   assert(is_array_klass(), "sanity");

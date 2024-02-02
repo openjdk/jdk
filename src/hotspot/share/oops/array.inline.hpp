@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,13 @@ inline void* Array<T>::operator new(size_t size, ClassLoaderData* loader_data, i
   size_t word_size = Array::size(length);
   return (void*) Metaspace::allocate(loader_data, word_size,
                                      MetaspaceObj::array_type(sizeof(T)), THREAD);
+}
+
+template <typename T>
+inline void* Array<T>::operator new(size_t size, ClassLoaderData* loader_data, int length) throw() {
+  size_t word_size = Array::size(length);
+  return (void*) Metaspace::allocate(loader_data, word_size,
+                                     MetaspaceObj::array_type(sizeof(T)));
 }
 
 #endif // SHARE_OOPS_ARRAY_INLINE_HPP

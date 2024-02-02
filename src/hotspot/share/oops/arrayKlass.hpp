@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,13 @@ class ArrayKlass: public Klass {
   // If you add a new field that points to any metaspace object, you
   // must add this field to ArrayKlass::metaspace_pointers_do().
   int      _dimension;         // This is n'th-dimensional array.
+  volatile bool _is_being_created;
+  volatile bool _is_created;
   ObjArrayKlass* volatile _higher_dimension;  // Refers the (n+1)'th-dimensional array (if present).
   ArrayKlass* volatile    _lower_dimension;   // Refers the (n-1)'th-dimensional array (if present).
+
+  bool claim_array_klass_creation();
+  void release_array_klass_creation();
 
  protected:
   // Constructors
@@ -113,9 +118,7 @@ class ArrayKlass: public Klass {
 
   virtual void metaspace_pointers_do(MetaspaceClosure* iter);
 
-  // Return a handle.
-  static void     complete_create_array_klass(ArrayKlass* k, Klass* super_klass, ModuleEntry* module, TRAPS);
-
+  static void create_array_mirror_and_link(ArrayKlass* k, TRAPS);
 
   // jvm support
   jint compute_modifier_flags() const;
