@@ -507,7 +507,7 @@ else
        unused-result array-bounds parentheses
    # noexcept-type required for GCC 7 builds. Not required for GCC 8+.
    # expansion-to-defined required for GCC 9 builds. Not required for GCC 10+.
-   # maybe-uninitialized required for GCC 8 builds. Not required for GCC 9+.	
+   # maybe-uninitialized required for GCC 8 builds. Not required for GCC 9+.
    # calloc-transposed-args required for GCC 14 builds. (fixed upstream in Harfbuzz 032c931e1c0cfb20f18e5acb8ba005775242bd92)
    HARFBUZZ_DISABLED_WARNINGS_CXX_gcc := class-memaccess noexcept-type \
        expansion-to-defined dangling-reference maybe-uninitialized \
