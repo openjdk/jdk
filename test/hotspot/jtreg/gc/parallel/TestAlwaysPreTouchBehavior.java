@@ -51,7 +51,7 @@ import java.io.*;
 public class TestAlwaysPreTouchBehavior {
     public static long getProcessRssInKb() throws IOException {
         String pid = ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
-        // Read RSS from /proc/$pid/status. Only avaiable on Linux
+        // Read RSS from /proc/$pid/status. Only available on Linux.
         String processStatusFile = "/proc/" + pid + "/status";
         BufferedReader reader = new BufferedReader(new FileReader(processStatusFile));
         String line = null;
