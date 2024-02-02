@@ -677,8 +677,8 @@ extern "C" bool dbg_is_good_oop(oopDesc* o) {
 // Additional "good oop" checks, separate method to not disturb existing asserts.
 extern "C" bool dbg_is_good_oop_detailed(oopDesc* o) {
   bool good = dbg_is_safe(o, -1)
-              && *(long*) o != 0
-              && *((long*)o + 1) != 0;
+              && *(uintptr_t*) o != 0
+              && *((uintptr_t*) o + (sizeof(uintptr_t))) != 0;
 
   if (good) {
     if (!UseCompressedClassPointers) {
@@ -686,7 +686,8 @@ extern "C" bool dbg_is_good_oop_detailed(oopDesc* o) {
              && o->klass()->is_klass();
     } else {
       // Fetch compressed class pointer (no accessor for o._metadata._compressed_klass)
-      uintptr_t* ccp = (uintptr_t*) CompressedKlassPointers::decode_raw((narrowKlass) *((juint*) o + 2));
+      uintptr_t ccpAddr = (uintptr_t) o + sizeof(uintptr_t);
+      uintptr_t* ccp =  (uintptr_t*) CompressedKlassPointers::decode_raw(*(uintptr_t*) ccpAddr);
       good = dbg_is_safe(ccp, -1)
              && dbg_is_safe((void*) *ccp, -1);
     }
