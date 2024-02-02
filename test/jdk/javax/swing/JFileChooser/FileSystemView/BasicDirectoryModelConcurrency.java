@@ -9,6 +9,7 @@ import java.util.TimerTask;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
 import javax.swing.JFileChooser;
@@ -69,12 +70,12 @@ public final class BasicDirectoryModelConcurrency extends ThreadGroup {
 
             final JFileChooser fc = new JFileChooser(temp.toFile());
 
-            int counter = NUMBER_OF_THREADS;
-            while (counter-- > 0) {
-                Thread thread = new Thread(new Scanner(fc));
-                threads.add(thread);
-                thread.start();
-            }
+            IntStream.range(0, NUMBER_OF_THREADS)
+                     .forEach(i -> {
+                         Thread thread = new Thread(new Scanner(fc));
+                         threads.add(thread);
+                         thread.start();
+                     });
 
             timer.scheduleAtFixedRate(new CreateFilesTimerTask(temp),
                                       0, 500);
