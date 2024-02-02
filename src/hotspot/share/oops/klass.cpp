@@ -354,7 +354,7 @@ bool Klass::initialize_supers(Klass* k, Array<InstanceKlass*>* transitive_interf
 void Klass::initialize_supers(Klass* k, Array<InstanceKlass*>* transitive_interfaces, TRAPS) {
   if (!initialize_supers(k, transitive_interfaces)) {
     // throw oom metaspace
-    THROW_OOP(Universe::out_of_memory_error_metaspace());
+    Metaspace::report_metadata_oome(false /* not class */, THREAD);
   }
 }
 
