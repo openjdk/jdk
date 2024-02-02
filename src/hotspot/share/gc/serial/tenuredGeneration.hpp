@@ -29,6 +29,7 @@
 #include "gc/serial/generation.hpp"
 #include "gc/shared/gcStats.hpp"
 #include "gc/shared/generationCounters.hpp"
+#include "gc/shared/space.hpp"
 #include "utilities/macros.hpp"
 
 class SerialBlockOffsetSharedArray;
