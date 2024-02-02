@@ -353,8 +353,9 @@ public final class DateTimeFormatterBuilder {
      * The change will remain in force until the end of the formatter that is eventually
      * constructed or until {@code parseLenient} is called.
      *
-     * @implSpec Each {@link Character#SPACE_SEPARATOR SPACE_SEPARATOR} is considered
-     * distinct with the strict parse style.
+     * @implSpec A {@link Character#SPACE_SEPARATOR SPACE_SEPARATOR} in the input
+     * text will not match any other {@link Character#SPACE_SEPARATOR SPACE_SEPARATOR}s
+     * in the pattern with the strict parse style.
      *
      * @return this, for chaining, not null
      */
@@ -375,8 +376,9 @@ public final class DateTimeFormatterBuilder {
      * The change will remain in force until the end of the formatter that is eventually
      * constructed or until {@code parseStrict} is called.
      *
-     * @implSpec Each {@link Character#SPACE_SEPARATOR SPACE_SEPARATOR} is considered
-     * the same with the lenient parse style.
+     * @implSpec A {@link Character#SPACE_SEPARATOR SPACE_SEPARATOR} in the input
+     * text will match any other {@link Character#SPACE_SEPARATOR SPACE_SEPARATOR}s
+     * in the pattern with the lenient parse style.
      *
      * @return this, for chaining, not null
      */

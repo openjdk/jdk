@@ -746,9 +746,9 @@ public abstract class DateFormat extends Format {
      * <p>This leniency value is overwritten by a call to {@link
      * #setCalendar(java.util.Calendar) setCalendar()}.
      *
-     * @implSpec With lenient parsing, each
-     * {@link Character#SPACE_SEPARATOR SPACE_SEPARATOR} is considered
-     * the same; otherwise, they are considered different.
+     * @implSpec A {@link Character#SPACE_SEPARATOR SPACE_SEPARATOR} in the input
+     * text will match any other {@link Character#SPACE_SEPARATOR SPACE_SEPARATOR}s
+     * in the pattern with the lenient parsing; otherwise, it will not match.
      *
      * @param lenient when {@code true}, parsing is lenient
      * @see java.util.Calendar#setLenient(boolean)
