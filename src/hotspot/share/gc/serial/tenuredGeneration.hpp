@@ -45,7 +45,7 @@ class TenuredGeneration: public Generation {
   // Abstractly, this is a subtype that gets access to protected fields.
   friend class VM_PopulateDumpSharedSpace;
 
- protected:
+  MemRegion _prev_used_region;
 
   // This is shared with other generations.
   CardTableRS* _rs;
@@ -70,7 +70,6 @@ class TenuredGeneration: public Generation {
   GenerationCounters* _gen_counters;
   CSpaceCounters*     _space_counters;
 
-
   // Attempt to expand the generation by "bytes".  Expand by at a
   // minimum "expand_bytes".  Return true if some amount (not
   // necessarily the full "bytes") was done.
@@ -94,6 +93,9 @@ class TenuredGeneration: public Generation {
   size_t used() const;
   size_t free() const;
   MemRegion used_region() const;
+
+  MemRegion prev_used_region() const { return _prev_used_region; }
+  void save_used_region()   { _prev_used_region = used_region(); }
 
   void space_iterate(SpaceClosure* blk, bool usedOnly = false);
 

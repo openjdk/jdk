@@ -294,11 +294,6 @@ size_t SerialHeap::used() const {
   return _young_gen->used() + _old_gen->used();
 }
 
-void SerialHeap::save_used_regions() {
-  _old_gen->save_used_region();
-  _young_gen->save_used_region();
-}
-
 size_t SerialHeap::max_capacity() const {
   return _young_gen->max_capacity() + _old_gen->max_capacity();
 }
