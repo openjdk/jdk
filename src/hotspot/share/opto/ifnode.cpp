@@ -1937,7 +1937,7 @@ Node* RangeCheckNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // the argument above still holds.
     //
     // Note that the same optimization with the same maximal accepted interval size can also be found in C1.
-    const jlong maximum_number_of_min_max_interval_indices = (jlong)max_jint;
+    const julong maximum_number_of_min_max_interval_indices = (julong)max_jint;
 
     // The top 3 range checks seen
     const int NRC = 3;
