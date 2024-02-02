@@ -505,9 +505,7 @@ static bool useHeavyMonitors() {
 
 // -----------------------------------------------------------------------------
 // Monitor Enter/Exit
-// The interpreter and compiler assembly code tries to lock using the fast path
-// of this algorithm. Make sure to update that code if the following function is
-// changed. The implementation is extremely sensitive to race condition. Be careful.
+
 void ObjectSynchronizer::enter_for(Handle obj, BasicLock* lock, JavaThread* locking_thread) {
   // When called with locking_thread != Thread::current() some mechanism must synchronize
   // the locking_thread with respect to the current thread. Currently only used when
@@ -547,6 +545,9 @@ void ObjectSynchronizer::enter(Handle obj, BasicLock* lock, JavaThread* current)
   }
 }
 
+// The interpreter and compiler assembly code tries to lock using the fast path
+// of this algorithm. Make sure to update that code if the following function is
+// changed. The implementation is extremely sensitive to race condition. Be careful.
 bool ObjectSynchronizer::enter_fast_impl(Handle obj, BasicLock* lock, JavaThread* locking_thread) {
 
   if (obj->klass()->is_value_based()) {
@@ -1344,7 +1345,7 @@ ObjectMonitor* ObjectSynchronizer::inflate_impl(JavaThread* inflating_thread, oo
   // JavaThread. (As may still be the case from FastHashCode). However it is only
   // important for the correctness of the LM_LIGHTWEIGHT algorithm that the thread
   // is set when called from ObjectSynchronizer::enter from the owning thread,
-  // ObjectSynchronizer::enter_for from any thread, or ObjectSynchronizer::exit
+  // ObjectSynchronizer::enter_for from any thread, or ObjectSynchronizer::exit.
   EventJavaMonitorInflate event;
 
   for (;;) {

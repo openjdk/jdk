@@ -101,8 +101,8 @@ class ObjectSynchronizer : AllStatic {
   // escape the locking_thread.
   static void enter_for(Handle obj, BasicLock* lock, JavaThread* locking_thread);
 private:
-  // Shared implementation for enter and enter_for. Preforms all but
-  // inflated monitor enter
+  // Shared implementation for enter and enter_for. Performs all but
+  // inflated monitor enter.
   static bool enter_fast_impl(Handle obj, BasicLock* lock, JavaThread* locking_thread);
 
 public:
@@ -121,11 +121,11 @@ public:
 
   // Inflate light weight monitor to heavy weight monitor
   static ObjectMonitor* inflate(Thread* current, oop obj, const InflateCause cause);
-  // Used inflate a monitor as if it was done from the thread JavaThread.
+  // Used to inflate a monitor as if it was done from the thread JavaThread.
   static ObjectMonitor* inflate_for(JavaThread* thread, oop obj, const InflateCause cause);
 
 private:
-  // Shared implementation between the different LockingMode
+  // Shared implementation between the different LockingMode.
   static ObjectMonitor* inflate_impl(JavaThread* thread, oop obj, const InflateCause cause);
 
 public:
