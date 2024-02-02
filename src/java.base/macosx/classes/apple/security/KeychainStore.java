@@ -870,7 +870,7 @@ abstract sealed class KeychainStore extends KeyStoreSpi {
             // Check whether a certificate with same alias already exists and is the same
             // If yes, we can return here - the existing entry must have the same
             // properties and trust settings
-            if (entries.contains(alias.toLowerCase(Locale.ROOT))) {
+            if (entries.containsKey(alias.toLowerCase(Locale.ROOT))) {
                 int uniqueVal = 1;
                 String originalAlias = alias;
                 var co = entries.get(alias.toLowerCase(Locale.ROOT));
