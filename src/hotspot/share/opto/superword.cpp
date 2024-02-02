@@ -571,88 +571,84 @@ bool SuperWord::SLP_extract() {
 // alignment. Whether the final vectors can be aligned is determined later
 // once all vectors are extended and combined.
 void SuperWord::find_adjacent_refs() {
-  // Get list of memory operations
-  Node_List memops;
+  // Create list with all memory references
+  ResourceMark rm;
+  GrowableArray<MemReference> mem_references;
+
   for (int i = 0; i < _block.length(); i++) {
-    Node* n = _block.at(i);
-    if (n->is_Mem() && !n->is_LoadStore() && in_bb(n) &&
-        is_java_primitive(n->as_Mem()->memory_type())) {
-      int align = memory_alignment(n->as_Mem(), 0);
-      if (align != bottom_align) {
-        memops.push(n);
-      }
+    MemNode* mem = _block.at(i)->isa_Mem();
+    MemReference mem_reference = get_mem_reference(mem);
+    if (mem_reference.is_valid()) {
+      mem_references.push(mem_reference);
     }
   }
+
+  // Sort into groups, and by offset
+  mem_references.sort(MemReference::cmp);
+
+  // For each group, create pairs
+  MemReferenceGroupIterator iter(mem_references);
+  for ( ;  !iter.done(); iter.next()) {
 #ifndef PRODUCT
-  if (is_trace_superword_adjacent_memops()) {
-    tty->print_cr("\nfind_adjacent_refs found %d memops", memops.size());
-  }
+    if (is_trace_superword_adjacent_memops()) {
+      tty->print_cr("\nSuperWord::find_adjacent_refs: group with %d of total %d mem_references",
+                    iter.current_length(), mem_references.length());
+      for (int i = 0; i < iter.current_length(); i++) {
+        iter.current_at(i).dump();
+      }
+    }
 #endif
+    MemNode* first = iter.current_at(0).mem();
+    int element_size = data_size(first);
 
-  int max_idx;
+    // For each mem node in group, find others that can be paired
+    for (int i = 0; i < iter.current_length(); i++) {
+      MemReference ref1 = iter.current_at(i);
+      MemNode* mem1 = ref1.mem();
 
-  // Take the first mem_ref as the reference to align to. The pre-loop trip count is
-  // modified to align this reference to a vector-aligned address. If strict alignment
-  // is required, we may change the reference later (see filter_packs_for_alignment()).
-  MemNode* align_to_mem_ref = nullptr;
+      bool found = false;
+      for (int j = i + 1; j < iter.current_length(); j++) {
+        MemReference ref2 = iter.current_at(j);
+        MemNode* mem2 = ref2.mem();
+        assert(mem1 != mem2,                   "not identical");
+        assert(isomorphic(mem1, mem2),         "isomorphically grouped");
+        assert(ref1.offset() <= ref2.offset(), "sorted by offset");
 
-  while (memops.size() != 0) {
-    // Find a memory reference to align to.
-    MemNode* mem_ref = find_align_to_ref(memops, max_idx);
-    if (mem_ref == nullptr) break;
-    int iv_adjustment = get_iv_adjustment(mem_ref);
+        // Distance too small or too large?
+        if (ref1.offset() + element_size > ref2.offset()) { continue; }
+        if (ref1.offset() + element_size < ref2.offset()) { break; }
+        assert(are_adjacent_refs(mem1, mem2),  "implied by offsets");
 
-    if (align_to_mem_ref == nullptr) {
-      align_to_mem_ref = mem_ref;
-      set_align_to_ref(align_to_mem_ref);
-    }
+        // TODO: maybe refactor?
+        if (!stmts_can_pack(mem1, mem2, 0)) { continue; }
 
-    VPointer align_to_ref_p(mem_ref, phase(), lpt(), nullptr, false);
-    // Set alignment relative to "align_to_ref" for all related memory operations.
-    for (int i = memops.size() - 1; i >= 0; i--) {
-      MemNode* s = memops.at(i)->as_Mem();
-      if (isomorphic(s, mem_ref) &&
-           (!_do_vector_loop || same_origin_idx(s, mem_ref))) {
-        VPointer p2(s, phase(), lpt(), nullptr, false);
-        if (p2.comparable(align_to_ref_p)) {
-          int align = memory_alignment(s, iv_adjustment);
-          set_alignment(s, align);
-        }
-      }
-    }
+        // Only allow nodes from same origin idx to be packed?
+        if (_do_vector_loop && !same_origin_idx(mem1, mem2)) { continue; }
 
-    // Create initial pack pairs of memory operations for which alignment was set.
-    for (uint i = 0; i < memops.size(); i++) {
-      Node* s1 = memops.at(i);
-      int align = alignment(s1);
-      if (align == top_align) continue;
-      for (uint j = 0; j < memops.size(); j++) {
-        Node* s2 = memops.at(j);
-        if (alignment(s2) == top_align) continue;
-        if (s1 != s2 && are_adjacent_refs(s1, s2)) {
-          if (stmts_can_pack(s1, s2, align)) {
-            Node_List* pair = new Node_List();
-            pair->push(s1);
-            pair->push(s2);
-            if (!_do_vector_loop || same_origin_idx(s1, s2)) {
-              _packset.append(pair);
-            }
+#ifndef PRODUCT
+        if (is_trace_superword_adjacent_memops()) {
+          if (found) {
+            tty->print_cr("WARNING: multiple pairs with the same node. Ignored pairing:");
+          } else {
+            tty->print_cr("pair:");
           }
+          ref1.dump();
+          ref2.dump();
         }
+#endif
+        if (!found) {
+          found = true;
+          add_pair(mem1, mem2);
+        } 
       }
     }
+  }
 
-    // Remove used mem nodes.
-    for (int i = memops.size() - 1; i >= 0; i--) {
-      MemNode* m = memops.at(i)->as_Mem();
-      if (alignment(m) != top_align) {
-        memops.remove(i);
-      }
-    }
-  } // while (memops.size() != 0)
-
-  assert(_packset.is_empty() || align_to_mem_ref != nullptr,
-         "packset empty or we find the alignment reference");
+  if (!_packset.is_empty()) {
+    // Pick first element of first pair. It has the lowest offset of all paired
+    // memory references in the first group.
+    set_align_to_ref(_packset.at(0)->at(0)->as_Mem());
+  }
 
 #ifndef PRODUCT
   if (is_trace_superword_packset()) {
@@ -661,6 +657,45 @@ void SuperWord::find_adjacent_refs() {
   }
 #endif
 }
+
+MemReference SuperWord::get_mem_reference(MemNode* mem) const {
+  if (mem == nullptr ||
+      mem->is_LoadStore() ||
+      !is_java_primitive(mem->memory_type())) {
+    return MemReference::make_invalid();
+  }
+  assert(in_bb(mem), "only accept mem nodes from the block");
+
+  VPointer mem_p(mem, phase(), lpt(), nullptr, false);
+  if (!mem_p.valid()) {
+#ifndef PRODUCT
+    if (is_trace_superword_alignment()) {
+      tty->print("SuperWord::get_mem_reference: VPointer invalid for "); mem->dump();
+    }
+#endif
+    return MemReference::make_invalid();
+  }
+ 
+  // TODO I dropped the get_vw_bytes_special / vw check here, is this ok?
+
+  return MemReference(mem,
+                      mem_p.base(),
+                      mem_p.offset_in_bytes(),
+                      mem_p.invar(),
+                      mem_p.scale_in_bytes());
+}
+
+#ifndef PRODUCT
+void MemReference::dump() const {
+  tty->print("MemReference %d %s: ", mem()->_idx, mem()->Name());
+  tty->print("base[%d %s] ", base()->_idx, base()->Name());
+  tty->print("+ offset(%d) ", offset());
+  if (invar() != nullptr) {
+    tty->print("+ invar[%d %s] ", invar()->_idx, invar()->Name());
+  }
+  tty->print_cr("+ scale(%d) * iv", scale());
+}
+#endif
 
 //------------------------------find_align_to_ref---------------------------
 // Find a memory reference to align the loop induction variable to.
@@ -1175,7 +1210,7 @@ int SuperWord::data_size(Node* s) {
 void SuperWord::extend_packlist() {
   bool changed;
   do {
-    packset_sort(_packset.length());
+    // TODO // packset_sort(_packset.length());
     changed = false;
     for (int i = 0; i < _packset.length(); i++) {
       Node_List* p = _packset.at(i);
@@ -1222,7 +1257,6 @@ bool SuperWord::follow_use_defs(Node_List* p) {
   Node* s1 = p->at(0);
   Node* s2 = p->at(1);
   assert(s1->req() == s2->req(), "just checking");
-  assert(alignment(s1) + data_size(s1) == alignment(s2), "just checking");
 
   if (s1->is_Load()) return false;
 
@@ -1272,7 +1306,6 @@ bool SuperWord::follow_def_uses(Node_List* p) {
   Node* s2 = p->at(1);
   assert(p->size() == 2, "just checking");
   assert(s1->req() == s2->req(), "just checking");
-  assert(alignment(s1) + data_size(s1) == alignment(s2), "just checking");
 
   if (s1->is_Store()) return false;
 

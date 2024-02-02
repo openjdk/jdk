@@ -197,6 +197,106 @@ class SWNodeInfo {
   static const SWNodeInfo initial;
 };
 
+// TODO think about integrating this with VPointer
+class MemReference {
+ private:
+  bool     _is_valid;
+
+  MemNode* _mem;
+
+  Node*    _base;
+  int      _offset;
+  Node*    _invar;
+  int      _scale;
+
+ public:
+  MemReference(MemNode* mem,
+               Node* base,
+               int offset,
+               Node* invar,
+               int scale) :
+    _is_valid(true),
+    _mem(mem),
+    _base(base),
+    _offset(offset),
+    _invar(invar),
+    _scale(scale) {}
+
+  MemReference() :
+    _is_valid(false),
+    _mem(nullptr) {}
+
+  static MemReference make_invalid() { return MemReference(); }
+
+  bool is_valid()       const { return _is_valid; }
+  MemNode* mem()        const { return _mem; }
+  Node* base()          const { return _base; }
+  int offset()          const { return _offset; }
+  Node* invar()         const { return _invar; }
+  int scale()           const { return _scale; }
+
+  // Comparator that compares only "groups", i.e. it groups nodes
+  // that could potentially be packed, and ignores the offset in
+  // the comparison.
+  static int cmp_groups(MemReference* a, MemReference* b) {
+    int cmp_base = a->base()->_idx - b->base()->_idx;
+    if (cmp_base != 0) { return cmp_base; }
+
+    int cmp_opcode = a->mem()->Opcode() - b->mem()->Opcode();
+    if (cmp_opcode != 0) { return cmp_opcode; }
+
+    int cmp_scale = a->scale() - b->scale();
+    if (cmp_scale != 0) { return cmp_scale; }
+
+    int cmp_invar = (a->invar() == nullptr ? 0 : a->invar()->_idx) -
+                    (b->invar() == nullptr ? 0 : b->invar()->_idx);
+    return cmp_invar;
+  }
+
+  // Sort into "groupts", and internal to groups sort by offset,
+  // and by mem idx.
+  static int cmp(MemReference* a, MemReference* b) {
+    int cmp_group = cmp_groups(a, b);
+    if (cmp_group != 0) { return cmp_group; }
+
+    int cmp_offset = a->offset() - b->offset();
+    if (cmp_offset != 0) { return cmp_offset; }
+
+    return a->mem()->_idx - b->mem()->_idx;
+  }
+
+  NOT_PRODUCT( void dump() const; )
+};
+
+// TODO template and move to GrowableArray
+// Iterator to extract groups (restricted array view) from a sorted array.
+class MemReferenceGroupIterator {
+ private:
+  const GrowableArrayView<MemReference>& _sorted_mem_references;
+  int _begin;
+  int _end;
+
+ public:
+  MemReferenceGroupIterator(const GrowableArrayView<MemReference>& sorted_mem_references) :
+    _sorted_mem_references(sorted_mem_references), _begin(0), _end(0) {
+    next();
+  }
+
+  int current_length()           const { return _end - _begin; }
+  MemReference current_at(int i) const { return _sorted_mem_references.at(_begin + i); }
+  bool done()                    const { return _begin >= _sorted_mem_references.length(); }
+
+  void next() {
+    if (done()) { return; }
+    _begin = _end;
+    while (_end < _sorted_mem_references.length() &&
+           MemReference::cmp_groups(_sorted_mem_references.adr_at(_begin),
+                                    _sorted_mem_references.adr_at(_end)) == 0) {
+      _end++;
+    }
+  }
+};
+
 // -----------------------------SuperWord---------------------------------
 // Transforms scalar operations into packed (superword) operations.
 class SuperWord : public ResourceObj {
@@ -459,8 +559,22 @@ private:
   void mark_reductions();
   // Extract the superword level parallelism
   bool SLP_extract();
+
   // Find the adjacent memory references and create pack pairs for them.
   void find_adjacent_refs();
+  // Get (maybe valid) reference for a memory node
+  MemReference get_mem_reference(MemNode* mem) const;
+
+  // Pair accessors: TODO
+  void add_pair(Node* s1, Node* s2) {
+    assert(!exists_at(s1, 0), "s1 not on left yet");
+    assert(!exists_at(s2, 1), "s1 not on right yet");
+    Node_List* pair = new (arena()) Node_List(arena(), 2);
+    pair->push(s1);
+    pair->push(s2);
+    _packset.append(pair);
+  }
+
   // Find a memory reference to align the loop induction variable to.
   MemNode* find_align_to_ref(Node_List &memops, int &idx);
   // Calculate loop's iv adjustment for this memory ops.
