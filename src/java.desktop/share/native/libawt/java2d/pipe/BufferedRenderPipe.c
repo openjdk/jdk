@@ -31,6 +31,10 @@
 #include "SpanIterator.h"
 #include "Trace.h"
 
+#if defined(_AIX) && defined(open)
+#undef open
+#endif
+
 /* The "header" consists of a jint opcode and a jint span count value */
 #define INTS_PER_HEADER  2
 #define BYTES_PER_HEADER 8
