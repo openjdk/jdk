@@ -36,6 +36,7 @@ import jdk.test.whitebox.WhiteBox;
  * @summary Test that memory allocation logging works when allocation operations run without error
  * @library /test/lib
  * @requires os.family != "windows"
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -47,6 +48,7 @@ import jdk.test.whitebox.WhiteBox;
  * @summary Test that memory allocation logging warns when attempted reservation fails
  * @library /test/lib
  * @requires os.family != "windows"
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -58,6 +60,7 @@ import jdk.test.whitebox.WhiteBox;
  * @summary Test that memory allocation logging warns when reservation fails
  * @library /test/lib
  * @requires os.family != "windows"
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -69,6 +72,7 @@ import jdk.test.whitebox.WhiteBox;
  * @summary Test that memory allocation logging warns when commit attempts fail
  * @library /test/lib
  * @requires os.family != "windows"
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -80,6 +84,7 @@ import jdk.test.whitebox.WhiteBox;
  * @summary Test that memory allocation logging warns when memory uncommitment fails
  * @library /test/lib
  * @requires os.family != "windows"
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -91,6 +96,7 @@ import jdk.test.whitebox.WhiteBox;
  * @summary Test that memory allocation logging warns when memory release fails
  * @library /test/lib
  * @requires os.family != "windows"
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
