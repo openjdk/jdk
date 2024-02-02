@@ -998,6 +998,7 @@ void ShenandoahConcurrentGC::op_final_updaterefs() {
   if (VerifyAfterGC) {
     Universe::verify();
   }
+
   heap->rebuild_free_set(true /*concurrent*/);
 }
 
