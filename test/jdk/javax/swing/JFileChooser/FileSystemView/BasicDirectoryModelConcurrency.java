@@ -23,6 +23,9 @@ public final class BasicDirectoryModelConcurrency {
     private static final int NUMBER_OF_THREADS = 5;
     public static final int NUMBER_OF_REPEATS = 2_000;
 
+    private static final CyclicBarrier start = new CyclicBarrier(NUMBER_OF_THREADS);
+    private static final CyclicBarrier end = new CyclicBarrier(NUMBER_OF_THREADS + 1);
+
     private static final List<Thread> threads = new ArrayList<>(NUMBER_OF_THREADS);
 
     private static final AtomicReference<Throwable> exception =
@@ -31,8 +34,6 @@ public final class BasicDirectoryModelConcurrency {
     public static void main(String[] args) throws Throwable {
         final long timeStart = System.currentTimeMillis();
         final Path temp = Files.createDirectory(Paths.get("fileChooser-concurrency-" + timeStart));
-        final CyclicBarrier start = new CyclicBarrier(NUMBER_OF_THREADS);
-        final CyclicBarrier end = new CyclicBarrier(NUMBER_OF_THREADS + 1);
 
         final Timer timer = new Timer("File creator");
 
@@ -43,7 +44,7 @@ public final class BasicDirectoryModelConcurrency {
 
             int counter = NUMBER_OF_THREADS;
             while (counter-- > 0) {
-                Thread thread = new Thread(new Scanner(start, end, fc));
+                Thread thread = new Thread(new Scanner(fc));
                 threads.add(thread);
                 thread.start();
             }
@@ -68,9 +69,7 @@ public final class BasicDirectoryModelConcurrency {
         }
     }
 
-    private record Scanner(CyclicBarrier start,
-                           CyclicBarrier end,
-                           JFileChooser fileChooser)
+    private record Scanner(JFileChooser fileChooser)
             implements Runnable {
 
         @Override
