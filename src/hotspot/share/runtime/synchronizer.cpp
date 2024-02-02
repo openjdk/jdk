@@ -1336,9 +1336,9 @@ ObjectMonitor* ObjectSynchronizer::inflate_for(JavaThread* thread, oop obj, cons
   return inflate_impl(thread, obj, cause);
 }
 
-ObjectMonitor* ObjectSynchronizer::inflate_impl(JavaThread* thread, oop object, const InflateCause cause) {
-  // The JavaThread* thread parameter is only used by LM_LIGHTWEIGHT and requires
-  // that the thread == Thread::current() or is suspended throughout the call by
+ObjectMonitor* ObjectSynchronizer::inflate_impl(JavaThread* inflating_thread, oop object, const InflateCause cause) {
+  // The JavaThread* inflating_thread parameter is only used by LM_LIGHTWEIGHT and requires
+  // that the inflating_thread == Thread::current() or is suspended throughout the call by
   // some other mechanism.
   // Even with LM_LIGHTWEIGHT the thread might be nullptr when called from a non
   // JavaThread. (As may still be the case from FastHashCode). However it is only
@@ -1353,9 +1353,10 @@ ObjectMonitor* ObjectSynchronizer::inflate_impl(JavaThread* thread, oop object, 
     // The mark can be in one of the following states:
     // *  inflated     - Just return if using stack-locking.
     //                   If using fast-locking and the ObjectMonitor owner
-    //                   is anonymous and the thread owns the object lock,
-    //                   then we make the thread the ObjectMonitor owner
-    //                   and remove the lock from the thread's lock stack.
+    //                   is anonymous and the inflating_thread owns the
+    //                   object lock, then we make the inflating_thread
+    //                   the ObjectMonitor owner and remove the lock from
+    //                   the inflating_thread's lock stack.
     // *  fast-locked  - Coerce it to inflated from fast-locked.
     // *  stack-locked - Coerce it to inflated from stack-locked.
     // *  INFLATING    - Busy wait for conversion from stack-locked to
@@ -1368,9 +1369,9 @@ ObjectMonitor* ObjectSynchronizer::inflate_impl(JavaThread* thread, oop object, 
       markWord dmw = inf->header();
       assert(dmw.is_neutral(), "invariant: header=" INTPTR_FORMAT, dmw.value());
       if (LockingMode == LM_LIGHTWEIGHT && inf->is_owner_anonymous() &&
-          thread != nullptr && thread->lock_stack().contains(object)) {
-        inf->set_owner_from_anonymous(thread);
-        thread->lock_stack().remove(object);
+          inflating_thread != nullptr && inflating_thread->lock_stack().contains(object)) {
+        inf->set_owner_from_anonymous(inflating_thread);
+        inflating_thread->lock_stack().remove(object);
       }
       return inf;
     }
@@ -1390,12 +1391,12 @@ ObjectMonitor* ObjectSynchronizer::inflate_impl(JavaThread* thread, oop object, 
     }
 
     // CASE: fast-locked
-    // Could be fast-locked either by the thread or by some other thread.
+    // Could be fast-locked either by the inflating_thread or by some other thread.
     //
     // Note that we allocate the ObjectMonitor speculatively, _before_
     // attempting to set the object's mark to the new ObjectMonitor. If
-    // this thread owns the monitor, then we set the ObjectMonitor's
-    // owner to this thread. Otherwise, we set the ObjectMonitor's owner
+    // the inflating_thread owns the monitor, then we set the ObjectMonitor's
+    // owner to the inflating_thread. Otherwise, we set the ObjectMonitor's owner
     // to anonymous. If we lose the race to set the object's mark to the
     // new ObjectMonitor, then we just delete it and loop around again.
     //
@@ -1403,10 +1404,10 @@ ObjectMonitor* ObjectSynchronizer::inflate_impl(JavaThread* thread, oop object, 
     if (LockingMode == LM_LIGHTWEIGHT && mark.is_fast_locked()) {
       ObjectMonitor* monitor = new ObjectMonitor(object);
       monitor->set_header(mark.set_unlocked());
-      bool own = thread != nullptr && thread->lock_stack().contains(object);
+      bool own = inflating_thread != nullptr && inflating_thread->lock_stack().contains(object);
       if (own) {
         // Owned by us.
-        monitor->set_owner_from(nullptr, thread);
+        monitor->set_owner_from(nullptr, inflating_thread);
       } else {
         // Owned by somebody else.
         monitor->set_owner_anonymous();
@@ -1416,7 +1417,7 @@ ObjectMonitor* ObjectSynchronizer::inflate_impl(JavaThread* thread, oop object, 
       if (old_mark == mark) {
         // Success! Return inflated monitor.
         if (own) {
-          thread->lock_stack().remove(object);
+          inflating_thread->lock_stack().remove(object);
         }
         // Once the ObjectMonitor is configured and object is associated
         // with the ObjectMonitor, it is safe to allow async deflation:
