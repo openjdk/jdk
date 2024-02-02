@@ -4210,32 +4210,33 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
   return true;
 }
 
-bool PhaseIdealLoop::autovectorize(IdealLoopTree* lpt, ResourceArea* arena) {
+// AutoVectorize the loop: replace scalar ops with vector ops.
+PhaseIdealLoop::AutoVectorizeStatus
+PhaseIdealLoop::autovectorize(IdealLoopTree* lpt, ResourceArea* arena) {
   // Counted loop only
-  if (!lpt->is_counted()) { return false; }
-  CountedLoopNode* cl = lpt->_head->as_CountedLoop();
+  if (!lpt->is_counted()) {
+    return AutoVectorizeStatus::Impossible;
+  }
 
   // Main-loop only
-  if (!cl->is_main_loop()) { return false; }
+  CountedLoopNode* cl = lpt->_head->as_CountedLoop();
+  if (!cl->is_main_loop()) {
+    return AutoVectorizeStatus::Impossible;
+  }
 
   VLoop vloop(lpt, false);
-  if (vloop.check_preconditions()) {
-    // Ensure that all data structures from autovectorization are deallocated later.
-    ResourceMark rm(arena);
-    SuperWord sw(arena, vloop);
-    if (sw.transform_loop()) {
-      return true;
-    }
+  if (!vloop.check_preconditions()) {
+    return AutoVectorizeStatus::TriedAndFailed;
   }
 
-  // This counted main-loop either failed preconditions,
-  // or in SuperWord. From now on only unroll the loop.
-  if (cl->has_passed_slp()) {
-    C->set_major_progress();
-    cl->set_notpassed_slp();
-    cl->mark_do_unroll_only();
+  // Ensure that all data structures from autovectorization are deallocated later.
+  ResourceMark rm(arena);
+  SuperWord sw(arena, vloop);
+  if (!sw.transform_loop()) {
+    return AutoVectorizeStatus::TriedAndFailed;
   }
-  return false;
+
+  return AutoVectorizeStatus::Success;
 }
 
 // Having ReductionNodes in the loop is expensive. They need to recursively

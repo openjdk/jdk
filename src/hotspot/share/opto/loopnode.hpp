@@ -1431,8 +1431,13 @@ public:
   bool partial_peel( IdealLoopTree *loop, Node_List &old_new );
   bool duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old_new);
 
-  // Apply autovectorization if possible
-  bool autovectorize(IdealLoopTree* lpt, ResourceArea* arena);
+  // AutoVectorize the loop: replace scalar ops with vector ops.
+  enum AutoVectorizeStatus {
+    Impossible,      // This loop has the wrong shape to even try vectorization.
+    Success,         // We just successfully vectorized the loop.
+    TriedAndFailed,  // We tried to vectorize, but failed.
+  };
+  AutoVectorizeStatus autovectorize(IdealLoopTree* lpt, ResourceArea* arena);
 
   // Move UnorderedReduction out of loop if possible
   void move_unordered_reduction_out_of_loop(IdealLoopTree* loop);

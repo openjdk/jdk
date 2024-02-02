@@ -4867,7 +4867,17 @@ void PhaseIdealLoop::build_and_optimize() {
     ResourceArea autovectorization_arena;
     for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
       IdealLoopTree* lpt = iter.current();
-      autovectorize(lpt, &autovectorization_arena);
+      AutoVectorizeStatus status = autovectorize(lpt, &autovectorization_arena);
+
+      if (status == AutoVectorizeStatus::TriedAndFailed) {
+        // We tried vectorization, but failed. From now on only unroll the loop.
+        CountedLoopNode* cl = lpt->_head->as_CountedLoop();
+        if (cl->has_passed_slp()) {
+          C->set_major_progress();
+          cl->set_notpassed_slp();
+          cl->mark_do_unroll_only();
+        }
+      }
     }
   }
 
