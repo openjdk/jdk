@@ -433,10 +433,9 @@ HeapWord* ShenandoahFreeSet::allocate_single(ShenandoahAllocRequest& req, bool& 
       // GCLABs are for evacuation so we must be in evacuation phase.
 
     case ShenandoahAllocRequest::_alloc_shared_gc: {
-      // size_t is unsigned, need to dodge underflow when _leftmost = 0
       // Fast-path: try to allocate in the collector view first
-      for (size_t c = _partitions.rightmost(Collector) + 1; c > _partitions.leftmost(Collector); c--) {
-        size_t idx = c - 1;
+      ssize_t leftmost_collector = _partitions.leftmost(Collector);
+      for (ssize_t idx = _partitions.rightmost(Collector); idx >= leftmost_collector; idx--) {
         if (_partitions.partition_id_matches(idx, Collector)) {
           HeapWord* result = try_allocate_in(_heap->get_region(idx), req, in_new_region);
           if (result != nullptr) {
@@ -451,8 +450,8 @@ HeapWord* ShenandoahFreeSet::allocate_single(ShenandoahAllocRequest& req, bool& 
       }
 
       // Try to steal an empty region from the mutator view.
-      for (size_t c = _partitions.rightmost_empty(Mutator) + 1; c > _partitions.leftmost_empty(Mutator); c--) {
-        size_t idx = c - 1;
+      ssize_t leftmost_mutator_empty = _partitions.leftmost_empty(Mutator);
+      for (ssize_t idx = _partitions.rightmost_empty(Mutator); idx >= leftmost_mutator_empty; idx--) {
         if (_partitions.partition_id_matches(idx, Mutator)) {
           ShenandoahHeapRegion* r = _heap->get_region(idx);
           if (can_allocate_from(r)) {
