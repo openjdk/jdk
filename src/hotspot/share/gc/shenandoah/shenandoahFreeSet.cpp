@@ -413,8 +413,8 @@ HeapWord* ShenandoahFreeSet::allocate_single(ShenandoahAllocRequest& req, bool& 
       // Allocate within mutator free from high memory to low so as to preserve low memory for humongous allocations
       if (!_partitions.is_empty(Mutator)) {
         // Use signed idx.  Otherwise, loop will never terminate.
-        int leftmost = (int) _partitions.leftmost(Mutator);
-        for (int idx = (int) _partitions.rightmost(Mutator); idx >= leftmost; idx--) {
+        ssize_t leftmost = _partitions.leftmost(Mutator);
+        for (ssize_t idx = _partitions.rightmost(Mutator); idx >= leftmost; idx--) {
           ShenandoahHeapRegion* r = _heap->get_region(idx);
           if (_partitions.partition_id_matches(idx, Mutator)) {
             // try_allocate_in() increases used if the allocation is successful.
