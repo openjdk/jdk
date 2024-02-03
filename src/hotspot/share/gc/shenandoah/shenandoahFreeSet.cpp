@@ -221,10 +221,8 @@ inline ShenandoahFreeSetPartitionId ShenandoahRegionPartitions::membership(size_
   return _membership[idx];
 }
 
-  // Returns true iff region idx is in the test_partition free_partition.  Before returning true, asserts that the free
-  // partition is not empty.
+  // Returns true iff region idx is in the test_partition free_partition.
 inline bool ShenandoahRegionPartitions::partition_id_matches(size_t idx, ShenandoahFreeSetPartitionId test_partition) const {
-  assert(test_partition != NotFree, "Invalid argument");
   assert (idx < _max, "index is sane: " SIZE_FORMAT " < " SIZE_FORMAT, idx, _max);
   if (_membership[idx] == test_partition) {
     assert ((test_partition == NotFree) || (_free_set->alloc_capacity(idx) > 0),
