@@ -77,7 +77,7 @@ jobs:
         id: bootjdk
         uses: ./.github/actions/get-bootjdk
         with:
-          platform: macos-x64
+          platform: ${{ inputs.platform }}
 
       - name: 'Get JTReg'
         id: jtreg
@@ -90,7 +90,7 @@ jobs:
       - name: 'Install toolchain and dependencies'
         run: |
           # Run Homebrew installation and xcode-select
-          brew install make
+          brew install autoconf make
           sudo xcode-select --switch /Applications/Xcode_${{ inputs.xcode-toolset-version }}.app/Contents/Developer
           # This will make GNU make available as 'make' and not only as 'gmake'
           echo '/usr/local/opt/make/libexec/gnubin' >> $GITHUB_PATH
