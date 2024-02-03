@@ -495,7 +495,7 @@ ClassFieldMap* ClassFieldMap::create_map_of_instance_fields(oop obj) {
       }
       field_map->add(start_index + index, fld.signature()->char_at(0), fld.offset());
     }
-    // update total_field_number for superclass
+    // update total_field_number for superclass (decrease by the field count in the current class)
     total_field_number = start_index;
   }
 
