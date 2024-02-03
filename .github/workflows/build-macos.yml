@@ -31,6 +31,9 @@ on:
       platform:
         required: true
         type: string
+      runs-on:
+        required: true
+        type: string
       extra-conf-options:
         required: false
         type: string
@@ -55,7 +58,7 @@ on:
 jobs:
   build-macos:
     name: build
-    runs-on: macos-13
+    runs-on: ${{ inputs.runs-on }}
 
     strategy:
       fail-fast: false
