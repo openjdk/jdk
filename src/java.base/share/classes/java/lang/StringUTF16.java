@@ -604,7 +604,7 @@ final class StringUTF16 {
         };
     }
 
-    // Caller must ensure that fromIndex >= 0. If toIndex <= fromIndex or >= value.length >> 1, -1 will be returned.
+    // Caller must ensure that from- and toIndex are within bounds
     public static int indexOf(byte[] value, int ch, int fromIndex, int toIndex) {
         if (ch < Character.MIN_SUPPLEMENTARY_CODE_POINT) {
             // handle most cases here (ch is a BMP code point or a

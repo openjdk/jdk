@@ -310,7 +310,7 @@ final class StringLatin1 {
         };
     }
 
-    // Caller must ensure that fromIndex >= 0. If toIndex <= fromIndex or >= value.length, -1 will be returned.
+    // Caller must ensure that from- and toIndex are within bounds
     public static int indexOf(byte[] value, int ch, int fromIndex, int toIndex) {
         if (!canEncode(ch)) {
             return -1;
