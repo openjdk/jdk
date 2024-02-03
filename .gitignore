@@ -23,3 +23,5 @@ NashornProfile.txt
 /.cproject
 /compile_commands.json
 /.cache
+config.log
+configure.log
