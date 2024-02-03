@@ -90,7 +90,7 @@ public:
   // Retire region idx from within its partition.  Requires that region idx is in in Mutator or Collector partitions.
   // Moves this region to the NotFree partition.  Any remnant of available memory at the time of retirement is added to the
   // original partition's total of used bytes.
-  void retire_within_partition(size_t idx, size_t used_bytes);
+  void retire_from_partition(size_t idx, size_t used_bytes);
 
   // Place region idx into free set which_partition.  Requires that idx is currently NotFree.
   void make_free(size_t idx, ShenandoahFreeSetPartitionId which_partition, size_t region_capacity);

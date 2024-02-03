@@ -151,7 +151,7 @@ inline void ShenandoahRegionPartitions::expand_interval_if_boundary_modified(She
 
 // Remove this region from its free partition, but leave its capacity and used as part of the original free partition's totals.
 // When retiring a region, add any remnant of available memory within the region to the used total for the original free partition.
-void ShenandoahRegionPartitions::retire_within_partition(size_t idx, size_t used_bytes) {
+void ShenandoahRegionPartitions::retire_from_partition(size_t idx, size_t used_bytes) {
   ShenandoahFreeSetPartitionId orig_partition = membership(idx);
 
   // Note: we may remove from free partition even if region is not entirely full, such as when available < PLAB::min_size()
@@ -539,7 +539,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
 
   if (alloc_capacity(r) < PLAB::min_size() * HeapWordSize) {
     // Regardless of whether this allocation succeeded, if the remaining memory is less than PLAB:min_size(), retire this region.
-    // Note that retire_within_partition() increases used to account for waste.
+    // Note that retire_from_partition() increases used to account for waste.
 
     // Note that a previous implementation of this function would retire a region following any failure to
     // allocate within.  This was observed to result in large amounts of available memory being ignored
@@ -547,7 +547,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
     // memory available within the region even if this is less than the desired size.
 
     size_t idx = r->index();
-    _partitions.retire_within_partition(idx, r->used());
+    _partitions.retire_from_partition(idx, r->used());
     _partitions.assert_bounds();
   }
   return result;
@@ -620,7 +620,7 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
     r->set_top(r->bottom() + used_words);
 
     // While individual regions report their true use, all humongous regions are marked used in the free partition.
-    _partitions.retire_within_partition(r->index(), ShenandoahHeapRegion::region_size_bytes());
+    _partitions.retire_from_partition(r->index(), ShenandoahHeapRegion::region_size_bytes());
   }
 
   size_t total_humongous_size = ShenandoahHeapRegion::region_size_bytes() * num;
@@ -755,7 +755,8 @@ void ShenandoahFreeSet::move_regions_from_collector_to_mutator(size_t max_xfer_r
 // Overwrite arguments to represent the number of regions to be reclaimed from the cset
 void ShenandoahFreeSet::prepare_to_rebuild(size_t &cset_regions) {
   shenandoah_assert_heaplocked();
-  // This resets all state information, removing all regions from all partitions.
+
+  // Clear() resets all state information, marking every region as NotFree.
   clear();
   log_debug(gc, free)("Rebuilding FreeSet");
 
