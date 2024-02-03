@@ -65,8 +65,8 @@ private:
   size_t _rightmosts_empty[NumPartitions];
 
   // For each partition p, _capacity[p] represents the total amount of memory within the partition at the time
-  // of the most recent rebuild, _used[p] represents the total amount of memory that has been consumed within this
-  // partition (either already consumed as of the rebuild, or consumed since the rebuild).  _capacity[p] and _used[p]
+  // of the most recent rebuild, _used[p] represents the total amount of memory that has been allocated within this
+  // partition (either already allocated as of the rebuild, or allocated since the rebuild).  _capacity[p] and _used[p]
   // are denoted in bytes.  Note that some regions that had been assigned to a particular partition at rebuild time
   // may have been retired following the rebuild.  The tallies for these regions are still reflected in _capacity[p]
   // and _used[p], even though the region may have been removed from the free set.
@@ -215,7 +215,7 @@ public:
 
   // After we have finished evacuation, we no longer need to hold regions in reserve for the Collector.
   // Call this method at the start of update refs to make more memory available to the Mutator.  This
-  // benefits workloads that do not consume all of the evacuation waste reserve.
+  // benefits workloads that do not allocate all of the evacuation waste reserve.
   //
   // Note that we plan to replenish the Collector reserve at the end of update refs, at which time all
   // of the regions recycled from the collection set will be available.
