@@ -92,6 +92,8 @@ OptoReg::Name BoxLockNode::reg(Node* box) {
 bool BoxLockNode::is_simple_lock_region(LockNode** unique_lock, Node* obj, Node** bad_lock) {
   LockNode* lock = nullptr;
   bool has_one_lock = false;
+  bool has_lock = false;
+  bool has_unlock = false;
   for (uint i = 0; i < this->outcnt(); i++) {
     Node* n = this->raw_out(i);
     assert(!n->is_Phi(), "should not merge BoxLock nodes");
@@ -100,6 +102,12 @@ bool BoxLockNode::is_simple_lock_region(LockNode** unique_lock, Node* obj, Node*
       // Check lock's box since box could be referenced by Lock's debug info.
       if (alock->box_node() == this) {
         if (alock->obj_node()->eqv_uncast(obj)) {
+          if (alock->is_Unlock()) {
+            has_unlock = true;
+          } else {
+            assert(alock->is_Lock(), "only Lock node expected");
+            has_lock = true;
+          }
           if ((unique_lock != nullptr) && alock->is_Lock()) {
             if (lock == nullptr) {
               lock = alock->as_Lock();
@@ -119,6 +127,12 @@ bool BoxLockNode::is_simple_lock_region(LockNode** unique_lock, Node* obj, Node*
         }
       }
     }
+  }
+  if (has_lock != has_unlock) {
+    // Unbalanced locking region.
+    // Can happen when locks coarsening optimization eliminated
+    // pair of Unlock/Lock nodes from adjacent locking regions.
+    return false;
   }
 #ifdef ASSERT
   // Verify that FastLock and Safepoint reference only this lock region.
