@@ -99,7 +99,7 @@ import javax.swing.WindowConstants;
 
 public final class RenderPerfTest {
 
-    private final static String VERSION = "Render_Perf_Test 2024.02";
+    private final static String VERSION = "RenderPerfTest 2024.02";
 
     private static final HashSet<String> ignoredTests = new HashSet<>();
 
@@ -1938,29 +1938,38 @@ public final class RenderPerfTest {
         System.out.print("##############################################################\n");
         System.out.printf("# %s\n", VERSION);
         System.out.print("##############################################################\n");
-        System.out.println("# java ... RenderPerfTest <args>");
+        System.out.println("# java ... RenderPerfTest <args> <tests>");
         System.out.println("#");
-        System.out.println("# Supported Arguments <args>:");
+        System.out.println("# Supported arguments <args>:");
+        System.out.println("# -h                        : display this help");
+        System.out.println("# -v                        : set verbose output");
         System.out.println("#");
-        System.out.println("# -h         : display this help");
-        System.out.println("# -v         : set verbose outputs");
+        System.out.println("# -e=<mode>                  : set the execution mode (default: " + EXEC_MODE_DEFAULT
+                                + ") among " + EXEC_MODES);
         System.out.println("#");
-        System.out.println("# -e<mode>   : set execution mode (default: " + EXEC_MODE_DEFAULT + ") among " + EXEC_MODES);
+        System.out.println("# -f                        : use FPS unit (default)");
+        System.out.println("# -t                        : use TIME(ms) unit");
         System.out.println("#");
-        System.out.println("# -f         : use FPS unit (default)");
-        System.out.println("# -t         : use TIME(ms) unit");
+        System.out.println("# -g=all|\"0-0,0-1...\"       : use 'all' or specific graphics configurations");
         System.out.println("#");
-        System.out.println("# -l         : list available graphics configurations");
-        System.out.println("# -g=all|0:0,0:1... : use all or specific graphics configurations");
+        System.out.println("# -font=\"<name>\"            : set the font name used by all text renderers");
+        System.out.println("# -fontSize=<number>        : set the font size used by Text renderers");
+        System.out.println("# -fontSizeLarge=<number>   : set the font size used by LargeText renderers");
+        System.out.println("# -text=\"<string>\"          : set the text drawn by all text renderers");
         System.out.println("#");
-        System.out.println("# -w<number> : use number of test frames (default: 1) per screen");
+        System.out.println("# -lf                       : list available font names");
+        System.out.println("# -lg                       : list available graphics configurations");
         System.out.println("#");
-        System.out.println("# -n<number> : set number of primitives (default: " + N_DEFAULT + ")");
-        System.out.println("# -r<number> : set number of test repeats (default: 1)");
+        System.out.println("# -n=<number>               : set number of primitives (default: " + N_DEFAULT + ")");
+        System.out.println("# -r=<number>               : set number of test repeats (default: 1)");
         System.out.println("#");
-        System.out.println("# -u<number> : set number of warmup iterations (default: " + MIN_COUNT + ")");
         System.out.println("#");
-        System.out.print("# Test arguments: ");
+        System.out.println("# -w=<number>               : use number of test frames (default: 1) per screen");
+        System.out.println("#");
+        System.out.println("# -u=<number>               : set number of warmup iterations (default: " + MIN_COUNT + ")");
+        System.out.println("#");
+
+        System.out.print("# Supported test arguments <tests>:");
 
         final ArrayList<Method> testCases = new ArrayList<>();
         for (Method m : RenderPerfTest.class.getDeclaredMethods()) {
@@ -2083,6 +2092,10 @@ public final class RenderPerfTest {
             testCases.sort(Comparator.comparing(Method::getName));
         }
 
+        if (help) {
+            help();
+        }
+
         if (CALIBRATION) {
             Method m = RenderPerfTest.class.getDeclaredMethod("testCalibration");
             testCases.add(0, m); // first
@@ -2097,20 +2110,20 @@ public final class RenderPerfTest {
             System.out.printf("#   OS: %s %s (%s)\n", System.getProperty("os.name"), System.getProperty("os.version"), System.getProperty("os.arch"));
             System.out.printf("# CPUs: %d (virtual)\n", Runtime.getRuntime().availableProcessors());
             System.out.print("##############################################################\n");
-            System.out.printf("# AWT Toolkit   :             %s \n", TOOLKIT.getClass().getSimpleName());
+            System.out.printf("# AWT Toolkit:                %s \n", TOOLKIT.getClass().getSimpleName());
             System.out.printf("# Execution mode:             %s\n", EXEC_MODE);
             System.out.printf("# GraphicsConfiguration mode: %s\n", GC_MODE);
             System.out.print("##############################################################\n");
-            System.out.printf("# Repeats:      %d\n", REPEATS);
-            System.out.printf("# NW:           %d\n", NW);
-            System.out.printf("# N:            %d\n", N);
-            System.out.printf("# WARMUP_COUNT: %d\n", WARMUP_COUNT);
-            System.out.printf("# Unit:    %s\n", USE_FPS ? "FPS" : "TIME(ms)");
+            System.out.printf("# Repeats:                    %d\n", REPEATS);
+            System.out.printf("# NW:                         %d\n", NW);
+            System.out.printf("# N:                          %d\n", N);
+            System.out.printf("# WARMUP_COUNT:               %d\n", WARMUP_COUNT);
+            System.out.printf("# Unit:                       %s\n", USE_FPS ? "FPS" : "TIME(ms)");
             System.out.print("##############################################################\n");
-            System.out.printf("# Font: '%s'\n", TEXT_FONT);
+            System.out.printf("# Font:                      '%s'\n", TEXT_FONT);
             System.out.printf("# Text: '%s'\n", TEXT_STR);
-            System.out.printf("# FontSize:      %s\n", TEXT_SIZE_DEFAULT);
-            System.out.printf("# FontSizeLarge: %s\n", TEXT_SIZE_LARGE);
+            System.out.printf("# FontSize:                   %s\n", TEXT_SIZE_DEFAULT);
+            System.out.printf("# FontSizeLarge:              %s\n", TEXT_SIZE_LARGE);
             System.out.print("##############################################################\n");
         }
 
@@ -2126,11 +2139,12 @@ public final class RenderPerfTest {
         }
         // Check font:
         if (!fontNames.contains(TEXT_FONT)) {
-            System.err.println("Bad font name: [" + TEXT_FONT + "] ! (available values: " + fontNames + ")");
+            System.err.println("Bad font name: [" + TEXT_FONT + "] !");
+            VERBOSE_FONT_CONFIG = true;
         }
 
         if (VERBOSE_FONT_CONFIG) {
-            System.out.println("Available Fonts:");
+            System.out.print("# Available font names: ");
 
             for (String name : fontNames) {
                 System.out.print(name);
@@ -2142,13 +2156,13 @@ public final class RenderPerfTest {
         final GraphicsDevice[] gds = ge.getScreenDevices();
 
         if (VERBOSE_GRAPHICS_CONFIG) {
-            System.out.println("Available GraphicsDevice(s) and their GraphicsConfiguration(s):");
+            System.out.println("# Available GraphicsDevice(s) and their GraphicsConfiguration(s):");
         }
 
         for (int gdIdx = 0; gdIdx < gds.length; gdIdx++) {
             final GraphicsDevice gd = gds[gdIdx];
             if (VERBOSE_GRAPHICS_CONFIG) {
-                System.out.println("[" + gdIdx + "] = GraphicsDevice[" + gd.getIDstring() + "]");
+                System.out.println("# [" + gdIdx + "] = GraphicsDevice[" + gd.getIDstring() + "]");
             }
 
             final GraphicsConfiguration[] gcs = gd.getConfigurations();
@@ -2159,7 +2173,7 @@ public final class RenderPerfTest {
                 gcByID.put(gcId, gc);
                 idByGC.put(gc, gcId);
                 if (VERBOSE_GRAPHICS_CONFIG) {
-                    System.out.println("- [" + gcId + "] = GraphicsConfiguration[" + gc + "] bounds:" + gc.getBounds());
+                    System.out.println("# - [" + gcId + "] = GraphicsConfiguration[" + gc + "] bounds:" + gc.getBounds());
                 }
             }
         }
@@ -2189,7 +2203,7 @@ public final class RenderPerfTest {
             final String gcId = idByGC.get(gcDef);
 
             if (VERBOSE_GRAPHICS_CONFIG) {
-                System.out.println("Using default [" + gcId + "] = GraphicsConfiguration[" + gcDef + "] bounds:" + gcDef.getBounds());
+                System.out.println("# Using default [" + gcId + "] = GraphicsConfiguration[" + gcDef + "] bounds:" + gcDef.getBounds());
             }
             gcSet.add(gcDef);
         }
@@ -2197,7 +2211,7 @@ public final class RenderPerfTest {
         final List<GraphicsConfiguration> gcList = new ArrayList<>(gcSet);
         final int NGC = gcList.size();
 
-        System.out.print("Using GraphicsConfiguration(s): ");
+        System.out.print("#  Using GraphicsConfiguration(s): ");
         for (GraphicsConfiguration gc : gcList) {
             final String gcId = idByGC.get(gc);
             System.out.print("[" + gcId + "][" + gc + "]");
@@ -2208,9 +2222,7 @@ public final class RenderPerfTest {
         final List<RenderPerfTest> instances = new ArrayList<>();
         int retCode = 0;
         try {
-            if (help) {
-                help();
-            } else {
+            if (!help) {
                 final List<Thread> threads = new ArrayList<>();
 
                 for (int i = 0; i < NGC; i++) {
@@ -2236,7 +2248,7 @@ public final class RenderPerfTest {
                     if (VERBOSE) {
                         final int k = n / REPEATS;
                         final String methodName = extractTestName(testCases.get(k));
-                        System.out.println("--- Test [" + (n + 1) + " / " + testCount + "] = " + methodName + " ---");
+                        System.out.println("# --- Test [" + (n + 1) + " / " + testCount + "] = " + methodName + " ---");
                     }
 
                     // reset stop barrier (to be ready):
@@ -2286,7 +2298,7 @@ public final class RenderPerfTest {
                     retCode = 1;
                 }
             }
-            // ensure jvm shutdown now (wayland)
+            // ensure jvm immediate shutdown:
             System.exit(retCode);
         }
     }
