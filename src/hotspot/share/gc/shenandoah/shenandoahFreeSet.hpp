@@ -105,9 +105,7 @@ public:
 
   // The following four methods return the left-most and right-most bounds on ranges of regions representing
   // the requested set.  The _empty variants represent bounds on the range that holds completely empty
-  // regions, which are required for humongous allocations and desired for "very large" allocations.  A
-  // return value of -1 from leftmost() or leftmost_empty() denotes that the corresponding set is empty.
-  // In other words:
+  // regions, which are required for humongous allocations and desired for "very large" allocations.
   //   if the requested which_partition is empty:
   //     leftmost() and leftmost_empty() return _max, rightmost() and rightmost_empty() return 0
   //   otherwise, expect the following:
