@@ -542,8 +542,9 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
 
     // Note that a previous implementation of this function would retire a region following any failure to
     // allocate within.  This was observed to result in large amounts of available memory being ignored
-    // following a failed shared allocation request.  TLAB requests will generally downsize to absorb all
-    // memory available within the region even if this is less than the desired size.
+    // following a failed shared allocation request.  In the current implementation, we only retire a region
+    // if the remaining capacity is less than PLAB::min_size().  Note that TLAB requests will generally downsize
+    // to absorb all memory available within the region even if the remaining memory is less than the desired size.
 
     size_t idx = r->index();
     _partitions.retire_from_partition(idx, r->used());
