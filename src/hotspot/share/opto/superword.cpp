@@ -177,7 +177,6 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
   for (uint i = 0; i < lpt()->_body.size(); i++) {
     Node* n = lpt()->_body.at(i);
     if (n == cl->incr() ||
-      is_marked_reduction(n) ||
       n->is_AddP() ||
       n->is_Cmp() ||
       n->is_Bool() ||

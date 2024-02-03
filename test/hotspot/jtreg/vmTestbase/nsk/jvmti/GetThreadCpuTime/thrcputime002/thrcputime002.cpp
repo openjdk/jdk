@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,8 +55,8 @@ static jvmtiEvent threadEvents[THREAD_EVENTS_COUNT] = {
 static julong prevTestedThreadTime = 0;
 static julong prevAgentThreadTime = 0;
 
-static jthread testedThread = NULL;
-static jthread testAgentThread = NULL;
+static jthread testedThread = nullptr;
+static jthread testAgentThread = nullptr;
 
 static int iterations = 0;
 
@@ -83,7 +83,7 @@ static int checkCpuTime(jvmtiEnv* jvmti, jthread thread, julong* time,
                             where, julong_to_string(*time, buf));
     }
 
-    if (prevTime != NULL) {
+    if (prevTime != nullptr) {
         julong diff = *time - *prevTime;
 
         NSK_DISPLAY1("Compare with previous time: %s\n",
@@ -150,7 +150,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
     NSK_DISPLAY0(">>> Testcase #2: Check initial cpu time in agent thread\n");
     {
-        if (!checkCpuTime(jvmti, testAgentThread, &prevAgentThreadTime, NULL, "agent thread")) {
+        if (!checkCpuTime(jvmti, testAgentThread, &prevAgentThreadTime, nullptr, "agent thread")) {
             nsk_jvmti_setFailStatus();
         }
     }
@@ -160,7 +160,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         runIterations(iterations);
 
         NSK_DISPLAY1("Enable thread events: %d events\n", THREAD_EVENTS_COUNT);
-        if (nsk_jvmti_enableEvents(JVMTI_ENABLE, THREAD_EVENTS_COUNT, threadEvents, NULL)) {
+        if (nsk_jvmti_enableEvents(JVMTI_ENABLE, THREAD_EVENTS_COUNT, threadEvents, nullptr)) {
             NSK_DISPLAY0("  ... enabled\n");
         }
 
@@ -180,7 +180,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
             }
         }
 
-        if (testedThread != NULL) {
+        if (testedThread != nullptr) {
             NSK_DISPLAY0(">>> Testcase #6: Check tested thread cpu time from agent thread\n");
             {
                 julong time = 0;
@@ -198,7 +198,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
             return;
 
         NSK_DISPLAY1("Disable thread events: %d events\n", THREAD_EVENTS_COUNT);
-        if (nsk_jvmti_enableEvents(JVMTI_DISABLE, THREAD_EVENTS_COUNT, threadEvents, NULL)) {
+        if (nsk_jvmti_enableEvents(JVMTI_DISABLE, THREAD_EVENTS_COUNT, threadEvents, nullptr)) {
             NSK_DISPLAY0("  ... disabled\n");
         }
     }
@@ -228,7 +228,7 @@ callbackVMInit(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
     NSK_DISPLAY0(">>> Testcase #1: Check initial cpu time in VM_INIT callback\n");
     {
         julong time = 0;
-        if (!checkCpuTime(jvmti, thread, &time, NULL, "VM_INIT callback")) {
+        if (!checkCpuTime(jvmti, thread, &time, nullptr, "VM_INIT callback")) {
             nsk_jvmti_setFailStatus();
         }
     }
@@ -242,7 +242,7 @@ callbackVMDeath(jvmtiEnv* jvmti, JNIEnv* jni) {
     int success = NSK_TRUE;
 
     NSK_DISPLAY1("Disable events: %d events\n", EVENTS_COUNT);
-    if (!nsk_jvmti_enableEvents(JVMTI_DISABLE, EVENTS_COUNT, events, NULL)) {
+    if (!nsk_jvmti_enableEvents(JVMTI_DISABLE, EVENTS_COUNT, events, nullptr)) {
         success = NSK_FALSE;
     } else {
         NSK_DISPLAY0("  ... disabled\n");
@@ -279,13 +279,13 @@ callbackThreadStart(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
         }
     }
 
-    if (threadInfo.name != NULL && strcmp(threadInfo.name, TESTED_THREAD_NAME) == 0) {
-        if (!NSK_JNI_VERIFY(jni, (testedThread = jni->NewGlobalRef(thread)) != NULL)) {
+    if (threadInfo.name != nullptr && strcmp(threadInfo.name, TESTED_THREAD_NAME) == 0) {
+        if (!NSK_JNI_VERIFY(jni, (testedThread = jni->NewGlobalRef(thread)) != nullptr)) {
             nsk_jvmti_setFailStatus();
         }
 
         NSK_DISPLAY0(">>> Testcase #4: Check initial cpu time in THREAD_START callback\n");
-        if (!checkCpuTime(jvmti, thread, &prevTestedThreadTime, NULL, "THREAD_START callback")) {
+        if (!checkCpuTime(jvmti, thread, &prevTestedThreadTime, nullptr, "THREAD_START callback")) {
             nsk_jvmti_setFailStatus();
         }
     }
@@ -314,14 +314,14 @@ callbackThreadEnd(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
         }
     }
 
-    if (threadInfo.name != NULL && strcmp(threadInfo.name, TESTED_THREAD_NAME) == 0) {
+    if (threadInfo.name != nullptr && strcmp(threadInfo.name, TESTED_THREAD_NAME) == 0) {
         julong time = 0;
         NSK_DISPLAY0(">>> Testcase #8: Check final cpu time in THREAD_END callback\n");
         if (!checkCpuTime(jvmti, thread, &time, &prevTestedThreadTime, "THREAD_END callback")) {
             nsk_jvmti_setFailStatus();
         }
         NSK_TRACE(jni->DeleteGlobalRef(testedThread));
-        testedThread = NULL;
+        testedThread = nullptr;
     }
 }
 
@@ -340,7 +340,7 @@ JNIEXPORT jint JNI_OnLoad_thrcputime002(JavaVM *jvm, char *options, void *reserv
 }
 #endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
-    jvmtiEnv* jvmti = NULL;
+    jvmtiEnv* jvmti = nullptr;
 
     if (!NSK_VERIFY(nsk_jvmti_parseOptions(options)))
         return JNI_ERR;
@@ -352,7 +352,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         return JNI_ERR;
 
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     NSK_DISPLAY1("Add required capability: %s\n", "can_get_thread_cpu_time");
@@ -382,11 +382,11 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     }
     NSK_DISPLAY0("  ... callbacks set\n");
 
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     NSK_DISPLAY1("Enable events: %d events\n", EVENTS_COUNT);
-    if (nsk_jvmti_enableEvents(JVMTI_ENABLE, EVENTS_COUNT, events, NULL)) {
+    if (nsk_jvmti_enableEvents(JVMTI_ENABLE, EVENTS_COUNT, events, nullptr)) {
         NSK_DISPLAY0("  ... enabled\n");
     }
 

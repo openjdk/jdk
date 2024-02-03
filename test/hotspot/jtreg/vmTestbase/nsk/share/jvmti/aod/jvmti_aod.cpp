@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ Options* nsk_jvmti_aod_getMultiagentsOptions(jvmtiEnv *jvmti) {
 
     NSK_COMPLAIN1("Options for jvmtiEnv %p weren't found\n", jvmti);
 
-    return NULL;
+    return nullptr;
 }
 
 /*
@@ -101,7 +101,7 @@ void nsk_jvmti_aod_deallocate(jvmtiEnv *jvmti, unsigned char* mem) {
 int nsk_jvmti_aod_getClassName(jvmtiEnv *jvmti, jclass klass, char classNameBuffer[]) {
     char* className;
 
-    if (!NSK_JVMTI_VERIFY(jvmti->GetClassSignature(klass, &className, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->GetClassSignature(klass, &className, nullptr))) {
         NSK_COMPLAIN0("Failed to get class name\n");
         classNameBuffer[0] = '\0';
         return NSK_FALSE;
@@ -161,25 +161,25 @@ jthread nsk_jvmti_aod_createThread(JNIEnv *jni) {
     jmethodID threadConstructor;
     jthread thread;
 
-    if (!NSK_JNI_VERIFY(jni, (klass = jni->FindClass("java/lang/Thread")) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni, (klass = jni->FindClass("java/lang/Thread")) != nullptr)) {
         NSK_COMPLAIN0("Failed to get the java.lang.Thread class\n");
-        return NULL;
+        return nullptr;
     }
     if (!NSK_JNI_VERIFY(jni,
-            (threadConstructor = jni->GetMethodID(klass, "<init>", "()V")) != NULL)) {
+            (threadConstructor = jni->GetMethodID(klass, "<init>", "()V")) != nullptr)) {
         NSK_COMPLAIN0("Failed to get java.lang.Thread constructor\n");
-        return NULL;
+        return nullptr;
     }
 
     if (!NSK_JNI_VERIFY (jni,
-            (thread = jni->NewObject(klass, threadConstructor, NULL)) != NULL)) {
+            (thread = jni->NewObject(klass, threadConstructor, nullptr)) != nullptr)) {
         NSK_COMPLAIN0("Failed to create Thread object\n");
-        return NULL;
+        return nullptr;
     }
 
-    if (!NSK_JNI_VERIFY(jni, (thread = jni->NewGlobalRef(thread)) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni, (thread = jni->NewGlobalRef(thread)) != nullptr)) {
         NSK_COMPLAIN0("Failed to create global reference\n");
-        return NULL;
+        return nullptr;
     }
 
     return thread;
@@ -191,28 +191,28 @@ jthread nsk_jvmti_aod_createThreadWithName(JNIEnv *jni, const char* threadName) 
     jthread thread;
     jstring threadNameString;
 
-    if (!NSK_JNI_VERIFY(jni, (threadNameString = jni->NewStringUTF(threadName)) != NULL))
-        return NULL;
+    if (!NSK_JNI_VERIFY(jni, (threadNameString = jni->NewStringUTF(threadName)) != nullptr))
+        return nullptr;
 
-    if (!NSK_JNI_VERIFY(jni, (klass = jni->FindClass("java/lang/Thread")) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni, (klass = jni->FindClass("java/lang/Thread")) != nullptr)) {
         NSK_COMPLAIN0("Failed to get the java.lang.Thread class\n");
-        return NULL;
+        return nullptr;
     }
     if (!NSK_JNI_VERIFY(jni,
-            (threadConstructor = jni->GetMethodID(klass, "<init>", "(Ljava/lang/String;)V")) != NULL)) {
+            (threadConstructor = jni->GetMethodID(klass, "<init>", "(Ljava/lang/String;)V")) != nullptr)) {
         NSK_COMPLAIN0("Failed to get java.lang.Thread constructor\n");
-        return NULL;
+        return nullptr;
     }
 
     if (!NSK_JNI_VERIFY(jni,
-            (thread = jni->NewObject(klass, threadConstructor, threadNameString)) != NULL)) {
+            (thread = jni->NewObject(klass, threadConstructor, threadNameString)) != nullptr)) {
         NSK_COMPLAIN0("Failed to create Thread object\n");
-        return NULL;
+        return nullptr;
     }
 
-    if (!NSK_JNI_VERIFY(jni, (thread = jni->NewGlobalRef(thread)) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni, (thread = jni->NewGlobalRef(thread)) != nullptr)) {
         NSK_COMPLAIN0("Failed to create global reference\n");
-        return NULL;
+        return nullptr;
     }
 
     return thread;
@@ -230,8 +230,8 @@ int nsk_jvmti_aod_redefineClass(
         NSK_COMPLAIN1("Option '%s' isn't specified\n", PATH_TO_NEW_BYTE_CODE_OPTION);
         return NSK_FALSE;
     }
-    if (fileName == NULL) {
-        NSK_COMPLAIN0("File name is NULL\n");
+    if (fileName == nullptr) {
+        NSK_COMPLAIN0("File name is null\n");
         return NSK_FALSE;
     }
     {
@@ -250,7 +250,7 @@ int nsk_jvmti_aod_redefineClass(
 
             bytecode = fopen(file, "rb");
             error= JVMTI_ERROR_NONE;
-            if (bytecode == NULL) {
+            if (bytecode == nullptr) {
                 NSK_COMPLAIN1("Error opening file '%s'\n", file);
                 return NSK_FALSE;
             }

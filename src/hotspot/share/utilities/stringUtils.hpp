@@ -27,6 +27,11 @@
 
 #include "memory/allStatic.hpp"
 
+#ifdef _WINDOWS
+  // strtok_s is the Windows thread-safe equivalent of POSIX strtok_r
+# define strtok_r strtok_s
+#endif
+
 class StringUtils : AllStatic {
 public:
   // Replace the substring <from> with another string <to>. <to> must be
