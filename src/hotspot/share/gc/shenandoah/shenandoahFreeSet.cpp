@@ -709,9 +709,10 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &cset_regions) {
   }
 }
 
-// Move no more than max_xfer_regions from the existing Collector free partitions to the Mutator free partition.
+// Move no more than max_xfer_regions from the existing Collector partition to the Mutator partition.
+//
 // This is called from outside the heap lock at the start of update refs.  At this point, we no longer
-// need to reserve memory within for evacuation.  (We will create a new reserve after update refs finishes,
+// need to reserve memory for evacuation.  (We will create a new reserve after update refs finishes,
 // setting aside some of the memory that was reclaimed by the most recent GC.  This new reserve will satisfy
 // the evacuation needs of the next GC pass.)
 void ShenandoahFreeSet::move_regions_from_collector_to_mutator(size_t max_xfer_regions) {
