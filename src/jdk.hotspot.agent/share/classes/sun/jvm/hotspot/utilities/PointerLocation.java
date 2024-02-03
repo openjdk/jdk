@@ -311,7 +311,7 @@ public class PointerLocation {
             }
         } else {
             // Address is some other heap type that we haven't special cased yet.
-            tty.println("In unknown section of Java heap");
+            tty.println("In unknown section of the Java heap");
         }
       }
     } else if (isInInterpreter()) {
