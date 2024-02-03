@@ -123,10 +123,12 @@ public class PointerFinder {
       if (heap instanceof G1CollectedHeap) {
         G1CollectedHeap g1 = (G1CollectedHeap)heap;
         loc.hr = g1.heapRegionForAddress(a);
-
-        if (Assert.ASSERTS_ENABLED) {
-          Assert.that(loc.hr != null, "Should have found this address in a g1 heap region");
-        }
+        // We don't assert that loc.hr is not null like we do for the SerialHeap. This is
+        // because heap.isIn(a) can return true if the address is anywhere in G1's mapped
+        // memory, even if that area of memory is not in use by a G1 HeapRegion. So there
+        // may in fact be no HeapRegion for the address even though it is in the heap.
+        // Leaving loc.hr == null in this case will result in PointerFinder saying that
+        // the address is "In unknown section of Java the heap", which is what we want.
       }
 
       return loc;
