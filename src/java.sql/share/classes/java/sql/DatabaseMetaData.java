@@ -1215,7 +1215,7 @@ public interface DatabaseMetaData extends Wrapper {
      * Only procedure descriptions matching the schema and
      * procedure name criteria are returned.  They are ordered by
      * {@code PROCEDURE_CAT}, {@code PROCEDURE_SCHEM},
-     * {@code PROCEDURE_NAME} and {@code SPECIFIC_ NAME}.
+     * {@code PROCEDURE_NAME} and {@code SPECIFIC_NAME}.
      *
      * <P>Each procedure description has the following columns:
      *  <OL>
