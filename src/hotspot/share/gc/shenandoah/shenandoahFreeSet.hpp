@@ -123,7 +123,7 @@ public:
   inline void increase_used(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
 
   inline size_t capacity_of(ShenandoahFreeSetPartitionId which_partition) const {
-    assert (which_partition > NotFree && which_partition < NumPartitions, "selected free set must be valid");
+    assert (which_partition < NumPartitions, "selected free set must be valid");
     return _capacity[which_partition];
   }
 
