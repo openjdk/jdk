@@ -1063,10 +1063,7 @@ void ShenandoahFullGC::phase4_compact_objects(ShenandoahHeapRegionSet** worker_s
     ShenandoahPostCompactClosure post_compact;
     heap->heap_region_iterate(&post_compact);
     heap->set_used(post_compact.get_live());
-
     heap->collection_set()->clear();
-
-    // Since Full GC directly manipulates top of certain regions, certain ShenandoahFreeSet abstractions may have been corrupted.
     heap->free_set()->rebuild();
   }
 
