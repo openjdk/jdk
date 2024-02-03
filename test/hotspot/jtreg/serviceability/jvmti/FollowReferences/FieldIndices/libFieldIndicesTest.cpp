@@ -61,7 +61,7 @@ static void sig2name(char* str) {
 
 static bool is_static_field(JNIEnv* env, jclass klass, jfieldID fid) {
   enum {
-   ACC_STATIC        = 0x0008,
+    ACC_STATIC        = 0x0008
   };
 
   jint access_flags = 0;
