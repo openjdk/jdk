@@ -141,7 +141,7 @@ public class HeapRegion extends ContiguousSpace implements LiveRegionsProvider {
     }
 
     public boolean isInRegion(Address addr) {
-        return (addr.greaterThanOrEqual(bottom()) && addr.lessThan(top()));
+        return (addr.greaterThanOrEqual(bottom()) && addr.lessThan(end()));
     }
 
     public void printOn(PrintStream tty) {
