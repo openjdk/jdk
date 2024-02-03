@@ -32,12 +32,15 @@
 
 // Each ShenandoahHeapRegion is associated with a ShenandoahFreeSetPartitionId.
 enum ShenandoahFreeSetPartitionId : uint8_t {
-  NotFree,                      // Region has been retired and is not in any free set: there is no available memory.
   Mutator,                      // Region is in the Mutator free set: available memory is available to mutators.
   Collector,                    // Region is in the Collector free set: available memory is reserved for evacuations.
-
-  NumPartitions                 // This value represents the size of an array that may be indexed by NotFree, Mutator, Collector.
+  NotFree                       // Region is in no free set: it has no available memory
 };
+
+// We do not maintain counts, capacity, or used for regions that are not free.  Informally, if a region is NotFree, it is
+// in no partition.  NumPartitions represents the size of an array that may be indexed by Mutator or Collector.
+#define NumPartitions NotFree
+
 
 
 // This class implements partitioning of regions into distinct sets.  Each ShenandoahHeapRegion is either in the Mutator free set,
@@ -50,7 +53,7 @@ private:
   const ShenandoahFreeSet* _free_set;
   ShenandoahFreeSetPartitionId* const _membership;
 
-  // For each type, we track an interval outside of which a region affiliated with that partition is guaranteed
+  // For each partition, we track an interval outside of which a region affiliated with that partition is guaranteed
   // not to be found. This makes searches for free space more efficient.  For each partition p, _leftmosts[p]
   // represents its least index, and its _rightmosts[p] its greatest index. Empty intervals are indicated by the
   // canonical [_max, 0].
@@ -81,7 +84,7 @@ public:
   ShenandoahRegionPartitions(size_t max_regions, ShenandoahFreeSet* free_set);
   ~ShenandoahRegionPartitions();
 
-  // Make all regions NotFree and reset all bounds
+  // Remove all regions from all partitions and reset all bounds
   void make_all_regions_unavailable();
 
   // Retire region idx from within its partition.  Requires that region idx is in in Mutator or Collector partitions.
@@ -95,13 +98,13 @@ public:
   // Place region idx into free partition new_partition.  Requires that idx is currently not NotFree.
   void move_to_partition(size_t idx, ShenandoahFreeSetPartitionId new_partition, size_t region_capacity);
 
-  // Returns the ShenandoahFreeSetPartitionId affiliation of region idx, NotFree if this region is not currently free.
+  // Returns the ShenandoahFreeSetPartitionId affiliation of region idx, NotFree if this region is not currently in any partition.
   // This does not enforce that free_set membership implies allocation capacity.
   inline ShenandoahFreeSetPartitionId membership(size_t idx) const;
 
-  // Returns true iff region idx is in the test_set free_set.  Before returning true, asserts that the free
-  // set is not empty.  Requires that test_set != NotFree or NumPartitions.
-  inline bool in_partition(size_t idx, ShenandoahFreeSetPartitionId which_partition) const;
+  // Returns true iff region idx's membership is which_partition.  If which_partition represents a free set, asserts
+  // that the region has allocation capacity.
+  inline bool partition_id_matches(size_t idx, ShenandoahFreeSetPartitionId which_partition) const;
 
   // The following four methods return the left-most and right-most bounds on ranges of regions representing
   // the requested set.  The _empty variants represent bounds on the range that holds completely empty
@@ -125,17 +128,17 @@ public:
   }
 
   inline size_t used_by(ShenandoahFreeSetPartitionId which_partition) const {
-    assert (which_partition > NotFree && which_partition < NumPartitions, "selected free set must be valid");
+    assert (which_partition < NumPartitions, "selected free set must be valid");
     return _used[which_partition];
   }
 
   inline void set_capacity_of(ShenandoahFreeSetPartitionId which_partition, size_t value) {
-    assert (which_partition > NotFree && which_partition < NumPartitions, "selected free set must be valid");
+    assert (which_partition < NumPartitions, "selected free set must be valid");
     _capacity[which_partition] = value;
   }
 
   inline void set_used_by(ShenandoahFreeSetPartitionId which_partition, size_t value) {
-    assert (which_partition > NotFree && which_partition < NumPartitions, "selected free set must be valid");
+    assert (which_partition < NumPartitions, "selected free set must be valid");
     _used[which_partition] = value;
   }
 
