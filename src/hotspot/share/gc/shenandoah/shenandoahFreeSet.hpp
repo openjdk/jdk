@@ -214,13 +214,16 @@ public:
   void clear();
   void rebuild();
 
-  // After we have finished evacuation, we no longer need to hold regions in reserve for the Collector.
-  // Call this method at the start of update refs to make more memory available to the Mutator.  This
-  // benefits workloads that do not allocate all of the evacuation waste reserve.
+  // Move up to cset_regions number of regions from being available to the collector to being available to the mutator.
+  //
+  // Typical usage: At the end of evacuation, when the collector no longer needs the regions that had been reserved
+  // for evacuation, invoke this to make regions available for mutator allocations.
   //
   // Note that we plan to replenish the Collector reserve at the end of update refs, at which time all
-  // of the regions recycled from the collection set will be available.
-  void move_regions_from_collector_to_mutator_partition(size_t cset_regions);
+  // of the regions recycled from the collection set will be available.  If the very unlikely event that there
+  // are fewer regions in the collection set than remain in the collector set, we limit the transfer in order
+  // to assure that the replenished Collector reserve can be sufficiently large.
+  void move_regions_from_collector_to_mutator(size_t cset_regions);
 
   void recycle_trash();
   void log_status();

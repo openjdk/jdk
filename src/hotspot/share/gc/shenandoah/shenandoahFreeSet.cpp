@@ -714,7 +714,7 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &cset_regions) {
 // need to reserve memory within for evacuation.  (We will create a new reserve after update refs finishes,
 // setting aside some of the memory that was reclaimed by the most recent GC.  This new reserve will satisfy
 // the evacuation needs of the next GC pass.)
-void ShenandoahFreeSet::move_regions_from_collector_to_mutator_partition(size_t max_xfer_regions) {
+void ShenandoahFreeSet::move_regions_from_collector_to_mutator(size_t max_xfer_regions) {
   size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
   size_t collector_empty_xfer = 0;
   size_t collector_not_empty_xfer = 0;
