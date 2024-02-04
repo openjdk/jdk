@@ -65,7 +65,7 @@ public class TestFpRegsABI {
             }
         }
 
-        // If checksum does not save fp registers as ABI requires,
+        // If checksum intrinsic does not save fp registers as ABI requires,
         // the second call of calcValue might produce a wrong result.
         private void runIteration(byte[] buf, long expectedValue) {
             int v1 = calcValue(buf);
@@ -101,7 +101,7 @@ public class TestFpRegsABI {
             }
         }
 
-        // If checksum does not save fp registers as ABI requires,
+        // If checksum intrinsic does not save fp registers as ABI requires,
         // the second call of calcValue might produce a wrong result.
         private void runIteration(byte[] buf, long expectedValue) {
             int v1 = calcValue(buf);
@@ -119,8 +119,8 @@ public class TestFpRegsABI {
             }
         }
 
-        // ABI can require some fp registers to be callee save, e.g. v8-15 in ARM 64 ABI.
-        // We create fp register pressure to get fp registers used as many as possible.
+        // ABI can require some fp registers to be saved by a callee, e.g. v8-15 in ARM64 ABI.
+        // We create fp register pressure to get as many fp registers used as possible.
         private int calcValue(byte[] buf) {
             double v = 0.0;
             for (int i = 24; i <= buf.length; i += 24) {

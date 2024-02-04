@@ -4323,7 +4323,7 @@ void MacroAssembler::kernel_crc32_common_fold_using_crypto_pmull(Register crc, R
     eor3(v6, T16B, v29, v30, v6);
 
     // Reuse registers v23, v24.
-    // Using them won't block first instruction of the next iteration.
+    // Using them won't block the first instruction of the next iteration.
     pmull (v23, T1Q, v7, v16, T1D);
     pmull2(v24, T1Q, v7, v16, T2D);
     ldrq(v7, Address(pre(buf, 0x80)));
