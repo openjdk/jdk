@@ -108,7 +108,7 @@ public class TestFloatConversionsVectorNaN {
             throw new RuntimeException("errors occur");
         }
     }
- 
+
     static int assertEquals(int idx, float f, short expected, short actual) {
         HexFormat hf = HexFormat.of();
         String msg = "floatToFloat16 wrong result: idx: " + idx + ", \t" + f +
