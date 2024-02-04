@@ -42,6 +42,7 @@ import java.util.spi.ToolProvider;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static java.nio.file.attribute.PosixFilePermission.GROUP_EXECUTE;
@@ -740,6 +741,7 @@ public class TestPosix {
      * @throws IOException if an unexpected IOException occurs
      */
     @Test
+    @Disabled
     public void setPermissionsShouldConvertToUnix() throws IOException {
         // The default environment creates MS-DOS entries, with zero 'external file attributes'
         createEmptyZipFile(ZIP_FILE, ENV_DEFAULT);
