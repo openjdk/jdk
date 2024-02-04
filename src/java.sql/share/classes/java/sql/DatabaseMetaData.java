@@ -3289,7 +3289,7 @@ public interface DatabaseMetaData extends Wrapper {
      * function name criteria are returned.  They are ordered by
      * {@code FUNCTION_CAT}, {@code FUNCTION_SCHEM},
      * {@code FUNCTION_NAME} and
-     * {@code SPECIFIC_ NAME}.
+     * {@code SPECIFIC_NAME}.
      *
      * <P>Each function description has the following columns:
      *  <OL>
@@ -3339,7 +3339,7 @@ public interface DatabaseMetaData extends Wrapper {
      * parameter name criteria are returned. They are ordered by
      * {@code FUNCTION_CAT}, {@code FUNCTION_SCHEM},
      * {@code FUNCTION_NAME} and
-     * {@code SPECIFIC_ NAME}. Within this, the return value,
+     * {@code SPECIFIC_NAME}. Within this, the return value,
      * if any, is first. Next are the parameter descriptions in call
      * order. The column descriptions follow in column number order.
      *
