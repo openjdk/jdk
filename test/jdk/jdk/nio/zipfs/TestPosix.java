@@ -747,8 +747,7 @@ public class TestPosix {
             return;
         }
         // The default environment creates MS-DOS entries, with zero 'external file attributes'
-        createEmptyZipFile(ZIP_FILE, ENV_DEFAULT);
-        try (FileSystem fs = FileSystems.newFileSystem(ZIP_FILE, ENV_DEFAULT)) {
+        try (FileSystem fs = createEmptyZipFile(ZIP_FILE, ENV_DEFAULT)) {
             Path path = fs.getPath("hello.txt");
             Files.createFile(path);
         }
