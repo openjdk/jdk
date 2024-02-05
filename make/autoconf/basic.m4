@@ -133,7 +133,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_BUILD_ENV],
       LOCALE_USED=C
     fi
   else
-      AC_MSG_WARN([locale command not not found, using C locale])
+    AC_MSG_WARN([locale command not not found, using C locale])
     LOCALE_USED=C
   fi
 
