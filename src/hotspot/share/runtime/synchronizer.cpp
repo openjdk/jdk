@@ -515,8 +515,8 @@ void ObjectSynchronizer::enter_for(Handle obj, BasicLock* lock, JavaThread* lock
     // Inflated ObjectMonitor::enter_for is required
 
     // An async deflation can race after the inflate_for() call and before
-    // enter() can make the ObjectMonitor busy. enter_for() returns false if
-    // we have lost the race to async deflation and we simply try again.
+    // enter_for() can make the ObjectMonitor busy. enter_for() returns false
+    // if we have lost the race to async deflation and we simply try again.
     while (true) {
       ObjectMonitor* monitor = inflate_for(locking_thread, obj(), inflate_cause_monitor_enter);
       if (monitor->enter_for(locking_thread)) {
@@ -585,7 +585,6 @@ bool ObjectSynchronizer::enter_fast_impl(Handle obj, BasicLock* lock, JavaThread
         if (mark == obj()->cas_set_mark(markWord::from_pointer(lock), mark)) {
           return true;
         }
-        // Fall through to inflate() ...
       } else if (mark.has_locker() &&
                  locking_thread->is_lock_owned((address) mark.locker())) {
         assert(lock != mark.locker(), "must not re-lock the same lock");
