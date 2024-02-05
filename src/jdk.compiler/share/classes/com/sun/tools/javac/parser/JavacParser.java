@@ -2712,7 +2712,24 @@ public class JavacParser implements Parser {
     /** VariableInitializer = ArrayInitializer | Expression
      */
     public JCExpression variableInitializer() {
-        return token.kind == LBRACE ? arrayInitializer(token.pos, null) : parseExpression();
+        return this.variableInitializer(null);
+    }
+
+    public JCExpression variableInitializer(JCExpression type) {
+        if (token.kind == LBRACE) {
+            if (type instanceof JCIdent && ((JCIdent) type).name.equals(names.fromString("Map"))) {
+                return mapInitializer(token.pos);
+            } else {
+                return arrayInitializer(token.pos, null);
+            }
+        }
+        return parseExpression();
+    }
+
+    private JCExpression mapInitializer(int pos) {
+        accept(LBRACE);
+        accept(RBRACE);
+        return F.at(pos).NewMap();
     }
 
     /** ParExpression = "(" Expression ")"
@@ -3699,7 +3716,7 @@ public class JavacParser implements Parser {
 
         if (token.kind == EQ) {
             nextToken();
-            init = variableInitializer();
+            init = variableInitializer(type);
         }
         else if (reqInit) syntaxError(token.pos, Errors.Expected(EQ));
 

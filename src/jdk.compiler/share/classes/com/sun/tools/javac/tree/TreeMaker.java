@@ -435,6 +435,17 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
 
+    public JCExpression NewMap() {
+        JCFieldAccess util = new JCFieldAccess(Ident(names.fromString("java")), names.fromString("util"), null);
+        JCFieldAccess map = new JCFieldAccess(util, names.fromString("Map"), null);
+        JCFieldAccess of = new JCFieldAccess(map, names.fromString("of"), null);
+
+        JCMethodInvocation invocation = new JCMethodInvocation(List.nil(), of, List.nil());
+        invocation.pos = pos;
+
+        return invocation;
+    }
+
     public JCLambda Lambda(List<JCVariableDecl> params,
                            JCTree body)
     {
