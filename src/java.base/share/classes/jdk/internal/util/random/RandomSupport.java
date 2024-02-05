@@ -27,7 +27,6 @@ package jdk.internal.util.random;
 
 import java.lang.annotation.*;
 import java.math.BigInteger;
-import java.util.Math;
 import java.util.Objects;
 import java.util.Random;
 import java.util.function.Consumer;
