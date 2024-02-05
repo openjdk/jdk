@@ -2727,9 +2727,31 @@ public class JavacParser implements Parser {
     }
 
     private JCExpression mapInitializer(int pos) {
+        List<JCExpression> entries = mapEntries(pos);
+        return F.at(pos).NewMap(entries);
+    }
+
+    private List<JCExpression> mapEntries(int pos) {
         accept(LBRACE);
+        ListBuffer<JCExpression> entries = new ListBuffer<>();
+        if (token.kind != RBRACE) {
+            entries.append(mapEntry(pos));
+        }
         accept(RBRACE);
-        return F.at(pos).NewMap();
+        return entries.toList();
+    }
+
+    private JCExpression mapEntry(int pos) {
+        if (token.kind == STRINGLITERAL && peekToken(COLON, STRINGLITERAL)) {
+            String key = token.stringVal();
+            accept(STRINGLITERAL);
+            accept(COLON);
+            String value = token.stringVal();
+            accept(STRINGLITERAL);
+            return F.at(pos).StringMapEntry(key, value);
+        } else {
+            return illegal(pos);
+        }
     }
 
     /** ParExpression = "(" Expression ")"

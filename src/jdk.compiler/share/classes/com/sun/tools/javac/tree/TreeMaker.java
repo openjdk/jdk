@@ -435,12 +435,23 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
 
-    public JCExpression NewMap() {
+    public JCExpression NewMap(List<JCExpression> entries) {
         JCFieldAccess util = new JCFieldAccess(Ident(names.fromString("java")), names.fromString("util"), null);
         JCFieldAccess map = new JCFieldAccess(util, names.fromString("Map"), null);
-        JCFieldAccess of = new JCFieldAccess(map, names.fromString("of"), null);
+        JCFieldAccess ofEntries = new JCFieldAccess(map, names.fromString("ofEntries"), null);
 
-        JCMethodInvocation invocation = new JCMethodInvocation(List.nil(), of, List.nil());
+        JCMethodInvocation invocation = new JCMethodInvocation(List.nil(), ofEntries, entries);
+        invocation.pos = pos;
+
+        return invocation;
+    }
+
+    public JCExpression StringMapEntry(String key, String value) {
+        JCFieldAccess util = new JCFieldAccess(Ident(names.fromString("java")), names.fromString("util"), null);
+        JCFieldAccess map = new JCFieldAccess(util, names.fromString("Map"), null);
+        JCFieldAccess entry = new JCFieldAccess(map, names.fromString("entry"), null);
+
+        JCMethodInvocation invocation = new JCMethodInvocation(List.nil(), entry, List.of(Literal(key), Literal(value)));
         invocation.pos = pos;
 
         return invocation;

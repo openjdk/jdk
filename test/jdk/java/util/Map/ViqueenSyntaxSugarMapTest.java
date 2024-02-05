@@ -15,4 +15,12 @@ public class ViqueenSyntaxSugarMapTest {
         Map empty = {};
         assertTrue(empty.isEmpty());
     }
+
+    @Test
+    public void testSingletonMap() {
+        Map singleton = {
+                "sweden": "stockholm"
+    };
+        assertEquals(singleton.size(), 1);
+    }
 }
