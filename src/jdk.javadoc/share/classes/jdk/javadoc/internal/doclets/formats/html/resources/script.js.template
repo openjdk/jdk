@@ -160,7 +160,7 @@ function show(tableId, selected, columns) {
 }
 
 function updateTabs(tableId, selected) {
-    document.querySelector('div#' + tableId +' .summary-table')
+    document.getElementById(tableId + '.tabpanel')
         .setAttribute('aria-labelledby', selected);
     document.querySelectorAll('button[id^="' + tableId + '"]')
         .forEach(function(tab, index) {
