@@ -521,7 +521,7 @@ bool SuperWord::SLP_extract() {
   assert(cl->is_main_loop(), "SLP should only work on main loops");
 
   // Find memory slices
-  analyze_memory_slices();
+  find_memory_slices();
 
   if (!is_marked_reduction_loop() &&
       _mem_slice_head.is_empty()) {
@@ -918,7 +918,7 @@ void SuperWord::dependence_graph() {
   }
 }
 
-void SuperWord::analyze_memory_slices() {
+void SuperWord::find_memory_slices() {
   assert(_mem_slice_head.length() == 0, "mem_slice_head is empty");
   assert(_mem_slice_tail.length() == 0, "mem_slice_tail is empty");
 

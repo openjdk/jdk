@@ -468,7 +468,7 @@ private:
   void dependence_graph();
 
   // Analyze the memory slices
-  void analyze_memory_slices();
+  void find_memory_slices();
   NOT_PRODUCT( void print_memory_slices(); )
   // Return a memory slice (node list) in predecessor order starting at "start"
   void mem_slice_preds(Node* start, Node* stop, GrowableArray<Node*> &preds);
