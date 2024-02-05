@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ static const char *classSig =
     "Lnsk/jvmti/SetJNIFunctionTable/setjniftab001a;";
 
 static JavaVM *vm;
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 
 static volatile int verbose = 0;
 
@@ -59,10 +59,10 @@ static volatile jobject clsObj;
 static jrawMonitorID countLock;
 
 /* the original JNI function table */
-static jniNativeInterface *orig_jni_functions = NULL;
+static jniNativeInterface *orig_jni_functions = nullptr;
 
 /* the redirected JNI function table */
-static jniNativeInterface *redir_jni_functions = NULL;
+static jniNativeInterface *redir_jni_functions = nullptr;
 
 /* number of the redirected JNI function calls */
 static volatile int monent_calls = 0;
@@ -278,7 +278,7 @@ void startThreads() {
         thrStarted[i] = 0;
         waitContElem[i] = i+1;
         waitThr[i] = THREAD_new(waitingThread, &waitContElem[i]);
-        if (THREAD_start(waitThr[i]) == NULL) {
+        if (THREAD_start(waitThr[i]) == nullptr) {
             printf("TEST FAILURE: cannot start waiting thread #%d\n",
                 i+1);
             result = STATUS_FAILED;
@@ -323,16 +323,16 @@ JNIEXPORT jint JNICALL
 Java_nsk_jvmti_SetJNIFunctionTable_setjniftab001_check(JNIEnv *env, jobject obj) {
     int exitCode = PASSED;
     jint res;
-    JNIEnv *nextEnv = NULL; /* JNI env used to verify the assertion */
+    JNIEnv *nextEnv = nullptr; /* JNI env used to verify the assertion */
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("(%s,%d): TEST FAILURE: JVMTI client was not properly loaded\n",
             __FILE__, __LINE__);
         return STATUS_FAILED;
     }
 
     clsObj = env->NewGlobalRef(getObjectFromField(env, obj));
-    if (clsObj == NULL) {
+    if (clsObj == nullptr) {
         printf("(%s,%d): TEST FAILURE: cannot create a new global reference of class \"%s\"\n",
             __FILE__, __LINE__, classSig);
         env->FatalError("failed to create a new global reference");
@@ -382,10 +382,10 @@ Java_nsk_jvmti_SetJNIFunctionTable_setjniftab001_check(JNIEnv *env, jobject obj)
        and check the assertion with current thread and new threads */
     if (verbose)
         printf("\nc) Checking the restored JNI function table ...\n");
-    doRestore((nextEnv == NULL) ? env : nextEnv);
+    doRestore((nextEnv == nullptr) ? env : nextEnv);
 
     zeroCounter();
-    doExec((nextEnv == NULL) ? env : nextEnv, 0);
+    doExec((nextEnv == nullptr) ? env : nextEnv, 0);
     checkCall(2, 0, "main thread");
 
     zeroCounter();
@@ -413,14 +413,14 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jint res;
     jvmtiError err;
 
-    if (options != NULL && strcmp(options, "-verbose") == 0)
+    if (options != nullptr && strcmp(options, "-verbose") == 0)
         verbose = 1;
 
     if (verbose)
         printf("verbose mode on\n");
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("(%s,%d): Failed to call GetEnv\n", __FILE__, __LINE__);
         return JNI_ERR;
     }

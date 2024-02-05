@@ -207,6 +207,15 @@ public:
 
   void set_soft_max_capacity(size_t v);
 
+// ---------- Periodic Tasks
+//
+private:
+  void notify_heap_changed();
+
+public:
+  void set_forced_counters_update(bool value);
+  void handle_force_counters_update();
+
 // ---------- Workers handling
 //
 private:
@@ -355,9 +364,13 @@ public:
   void cancel_gc(GCCause::Cause cause);
 
 public:
-  // Elastic heap support
-  void entry_uncommit(double shrink_before, size_t shrink_until);
+  // These will uncommit empty regions if heap::committed > shrink_until
+  // and there exists at least one region which was made empty before shrink_before.
+  void maybe_uncommit(double shrink_before, size_t shrink_until);
   void op_uncommit(double shrink_before, size_t shrink_until);
+
+  // Returns true if the soft maximum heap has been changed using management APIs.
+  bool check_soft_max_changed();
 
 private:
   // GC support

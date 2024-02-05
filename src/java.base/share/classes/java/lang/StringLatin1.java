@@ -310,13 +310,9 @@ final class StringLatin1 {
         };
     }
 
+    // Caller must ensure that from- and toIndex are within bounds
     public static int indexOf(byte[] value, int ch, int fromIndex, int toIndex) {
         if (!canEncode(ch)) {
-            return -1;
-        }
-        fromIndex = Math.max(fromIndex, 0);
-        toIndex = Math.min(toIndex, value.length);
-        if (fromIndex >= toIndex) {
             return -1;
         }
         return indexOfChar(value, ch, fromIndex, toIndex);

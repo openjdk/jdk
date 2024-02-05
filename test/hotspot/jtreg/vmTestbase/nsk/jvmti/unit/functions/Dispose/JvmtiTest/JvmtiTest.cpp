@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,7 @@ jint Agent_Initialize(JavaVM * jvm, char *options, void *reserved) {
     JVMTI_ERROR_CHECK("GetAddCapabilities returned error", res);
 
 
-    res = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, NULL);
+    res = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, nullptr);
     JVMTI_ERROR_CHECK("SetEventNotificationMode for VM_INIT returned error", res);
 
     res = jvmti->GetSystemProperties(&count, &properties);

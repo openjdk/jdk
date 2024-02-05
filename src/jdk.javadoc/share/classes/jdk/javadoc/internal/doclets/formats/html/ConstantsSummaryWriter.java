@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,6 @@ import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
-import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
@@ -144,16 +143,18 @@ public class ConstantsSummaryWriter extends HtmlDocletWriter {
      * Builds the list of contents for the groups of packages appearing in the constants summary page.
      */
     protected void buildContents() {
-        Content contentList = getContentsHeader();
+        tableOfContents.addLink(HtmlIds.TOP_OF_PAGE, Text.of(resources.getText("doclet.Constants_Summary")))
+                .pushNestedList();
         packageGroupHeadings.clear();
         for (PackageElement pkg : configuration.packages) {
             String abbrevPackageName = getAbbrevPackageName(pkg);
             if (hasConstantField(pkg) && !packageGroupHeadings.contains(abbrevPackageName)) {
-                addLinkToPackageContent(abbrevPackageName, contentList);
+                addLinkToTableOfContents(abbrevPackageName);
                 packageGroupHeadings.add(abbrevPackageName);
             }
         }
-        addContentsList(contentList);
+        tableOfContents.popNestedList();
+        bodyContents.setSideContent(tableOfContents.toContent(true));
     }
 
     /**
@@ -322,42 +323,27 @@ public class ConstantsSummaryWriter extends HtmlDocletWriter {
     }
 
      Content getHeader() {
-        String label = resources.getText("doclet.Constants_Summary");
-        HtmlTree body = getBody(getWindowTitle(label));
-        bodyContents.setHeader(getHeader(PageMode.CONSTANT_VALUES));
-        return body;
+         String label = resources.getText("doclet.Constants_Summary");
+         HtmlTree body = getBody(getWindowTitle(label));
+         bodyContents.setHeader(getHeader(PageMode.CONSTANT_VALUES));
+         Content titleContent = contents.constantsSummaryTitle;
+         var pHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
+                 HtmlStyle.title, titleContent);
+         var div = HtmlTree.DIV(HtmlStyle.header, pHeading);
+         bodyContents.addMainContent(div);
+         return body;
     }
 
-     Content getContentsHeader() {
+    Content getContentsHeader() {
         return HtmlTree.UL(HtmlStyle.contentsList);
     }
 
-     void addLinkToPackageContent(String abbrevPackageName, Content content) {
-        //add link to summary
-        Content link;
+    void addLinkToTableOfContents(String abbrevPackageName) {
         if (abbrevPackageName.isEmpty()) {
-            link = links.createLink(HtmlIds.UNNAMED_PACKAGE_ANCHOR,
-                    contents.defaultPackageLabel, "");
+            tableOfContents.addLink(HtmlIds.UNNAMED_PACKAGE_ANCHOR, contents.defaultPackageLabel);
         } else {
-            Content packageNameContent = Text.of(abbrevPackageName + ".*");
-            link = links.createLink(DocLink.fragment(abbrevPackageName),
-                    packageNameContent, "");
+            tableOfContents.addLink(HtmlId.of(abbrevPackageName), Text.of(abbrevPackageName + ".*"));
         }
-        content.add(HtmlTree.LI(link));
-    }
-
-     void addContentsList(Content content) {
-        Content titleContent = contents.constantsSummaryTitle;
-        var pHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
-                HtmlStyle.title, titleContent);
-        var div = HtmlTree.DIV(HtmlStyle.header, pHeading);
-        bodyContents.addMainContent(div);
-        Content headingContent = contents.contentsHeading;
-        var heading = HtmlTree.HEADING_TITLE(Headings.CONTENT_HEADING,
-                headingContent);
-        var section = HtmlTree.SECTION(HtmlStyle.packages, heading);
-        section.add(content);
-        bodyContents.addMainContent(section);
     }
 
      void addPackageGroup(String abbrevPackageName, Content toContent) {

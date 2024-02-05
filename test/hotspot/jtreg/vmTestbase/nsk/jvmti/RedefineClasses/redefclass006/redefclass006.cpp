@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ extern "C" {
 #define STATUS_FAILED 2
 #define PASSED 0
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiCapabilities caps;
 
 #ifdef STATIC_BUILD
@@ -90,9 +90,9 @@ Java_nsk_jvmti_RedefineClasses_redefclass006_makeRedefinition(JNIEnv *env,
         jclass cls, jint t_case, jclass redefCls, jbyteArray classBytes) {
     jvmtiError err;
     jvmtiClassDefinition classDef;
-    jvmtiClassDefinition* classDefPtr = NULL;
+    jvmtiClassDefinition* classDefPtr = nullptr;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("JVMTI client was not properly loaded!\n");
         return STATUS_FAILED;
     }
@@ -102,25 +102,25 @@ Java_nsk_jvmti_RedefineClasses_redefclass006_makeRedefinition(JNIEnv *env,
     }
 
     switch (t_case) {
-/* NULL pointer to the jvmtiClassDefinition */
+/* nullptr pointer to the jvmtiClassDefinition */
         case 0:
             break;
-/* NULL pointer to the jvmtiClassDefinition in debug mode */
+/* nullptr pointer to the jvmtiClassDefinition in debug mode */
         case 1:
-            printf("Invoke RedefineClasses() with NULL pointer to the structure jvmtiClassDefinition\n");
+            printf("Invoke RedefineClasses() with null pointer to the structure jvmtiClassDefinition\n");
             fflush(stdout);
             break;
-/* NULL pointer to the jvmtiClassDefinition->class_bytes in debug mode */
+/* nullptr pointer to the jvmtiClassDefinition->class_bytes in debug mode */
         case 3:
-            printf("Invoke RedefineClasses() with NULL pointer to the field jvmtiClassDefinition->class_bytes\n");
+            printf("Invoke RedefineClasses() with null pointer to the field jvmtiClassDefinition->class_bytes\n");
             fflush(stdout);
             // fallthrough
-/* NULL pointer to the jvmtiClassDefinition->class_bytes */
+/* nullptr pointer to the jvmtiClassDefinition->class_bytes */
         case 2:
             /* partly fill the structure jvmtiClassDefinition */
             classDef.klass = redefCls;
             classDef.class_byte_count = env->GetArrayLength(classBytes);
-            classDef.class_bytes = NULL;
+            classDef.class_bytes = nullptr;
             classDefPtr = &classDef;
             break;
     }

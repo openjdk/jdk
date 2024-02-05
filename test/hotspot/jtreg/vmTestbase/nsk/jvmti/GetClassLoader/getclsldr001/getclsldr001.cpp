@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ extern "C" {
 #define PASSED 0
 #define STATUS_FAILED 2
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
 
@@ -51,12 +51,12 @@ JNIEXPORT jint JNI_OnLoad_getclsldr001(JavaVM *jvm, char *options, void *reserve
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jint res;
 
-    if (options != NULL && strcmp(options, "printdump") == 0) {
+    if (options != nullptr && strcmp(options, "printdump") == 0) {
         printdump = JNI_TRUE;
     }
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
     }
@@ -69,7 +69,7 @@ Java_nsk_jvmti_GetClassLoader_getclsldr001_check(JNIEnv *env, jclass cls) {
     jvmtiError err;
     jobject classloader;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("JVMTI client was not properly loaded!\n");
         return STATUS_FAILED;
     }
@@ -77,7 +77,7 @@ Java_nsk_jvmti_GetClassLoader_getclsldr001_check(JNIEnv *env, jclass cls) {
     if (printdump == JNI_TRUE) {
         printf(">>> invalid class check ...\n");
     }
-    err = jvmti->GetClassLoader(NULL, &classloader);
+    err = jvmti->GetClassLoader(nullptr, &classloader);
     if (err != JVMTI_ERROR_INVALID_CLASS) {
         printf("Error expected: JVMTI_ERROR_INVALID_CLASS,\n");
         printf("\tactual: %s (%d)\n", TranslateError(err), err);
@@ -87,7 +87,7 @@ Java_nsk_jvmti_GetClassLoader_getclsldr001_check(JNIEnv *env, jclass cls) {
     if (printdump == JNI_TRUE) {
         printf(">>> null pointer check ...\n");
     }
-    err = jvmti->GetClassLoader(cls, NULL);
+    err = jvmti->GetClassLoader(cls, nullptr);
     if (err != JVMTI_ERROR_NULL_POINTER) {
         printf("Error expected: JVMTI_ERROR_NULL_POINTER,\n");
         printf("\tactual: %s (%d)\n", TranslateError(err), err);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -301,7 +301,7 @@ callbackVMDeath(jvmtiEnv* jvmti, JNIEnv* jni) {
     success = checkCapabilities(jvmti, &initCaps, "VM_DEATH callback");
 
     NSK_DISPLAY1("Disable events: %d events\n", EVENTS_COUNT);
-    if (!nsk_jvmti_enableEvents(JVMTI_DISABLE, EVENTS_COUNT, events, NULL)) {
+    if (!nsk_jvmti_enableEvents(JVMTI_DISABLE, EVENTS_COUNT, events, nullptr)) {
         success = false;
     } else {
         NSK_DISPLAY0("  ... disabled\n");
@@ -328,7 +328,7 @@ JNIEXPORT jint JNI_OnLoad_relcaps002(JavaVM *jvm, char *options, void *reserved)
 }
 #endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
-    jvmtiEnv* jvmti = NULL;
+    jvmtiEnv* jvmti = nullptr;
 
     if (!NSK_VERIFY(nsk_jvmti_parseOptions(options)))
         return JNI_ERR;
@@ -336,7 +336,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     timeout = nsk_jvmti_getWaitTime() * 60 * 1000;
 
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     {
@@ -351,7 +351,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     }
 
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     memset(&initCaps, 0, sizeof(jvmtiCapabilities));
@@ -364,7 +364,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     }
 
     NSK_DISPLAY1("Enable events: %d events\n", EVENTS_COUNT);
-    if (nsk_jvmti_enableEvents(JVMTI_ENABLE, EVENTS_COUNT, events, NULL)) {
+    if (nsk_jvmti_enableEvents(JVMTI_ENABLE, EVENTS_COUNT, events, nullptr)) {
         NSK_DISPLAY0("  ... enabled\n");
     }
 
