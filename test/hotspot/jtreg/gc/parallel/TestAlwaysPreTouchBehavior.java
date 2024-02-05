@@ -28,7 +28,8 @@ package gc.parallel;
  * @summary Tests AlwaysPreTouch Bahavior, pages of java heap should be pretouched with AlwaysPreTouch enabled. This test reads RSS of test process, which should be bigger than heap size(1g) with AlwaysPreTouch enabled.
  * @requires vm.gc.Parallel
  * @requires vm.debug != true
- * @requires os.family == "linux" & os.maxMemory > 2G
+ * @requires os.family == "linux"
+ * @requires os.maxMemory > 2G
  * @library /test/lib
  * @run main/othervm -Xmx1g -Xms1g -XX:+UseParallelGC -XX:+AlwaysPreTouch gc.parallel.TestAlwaysPreTouchBehavior
  */
