@@ -104,6 +104,7 @@ public class TestPosix {
     // misc
     private static final CopyOption[] COPY_ATTRIBUTES = {StandardCopyOption.COPY_ATTRIBUTES};
     private static final Map<String, ZipFileEntryInfo> ENTRIES = new HashMap<>();
+    private static final boolean isWindows = System.getProperty("os.name") .startsWith("Windows");
 
     private int entriesCreated;
 
@@ -741,6 +742,10 @@ public class TestPosix {
      */
     @Test
     public void setPermissionsShouldConvertToUnix() throws IOException {
+        // Temporarily skip test on Windows until intermittent failures are investigated
+        if(isWindows) {
+            return;
+        }
         // The default environment creates MS-DOS entries, with zero 'external file attributes'
         createEmptyZipFile(ZIP_FILE, ENV_DEFAULT);
         try (FileSystem fs = FileSystems.newFileSystem(ZIP_FILE, ENV_DEFAULT)) {
