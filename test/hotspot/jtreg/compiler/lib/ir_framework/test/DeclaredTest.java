@@ -60,13 +60,6 @@ public class DeclaredTest {
         return warmupIterations;
     }
 
-    /**
-     * The ArgumentsProvider is default, if there is no @Arguments annotation.
-     */
-    public boolean hasDefaultArgumentsProvider() {
-        return argumentsProvider.isDefault();
-    }
-
     public Object[] getArguments(Object invocationTarget, int invocationCounter) {
         return argumentsProvider.getArguments(invocationTarget, invocationCounter);
     }

@@ -35,17 +35,10 @@ import java.util.HashMap;
 import java.util.Arrays;
 
 /**
- * This class provides arguments (and can set fields) for a test method. Different implementations are chosen
+ * This interface provides arguments (and can set fields) for a test method. Different implementations are chosen
  * based on the @Arguments annotation for the @Test method.
  */
-abstract class ArgumentsProvider {
-    /**
-     * The ArgumentsProvider is default, if there is no @Arguments annotation.
-     */
-    public boolean isDefault() {
-        return this instanceof DefaultArgumentsProvider;
-    }
-
+interface ArgumentsProvider {
     /**
      * Compute arguments (and possibly set fields) for a test method.
      *
@@ -57,12 +50,15 @@ abstract class ArgumentsProvider {
      */
     public abstract Object[] getArguments(Object invocationTarget, int invocationCounter);
 
-    /**
-     * For a test method, determine what ArgumentsProvider is to be constructed, given its @Arguments annotation,
-     * and the available setup methods.
-     */
-    public static ArgumentsProvider getArgumentsProvider(Method method,
-                                                         HashMap<String, Method> setupMethodMap) {
+}
+
+/**
+ * For a test method, determine what ArgumentsProvider is to be constructed, given its @Arguments annotation,
+ * and the available setup methods.
+ */
+class ArgumentsProviderBuilder {
+   public static ArgumentsProvider build(Method method,
+                                          HashMap<String, Method> setupMethodMap) {
         Arguments argumentsAnnotation = method.getAnnotation(Arguments.class);
         if (argumentsAnnotation == null) {
             return new DefaultArgumentsProvider();
@@ -91,7 +87,7 @@ abstract class ArgumentsProvider {
 /**
  * Default: when no @Arguments annotation is provided (including for custom run tests).
  */
-final class DefaultArgumentsProvider extends ArgumentsProvider {
+final class DefaultArgumentsProvider implements ArgumentsProvider {
     @Override
     public Object[] getArguments(Object invocationTarget, int invocationCounter) {
         return new Object[]{};
@@ -101,7 +97,7 @@ final class DefaultArgumentsProvider extends ArgumentsProvider {
 /**
  * Used for @Arguments(values = {...}) to specify individual arguments directly.
  */
-final class ValueArgumentsProvider extends ArgumentsProvider {
+final class ValueArgumentsProvider implements ArgumentsProvider {
     ArgumentValue[] argumentValues;
 
     ValueArgumentsProvider(ArgumentValue[] argumentValues) {
@@ -118,7 +114,7 @@ final class ValueArgumentsProvider extends ArgumentsProvider {
  * Used for @Arguments(setup = {"setupMethodName"}) to specify a setup method to provide arguments
  * and possibly set fields.
  */
-final class SetupArgumentsProvider extends ArgumentsProvider {
+final class SetupArgumentsProvider implements ArgumentsProvider {
     Method setupMethod;
 
     SetupArgumentsProvider(Method setupMethod) {

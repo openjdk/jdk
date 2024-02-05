@@ -569,7 +569,7 @@ public class TestVM {
         if (EXCLUDE_RANDOM) {
             compLevel = compLevel.excludeCompilationRandomly(m);
         }
-        ArgumentsProvider argumentsProvider = ArgumentsProvider.getArgumentsProvider(m, setupMethodMap);
+        ArgumentsProvider argumentsProvider = ArgumentsProviderBuilder.build(m, setupMethodMap);
         DeclaredTest test = new DeclaredTest(m, argumentsProvider, compLevel, warmupIterations);
         declaredTests.put(m, test);
         testMethodMap.put(m.getName(), m);
@@ -759,7 +759,7 @@ public class TestVM {
         TestFormat.check(attachedMethod == null,
                          "Cannot use @Test " + testMethod + " for more than one @Run/@Check method. Found: "
                          + m + ", " + attachedMethod);
-        TestFormat.check(test.hasDefaultArgumentsProvider(),
+        TestFormat.check(!setupMethodMap.containsKey(testMethod.getName()),
                          "Cannot use @Arguments at test method " + testMethod + " in combination with @Run method " + m);
         Warmup warmupAnno = getAnnotation(testMethod, Warmup.class);
         TestFormat.checkNoThrow(warmupAnno == null,
