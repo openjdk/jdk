@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -204,23 +204,6 @@ void VM_Version::initialize() {
     // A73 is faster with short-and-easy-for-speculative-execution-loop
     if (FLAG_IS_DEFAULT(UseSimpleArrayEquals)) {
       FLAG_SET_DEFAULT(UseSimpleArrayEquals, true);
-    }
-  }
-
-  // Apple silicon
-  //   M1:     0x1b588bb3
-  //   M2:     0xda33d83d
-  //   M3:     0xfa33415e
-  //   M3 Pro: 0x5f4dea93
-  //   M3 Max: 0x72015832
-  if (_cpu == CPU_APPLE) {
-    if (model_is(0x1b588bb3) || model_is(0xda33d83d) || model_is(0xfa33415e) ||
-        model_is(0x5f4dea93) || model_is(0x72015832)) {
-      if (FLAG_IS_DEFAULT(OnSpinWaitInst)) {
-        FLAG_SET_DEFAULT(OnSpinWaitInst, "isb");
-      }
-    } else {
-      assert(0, "Unrecognized Apple CPU family: %#x", cpu_model());
     }
   }
 
