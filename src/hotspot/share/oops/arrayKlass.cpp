@@ -145,7 +145,7 @@ void ArrayKlass::create_array_mirror_and_link(ArrayKlass* k, TRAPS) {
   }
 
   ModuleEntry* module_entry = k->module();
-  if (module_entry != nullptr) {
+  if (module_entry == nullptr) {
     module_entry = ModuleEntryTable::javabase_moduleEntry();
   }
 
