@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 /*
  *@test
- *@bug 4858517 6300580 8008577
+ *@bug 4858517 6300580 8008577 8174269
  *@summary Test case for tzdata2003a support for 9 locales
- *@run main/othervm -Djava.locale.providers=JRE,SPI Bug4858517
+ *@run main Bug4858517
  */
 
 import java.util.Locale;
@@ -37,11 +37,11 @@ public class Bug4858517 {
         Locale.ENGLISH,
         Locale.GERMAN,
         Locale.of("es"),
-        Locale.FRENCH,
+//        Locale.FRENCH,   "fr" returns "UTC\u221203:00" with CLDR
         Locale.ITALIAN,
         Locale.JAPANESE,
         Locale.KOREAN,
-        Locale.of("sv"),
+//        Locale.of("sv"), "sv" returns "GMT\u221203:00" with CLDR
         Locale.SIMPLIFIED_CHINESE,
         Locale.TRADITIONAL_CHINESE
     };
@@ -54,20 +54,19 @@ public class Bug4858517 {
 
             tzLocale = locales2Test[i];
             TimeZone Rothera = TimeZone.getTimeZone("Antarctica/Rothera");
+            if (!Rothera.getDisplayName(false, TimeZone.SHORT, tzLocale).equals ("GMT-03:00"))
+                throw new RuntimeException("\n" + tzLocale + ": short name, non-daylight time for Rothera should be \"GMT-03:00\"");
 
-            if (!Rothera.getDisplayName(false, TimeZone.SHORT, tzLocale).equals ("ROTT"))
-                throw new RuntimeException("\n" + tzLocale + ": short name, non-daylight time for Rothera should be \"ROTT\"");
-
-            if (!Rothera.getDisplayName(true, TimeZone.SHORT, tzLocale).equals ("ROTST"))
-                throw new RuntimeException("\n" + tzLocale + ": short name, daylight time for Rothera should be \"ROTST\"");
+            if (!Rothera.getDisplayName(true, TimeZone.SHORT, tzLocale).equals ("GMT-03:00"))
+                throw new RuntimeException("\n" + tzLocale + ": short name, daylight time for Rothera should be \"GMT-03:00\"");
 
             TimeZone IRT = TimeZone.getTimeZone("Iran");
 
-            if (!IRT.getDisplayName(false, TimeZone.SHORT, tzLocale).equals ("IRST"))
-                throw new RuntimeException("\n" + tzLocale + ": short name, non-daylight time for IRT should be \"IRST\"");
+            if (!IRT.getDisplayName(false, TimeZone.SHORT, tzLocale).equals ("GMT+03:30"))
+                throw new RuntimeException("\n" + tzLocale + ": short name, non-daylight time for IRT should be \"GMT+03:30\"");
 
-            if (!IRT.getDisplayName(true, TimeZone.SHORT, tzLocale).equals ("IRDT"))
-             throw new RuntimeException("\n" + tzLocale + ": short name, daylight time for IRT should be \"IRDT\"");
+            if (!IRT.getDisplayName(true, TimeZone.SHORT, tzLocale).equals ("GMT+04:30"))
+                throw new RuntimeException("\n" + tzLocale + ": short name, daylight time for IRT should be \"GMT+04:30\"");
         }
 
    }

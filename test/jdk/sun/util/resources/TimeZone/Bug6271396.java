@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
 
 /*
  * @test
- * @bug 6271396 8008577
+ * @bug 6271396 8008577 8174269
  * @modules jdk.localedata
  * @summary Test case for verifying typo of timezone display name Australia/Lord_Howe
- * @run main/othervm -Djava.locale.providers=JRE,SPI Bug6271396
+ * @run main Bug6271396
  */
 
 import java.util.Locale;
@@ -40,13 +40,13 @@ public class Bug6271396 {
         Locale tzLocale = Locale.FRENCH;
 
         if (!Lord_Howe.getDisplayName(false, TimeZone.LONG, tzLocale).equals
-           ("Heure standard de Lord Howe"))
+           ("heure normale de Lord Howe"))
              throw new RuntimeException("\n" + tzLocale + ": LONG, " +
                                         "non-daylight saving name for " +
                                         "Australia/Lord_Howe should be " +
                                         "\"Heure standard de Lord Howe\"");
         if (!Lord_Howe.getDisplayName(true, TimeZone.LONG, tzLocale).equals
-           ("Heure d'\u00e9t\u00e9 de Lord Howe"))
+           ("heure d\u2019\u00e9t\u00e9 de Lord Howe"))
              throw new RuntimeException("\n" + tzLocale + ": LONG, " +
                                         "daylight saving name for " +
                                         "Australia/Lord_Howe should be " +
