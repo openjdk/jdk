@@ -76,7 +76,7 @@ abstract class ArgumentsProvider {
                              "@Arguments: \"setup\" should specify exactly one @Setup method " +
                              " but got " + setup.length + " in " + method);
             TestFormat.check(values.length == 0,
-                             "@Arguments: Can only specify \"setup\" or \"values" but not both in " + method);
+                             "@Arguments: Can only specify \"setup\" or \"values\" but not both in " + method);
             String setupMethodName = setup[0];
             TestFormat.check(setupMethodMap.containsKey(setupMethodName),
                              "@Arguments setup: did not find " + setupMethodName +

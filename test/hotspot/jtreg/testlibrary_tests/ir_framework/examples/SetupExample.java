@@ -90,10 +90,10 @@ public class SetupExample {
     // Test with non-static setup, test and check method.
     @Setup
     Object[] setupTestSetupArgumentsAndFields(SetupInfo info) {
-        iFld  = info.getInvocationCounter();
-        iFld2 = info.getInvocationCounter() + 1;
-        iFld3 = info.getInvocationCounter() + 2;
-        return new Object[]{info.getInvocationCounter()}; // passed as arguments to test method
+        iFld  = info.invocationCounter();
+        iFld2 = info.invocationCounter() + 1;
+        iFld3 = info.invocationCounter() + 2;
+        return new Object[]{info.invocationCounter()}; // passed as arguments to test method
     }
 
     @Test

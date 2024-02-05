@@ -28,18 +28,14 @@ package compiler.lib.ir_framework;
  *
  * @see Setup
  */
-public class SetupInfo {
-    private final int invocationCounter;
-
-    public SetupInfo(int invocationCounter) {
-        this.invocationCounter = invocationCounter;
-    }
+public record SetupInfo(int invocationCounter) {
 
     /**
      * Get the invocation counter, which increments with every invocation of the setup method. It allows the creation
      * of deterministically different inputs to the test method for every invocation.
      */
-    public int getInvocationCounter() {
+    @Override
+    public int invocationCounter() {
         return invocationCounter;
     }
 }
