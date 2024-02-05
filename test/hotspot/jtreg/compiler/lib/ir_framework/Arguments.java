@@ -27,9 +27,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- * This annotation is used for test methods (see {@link Test}), to specify what values should be passed as arguments.
- * One can either specify the individual arguments with values (see {@link Argument}). Alternatively, one can specify
- * a setup method (see {@link Setup}), which can compute arbitrary arguments, and can even be used to set fields.
+ * This annotation is used for test methods (see {@link Test}) to specify what values should be passed as arguments.
+ * One can either specify the individual arguments with values (see {@link Argument}), or use
+ * a setup method (see {@link Setup}) to define more complex arguments and/or even set fields values.
  * This annotation can only be applied to a <b>base test</b> or <b>checked test</b>.
  *
  * @see Argument

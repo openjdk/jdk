@@ -73,10 +73,10 @@ abstract class ArgumentsProvider {
 
         if (setup.length > 0) {
             TestFormat.check(setup.length == 1,
-                             "@Arguments: setup should specify exactly one setup method " +
+                             "@Arguments: \"setup\" should specify exactly one @Setup method " +
                              " but got " + setup.length + " in " + method);
             TestFormat.check(values.length == 0,
-                             "@Arguments: specify only one of setup and values in " + method);
+                             "@Arguments: Can only specify \"setup\" or \"values" but not both in " + method);
             String setupMethodName = setup[0];
             TestFormat.check(setupMethodMap.containsKey(setupMethodName),
                              "@Arguments setup: did not find " + setupMethodName +
@@ -85,8 +85,7 @@ abstract class ArgumentsProvider {
             return new SetupArgumentsProvider(setupMethod);
         } else {
             TestFormat.check(values.length > 0,
-                             "@Arguments: empty annotation not allowed, need to have at least one values " +
-                             "argument, or specify a setup method. In method " + method);
+                             "@Arguments: Empty annotation not allowed. Either specify \"values\" or \"setup\" in " + method);
             ArgumentValue[] argumentValues = ArgumentValue.getArgumentValues(method, values);
             return new ValueArgumentsProvider(argumentValues);
         }
