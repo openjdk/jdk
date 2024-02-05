@@ -2042,7 +2042,7 @@ class EARelockingNestedInflated_03Target extends EATestCaseBaseTarget {
         if (!warmupDone) {
             return;
         }
-        synchronized(testCase) {
+        synchronized (testCase) {
             doLockNow = true;
             testCase.notify();
             // wait for other thread to reset doLockNow again
