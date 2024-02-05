@@ -27,6 +27,7 @@ package jdk.internal.util.random;
 
 import java.lang.annotation.*;
 import java.math.BigInteger;
+import java.util.Math;
 import java.util.Objects;
 import java.util.Random;
 import java.util.function.Consumer;
@@ -1217,8 +1218,9 @@ public class RandomSupport {
         if (maxValue >= MAX_EXPONENTIAL) {
             maxExtraMinus1 = Long.MAX_VALUE;
         } else {
-            // Conversion to long rounds toward zero
-            maxExtraMinus1 = (long) (maxValue / DoubleZigguratTables.exponentialX0);
+            // Math.round rounds toward infinity in conversion to long; Math.nextUp corrects for any
+            // downward rounding error in the division
+            maxExtraMinus1 = Math.round(Math.nextUp(maxValue / DoubleZigguratTables.exponentialX0));
         }
         for (long extra = 0; ; ) {
             // Use Walker's alias method to sample an (unsigned) integer j from a discrete
