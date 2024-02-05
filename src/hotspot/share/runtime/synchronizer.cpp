@@ -1405,7 +1405,7 @@ ObjectMonitor* ObjectSynchronizer::inflate_impl(JavaThread* inflating_thread, oo
       monitor->set_header(mark.set_unlocked());
       bool own = inflating_thread != nullptr && inflating_thread->lock_stack().contains(object);
       if (own) {
-        // Owned by us.
+        // Owned by inflating_thread.
         monitor->set_owner_from(nullptr, inflating_thread);
       } else {
         // Owned by somebody else.
