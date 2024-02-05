@@ -673,12 +673,15 @@ void DefNewGeneration::object_iterate(ObjectClosure* blk) {
   from()->object_iterate(blk);
 }
 
-
-void DefNewGeneration::space_iterate(SpaceClosure* blk,
-                                     bool usedOnly) {
-  blk->do_space(eden());
-  blk->do_space(from());
-  blk->do_space(to());
+HeapWord* DefNewGeneration::block_start(const void* p) const {
+  if (eden()->is_in_reserved(p)) {
+    return eden()->block_start_const(p);
+  }
+  if (from()->is_in_reserved(p)) {
+    return from()->block_start_const(p);
+  }
+  assert(to()->is_in_reserved(p), "inv");
+  return to()->block_start_const(p);
 }
 
 // The last collection bailed out, we are running out of heap space,
