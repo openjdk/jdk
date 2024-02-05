@@ -131,6 +131,38 @@ private:
   const char* check_preconditions_helper();
 };
 
+// Optimization to keep allocation of large arrays in AutoVectorization low.
+// We allocate the arrays once, and reuse them for multiple loops that we
+// AutoVectorize, clearing them before every new use.
+class VSharedData : public StackObj {
+private:
+  // Arena, used to allocate all arrays from.
+  Arena _arena;
+
+  // An array that maps node->_idx to a much smaller idx, which is at most the
+  // size of a loop body. This allow us to have smaller arrays for other data
+  // structures, since we are using smaller indices.
+  GrowableArray<int> _node_idx_to_loop_body_idx;
+
+public:
+  VSharedData() :
+    _arena(mtCompiler),
+    _node_idx_to_loop_body_idx(&_arena, estimated_node_count(), 0, 0)
+  {
+  }
+
+  GrowableArray<int>& node_idx_to_loop_body_idx() {
+    // Since this is a shared resource, we clear before every individual use.
+    _node_idx_to_loop_body_idx.clear();
+    return _node_idx_to_loop_body_idx;
+  }
+
+private:
+  static int estimated_node_count() {
+    return (int)(1.10 * Compile::current()->unique());
+  }
+};
+
 // A vectorization pointer (VPointer) has information about an address for
 // dependence checking and vector alignment. It's usually bound to a memory
 // operation in a counted loop for vectorizable analysis.

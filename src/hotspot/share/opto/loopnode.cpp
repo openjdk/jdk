@@ -45,6 +45,7 @@
 #include "opto/predicates.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
+#include "opto/vectorization.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -4866,10 +4867,12 @@ void PhaseIdealLoop::build_and_optimize() {
   if (C->do_superword() && C->has_loops() && !C->major_progress()) {
     Compile::TracePhase tp("autoVectorize", &timers[_t_autoVectorize]);
 
-    ResourceArea autovectorization_arena;
+    // Shared data structures for all AutoVectorizations, to reduce allocations
+    // of large arrays.
+    VSharedData vshared;
     for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
       IdealLoopTree* lpt = iter.current();
-      AutoVectorizeStatus status = autovectorize(lpt, &autovectorization_arena);
+      AutoVectorizeStatus status = auto_vectorize(lpt, vshared);
 
       if (status == AutoVectorizeStatus::TriedAndFailed) {
         // We tried vectorization, but failed. From now on only unroll the loop.

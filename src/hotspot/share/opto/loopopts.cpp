@@ -4212,7 +4212,7 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
 
 // AutoVectorize the loop: replace scalar ops with vector ops.
 PhaseIdealLoop::AutoVectorizeStatus
-PhaseIdealLoop::autovectorize(IdealLoopTree* lpt, ResourceArea* arena) {
+PhaseIdealLoop::auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared) {
   // Counted loop only
   if (!lpt->is_counted()) {
     return AutoVectorizeStatus::Impossible;
@@ -4229,9 +4229,7 @@ PhaseIdealLoop::autovectorize(IdealLoopTree* lpt, ResourceArea* arena) {
     return AutoVectorizeStatus::TriedAndFailed;
   }
 
-  // Ensure that all data structures from autovectorization are deallocated later.
-  ResourceMark rm(arena);
-  SuperWord sw(arena, vloop);
+  SuperWord sw(vloop, vshared);
   if (!sw.transform_loop()) {
     return AutoVectorizeStatus::TriedAndFailed;
   }

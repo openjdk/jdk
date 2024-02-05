@@ -38,21 +38,21 @@
 #include "opto/movenode.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-SuperWord::SuperWord(Arena* arena, const VLoop &vloop) :
+SuperWord::SuperWord(const VLoop &vloop, VSharedData &vshared) :
   _vloop(vloop),
-  _arena(arena),
-  _packset(arena, 8,  0, nullptr),                          // packs for the current block
-  _bb_idx(arena, vloop.estimated_node_count(), 0, 0),       // node idx to index in bb
-  _block(arena, vloop.estimated_body_length(), 0, nullptr), // nodes in current block
-  _data_entry(arena, 8,  0, nullptr),                       // nodes with all inputs from outside
-  _mem_slice_head(arena, 8,  0, nullptr),                   // memory slice heads
-  _mem_slice_tail(arena, 8,  0, nullptr),                   // memory slice tails
-  _node_info(arena, vloop.estimated_body_length(), 0, SWNodeInfo::initial), // info needed per node
+  _arena(mtCompiler),
+  _packset(arena(), 8,  0, nullptr),                        // packs for the current block
+  _bb_idx(vshared.node_idx_to_loop_body_idx()),             // node idx to index in bb
+  _block(arena(), vloop.estimated_body_length(), 0, nullptr), // nodes in current block
+  _data_entry(arena(), 8,  0, nullptr),                     // nodes with all inputs from outside
+  _mem_slice_head(arena(), 8,  0, nullptr),                 // memory slice heads
+  _mem_slice_tail(arena(), 8,  0, nullptr),                 // memory slice tails
+  _node_info(arena(), vloop.estimated_body_length(), 0, SWNodeInfo::initial), // info needed per node
   _clone_map(phase()->C->clone_map()),                      // map of nodes created in cloning
   _align_to_ref(nullptr),                                   // memory reference to align vectors to
-  _dg(arena),                                               // dependence graph
-  _nlist(arena, vloop.estimated_body_length(), 0, nullptr), // scratch list of nodes
-  _loop_reductions(arena),                                  // reduction nodes in the current loop
+  _dg(arena()),                                             // dependence graph
+  _nlist(arena(), vloop.estimated_body_length(), 0, nullptr), // scratch list of nodes
+  _loop_reductions(arena()),                                // reduction nodes in the current loop
   _race_possible(false),                                    // cases where SDMU is true
   _do_vector_loop(phase()->C->do_vector_loop()),            // whether to do vectorization/simd style
   _num_work_vecs(0),                                        // amount of vector work we have

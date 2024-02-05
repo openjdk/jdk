@@ -200,13 +200,16 @@ class SWNodeInfo {
 class SuperWord : public ResourceObj {
  private:
   const VLoop& _vloop;
-  Arena* _arena;
+
+  // Arena for small data structures. Large data structures are allocated in
+  // VSharedData, and reused over many AutoVectorizations.
+  Arena _arena;
 
   enum consts { top_align = -1, bottom_align = -666 };
 
   GrowableArray<Node_List*> _packset;    // Packs for the current block
 
-  GrowableArray<int> _bb_idx;            // Map from Node _idx to index within block
+  GrowableArray<int> &_bb_idx;           // Map from Node _idx to index within block
 
   GrowableArray<Node*> _block;           // Nodes in current block
   GrowableArray<Node*> _data_entry;      // Nodes with all inputs from outside
@@ -222,7 +225,7 @@ class SuperWord : public ResourceObj {
   GrowableArray<Node*> _nlist; // List of nodes
 
  public:
-  SuperWord(Arena* arena, const VLoop &vloop);
+  SuperWord(const VLoop &vloop, VSharedData &vshared);
 
   // Attempt to run the SuperWord algorithm on the loop. Return true if we succeed.
   bool transform_loop();
@@ -320,7 +323,7 @@ class SuperWord : public ResourceObj {
   int            _num_reductions;  // Number of reduction expressions applied
 
   // Accessors
-  Arena* arena()                   { return _arena; }
+  Arena* arena()                   { return &_arena; }
 
   int vector_width(const Node* n) const {
     BasicType bt = velt_basic_type(n);

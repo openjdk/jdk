@@ -43,6 +43,7 @@ class PredicateBlock;
 class PathFrequency;
 class PhaseIdealLoop;
 class VectorSet;
+class VSharedData;
 class Invariance;
 struct small_cache;
 
@@ -1437,7 +1438,7 @@ public:
     Success,         // We just successfully vectorized the loop.
     TriedAndFailed,  // We tried to vectorize, but failed.
   };
-  AutoVectorizeStatus autovectorize(IdealLoopTree* lpt, ResourceArea* arena);
+  AutoVectorizeStatus auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared);
 
   // Move UnorderedReduction out of loop if possible
   void move_unordered_reduction_out_of_loop(IdealLoopTree* loop);
