@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -494,10 +494,6 @@ void Arguments::init_version_specific_system_properties() {
 static SpecialFlag const special_jvm_flags[] = {
   // -------------- Deprecated Flags --------------
   // --- Non-alias flags - sorted by obsolete_in then expired_in:
-  { "MaxGCMinorPauseMillis",        JDK_Version::jdk(8), JDK_Version::undefined(), JDK_Version::undefined() },
-  { "MaxRAMFraction",               JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
-  { "MinRAMFraction",               JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
-  { "InitialRAMFraction",           JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "AllowRedefinitionToAddDeleteMethods", JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
   { "FlightRecorder",               JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
   { "DumpSharedSpaces",             JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
@@ -507,7 +503,6 @@ static SpecialFlag const special_jvm_flags[] = {
   { "RegisterFinalizersAtInit",     JDK_Version::jdk(22), JDK_Version::jdk(23), JDK_Version::jdk(24) },
 
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
-  { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "CreateMinidumpOnCrash",        JDK_Version::jdk(9),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "TLABStats",                    JDK_Version::jdk(12), JDK_Version::undefined(), JDK_Version::undefined() },
 
@@ -526,6 +521,11 @@ static SpecialFlag const special_jvm_flags[] = {
   { "MetaspaceReclaimPolicy",       JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
 
   { "AdaptiveSizePolicyCollectionCostMargin",   JDK_Version::undefined(), JDK_Version::jdk(23), JDK_Version::jdk(24) },
+  { "MaxGCMinorPauseMillis",        JDK_Version::jdk(8), JDK_Version::jdk(23), JDK_Version::jdk(24) },
+  { "MaxRAMFraction",               JDK_Version::jdk(10),  JDK_Version::jdk(23), JDK_Version::jdk(24) },
+  { "MinRAMFraction",               JDK_Version::jdk(10),  JDK_Version::jdk(23), JDK_Version::jdk(24) },
+  { "InitialRAMFraction",           JDK_Version::jdk(10),  JDK_Version::jdk(23), JDK_Version::jdk(24) },
+  { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::jdk(23), JDK_Version::jdk(24) },
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
 #endif
@@ -551,7 +551,6 @@ typedef struct {
 } AliasedFlag;
 
 static AliasedFlag const aliased_jvm_flags[] = {
-  { "DefaultMaxRAMFraction",    "MaxRAMFraction"    },
   { "CreateMinidumpOnCrash",    "CreateCoredumpOnCrash" },
   { nullptr, nullptr}
 };
@@ -1479,11 +1478,8 @@ void Arguments::set_heap_size() {
   // available os physical memory, not our MaxRAM limit,
   // unless MaxRAM is also specified.
   bool override_coop_limit = (!FLAG_IS_DEFAULT(MaxRAMPercentage) ||
-                           !FLAG_IS_DEFAULT(MaxRAMFraction) ||
                            !FLAG_IS_DEFAULT(MinRAMPercentage) ||
-                           !FLAG_IS_DEFAULT(MinRAMFraction) ||
                            !FLAG_IS_DEFAULT(InitialRAMPercentage) ||
-                           !FLAG_IS_DEFAULT(InitialRAMFraction) ||
                            !FLAG_IS_DEFAULT(MaxRAM));
   if (override_coop_limit) {
     if (FLAG_IS_DEFAULT(MaxRAM)) {
@@ -1496,20 +1492,6 @@ void Arguments::set_heap_size() {
     phys_mem = FLAG_IS_DEFAULT(MaxRAM) ? MIN2(os::physical_memory(), (julong)MaxRAM)
                                        : (julong)MaxRAM;
   }
-
-
-  // Convert deprecated flags
-  if (FLAG_IS_DEFAULT(MaxRAMPercentage) &&
-      !FLAG_IS_DEFAULT(MaxRAMFraction))
-    MaxRAMPercentage = 100.0 / (double)MaxRAMFraction;
-
-  if (FLAG_IS_DEFAULT(MinRAMPercentage) &&
-      !FLAG_IS_DEFAULT(MinRAMFraction))
-    MinRAMPercentage = 100.0 / (double)MinRAMFraction;
-
-  if (FLAG_IS_DEFAULT(InitialRAMPercentage) &&
-      !FLAG_IS_DEFAULT(InitialRAMFraction))
-    InitialRAMPercentage = 100.0 / (double)InitialRAMFraction;
 
   // If the maximum heap size has not been set with -Xmx,
   // then set it as fraction of the size of physical memory,

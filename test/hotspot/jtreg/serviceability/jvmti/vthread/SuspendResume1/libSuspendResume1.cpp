@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,8 @@ extern "C" {
 static const char* CTHREAD_NAME_START = "ForkJoinPool";
 static const int CTHREAD_NAME_START_LEN = (int)strlen("ForkJoinPool");
 
-static jvmtiEnv *jvmti = NULL;
-static jrawMonitorID agent_event_lock = NULL;
+static jvmtiEnv *jvmti = nullptr;
+static jrawMonitorID agent_event_lock = nullptr;
 static jthread tested_vthreads[VTHREAD_CNT];
 static int vthread_no = 0;
 
@@ -48,7 +48,7 @@ test_get_stack_trace(JNIEnv *jni, jthread thread) {
 
 static void
 test_get_thread_list_stack_traces(JNIEnv *jni, bool is_virt, jint thread_cnt, jthread* thread_list) {
-  jvmtiStackInfo* stack_info_arr = NULL;
+  jvmtiStackInfo* stack_info_arr = nullptr;
 
   LOG("## Agent: test_get_thread_list_stack_traces started: is virtual: %d, count: %d\n\n",
          is_virt, thread_cnt);
@@ -70,9 +70,9 @@ static void
 test_get_frame_location(JNIEnv* jni, jthread thread, char* tname) {
   const jint DEPTH = 1;
   jlocation loc = 0;
-  jmethodID method = NULL;
-  char* name = NULL;
-  char* sign = NULL;
+  jmethodID method = nullptr;
+  char* name = nullptr;
+  char* sign = nullptr;
   jboolean is_virtual = jni->IsVirtualThread(thread);
 
   jvmtiError err = jvmti->GetFrameLocation(thread, DEPTH, &method, &loc);
@@ -84,7 +84,7 @@ test_get_frame_location(JNIEnv* jni, jthread thread, char* tname) {
     }
     return;
   }
-  err = jvmti->GetMethodName(method, &name, &sign, NULL);
+  err = jvmti->GetMethodName(method, &name, &sign, nullptr);
   check_jvmti_status(jni, err, "test_get_frame_location: error in JVMTI GetMethodName");
 
   LOG("Agent: GetFrameLocation: frame for current thread %s: method: %s%s, loc: %lld\n",
@@ -93,7 +93,7 @@ test_get_frame_location(JNIEnv* jni, jthread thread, char* tname) {
 
 static jint
 get_cthreads(JNIEnv* jni, jthread** cthreads_p) {
-  jthread* tested_cthreads = NULL;
+  jthread* tested_cthreads = nullptr;
   jint all_cnt = 0;
   jint ct_cnt = 0;
 
@@ -313,7 +313,7 @@ test_jvmti_functions_for_threads(JNIEnv* jni, bool is_virt, jint thread_cnt, jth
 
 JNIEXPORT void JNICALL
 Java_SuspendResume1_TestSuspendResume(JNIEnv* jni, jclass cls) {
-  jthread* tested_cthreads = NULL;
+  jthread* tested_cthreads = nullptr;
   jint cthread_cnt = 0;
 
   LOG("\n## TestSuspendResume: Test carrier threads\n");
@@ -395,7 +395,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   }
 
   err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-                                        JVMTI_EVENT_VIRTUAL_THREAD_START, NULL);
+                                        JVMTI_EVENT_VIRTUAL_THREAD_START, nullptr);
   if (err != JVMTI_ERROR_NONE) {
     LOG("Agent init: error in JVMTI SetEventNotificationMode: %s (%d)\n",
            TranslateError(err), err);

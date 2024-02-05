@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,7 +179,7 @@ static int initAgent(int indx) {
 
     NSK_DISPLAY1("\nagent %s initializer: obtaining the JVMTI env ...\n", (indx == 0) ? "A" : "B");
     res = vm->GetEnv((void **) &jvmti[indx], JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti[indx] == NULL) {
+    if (res != JNI_OK || jvmti[indx] == nullptr) {
         NSK_COMPLAIN1("TEST FAILURE: failed to call GetEnv for the agent %s\n",
             (indx == 0) ? "A" : "B");
         result = STATUS_FAILED;
@@ -207,7 +207,7 @@ static int initAgent(int indx) {
 
     NSK_DISPLAY1("\nagent %s initializer: setting event callbacks done\n\tenabling events ...\n",
         (indx == 0) ? "A" : "B");
-    err = jvmti[indx]->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, NULL);
+    err = jvmti[indx]->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, nullptr);
     if (err != JVMTI_ERROR_NONE) { /* enable event globally */
         NSK_COMPLAIN2("TEST FAILURE: failed to enable JVMTI_EVENT_VM_INIT event for the agent %s: %s\n",
             (indx == 0) ? "A" : "B", TranslateError(err));
@@ -227,7 +227,7 @@ static void startAgent(int indx) {
         (indx == 0) ? "A" : "B");
     void* context = (void*) ((indx == 0) ? "agent A" : "agent B");
     agentThr[indx] = THREAD_new((indx == 0) ? agentA : agentB, context);
-    if (THREAD_start(agentThr[indx]) == NULL) {
+    if (THREAD_start(agentThr[indx]) == nullptr) {
         NSK_COMPLAIN1("TEST FAILURE: cannot start the agent %s thread\n",
             (indx == 0) ? "A" : "B");
         exit(STATUS_FAILED);

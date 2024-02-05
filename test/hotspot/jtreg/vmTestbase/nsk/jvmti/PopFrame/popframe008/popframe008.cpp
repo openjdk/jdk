@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,13 +40,13 @@ typedef struct {
     jlocation loc;
 } frame_info;
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiCapabilities caps;
 static jvmtiEventCallbacks callbacks;
 static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
-static jmethodID midD = NULL;
-static jmethodID midRun = NULL;
+static jmethodID midD = nullptr;
+static jmethodID midRun = nullptr;
 static int framesExpected = 0;
 static int framesCount = 0;
 static frame_info frames[] = {
@@ -83,17 +83,17 @@ void check(jvmtiEnv *jvmti_env, jmethodID mid, jlocation loc, int i) {
         result = STATUS_FAILED;
     }
 
-    if (sigClass == NULL || strcmp(sigClass, frames[i].cls) != 0) {
+    if (sigClass == nullptr || strcmp(sigClass, frames[i].cls) != 0) {
         printf("(%d) wrong class sig: \"%s\",\n", i, sigClass);
         printf(" expected: \"%s\"\n", frames[i].cls);
         result = STATUS_FAILED;
     }
-    if (name == NULL || strcmp(name, frames[i].name) != 0) {
+    if (name == nullptr || strcmp(name, frames[i].name) != 0) {
         printf("(%d) wrong method name: \"%s\",", i, name);
         printf(" expected: \"%s\"\n", frames[i].name);
         result = STATUS_FAILED;
     }
-    if (sig == NULL || strcmp(sig, frames[i].sig) != 0) {
+    if (sig == nullptr || strcmp(sig, frames[i].sig) != 0) {
         printf("(%d) wrong method sig: \"%s\",", i, sig);
         printf(" expected: \"%s\"\n", frames[i].sig);
         result = STATUS_FAILED;
@@ -195,12 +195,12 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jvmtiError err;
     jint res;
 
-    if (options != NULL && strcmp(options, "printdump") == 0) {
+    if (options != nullptr && strcmp(options, "printdump") == 0) {
         printdump = JNI_TRUE;
     }
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
     }
@@ -253,7 +253,7 @@ Java_nsk_jvmti_PopFrame_popframe008_getReady(JNIEnv *env,
     jvmtiError err;
     jclass clazz;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("JVMTI client was not properly loaded!\n");
         result = STATUS_FAILED;
         return;
@@ -266,21 +266,21 @@ Java_nsk_jvmti_PopFrame_popframe008_getReady(JNIEnv *env,
     }
 
     clazz = env->GetObjectClass(thr);
-    if (clazz == NULL) {
+    if (clazz == nullptr) {
         printf("Cannot get class of the thread object\n");
         result = STATUS_FAILED;
         return;
     }
 
     midD = env->GetMethodID(clazz, "D", "()V");
-    if (midD == NULL) {
+    if (midD == nullptr) {
         printf("Cannot get Method ID for method \"D\"\n");
         result = STATUS_FAILED;
         return;
     }
 
     midRun = env->GetMethodID(clazz, "run", "()V");
-    if (midRun == NULL) {
+    if (midRun == nullptr) {
         printf("Cannot get Method ID for method \"run\"\n");
         result = STATUS_FAILED;
         return;
@@ -295,7 +295,7 @@ Java_nsk_jvmti_PopFrame_popframe008_getReady(JNIEnv *env,
     }
 
     err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-        JVMTI_EVENT_BREAKPOINT, NULL);
+        JVMTI_EVENT_BREAKPOINT, nullptr);
     if (err != JVMTI_ERROR_NONE) {
         printf("Failed to enable BREAKPOINT event: %s (%d)\n",
                TranslateError(err), err);

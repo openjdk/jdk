@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_OPTO_PHASETYPE_HPP
 
 #include "utilities/bitMap.inline.hpp"
+#include "utilities/stringUtils.hpp"
 
 #define COMPILER_PHASES(flags) \
   flags(BEFORE_STRINGOPTS,              "Before StringOpts") \
@@ -139,47 +140,6 @@ static CompilerPhaseType find_phase(const char* str) {
   return PHASE_NONE;
 }
 
-class PhaseNameIter {
- private:
-  char* _token;
-  char* _saved_ptr;
-  char* _list;
-
- public:
-  PhaseNameIter(ccstrlist option) {
-    _list = (char*) canonicalize(option);
-    _saved_ptr = _list;
-    _token = strtok_r(_saved_ptr, ",", &_saved_ptr);
-  }
-
-  ~PhaseNameIter() {
-    FREE_C_HEAP_ARRAY(char, _list);
-  }
-
-  const char* operator*() const { return _token; }
-
-  PhaseNameIter& operator++() {
-    _token = strtok_r(nullptr, ",", &_saved_ptr);
-    return *this;
-  }
-
-  ccstrlist canonicalize(ccstrlist option_value) {
-    char* canonicalized_list = NEW_C_HEAP_ARRAY(char, strlen(option_value) + 1, mtCompiler);
-    int i = 0;
-    char current;
-    while ((current = option_value[i]) != '\0') {
-      if (current == '\n' || current == ' ') {
-        canonicalized_list[i] = ',';
-      } else {
-        canonicalized_list[i] = current;
-      }
-      i++;
-    }
-    canonicalized_list[i] = '\0';
-    return canonicalized_list;
-  }
-};
-
 class PhaseNameValidator {
  private:
   CHeapBitMap _phase_name_set;
@@ -192,7 +152,7 @@ class PhaseNameValidator {
     _valid(true),
     _bad(nullptr)
   {
-    for (PhaseNameIter iter(option); *iter != nullptr && _valid; ++iter) {
+    for (StringUtils::CommaSeparatedStringIterator iter(option); *iter != nullptr && _valid; ++iter) {
 
       CompilerPhaseType cpt = find_phase(*iter);
       if (PHASE_NONE == cpt) {
