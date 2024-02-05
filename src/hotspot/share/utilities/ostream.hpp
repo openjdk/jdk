@@ -228,6 +228,8 @@ class stringStream : public outputStream {
   void  reset();
   // Copy to a resource, or C-heap, array as requested
   char* as_string(bool c_heap = false) const;
+
+  char* as_arena_string(Arena* arena) const;
 };
 
 class fileStream : public outputStream {

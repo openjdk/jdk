@@ -781,7 +781,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
       assert(reason != nullptr, "expect reason for parse failure");
       stringStream ss;
       ss.print("cannot parse method: %s", reason);
-      record_method_not_compilable(ss.as_string());
+      record_method_not_compilable(ss.as_arena_string(ciEnv::current()->task()->arena()));
       return;
     }
 
@@ -792,7 +792,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
       assert(failure_reason() != nullptr, "expect reason for parse failure");
       stringStream ss;
       ss.print("method parse failed: %s", failure_reason());
-      record_method_not_compilable(ss.as_string());
+      record_method_not_compilable(ss.as_arena_string(ciEnv::current()->task()->arena()));
       return;
     }
     GraphKit kit(jvms);
