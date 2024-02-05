@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,10 +95,10 @@ static void checkStackMethodsObsolete(jvmtiEnv* jvmti, jthread thread,
         int i;
 
         for (i = 0; i < frameCount; i++) {
-            char* name = NULL;
-            char* signature = NULL;
-            char* generic = NULL;
-            char* kind = NULL;
+            char* name = nullptr;
+            char* signature = nullptr;
+            char* generic = nullptr;
+            char* kind = nullptr;
 
             NSK_DISPLAY1("  frame #%i:\n", i);
             NSK_DISPLAY1("     methodID:  %p\n", (void*)frameStack[i].method);
@@ -110,7 +110,7 @@ static void checkStackMethodsObsolete(jvmtiEnv* jvmti, jthread thread,
             NSK_DISPLAY1("     name:      %s\n", nsk_null_string(name));
             NSK_DISPLAY1("     signature: %s\n", nsk_null_string(signature));
             NSK_DISPLAY1("     generic:   %s\n", nsk_null_string(generic));
-            if (name != NULL
+            if (name != nullptr
                     && (strcmp(STATIC_METHOD_NAME, name) == 0
                         || strcmp(INSTANCE_METHOD_NAME, name) == 0)) {
                 found++;
@@ -166,15 +166,15 @@ static int redefineClass(jvmtiEnv* jvmti, jclass klass, const char className[],
 /** Get classfile bytes to redefine. */
 static int getClassfileBytes(JNIEnv* jni, jvmtiEnv* jvmti,
                                     jint* size, unsigned char* *bytes) {
-    jclass debugeeClass = NULL;
-    jfieldID fieldID = NULL;
-    jbyteArray array = NULL;
+    jclass debugeeClass = nullptr;
+    jfieldID fieldID = nullptr;
+    jbyteArray array = nullptr;
     jbyte* elements;
     int i;
 
     NSK_DISPLAY1("Find debugee class: %s\n", DEBUGEE_CLASS_NAME);
     if (!NSK_JNI_VERIFY(jni, (debugeeClass =
-            jni->FindClass(DEBUGEE_CLASS_NAME)) != NULL)) {
+            jni->FindClass(DEBUGEE_CLASS_NAME)) != nullptr)) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
@@ -182,7 +182,7 @@ static int getClassfileBytes(JNIEnv* jni, jvmtiEnv* jvmti,
 
     NSK_DISPLAY1("Find static field: %s\n", CLASSFILE_FIELD_NAME);
     if (!NSK_JNI_VERIFY(jni, (fieldID =
-            jni->GetStaticFieldID(debugeeClass, CLASSFILE_FIELD_NAME, CLASSFILE_FIELD_SIG)) != NULL)) {
+            jni->GetStaticFieldID(debugeeClass, CLASSFILE_FIELD_NAME, CLASSFILE_FIELD_SIG)) != nullptr)) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
@@ -190,7 +190,7 @@ static int getClassfileBytes(JNIEnv* jni, jvmtiEnv* jvmti,
 
     NSK_DISPLAY1("Get classfile bytes array from static field: %s\n", CLASSFILE_FIELD_NAME);
     if (!NSK_JNI_VERIFY(jni, (array = (jbyteArray)
-            jni->GetStaticObjectField(debugeeClass, fieldID)) != NULL)) {
+            jni->GetStaticObjectField(debugeeClass, fieldID)) != nullptr)) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
@@ -206,7 +206,7 @@ static int getClassfileBytes(JNIEnv* jni, jvmtiEnv* jvmti,
     {
         jboolean isCopy;
         if (!NSK_JNI_VERIFY(jni, (elements =
-                jni->GetByteArrayElements(array, &isCopy)) != NULL)) {
+                jni->GetByteArrayElements(array, &isCopy)) != nullptr)) {
             nsk_jvmti_setFailStatus();
         return NSK_FALSE;
         }
@@ -242,11 +242,11 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
     /* perform testing */
     {
-        jclass testedClass = NULL;
-        jobject testedThread = NULL;
-        jmethodID staticMethodID = NULL;
-        jmethodID instanceMethodID = NULL;
-        unsigned char* classfileBytes = NULL;
+        jclass testedClass = nullptr;
+        jobject testedThread = nullptr;
+        jmethodID staticMethodID = nullptr;
+        jmethodID instanceMethodID = nullptr;
+        unsigned char* classfileBytes = nullptr;
         jint classfileSize = 0;
 
         NSK_DISPLAY0(">>> Obtain bytes for class file redefinition\n");
@@ -259,7 +259,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         {
             NSK_DISPLAY1("Find tested class: %s\n", TESTED_CLASS_NAME);
             if (!NSK_JNI_VERIFY(jni, (testedClass =
-                    jni->FindClass(TESTED_CLASS_NAME)) != NULL)) {
+                    jni->FindClass(TESTED_CLASS_NAME)) != nullptr)) {
                 nsk_jvmti_setFailStatus();
                 return;
             }
@@ -267,7 +267,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
             NSK_DISPLAY1("Make global reference for class object: %p\n", (void*)testedClass);
             if (!NSK_JNI_VERIFY(jni, (testedClass = (jclass)
-                    jni->NewGlobalRef(testedClass)) != NULL)) {
+                    jni->NewGlobalRef(testedClass)) != nullptr)) {
                 nsk_jvmti_setFailStatus();
                 return;
             }
@@ -275,7 +275,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
             NSK_DISPLAY1("Get static methodID: %s\n", STATIC_METHOD_NAME);
             if (!NSK_JNI_VERIFY(jni, (staticMethodID =
-                    jni->GetStaticMethodID(testedClass, STATIC_METHOD_NAME, STATIC_METHOD_SIG)) != NULL)) {
+                    jni->GetStaticMethodID(testedClass, STATIC_METHOD_NAME, STATIC_METHOD_SIG)) != nullptr)) {
                 nsk_jvmti_setFailStatus();
                 return;
             }
@@ -283,7 +283,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
             NSK_DISPLAY1("Get instance methodID: %s\n", INSTANCE_METHOD_NAME);
             if (!NSK_JNI_VERIFY(jni, (instanceMethodID =
-                    jni->GetMethodID(testedClass, INSTANCE_METHOD_NAME, INSTANCE_METHOD_SIG)) != NULL)) {
+                    jni->GetMethodID(testedClass, INSTANCE_METHOD_NAME, INSTANCE_METHOD_SIG)) != nullptr)) {
                 nsk_jvmti_setFailStatus();
                 return;
             }
@@ -291,7 +291,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
             NSK_DISPLAY1("Find thread with running methods by name: %s\n", TESTED_THREAD_NAME);
             if (!NSK_VERIFY((testedThread =
-                    nsk_jvmti_threadByName(TESTED_THREAD_NAME)) != NULL)) {
+                    nsk_jvmti_threadByName(TESTED_THREAD_NAME)) != nullptr)) {
                 nsk_jvmti_setFailStatus();
                 return;
             }
@@ -367,7 +367,7 @@ JNIEXPORT jint JNI_OnLoad_isobsolete001(JavaVM *jvm, char *options, void *reserv
 }
 #endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
-    jvmtiEnv* jvmti = NULL;
+    jvmtiEnv* jvmti = nullptr;
 
     /* init framework and parse options */
     if (!NSK_VERIFY(nsk_jvmti_parseOptions(options)))
@@ -377,7 +377,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     /* create JVMTI environment */
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     /* add required capabilities */
@@ -393,7 +393,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     }
 
     /* register agent proc and arg */
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     return JNI_OK;

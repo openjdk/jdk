@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,8 +195,8 @@ Java_nsk_jvmti_unit_StackTrace_JvmtiTest_GetFrameCount(JNIEnv * env, jclass cls,
 JNIEXPORT void JNICALL
 Java_nsk_jvmti_unit_StackTrace_JvmtiTest_GetStackTrace(JNIEnv * env, jclass cls, jobject thr) {
     jvmtiError ret;
-    jvmtiFrameInfo *stack_buffer = NULL;
-    jvmtiFrameInfo *compare_buffer = NULL;
+    jvmtiFrameInfo *stack_buffer = nullptr;
+    jvmtiFrameInfo *compare_buffer = nullptr;
     jint max_count = 20;
     jint count;
     jclass klass;
@@ -291,14 +291,14 @@ Java_nsk_jvmti_unit_StackTrace_JvmtiTest_GetStackTrace(JNIEnv * env, jclass cls,
             return;
         }
 
-        ret = jvmti->GetClassSignature(klass, &clname, NULL);
+        ret = jvmti->GetClassSignature(klass, &clname, nullptr);
         if (ret != JVMTI_ERROR_NONE) {
             printf("Error: GetClassSignature %d  \n", ret);
             iGlobalStatus = 2;
             return;
         }
 
-        ret = jvmti->GetMethodName(stack_buffer[i].method, &mname, &signature, NULL);
+        ret = jvmti->GetMethodName(stack_buffer[i].method, &mname, &signature, nullptr);
         if (ret != JVMTI_ERROR_NONE) {
             printf("Error: GetMethodName %d  \n", ret);
             iGlobalStatus = 2;

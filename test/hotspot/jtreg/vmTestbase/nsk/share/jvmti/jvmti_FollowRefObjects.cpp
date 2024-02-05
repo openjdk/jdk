@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,13 +131,13 @@ JNIEXPORT jboolean JNICALL Java_nsk_jvmti_unit_FollowReferences_FollowRefObjects
         jboolean fCopy;
         const char * s;
 
-        if (!NSK_VERIFY((s = jni->GetStringUTFChars(sInfo, &fCopy)) != NULL)) {
+        if (!NSK_VERIFY((s = jni->GetStringUTFChars(sInfo, &fCopy)) != nullptr)) {
             NSK_COMPLAIN1("Can't get string at %#p\n", sInfo);
             return JNI_FALSE;
         }
 
         if (!s) {
-            NSK_COMPLAIN1("Can't get string at %#p: NULL\n", sInfo);
+            NSK_COMPLAIN1("Can't get string at %#p: null\n", sInfo);
             return JNI_FALSE;
         }
 
@@ -193,7 +193,7 @@ static RefToVerify * findRefToVerify(jlong tagFrom, jlong tagTo, jint refKind)
         }
     }
 
-    return NULL;
+    return nullptr;
 }
 
 static jboolean addRefToVerify(jlong tagFrom, jlong tagTo, jint refKind, int expectedCount, int actualCount)
@@ -238,7 +238,7 @@ JNIEXPORT jboolean JNICALL Java_nsk_jvmti_unit_FollowReferences_FollowRefObjects
     }
 
     pRefRec = findRefToVerify(tagFrom, tagTo, refKind);
-    if (pRefRec != NULL) {
+    if (pRefRec != nullptr) {
         pRefRec->_expectedCount += count;
         return JNI_TRUE;
     }
@@ -251,7 +251,7 @@ jboolean markRefToVerify(jlong tagFrom, jlong tagTo, int refKind)
     RefToVerify * pRefRec;
 
     pRefRec = findRefToVerify(tagFrom, tagTo, refKind);
-    if (pRefRec != NULL) {
+    if (pRefRec != nullptr) {
         pRefRec->_actualCount++;
         return JNI_TRUE;
     }
@@ -380,14 +380,14 @@ jint JNICALL wrongStringPrimitiveValueCallback(
 
 void jvmti_FollowRefObject_init()
 {
-    g_wrongHeapCallbacks.heap_iteration_callback         = NULL;
+    g_wrongHeapCallbacks.heap_iteration_callback         = nullptr;
     g_wrongHeapCallbacks.heap_reference_callback         = wrongHeapReferenceCallback;
     g_wrongHeapCallbacks.primitive_field_callback        = wrongPrimitiveFieldCallback;
     g_wrongHeapCallbacks.array_primitive_value_callback  = wrongArrayPrimitiveValueCallback;
     g_wrongHeapCallbacks.string_primitive_value_callback = wrongStringPrimitiveValueCallback;
 
-    Java_nsk_jvmti_unit_FollowReferences_FollowRefObjects_resetTags(NULL, NULL);
-    Java_nsk_jvmti_unit_FollowReferences_FollowRefObjects_resetRefsToVerify(NULL, NULL);
+    Java_nsk_jvmti_unit_FollowReferences_FollowRefObjects_resetTags(nullptr, nullptr);
+    Java_nsk_jvmti_unit_FollowReferences_FollowRefObjects_resetRefsToVerify(nullptr, nullptr);
 }
 
 /* ============================================================================= */

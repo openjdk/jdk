@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ typedef struct {
     jboolean is_static;
 } field_info;
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
 static field_info fields[] = {
@@ -120,12 +120,12 @@ JNIEXPORT jint JNI_OnLoad_getfldmdf004(JavaVM *jvm, char *options, void *reserve
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jint res;
 
-    if (options != NULL && strcmp(options, "printdump") == 0) {
+    if (options != nullptr && strcmp(options, "printdump") == 0) {
         printdump = JNI_TRUE;
     }
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
     }
@@ -155,7 +155,7 @@ Java_nsk_jvmti_GetFieldModifiers_getfldmdf004_check(JNIEnv *env,
     jfieldID fid;
     jint modifiers;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("JVMTI client was not properly loaded!\n");
         result = STATUS_FAILED;
         return;
@@ -166,7 +166,7 @@ Java_nsk_jvmti_GetFieldModifiers_getfldmdf004_check(JNIEnv *env,
     } else {
         fid = env->GetFieldID(cls, fields[i].name, fields[i].sig);
     }
-    if (fid == NULL) {
+    if (fid == nullptr) {
         printf("(%d) cannot get field ID for %s:\"%s\"\n",
                i, fields[i].name, fields[i].sig);
         result = STATUS_FAILED;
