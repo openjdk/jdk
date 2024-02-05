@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef _NSK_SHARE_JVMTI_INJECTOR_H_
-#define _NSK_SHARE_JVMTI_INJECTOR_H_
+#ifndef _NSK_SHARE_JVMTI_INJECTOR_HPP_
+#define _NSK_SHARE_JVMTI_INJECTOR_HPP_
 
 /* Class File Format Constants
  */
@@ -304,4 +304,4 @@ int Inject(const u1* old_bytes, const jint old_length,
 
 }
 
-#endif /* _NSK_SHARE_JVMTI_INJECTOR_H_ */
+#endif /* _NSK_SHARE_JVMTI_INJECTOR_HPP_ */

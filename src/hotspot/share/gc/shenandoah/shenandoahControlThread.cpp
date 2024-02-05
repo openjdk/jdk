@@ -84,11 +84,11 @@ void ShenandoahControlThread::run_service() {
     bool explicit_gc_requested = is_gc_requested && is_explicit_gc(requested_gc_cause);
     bool implicit_gc_requested = is_gc_requested && !is_explicit_gc(requested_gc_cause);
 
-    // This control loop iteration have seen this much allocations.
+    // This control loop iteration has seen this much allocation.
     size_t allocs_seen = Atomic::xchg(&_allocs_seen, (size_t)0, memory_order_relaxed);
 
     // Check if we have seen a new target for soft max heap size.
-    bool soft_max_changed = check_soft_max_changed();
+    bool soft_max_changed = heap->check_soft_max_changed();
 
     // Choose which GC mode to run in. The block below should select a single mode.
     GCMode mode = none;
@@ -287,7 +287,7 @@ void ShenandoahControlThread::run_service() {
                              heap->soft_max_capacity() :
                              heap->min_capacity();
 
-      service_uncommit(shrink_before, shrink_until);
+      heap->maybe_uncommit(shrink_before, shrink_until);
       heap->phase_timings()->flush_cycle_to_global();
       last_shrink_time = current;
     }
@@ -308,25 +308,6 @@ void ShenandoahControlThread::run_service() {
   while (!should_terminate()) {
     os::naked_short_sleep(ShenandoahControlIntervalMin);
   }
-}
-
-bool ShenandoahControlThread::check_soft_max_changed() const {
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  size_t new_soft_max = Atomic::load(&SoftMaxHeapSize);
-  size_t old_soft_max = heap->soft_max_capacity();
-  if (new_soft_max != old_soft_max) {
-    new_soft_max = MAX2(heap->min_capacity(), new_soft_max);
-    new_soft_max = MIN2(heap->max_capacity(), new_soft_max);
-    if (new_soft_max != old_soft_max) {
-      log_info(gc)("Soft Max Heap Size: " SIZE_FORMAT "%s -> " SIZE_FORMAT "%s",
-                   byte_size_in_proper_unit(old_soft_max), proper_unit_for_byte_size(old_soft_max),
-                   byte_size_in_proper_unit(new_soft_max), proper_unit_for_byte_size(new_soft_max)
-      );
-      heap->set_soft_max_capacity(new_soft_max);
-      return true;
-    }
-  }
-  return false;
 }
 
 void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cause) {
@@ -418,29 +399,6 @@ void ShenandoahControlThread::service_stw_degenerated_cycle(GCCause::Cause cause
 
   ShenandoahDegenGC gc(point);
   gc.collect(cause);
-}
-
-void ShenandoahControlThread::service_uncommit(double shrink_before, size_t shrink_until) {
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-
-  // Determine if there is work to do. This avoids taking heap lock if there is
-  // no work available, avoids spamming logs with superfluous logging messages,
-  // and minimises the amount of work while locks are taken.
-
-  if (heap->committed() <= shrink_until) return;
-
-  bool has_work = false;
-  for (size_t i = 0; i < heap->num_regions(); i++) {
-    ShenandoahHeapRegion *r = heap->get_region(i);
-    if (r->is_empty_committed() && (r->empty_time() < shrink_before)) {
-      has_work = true;
-      break;
-    }
-  }
-
-  if (has_work) {
-    heap->entry_uncommit(shrink_before, shrink_until);
-  }
 }
 
 bool ShenandoahControlThread::is_explicit_gc(GCCause::Cause cause) const {
