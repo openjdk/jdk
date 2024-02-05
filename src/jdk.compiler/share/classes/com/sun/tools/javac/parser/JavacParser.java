@@ -2748,6 +2748,8 @@ public class JavacParser implements Parser {
             entries.append(mapEntry(pos));
             if (token.kind != RBRACE) {
                 accept(COMMA);
+                // from Jfokus attendee
+                pos = token.pos;
             }
         }
         accept(RBRACE);
