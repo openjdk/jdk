@@ -58,14 +58,19 @@ public class ListSubFormats {
     }
 
     // Ensure incorrect FormatElement pattern throws IAE
+    // java.text.ListFormat does not support String subformatPatterns
     @Test
     public void badApplyPatternTest() {
         // Wrong FormatStyle
-        assertThrows(IllegalArgumentException.class, () ->
+        IllegalArgumentException exc = assertThrows(IllegalArgumentException.class, () ->
                 new MessageFormat("{0,list,standard}"));
+        assertEquals("Unexpected modifier for List: standard", exc.getMessage());
+
         // Wrong FormatType
-        assertThrows(IllegalArgumentException.class, () ->
+        exc = assertThrows(IllegalArgumentException.class, () ->
                 new MessageFormat("{0,listt,or}"));
+        assertEquals("unknown format type: listt", exc.getMessage());
+
     }
 
     // STANDARD, OR, UNIT ListFormats (with FULL style) should

@@ -1774,6 +1774,7 @@ public class MessageFormat extends Format {
                 case DTF_DATE, DTF_TIME, DTF_DATETIME ->
                         DateTimeFormatter.ofPattern(pattern).toFormat();
                 case CHOICE -> new ChoiceFormat(pattern);
+                // These classe(s) do not support String patterns
                 default ->  throw new IllegalArgumentException(String.format(
                             "Unexpected modifier for %s: %s", type, pattern));
             };

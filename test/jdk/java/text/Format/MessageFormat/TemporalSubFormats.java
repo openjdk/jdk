@@ -166,17 +166,20 @@ public class TemporalSubFormats {
     // valid SubformatPattern are recognized
     @Test
     public void badApplyPatternTest() {
-        // Not a supported FormatStyle
-        assertThrows(IllegalArgumentException.class, () ->
+        // Not a supported FormatStyle: throws the underlying IAE from DTF
+        // as it is interpreted as a subformatPattern
+        IllegalArgumentException exc = assertThrows(IllegalArgumentException.class, () ->
                 new MessageFormat("{0,dtf_date,longer}"));
+        assertEquals("Unknown pattern letter: l", exc.getMessage());
 
-        // Not a legal SubformatPattern, catch the underlying exception
-        assertThrows(IllegalArgumentException.class, () ->
+        // Not a legal SubformatPattern: throws the underlying IAE from DTF
+        exc = assertThrows(IllegalArgumentException.class, () ->
                 new MessageFormat("{0,dtf_date,VVV}"));
+        assertEquals("Pattern letter count must be 2: V", exc.getMessage());
 
         // Pre-defined ISO style does not exist and should be ignored
         assertDoesNotThrow(() -> new MessageFormat("{0,BASIC_ISO_DATE,foo}"),
-                "Style on a pre-defined formatter should be ignored, instead of throwing an exception");
+                "Style on a pre-defined DTF should be ignored, instead of throwing an exception");
     }
 
     // DateTimeFormatters cannot be recognized when toPattern() is invoked
