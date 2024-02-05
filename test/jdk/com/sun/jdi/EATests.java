@@ -2004,7 +2004,7 @@ class EARelockingNestedInflated_03Target extends EATestCaseBaseTarget {
         lockInflatedByContention = new XYVal(1, 1);
         // Start thread that tries to enter lockInflatedByContention while the main thread owns it -> inflation
         DebuggeeWrapper.newThread(() -> {
-            while(true) {
+            while (true) {
                 synchronized (testCase) {
                     try {
                         if (doLockNow) {
