@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,16 @@
  * questions.
  */
 
-extern "C" {
-
-char const *TranslateEvent(jint kind);
-char const *TranslateError(jvmdiError err);
-
+// key: compiler.err.default.and.both.boolean.values
+// key: compiler.note.preview.filename
+// key: compiler.note.preview.recompile
+// options: --enable-preview --source 23
+public class DefaultAndBothBoolean {
+    private int test(boolean sel) {
+        return switch (sel) {
+            case true -> 1;
+            case false -> 2;
+            default -> 3;
+        };
+    }
 }

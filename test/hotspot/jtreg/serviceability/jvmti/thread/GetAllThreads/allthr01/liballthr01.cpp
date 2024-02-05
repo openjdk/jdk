@@ -46,7 +46,7 @@ static jrawMonitorID stopping_agent_thread_lock;
 static const char main_name[] = "main";
 static const char thread1_name[] = "thread1";
 static const char sys_thread_name[] = "SysThread";
-// Tes uses -Djava.util.concurrent.ForkJoinPool.common.parallelism=1
+// Test uses -Djdk.virtualThreadScheduler.maxPoolSize=1
 // to make name of carrier thread deterministic
 static const char fj_thread_name[] = "ForkJoinPool-1-worker-1";
 

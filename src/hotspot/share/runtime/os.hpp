@@ -328,6 +328,9 @@ class os: AllStatic {
   static julong available_memory();
   static julong free_memory();
 
+  static jlong total_swap_space();
+  static jlong free_swap_space();
+
   static julong physical_memory();
   static bool has_allocatable_memory_limit(size_t* limit);
   static bool is_server_class_machine();

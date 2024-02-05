@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,16 @@
  * questions.
  */
 
-// key: compiler.misc.not.applicable.types
-// key: compiler.err.prob.found.req
-
-class NotApplicableTypes {
-    void t(int i) {
-        switch (i) {
-            case Integer j -> {}
-        }
+// key: compiler.err.unconditional.pattern.and.both.boolean.values
+// key: compiler.note.preview.filename
+// key: compiler.note.preview.recompile
+// options: --enable-preview --source 23
+public class UnconditionalPatternAndBothBoolean {
+    private int test(boolean sel) {
+        return switch (sel) {
+            case true -> 1;
+            case false -> 2;
+            case boolean b -> 3;
+        };
     }
 }
