@@ -44,6 +44,10 @@
 #include "java_lang_Long.h"
 #include <assert.h>
 
+#if defined(_AIX)
+  #define statvfs statvfs64
+#endif
+
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_UnixFileDispatcherImpl_read0(JNIEnv *env, jclass clazz,
                              jobject fdo, jlong address, jint len)

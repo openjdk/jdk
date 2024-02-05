@@ -55,6 +55,10 @@
 #include <sys/sysmacros.h> // makedev macros
 #endif
 
+#if defined(_AIX)
+  #define statvfs statvfs64
+#endif
+
 #if defined(__linux__)
 // Account for the case where we compile on a system without statx
 // support. We still want to ensure we can call statx at runtime
