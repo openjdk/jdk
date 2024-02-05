@@ -72,6 +72,7 @@
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/align.hpp"
 #include "utilities/quickSort.hpp"
@@ -1253,6 +1254,7 @@ void Method::link_method(const methodHandle& h_method, TRAPS) {
     _from_compiled_entry = nullptr;
     _i2i_entry = nullptr;
     if (Continuations::enabled()) {
+      assert(!Threads::is_vm_complete(), "should only be called during vm init");
       AdapterHandlerLibrary::create_native_wrapper(h_method);
       assert(_from_interpreted_entry == get_i2c_entry(), "invariant");
     }
