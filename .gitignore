@@ -25,4 +25,4 @@ NashornProfile.txt
 /.cache
 config.log
 configure.log
-.iml
+*.iml
