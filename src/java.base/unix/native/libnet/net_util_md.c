@@ -661,7 +661,9 @@ NET_SetSockOpt(int fd, int level, int  opt, const void *arg,
         }
 
         if (sotype == SOCK_DGRAM) {
-            setsockopt(fd, level, SO_REUSEPORT, arg, len);
+            if (setsockopt(fd, level, SO_REUSEPORT, arg, len) < 0) {
+                return -1;
+            }
         }
     }
 #endif
