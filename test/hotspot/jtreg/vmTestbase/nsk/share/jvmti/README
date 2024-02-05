@@ -1,4 +1,4 @@
-Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
 DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
 This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@ which provides support for JVMTI tests and accessing JVMTI environment.
         jvmti_tools.h
         jvmti_tools.c
         agent_tools.c
-        Injector.h
-        Injector.c
+        Injector.hpp
+        Injector.cpp
         JVMTITools.h
         JVMTITools.c
 
@@ -150,7 +150,7 @@ a null-terminated character string:
 
 ---------------------------------------------------------------------------------
 
-Injector.h
+Injector.hpp
 
 Provides class file format constants and the function which inject some
 profiling bytecodes into Java class files:
