@@ -4909,7 +4909,7 @@ public class Check {
     void checkDerivedInstanceBlockStructure(JCDerivedInstance instance) {
         new TreeScanner() {
             private final Set<JCTree> seenTrees = Collections.newSetFromMap(new IdentityHashMap<>());
-            private final Set<VarSymbol> seenVariables = new HashSet<>(instance.outgoingBindings);
+            private final Set<VarSymbol> seenVariables = new HashSet<>();
             @Override
             public void scan(JCTree tree) {
                 seenTrees.add(tree);
@@ -4961,7 +4961,13 @@ public class Check {
                 }
                 super.visitAssign(tree);
             }
-        }.scan(instance.block);
+
+            @Override
+            public void visitReconstruction(JCDerivedInstance tree) {
+                seenVariables.addAll(tree.outgoingBindings);
+                super.visitReconstruction(tree);
+            }
+        }.scan(instance);
     }
 
     /** check if a type is a subtype of Externalizable, if that is available. */

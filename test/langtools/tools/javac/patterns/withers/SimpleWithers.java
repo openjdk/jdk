@@ -38,9 +38,9 @@ public class SimpleWithers {
             r.val3() != (-3)) {
             throw new AssertionError("Incorrect value: " + r);
         }
-        R r2 = r;
-        boolean match = switch (r2) {
-            case R(var i1, var i2, var i3) when r2 with {
+        R rp = r;
+        boolean match = switch (rp) {
+            case R(var i1, var i2, var i3) when rp with {
                 val1 = -1;
                 val3 = -3;
             }.val1() == -1 -> true;
@@ -49,6 +49,40 @@ public class SimpleWithers {
         if (!match) {
             throw new AssertionError("Did not match.");
         }
+        //shadowing:
+        R2 r2 = new R2(r);
+        R2 r2p = r2 with {
+            val1 = val1 with {
+                val1 = -2;
+                val3 = -6;
+            };
+        };
+        if (r2p.val1().val1() != (-2) ||
+            r2p.val1().val2() != 2 ||
+            r2p.val1().val3() != (-6)) {
+            throw new AssertionError("Incorrect value: " + r);
+        }
+        {
+            int val1 = 0;
+            if (r with {
+                    val1 = -3;
+                } instanceof R(var v1, var v2, var v3) && v1 != (-3)) {
+                throw new AssertionError("Incorrect value: " + v1);
+            }
+        }
+        if (r instanceof R(var val1, var val2, var val3) && r with {
+                val1 = -3;
+            } instanceof R(var v1, var v2, var v3) && v1 != (-3)) {
+            throw new AssertionError("Incorrect value: " + v1);
+        }
+        C c = l -> l with {
+            val1 = -4;
+            val3 = -8;
+        };
     }
     record R(int val1, int val2, int val3) {}
+    record R2(R val1) {}
+    interface C {
+        R apply(R r);
+    }
 }

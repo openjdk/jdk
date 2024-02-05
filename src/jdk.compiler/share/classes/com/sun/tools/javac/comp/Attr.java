@@ -3962,6 +3962,7 @@ public class Attr extends JCTree.Visitor {
             for (RecordComponent component : ((ClassSymbol) owntype.tsym).getRecordComponents()) {
                 VarSymbol outgoing = new VarSymbol(OUTGOING_BINDING, component.name, types.memberType(owntype, component), env.info.scope.owner);
 
+                outgoing.pos = tree.pos;
                 outgoingBindings.append(outgoing);
                 blockEnv.info.scope.enter(outgoing);
             }
