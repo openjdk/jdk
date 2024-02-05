@@ -26,9 +26,9 @@
  * @test
  * @bug 8283451
  * @summary C2: assert(_base == Long) failed: Not a Long
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+StressLCM -XX:+StressGCM -XX:+StressCCP -XX:+StressIGVN -XX:+StressMacroExpansion
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+StressLCM -XX:+StressGCM -XX:+StressCCP -XX:+StressIGVN
  *                   -Xcomp -XX:CompileOnly=TestModDivTopInput::* -XX:-TieredCompilation -XX:StressSeed=87628618 TestModDivTopInput
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+StressLCM -XX:+StressGCM -XX:+StressCCP -XX:+StressIGVN -XX:+StressMacroExpansion
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+StressLCM -XX:+StressGCM -XX:+StressCCP -XX:+StressIGVN
  *                   -Xcomp -XX:CompileOnly=TestModDivTopInput::* -XX:-TieredCompilation TestModDivTopInput
  */
 
