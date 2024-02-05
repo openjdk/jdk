@@ -4002,6 +4002,7 @@ void os::win32::initialize_system_info() {
   GetSystemInfo(&si);
   OSInfo::set_vm_page_size(si.dwPageSize);
   OSInfo::set_vm_allocation_granularity(si.dwAllocationGranularity);
+  OSInfo::set_vm_shm_allocation_granularity(si.dwAllocationGranularity);
   _processor_type  = si.dwProcessorType;
   _processor_level = si.wProcessorLevel;
   set_processor_count(si.dwNumberOfProcessors);

@@ -516,9 +516,7 @@ void ReservedHeapSpace::initialize_compressed_heap(const size_t size, size_t ali
 
   // The necessary attach point alignment for generated wish addresses.
   // This is needed to increase the chance of attaching for mmap and shmat.
-  const size_t os_attach_point_alignment =
-    AIX_ONLY(SIZE_256M)  // Known shm boundary alignment.
-    NOT_AIX(os::vm_allocation_granularity());
+  const size_t os_attach_point_alignment = os::vm_shm_allocation_granularity();
   const size_t attach_point_alignment = lcm(alignment, os_attach_point_alignment);
 
   char *aligned_heap_base_min_address = (char *)align_up((void *)HeapBaseMinAddress, alignment);

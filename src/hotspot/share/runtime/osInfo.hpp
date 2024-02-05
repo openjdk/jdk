@@ -33,6 +33,7 @@
 class OSInfo : AllStatic {
   static size_t    _vm_page_size;
   static size_t    _vm_allocation_granularity;
+  static size_t    _vm_shm_allocation_granularity;
 
 public:
   // Returns the byte size of a virtual memory page
@@ -40,6 +41,8 @@ public:
 
   // Returns the size, in bytes, of the granularity with which memory can be reserved using os::reserve_memory().
   static size_t vm_allocation_granularity() { return _vm_allocation_granularity; }
+
+  static size_t vm_shm_allocation_granularity() { return _vm_shm_allocation_granularity; }
 
   static void set_vm_page_size(size_t n) {
     assert(_vm_page_size == 0, "init only once");
@@ -49,6 +52,11 @@ public:
   static void set_vm_allocation_granularity(size_t n) {
     assert(_vm_allocation_granularity == 0, "init only once");
     _vm_allocation_granularity = n;
+  }
+
+  static void set_vm_shm_allocation_granularity(size_t n) {
+    assert(_vm_shm_allocation_granularity == 0, "init only once");
+    _vm_shm_allocation_granularity = n;
   }
 };
 

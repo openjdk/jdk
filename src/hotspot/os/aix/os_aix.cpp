@@ -2285,6 +2285,15 @@ extern "C" {
 static void set_page_size(size_t page_size) {
   OSInfo::set_vm_page_size(page_size);
   OSInfo::set_vm_allocation_granularity(page_size);
+  // use the same logic as in os::pd_attempt_reserve_memory_at to decide
+  // if mmap with granularity vm_page_size() or shmat with granularity 256MB is used.
+  if (os::vm_page_size() == 4*K) {
+    // mmap used
+    OSInfo::set_vm_shm_allocation_granularity(page_size);
+  } else {
+    // shmat used
+    OSInfo::set_vm_shm_allocation_granularity(256 * M);
+  }
 }
 
 // This is called _before_ the most of global arguments have been parsed.

@@ -1873,7 +1873,12 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
 
   // In randomization mode: We require a minimum number of possible attach points for
   // randomness. Below that we refuse to reserve anything.
-  constexpr unsigned min_random_value_range = 16;
+  // Because AIX has an shmat alignment of 256MB, we have only 12 segments in the unscaled case,
+  // when min=0 and max=4GB and os::vm_shm_allocation_granularity() returns 256MB.
+  unsigned min_random_value_range = 16;
+  if (min == nullptr && (char*)(4 * G) == max && 256 * M == os::vm_shm_allocation_granularity()) {
+    min_random_value_range = 12;
+  }
 
   // In randomization mode: If the possible value range is below this threshold, we
   // use a total shuffle without regard for address space fragmentation, otherwise
@@ -1893,7 +1898,7 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
   char* const absolute_max = (char*)(NOT_LP64(G * 3) LP64_ONLY(G * 128 * 1024));
   char* const absolute_min = (char*) os::vm_min_address();
 
-  const size_t alignment_adjusted = MAX2(alignment, os::vm_allocation_granularity());
+  const size_t alignment_adjusted = MAX2(alignment, os::vm_shm_allocation_granularity());
 
   // Calculate first and last possible attach points:
   char* const lo_att = align_up(MAX2(absolute_min, min), alignment_adjusted);

@@ -4410,6 +4410,7 @@ void os::init(void) {
   size_t page_size = sys_pg_size;
   OSInfo::set_vm_page_size(page_size);
   OSInfo::set_vm_allocation_granularity(page_size);
+  OSInfo::set_vm_shm_allocation_granularity(page_size);
   if (os::vm_page_size() == 0) {
     fatal("os_linux.cpp: os::init: OSInfo::set_vm_page_size failed");
   }

@@ -432,6 +432,8 @@ class os: AllStatic {
 
   static size_t vm_allocation_granularity() { return OSInfo::vm_allocation_granularity(); }
 
+  static size_t vm_shm_allocation_granularity() { return OSInfo::vm_shm_allocation_granularity(); }
+
   // Returns the lowest address the process is allowed to map against.
   static size_t vm_min_address();
 
