@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3829,9 +3829,19 @@ public abstract class LongVector extends AbstractVector<Long> {
         @ForceInline
         @Override final
         public LongVector fromArray(Object a, int offset) {
-            // User entry point:  Be careful with inputs.
+            // User entry point
+            // Defer only to the equivalent method on the vector class, using the same inputs
             return LongVector
                 .fromArray(this, (long[]) a, offset);
+        }
+
+        @ForceInline
+        @Override final
+        public LongVector fromMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
+            // User entry point
+            // Defer only to the equivalent method on the vector class, using the same inputs
+            return LongVector
+                .fromMemorySegment(this, ms, offset, bo);
         }
 
         @ForceInline

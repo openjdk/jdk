@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ static void verifyReturnCodes(JNIEnv* jni, jvmtiEnv* jvmti)
 
     retCode = jvmti->FollowReferences((jint) 0,                 /* heap filter */
                                       (jclass) &g_wrongHeapCallbacks ,   /* invalid class, but valid memory address */
-                                      NULL,                     /* inital object */
+                                      nullptr,                     /* inital object */
                                       &g_wrongHeapCallbacks,
                                       (const void *) &g_fakeUserData);
 
@@ -63,18 +63,18 @@ static void verifyReturnCodes(JNIEnv* jni, jvmtiEnv* jvmti)
     // When FollowReferences() is called with an invalid initial object
     // the behaviour according to the jvmti spec is optional.
     // It may return JVMTI_ERROR_INVALID_OBJECT and not follow any references.
-    // Or it may treat the object as NULL, and follow all references.
+    // Or it may treat the object as nullptr, and follow all references.
     //
     // We will accept both behaviours. We use empty callbacks since the existing
     // callback marks the test as failed.
 
-    emptyHeapCallbacks.heap_iteration_callback = NULL;
-    emptyHeapCallbacks.heap_reference_callback = NULL;
-    emptyHeapCallbacks.primitive_field_callback = NULL;
-    emptyHeapCallbacks.array_primitive_value_callback = NULL;
-    emptyHeapCallbacks.string_primitive_value_callback = NULL;
+    emptyHeapCallbacks.heap_iteration_callback = nullptr;
+    emptyHeapCallbacks.heap_reference_callback = nullptr;
+    emptyHeapCallbacks.primitive_field_callback = nullptr;
+    emptyHeapCallbacks.array_primitive_value_callback = nullptr;
+    emptyHeapCallbacks.string_primitive_value_callback = nullptr;
     retCode = jvmti->FollowReferences((jint) 0,               // heap filter
-                                      NULL,                   // class
+                                      nullptr,                   // class
                                       (jobject) &g_wrongHeapCallbacks,  // invalid inital object
                                       &emptyHeapCallbacks,    // No callbacks
                                       (const void *) &g_fakeUserData);
@@ -87,9 +87,9 @@ static void verifyReturnCodes(JNIEnv* jni, jvmtiEnv* jvmti)
     NSK_DISPLAY0("FollowReferences: Invalid callbacks:");
 
     retCode = jvmti->FollowReferences((jint) 0,     /* heap filter */
-                                      NULL,         /* class */
-                                      NULL,         /* inital object */
-                                      NULL,
+                                      nullptr,         /* class */
+                                      nullptr,         /* inital object */
+                                      nullptr,
                                       (const void *) &g_fakeUserData);
 
     if (!NSK_VERIFY(retCode == JVMTI_ERROR_NULL_POINTER)) {
@@ -105,17 +105,17 @@ static void verifyReturnCodes(JNIEnv* jni, jvmtiEnv* jvmti)
         nsk_jvmti_setFailStatus();
     }
 
-    NSK_DISPLAY0("GetTag: NULL object pointer:");
+    NSK_DISPLAY0("GetTag: null object pointer:");
 
-    retCode = jvmti->GetTag(NULL, &tag);
+    retCode = jvmti->GetTag(nullptr, &tag);
 
     if (!NSK_VERIFY(retCode == JVMTI_ERROR_INVALID_OBJECT)) {
         nsk_jvmti_setFailStatus();
     }
 
-    NSK_DISPLAY0("GetTag: NULL tag pointer:");
+    NSK_DISPLAY0("GetTag: null tag pointer:");
 
-    retCode = jvmti->GetTag((jobject) &g_wrongHeapCallbacks, NULL);
+    retCode = jvmti->GetTag((jobject) &g_wrongHeapCallbacks, nullptr);
 
     if (!NSK_VERIFY(retCode == JVMTI_ERROR_NULL_POINTER)) {
         nsk_jvmti_setFailStatus();
@@ -131,15 +131,15 @@ static void verifyReturnCodes(JNIEnv* jni, jvmtiEnv* jvmti)
         nsk_jvmti_setFailStatus();
     }
 
-    NSK_DISPLAY0("SetTag: NULL object pointer:");
+    NSK_DISPLAY0("SetTag: null object pointer:");
 
-    retCode = jvmti->GetTag(NULL, &tag);
+    retCode = jvmti->GetTag(nullptr, &tag);
 
     if (!NSK_VERIFY(retCode == JVMTI_ERROR_INVALID_OBJECT)) {
         nsk_jvmti_setFailStatus();
     }
 
-    NSK_DISPLAY0("GetTag: NULL tag pointer:");
+    NSK_DISPLAY0("GetTag: null tag pointer:");
 
 } /* verifyReturnCodes */
 
@@ -151,14 +151,14 @@ static void checkNoObjIterated(JNIEnv* jni, jvmtiEnv* jvmti, const char * szClas
     jclass klass;
 
     NSK_DISPLAY1("Verify, that no objects are returned if initial object is %s", szClassName);
-    if (!NSK_JNI_VERIFY(jni, (klass = jni->FindClass(szClassName)) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni, (klass = jni->FindClass(szClassName)) != nullptr)) {
         nsk_jvmti_setFailStatus();
         return;
     }
 
     retCode = jvmti->FollowReferences((jint) 0,     /* heap filter */
                                       klass, /* class */
-                                      NULL,         /* inital object */
+                                      nullptr,         /* inital object */
                                       &g_wrongHeapCallbacks,
                                       (const void *) &g_fakeUserData);
 
@@ -211,7 +211,7 @@ JNIEXPORT jint JNI_OnLoad_followref006(JavaVM *jvm, char *options, void *reserve
 #endif
 jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved)
 {
-    jvmtiEnv* jvmti = NULL;
+    jvmtiEnv* jvmti = nullptr;
 
     if (!NSK_VERIFY(nsk_jvmti_parseOptions(options))) {
         return JNI_ERR;
@@ -219,7 +219,7 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved)
 
     g_timeout = nsk_jvmti_getWaitTime() * 60 * 1000;
 
-    if (!NSK_VERIFY((jvmti = nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL)) {
+    if (!NSK_VERIFY((jvmti = nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr)) {
         return JNI_ERR;
     }
 
@@ -235,7 +235,7 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved)
         }
     }
 
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL))) {
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr))) {
         return JNI_ERR;
     }
 

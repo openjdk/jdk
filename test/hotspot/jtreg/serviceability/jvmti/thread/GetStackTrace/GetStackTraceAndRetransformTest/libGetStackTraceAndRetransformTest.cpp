@@ -25,19 +25,19 @@
 #include <string.h>
 #include "jvmti.h"
 #include "jvmti_common.h"
-#include "../get_stack_trace.h"
+#include "../get_stack_trace.hpp"
 
 
 extern "C" {
 
-static jvmtiEnv *jvmti = NULL;
-static jmethodID* ids = NULL;
+static jvmtiEnv *jvmti = nullptr;
+static jmethodID* ids = nullptr;
 static int ids_size = 0;
 
 JNIEXPORT jint JNICALL
 Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jint res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     printf("Wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }
@@ -71,11 +71,11 @@ Java_GetStackTraceAndRetransformTest_check(JNIEnv *jni, jclass cls, jint expecte
     exit(2);
   }
   for (int i = 0; i < ids_size; i++) {
-    jclass rslt = NULL;
-    char* class_name = NULL;
+    jclass rslt = nullptr;
+    char* class_name = nullptr;
     jvmti->GetMethodDeclaringClass(ids[i], &rslt);
-    if (rslt != NULL) {
-        jvmti->GetClassSignature(rslt, &class_name, NULL);
+    if (rslt != nullptr) {
+        jvmti->GetClassSignature(rslt, &class_name, nullptr);
     }
   }
 }

@@ -40,7 +40,7 @@
   nonstatic_field(TenuredGeneration,                 _min_heap_delta_bytes,  size_t)                        \
   nonstatic_field(TenuredGeneration,                 _the_space,             TenuredSpace*)                 \
                                                                                                             \
-  nonstatic_field(DefNewGeneration,                  _old_gen,               Generation*)                   \
+  nonstatic_field(DefNewGeneration,                  _old_gen,               TenuredGeneration*)            \
   nonstatic_field(DefNewGeneration,                  _tenuring_threshold,    uint)                          \
   nonstatic_field(DefNewGeneration,                  _age_table,             AgeTable)                      \
   nonstatic_field(DefNewGeneration,                  _eden_space,            ContiguousSpace*)              \

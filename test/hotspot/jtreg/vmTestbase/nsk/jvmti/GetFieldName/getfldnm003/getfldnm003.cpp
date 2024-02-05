@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ extern "C" {
 #define PASSED 0
 #define STATUS_FAILED 2
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
 
@@ -51,12 +51,12 @@ JNIEXPORT jint JNI_OnLoad_getfldnm003(JavaVM *jvm, char *options, void *reserved
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jint res;
 
-    if (options != NULL && strcmp(options, "printdump") == 0) {
+    if (options != nullptr && strcmp(options, "printdump") == 0) {
         printdump = JNI_TRUE;
     }
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
     }
@@ -70,13 +70,13 @@ Java_nsk_jvmti_GetFieldName_getfldnm003_check(JNIEnv *env, jclass cls) {
     jfieldID field;
     char *name, *sig, *generic;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("JVMTI client was not properly loaded!\n");
         return STATUS_FAILED;
     }
 
     field = env->GetFieldID(cls, "fld", "I");
-    if (field == NULL) {
+    if (field == nullptr) {
         printf("Cannot get field ID!\n");
         return STATUS_FAILED;
     }
@@ -84,7 +84,7 @@ Java_nsk_jvmti_GetFieldName_getfldnm003_check(JNIEnv *env, jclass cls) {
     if (printdump == JNI_TRUE) {
         printf(">>> invalid class check ...\n");
     }
-    err = jvmti->GetFieldName(NULL, field, &name, &sig, &generic);
+    err = jvmti->GetFieldName(nullptr, field, &name, &sig, &generic);
     if (err != JVMTI_ERROR_INVALID_CLASS) {
         printf("Error expected: JVMTI_ERROR_INVALID_CLASS,\n");
         printf("\tactual: %s (%d)\n", TranslateError(err), err);
@@ -94,7 +94,7 @@ Java_nsk_jvmti_GetFieldName_getfldnm003_check(JNIEnv *env, jclass cls) {
     if (printdump == JNI_TRUE) {
         printf(">>> invalid field check ...\n");
     }
-    err = jvmti->GetFieldName(cls, NULL, &name, &sig, &generic);
+    err = jvmti->GetFieldName(cls, nullptr, &name, &sig, &generic);
     if (err != JVMTI_ERROR_INVALID_FIELDID) {
         printf("Error expected: JVMTI_ERROR_INVALID_FIELDID,\n");
         printf("\tactual: %s (%d)\n", TranslateError(err), err);
@@ -104,7 +104,7 @@ Java_nsk_jvmti_GetFieldName_getfldnm003_check(JNIEnv *env, jclass cls) {
     if (printdump == JNI_TRUE) {
         printf(">>> (namePtr) null pointer check ...\n");
     }
-    err = jvmti->GetFieldName(cls, field, NULL, &sig, &generic);
+    err = jvmti->GetFieldName(cls, field, nullptr, &sig, &generic);
     if (err != JVMTI_ERROR_NONE) {
         printf("(name_ptr) unexpected error: %s (%d)\n",
                TranslateError(err), err);
@@ -113,7 +113,7 @@ Java_nsk_jvmti_GetFieldName_getfldnm003_check(JNIEnv *env, jclass cls) {
         if (printdump == JNI_TRUE) {
             printf(">>> sig = \"%s\", generic = \"%s\"\n", sig, generic);
         }
-        if (sig == NULL || strcmp(sig, "I") != 0) {
+        if (sig == nullptr || strcmp(sig, "I") != 0) {
             printf("Wrong field sig: \"%s\", expected: \"I\"\n", sig);
             result = STATUS_FAILED;
         }
@@ -122,7 +122,7 @@ Java_nsk_jvmti_GetFieldName_getfldnm003_check(JNIEnv *env, jclass cls) {
     if (printdump == JNI_TRUE) {
         printf(">>> (signature_ptr) null pointer check ...\n");
     }
-    err = jvmti->GetFieldName(cls, field, &name, NULL, &generic);
+    err = jvmti->GetFieldName(cls, field, &name, nullptr, &generic);
     if (err != JVMTI_ERROR_NONE) {
         printf("(signaturePtr) unexpected error: %s (%d)\n",
                TranslateError(err), err);
@@ -131,7 +131,7 @@ Java_nsk_jvmti_GetFieldName_getfldnm003_check(JNIEnv *env, jclass cls) {
         if (printdump == JNI_TRUE) {
             printf(">>> name = \"%s\", generic = \"%s\"\n", name, generic);
         }
-        if (name == NULL || strcmp(name, "fld") != 0) {
+        if (name == nullptr || strcmp(name, "fld") != 0) {
             printf("Wrong field name: \"%s\", expected: \"fld\"\n", name);
             result = STATUS_FAILED;
         }
@@ -140,7 +140,7 @@ Java_nsk_jvmti_GetFieldName_getfldnm003_check(JNIEnv *env, jclass cls) {
     if (printdump == JNI_TRUE) {
         printf(">>> (generic_ptr) null pointer check ...\n");
     }
-    err = jvmti->GetFieldName(cls, field, &name, &sig, NULL);
+    err = jvmti->GetFieldName(cls, field, &name, &sig, nullptr);
     if (err != JVMTI_ERROR_NONE) {
         printf("(signaturePtr) unexpected error: %s (%d)\n",
                TranslateError(err), err);
@@ -149,11 +149,11 @@ Java_nsk_jvmti_GetFieldName_getfldnm003_check(JNIEnv *env, jclass cls) {
         if (printdump == JNI_TRUE) {
             printf(">>> name = \"%s\", sig = \"%s\"\n", name, sig);
         }
-        if (name == NULL || strcmp(name, "fld") != 0) {
+        if (name == nullptr || strcmp(name, "fld") != 0) {
             printf("Wrong field name: \"%s\", expected: \"fld\"\n", name);
             result = STATUS_FAILED;
         }
-        if (sig == NULL || strcmp(sig, "I") != 0) {
+        if (sig == nullptr || strcmp(sig, "I") != 0) {
             printf("Wrong field sig: \"%s\", expected: \"I\"\n", sig);
             result = STATUS_FAILED;
         }

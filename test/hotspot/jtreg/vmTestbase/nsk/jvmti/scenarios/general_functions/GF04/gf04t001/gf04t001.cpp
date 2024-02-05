@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ extern "C" {
 /* ============================================================================= */
 
 static jlong timeout = 0;
-static const char* segment = NULL;
+static const char* segment = nullptr;
 static const char* EXP_CLASS_SIGNATURE = "Lnsk/jvmti/scenarios/general_functions/GF04/gf04t001;";
 static jrawMonitorID countLock;
 static jboolean classLoadReceived = JNI_FALSE, classPrepareReceived = JNI_FALSE;
@@ -49,7 +49,7 @@ static jint result = PASSED;
  * @returns NSK_FALSE if any error occured.
  */
 static int addSegment(jvmtiEnv* jvmti, const char segment[], const char where[]) {
-    void* storage = NULL;
+    void* storage = nullptr;
 
     NSK_DISPLAY1("Add segment: %s\n", segment);
     if (!NSK_JVMTI_VERIFY(jvmti->AddToBootstrapClassLoaderSearch(segment))) {
@@ -97,7 +97,7 @@ ClassLoad(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thread, jclass klass) {
             sig);
         classLoadReceived = JNI_TRUE;
 
-        if (!NSK_JVMTI_VERIFY(jvmti_env->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_CLASS_LOAD, NULL))) {
+        if (!NSK_JVMTI_VERIFY(jvmti_env->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_CLASS_LOAD, nullptr))) {
             result = STATUS_FAILED;
         } else {
             NSK_DISPLAY0("ClassLoad event disabled\n");
@@ -123,7 +123,7 @@ ClassPrepare(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thread, jclass klass) {
             sig);
         classPrepareReceived = JNI_TRUE;
 
-        if (!NSK_JVMTI_VERIFY(jvmti_env->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_CLASS_PREPARE, NULL))) {
+        if (!NSK_JVMTI_VERIFY(jvmti_env->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_CLASS_PREPARE, nullptr))) {
             result = STATUS_FAILED;
         } else {
             NSK_DISPLAY0("ClassPrepare event disabled\n");
@@ -148,19 +148,19 @@ JNIEXPORT jint JNI_OnLoad_gf04t001(JavaVM *jvm, char *options, void *reserved) {
 }
 #endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
-    jvmtiEnv* jvmti = NULL;
+    jvmtiEnv* jvmti = nullptr;
 
     if (!NSK_VERIFY(nsk_jvmti_parseOptions(options)))
         return JNI_ERR;
 
     timeout = nsk_jvmti_getWaitTime() * 60 * 1000;
 
-    segment = nsk_jvmti_findOptionStringValue("segment", NULL);
-    if (!NSK_VERIFY(segment != NULL))
+    segment = nsk_jvmti_findOptionStringValue("segment", nullptr);
+    if (!NSK_VERIFY(segment != nullptr))
         return JNI_ERR;
 
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     if (!NSK_JVMTI_VERIFY(jvmti->CreateRawMonitor("eventLock", &countLock)))
@@ -186,12 +186,12 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     NSK_DISPLAY0("  ... set\n");
 
     NSK_DISPLAY0("Enabling events: \n");
-    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_LOAD, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_LOAD, nullptr))) {
         return JNI_ERR;
     } else {
         NSK_DISPLAY0("  ... ClassLoad enabled\n");
     }
-    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_PREPARE, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_PREPARE, nullptr))) {
         return JNI_ERR;
     } else {
         NSK_DISPLAY0("  ... ClassPrepare enabled\n");
