@@ -116,7 +116,7 @@ public class Zip64DataDescriptor {
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (ZipOutputStream zo = new ZipOutputStream(baos)) {
-            ZipEntry ze = new ZipEntry("hello");
+            ZipEntry ze = new ZipEntry("-");
             ze.setExtra(extra);
             zo.putNextEntry(ze);
             zo.write("hello\n".getBytes(StandardCharsets.UTF_8));
@@ -261,15 +261,22 @@ public class Zip64DataDescriptor {
     }
 
     /*
-     * Consume all entries in a ZipInputStream, possibly throwing a
-     * ZipException if the reading of any entry stream fails.
+     * Consume and verify the ZIP file using ZipInputStream
      */
     private void readZipInputStream(byte[] zip) throws IOException {
         try (ZipInputStream in = new ZipInputStream(new ByteArrayInputStream(zip))) {
-            ZipEntry e;
-            while ( (e = in.getNextEntry()) != null) {
-                assertEquals("hello\n", new String(in.readAllBytes(), StandardCharsets.UTF_8));
-            }
+            // Read the ZIP entry, this calls readLOC
+            ZipEntry e = in.getNextEntry();
+
+            // Sanity check the zip entry
+            assertNotNull(e, "Missing zip entry");
+            assertEquals("-", e.getName());
+
+            // Read the entry data, this causes readEND to parse the data descriptor
+            assertEquals("hello\n", new String(in.readAllBytes(), StandardCharsets.UTF_8));
+
+            // There should only be a single zip entry
+            assertNull(in.getNextEntry(), "Unexpected additional zip entry");
         }
     }
 }
