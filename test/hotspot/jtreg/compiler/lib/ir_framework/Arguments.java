@@ -45,5 +45,5 @@ public @interface Arguments {
     /**
      * Get the setup method name.
      */
-    String[] setup() default {};
+    String setup() default "";
 }

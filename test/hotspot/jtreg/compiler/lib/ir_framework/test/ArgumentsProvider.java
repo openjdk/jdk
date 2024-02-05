@@ -69,15 +69,11 @@ abstract class ArgumentsProvider {
         }
 
         Argument[] values = argumentsAnnotation.values();
-        String[] setup = argumentsAnnotation.setup();
+        String setupMethodName = argumentsAnnotation.setup();
 
-        if (setup.length > 0) {
-            TestFormat.check(setup.length == 1,
-                             "@Arguments: \"setup\" should specify exactly one @Setup method " +
-                             " but got " + setup.length + " in " + method);
+        if (setupMethodName.length() > 0) {
             TestFormat.check(values.length == 0,
                              "@Arguments: Can only specify \"setup\" or \"values\" but not both in " + method);
-            String setupMethodName = setup[0];
             TestFormat.check(setupMethodMap.containsKey(setupMethodName),
                              "@Arguments setup: did not find " + setupMethodName +
                              " for " + method);
