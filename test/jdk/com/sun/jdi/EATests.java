@@ -2046,7 +2046,7 @@ class EARelockingNestedInflated_03Target extends EATestCaseBaseTarget {
             doLockNow = true;
             testCase.notify();
             // wait for other thread to reset doLockNow again
-            while(doLockNow) {
+            while (doLockNow) {
                 try {
                     testCase.wait();
                 } catch (InterruptedException e) { /* ignored */ }
