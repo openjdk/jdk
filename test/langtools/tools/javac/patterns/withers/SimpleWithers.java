@@ -38,6 +38,17 @@ public class SimpleWithers {
             r.val3() != (-3)) {
             throw new AssertionError("Incorrect value: " + r);
         }
+        R r2 = r;
+        boolean match = switch (r2) {
+            case R(var i1, var i2, var i3) when r2 with {
+                val1 = -1;
+                val3 = -3;
+            }.val1() == -1 -> true;
+            default -> false;
+        };
+        if (!match) {
+            throw new AssertionError("Did not match.");
+        }
     }
     record R(int val1, int val2, int val3) {}
 }

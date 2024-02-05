@@ -3376,6 +3376,14 @@ public class Flow {
         }
 
         @Override
+        public void visitReconstruction(JCDerivedInstance tree) {
+            if (declaredInsideGuard != null) {
+                tree.outgoingBindings.forEach(declaredInsideGuard::enter);
+            }
+            super.visitReconstruction(tree);
+        }
+
+        @Override
         public void visitYield(JCYield tree) {
             scan(tree.value);
         }
