@@ -90,7 +90,7 @@ DISABLED_WARNINGS_gcc := array-bounds comment delete-non-virtual-dtor \
 
 DISABLED_WARNINGS_clang := sometimes-uninitialized \
     missing-braces delete-non-abstract-non-virtual-dtor unknown-pragmas \
-    gnu-zero-variadic-macro-arguments
+    gnu-zero-variadic-macro-arguments dollar-in-identifier-extension
 
 ifneq ($(DEBUG_LEVEL), release)
   # Assert macro gives warning
