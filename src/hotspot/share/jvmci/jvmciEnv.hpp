@@ -96,9 +96,7 @@ class JVMCINMethodHandle : public StackObj {
  public:
   JVMCINMethodHandle(JavaThread* thread): _thread(thread) {}
 
-  void set_nmethod(nmethod* nm) {
-      _thread->set_live_nmethod(nm);
-  }
+  void set_nmethod(nmethod* nm);
 
   ~JVMCINMethodHandle() {
     _thread->clear_live_nmethod();

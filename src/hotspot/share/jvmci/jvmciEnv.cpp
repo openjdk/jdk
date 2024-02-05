@@ -1819,15 +1819,19 @@ CodeBlob* JVMCIEnv::get_code_blob(JVMCIObject obj) {
   return cb;
 }
 
+void JVMCINMethodHandle::set_nmethod(nmethod* nm) {
+  BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+  if (bs_nm != nullptr) {
+    bs_nm->nmethod_entry_barrier(nm);
+  }
+  _thread->set_live_nmethod(nm);
+}
+
 nmethod* JVMCIEnv::get_nmethod(JVMCIObject obj, JVMCINMethodHandle& nmethod_handle) {
   CodeBlob* cb = get_code_blob(obj);
   if (cb != nullptr) {
     nmethod* nm = cb->as_nmethod_or_null();
     if (nm != nullptr) {
-      BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-      if (bs_nm != nullptr) {
-        bs_nm->nmethod_entry_barrier(nm);
-      }
       nmethod_handle.set_nmethod(nm);
       return nm;
     }
