@@ -104,6 +104,9 @@ public class WithErrors {
                 }
             };
         };
+
+        String _ = "" with {};
+        int _ = 1 with {};
     }
 
     private void controlFlow(R input) {

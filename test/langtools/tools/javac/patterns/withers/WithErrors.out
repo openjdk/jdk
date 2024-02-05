@@ -2,17 +2,19 @@ WithErrors.java:42:13: compiler.err.with.assignment.not.allowed: i
 WithErrors.java:43:13: compiler.err.with.assignment.not.allowed: field
 WithErrors.java:54:17: compiler.err.with.assignment.not.allowed: i
 WithErrors.java:55:17: compiler.err.with.assignment.not.allowed: field
-WithErrors.java:112:17: compiler.err.with.return.not.allowed
-WithErrors.java:118:17: compiler.err.with.break.not.allowed
-WithErrors.java:130:17: compiler.err.with.break.not.allowed
-WithErrors.java:142:17: compiler.err.with.break.not.allowed
-WithErrors.java:154:17: compiler.err.with.break.not.allowed
-WithErrors.java:167:21: compiler.err.with.break.not.allowed
-WithErrors.java:180:21: compiler.err.with.continue.not.allowed
-WithErrors.java:196:21: compiler.err.with.continue.not.allowed
-WithErrors.java:212:21: compiler.err.with.continue.not.allowed
-WithErrors.java:228:21: compiler.err.with.continue.not.allowed
-WithErrors.java:244:21: compiler.err.with.yield.not.allowed
+WithErrors.java:108:23: compiler.err.derived.expression.no.record
+WithErrors.java:109:19: compiler.err.derived.expression.no.record
+WithErrors.java:115:17: compiler.err.with.return.not.allowed
+WithErrors.java:121:17: compiler.err.with.break.not.allowed
+WithErrors.java:133:17: compiler.err.with.break.not.allowed
+WithErrors.java:145:17: compiler.err.with.break.not.allowed
+WithErrors.java:157:17: compiler.err.with.break.not.allowed
+WithErrors.java:170:21: compiler.err.with.break.not.allowed
+WithErrors.java:183:21: compiler.err.with.continue.not.allowed
+WithErrors.java:199:21: compiler.err.with.continue.not.allowed
+WithErrors.java:215:21: compiler.err.with.continue.not.allowed
+WithErrors.java:231:21: compiler.err.with.continue.not.allowed
+WithErrors.java:247:21: compiler.err.with.yield.not.allowed
 WithErrors.java:53:17: compiler.err.cant.ref.non.effectively.final.var: value, (compiler.misc.lambda)
 WithErrors.java:57:17: compiler.err.cant.ref.non.effectively.final.var: l1, (compiler.misc.lambda)
 WithErrors.java:64:28: compiler.err.cant.ref.non.effectively.final.var: value, (compiler.misc.lambda)
@@ -22,4 +24,4 @@ WithErrors.java:82:21: compiler.err.cant.ref.non.effectively.final.var: i, (comp
 WithErrors.java:85:21: compiler.err.cant.ref.non.effectively.final.var: l1, (compiler.misc.inner.cls)
 WithErrors.java:94:32: compiler.err.cant.ref.non.effectively.final.var: value, (compiler.misc.inner.cls)
 WithErrors.java:103:32: compiler.err.cant.ref.non.effectively.final.var: value, (compiler.misc.inner.cls)
-24 errors
+26 errors

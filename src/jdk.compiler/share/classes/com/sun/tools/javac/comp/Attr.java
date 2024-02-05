@@ -3951,29 +3951,32 @@ public class Attr extends JCTree.Visitor {
 
     @Override
     public void visitReconstruction(JCDerivedInstance tree) {
-        Type owntype = attribExpr(tree.expr, env);
+        Type exprType = attribExpr(tree.expr, env);
         Env<AttrContext> blockEnv =
             env.dup(tree, env.info.dup(env.info.scope.dup()));
 
         try {
-            //TODO: check owntype is a record type!
             ListBuffer<VarSymbol> outgoingBindings = new ListBuffer<>();
 
-            for (RecordComponent component : ((ClassSymbol) owntype.tsym).getRecordComponents()) {
-                VarSymbol outgoing = new VarSymbol(OUTGOING_BINDING, component.name, types.memberType(owntype, component), env.info.scope.owner);
+            if ((exprType.tsym.flags() & RECORD) == 0) {
+                log.error(tree, Errors.DerivedExpressionNoRecord);
+            } else {
+                for (RecordComponent component : ((ClassSymbol) exprType.tsym).getRecordComponents()) {
+                    VarSymbol outgoing = new VarSymbol(OUTGOING_BINDING, component.name, types.memberType(exprType, component), env.info.scope.owner);
 
-                outgoing.pos = tree.pos;
-                outgoingBindings.append(outgoing);
-                blockEnv.info.scope.enter(outgoing);
+                    outgoing.pos = tree.pos;
+                    outgoingBindings.append(outgoing);
+                    blockEnv.info.scope.enter(outgoing);
+                }
             }
-
-            attribStat(tree.block, blockEnv);
 
             tree.outgoingBindings = outgoingBindings.toList();
 
+            attribStat(tree.block, blockEnv);
+
             chk.checkDerivedInstanceBlockStructure(tree);
 
-            result = check(tree, owntype, KindSelector.VAL, resultInfo);;
+            result = check(tree, exprType, KindSelector.VAL, resultInfo);;
         } finally {
             blockEnv.info.scope.leave();
         }
