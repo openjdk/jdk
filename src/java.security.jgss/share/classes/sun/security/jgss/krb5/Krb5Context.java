@@ -33,8 +33,10 @@ import sun.security.jgss.spi.*;
 import sun.security.jgss.TokenTracker;
 import sun.security.krb5.*;
 import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.InvalidObjectException;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.OutputStream;
 import java.security.*;
 import javax.security.auth.Subject;
 import javax.security.auth.kerberos.ServicePermission;
@@ -1408,6 +1410,20 @@ class Krb5Context implements GSSContextSpi {
             return "Kerberos session key: etype: " + key.getEType() + "\n" +
                     new HexDumpEncoder().encodeBuffer(key.getBytes());
         }
+
+        /**
+         * Restores the state of this object from the stream.
+         *
+         * @param  stream the {@code ObjectInputStream} from which data is read
+         * @throws IOException if an I/O error occurs
+         * @throws ClassNotFoundException if a serialized class cannot be loaded
+         */
+        @java.io.Serial
+        private void readObject(ObjectInputStream stream)
+                throws IOException, ClassNotFoundException {
+            throw new InvalidObjectException
+                    ("KerberosSessionKey not directly deserializable");
+        }
     }
 
     /**
@@ -1477,5 +1493,4 @@ class Krb5Context implements GSSContextSpi {
     public void setAuthzData(AuthorizationData authzData) {
         this.authzData = authzData;
     }
-
 }
