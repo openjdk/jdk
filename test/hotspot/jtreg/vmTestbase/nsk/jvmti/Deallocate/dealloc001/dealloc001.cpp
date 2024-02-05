@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ extern "C" {
 #define PASSED  0
 #define STATUS_FAILED  2
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
 
@@ -51,12 +51,12 @@ JNIEXPORT jint JNI_OnLoad_dealloc001(JavaVM *jvm, char *options, void *reserved)
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jint res;
 
-    if (options != NULL && strcmp(options, "printdump") == 0) {
+    if (options != nullptr && strcmp(options, "printdump") == 0) {
         printdump = JNI_TRUE;
     }
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
     }
@@ -68,7 +68,7 @@ JNIEXPORT jint JNICALL
 Java_nsk_jvmti_Deallocate_dealloc001_check(JNIEnv *env, jclass cls) {
     jvmtiError err;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("JVMTI client was not properly loaded!\n");
         return STATUS_FAILED;
     }
@@ -76,7 +76,7 @@ Java_nsk_jvmti_Deallocate_dealloc001_check(JNIEnv *env, jclass cls) {
     if (printdump == JNI_TRUE) {
         printf(">>> Null pointer check ...\n");
     }
-    err = jvmti->Deallocate(NULL);
+    err = jvmti->Deallocate(nullptr);
     if (err != JVMTI_ERROR_NONE) {
         printf("Error expected: JVMTI_ERROR_NONE, got: %s\n",
                TranslateError(err));

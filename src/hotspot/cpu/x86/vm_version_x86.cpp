@@ -809,7 +809,8 @@ void VM_Version::get_processor_features() {
   _stepping = cpu_stepping();
 
   if (cpu_family() > 4) { // it supports CPUID
-    _features = feature_flags();
+    _features = feature_flags(); // These can be changed by VM settings
+    _cpu_features = _features;   // Preserve features
     // Logical processors are only available on P4s and above,
     // and only if hyperthreading is available.
     _logical_processors_per_package = logical_processor_count();

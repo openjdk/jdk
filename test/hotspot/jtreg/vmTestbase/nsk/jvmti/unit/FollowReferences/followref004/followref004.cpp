@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,16 +146,16 @@ static void createGlobalRefs(JNIEnv * jni)
 {
     jclass klass;
 
-    if  (!NSK_JNI_VERIFY(jni, (klass = jni->FindClass(JAVA_LANG_STRING_CLASS_NAME)) != NULL)) {
+    if  (!NSK_JNI_VERIFY(jni, (klass = jni->FindClass(JAVA_LANG_STRING_CLASS_NAME)) != nullptr)) {
         nsk_jvmti_setFailStatus();
         return;
     }
 
-    if (!NSK_JNI_VERIFY(jni, (g_jniGlobalRef = jni->NewGlobalRef(klass)) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni, (g_jniGlobalRef = jni->NewGlobalRef(klass)) != nullptr)) {
         nsk_jvmti_setFailStatus();
     }
 
-    if (!NSK_JNI_VERIFY(jni, (g_jniWeakGlobalRef = jni->NewWeakGlobalRef(klass)) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni, (g_jniWeakGlobalRef = jni->NewWeakGlobalRef(klass)) != nullptr)) {
         nsk_jvmti_setFailStatus();
     }
 
@@ -180,8 +180,8 @@ static void JNICALL agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg)
     createGlobalRefs(jni);
 
     retCode = jvmti->FollowReferences((jint) 0,                 /* heap filter */
-                                      NULL,                     /* class */
-                                      NULL,                     /* inital object */
+                                      nullptr,                     /* class */
+                                      nullptr,                     /* inital object */
                                       &g_heapCallbacks,
                                       (const void *) &g_fakeUserData);
 
@@ -218,7 +218,7 @@ JNIEXPORT jint JNI_OnLoad_followref004(JavaVM *jvm, char *options, void *reserve
 #endif
 jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved)
 {
-    jvmtiEnv* jvmti = NULL;
+    jvmtiEnv* jvmti = nullptr;
 
     if (!NSK_VERIFY(nsk_jvmti_parseOptions(options))) {
         return JNI_ERR;
@@ -226,13 +226,13 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved)
 
     g_timeout = nsk_jvmti_getWaitTime() * 60 * 1000;
 
-    if (!NSK_VERIFY((jvmti = nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL)) {
+    if (!NSK_VERIFY((jvmti = nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr)) {
         return JNI_ERR;
     }
 
     /* Setting Heap Callbacks */
     memset(&g_heapCallbacks, 0, sizeof(g_heapCallbacks));
-    g_heapCallbacks.heap_iteration_callback         = NULL;
+    g_heapCallbacks.heap_iteration_callback         = nullptr;
     g_heapCallbacks.heap_reference_callback         = heapReferenceCallback;
     g_heapCallbacks.primitive_field_callback        = primitiveFieldCallback;
     g_heapCallbacks.array_primitive_value_callback  = arrayPrimitiveValueCallback;
@@ -250,7 +250,7 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved)
         }
     }
 
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL))) {
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr))) {
         return JNI_ERR;
     }
 

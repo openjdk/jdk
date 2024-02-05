@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,16 +48,16 @@ Java_vm_mlvm_meth_stress_jni_nativeAndMH_Test_native01(
     jobjectArray arguments;
     jobject result;
 
-    if (!NSK_JNI_VERIFY(pEnv, (mhClass = pEnv->GetObjectClass(mhToCall)) != NULL))
-        return NULL;
+    if (!NSK_JNI_VERIFY(pEnv, (mhClass = pEnv->GetObjectClass(mhToCall)) != nullptr))
+        return nullptr;
 
-    if (!NSK_JNI_VERIFY(pEnv, NULL != (mid = pEnv->GetMethodID(mhClass, "invokeWithArguments", "([Ljava/lang/Object;)Ljava/lang/Object;"))))
-        return NULL;
+    if (!NSK_JNI_VERIFY(pEnv, nullptr != (mid = pEnv->GetMethodID(mhClass, "invokeWithArguments", "([Ljava/lang/Object;)Ljava/lang/Object;"))))
+        return nullptr;
 
-    NSK_JNI_VERIFY(pEnv, NULL != (objectClass = pEnv->FindClass("java/lang/Object")));
+    NSK_JNI_VERIFY(pEnv, nullptr != (objectClass = pEnv->FindClass("java/lang/Object")));
 
-    if (!NSK_JNI_VERIFY(pEnv, NULL != (arguments = pEnv->NewObjectArray(ARGS_COUNT, objectClass, NULL))))
-        return NULL;
+    if (!NSK_JNI_VERIFY(pEnv, nullptr != (arguments = pEnv->NewObjectArray(ARGS_COUNT, objectClass, nullptr))))
+        return nullptr;
 
     NSK_JNI_VERIFY_VOID(pEnv, pEnv->SetObjectArrayElement(arguments, 0, a1));
     NSK_JNI_VERIFY_VOID(pEnv, pEnv->SetObjectArrayElement(arguments, 1, a2));
@@ -67,7 +67,7 @@ Java_vm_mlvm_meth_stress_jni_nativeAndMH_Test_native01(
     NSK_JNI_VERIFY_VOID(pEnv, pEnv->SetObjectArrayElement(arguments, 5, a6));
 
     // Swap arguments
-    NSK_JNI_VERIFY(pEnv, NULL != (result = pEnv->CallObjectMethod(mhToCall, mid, arguments)));
+    NSK_JNI_VERIFY(pEnv, nullptr != (result = pEnv->CallObjectMethod(mhToCall, mid, arguments)));
     return result;
 }
 

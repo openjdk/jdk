@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -287,6 +287,7 @@ static char* reserve_mmapped_memory(size_t bytes, char* requested_addr) {
 }
 
 static int util_posix_fallocate(int fd, off_t offset, off_t len) {
+  static_assert(sizeof(off_t) == 8, "Expected Large File Support in this file");
 #ifdef __APPLE__
   fstore_t store = { F_ALLOCATECONTIG, F_PEOFPOSMODE, 0, len };
   // First we try to get a continuous chunk of disk space
@@ -752,11 +753,11 @@ void os::dll_unload(void *lib) {
 }
 
 jlong os::lseek(int fd, jlong offset, int whence) {
-  return (jlong) BSD_ONLY(::lseek) NOT_BSD(::lseek64)(fd, offset, whence);
+  return (jlong) ::lseek(fd, offset, whence);
 }
 
 int os::ftruncate(int fd, jlong length) {
-   return BSD_ONLY(::ftruncate) NOT_BSD(::ftruncate64)(fd, length);
+   return ::ftruncate(fd, length);
 }
 
 const char* os::get_current_directory(char *buf, size_t buflen) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,6 +179,32 @@ void os::Bsd::print_uptime_info(outputStream* st) {
     time_t currsec = time(nullptr);
     os::print_dhm(st, "OS uptime:", (long) difftime(currsec, bootsec));
   }
+}
+
+jlong os::total_swap_space() {
+#if defined(__APPLE__)
+  struct xsw_usage vmusage;
+  size_t size = sizeof(vmusage);
+  if (sysctlbyname("vm.swapusage", &vmusage, &size, NULL, 0) != 0) {
+    return -1;
+  }
+  return (jlong)vmusage.xsu_total;
+#else
+  return -1;
+#endif
+}
+
+jlong os::free_swap_space() {
+#if defined(__APPLE__)
+  struct xsw_usage vmusage;
+  size_t size = sizeof(vmusage);
+  if (sysctlbyname("vm.swapusage", &vmusage, &size, NULL, 0) != 0) {
+    return -1;
+  }
+  return (jlong)vmusage.xsu_avail;
+#else
+  return -1;
+#endif
 }
 
 julong os::physical_memory() {
@@ -985,6 +1011,13 @@ void *os::Bsd::dlopen_helper(const char *filename, int mode, char *ebuf, int ebu
   if (!ieee_handling) {
     Events::log_dll_message(nullptr, "IEEE subnormal handling check failed before loading %s", filename);
     log_info(os)("IEEE subnormal handling check failed before loading %s", filename);
+    if (CheckJNICalls) {
+      tty->print_cr("WARNING: IEEE subnormal handling check failed before loading %s", filename);
+      Thread* current = Thread::current();
+      if (current->is_Java_thread()) {
+        JavaThread::cast(current)->print_jni_stack();
+      }
+    }
   }
 
   // Save and restore the floating-point environment around dlopen().
@@ -1038,6 +1071,13 @@ void *os::Bsd::dlopen_helper(const char *filename, int mode, char *ebuf, int ebu
       } else {
         Events::log_dll_message(nullptr, "IEEE subnormal handling could not be corrected after loading %s", filename);
         log_info(os)("IEEE subnormal handling could not be corrected after loading %s", filename);
+        if (CheckJNICalls) {
+          tty->print_cr("WARNING: IEEE subnormal handling could not be corrected after loading %s", filename);
+          Thread* current = Thread::current();
+          if (current->is_Java_thread()) {
+            JavaThread::cast(current)->print_jni_stack();
+          }
+        }
         assert(false, "fesetenv didn't work");
       }
     }
@@ -1621,6 +1661,10 @@ void os::pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
 
 void os::pd_free_memory(char *addr, size_t bytes, size_t alignment_hint) {
   ::madvise(addr, bytes, MADV_DONTNEED);
+}
+
+size_t os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
+  return page_size;
 }
 
 void os::numa_make_global(char *addr, size_t bytes) {
