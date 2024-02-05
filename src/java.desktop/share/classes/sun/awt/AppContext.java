@@ -163,7 +163,7 @@ public final class AppContext {
      */
     private static volatile AppContext mainAppContext;
 
-    private static class GetAppContextLock {};
+    private static class GetAppContextLock {}
     private static final Object getAppContextLock = new GetAppContextLock();
 
     /*
@@ -193,7 +193,7 @@ public final class AppContext {
         VALID,
         BEING_DISPOSED,
         DISPOSED
-    };
+    }
 
     private volatile State state = State.VALID;
 

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2020, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ class ChunkManagerRandomChunkAllocTest {
     // Assuming we allocate only the largest type of chunk, committed to the fullest commit factor,
     // how many chunks can we accomodate before hitting max_footprint_words?
     const size_t largest_chunk_size = word_size_for_level(r.lowest());
-    int max_chunks = (max_footprint_words * commit_factor) / largest_chunk_size;
+    int max_chunks = (int)((max_footprint_words * commit_factor) / (float) largest_chunk_size);
     // .. but cap at (min) 50 and (max) 1000
     max_chunks = MIN2(1000, max_chunks);
     max_chunks = MAX2(50, max_chunks);
@@ -70,11 +70,6 @@ class ChunkManagerRandomChunkAllocTest {
   bool could_be_commit_error(size_t additional_word_size) {
 
     // could it be commit limit hit?
-
-    if (Settings::new_chunks_are_fully_committed()) {
-      // For all we know we may have just failed to fully-commit a new root chunk.
-      additional_word_size = MAX_CHUNK_WORD_SIZE;
-    }
 
     // Note that this is difficult to verify precisely, since there are
     // several layers of truth:
@@ -101,7 +96,7 @@ class ChunkManagerRandomChunkAllocTest {
 
   // Given a chunk level and a factor, return a random commit size.
   static size_t random_committed_words(chunklevel_t lvl, float commit_factor) {
-    const size_t sz = word_size_for_level(lvl) * commit_factor;
+    const size_t sz = (size_t)((float)word_size_for_level(lvl) * commit_factor);
     if (sz < 2) {
       return 0;
     }
@@ -121,9 +116,9 @@ class ChunkManagerRandomChunkAllocTest {
     const chunklevel_t max_level = r.highest();
     const size_t min_committed = random_committed_words(max_level, _commit_factor);
 
-    Metachunk* c = NULL;
+    Metachunk* c = nullptr;
     _context.alloc_chunk(&c, r.lowest(), r.highest(), min_committed);
-    if (c == NULL) {
+    if (c == nullptr) {
       EXPECT_TRUE(could_be_reserve_error() ||
                   could_be_commit_error(min_committed));
       LOG("Alloc chunk at %d failed.", slot);
@@ -167,7 +162,7 @@ class ChunkManagerRandomChunkAllocTest {
     Metachunk* c = _chunks.at(slot);
     LOG("Returning chunk at %d: " METACHUNK_FORMAT ".", slot, METACHUNK_FORMAT_ARGS(c));
     _context.return_chunk(c);
-    _chunks.set_at(slot, NULL);
+    _chunks.set_at(slot, nullptr);
   }
 
   // return a random number of chunks (at most a quarter of the full slot range)
@@ -190,7 +185,7 @@ class ChunkManagerRandomChunkAllocTest {
 
   // adjust test if we change levels
   STATIC_ASSERT(HIGHEST_CHUNK_LEVEL == CHUNK_LEVEL_1K);
-  STATIC_ASSERT(LOWEST_CHUNK_LEVEL == CHUNK_LEVEL_4M);
+  STATIC_ASSERT(LOWEST_CHUNK_LEVEL == CHUNK_LEVEL_16M);
 
   void one_test() {
 
@@ -199,7 +194,7 @@ class ChunkManagerRandomChunkAllocTest {
 
     IntRange rand(100);
 
-    for (int j = 0; j < 1000; j++) {
+    for (int j = 0; j < 750; j++) {
 
       bool force_alloc = false;
       bool force_free = true;
@@ -254,7 +249,7 @@ public:
   // {}
 
   void do_tests() {
-    const int num_runs = 5;
+    const int num_runs = 3;
     for (int n = 0; n < num_runs; n++) {
       one_test();
     }

@@ -12,7 +12,7 @@ class T4718142 {
     static void thr() throws E {
         throw new E();
     }
-    public static void main(String[] args) {
+    public static void meth() {
         int count = 0;
         final int i;
         while (true) {

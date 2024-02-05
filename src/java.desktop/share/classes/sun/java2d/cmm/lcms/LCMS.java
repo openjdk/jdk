@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,12 +95,10 @@ final class LCMS implements PCMM {
         }
     }
 
-    /* Helper method used from LCMSColorTransfrom */
-    static long createTransform(
-        LCMSProfile[] profiles, int renderingIntent,
-        int inFormatter, boolean isInIntPacked,
-        int outFormatter, boolean isOutIntPacked,
-        Object disposerRef)
+    /* Helper method used from LCMSColorTransform */
+    static long createTransform(LCMSProfile[] profiles, int renderingIntent,
+                                int inFormatter, int outFormatter,
+                                Object disposerRef)
     {
         long[] ptrs = new long[profiles.length];
         long stamp = lock.readLock();
@@ -113,17 +111,17 @@ final class LCMS implements PCMM {
             }
 
             return createNativeTransform(ptrs, renderingIntent, inFormatter,
-                    isInIntPacked, outFormatter, isOutIntPacked, disposerRef);
+                                         outFormatter, disposerRef);
         } finally {
             lock.unlockRead(stamp);
         }
     }
 
-    private static native long createNativeTransform(
-        long[] profileIDs, int renderingIntent,
-        int inFormatter, boolean isInIntPacked,
-        int outFormatter, boolean isOutIntPacked,
-        Object disposerRef);
+    private static native long createNativeTransform(long[] profileIDs,
+                                                     int renderingIntent,
+                                                     int inFormatter,
+                                                     int outFormatter,
+                                                     Object disposerRef);
 
     /**
      * Constructs ColorTransform object corresponding to the ICC_profiles.
@@ -141,7 +139,7 @@ final class LCMS implements PCMM {
                                     Object srcData, Object dstData,
                                     int srcType, int dstType);
 
-    private LCMS() {};
+    private LCMS() {}
 
     private static LCMS theLcms = null;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "jvm_io.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/elfFile.hpp"
 #include "utilities/elfFuncDescTable.hpp"
@@ -46,12 +47,12 @@ const char* ElfFile::USR_LIB_DEBUG_DIRECTORY = "/usr/lib/debug";
 // For test only, disable elf section cache and force to read from file directly.
 bool ElfFile::_do_not_cache_elf_section = false;
 
-ElfSection::ElfSection(FILE* fd, const Elf_Shdr& hdr) : _section_data(NULL) {
+ElfSection::ElfSection(FILE* fd, const Elf_Shdr& hdr) : _section_data(nullptr) {
   _stat = load_section(fd, hdr);
 }
 
 ElfSection::~ElfSection() {
-  if (_section_data != NULL) {
+  if (_section_data != nullptr) {
     os::free(_section_data);
   }
 }
@@ -67,7 +68,7 @@ NullDecoder::decoder_status ElfSection::load_section(FILE* const fd, const Elf_S
   _section_data = os::malloc(shdr.sh_size, mtInternal);
   // No enough memory for caching. It is okay, we can try to read from
   // file instead.
-  if (_section_data == NULL) return NullDecoder::no_error;
+  if (_section_data == nullptr) return NullDecoder::no_error;
 
   MarkedFileReader mfd(fd);
   if (mfd.has_mark() &&
@@ -76,19 +77,19 @@ NullDecoder::decoder_status ElfSection::load_section(FILE* const fd, const Elf_S
     return NullDecoder::no_error;
   } else {
     os::free(_section_data);
-    _section_data = NULL;
+    _section_data = nullptr;
     return NullDecoder::file_invalid;
   }
 }
 
 bool FileReader::read(void* buf, size_t size) {
-  assert(buf != NULL, "no buffer");
+  assert(buf != nullptr, "no buffer");
   assert(size > 0, "no space");
   return fread(buf, size, 1, _fd) == 1;
 }
 
 size_t FileReader::read_buffer(void* buf, size_t size) {
-  assert(buf != NULL, "no buffer");
+  assert(buf != nullptr, "no buffer");
   assert(size > 0, "no space");
   return fread(buf, 1, size, _fd);
 }
@@ -107,8 +108,8 @@ MarkedFileReader::~MarkedFileReader() {
 }
 
 ElfFile::ElfFile(const char* filepath) :
-  _next(NULL), _filepath(os::strdup(filepath)), _file(NULL),
-  _symbol_tables(NULL), _string_tables(NULL), _shdr_string_table(NULL), _funcDesc_table(NULL),
+  _next(nullptr), _filepath(os::strdup(filepath)), _file(nullptr),
+  _symbol_tables(nullptr), _string_tables(nullptr), _shdr_string_table(nullptr), _funcDesc_table(nullptr),
   _status(NullDecoder::no_error), _dwarf_file(nullptr) {
   memset(&_elfHdr, 0, sizeof(_elfHdr));
   if (_filepath == nullptr) {
@@ -121,7 +122,7 @@ ElfFile::ElfFile(const char* filepath) :
 ElfFile::~ElfFile() {
   cleanup_tables();
 
-  if (_file != NULL) {
+  if (_file != nullptr) {
     fclose(_file);
   }
 
@@ -165,7 +166,7 @@ NullDecoder::decoder_status ElfFile::parse_elf(const char* filepath) {
   assert(filepath, "null file path");
 
   _file = os::fopen(filepath, "r");
-  if (_file != NULL) {
+  if (_file != nullptr) {
     return load_tables();
   } else {
     return NullDecoder::file_not_found;
@@ -211,11 +212,11 @@ NullDecoder::decoder_status ElfFile::load_tables() {
     if (shdr.sh_type == SHT_STRTAB) {
       // string tables
       ElfStringTable* table = new (std::nothrow) ElfStringTable(fd(), shdr, index);
-      if (table == NULL) {
+      if (table == nullptr) {
         return NullDecoder::out_of_memory;
       }
       if (index == _elfHdr.e_shstrndx) {
-        assert(_shdr_string_table == NULL, "Only set once");
+        assert(_shdr_string_table == nullptr, "Only set once");
         _shdr_string_table = table;
       } else {
         add_string_table(table);
@@ -223,7 +224,7 @@ NullDecoder::decoder_status ElfFile::load_tables() {
     } else if (shdr.sh_type == SHT_SYMTAB || shdr.sh_type == SHT_DYNSYM) {
       // symbol tables
       ElfSymbolTable* table = new (std::nothrow) ElfSymbolTable(fd(), shdr);
-      if (table == NULL) {
+      if (table == nullptr) {
         return NullDecoder::out_of_memory;
       }
       add_symbol_table(table);
@@ -247,7 +248,7 @@ NullDecoder::decoder_status ElfFile::load_tables() {
   }
 
   _funcDesc_table = new (std::nothrow) ElfFuncDescTable(_file, shdr, sect_index);
-  if (_funcDesc_table == NULL) {
+  if (_funcDesc_table == nullptr) {
       return NullDecoder::out_of_memory;
   }
 #endif
@@ -256,14 +257,14 @@ NullDecoder::decoder_status ElfFile::load_tables() {
 
 #if defined(PPC64) && !defined(ABI_ELFv2)
 int ElfFile::section_by_name(const char* name, Elf_Shdr& hdr) {
-  assert(name != NULL, "No section name");
+  assert(name != nullptr, "No section name");
   size_t len = strlen(name) + 1;
   char* buf = (char*)os::malloc(len, mtInternal);
-  if (buf == NULL) {
+  if (buf == nullptr) {
     return -1;
   }
 
-  assert(_shdr_string_table != NULL, "Section header string table should be loaded");
+  assert(_shdr_string_table != nullptr, "Section header string table should be loaded");
   ElfStringTable* const table = _shdr_string_table;
   MarkedFileReader mfd(fd());
   if (!mfd.has_mark() || !mfd.set_position(_elfHdr.e_shoff)) return -1;
@@ -299,7 +300,7 @@ bool ElfFile::decode(address addr, char* buf, int buflen, int* offset) {
   bool found_symbol = false;
   ElfSymbolTable* symbol_table = _symbol_tables;
 
-  while (symbol_table != NULL) {
+  while (symbol_table != nullptr) {
     if (symbol_table->lookup(addr, &string_table_index, &pos_in_string_table, &off, _funcDesc_table)) {
       found_symbol = true;
       break;
@@ -312,7 +313,7 @@ bool ElfFile::decode(address addr, char* buf, int buflen, int* offset) {
 
   ElfStringTable* string_table = get_string_table(string_table_index);
 
-  if (string_table == NULL) {
+  if (string_table == nullptr) {
     _status = NullDecoder::file_invalid;
     return false;
   }
@@ -322,7 +323,7 @@ bool ElfFile::decode(address addr, char* buf, int buflen, int* offset) {
 }
 
 void ElfFile::add_symbol_table(ElfSymbolTable* table) {
-  if (_symbol_tables == NULL) {
+  if (_symbol_tables == nullptr) {
     _symbol_tables = table;
   } else {
     table->set_next(_symbol_tables);
@@ -331,7 +332,7 @@ void ElfFile::add_symbol_table(ElfSymbolTable* table) {
 }
 
 void ElfFile::add_string_table(ElfStringTable* table) {
-  if (_string_tables == NULL) {
+  if (_string_tables == nullptr) {
     _string_tables = table;
   } else {
     table->set_next(_string_tables);
@@ -341,11 +342,11 @@ void ElfFile::add_string_table(ElfStringTable* table) {
 
 ElfStringTable* ElfFile::get_string_table(int index) {
   ElfStringTable* p = _string_tables;
-  while (p != NULL) {
+  while (p != nullptr) {
     if (p->index() == index) return p;
     p = p->next();
   }
-  return NULL;
+  return nullptr;
 }
 
 // Use unified logging to report errors rather than assert() throughout this method as this code is already part of the error reporting
@@ -789,7 +790,7 @@ bool DwarfFile::DebugAranges::read_set_header(DebugArangesSetHeader& header) {
 
   // We must align to twice the address size.
   uint8_t alignment = DwarfFile::ADDRESS_SIZE * 2;
-  uint8_t padding = alignment - (_reader.get_position() - _section_start_address) % alignment;
+  long padding = alignment - (_reader.get_position() - _section_start_address) % alignment;
   return _reader.move_position(padding);
 }
 
@@ -1423,7 +1424,7 @@ bool DwarfFile::LineNumberProgram::apply_extended_opcode() {
         // Must be an unsigned integer as specified in section 6.2.2 of the DWARF 4 spec for the discriminator register.
         return false;
       }
-      _state->_discriminator = discriminator;
+      _state->_discriminator = static_cast<uint32_t>(discriminator);
       break;
     default:
       assert(false, "Unknown extended opcode");
@@ -1446,11 +1447,12 @@ bool DwarfFile::LineNumberProgram::apply_standard_opcode(const uint8_t opcode) {
       }
       break;
     case DW_LNS_advance_pc: { // 1 operand
-      uint64_t operation_advance;
-      if (!_reader.read_uleb128(&operation_advance, 4)) {
+      uint64_t adv;
+      if (!_reader.read_uleb128(&adv, 4)) {
         // Must be at most 4 bytes because the index register is only 4 bytes wide.
         return false;
       }
+      uint32_t operation_advance = checked_cast<uint32_t>(adv);
       _state->add_to_address_register(operation_advance, _header);
       if (_state->_dwarf_version == 4) {
         _state->set_index_register(operation_advance, _header);
@@ -1464,7 +1466,7 @@ bool DwarfFile::LineNumberProgram::apply_standard_opcode(const uint8_t opcode) {
         // line register is 4 bytes wide.
         return false;
       }
-      _state->_line += line;
+      _state->_line += static_cast<uint32_t>(line);
       DWARF_LOG_TRACE("    DW_LNS_advance_line (%d)", _state->_line);
       break;
     case DW_LNS_set_file: // 1 operand
@@ -1473,7 +1475,7 @@ bool DwarfFile::LineNumberProgram::apply_standard_opcode(const uint8_t opcode) {
         // file register is 4 bytes wide.
         return false;
       }
-      _state->_file = file;
+      _state->_file = static_cast<uint32_t>(file);
       DWARF_LOG_TRACE("    DW_LNS_set_file (%u)", _state->_file);
       break;
     case DW_LNS_set_column: // 1 operand
@@ -1482,7 +1484,7 @@ bool DwarfFile::LineNumberProgram::apply_standard_opcode(const uint8_t opcode) {
         // column register is 4 bytes wide.
         return false;
       }
-      _state->_column = column;
+      _state->_column = static_cast<uint32_t>(column);
       DWARF_LOG_TRACE("    DW_LNS_set_column (%u)", _state->_column);
       break;
     case DW_LNS_negate_stmt: // No operands
@@ -1528,7 +1530,7 @@ bool DwarfFile::LineNumberProgram::apply_standard_opcode(const uint8_t opcode) {
         // isa register is 4 bytes wide.
         return false;
       }
-      _state->_isa = isa;
+      _state->_isa = static_cast<uint32_t>(isa);  // only save 4 bytes
       DWARF_LOG_TRACE("    DW_LNS_set_isa (%u)", _state->_isa);
       break;
     default:
@@ -1824,7 +1826,7 @@ bool DwarfFile::MarkedDwarfFileReader::read_sleb128(int64_t* result, const int8_
   return read_leb128((uint64_t*)result, check_size, true);
 }
 
-// If result is a nullptr, we do not care about the content of the string being read.
+// If result is a null, we do not care about the content of the string being read.
 bool DwarfFile::MarkedDwarfFileReader::read_string(char* result, const size_t result_len) {
   char first_char;
   if (!read_non_null_char(&first_char)) {

@@ -175,7 +175,7 @@ public class Util {
        of the string, which will match if that remainder looks like
        YC, so the whole string looks like AXBYC.
     */
-    private static boolean wildmatch(final String str, final String pat,
+    public static boolean wildmatch(final String str, final String pat,
             int stri, final int strend, int pati, final int patend) {
 
         // System.out.println("matching "+pat.substring(pati,patend)+

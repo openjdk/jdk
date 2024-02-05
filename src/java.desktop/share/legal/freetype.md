@@ -1,4 +1,4 @@
-## The FreeType Project: Freetype v2.12.1
+## The FreeType Project: Freetype v2.13.2
 
 
 ### FreeType Notice
@@ -21,27 +21,26 @@ which fits your needs best.
 ### FreeType License
 ```
 
-Copyright (C) 1996-2022 by David Turner, Robert Wilhelm, and Werner Lemberg.
-Copyright (C) 2007-2022 by Dereg Clegg and Michael Toftdal.
-Copyright (C) 1996-2022 by Just van Rossum, David Turner, Robert Wilhelm, and Werner Lemberg.
-Copyright (C) 2004-2022 by Masatake YAMATO and Redhat K.K.
-Copyright (C) 2007-2022 by Derek Clegg and Michael Toftdal.
-Copyright (C) 2007-2022 by David Turner.
-Copyright (C) 2022 by David Turner, Robert Wilhelm, Werner Lemberg, and Moazin Khatti.
-Copyright (C) 2007-2022 by Rahul Bhalerao <rahul.bhalerao@redhat.com>, <b.rahul.pm@gmail.com>.
-Copyright (C) 2008-2022 by David Turner, Robert Wilhelm, Werner Lemberg, and suzuki toshiya.
-Copyright (C) 2019-2022 by Nikhil Ramakrishnan, David Turner, Robert Wilhelm, and Werner Lemberg.
-Copyright (C) 2009-2022 by Oran Agra and Mickey Gabel.
-Copyright (C) 2004-2022 by David Turner, Robert Wilhelm, Werner Lemberg, and George Williams.
-Copyright (C) 2004-2022 by Masatake YAMATO, Red Hat K.K.,
-Copyright (C) 2003-2022 by Masatake YAMATO, Redhat K.K.,
-Copyright (C) 2013-2022 by Google, Inc.
-Copyright (C) 2018-2022 by David Turner, Robert Wilhelm, Dominik Röttsches, and Werner Lemberg.
-Copyright (C) 2005-2022 by David Turner, Robert Wilhelm, and Werner Lemberg.
-Copyright 2013 by Google, Inc.
+Copyright (C) 1996-2023 by David Turner, Robert Wilhelm, and Werner Lemberg.
+Copyright (C) 2007-2023 by Dereg Clegg and Michael Toftdal.
+Copyright (C) 1996-2023 by Just van Rossum, David Turner, Robert Wilhelm, and Werner Lemberg.
+Copyright (C) 2022-2023 by David Turner, Robert Wilhelm, Werner Lemberg, George Williams, and
+Copyright (C) 2004-2023 by Masatake YAMATO and Redhat K.K.
+Copyright (C) 2007-2023 by Derek Clegg and Michael Toftdal.
+Copyright (C) 2003-2023 by Masatake YAMATO, Red Hat K.K.,
+Copyright (C) 1996-2023 by David Turner, Robert Wilhelm, Werner Lemberg, and Dominik Röttsches.
+Copyright (C) 2007-2023 by David Turner.
+Copyright (C) 2022-2023 by David Turner, Robert Wilhelm, Werner Lemberg, and Moazin Khatti.
+Copyright (C) 2007-2023 by Rahul Bhalerao <rahul.bhalerao@redhat.com>, <b.rahul.pm@gmail.com>.
+Copyright (C) 2008-2023 by David Turner, Robert Wilhelm, Werner Lemberg, and suzuki toshiya.
+Copyright (C) 2013-2023 by Google, Inc.
+Copyright (C) 2019-2023 by Nikhil Ramakrishnan, David Turner, Robert Wilhelm, and Werner Lemberg.
+Copyright (C) 2009-2023 by Oran Agra and Mickey Gabel.
+Copyright (C) 2018-2023 by David Turner, Robert Wilhelm, Dominik Röttsches, and Werner Lemberg.
+Copyright (C) 2004-2023 by David Turner, Robert Wilhelm, Werner Lemberg, and George Williams.
 
 
-                   The FreeType Project LICENSE
+                    The FreeType Project LICENSE
                     ----------------------------
 
                             2006-Jan-27
@@ -206,7 +205,7 @@ Legal Terms
 
   Our home page can be found at
 
-    http://www.freetype.org
+    https://www.freetype.org
 
 ```
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ class SpaceDecorator: public AllStatic {
 // area and provides the methods for doing the piece meal mangling.
 // Methods for doing spaces and full checking of the mangling are
 // included.  The full checking is done if DEBUG_MANGLING is defined.
-//   GenSpaceMangler is used with the GenCollectedHeap collectors and
+//   GenSpaceMangler is used with the SerialHeap collectors and
 // MutableSpaceMangler is used with the ParallelScavengeHeap collectors.
 // These subclasses abstract the differences in the types of spaces used
 // by each heap.
@@ -83,12 +83,12 @@ class SpaceMangler: public CHeapObj<mtGC> {
 
  public:
 
-  // Setting _top_for_allocations to NULL at initialization
+  // Setting _top_for_allocations to null at initialization
   // makes it always below top so that mangling done as part
   // of the initialize() call of a space does nothing (as it
   // should since the mangling is done as part of the constructor
   // for the space.
-  SpaceMangler() : _top_for_allocations(NULL) {}
+  SpaceMangler() : _top_for_allocations(nullptr) {}
 
   // Methods for top and end that delegate to the specific
   // space type.
@@ -122,7 +122,7 @@ class SpaceMangler: public CHeapObj<mtGC> {
 class ContiguousSpace;
 class MutableSpace;
 
-// For use with GenCollectedHeap's
+// For use with SerialHeap's
 class GenSpaceMangler: public SpaceMangler {
   ContiguousSpace* _sp;
 

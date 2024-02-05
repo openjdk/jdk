@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
 
-import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
+import jdk.httpclient.test.lib.common.TestServerConfigurator;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
@@ -42,20 +43,18 @@ import org.testng.annotations.Test;
 
 import javax.net.ssl.SSLContext;
 
+import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.net.http.HttpClient.Version.HTTP_2;
+
 /**
  * @test
  * @bug 8232853
  * @summary AuthenticationFilter.Cache::remove may throw ConcurrentModificationException
- * @library /test/lib http2/server
- * @build jdk.test.lib.net.SimpleSSLContext HttpServerAdapters DigestEchoServer HttpRedirectTest
- * @modules java.net.http/jdk.internal.net.http.common
- * java.net.http/jdk.internal.net.http.frame
- * java.net.http/jdk.internal.net.http.hpack
- * java.logging
- * java.base/sun.net.www.http
- * java.base/sun.net.www
- * java.base/sun.net
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
+ *        DigestEchoServer jdk.httpclient.test.lib.common.TestServerConfigurator
  * @run testng/othervm -Dtest.requiresHost=true
+ * -Djdk.tracePinnedThreads=full
  * -Djdk.httpclient.HttpClient.log=headers
  * -Djdk.internal.httpclient.debug=false
  * AuthFilterCacheTest
@@ -91,7 +90,9 @@ public class AuthFilterCacheTest implements HttpServerAdapters {
     ProxySelector proxySelector;
     MyAuthenticator auth;
     HttpClient client;
-    Executor executor = Executors.newCachedThreadPool();
+    ExecutorService serverExecutor = Executors.newCachedThreadPool();
+    ExecutorService virtualExecutor = Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
+            .name("HttpClient-Worker", 0).factory());
 
     @DataProvider(name = "uris")
     Object[][] testURIs() {
@@ -109,6 +110,7 @@ public class AuthFilterCacheTest implements HttpServerAdapters {
     public HttpClient newHttpClient(ProxySelector ps, Authenticator auth) {
         HttpClient.Builder builder = HttpClient
                 .newBuilder()
+                .executor(virtualExecutor)
                 .sslContext(context)
                 .authenticator(auth)
                 .proxy(ps);
@@ -123,9 +125,7 @@ public class AuthFilterCacheTest implements HttpServerAdapters {
             auth = new MyAuthenticator();
 
             // HTTP/1.1
-            HttpServer server1 = HttpServer.create(sa, 0);
-            server1.setExecutor(executor);
-            http1Server = HttpTestServer.of(server1);
+            http1Server = HttpTestServer.create(HTTP_1_1, null, serverExecutor);
             http1Server.addHandler(new TestHandler(), "/AuthFilterCacheTest/http1/");
             http1Server.start();
             http1URI = new URI("http://" + http1Server.serverAuthority()
@@ -133,8 +133,8 @@ public class AuthFilterCacheTest implements HttpServerAdapters {
 
             // HTTPS/1.1
             HttpsServer sserver1 = HttpsServer.create(sa, 100);
-            sserver1.setExecutor(executor);
-            sserver1.setHttpsConfigurator(new HttpsConfigurator(context));
+            sserver1.setExecutor(serverExecutor);
+            sserver1.setHttpsConfigurator(new TestServerConfigurator(sa.getAddress(), context));
             https1Server = HttpTestServer.of(sserver1);
             https1Server.addHandler(new TestHandler(), "/AuthFilterCacheTest/https1/");
             https1Server.start();
@@ -142,16 +142,14 @@ public class AuthFilterCacheTest implements HttpServerAdapters {
                     + "/AuthFilterCacheTest/https1/");
 
             // HTTP/2.0
-            http2Server = HttpTestServer.of(
-                    new Http2TestServer("localhost", false, 0));
+            http2Server = HttpTestServer.create(HTTP_2);
             http2Server.addHandler(new TestHandler(), "/AuthFilterCacheTest/http2/");
             http2Server.start();
             http2URI = new URI("http://" + http2Server.serverAuthority()
                     + "/AuthFilterCacheTest/http2/");
 
             // HTTPS/2.0
-            https2Server = HttpTestServer.of(
-                    new Http2TestServer("localhost", true, 0));
+            https2Server = HttpTestServer.create(HTTP_2, SSLContext.getDefault());
             https2Server.addHandler(new TestHandler(), "/AuthFilterCacheTest/https2/");
             https2Server.start();
             https2URI = new URI("https://" + https2Server.serverAuthority()
@@ -180,7 +178,8 @@ public class AuthFilterCacheTest implements HttpServerAdapters {
         https1Server = stop(https1Server, HttpTestServer::stop);
         http2Server = stop(http2Server, HttpTestServer::stop);
         https2Server = stop(https2Server, HttpTestServer::stop);
-        client = null;
+        client.close();
+        virtualExecutor.close();
 
         System.out.println("Teardown: done");
     }
@@ -272,7 +271,7 @@ public class AuthFilterCacheTest implements HttpServerAdapters {
         CompletableFuture.allOf(cfs.toArray(new CompletableFuture[0])).join();
     }
 
-    static class MyAuthenticator extends Authenticator {
+    static final class MyAuthenticator extends Authenticator {
         private int count = 0;
 
         MyAuthenticator() {
@@ -280,9 +279,29 @@ public class AuthFilterCacheTest implements HttpServerAdapters {
         }
 
         public PasswordAuthentication getPasswordAuthentication() {
-            System.out.println("Authenticator called: " + ++count);
             return (new PasswordAuthentication("user" + count,
                     ("passwordNotCheckedAnyway" + count).toCharArray()));
+        }
+
+        @Override
+        public PasswordAuthentication requestPasswordAuthenticationInstance(String host,
+                                                                            InetAddress addr,
+                                                                            int port,
+                                                                            String protocol,
+                                                                            String prompt,
+                                                                            String scheme,
+                                                                            URL url,
+                                                                            RequestorType reqType) {
+            PasswordAuthentication passwordAuthentication;
+            int count;
+            synchronized (this) {
+                count = ++this.count;
+                passwordAuthentication = super.requestPasswordAuthenticationInstance(
+                        host, addr, port, protocol, prompt, scheme, url, reqType);
+            }
+            // log outside of synchronized block
+            System.out.println("Authenticator called: " + count);
+            return passwordAuthentication;
         }
 
         public int getCount() {

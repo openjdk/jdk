@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ public class MotifDesktopPaneUI extends javax.swing.plaf.basic.BasicDesktopPaneU
             g.setColor(Color.darkGray);
             g.drawRect(0, 0, getWidth()-1, getHeight()-1);
         }
-    };
+    }
 
 ////////////////////////////////////////////////////////////////////////////////////
 ///  MotifDesktopManager class
@@ -216,7 +216,7 @@ public class MotifDesktopPaneUI extends javax.swing.plaf.basic.BasicDesktopPaneU
 
             /* Fix for disappearing icons. If the y value is maxy then this
              * algorithm would place the icon in a non-displayed cell.  Never
-             * to be ssen again.*/
+             * to be seen again.*/
             y = y >= maxy ? (maxy - 1) : y;
 
             /* Compute the offset for the cell we are trying to go in. */
@@ -266,5 +266,5 @@ public class MotifDesktopPaneUI extends javax.swing.plaf.basic.BasicDesktopPaneU
             }
             return null;
         }
-    }; /// END of MotifDesktopManager
+    } /// END of MotifDesktopManager
 }

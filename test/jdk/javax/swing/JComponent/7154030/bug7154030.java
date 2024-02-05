@@ -102,6 +102,8 @@ public class bug7154030 {
 
             robot.waitForIdle(1000);
             robot.delay(1000);
+            robot.mouseMove(0, 0);
+            robot.waitForIdle();
 
             Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
             Rectangle screen = new Rectangle(0, 0, (int) screenSize.getWidth(), (int) screenSize.getHeight());

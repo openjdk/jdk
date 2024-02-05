@@ -34,6 +34,8 @@
 #include "runtime/atomic.hpp"
 #include "runtime/orderAccess.hpp"
 
+#include <type_traits>
+
 template <DecoratorSet decorators>
 template <DecoratorSet idecorators, typename T>
 inline typename EnableIf<
@@ -212,46 +214,8 @@ RawAccessBarrier<decorators>::atomic_xchg_internal(void* addr, T new_value) {
                       new_value);
 }
 
-// For platforms that do not have native support for wide atomics,
-// we can emulate the atomicity using a lock. So here we check
-// whether that is necessary or not.
-
-template <DecoratorSet ds>
-template <DecoratorSet decorators, typename T>
-inline typename EnableIf<
-  AccessInternal::PossiblyLockedAccess<T>::value, T>::type
-RawAccessBarrier<ds>::atomic_xchg_maybe_locked(void* addr, T new_value) {
-  if (!AccessInternal::wide_atomic_needs_locking()) {
-    return atomic_xchg_internal<ds>(addr, new_value);
-  } else {
-    AccessInternal::AccessLocker access_lock;
-    volatile T* p = reinterpret_cast<volatile T*>(addr);
-    T old_val = RawAccess<>::load(p);
-    RawAccess<>::store(p, new_value);
-    return old_val;
-  }
-}
-
-template <DecoratorSet ds>
-template <DecoratorSet decorators, typename T>
-inline typename EnableIf<
-  AccessInternal::PossiblyLockedAccess<T>::value, T>::type
-RawAccessBarrier<ds>::atomic_cmpxchg_maybe_locked(void* addr, T compare_value, T new_value) {
-  if (!AccessInternal::wide_atomic_needs_locking()) {
-    return atomic_cmpxchg_internal<ds>(addr, compare_value, new_value);
-  } else {
-    AccessInternal::AccessLocker access_lock;
-    volatile T* p = reinterpret_cast<volatile T*>(addr);
-    T old_val = RawAccess<>::load(p);
-    if (old_val == compare_value) {
-      RawAccess<>::store(p, new_value);
-    }
-    return old_val;
-  }
-}
-
 class RawAccessBarrierArrayCopy: public AllStatic {
-  template<typename T> struct IsHeapWordSized: public IntegralConstant<bool, sizeof(T) == HeapWordSize> { };
+  template<typename T> struct IsHeapWordSized: public std::integral_constant<bool, sizeof(T) == HeapWordSize> { };
 public:
   template <DecoratorSet decorators, typename T>
   static inline typename EnableIf<
@@ -334,7 +298,7 @@ public:
   }
 };
 
-template<> struct RawAccessBarrierArrayCopy::IsHeapWordSized<void>: public IntegralConstant<bool, false> { };
+template<> struct RawAccessBarrierArrayCopy::IsHeapWordSized<void>: public std::false_type { };
 
 template <DecoratorSet decorators>
 template <typename T>

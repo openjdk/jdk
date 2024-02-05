@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import javadoc.tester.JavadocTester;
 
 public class TestPackageHtml extends JavadocTester {
     public static void main(String... args) throws Exception  {
-        TestPackageHtml tester = new TestPackageHtml();
+        var tester = new TestPackageHtml();
         tester.runTests();
     }
 

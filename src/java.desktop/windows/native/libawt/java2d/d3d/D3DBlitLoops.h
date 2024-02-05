@@ -37,7 +37,7 @@
 #define OFFSET_XFORM   sun_java2d_d3d_D3DBlitLoops_OFFSET_XFORM
 #define OFFSET_ISOBLIT sun_java2d_d3d_D3DBlitLoops_OFFSET_ISOBLIT
 
-D3DPIPELINE_API HRESULT
+HRESULT
 D3DBlitLoops_IsoBlit(JNIEnv *env,
                      D3DContext *d3dc, jlong pSrcOps, jlong pDstOps,
                      jboolean xform, jint hint,
@@ -47,14 +47,14 @@ D3DBlitLoops_IsoBlit(JNIEnv *env,
                      jdouble dx1, jdouble dy1,
                      jdouble dx2, jdouble dy2);
 
-D3DPIPELINE_API HRESULT
+HRESULT
 D3DBL_CopySurfaceToIntArgbImage(IDirect3DSurface9 *pSurface,
                                 SurfaceDataRasInfo *pDstInfo,
                                 jint srcx, jint srcy,
                                 jint srcWidth, jint srcHeight,
                                 jint dstx, jint dsty);
 
-D3DPIPELINE_API HRESULT
+HRESULT
 D3DBL_CopyImageToIntXrgbSurface(SurfaceDataRasInfo *pSrcInfo,
                                 int srctype,
                                 D3DResource *pDstSurfaceRes,

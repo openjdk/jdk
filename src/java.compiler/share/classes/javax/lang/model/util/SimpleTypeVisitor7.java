@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import javax.lang.model.type.*;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import static javax.lang.model.SourceVersion.*;
+import javax.lang.model.type.TypeVisitor;
 
 /**
  * A simple visitor of types with default behavior appropriate for the
@@ -86,12 +87,12 @@ public class SimpleTypeVisitor7<R, P> extends SimpleTypeVisitor6<R, P> {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc TypeVisitor}
      *
      * @implSpec This implementation calls {@code defaultAction}.
      *
-     * @param t  {@inheritDoc}
-     * @param p  {@inheritDoc}
+     * @param t  {@inheritDoc TypeVisitor}
+     * @param p  {@inheritDoc TypeVisitor}
      * @return the result of {@code defaultAction}
      */
     @Override

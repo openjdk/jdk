@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,7 +110,7 @@ class VMThread: public NamedThread {
 
   static VM_Operation::VMOp_Type vm_op_type()     {
     VM_Operation* op = vm_operation();
-    assert(op != NULL, "sanity");
+    assert(op != nullptr, "sanity");
     return op->type();
   }
 

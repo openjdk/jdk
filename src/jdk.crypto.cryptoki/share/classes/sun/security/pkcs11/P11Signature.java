@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,12 @@ import java.nio.ByteBuffer;
 import java.security.*;
 import java.security.interfaces.*;
 import java.security.spec.AlgorithmParameterSpec;
+
+import jdk.internal.access.JavaNioAccess;
+import jdk.internal.access.SharedSecrets;
 import sun.nio.ch.DirectBuffer;
 
 import sun.security.util.*;
-import sun.security.x509.AlgorithmId;
 
 import sun.security.rsa.RSAUtil;
 import sun.security.rsa.RSAPadding;
@@ -97,6 +99,8 @@ import sun.security.util.KeyUtil;
  * @since   1.5
  */
 final class P11Signature extends SignatureSpi {
+
+    private static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
 
     // token instance
     private final Token token;
@@ -575,14 +579,15 @@ final class P11Signature extends SignatureSpi {
         }
         switch (type) {
             case T_UPDATE -> {
-                if (!(byteBuffer instanceof DirectBuffer)) {
+                if (!(byteBuffer instanceof DirectBuffer dByteBuffer)) {
                     // cannot do better than default impl
                     super.engineUpdate(byteBuffer);
                     return;
                 }
-                long addr = ((DirectBuffer) byteBuffer).address();
                 int ofs = byteBuffer.position();
+                NIO_ACCESS.acquireSession(byteBuffer);
                 try {
+                    long addr = dByteBuffer.address();
                     if (mode == M_SIGN) {
                         token.p11.C_SignUpdate
                                 (session.id(), addr + ofs, null, 0, len);
@@ -595,6 +600,8 @@ final class P11Signature extends SignatureSpi {
                 } catch (PKCS11Exception e) {
                     reset(false);
                     throw new ProviderException("Update failed", e);
+                } finally {
+                    NIO_ACCESS.releaseSession(byteBuffer);
                 }
             }
             case T_DIGEST -> {
@@ -752,9 +759,12 @@ final class P11Signature extends SignatureSpi {
             int len = (p11Key.length() + 7) >> 3;
             RSAPadding padding = RSAPadding.getInstance
                                         (RSAPadding.PAD_BLOCKTYPE_1, len);
-            byte[] padded = padding.pad(data);
-            return padded;
-        } catch (GeneralSecurityException e) {
+            byte[] result = padding.pad(data);
+            if (result == null) {
+                throw new ProviderException("Error padding data");
+            }
+            return result;
+        } catch (InvalidKeyException | InvalidAlgorithmParameterException e) {
             throw new ProviderException(e);
         }
     }

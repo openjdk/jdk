@@ -33,16 +33,13 @@
 
 G1FullGCMarker::G1FullGCMarker(G1FullCollector* collector,
                                uint worker_id,
-                               PreservedMarks* preserved_stack,
                                G1RegionMarkStats* mark_stats) :
     _collector(collector),
     _worker_id(worker_id),
     _bitmap(collector->mark_bitmap()),
     _oop_stack(),
     _objarray_stack(),
-    _preserved_stack(preserved_stack),
-    _mark_closure(worker_id, this, G1CollectedHeap::heap()->ref_processor_stw()),
-    _verify_closure(VerifyOption::G1UseFullMarking),
+    _mark_closure(worker_id, this, ClassLoaderData::_claim_stw_fullgc_mark, G1CollectedHeap::heap()->ref_processor_stw()),
     _stack_closure(this),
     _cld_closure(mark_closure(), ClassLoaderData::_claim_stw_fullgc_mark),
     _mark_stats_cache(mark_stats, G1RegionMarkStatsCache::RegionMarkStatsCacheSize) {

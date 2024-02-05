@@ -38,7 +38,7 @@ import javadoc.tester.JavadocTester;
 public class TestPreview extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestPreview tester = new TestPreview();
+        var tester = new TestPreview();
         tester.runTests();
     }
 
@@ -95,8 +95,8 @@ public class TestPreview extends JavadocTester {
                     <div class="table-tabs" role="tablist" aria-orientation="horizontal">
                     <div class="caption"><span>Record Classes</span></div>
                     </div>
-                    <div id="record-class.tabpanel" role="tabpanel">
-                    <div class="summary-table three-column-summary" aria-labelledby="record-class-tab0">
+                    <div id="record-class.tabpanel" role="tabpanel" aria-labelledby="record-class-tab0">
+                    <div class="summary-table three-column-summary">
                     <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Record Class</div>
                     <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Preview Feature</div>
                     <div class="table-header col-last">Description</div>
@@ -110,8 +110,8 @@ public class TestPreview extends JavadocTester {
                     <div class="table-tabs" role="tablist" aria-orientation="horizontal">
                     <div class="caption"><span>Methods</span></div>
                     </div>
-                    <div id="method.tabpanel" role="tabpanel">
-                    <div class="summary-table three-column-summary" aria-labelledby="method-tab0">
+                    <div id="method.tabpanel" role="tabpanel" aria-labelledby="method-tab0">
+                    <div class="summary-table three-column-summary">
                     <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Method</div>
                     <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Preview Feature</div>
                     <div class="table-header col-last">Description</div>

@@ -32,8 +32,7 @@
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
- * @run main/othervm   --enable-preview
- *                     -XX:+UnlockDiagnosticVMOptions   -XX:+WhiteBoxAPI
+ * @run main/othervm   -XX:+UnlockDiagnosticVMOptions   -XX:+WhiteBoxAPI
  *                     -Xbootclasspath/a:.
  *                     -Xbatch
  *                     -XX:-TieredCompilation

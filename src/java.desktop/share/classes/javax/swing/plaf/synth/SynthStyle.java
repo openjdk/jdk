@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -573,7 +573,7 @@ public abstract class SynthStyle {
                               "KP_DOWN", "selectNextRow",
                            "shift DOWN", "selectNextRowExtendSelection",
                         "shift KP_DOWN", "selectNextRowExtendSelection",
-                      "ctrl shift DOWN", "selectNextRowExtendSelection",
+                      "ctrl shift DOWN", "selectLastRowExtendSelection",
                    "ctrl shift KP_DOWN", "selectNextRowExtendSelection",
                             "ctrl DOWN", "selectNextRowChangeLead",
                          "ctrl KP_DOWN", "selectNextRowChangeLead",
@@ -581,7 +581,7 @@ public abstract class SynthStyle {
                                 "KP_UP", "selectPreviousRow",
                              "shift UP", "selectPreviousRowExtendSelection",
                           "shift KP_UP", "selectPreviousRowExtendSelection",
-                        "ctrl shift UP", "selectPreviousRowExtendSelection",
+                        "ctrl shift UP", "selectFirstRowExtendSelection",
                      "ctrl shift KP_UP", "selectPreviousRowExtendSelection",
                               "ctrl UP", "selectPreviousRowChangeLead",
                            "ctrl KP_UP", "selectPreviousRowChangeLead",
@@ -779,14 +779,6 @@ public abstract class SynthStyle {
                             (type == ColorType.FOREGROUND ||
                              type == ColorType.TEXT_FOREGROUND)) {
                 return getColorForState(context, type);
-            } else if (c instanceof JCheckBox) {
-                if (UIManager.getColor("CheckBox.disabledText") != null) {
-                    return UIManager.getColor("CheckBox.disabledText");
-                }
-            } else if (c instanceof JRadioButton) {
-                if (UIManager.getColor("RadioButton.disabledText") != null) {
-                    return UIManager.getColor("RadioButton.disabledText");
-                }
             }
         }
 

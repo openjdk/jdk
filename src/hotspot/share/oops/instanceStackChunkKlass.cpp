@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
+#include "cds/serializeClosure.hpp"
 #include "classfile/vmClasses.hpp"
 #include "compiler/oopMap.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
@@ -46,9 +48,13 @@ int InstanceStackChunkKlass::_offset_of_stack = 0;
 
 #if INCLUDE_CDS
 void InstanceStackChunkKlass::serialize_offsets(SerializeClosure* f) {
-  f->do_u4((u4*)&_offset_of_stack);
+  f->do_int(&_offset_of_stack);
 }
 #endif
+
+InstanceStackChunkKlass::InstanceStackChunkKlass() {
+  assert(CDSConfig::is_dumping_static_archive() || UseSharedSpaces, "only for CDS");
+}
 
 InstanceStackChunkKlass::InstanceStackChunkKlass(const ClassFileParser& parser)
   : InstanceKlass(parser, Kind) {
@@ -168,7 +174,7 @@ class DescribeStackChunkClosure {
 public:
   DescribeStackChunkClosure(stackChunkOop chunk)
     : _chunk(chunk),
-      _map((JavaThread*)nullptr,
+      _map(nullptr,
            RegisterMap::UpdateMap::include,
            RegisterMap::ProcessFrames::skip,
            RegisterMap::WalkContinuation::include),
@@ -235,7 +241,7 @@ public:
 
 void InstanceStackChunkKlass::print_chunk(const stackChunkOop c, bool verbose, outputStream* st) {
   if (c == nullptr) {
-    st->print_cr("CHUNK NULL");
+    st->print_cr("CHUNK null");
     return;
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package java.lang.reflect;
 
-import jdk.internal.misc.VM;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.Label;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
@@ -55,7 +54,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
  * "generateProxyClass" method.
  */
 final class ProxyGenerator extends ClassWriter {
-    private static final int CLASSFILE_VERSION = VM.classFileVersion();
+    private static final int CLASSFILE_VERSION = ClassFileFormatVersion.latest().major();
     private static final String JL_CLASS = "java/lang/Class";
     private static final String JL_OBJECT = "java/lang/Object";
     private static final String JL_THROWABLE = "java/lang/Throwable";

@@ -85,7 +85,7 @@ INT32 PORT_GetPortMixerCount() {
     mixerCount = 0;
     if (snd_card_next(&card) >= 0) {
         while (card >= 0) {
-            sprintf(devname, ALSA_HARDWARE_CARD, card);
+            snprintf(devname, sizeof(devname), ALSA_HARDWARE_CARD, card);
             TRACE1("PORT_GetPortMixerCount: Opening alsa device \"%s\"...\n", devname);
             err = snd_ctl_open(&handle, devname, 0);
             if (err < 0) {
@@ -115,7 +115,7 @@ INT32 PORT_GetPortMixerDescription(INT32 mixerIndex, PortMixerDescription* descr
     TRACE0("> PORT_GetPortMixerDescription\n");
     snd_ctl_card_info_malloc(&card_info);
 
-    sprintf(devname, ALSA_HARDWARE_CARD, (int) mixerIndex);
+    snprintf(devname, sizeof(devname), ALSA_HARDWARE_CARD, (int) mixerIndex);
     TRACE1("Opening alsa device \"%s\"...\n", devname);
     err = snd_ctl_open(&handle, devname, 0);
     if (err < 0) {
@@ -127,7 +127,7 @@ INT32 PORT_GetPortMixerDescription(INT32 mixerIndex, PortMixerDescription* descr
         ERROR2("ERROR: snd_ctl_card_info, card=%d: %s\n", (int) mixerIndex, snd_strerror(err));
     }
     strncpy(description->name, snd_ctl_card_info_get_id(card_info), PORT_STRING_LENGTH - 1);
-    sprintf(buffer, " [%s]", devname);
+    snprintf(buffer, sizeof(buffer), " [%s]", devname);
     strncat(description->name, buffer, PORT_STRING_LENGTH - 1 - strlen(description->name));
     strncpy(description->vendor, "ALSA (http://www.alsa-project.org)", PORT_STRING_LENGTH - 1);
     strncpy(description->description, snd_ctl_card_info_get_name(card_info), PORT_STRING_LENGTH - 1);
@@ -149,7 +149,7 @@ void* PORT_Open(INT32 mixerIndex) {
     PortMixer* handle;
 
     TRACE0("> PORT_Open\n");
-    sprintf(devname, ALSA_HARDWARE_CARD, (int) mixerIndex);
+    snprintf(devname, sizeof(devname), ALSA_HARDWARE_CARD, (int) mixerIndex);
     if ((err = snd_mixer_open(&mixer_handle, 0)) < 0) {
         ERROR2("Mixer %s open error: %s", devname, snd_strerror(err));
         return NULL;

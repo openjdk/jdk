@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,10 @@
  */
 package jdk.internal.util;
 
+import java.util.Arrays;
+import java.util.Collection;
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
@@ -158,6 +162,105 @@ public class ArraysSupport {
         else {
             return ~tail;
         }
+    }
+
+    // Possible values for the type operand of the NEWARRAY instruction.
+    // See https://docs.oracle.com/javase/specs/jvms/se9/html/jvms-6.html#jvms-6.5.newarray.
+
+    public static final int T_BOOLEAN = 4;
+    public static final int T_CHAR = 5;
+    public static final int T_FLOAT = 6;
+    public static final int T_DOUBLE = 7;
+    public static final int T_BYTE = 8;
+    public static final int T_SHORT = 9;
+    public static final int T_INT = 10;
+    public static final int T_LONG = 11;
+
+    /**
+     * Calculate the hash code for an array in a way that enables efficient
+     * vectorization.
+     *
+     * <p>This method does not perform type checks or bounds checks.  It is the
+     * responsibility of the caller to perform such checks before calling this
+     * method.
+     *
+     * @param array for which to calculate hash code
+     * @param fromIndex start index, scaled to basicType
+     * @param length number of elements to include in the hash
+     * @param initialValue the initial value for the hash (typically constant 0 or 1)
+     * @param basicType type constant denoting how to interpret the array content.
+     *                  T_BOOLEAN is used to signify unsigned bytes, and T_CHAR might be used
+     *                  even if array is a byte[].
+     * @implNote currently basicType must be constant at the call site for this method
+     *           to be intrinsified.
+     *
+     * @return the calculated hash value
+     */
+    @IntrinsicCandidate
+    public static int vectorizedHashCode(Object array, int fromIndex, int length, int initialValue,
+                                         int basicType) {
+        return switch (basicType) {
+            case T_BOOLEAN -> signedHashCode(initialValue, (byte[]) array, fromIndex, length);
+            case T_CHAR -> array instanceof byte[]
+                    ? utf16hashCode(initialValue, (byte[]) array, fromIndex, length)
+                    : hashCode(initialValue, (char[]) array, fromIndex, length);
+            case T_BYTE -> hashCode(initialValue, (byte[]) array, fromIndex, length);
+            case T_SHORT -> hashCode(initialValue, (short[]) array, fromIndex, length);
+            case T_INT -> hashCode(initialValue, (int[]) array, fromIndex, length);
+                default -> throw new IllegalArgumentException("unrecognized basic type: " + basicType);
+        };
+    }
+
+    private static int signedHashCode(int result, byte[] a, int fromIndex, int length) {
+        int end = fromIndex + length;
+        for (int i = fromIndex; i < end; i++) {
+            result = 31 * result + (a[i] & 0xff);
+        }
+        return result;
+    }
+
+    private static int hashCode(int result, byte[] a, int fromIndex, int length) {
+        int end = fromIndex + length;
+        for (int i = fromIndex; i < end; i++) {
+            result = 31 * result + a[i];
+        }
+        return result;
+    }
+
+    private static int hashCode(int result, char[] a, int fromIndex, int length) {
+        int end = fromIndex + length;
+        for (int i = fromIndex; i < end; i++) {
+            result = 31 * result + a[i];
+        }
+        return result;
+    }
+
+    private static int hashCode(int result, short[] a, int fromIndex, int length) {
+        int end = fromIndex + length;
+        for (int i = fromIndex; i < end; i++) {
+            result = 31 * result + a[i];
+        }
+        return result;
+    }
+
+    private static int hashCode(int result, int[] a, int fromIndex, int length) {
+        int end = fromIndex + length;
+        for (int i = fromIndex; i < end; i++) {
+            result = 31 * result + a[i];
+        }
+        return result;
+    }
+
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+    /*
+     * fromIndex and length must be scaled to char indexes.
+     */
+    public static int utf16hashCode(int result, byte[] value, int fromIndex, int length) {
+        int end = fromIndex + length;
+        for (int i = fromIndex; i < end; i++) {
+            result = 31 * result + JLA.getUTF16Char(value, i);
+        }
+        return result;
     }
 
     // Booleans
@@ -652,6 +755,55 @@ public class ArraysSupport {
             return SOFT_MAX_ARRAY_LENGTH;
         } else {
             return minLength;
+        }
+    }
+
+    /**
+     * Reverses the elements of an array in-place.
+     *
+     * @param <T> the array component type
+     * @param a the array to be reversed
+     * @return the reversed array, always the same array as the argument
+     */
+    public static <T> T[] reverse(T[] a) {
+        int limit = a.length / 2;
+        for (int i = 0, j = a.length - 1; i < limit; i++, j--) {
+            T t = a[i];
+            a[i] = a[j];
+            a[j] = t;
+        }
+        return a;
+    }
+
+    /**
+     * Dump the contents of the given collection into the given array, in reverse order.
+     * This mirrors the semantics of Collection.toArray(T[]) in regard to reusing the given
+     * array, appending null if necessary, or allocating a new array of the same component type.
+     * <p>
+     * A constraint is that this method should issue exactly one method call on the collection
+     * to obtain the elements and the size. Having a separate size() call or using an Iterator
+     * could result in errors if the collection changes size between calls. This implies that
+     * the elements need to be obtained via a single call to one of the toArray() methods.
+     * This further implies allocating memory proportional to the number of elements and
+     * making an extra copy, but this seems unavoidable.
+     * <p>
+     * An obvious approach would be simply to call coll.toArray(array) and then reverse the
+     * order of the elements. This doesn't work, because if given array is sufficiently long,
+     * we cannot tell how many elements were copied into it and thus there is no way to reverse
+     * the right set of elements while leaving the remaining array elements undisturbed.
+     *
+     * @throws ArrayStoreException if coll contains elements that can't be stored in the array
+     */
+    public static <T> T[] toArrayReversed(Collection<?> coll, T[] array) {
+        T[] newArray = reverse(coll.toArray(Arrays.copyOfRange(array, 0, 0)));
+        if (newArray.length > array.length) {
+            return newArray;
+        } else {
+            System.arraycopy(newArray, 0, array, 0, newArray.length);
+            if (array.length > newArray.length) {
+                array[newArray.length] = null;
+            }
+            return array;
         }
     }
 }

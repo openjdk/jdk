@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,9 +54,15 @@ class ResolutionErrorKey {
   }
 };
 
-ResourceHashtable<ResolutionErrorKey, ResolutionErrorEntry*, 107, AnyObj::C_HEAP, mtClass,
+using InternalResolutionErrorTable = ResourceHashtable<ResolutionErrorKey, ResolutionErrorEntry*, 107, AnyObj::C_HEAP, mtClass,
                   ResolutionErrorKey::hash,
-                  ResolutionErrorKey::equals> _resolution_error_table;
+                  ResolutionErrorKey::equals>;
+
+static InternalResolutionErrorTable* _resolution_error_table;
+
+void ResolutionErrorTable::initialize() {
+  _resolution_error_table = new (mtClass) InternalResolutionErrorTable();
+}
 
 // create new error entry
 void ResolutionErrorTable::add_entry(const constantPoolHandle& pool, int cp_index,
@@ -64,11 +70,11 @@ void ResolutionErrorTable::add_entry(const constantPoolHandle& pool, int cp_inde
                                      Symbol* cause, Symbol* cause_msg)
 {
   assert_locked_or_safepoint(SystemDictionary_lock);
-  assert(!pool.is_null() && error != NULL, "adding NULL obj");
+  assert(!pool.is_null() && error != nullptr, "adding null obj");
 
   ResolutionErrorKey key(pool(), cp_index);
   ResolutionErrorEntry *entry = new ResolutionErrorEntry(error, message, cause, cause_msg);
-  _resolution_error_table.put(key, entry);
+  _resolution_error_table->put(key, entry);
 }
 
 // create new nest host error entry
@@ -76,18 +82,18 @@ void ResolutionErrorTable::add_entry(const constantPoolHandle& pool, int cp_inde
                                      const char* message)
 {
   assert_locked_or_safepoint(SystemDictionary_lock);
-  assert(!pool.is_null() && message != NULL, "adding NULL obj");
+  assert(!pool.is_null() && message != nullptr, "adding null obj");
 
   ResolutionErrorKey key(pool(), cp_index);
   ResolutionErrorEntry *entry = new ResolutionErrorEntry(message);
-  _resolution_error_table.put(key, entry);
+  _resolution_error_table->put(key, entry);
 }
 
 // find entry in the table
 ResolutionErrorEntry* ResolutionErrorTable::find_entry(const constantPoolHandle& pool, int cp_index) {
   assert_locked_or_safepoint(SystemDictionary_lock);
   ResolutionErrorKey key(pool(), cp_index);
-  ResolutionErrorEntry** entry = _resolution_error_table.get(key);
+  ResolutionErrorEntry** entry = _resolution_error_table->get(key);
   return entry == nullptr ? nullptr : *entry;
 }
 
@@ -112,7 +118,7 @@ ResolutionErrorEntry::~ResolutionErrorEntry() {
   Symbol::maybe_decrement_refcount(_cause);
   Symbol::maybe_decrement_refcount(_cause_msg);
 
-  if (nest_host_error() != NULL) {
+  if (nest_host_error() != nullptr) {
     FREE_C_HEAP_ARRAY(char, nest_host_error());
   }
 }
@@ -139,7 +145,7 @@ void ResolutionErrorTable::delete_entry(ConstantPool* c) {
   assert_locked_or_safepoint(SystemDictionary_lock);
 
   ResolutionErrorDeleteIterate deleteIterator(c);
-  _resolution_error_table.unlink(&deleteIterator);
+  _resolution_error_table->unlink(&deleteIterator);
 }
 
 class ResolutionIteratePurgeErrors : StackObj {
@@ -160,5 +166,5 @@ void ResolutionErrorTable::purge_resolution_errors() {
   assert_locked_or_safepoint(SystemDictionary_lock);
 
   ResolutionIteratePurgeErrors purgeErrorsIterator;
-  _resolution_error_table.unlink(&purgeErrorsIterator);
+  _resolution_error_table->unlink(&purgeErrorsIterator);
 }

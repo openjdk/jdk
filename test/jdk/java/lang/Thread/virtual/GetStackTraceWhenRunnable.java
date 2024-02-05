@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,40 +25,38 @@
  * @test
  * @summary Test Thread::getStackTrace on a virtual thread that is runnable-unmounted
  * @requires vm.continuations
- * @enablePreview
  * @run main/othervm -Djdk.virtualThreadScheduler.maxPoolSize=1 GetStackTraceWhenRunnable
  */
 
 import java.io.IOException;
-import java.nio.channels.ClosedSelectorException;
-import java.nio.channels.Selector;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
 
 public class GetStackTraceWhenRunnable {
 
     public static void main(String[] args) throws Exception {
-        try (Selector sel = Selector.open()) {
 
-            // start thread1 and wait for it to park
-            Thread thread1 = Thread.startVirtualThread(LockSupport::park);
-            while (thread1.getState() != Thread.State.WAITING) {
-                Thread.sleep(20);
+        // start thread1 and wait for it to park
+        Thread thread1 = Thread.startVirtualThread(LockSupport::park);
+        while (thread1.getState() != Thread.State.WAITING) {
+            Thread.sleep(20);
+        }
+
+        // start thread2 to pin the carrier thread
+        var started = new AtomicBoolean();
+        var done = new AtomicBoolean();
+        Thread thread2 = Thread.startVirtualThread(() -> {
+            started.set(true);
+            while (!done.get()) {
+                Thread.onSpinWait();
             }
-
-            // start thread2 to pin the carrier thread
-            CountDownLatch latch = new CountDownLatch(1);
-            Thread thread2 = Thread.startVirtualThread(() -> {
-                latch.countDown();
-                try {
-                    sel.select();
-                } catch (ClosedSelectorException e) {
-                    // expected
-                } catch (IOException ioe) {
-                    ioe.printStackTrace();
-                }
-            });
-            latch.await();   // wait for thread2 to run
+        });
+        try {
+            // wait for thread2 to start
+            while (!started.get()) {
+                Thread.sleep(10);
+            }
 
             // unpark thread1 and check that it is "stuck" in the runnable state
             // (the carrier thread is pinned, no other virtual thread can run)
@@ -74,6 +72,10 @@ public class GetStackTraceWhenRunnable {
             for (StackTraceElement e : stack) {
                 System.out.println(e);
             }
+        } finally {
+            done.set(true);
+            thread2.join();
+            thread1.join();
         }
     }
 

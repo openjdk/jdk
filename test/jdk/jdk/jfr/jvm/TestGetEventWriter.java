@@ -38,7 +38,7 @@ import jdk.vm.ci.meta.ConstantPool;
 import jdk.vm.ci.runtime.JVMCI;
 
 /**
- * @test TestGetEventWriter
+ * @test id=default
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib
@@ -57,9 +57,6 @@ import jdk.vm.ci.runtime.JVMCI;
  *
  * @run main/othervm jdk.jfr.jvm.TestGetEventWriter
  *
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -Dtest.jvmci=true --add-exports=jdk.jfr/jdk.jfr.internal.event=ALL-UNNAMED
- *      jdk.jfr.jvm.TestGetEventWriter
- *
  * @run main/othervm/timeout=300 -Xint -XX:+UseInterpreter -Dinterpreted=true
  *      jdk.jfr.jvm.TestGetEventWriter
  *
@@ -72,6 +69,30 @@ import jdk.vm.ci.runtime.JVMCI;
  * @run main/othervm/timeout=300 -Xcomp -XX:TieredStopAtLevel=4 -XX:-TieredCompilation -XX:-UseInterpreter -Dinterpreted=false
  *      jdk.jfr.jvm.TestGetEventWriter
  */
+
+/**
+ * @test id=jvmci
+ * @key jfr
+ * @requires vm.hasJFR
+ * @requires vm.jvmci
+ * @library /test/lib
+ * @modules jdk.internal.vm.ci/jdk.vm.ci.meta
+ *          jdk.internal.vm.ci/jdk.vm.ci.runtime
+ *
+ * @compile PlaceholderEventWriter.java
+ * @compile PlaceholderEventWriterFactory.java
+ * @compile E.java
+ * @compile NonEvent.java
+ * @compile RegisteredTrueEvent.java
+ * @compile RegisteredFalseEvent.java
+ * @compile MyCommitRegisteredTrueEvent.java
+ * @compile MyCommitRegisteredFalseEvent.java
+ * @compile StaticCommitEvent.java
+ *
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -Dtest.jvmci=true --add-exports=jdk.jfr/jdk.jfr.internal.event=ALL-UNNAMED
+ *      jdk.jfr.jvm.TestGetEventWriter
+ */
+
 public class TestGetEventWriter {
 
     static class InitializationEvent extends Event {

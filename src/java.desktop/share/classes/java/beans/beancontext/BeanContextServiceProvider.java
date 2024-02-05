@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import java.util.Iterator;
  * the service is asked to provide an instance of that service.
  * </p>
  * <p>
- * The ServcieProvider may always return the same instance, or it may
+ * The ServiceProvider may always return the same instance, or it may
  * construct a new instance for each request.
  * </p>
  */

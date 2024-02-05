@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ template <typename T, int cmp(const T&, const T&)>
 class JfrPredicate : AllStatic {
  public:
   static bool test(GrowableArray<T>* set, T value) {
-    assert(set != NULL, "invariant");
+    assert(set != nullptr, "invariant");
     bool found = false;
     set->template find_sorted<T, cmp>(value, found);
     return found;
@@ -49,7 +49,7 @@ template <typename T, int cmp(const T&, const T&)>
 class JfrMutablePredicate : AllStatic {
  public:
   static bool test(GrowableArray<T>* set, T value) {
-    assert(set != NULL, "invariant");
+    assert(set != nullptr, "invariant");
     bool found = false;
     const int location = set->template find_sorted<T, cmp>(value, found);
     if (!found) {

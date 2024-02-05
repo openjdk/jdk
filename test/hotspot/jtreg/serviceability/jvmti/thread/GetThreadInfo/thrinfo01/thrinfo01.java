@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,10 +41,9 @@
  *     Fixed according to the 4480280 bug.
  *     Ported from JVMDI.
  *
- * @requires vm.continuations
  * @library /test/lib
- * @compile --enable-preview -source ${jdk.version} thrinfo01.java
- * @run main/othervm/native --enable-preview -agentlib:thrinfo01 thrinfo01
+ * @compile thrinfo01.java
+ * @run main/othervm/native -agentlib:thrinfo01 thrinfo01
  */
 
 

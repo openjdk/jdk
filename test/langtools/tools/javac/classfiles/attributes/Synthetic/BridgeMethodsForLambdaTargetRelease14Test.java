@@ -30,11 +30,11 @@
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.classfile
- * @library /tools/lib /tools/javac/lib ../lib
+ * @library /tools/lib /tools/javac/lib ../lib_legacy
  * @build toolbox.ToolBox InMemoryFileManager TestResult TestBase
- * @build SyntheticTestDriver ExpectedClass ExpectedClasses
+ * @build SyntheticTestDriver_legacy ExpectedClass ExpectedClasses
  * @compile --source 14 -target 14 -XDdeduplicateLambdas=false BridgeMethodsForLambdaTargetRelease14Test.java
- * @run main SyntheticTestDriver BridgeMethodsForLambdaTargetRelease14Test
+ * @run main SyntheticTestDriver_legacy BridgeMethodsForLambdaTargetRelease14Test
  */
 
 import java.util.Comparator;

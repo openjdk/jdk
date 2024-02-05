@@ -36,7 +36,7 @@ typedef struct {
   const char* expected_path;
 } TestCase;
 
-TEST(os_linux_cgroup, set_cgroupv1_subsystem_path) {
+TEST(cgroupTest, set_cgroupv1_subsystem_path) {
   TestCase host = {
     "/sys/fs/cgroup/memory",                                             // mount_path
     "/",                                                                 // root_path
@@ -60,16 +60,16 @@ TEST(os_linux_cgroup, set_cgroupv1_subsystem_path) {
   }
 }
 
-TEST(os_linux_cgroup, set_cgroupv2_subsystem_path) {
+TEST(cgroupTest, set_cgroupv2_subsystem_path) {
   TestCase at_mount_root = {
     "/sys/fs/cgroup",       // mount_path
-    NULL,                   // root_path, ignored
+    nullptr,                // root_path, ignored
     "/",                    // cgroup_path
     "/sys/fs/cgroup"        // expected_path
   };
   TestCase sub_path = {
     "/sys/fs/cgroup",       // mount_path
-    NULL,                   // root_path, ignored
+    nullptr,                // root_path, ignored
     "/foobar",              // cgroup_path
     "/sys/fs/cgroup/foobar" // expected_path
   };

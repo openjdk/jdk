@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ public abstract class InputStream implements Closeable {
     // use when skipping.
     private static final int MAX_SKIP_BUFFER_SIZE = 2048;
 
-    private static final int DEFAULT_BUFFER_SIZE = 8192;
+    private static final int DEFAULT_BUFFER_SIZE = 16384;
 
     /**
      * Constructor for subclasses to call.
@@ -201,7 +201,10 @@ public abstract class InputStream implements Closeable {
      *
      * @implSpec
      * The {@code read(b)} method for class {@code InputStream}
-     * has the same effect as: <pre>{@code  read(b, 0, b.length) }</pre>
+     * has the same effect as:
+     * {@snippet lang=java :
+     *     read(b, 0, b.length)
+     * }
      *
      * @param      b   the buffer into which the data is read.
      * @return     the total number of bytes read into the buffer, or
@@ -769,6 +772,9 @@ public abstract class InputStream implements Closeable {
      * interrupted during the transfer, is highly input and output stream
      * specific, and therefore not specified.
      * <p>
+     * If the total number of bytes transferred is greater than {@linkplain
+     * Long#MAX_VALUE}, then {@code Long.MAX_VALUE} will be returned.
+     * <p>
      * If an I/O error occurs reading from the input stream or writing to the
      * output stream, then it may do so after some bytes have been read or
      * written. Consequently the input stream may not be at end of stream and
@@ -789,7 +795,13 @@ public abstract class InputStream implements Closeable {
         int read;
         while ((read = this.read(buffer, 0, DEFAULT_BUFFER_SIZE)) >= 0) {
             out.write(buffer, 0, read);
-            transferred += read;
+            if (transferred < Long.MAX_VALUE) {
+                try {
+                    transferred = Math.addExact(transferred, read);
+                } catch (ArithmeticException ignore) {
+                    transferred = Long.MAX_VALUE;
+                }
+            }
         }
         return transferred;
     }

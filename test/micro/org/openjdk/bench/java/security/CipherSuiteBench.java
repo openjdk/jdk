@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
 
 
 @Fork(value = 3, jvmArgsAppend = {"--add-exports", "java.base/sun.security.ssl=ALL-UNNAMED", "--add-opens", "java.base/sun.security.ssl=ALL-UNNAMED"})
-@State(Scope.Benchmark)
+@State(Scope.Thread)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @BenchmarkMode(Mode.Throughput)
 @Warmup(iterations = 5, time = 1)

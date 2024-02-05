@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Datadog, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -35,13 +35,13 @@ import jdk.jfr.MetadataDefinition;
 import jdk.jfr.Name;
 import jdk.jfr.internal.PlatformEventType;
 import jdk.jfr.internal.Type;
-import jdk.jfr.internal.Utils;
 
 @MetadataDefinition
 @Label("Event Emission Throttle")
 @Description("Throttles the emission rate for an event")
 @Name(Type.SETTINGS_PREFIX + "Throttle")
 public final class ThrottleSetting extends JDKSettingControl {
+    static final String OFF_TEXT = "off";
     private static final long OFF = -2;
     private String value = "0/s";
     private final PlatformEventType eventType;
@@ -67,7 +67,7 @@ public final class ThrottleSetting extends JDKSettingControl {
     private static long parseValueSafe(String s) {
         long value = 0L;
         try {
-            value = Utils.parseThrottleValue(s);
+            value = parseThrottleValue(s);
         } catch (NumberFormatException nfe) {
         }
         return value;
@@ -78,8 +78,8 @@ public final class ThrottleSetting extends JDKSettingControl {
         long size = 0;
         long millis = 1000;
         try {
-            size = Utils.parseThrottleValue(s);
-            millis = Utils.parseThrottleTimeUnit(s);
+            size = parseThrottleValue(s);
+            millis = parseThrottleTimeUnit(s);
             this.value = s;
         } catch (NumberFormatException nfe) {
         }
@@ -89,6 +89,38 @@ public final class ThrottleSetting extends JDKSettingControl {
     @Override
     public String getValue() {
         return value;
+    }
+
+    private static long parseThrottleValue(String s) {
+        if (s.equals(OFF_TEXT)) {
+            return OFF;
+        }
+        String parsedValue = parseThrottleString(s, true);
+        long normalizedValue = 0;
+        try {
+            normalizedValue = ThrottleUnit.normalizeValueAsMillis(Long.parseLong(parsedValue), s);
+        } catch (NumberFormatException nfe) {
+            throwThrottleNumberFormatException(s);
+        }
+        return normalizedValue;
+    }
+
+    private static long parseThrottleTimeUnit(String s) {
+        return ThrottleUnit.asMillis(s);
+    }
+
+    // Expected input format is "x/y" where x is a non-negative long
+    // and y is a time unit. Split the string at the delimiter.
+    static String parseThrottleString(String s, boolean value) {
+        String[] split = s.split("/");
+        if (split.length != 2) {
+            throwThrottleNumberFormatException(s);
+        }
+        return value ? split[0].trim() : split[1].trim();
+    }
+
+    private static void throwThrottleNumberFormatException(String s) {
+        throw new NumberFormatException("'" + s + "' is not valid. Should be a non-negative numeric value followed by a delimiter. i.e. '/', and then followed by a unit e.g. 100/s.");
     }
 }
 

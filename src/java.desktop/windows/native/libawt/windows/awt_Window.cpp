@@ -23,6 +23,7 @@
  * questions.
  */
 
+#include <cmath>
 #include "awt.h"
 #include <jlong.h>
 
@@ -45,9 +46,8 @@
 #include "sun_awt_windows_WCanvasPeer.h"
 
 #include <windowsx.h>
-#include <math.h>
 #if !defined(__int3264)
-typedef __int32 LONG_PTR;
+typedef int32_t LONG_PTR;
 #endif // __int3264
 
 // Used for Swing's Menu/Tooltip animation Support
@@ -370,6 +370,20 @@ void AwtWindow::RepositionSecurityWarning(JNIEnv *env)
 
 MsgRouting AwtWindow::WmWindowPosChanged(LPARAM windowPos) {
     WINDOWPOS * wp = (WINDOWPOS *)windowPos;
+
+    // There's no good way to detect partial maximization (e.g. Aero Snap),
+    // but by inspecting SWP_* flags we can guess it and reset
+    // prevScaleRec to neutralize the CheckWindowDPIChange logic.
+    // Here are the flags, observed on Windows 11 for reference:
+    // Restore/maximize:        SWP_NOZORDER | SWP_DRAWFRAME
+    // Partial Aero Snap:       SWP_NOZORDER | SWP_NOREPOSITION
+    // DPI change (new screen): SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOCOPYBITS
+    if (!(wp->flags & (SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE)) &&
+        prevScaleRec.screen != -1 && prevScaleRec.screen != m_screenNum) {
+        prevScaleRec.screen = -1;
+        prevScaleRec.scaleX = -1.0f;
+        prevScaleRec.scaleY = -1.0f;
+    }
 
     // Reposition the warning window
     if (IsUntrusted() && warningWindow != NULL) {

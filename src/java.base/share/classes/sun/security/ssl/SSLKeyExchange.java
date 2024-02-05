@@ -28,8 +28,6 @@ package sun.security.ssl;
 import java.io.IOException;
 import java.util.*;
 import java.util.AbstractMap.SimpleImmutableEntry;
-
-import sun.security.ssl.SupportedGroupsExtension.SupportedGroups;
 import sun.security.ssl.X509Authentication.X509Possession;
 
 final class SSLKeyExchange implements SSLKeyAgreementGenerator,
@@ -561,23 +559,13 @@ final class SSLKeyExchange implements SSLKeyAgreementGenerator,
 
     private static final class T13KeyAgreement implements SSLKeyAgreement {
         private final NamedGroup namedGroup;
-        static final Map<NamedGroup, T13KeyAgreement>
-                supportedKeyShares = new HashMap<>();
-
-        static {
-            for (NamedGroup namedGroup :
-                    SupportedGroups.supportedNamedGroups) {
-                supportedKeyShares.put(
-                        namedGroup, new T13KeyAgreement(namedGroup));
-            }
-        }
 
         private T13KeyAgreement(NamedGroup namedGroup) {
             this.namedGroup = namedGroup;
         }
 
         static T13KeyAgreement valueOf(NamedGroup namedGroup) {
-            return supportedKeyShares.get(namedGroup);
+            return new T13KeyAgreement(namedGroup);
         }
 
         @Override

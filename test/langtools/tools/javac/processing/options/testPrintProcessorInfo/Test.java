@@ -57,15 +57,8 @@ public class Test extends JavacTestingAbstractProcessor {
 
     void generateSource(String name) {
         String text = "class " + name + " { }\n";
-
-        // avoid try-with-resources so test can be run on older builds
-        try {
-            Writer out = filer.createSourceFile(name).openWriter();
-            try {
-                out.write(text);
-            } finally {
-                out.close();
-            }
+        try (Writer out = filer.createSourceFile(name).openWriter()) {
+            out.write(text);
         } catch (IOException e) {
             throw new Error(e);
         }

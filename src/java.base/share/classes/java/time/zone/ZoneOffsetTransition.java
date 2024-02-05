@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -399,12 +399,13 @@ public final class ZoneOffsetTransition
      * This compares the instants of each transition.
      * The offsets are ignored, making this order inconsistent with equals.
      *
-     * @param transition  the transition to compare to, not null
-     * @return the comparator value, negative if less, positive if greater
+     * @param otherTransition  the transition to compare to, not null
+     * @return the comparator value, that is the comparison of this transition instant
+     *          with {@code otherTransition} instant
      */
     @Override
-    public int compareTo(ZoneOffsetTransition transition) {
-        return Long.compare(epochSecond, transition.epochSecond);
+    public int compareTo(ZoneOffsetTransition otherTransition) {
+        return Long.compare(epochSecond, otherTransition.epochSecond);
     }
 
     //-----------------------------------------------------------------------

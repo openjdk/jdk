@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@ import java.security.*;
 import java.security.interfaces.*;
 import java.security.spec.*;
 
+import jtreg.SkippedException;
+
 /**
  * @test
  * @bug 8080462 8226651 8242332
@@ -35,25 +37,19 @@ import java.security.spec.*;
  */
 public class KeyAndParamCheckForPSS extends PKCS11Test {
 
-    /**
-     * ALGORITHM name, fixed as RSA for PKCS11
-     */
-    private static final String KEYALG = "RSA";
     private static final String SIGALG = "RSASSA-PSS";
 
     public static void main(String[] args) throws Exception {
         main(new KeyAndParamCheckForPSS(), args);
     }
 
+    private static boolean skipTest = true;
+
     @Override
     public void main(Provider p) throws Exception {
-        Signature sig;
-        try {
-            sig = Signature.getInstance(SIGALG, p);
-        } catch (NoSuchAlgorithmException e) {
-            System.out.println("Skip testing RSASSA-PSS" +
-                " due to no support");
-            return;
+        if (!PSSUtil.isSignatureSupported(p)) {
+            throw new SkippedException("Skip due to no support for " +
+                    SIGALG);
         }
 
         // NOTE: key length >= (digest length + 2) in bytes
@@ -76,27 +72,26 @@ public class KeyAndParamCheckForPSS extends PKCS11Test {
         runTest(p, 1040, "SHA3-512", "SHA3-256");
         runTest(p, 1040, "SHA3-512", "SHA3-384");
         runTest(p, 1040, "SHA3-512", "SHA3-512");
+
+        if (skipTest) {
+            throw new SkippedException("Test Skipped");
+        }
     }
 
-    private void runTest(Provider p, int keySize, String hashAlg,
+    private static void runTest(Provider p, int keySize, String hashAlg,
             String mgfHashAlg) throws Exception {
 
-        // skip further test if this provider does not support hashAlg or
-        // mgfHashAlg
-        try {
-            MessageDigest.getInstance(hashAlg, p);
-            MessageDigest.getInstance(mgfHashAlg, p);
-        } catch (NoSuchAlgorithmException nsae) {
-            System.out.println("No support for " + hashAlg + ", skip");
+        System.out.println("Testing " + hashAlg + " and MGF1" + mgfHashAlg);
+        PSSUtil.AlgoSupport s = PSSUtil.isHashSupported(p, hashAlg, mgfHashAlg);
+        if (s == PSSUtil.AlgoSupport.NO) {
+            System.out.println("=> Skip; no support");
             return;
         }
 
-        System.out.println("Testing [" + keySize + " " + hashAlg + "]");
+        Signature sig = Signature.getInstance(SIGALG, p);
 
         // create a key pair with the supplied size
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance(KEYALG, p);
-        kpg.initialize(keySize);
-        KeyPair kp = kpg.generateKeyPair();
+        KeyPair kp = PSSUtil.generateKeys(p, keySize);
 
         int bigSaltLen = keySize/8 - 14;
         AlgorithmParameterSpec paramsBad = new PSSParameterSpec(hashAlg,
@@ -108,58 +103,71 @@ public class KeyAndParamCheckForPSS extends PKCS11Test {
         PublicKey pub = kp.getPublic();
 
         // test#1 - setParameter then initSign
-        Signature sig = Signature.getInstance("RSASSA-PSS", p);
-        sig.setParameter(paramsBad);
+        sig = Signature.getInstance(SIGALG, p);
         try {
+            sig.setParameter(paramsGood);
+            sig.initSign(priv);
+            // algorithm support confirmed
+            skipTest = false;
+        } catch (Exception ex) {
+            if (s == PSSUtil.AlgoSupport.MAYBE) {
+                // confirmed to be unsupported; skip the rest of the test
+                System.out.println("=> Skip; no PSS support");
+                return;
+            } else {
+                throw new RuntimeException("Unexpected Exception", ex);
+            }
+        }
+
+        sig = Signature.getInstance(SIGALG, p);
+        try {
+            sig.setParameter(paramsBad);
             sig.initSign(priv);
             throw new RuntimeException("Expected IKE not thrown");
         } catch (InvalidKeyException ike) {
-            System.out.println("test#1: got expected IKE");
+            // expected
         }
 
-        sig.setParameter(paramsGood);
-        sig.initSign(priv);
-        System.out.println("test#1: pass");
-
         // test#2 - setParameter then initVerify
-        sig = Signature.getInstance("RSASSA-PSS", p);
-        sig.setParameter(paramsBad);
+        sig = Signature.getInstance(SIGALG, p);
+        sig.setParameter(paramsGood);
+        sig.initVerify(pub);
+
+        sig = Signature.getInstance(SIGALG, p);
         try {
+            sig.setParameter(paramsBad);
             sig.initVerify(pub);
             throw new RuntimeException("Expected IKE not thrown");
         } catch (InvalidKeyException ike) {
-            System.out.println("test#2: got expected IKE");
+            // expected
         }
-
-        sig.setParameter(paramsGood);
-        sig.initVerify(pub);
-
-        System.out.println("test#2: pass");
 
         // test#3 - initSign, then setParameter
-        sig = Signature.getInstance("RSASSA-PSS", p);
+        sig = Signature.getInstance(SIGALG, p);
         sig.initSign(priv);
+        sig.setParameter(paramsGood);
+
+        sig = Signature.getInstance(SIGALG, p);
         try {
+            sig.initSign(priv);
             sig.setParameter(paramsBad);
             throw new RuntimeException("Expected IAPE not thrown");
         } catch (InvalidAlgorithmParameterException iape) {
-            System.out.println("test#3: got expected IAPE");
+            // expected
         }
-
-        sig.setParameter(paramsGood);
-        System.out.println("test#3: pass");
 
         // test#4 - initVerify, then setParameter
-        sig = Signature.getInstance("RSASSA-PSS", p);
+        sig = Signature.getInstance(SIGALG, p);
+        sig.setParameter(paramsGood);
         sig.initVerify(pub);
+
+        sig = Signature.getInstance(SIGALG, p);
         try {
+            sig.initVerify(pub);
             sig.setParameter(paramsBad);
             throw new RuntimeException("Expected IAPE not thrown");
         } catch (InvalidAlgorithmParameterException iape) {
-            System.out.println("test#4: got expected IAPE");
+            // expected
         }
-
-        sig.setParameter(paramsGood);
-        System.out.println("test#4: pass");
     }
 }

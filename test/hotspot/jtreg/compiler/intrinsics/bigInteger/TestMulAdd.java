@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,11 @@
  * @run main/othervm/timeout=600 -XX:-TieredCompilation -Xbatch
  *      -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions -XX:-UseSquareToLenIntrinsic -XX:-UseMultiplyToLenIntrinsic
  *      -XX:CompileCommand=dontinline,compiler.intrinsics.bigInteger.TestMulAdd::main
- *      -XX:CompileCommand=option,compiler.intrinsics.bigInteger.TestMulAdd::base_multiply,ccstr,DisableIntrinsic,_mulAdd
- *      -XX:CompileCommand=option,java.math.BigInteger::multiply,ccstr,DisableIntrinsic,_mulAdd
- *      -XX:CompileCommand=option,java.math.BigInteger::square,ccstr,DisableIntrinsic,_mulAdd
- *      -XX:CompileCommand=option,java.math.BigInteger::squareToLen,ccstr,DisableIntrinsic,_mulAdd
- *      -XX:CompileCommand=option,java.math.BigInteger::mulAdd,ccstr,DisableIntrinsic,_mulAdd
+ *      -XX:CompileCommand=option,compiler.intrinsics.bigInteger.TestMulAdd::base_multiply,ccstrlist,DisableIntrinsic,_mulAdd
+ *      -XX:CompileCommand=option,java.math.BigInteger::multiply,ccstrlist,DisableIntrinsic,_mulAdd
+ *      -XX:CompileCommand=option,java.math.BigInteger::square,ccstrlist,DisableIntrinsic,_mulAdd
+ *      -XX:CompileCommand=option,java.math.BigInteger::squareToLen,ccstrlist,DisableIntrinsic,_mulAdd
+ *      -XX:CompileCommand=option,java.math.BigInteger::mulAdd,ccstrlist,DisableIntrinsic,_mulAdd
  *      -XX:CompileCommand=inline,java.math.BigInteger::multiply
  *      -XX:CompileCommand=inline,java.math.BigInteger::square
  *      -XX:CompileCommand=inline,java.math.BigInteger::squareToLen

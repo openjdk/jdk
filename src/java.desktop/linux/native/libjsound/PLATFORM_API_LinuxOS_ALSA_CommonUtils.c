@@ -44,11 +44,6 @@ static int alsa_inited = 0;
 static int alsa_enumerate_pcm_subdevices = FALSE; // default: no
 static int alsa_enumerate_midi_subdevices = FALSE; // default: no
 
-/*
- * Declare library specific JNI_Onload entry if static build
- */
-DEF_STATIC_JNI_OnLoad
-
 void initAlsaSupport() {
     char* enumerate;
     if (!alsa_inited) {
@@ -103,29 +98,29 @@ void decodeDeviceID(UINT32 deviceID, int* card, int* device, int* subdevice,
 }
 
 
-void getDeviceString(char* buffer, int card, int device, int subdevice,
-                     int usePlugHw, int isMidi) {
+void getDeviceString(char* buffer, size_t bufferSize, int card, int device,
+                     int subdevice, int usePlugHw, int isMidi) {
     if (needEnumerateSubdevices(isMidi)) {
-        sprintf(buffer, "%s:%d,%d,%d",
+        snprintf(buffer, bufferSize, "%s:%d,%d,%d",
                         usePlugHw ? ALSA_PLUGHARDWARE : ALSA_HARDWARE,
                         card, device, subdevice);
     } else {
-        sprintf(buffer, "%s:%d,%d",
+        snprintf(buffer, bufferSize, "%s:%d,%d",
                         usePlugHw ? ALSA_PLUGHARDWARE : ALSA_HARDWARE,
                         card, device);
     }
 }
 
 
-void getDeviceStringFromDeviceID(char* buffer, UINT32 deviceID,
-                                 int usePlugHw, int isMidi) {
+void getDeviceStringFromDeviceID(char* buffer, size_t bufferSize,
+                                 UINT32 deviceID, int usePlugHw, int isMidi) {
     int card, device, subdevice;
 
     if (deviceID == ALSA_DEFAULT_DEVICE_ID) {
         strcpy(buffer, ALSA_DEFAULT_DEVICE_NAME);
     } else {
         decodeDeviceID(deviceID, &card, &device, &subdevice, isMidi);
-        getDeviceString(buffer, card, device, subdevice, usePlugHw, isMidi);
+        getDeviceString(buffer, bufferSize, card, device, subdevice, usePlugHw, isMidi);
     }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ template OopStorage* OopStorageSet::get_storage(Id);
 
 void OopStorageSet::verify_initialized(uint index) {
   assert(index < ARRAY_SIZE(_storages), "invalid index");
-  assert(_storages[index] != NULL, "oopstorage_init not yet called");
+  assert(_storages[index] != nullptr, "oopstorage_init not yet called");
 }
 
 #endif // ASSERT

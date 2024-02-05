@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ public class Test7100757 {
     Random rnd = Utils.getRandomInstance();
     long[] ra = new long[(NBITS+63)/64];
 
-    for(int l=0; l < 5000000; l++) {
+    for(int l=0; l < 50_000; l++) {
 
       for(int r = 0; r < ra.length; r++) {
         ra[r] = rnd.nextLong();

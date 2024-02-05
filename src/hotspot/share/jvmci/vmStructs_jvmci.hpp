@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,24 +30,24 @@
 class JVMCIVMStructs {
 public:
   /**
-   * The last entry has a NULL fieldName.
+   * The last entry has a null fieldName.
    */
   static VMStructEntry localHotSpotVMStructs[];
 
   /**
-   * The last entry has a NULL typeName.
+   * The last entry has a null typeName.
    */
   static VMTypeEntry localHotSpotVMTypes[];
 
   /**
    * Table of integer constants.
-   * The last entry has a NULL typeName.
+   * The last entry has a null typeName.
    */
   static VMIntConstantEntry localHotSpotVMIntConstants[];
 
   /**
    * Table of long constants.
-   * The last entry has a NULL typeName.
+   * The last entry has a null typeName.
    */
   static VMLongConstantEntry localHotSpotVMLongConstants[];
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2022, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -67,7 +67,7 @@ public class TestBreakSignalThreadDump {
 
     public static void main(String[] argv) throws Exception {
         String main = "TestBreakSignalThreadDump$TestProcess";
-        ProcessBuilder pb = ProcessTools.createTestJvm("-Djava.library.path=" + Utils.TEST_NATIVE_PATH, main);
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder("-Djava.library.path=" + Utils.TEST_NATIVE_PATH, main);
 
         if (argv.length > 0 && argv[0].equals("load_libjsig")) {
             prepend_jsig_lib(pb.environment());

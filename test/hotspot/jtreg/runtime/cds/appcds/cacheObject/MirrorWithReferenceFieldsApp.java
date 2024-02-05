@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,17 +64,7 @@ public class MirrorWithReferenceFieldsApp {
     public void test(WhiteBox wb) {
         Class c = MirrorWithReferenceFieldsApp.class;
         if (wb.isSharedClass(c)) {
-            // Check if the Class object is cached
-            if (wb.isShared(c)) {
-                System.out.println(c + " mirror is cached. Expected.");
-            } else {
-                throw new RuntimeException(
-                    "FAILED. " + c + " mirror should be cached.");
-            }
-
-            // Check fields
-
-            if (wb.isShared(archived_field)) {
+            if (wb.isSharedInternedString(archived_field)) {
                 System.out.println("archived_field is archived as excepted");
             } else {
                 throw new RuntimeException(

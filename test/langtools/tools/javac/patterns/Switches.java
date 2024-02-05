@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -31,7 +30,6 @@ import java.util.function.Function;
  * @test
  * @bug 8262891 8268333 8268896 8269802 8269808 8270151 8269113 8277864 8290709
  * @summary Check behavior of pattern switches.
- * @enablePreview
  */
 public class Switches {
 
@@ -53,10 +51,12 @@ public class Switches {
         runEnumTest(this::testEnumWithGuards2);
         runEnumTest(this::testEnumWithGuards3);
         runEnumTest(this::testEnumWithGuards4);
+        runEnumTest(this::testEnumWithGuards5);
         runEnumTest(this::testEnumWithGuardsExpression1);
         runEnumTest(this::testEnumWithGuardsExpression2);
         runEnumTest(this::testEnumWithGuardsExpression3);
         runEnumTest(this::testEnumWithGuardsExpression4);
+        runEnumTest(this::testEnumWithGuardsExpression5);
         runEnumTest(this::testStringWithGuards1);
         runEnumTest(this::testStringWithGuardsExpression1);
         runEnumTest(this::testIntegerWithGuards1);
@@ -92,6 +92,10 @@ public class Switches {
         assertEquals("a", deconstructExpression(new R("a")));
         assertEquals("1", deconstructExpression(new R(1)));
         assertEquals("other", deconstructExpression(""));
+        assertEquals("a", translationTest("a"));
+        assertEquals("Rb", translationTest(new R("b")));
+        assertEquals("R2c", translationTest(new R2("c")));
+        assertEquals("other", translationTest(0));
         assertEquals("OK", totalPatternAndNull(Integer.valueOf(42)));
         assertEquals("OK", totalPatternAndNull(null));
         assertEquals("1", nullAfterTotal(Integer.valueOf(42)));
@@ -99,6 +103,20 @@ public class Switches {
         emptyFallThrough(1);
         emptyFallThrough("");
         emptyFallThrough(1.0);
+        testSimpleSwitch();
+        testSimpleSwitchExpression();
+        assertEquals(0, constantAndPatternGuardInteger(0, true));
+        assertEquals(0, constantAndPatternGuardInteger(1, true));
+        assertEquals(1, constantAndPatternGuardInteger(1, false));
+        assertEquals(2, constantAndPatternGuardInteger(0, false));
+        assertEquals(0, constantAndPatternGuardString("", true));
+        assertEquals(0, constantAndPatternGuardString("a", true));
+        assertEquals(1, constantAndPatternGuardString("a", false));
+        assertEquals(2, constantAndPatternGuardString("", false));
+        assertEquals(0, constantAndPatternGuardEnum(E.A, true));
+        assertEquals(0, constantAndPatternGuardEnum(E.B, true));
+        assertEquals(1, constantAndPatternGuardEnum(E.B, false));
+        assertEquals(2, constantAndPatternGuardEnum(E.A, false));
     }
 
     void run(Function<Object, Integer> mapper) {
@@ -340,6 +358,28 @@ public class Switches {
             case Runnable x when "C".equals(x.toString()) -> "C";
             case E x -> e == E.C ? "broken" : String.valueOf(x);
             case null -> "null";
+        };
+    }
+
+    String testEnumWithGuards5(Object e) {
+        switch (e) {
+            case E.A: return "a";
+            case E.B: return "b";
+            case Runnable x when "C".equals(x.toString()): return "C";
+            case E x: return e == E.C ? "broken" : String.valueOf(x);
+            case null: return "null";
+            default: throw new AssertionError("Unexpected case!");
+        }
+    }
+
+    String testEnumWithGuardsExpression5(Object e) {
+        return switch (e) {
+            case E.A -> "a";
+            case E.B -> "b";
+            case Runnable x when "C".equals(x.toString()) -> "C";
+            case E x -> e == E.C ? "broken" : String.valueOf(x);
+            case null -> "null";
+            default -> throw new AssertionError("Unexpected case!");
         };
     }
 
@@ -636,6 +676,15 @@ public class Switches {
         };
     }
 
+    String translationTest(Object o) {
+        return switch (o) {
+            case R(String s) -> "R" + s;
+            case String s -> s;
+            case R2(String s) -> "R2" + s;
+            default -> "other";
+        };
+    }
+
     String totalPatternAndNull(Integer in) {
         return switch (in) {
             case -1: { yield "";}
@@ -657,6 +706,47 @@ public class Switches {
             case String s:
             case Object obj:
         }
+    }
+
+    void testSimpleSwitch() {
+        Object o = "";
+        int res;
+        switch (o) {
+            default -> res = 1;
+        };
+        assertEquals(1, res);
+    }
+
+    void testSimpleSwitchExpression() {
+        Object o = "";
+        int res = switch (o) {
+            default -> 1;
+        };
+        assertEquals(1, res);
+    }
+
+    int constantAndPatternGuardInteger(Integer i, boolean g) {
+        return switch (i) {
+            case Integer j when g -> 0;
+            case 1 -> 1;
+            case Integer j -> 2;
+        };
+    }
+
+    int constantAndPatternGuardString(String s, boolean g) {
+        return switch (s) {
+            case String t when g -> 0;
+            case "a" -> 1;
+            case String t -> 2;
+        };
+    }
+
+    int constantAndPatternGuardEnum(E e, boolean g) {
+        return switch (e) {
+            case E f when g -> 0;
+            case E.B -> 1;
+            case E f -> 2;
+        };
     }
 
     //verify that for cases like:
@@ -700,4 +790,5 @@ public class Switches {
     }
 
     record R(Object o) {}
+    record R2(Object o) {}
 }

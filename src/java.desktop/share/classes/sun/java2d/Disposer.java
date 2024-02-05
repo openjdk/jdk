@@ -162,7 +162,7 @@ public class Disposer implements Runnable {
      * which happens to be the Toolkit thread, is in use.
      */
     public static interface PollDisposable {
-    };
+    }
 
     private static ConcurrentLinkedDeque<DisposerRecord> deferredRecords = new ConcurrentLinkedDeque<>();
 

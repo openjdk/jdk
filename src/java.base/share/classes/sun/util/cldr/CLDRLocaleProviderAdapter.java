@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
     private final LocaleDataMetaInfo nonBaseMetaInfo;
 
     // parent locales map
-    private static volatile Map<Locale, Locale> parentLocalesMap;
+    private static final Map<Locale, Locale> parentLocalesMap;
     // cache to hold  locale to locale mapping for language aliases.
     private static final Map<Locale, Locale> langAliasesCache;
     // cache the available locales

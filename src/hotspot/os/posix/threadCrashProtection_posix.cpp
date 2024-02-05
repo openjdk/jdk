@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
 #include "runtime/thread.hpp"
 #include "runtime/threadCrashProtection.hpp"
 
-Thread* ThreadCrashProtection::_protected_thread = NULL;
-ThreadCrashProtection* ThreadCrashProtection::_crash_protection = NULL;
+Thread* ThreadCrashProtection::_protected_thread = nullptr;
+ThreadCrashProtection* ThreadCrashProtection::_crash_protection = nullptr;
 
 ThreadCrashProtection::ThreadCrashProtection() {
   _protected_thread = Thread::current();
@@ -46,35 +46,35 @@ bool ThreadCrashProtection::call(CrashProtectionCallback& cb) {
   // we cannot rely on sigsetjmp/siglongjmp to save/restore the signal mask
   // since on at least some systems (OS X) siglongjmp will restore the mask
   // for the process, not the thread
-  pthread_sigmask(0, NULL, &saved_sig_mask);
+  pthread_sigmask(0, nullptr, &saved_sig_mask);
   if (sigsetjmp(_jmpbuf, 0) == 0) {
     // make sure we can see in the signal handler that we have crash protection
     // installed
     _crash_protection = this;
     cb.call();
     // and clear the crash protection
-    _crash_protection = NULL;
-    _protected_thread = NULL;
+    _crash_protection = nullptr;
+    _protected_thread = nullptr;
     return true;
   }
   // this happens when we siglongjmp() back
-  pthread_sigmask(SIG_SETMASK, &saved_sig_mask, NULL);
-  _crash_protection = NULL;
-  _protected_thread = NULL;
+  pthread_sigmask(SIG_SETMASK, &saved_sig_mask, nullptr);
+  _crash_protection = nullptr;
+  _protected_thread = nullptr;
   return false;
 }
 
 void ThreadCrashProtection::restore() {
-  assert(_crash_protection != NULL, "must have crash protection");
+  assert(_crash_protection != nullptr, "must have crash protection");
   siglongjmp(_jmpbuf, 1);
 }
 
 void ThreadCrashProtection::check_crash_protection(int sig,
     Thread* thread) {
 
-  if (thread != NULL &&
+  if (thread != nullptr &&
       thread == _protected_thread &&
-      _crash_protection != NULL) {
+      _crash_protection != nullptr) {
 
     if (sig == SIGSEGV || sig == SIGBUS) {
       _crash_protection->restore();

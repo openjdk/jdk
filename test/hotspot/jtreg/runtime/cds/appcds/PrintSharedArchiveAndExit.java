@@ -114,7 +114,7 @@ public class PrintSharedArchiveAndExit {
     TestCommon.run(
         "-cp", cp,
         "-XX:+PrintSharedArchiveAndExit")
-      .ifNoMappingFailure(output -> check(output, 1, true, lastCheckMsg, "[Timestamp mismatch]"));
+      .ifNoMappingFailure(output -> check(output, 1, true, lastCheckMsg, "Timestamp mismatch"));
 
     log("Even if hello.jar is out of date, we should still be able to print the dictionary.");
     TestCommon.run(
@@ -128,7 +128,7 @@ public class PrintSharedArchiveAndExit {
     TestCommon.run(
         "-cp", cp,
         "-XX:+PrintSharedArchiveAndExit")
-      .ifNoMappingFailure(output -> check(output, 1, true, lastCheckMsg, "[Required classpath entry does not exist: " + appJar + "]"));
+      .ifNoMappingFailure(output -> check(output, 1, true, lastCheckMsg, "Required classpath entry does not exist: " + appJar));
 
     log("Execution with major errors -- with 'major' errors like the JSA file\n" +
         "is missing, we should stop immediately to avoid crashing the JVM.");

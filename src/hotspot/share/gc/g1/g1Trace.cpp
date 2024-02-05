@@ -145,9 +145,9 @@ void G1NewTracer::send_evacuation_info_event(G1EvacInfo* info) {
   EventEvacuationInformation e;
   if (e.should_commit()) {
     e.set_gcId(GCId::current());
-    e.set_cSetRegions(info->collectionset_regions());
-    e.set_cSetUsedBefore(info->collectionset_used_before());
-    e.set_cSetUsedAfter(info->collectionset_used_after());
+    e.set_cSetRegions(info->collection_set_regions());
+    e.set_cSetUsedBefore(info->collection_set_used_before());
+    e.set_cSetUsedAfter(info->collection_set_used_after());
     e.set_allocationRegions(info->allocation_regions());
     e.set_allocationRegionsUsedBefore(info->alloc_regions_used_before());
     e.set_allocationRegionsUsedAfter(info->alloc_regions_used_before() + info->bytes_used());

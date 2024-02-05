@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,17 +75,17 @@ class MethodCounters : public Metadata {
       _interpreter_throwout_count++;
     }
   }
-  int  interpreter_throwout_count() const {
+  u2  interpreter_throwout_count() const {
     return _interpreter_throwout_count;
   }
-  void set_interpreter_throwout_count(int count) {
+  void set_interpreter_throwout_count(u2 count) {
     _interpreter_throwout_count = count;
   }
 #else // COMPILER2_OR_JVMCI
-  int  interpreter_throwout_count() const {
+  u2  interpreter_throwout_count() const {
     return 0;
   }
-  void set_interpreter_throwout_count(int count) {
+  void set_interpreter_throwout_count(u2 count) {
     assert(count == 0, "count must be 0");
   }
 #endif // COMPILER2_OR_JVMCI
@@ -105,9 +105,9 @@ class MethodCounters : public Metadata {
   void set_rate(float rate)                      { _rate = rate; }
 
   int highest_comp_level() const                 { return _highest_comp_level;  }
-  void set_highest_comp_level(int level)         { _highest_comp_level = level; }
+  void set_highest_comp_level(int level)         { _highest_comp_level = (u1)level; }
   int highest_osr_comp_level() const             { return _highest_osr_comp_level;  }
-  void set_highest_osr_comp_level(int level)     { _highest_osr_comp_level = level; }
+  void set_highest_osr_comp_level(int level)     { _highest_osr_comp_level = (u1)level; }
 
   // invocation counter
   InvocationCounter* invocation_counter() { return &_invocation_counter; }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@
   // the perfect job. In those cases, decode_instruction0 may kick in
   // and do it right.
   // If nothing had to be done, just return "here", otherwise return "here + instr_len(here)"
-  static address decode_instruction0(address here, outputStream* st, address virtual_begin = NULL) {
+  static address decode_instruction0(address here, outputStream* st, address virtual_begin = nullptr) {
     return here;
   }
 

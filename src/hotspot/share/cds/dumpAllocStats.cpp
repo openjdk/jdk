@@ -54,7 +54,7 @@ void DumpAllocStats::print_stats(int ro_all, int rw_all) {
 
   LogMessage(cds) msg;
 
-  msg.debug("Detailed metadata info (excluding heap regions):");
+  msg.debug("Detailed metadata info (excluding heap region):");
   msg.debug("%s", hdr);
   msg.debug("%s", sep);
   for (int type = 0; type < int(_number_of_types); type ++) {

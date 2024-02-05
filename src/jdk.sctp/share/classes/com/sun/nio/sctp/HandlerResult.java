@@ -36,7 +36,7 @@ package com.sun.nio.sctp;
  */
 public enum HandlerResult {
     /**
-     * Try to receieve another message or notification.
+     * Try to receive another message or notification.
      */
     CONTINUE,
 

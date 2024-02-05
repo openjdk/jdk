@@ -70,17 +70,15 @@ public final class ConfigurationInfo {
     }
 
     private static Map<String, String> createMap(Object o) {
-        if (o instanceof TabularData) {
-            TabularData td = (TabularData) o;
+        if (o instanceof TabularData td) {
             Collection<?> values = td.values();
             Map<String, String> map = HashMap.newHashMap(values.size());
             for (Object value : td.values()) {
-                if (value instanceof CompositeData) {
-                    CompositeData cdRow = (CompositeData) value;
+                if (value instanceof CompositeData cdRow) {
                     Object k = cdRow.get("key");
                     Object v = cdRow.get("value");
-                    if (k instanceof String && v instanceof String) {
-                        map.put((String) k, (String) v);
+                    if (k instanceof String sk && v instanceof String sv) {
+                        map.put(sk, sv);
                     }
                 }
             }

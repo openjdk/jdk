@@ -29,6 +29,10 @@
 #include "memory/allocation.hpp"
 #include "oops/access.hpp"
 
+enum class NMethodPatchingType {
+  stw_instruction_and_data_patch,
+};
+
 class BarrierSetAssembler: public CHeapObj<mtGC> {
 private:
   void incr_allocated_bytes(MacroAssembler* masm,
@@ -56,6 +60,8 @@ public:
   );
 
   virtual void barrier_stubs_init() {}
+  virtual NMethodPatchingType nmethod_patching_type() { return NMethodPatchingType::stw_instruction_and_data_patch; }
+  virtual void nmethod_entry_barrier(MacroAssembler* masm);
 };
 
 #endif // CPU_ARM_GC_SHARED_BARRIERSETASSEMBLER_ARM_HPP

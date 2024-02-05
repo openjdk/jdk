@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,27 +24,22 @@
  */
 package jdk.internal.foreign.abi;
 
-import java.lang.foreign.Addressable;
-import java.lang.foreign.MemoryAddress;
-import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
-import java.lang.foreign.SegmentAllocator;
-import java.lang.foreign.ValueLayout;
-import jdk.internal.foreign.MemoryAddressImpl;
+import jdk.internal.foreign.AbstractMemorySegmentImpl;
+import jdk.internal.foreign.Utils;
+import jdk.internal.foreign.abi.BindingInterpreter.LoadFunc;
+import jdk.internal.foreign.abi.BindingInterpreter.StoreFunc;
 
+import java.lang.foreign.*;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
-import java.util.Objects;
 
-import java.lang.invoke.VarHandle;
-import java.nio.ByteOrder;
-
-import static java.lang.invoke.MethodType.methodType;
+import static java.lang.foreign.ValueLayout.JAVA_BYTE;
+import static java.lang.foreign.ValueLayout.JAVA_INT_UNALIGNED;
+import static java.lang.foreign.ValueLayout.JAVA_SHORT_UNALIGNED;
 
 /**
  * The binding operators defined in the Binding class can be combined into argument and return value processing 'recipes'.
@@ -62,7 +57,7 @@ import static java.lang.invoke.MethodType.methodType;
  * the CONVERT_ADDRESS operator 'unboxes' a MemoryAddress to a long, but 'boxes' a long to a MemoryAddress.
  *
  * Here are some examples of binding recipes derived from C declarations, and according to the Windows ABI (recipes are
- * ABI-specific). Note that each argument has it's own recipe, which is indicated by '[number]:' (though, the only
+ * ABI-specific). Note that each argument has its own recipe, which is indicated by '[number]:' (though, the only
  * example that has multiple arguments is the one using varargs).
  *
  * --------------------
@@ -199,121 +194,15 @@ import static java.lang.invoke.MethodType.methodType;
  *
  * --------------------
  */
-public abstract class Binding {
+public sealed interface Binding {
 
-    /**
-     * A binding context is used as an helper to carry out evaluation of certain bindings; for instance,
-     * it helps {@link Allocate} bindings, by providing the {@link SegmentAllocator} that should be used for
-     * the allocation operation, or {@link ToSegment} bindings, by providing the {@link MemorySession} that
-     * should be used to create an unsafe struct from a memory address.
-     */
-    public static class Context implements AutoCloseable {
-        private final SegmentAllocator allocator;
-        private final MemorySession session;
+    void verify(Deque<Class<?>> stack);
 
-        private Context(SegmentAllocator allocator, MemorySession session) {
-            this.allocator = allocator;
-            this.session = session;
-        }
-
-        public SegmentAllocator allocator() {
-            return allocator;
-        }
-
-        public MemorySession session() {
-            return session;
-        }
-
-        @Override
-        public void close() {
-            session().close();
-        }
-
-        /**
-         * Create a binding context from given native scope.
-         */
-        public static Context ofBoundedAllocator(long size) {
-            MemorySession scope = MemorySession.openConfined();
-            return new Context(SegmentAllocator.newNativeArena(size, scope), scope);
-        }
-
-        /**
-         * Create a binding context from given segment allocator. The resulting context will throw when
-         * the context's scope is accessed.
-         */
-        public static Context ofAllocator(SegmentAllocator allocator) {
-            return new Context(allocator, null) {
-                @Override
-                public MemorySession session() {
-                    throw new UnsupportedOperationException();
-                }
-            };
-        }
-
-        /**
-         * Create a binding context from given scope. The resulting context will throw when
-         * the context's allocator is accessed.
-         */
-        public static Context ofSession() {
-            MemorySession scope = MemorySession.openConfined();
-            return new Context(null, scope) {
-                @Override
-                public SegmentAllocator allocator() { throw new UnsupportedOperationException(); }
-            };
-        }
-
-        /**
-         * Dummy binding context. Throws exceptions when attempting to access scope, return a throwing allocator, and has
-         * an idempotent {@link #close()}.
-         */
-        public static final Context DUMMY = new Context(null, null) {
-            @Override
-            public SegmentAllocator allocator() {
-                return SharedUtils.THROWING_ALLOCATOR;
-            }
-
-            @Override
-            public MemorySession session() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public void close() {
-                // do nothing
-            }
-        };
-    }
-
-    enum Tag {
-        VM_STORE,
-        VM_LOAD,
-        BUFFER_STORE,
-        BUFFER_LOAD,
-        COPY_BUFFER,
-        ALLOC_BUFFER,
-        BOX_ADDRESS,
-        UNBOX_ADDRESS,
-        TO_SEGMENT,
-        DUP
-    }
-
-    private final Tag tag;
-
-    private Binding(Tag tag) {
-        this.tag = tag;
-    }
-
-    public Tag tag() {
-        return tag;
-    }
-
-    public abstract void verify(Deque<Class<?>> stack);
-
-    public abstract void interpret(Deque<Object> stack, BindingInterpreter.StoreFunc storeFunc,
-                                   BindingInterpreter.LoadFunc loadFunc, Context context);
+    void interpret(Deque<Object> stack, StoreFunc storeFunc,
+                   LoadFunc loadFunc, SegmentAllocator allocator);
 
     private static void checkType(Class<?> type) {
-        if (!type.isPrimitive() || type == void.class)
+        if (type != Object.class && (!type.isPrimitive() || type == void.class))
             throw new IllegalArgumentException("Illegal type: " + type);
     }
 
@@ -322,91 +211,174 @@ public abstract class Binding {
             throw new IllegalArgumentException("Negative offset: " + offset);
     }
 
-    public static VMStore vmStore(VMStorage storage, Class<?> type) {
+    private static void checkByteWidth(int byteWidth, Class<?> type) {
+        if (byteWidth < 0 || byteWidth > Utils.byteWidthOfPrimitive(type))
+            throw new IllegalArgumentException("Illegal byteWidth: " + byteWidth);
+    }
+
+    static VMStore vmStore(VMStorage storage, Class<?> type) {
         checkType(type);
         return new VMStore(storage, type);
     }
 
-    public static VMLoad vmLoad(VMStorage storage, Class<?> type) {
+    static VMLoad vmLoad(VMStorage storage, Class<?> type) {
         checkType(type);
         return new VMLoad(storage, type);
     }
 
-    public static BufferStore bufferStore(long offset, Class<?> type) {
-        checkType(type);
-        checkOffset(offset);
-        return new BufferStore(offset, type);
+    static BufferStore bufferStore(long offset, Class<?> type) {
+        return bufferStore(offset, type, Utils.byteWidthOfPrimitive(type));
     }
 
-    public static BufferLoad bufferLoad(long offset, Class<?> type) {
+    static BufferStore bufferStore(long offset, Class<?> type, int byteWidth) {
         checkType(type);
         checkOffset(offset);
-        return new BufferLoad(offset, type);
+        checkByteWidth(byteWidth, type);
+        return new BufferStore(offset, type, byteWidth);
     }
 
-    public static Copy copy(MemoryLayout layout) {
+    static BufferLoad bufferLoad(long offset, Class<?> type) {
+        return Binding.bufferLoad(offset, type, Utils.byteWidthOfPrimitive(type));
+    }
+
+    static BufferLoad bufferLoad(long offset, Class<?> type, int byteWidth) {
+        checkType(type);
+        checkOffset(offset);
+        checkByteWidth(byteWidth, type);
+        return new BufferLoad(offset, type, byteWidth);
+    }
+
+    static Copy copy(MemoryLayout layout) {
         return new Copy(layout.byteSize(), layout.byteAlignment());
     }
 
-    public static Allocate allocate(MemoryLayout layout) {
+    static Allocate allocate(MemoryLayout layout) {
         return new Allocate(layout.byteSize(), layout.byteAlignment());
     }
 
-    public static BoxAddress boxAddress() {
-        return BoxAddress.INSTANCE;
+    static BoxAddress boxAddressRaw(long size, long align) {
+        return new BoxAddress(size, align, false);
     }
 
-    public static UnboxAddress unboxAddress() {
-        return UnboxAddress.INSTANCE.get(MemoryAddress.class);
+    static BoxAddress boxAddress(MemoryLayout layout) {
+        return new BoxAddress(layout.byteSize(), layout.byteAlignment(), true);
     }
 
-    public static UnboxAddress unboxAddress(Class<?> carrier) {
-        return UnboxAddress.INSTANCE.get(carrier);
+    static BoxAddress boxAddress(long byteSize) {
+        return new BoxAddress(byteSize, 1, true);
     }
 
-    public static ToSegment toSegment(MemoryLayout layout) {
-        return new ToSegment(layout.byteSize());
+    // alias
+    static SegmentOffset unboxAddress() {
+        return segmentOffsetNoAllowHeap();
     }
 
-    public static ToSegment toSegment(long byteSize) {
-        return new ToSegment(byteSize);
+    static SegmentBase segmentBase() {
+        return SegmentBase.INSTANCE;
     }
 
-    public static Dup dup() {
+    static SegmentOffset segmentOffsetAllowHeap() {
+        return SegmentOffset.INSTANCE_ALLOW_HEAP;
+    }
+
+    static SegmentOffset segmentOffsetNoAllowHeap() {
+        return SegmentOffset.INSTANCE_NO_ALLOW_HEAP;
+    }
+
+    static Dup dup() {
         return Dup.INSTANCE;
     }
 
+    static ShiftLeft shiftLeft(int shiftAmount) {
+        if (shiftAmount <= 0)
+            throw new IllegalArgumentException("shiftAmount must be positive");
+        return new ShiftLeft(shiftAmount);
+    }
 
-    public static Binding.Builder builder() {
+    static ShiftRight shiftRight(int shiftAmount) {
+        if (shiftAmount <= 0)
+            throw new IllegalArgumentException("shiftAmount must be positive");
+        return new ShiftRight(shiftAmount);
+    }
+
+    static Binding cast(Class<?> fromType, Class<?> toType) {
+        if (fromType == int.class) {
+            if (toType == boolean.class) {
+                return Cast.INT_TO_BOOLEAN;
+            } else if (toType == byte.class) {
+                return Cast.INT_TO_BYTE;
+            } else if (toType == short.class) {
+                return Cast.INT_TO_SHORT;
+            } else if (toType == char.class) {
+                return Cast.INT_TO_CHAR;
+            } else if (toType == long.class) {
+                return Cast.INT_TO_LONG;
+            }
+        } else if (toType == int.class) {
+            if (fromType == boolean.class) {
+                return Cast.BOOLEAN_TO_INT;
+            } else if (fromType == byte.class) {
+                return Cast.BYTE_TO_INT;
+            } else if (fromType == short.class) {
+                return Cast.SHORT_TO_INT;
+            } else if (fromType == char.class) {
+                return Cast.CHAR_TO_INT;
+            } else if (fromType == long.class) {
+                return Cast.LONG_TO_INT;
+            }
+        } else if (fromType == long.class) {
+            if (toType == byte.class) {
+                return Cast.LONG_TO_BYTE;
+            } else if (toType == short.class) {
+                return Cast.LONG_TO_SHORT;
+            } else if (toType == char.class) {
+                return Cast.LONG_TO_CHAR;
+            }
+        } else if (toType == long.class) {
+            if (fromType == byte.class) {
+                return Cast.BYTE_TO_LONG;
+            } else if (fromType == short.class) {
+                return Cast.SHORT_TO_LONG;
+            } else if (fromType == char.class) {
+                return Cast.CHAR_TO_LONG;
+            }
+        }
+        throw new IllegalArgumentException("Unknown conversion: " + fromType + " -> " + toType);
+    }
+
+
+    static Binding.Builder builder() {
         return new Binding.Builder();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Binding binding = (Binding) o;
-        return tag == binding.tag;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(tag);
     }
 
     /**
      * A builder helper class for generating lists of Bindings
      */
-    public static class Builder {
+    class Builder {
         private final List<Binding> bindings = new ArrayList<>();
 
+        private static boolean isSubIntType(Class<?> type) {
+            return type == boolean.class || type == byte.class || type == short.class || type == char.class;
+        }
+
         public Binding.Builder vmStore(VMStorage storage, Class<?> type) {
+            if (isSubIntType(type)) {
+                bindings.add(Binding.cast(type, int.class));
+                type = int.class;
+            }
             bindings.add(Binding.vmStore(storage, type));
             return this;
         }
 
         public Binding.Builder vmLoad(VMStorage storage, Class<?> type) {
-            bindings.add(Binding.vmLoad(storage, type));
+            Class<?> loadType = type;
+            if (isSubIntType(type)) {
+                loadType = int.class;
+            }
+            bindings.add(Binding.vmLoad(storage, loadType));
+            if (isSubIntType(type)) {
+                bindings.add(Binding.cast(int.class, type));
+            }
             return this;
         }
 
@@ -415,8 +387,18 @@ public abstract class Binding {
             return this;
         }
 
+        public Binding.Builder bufferStore(long offset, Class<?> type, int byteWidth) {
+            bindings.add(Binding.bufferStore(offset, type, byteWidth));
+            return this;
+        }
+
         public Binding.Builder bufferLoad(long offset, Class<?> type) {
             bindings.add(Binding.bufferLoad(offset, type));
+            return this;
+        }
+
+        public Binding.Builder bufferLoad(long offset, Class<?> type, int byteWidth) {
+            bindings.add(Binding.bufferLoad(offset, type, byteWidth));
             return this;
         }
 
@@ -430,8 +412,13 @@ public abstract class Binding {
             return this;
         }
 
-        public Binding.Builder boxAddress() {
-            bindings.add(Binding.boxAddress());
+        public Binding.Builder boxAddressRaw(long size, long align) {
+            bindings.add(Binding.boxAddressRaw(size, align));
+            return this;
+        }
+
+        public Binding.Builder boxAddress(MemoryLayout layout) {
+            bindings.add(Binding.boxAddress(layout));
             return this;
         }
 
@@ -440,13 +427,18 @@ public abstract class Binding {
             return this;
         }
 
-        public Binding.Builder unboxAddress(Class<?> carrier) {
-            bindings.add(Binding.unboxAddress(carrier));
+        public Binding.Builder segmentBase() {
+            bindings.add(Binding.segmentBase());
             return this;
         }
 
-        public Binding.Builder toSegment(MemoryLayout layout) {
-            bindings.add(Binding.toSegment(layout));
+        public Binding.Builder segmentOffsetAllowHeap() {
+            bindings.add(Binding.segmentOffsetAllowHeap());
+            return this;
+        }
+
+        public Binding.Builder segmentOffsetNoAllowHeap() {
+            bindings.add(Binding.segmentOffsetNoAllowHeap());
             return this;
         }
 
@@ -455,54 +447,42 @@ public abstract class Binding {
             return this;
         }
 
+        // Converts to long if needed then shifts left by the given number of Bytes.
+        public Binding.Builder shiftLeft(int shiftAmount, Class<?> type) {
+            if (type != long.class) {
+                bindings.add(Binding.cast(type, long.class));
+            }
+            bindings.add(Binding.shiftLeft(shiftAmount));
+            return this;
+        }
+
+        // Shifts right by the given number of Bytes then converts from long if needed.
+        public Binding.Builder shiftRight(int shiftAmount, Class<?> type) {
+            bindings.add(Binding.shiftRight(shiftAmount));
+            if (type != long.class) {
+                bindings.add(Binding.cast(long.class, type));
+            }
+            return this;
+        }
+
         public List<Binding> build() {
-            return new ArrayList<>(bindings);
+            return List.copyOf(bindings);
         }
     }
 
-    abstract static class Move extends Binding {
-        private final VMStorage storage;
-        private final Class<?> type;
-
-        private Move(Tag tag, VMStorage storage, Class<?> type) {
-            super(tag);
-            this.storage = storage;
-            this.type = type;
-        }
-
-        public VMStorage storage() {
-            return storage;
-        }
-
-        public Class<?> type() {
-            return type;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            if (!super.equals(o)) return false;
-            Move move = (Move) o;
-            return Objects.equals(storage, move.storage) &&
-                    Objects.equals(type, move.type);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(super.hashCode(), storage, type);
-        }
+    sealed interface Move extends Binding {
+        VMStorage storage();
+        Class<?> type();
     }
 
     /**
      * VM_STORE([storage location], [type])
-     * Pops a [type] from the operand stack, and moves it to [storage location]
-     * The [type] must be one of byte, short, char, int, long, float, or double
+     *   Pops a [type] from the operand stack, and moves it to [storage location]
+     *   The [type] must be one of byte, short, char, int, long, float, or double.
+     *   [storage location] may be 'null', indicating that this value should be passed
+     *   to the VM stub, but does not have an explicit target register (e.g. oop offsets)
      */
-    public static class VMStore extends Move {
-        private VMStore(VMStorage storage, Class<?> type) {
-            super(Tag.VM_STORE, storage, type);
-        }
+    record VMStore(VMStorage storage, Class<?> type) implements Move {
 
         @Override
         public void verify(Deque<Class<?>> stack) {
@@ -512,29 +492,18 @@ public abstract class Binding {
         }
 
         @Override
-        public void interpret(Deque<Object> stack, BindingInterpreter.StoreFunc storeFunc,
-                              BindingInterpreter.LoadFunc loadFunc, Context context) {
-            storeFunc.store(storage(), type(), stack.pop());
-        }
-
-        @Override
-        public String toString() {
-            return "VMStore{" +
-                    "storage=" + storage() +
-                    ", type=" + type() +
-                    '}';
+        public void interpret(Deque<Object> stack, StoreFunc storeFunc,
+                              LoadFunc loadFunc, SegmentAllocator allocator) {
+            storeFunc.store(storage(), stack.pop());
         }
     }
 
     /**
      * VM_LOAD([storage location], [type])
-     * Loads a [type] from [storage location], and pushes it onto the operand stack.
-     * The [type] must be one of byte, short, char, int, long, float, or double
+     *   Loads a [type] from [storage location], and pushes it onto the operand stack.
+     *   The [type] must be one of byte, short, char, int, long, float, or double
      */
-    public static class VMLoad extends Move {
-        private VMLoad(VMStorage storage, Class<?> type) {
-            super(Tag.VM_LOAD, storage, type);
-        }
+    record VMLoad(VMStorage storage, Class<?> type) implements Move {
 
         @Override
         public void verify(Deque<Class<?>> stack) {
@@ -542,72 +511,24 @@ public abstract class Binding {
         }
 
         @Override
-        public void interpret(Deque<Object> stack, BindingInterpreter.StoreFunc storeFunc,
-                              BindingInterpreter.LoadFunc loadFunc, Context context) {
+        public void interpret(Deque<Object> stack, StoreFunc storeFunc,
+                              LoadFunc loadFunc, SegmentAllocator allocator) {
             stack.push(loadFunc.load(storage(), type()));
-        }
-
-        @Override
-        public String toString() {
-            return "VMLoad{" +
-                    "storage=" + storage() +
-                    ", type=" + type() +
-                    '}';
         }
     }
 
-    private abstract static class Dereference extends Binding {
-        private final long offset;
-        private final Class<?> type;
-
-        private Dereference(Tag tag, long offset, Class<?> type) {
-            super(tag);
-            this.offset = offset;
-            this.type = type;
-        }
-
-        public long offset() {
-            return offset;
-        }
-
-        public Class<?> type() {
-            return type;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            if (!super.equals(o)) return false;
-            Dereference that = (Dereference) o;
-            return offset == that.offset &&
-                    Objects.equals(type, that.type);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(super.hashCode(), offset, type);
-        }
-
-        public VarHandle varHandle() {
-            // alignment is set to 1 byte here to avoid exceptions for cases where we do super word
-            // copies of e.g. 2 int fields of a struct as a single long, while the struct is only
-            // 4-byte-aligned (since it only contains ints)
-            ValueLayout layout = MemoryLayout.valueLayout(type(), ByteOrder.nativeOrder()).withBitAlignment(8);
-            return MethodHandles.insertCoordinates(MethodHandles.memorySegmentViewVarHandle(layout), 1, offset);
-        }
+    sealed interface Dereference extends Binding {
+        long offset();
+        Class<?> type();
     }
 
     /**
-     * BUFFER_STORE([offset into memory region], [type])
-     * Pops a [type] from the operand stack, then pops a MemorySegment from the operand stack.
-     * Stores the [type] to [offset into memory region].
-     * The [type] must be one of byte, short, char, int, long, float, or double
+     * BUFFER_STORE([offset into memory region], [type], [width])
+     *   Pops a [type] from the operand stack, then pops a MemorySegment from the operand stack.
+     *   Stores [width] bytes of the value contained in the [type] to [offset into memory region].
+     *   The [type] must be one of byte, short, char, int, long, float, or double
      */
-    public static class BufferStore extends Dereference {
-        private BufferStore(long offset, Class<?> type) {
-            super(Tag.BUFFER_STORE, offset, type);
-        }
+    record BufferStore(long offset, Class<?> type, int byteWidth) implements Dereference {
 
         @Override
         public void verify(Deque<Class<?>> stack) {
@@ -618,33 +539,53 @@ public abstract class Binding {
         }
 
         @Override
-        public void interpret(Deque<Object> stack, BindingInterpreter.StoreFunc storeFunc,
-                              BindingInterpreter.LoadFunc loadFunc, Context context) {
+        public void interpret(Deque<Object> stack, StoreFunc storeFunc,
+                              LoadFunc loadFunc, SegmentAllocator allocator) {
             Object value = stack.pop();
-            MemorySegment operand = (MemorySegment) stack.pop();
-            MemorySegment writeAddress = operand.asSlice(offset());
-            SharedUtils.write(writeAddress, type(), value);
-        }
-
-        @Override
-        public String toString() {
-            return "BufferStore{" +
-                    "offset=" + offset() +
-                    ", type=" + type() +
-                    '}';
+            MemorySegment writeAddress = (MemorySegment) stack.pop();
+            if (SharedUtils.isPowerOfTwo(byteWidth())) {
+                // exact size match
+                SharedUtils.write(writeAddress, offset(), type(), value);
+            } else {
+                // non-exact match, need to do chunked load
+                long longValue = ((Number) value).longValue();
+                // byteWidth is smaller than the width of 'type', so it will always be < 8 here
+                int remaining = byteWidth();
+                int chunkOffset = 0;
+                do {
+                    int chunkSize = Integer.highestOneBit(remaining); // next power of 2, in bytes
+                    long writeOffset = offset() + SharedUtils.pickChunkOffset(chunkOffset, byteWidth(), chunkSize);
+                    int shiftAmount = chunkOffset * Byte.SIZE;
+                    switch (chunkSize) {
+                        case 4 -> {
+                            int writeChunk = (int) (((0xFFFF_FFFFL << shiftAmount) & longValue) >>> shiftAmount);
+                            writeAddress.set(JAVA_INT_UNALIGNED, writeOffset, writeChunk);
+                        }
+                        case 2 -> {
+                            short writeChunk = (short) (((0xFFFFL << shiftAmount) & longValue) >>> shiftAmount);
+                            writeAddress.set(JAVA_SHORT_UNALIGNED, writeOffset, writeChunk);
+                        }
+                        case 1 -> {
+                            byte writeChunk = (byte) (((0xFFL << shiftAmount) & longValue) >>> shiftAmount);
+                            writeAddress.set(JAVA_BYTE, writeOffset, writeChunk);
+                        }
+                        default ->
+                           throw new IllegalStateException("Unexpected chunk size for chunked write: " + chunkSize);
+                    }
+                    remaining -= chunkSize;
+                    chunkOffset += chunkSize;
+                } while (remaining != 0);
+            }
         }
     }
 
     /**
-     * BUFFER_LOAD([offset into memory region], [type])
-     * Pops a [type], and then a MemorySegment from the operand stack,
-     * and then stores [type] to [offset into memory region] of the MemorySegment.
-     * The [type] must be one of byte, short, char, int, long, float, or double
+     * BUFFER_LOAD([offset into memory region], [type], [width])
+     *   Pops a MemorySegment from the operand stack,
+     *   and then loads [width] bytes from it at [offset into memory region], into a [type].
+     *   The [type] must be one of byte, short, char, int, long, float, or double
      */
-    public static class BufferLoad extends Dereference {
-        private BufferLoad(long offset, Class<?> type) {
-            super(Tag.BUFFER_LOAD, offset, type);
-        }
+    record BufferLoad(long offset, Class<?> type, int byteWidth) implements Dereference {
 
         @Override
         public void verify(Deque<Class<?>> stack) {
@@ -655,58 +596,54 @@ public abstract class Binding {
         }
 
         @Override
-        public void interpret(Deque<Object> stack, BindingInterpreter.StoreFunc storeFunc,
-                              BindingInterpreter.LoadFunc loadFunc, Context context) {
-            MemorySegment operand = (MemorySegment) stack.pop();
-            MemorySegment readAddress = operand.asSlice(offset());
-            stack.push(SharedUtils.read(readAddress, type()));
-        }
+        public void interpret(Deque<Object> stack, StoreFunc storeFunc,
+                              LoadFunc loadFunc, SegmentAllocator allocator) {
+            MemorySegment readAddress = (MemorySegment) stack.pop();
+            if (SharedUtils.isPowerOfTwo(byteWidth())) {
+                // exact size match
+                stack.push(SharedUtils.read(readAddress, offset(), type()));
+            } else {
+                // non-exact match, need to do chunked load
+                long result = 0;
+                // byteWidth is smaller than the width of 'type', so it will always be < 8 here
+                int remaining = byteWidth();
+                int chunkOffset = 0;
+                do {
+                    int chunkSize = Integer.highestOneBit(remaining); // next power of 2
+                    long readOffset = offset() + SharedUtils.pickChunkOffset(chunkOffset, byteWidth(), chunkSize);
+                    long readChunk = switch (chunkSize) {
+                        case 4 -> Integer.toUnsignedLong(readAddress.get(JAVA_INT_UNALIGNED, readOffset));
+                        case 2 -> Short.toUnsignedLong(readAddress.get(JAVA_SHORT_UNALIGNED, readOffset));
+                        case 1 -> Byte.toUnsignedLong(readAddress.get(JAVA_BYTE, readOffset));
+                        default ->
+                            throw new IllegalStateException("Unexpected chunk size for chunked write: " + chunkSize);
+                    };
+                    result |= readChunk << (chunkOffset * Byte.SIZE);
+                    remaining -= chunkSize;
+                    chunkOffset += chunkSize;
+                } while (remaining != 0);
 
-        @Override
-        public String toString() {
-            return "BufferLoad{" +
-                    "offset=" + offset() +
-                    ", type=" + type() +
-                    '}';
+                if (type() == int.class) { // 3 byte write
+                    stack.push((int) result);
+                } else if (type() == long.class) { // 5, 6, 7 byte write
+                    stack.push(result);
+                } else {
+                    throw new IllegalStateException("Unexpected type for chunked load: " + type());
+                }
+            }
         }
     }
 
     /**
      * COPY([size], [alignment])
      *   Creates a new MemorySegment with the given [size] and [alignment],
-     *     and copies contents from a MemorySegment popped from the top of the operand stack into this new buffer,
-     *     and pushes the new buffer onto the operand stack
+     *   and copies contents from a MemorySegment popped from the top of the operand stack into this new buffer,
+     *   and pushes the new buffer onto the operand stack
      */
-    public static class Copy extends Binding {
-        private final long size;
-        private final long alignment;
-
-        private Copy(long size, long alignment) {
-            super(Tag.COPY_BUFFER);
-            this.size = size;
-            this.alignment = alignment;
-        }
-
-        private static MemorySegment copyBuffer(MemorySegment operand, long size, long alignment, Context context) {
-            return context.allocator().allocate(size, alignment)
+    record Copy(long size, long alignment) implements Binding {
+        private static MemorySegment copyBuffer(MemorySegment operand, long size, long alignment, SegmentAllocator allocator) {
+            return allocator.allocate(size, alignment)
                             .copyFrom(operand.asSlice(0, size));
-        }
-
-        public long size() {
-            return size;
-        }
-
-        public long alignment() {
-            return alignment;
-        }
-
-        @Override
-        public String toString() {
-            return "Copy{" +
-                    "tag=" + tag() +
-                    ", size=" + size +
-                    ", alignment=" + alignment +
-                    '}';
         }
 
         @Override
@@ -717,26 +654,11 @@ public abstract class Binding {
         }
 
         @Override
-        public void interpret(Deque<Object> stack, BindingInterpreter.StoreFunc storeFunc,
-                              BindingInterpreter.LoadFunc loadFunc, Context context) {
+        public void interpret(Deque<Object> stack, StoreFunc storeFunc,
+                              LoadFunc loadFunc, SegmentAllocator allocator) {
             MemorySegment operand = (MemorySegment) stack.pop();
-            MemorySegment copy = copyBuffer(operand, size, alignment, context);
+            MemorySegment copy = copyBuffer(operand, size, alignment, allocator);
             stack.push(copy);
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            if (!super.equals(o)) return false;
-            Copy copy = (Copy) o;
-            return size == copy.size &&
-                    alignment == copy.alignment;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(super.hashCode(), size, alignment);
         }
     }
 
@@ -744,35 +666,9 @@ public abstract class Binding {
      * ALLOCATE([size], [alignment])
      *   Creates a new MemorySegment with the give [size] and [alignment], and pushes it onto the operand stack.
      */
-    public static class Allocate extends Binding {
-        private final long size;
-        private final long alignment;
-
-        private Allocate(long size, long alignment) {
-            super(Tag.ALLOC_BUFFER);
-            this.size = size;
-            this.alignment = alignment;
-        }
-
-        private static MemorySegment allocateBuffer(long size, long alignment, Context context) {
-            return context.allocator().allocate(size, alignment);
-        }
-
-        public long size() {
-            return size;
-        }
-
-        public long alignment() {
-            return alignment;
-        }
-
-        @Override
-        public String toString() {
-            return "AllocateBuffer{" +
-                    "tag=" + tag() +
-                    "size=" + size +
-                    ", alignment=" + alignment +
-                    '}';
+    record Allocate(long size, long alignment) implements Binding {
+        private static MemorySegment allocateBuffer(long size, long alignment, SegmentAllocator allocator) {
+            return allocator.allocate(size, alignment);
         }
 
         @Override
@@ -781,159 +677,86 @@ public abstract class Binding {
         }
 
         @Override
-        public void interpret(Deque<Object> stack, BindingInterpreter.StoreFunc storeFunc,
-                              BindingInterpreter.LoadFunc loadFunc, Context context) {
-            stack.push(allocateBuffer(size, alignment, context));
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            if (!super.equals(o)) return false;
-            Allocate allocate = (Allocate) o;
-            return size == allocate.size &&
-                    alignment == allocate.alignment;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(super.hashCode(), size, alignment);
+        public void interpret(Deque<Object> stack, StoreFunc storeFunc,
+                              LoadFunc loadFunc, SegmentAllocator allocator) {
+            stack.push(allocateBuffer(size, alignment, allocator));
         }
     }
 
     /**
-     * UNBOX_ADDRESS()
-     * Pops a 'MemoryAddress' from the operand stack, converts it to a 'long',
-     *     and pushes that onto the operand stack.
+     * SEGMENT_BASE()
+     *   Pops a MemorySegment from the stack, retrieves the heap base object from it, or null if there is none
+     *   (See: AbstractMemorySegmentImpl::unsafeGetBase), and pushes the result onto the operand stack.
      */
-    public static class UnboxAddress extends Binding {
-
-        static final ClassValue<UnboxAddress> INSTANCE = new ClassValue<>() {
-            @Override
-            protected UnboxAddress computeValue(Class<?> type) {
-                return new UnboxAddress(type);
-            }
-        };
-
-        final Class<?> carrier;
-        final MethodHandle toAddress;
-
-        private UnboxAddress(Class<?> carrier) {
-            super(Tag.UNBOX_ADDRESS);
-            this.carrier = carrier;
-            try {
-                this.toAddress = MethodHandles.lookup().findVirtual(carrier, "address", MethodType.methodType(MemoryAddress.class));
-            } catch (Throwable ex) {
-                throw new IllegalArgumentException(ex);
-            }
-        }
+    record SegmentBase() implements Binding {
+        static final SegmentBase INSTANCE = new SegmentBase();
 
         @Override
         public void verify(Deque<Class<?>> stack) {
             Class<?> actualType = stack.pop();
-            SharedUtils.checkType(actualType, carrier);
+            SharedUtils.checkType(actualType, MemorySegment.class);
+            stack.push(Object.class);
+        }
+
+        @Override
+        public void interpret(Deque<Object> stack, StoreFunc storeFunc,
+                              LoadFunc loadFunc, SegmentAllocator allocator) {
+            stack.push(((AbstractMemorySegmentImpl)stack.pop()).unsafeGetBase());
+        }
+    }
+
+    /**
+     * SEGMENT_OFFSET([allowHeap])
+     *   Pops a MemorySegment from the stack, retrieves the offset from it,
+     *   (See: AbstractMemorySegmentImpl::unsafeGetOffset), and pushes the result onto the operand stack.
+     *   Note that for heap segments, the offset is a virtual address into the heap base object.
+     *   If [allowHeap] is 'false' an exception will be thrown for heap segments (See SharedUtils::checkNative).
+     */
+    record SegmentOffset(boolean allowHeap) implements Binding {
+        static final SegmentOffset INSTANCE_NO_ALLOW_HEAP = new SegmentOffset(false);
+        static final SegmentOffset INSTANCE_ALLOW_HEAP = new SegmentOffset(true);
+
+        @Override
+        public void verify(Deque<Class<?>> stack) {
+            Class<?> actualType = stack.pop();
+            SharedUtils.checkType(actualType, MemorySegment.class);
             stack.push(long.class);
         }
 
         @Override
-        public void interpret(Deque<Object> stack, BindingInterpreter.StoreFunc storeFunc,
-                              BindingInterpreter.LoadFunc loadFunc, Context context) {
-            stack.push(((Addressable)stack.pop()).address().toRawLongValue());
-        }
-
-        @Override
-        public String toString() {
-            return "UnboxAddress{}";
+        public void interpret(Deque<Object> stack, StoreFunc storeFunc,
+                              LoadFunc loadFunc, SegmentAllocator allocator) {
+            MemorySegment operand = (MemorySegment) stack.pop();
+            if (!allowHeap) {
+                SharedUtils.checkNative(operand);
+            }
+            stack.push(((AbstractMemorySegmentImpl)operand).unsafeGetOffset());
         }
     }
 
     /**
      * BOX_ADDRESS()
-     * Pops a 'long' from the operand stack, converts it to a 'MemoryAddress',
-     *     and pushes that onto the operand stack.
+     *   Pops a 'long' from the operand stack, converts it to a 'MemorySegment', with the given size and memory scope
+     *   (either the context scope, or the global scope), and pushes that onto the operand stack.
      */
-    public static class BoxAddress extends Binding {
-        private static final BoxAddress INSTANCE = new BoxAddress();
-        private BoxAddress() {
-            super(Tag.BOX_ADDRESS);
-        }
+    record BoxAddress(long size, long align, boolean needsScope) implements Binding {
 
         @Override
         public void verify(Deque<Class<?>> stack) {
             Class<?> actualType = stack.pop();
             SharedUtils.checkType(actualType, long.class);
-            stack.push(MemoryAddress.class);
-        }
-
-        @Override
-        public void interpret(Deque<Object> stack, BindingInterpreter.StoreFunc storeFunc,
-                              BindingInterpreter.LoadFunc loadFunc, Context context) {
-            stack.push(MemoryAddress.ofLong((long) stack.pop()));
-        }
-
-        @Override
-        public String toString() {
-            return "BoxAddress{}";
-        }
-    }
-
-    /**
-     * TO_SEGMENT([size])
-     *   Pops a MemoryAddress from the operand stack, and converts it to a MemorySegment
-     *   with the given size, and pushes that onto the operand stack
-     */
-    public static class ToSegment extends Binding {
-        private final long size;
-        // FIXME alignment?
-
-        public ToSegment(long size) {
-            super(Tag.TO_SEGMENT);
-            this.size = size;
-        }
-
-        public long size() {
-            return size;
-        }
-
-        private static MemorySegment toSegment(MemoryAddress operand, long size, Context context) {
-            return MemoryAddressImpl.ofLongUnchecked(operand.toRawLongValue(), size, context.session);
-        }
-
-        @Override
-        public void verify(Deque<Class<?>> stack) {
-            Class<?> actualType = stack.pop();
-            SharedUtils.checkType(actualType, MemoryAddress.class);
             stack.push(MemorySegment.class);
         }
 
         @Override
-        public void interpret(Deque<Object> stack, BindingInterpreter.StoreFunc storeFunc,
-                              BindingInterpreter.LoadFunc loadFunc, Context context) {
-            MemoryAddress operand = (MemoryAddress) stack.pop();
-            MemorySegment segment = toSegment(operand, size, context);
+        @SuppressWarnings("restricted")
+        public void interpret(Deque<Object> stack, StoreFunc storeFunc,
+                              LoadFunc loadFunc, SegmentAllocator allocator) {
+            MemorySegment segment = Utils.longToAddress((long) stack.pop(), size, align);
+            if (needsScope) {
+                segment = segment.reinterpret((Arena) allocator, null); // restricted
+            }
             stack.push(segment);
-        }
-
-        @Override
-        public String toString() {
-            return "ToSegemnt{" +
-                    "size=" + size +
-                    '}';
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            if (!super.equals(o)) return false;
-            ToSegment toSegemnt = (ToSegment) o;
-            return size == toSegemnt.size;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(super.hashCode(), size);
         }
     }
 
@@ -942,11 +765,8 @@ public abstract class Binding {
      *   Duplicates the value on the top of the operand stack (without popping it!),
      *   and pushes the duplicate onto the operand stack
      */
-    public static class Dup extends Binding {
-        private static final Dup INSTANCE = new Dup();
-        private Dup() {
-            super(Tag.DUP);
-        }
+    record Dup() implements Binding {
+        static final Dup INSTANCE = new Dup();
 
         @Override
         public void verify(Deque<Class<?>> stack) {
@@ -954,20 +774,129 @@ public abstract class Binding {
         }
 
         @Override
-        public void interpret(Deque<Object> stack, BindingInterpreter.StoreFunc storeFunc,
-                              BindingInterpreter.LoadFunc loadFunc, Context context) {
+        public void interpret(Deque<Object> stack, StoreFunc storeFunc,
+                              LoadFunc loadFunc, SegmentAllocator allocator) {
             stack.push(stack.peekLast());
         }
+    }
+
+    /**
+     * ShiftLeft([shiftAmount])
+     *   Shifts the Bytes on the top of the operand stack (64 bit unsigned).
+     *   Shifts left by the given number of Bytes.
+     */
+    record ShiftLeft(int shiftAmount) implements Binding {
 
         @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            return o != null && getClass() == o.getClass();
+        public void verify(Deque<Class<?>> stack) {
+            Class<?> last = stack.pop();
+            SharedUtils.checkType(last, long.class);
+            stack.push(long.class);
         }
 
         @Override
-        public String toString() {
-            return "Dup{}";
+        public void interpret(Deque<Object> stack, StoreFunc storeFunc,
+                              LoadFunc loadFunc, SegmentAllocator allocator) {
+            long l = (long) stack.pop();
+            l <<= (shiftAmount * Byte.SIZE);
+            stack.push(l);
+        }
+    }
+
+    /**
+     * ShiftRight([shiftAmount])
+     *   Shifts the Bytes on the top of the operand stack (64 bit unsigned).
+     *   Shifts right by the given number of Bytes.
+     */
+    record ShiftRight(int shiftAmount) implements Binding {
+
+        @Override
+        public void verify(Deque<Class<?>> stack) {
+            Class<?> last = stack.pop();
+            SharedUtils.checkType(last, long.class);
+            stack.push(long.class);
+        }
+
+        @Override
+        public void interpret(Deque<Object> stack, StoreFunc storeFunc,
+                              LoadFunc loadFunc, SegmentAllocator allocator) {
+            long l = (long) stack.pop();
+            l >>>= (shiftAmount * Byte.SIZE);
+            stack.push(l);
+        }
+    }
+
+    /**
+     * CAST([fromType], [toType])
+     *   Pop a [fromType] from the stack, convert it to [toType], and push the resulting
+     *   value onto the stack.
+     *
+     */
+    enum Cast implements Binding {
+        INT_TO_BOOLEAN(int.class, boolean.class) {
+            @Override
+            public void interpret(Deque<Object> stack, StoreFunc storeFunc,
+                                  LoadFunc loadFunc, SegmentAllocator allocator) {
+                // implement least significant byte non-zero test
+                int arg = (int) stack.pop();
+                boolean result = Utils.byteToBoolean((byte) arg);
+                stack.push(result);
+            }
+        },
+        INT_TO_BYTE(int.class, byte.class),
+        INT_TO_CHAR(int.class, char.class),
+        INT_TO_SHORT(int.class, short.class),
+        INT_TO_LONG(int.class, long.class),
+
+        BOOLEAN_TO_INT(boolean.class, int.class),
+        BYTE_TO_INT(byte.class, int.class),
+        CHAR_TO_INT(char.class, int.class),
+        SHORT_TO_INT(short.class, int.class),
+        LONG_TO_INT(long.class, int.class),
+
+        LONG_TO_BYTE(long.class, byte.class),
+        LONG_TO_SHORT(long.class, short.class),
+        LONG_TO_CHAR(long.class, char.class),
+
+        BYTE_TO_LONG(byte.class, long.class),
+        SHORT_TO_LONG(short.class, long.class),
+        CHAR_TO_LONG(char.class, long.class);
+
+        private final Class<?> fromType;
+        private final Class<?> toType;
+
+        Cast(Class<?> fromType, Class<?> toType) {
+            this.fromType = fromType;
+            this.toType = toType;
+        }
+
+        public Class<?> fromType() {
+            return fromType;
+        }
+
+        public Class<?> toType() {
+            return toType;
+        }
+
+        @Override
+        public void verify(Deque<Class<?>> stack) {
+            Class<?> actualType = stack.pop();
+            SharedUtils.checkType(actualType, fromType);
+            stack.push(toType);
+        }
+
+        @Override
+        public void interpret(Deque<Object> stack, StoreFunc storeFunc,
+                              LoadFunc loadFunc, SegmentAllocator allocator) {
+            Object arg = stack.pop();
+            MethodHandle converter = MethodHandles.explicitCastArguments(MethodHandles.identity(toType),
+                    MethodType.methodType(toType, fromType));
+            try {
+                Object result = converter.invoke(arg);
+                stack.push(result);
+            } catch (Throwable e) {
+                throw new InternalError(e);
+            }
         }
     }
 }

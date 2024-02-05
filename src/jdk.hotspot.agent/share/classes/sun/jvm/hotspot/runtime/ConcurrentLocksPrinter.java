@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,20 +30,21 @@ import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.oops.*;
 
 public class ConcurrentLocksPrinter {
-    private Map<JavaThread, List<Oop>> locksMap = new HashMap<>();
+    private final Map<JavaThread, List<Oop>> locksMap = new HashMap<>();
+    private PrintStream tty;
 
-    public ConcurrentLocksPrinter() {
+    public ConcurrentLocksPrinter(PrintStream tty) {
+        this.tty = tty;
         fillLocks();
     }
 
-    public void print(JavaThread jthread, PrintStream tty) {
+    public void print(JavaThread jthread) {
         List<Oop> locks = locksMap.get(jthread);
         tty.println("Locked ownable synchronizers:");
         if (locks == null || locks.isEmpty()) {
             tty.println("    - None");
         } else {
-            for (Iterator<Oop> itr = locks.iterator(); itr.hasNext();) {
-                Oop oop = itr.next();
+            for (Oop oop : locks) {
                 tty.println("    - <" + oop.getHandle() + ">, (a " +
                        oop.getKlass().getName().asString() + ")");
             }
@@ -67,21 +68,19 @@ public class ConcurrentLocksPrinter {
         ObjectHeap heap = vm.getObjectHeap();
         // may be not loaded at all
         if (absOwnSyncKlass != null) {
+            tty.println("Finding concurrent locks. This might take a while...");
             heap.iterateObjectsOfKlass(new DefaultHeapVisitor() {
                     public boolean doObj(Oop oop) {
                         JavaThread thread = getOwnerThread(oop);
                         if (thread != null) {
-                            List<Oop> locks = locksMap.get(thread);
-                            if (locks == null) {
-                                locks = new LinkedList<>();
-                                locksMap.put(thread, locks);
-                            }
-                            locks.add(oop);
+                            locksMap.computeIfAbsent(thread, t -> new ArrayList<>())
+                                    .add(oop);
                         }
                         return false;
                     }
 
                 }, absOwnSyncKlass, true);
+            tty.println();
         }
     }
 }

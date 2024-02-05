@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,12 +68,10 @@
 void OptoRuntime::generate_exception_blob() {
   // allocate space for code
   ResourceMark rm;
-  int pad = VerifyThread ? 256 : 0;// Extra slop space for more verify code
 
   // setup code generation tools
-  // Measured 8/7/03 at 256 in 32bit debug build (no VerifyThread)
-  // Measured 8/7/03 at 528 in 32bit debug build (VerifyThread)
-  CodeBuffer buffer("exception_blob", 600+pad, 512);
+  // Measured 8/7/03 at 256 in 32bit debug build
+  CodeBuffer buffer("exception_blob", 600, 512);
   MacroAssembler* masm     = new MacroAssembler(&buffer);
 
   int framesize_in_words = 2; // FP + LR

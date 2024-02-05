@@ -625,7 +625,7 @@ final class ConstructKeys {
      *
      * @return a public key constructed from the encodedKey.
      */
-    private static final PublicKey constructPublicKey(byte[] encodedKey,
+    private static PublicKey constructPublicKey(byte[] encodedKey,
             String encodedKeyAlgorithm)
             throws InvalidKeyException, NoSuchAlgorithmException {
         try {
@@ -652,7 +652,7 @@ final class ConstructKeys {
      *
      * @return a private key constructed from the encodedKey.
      */
-    private static final PrivateKey constructPrivateKey(byte[] encodedKey,
+    private static PrivateKey constructPrivateKey(byte[] encodedKey,
             String encodedKeyAlgorithm) throws InvalidKeyException,
             NoSuchAlgorithmException {
         try {
@@ -679,12 +679,12 @@ final class ConstructKeys {
      *
      * @return a secret key constructed from the encodedKey.
      */
-    private static final SecretKey constructSecretKey(byte[] encodedKey,
+    private static SecretKey constructSecretKey(byte[] encodedKey,
             String encodedKeyAlgorithm) {
         return new SecretKeySpec(encodedKey, encodedKeyAlgorithm);
     }
 
-    static final Key constructKey(byte[] encoding, String keyAlgorithm,
+    static Key constructKey(byte[] encoding, String keyAlgorithm,
             int keyType) throws InvalidKeyException, NoSuchAlgorithmException {
         return switch (keyType) {
             case Cipher.SECRET_KEY -> constructSecretKey(encoding, keyAlgorithm);

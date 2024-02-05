@@ -34,7 +34,7 @@ void ShenandoahObjToScanQueueSet::clear() {
   uint size = GenericTaskQueueSet<ShenandoahObjToScanQueue, mtGC>::size();
   for (uint index = 0; index < size; index ++) {
     ShenandoahObjToScanQueue* q = queue(index);
-    assert(q != NULL, "Sanity");
+    assert(q != nullptr, "Sanity");
     q->clear();
   }
 }
@@ -43,7 +43,7 @@ bool ShenandoahObjToScanQueueSet::is_empty() {
   uint size = GenericTaskQueueSet<ShenandoahObjToScanQueue, mtGC>::size();
   for (uint index = 0; index < size; index ++) {
     ShenandoahObjToScanQueue* q = queue(index);
-    assert(q != NULL, "Sanity");
+    assert(q != nullptr, "Sanity");
     if (!q->is_empty()) {
       return false;
     }

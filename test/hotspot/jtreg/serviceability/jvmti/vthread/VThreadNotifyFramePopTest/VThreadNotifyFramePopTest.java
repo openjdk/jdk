@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,17 +21,28 @@
  * questions.
  */
 
-/**
- * @test
+/*
+ * @test id=default
  * @bug 8284161 8288214
  * @summary Verifies that FRAME_POP event is delivered when called from URL.openStream().
- * @requires vm.continuations
- * @enablePreview
  * @modules jdk.httpserver
  * @library /test/lib
  * @run main/othervm/native
  *     -agentlib:VThreadNotifyFramePopTest
  *     -Djdk.defaultScheduler.parallelism=2 -Djdk.defaultScheduler.maxPoolSize=2
+ *     VThreadNotifyFramePopTest
+ */
+
+/*
+ * @test id=no-vmcontinuations
+ * @requires vm.continuations
+ * @modules jdk.httpserver
+ * @library /test/lib
+ * @run main/othervm/native
+ *     -agentlib:VThreadNotifyFramePopTest
+ *     -Djdk.defaultScheduler.parallelism=2 -Djdk.defaultScheduler.maxPoolSize=2
+ *     -XX:+UnlockExperimentalVMOptions
+ *     -XX:-VMContinuations
  *     VThreadNotifyFramePopTest
  */
 

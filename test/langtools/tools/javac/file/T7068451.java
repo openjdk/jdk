@@ -151,11 +151,9 @@ public class T7068451 {
                 messager.printError("while reading: " + x);
             }
 
-            try {
-                String body = "package p; public class C { public static void " + m + "() {} }";
-                Writer w = filer.createSourceFile("p.C").openWriter();
+            String body = "package p; public class C { public static void " + m + "() {} }";
+            try (Writer w = filer.createSourceFile("p.C").openWriter()) {
                 w.write(body);
-                w.close();
                 messager.printNote("C.java: wrote new content: " + body);
             } catch (IOException x) {
                 messager.printError("while writing: " + x);

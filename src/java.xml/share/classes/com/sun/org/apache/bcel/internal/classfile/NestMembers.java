@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -24,89 +23,101 @@ package com.sun.org.apache.bcel.internal.classfile;
 import java.io.DataInput;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
 
 import com.sun.org.apache.bcel.internal.Const;
+import com.sun.org.apache.bcel.internal.util.Args;
 
 /**
- * This class is derived from <em>Attribute</em> and records the classes and interfaces that
- * are authorized to claim membership in the nest hosted by the current class or interface.
- * There may be at most one NestMembers attribute in a ClassFile structure.
+ * This class is derived from <em>Attribute</em> and records the classes and interfaces that are authorized to claim
+ * membership in the nest hosted by the current class or interface. There may be at most one NestMembers attribute in a
+ * ClassFile structure.
  *
- * @see     Attribute
+ * @see Attribute
+ * @LastModified: Feb 2023
  */
 public final class NestMembers extends Attribute {
 
     private int[] classes;
 
+    /**
+     * Construct object from input stream.
+     *
+     * @param nameIndex Index in constant pool
+     * @param length Content length in bytes
+     * @param input Input stream
+     * @param constantPool Array of constants
+     * @throws IOException if an I/O error occurs.
+     */
+    NestMembers(final int nameIndex, final int length, final DataInput input, final ConstantPool constantPool) throws IOException {
+        this(nameIndex, length, (int[]) null, constantPool);
+        final int classCount = input.readUnsignedShort();
+        classes = new int[classCount];
+        for (int i = 0; i < classCount; i++) {
+            classes[i] = input.readUnsignedShort();
+        }
+    }
 
     /**
-     * Initialize from another object. Note that both objects use the same
-     * references (shallow copy). Use copy() for a physical copy.
+     * @param nameIndex Index in constant pool
+     * @param length Content length in bytes
+     * @param classes Table of indices in constant pool
+     * @param constantPool Array of constants
+     */
+    public NestMembers(final int nameIndex, final int length, final int[] classes, final ConstantPool constantPool) {
+        super(Const.ATTR_NEST_MEMBERS, nameIndex, length, constantPool);
+        this.classes = classes != null ? classes : Const.EMPTY_INT_ARRAY;
+        Args.requireU2(this.classes.length, "classes.length");
+    }
+
+    /**
+     * Initialize from another object. Note that both objects use the same references (shallow copy). Use copy() for a
+     * physical copy.
+     *
+     * @param c Source to copy.
      */
     public NestMembers(final NestMembers c) {
         this(c.getNameIndex(), c.getLength(), c.getClasses(), c.getConstantPool());
     }
 
-
     /**
-     * @param name_index Index in constant pool
-     * @param length Content length in bytes
-     * @param classes Table of indices in constant pool
-     * @param constant_pool Array of constants
-     */
-    public NestMembers(final int name_index, final int length, final int[] classes,
-            final ConstantPool constant_pool) {
-        super(Const.ATTR_NEST_MEMBERS, name_index, length, constant_pool);
-        this.classes = classes != null ? classes : new int[0];
-    }
-
-
-    /**
-     * Construct object from input stream.
-     * @param name_index Index in constant pool
-     * @param length Content length in bytes
-     * @param input Input stream
-     * @param constant_pool Array of constants
-     * @throws IOException
-     */
-    NestMembers(final int name_index, final int length, final DataInput input, final ConstantPool constant_pool) throws IOException {
-        this(name_index, length, (int[]) null, constant_pool);
-        final int number_of_classes = input.readUnsignedShort();
-        classes = new int[number_of_classes];
-        for (int i = 0; i < number_of_classes; i++) {
-            classes[i] = input.readUnsignedShort();
-        }
-    }
-
-
-    /**
-     * Called by objects that are traversing the nodes of the tree implicitely
-     * defined by the contents of a Java class. I.e., the hierarchy of methods,
-     * fields, attributes, etc. spawns a tree of objects.
+     * Called by objects that are traversing the nodes of the tree implicitly defined by the contents of a Java class.
+     * I.e., the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
      *
      * @param v Visitor object
      */
     @Override
-    public void accept( final Visitor v ) {
+    public void accept(final Visitor v) {
         v.visitNestMembers(this);
     }
 
+    /**
+     * @return deep copy of this attribute
+     */
+    @Override
+    public Attribute copy(final ConstantPool constantPool) {
+        final NestMembers c = (NestMembers) clone();
+        if (classes.length > 0) {
+            c.classes = classes.clone();
+        }
+        c.setConstantPool(constantPool);
+        return c;
+    }
 
     /**
      * Dump NestMembers attribute to file stream in binary format.
      *
      * @param file Output file stream
-     * @throws IOException
+     * @throws IOException if an I/O error occurs.
      */
     @Override
-    public void dump( final DataOutputStream file ) throws IOException {
+    public void dump(final DataOutputStream file) throws IOException {
         super.dump(file);
         file.writeShort(classes.length);
         for (final int index : classes) {
             file.writeShort(index);
         }
     }
-
 
     /**
      * @return array of indices into constant pool of class names.
@@ -115,36 +126,28 @@ public final class NestMembers extends Attribute {
         return classes;
     }
 
-
-    /**
-     * @return Length of classes table.
-     */
-    public int getNumberClasses() {
-        return classes == null ? 0 : classes.length;
-    }
-
-
     /**
      * @return string array of class names
      */
     public String[] getClassNames() {
         final String[] names = new String[classes.length];
-        for (int i = 0; i < classes.length; i++) {
-            names[i] = super.getConstantPool().getConstantString(classes[i],
-                    Const.CONSTANT_Class).replace('/', '.');
-        }
+        Arrays.setAll(names, i -> Utility.pathToPackage(super.getConstantPool().getConstantString(classes[i], Const.CONSTANT_Class)));
         return names;
     }
 
-
     /**
-     * @param classes the list of class indexes
-     * Also redefines number_of_classes according to table length.
+     * @return Length of classes table.
      */
-    public void setClasses( final int[] classes ) {
-        this.classes = classes != null ? classes : new int[0];
+    public int getNumberClasses() {
+        return classes.length;
     }
 
+    /**
+     * @param classes the list of class indexes Also redefines number_of_classes according to table length.
+     */
+    public void setClasses(final int[] classes) {
+        this.classes = classes != null ? classes : Const.EMPTY_INT_ARRAY;
+    }
 
     /**
      * @return String representation, i.e., a list of classes.
@@ -156,25 +159,9 @@ public final class NestMembers extends Attribute {
         buf.append(classes.length);
         buf.append("):\n");
         for (final int index : classes) {
-            final String class_name = super.getConstantPool().getConstantString(index, Const.CONSTANT_Class);
-            buf.append("  ").append(Utility.compactClassName(class_name, false)).append("\n");
+            final String className = super.getConstantPool().getConstantString(index, Const.CONSTANT_Class);
+            buf.append("  ").append(Utility.compactClassName(className, false)).append("\n");
         }
-        return buf.substring(0, buf.length()-1); // remove the last newline
-    }
-
-
-    /**
-     * @return deep copy of this attribute
-     */
-    @Override
-    public Attribute copy( final ConstantPool _constant_pool ) {
-        final NestMembers c = (NestMembers) clone();
-        if (classes != null) {
-            c.classes = new int[classes.length];
-            System.arraycopy(classes, 0, c.classes, 0,
-                    classes.length);
-        }
-        c.setConstantPool(_constant_pool);
-        return c;
+        return buf.substring(0, buf.length() - 1); // remove the last newline
     }
 }

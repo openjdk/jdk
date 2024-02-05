@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@
 //    [pointer to locals     ]                   = locals()             locals_offset
 //    [constant pool cache   ]                   = cache()              cache_offset
 //    [methodData            ]                   = mdp()                mdx_offset
+//    [klass of method       ]                   = mirror()             mirror_offset
 //    [Method*               ]                   = method()             method_offset
 //    [last sp               ]                   = last_sp()            last_sp_offset
 //    [old stack pointer     ]                     (sender_sp)          sender_sp_offset
@@ -81,7 +82,7 @@
     // Entry frames
 #ifdef AMD64
 #ifdef _WIN64
-    entry_frame_after_call_words                     =  60,
+    entry_frame_after_call_words                     =  28,
     entry_frame_call_wrapper_offset                  =  2,
 
     arg_reg_save_area_bytes                          = 32, // Register argument save area
@@ -147,8 +148,6 @@
   // Used in frame::sender_for_{interpreter,compiled}_frame
   static void verify_deopt_original_pc(CompiledMethod* nm, intptr_t* unextended_sp);
 #endif
-
-  const ImmutableOopMap* get_oop_map() const;
 
  public:
   // Constructors

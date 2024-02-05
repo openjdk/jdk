@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 #include "runtime/vmOperation.hpp"
 #include "runtime/threadSMR.hpp"
 
-class ObjectMonitorsHashtable;
+class ObjectMonitorsView;
 
 // A hodge podge of commonly used VM Operations
 
@@ -181,8 +181,8 @@ class VM_FindDeadlocks: public VM_Operation {
                               // which protects the JavaThreads in _deadlocks.
 
  public:
-  VM_FindDeadlocks(bool concurrent_locks) :  _concurrent_locks(concurrent_locks), _deadlocks(NULL), _out(NULL), _setter() {};
-  VM_FindDeadlocks(outputStream* st) : _concurrent_locks(true), _deadlocks(NULL), _out(st) {};
+  VM_FindDeadlocks(bool concurrent_locks) :  _concurrent_locks(concurrent_locks), _deadlocks(nullptr), _out(nullptr), _setter() {};
+  VM_FindDeadlocks(outputStream* st) : _concurrent_locks(true), _deadlocks(nullptr), _out(st) {};
   ~VM_FindDeadlocks();
 
   DeadlockCycle* result()      { return _deadlocks; };
@@ -204,7 +204,7 @@ class VM_ThreadDump : public VM_Operation {
   bool                           _with_locked_synchronizers;
 
   void snapshot_thread(JavaThread* java_thread, ThreadConcurrentLocks* tcl,
-                       ObjectMonitorsHashtable* table);
+                       ObjectMonitorsView* monitors);
 
  public:
   VM_ThreadDump(ThreadDumpResult* result,

@@ -109,7 +109,7 @@ public class GraphNode extends AbstractNode {
         content.add(new DiffGraphCookie(graph));
 
         // Action for cloning to the current graph
-        content.add(new GraphCloneCookie(viewer, graph));
+        content.add(new NewGraphTabCookie(viewer, graph));
     }
 
     @Override
@@ -142,7 +142,7 @@ public class GraphNode extends AbstractNode {
         return new Action[]{
                 RenameAction.findObject(RenameAction.class, true),
                 DiffGraphAction.findObject(DiffGraphAction.class, true),
-                CloneGraphAction.findObject(CloneGraphAction.class, true),
+                NewGraphTabAction.findObject(NewGraphTabAction.class, true),
                 OpenAction.findObject(OpenAction.class, true)
         };
     }

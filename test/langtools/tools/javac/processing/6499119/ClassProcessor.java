@@ -78,39 +78,18 @@ public class ClassProcessor extends JavacTestingAbstractProcessor {
             pkgInfo = new File(System.getProperty("test.classes"), "foo/package-info.class");
 
         byte[] bytes = new byte[(int) pkgInfo.length()];
-        DataInputStream in = null;
-        try {
-            in = new DataInputStream(new FileInputStream(pkgInfo));
+        try (DataInputStream in = new DataInputStream(new FileInputStream(pkgInfo))) {
             in.readFully(bytes);
         } catch (IOException ioe) {
             error("Couldn't read package info file: " + ioe);
-        } finally {
-            if(in != null) {
-                try {
-                    in.close();
-                } catch (IOException e) {
-                    error("InputStream closing failed: " + e);
-                }
-            }
         }
 
-        OutputStream out = null;
-        try {
-            if (kind.equals("java"))
-                out = filer.createSourceFile("foo.package-info").openOutputStream();
-            else
-                out = filer.createClassFile("foo.package-info").openOutputStream();
+        try (OutputStream out = kind.equals("java") ?
+              filer.createSourceFile("foo.package-info").openOutputStream() :
+              filer.createClassFile("foo.package-info").openOutputStream()) {
             out.write(bytes, 0, bytes.length);
         } catch (IOException ioe) {
             error("Couldn't create package info file: " + ioe);
-        } finally {
-            if(out != null) {
-                try {
-                    out.close();
-                } catch (IOException e) {
-                    error("OutputStream closing failed: " + e);
-                }
-            }
         }
     }
 

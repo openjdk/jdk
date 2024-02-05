@@ -58,6 +58,4 @@ class ArrayDims3 {
         [][][][][][][][][][]
         [][][][][][][][][][]
         [][][][][]; // 255 = limit (OK)
-    public static void main(String[] args) {
-    }
 }

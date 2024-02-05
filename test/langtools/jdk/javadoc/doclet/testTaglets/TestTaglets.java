@@ -50,7 +50,7 @@ import toolbox.ToolBox;
 public class TestTaglets extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestTaglets tester = new TestTaglets();
+        var tester = new TestTaglets();
         tester.runTests();
     }
 

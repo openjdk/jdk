@@ -1,3 +1,28 @@
+/*
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
 package build.tools.jfr;
 
 import java.io.BufferedOutputStream;
@@ -173,6 +198,7 @@ public class GenerateJfrFiles {
         String period = "";
         boolean cutoff;
         boolean throttle;
+        String level = "";
         boolean experimental;
         boolean internal;
         long id;
@@ -197,6 +223,7 @@ public class GenerateJfrFiles {
             pos.writeUTF(period);
             pos.writeBoolean(cutoff);
             pos.writeBoolean(throttle);
+            pos.writeUTF(level);
             pos.writeBoolean(experimental);
             pos.writeBoolean(internal);
             pos.writeLong(id);
@@ -495,6 +522,7 @@ public class GenerateJfrFiles {
                 currentType.startTime = getBoolean(attributes, "startTime", true);
                 currentType.period = getString(attributes, "period");
                 currentType.cutoff = getBoolean(attributes, "cutoff", false);
+                currentType.level = getString(attributes, "level");
                 currentType.throttle = getBoolean(attributes, "throttle", false);
                 currentType.commitState = getString(attributes, "commitState");
                 currentType.isEvent = "Event".equals(qName);
@@ -573,9 +601,13 @@ public class GenerateJfrFiles {
             out.write("#include \"jfrfiles/jfrEventIds.hpp\"");
             out.write("#include \"memory/allocation.hpp\"");
             out.write("");
+            out.write("enum PeriodicType {BEGIN_CHUNK, INTERVAL, END_CHUNK};");
+            out.write("");
             out.write("class JfrPeriodicEventSet : public AllStatic {");
             out.write(" public:");
-            out.write("  static void requestEvent(JfrEventId id) {");
+            out.write("  static void requestEvent(JfrEventId id, jlong timestamp, PeriodicType periodicType) {");
+            out.write("    _timestamp = Ticks(timestamp);");
+            out.write("    _type = periodicType;");
             out.write("    switch(id) {");
             out.write("  ");
             for (TypeElement e : metadata.getPeriodicEvents()) {
@@ -595,6 +627,10 @@ public class GenerateJfrFiles {
                 out.write("  static void request" + e.name + "(void);");
                 out.write("");
             }
+            out.write(" static Ticks timestamp(void);");
+            out.write(" static Ticks _timestamp;");
+            out.write(" static PeriodicType type(void);");
+            out.write(" static PeriodicType _type;");
             out.write("};");
             out.write("");
             out.write("#endif // INCLUDE_JFR");
@@ -618,7 +654,7 @@ public class GenerateJfrFiles {
             out.write("");
             out.write("struct jfrNativeEventSetting {");
             out.write("  jlong  threshold_ticks;");
-            out.write("  jlong  cutoff_ticks;");
+            out.write("  jlong  miscellaneous;");
             out.write("  u1     stacktrace;");
             out.write("  u1     enabled;");
             out.write("  u1     large;");

@@ -297,8 +297,10 @@ class Example implements Comparable<Example> {
             // source for import statements or a magic comment
             for (File pf: procFiles) {
                 if (pf.getName().equals("CreateBadClassFile.java")) {
-                    pOpts.add("--add-modules=jdk.jdeps");
-                    pOpts.add("--add-exports=jdk.jdeps/com.sun.tools.classfile=ALL-UNNAMED");
+                    pOpts.add("--enable-preview");
+                    pOpts.add("--source");
+                    pOpts.add(String.valueOf(Runtime.version().feature()));
+                    pOpts.add("--add-exports=java.base/jdk.internal.classfile.impl=ALL-UNNAMED");
                 }
             }
 
@@ -429,11 +431,8 @@ class Example implements Comparable<Example> {
      */
     private String read(File f) throws IOException {
         byte[] bytes = new byte[(int) f.length()];
-        DataInputStream in = new DataInputStream(new FileInputStream(f));
-        try {
+        try (DataInputStream in = new DataInputStream(new FileInputStream(f))) {
             in.readFully(bytes);
-        } finally {
-            in.close();
         }
         return new String(bytes);
     }

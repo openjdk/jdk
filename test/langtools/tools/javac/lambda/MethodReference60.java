@@ -22,7 +22,7 @@ public class MethodReference60 {
         X make(String s);
     }
 
-    public static void main(String[] args) {
+    public static void meth() {
         BadArrayFactory1<int[]> factory1 = int[]::new; //param mismatch
         BadArrayFactory2<int[]> factory2 = int[]::new; //param mismatch
         BadArrayFactory3<int[]> factory3 = int[]::new; //param mismatch

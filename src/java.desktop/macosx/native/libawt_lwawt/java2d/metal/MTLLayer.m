@@ -45,6 +45,12 @@
 @synthesize displayLink;
 @synthesize displayLinkCount;
 
+- (void) createDisplayLink {
+    CVDisplayLinkCreateWithActiveCGDisplays(&displayLink);
+    CVDisplayLinkSetOutputCallback(displayLink, &displayLinkCallback, (__bridge void*)self);
+    self.displayLinkCount = 0;
+}
+
 - (id) initWithJavaLayer:(jobject)layer
 {
     AWT_ASSERT_APPKIT_THREAD;
@@ -74,10 +80,36 @@
     self.framebufferOnly = NO;
     self.nextDrawableCount = 0;
     self.opaque = YES;
-    CVDisplayLinkCreateWithActiveCGDisplays(&displayLink);
-    CVDisplayLinkSetOutputCallback(displayLink, &displayLinkCallback, (__bridge void*)self);
-    self.displayLinkCount = 0;
+    [self createDisplayLink];
+
+    [[[NSWorkspace sharedWorkspace] notificationCenter]
+        addObserver : self
+           selector : @selector(onScreenSleep)
+               name : NSWorkspaceScreensDidSleepNotification object: NULL];
+
+    [[[NSWorkspace sharedWorkspace] notificationCenter]
+        addObserver : self
+           selector : @selector(onScreenWakeup)
+               name : NSWorkspaceScreensDidWakeNotification object: NULL];
+
     return self;
+}
+
+- (void) onScreenSleep {
+    J2dTraceLn(J2D_TRACE_VERBOSE, "MTLLayer.onScreenSleep ---  received screen sleep notification.");
+
+    [self stopDisplayLink];
+}
+
+- (void) onScreenWakeup {
+    J2dTraceLn(J2D_TRACE_VERBOSE, "MTLLayer.onScreenWakeup ---  received screen wakeup notification.");
+    [self stopDisplayLink];
+    CVDisplayLinkRelease(self.displayLink);
+    self.displayLink = nil;
+
+    [self createDisplayLink];
+
+    [self startDisplayLink];
 }
 
 - (void) blitTexture {
@@ -148,6 +180,9 @@
 }
 
 - (void) dealloc {
+
+    [[[NSWorkspace sharedWorkspace] notificationCenter] removeObserver:self];
+
     JNIEnv *env = [ThreadUtilities getJNIEnvUncached];
     (*env)->DeleteWeakGlobalRef(env, self.javaLayer);
     self.javaLayer = nil;

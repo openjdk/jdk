@@ -68,7 +68,7 @@
 
 // The 32 bit code is at most SSE2 compliant
 
-ATTRIBUTE_ALIGNED(16) juint _static_const_table[] =
+ATTRIBUTE_ALIGNED(16) static const juint _static_const_table[] =
 {
     0x00000000UL, 0xfff00000UL, 0x00000000UL, 0xfff00000UL, 0xffffffc0UL,
     0x00000000UL, 0xffffffc0UL, 0x00000000UL, 0x0000ffc0UL, 0x00000000UL,

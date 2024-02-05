@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -103,7 +103,7 @@ public:
   // Allocate a root chunk from this list.
   // Note: this just returns a chunk whose memory is reserved; no memory is committed yet.
   // Hence, before using this chunk, it must be committed.
-  // May return NULL if vslist would need to be expanded to hold the new root node but
+  // May return null if vslist would need to be expanded to hold the new root node but
   // the list cannot be expanded (in practice this means we reached CompressedClassSpaceSize).
   Metachunk* allocate_root_chunk();
 
@@ -136,8 +136,8 @@ public:
   // These exist purely to print limits of the compressed class space;
   // if we ever change the ccs to not use a degenerated-list-of-one-node this
   // will go away.
-  MetaWord* base_of_first_node() const { return _first_node != NULL ? _first_node->base() : NULL; }
-  size_t word_size_of_first_node() const { return _first_node != NULL ? _first_node->word_size() : 0; }
+  MetaWord* base_of_first_node() const { return _first_node != nullptr ? _first_node->base() : nullptr; }
+  size_t word_size_of_first_node() const { return _first_node != nullptr ? _first_node->word_size() : 0; }
 
 };
 

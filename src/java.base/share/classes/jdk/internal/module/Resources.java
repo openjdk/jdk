@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -132,15 +133,24 @@ public final class Resources {
             return null;
         }
 
-        // convert to file path
-        Path path;
+        // map resource name to a file path string
+        String pathString;
         if (File.separatorChar == '/') {
-            path = fs.getPath(name);
+            pathString = name;
         } else {
             // not allowed to embed file separators
             if (name.contains(File.separator))
                 return null;
-            path = fs.getPath(name.replace('/', File.separatorChar));
+            pathString = name.replace('/', File.separatorChar);
+        }
+
+        // try to convert to a Path
+        Path path;
+        try {
+            path = fs.getPath(pathString);
+        } catch (InvalidPathException e) {
+            // not a valid file path
+            return null;
         }
 
         // file path not allowed to have root component

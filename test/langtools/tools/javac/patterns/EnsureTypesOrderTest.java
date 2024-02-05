@@ -5,7 +5,7 @@
  * @compile/fail/ref=EnsureTypesOrderTest.out -XDrawDiagnostics EnsureTypesOrderTest.java
  */
 public class EnsureTypesOrderTest {
-    public static void main(String [] args) {
+    public static void meth(String[] args) {
         if (args instanceof String s) {
             System.out.println("Broken");
         }

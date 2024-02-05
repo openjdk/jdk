@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,8 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
  public:
   enum GCParPhases {
+    RetireTLABsAndFlushLogs,
+    NonJavaThreadFlushLogs,
     GCWorkerStart,
     ExtRootScan,
     ThreadRoots,
@@ -58,7 +60,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     MergeRS,
     OptMergeRS,
     MergeLB,
-    MergeHCC,
     ScanHR,
     OptScanHR,
     CodeRoots,
@@ -74,21 +75,20 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     FreeCollectionSet,
     YoungFreeCSet,
     NonYoungFreeCSet,
+    ResizeThreadLABs,
     RebuildFreeList,
     SampleCollectionSetCandidates,
     MergePSS,
-    RestoreRetainedRegions,
+    RestoreEvacuationFailedRegions,
     RemoveSelfForwards,
     ClearCardTable,
     RecalculateUsed,
-    ResetHotCardCache,
-    PurgeCodeRoots,
 #if COMPILER2_OR_JVMCI
     UpdateDerivedPointers,
 #endif
     EagerlyReclaimHumongousObjects,
     RestorePreservedMarks,
-    ClearRetainedRegionBitmaps,
+    ProcessEvacuationFailedRegions,
     ResetMarkingState,
     NoteStartOfMark,
     GCParPhasesSentinel
@@ -129,25 +129,27 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     ScanHRUsedMemory
   };
 
-  enum GCMergeHCCWorkItems {
-    MergeHCCDirtyCards,
-    MergeHCCSkippedCards
-  };
-
   enum GCMergeLBWorkItems {
     MergeLBDirtyCards,
     MergeLBSkippedCards
+  };
+
+  enum GCCodeRootsWorkItems {
+    CodeRootsScannedNMethods
   };
 
   enum GCMergePSSWorkItems {
     MergePSSCopiedBytes,
     MergePSSLABSize,
     MergePSSLABWasteBytes,
-    MergePSSLABUndoWasteBytes
+    MergePSSLABUndoWasteBytes,
+    MergePSSEvacFailExtra
   };
 
-  enum RestoreRetainedRegionsWorkItems {
-    RestoreRetainedRegionsNum,
+  enum RestoreEvacFailureRegionsWorkItems {
+    RestoreEvacFailureRegionsEvacFailedNum,       // How many regions experienced an evacuation failure (pinned or allocation failure)
+    RestoreEvacFailureRegionsPinnedNum,           // How many regions were found as pinned.
+    RestoreEvacFailureRegionsAllocFailedNum       // How many regions were found experiencing an allocation failure.
   };
 
   enum RemoveSelfForwardsWorkItems {
@@ -179,10 +181,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _cur_prepare_merge_heap_roots_time_ms;
   double _cur_optional_prepare_merge_heap_roots_time_ms;
 
-  double _cur_prepare_tlab_time_ms;
-  double _cur_resize_tlab_time_ms;
-
-  double _cur_concatenate_dirty_card_logs_time_ms;
+  double _cur_pre_evacuate_prepare_time_ms;
 
   double _cur_post_evacuate_cleanup_1_time_ms;
   double _cur_post_evacuate_cleanup_2_time_ms;
@@ -200,7 +199,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _recorded_young_cset_choice_time_ms;
   double _recorded_non_young_cset_choice_time_ms;
 
-  double _recorded_start_new_cset_time_ms;
+  double _recorded_prepare_for_mutator_time_ms;
 
   double _recorded_serial_free_cset_time_ms;
 
@@ -273,16 +272,8 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   size_t sum_thread_work_items(GCParPhases phase, uint index = 0);
 
-  void record_prepare_tlab_time_ms(double ms) {
-    _cur_prepare_tlab_time_ms = ms;
-  }
-
-  void record_resize_tlab_time_ms(double ms) {
-    _cur_resize_tlab_time_ms = ms;
-  }
-
-  void record_concatenate_dirty_card_logs_time_ms(double ms) {
-    _cur_concatenate_dirty_card_logs_time_ms = ms;
+  void record_pre_evacuate_prepare_time_ms(double ms) {
+    _cur_pre_evacuate_prepare_time_ms = ms;
   }
 
   void record_expand_heap_time(double ms) {
@@ -357,8 +348,8 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     _recorded_non_young_cset_choice_time_ms = time_ms;
   }
 
-  void record_start_new_cset_time_ms(double time_ms) {
-    _recorded_start_new_cset_time_ms = time_ms;
+  void record_prepare_for_mutator_time_ms(double time_ms) {
+    _recorded_prepare_for_mutator_time_ms = time_ms;
   }
 
   void record_cur_collection_start_sec(double time_ms) {

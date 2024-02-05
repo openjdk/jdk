@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,25 +23,25 @@
 
 /**
  * @test
- * @bug 8284161 8289284
+ * @bug 8284161 8289284 8322846
  * @summary Basic test of debugging option to trace pinned threads
  * @requires vm.continuations
- * @enablePreview
  * @library /test/lib
- * @run testng/othervm -Djdk.tracePinnedThreads=full TracePinnedThreads
- * @run testng/othervm -Djdk.tracePinnedThreads=short TracePinnedThreads
+ * @run junit/othervm -Djdk.tracePinnedThreads=full TracePinnedThreads
+ * @run junit/othervm -Djdk.tracePinnedThreads=short TracePinnedThreads
  */
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.time.Duration;
+import java.util.concurrent.Executors;
 import java.util.concurrent.locks.LockSupport;
 
 import jdk.test.lib.thread.VThreadRunner;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class TracePinnedThreads {
+class TracePinnedThreads {
     static final Object lock = new Object();
 
     /**
@@ -62,29 +62,89 @@ public class TracePinnedThreads {
      * Test parking inside synchronized block.
      */
     @Test
-    public void testPinnedCausedBySynchronizedBlock() throws Exception {
+    void testPinnedCausedBySynchronizedBlock() throws Exception {
         String output = run(() -> {
             synchronized (lock) {
                 park();
             }
         });
+        assertContains(output, "reason:MONITOR");
         assertContains(output, "<== monitors:1");
-        assertDoesNotContain(output, "(Native Method)");
     }
 
     /**
      * Test parking with native frame on stack.
      */
     @Test
-    public void testPinnedCausedByNativeMethod() throws Exception {
+    void testPinnedCausedByNativeMethod() throws Exception {
         System.loadLibrary("TracePinnedThreads");
         String output = run(() -> invokePark());
+        assertContains(output, "reason:NATIVE");
         assertContains(output, "(Native Method)");
-        assertDoesNotContain(output, "<== monitors");
     }
 
     /**
-     * Runs a task in a virutal thread, returning a String with any output printed
+     * Test parking in class initializer.
+     */
+    @Test
+    void testPinnedCausedByClassInitializer() throws Exception {
+        class C {
+            static {
+                park();
+            }
+        }
+        String output = run(C::new);
+        assertContains(output, "reason:NATIVE");
+        assertContains(output, "<clinit>");
+    }
+
+    /**
+     * Test contention writing to System.out when pinned. The test creates four threads
+     * that write to System.out when pinned, this is enough to potentially deadlock
+     * without the changes in JDK-8322846.
+     */
+    @Test
+    void testContention() throws Exception {
+        // use several classes to avoid duplicate stack traces
+        class C1 {
+            synchronized void print() {
+                System.out.println("hello");
+            }
+        }
+        class C2 {
+            synchronized void print() {
+                System.out.println("hello");
+            }
+        }
+        class C3 {
+            synchronized void print() {
+                System.out.println("hello");
+            }
+        }
+        class C4 {
+            synchronized void print() {
+                System.out.println("hello");
+            }
+        }
+
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            executor.submit(() -> {
+                new C1().print();
+            });
+            executor.submit(() -> {
+                new C2().print();
+            });
+            executor.submit(() -> {
+                new C3().print();
+            });
+            executor.submit(() -> {
+                new C4().print();
+            });
+        }
+    }
+
+    /**
+     * Run a task in a virtual thread, returning a String with any output printed
      * to standard output.
      */
     private static String run(Runnable task) throws Exception {

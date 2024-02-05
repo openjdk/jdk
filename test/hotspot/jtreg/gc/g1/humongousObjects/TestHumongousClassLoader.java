@@ -126,9 +126,7 @@ public class TestHumongousClassLoader {
                 WHITE_BOX.youngGC();
                 Helpers.waitTillCMCFinished(WHITE_BOX, 0);
                 WHITE_BOX.youngGC();
-                Helpers.waitTillCMCFinished(WHITE_BOX, 0);
-                WHITE_BOX.g1StartConcMarkCycle();
-                Helpers.waitTillCMCFinished(WHITE_BOX, 0);
+                WHITE_BOX.g1RunConcurrentGC();
             }
         },
         FULL_GC_MEMORY_PRESSURE {
@@ -142,9 +140,7 @@ public class TestHumongousClassLoader {
         public abstract void provoke();
     }
 
-    public static void main(String[] args) throws ClassNotFoundException, InstantiationException,
-            IllegalAccessException, IOException, NoSuchMethodException, InvocationTargetException {
-
+    public static void main(String[] args) throws Exception {
         if (args.length != 1) {
             throw new Error("Test Bug: Expected GC type wasn't provided as command line argument");
         }

@@ -23,7 +23,9 @@
 
 /**
  * @test
- * @enablePreview
+ * @bug 8298184
+ * @compile GenericRecordDeconstructionPattern.java
+ * @run main GenericRecordDeconstructionPattern
  */
 import java.util.List;
 import java.util.Objects;
@@ -44,8 +46,8 @@ public class GenericRecordDeconstructionPattern {
         runTest(this::runSwitchInference3);
         runTest(this::runSwitchInference4);
         testInference3();
-        assertEquals(0, forEachInference(List.of(new Box(""))));
-        assertEquals(1, forEachInference(List.of(new Box(null))));
+        assertEquals(1, runIfSuperBound(new Box<>(new StringBuilder())));
+        assertEquals(1, runIfSuperBound(new Box<>(0)));
     }
 
     void runTest(Function<Box<String>, Integer> test) {
@@ -101,13 +103,6 @@ public class GenericRecordDeconstructionPattern {
                                        : -1;
     }
 
-    int forEachInference(Iterable<I<String>> b) {
-        for (Box(var s) : b) {
-            return s == null ? 1 : s.length();
-        }
-        return -1;
-    }
-
     void testInference3() {
         I<I<String>> b = new Box<>(new Box<>(null));
         assertEquals(1, runSwitchInferenceNested(b));
@@ -118,6 +113,11 @@ public class GenericRecordDeconstructionPattern {
             case Box(Box(var s)): return s == null ? 1 : s.length();
             default: return -1;
         }
+    }
+
+    int runIfSuperBound(I<? super String> b) {
+        if (b instanceof Box(var v)) return 1;
+        return -1;
     }
 
     sealed interface I<T> {}

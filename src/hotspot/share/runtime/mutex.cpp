@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,13 +40,13 @@ class InFlightMutexRelease {
   Mutex* _in_flight_mutex;
  public:
   InFlightMutexRelease(Mutex* in_flight_mutex) : _in_flight_mutex(in_flight_mutex) {
-    assert(in_flight_mutex != NULL, "must be");
+    assert(in_flight_mutex != nullptr, "must be");
   }
   void operator()(JavaThread* current) {
     _in_flight_mutex->release_for_safepoint();
-    _in_flight_mutex = NULL;
+    _in_flight_mutex = nullptr;
   }
-  bool not_released() { return _in_flight_mutex != NULL; }
+  bool not_released() { return _in_flight_mutex != nullptr; }
 };
 
 #ifdef ASSERT
@@ -124,7 +124,7 @@ void Mutex::lock(Thread* self) {
     lock_contended(self);
   }
 
-  assert_owner(NULL);
+  assert_owner(nullptr);
   set_owner(self);
 }
 
@@ -145,7 +145,7 @@ void Mutex::lock_without_safepoint_check(Thread * self) {
   check_rank(self);
 
   _lock.lock();
-  assert_owner(NULL);
+  assert_owner(nullptr);
   set_owner(self);
 }
 
@@ -171,7 +171,7 @@ bool Mutex::try_lock_inner(bool do_rank_checks) {
   check_block_state(self);
 
   if (_lock.try_lock()) {
-    assert_owner(NULL);
+    assert_owner(nullptr);
     set_owner(self);
     return true;
   }
@@ -189,13 +189,13 @@ bool Mutex::try_lock_without_rank_check() {
 }
 
 void Mutex::release_for_safepoint() {
-  assert_owner(NULL);
+  assert_owner(nullptr);
   _lock.unlock();
 }
 
 void Mutex::unlock() {
   DEBUG_ONLY(assert_owner(Thread::current()));
-  set_owner(NULL);
+  set_owner(nullptr);
   _lock.unlock();
 }
 
@@ -209,17 +209,16 @@ void Monitor::notify_all() {
   _lock.notify_all();
 }
 
-bool Monitor::wait_without_safepoint_check(int64_t timeout) {
+// timeout is in milliseconds - with zero meaning never timeout
+bool Monitor::wait_without_safepoint_check(uint64_t timeout) {
   Thread* const self = Thread::current();
 
-  // timeout is in milliseconds - with zero meaning never timeout
-  assert(timeout >= 0, "negative timeout");
   assert_owner(self);
   check_rank(self);
 
-  // conceptually set the owner to NULL in anticipation of
+  // conceptually set the owner to null in anticipation of
   // abdicating the lock in wait
-  set_owner(NULL);
+  set_owner(nullptr);
 
   // Check safepoint state after resetting owner and possible NSV.
   check_no_safepoint_state(self);
@@ -229,19 +228,18 @@ bool Monitor::wait_without_safepoint_check(int64_t timeout) {
   return wait_status != 0;          // return true IFF timeout
 }
 
-bool Monitor::wait(int64_t timeout) {
+// timeout is in milliseconds - with zero meaning never timeout
+bool Monitor::wait(uint64_t timeout) {
   JavaThread* const self = JavaThread::current();
   // Safepoint checking logically implies an active JavaThread.
   assert(self->is_active_Java_thread(), "invariant");
 
-  // timeout is in milliseconds - with zero meaning never timeout
-  assert(timeout >= 0, "negative timeout");
   assert_owner(self);
   check_rank(self);
 
-  // conceptually set the owner to NULL in anticipation of
+  // conceptually set the owner to null in anticipation of
   // abdicating the lock in wait
-  set_owner(NULL);
+  set_owner(nullptr);
 
   // Check safepoint state after resetting owner and possible NSV.
   check_safepoint_state(self);
@@ -258,7 +256,7 @@ bool Monitor::wait(int64_t timeout) {
 
   if (ifmr.not_released()) {
     // Not unlocked by ~ThreadBlockInVMPreprocess
-    assert_owner(NULL);
+    assert_owner(nullptr);
     // Conceptually reestablish ownership of the lock.
     set_owner(self);
   } else {
@@ -269,13 +267,13 @@ bool Monitor::wait(int64_t timeout) {
 }
 
 Mutex::~Mutex() {
-  assert_owner(NULL);
+  assert_owner(nullptr);
   os::free(const_cast<char*>(_name));
 }
 
-Mutex::Mutex(Rank rank, const char * name, bool allow_vm_block) : _owner(NULL) {
+Mutex::Mutex(Rank rank, const char * name, bool allow_vm_block) : _owner(nullptr) {
   assert(os::mutex_init_done(), "Too early!");
-  assert(name != NULL, "Mutex requires a name");
+  assert(name != nullptr, "Mutex requires a name");
   _name = os::strdup(name, mtInternal);
 #ifdef ASSERT
   _allow_vm_block  = allow_vm_block;
@@ -365,7 +363,7 @@ void Mutex::print() const {
 #ifdef ASSERT
 void Mutex::assert_owner(Thread * expected) {
   const char* msg = "invalid owner";
-  if (expected == NULL) {
+  if (expected == nullptr) {
     msg = "should be un-owned";
   }
   else if (expected == Thread::current()) {
@@ -378,7 +376,7 @@ void Mutex::assert_owner(Thread * expected) {
 
 Mutex* Mutex::get_least_ranked_lock(Mutex* locks) {
   Mutex *res, *tmp;
-  for (res = tmp = locks; tmp != NULL; tmp = tmp->next()) {
+  for (res = tmp = locks; tmp != nullptr; tmp = tmp->next()) {
     if (tmp->rank() < res->rank()) {
       res = tmp;
     }
@@ -388,8 +386,8 @@ Mutex* Mutex::get_least_ranked_lock(Mutex* locks) {
 
 Mutex* Mutex::get_least_ranked_lock_besides_this(Mutex* locks) {
   Mutex *res, *tmp;
-  for (res = NULL, tmp = locks; tmp != NULL; tmp = tmp->next()) {
-    if (tmp != this && (res == NULL || tmp->rank() < res->rank())) {
+  for (res = nullptr, tmp = locks; tmp != nullptr; tmp = tmp->next()) {
+    if (tmp != this && (res == nullptr || tmp->rank() < res->rank())) {
       res = tmp;
     }
   }
@@ -403,8 +401,8 @@ void Mutex::check_rank(Thread* thread) {
 
   // We expect the locks already acquired to be in increasing rank order,
   // modulo locks acquired in try_lock_without_rank_check()
-  for (Mutex* tmp = locks_owned; tmp != NULL; tmp = tmp->next()) {
-    if (tmp->next() != NULL) {
+  for (Mutex* tmp = locks_owned; tmp != nullptr; tmp = tmp->next()) {
+    if (tmp->next() != nullptr) {
       assert(tmp->rank() < tmp->next()->rank()
              || tmp->skip_rank_check(), "mutex rank anomaly?");
     }
@@ -418,7 +416,7 @@ void Mutex::check_rank(Thread* thread) {
     // able to check for safepoints first with a TBIVM.
     // For all threads, we enforce not holding the tty lock or below, since this could block progress also.
     // Also "this" should be the monitor with lowest rank owned by this thread.
-    if (least != NULL && ((least->rank() <= Mutex::nosafepoint && thread->is_Java_thread()) ||
+    if (least != nullptr && ((least->rank() <= Mutex::nosafepoint && thread->is_Java_thread()) ||
                            least->rank() <= Mutex::tty ||
                            least->rank() <= this->rank())) {
       ResourceMark rm(thread);
@@ -438,7 +436,7 @@ void Mutex::check_rank(Thread* thread) {
     // that the thread holds and m2 is the mutex the thread is trying
     // to acquire, then deadlock prevention rules require that the rank
     // of m2 be less than the rank of m1. This prevents circular waits.
-    if (least != NULL && least->rank() <= this->rank()) {
+    if (least != nullptr && least->rank() <= this->rank()) {
       ResourceMark rm(thread);
       if (least->rank() > Mutex::tty) {
         // Printing owned locks acquires tty lock. If the least rank was below or equal
@@ -463,15 +461,15 @@ void Mutex::set_owner_implementation(Thread *new_owner) {
   // It uses the Mutex::_owner, Mutex::_next, and
   // Thread::_owned_locks fields, and no other function
   // changes those fields.
-  // It is illegal to set the mutex from one non-NULL
-  // owner to another--it must be owned by NULL as an
+  // It is illegal to set the mutex from one non-null
+  // owner to another--it must be owned by null as an
   // intermediate state.
 
-  if (new_owner != NULL) {
+  if (new_owner != nullptr) {
     // the thread is acquiring this lock
 
     assert(new_owner == Thread::current(), "Should I be doing this?");
-    assert(owner() == NULL, "setting the owner thread of an already owned mutex");
+    assert(owner() == nullptr, "setting the owner thread of an already owned mutex");
     raw_set_owner(new_owner); // set the owner
 
     // link "this" into the owned locks list
@@ -492,30 +490,30 @@ void Mutex::set_owner_implementation(Thread *new_owner) {
     _last_owner = old_owner;
     _skip_rank_check = false;
 
-    assert(old_owner != NULL, "removing the owner thread of an unowned mutex");
+    assert(old_owner != nullptr, "removing the owner thread of an unowned mutex");
     assert(old_owner == Thread::current(), "removing the owner thread of an unowned mutex");
 
-    raw_set_owner(NULL); // set the owner
+    raw_set_owner(nullptr); // set the owner
 
     Mutex* locks = old_owner->owned_locks();
 
     // remove "this" from the owned locks list
 
-    Mutex* prev = NULL;
+    Mutex* prev = nullptr;
     bool found = false;
-    for (; locks != NULL; prev = locks, locks = locks->next()) {
+    for (; locks != nullptr; prev = locks, locks = locks->next()) {
       if (locks == this) {
         found = true;
         break;
       }
     }
     assert(found, "Removing a lock not owned");
-    if (prev == NULL) {
+    if (prev == nullptr) {
       old_owner->_owned_locks = _next;
     } else {
       prev->_next = _next;
     }
-    _next = NULL;
+    _next = nullptr;
 
     // ~NSV implied with locking allow_vm_block flag.
     if (old_owner->is_Java_thread() && _allow_vm_block && this != tty_lock) {

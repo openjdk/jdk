@@ -6,28 +6,36 @@
 
 namespace OT {
 namespace Layout {
-namespace GSUB {
+namespace GSUB_impl {
 
 struct AlternateSubst
 {
   protected:
   union {
-  HBUINT16              format;         /* Format identifier */
-  AlternateSubstFormat1 format1;
+  HBUINT16                              format;         /* Format identifier */
+  AlternateSubstFormat1_2<SmallTypes>   format1;
+#ifndef HB_NO_BEYOND_64K
+  AlternateSubstFormat1_2<MediumTypes>  format2;
+#endif
   } u;
   public:
 
   template <typename context_t, typename ...Ts>
   typename context_t::return_t dispatch (context_t *c, Ts&&... ds) const
   {
+    if (unlikely (!c->may_dispatch (this, &u.format))) return c->no_dispatch_return_value ();
     TRACE_DISPATCH (this, u.format);
-    if (unlikely (!c->may_dispatch (this, &u.format))) return_trace (c->no_dispatch_return_value ());
     switch (u.format) {
     case 1: return_trace (c->dispatch (u.format1, std::forward<Ts> (ds)...));
+#ifndef HB_NO_BEYOND_64K
+    case 2: return_trace (c->dispatch (u.format2, std::forward<Ts> (ds)...));
+#endif
     default:return_trace (c->default_return_value ());
     }
   }
 
+  /* TODO This function is unused and not updated to 24bit GIDs. Should be done by using
+   * iterators. While at it perhaps using iterator of arrays of hb_codepoint_t instead. */
   bool serialize (hb_serialize_context_t *c,
                   hb_sorted_array_t<const HBGlyphID16> glyphs,
                   hb_array_t<const unsigned int> alternate_len_list,
@@ -42,6 +50,9 @@ struct AlternateSubst
     default:return_trace (false);
     }
   }
+
+  /* TODO subset() should choose format. */
+
 };
 
 }

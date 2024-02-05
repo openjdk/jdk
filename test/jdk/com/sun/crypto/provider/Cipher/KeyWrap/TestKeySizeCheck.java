@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8248268
+ * @bug 8248268 8302225
  * @summary Verify cipher key size restriction is enforced properly with IKE
  * @run main TestKeySizeCheck
  */
@@ -42,6 +42,8 @@ public class TestKeySizeCheck {
             BYTES_32[i] = (byte) i;
         }
     }
+
+    private static final int[] AES_KEYSIZES = { 128, 192, 256 };
 
     private static SecretKey getKey(int sizeInBytes) {
         if (sizeInBytes <= BYTES_32.length) {
@@ -64,7 +66,7 @@ public class TestKeySizeCheck {
         int[] modes = { Cipher.ENCRYPT_MODE, Cipher.WRAP_MODE };
         for (int ks : invalidKeySizes) {
             System.out.println("keysize: " + ks);
-            SecretKey key = getKey(ks);
+            SecretKey key = getKey(ks >> 3);
 
             for (int m : modes) {
                 try {
@@ -72,9 +74,23 @@ public class TestKeySizeCheck {
                     throw new RuntimeException("Expected IKE not thrown for "
                             + getModeStr(m));
                 } catch (InvalidKeyException ike) {
-                    System.out.println(" => expected IKE thrown for "
-                            + getModeStr(m));
+                    System.out.println(getModeStr(m) + " => got expected IKE");
                 }
+            }
+        }
+
+        // now test against the valid key size(s) and make sure they work
+        int underscoreIdx = algo.indexOf("_");
+        int[] validKeySizes = (algo.indexOf("_") == -1 ?
+            AES_KEYSIZES : new int[] { Integer.parseInt(algo.substring
+                    (underscoreIdx + 1, underscoreIdx + 4)) });
+        for (int ks : validKeySizes) {
+            System.out.println("keysize: " + ks);
+            SecretKey key = getKey(ks >> 3);
+
+            for (int m : modes) {
+                c.init(m, key);
+                System.out.println(getModeStr(m) + " => ok");
             }
         }
     }

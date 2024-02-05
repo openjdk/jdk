@@ -88,7 +88,7 @@ final class Config {
     private static final boolean DEBUG = false;
 
     // file name containing this configuration
-    private String filename;
+    private final String filename;
 
     // Reader and StringTokenizer used during parsing
     private Reader reader;

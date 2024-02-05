@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,10 @@ package gc.z;
 
 /**
  * @test TestMemoryManagerMXBean
- * @requires vm.gc.Z
+ * @requires vm.gc.ZGenerational
  * @summary Test ZGC memory manager MXBean
  * @modules java.management
- * @run main/othervm -XX:+UseZGC -Xmx128M gc.z.TestMemoryManagerMXBean
+ * @run main/othervm -XX:+UseZGC -XX:+ZGenerational -Xmx128M gc.z.TestMemoryManagerMXBean
  */
 
 import java.lang.management.ManagementFactory;
@@ -52,9 +52,9 @@ public class TestMemoryManagerMXBean {
 
             System.out.println("MemoryManager: " + memoryManagerName);
 
-            if (memoryManagerName.equals("ZGC Cycles")) {
+            if (memoryManagerName.equals("ZGC Minor Cycles") || memoryManagerName.equals("ZGC Major Cycles")) {
                 zgcCyclesMemoryManagers++;
-            } else if (memoryManagerName.equals("ZGC Pauses")) {
+            } else if (memoryManagerName.equals("ZGC Minor Pauses") || memoryManagerName.equals("ZGC Major Pauses")) {
                 zgcPausesMemoryManagers++;
             }
 
@@ -63,29 +63,29 @@ public class TestMemoryManagerMXBean {
 
                 System.out.println("   MemoryPool:   " + memoryPoolName);
 
-                if (memoryPoolName.equals("ZHeap")) {
-                    if (memoryManagerName.equals("ZGC Cycles")) {
+                if (memoryPoolName.equals("ZGC Young Generation") || memoryPoolName.equals("ZGC Old Generation")) {
+                    if (memoryManagerName.equals("ZGC Minor Cycles") || memoryManagerName.equals("ZGC Major Cycles")) {
                         zgcCyclesMemoryPools++;
-                    } else if (memoryManagerName.equals("ZGC Pauses")) {
+                    } else if (memoryManagerName.equals("ZGC Minor Pauses") || memoryManagerName.equals("ZGC Major Pauses")) {
                         zgcPausesMemoryPools++;
                     }
                 }
             }
         }
 
-        if (zgcCyclesMemoryManagers != 1) {
+        if (zgcCyclesMemoryManagers != 2) {
             throw new Exception("Unexpected number of cycle MemoryManagers");
         }
 
-        if (zgcPausesMemoryManagers != 1) {
+        if (zgcPausesMemoryManagers != 2) {
             throw new Exception("Unexpected number of pause MemoryManagers");
         }
 
-        if (zgcCyclesMemoryPools != 1) {
+        if (zgcCyclesMemoryPools != 4) {
             throw new Exception("Unexpected number of cycle MemoryPools");
         }
 
-        if (zgcPausesMemoryPools != 1) {
+        if (zgcPausesMemoryPools != 4) {
             throw new Exception("Unexpected number of pause MemoryPools");
         }
     }

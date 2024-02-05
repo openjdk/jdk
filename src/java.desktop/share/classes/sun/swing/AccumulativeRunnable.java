@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ import javax.swing.SwingUtilities;
  * <p>
  * Say we want to implement addDirtyRegion(Rectangle rect)
  * which sends this region to the
- * {@code handleDirtyRegions(List<Rect> regiouns)} on the EDT.
+ * {@code handleDirtyRegions(List<Rect> regions)} on the EDT.
  * addDirtyRegions better be accumulated before handling on the EDT.
  *
  * <p>
@@ -116,7 +116,7 @@ public abstract class AccumulativeRunnable<T> implements Runnable {
      * appends arguments and sends this {@code Runnable} for the
      * execution if needed.
      * <p>
-     * This implementation uses {@see #submit} to send this
+     * This implementation uses {@link #submit} to send this
      * {@code Runnable} for execution.
      * @param args the arguments to accumulate
      */

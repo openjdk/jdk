@@ -25,14 +25,15 @@
  * @test
  * @bug 8029800
  * @summary String.toLowerCase()/toUpperCase is generally dangerous, check it is not used in langtools
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  */
 
 import java.io.*;
 import java.util.*;
 import javax.tools.*;
-import com.sun.tools.classfile.*;
-import com.sun.tools.classfile.ConstantPool.CONSTANT_Methodref_info;
+import java.lang.classfile.*;
+import java.lang.classfile.constantpool.*;
 
 public class NoStringToLower {
     public static void main(String... args) throws Exception {
@@ -62,7 +63,7 @@ public class NoStringToLower {
                 "javax.lang.model",
                 "javax.tools",
                 "com.sun.source",
-                "com.sun.tools.classfile",
+                "jdk.internal.classfile",
                 "com.sun.tools.doclint",
                 "com.sun.tools.javac",
                 "com.sun.tools.javah",
@@ -102,13 +103,11 @@ public class NoStringToLower {
      * Verify there are no references to String.toLowerCase() in a class file.
      */
     void scan(JavaFileObject fo) throws IOException {
-        InputStream in = fo.openInputStream();
-        try {
-            ClassFile cf = ClassFile.read(in);
-            for (ConstantPool.CPInfo cpinfo: cf.constant_pool.entries()) {
-                if (cpinfo.getTag() == ConstantPool.CONSTANT_Methodref) {
-                    CONSTANT_Methodref_info ref = (CONSTANT_Methodref_info) cpinfo;
-                    String methodDesc = ref.getClassInfo().getName() + "." + ref.getNameAndTypeInfo().getName() + ":" + ref.getNameAndTypeInfo().getType();
+        try (InputStream in = fo.openInputStream()) {
+            ClassModel cf = ClassFile.of().parse(in.readAllBytes());
+            for (PoolEntry pe : cf.constantPool()) {
+                if (pe instanceof MethodRefEntry ref) {
+                    String methodDesc = ref.owner().name().stringValue() + "." + ref.name().stringValue() + ":" + ref.type().stringValue();
 
                     if ("java/lang/String.toLowerCase:()Ljava/lang/String;".equals(methodDesc)) {
                         error("found reference to String.toLowerCase() in: " + fo.getName());
@@ -119,8 +118,6 @@ public class NoStringToLower {
                 }
             }
         } catch (ConstantPoolException ignore) {
-        } finally {
-            in.close();
         }
     }
 

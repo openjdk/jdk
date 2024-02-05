@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,6 +92,8 @@ public:
   inline void set_max_thawing_size(int value);
 
   inline oop cont() const;
+  template<typename P>
+  inline oop cont() const;
   inline void set_cont(oop value);
   template<typename P>
   inline void set_cont_raw(oop value);
@@ -153,7 +155,7 @@ public:
 
   inline void* gc_data() const;
   inline BitMapView bitmap() const;
-  inline BitMap::idx_t bit_index_for(intptr_t* p) const;
+  inline BitMap::idx_t bit_index_for(address p) const;
   inline intptr_t* address_for_bit(BitMap::idx_t index) const;
   template <typename OopT> inline BitMap::idx_t bit_index_for(OopT* p) const;
   template <typename OopT> inline OopT* address_for_bit(BitMap::idx_t index) const;
@@ -191,8 +193,8 @@ public:
   void print_on(bool verbose, outputStream* st) const;
 
   // Verifies the consistency of the chunk's data
-  bool verify(size_t* out_size = NULL, int* out_oops = NULL,
-              int* out_frames = NULL, int* out_interpreted_frames = NULL) NOT_DEBUG({ return true; });
+  bool verify(size_t* out_size = nullptr, int* out_oops = nullptr,
+              int* out_frames = nullptr, int* out_interpreted_frames = nullptr) NOT_DEBUG({ return true; });
 
 private:
   template <BarrierType barrier, ChunkFrames frames = ChunkFrames::Mixed, typename RegisterMapT>

@@ -50,23 +50,9 @@ import jdk.test.lib.classloader.ClassUnloadCommon;
 public class UnloadTestWithVerifyDuringGC {
     private static final WhiteBox wb = WhiteBox.getWhiteBox();
 
-    private static void waitUntilConcMarkFinished() throws Exception {
-        while (wb.g1InConcurrentMark()) {
-            try {
-                Thread.sleep(1);
-            } catch (InterruptedException e) {
-                System.out.println("Got InterruptedException while waiting for concurrent mark to finish");
-                throw e;
-            }
-        }
-    }
-
     private static void triggerUnloadingWithConcurrentMark() throws Exception {
-        // Try to unload classes using concurrent mark. First wait for any currently running concurrent
-        // cycle.
-        waitUntilConcMarkFinished();
-        wb.g1StartConcMarkCycle();
-        waitUntilConcMarkFinished();
+        // Try to unload classes using concurrent mark.
+        wb.g1RunConcurrentGC();
     }
 
     private static String className = "test.Empty";

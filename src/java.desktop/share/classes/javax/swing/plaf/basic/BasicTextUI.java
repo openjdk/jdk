@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2598,18 +2598,21 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
                     if (ic != null) {
                         ic.endComposition();
                     }
-                    Reader r = importFlavor.getReaderForText(t);
 
-                    if (modeBetween) {
-                        Caret caret = c.getCaret();
-                        if (caret instanceof DefaultCaret) {
-                            ((DefaultCaret)caret).setDot(pos, dropBias);
-                        } else {
-                            c.setCaretPosition(pos);
+                    // Use try-with-resource logic to close stream after use
+                    try (Reader r = importFlavor.getReaderForText(t)) {
+
+                        if (modeBetween) {
+                            Caret caret = c.getCaret();
+                            if (caret instanceof DefaultCaret) {
+                                ((DefaultCaret) caret).setDot(pos, dropBias);
+                            } else {
+                                c.setCaretPosition(pos);
+                            }
                         }
-                    }
 
-                    handleReaderImport(r, c, useRead);
+                        handleReaderImport(r, c, useRead);
+                    }
 
                     if (isDrop) {
                         c.requestFocus();

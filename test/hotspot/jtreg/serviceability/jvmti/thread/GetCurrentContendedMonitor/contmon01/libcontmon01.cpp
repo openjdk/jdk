@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,13 +29,13 @@
 
 extern "C" {
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 
 JNIEXPORT jint JNICALL
 Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
 
   jint res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     LOG("Wrong result of a valid call to GetEnv !\n");
     return JNI_ERR;
   }
@@ -54,7 +54,7 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
 
 JNIEXPORT void JNICALL
 Java_contmon01_checkMonitor(JNIEnv *jni, jclass cls, jint point, jthread thread, jobject lock) {
-  jobject monitor = NULL;
+  jobject monitor = nullptr;
 
   jvmtiError err = jvmti->GetCurrentContendedMonitor(thread, &monitor);
   if (err == JVMTI_ERROR_THREAD_NOT_ALIVE && point == 5) {

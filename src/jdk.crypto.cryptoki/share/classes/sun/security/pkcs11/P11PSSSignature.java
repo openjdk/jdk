@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,13 @@
 
 package sun.security.pkcs11;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.nio.ByteBuffer;
+
+import jdk.internal.access.JavaNioAccess;
+import jdk.internal.access.SharedSecrets;
 import sun.nio.ch.DirectBuffer;
 
 import java.util.Hashtable;
-import java.util.Arrays;
 import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.MGF1ParameterSpec;
@@ -67,6 +67,8 @@ import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
  * @since   13
  */
 final class P11PSSSignature extends SignatureSpi {
+
+    private static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
 
     private static final boolean DEBUG = false;
 
@@ -259,7 +261,6 @@ final class P11PSSSignature extends SignatureSpi {
             }
         } finally {
             p11Key.releaseKeyID();
-            mechanism.freeHandle();
             session = token.releaseSession(session);
             isActive = false;
         }
@@ -613,14 +614,15 @@ final class P11PSSSignature extends SignatureSpi {
         isActive = true;
         switch (type) {
             case T_UPDATE -> {
-                if (byteBuffer instanceof DirectBuffer == false) {
+                if (!(byteBuffer instanceof DirectBuffer dByteBuffer)) {
                     // cannot do better than default impl
                     super.engineUpdate(byteBuffer);
                     return;
                 }
-                long addr = ((DirectBuffer) byteBuffer).address();
                 int ofs = byteBuffer.position();
+                NIO_ACCESS.acquireSession(byteBuffer);
                 try {
+                    long addr = dByteBuffer.address();
                     if (mode == M_SIGN) {
                         if (DEBUG) System.out.println(this + ": Calling C_SignUpdate");
                         token.p11.C_SignUpdate
@@ -635,6 +637,8 @@ final class P11PSSSignature extends SignatureSpi {
                 } catch (PKCS11Exception e) {
                     reset(false);
                     throw new ProviderException("Update failed", e);
+                } finally {
+                    NIO_ACCESS.releaseSession(byteBuffer);
                 }
             }
             case T_DIGEST -> {

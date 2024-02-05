@@ -846,6 +846,23 @@ public final class AttributeValues implements Cloneable {
         return null;
     }
 
+    @SuppressWarnings("unchecked")
+    public static float getTracking(Map<?, ?> map) {
+        if (map != null) {
+            AttributeValues av = null;
+            if (map instanceof AttributeMap &&
+                    ((AttributeMap) map).getValues() != null) {
+                av = ((AttributeMap)map).getValues();
+            } else if (map.get(TextAttribute.TRACKING) != null) {
+                av = AttributeValues.fromMap((Map<Attribute, ?>)map);
+            }
+            if (av != null) {
+                return av.tracking;
+            }
+        }
+        return 0;
+    }
+
     public void updateDerivedTransforms() {
         // this also updates the mask for the baseline transform
         if (transform == null) {

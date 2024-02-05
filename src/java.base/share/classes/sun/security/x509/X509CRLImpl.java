@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -233,8 +233,7 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
 
             // revokedCertificates (optional)
             nextByte = (byte)derStrm.peekByte();
-            if ((nextByte == DerValue.tag_SequenceOf)
-                    && (! ((nextByte & 0x0c0) == 0x080))) {
+            if ((nextByte == DerValue.tag_SequenceOf)) {
                 DerValue[] badCerts = derStrm.getSequence(4);
 
                 X500Principal crlIssuer = getIssuerX500Principal();
@@ -1297,6 +1296,7 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
          * @param o the other object to compare with
          * @return true if equal, false otherwise
          */
+        @Override
         public boolean equals(Object o) {
             if (o == this) {
                 return true;
@@ -1311,16 +1311,13 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
         }
 
         /**
-         * Returns a hash code value for this X509IssuerSerial.
-         *
-         * @return the hash code value
+         * {@return a hash code value for this X509IssuerSerial}
          */
+        @Override
         public int hashCode() {
             int h = hashcode;
             if (h == 0) {
-                h = 17;
-                h = 37*h + issuer.hashCode();
-                h = 37*h + serial.hashCode();
+                h = Objects.hash(issuer, serial);
                 if (h != 0) {
                     hashcode = h;
                 }

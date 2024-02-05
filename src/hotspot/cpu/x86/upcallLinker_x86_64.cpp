@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -165,22 +165,59 @@ static void restore_callee_saved_registers(MacroAssembler* _masm, const ABIDescr
   __ block_comment("} restore_callee_saved_regs ");
 }
 
+static const int upcall_stub_code_base_size = 1024;
+static const int upcall_stub_size_per_arg = 16;
+
 address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
-                                       BasicType* in_sig_bt, int total_in_args,
                                        BasicType* out_sig_bt, int total_out_args,
                                        BasicType ret_type,
                                        jobject jabi, jobject jconv,
                                        bool needs_return_buffer, int ret_buf_size) {
   const ABIDescriptor abi = ForeignGlobals::parse_abi_descriptor(jabi);
   const CallRegs call_regs = ForeignGlobals::parse_call_regs(jconv);
-  CodeBuffer buffer("upcall_stub", /* code_size = */ 2048, /* locs_size = */ 1024);
+  int code_size = upcall_stub_code_base_size + (total_out_args * upcall_stub_size_per_arg);
+  CodeBuffer buffer("upcall_stub", code_size, /* locs_size = */ 1);
+  if (buffer.blob() == nullptr) {
+    return nullptr;
+  }
 
-  Register shuffle_reg = rbx;
-  JavaCallingConvention out_conv;
-  NativeCallingConvention in_conv(call_regs._arg_regs);
-  ArgumentShuffle arg_shuffle(in_sig_bt, total_in_args, out_sig_bt, total_out_args, &in_conv, &out_conv, shuffle_reg->as_VMReg());
-  int stack_slots = SharedRuntime::out_preserve_stack_slots() + arg_shuffle.out_arg_stack_slots();
-  int out_arg_area = align_up(stack_slots * VMRegImpl::stack_slot_size, StackAlignmentInBytes);
+  GrowableArray<VMStorage> unfiltered_out_regs;
+  int out_arg_bytes = ForeignGlobals::java_calling_convention(out_sig_bt, total_out_args, unfiltered_out_regs);
+  int preserved_bytes = SharedRuntime::out_preserve_stack_slots() * VMRegImpl::stack_slot_size;
+  int stack_bytes = preserved_bytes + out_arg_bytes;
+  int out_arg_area = align_up(stack_bytes , StackAlignmentInBytes);
+
+  // out_arg_area (for stack arguments) doubles as shadow space for native calls.
+  // make sure it is big enough.
+  if (out_arg_area < frame::arg_reg_save_area_bytes) {
+    out_arg_area = frame::arg_reg_save_area_bytes;
+  }
+
+  int reg_save_area_size = compute_reg_save_area_size(abi);
+  RegSpiller arg_spiller(call_regs._arg_regs);
+  RegSpiller result_spiller(call_regs._ret_regs);
+
+  int shuffle_area_offset    = 0;
+  int res_save_area_offset   = shuffle_area_offset    + out_arg_area;
+  int arg_save_area_offset   = res_save_area_offset   + result_spiller.spill_size_bytes();
+  int reg_save_area_offset   = arg_save_area_offset   + arg_spiller.spill_size_bytes();
+  int frame_data_offset      = reg_save_area_offset   + reg_save_area_size;
+  int frame_bottom_offset    = frame_data_offset      + sizeof(UpcallStub::FrameData);
+
+  StubLocations locs;
+  int ret_buf_offset = -1;
+  if (needs_return_buffer) {
+    ret_buf_offset = frame_bottom_offset;
+    frame_bottom_offset += ret_buf_size;
+    // use a free register for shuffling code to pick up return
+    // buffer address from
+    locs.set(StubLocations::RETURN_BUFFER, abi._scratch1);
+  }
+
+  VMStorage shuffle_reg = as_VMStorage(rbx);
+  GrowableArray<VMStorage> in_regs = ForeignGlobals::replace_place_holders(call_regs._arg_regs, locs);
+  GrowableArray<VMStorage> filtered_out_regs = ForeignGlobals::upcall_filter_receiver_reg(unfiltered_out_regs);
+  ArgumentShuffle arg_shuffle(in_regs, filtered_out_regs, shuffle_reg);
 
 #ifndef PRODUCT
   LogTarget(Trace, foreign, upcall) lt;
@@ -190,29 +227,6 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
     arg_shuffle.print_on(&ls);
   }
 #endif
-
-  // out_arg_area (for stack arguments) doubles as shadow space for native calls.
-  // make sure it is big enough.
-  if (out_arg_area < frame::arg_reg_save_area_bytes) {
-    out_arg_area = frame::arg_reg_save_area_bytes;
-  }
-
-  int reg_save_area_size = compute_reg_save_area_size(abi);
-  RegSpiller arg_spilller(call_regs._arg_regs);
-  RegSpiller result_spiller(call_regs._ret_regs);
-
-  int shuffle_area_offset    = 0;
-  int res_save_area_offset   = shuffle_area_offset    + out_arg_area;
-  int arg_save_area_offset   = res_save_area_offset   + result_spiller.spill_size_bytes();
-  int reg_save_area_offset   = arg_save_area_offset   + arg_spilller.spill_size_bytes();
-  int frame_data_offset      = reg_save_area_offset   + reg_save_area_size;
-  int frame_bottom_offset    = frame_data_offset      + sizeof(UpcallStub::FrameData);
-
-  int ret_buf_offset = -1;
-  if (needs_return_buffer) {
-    ret_buf_offset = frame_bottom_offset;
-    frame_bottom_offset += ret_buf_size;
-  }
 
   int frame_size = frame_bottom_offset;
   frame_size = align_up(frame_size, StackAlignmentInBytes);
@@ -256,13 +270,14 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
 
   // we have to always spill args since we need to do a call to get the thread
   // (and maybe attach it).
-  arg_spilller.generate_spill(_masm, arg_save_area_offset);
+  arg_spiller.generate_spill(_masm, arg_save_area_offset);
 
   preserve_callee_saved_registers(_masm, abi, reg_save_area_offset);
 
   __ block_comment("{ on_entry");
   __ vzeroupper();
   __ lea(c_rarg0, Address(rsp, frame_data_offset));
+  __ movptr(c_rarg1, (intptr_t)receiver);
   // stack already aligned
   __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, UpcallLinker::on_entry)));
   __ movptr(r15_thread, rax);
@@ -270,18 +285,16 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   __ block_comment("} on_entry");
 
   __ block_comment("{ argument shuffle");
-  arg_spilller.generate_fill(_masm, arg_save_area_offset);
+  arg_spiller.generate_fill(_masm, arg_save_area_offset);
   if (needs_return_buffer) {
     assert(ret_buf_offset != -1, "no return buffer allocated");
-    __ lea(abi._ret_buf_addr_reg, Address(rsp, ret_buf_offset));
+    __ lea(as_Register(locs.get(StubLocations::RETURN_BUFFER)), Address(rsp, ret_buf_offset));
   }
-  arg_shuffle.generate(_masm, shuffle_reg->as_VMReg(), abi._shadow_space_bytes, 0);
+  arg_shuffle.generate(_masm, shuffle_reg, abi._shadow_space_bytes, 0);
   __ block_comment("} argument shuffle");
 
   __ block_comment("{ receiver ");
-  __ movptr(rscratch1, (intptr_t)receiver);
-  __ resolve_jobject(rscratch1, r15_thread, rscratch2);
-  __ movptr(j_rarg0, rscratch1);
+  __ get_vm_result(j_rarg0, r15_thread);
   __ block_comment("} receiver ");
 
   __ mov_metadata(rbx, entry);
@@ -293,7 +306,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   if (!needs_return_buffer) {
 #ifdef ASSERT
     if (call_regs._ret_regs.length() == 1) { // 0 or 1
-      VMReg j_expected_result_reg;
+      VMStorage j_expected_result_reg;
       switch (ret_type) {
         case T_BOOLEAN:
         case T_BYTE:
@@ -301,19 +314,18 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
         case T_CHAR:
         case T_INT:
         case T_LONG:
-        j_expected_result_reg = rax->as_VMReg();
+        j_expected_result_reg = as_VMStorage(rax);
         break;
         case T_FLOAT:
         case T_DOUBLE:
-          j_expected_result_reg = xmm0->as_VMReg();
+          j_expected_result_reg = as_VMStorage(xmm0);
           break;
         default:
           fatal("unexpected return type: %s", type2name(ret_type));
       }
       // No need to move for now, since CallArranger can pick a return type
       // that goes in the same reg for both CCs. But, at least assert they are the same
-      assert(call_regs._ret_regs.at(0) == j_expected_result_reg,
-        "unexpected result register: %s != %s", call_regs._ret_regs.at(0)->name(), j_expected_result_reg->name());
+      assert(call_regs._ret_regs.at(0) == j_expected_result_reg, "unexpected result register");
     }
 #endif
   } else {
@@ -321,12 +333,12 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
     __ lea(rscratch1, Address(rsp, ret_buf_offset));
     int offset = 0;
     for (int i = 0; i < call_regs._ret_regs.length(); i++) {
-      VMReg reg = call_regs._ret_regs.at(i);
-      if (reg->is_Register()) {
-        __ movptr(reg->as_Register(), Address(rscratch1, offset));
+      VMStorage reg = call_regs._ret_regs.at(i);
+      if (reg.type() == StorageType::INTEGER) {
+        __ movptr(as_Register(reg), Address(rscratch1, offset));
         offset += 8;
-      } else if (reg->is_XMMRegister()) {
-        __ movdqu(reg->as_XMMRegister(), Address(rscratch1, offset));
+      } else if (reg.type() == StorageType::VECTOR) {
+        __ movdqu(as_XMMRegister(reg), Address(rscratch1, offset));
         offset += 16;
       } else {
         ShouldNotReachHere();
@@ -353,26 +365,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
 
   //////////////////////////////////////////////////////////////////////////////
 
-  __ block_comment("{ exception handler");
-
-  intptr_t exception_handler_offset = __ pc() - start;
-
-  // TODO: this is always the same, can we bypass and call handle_uncaught_exception directly?
-
-  // native caller has no idea how to handle exceptions
-  // we just crash here. Up to callee to catch exceptions.
-  __ verify_oop(rax);
-  __ vzeroupper();
-  __ mov(c_rarg0, rax);
-  __ andptr(rsp, -StackAlignmentInBytes); // align stack as required by ABI
-  __ subptr(rsp, frame::arg_reg_save_area_bytes); // windows (not really needed)
-  __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, UpcallLinker::handle_uncaught_exception)));
-  __ should_not_reach_here();
-
-  __ block_comment("} exception handler");
-
   _masm->flush();
-
 
 #ifndef PRODUCT
   stringStream ss;
@@ -382,16 +375,24 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   const char* name = "upcall_stub";
 #endif // PRODUCT
 
+  buffer.log_section_sizes(name);
+
   UpcallStub* blob
     = UpcallStub::create(name,
                          &buffer,
-                         exception_handler_offset,
                          receiver,
                          in_ByteSize(frame_data_offset));
-
-  if (TraceOptimizedUpcallStubs) {
-    blob->print_on(tty);
+  if (blob == nullptr) {
+    return nullptr;
   }
+
+#ifndef PRODUCT
+  if (lt.is_enabled()) {
+    ResourceMark rm;
+    LogStream ls(lt);
+    blob->print_on(&ls);
+  }
+#endif
 
   return blob->code_begin();
 }

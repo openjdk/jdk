@@ -33,6 +33,7 @@ import javax.swing.*;
 import javax.swing.text.*;
 import javax.swing.text.html.*;
 
+import sun.swing.SwingAccessor;
 import sun.swing.SwingUtilities2;
 
 /**
@@ -220,7 +221,7 @@ public class BasicHTML {
         View value = null;
         View oldValue = (View)c.getClientProperty(BasicHTML.propertyKey);
         Boolean htmlDisabled = (Boolean) c.getClientProperty(htmlDisable);
-        if (htmlDisabled != Boolean.TRUE && BasicHTML.isHTMLString(text)) {
+        if (!(Boolean.TRUE.equals(htmlDisabled)) && BasicHTML.isHTMLString(text)) {
             value = BasicHTML.createHTMLView(c, text);
         }
         if (value != oldValue && oldValue != null) {
@@ -376,15 +377,36 @@ public class BasicHTML {
      */
     static class BasicHTMLViewFactory extends HTMLEditorKit.HTMLFactory {
         public View create(Element elem) {
-            View view = super.create(elem);
 
+            View view = null;
+            try {
+                setAllowHTMLObject();
+                view = super.create(elem);
+            } finally {
+                clearAllowHTMLObject();
+            }
             if (view instanceof ImageView) {
                 ((ImageView)view).setLoadsSynchronously(true);
             }
             return view;
         }
-    }
 
+        private static Boolean useOV = null;
+
+        @SuppressWarnings("removal")
+        private static void setAllowHTMLObject() {
+            if (useOV == null) {
+                useOV = java.security.AccessController.doPrivileged(
+                    new sun.security.action.GetBooleanAction(
+                        "swing.html.object"));
+            };
+            SwingAccessor.setAllowHTMLObject(useOV);
+        }
+
+        private static void clearAllowHTMLObject() {
+            SwingAccessor.setAllowHTMLObject(null);
+        }
+    }
 
     /**
      * The subclass of HTMLDocument that is used as the model. getForeground

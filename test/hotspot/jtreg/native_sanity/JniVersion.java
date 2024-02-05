@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,12 @@
  */
 public class JniVersion {
 
-    public static final int JNI_VERSION_20 = 0x00140000;
+    public static final int JNI_VERSION_21 = 0x00150000;
 
     public static void main(String... args) throws Exception {
         System.loadLibrary("JniVersion");
         int res = getJniVersion();
-        if (res != JNI_VERSION_20) {
+        if (res != JNI_VERSION_21) {
             throw new Exception("Unexpected value returned from getJniVersion(): 0x" + Integer.toHexString(res));
         }
     }

@@ -54,7 +54,6 @@ public class JcmdDetailDiff {
 
         // Run 'jcmd <pid> VM.native_memory baseline=true'
         pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "baseline=true"});
-        pb.start().waitFor();
 
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("Baseline taken");

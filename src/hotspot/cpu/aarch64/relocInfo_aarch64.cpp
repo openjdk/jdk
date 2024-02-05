@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -66,7 +66,7 @@ address Relocation::pd_call_destination(address orig_addr) {
       return nativeCallTrampolineStub_at(trampoline)->destination();
     }
   }
-  if (orig_addr != NULL) {
+  if (orig_addr != nullptr) {
     address new_addr = MacroAssembler::pd_call_destination(orig_addr);
     // If call is branch to self, don't try to relocate it, just leave it
     // as branch to self. This happens during code generation if the code

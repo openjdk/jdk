@@ -985,7 +985,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     }
 
     /**
-     * Returns the hashcode for this session
+     * {@return the hashcode for this session}
      */
     @Override
     public int hashCode() {
@@ -1002,12 +1002,9 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             return true;
         }
 
-        if (obj instanceof SSLSessionImpl sess) {
-            return (sessionId != null) && (sessionId.equals(
-                        sess.getSessionId()));
-        }
-
-        return false;
+        return obj instanceof SSLSessionImpl other
+                && sessionId != null
+                && sessionId.equals(other.getSessionId());
     }
 
 

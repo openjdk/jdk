@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @summary Test using -XX:+CrashOnOutOfMemoryError
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
+ * @requires vm.flagless
  * @run driver TestCrashOnOutOfMemoryError
  * @bug 8138745
  */
@@ -53,7 +54,7 @@ public class TestCrashOnOutOfMemoryError {
             }
         }
         // else this is the main test
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+CrashOnOutOfMemoryError",
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+CrashOnOutOfMemoryError",
                  "-XX:-CreateCoredumpOnCrash", "-Xmx128m", TestCrashOnOutOfMemoryError.class.getName(),"throwOOME");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         int exitValue = output.getExitValue();
@@ -64,9 +65,6 @@ public class TestCrashOnOutOfMemoryError {
 
         /* Output should look something like this. The actual text will depend on the OS and its core dump processing.
            Aborting due to java.lang.OutOfMemoryError: Requested array size exceeds VM limit
-           # To suppress the following error report, specify this argument
-           # after -XX: or in .hotspotrc:  SuppressErrorAt=/debug.cpp:303
-           #
            # A fatal error has been detected by the Java Runtime Environment:
            #
            #  Internal Error (/home/cheleswer/Desktop/jdk9/dev/hotspot/src/share/vm/utilities/debug.cpp:303), pid=6212, tid=6213

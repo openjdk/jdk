@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package java.lang;
 
 import jdk.internal.misc.CDS;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
+import jdk.internal.vm.annotation.Stable;
 
 import java.lang.constant.Constable;
 import java.lang.constant.DynamicConstantDesc;
@@ -39,7 +40,6 @@ import java.util.Optional;
 
 import static java.lang.constant.ConstantDescs.BSM_EXPLICIT_CAST;
 import static java.lang.constant.ConstantDescs.CD_char;
-import static java.lang.constant.ConstantDescs.CD_int;
 import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
 
 /**
@@ -63,7 +63,7 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  * from the Unicode Consortium at
  * <a href="http://www.unicode.org">http://www.unicode.org</a>.
  * <p>
- * Character information is based on the Unicode Standard, version 15.0.
+ * Character information is based on the Unicode Standard, version 15.1.
  * <p>
  * The Java platform has supported different versions of the Unicode
  * Standard over time. Upgrades to newer versions of the Unicode Standard
@@ -75,6 +75,8 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  *     <th scope="col">Unicode version</th></tr>
  * </thead>
  * <tbody>
+ * <tr><th scope="row" style="text-align:left">Java SE 22</th>
+ *     <td>Unicode 15.1</td></tr>
  * <tr><th scope="row" style="text-align:left">Java SE 20</th>
  *     <td>Unicode 15.0</td></tr>
  * <tr><th scope="row" style="text-align:left">Java SE 19</th>
@@ -169,6 +171,7 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  * use instances for synchronization, or unpredictable behavior may
  * occur. For example, in a future release, synchronization may fail.
  *
+ * @spec https://www.unicode.org/reports/tr27 Unicode 3.1.0
  * @author  Lee Boynton
  * @author  Guy Steele
  * @author  Akira Tanaka
@@ -743,7 +746,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
          * It should be adjusted whenever the Unicode Character Database
          * is upgraded.
          */
-        private static final int NUM_ENTITIES = 756;
+        private static final int NUM_ENTITIES = 759;
         private static Map<String, UnicodeBlock> map = HashMap.newHashMap(NUM_ENTITIES);
 
         /**
@@ -3610,6 +3613,16 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
                              "CJK UNIFIED IDEOGRAPHS EXTENSION H",
                              "CJKUNIFIEDIDEOGRAPHSEXTENSIONH");
 
+        /**
+         * Constant for the "CJK Unified Ideographs Extension I" Unicode
+         * character block.
+         * @since 22
+         */
+        public static final UnicodeBlock CJK_UNIFIED_IDEOGRAPHS_EXTENSION_I =
+            new UnicodeBlock("CJK_UNIFIED_IDEOGRAPHS_EXTENSION_I",
+                             "CJK UNIFIED IDEOGRAPHS EXTENSION I",
+                             "CJKUNIFIEDIDEOGRAPHSEXTENSIONI");
+
         private static final int[] blockStarts = {
             0x0000,   // 0000..007F; Basic Latin
             0x0080,   // 0080..00FF; Latin-1 Supplement
@@ -3977,7 +3990,8 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
             0x2B740,  // 2B740..2B81F; CJK Unified Ideographs Extension D
             0x2B820,  // 2B820..2CEAF; CJK Unified Ideographs Extension E
             0x2CEB0,  // 2CEB0..2EBEF; CJK Unified Ideographs Extension F
-            0x2EBF0,  //               unassigned
+            0x2EBF0,  // 2EBF0..2EE5F; CJK Unified Ideographs Extension I
+            0x2EE60,  //               unassigned
             0x2F800,  // 2F800..2FA1F; CJK Compatibility Ideographs Supplement
             0x2FA20,  //               unassigned
             0x30000,  // 30000..3134F; CJK Unified Ideographs Extension G
@@ -4358,6 +4372,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
             CJK_UNIFIED_IDEOGRAPHS_EXTENSION_D,
             CJK_UNIFIED_IDEOGRAPHS_EXTENSION_E,
             CJK_UNIFIED_IDEOGRAPHS_EXTENSION_F,
+            CJK_UNIFIED_IDEOGRAPHS_EXTENSION_I,
             null,
             CJK_COMPATIBILITY_IDEOGRAPHS_SUPPLEMENT,
             null,
@@ -4490,6 +4505,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * {@link Character.UnicodeScript#COMMON Common} or
      * {@link Character.UnicodeScript#UNKNOWN Unknown}.
      *
+     * @spec https://www.unicode.org/reports/tr24 Unicode Script Property
      * @since 1.7
      */
     public static enum UnicodeScript {
@@ -6055,9 +6071,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
             0x2EF4,   // 2EF4..2EFF; UNKNOWN
             0x2F00,   // 2F00..2FD5; HAN
             0x2FD6,   // 2FD6..2FEF; UNKNOWN
-            0x2FF0,   // 2FF0..2FFB; COMMON
-            0x2FFC,   // 2FFC..2FFF; UNKNOWN
-            0x3000,   // 3000..3004; COMMON
+            0x2FF0,   // 2FF0..3004; COMMON
             0x3005,   // 3005      ; HAN
             0x3006,   // 3006      ; COMMON
             0x3007,   // 3007      ; HAN
@@ -6086,7 +6100,8 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
             0x3190,   // 3190..319F; COMMON
             0x31A0,   // 31A0..31BF; BOPOMOFO
             0x31C0,   // 31C0..31E3; COMMON
-            0x31E4,   // 31E4..31EF; UNKNOWN
+            0x31E4,   // 31E4..31EE; UNKNOWN
+            0x31EF,   // 31EF      ; COMMON
             0x31F0,   // 31F0..31FF; KATAKANA
             0x3200,   // 3200..321E; HANGUL
             0x321F,   // 321F      ; UNKNOWN
@@ -7026,7 +7041,9 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
             0x2B820,  // 2B820..2CEA1; HAN
             0x2CEA2,  // 2CEA2..2CEAF; UNKNOWN
             0x2CEB0,  // 2CEB0..2EBE0; HAN
-            0x2EBE1,  // 2EBE1..2F7FF; UNKNOWN
+            0x2EBE1,  // 2EBE1..2EBEF; UNKNOWN
+            0x2EBF0,  // 2EBF0..2EE5D; HAN
+            0x2EE5E,  // 2EE5E..2F7FF; UNKNOWN
             0x2F800,  // 2F800..2FA1D; HAN
             0x2FA1E,  // 2FA1E..2FFFF; UNKNOWN
             0x30000,  // 30000..3134A; HAN
@@ -7715,9 +7732,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
             UNKNOWN,                  // 2EF4..2EFF
             HAN,                      // 2F00..2FD5
             UNKNOWN,                  // 2FD6..2FEF
-            COMMON,                   // 2FF0..2FFB
-            UNKNOWN,                  // 2FFC..2FFF
-            COMMON,                   // 3000..3004
+            COMMON,                   // 2FF0..3004
             HAN,                      // 3005
             COMMON,                   // 3006
             HAN,                      // 3007
@@ -7746,7 +7761,8 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
             COMMON,                   // 3190..319F
             BOPOMOFO,                 // 31A0..31BF
             COMMON,                   // 31C0..31E3
-            UNKNOWN,                  // 31E4..31EF
+            UNKNOWN,                  // 31E4..31EE
+            COMMON,                   // 31EF
             KATAKANA,                 // 31F0..31FF
             HANGUL,                   // 3200..321E
             UNKNOWN,                  // 321F
@@ -8686,7 +8702,9 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
             HAN,                      // 2B820..2CEA1
             UNKNOWN,                  // 2CEA2..2CEAF
             HAN,                      // 2CEB0..2EBE0
-            UNKNOWN,                  // 2EBE1..2F7FF
+            UNKNOWN,                  // 2EBE1..2EBEF
+            HAN,                      // 2EBF0..2EE5D
+            UNKNOWN,                  // 2EE5E..2F7FF
             HAN,                      // 2F800..2FA1D
             UNKNOWN,                  // 2FA1E..2FFFF
             HAN,                      // 30000..3134A
@@ -8955,9 +8973,10 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
         this.value = value;
     }
 
-    private static class CharacterCache {
+    private static final class CharacterCache {
         private CharacterCache(){}
 
+        @Stable
         static final Character[] cache;
         static Character[] archivedCache;
 
@@ -9375,7 +9394,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @since  1.5
      */
     public static int codePointAt(char[] a, int index, int limit) {
-        if (index >= limit || limit < 0 || limit > a.length) {
+        if (index >= limit || index < 0 || limit > a.length) {
             throw new IndexOutOfBoundsException();
         }
         return codePointAtImpl(a, index, limit);
@@ -9478,7 +9497,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @since  1.5
      */
     public static int codePointBefore(char[] a, int index, int start) {
-        if (index <= start || start < 0 || start >= a.length) {
+        if (index <= start || start < 0 || index > a.length) {
             throw new IndexOutOfBoundsException();
         }
         return codePointBeforeImpl(a, index, start);
@@ -9688,7 +9707,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @since  1.5
      */
     public static int codePointCount(char[] a, int offset, int count) {
-        Objects.checkFromIndexSize(count, offset, a.length);
+        Objects.checkFromIndexSize(offset, count, a.length);
         return codePointCountImpl(a, offset, count);
     }
 
@@ -10577,6 +10596,9 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @param   ch      the character to be tested.
      * @return  {@code true} if the character may start a Unicode
      *          identifier; {@code false} otherwise.
+     *
+     * @spec https://www.unicode.org/reports/tr44 Unicode Character Database
+     * @spec https://www.unicode.org/reports/tr31 Unicode Identifier and Pattern Syntax
      * @see     Character#isJavaIdentifierStart(char)
      * @see     Character#isLetter(char)
      * @see     Character#isUnicodeIdentifierPart(char)
@@ -10613,6 +10635,9 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @param   codePoint the character (Unicode code point) to be tested.
      * @return  {@code true} if the character may start a Unicode
      *          identifier; {@code false} otherwise.
+     *
+     * @spec https://www.unicode.org/reports/tr44 Unicode Character Database
+     * @spec https://www.unicode.org/reports/tr31 Unicode Identifier and Pattern Syntax
      * @see     Character#isJavaIdentifierStart(int)
      * @see     Character#isLetter(int)
      * @see     Character#isUnicodeIdentifierPart(int)
@@ -10662,6 +10687,9 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @param   ch      the character to be tested.
      * @return  {@code true} if the character may be part of a
      *          Unicode identifier; {@code false} otherwise.
+     *
+     * @spec https://www.unicode.org/reports/tr44 Unicode Character Database
+     * @spec https://www.unicode.org/reports/tr31 Unicode Identifier and Pattern Syntax
      * @see     Character#isIdentifierIgnorable(char)
      * @see     Character#isJavaIdentifierPart(char)
      * @see     Character#isLetterOrDigit(char)
@@ -10707,6 +10735,9 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @param   codePoint the character (Unicode code point) to be tested.
      * @return  {@code true} if the character may be part of a
      *          Unicode identifier; {@code false} otherwise.
+     *
+     * @spec https://www.unicode.org/reports/tr44 Unicode Character Database
+     * @spec https://www.unicode.org/reports/tr31 Unicode Identifier and Pattern Syntax
      * @see     Character#isIdentifierIgnorable(int)
      * @see     Character#isJavaIdentifierPart(int)
      * @see     Character#isLetterOrDigit(int)
@@ -10780,6 +10811,113 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      */
     public static boolean isIdentifierIgnorable(int codePoint) {
         return CharacterData.of(codePoint).isIdentifierIgnorable(codePoint);
+    }
+
+    /**
+     * Determines if the specified character (Unicode code point) is an Emoji.
+     * <p>
+     * A character is considered to be an Emoji if and only if it has the {@code Emoji}
+     * property, defined in
+     * <a href="https://unicode.org/reports/tr51/#Emoji_Properties_and_Data_Files">
+     * Unicode Emoji (Technical Standard #51)</a>.
+     *
+     * @param   codePoint the character (Unicode code point) to be tested.
+     * @return  {@code true} if the character is an Emoji;
+     *          {@code false} otherwise.
+     * @since   21
+     */
+    public static boolean isEmoji(int codePoint) {
+        return CharacterData.of(codePoint).isEmoji(codePoint);
+    }
+
+    /**
+     * Determines if the specified character (Unicode code point) has the
+     * Emoji Presentation property by default.
+     * <p>
+     * A character is considered to have the Emoji Presentation property if and
+     * only if it has the {@code Emoji_Presentation} property, defined in
+     * <a href="https://unicode.org/reports/tr51/#Emoji_Properties_and_Data_Files">
+     * Unicode Emoji (Technical Standard #51)</a>.
+     *
+     * @param   codePoint the character (Unicode code point) to be tested.
+     * @return  {@code true} if the character has the Emoji Presentation
+     *          property; {@code false} otherwise.
+     * @since   21
+     */
+    public static boolean isEmojiPresentation(int codePoint) {
+        return CharacterData.of(codePoint).isEmojiPresentation(codePoint);
+    }
+
+    /**
+     * Determines if the specified character (Unicode code point) is an
+     * Emoji Modifier.
+     * <p>
+     * A character is considered to be an Emoji Modifier if and only if it has
+     * the {@code Emoji_Modifier} property, defined in
+     * <a href="https://unicode.org/reports/tr51/#Emoji_Properties_and_Data_Files">
+     * Unicode Emoji (Technical Standard #51)</a>.
+     *
+     * @param   codePoint the character (Unicode code point) to be tested.
+     * @return  {@code true} if the character is an Emoji Modifier;
+     *          {@code false} otherwise.
+     * @since   21
+     */
+    public static boolean isEmojiModifier(int codePoint) {
+        return CharacterData.of(codePoint).isEmojiModifier(codePoint);
+    }
+
+    /**
+     * Determines if the specified character (Unicode code point) is an
+     * Emoji Modifier Base.
+     * <p>
+     * A character is considered to be an Emoji Modifier Base if and only if it has
+     * the {@code Emoji_Modifier_Base} property, defined in
+     * <a href="https://unicode.org/reports/tr51/#Emoji_Properties_and_Data_Files">
+     * Unicode Emoji (Technical Standard #51)</a>.
+     *
+     * @param   codePoint the character (Unicode code point) to be tested.
+     * @return  {@code true} if the character is an Emoji Modifier Base;
+     *          {@code false} otherwise.
+     * @since   21
+     */
+    public static boolean isEmojiModifierBase(int codePoint) {
+        return CharacterData.of(codePoint).isEmojiModifierBase(codePoint);
+    }
+
+    /**
+     * Determines if the specified character (Unicode code point) is an
+     * Emoji Component.
+     * <p>
+     * A character is considered to be an Emoji Component if and only if it has
+     * the {@code Emoji_Component} property, defined in
+     * <a href="https://unicode.org/reports/tr51/#Emoji_Properties_and_Data_Files">
+     * Unicode Emoji (Technical Standard #51)</a>.
+     *
+     * @param   codePoint the character (Unicode code point) to be tested.
+     * @return  {@code true} if the character is an Emoji Component;
+     *          {@code false} otherwise.
+     * @since   21
+     */
+    public static boolean isEmojiComponent(int codePoint) {
+        return CharacterData.of(codePoint).isEmojiComponent(codePoint);
+    }
+
+    /**
+     * Determines if the specified character (Unicode code point) is
+     * an Extended Pictographic.
+     * <p>
+     * A character is considered to be an Extended Pictographic if and only if it has
+     * the {@code Extended_Pictographic} property, defined in
+     * <a href="https://unicode.org/reports/tr51/#Emoji_Properties_and_Data_Files">
+     * Unicode Emoji (Technical Standard #51)</a>.
+     *
+     * @param   codePoint the character (Unicode code point) to be tested.
+     * @return  {@code true} if the character is an Extended Pictographic;
+     *          {@code false} otherwise.
+     * @since   21
+     */
+    public static boolean isExtendedPictographic(int codePoint) {
+        return CharacterData.of(codePoint).isExtendedPictographic(codePoint);
     }
 
     /**

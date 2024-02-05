@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package sun.util.calendar;
 
 import java.lang.Cloneable;
-import java.util.Locale;
 import java.util.TimeZone;
 
 /**
@@ -60,7 +59,8 @@ import java.util.TimeZone;
  * @author Masayoshi Okutsu
  * @since 1.5
  */
-public abstract class CalendarDate implements Cloneable {
+public abstract sealed class CalendarDate implements Cloneable
+        permits BaseCalendar.Date {
     public static final int FIELD_UNDEFINED = Integer.MIN_VALUE;
     public static final long TIME_UNDEFINED = Long.MIN_VALUE;
 
@@ -82,9 +82,6 @@ public abstract class CalendarDate implements Cloneable {
     private TimeZone zoneinfo;
     private int zoneOffset;
     private int daylightSaving;
-    private boolean forceStandardTime;
-
-    private Locale locale;
 
     protected CalendarDate() {
         this(TimeZone.getDefault());
@@ -152,7 +149,7 @@ public abstract class CalendarDate implements Cloneable {
      * @return <code>true</code> if this <code>CalendarDate</code> is
      * normalized and the year of this <code>CalendarDate</code> is a
      * leap year, or <code>false</code> otherwise.
-     * @see BaseCalendar#isGregorianLeapYear
+     * @see CalendarUtils#isGregorianLeapYear
      */
     public boolean isLeapYear() {
         return leapYear;
@@ -189,14 +186,6 @@ public abstract class CalendarDate implements Cloneable {
     public CalendarDate setDayOfMonth(int date) {
         if (dayOfMonth != date) {
             dayOfMonth = date;
-            normalized = false;
-        }
-        return this;
-    }
-
-    public CalendarDate addDayOfMonth(int n) {
-        if (n != 0) {
-            dayOfMonth += n;
             normalized = false;
         }
         return this;
@@ -247,14 +236,6 @@ public abstract class CalendarDate implements Cloneable {
         return this;
     }
 
-    public CalendarDate addMinutes(int n) {
-        if (n != 0) {
-            minutes += n;
-            normalized = false;
-        }
-        return this;
-    }
-
     public int getSeconds() {
         return seconds;
     }
@@ -267,14 +248,6 @@ public abstract class CalendarDate implements Cloneable {
         return this;
     }
 
-    public CalendarDate addSeconds(int n) {
-        if (n != 0) {
-            seconds += n;
-            normalized = false;
-        }
-        return this;
-    }
-
     public int getMillis() {
         return millis;
     }
@@ -282,14 +255,6 @@ public abstract class CalendarDate implements Cloneable {
     public CalendarDate setMillis(int millis) {
         if (this.millis != millis) {
             this.millis = millis;
-            normalized = false;
-        }
-        return this;
-    }
-
-    public CalendarDate addMillis(int n) {
-        if (n != 0) {
-            millis += n;
             normalized = false;
         }
         return this;
@@ -309,26 +274,11 @@ public abstract class CalendarDate implements Cloneable {
         return this;
     }
 
-    public CalendarDate addDate(int year, int month, int dayOfMonth) {
-        addYear(year);
-        addMonth(month);
-        addDayOfMonth(dayOfMonth);
-        return this;
-    }
-
     public CalendarDate setTimeOfDay(int hours, int minutes, int seconds, int millis) {
         setHours(hours);
         setMinutes(minutes);
         setSeconds(seconds);
         setMillis(millis);
-        return this;
-    }
-
-    public CalendarDate addTimeOfDay(int hours, int minutes, int seconds, int millis) {
-        addHours(hours);
-        addMinutes(minutes);
-        addSeconds(seconds);
-        addMillis(millis);
         return this;
     }
 
@@ -340,24 +290,8 @@ public abstract class CalendarDate implements Cloneable {
         return normalized;
     }
 
-
-    public boolean isStandardTime() {
-        return forceStandardTime;
-    }
-
-    public void setStandardTime(boolean standardTime) {
-        forceStandardTime = standardTime;
-    }
-
     public boolean isDaylightTime() {
-        if (isStandardTime()) {
-            return false;
-        }
         return daylightSaving != 0;
-    }
-
-    protected void setLocale(Locale loc) {
-        locale = loc;
     }
 
     public TimeZone getZone() {
@@ -382,10 +316,9 @@ public abstract class CalendarDate implements Cloneable {
     }
 
     public boolean equals(Object obj) {
-        if (!(obj instanceof CalendarDate)) {
+        if (!(obj instanceof CalendarDate that)) {
             return false;
         }
-        CalendarDate that = (CalendarDate) obj;
         if (isNormalized() != that.isNormalized()) {
             return false;
         }
@@ -408,6 +341,7 @@ public abstract class CalendarDate implements Cloneable {
                 && zoneOffset == that.zoneOffset);
     }
 
+    @Override
     public int hashCode() {
         // a pseudo (local standard) time stamp value in milliseconds
         // from the Epoch, assuming Gregorian calendar fields.
@@ -430,6 +364,7 @@ public abstract class CalendarDate implements Cloneable {
      *
      * @return a copy of this <code>CalendarDate</code>
      */
+    @Override
     public Object clone() {
         try {
             return super.clone();
@@ -448,6 +383,7 @@ public abstract class CalendarDate implements Cloneable {
      *
      * @see java.text.SimpleDateFormat
      */
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         CalendarUtils.sprintf0d(sb, year, 4).append('-');

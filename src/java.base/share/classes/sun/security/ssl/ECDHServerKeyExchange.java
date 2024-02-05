@@ -42,7 +42,6 @@ import java.util.EnumSet;
 import java.util.Locale;
 import java.util.Map;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
-import sun.security.ssl.SupportedGroupsExtension.SupportedGroups;
 import sun.security.ssl.X509Authentication.X509Credentials;
 import sun.security.ssl.X509Authentication.X509Possession;
 import sun.security.util.HexDumpEncoder;
@@ -139,6 +138,7 @@ final class ECDHServerKeyExchange {
                 if (useExplicitSigAlgorithm) {
                     Map.Entry<SignatureScheme, Signature> schemeAndSigner =
                             SignatureScheme.getSignerOfPreferableAlgorithm(
+                                shc.sslConfig,
                                 shc.algorithmConstraints,
                                 shc.peerRequestedSignatureSchemes,
                                 x509Possession,
@@ -204,7 +204,7 @@ final class ECDHServerKeyExchange {
                     "Unknown named group ID: " + namedGroupId);
             }
 
-            if (!SupportedGroups.isSupported(namedGroup)) {
+            if (!NamedGroup.isEnabled(chc.sslConfig, namedGroup)) {
                 throw chc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                     "Unsupported named group: " + namedGroup);
             }

@@ -34,7 +34,6 @@ class HeapRegion;
 class G1CollectedHeap;
 class G1RemSet;
 class G1ConcurrentMark;
-class DirtyCardToOopClosure;
 class G1CMBitMap;
 class G1ParScanThreadState;
 class G1ScanEvacuatedObjClosure;

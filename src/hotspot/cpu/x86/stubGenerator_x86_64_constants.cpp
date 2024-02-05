@@ -27,93 +27,93 @@
 
 // Constants for libm trigonometric stubs
 
-ATTRIBUTE_ALIGNED(8) juint _ONE[] = {
+ATTRIBUTE_ALIGNED(8) static const juint _ONE[] = {
     0x00000000UL, 0x3ff00000UL
 };
 address StubGenerator::ONE = (address)_ONE;
 
-ATTRIBUTE_ALIGNED(16) juint _ONEHALF[] = {
+ATTRIBUTE_ALIGNED(16) static const juint _ONEHALF[] = {
     0x00000000UL, 0x3fe00000UL, 0x00000000UL, 0x3fe00000UL
 };
 address StubGenerator::ONEHALF = (address)_ONEHALF;
 
-ATTRIBUTE_ALIGNED(8) juint _SIGN_MASK[] = {
+ATTRIBUTE_ALIGNED(8) static const juint _SIGN_MASK[] = {
     0x00000000UL, 0x80000000UL
 };
 address StubGenerator::SIGN_MASK = (address)_SIGN_MASK;
 
-ATTRIBUTE_ALIGNED(8) juint _TWO_POW_55[] = {
+ATTRIBUTE_ALIGNED(8) static const juint _TWO_POW_55[] = {
     0x00000000UL, 0x43600000UL
 };
 address StubGenerator::TWO_POW_55 = (address)_TWO_POW_55;
 
-ATTRIBUTE_ALIGNED(8) juint _TWO_POW_M55[] = {
+ATTRIBUTE_ALIGNED(8) static const juint _TWO_POW_M55[] = {
     0x00000000UL, 0x3c800000UL
 };
 address StubGenerator::TWO_POW_M55 = (address)_TWO_POW_M55;
 
-ATTRIBUTE_ALIGNED(16) juint _SHIFTER[] = {
+ATTRIBUTE_ALIGNED(16) static const juint _SHIFTER[] = {
     0x00000000UL, 0x43380000UL, 0x00000000UL, 0x43380000UL
 };
 address StubGenerator::SHIFTER = (address)_SHIFTER;
 
-ATTRIBUTE_ALIGNED(4) juint _ZERO[] = {
+ATTRIBUTE_ALIGNED(4) static const juint _ZERO[] = {
     0x00000000UL, 0x00000000UL
 };
 address StubGenerator::ZERO = (address)_ZERO;
 
-ATTRIBUTE_ALIGNED(16) juint _SC_1[] = {
+ATTRIBUTE_ALIGNED(16) static const juint _SC_1[] = {
     0x55555555UL, 0xbfc55555UL, 0x00000000UL, 0xbfe00000UL
 };
 address StubGenerator::SC_1 = (address)_SC_1;
 
-ATTRIBUTE_ALIGNED(16) juint _SC_2[] = {
+ATTRIBUTE_ALIGNED(16) static const juint _SC_2[] = {
     0x11111111UL, 0x3f811111UL, 0x55555555UL, 0x3fa55555UL
 };
 address StubGenerator::SC_2 = (address)_SC_2;
 
-ATTRIBUTE_ALIGNED(16) juint _SC_3[] = {
+ATTRIBUTE_ALIGNED(16) static const juint _SC_3[] = {
     0x1a01a01aUL, 0xbf2a01a0UL, 0x16c16c17UL, 0xbf56c16cUL
 };
 address StubGenerator::SC_3 = (address)_SC_3;
 
-ATTRIBUTE_ALIGNED(16) juint _SC_4[] = {
+ATTRIBUTE_ALIGNED(16) static const juint _SC_4[] = {
     0xa556c734UL, 0x3ec71de3UL, 0x1a01a01aUL, 0x3efa01a0UL
 };
 address StubGenerator::SC_4 = (address)_SC_4;
 
-ATTRIBUTE_ALIGNED(8) juint _PI_4[] = {
+ATTRIBUTE_ALIGNED(8) static const juint _PI_4[] = {
     0x40000000UL, 0x3fe921fbUL, 0x18469899UL, 0x3e64442dUL
 };
 address StubGenerator::PI_4 = (address)_PI_4;
 
-ATTRIBUTE_ALIGNED(8) juint _PI32INV[] = {
+ATTRIBUTE_ALIGNED(8) static const juint _PI32INV[] = {
     0x6dc9c883UL, 0x40245f30UL
 };
 address StubGenerator::PI32INV = (address)_PI32INV;
 
-ATTRIBUTE_ALIGNED(8) juint _NEG_ZERO[] = {
+ATTRIBUTE_ALIGNED(8) static const juint _NEG_ZERO[] = {
     0x00000000UL, 0x80000000UL
 };
 address StubGenerator::NEG_ZERO = (address)_NEG_ZERO;
 
-ATTRIBUTE_ALIGNED(8) juint _P_1[] = {
+ATTRIBUTE_ALIGNED(8) static const juint _P_1[] = {
     0x54400000UL, 0x3fb921fbUL
 };
 address StubGenerator::P_1 = (address)_P_1;
 
-ATTRIBUTE_ALIGNED(16) juint _P_2[] = {
+ATTRIBUTE_ALIGNED(16) static const juint _P_2[] = {
     0x1a600000UL, 0x3d90b461UL, 0x1a600000UL, 0x3d90b461UL
 };
 address StubGenerator::P_2 = (address)_P_2;
 
-ATTRIBUTE_ALIGNED(8) juint _P_3[] = {
+ATTRIBUTE_ALIGNED(8) static const juint _P_3[] = {
     0x2e037073UL, 0x3b63198aUL
 };
 address StubGenerator::P_3 = (address)_P_3;
 
 
-ATTRIBUTE_ALIGNED(16) juint _PI_INV_TABLE[] = {
+ATTRIBUTE_ALIGNED(16) static const juint _PI_INV_TABLE[] = {
     0x00000000UL, 0x00000000UL, 0xa2f9836eUL, 0x4e441529UL, 0xfc2757d1UL,
     0xf534ddc0UL, 0xdb629599UL, 0x3c439041UL, 0xfe5163abUL, 0xdebbc561UL,
     0xb7246e3aUL, 0x424dd2e0UL, 0x06492eeaUL, 0x09d1921cUL, 0xfe1deb1cUL,
@@ -127,7 +127,7 @@ ATTRIBUTE_ALIGNED(16) juint _PI_INV_TABLE[] = {
 address StubGenerator::PI_INV_TABLE = (address)_PI_INV_TABLE;
 
 
-ATTRIBUTE_ALIGNED(16) juint _Ctable[] = {
+ATTRIBUTE_ALIGNED(16) static const juint _Ctable[] = {
     0x00000000UL, 0x00000000UL, 0x00000000UL, 0x00000000UL, 0x00000000UL,
     0x00000000UL, 0x00000000UL, 0x3ff00000UL, 0x176d6d31UL, 0xbf73b92eUL,
     0xbc29b42cUL, 0x3fb917a6UL, 0xe0000000UL, 0xbc3e2718UL, 0x00000000UL,

@@ -25,43 +25,36 @@
 #ifndef OS_CPU_WINDOWS_X86_COPY_WINDOWS_X86_HPP
 #define OS_CPU_WINDOWS_X86_COPY_WINDOWS_X86_HPP
 
+#include "runtime/atomic.hpp"
 
-static void pd_conjoint_jshorts_atomic(const jshort* from, jshort* to, size_t count) {
+template <typename T>
+static void pd_conjoint_atomic_helper(const T* from, T* to, size_t count) {
   if (from > to) {
     while (count-- > 0) {
       // Copy forwards
-      *to++ = *from++;
+      Atomic::store(to++, Atomic::load(from++));
     }
   } else {
     from += count - 1;
     to   += count - 1;
     while (count-- > 0) {
       // Copy backwards
-      *to-- = *from--;
+      Atomic::store(to--, Atomic::load(from--));
     }
   }
 }
 
+static void pd_conjoint_jshorts_atomic(const jshort* from, jshort* to, size_t count) {
+  pd_conjoint_atomic_helper(from, to, count);
+}
+
 static void pd_conjoint_jints_atomic(const jint* from, jint* to, size_t count) {
-  if (from > to) {
-    while (count-- > 0) {
-      // Copy forwards
-      *to++ = *from++;
-    }
-  } else {
-    from += count - 1;
-    to   += count - 1;
-    while (count-- > 0) {
-      // Copy backwards
-      *to-- = *from--;
-    }
-  }
+  pd_conjoint_atomic_helper(from, to, count);
 }
 
 static void pd_conjoint_jlongs_atomic(const jlong* from, jlong* to, size_t count) {
 #ifdef AMD64
-  assert(BytesPerLong == BytesPerOop, "jlongs and oops must be the same size");
-  pd_conjoint_oops_atomic((const oop*)from, (oop*)to, count);
+  pd_conjoint_atomic_helper(from, to, count);
 #else
   // Guarantee use of fild/fistp or xmm regs via some asm code, because compilers won't.
   __asm {
@@ -92,20 +85,7 @@ static void pd_conjoint_jlongs_atomic(const jlong* from, jlong* to, size_t count
 }
 
 static void pd_conjoint_oops_atomic(const oop* from, oop* to, size_t count) {
-  // Do better than this: inline memmove body  NEEDS CLEANUP
-  if (from > to) {
-    while (count-- > 0) {
-      // Copy forwards
-      *to++ = *from++;
-    }
-  } else {
-    from += count - 1;
-    to   += count - 1;
-    while (count-- > 0) {
-      // Copy backwards
-      *to-- = *from--;
-    }
-  }
+  pd_conjoint_atomic_helper(from, to, count);
 }
 
 static void pd_arrayof_conjoint_bytes(const HeapWord* from, HeapWord* to, size_t count) {

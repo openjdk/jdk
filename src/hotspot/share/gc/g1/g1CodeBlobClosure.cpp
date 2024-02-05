@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ void G1CodeBlobClosure::do_evacuation_and_fixup(nmethod* nm) {
     nm->mark_as_maybe_on_stack();
 
     BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-    if (bs_nm != NULL) {
+    if (bs_nm != nullptr) {
       bs_nm->disarm(nm);
     }
   }
@@ -101,7 +101,7 @@ void G1CodeBlobClosure::do_marking(nmethod* nm) {
   nm->mark_as_maybe_on_stack();
 
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs_nm != NULL) {
+  if (bs_nm != nullptr) {
     bs_nm->disarm(nm);
   }
 
@@ -125,7 +125,7 @@ public:
 
 void G1CodeBlobClosure::do_code_blob(CodeBlob* cb) {
   nmethod* nm = cb->as_nmethod_or_null();
-  if (nm == NULL) {
+  if (nm == nullptr) {
     return;
   }
 

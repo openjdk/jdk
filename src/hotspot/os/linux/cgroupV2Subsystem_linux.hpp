@@ -51,10 +51,10 @@ class CgroupV2Controller: public CgroupController {
 class CgroupV2Subsystem: public CgroupSubsystem {
   private:
     /* One unified controller */
-    CgroupController* _unified = NULL;
+    CgroupController* _unified = nullptr;
     /* Caching wrappers for cpu/memory metrics */
-    CachingCgroupController* _memory = NULL;
-    CachingCgroupController* _cpu = NULL;
+    CachingCgroupController* _memory = nullptr;
+    CachingCgroupController* _cpu = nullptr;
 
     char *mem_limit_val();
     char *mem_swp_limit_val();
@@ -78,6 +78,8 @@ class CgroupV2Subsystem: public CgroupSubsystem {
     jlong memory_soft_limit_in_bytes();
     jlong memory_usage_in_bytes();
     jlong memory_max_usage_in_bytes();
+    jlong rss_usage_in_bytes();
+    jlong cache_usage_in_bytes();
 
     char * cpu_cpuset_cpus();
     char * cpu_cpuset_memory_nodes();

@@ -38,11 +38,11 @@ public class SendFailed extends SendFailedNotification
     private Association association;
     /* assocId is used to lookup the association before the notification is
      * returned to user code */
-    private int assocId;
-    private SocketAddress address;
-    private ByteBuffer buffer;
-    private int errorCode;
-    private int streamNumber;
+    private final int assocId;
+    private final SocketAddress address;
+    private final ByteBuffer buffer;
+    private final int errorCode;
+    private final int streamNumber;
 
     /* Invoked from native */
     private SendFailed(int assocId,
@@ -97,14 +97,12 @@ public class SendFailed extends SendFailedNotification
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(super.toString()).append(" [");
-        sb.append("Association:").append(association);
-        sb.append(", Address: ").append(address);
-        sb.append(", buffer: ").append(buffer);
-        sb.append(", errorCode: ").append(errorCode);
-        sb.append(", streamNumber: ").append(streamNumber);
-        sb.append("]");
-        return sb.toString();
+        return super.toString() + " [" +
+                "Association:" + association +
+                ", Address: " + address +
+                ", buffer: " + buffer +
+                ", errorCode: " + errorCode +
+                ", streamNumber: " + streamNumber +
+                "]";
     }
 }

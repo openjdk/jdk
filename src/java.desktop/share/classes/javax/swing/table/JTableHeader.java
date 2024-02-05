@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -743,19 +743,6 @@ public class JTableHeader extends JComponent implements TableColumnModelListener
         resizingColumn = aColumn;
     }
 
-    /**
-     * See <code>readObject</code> and <code>writeObject</code> in
-     * <code>JComponent</code> for more
-     * information about serialization in Swing.
-     */
-    @Serial
-    private void writeObject(ObjectOutputStream s) throws IOException {
-        s.defaultWriteObject();
-        if ((ui != null) && (getUIClassID().equals(uiClassID))) {
-            ui.installUI(this);
-        }
-    }
-
     private int getWidthInRightToLeft() {
         if ((table != null) &&
             (table.getAutoResizeMode() != JTable.AUTO_RESIZE_OFF)) {
@@ -935,7 +922,7 @@ public class JTableHeader extends JComponent implements TableColumnModelListener
             private JTable table;
 
             /**
-             *  Constructs an AccessiblJTableHeaaderEntry
+             * Constructs an AccessibleJTableHeaderEntry
              * @since 1.4
              *
              * @param c  the column index

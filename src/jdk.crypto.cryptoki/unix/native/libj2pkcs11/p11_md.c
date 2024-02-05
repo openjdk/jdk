@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -114,12 +114,12 @@ JNIEXPORT jobject JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_connect
         systemErrorMessage = dlerror();
         exceptionMessage = (char *) malloc(sizeof(char) * (strlen(systemErrorMessage) + strlen(libraryNameStr) + 1));
         if (exceptionMessage == NULL) {
-            throwOutOfMemoryError(env, 0);
+            p11ThrowOutOfMemoryError(env, 0);
             goto cleanup;
         }
         strcpy(exceptionMessage, systemErrorMessage);
         strcat(exceptionMessage, libraryNameStr);
-        throwIOException(env, exceptionMessage);
+        p11ThrowIOException(env, exceptionMessage);
         free(exceptionMessage);
         goto cleanup;
     }
@@ -167,12 +167,12 @@ JNIEXPORT jobject JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_connect
         C_GetFunctionList = (CK_C_GetFunctionList) dlsym(hModule,
             getFunctionListStr);
         if ((systemErrorMessage = dlerror()) != NULL){
-            throwIOException(env, systemErrorMessage);
+            p11ThrowIOException(env, systemErrorMessage);
             goto cleanup;
         }
         if (C_GetFunctionList == NULL) {
             TRACE1("Connect: No %s func\n", getFunctionListStr);
-            throwIOException(env, "ERROR: C_GetFunctionList == NULL");
+            p11ThrowIOException(env, "ERROR: C_GetFunctionList == NULL");
             goto cleanup;
         }
         TRACE1("Connect: Found %s func\n", getFunctionListStr);
@@ -189,12 +189,12 @@ JNIEXPORT jobject JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_connect
         C_GetFunctionList = (CK_C_GetFunctionList) dlsym(hModule,
                 "C_GetFunctionList");
         if ((systemErrorMessage = dlerror()) != NULL){
-            throwIOException(env, systemErrorMessage);
+            p11ThrowIOException(env, systemErrorMessage);
             goto cleanup;
         }
         if (C_GetFunctionList == NULL) {
             TRACE0("Connect: No C_GetFunctionList func\n");
-            throwIOException(env, "ERROR: C_GetFunctionList == NULL");
+            p11ThrowIOException(env, "ERROR: C_GetFunctionList == NULL");
             goto cleanup;
         }
         TRACE0("Connect: Found C_GetFunctionList func\n");
@@ -207,7 +207,7 @@ setModuleData:
     moduleData = (ModuleData *) malloc(sizeof(ModuleData));
     if (moduleData == NULL) {
         dlclose(hModule);
-        throwOutOfMemoryError(env, 0);
+        p11ThrowOutOfMemoryError(env, 0);
         goto cleanup;
     }
     moduleData->hModule = hModule;
@@ -224,7 +224,7 @@ setModuleData:
         }
     } else {
         // should never happen
-        throwIOException(env, "ERROR: No function list ptr found");
+        p11ThrowIOException(env, "ERROR: No function list ptr found");
         goto cleanup;
     }
     if (((CK_VERSION *)moduleData->ckFunctionListPtr)->major == 3) {

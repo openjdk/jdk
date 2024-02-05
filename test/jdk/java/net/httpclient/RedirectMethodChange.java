@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,8 @@
 /*
  * @test
  * @summary Method change during redirection
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
- *          jdk.httpserver
- * @library /test/lib http2/server
- * @build Http2TestServer
- * @build jdk.test.lib.net.SimpleSSLContext
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.httpclient.test.lib.http2.Http2TestServer jdk.test.lib.net.SimpleSSLContext
  * @run testng/othervm RedirectMethodChange
  */
 
@@ -50,11 +44,15 @@ import java.net.http.HttpResponse.BodyHandlers;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.http2.Http2TestServer;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.testng.Assert.assertEquals;
 
@@ -190,29 +188,25 @@ public class RedirectMethodChange implements HttpServerAdapters {
                 .sslContext(sslContext)
                 .build();
 
-        InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
-
-        httpTestServer = HttpTestServer.of(HttpServer.create(sa, 0));
+        httpTestServer = HttpTestServer.create(HTTP_1_1);
         String targetURI = "http://" + httpTestServer.serverAuthority() + "/http1/redirect/rmt";
         RedirMethodChgeHandler handler = new RedirMethodChgeHandler(targetURI);
         httpTestServer.addHandler(handler, "/http1/");
         httpURI = "http://" + httpTestServer.serverAuthority() + "/http1/test/rmt";
 
-        HttpsServer httpsServer = HttpsServer.create(sa, 0);
-        httpsServer.setHttpsConfigurator(new HttpsConfigurator(sslContext));
-        httpsTestServer = HttpTestServer.of(httpsServer);
+        httpsTestServer = HttpTestServer.create(HTTP_1_1, sslContext);
         targetURI = "https://" + httpsTestServer.serverAuthority() + "/https1/redirect/rmt";
         handler = new RedirMethodChgeHandler(targetURI);
         httpsTestServer.addHandler(handler,"/https1/");
         httpsURI = "https://" + httpsTestServer.serverAuthority() + "/https1/test/rmt";
 
-        http2TestServer = HttpTestServer.of(new Http2TestServer("localhost", false, 0));
+        http2TestServer = HttpTestServer.create(HTTP_2);
         targetURI = "http://" + http2TestServer.serverAuthority() + "/http2/redirect/rmt";
         handler = new RedirMethodChgeHandler(targetURI);
         http2TestServer.addHandler(handler, "/http2/");
         http2URI = "http://" + http2TestServer.serverAuthority() + "/http2/test/rmt";
 
-        https2TestServer = HttpTestServer.of(new Http2TestServer("localhost", true, sslContext));
+        https2TestServer = HttpTestServer.create(HTTP_2, sslContext);
         targetURI = "https://" + https2TestServer.serverAuthority() + "/https2/redirect/rmt";
         handler = new RedirMethodChgeHandler(targetURI);
         https2TestServer.addHandler(handler, "/https2/");

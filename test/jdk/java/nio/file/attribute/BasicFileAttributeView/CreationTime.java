@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 8011536 8151430
+ * @bug 8011536 8151430 8316304
  * @summary Basic test for creationTime attribute on platforms/file systems
  *     that support it.
  * @library  ../.. /test/lib
@@ -30,6 +30,7 @@
  * @run main CreationTime
  */
 
+import java.lang.foreign.Linker;
 import java.nio.file.Path;
 import java.nio.file.Files;
 import java.nio.file.attribute.*;
@@ -88,7 +89,13 @@ public class CreationTime {
                 supportsCreationTimeRead = true;
                 supportsCreationTimeWrite = true;
             }
+        } else if (Platform.isLinux()) {
+            // Creation time read depends on statx system call support
+            supportsCreationTimeRead = Linker.nativeLinker().defaultLookup().find("statx").isPresent();
+            // Creation time updates are not supported on Linux
+            supportsCreationTimeWrite = false;
         }
+        System.out.println("supportsCreationTimeRead == " + supportsCreationTimeRead);
 
         /**
          * If the creation-time attribute is supported then change the file's

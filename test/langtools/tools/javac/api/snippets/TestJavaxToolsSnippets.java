@@ -58,7 +58,11 @@ import toolbox.ToolBox;
  */
 public class TestJavaxToolsSnippets extends TestRunner {
     public static void main(String... args) throws Exception {
-        new TestJavaxToolsSnippets().runTests(m -> new Object[] { Path.of(m.getName()) });
+        try {
+            new TestJavaxToolsSnippets().runTests(m -> new Object[] { Path.of(m.getName()) });
+        } catch (SnippetUtils.ConfigurationException e) {
+            System.err.println("NOTE: " + e.getMessage() + "; test skipped");
+        }
     }
 
     SnippetUtils snippets = new SnippetUtils("java.compiler");

@@ -24,47 +24,56 @@ package com.sun.org.apache.bcel.internal.generic;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
+import com.sun.org.apache.bcel.internal.Const;
 import com.sun.org.apache.bcel.internal.util.ByteSequence;
 
 /**
  * IINC - Increment local variable by constant
- *
  */
 public class IINC extends LocalVariableInstruction {
 
     private boolean wide;
     private int c;
 
-
     /**
-     * Empty constructor needed for Instruction.readInstruction.
-     * Not to be used otherwise.
+     * Empty constructor needed for Instruction.readInstruction. Not to be used otherwise.
      */
     IINC() {
     }
-
 
     /**
      * @param n index of local variable
      * @param c increment factor
      */
     public IINC(final int n, final int c) {
-        super(); // Default behavior of LocalVariableInstruction causes error
-        super.setOpcode(com.sun.org.apache.bcel.internal.Const.IINC);
+        // Default behavior of LocalVariableInstruction causes error
+        super.setOpcode(Const.IINC);
         super.setLength((short) 3);
         setIndex(n); // May set wide as side effect
         setIncrement(c);
     }
 
+    /**
+     * Calls corresponding visitor method(s). The order is: Call visitor methods of implemented interfaces first, then call
+     * methods according to the class hierarchy in descending order, i.e., the most specific visitXXX() call comes last.
+     *
+     * @param v Visitor object
+     */
+    @Override
+    public void accept(final Visitor v) {
+        v.visitLocalVariableInstruction(this);
+        v.visitIINC(this);
+    }
 
     /**
-     * Dump instruction as byte code to stream out.
+     * Dumps instruction as byte code to stream out.
+     *
      * @param out Output stream
      */
     @Override
-    public void dump( final DataOutputStream out ) throws IOException {
+    public void dump(final DataOutputStream out) throws IOException {
         if (wide) {
-            out.writeByte(com.sun.org.apache.bcel.internal.Const.WIDE);
+            out.writeByte(Const.WIDE);
         }
         out.writeByte(super.getOpcode());
         if (wide) {
@@ -76,27 +85,26 @@ public class IINC extends LocalVariableInstruction {
         }
     }
 
-
-    private void setWide() {
-        wide = super.getIndex() > com.sun.org.apache.bcel.internal.Const.MAX_BYTE;
-        if (c > 0) {
-            wide = wide || (c > Byte.MAX_VALUE);
-        } else {
-            wide = wide || (c < Byte.MIN_VALUE);
-        }
-        if (wide) {
-            super.setLength(6); // wide byte included
-        } else {
-            super.setLength(3);
-        }
+    /**
+     * @return increment factor
+     */
+    public final int getIncrement() {
+        return c;
     }
 
-
     /**
-     * Read needed data (e.g. index) from file.
+     * @return int type
      */
     @Override
-    protected void initFromFile( final ByteSequence bytes, final boolean wide ) throws IOException {
+    public Type getType(final ConstantPoolGen cp) {
+        return Type.INT;
+    }
+
+    /**
+     * Reads needed data (e.g. index) from file.
+     */
+    @Override
+    protected void initFromFile(final ByteSequence bytes, final boolean wide) throws IOException {
         this.wide = wide;
         if (wide) {
             super.setLength(6);
@@ -109,21 +117,19 @@ public class IINC extends LocalVariableInstruction {
         }
     }
 
-
     /**
-     * @return mnemonic for instruction
+     * Sets increment factor.
      */
-    @Override
-    public String toString( final boolean verbose ) {
-        return super.toString(verbose) + " " + c;
+    public final void setIncrement(final int c) {
+        this.c = c;
+        setWide();
     }
 
-
     /**
-     * Set index of local variable.
+     * Sets index of local variable.
      */
     @Override
-    public final void setIndex( final int n ) {
+    public final void setIndex(final int n) {
         if (n < 0) {
             throw new ClassGenException("Negative index value: " + n);
         }
@@ -131,43 +137,27 @@ public class IINC extends LocalVariableInstruction {
         setWide();
     }
 
-
-    /**
-     * @return increment factor
-     */
-    public final int getIncrement() {
-        return c;
+    private void setWide() {
+        wide = super.getIndex() > Const.MAX_BYTE;
+        if (c > 0) {
+            wide = wide || c > Byte.MAX_VALUE;
+        } else {
+            wide = wide || c < Byte.MIN_VALUE;
+        }
+        if (wide) {
+            super.setLength(6); // wide byte included
+        } else {
+            super.setLength(3);
+        }
     }
 
-
     /**
-     * Set increment factor.
-     */
-    public final void setIncrement( final int c ) {
-        this.c = c;
-        setWide();
-    }
-
-
-    /** @return int type
-     */
-    @Override
-    public Type getType( final ConstantPoolGen cp ) {
-        return Type.INT;
-    }
-
-
-    /**
-     * Call corresponding visitor method(s). The order is:
-     * Call visitor methods of implemented interfaces first, then
-     * call methods according to the class hierarchy in descending order,
-     * i.e., the most specific visitXXX() call comes last.
+     * Returns mnemonic for instruction.
      *
-     * @param v Visitor object
+     * @return mnemonic for instruction.
      */
     @Override
-    public void accept( final Visitor v ) {
-        v.visitLocalVariableInstruction(this);
-        v.visitIINC(this);
+    public String toString(final boolean verbose) {
+        return super.toString(verbose) + " " + c;
     }
 }

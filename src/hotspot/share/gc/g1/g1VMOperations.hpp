@@ -77,9 +77,6 @@ public:
   virtual VMOp_Type type() const { return VMOp_G1CollectForAllocation; }
   virtual void doit();
   bool gc_succeeded() const { return _gc_succeeded; }
-
-private:
-  bool should_try_allocation_before_gc();
 };
 
 // Concurrent G1 stop-the-world operations such as remark and cleanup.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@ rm -f test-classes/pkg2/Child.java
 //    at java.base/java.lang.Thread.dumpStack(Thread.java:1380)
 //    at pkg1.BaseWithProtectedMethod.protectedMethod(BaseWithProtectedMethod.java:29)
 //    at pkg2.Child.lambda$test$0(Child.java:8)
-//    at pkg2.Child$$Lambda$1/0x0000000800c01000.accept(Unknown Source)
+//    at pkg2.Child$$Lambda/0x0000000800c01000.accept(Unknown Source)
 //    at java.base/java.util.Optional.ifPresent(Optional.java:178)
 //    at pkg2.Child.test(Child.java:8)
 //    at LambdaWithUseImplMethodHandleApp.main(LambdaWithUseImplMethodHandleApp.java:32)

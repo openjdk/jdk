@@ -193,6 +193,9 @@ public abstract class SynthFileChooserUI extends BasicFileChooserUI implements
 
     protected void uninstallDefaults(JFileChooser fc) {
         super.uninstallDefaults(fc);
+        if (fc.getFont() instanceof UIResource) {
+            fc.setFont(null);
+        }
 
         SynthContext context = getContext(getFileChooser(), ENABLED);
         style.uninstallDefaults(context);

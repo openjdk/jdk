@@ -55,4 +55,3 @@ interface MessageStreamHandler extends MessageStreamConsumer {
      */
     void onInit(MessageStreamResponder responder);
 }
-

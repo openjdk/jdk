@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -470,7 +470,7 @@ GrPrim_Sg2dGetCompInfo(JNIEnv *env, jobject sg2d,
     (*env)->DeleteLocalRef(env, comp);
 }
 
-JNIEXPORT jint JNICALL
+jint
 GrPrim_CompGetXorColor(JNIEnv *env, jobject comp)
 {
     jobject color;
@@ -511,7 +511,7 @@ GrPrim_Sg2dGetLCDTextContrast(JNIEnv *env, jobject sg2d)
 /*
  * Helper function for CompositeTypes.Xor
  */
-JNIEXPORT void JNICALL
+static void JNICALL
 GrPrim_CompGetXorInfo(JNIEnv *env, CompositeInfo *pCompInfo, jobject comp)
 {
     pCompInfo->rule = RULE_Xor;
@@ -522,7 +522,7 @@ GrPrim_CompGetXorInfo(JNIEnv *env, CompositeInfo *pCompInfo, jobject comp)
 /*
  * Helper function for CompositeTypes.AnyAlpha
  */
-JNIEXPORT void JNICALL
+static void JNICALL
 GrPrim_CompGetAlphaInfo(JNIEnv *env, CompositeInfo *pCompInfo, jobject comp)
 {
     pCompInfo->rule =
@@ -531,7 +531,7 @@ GrPrim_CompGetAlphaInfo(JNIEnv *env, CompositeInfo *pCompInfo, jobject comp)
         (*env)->GetFloatField(env, comp, extraAlphaID);
 }
 
-JNIEXPORT void JNICALL
+void
 Transform_GetInfo(JNIEnv *env, jobject txform, TransformInfo *pTxInfo)
 {
     pTxInfo->dxdx = (*env)->GetDoubleField(env, txform, m00ID);
@@ -542,7 +542,7 @@ Transform_GetInfo(JNIEnv *env, jobject txform, TransformInfo *pTxInfo)
     pTxInfo->ty   = (*env)->GetDoubleField(env, txform, m12ID);
 }
 
-JNIEXPORT void JNICALL
+void
 Transform_transform(TransformInfo *pTxInfo, jdouble *pX, jdouble *pY)
 {
     jdouble x = *pX;

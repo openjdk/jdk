@@ -703,7 +703,7 @@ class GTKColorChooserPanel extends AbstractColorChooserPanel implements
                 int y = ((MouseEvent)e).getY() - size;
 
                 if (!hasFocus()) {
-                    requestFocus();
+                    requestFocus(FocusEvent.Cause.MOUSE_EVENT);
                 }
                 if (!isSet(FLAGS_DRAGGING_TRIANGLE) &&
                       adjustHue(x, y, e.getID() == MouseEvent.MOUSE_PRESSED)) {

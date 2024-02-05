@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ class JvmtiBreakpoints;
 //
 // GrowableCache is a permanent CHeap growable array of <GrowableElement *>
 //
-// In addition, the GrowableCache maintains a NULL terminated cache array of type address
+// In addition, the GrowableCache maintains a null terminated cache array of type address
 // that's created from the element array using the function:
 //     address GrowableElement::getCacheValue().
 //
@@ -66,9 +66,9 @@ class JvmtiBreakpoints;
 class GrowableElement : public CHeapObj<mtInternal> {
 public:
   virtual ~GrowableElement() {}
-  virtual address getCacheValue()          =0;
-  virtual bool equals(GrowableElement* e)  =0;
-  virtual GrowableElement *clone()         =0;
+  virtual address getCacheValue()                     =0;
+  virtual bool equals(const GrowableElement* e) const =0;
+  virtual GrowableElement* clone()                    =0;
 };
 
 class GrowableCache {
@@ -88,8 +88,6 @@ private:
   // (but NOT when cached elements are recomputed).
   void (*_listener_fun)(void *, address*);
 
-  static bool equals(void *, GrowableElement *);
-
   // recache all elements after size change, notify listener
   void recache();
 
@@ -104,7 +102,7 @@ public:
   // get the value of the index element in the collection
   GrowableElement* at(int index);
   // find the index of the element, -1 if it doesn't exist
-  int find(GrowableElement* e);
+  int find(const GrowableElement* e) const;
   // append a copy of the element to the end of the collection, notify listener
   void append(GrowableElement* e);
   // remove the element at index, notify listener
@@ -162,10 +160,10 @@ private:
   OopHandle             _class_holder;  // keeps _method memory from being deallocated
 
 public:
-  JvmtiBreakpoint() : _method(NULL), _bci(0) {}
+  JvmtiBreakpoint() : _method(nullptr), _bci(0) {}
   JvmtiBreakpoint(Method* m_method, jlocation location);
   virtual ~JvmtiBreakpoint();
-  bool equals(JvmtiBreakpoint& bp);
+  bool equals(const JvmtiBreakpoint& bp) const;
   void copy(JvmtiBreakpoint& bp);
   address getBcp() const;
   void each_method_version_do(method_action meth_act);
@@ -177,7 +175,7 @@ public:
 
   // GrowableElement implementation
   address getCacheValue()         { return getBcp(); }
-  bool equals(GrowableElement* e) { return equals((JvmtiBreakpoint&) *e); }
+  bool equals(const GrowableElement* e) const { return equals((const JvmtiBreakpoint&) *e); }
 
   GrowableElement *clone()        {
     JvmtiBreakpoint *bp = new JvmtiBreakpoint();
@@ -248,7 +246,7 @@ private:
   // Current breakpoints, lazily initialized by get_jvmti_breakpoints();
   static JvmtiBreakpoints *_jvmti_breakpoints;
 
-  // NULL terminated cache of byte-code pointers corresponding to current breakpoints.
+  // null terminated cache of byte-code pointers corresponding to current breakpoints.
   // Updated only at safepoints (with listener_fun) when the cache is moved.
   // It exists only to make is_breakpoint fast.
   static address          *_breakpoint_list;
@@ -289,7 +287,7 @@ public:
     _breakpoints = &current_bps;
     _bp = bp;
     _operation = operation;
-    assert(bp != NULL, "bp != NULL");
+    assert(bp != nullptr, "bp != null");
   }
 
   VMOp_Type type() const { return VMOp_ChangeBreakpoints; }
@@ -521,7 +519,7 @@ class JvmtiDeferredEventQueue : public CHeapObj<mtInternal> {
 
    public:
     QueueNode(const JvmtiDeferredEvent& event)
-      : _event(event), _next(NULL) {}
+      : _event(event), _next(nullptr) {}
 
     JvmtiDeferredEvent& event() { return _event; }
     QueueNode* next() const { return _next; }
@@ -533,7 +531,7 @@ class JvmtiDeferredEventQueue : public CHeapObj<mtInternal> {
   QueueNode* _queue_tail;
 
  public:
-  JvmtiDeferredEventQueue() : _queue_head(NULL), _queue_tail(NULL) {}
+  JvmtiDeferredEventQueue() : _queue_head(nullptr), _queue_tail(nullptr) {}
 
   bool has_events() NOT_JVMTI_RETURN_(false);
   JvmtiDeferredEvent dequeue() NOT_JVMTI_RETURN_(JvmtiDeferredEvent());
@@ -549,7 +547,7 @@ class JvmtiDeferredEventQueue : public CHeapObj<mtInternal> {
   void oops_do(OopClosure* f, CodeBlobClosure* cf) NOT_JVMTI_RETURN;
 };
 
-// Utility macro that checks for NULL pointers:
-#define NULL_CHECK(X, Y) if ((X) == NULL) { return (Y); }
+// Utility macro that checks for null pointers:
+#define NULL_CHECK(X, Y) if ((X) == nullptr) { return (Y); }
 
 #endif // SHARE_PRIMS_JVMTIIMPL_HPP

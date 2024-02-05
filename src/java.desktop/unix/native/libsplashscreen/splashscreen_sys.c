@@ -387,7 +387,7 @@ HandleError(Display * disp, XErrorEvent * err) {
     XGetErrorText(disp, err->error_code, msg, sizeof(msg));
     fprintf(stderr, "Xerror %s, XID %x, ser# %d\n", msg, err->resourceid,
         err->serial);
-    sprintf(buf, "%d", err->request_code);
+    snprintf(buf, sizeof(buf), "%d", err->request_code);
     XGetErrorDatabaseText(disp, "XRequest", buf, "Unknown", msg, sizeof(msg));
     fprintf(stderr, "Major opcode %d (%s)\n", err->request_code, msg);
     if (err->request_code > 128) {
@@ -773,8 +773,10 @@ SplashCreateThread(Splash * splash) {
     pthread_attr_t attr;
     int rc;
 
-    pthread_attr_init(&attr);
+    int rslt = pthread_attr_init(&attr);
+    if (rslt != 0) return;
     rc = pthread_create(&thr, &attr, SplashScreenThread, (void *) splash);
+    pthread_attr_destroy(&attr);
 }
 
 void

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,8 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
     # Add -z,defs, to forbid undefined symbols in object files.
     # add -z,relro (mark relocations read only) for all libs
     # add -z,now ("full relro" - more of the Global Offset Table GOT is marked read only)
-    BASIC_LDFLAGS="-Wl,-z,defs -Wl,-z,relro -Wl,-z,now"
+    # add --no-as-needed to disable default --as-needed link flag on some GCC toolchains
+    BASIC_LDFLAGS="-Wl,-z,defs -Wl,-z,relro -Wl,-z,now -Wl,--no-as-needed"
     # Linux : remove unused code+data in link step
     if test "x$ENABLE_LINKTIME_GC" = xtrue; then
       if test "x$OPENJDK_TARGET_CPU" = xs390x; then
@@ -70,12 +71,21 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
       fi
     fi
 
-    BASIC_LDFLAGS_JVM_ONLY="-Wl,-O1"
+    BASIC_LDFLAGS_JVM_ONLY=""
+
+    LDFLAGS_CXX_PARTIAL_LINKING="$MACHINE_FLAG -r"
 
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
     BASIC_LDFLAGS_JVM_ONLY="-mno-omit-leaf-frame-pointer -mstack-alignment=16 \
         -fPIC"
 
+    LDFLAGS_CXX_PARTIAL_LINKING="$MACHINE_FLAG -r"
+
+    if test "x$OPENJDK_TARGET_OS" = xaix; then
+      BASIC_LDFLAGS="-Wl,-b64 -Wl,-brtl -Wl,-bnorwexec -Wl,-bnolibpath -Wl,-bnoexpall \
+        -Wl,-bernotok -Wl,-bdatapsize:64k -Wl,-btextpsize:64k -Wl,-bstackpsize:64k"
+      BASIC_LDFLAGS_JVM_ONLY="$BASIC_LDFLAGS_JVM_ONLY -Wl,-lC_r -Wl,-bbigtoc"
+    fi
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
     BASIC_LDFLAGS="-b64 -brtl -bnorwexec -bnolibpath -bnoexpall -bernotok -btextpsize:64K \
         -bdatapsize:64K -bstackpsize:64K"
@@ -88,7 +98,8 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
     BASIC_LDFLAGS_JVM_ONLY="-opt:icf,8 -subsystem:windows"
   fi
 
-  if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
+  if (test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang) \
+      && test "x$OPENJDK_TARGET_OS" != xaix; then
     if test -n "$HAS_NOEXECSTACK"; then
       BASIC_LDFLAGS="$BASIC_LDFLAGS -Wl,-z,noexecstack"
     fi
@@ -115,6 +126,14 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
     # so we build with '-qpic=large -bbigtoc'.
     if test "x$DEBUG_LEVEL" != xrelease; then
       DEBUGLEVEL_LDFLAGS_JVM_ONLY="$DEBUGLEVEL_LDFLAGS_JVM_ONLY -bbigtoc"
+    fi
+
+  elif test "x$TOOLCHAIN_TYPE" = xclang && test "x$OPENJDK_TARGET_OS" = xaix; then
+    # We need '-fpic' or '-fpic -mcmodel=large -Wl,-bbigtoc' if the TOC overflows.
+    # Hotspot now overflows its 64K TOC (currently only for debug),
+    # so we build with '-fpic -mcmodel=large -Wl,-bbigtoc'.
+    if test "x$DEBUG_LEVEL" != xrelease; then
+      DEBUGLEVEL_LDFLAGS_JVM_ONLY="$DEBUGLEVEL_LDFLAGS_JVM_ONLY -Wl,-bbigtoc"
     fi
   fi
 
@@ -148,6 +167,7 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
   # Export some intermediate variables for compatibility
   LDFLAGS_CXX_JDK="$BASIC_LDFLAGS_ONLYCXX $BASIC_LDFLAGS_ONLYCXX_JDK_ONLY $DEBUGLEVEL_LDFLAGS_JDK_ONLY"
   AC_SUBST(LDFLAGS_CXX_JDK)
+  AC_SUBST(LDFLAGS_CXX_PARTIAL_LINKING)
 ])
 
 ################################################################################

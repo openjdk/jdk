@@ -79,9 +79,7 @@ public class TestObjectCollected {
         CMC {
             @Override
             public void provoke() {
-                Helpers.waitTillCMCFinished(WHITE_BOX, 0);
-                WHITE_BOX.g1StartConcMarkCycle();
-                Helpers.waitTillCMCFinished(WHITE_BOX, 0);
+                WHITE_BOX.g1RunConcurrentGC();
             }
         },
         FULL_GC_MEMORY_PRESSURE {

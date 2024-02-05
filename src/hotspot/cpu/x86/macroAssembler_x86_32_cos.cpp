@@ -176,7 +176,7 @@
 
 // The 32 bit code is at most SSE2 compliant
 
-ATTRIBUTE_ALIGNED(16) juint _static_const_table_cos[] =
+ATTRIBUTE_ALIGNED(16) static const juint _static_const_table_cos[] =
 {
     0x00000000UL, 0x00000000UL, 0x00000000UL, 0x00000000UL, 0x00000000UL,
     0x00000000UL, 0x00000000UL, 0x3ff00000UL, 0x176d6d31UL, 0xbf73b92eUL,

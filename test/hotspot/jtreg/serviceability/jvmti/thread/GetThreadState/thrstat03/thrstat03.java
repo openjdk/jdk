@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,10 +37,9 @@
  *     Converted the test to use GetThreadState instead of GetThreadStatus.
  *     Ported from JVMDI.
  *
- * @requires vm.continuations
  * @library /test/lib
- * @compile --enable-preview -source ${jdk.version} thrstat03.java
- * @run main/othervm/native --enable-preview  -agentlib:thrstat03 thrstat03 5
+ * @compile thrstat03.java
+ * @run main/othervm/native  -agentlib:thrstat03 thrstat03 5
  */
 
 public class thrstat03 {

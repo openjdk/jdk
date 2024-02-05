@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -314,7 +314,7 @@ public class DistributionPointFetcher {
         if (debug != null) {
             debug.println("DistributionPointFetcher.verifyCRL: " +
                 "checking revocation status for" +
-                "\n  SN: " + Debug.toHexString(certImpl.getSerialNumber()) +
+                "\n  SN: " + Debug.toString(certImpl.getSerialNumber()) +
                 "\n  Subject: " + certImpl.getSubjectX500Principal() +
                 "\n  Issuer: " + certImpl.getIssuerX500Principal());
         }
@@ -430,7 +430,7 @@ public class DistributionPointFetcher {
                             debug.println("DP relativeName:" + relativeName);
                         }
                         if (indirectCRL) {
-                            if (pointCrlIssuers.size() != 1) {
+                            if (pointCrlIssuers == null || pointCrlIssuers.size() != 1) {
                                 // RFC 5280: there must be only 1 CRL issuer
                                 // name when relativeName is present
                                 if (debug != null) {
@@ -439,6 +439,9 @@ public class DistributionPointFetcher {
                                 }
                                 return false;
                             }
+                            // if pointCrlIssuers is not null, pointCrlIssuer
+                            // will also be non-null or the code would have
+                            // returned before now
                             pointNames = getFullNames
                                 (pointCrlIssuer, relativeName);
                         } else {
@@ -475,6 +478,9 @@ public class DistributionPointFetcher {
                     // verify that one of the names in the IDP matches one of
                     // the names in the cRLIssuer of the cert's DP
                     boolean match = false;
+                    // the DP's fullName and relativeName fields are null
+                    // which means pointCrlIssuers is non-null; the three
+                    // cannot all be missing from a certificate.
                     for (Iterator<GeneralName> t = pointCrlIssuers.iterator();
                             !match && t.hasNext(); ) {
                         GeneralNameInterface crlIssuerName = t.next().getName();

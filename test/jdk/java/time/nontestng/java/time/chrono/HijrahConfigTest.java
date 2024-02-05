@@ -33,8 +33,8 @@ import tests.JImageGenerator;
  * @bug 8187987
  * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library /tools/lib
+ * @enablePreview
  * @modules java.base/jdk.internal.jimage
- *          jdk.jdeps/com.sun.tools.classfile
  *          jdk.jlink/jdk.tools.jimage
  *          jdk.compiler
  * @build HijrahConfigCheck tests.*

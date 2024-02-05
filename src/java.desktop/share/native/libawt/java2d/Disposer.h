@@ -47,7 +47,7 @@ Disposer_AddRecord(JNIEnv *env, jobject obj,
                    GeneralDisposeFunc disposer, jlong pData);
 
 #ifdef __cplusplus
-};
+}
 #endif
 
 #endif /* _Included_Disposer */

@@ -26,8 +26,8 @@
 #define SHARE_GC_G1_G1FULLGCMARKER_HPP
 
 #include "gc/g1/g1FullGCOopClosures.hpp"
+#include "gc/g1/g1OopClosures.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.hpp"
-#include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "memory/iterator.hpp"
@@ -58,11 +58,9 @@ class G1FullGCMarker : public CHeapObj<mtGC> {
   // Mark stack
   OopQueue           _oop_stack;
   ObjArrayTaskQueue  _objarray_stack;
-  PreservedMarks*    _preserved_stack;
 
   // Marking closures
   G1MarkAndPushClosure  _mark_closure;
-  G1VerifyOopClosure    _verify_closure;
   G1FollowStackClosure  _stack_closure;
   CLDToOopClosure       _cld_closure;
   StringDedup::Requests _string_dedup_requests;
@@ -89,19 +87,15 @@ class G1FullGCMarker : public CHeapObj<mtGC> {
 public:
   G1FullGCMarker(G1FullCollector* collector,
                  uint worker_id,
-                 PreservedMarks* preserved_stack,
                  G1RegionMarkStats* mark_stats);
   ~G1FullGCMarker();
 
   // Stack getters
   OopQueue*          oop_stack()       { return &_oop_stack; }
   ObjArrayTaskQueue* objarray_stack()  { return &_objarray_stack; }
-  PreservedMarks*    preserved_stack() { return _preserved_stack; }
 
   // Marking entry points
   template <class T> inline void mark_and_push(T* p);
-  inline void follow_klass(Klass* k);
-  inline void follow_cld(ClassLoaderData* cld);
 
   inline void follow_marking_stacks();
   void complete_marking(OopQueueSet* oop_stacks,

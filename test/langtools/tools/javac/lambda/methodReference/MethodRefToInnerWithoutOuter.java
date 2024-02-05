@@ -17,7 +17,7 @@ class MethodRefToInnerBase {
     }
 }
 public class MethodRefToInnerWithoutOuter extends MethodRefToInnerBase {
-    public static void main(String[] args) {
+    public static void meth() {
         List<String> list = new ArrayList<>();
         list.stream().forEach(TestString::new);
     }

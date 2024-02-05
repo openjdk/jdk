@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@
  * @test
  * @summary Test Thread.getStackTrace to examine the stack trace of a virtual
  *     thread and its carrier
+ * @requires vm.continuations
  * @modules java.base/java.lang:+open
- * @enablePreview
- * @run testng GetStackTrace
+ * @run main GetStackTrace
  */
 
 import java.util.Objects;
@@ -56,11 +56,11 @@ public class GetStackTrace {
                     Thread.sleep(10);
                 }
 
-                // bottom-most frame of virtual thread should be Continuation.enter
+                // bottom-most frame of virtual thread should be VirtualThread.run
                 System.out.println(vthread);
                 StackTraceElement[] vthreadStack = vthread.getStackTrace();
                 Stream.of(vthreadStack).forEach(System.out::println);
-                assertEquals("enter", vthreadStack[vthreadStack.length - 1].getMethodName());
+                assertEquals("run", vthreadStack[vthreadStack.length - 1].getMethodName());
 
                 System.out.println();
 

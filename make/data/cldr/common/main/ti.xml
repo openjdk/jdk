@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -12,7 +12,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</identity>
 	<localeDisplayNames>
 		<localeDisplayPattern>
-			<localePattern>{0} ({1})</localePattern>
 			<localeSeparator>{0}፣ {1}</localeSeparator>
 			<localeKeyTypePattern>{0}፦ {1}</localeKeyTypePattern>
 		</localeDisplayPattern>
@@ -31,6 +30,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="an">ኣራጎንኛ</language>
 			<language type="ann">ኦቦሎ</language>
 			<language type="anp">ኣንጂካ</language>
+			<language type="apc">ሌቫንቲናዊ ዓረብ</language>
 			<language type="ar">ዓረብ</language>
 			<language type="ar_001">ዘመናዊ ምዱብ ዓረብ</language>
 			<language type="arn">ማፑቺ</language>
@@ -52,6 +52,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="bem">ቤምባ</language>
 			<language type="bez">በና</language>
 			<language type="bg">ቡልጋርኛ</language>
+			<language type="bgc">ሃርያንቪ</language>
 			<language type="bho">ቦጅፑሪ</language>
 			<language type="bi">ቢስላማ</language>
 			<language type="bin">ቢኒ</language>
@@ -112,7 +113,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="eka">ኤካጁክ</language>
 			<language type="el">ግሪኽኛ</language>
 			<language type="en">እንግሊዝኛ</language>
-			<language type="en_GB" alt="short">እንግሊዝኛ (ዩ.ኪ.)</language>
 			<language type="en_US">እንግሊዝኛ (ሕቡራት መንግስታት)</language>
 			<language type="en_US" alt="short">እንግሊዝኛ (ሕ.መ.)</language>
 			<language type="eo">ኤስፐራንቶ</language>
@@ -230,6 +230,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="lij">ሊጉርኛ</language>
 			<language type="lil">ሊሉት</language>
 			<language type="lkt">ላኮታ</language>
+			<language type="lmo">ሎምባርድኛ</language>
 			<language type="ln">ሊንጋላ</language>
 			<language type="lo">ላኦ</language>
 			<language type="lou">ክርዮል ሉዊዝያና</language>
@@ -325,9 +326,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ps">ፓሽቶ</language>
 			<language type="pt">ፖርቱጊዝኛ</language>
 			<language type="qu">ቀችዋ</language>
+			<language type="raj">ራጃስታኒ</language>
 			<language type="rap">ራፓኑይ</language>
 			<language type="rar">ራሮቶንጋንኛ</language>
 			<language type="rhg">ሮሂንግያ</language>
+			<language type="rif">ሪፍኛ</language>
 			<language type="rm">ሮማንሽ</language>
 			<language type="rn">ኪሩንዲ</language>
 			<language type="ro">ሩማንኛ</language>
@@ -543,6 +546,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="CN">ቻይና</territory>
 			<territory type="CO">ኮሎምብያ</territory>
 			<territory type="CP">ደሴት ክሊፐርቶን</territory>
+			<territory type="CQ">ሳርክ</territory>
 			<territory type="CR">ኮስታ ሪካ</territory>
 			<territory type="CU">ኩባ</territory>
 			<territory type="CV">ኬፕ ቨርደ</territory>
@@ -608,7 +612,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL">እስራኤል</territory>
 			<territory type="IM">ኣይል ኦፍ ማን</territory>
 			<territory type="IN">ህንዲ</territory>
-			<territory type="IO">ብሪጣንያዊ ህንዳዊ ውቅያኖስ ግዝኣት</territory>
+			<territory type="IO" draft="provisional">ብሪጣንያዊ ህንዳዊ ውቅያኖስ ግዝኣት</territory>
 			<territory type="IQ">ዒራቕ</territory>
 			<territory type="IR">ኢራን</territory>
 			<territory type="IS">ኣይስላንድ</territory>
@@ -786,13 +790,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[\u135F ሀ-ሆ ለ-ቆ ቈ ቊ-ቍ ቐ-ቖ ቘ ቚ-ቝ በ-ኆ ኈ ኊ-ኍ ነ-ኮ ኰ ኲ-ኵ ኸ-ኾ ዀ ዂ-ዅ ወ-ዎ ዐ-ዖ ዘ-ዮ ደ-ዷ ጀ-ጎ ጐ ጒ-ጕ ጠ-ፗ]</exemplarCharacters>
+		<exemplarCharacters>[፟ ሀ ሁ ሂ ሃ ሄ ህ ሆ ለ ሉ ሊ ላ ሌ ል ሎ ሏ ሐ ሑ ሒ ሓ ሔ ሕ ሖ ሗ መ ሙ ሚ ማ ሜ ም ሞ ሟ ሠ ሡ ሢ ሣ ሤ ሥ ሦ ሧ ረ ሩ ሪ ራ ሬ ር ሮ ሯ ሰ ሱ ሲ ሳ ሴ ስ ሶ ሷ ሸ ሹ ሺ ሻ ሼ ሽ ሾ ሿ ቀ ቁ ቂ ቃ ቄ ቅ ቆ ቈ ቊ ቋ ቌ ቍ ቐ ቑ ቒ ቓ ቔ ቕ ቖ ቘ ቚ ቛ ቜ ቝ በ ቡ ቢ ባ ቤ ብ ቦ ቧ ቨ ቩ ቪ ቫ ቬ ቭ ቮ ቯ ተ ቱ ቲ ታ ቴ ት ቶ ቷ ቸ ቹ ቺ ቻ ቼ ች ቾ ቿ ኀ ኁ ኂ ኃ ኄ ኅ ኆ ኈ ኊ ኋ ኌ ኍ ነ ኑ ኒ ና ኔ ን ኖ ኗ ኘ ኙ ኚ ኛ ኜ ኝ ኞ ኟ አ ኡ ኢ ኣ ኤ እ ኦ ኧ ከ ኩ ኪ ካ ኬ ክ ኮ ኰ ኲ ኳ ኴ ኵ ኸ ኹ ኺ ኻ ኼ ኽ ኾ ዀ ዂ ዃ ዄ ዅ ወ ዉ ዊ ዋ ዌ ው ዎ ዐ ዑ ዒ ዓ ዔ ዕ ዖ ዘ ዙ ዚ ዛ ዜ ዝ ዞ ዟ ዠ ዡ ዢ ዣ ዤ ዥ ዦ ዧ የ ዩ ዪ ያ ዬ ይ ዮ ደ ዱ ዲ ዳ ዴ ድ ዶ ዷ ጀ ጁ ጂ ጃ ጄ ጅ ጆ ጇ ገ ጉ ጊ ጋ ጌ ግ ጎ ጐ ጒ ጓ ጔ ጕ ጠ ጡ ጢ ጣ ጤ ጥ ጦ ጧ ጨ ጩ ጪ ጫ ጬ ጭ ጮ ጯ ጰ ጱ ጲ ጳ ጴ ጵ ጶ ጷ ጸ ጹ ጺ ጻ ጼ ጽ ጾ ጿ ፀ ፁ ፂ ፃ ፄ ፅ ፆ ፇ ፈ ፉ ፊ ፋ ፌ ፍ ፎ ፏ ፐ ፑ ፒ ፓ ፔ ፕ ፖ ፗ]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[᎐ ᎑ ᎒ ᎓ ᎔ ᎕ ᎖ ᎗ ᎘ ᎙ ሇ ⶀ ᎀ ᎁ ᎂ ᎃ ⶁ ⶂ ⶃ ⶄ ቇ ᎄ ᎅ ᎆ ᎇ ⶅ ⶆ ⶇ ኇ ⶈ ⶉ ⶊ ኯ ዏ ⶋ ዯ ⶌ ዸ ዹ ዺ ዻ ዼ ዽ ዾ ዿ ⶍ ⶎ ጏ ጘ ጙ ጚ ጛ ጜ ጝ ጞ ጟ ⶓ ⶔ ⶕ ⶖ ⶏ ⶐ ⶑ ᎈ ᎉ ᎊ ᎋ ᎌ ᎍ ᎎ ᎏ ⶒ ፘ ፙ ፚ ⶠ ⶡ ⶢ ⶣ ⶤ ⶥ ⶦ ⶨ ⶩ ⶪ ⶫ ⶬ ⶭ ⶮ ⶰ ⶱ ⶲ ⶳ ⶴ ⶵ ⶶ ⶸ ⶹ ⶺ ⶻ ⶼ ⶽ ⶾ ⷀ ⷁ ⷂ ⷃ ⷄ ⷅ ⷆ ⷈ ⷉ ⷊ ⷋ ⷌ ⷍ ⷎ ⷐ ⷑ ⷒ ⷓ ⷔ ⷕ ⷖ ⷘ ⷙ ⷚ ⷛ ⷜ ⷝ ⷞ]</exemplarCharacters>
 		<exemplarCharacters type="index">[ሀ ለ ሐ መ ሠ ረ ሰ ሸ ቀ ቈ ቐ ቘ በ ቨ ተ ቸ ኀ ኈ ነ ኘ አ ከ ኰ ኸ ዀ ወ ዐ ዘ ዠ የ ደ ጀ ገ ጐ ጠ ጨ ጰ ጸ ፀ ፈ ፐ]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<ellipsis type="final">{0}…</ellipsis>
-		<ellipsis type="word-initial">… {0}</ellipsis>
-		<moreInformation>?</moreInformation>
 	</characters>
 	<delimiters>
 		<quotationStart>«</quotationStart>
@@ -802,25 +802,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</delimiters>
 	<dates>
 		<calendars>
-			<calendar type="buddhist">
-				<eras>
-					<eraNames>
-						<era type="0">BE</era>
-					</eraNames>
-					<eraAbbr>
-						<era type="0">BE</era>
-					</eraAbbr>
-					<eraNarrow>
-						<era type="0">BE</era>
-					</eraNarrow>
-				</eras>
-			</calendar>
 			<calendar type="generic">
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE፣ d MMMM y G</pattern>
-							<datetimeSkeleton>GyMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
@@ -870,39 +856,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
-						<dateFormatItem id="Bh">h B</dateFormatItem>
-						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
-						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
-						<dateFormatItem id="d">d</dateFormatItem>
-						<dateFormatItem id="E">ccc</dateFormatItem>
-						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
-						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E d</dateFormatItem>
-						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
-						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
-						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMd">d/M/y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E፣ d MMM y G</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
-						<dateFormatItem id="H">HH</dateFormatItem>
-						<dateFormatItem id="hm">h:mm a</dateFormatItem>
-						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
-						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="MEd">E፣ d/M</dateFormatItem>
 						<dateFormatItem id="MMdd">dd/MM</dateFormatItem>
-						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E፣ d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMdd">dd MMMM</dateFormatItem>
-						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y G</dateFormatItem>
 						<dateFormatItem id="yMM">MM/y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
@@ -920,23 +886,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</availableFormats>
 					<intervalFormats>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
-						<intervalFormatItem id="h">
-							<greatestDifference id="a">h a – h a</greatestDifference>
-							<greatestDifference id="h">h–h a</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="H">
-							<greatestDifference id="H">HH–HH</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
 							<greatestDifference id="h">h:mm – h:mm a</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hv">
-							<greatestDifference id="a">h a – h a v</greatestDifference>
-							<greatestDifference id="h">h–h a v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hv">
-							<greatestDifference id="H">HH–HH v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M">M–M</greatestDifference>
@@ -961,20 +912,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="11">ሕዳ</month>
 							<month type="12">ታሕ</month>
 						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1">ጥ</month>
-							<month type="2">ለ</month>
-							<month type="3">መ</month>
-							<month type="4">ሚ</month>
-							<month type="5">ግ</month>
-							<month type="6">ሰ</month>
-							<month type="7">ሓ</month>
-							<month type="8">ነ</month>
-							<month type="9">መ</month>
-							<month type="10">ጥ</month>
-							<month type="11">ሕ</month>
-							<month type="12">ታ</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">ጥሪ</month>
 							<month type="2">ለካቲት</month>
@@ -991,20 +928,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1">ጥሪ</month>
-							<month type="2">ለካ</month>
-							<month type="3">መጋ</month>
-							<month type="4">ሚያ</month>
-							<month type="5">ግን</month>
-							<month type="6">ሰነ</month>
-							<month type="7">ሓም</month>
-							<month type="8">ነሓ</month>
-							<month type="9">መስ</month>
-							<month type="10">ጥቅ</month>
-							<month type="11">ሕዳ</month>
-							<month type="12">ታሕ</month>
-						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1">ጥ</month>
 							<month type="2">ለ</month>
@@ -1019,43 +942,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="11">ሕ</month>
 							<month type="12">ታ</month>
 						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1">ጥሪ</month>
-							<month type="2">ለካቲት</month>
-							<month type="3">መጋቢት</month>
-							<month type="4">ሚያዝያ</month>
-							<month type="5">ግንቦት</month>
-							<month type="6">ሰነ</month>
-							<month type="7">ሓምለ</month>
-							<month type="8">ነሓሰ</month>
-							<month type="9">መስከረም</month>
-							<month type="10">ጥቅምቲ</month>
-							<month type="11">ሕዳር</month>
-							<month type="12">ታሕሳስ</month>
-						</monthWidth>
 					</monthContext>
 				</months>
 				<days>
 					<dayContext type="format">
 						<dayWidth type="abbreviated">
-							<day type="sun">ሰን</day>
-							<day type="mon">ሰኑ</day>
-							<day type="tue">ሰሉ</day>
-							<day type="wed">ረቡ</day>
-							<day type="thu">ሓሙ</day>
-							<day type="fri">ዓር</day>
-							<day type="sat">ቀዳ</day>
-						</dayWidth>
-						<dayWidth type="narrow">
-							<day type="sun">ሰ</day>
-							<day type="mon">ሰ</day>
-							<day type="tue">ሰ</day>
-							<day type="wed">ረ</day>
-							<day type="thu">ሓ</day>
-							<day type="fri">ዓ</day>
-							<day type="sat">ቀ</day>
-						</dayWidth>
-						<dayWidth type="short">
 							<day type="sun">ሰን</day>
 							<day type="mon">ሰኑ</day>
 							<day type="tue">ሰሉ</day>
@@ -1075,15 +966,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
-						<dayWidth type="abbreviated">
-							<day type="sun">ሰን</day>
-							<day type="mon">ሰኑ</day>
-							<day type="tue">ሰሉ</day>
-							<day type="wed">ረቡ</day>
-							<day type="thu">ሓሙ</day>
-							<day type="fri">ዓር</day>
-							<day type="sat">ቀዳ</day>
-						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun">ሰ</day>
 							<day type="mon">ሰ</day>
@@ -1092,24 +974,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="thu">ሓ</day>
 							<day type="fri">ዓ</day>
 							<day type="sat">ቀ</day>
-						</dayWidth>
-						<dayWidth type="short">
-							<day type="sun">ሰን</day>
-							<day type="mon">ሰኑ</day>
-							<day type="tue">ሰሉ</day>
-							<day type="wed">ረቡ</day>
-							<day type="thu">ሓሙ</day>
-							<day type="fri">ዓር</day>
-							<day type="sat">ቀዳ</day>
-						</dayWidth>
-						<dayWidth type="wide">
-							<day type="sun">ሰንበት</day>
-							<day type="mon">ሰኑይ</day>
-							<day type="tue">ሰሉስ</day>
-							<day type="wed">ረቡዕ</day>
-							<day type="thu">ሓሙስ</day>
-							<day type="fri">ዓርቢ</day>
-							<day type="sat">ቀዳም</day>
 						</dayWidth>
 					</dayContext>
 				</days>
@@ -1120,32 +984,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<quarter type="2">ር2</quarter>
 							<quarter type="3">ር3</quarter>
 							<quarter type="4">ር4</quarter>
-						</quarterWidth>
-						<quarterWidth type="narrow">
-							<quarter type="1">1</quarter>
-							<quarter type="2">2</quarter>
-							<quarter type="3">3</quarter>
-							<quarter type="4">4</quarter>
-						</quarterWidth>
-						<quarterWidth type="wide">
-							<quarter type="1">1ይ ርብዒ</quarter>
-							<quarter type="2">2ይ ርብዒ</quarter>
-							<quarter type="3">3ይ ርብዒ</quarter>
-							<quarter type="4">4ይ ርብዒ</quarter>
-						</quarterWidth>
-					</quarterContext>
-					<quarterContext type="stand-alone">
-						<quarterWidth type="abbreviated">
-							<quarter type="1">ር1</quarter>
-							<quarter type="2">ር2</quarter>
-							<quarter type="3">ር3</quarter>
-							<quarter type="4">ር4</quarter>
-						</quarterWidth>
-						<quarterWidth type="narrow">
-							<quarter type="1">1</quarter>
-							<quarter type="2">2</quarter>
-							<quarter type="3">3</quarter>
-							<quarter type="4">4</quarter>
 						</quarterWidth>
 						<quarterWidth type="wide">
 							<quarter type="1">1ይ ርብዒ</quarter>
@@ -1161,36 +999,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<dayPeriod type="am">ቅ.ቀ.</dayPeriod>
 							<dayPeriod type="pm">ድ.ቀ.</dayPeriod>
 						</dayPeriodWidth>
-						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am">ቅ.ቀ.</dayPeriod>
-							<dayPeriod type="pm">ድ.ቀ.</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">ቅ.ቀ.</dayPeriod>
-							<dayPeriod type="pm">ድ.ቀ.</dayPeriod>
-						</dayPeriodWidth>
-					</dayPeriodContext>
-					<dayPeriodContext type="stand-alone">
-						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am">ቅ.ቀ.</dayPeriod>
-							<dayPeriod type="pm">ድ.ቀ.</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am">ቅ.ቀ.</dayPeriod>
-							<dayPeriod type="pm">ድ.ቀ.</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">ቅ.ቀ.</dayPeriod>
-							<dayPeriod type="pm">ድ.ቀ.</dayPeriod>
-						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
 				<eras>
 					<eraNames>
 						<era type="0">ቅድመ ክርስቶስ</era>
-						<era type="0" alt="variant">ቅ.ል.ክ</era>
 						<era type="1">ዓመተ ምሕረት</era>
-						<era type="1" alt="variant">ድ.ል.ክ</era>
 					</eraNames>
 					<eraAbbr>
 						<era type="0">ዓ/ዓ</era>
@@ -1279,13 +1093,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
-						<dateFormatItem id="Bh">h B</dateFormatItem>
-						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
-						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
-						<dateFormatItem id="d">d</dateFormatItem>
-						<dateFormatItem id="E">ccc</dateFormatItem>
-						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
-						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E d</dateFormatItem>
 						<dateFormatItem id="Ehm">E፣ h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E፣ HH:mm</dateFormatItem>
@@ -1296,59 +1103,29 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E፣ d MMM y G</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
-						<dateFormatItem id="H">HH</dateFormatItem>
-						<dateFormatItem id="hm">h:mm a</dateFormatItem>
-						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
-						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
-						<dateFormatItem id="Hmsv">HH:mm:ss v</dateFormatItem>
-						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
-						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
-						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="MEd">E፣ d/M</dateFormatItem>
 						<dateFormatItem id="MMdd">d/M</dateFormatItem>
-						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E፣ d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMdd">d MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="one">ሰሙን W ናይ MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">ሰሙን W ናይ MMMM</dateFormatItem>
-						<dateFormatItem id="ms">mm:ss</dateFormatItem>
-						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">M/y</dateFormatItem>
 						<dateFormatItem id="yMd">d/M/y</dateFormatItem>
 						<dateFormatItem id="yMEd">E፣ d/M/y</dateFormatItem>
 						<dateFormatItem id="yMM">M/y</dateFormatItem>
 						<dateFormatItem id="yMMM">MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMd">d MMM y</dateFormatItem>
-						<dateFormatItem id="yMMMEd">y MMM d, E</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
 						<dateFormatItem id="yw" count="one">ሰሙን w ናይ Y</dateFormatItem>
 						<dateFormatItem id="yw" count="other">ሰሙን w ናይ Y</dateFormatItem>
 					</availableFormats>
-					<appendItems>
-						<appendItem request="Timezone">{0} {1}</appendItem>
-					</appendItems>
 					<intervalFormats>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
-						<intervalFormatItem id="Bh">
-							<greatestDifference id="B">h B – h B</greatestDifference>
-							<greatestDifference id="h">h–h B</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Bhm">
-							<greatestDifference id="B">h:mm B – h:mm B</greatestDifference>
-							<greatestDifference id="h">h:mm–h:mm B</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm B</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="d">
-							<greatestDifference id="d">d–d</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="Gy">
 							<greatestDifference id="G">y G – y G</greatestDifference>
 							<greatestDifference id="y">y–y G</greatestDifference>
@@ -1387,37 +1164,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="M">E፣ d MMM – E፣ d MMM y G</greatestDifference>
 							<greatestDifference id="y">E፣ d MMM y – E፣ d MMM y G</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="h">
-							<greatestDifference id="a">h a – h a</greatestDifference>
-							<greatestDifference id="h">h–h a</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="H">
-							<greatestDifference id="H">HH–HH</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
 							<greatestDifference id="h">h:mm – h:mm a</greatestDifference>
 							<greatestDifference id="m">h:mm – h:mm a</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hm">
-							<greatestDifference id="H">HH:mm–HH:mm</greatestDifference>
-							<greatestDifference id="m">HH:mm–HH:mm</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hmv">
-							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
-							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hmv">
-							<greatestDifference id="H">HH:mm–HH:mm v</greatestDifference>
-							<greatestDifference id="m">HH:mm–HH:mm v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hv">
-							<greatestDifference id="a">h a – h a v</greatestDifference>
-							<greatestDifference id="h">h–h a v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hv">
-							<greatestDifference id="H">HH–HH v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M">M–M</greatestDifference>
@@ -1440,9 +1189,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">E፣ d MMM – E፣ d MMM</greatestDifference>
 							<greatestDifference id="M">E፣ d MMM – E፣ d MMM</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="y">
-							<greatestDifference id="y">y–y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
 							<greatestDifference id="M">M/y – M/y</greatestDifference>
@@ -1484,12 +1230,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="era">
 				<displayName>ዘመን</displayName>
 			</field>
-			<field type="era-short">
-				<displayName>ዘመን</displayName>
-			</field>
-			<field type="era-narrow">
-				<displayName>ዘመን</displayName>
-			</field>
 			<field type="year">
 				<displayName>ዓመት</displayName>
 				<relative type="-1">ዓሚ</relative>
@@ -1505,22 +1245,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="year-short">
-				<displayName>ዓመት</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">ኣብ {0} ዓ</relativeTimePattern>
-					<relativeTimePattern count="other">ኣብ {0} ዓ</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">ቅድሚ -{0} ዓ</relativeTimePattern>
 					<relativeTimePattern count="other">ቅድሚ {0} ዓ</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="year-narrow">
-				<displayName>ዓመት</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">ኣብ {0} ዓ</relativeTimePattern>
-					<relativeTimePattern count="other">ኣብ {0} ዓ</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">ቅድሚ {0} ዓ</relativeTimePattern>
 					<relativeTimePattern count="other">ቅድሚ {0} ዓ</relativeTimePattern>
@@ -1531,28 +1261,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">ዝሓለፈ ርብዒ</relative>
 				<relative type="0">ህሉው ርብዒ</relative>
 				<relative type="1">ዝመጽእ ርብዒ</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">ኣብ {0} ርብዒ</relativeTimePattern>
-					<relativeTimePattern count="other">ኣብ {0} ርብዒ</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">ቅድሚ {0} ርብዒ</relativeTimePattern>
-					<relativeTimePattern count="other">ቅድሚ {0} ርብዒ</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="quarter-short">
-				<displayName>ርብዒ</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">ኣብ {0} ርብዒ</relativeTimePattern>
-					<relativeTimePattern count="other">ኣብ {0} ርብዒ</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">ቅድሚ {0} ርብዒ</relativeTimePattern>
-					<relativeTimePattern count="other">ቅድሚ {0} ርብዒ</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="quarter-narrow">
-				<displayName>ርብዒ</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">ኣብ {0} ርብዒ</relativeTimePattern>
 					<relativeTimePattern count="other">ኣብ {0} ርብዒ</relativeTimePattern>
@@ -1576,63 +1284,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">ቅድሚ {0} ወርሒ</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="month-short">
-				<displayName>ወርሒ</displayName>
-				<relative type="-1">ዝሓለፈ ወርሒ</relative>
-				<relative type="0">ህሉው ወርሒ</relative>
-				<relative type="1">ዝመጽእ ወርሒ</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">ኣብ {0} ወርሒ</relativeTimePattern>
-					<relativeTimePattern count="other">ኣብ {0} ወርሒ</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">ቅድሚ {0} ወርሒ</relativeTimePattern>
-					<relativeTimePattern count="other">ቅድሚ {0} ወርሒ</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="month-narrow">
-				<displayName>ወርሒ</displayName>
-				<relative type="-1">ዝሓለፈ ወርሒ</relative>
-				<relative type="0">ህሉው ወርሒ</relative>
-				<relative type="1">ዝመጽእ ወርሒ</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">ኣብ {0} ወርሒ</relativeTimePattern>
-					<relativeTimePattern count="other">ኣብ {0} ወርሒ</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">ቅድሚ {0} ወርሒ</relativeTimePattern>
-					<relativeTimePattern count="other">ቅድሚ {0} ወርሒ</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="week">
 				<displayName>ሰሙን</displayName>
 				<relative type="-1">ዝሓለፈ ሰሙን</relative>
 				<relative type="0">ህሉው ሰሙን</relative>
 				<relative type="1">ዝመጽእ ሰሙን</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">ኣብ {0} ሰሙን</relativeTimePattern>
-					<relativeTimePattern count="other">ኣብ {0} ሰሙን</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">ቅድሚ {0} ሰሙን</relativeTimePattern>
-					<relativeTimePattern count="other">ቅድሚ {0} ሰሙን</relativeTimePattern>
-				</relativeTime>
-				<relativePeriod>ሰሙን ናይ {0}</relativePeriod>
-			</field>
-			<field type="week-short">
-				<displayName>ሰሙን</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">ኣብ {0} ሰሙን</relativeTimePattern>
-					<relativeTimePattern count="other">ኣብ {0} ሰሙን</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">ቅድሚ {0} ሰሙን</relativeTimePattern>
-					<relativeTimePattern count="other">ቅድሚ {0} ሰሙን</relativeTimePattern>
-				</relativeTime>
-				<relativePeriod>ሰሙን ናይ {0}</relativePeriod>
-			</field>
-			<field type="week-narrow">
-				<displayName>ሰሙን</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">ኣብ {0} ሰሙን</relativeTimePattern>
 					<relativeTimePattern count="other">ኣብ {0} ሰሙን</relativeTimePattern>
@@ -1664,22 +1320,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="day-short">
-				<displayName>መዓልቲ</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">ኣብ {0} መዓልቲ</relativeTimePattern>
-					<relativeTimePattern count="other">ኣብ {0} መዓልቲ</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">ቅድሚ {0} መዓልቲ</relativeTimePattern>
-					<relativeTimePattern count="other">ቅድሚ {0} መዓልቲ</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="day-narrow">
-				<displayName>መዓልቲ</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">ኣብ {0} መዓልቲ</relativeTimePattern>
-					<relativeTimePattern count="other">ኣብ {0} መዓልቲ</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">ቅድሚ {0} መዓልቲ</relativeTimePattern>
 					<relativeTimePattern count="other">ቅድሚ {0} መዓልቲ</relativeTimePattern>
@@ -1691,13 +1331,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="dayOfYear-short">
 				<displayName>መዓልቲ ናይ ዓ.</displayName>
 			</field>
-			<field type="dayOfYear-narrow">
-				<displayName>መዓልቲ ናይ ዓ.</displayName>
-			</field>
 			<field type="weekday">
-				<displayName>መዓልቲ ናይ ሰሙን</displayName>
-			</field>
-			<field type="weekday-short">
 				<displayName>መዓልቲ ናይ ሰሙን</displayName>
 			</field>
 			<field type="weekday-narrow">
@@ -1706,39 +1340,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="weekdayOfMonth">
 				<displayName>መዓልታት ስራሕ ናይ ወርሒ</displayName>
 			</field>
-			<field type="weekdayOfMonth-short">
-				<displayName>መዓልታት ስራሕ ናይ ወርሒ</displayName>
-			</field>
 			<field type="weekdayOfMonth-narrow">
 				<displayName>መ.ስራሕ ናይ ወርሒ</displayName>
 			</field>
 			<field type="sun">
-				<relative type="-1">ዝሓለፈ ሰንበት</relative>
-				<relative type="0">ሎሚ ሰንበት</relative>
-				<relative type="1">ዝመጽእ ሰንበት</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">ኣብ {0} ሰንበት</relativeTimePattern>
-					<relativeTimePattern count="other">ኣብ {0} ሰንበት</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">ቅድሚ {0} ሰንበት</relativeTimePattern>
-					<relativeTimePattern count="other">ቅድሚ {0} ሰንበት</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="sun-short">
-				<relative type="-1">ዝሓለፈ ሰንበት</relative>
-				<relative type="0">ሎሚ ሰንበት</relative>
-				<relative type="1">ዝመጽእ ሰንበት</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">ኣብ {0} ሰንበት</relativeTimePattern>
-					<relativeTimePattern count="other">ኣብ {0} ሰንበት</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">ቅድሚ {0} ሰንበት</relativeTimePattern>
-					<relativeTimePattern count="other">ቅድሚ {0} ሰንበት</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="sun-narrow">
 				<relative type="-1">ዝሓለፈ ሰንበት</relative>
 				<relative type="0">ሎሚ ሰንበት</relative>
 				<relative type="1">ዝመጽእ ሰንበት</relative>
@@ -1764,59 +1369,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">ቅድሚ {0} ሰኑይ</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="mon-short">
-				<relative type="-1">ዝሓለፈ ሰኑይ</relative>
-				<relative type="0">ሎሚ ሰኑይ</relative>
-				<relative type="1">ዝመጽእ ሰኑይ</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">ኣብ {0} ሰኑይ</relativeTimePattern>
-					<relativeTimePattern count="other">ኣብ {0} ሰኑይ</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">ቅድሚ {0} ሰኑይ</relativeTimePattern>
-					<relativeTimePattern count="other">ቅድሚ {0} ሰኑይ</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="mon-narrow">
-				<relative type="-1">ዝሓለፈ ሰኑይ</relative>
-				<relative type="0">ሎሚ ሰኑይ</relative>
-				<relative type="1">ዝመጽእ ሰኑይ</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">ኣብ {0} ሰኑይ</relativeTimePattern>
-					<relativeTimePattern count="other">ኣብ {0} ሰኑይ</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">ቅድሚ {0} ሰኑይ</relativeTimePattern>
-					<relativeTimePattern count="other">ቅድሚ {0} ሰኑይ</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="tue">
-				<relative type="-1">ዝሓለፈ ሰሉስ</relative>
-				<relative type="0">ሎሚ ሰሉስ</relative>
-				<relative type="1">ዝመጽእ ሰሉስ</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">ኣብ {0} ሰሉስ</relativeTimePattern>
-					<relativeTimePattern count="other">ኣብ {0} ሰሉስ</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">ቅድሚ {0} ሰሉስ</relativeTimePattern>
-					<relativeTimePattern count="other">ቅድሚ {0} ሰሉስ</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="tue-short">
-				<relative type="-1">ዝሓለፈ ሰሉስ</relative>
-				<relative type="0">ሎሚ ሰሉስ</relative>
-				<relative type="1">ዝመጽእ ሰሉስ</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">ኣብ {0} ሰሉስ</relativeTimePattern>
-					<relativeTimePattern count="other">ኣብ {0} ሰሉስ</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">ቅድሚ {0} ሰሉስ</relativeTimePattern>
-					<relativeTimePattern count="other">ቅድሚ {0} ሰሉስ</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="tue-narrow">
 				<relative type="-1">ዝሓለፈ ሰሉስ</relative>
 				<relative type="0">ሎሚ ሰሉስ</relative>
 				<relative type="1">ዝመጽእ ሰሉስ</relative>
@@ -1842,59 +1395,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">ቅድሚ {0} ረቡዕ</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="wed-short">
-				<relative type="-1">ዝሓለፈ ረቡዕ</relative>
-				<relative type="0">ሎሚ ረቡዕ</relative>
-				<relative type="1">ዝመጽእ ረቡዕ</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">ኣብ {0} ረቡዕ</relativeTimePattern>
-					<relativeTimePattern count="other">ኣብ {0} ረቡዕ</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">ቅድሚ {0} ረቡዕ</relativeTimePattern>
-					<relativeTimePattern count="other">ቅድሚ {0} ረቡዕ</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="wed-narrow">
-				<relative type="-1">ዝሓለፈ ረቡዕ</relative>
-				<relative type="0">ሎሚ ረቡዕ</relative>
-				<relative type="1">ዝመጽእ ረቡዕ</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">ኣብ {0} ረቡዕ</relativeTimePattern>
-					<relativeTimePattern count="other">ኣብ {0} ረቡዕ</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">ቅድሚ {0} ረቡዕ</relativeTimePattern>
-					<relativeTimePattern count="other">ቅድሚ {0} ረቡዕ</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="thu">
-				<relative type="-1">ዝሓለፈ ሓሙስ</relative>
-				<relative type="0">ሎሚ ሓሙስ</relative>
-				<relative type="1">ዝመጽእ ሓሙስ</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">ኣብ {0} ሓሙስ</relativeTimePattern>
-					<relativeTimePattern count="other">ኣብ {0} ሓሙስ</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">ቅድሚ {0} ሓሙስ</relativeTimePattern>
-					<relativeTimePattern count="other">ቅድሚ {0} ሓሙስ</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="thu-short">
-				<relative type="-1">ዝሓለፈ ሓሙስ</relative>
-				<relative type="0">ሎሚ ሓሙስ</relative>
-				<relative type="1">ዝመጽእ ሓሙስ</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">ኣብ {0} ሓሙስ</relativeTimePattern>
-					<relativeTimePattern count="other">ኣብ {0} ሓሙስ</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">ቅድሚ {0} ሓሙስ</relativeTimePattern>
-					<relativeTimePattern count="other">ቅድሚ {0} ሓሙስ</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="thu-narrow">
 				<relative type="-1">ዝሓለፈ ሓሙስ</relative>
 				<relative type="0">ሎሚ ሓሙስ</relative>
 				<relative type="1">ዝመጽእ ሓሙስ</relative>
@@ -1921,26 +1422,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="fri-short">
-				<relative type="-1">ዝሓለፈ ዓርቢ</relative>
-				<relative type="0">ሎሚ ዓርቢ</relative>
-				<relative type="1">ዝመጽእ ዓርቢ</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">ኣብ {0} ዓርቢ</relativeTimePattern>
-					<relativeTimePattern count="other">ኣብ {0} ዓርቢ</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">ቅድሚ {0} ዓርቢ</relativeTimePattern>
-					<relativeTimePattern count="other">ቅድሚ {0} ዓርቢ</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="fri-narrow">
-				<relative type="-1">ዝሓለፈ ዓርቢ</relative>
-				<relative type="0">ሎሚ ዓርቢ</relative>
-				<relative type="1">ዝመጽእ ዓርቢ</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">ኣብ {0} ዓርቢ</relativeTimePattern>
-					<relativeTimePattern count="other">ኣብ {0} ዓርቢ</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">ቅድሚ {0} ዓርቢ</relativeTimePattern>
 					<relativeTimePattern count="other">ቅድሚ {0} ዓርቢ</relativeTimePattern>
@@ -1959,66 +1440,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">ቅድሚ {0} ቀዳም</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="sat-short">
-				<relative type="-1">ዝሓለፈ ቀዳም</relative>
-				<relative type="0">ሎሚ ቀዳም</relative>
-				<relative type="1">ዝመጽእ ቀዳም</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">ኣብ {0} ቀዳም</relativeTimePattern>
-					<relativeTimePattern count="other">ኣብ {0} ቀዳም</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">ቅድሚ {0} ቀዳም</relativeTimePattern>
-					<relativeTimePattern count="other">ቅድሚ {0} ቀዳም</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="sat-narrow">
-				<relative type="-1">ዝሓለፈ ቀዳም</relative>
-				<relative type="0">ሎሚ ቀዳም</relative>
-				<relative type="1">ዝመጽእ ቀዳም</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">ኣብ {0} ቀዳም</relativeTimePattern>
-					<relativeTimePattern count="other">ኣብ {0} ቀዳም</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">ቅድሚ {0} ቀዳም</relativeTimePattern>
-					<relativeTimePattern count="other">ቅድሚ {0} ቀዳም</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="dayperiod-short">
-				<displayName>AM/PM</displayName>
-			</field>
 			<field type="dayperiod">
-				<displayName>AM/PM</displayName>
-			</field>
-			<field type="dayperiod-narrow">
 				<displayName>AM/PM</displayName>
 			</field>
 			<field type="hour">
 				<displayName>ሰዓት</displayName>
 				<relative type="0">ኣብዚ ሰዓት</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">ኣብ {0} ሰዓት</relativeTimePattern>
-					<relativeTimePattern count="other">ኣብ {0} ሰዓት</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">ቅድሚ {0} ሰዓት</relativeTimePattern>
-					<relativeTimePattern count="other">ቅድሚ {0} ሰዓት</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="hour-short">
-				<displayName>ሰዓት</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">ኣብ {0} ሰዓት</relativeTimePattern>
-					<relativeTimePattern count="other">ኣብ {0} ሰዓት</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">ቅድሚ {0} ሰዓት</relativeTimePattern>
-					<relativeTimePattern count="other">ቅድሚ {0} ሰዓት</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="hour-narrow">
-				<displayName>ሰዓት</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">ኣብ {0} ሰዓት</relativeTimePattern>
 					<relativeTimePattern count="other">ኣብ {0} ሰዓት</relativeTimePattern>
@@ -2040,53 +1467,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">ቅድሚ {0} ደቒቕ</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="minute-short">
-				<displayName>ደቒቕ</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">ኣብ {0} ደቒቕ</relativeTimePattern>
-					<relativeTimePattern count="other">ኣብ {0} ደቒቕ</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">ቅድሚ {0} ደቒቕ</relativeTimePattern>
-					<relativeTimePattern count="other">ቅድሚ {0} ደቒቕ</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="minute-narrow">
 				<displayName>ደቒ.</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">ኣብ {0} ደቒቕ</relativeTimePattern>
-					<relativeTimePattern count="other">ኣብ {0} ደቒቕ</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">ቅድሚ {0} ደቒቕ</relativeTimePattern>
-					<relativeTimePattern count="other">ቅድሚ {0} ደቒቕ</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="second">
 				<displayName>ካልኢት</displayName>
 				<relative type="0">ሕጂ</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">ኣብ {0} ካልኢት</relativeTimePattern>
-					<relativeTimePattern count="other">ኣብ {0} ካልኢት</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">ቅድሚ {0} ካልኢት</relativeTimePattern>
-					<relativeTimePattern count="other">ቅድሚ {0} ካልኢት</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="second-short">
-				<displayName>ካልኢት</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">ኣብ {0} ካልኢት</relativeTimePattern>
-					<relativeTimePattern count="other">ኣብ {0} ካልኢት</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">ቅድሚ {0} ካልኢት</relativeTimePattern>
-					<relativeTimePattern count="other">ቅድሚ {0} ካልኢት</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="second-narrow">
-				<displayName>ካልኢት</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">ኣብ {0} ካልኢት</relativeTimePattern>
 					<relativeTimePattern count="other">ኣብ {0} ካልኢት</relativeTimePattern>
@@ -2102,18 +1488,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="zone-short">
 				<displayName>ዞባ</displayName>
 			</field>
-			<field type="zone-narrow">
-				<displayName>ዞባ</displayName>
-			</field>
 		</fields>
 		<timeZoneNames>
-			<hourFormat>+HH:mm;-HH:mm</hourFormat>
-			<gmtFormat>GMT{0}</gmtFormat>
-			<gmtZeroFormat>GMT</gmtZeroFormat>
 			<regionFormat>ግዜ {0}</regionFormat>
 			<regionFormat type="daylight">ግዜ ክረምቲ {0}</regionFormat>
 			<regionFormat type="standard">ምዱብ ግዜ {0}</regionFormat>
-			<fallbackFormat>{1} ({0})</fallbackFormat>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>ዝተሳነየ ኣድማሳዊ ግዜ</standard>
@@ -2905,6 +2284,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Hermosillo">
 				<exemplarCity>ኤርሞስዮ</exemplarCity>
 			</zone>
+			<zone type="America/Ciudad_Juarez">
+				<exemplarCity>ሲዩዳድ ጁዋረዝ</exemplarCity>
+			</zone>
 			<zone type="America/Mazatlan">
 				<exemplarCity>ማዛትላን</exemplarCity>
 			</zone>
@@ -3650,32 +3032,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<defaultNumberingSystem>latn</defaultNumberingSystem>
 		<otherNumberingSystems>
-			<native>latn</native>
 			<traditional>ethi</traditional>
 		</otherNumberingSystems>
-		<minimumGroupingDigits draft="contributed">1</minimumGroupingDigits>
-		<symbols numberSystem="latn">
-			<decimal>.</decimal>
-			<group>,</group>
-			<percentSign>%</percentSign>
-			<plusSign>+</plusSign>
-			<minusSign>-</minusSign>
-			<approximatelySign>~</approximatelySign>
-			<exponential>E</exponential>
-			<superscriptingExponent>×</superscriptingExponent>
-			<perMille>‰</perMille>
-			<infinity>∞</infinity>
-			<nan>NaN</nan>
-			<timeSeparator>:</timeSeparator>
-		</symbols>
 		<decimalFormats numberSystem="latn">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern>#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
 			<decimalFormatLength type="long">
 				<decimalFormat>
 					<pattern type="1000" count="one">0 ሽሕ</pattern>
@@ -3733,31 +3093,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
-		<scientificFormats numberSystem="latn">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern>#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<percentFormats numberSystem="latn">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern>#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤#,##0.00</pattern>
 					<pattern alt="alphaNextToNumber" draft="provisional">¤ #,##0.00</pattern>
-					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
-				</currencyFormat>
-				<currencyFormat type="accounting">
-					<pattern>¤#,##0.00</pattern>
-					<pattern alt="alphaNextToNumber" draft="provisional">¤ #,##0.00</pattern>
-					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -3816,37 +3156,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
-			<currency type="BMD">
-				<symbol alt="narrow" draft="contributed">$</symbol>
-			</currency>
 			<currency type="BRL">
 				<displayName>የብራዚል ሪል</displayName>
 			</currency>
 			<currency type="CNY">
 				<displayName>ዩዋን ቻይና</displayName>
-				<displayName count="one">ዩዋን ቻይና</displayName>
-				<displayName count="other">ዩዋን ቻይና</displayName>
 				<symbol draft="contributed">CNY</symbol>
-				<symbol alt="narrow" draft="contributed">¥</symbol>
 			</currency>
 			<currency type="ERN">
 				<displayName>ናቕፋ</displayName>
-				<displayName count="one">ናቕፋ</displayName>
-				<displayName count="other">ናቕፋ</displayName>
-				<symbol draft="contributed">ERN</symbol>
 			</currency>
 			<currency type="ETB">
 				<displayName>ብር</displayName>
-				<displayName count="one">ብር</displayName>
-				<displayName count="other">ብር</displayName>
 				<symbol>Br</symbol>
 			</currency>
 			<currency type="EUR">
 				<displayName>ዩሮ</displayName>
-				<displayName count="one">ዩሮ</displayName>
-				<displayName count="other">ዩሮ</displayName>
-				<symbol draft="contributed">€</symbol>
-				<symbol alt="narrow" draft="contributed">€</symbol>
 			</currency>
 			<currency type="GBP">
 				<displayName>የእንግሊዝ ፓውንድ ስተርሊንግ</displayName>
@@ -3856,30 +3181,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="JPY">
 				<displayName>የን ጃፓን</displayName>
-				<displayName count="one">የን ጃፓን</displayName>
-				<displayName count="other">የን ጃፓን</displayName>
 				<symbol draft="contributed">JPY</symbol>
-				<symbol alt="narrow" draft="contributed">¥</symbol>
 			</currency>
 			<currency type="RUB">
 				<displayName>የራሻ ሩብል</displayName>
 			</currency>
 			<currency type="USD">
 				<displayName>ዶላር ኣመሪካ</displayName>
-				<displayName count="one">ዶላር ኣመሪካ</displayName>
-				<displayName count="other">ዶላር ኣመሪካ</displayName>
-				<symbol draft="contributed">US$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="XAG">
 				<displayName>ብሩር</displayName>
-				<displayName count="one">ብሩር</displayName>
-				<displayName count="other">ብሩር</displayName>
 			</currency>
 			<currency type="XAU">
 				<displayName>ወርቂ</displayName>
-				<displayName count="one">ወርቂ</displayName>
-				<displayName count="other">ወርቂ</displayName>
 			</currency>
 			<currency type="XXX">
 				<displayName>ዘይተፈልጠ ባጤራ</displayName>
@@ -3888,10 +3202,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
-			<pattern type="approximately">~{0}</pattern>
 			<pattern type="atLeast">⩾{0}</pattern>
-			<pattern type="atMost">≤{0}</pattern>
-			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
 		<minimalPairs>
 			<pluralMinimalPairs count="one">{0} መዓልቲ</pluralMinimalPairs>
@@ -3900,10 +3211,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<compoundUnit type="power2">
+				<compoundUnitPattern1 count="one">ትርብዒት {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">ትርብዒት {0}</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1 count="one">ኪዩቢክ {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">ኪዩቢክ {0}</compoundUnitPattern1>
+			</compoundUnit>
 			<unit type="duration-century">
 				<displayName>ዘመናት</displayName>
-				<unitPattern count="one">{0} ዘመን</unitPattern>
-				<unitPattern count="other">{0} ዘመናት</unitPattern>
 			</unit>
 			<unit type="duration-decade">
 				<displayName>ዓሰርተታት ዓመታት</displayName>
@@ -3927,26 +3244,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 		</unitLength>
 		<unitLength type="narrow">
-			<unit type="duration-century">
-				<displayName>ዘመን</displayName>
-				<unitPattern count="one">{0} ዘመን</unitPattern>
-				<unitPattern count="other">{0} ዘመናት</unitPattern>
-			</unit>
 			<unit type="duration-decade">
-				<displayName>ዓሰርተ ዓመት</displayName>
 				<unitPattern count="one">{0} ዓ.ዓ.</unitPattern>
 				<unitPattern count="other">{0} ዓ.ዓ.</unitPattern>
 			</unit>
 		</unitLength>
-		<durationUnit type="hm">
-			<durationUnitPattern>h:mm</durationUnitPattern>
-		</durationUnit>
-		<durationUnit type="hms">
-			<durationUnitPattern>h:mm:ss</durationUnitPattern>
-		</durationUnit>
-		<durationUnit type="ms">
-			<durationUnitPattern>m:ss</durationUnitPattern>
-		</durationUnit>
 	</units>
 	<listPatterns>
 		<listPattern>
@@ -3961,17 +3263,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<listPatternPart type="end">{0} ወይ {1}</listPatternPart>
 			<listPatternPart type="2">{0} ወይ {1}</listPatternPart>
 		</listPattern>
-		<listPattern type="standard-short">
-			<listPatternPart type="start">{0}፣ {1}</listPatternPart>
-			<listPatternPart type="middle">{0}፣ {1}</listPatternPart>
-			<listPatternPart type="end">{0}ን {1}ን</listPatternPart>
-			<listPatternPart type="2">{0}ን {1}ን</listPatternPart>
-		</listPattern>
 		<listPattern type="unit">
-			<listPatternPart type="start">{0}፣ {1}</listPatternPart>
-			<listPatternPart type="middle">{0}፣ {1}</listPatternPart>
 			<listPatternPart type="end">{0}ን {1}ን</listPatternPart>
-			<listPatternPart type="2">{0}ን {1}ን</listPatternPart>
 		</listPattern>
 		<listPattern type="unit-narrow">
 			<listPatternPart type="start">{0} {1}</listPatternPart>
@@ -3980,10 +3273,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<listPatternPart type="2">{0} {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit-short">
-			<listPatternPart type="start">{0}፣ {1}</listPatternPart>
-			<listPatternPart type="middle">{0}፣ {1}</listPatternPart>
 			<listPatternPart type="end">{0}፣ {1}</listPatternPart>
-			<listPatternPart type="2">{0}ን {1}ን</listPatternPart>
 		</listPattern>
 	</listPatterns>
 	<posix>
@@ -4049,5 +3339,150 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	<personNames>
 		<nameOrderLocales order="givenFirst">und ti</nameOrderLocales>
 		<nameOrderLocales order="surnameFirst">ko si ta te vi yue zh</nameOrderLocales>
+		<personName order="givenFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{title} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{given} {given2-initial} {surname} {generation}, {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{title} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname-initial}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{title} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
+			<namePattern>{title} {surname} {given} {given2} {generation}, {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{surname} {given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{title} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{surname-monogram-allCaps}{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname} {given} {given2-initial} {generation}, {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname} {given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{title} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{surname} {given-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="formal">
+			<namePattern>{surname-core}, {given} {given2} {surname-prefix}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="informal">
+			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname-core}, {given} {given2-initial} {surname-prefix}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname}, {given-informal}</namePattern>
+		</personName>
+		<sampleName item="nativeG">
+			<nameField type="given">ዘንዳያ</nameField>
+		</sampleName>
+		<sampleName item="nativeGS">
+			<nameField type="given">ኣይሪን</nameField>
+			<nameField type="surname">ኣድለር</nameField>
+		</sampleName>
+		<sampleName item="nativeGGS">
+			<nameField type="given">ሜሪ ሱ</nameField>
+			<nameField type="given2">ሃሚሽ</nameField>
+			<nameField type="surname">ዋትሰን</nameField>
+		</sampleName>
+		<sampleName item="nativeFull">
+			<nameField type="title">ኣይተ</nameField>
+			<nameField type="given">በርትረም ዊልበርፎርስ</nameField>
+			<nameField type="given-informal">በርቲ</nameField>
+			<nameField type="given2">ሄንሪ ሮበርት</nameField>
+			<nameField type="surname-prefix">∅∅∅</nameField>
+			<nameField type="surname-core">ዉስተር</nameField>
+			<nameField type="surname2">∅∅∅</nameField>
+			<nameField type="generation">ማንጁስ</nameField>
+			<nameField type="credentials">ኣባል ባይቶ</nameField>
+		</sampleName>
+		<sampleName item="foreignG">
+			<nameField type="given">ሲንባድ</nameField>
+		</sampleName>
+		<sampleName item="foreignGS">
+			<nameField type="given">ካቲ</nameField>
+			<nameField type="surname">ሙለር</nameField>
+		</sampleName>
+		<sampleName item="foreignGGS">
+			<nameField type="given">ዛዚሊያ</nameField>
+			<nameField type="given2">ሃሚሽ</nameField>
+			<nameField type="surname">ስቶበር</nameField>
+		</sampleName>
+		<sampleName item="foreignFull">
+			<nameField type="title">ፕሮ. ዶር.</nameField>
+			<nameField type="given">ኣዳ ኮርኒሊያ</nameField>
+			<nameField type="given-informal">ኒሊ</nameField>
+			<nameField type="given2">ሲዘር ማርቲን</nameField>
+			<nameField type="surname-prefix">ቮን</nameField>
+			<nameField type="surname-core">ብሩሂ</nameField>
+			<nameField type="surname2">ጎንዛሌዝ ዶሚንጐ</nameField>
+			<nameField type="generation">ማንጁስ</nameField>
+			<nameField type="credentials">ሓኪም መጥባሕቲ ስኒ</nameField>
+		</sampleName>
 	</personNames>
 </ldml>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,16 +29,10 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Helper class to support tests running tasks a in virtual thread.
+ * Helper class to support tests running tasks in a virtual thread.
  */
 public class VThreadRunner {
     private VThreadRunner() { }
-
-    /**
-     * Characteristic value signifying that the thread cannot set values for its
-     * copy of thread-locals.
-     */
-    public static final int NO_THREAD_LOCALS = 1 << 1;
 
     /**
      * Characteristic value signifying that initial values for inheritable
@@ -47,99 +41,95 @@ public class VThreadRunner {
     public static final int NO_INHERIT_THREAD_LOCALS = 1 << 2;
 
     /**
-     * Represents a task that does not return a result but may throw
-     * an exception.
+     * Represents a task that does not return a result but may throw an exception.
      */
     @FunctionalInterface
-    public interface ThrowingRunnable {
-        /**
-         * Runs this operation.
-         */
-        void run() throws Exception;
+    public interface ThrowingRunnable<X extends Throwable> {
+        void run() throws X;
     }
 
     /**
      * Run a task in a virtual thread and wait for it to terminate.
      * If the task completes with an exception then it is thrown by this method.
-     * If the task throws an Error then it is wrapped in an RuntimeException.
      *
      * @param name thread name, can be null
      * @param characteristics thread characteristics
      * @param task the task to run
-     * @throws Exception the exception thrown by the task
+     * @throws X the exception thrown by the task
      */
-    public static void run(String name,
-                           int characteristics,
-                           ThrowingRunnable task) throws Exception {
-        AtomicReference<Exception> exc = new AtomicReference<>();
-        Runnable target =  () -> {
+    public static <X extends Throwable> void run(String name,
+                                                 int characteristics,
+                                                 ThrowingRunnable<X> task) throws X {
+        var throwableRef = new AtomicReference<Throwable>();
+        Runnable target = () -> {
             try {
                 task.run();
-            } catch (Error e) {
-                exc.set(new RuntimeException(e));
-            } catch (Exception e) {
-                exc.set(e);
+            } catch (Throwable ex) {
+                throwableRef.set(ex);
             }
         };
 
         Thread.Builder builder = Thread.ofVirtual();
         if (name != null)
             builder.name(name);
-        if ((characteristics & NO_THREAD_LOCALS) != 0)
-            builder.allowSetThreadLocals(false);
         if ((characteristics & NO_INHERIT_THREAD_LOCALS) != 0)
             builder.inheritInheritableThreadLocals(false);
         Thread thread = builder.start(target);
 
         // wait for thread to terminate
-        while (thread.join(Duration.ofSeconds(10)) == false) {
-            System.out.println("-- " + thread + " --");
-            for (StackTraceElement e : thread.getStackTrace()) {
-                System.out.println("  " + e);
+        try {
+            while (thread.join(Duration.ofSeconds(10)) == false) {
+                System.out.println("-- " + thread + " --");
+                for (StackTraceElement e : thread.getStackTrace()) {
+                    System.out.println("  " + e);
+                }
             }
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
 
-        Exception e = exc.get();
-        if (e != null) {
-            throw e;
+        Throwable ex = throwableRef.get();
+        if (ex != null) {
+            if (ex instanceof RuntimeException e)
+                throw e;
+            if (ex instanceof Error e)
+                throw e;
+            throw (X) ex;
         }
     }
 
     /**
      * Run a task in a virtual thread and wait for it to terminate.
      * If the task completes with an exception then it is thrown by this method.
-     * If the task throws an Error then it is wrapped in an RuntimeException.
      *
      * @param name thread name, can be null
      * @param task the task to run
-     * @throws Exception the exception thrown by the task
+     * @throws X the exception thrown by the task
      */
-    public static void run(String name, ThrowingRunnable task) throws Exception {
+    public static <X extends Throwable> void run(String name, ThrowingRunnable<X> task) throws X {
         run(name, 0, task);
     }
 
     /**
      * Run a task in a virtual thread and wait for it to terminate.
      * If the task completes with an exception then it is thrown by this method.
-     * If the task throws an Error then it is wrapped in an RuntimeException.
      *
      * @param characteristics thread characteristics
      * @param task the task to run
-     * @throws Exception the exception thrown by the task
+     * @throws X the exception thrown by the task
      */
-    public static void run(int characteristics, ThrowingRunnable task) throws Exception {
+    public static <X extends Throwable> void run(int characteristics, ThrowingRunnable<X> task) throws X {
         run(null, characteristics, task);
     }
 
     /**
      * Run a task in a virtual thread and wait for it to terminate.
      * If the task completes with an exception then it is thrown by this method.
-     * If the task throws an Error then it is wrapped in an RuntimeException.
      *
      * @param task the task to run
-     * @throws Exception the exception thrown by the task
+     * @throws X the exception thrown by the task
      */
-    public static void run(ThrowingRunnable task) throws Exception {
+    public static <X extends Throwable> void run(ThrowingRunnable<X> task) throws X {
         run(null, 0, task);
     }
 

@@ -266,6 +266,7 @@ public class TestVM {
         addBaseTests();
         if (PRINT_VALID_IR_RULES) {
             irMatchRulePrinter.emit();
+            VMInfoPrinter.emit();
         }
         TestFormat.throwIfAnyFailures();
         declaredTests.clear();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,9 +47,9 @@ private:
 public:
   PCMarkAndPushClosure(ParCompactionManager* cm) : _compaction_manager(cm) { }
 
-  template <typename T> void do_oop_nv(T* p)      { _compaction_manager->mark_and_push(p); }
-  virtual void do_oop(oop* p)                     { do_oop_nv(p); }
-  virtual void do_oop(narrowOop* p)               { do_oop_nv(p); }
+  template <typename T> void do_oop_work(T* p)      { _compaction_manager->mark_and_push(p); }
+  virtual void do_oop(oop* p)                     { do_oop_work(p); }
+  virtual void do_oop(narrowOop* p)               { do_oop_work(p); }
 };
 
 class PCIterateMarkAndPushClosure: public ClaimMetadataVisitingOopIterateClosure {
@@ -60,9 +60,9 @@ public:
     ClaimMetadataVisitingOopIterateClosure(ClassLoaderData::_claim_stw_fullgc_mark, rp),
     _compaction_manager(cm) { }
 
-  template <typename T> void do_oop_nv(T* p)      { _compaction_manager->mark_and_push(p); }
-  virtual void do_oop(oop* p)                     { do_oop_nv(p); }
-  virtual void do_oop(narrowOop* p)               { do_oop_nv(p); }
+  template <typename T> void do_oop_work(T* p)      { _compaction_manager->mark_and_push(p); }
+  virtual void do_oop(oop* p)                     { do_oop_work(p); }
+  virtual void do_oop(narrowOop* p)               { do_oop_work(p); }
 };
 
 inline bool ParCompactionManager::steal(int queue_num, oop& t) {
@@ -78,7 +78,7 @@ inline bool ParCompactionManager::steal(int queue_num, size_t& region) {
 }
 
 inline void ParCompactionManager::push(oop obj) {
-  _marking_stack.push(obj);
+  _oop_stack.push(obj);
 }
 
 void ParCompactionManager::push_objarray(oop obj, size_t index)
@@ -141,7 +141,7 @@ inline void follow_array_specialized(objArrayOop obj, int index, ParCompactionMa
     cm->push_objarray(obj, end_index); // Push the continuation.
   }
 
-  // Push the non-NULL elements of the next stride on the marking stack.
+  // Push the non-null elements of the next stride on the marking stack.
   for (T* e = beg; e < end; e++) {
     cm->mark_and_push<T>(e);
   }

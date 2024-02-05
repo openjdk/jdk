@@ -10,7 +10,7 @@ import static java.lang.System.out;
 
 class UseEnum {
     enum Animal {cat, dog, bird, fish};
-    public static void main(String args[]) {
+    public static void meth() {
         Animal pet;
 
         pet = Animal.cat;

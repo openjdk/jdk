@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,7 +128,7 @@ class outputStream : public CHeapObjBase {
    // flushing
    virtual void flush() {}
    virtual void write(const char* str, size_t len) = 0;
-   virtual void rotate_log(bool force, outputStream* out = NULL) {} // GC log rotation
+   virtual void rotate_log(bool force, outputStream* out = nullptr) {} // GC log rotation
    virtual ~outputStream() {}   // close properly on deletion
 
    // Caller may specify their own scratch buffer to use for printing; otherwise,
@@ -235,18 +235,18 @@ class fileStream : public outputStream {
   FILE* _file;
   bool  _need_close;
  public:
-  fileStream() { _file = NULL; _need_close = false; }
+  fileStream() { _file = nullptr; _need_close = false; }
   fileStream(const char* file_name);
   fileStream(const char* file_name, const char* opentype);
   fileStream(FILE* file, bool need_close = false) { _file = file; _need_close = need_close; }
   ~fileStream();
-  bool is_open() const { return _file != NULL; }
+  bool is_open() const { return _file != nullptr; }
   virtual void write(const char* c, size_t len);
-  size_t read(void *data, size_t size, size_t count) { return _file != NULL ? ::fread(data, size, count, _file) : 0; }
+  size_t read(void *data, size_t size, size_t count) { return _file != nullptr ? ::fread(data, size, count, _file) : 0; }
   char* readln(char *data, int count);
-  int eof() { return _file != NULL ? feof(_file) : -1; }
+  int eof() { return _file != nullptr ? feof(_file) : -1; }
   long fileSize();
-  void rewind() { if (_file != NULL) ::rewind(_file); }
+  void rewind() { if (_file != nullptr) ::rewind(_file); }
   void flush();
 };
 
@@ -293,11 +293,9 @@ class bufferedStream : public outputStream {
   size_t buffer_pos;
   size_t buffer_max;
   size_t buffer_length;
-  bool   buffer_fixed;
   bool   truncated;
  public:
   bufferedStream(size_t initial_bufsize = 256, size_t bufmax = 1024*1024*10);
-  bufferedStream(char* fixed_buffer, size_t fixed_buffer_size, size_t bufmax = 1024*1024*10);
   ~bufferedStream();
   virtual void write(const char* c, size_t len);
   size_t      size() { return buffer_pos; }
@@ -321,7 +319,7 @@ class networkStream : public bufferedStream {
 
     bool connect(const char *host, short port);
     bool is_open() const { return _socket != -1; }
-    int read(char *buf, size_t len);
+    ssize_t read(char *buf, size_t len);
     void close();
     virtual void flush();
 };

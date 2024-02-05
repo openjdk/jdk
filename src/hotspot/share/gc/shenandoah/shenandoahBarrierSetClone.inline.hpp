@@ -53,7 +53,7 @@ private:
         if (EVAC && obj == fwd) {
           fwd = _heap->evacuate_object(obj, _thread);
         }
-        assert(obj != fwd || _heap->cancelled_gc(), "must be forwarded");
+        shenandoah_assert_forwarded_except(p, obj, _heap->cancelled_gc());
         ShenandoahHeap::atomic_update_oop(fwd, p, o);
         obj = fwd;
       }
@@ -102,7 +102,7 @@ void ShenandoahBarrierSet::clone_update(oop obj) {
 
 void ShenandoahBarrierSet::clone_barrier(oop obj) {
   assert(ShenandoahCloneBarrier, "only get here with clone barriers enabled");
-  shenandoah_assert_correct(NULL, obj);
+  shenandoah_assert_correct(nullptr, obj);
 
   int gc_state = _heap->gc_state();
   if ((gc_state & ShenandoahHeap::MARKING) != 0) {

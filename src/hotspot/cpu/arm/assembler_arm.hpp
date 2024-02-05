@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,7 +175,7 @@ class Address {
     if (_index == noreg) {
       assert(-256 < _disp && _disp < 256, "encoding constraint");
       return _mode | up(_disp) << 23 | 1 << 22 | _base->encoding() << 16 |
-             (abs(_disp) & 0xf0) << 4 | abs(_disp) & 0x0f;
+             (abs(_disp) & 0xf0) << 4 | (abs(_disp) & 0x0f);
     } else {
       assert(_index != PC && (_mode == basic_offset || _index != _base), "unpredictable instruction");
       assert(_disp == 0 && _shift == lsl && _shift_imm == 0, "encoding constraint");
@@ -245,7 +245,7 @@ class Address {
 
   bool uses(Register reg) const { return _base == reg || _index == reg; }
 
-  const relocInfo::relocType rtype() { return _rspec.type(); }
+  relocInfo::relocType rtype()       { return _rspec.type(); }
   const RelocationHolder&    rspec() { return _rspec; }
 
   // Convert the raw encoding form into the form expected by the
@@ -279,37 +279,31 @@ class VFP {
   class float_num : public fpnum {
    public:
     float_num(float v) {
-      _num.val = v;
+      _bits = PrimitiveConversions::cast<unsigned int>(v);
     }
 
-    virtual unsigned int f_hi4() const { return (_num.bits << 9) >> (19+9); }
-    virtual bool f_lo_is_null() const { return (_num.bits & ((1 << 19) - 1)) == 0; }
-    virtual int e() const { return ((_num.bits << 1) >> (23+1)) - 127; }
-    virtual unsigned int s() const { return _num.bits >> 31; }
+    unsigned int f_hi4() const override { return (_bits << 9) >> (19+9); }
+    bool f_lo_is_null() const override { return (_bits & ((1 << 19) - 1)) == 0; }
+    int e() const override { return ((_bits << 1) >> (23+1)) - 127; }
+    unsigned int s() const override { return _bits >> 31; }
 
    private:
-    union {
-      float val;
-      unsigned int bits;
-    } _num;
+    unsigned int _bits;
   };
 
   class double_num : public fpnum {
    public:
     double_num(double v) {
-      _num.val = v;
+      _bits = PrimitiveConversions::cast<uint64_t>(v);
     }
 
-    virtual unsigned int f_hi4() const { return (_num.bits << 12) >> (48+12); }
-    virtual bool f_lo_is_null() const { return (_num.bits & ((1LL << 48) - 1)) == 0; }
-    virtual int e() const { return ((_num.bits << 1) >> (52+1)) - 1023; }
-    virtual unsigned int s() const { return _num.bits >> 63; }
+    unsigned int f_hi4() const override { return (_bits << 12) >> (48+12); }
+    bool f_lo_is_null() const override { return (_bits & ((1LL << 48) - 1)) == 0; }
+    int e() const override { return ((_bits << 1) >> (52+1)) - 1023; }
+    unsigned int s() const override { return _bits >> 63; }
 
    private:
-    union {
-      double val;
-      unsigned long long bits;
-    } _num;
+    uint64_t _bits;
   };
 };
 #endif

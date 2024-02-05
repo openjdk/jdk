@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,7 +109,7 @@ void OptoRuntime::generate_exception_blob() {
   // registers of the frame being removed.
   //
   __ movptr(Address(rsp, thread_off * wordSize), rcx); // Thread is first argument
-  __ set_last_Java_frame(rcx, noreg, noreg, NULL, noreg);
+  __ set_last_Java_frame(rcx, noreg, noreg, nullptr, noreg);
 
   __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, OptoRuntime::handle_exception_C)));
 

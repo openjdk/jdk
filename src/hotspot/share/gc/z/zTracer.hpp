@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,30 +25,58 @@
 #define SHARE_GC_Z_ZTRACER_HPP
 
 #include "gc/shared/gcTrace.hpp"
+#include "gc/z/zGenerationId.hpp"
 
 class ZStatCounter;
 class ZStatPhase;
 class ZStatSampler;
 
-class ZTracer : public GCTracer, public CHeapObj<mtGC> {
+class ZTracer : AllStatic {
 private:
-  static ZTracer* _tracer;
-
-  ZTracer();
-
-  void send_stat_counter(const ZStatCounter& counter, uint64_t increment, uint64_t value);
-  void send_stat_sampler(const ZStatSampler& sampler, uint64_t value);
-  void send_thread_phase(const char* name, const Ticks& start, const Ticks& end);
-  void send_thread_debug(const char* name, const Ticks& start, const Ticks& end);
+  static void send_stat_counter(const ZStatCounter& counter, uint64_t increment, uint64_t value);
+  static void send_stat_sampler(const ZStatSampler& sampler, uint64_t value);
+  static void send_thread_phase(const char* name, const Ticks& start, const Ticks& end);
+  static void send_thread_debug(const char* name, const Ticks& start, const Ticks& end);
 
 public:
-  static ZTracer* tracer();
   static void initialize();
 
-  void report_stat_counter(const ZStatCounter& counter, uint64_t increment, uint64_t value);
-  void report_stat_sampler(const ZStatSampler& sampler, uint64_t value);
-  void report_thread_phase(const char* name, const Ticks& start, const Ticks& end);
-  void report_thread_debug(const char* name, const Ticks& start, const Ticks& end);
+  static void report_stat_counter(const ZStatCounter& counter, uint64_t increment, uint64_t value);
+  static void report_stat_sampler(const ZStatSampler& sampler, uint64_t value);
+  static void report_thread_phase(const char* name, const Ticks& start, const Ticks& end);
+  static void report_thread_debug(const char* name, const Ticks& start, const Ticks& end);
+};
+
+class ZMinorTracer : public GCTracer {
+public:
+  ZMinorTracer();
+};
+
+class ZMajorTracer : public GCTracer {
+public:
+  ZMajorTracer();
+};
+
+class ZGenerationTracer {
+protected:
+  Ticks _start;
+
+public:
+  ZGenerationTracer()
+    : _start() {}
+
+  void report_start(const Ticks& timestamp);
+  virtual void report_end(const Ticks& timestamp) = 0;
+};
+
+class ZYoungTracer : public ZGenerationTracer {
+public:
+  void report_end(const Ticks& timestamp) override;
+};
+
+class ZOldTracer : public ZGenerationTracer {
+public:
+  void report_end(const Ticks& timestamp) override;
 };
 
 // For temporary latency measurements during development and debugging

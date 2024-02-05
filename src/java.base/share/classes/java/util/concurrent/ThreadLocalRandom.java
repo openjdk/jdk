@@ -39,14 +39,10 @@
 package java.util.concurrent;
 
 import java.io.ObjectStreamField;
-import java.math.BigInteger;
 import java.security.AccessControlContext;
-import java.util.Map;
 import java.util.Random;
-import java.util.Spliterator;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.random.RandomGenerator;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -368,11 +364,6 @@ public final class ThreadLocalRandom extends Random {
      */
     private static final long SEEDER_INCREMENT = 0xbb67ae8584caa73bL;
 
-    // IllegalArgumentException messages
-    static final String BAD_BOUND = "bound must be positive";
-    static final String BAD_RANGE = "bound must be greater than origin";
-    static final String BAD_SIZE  = "size must be non-negative";
-
     // Unsafe mechanics
     private static final Unsafe U = Unsafe.getUnsafe();
     private static final long SEED
@@ -401,7 +392,7 @@ public final class ThreadLocalRandom extends Random {
         = new AtomicLong(RandomSupport.mixMurmur64(System.currentTimeMillis()) ^
                          RandomSupport.mixMurmur64(System.nanoTime()));
 
-    // used by ExtentLocal
+    // used by ScopedValue
     private static class Access {
         static {
             SharedSecrets.setJavaUtilConcurrentTLRAccess(
@@ -436,6 +427,10 @@ public final class ThreadLocalRandom extends Random {
 
         public long nextLong() {
             return ThreadLocalRandom.current().nextLong();
+        }
+
+        public double nextDouble() {
+            return ThreadLocalRandom.current().nextDouble();
         }
     }
 

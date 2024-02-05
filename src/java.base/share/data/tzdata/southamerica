@@ -231,7 +231,7 @@ Rule	Arg	2008	only	-	Oct	Sun>=15	0:00	1:00	-
 # Hora de verano para la República Argentina
 # http://buenasiembra.com.ar/esoterismo/astrologia/hora-de-verano-de-la-republica-argentina-27.html
 # says that standard time in Argentina from 1894-10-31
-# to 1920-05-01 was -4:16:48.25.  Go with this more-precise value
+# to 1920-05-01 was -4:16:48.25.  Go with this more precise value
 # over Shanks & Pottenger.  It is upward compatible with Milne, who
 # says Córdoba time was -4:16:48.2.
 
@@ -1441,9 +1441,14 @@ Zone Antarctica/Palmer	0	-	-00	1965
 # Milne gives 4:56:16.4 for Bogotá time in 1899.  He writes,
 # "A variation of fifteen minutes in the public clocks of Bogota is not rare."
 
+# From Alois Treindl (2022-11-10):
+# End of time change in Colombia 1993 ... should be 6 February 24h ...
+# DECRETO 267 DE 1993
+# https://www.suin-juriscol.gov.co/viewDocument.asp?ruta=Decretos/1061335
+
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
-Rule	CO	1992	only	-	May	 3	0:00	1:00	-
-Rule	CO	1993	only	-	Apr	 4	0:00	0	-
+Rule	CO	1992	only	-	May	 3	 0:00	1:00	-
+Rule	CO	1993	only	-	Feb	 6	24:00	0	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 		#STDOFF	-4:56:16.4
 Zone	America/Bogota	-4:56:16 -	LMT	1884 Mar 13
@@ -1715,6 +1720,12 @@ Rule	Para	2010	2012	-	Apr	Sun>=8	0:00	0	-
 # From Carlos Raúl Perasso (2014-02-28):
 # Decree 1264 can be found at:
 # http://www.presidencia.gov.py/archivos/documentos/DECRETO1264_ey9r8zai.pdf
+#
+# From Paul Eggert (2023-07-26):
+# Transition dates are now set by Law No. 7115, not by presidential decree.
+# https://www.abc.com.py/politica/2023/07/12/promulgacion-el-cambio-de-hora-sera-por-ley/
+# From Carlos Raúl Perasso (2023-07-27):
+# http://silpy.congreso.gov.py/descarga/ley-144138
 Rule	Para	2013	max	-	Mar	Sun>=22	0:00	0	-
 
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]

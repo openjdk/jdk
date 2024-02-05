@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1538,7 +1538,7 @@ public class FloatingDecimal{
                     }
                 }
             }
-            fValue = Math.max(Float.MIN_VALUE, Math.min(Float.MAX_VALUE, (float) dValue));
+            fValue = Math.clamp((float) dValue, Float.MIN_VALUE, Float.MAX_VALUE);
 
             //
             // fValue is now approximately the result.

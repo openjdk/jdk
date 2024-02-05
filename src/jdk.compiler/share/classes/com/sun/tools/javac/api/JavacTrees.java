@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,25 +155,24 @@ import static com.sun.tools.javac.code.Kinds.Kind.*;
  * @author Peter von der Ah&eacute;
  */
 public class JavacTrees extends DocTrees {
+    private final Modules modules;
+    private final Resolve resolve;
+    private final Enter enter;
+    private final Log log;
+    private final MemberEnter memberEnter;
+    private final Attr attr;
+    private final Check chk;
+    private final TreeMaker treeMaker;
+    private final JavacElements elements;
+    private final JavacTaskImpl javacTaskImpl;
+    private final Names names;
+    private final Types types;
+    private final DocTreeMaker docTreeMaker;
+    private final JavaFileManager fileManager;
+    private final ParserFactory parser;
+    private final Symtab syms;
 
-    // in a world of a single context per compilation, these would all be final
-    private Modules modules;
-    private Resolve resolve;
-    private Enter enter;
-    private Log log;
-    private MemberEnter memberEnter;
-    private Attr attr;
-    private Check chk;
-    private TreeMaker treeMaker;
-    private JavacElements elements;
-    private JavacTaskImpl javacTaskImpl;
-    private Names names;
-    private Types types;
-    private DocTreeMaker docTreeMaker;
     private BreakIterator breakIterator;
-    private JavaFileManager fileManager;
-    private ParserFactory parser;
-    private Symtab syms;
 
     private final Map<Type, Type> extraType2OriginalMap = new WeakHashMap<>();
 
@@ -198,17 +197,11 @@ public class JavacTrees extends DocTrees {
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     protected JavacTrees(Context context) {
         this.breakIterator = null;
         context.put(JavacTrees.class, this);
-        init(context);
-    }
 
-    public void updateContext(Context context) {
-        init(context);
-    }
-
-    private void init(Context context) {
         modules = Modules.instance(context);
         attr = Attr.instance(context);
         chk = Check.instance(context);
@@ -224,9 +217,8 @@ public class JavacTrees extends DocTrees {
         parser = ParserFactory.instance(context);
         syms = Symtab.instance(context);
         fileManager = context.get(JavaFileManager.class);
-        JavacTask t = context.get(JavacTask.class);
-        if (t instanceof JavacTaskImpl taskImpl)
-            javacTaskImpl = taskImpl;
+        var task = context.get(JavacTask.class);
+        javacTaskImpl = (task instanceof JavacTaskImpl taskImpl) ? taskImpl : null;
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
@@ -1182,13 +1174,17 @@ public class JavacTrees extends DocTrees {
         printMessage(kind, msg, ((DCTree) t).pos((DCDocComment) c), root);
     }
 
+    public void printMessage(Diagnostic.Kind kind, CharSequence msg) {
+        printMessage(kind, msg, (JCDiagnostic.DiagnosticPosition) null, null);
+    }
+
     private void printMessage(Diagnostic.Kind kind, CharSequence msg,
             JCDiagnostic.DiagnosticPosition pos,
             com.sun.source.tree.CompilationUnitTree root) {
         JavaFileObject oldSource = null;
         JavaFileObject newSource = null;
 
-        newSource = root.getSourceFile();
+        newSource = root == null ? null : root.getSourceFile();
         if (newSource == null) {
             pos = null;
         } else {

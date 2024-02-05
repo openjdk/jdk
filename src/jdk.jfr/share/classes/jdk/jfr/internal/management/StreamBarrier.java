@@ -62,6 +62,10 @@ public final class StreamBarrier implements Closeable {
         return end;
     }
 
+    public synchronized boolean hasStreamEnd() {
+        return end != Long.MAX_VALUE;
+    }
+
     public synchronized void activate() {
         activated = true;
     }

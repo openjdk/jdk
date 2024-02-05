@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1261,7 +1261,7 @@ final class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
         }
 
 
-        // 1. We can make grab-tracking emulation here more robust to variations in
+        // 1. We can make grab-tracking emulation here more robust to variations
         //    in mouse-events order and consistence. E.g. by using such code:
         //    if( grabbed && event.getID()==MouseEvent.MOUSE_MOVED ) grabbed = false;
         //    Or we can also use 'assert'ions.
@@ -1270,7 +1270,7 @@ final class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
         //    is set to a scrollbar or to a scroll-button, then references to their
         //    'Component'-instances are "remembered". And events are dispatched to
         //    these remembered components, without checking, if XTextAreaPeer has
-        //    replaced these instances with another ones. This also aplies to
+        //    replaced these instances with other ones. This also applies to
         //    mouse-drags-from-outside (see comment in 'grabbed_update' method).
 
         void handle( MouseEvent event ) {

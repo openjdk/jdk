@@ -24,7 +24,9 @@
  */
 
 #include <windows.h>
+#include <strsafe.h>
 #include <stdio.h>
+#include <malloc.h>
 
 #include <jni.h>
 #include <jni_util.h>
@@ -63,20 +65,20 @@ JNIEXPORT jstring JNICALL Java_sun_awt_Win32FontManager_getFontPath(JNIEnv *env,
     end = strrchr(sysdir,'\\');
     if (end && (stricmp(end,"\\System") || stricmp(end,"\\System32"))) {
         *end = 0;
-         strcat(sysdir, "\\Fonts");
+        StringCchCatA(sysdir, BSIZE, "\\Fonts");
     }
 
     GetWindowsDirectory(windir, BSIZE);
     if (strlen(windir) > BSIZE-7) {
         *windir = 0;
     } else {
-        strcat(windir, "\\Fonts");
+        StringCchCatA(windir, BSIZE, "\\Fonts");
     }
 
-    strcpy(fontpath,sysdir);
+    StringCchCopyA(fontpath, BSIZE*2, sysdir);
     if (stricmp(sysdir,windir)) {
-        strcat(fontpath,";");
-        strcat(fontpath,windir);
+        StringCchCatA(fontpath, BSIZE*2, ";");
+        StringCchCatA(fontpath, BSIZE*2, windir);
     }
 
     return JNU_NewStringPlatform(env, fontpath);
@@ -152,7 +154,7 @@ static int DifferentFamily(wchar_t *family, wchar_t* fullName) {
     info.isDifferent = 0;
 
     memset(&lfw, 0, sizeof(lfw));
-    wcscpy(lfw.lfFaceName, fullName);
+    StringCchCopyW(lfw.lfFaceName, LF_FACESIZE, fullName);
     lfw.lfCharSet = DEFAULT_CHARSET;
     EnumFontFamiliesExW(screenDC, &lfw,
                         (FONTENUMPROCW)CheckFontFamilyProcW,
@@ -349,7 +351,7 @@ static int CALLBACK EnumFamilyNamesW(
     }
 
     memset(&lfw, 0, sizeof(lfw));
-    wcscpy(lfw.lfFaceName, lpelfe->elfLogFont.lfFaceName);
+    StringCchCopyW(lfw.lfFaceName, LF_FACESIZE, lpelfe->elfLogFont.lfFaceName);
     lfw.lfCharSet = lpelfe->elfLogFont.lfCharSet;
     EnumFontFamiliesExW(screenDC, &lfw,
                         (FONTENUMPROCW)EnumFontFacesInFamilyProcW,
@@ -515,15 +517,9 @@ static void populateFontFileNameFromRegistryKey(HKEY regKey,
                                                 GdiFontMapInfo *fmi,
                                                 jobject fontToFileMap)
 {
-#define MAX_BUFFER (FILENAME_MAX+1)
-    const wchar_t wname[MAX_BUFFER];
-    const char data[MAX_BUFFER];
-
     DWORD type;
     LONG ret;
     HKEY hkeyFonts;
-    DWORD dwNameSize;
-    DWORD dwDataValueSize;
     DWORD nval;
     DWORD dwNumValues, dwMaxValueNameLen, dwMaxValueDataLen;
 
@@ -538,16 +534,17 @@ static void populateFontFileNameFromRegistryKey(HKEY regKey,
                            &dwNumValues, &dwMaxValueNameLen,
                            &dwMaxValueDataLen, NULL, NULL);
 
-    if (ret != ERROR_SUCCESS ||
-        dwMaxValueNameLen >= MAX_BUFFER ||
-        dwMaxValueDataLen >= MAX_BUFFER) {
+    if (ret != ERROR_SUCCESS) {
         RegCloseKey(hkeyFonts);
         return;
     }
+    dwMaxValueNameLen++; /* Account for NULL-terminator */
+    wchar_t *wname = (wchar_t*)malloc(dwMaxValueNameLen * sizeof(wchar_t));
+    wchar_t *data = (wchar_t*)malloc(dwMaxValueDataLen);
     for (nval = 0; nval < dwNumValues; nval++ ) {
-        dwNameSize = MAX_BUFFER;
-        dwDataValueSize = MAX_BUFFER;
-        ret = RegEnumValueW(hkeyFonts, nval, (LPWSTR)wname, &dwNameSize,
+        DWORD dwNameSize = dwMaxValueNameLen;
+        DWORD dwDataValueSize = dwMaxValueDataLen;
+        ret = RegEnumValueW(hkeyFonts, nval, wname, &dwNameSize,
                             NULL, &type, (LPBYTE)data, &dwDataValueSize);
 
         if (ret != ERROR_SUCCESS) {
@@ -557,20 +554,22 @@ static void populateFontFileNameFromRegistryKey(HKEY regKey,
             continue;
         }
 
-        if (!RegistryToBaseTTNameW((LPWSTR)wname) ) {
+        if (!RegistryToBaseTTNameW(wname) ) {
             /* If the filename ends with ".ttf" or ".otf" also accept it.
              * Not expecting to need to do this for .ttc files.
              * Also note this code is not mirrored in the "A" (win9x) path.
              */
-            LPWSTR dot = wcsrchr((LPWSTR)data, L'.');
+            LPWSTR dot = wcsrchr(data, L'.');
             if (dot == NULL || ((wcsicmp(dot, L".ttf") != 0)
                                   && (wcsicmp(dot, L".otf") != 0))) {
                 continue;  /* not a TT font... */
             }
         }
-        registerFontW(fmi, fontToFileMap, (LPWSTR)wname, (LPWSTR)data);
+        registerFontW(fmi, fontToFileMap, wname, data);
     }
 
+    free(wname);
+    free(data);
     RegCloseKey(hkeyFonts);
 }
 
@@ -653,7 +652,7 @@ Java_sun_awt_Win32FontManager_populateFontFileNameMap0
     /* Enumerate fonts via GDI to build maps of fonts and families */
     memset(&lfw, 0, sizeof(lfw));
     lfw.lfCharSet = DEFAULT_CHARSET;  /* all charsets */
-    wcscpy(lfw.lfFaceName, L"");      /* one face per family (CHECK) */
+    StringCchCopyW(lfw.lfFaceName, LF_FACESIZE, L"");      /* one face per family (CHECK) */
     EnumFontFamiliesExW(screenDC, &lfw,
                         (FONTENUMPROCW)EnumFamilyNamesW,
                         (LPARAM)(&fmi), 0L);

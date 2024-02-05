@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,25 +31,23 @@
 // Static information about the operating system. Initialized exactly once
 // at VM start-up and never changes again.
 class OSInfo : AllStatic {
-  static int    _vm_page_size;
-  static int    _vm_allocation_granularity;
+  static size_t    _vm_page_size;
+  static size_t    _vm_allocation_granularity;
 
 public:
   // Returns the byte size of a virtual memory page
-  static int vm_page_size() { return _vm_page_size; }
+  static size_t vm_page_size() { return _vm_page_size; }
 
   // Returns the size, in bytes, of the granularity with which memory can be reserved using os::reserve_memory().
-  static int vm_allocation_granularity() { return _vm_allocation_granularity; }
+  static size_t vm_allocation_granularity() { return _vm_allocation_granularity; }
 
-  static void set_vm_page_size(int n) {
-    assert(_vm_page_size < 0, "init only once");
-    assert(n > 0, "sanity");
+  static void set_vm_page_size(size_t n) {
+    assert(_vm_page_size == 0, "init only once");
     _vm_page_size = n;
   }
 
-  static void set_vm_allocation_granularity(int n) {
-    assert(_vm_allocation_granularity < 0, "init only once");
-    assert(n > 0, "sanity");
+  static void set_vm_allocation_granularity(size_t n) {
+    assert(_vm_allocation_granularity == 0, "init only once");
     _vm_allocation_granularity = n;
   }
 };

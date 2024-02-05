@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,8 @@ import jdk.internal.access.SharedSecrets;
  *
  * <p> HttpCookie class can accept all these 3 forms of syntax.
  *
+ * @spec https://www.rfc-editor.org/info/rfc2109 RFC 2109: HTTP State Management Mechanism
+ * @spec https://www.rfc-editor.org/info/rfc2965 RFC 2965: HTTP State Management Mechanism
  * @author Edward Wang
  * @since 1.6
  */
@@ -368,7 +370,7 @@ public final class HttpCookie implements Cloneable {
      */
     public void setDomain(String pattern) {
         if (pattern != null)
-            domain = pattern.toLowerCase();
+            domain = pattern.toLowerCase(Locale.ROOT);
         else
             domain = pattern;
     }
@@ -741,8 +743,8 @@ public final class HttpCookie implements Cloneable {
      */
     @Override
     public int hashCode() {
-        int h1 = name.toLowerCase().hashCode();
-        int h2 = (domain!=null) ? domain.toLowerCase().hashCode() : 0;
+        int h1 = name.toLowerCase(Locale.ROOT).hashCode();
+        int h2 = (domain!=null) ? domain.toLowerCase(Locale.ROOT).hashCode() : 0;
         int h3 = (path!=null) ? path.hashCode() : 0;
 
         return h1 + h2 + h3;
@@ -975,7 +977,7 @@ public final class HttpCookie implements Cloneable {
         // strip off the surrounding "-sign if there's any
         attrValue = stripOffSurroundingQuote(attrValue);
 
-        CookieAttributeAssignor assignor = assignors.get(attrName.toLowerCase());
+        CookieAttributeAssignor assignor = assignors.get(attrName.toLowerCase(Locale.ROOT));
         if (assignor != null) {
             assignor.assign(cookie, attrName, attrValue);
         } else {
@@ -1077,7 +1079,7 @@ public final class HttpCookie implements Cloneable {
     private static int guessCookieVersion(String header) {
         int version = 0;
 
-        header = header.toLowerCase();
+        header = header.toLowerCase(Locale.ROOT);
         if (header.contains("expires=")) {
             // only netscape cookie using 'expires'
             version = 0;

@@ -72,6 +72,14 @@
  *     <li>Adler-32 checksum is described in RFC 1950 (above)
  * </ul>
  *
+ * @spec https://www.rfc-editor.org/info/rfc1950
+ *      RFC 1950: ZLIB Compressed Data Format Specification version 3.3
+ * @spec https://www.rfc-editor.org/info/rfc1951
+ *      RFC 1951: DEFLATE Compressed Data Format Specification version 1.3
+ * @spec https://www.rfc-editor.org/info/rfc1952
+ *      RFC 1952: GZIP file format specification version 4.3
+ * @spec https://www.rfc-editor.org/info/rfc3720
+ *      RFC 3720: Internet Small Computer Systems Interface (iSCSI)
  * @since 1.1
  */
 package java.util.zip;

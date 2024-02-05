@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ class os::Linux {
   friend class CgroupSubsystem;
   friend class os;
   friend class OSContainer;
-  friend class TestReserveMemorySpecial;
 
   static int (*_pthread_getcpuclockid)(pthread_t, clockid_t *);
   static int (*_pthread_setname_np)(pthread_t, const char*);
@@ -49,7 +48,7 @@ class os::Linux {
   static GrowableArray<int>* _cpu_to_node;
   static GrowableArray<int>* _nindex_to_node;
 
-  static size_t _default_large_page_size;
+  static julong available_memory_in_container();
 
  protected:
 
@@ -57,6 +56,8 @@ class os::Linux {
   static pthread_t _main_thread;
 
   static julong available_memory();
+  static julong free_memory();
+
   static int active_processor_count();
 
   static void initialize_system_info();
@@ -72,25 +73,6 @@ class os::Linux {
   static void rebuild_nindex_to_node_map();
   static GrowableArray<int>* cpu_to_node()    { return _cpu_to_node; }
   static GrowableArray<int>* nindex_to_node()  { return _nindex_to_node; }
-
-  static size_t default_large_page_size();
-  static size_t scan_default_large_page_size();
-  static os::PageSizes scan_multiple_page_support();
-
-  static bool setup_large_page_type(size_t page_size);
-  static bool transparent_huge_pages_sanity_check(bool warn, size_t pages_size);
-  static bool hugetlbfs_sanity_check(bool warn, size_t page_size);
-  static bool shm_hugetlbfs_sanity_check(bool warn, size_t page_size);
-
-  static int hugetlbfs_page_size_flag(size_t page_size);
-
-  static char* reserve_memory_special_shm(size_t bytes, size_t alignment, char* req_addr, bool exec);
-  static char* reserve_memory_special_huge_tlbfs(size_t bytes, size_t alignment, size_t page_size, char* req_addr, bool exec);
-  static bool commit_memory_special(size_t bytes, size_t page_size, char* req_addr, bool exec);
-
-  static bool release_memory_special_impl(char* base, size_t bytes);
-  static bool release_memory_special_shm(char* base, size_t bytes);
-  static bool release_memory_special_huge_tlbfs(char* base, size_t bytes);
 
   static void print_process_memory_info(outputStream* st);
   static void print_system_memory_info(outputStream* st);
@@ -149,6 +131,8 @@ class os::Linux {
   // Return default guard size for the specified thread type
   static size_t default_guard_size(os::ThreadType thr_type);
 
+  static bool adjustStackSizeForGuardPages(); // See comments in os_linux.cpp
+
   static void capture_initial_stack(size_t max_size);
 
   // Stack overflow handling
@@ -167,6 +151,8 @@ class os::Linux {
   }
 
   static jlong fast_thread_cpu_time(clockid_t clockid);
+
+  static jlong sendfile(int out_fd, int in_fd, jlong* offset, jlong count);
 
   // Determine if the vmid is the parent pid for a child in a PID namespace.
   // Return the namespace pid if so, otherwise -1.
@@ -188,6 +174,17 @@ class os::Linux {
   // May fail (returns false) or succeed (returns true) but not all output fields are available; unavailable
   // fields will contain -1.
   static bool query_process_memory_info(meminfo_t* info);
+
+  // Tells if the user asked for transparent huge pages.
+  static bool _thp_requested;
+
+  static void large_page_init();
+
+  static bool thp_requested();
+  static bool should_madvise_anonymous_thps();
+  static bool should_madvise_shmem_thps();
+
+  static void madvise_transparent_huge_pages(void* addr, size_t bytes);
 
   // Stack repair handling
 
@@ -252,8 +249,8 @@ class os::Linux {
   static void set_numa_move_pages(numa_move_pages_func_t func) { _numa_move_pages = func; }
   static void set_numa_set_preferred(numa_set_preferred_func_t func) { _numa_set_preferred = func; }
   static void set_numa_all_nodes(unsigned long* ptr) { _numa_all_nodes = ptr; }
-  static void set_numa_all_nodes_ptr(struct bitmask **ptr) { _numa_all_nodes_ptr = (ptr == NULL ? NULL : *ptr); }
-  static void set_numa_nodes_ptr(struct bitmask **ptr) { _numa_nodes_ptr = (ptr == NULL ? NULL : *ptr); }
+  static void set_numa_all_nodes_ptr(struct bitmask **ptr) { _numa_all_nodes_ptr = (ptr == nullptr ? nullptr : *ptr); }
+  static void set_numa_nodes_ptr(struct bitmask **ptr) { _numa_nodes_ptr = (ptr == nullptr ? nullptr : *ptr); }
   static void set_numa_interleave_bitmask(struct bitmask* ptr)     { _numa_interleave_bitmask = ptr ;   }
   static void set_numa_membind_bitmask(struct bitmask* ptr)        { _numa_membind_bitmask = ptr ;      }
   static int sched_getcpu_syscall(void);
@@ -266,15 +263,15 @@ class os::Linux {
   static NumaAllocationPolicy _current_numa_policy;
 
  public:
-  static int sched_getcpu()  { return _sched_getcpu != NULL ? _sched_getcpu() : -1; }
+  static int sched_getcpu()  { return _sched_getcpu != nullptr ? _sched_getcpu() : -1; }
   static int numa_node_to_cpus(int node, unsigned long *buffer, int bufferlen);
-  static int numa_max_node() { return _numa_max_node != NULL ? _numa_max_node() : -1; }
+  static int numa_max_node() { return _numa_max_node != nullptr ? _numa_max_node() : -1; }
   static int numa_num_configured_nodes() {
-    return _numa_num_configured_nodes != NULL ? _numa_num_configured_nodes() : -1;
+    return _numa_num_configured_nodes != nullptr ? _numa_num_configured_nodes() : -1;
   }
-  static int numa_available() { return _numa_available != NULL ? _numa_available() : -1; }
+  static int numa_available() { return _numa_available != nullptr ? _numa_available() : -1; }
   static int numa_tonode_memory(void *start, size_t size, int node) {
-    return _numa_tonode_memory != NULL ? _numa_tonode_memory(start, size, node) : -1;
+    return _numa_tonode_memory != nullptr ? _numa_tonode_memory(start, size, node) : -1;
   }
 
   static bool is_running_in_interleave_mode() {
@@ -296,46 +293,46 @@ class os::Linux {
 
   static void numa_interleave_memory(void *start, size_t size) {
     // Prefer v2 API
-    if (_numa_interleave_memory_v2 != NULL) {
+    if (_numa_interleave_memory_v2 != nullptr) {
       if (is_running_in_interleave_mode()) {
         _numa_interleave_memory_v2(start, size, _numa_interleave_bitmask);
-      } else if (_numa_membind_bitmask != NULL) {
+      } else if (_numa_membind_bitmask != nullptr) {
         _numa_interleave_memory_v2(start, size, _numa_membind_bitmask);
       }
-    } else if (_numa_interleave_memory != NULL) {
+    } else if (_numa_interleave_memory != nullptr) {
       _numa_interleave_memory(start, size, _numa_all_nodes);
     }
   }
   static void numa_set_preferred(int node) {
-    if (_numa_set_preferred != NULL) {
+    if (_numa_set_preferred != nullptr) {
       _numa_set_preferred(node);
     }
   }
   static void numa_set_bind_policy(int policy) {
-    if (_numa_set_bind_policy != NULL) {
+    if (_numa_set_bind_policy != nullptr) {
       _numa_set_bind_policy(policy);
     }
   }
   static int numa_distance(int node1, int node2) {
-    return _numa_distance != NULL ? _numa_distance(node1, node2) : -1;
+    return _numa_distance != nullptr ? _numa_distance(node1, node2) : -1;
   }
   static long numa_move_pages(int pid, unsigned long count, void **pages, const int *nodes, int *status, int flags) {
-    return _numa_move_pages != NULL ? _numa_move_pages(pid, count, pages, nodes, status, flags) : -1;
+    return _numa_move_pages != nullptr ? _numa_move_pages(pid, count, pages, nodes, status, flags) : -1;
   }
   static int get_node_by_cpu(int cpu_id);
   static int get_existing_num_nodes();
   // Check if numa node is configured (non-zero memory node).
   static bool is_node_in_configured_nodes(unsigned int n) {
-    if (_numa_bitmask_isbitset != NULL && _numa_all_nodes_ptr != NULL) {
+    if (_numa_bitmask_isbitset != nullptr && _numa_all_nodes_ptr != nullptr) {
       return _numa_bitmask_isbitset(_numa_all_nodes_ptr, n);
     } else
       return false;
   }
   // Check if numa node exists in the system (including zero memory nodes).
   static bool is_node_in_existing_nodes(unsigned int n) {
-    if (_numa_bitmask_isbitset != NULL && _numa_nodes_ptr != NULL) {
+    if (_numa_bitmask_isbitset != nullptr && _numa_nodes_ptr != nullptr) {
       return _numa_bitmask_isbitset(_numa_nodes_ptr, n);
-    } else if (_numa_bitmask_isbitset != NULL && _numa_all_nodes_ptr != NULL) {
+    } else if (_numa_bitmask_isbitset != nullptr && _numa_all_nodes_ptr != nullptr) {
       // Not all libnuma API v2 implement numa_nodes_ptr, so it's not possible
       // to trust the API version for checking its absence. On the other hand,
       // numa_nodes_ptr found in libnuma 2.0.9 and above is the only way to get
@@ -352,11 +349,11 @@ class os::Linux {
   }
   // Check if node is in bound node set.
   static bool is_node_in_bound_nodes(int node) {
-    if (_numa_bitmask_isbitset != NULL) {
+    if (_numa_bitmask_isbitset != nullptr) {
       if (is_running_in_interleave_mode()) {
         return _numa_bitmask_isbitset(_numa_interleave_bitmask, node);
       } else {
-        return _numa_membind_bitmask != NULL ? _numa_bitmask_isbitset(_numa_membind_bitmask, node) : false;
+        return _numa_membind_bitmask != nullptr ? _numa_bitmask_isbitset(_numa_membind_bitmask, node) : false;
       }
     }
     return false;
@@ -368,7 +365,7 @@ class os::Linux {
     unsigned int node = 0;
     unsigned int highest_node_number = 0;
 
-    if (_numa_membind_bitmask != NULL && _numa_max_node != NULL && _numa_bitmask_isbitset != NULL) {
+    if (_numa_membind_bitmask != nullptr && _numa_max_node != nullptr && _numa_bitmask_isbitset != nullptr) {
       highest_node_number = _numa_max_node();
     } else {
       return false;
@@ -424,6 +421,10 @@ class os::Linux {
     size_t keepcost;
   };
   static void get_mallinfo(glibc_mallinfo* out, bool* might_have_wrapped);
+
+  // Calls out to GNU extension malloc_info if available
+  // otherwise does nothing and returns -2.
+  static int malloc_info(FILE* stream);
 #endif // GLIBC
 };
 

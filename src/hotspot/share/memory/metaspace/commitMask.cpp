@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -78,7 +78,7 @@ void CommitMask::verify() const {
   // Walk the whole commit mask.
   // For each 1 bit, check if the associated granule is accessible.
   // For each 0 bit, check if the associated granule is not accessible. Slow mode only.
-  assert(_base != NULL && _word_size > 0 && _words_per_bit > 0, "Sanity");
+  assert(_base != nullptr && _word_size > 0 && _words_per_bit > 0, "Sanity");
   assert_is_aligned(_base, _words_per_bit * BytesPerWord);
   assert_is_aligned(_word_size, _words_per_bit);
 }

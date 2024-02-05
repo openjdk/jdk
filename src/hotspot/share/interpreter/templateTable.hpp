@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ class Template {
 
  public:
   Bytecodes::Code bytecode() const;
-  bool      is_valid() const                     { return _gen != NULL; }
+  bool      is_valid() const                     { return _gen != nullptr; }
   bool      uses_bcp() const                     { return (_flags & (1 << uses_bcp_bit     )) != 0; }
   bool      does_dispatch() const                { return (_flags & (1 << does_dispatch_bit)) != 0; }
   bool      calls_vm() const                     { return (_flags & (1 << calls_vm_bit     )) != 0; }
@@ -262,10 +262,33 @@ class TemplateTable: AllStatic {
 
   static void _return(TosState state);
 
-  static void resolve_cache_and_index(int byte_no,       // one of 1,2,11
-                                      Register cache,    // output for CP cache
-                                      Register index,    // output for CP index
-                                      size_t index_size); // one of 1,2,4
+  static void resolve_cache_and_index_for_field(int byte_no,
+                                                Register cache,
+                                                Register index);
+  static void resolve_cache_and_index_for_method(int byte_no,
+                                                 Register cache,
+                                                 Register index);
+  static void load_invokedynamic_entry(Register method);
+  static void load_resolved_field_entry(Register obj,
+                                        Register cache,
+                                        Register tos_state,
+                                        Register off,
+                                        Register flags,
+                                        bool is_static);
+  static void load_resolved_method_entry_special_or_static(Register cache,
+                                                           Register method,
+                                                           Register flags);
+  static void load_resolved_method_entry_handle(Register cache,
+                                                Register method,
+                                                Register ref_index,
+                                                Register flags);
+  static void load_resolved_method_entry_interface(Register cache,
+                                                   Register klass,
+                                                   Register method_or_table_index,
+                                                   Register flags);
+  static void load_resolved_method_entry_virtual(Register cache,
+                                                 Register method_or_table_index,
+                                                 Register flags);
   static void load_invoke_cp_cache_entry(int byte_no,
                                          Register method,
                                          Register itable_index,

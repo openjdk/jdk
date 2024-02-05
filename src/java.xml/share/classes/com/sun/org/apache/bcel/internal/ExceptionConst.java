@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,12 +20,23 @@
 
 package com.sun.org.apache.bcel.internal;
 
+import jdk.xml.internal.Utils;
+
 /**
  * Exception constants.
+ *
  * @since 6.0 (intended to replace the InstructionConstant interface)
- * @LastModified: May 2021
+ * @LastModified: Feb 2023
  */
 public final class ExceptionConst {
+
+    /**
+     * Enum corresponding to the various Exception Class arrays, used by
+     * {@link ExceptionConst#createExceptions(EXCS, Class...)}
+     */
+    public enum EXCS {
+        EXCS_CLASS_AND_INTERFACE_RESOLUTION, EXCS_FIELD_AND_METHOD_RESOLUTION, EXCS_INTERFACE_METHOD_RESOLUTION, EXCS_STRING_RESOLUTION, EXCS_ARRAY_EXCEPTION,
+    }
 
     /**
      * The mother of all exceptions
@@ -64,61 +75,41 @@ public final class ExceptionConst {
      * Run-Time Exceptions
      */
     public static final Class<NullPointerException> NULL_POINTER_EXCEPTION = NullPointerException.class;
-    public static final Class<ArrayIndexOutOfBoundsException> ARRAY_INDEX_OUT_OF_BOUNDS_EXCEPTION
-                                                            = ArrayIndexOutOfBoundsException.class;
+    public static final Class<ArrayIndexOutOfBoundsException> ARRAY_INDEX_OUT_OF_BOUNDS_EXCEPTION = ArrayIndexOutOfBoundsException.class;
     public static final Class<ArithmeticException> ARITHMETIC_EXCEPTION = ArithmeticException.class;
     public static final Class<NegativeArraySizeException> NEGATIVE_ARRAY_SIZE_EXCEPTION = NegativeArraySizeException.class;
     public static final Class<ClassCastException> CLASS_CAST_EXCEPTION = ClassCastException.class;
+
     public static final Class<IllegalMonitorStateException> ILLEGAL_MONITOR_STATE = IllegalMonitorStateException.class;
+    /**
+     * Pre-defined exception arrays according to chapters 5.1-5.4 of the Java Virtual Machine Specification
+     */
+    private static final Class<?>[] EXCS_CLASS_AND_INTERFACE_RESOLUTION = {NO_CLASS_DEF_FOUND_ERROR, CLASS_FORMAT_ERROR, VERIFY_ERROR, ABSTRACT_METHOD_ERROR,
+        EXCEPTION_IN_INITIALIZER_ERROR, ILLEGAL_ACCESS_ERROR}; // Chapter 5.1
+
+    private static final Class<?>[] EXCS_FIELD_AND_METHOD_RESOLUTION = {NO_SUCH_FIELD_ERROR, ILLEGAL_ACCESS_ERROR, NO_SUCH_METHOD_ERROR}; // Chapter 5.2
 
     /**
-     * Pre-defined exception arrays according to chapters 5.1-5.4 of the Java Virtual
-     * Machine Specification
+     * Empty array.
      */
-    private static final Class<?>[] EXCS_CLASS_AND_INTERFACE_RESOLUTION = {
-            NO_CLASS_DEF_FOUND_ERROR, CLASS_FORMAT_ERROR, VERIFY_ERROR, ABSTRACT_METHOD_ERROR,
-            EXCEPTION_IN_INITIALIZER_ERROR, ILLEGAL_ACCESS_ERROR
-    }; // Chapter 5.1
-    private static final Class<?>[] EXCS_FIELD_AND_METHOD_RESOLUTION = {
-            NO_SUCH_FIELD_ERROR, ILLEGAL_ACCESS_ERROR, NO_SUCH_METHOD_ERROR
-    }; // Chapter 5.2
     private static final Class<?>[] EXCS_INTERFACE_METHOD_RESOLUTION = new Class<?>[0]; // Chapter 5.3 (as below)
-    private static final Class<?>[] EXCS_STRING_RESOLUTION = new Class<?>[0];
-    // Chapter 5.4 (no errors but the ones that _always_ could happen! How stupid.)
-    private static final Class<?>[] EXCS_ARRAY_EXCEPTION = {
-            NULL_POINTER_EXCEPTION, ARRAY_INDEX_OUT_OF_BOUNDS_EXCEPTION
-    };
 
     /**
-     * Enum corresponding to the various Exception Class arrays,
-     * used by {@link ExceptionConst#createExceptions(EXCS, Class...)}
+     * Empty array.
      */
-    public enum EXCS {
-        EXCS_CLASS_AND_INTERFACE_RESOLUTION,
-        EXCS_FIELD_AND_METHOD_RESOLUTION,
-        EXCS_INTERFACE_METHOD_RESOLUTION,
-        EXCS_STRING_RESOLUTION,
-        EXCS_ARRAY_EXCEPTION,
-    }
+    private static final Class<?>[] EXCS_STRING_RESOLUTION = new Class<?>[0];
 
-    // helper method to merge exception class arrays
-    private static Class<?>[] mergeExceptions(final Class<?>[] input, final Class<?> ... extraClasses) {
-        final int extraLen = extraClasses == null ? 0 : extraClasses.length;
-        final Class<?>[] excs = new Class<?>[input.length + extraLen];
-        System.arraycopy(input, 0, excs, 0, input.length);
-        if (extraLen > 0) {
-            System.arraycopy(extraClasses, 0, excs, input.length, extraLen);
-        }
-        return excs;
-    }
+    // Chapter 5.4 (no errors but the ones that _always_ could happen! How stupid.)
+    private static final Class<?>[] EXCS_ARRAY_EXCEPTION = {NULL_POINTER_EXCEPTION, ARRAY_INDEX_OUT_OF_BOUNDS_EXCEPTION};
 
     /**
      * Creates a copy of the specified Exception Class array combined with any additional Exception classes.
+     *
      * @param type the basic array type
      * @param extraClasses additional classes, if any
      * @return the merged array
      */
-    public static Class<?>[] createExceptions(final EXCS type, final Class<?> ... extraClasses) {
+    public static Class<?>[] createExceptions(final EXCS type, final Class<?>... extraClasses) {
         switch (type) {
         case EXCS_CLASS_AND_INTERFACE_RESOLUTION:
             return mergeExceptions(EXCS_CLASS_AND_INTERFACE_RESOLUTION, extraClasses);
@@ -135,5 +126,8 @@ public final class ExceptionConst {
         }
     }
 
-
+    // helper method to merge exception class arrays
+    private static Class<?>[] mergeExceptions(final Class<?>[] input, final Class<?>... extraClasses) {
+        return Utils.arraysAppend(input, extraClasses);
+    }
 }

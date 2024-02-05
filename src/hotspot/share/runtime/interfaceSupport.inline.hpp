@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -80,7 +80,7 @@ class ThreadStateTransition : public StackObj {
 
  public:
   ThreadStateTransition(JavaThread *thread) : _thread(thread) {
-    assert(thread != NULL, "must be active Java thread");
+    assert(thread != nullptr, "must be active Java thread");
     assert(thread == Thread::current(), "must be current thread");
   }
 
@@ -145,7 +145,7 @@ class ThreadInVMfromJava : public ThreadStateTransition {
 class ThreadInVMfromUnknown {
   JavaThread* _thread;
  public:
-  ThreadInVMfromUnknown() : _thread(NULL) {
+  ThreadInVMfromUnknown() : _thread(nullptr) {
     Thread* t = Thread::current();
     if (t->is_Java_thread()) {
       JavaThread* t2 = JavaThread::cast(t);
@@ -260,8 +260,6 @@ class VMNativeEntryWrapper {
 
 #define VM_LEAF_BASE(result_type, header)                            \
   debug_only(NoHandleMark __hm;)                                     \
-  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite,                    \
-                                         JavaThread::current()));    \
   os::verify_stack_alignment();                                      \
   /* begin of body */
 
@@ -406,14 +404,6 @@ extern "C" {                                                         \
   result_type JNICALL header {                                       \
     VM_Exit::block_if_vm_exited();                                   \
     VM_LEAF_BASE(result_type, header)
-
-
-#define JVM_ENTRY_FROM_LEAF(env, result_type, header)                \
-  { {                                                                \
-    JavaThread* thread=JavaThread::thread_from_jni_environment(env); \
-    ThreadInVMfromNative __tiv(thread);                              \
-    debug_only(VMNativeEntryWrapper __vew;)                          \
-    VM_ENTRY_BASE_FROM_LEAF(result_type, header, thread)
 
 
 #define JVM_END } }

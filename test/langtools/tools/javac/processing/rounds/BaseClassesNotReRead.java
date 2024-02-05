@@ -91,7 +91,6 @@ public class BaseClassesNotReRead extends AbstractProcessor {
         Filer filer = processingEnv.getFiler();
         try (Writer out = filer.createSourceFile(name).openWriter()) {
             out.write(code);
-            out.close();
         } catch (IOException e) {
             processingEnv.getMessager().printError(e.toString());
         }

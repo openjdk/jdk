@@ -117,8 +117,6 @@ struct hb_ot_shaper_t
                               hb_font_t                *font);
 
 
-  hb_ot_shape_normalization_mode_t normalization_preference;
-
   /* decompose()
    * Called during shape()'s normalization.
    * May be NULL.
@@ -147,12 +145,6 @@ struct hb_ot_shaper_t
                        hb_buffer_t              *buffer,
                        hb_font_t                *font);
 
-  /* gpos_tag()
-   * If not HB_TAG_NONE, then must match found GPOS script tag for
-   * GPOS to be applied.  Otherwise, fallback positioning will be used.
-   */
-  hb_tag_t gpos_tag;
-
   /* reorder_marks()
    * Called during shape().
    * Shapers can use to modify ordering of combining marks.
@@ -162,6 +154,14 @@ struct hb_ot_shaper_t
                          hb_buffer_t              *buffer,
                          unsigned int              start,
                          unsigned int              end);
+
+  /* gpos_tag()
+   * If not HB_TAG_NONE, then must match found GPOS script tag for
+   * GPOS to be applied.  Otherwise, fallback positioning will be used.
+   */
+  hb_tag_t gpos_tag;
+
+  hb_ot_shape_normalization_mode_t normalization_preference;
 
   hb_ot_shape_zero_width_marks_type_t zero_width_marks;
 
@@ -262,11 +262,13 @@ hb_ot_shaper_categorize (const hb_ot_shape_planner_t *planner)
         return &_hb_ot_shaper_myanmar;
 
 
+#ifndef HB_NO_OT_SHAPER_MYANMAR_ZAWGYI
 #define HB_SCRIPT_MYANMAR_ZAWGYI        ((hb_script_t) HB_TAG ('Q','a','a','g'))
     case HB_SCRIPT_MYANMAR_ZAWGYI:
     /* https://github.com/harfbuzz/harfbuzz/issues/1162 */
 
       return &_hb_ot_shaper_myanmar_zawgyi;
+#endif
 
 
     /* Unicode-2.0 additions */
@@ -379,6 +381,10 @@ hb_ot_shaper_categorize (const hb_ot_shape_planner_t *planner)
     case HB_SCRIPT_TANGSA:
     case HB_SCRIPT_TOTO:
     case HB_SCRIPT_VITHKUQI:
+
+    /* Unicode-15.0 additions */
+    case HB_SCRIPT_KAWI:
+    case HB_SCRIPT_NAG_MUNDARI:
 
       /* If the designer designed the font for the 'DFLT' script,
        * (or we ended up arbitrarily pick 'latn'), use the default shaper.

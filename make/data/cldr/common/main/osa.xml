@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2023 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-DFS-2016
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="osa"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="osa">𐓏𐓘𐓻𐓘𐓻𐓟</language>
+		</languages>
+		<territories>
+			<territory type="US">United States</territory>
+		</territories>
+		<types>
+			<type key="numbers" type="latn">𐓷𐓘𐓵𐓘𐓷𐓘 𐓨𐓣𐓡𐓣𐓵𐓟 𐓣͘𐓤𐓯𐓟</type>
+		</types>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[𐓘{𐓘́}{𐓘́͘}{𐓘̋}{𐓘̋͘}{𐓘̄}{𐓘̄͘}{𐓘͘} 𐓙{𐓙́}{𐓙̋}{𐓙̄} 𐓚{𐓚́}{𐓚̋}{𐓚̄} 𐓛{𐓛͘} 𐓜 𐓝 𐓞 𐓟{𐓟́}{𐓟̋}{𐓟̄} 𐓠{𐓠́}{𐓠̋}{𐓠̄} 𐓡 𐓢 𐓣{𐓣́}{𐓣́͘}{𐓣̋}{𐓣̋͘}{𐓣̄}{𐓣̄͘}{𐓣͘} 𐓤 𐓥 𐓦 𐓧 𐓨 𐓩 𐓪{𐓪́}{𐓪́͘}{𐓪̋}{𐓪̋͘}{𐓪̄}{𐓪̄͘}{𐓪͘} 𐓫{𐓫́}{𐓫̋}{𐓫̄} 𐓬 𐓭 𐓮 𐓯 𐓰 𐓱 𐓲 𐓳 𐓴 𐓵 𐓶{𐓶́}{𐓶̋}{𐓶̄} 𐓷 𐓸 𐓹 𐓺 𐓻]</exemplarCharacters>
+		<exemplarCharacters type="index">[𐒰{𐒰͘} 𐒱 𐒲 𐒳 𐒴 𐒵 𐒶 𐒷 𐒸 𐒹 𐒺 𐒻{𐒻͘} 𐒼 𐒽 𐒾 𐒿 𐓀 𐓁 𐓂{𐓂͘} 𐓃 𐓄 𐓅 𐓆 𐓇 𐓈 𐓉 𐓊 𐓋 𐓌 𐓍 𐓎 𐓏 𐓐 𐓑 𐓒 𐓓]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="generic">
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern draft="unconfirmed">EEEE, MMMM d, y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern draft="unconfirmed">MMMM d, y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern draft="unconfirmed">MMM d, y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern draft="unconfirmed">M/d/y GGGGG</pattern>
+							<datetimeSkeleton draft="unconfirmed">GGGGGyMd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+			</calendar>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1">𐓄𐓘𐓡𐓛͘𐓧𐓟</month>
+							<month type="2">𐓵𐓪͘𐓬𐓘</month>
+							<month type="3">𐓵𐓘𐓜𐓣</month>
+							<month type="4">𐓰𐓪𐓬𐓘</month>
+							<month type="5">𐓮𐓘𐓰𐓘</month>
+							<month type="6">𐓯𐓘𐓬𐓟</month>
+							<month type="7">𐓄𐓟𐓵𐓪͘𐓬𐓘</month>
+							<month type="8">𐒼𐓣𐓟𐓰𐓪𐓬𐓘</month>
+							<month type="9">𐒿𐓟𐓜𐓛𐓲𐓟𐓷𐓣͘𐓤𐓟</month>
+							<month type="10">𐒿𐓟𐓜𐓛</month>
+							<month type="11">𐒰𐓧𐓣 𐓏𐓣͘𐓸𐓲𐓣</month>
+							<month type="12">𐒰𐓧𐓣 𐓍𐓪͘𐓬𐓘</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">𐓀𐓣͘𐓪͘𐓬𐓘 𐓄𐓘𐓡𐓛͘𐓧𐓟</month>
+							<month type="2">𐓀𐓣͘𐓪͘𐓬𐓘 𐓏𐓟𐓵𐓪͘𐓬𐓘</month>
+							<month type="3">𐓀𐓣͘𐓪͘𐓬𐓘 𐓏𐓟𐓵𐓘𐓜𐓣</month>
+							<month type="4">𐓀𐓣͘𐓪͘𐓬𐓘 𐓏𐓟𐓰𐓪𐓬𐓘</month>
+							<month type="5">𐓀𐓣͘𐓪͘𐓬𐓘 𐓏𐓟𐓮𐓘𐓰𐓘</month>
+							<month type="6">𐓀𐓣͘𐓪͘𐓬𐓘 𐓏𐓟𐓯𐓘𐓬𐓟</month>
+							<month type="7">𐓀𐓣͘𐓪͘𐓬𐓘 𐓄𐓟𐓵𐓪͘𐓬𐓘</month>
+							<month type="8">𐓀𐓣͘𐓪͘𐓬𐓘 𐒼𐓣𐓟𐓰𐓪𐓬𐓘</month>
+							<month type="9">𐓀𐓣͘𐓪͘𐓬𐓘 𐒿𐓟𐓜𐓛𐓲𐓟𐓷𐓣͘𐓤𐓟</month>
+							<month type="10">𐓀𐓣͘𐓪͘𐓬𐓘 𐒿𐓟𐓜𐓛</month>
+							<month type="11">𐓀𐓣͘𐓪͘𐓬𐓘 𐒰𐓧𐓣 𐓏𐓣͘𐓸𐓲𐓣</month>
+							<month type="12">𐓀𐓣͘𐓪͘𐓬𐓘 𐒰𐓧𐓣 𐓍𐓪͘𐓬𐓘</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="narrow">
+							<day type="sun">𐓏</day>
+							<day type="mon">𐓄</day>
+							<day type="tue">𐓍</day>
+							<day type="wed">𐒴</day>
+							<day type="thu">𐓈</day>
+							<day type="fri">𐓊</day>
+							<day type="sat">𐓸</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">𐒹𐓘͘𐓬𐓘 𐓏𐓘𐓤𐓘͘𐓰𐓘𐓤𐓣</day>
+							<day type="mon">𐒹𐓘͘𐓬𐓘 𐓄𐓘𐓡𐓛͘𐓧𐓣</day>
+							<day type="tue">𐒹𐓘͘𐓬𐓘 𐓏𐓟𐓵𐓪͘𐓬𐓘</day>
+							<day type="wed">𐒹𐓘͘𐓬𐓘 𐓏𐓟𐓵𐓘𐓜𐓣</day>
+							<day type="thu">𐒹𐓘͘𐓬𐓘 𐓏𐓟𐓰𐓪𐓬𐓘</day>
+							<day type="fri">𐒹𐓘͘𐓬𐓘 𐓈𐓘 𐓵𐓘𐓲𐓘 𐓻𐓣͘</day>
+							<day type="sat">𐒹𐓘͘𐓬𐓘 𐓂𐓤𐓘𐓸𐓟 𐓣͘𐓤𐓟</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern draft="unconfirmed">EEEE, MMMM d, y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern draft="unconfirmed">MMMM d, y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern draft="unconfirmed">MMM d, y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern draft="unconfirmed">M/d/yy</pattern>
+							<datetimeSkeleton draft="unconfirmed">yyMd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern draft="unconfirmed">h:mm:ss a zzzz</pattern>
+							<datetimeSkeleton draft="unconfirmed">ahmmsszzzz</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern draft="unconfirmed">h:mm:ss a z</pattern>
+							<datetimeSkeleton draft="unconfirmed">ahmmssz</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern draft="unconfirmed">h:mm:ss a</pattern>
+							<datetimeSkeleton draft="unconfirmed">ahmmss</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern draft="unconfirmed">h:mm a</pattern>
+							<datetimeSkeleton draft="unconfirmed">ahmm</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+			</calendar>
+		</calendars>
+		<fields>
+			<field type="year">
+				<displayName>𐓂𐓨𐓚𐓤𐓘</displayName>
+			</field>
+			<field type="month">
+				<displayName>𐓀𐓣͘𐓪͘𐓬𐓘</displayName>
+			</field>
+			<field type="week">
+				<displayName>𐒹𐓘͘𐓬𐓘 𐓷𐓘𐓤𐓘͘𐓰𐓘𐓤𐓣</displayName>
+			</field>
+			<field type="day">
+				<displayName>𐒹𐓘͘𐓬𐓘</displayName>
+			</field>
+			<field type="hour">
+				<displayName>𐓨𐓣𐓪𐓵𐓘𐓤𐓟 𐓪𐓰𐓘𐓩𐓘͘</displayName>
+			</field>
+			<field type="minute">
+				<displayName>𐓰𐓘𐓲𐓟 𐓤𐓯𐓣𐓵𐓟</displayName>
+			</field>
+			<field type="second">
+				<displayName>𐓰𐓘𐓲𐓟 𐓤𐓯𐓣𐓵𐓟 𐓻𐓣͘</displayName>
+			</field>
+		</fields>
+	</dates>
+	<numbers>
+		<currencies>
+			<currency type="USD">
+				<symbol>$</symbol>
+			</currency>
+		</currencies>
+	</numbers>
+	<units>
+		<unitLength type="long">
+			<unit type="duration-year">
+				<displayName draft="provisional">𐓂𐓨𐓚𐓤𐓘</displayName>
+				<unitPattern count="other">𐓂𐓨𐓚𐓤𐓘 {0}</unitPattern>
+			</unit>
+			<unit type="duration-month">
+				<displayName draft="provisional">𐓀𐓣͘𐓪͘𐓬𐓘</displayName>
+				<unitPattern count="other">𐓀𐓣͘𐓪͘𐓬𐓘 {0}</unitPattern>
+			</unit>
+			<unit type="duration-week">
+				<displayName draft="provisional">𐒹𐓘͘𐓬𐓘𐓷𐓘𐓤𐓘͘𐓰𐓛𐓤𐓣</displayName>
+				<unitPattern count="other">𐒹𐓘͘𐓬𐓘𐓷𐓘𐓤𐓘͘𐓰𐓛𐓤𐓣 {0}</unitPattern>
+			</unit>
+			<unit type="duration-day">
+				<displayName draft="provisional">𐒹𐓘͘𐓬𐓘</displayName>
+				<unitPattern count="other">{0} 𐒹𐓘͘𐓬𐓘</unitPattern>
+			</unit>
+			<unit type="duration-hour">
+				<displayName draft="provisional">𐓨𐓣𐓪𐓵𐓘𐓤𐓟 𐓪𐓰𐓘𐓩𐓘͘</displayName>
+				<unitPattern count="other">{0} 𐓨𐓣𐓪𐓵𐓘𐓤𐓟 𐓪𐓰𐓘𐓩𐓘͘</unitPattern>
+			</unit>
+			<unit type="duration-minute">
+				<displayName draft="provisional">𐓰𐓘𐓲𐓟 𐓤𐓯𐓣𐓵𐓟</displayName>
+				<unitPattern count="other">{0} 𐓰𐓘𐓲𐓟 𐓤𐓯𐓣𐓵𐓟</unitPattern>
+			</unit>
+			<unit type="duration-second">
+				<displayName draft="provisional">𐓰𐓘𐓲𐓟 𐓤𐓯𐓣𐓵𐓟 𐓻𐓣͘</displayName>
+				<unitPattern count="other">{0} 𐓰𐓘𐓲𐓟 𐓤𐓯𐓣𐓵𐓟 𐓻𐓣͘</unitPattern>
+			</unit>
+		</unitLength>
+	</units>
+</ldml>

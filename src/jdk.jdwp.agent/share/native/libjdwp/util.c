@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -243,6 +243,7 @@ util_initialize(JNIEnv *env)
         }
         localSystemThreadGroup = groups[0];
         saveGlobalRef(env, localSystemThreadGroup, &(gdata->systemThreadGroup));
+        jvmtiDeallocate(groups);
 
         /* Get some basic Java property values we will need at some point */
         gdata->property_java_version
@@ -1073,23 +1074,6 @@ debugMonitorWait(jrawMonitorID monitor)
 }
 
 void
-debugMonitorTimedWait(jrawMonitorID monitor, jlong millis)
-{
-    jvmtiError error;
-    error = JVMTI_FUNC_PTR(gdata->jvmti,RawMonitorWait)
-        (gdata->jvmti, monitor, millis);
-    if (error == JVMTI_ERROR_INTERRUPT) {
-        /* See comment above */
-        handleInterrupt();
-        error = JVMTI_ERROR_NONE;
-    }
-    error = ignore_vm_death(error);
-    if (error != JVMTI_ERROR_NONE) {
-        EXIT_ERROR(error, "on raw monitor timed wait");
-    }
-}
-
-void
 debugMonitorNotify(jrawMonitorID monitor)
 {
     jvmtiError error;
@@ -1734,7 +1718,7 @@ getSpecialJvmti(void)
     jvmtiCapabilities caps;
 
     rc = JVM_FUNC_PTR(gdata->jvm,GetEnv)
-                     (gdata->jvm, (void **)&jvmti, JVMTI_VERSION_1);
+                     (gdata->jvm, (void **)&jvmti, JVMTI_VERSION);
     if (rc != JNI_OK) {
         return NULL;
     }

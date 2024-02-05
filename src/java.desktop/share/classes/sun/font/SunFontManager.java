@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1325,7 +1325,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
          */
         HashMap<String,String> fontToFileMap2 = null;
         HashMap<String,String> fontToFamilyNameMap2 = null;
-        HashMap<String,ArrayList<String>> familyToFontListMap2 = null;;
+        HashMap<String,ArrayList<String>> familyToFontListMap2 = null;
 
         for (String pathFile : getFontFilesFromPath(false)) {
             if (!registryFiles.contains(pathFile)) {
@@ -2831,7 +2831,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
      */
     protected abstract String[] getDefaultPlatformFont();
 
-    // Begin: Refactored from SunGraphicsEnviroment.
+    // Begin: Refactored from SunGraphicsEnvironment.
 
     /*
      * helper function for registerFonts

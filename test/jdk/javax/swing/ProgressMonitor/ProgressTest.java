@@ -22,32 +22,29 @@
  */
 
 /* @test
- * @bug 8054572
+ * @bug 6445283
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
- * @summary Tests if JComboBox displays correctly when editable/non-editable
+ * @summary Tests if ProgressMonitorInputStream reports progress accurately
  * @run main/manual ProgressTest
  */
 
 import java.io.InputStream;
-
-import javax.swing.JFrame;
+import java.awt.EventQueue;
 import javax.swing.ProgressMonitorInputStream;
-import javax.swing.SwingUtilities;
 
 public class ProgressTest {
-
+    static volatile long total = 0;
     private static final String instructionsText =
-            "A ProgressMonitor will be shown." +
-            " If it shows blank progressbar after 2048MB bytes read,"+
+            "A ProgressMonitor will be shown.\n" +
+            " If it shows blank progressbar after 2048MB bytes read,\n"+
             " press Fail else press Pass";
-
-    private static JFrame frame;
 
     public static void main(String[] args) throws Exception {
 
         PassFailJFrame pfjFrame = new PassFailJFrame("JScrollPane "
                 + "Test Instructions", instructionsText, 5);
+        PassFailJFrame.positionTestWindow(null, PassFailJFrame.Position.VERTICAL);
 
         final long SIZE = (long) (Integer.MAX_VALUE * 1.5);
 
@@ -72,19 +69,25 @@ public class ProgressTest {
             public void run() {
                 byte[] buffer = new byte[512];
                 int nb = 0;
-                long total = 0;
                 while (true) {
                     try {
                         nb = pmis.read(buffer);
                     } catch (Exception e){}
                     if (nb == 0) break;
                     total += nb;
-
-                    pmis.getProgressMonitor().setNote(total/(1024*1024)+" MB Read");
+                    System.out.println("total " + total);
+                    if ((total % (1024*1024)) == 0) {
+                        try {
+                            EventQueue.invokeAndWait(() -> {
+                                pmis.getProgressMonitor().setNote(total/(1024*1024)+" MB Read");
+                            });
+                        } catch (Exception e) {}
+                    }
                 }
             }
         };
         thread.start();
+
         pfjFrame.awaitAndCheck();
     }
 }

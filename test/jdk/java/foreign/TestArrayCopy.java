@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,12 @@
 
 /*
  * @test
- * @enablePreview
  * @run testng TestArrayCopy
  */
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -227,6 +227,21 @@ public class TestArrayCopy {
         }
     }
 
+    @Test(dataProvider = "copyModesAndHelpers")
+    public void testCopyReadOnlyDest(CopyMode mode, CopyHelper<Object, ValueLayout> helper, String helperDebugString) {
+        int bytesPerElement = (int)helper.elementLayout.byteSize();
+        MemorySegment base = srcSegment(SEG_LENGTH_BYTES);
+        //CopyFrom
+        Object srcArr = helper.toArray(base);
+        MemorySegment dstSeg = helper.fromArray(srcArr).asReadOnly();
+        try {
+            helper.copyFromArray(srcArr, 0, SEG_LENGTH_BYTES / bytesPerElement, dstSeg, 0, ByteOrder.nativeOrder());
+            fail();
+        } catch (IllegalArgumentException ex) {
+            //ok
+        }
+    }
+
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testNotAnArraySrc() {
         MemorySegment segment = MemorySegment.ofArray(new int[] {1, 2, 3, 4});
@@ -254,13 +269,13 @@ public class TestArrayCopy {
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testHyperAlignedSrc() {
         MemorySegment segment = MemorySegment.ofArray(new byte[] {1, 2, 3, 4});
-        MemorySegment.copy(new byte[] { 1, 2, 3, 4 }, 0, segment, JAVA_BYTE.withBitAlignment(16), 0, 4);
+        MemorySegment.copy(new byte[] { 1, 2, 3, 4 }, 0, segment, JAVA_BYTE.withByteAlignment(2), 0, 4);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testHyperAlignedDst() {
         MemorySegment segment = MemorySegment.ofArray(new byte[] {1, 2, 3, 4});
-        MemorySegment.copy(segment, JAVA_BYTE.withBitAlignment(16), 0, new byte[] { 1, 2, 3, 4 }, 0, 4);
+        MemorySegment.copy(segment, JAVA_BYTE.withByteAlignment(2), 0, new byte[] { 1, 2, 3, 4 }, 0, 4);
     }
 
     /***** Utilities *****/
@@ -273,9 +288,13 @@ public class TestArrayCopy {
         return MemorySegment.ofArray(arr);
     }
 
+    private static VarHandle arrayVarHandle(ValueLayout layout) {
+        return MethodHandles.insertCoordinates(layout.arrayElementVarHandle(), 1, 0L);
+    }
+
     public static MemorySegment truthSegment(MemorySegment srcSeg, CopyHelper<?, ?> helper, int indexShifts, CopyMode mode) {
-        VarHandle indexedHandleNO = helper.elementLayout.withOrder(NATIVE_ORDER).arrayElementVarHandle();
-        VarHandle indexedHandleNNO = helper.elementLayout.withOrder(NON_NATIVE_ORDER).arrayElementVarHandle();
+        VarHandle indexedHandleNO = arrayVarHandle(helper.elementLayout.withOrder(NATIVE_ORDER));
+        VarHandle indexedHandleNNO = arrayVarHandle(helper.elementLayout.withOrder(NON_NATIVE_ORDER));
         MemorySegment dstSeg = MemorySegment.ofArray(srcSeg.toArray(JAVA_BYTE));
         int indexLength = (int) dstSeg.byteSize() / (int)helper.elementLayout.byteSize();
         if (mode.direction) {
@@ -328,7 +347,7 @@ public class TestArrayCopy {
 
         @SuppressWarnings("unchecked")
         public CopyHelper(L elementLayout, Class<X> carrier) {
-            this.elementLayout = (L)elementLayout.withBitAlignment(8);
+            this.elementLayout = (L)elementLayout.withByteAlignment(1);
             this.carrier = carrier;
         }
 

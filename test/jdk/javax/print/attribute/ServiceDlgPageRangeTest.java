@@ -23,6 +23,7 @@
 /*
  * @test
  * @bug 5080098 8164205
+ * @key printer
  * @summary Verify if PageRanges option is disabled for Non service-formatted
  *          flavors.
  * @run main/manual ServiceDlgPageRangeTest
@@ -99,7 +100,7 @@ public class ServiceDlgPageRangeTest {
         } catch (InterruptedException e) {
             if (!testPassed && testGeneratedInterrupt) {
                 throw new RuntimeException("PageRanges option is not disabled "
-                        + "for for Non serv-formatted flvrs");
+                        + "for Non serv-formatted flvrs");
             }
         }
         if (!testGeneratedInterrupt) {

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,14 +92,14 @@ class Register {
   inline constexpr friend Register as_Register(int encoding);
 
   // accessors
-  int encoding() const { assert(is_valid(), "invalid register"); return _encoding; }
+  constexpr int encoding() const { assert(is_valid(), "invalid register"); return _encoding; }
   inline VMReg as_VMReg() const;
   Register successor() const { return Register(encoding() + 1); }
 
   // testers
-  bool is_valid()       const { return ( 0 <= _encoding && _encoding <  number_of_registers); }
-  bool is_volatile()    const { return ( 0 <= _encoding && _encoding <= 13 ); }
-  bool is_nonvolatile() const { return (14 <= _encoding && _encoding <= 31 ); }
+  constexpr bool is_valid()       const { return ( 0 <= _encoding && _encoding <  number_of_registers); }
+  constexpr bool is_volatile()    const { return ( 0 <= _encoding && _encoding <= 13 ); }
+  constexpr bool is_nonvolatile() const { return (14 <= _encoding && _encoding <= 31 ); }
 
   const char* name() const;
 };
@@ -163,12 +163,12 @@ class ConditionRegister {
   inline constexpr friend ConditionRegister as_ConditionRegister(int encoding);
 
   // accessors
-  int encoding() const { assert(is_valid(), "invalid register"); return _encoding; }
+  constexpr int encoding() const { assert(is_valid(), "invalid register"); return _encoding; }
   inline VMReg as_VMReg() const;
 
   // testers
-  bool is_valid()       const { return (0 <= _encoding && _encoding <  number_of_registers); }
-  bool is_nonvolatile() const { return (2 <= _encoding && _encoding <= 4 );  }
+  constexpr bool is_valid()       const { return (0 <= _encoding && _encoding <  number_of_registers); }
+  constexpr bool is_nonvolatile() const { return (2 <= _encoding && _encoding <= 4 );  }
 
   const char* name() const;
 };
@@ -207,12 +207,12 @@ class FloatRegister {
   inline constexpr friend FloatRegister as_FloatRegister(int encoding);
 
   // accessors
-  int encoding() const { assert(is_valid(), "invalid register"); return _encoding; }
+  constexpr int encoding() const { assert(is_valid(), "invalid register"); return _encoding; }
   inline VMReg as_VMReg() const;
   FloatRegister successor() const { return FloatRegister(encoding() + 1); }
 
   // testers
-  bool is_valid() const { return (0 <= _encoding && _encoding < number_of_registers); }
+  constexpr bool is_valid() const { return (0 <= _encoding && _encoding < number_of_registers); }
 
   const char* name() const;
 
@@ -279,11 +279,11 @@ class SpecialRegister {
   inline constexpr friend SpecialRegister as_SpecialRegister(int encoding);
 
   // accessors
-  int encoding() const { assert(is_valid(), "invalid register"); return _encoding; }
+  constexpr int encoding() const { assert(is_valid(), "invalid register"); return _encoding; }
   inline VMReg as_VMReg() const;
 
   // testers
-  bool is_valid() const { return (0 <= _encoding && _encoding < number_of_registers); }
+  constexpr bool is_valid() const { return (0 <= _encoding && _encoding < number_of_registers); }
 
   const char* name() const;
 };
@@ -318,10 +318,10 @@ class VectorRegister {
   inline constexpr friend VectorRegister as_VectorRegister(int encoding);
 
   // accessors
-  int encoding()  const { assert(is_valid(), "invalid register"); return _encoding; }
+  constexpr int encoding() const { assert(is_valid(), "invalid register"); return _encoding; }
 
   // testers
-  bool is_valid() const { return (0 <= _encoding && _encoding < number_of_registers); }
+  constexpr bool is_valid() const { return (0 <= _encoding && _encoding < number_of_registers); }
 
   const char* name() const;
 
@@ -387,11 +387,11 @@ class VectorSRegister {
   inline constexpr friend VectorSRegister as_VectorSRegister(int encoding);
 
   // accessors
-  int encoding() const { assert(is_valid(), "invalid register"); return _encoding; }
+  constexpr int encoding() const { assert(is_valid(), "invalid register"); return _encoding; }
   inline VMReg as_VMReg() const;
 
   // testers
-  bool is_valid() const { return (0 <= _encoding && _encoding < number_of_registers); }
+  constexpr bool is_valid() const { return (0 <= _encoding && _encoding < number_of_registers); }
 
   const char* name() const;
 

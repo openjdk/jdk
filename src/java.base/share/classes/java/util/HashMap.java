@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1523,7 +1523,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         if (lf <= 0 || Float.isNaN(lf))
             throw new InvalidObjectException("Illegal load factor: " + lf);
 
-        lf = Math.min(Math.max(0.25f, lf), 4.0f);
+        lf = Math.clamp(lf, 0.25f, 4.0f);
         HashMap.UnsafeHolder.putLoadFactor(this, lf);
 
         reinitialize();

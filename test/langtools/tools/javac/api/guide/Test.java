@@ -36,6 +36,7 @@
 
 import javax.tools.*;
 import java.io.File;
+import java.io.Reader;
 import java.util.Collections;
 
 public class Test extends ToolTester {
@@ -45,10 +46,10 @@ public class Test extends ToolTester {
     class DiagnosticTester implements DiagnosticListener<JavaFileObject> {
         public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
             if (diagnostic.getKind() == Diagnostic.Kind.NOTE) {
-                try {
-                    // 6427274: FileObject.openReader throws exception
-                    // 6347778: getSource() returns null for notes
-                    diagnostic.getSource().openReader(true).getClass();
+                // 6427274: FileObject.openReader throws exception
+                // 6347778: getSource() returns null for notes
+                try (Reader reader = diagnostic.getSource().openReader(true)) {
+                    reader.getClass();
                 } catch (Exception ex) {
                     throw new AssertionError(ex);
                 }
@@ -66,9 +67,11 @@ public class Test extends ToolTester {
         if (!success)
             throw new AssertionError("Did not see a NOTE");
         // 6427274: openReader throws exception
-        fm.getFileForInput(StandardLocation.PLATFORM_CLASS_PATH,
+        try (Reader reader = fm.getFileForInput(StandardLocation.PLATFORM_CLASS_PATH,
                            "java.lang",
-                           "Object.class").openReader(true).getClass();
+                           "Object.class").openReader(true)) {
+            reader.getClass();
+        }
         DiagnosticCollector<JavaFileObject> diags = new DiagnosticCollector<JavaFileObject>();
         task = tool.getTask(null, fm, diags, Collections.singleton("-Xlint:all"),
                             null, compilationUnits);

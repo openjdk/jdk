@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -112,14 +112,14 @@ address os::fetch_frame_from_context(const void* ucVoid,
   address epc;
   const ucontext_t* uc = (const ucontext_t*)ucVoid;
 
-  if (uc != NULL) {
+  if (uc != nullptr) {
     epc = os::Posix::ucontext_get_pc(uc);
     if (ret_sp) *ret_sp = os::Linux::ucontext_get_sp(uc);
     if (ret_fp) *ret_fp = os::Linux::ucontext_get_fp(uc);
   } else {
-    epc = NULL;
-    if (ret_sp) *ret_sp = (intptr_t *)NULL;
-    if (ret_fp) *ret_fp = (intptr_t *)NULL;
+    epc = nullptr;
+    if (ret_sp) *ret_sp = (intptr_t *)nullptr;
+    if (ret_fp) *ret_fp = (intptr_t *)nullptr;
   }
 
   return epc;
@@ -152,8 +152,23 @@ frame os::fetch_compiled_frame_from_context(const void* ucVoid) {
 
 // By default, gcc always saves frame pointer rfp on this stack. This
 // may get turned off by -fomit-frame-pointer.
+// The "Procedure Call Standard for the Arm 64-bit Architecture" doesn't
+// specify a location for the frame record within a stack frame (6.4.6).
+// GCC currently chooses to save it at the top of the frame (lowest address).
+// This means that using fr->sender_sp() to set the caller's frame _unextended_sp,
+// as we do in x86, is wrong. Using fr->link() instead only makes sense for
+// native frames. Setting a correct value for _unextended_sp is important
+// if this value is later used to get that frame's caller. This will happen
+// if we end up calling frame::sender_for_compiled_frame(), which will be the
+// case if the _pc is associated with a CodeBlob that has a _frame_size > 0
+// (nmethod, runtime stub, safepoint stub, etc).
 frame os::get_sender_for_C_frame(frame* fr) {
-  return frame(fr->link(), fr->link(), fr->sender_pc());
+  address pc = fr->sender_pc();
+  CodeBlob* cb = CodeCache::find_blob(pc);
+  bool use_codeblob = cb != nullptr && cb->frame_size() > 0;
+  assert(!use_codeblob || !Interpreter::contains(pc), "should not be an interpreter frame");
+  intptr_t* sender_sp = use_codeblob ? (fr->link() + frame::metadata_words - cb->frame_size()) : fr->link();
+  return frame(sender_sp, sender_sp, fr->link(), pc, cb, true /* allow_cb_null */);
 }
 
 NOINLINE frame os::current_frame() {
@@ -174,20 +189,20 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 
 /*
   NOTE: does not seem to work on linux.
-  if (info == NULL || info->si_code <= 0 || info->si_code == SI_NOINFO) {
+  if (info == nullptr || info->si_code <= 0 || info->si_code == SI_NOINFO) {
     // can't decode this kind of signal
-    info = NULL;
+    info = nullptr;
   } else {
     assert(sig == info->si_signo, "bad siginfo");
   }
 */
   // decide if this trap can be handled by a stub
-  address stub = NULL;
+  address stub = nullptr;
 
-  address pc          = NULL;
+  address pc          = nullptr;
 
   //%note os_trap_1
-  if (info != NULL && uc != NULL && thread != NULL) {
+  if (info != nullptr && uc != nullptr && thread != nullptr) {
     pc = (address) os::Posix::ucontext_get_pc(uc);
 
     address addr = (address) info->si_addr;
@@ -225,9 +240,9 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         // here if the underlying file has been truncated.
         // Do not crash the VM in such a case.
         CodeBlob* cb = CodeCache::find_blob(pc);
-        CompiledMethod* nm = (cb != NULL) ? cb->as_compiled_method_or_null() : NULL;
+        CompiledMethod* nm = (cb != nullptr) ? cb->as_compiled_method_or_null() : nullptr;
         bool is_unsafe_arraycopy = (thread->doing_unsafe_access() && UnsafeCopyMemory::contains_pc(pc));
-        if ((nm != NULL && nm->has_unsafe_access()) || is_unsafe_arraycopy) {
+        if ((nm != nullptr && nm->has_unsafe_access()) || is_unsafe_arraycopy) {
           address next_pc = pc + NativeCall::instruction_size;
           if (is_unsafe_arraycopy) {
             next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
@@ -247,9 +262,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 
         // End life with a fatal error, message and detail message and the context.
         // Note: no need to do any post-processing here (e.g. signal chaining)
-        va_list va_dummy;
-        VMError::report_and_die(thread, uc, NULL, 0, msg, detail_msg, va_dummy);
-        va_end(va_dummy);
+        VMError::report_and_die(thread, uc, nullptr, 0, msg, "%s", detail_msg);
 
         ShouldNotReachHere();
 
@@ -290,9 +303,9 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
     }
   }
 
-  if (stub != NULL) {
+  if (stub != nullptr) {
     // save all thread context in case we need to restore it
-    if (thread != NULL) thread->set_saved_exception_pc(pc);
+    if (thread != nullptr) thread->set_saved_exception_pc(pc);
 
     os::Posix::ucontext_set_pc(uc, stub);
     return true;
@@ -331,7 +344,7 @@ size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
 // helper functions for fatal error handler
 
 void os::print_context(outputStream *st, const void *context) {
-  if (context == NULL) return;
+  if (context == nullptr) return;
 
   const ucontext_t *uc = (const ucontext_t*)context;
 
@@ -343,7 +356,7 @@ void os::print_context(outputStream *st, const void *context) {
 }
 
 void os::print_tos_pc(outputStream *st, const void *context) {
-  if (context == NULL) return;
+  if (context == nullptr) return;
 
   const ucontext_t* uc = (const ucontext_t*)context;
 
@@ -355,29 +368,26 @@ void os::print_tos_pc(outputStream *st, const void *context) {
   // point to garbage if entry point in an nmethod is corrupted. Leave
   // this at the end, and hope for the best.
   address pc = os::fetch_frame_from_context(uc).pc();
-  print_instructions(st, pc, 4/*native instruction size*/);
+  print_instructions(st, pc);
   st->cr();
 }
 
-void os::print_register_info(outputStream *st, const void *context) {
-  if (context == NULL) return;
+void os::print_register_info(outputStream *st, const void *context, int& continuation) {
+  const int register_count = 32 /* r0-r31 */;
+  int n = continuation;
+  assert(n >= 0 && n <= register_count, "Invalid continuation value");
+  if (context == nullptr || n == register_count) {
+    return;
+  }
 
   const ucontext_t *uc = (const ucontext_t*)context;
-
-  st->print_cr("Register to memory mapping:");
-  st->cr();
-
-  // this is horrendously verbose but the layout of the registers in the
-  // context does not match how we defined our abstract Register set, so
-  // we can't just iterate through the gregs area
-
-  // this is only for the "general purpose" registers
-
-  for (int r = 0; r < 31; r++) {
-    st->print("R%-2d=", r);
-    print_location(st, uc->uc_mcontext.regs[r]);
+  while (n < register_count) {
+    // Update continuation with next index before printing location
+    continuation = n + 1;
+    st->print("R%-2d=", n);
+    print_location(st, uc->uc_mcontext.regs[n]);
+    ++n;
   }
-  st->cr();
 }
 
 void os::setup_fpu() {

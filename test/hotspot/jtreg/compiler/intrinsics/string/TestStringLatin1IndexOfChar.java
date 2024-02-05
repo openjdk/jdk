@@ -32,24 +32,57 @@
  *
  * Run with varing levels of AVX and SSE support, also without the intrinsic at all
  *
- * @library /compiler/patches /test/lib
- * @run main/othervm -Xbatch -XX:Tier4InvocationThreshold=200 -XX:CompileThreshold=100 compiler.intrinsics.string.TestStringLatin1IndexOfChar
- * @run main/othervm -Xbatch -XX:Tier4InvocationThreshold=200 -XX:CompileThreshold=100 -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_indexOfL_char compiler.intrinsics.string.TestStringLatin1IndexOfChar
- * @run main/othervm -Xbatch -XX:Tier4InvocationThreshold=200 -XX:CompileThreshold=100 -XX:+IgnoreUnrecognizedVMOptions -XX:UseSSE=0 compiler.intrinsics.string.TestStringLatin1IndexOfChar
- * @run main/othervm -Xbatch -XX:Tier4InvocationThreshold=200 -XX:CompileThreshold=100 -XX:+IgnoreUnrecognizedVMOptions -XX:UseAVX=1 compiler.intrinsics.string.TestStringLatin1IndexOfChar
- * @run main/othervm -Xbatch -XX:Tier4InvocationThreshold=200 -XX:CompileThreshold=100 -XX:+IgnoreUnrecognizedVMOptions -XX:UseAVX=2 compiler.intrinsics.string.TestStringLatin1IndexOfChar
- * @run main/othervm -Xbatch -XX:Tier4InvocationThreshold=200 -XX:CompileThreshold=100 -XX:+IgnoreUnrecognizedVMOptions -XX:UseAVX=3 compiler.intrinsics.string.TestStringLatin1IndexOfChar
+ * @requires vm.compiler2.enabled
+ * @library /compiler/patches /test/lib /
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   -Xbatch compiler.intrinsics.string.TestStringLatin1IndexOfChar
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_indexOfL_char compiler.intrinsics.string.TestStringLatin1IndexOfChar
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:UseAVX=0 compiler.intrinsics.string.TestStringLatin1IndexOfChar
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:UseAVX=1 compiler.intrinsics.string.TestStringLatin1IndexOfChar
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:UseAVX=2 compiler.intrinsics.string.TestStringLatin1IndexOfChar
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:UseAVX=3 compiler.intrinsics.string.TestStringLatin1IndexOfChar
  */
 
 package compiler.intrinsics.string;
 
 import jdk.test.lib.Asserts;
+import jdk.test.whitebox.WhiteBox;
+import java.lang.reflect.Method;
+import compiler.whitebox.CompilerWhiteBoxTest;
 
 public class TestStringLatin1IndexOfChar{
+    private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
     private final static int MAX_LENGTH = 2048;//future proof for AVX-512 instructions
 
     public static void main(String[] args) throws Exception {
-        for (int i = 0; i < 1_000; ++i) {//repeat such that we enter into C2 code...
+        Method methodFindOneItem    = TestStringLatin1IndexOfChar.class.getDeclaredMethod("findOneItem");
+        Method methodWithOffsetTest = TestStringLatin1IndexOfChar.class.getDeclaredMethod("withOffsetTest");
+        Method methodTestEmpty      = TestStringLatin1IndexOfChar.class.getDeclaredMethod("testEmpty");
+        Asserts.assertNotNull(methodFindOneItem);
+        Asserts.assertNotNull(methodWithOffsetTest);
+        Asserts.assertNotNull(methodTestEmpty);
+
+        // Warmup - profiling must inline the methods
+        for (int i = 0; i < 10; ++i) {
+            findOneItem();
+            withOffsetTest();
+            testEmpty();
+        }
+
+        // Compile
+        WHITE_BOX.enqueueMethodForCompilation(methodFindOneItem,    CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
+        WHITE_BOX.enqueueMethodForCompilation(methodWithOffsetTest, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
+        WHITE_BOX.enqueueMethodForCompilation(methodTestEmpty,      CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
+
+        // Run compiled method
+        for (int i = 0; i < 10; ++i) {
             findOneItem();
             withOffsetTest();
             testEmpty();

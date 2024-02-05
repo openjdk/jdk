@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
@@ -32,7 +33,6 @@
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
 #include "oops/klass.inline.hpp"
-#include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
 
 VerificationType VerificationType::from_tag(u1 tag) {
@@ -109,7 +109,7 @@ bool VerificationType::is_reference_assignable_from(
       return true;
     }
 
-    if (Arguments::is_dumping_archive()) {
+    if (CDSConfig::is_dumping_archive()) {
       if (SystemDictionaryShared::add_verification_constraint(klass,
               name(), from.name(), from_field_is_protected, from.is_array(),
               from.is_object())) {
@@ -187,10 +187,10 @@ void VerificationType::print_on(outputStream* st) const {
       } else if (is_uninitialized()) {
         st->print("uninitialized %d", bci());
       } else {
-        if (name() != NULL) {
+        if (name() != nullptr) {
           name()->print_value_on(st);
         } else {
-          st->print_cr("NULL");
+          st->print_cr("null");
         }
       }
   }

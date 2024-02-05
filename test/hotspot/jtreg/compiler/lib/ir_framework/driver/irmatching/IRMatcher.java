@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,17 @@
 
 package compiler.lib.ir_framework.driver.irmatching;
 
-import compiler.lib.ir_framework.driver.irmatching.parser.MethodCompilationParser;
+import compiler.lib.ir_framework.driver.irmatching.parser.TestClassParser;
 import compiler.lib.ir_framework.driver.irmatching.report.CompilationOutputBuilder;
 import compiler.lib.ir_framework.driver.irmatching.report.FailureMessageBuilder;
 
 /**
- * This class performs IR matching on the prepared {@link TestClass} object parsed by {@link MethodCompilationParser}.
+ * This class performs IR matching on the prepared {@link TestClass} object parsed by {@link TestClassParser}.
  * All applicable @IR rules are matched with all their defined compilation phases. If there are any IR matching failures,
  * an {@link IRViolationException} is reported which provides a formatted failure message and the compilation outputs
  * of the failed compilation phases.
  */
 public class IRMatcher {
-    public static final String SAFEPOINT_WHILE_PRINTING_MESSAGE = "<!-- safepoint while printing -->";
     private final Matchable testClass;
 
     public IRMatcher(Matchable testClass) {
@@ -42,7 +41,7 @@ public class IRMatcher {
     }
 
     /**
-     * Do an IR matching of all methods with applicable @IR rules prepared with by the {@link MethodCompilationParser}.
+     * Do an IR matching of all methods with applicable @IR rules prepared with by the {@link TestClassParser}.
      */
     public void match() {
         MatchResult result = testClass.match();
@@ -58,20 +57,7 @@ public class IRMatcher {
      */
     private void reportFailures(MatchResult result) {
         String failureMsg = new FailureMessageBuilder(result).build();
-        String compilationOutput =  new CompilationOutputBuilder(result).build();
-        throwIfNoSafepointWhilePrinting(failureMsg, compilationOutput);
-    }
-
-    /**
-     * In some very rare cases, the hotspot_pid* file to IR match on contains "<!-- safepoint while printing -->"
-     * (emitted by ttyLocker::break_tty_for_safepoint) which might be the reason for a matching error.
-     * Do not throw an exception in this case (i.e. bailout).
-     */
-    private void throwIfNoSafepointWhilePrinting(String failures, String compilations) {
-        if (!compilations.contains(SAFEPOINT_WHILE_PRINTING_MESSAGE)) {
-            throw new IRViolationException(failures, compilations);
-        } else {
-            System.out.println("Found " + SAFEPOINT_WHILE_PRINTING_MESSAGE + ", bail out of IR matching");
-        }
+        String compilationOutput = new CompilationOutputBuilder(result).build();
+        throw new IRViolationException(failureMsg, compilationOutput);
     }
 }

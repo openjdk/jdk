@@ -173,7 +173,7 @@
 /******************************************************************************/
 
 // The 64 bit code is at most SSE2 compliant
-ATTRIBUTE_ALIGNED(8) juint _ALL_ONES[] =
+ATTRIBUTE_ALIGNED(8) static const juint _ALL_ONES[] =
 {
     0xffffffffUL, 0x3fefffffUL
 };

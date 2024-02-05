@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,6 @@ import sun.security.util.*;
  * A public key in X.509 format for the Diffie-Hellman key agreement algorithm.
  *
  * @author Jan Luehe
- *
- *
  * @see DHPrivateKey
  * @see javax.crypto.KeyAgreement
  */
@@ -48,10 +46,10 @@ final class DHPublicKey implements PublicKey,
 javax.crypto.interfaces.DHPublicKey, Serializable {
 
     @java.io.Serial
-    static final long serialVersionUID = 7647557958927458271L;
+    private static final long serialVersionUID = 7647557958927458271L;
 
     // the public key
-    private BigInteger y;
+    private final BigInteger y;
 
     // the key bytes, without the algorithm information
     private byte[] key;
@@ -60,16 +58,16 @@ javax.crypto.interfaces.DHPublicKey, Serializable {
     private byte[] encodedKey;
 
     // the prime modulus
-    private BigInteger p;
+    private final BigInteger p;
 
     // the base generator
-    private BigInteger g;
+    private final BigInteger g;
 
     // the private-value length (optional)
-    private int l;
+    private final int l;
 
     // Note: this OID is used by DHPrivateKey as well.
-    static ObjectIdentifier DH_OID =
+    static final ObjectIdentifier DH_OID =
             ObjectIdentifier.of(KnownOIDs.DiffieHellman);
 
     /**
@@ -155,6 +153,8 @@ javax.crypto.interfaces.DHPublicKey, Serializable {
             // Private-value length is OPTIONAL
             if (params.data.available() != 0) {
                 this.l = params.data.getInteger();
+            } else {
+                this.l = 0;
             }
             if (params.data.available() != 0) {
                 throw new InvalidKeyException("Extra parameter data");
@@ -164,7 +164,10 @@ javax.crypto.interfaces.DHPublicKey, Serializable {
              * Parse the key
              */
             this.key = derKeyVal.data.getBitString();
-            parseKeyBits();
+
+            DerInputStream in = new DerInputStream(this.key);
+            this.y = in.getBigInteger();
+
             if (derKeyVal.data.available() != 0) {
                 throw new InvalidKeyException("Excess key data");
             }
@@ -265,33 +268,23 @@ javax.crypto.interfaces.DHPublicKey, Serializable {
         return sb.toString();
     }
 
-    private void parseKeyBits() throws InvalidKeyException {
-        try {
-            DerInputStream in = new DerInputStream(this.key);
-            this.y = in.getBigInteger();
-        } catch (IOException e) {
-            throw new InvalidKeyException(
-                "Error parsing key encoding: " + e.toString());
-        }
-    }
-
     /**
      * Calculates a hash code value for the object.
      * Objects that are equal will also have the same hashcode.
      */
+    @Override
     public int hashCode() {
         return Objects.hash(y, p, g);
     }
 
+    @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
 
-        if (!(obj instanceof javax.crypto.interfaces.DHPublicKey)) {
+        if (!(obj instanceof javax.crypto.interfaces.DHPublicKey other)) {
             return false;
         }
 
-        javax.crypto.interfaces.DHPublicKey other =
-            (javax.crypto.interfaces.DHPublicKey) obj;
         DHParameterSpec otherParams = other.getParams();
         return ((this.y.compareTo(other.getY()) == 0) &&
                 (this.p.compareTo(otherParams.getP()) == 0) &&
@@ -312,5 +305,29 @@ javax.crypto.interfaces.DHPublicKey, Serializable {
                         getAlgorithm(),
                         getFormat(),
                         getEncoded());
+    }
+
+    /**
+     * Restores the state of this object from the stream.
+     * <p>
+     * JDK 1.5+ objects use <code>KeyRep</code>s instead.
+     *
+     * @param  stream the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
+     */
+    @java.io.Serial
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException {
+        stream.defaultReadObject();
+        if ((key == null) || (key.length == 0)) {
+            throw new InvalidObjectException("key not deserializable");
+        }
+        this.key = key.clone();
+        if ((encodedKey == null) || (encodedKey.length == 0)) {
+            throw new InvalidObjectException(
+                    "encoded key not deserializable");
+        }
+        this.encodedKey = encodedKey.clone();
     }
 }

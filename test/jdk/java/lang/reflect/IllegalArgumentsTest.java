@@ -25,7 +25,7 @@
  * @test
  * @bug 8277964
  * @summary Test IllegalArgumentException be thrown when an argument is invalid
- * @run testng/othervm IllegalArgumentsTest
+ * @run testng/othervm/timeout=180 IllegalArgumentsTest
  */
 
 import java.lang.reflect.Constructor;

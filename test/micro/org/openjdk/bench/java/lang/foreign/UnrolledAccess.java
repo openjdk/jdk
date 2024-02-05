@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
 package org.openjdk.bench.java.lang.foreign;
 
 import java.lang.foreign.*;
+import java.lang.foreign.Arena;
+import java.lang.invoke.VarHandle;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.Options;
@@ -31,14 +33,14 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 import sun.misc.Unsafe;
 import java.util.concurrent.TimeUnit;
 
-import static java.lang.foreign.ValueLayout.JAVA_LONG;
+import static java.lang.foreign.ValueLayout.*;
 
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
-@Fork(value = 3, jvmArgsAppend = { "--enable-preview", "--enable-native-access=ALL-UNNAMED" })
+@Fork(value = 3, jvmArgsAppend = { "--enable-native-access=ALL-UNNAMED" })
 public class UnrolledAccess extends JavaLayouts {
 
     static final Unsafe U = Utils.unsafe;
@@ -61,8 +63,10 @@ public class UnrolledAccess extends JavaLayouts {
             this.outputArray = new double[SIZE];
             this.inputAddress = U.allocateMemory(8 * SIZE);
             this.outputAddress = U.allocateMemory(8 * SIZE);
-            this.inputSegment = MemorySegment.ofAddress(MemoryAddress.ofLong(inputAddress), 8*SIZE, MemorySession.global());
-            this.outputSegment = MemorySegment.ofAddress(MemoryAddress.ofLong(outputAddress), 8*SIZE, MemorySession.global());
+            this.inputSegment = MemorySegment.ofAddress(inputAddress)
+                    .reinterpret(8*SIZE);
+            this.outputSegment = MemorySegment.ofAddress(outputAddress)
+                    .reinterpret(8*SIZE);
         }
     }
 

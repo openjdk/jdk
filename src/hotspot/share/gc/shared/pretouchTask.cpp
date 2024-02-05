@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,12 +68,6 @@ void PretouchTask::pretouch(const char* task_name, char* start_address, char* en
   // Page-align the chunk size, so if start_address is also page-aligned (as
   // is common) then there won't be any pages shared by multiple chunks.
   size_t chunk_size = align_down_bounded(PretouchTask::chunk_size(), page_size);
-#ifdef LINUX
-  // When using THP we need to always pre-touch using small pages as the OS will
-  // initially always use small pages.
-  page_size = UseTransparentHugePages ? (size_t)os::vm_page_size() : page_size;
-#endif
-
   PretouchTask task(task_name, start_address, end_address, page_size, chunk_size);
   size_t total_bytes = pointer_delta(end_address, start_address, sizeof(char));
 
@@ -81,7 +75,7 @@ void PretouchTask::pretouch(const char* task_name, char* start_address, char* en
     return;
   }
 
-  if (pretouch_workers != NULL) {
+  if (pretouch_workers != nullptr) {
     size_t num_chunks = ((total_bytes - 1) / chunk_size) + 1;
 
     uint num_workers = (uint)MIN2(num_chunks, (size_t)pretouch_workers->max_workers());
@@ -95,4 +89,3 @@ void PretouchTask::pretouch(const char* task_name, char* start_address, char* en
     task.work(0);
   }
 }
-

@@ -12,5 +12,5 @@
   <String Id="ShortcutPromptDlgDesktopShortcutControlLabel">デスクトップ・ショートカットの作成</String>
   <String Id="ShortcutPromptDlgStartMenuShortcutControlLabel">スタート・メニューのショートカットの作成</String>
   <String Id="InstallDirNotEmptyDlg_Title">[ProductName]セットアップ</String>
-  <String Id="ContextMenuCommandLabel">Open with [ProductName]</String>
+  <String Id="ContextMenuCommandLabel">[ProductName]で開く</String>
 </WixLocalization>

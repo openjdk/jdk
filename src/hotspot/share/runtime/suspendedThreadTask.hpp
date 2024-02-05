@@ -41,7 +41,6 @@ class SuspendedThreadTask {
 public:
   SuspendedThreadTask(Thread* thread) : _thread(thread), _done(false) {}
   void run();
-  bool is_done() { return _done; }
   virtual void do_task(const SuspendedThreadTaskContext& context) = 0;
 protected:
   ~SuspendedThreadTask() {}

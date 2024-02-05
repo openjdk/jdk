@@ -78,7 +78,7 @@ public class TestReverseByteTransformsSVE {
     }
 
     @Test
-    @IR(applyIf = {"UseSVE", " > 0"}, failOn = {IRNode.REVERSE_BYTES_V})
+    @IR(applyIf = {"UseSVE", " > 0"}, failOn = {IRNode.REVERSE_BYTES_VL})
     public void test_reversebytes_long_transform(long[] lout, long[] linp) {
         VectorMask<Long> mask = VectorMask.fromLong(LSPECIES, 3);
         for (int i = 0; i < LSPECIES.loopBound(linp.length); i+=LSPECIES.length()) {
@@ -97,7 +97,7 @@ public class TestReverseByteTransformsSVE {
     }
 
     @Test
-    @IR(applyIf = {"UseSVE", " > 0"}, failOn = {IRNode.REVERSE_BYTES_V})
+    @IR(applyIf = {"UseSVE", " > 0"}, failOn = {IRNode.REVERSE_BYTES_VI})
     public void test_reversebytes_int_transform(int[] iout, int[] iinp) {
         VectorMask<Integer> mask = VectorMask.fromLong(ISPECIES, 3);
         for (int i = 0; i < ISPECIES.loopBound(iinp.length); i+=ISPECIES.length()) {
@@ -116,7 +116,7 @@ public class TestReverseByteTransformsSVE {
     }
 
     @Test
-    @IR(applyIf = {"UseSVE", " > 0"}, failOn = {IRNode.REVERSE_BYTES_V})
+    @IR(applyIf = {"UseSVE", " > 0"}, failOn = {IRNode.REVERSE_BYTES_VS})
     public void test_reversebytes_short_transform(short[] sout, short[] sinp) {
         VectorMask<Short> mask = VectorMask.fromLong(SSPECIES, 3);
         for (int i = 0; i < SSPECIES.loopBound(sinp.length); i+=SSPECIES.length()) {

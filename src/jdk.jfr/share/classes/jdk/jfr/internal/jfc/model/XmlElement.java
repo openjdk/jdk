@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,7 +175,7 @@ class XmlElement {
         if (producers.size() != 1) {
             throw new Error("Unsure how to evaluate multiple producers " + getClass());
         }
-        return producers.get(0).evaluate();
+        return producers.getFirst().evaluate();
     }
 
     protected void validateAttributes() throws JFCModelException {

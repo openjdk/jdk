@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -185,8 +185,14 @@ final class AquaComboBoxPopup extends BasicComboPopup {
             updateContents(true);
         }
 
+        int popupBoundsY = comboBox.getBounds().height;
+        if (comboBox.isEditable() && comboBox.getBorder() != null) {
+            Insets inset = comboBox.getBorder().getBorderInsets(comboBox);
+            popupBoundsY += inset.top + inset.bottom;
+        }
+
         final Dimension popupSize = getBestPopupSizeForRowCount(comboBox.getMaximumRowCount());
-        final Rectangle popupBounds = computePopupBounds(0, comboBox.getBounds().height, popupSize.width, popupSize.height);
+        final Rectangle popupBounds = computePopupBounds(0, popupBoundsY, popupSize.width, popupSize.height);
         if (popupBounds == null) return null; // returning null means don't show anything
 
         final Dimension realPopupSize = popupBounds.getSize();
@@ -343,6 +349,10 @@ final class AquaComboBoxPopup extends BasicComboPopup {
 
         final Rectangle r = new Rectangle(px, py, pw, ph);
         if (r.y + r.height < top.y + scrBounds.y + scrBounds.height) {
+            // Adjust popup location to match popup for non-editable without border
+            if (!comboBox.isEditable()) {
+                r.y += (comboBoxInsets.top + comboBoxInsets.bottom) / 2;
+            }
             return r;
         }
         // Check whether it goes below the bottom of the screen, if so flip it

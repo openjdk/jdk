@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,11 +41,14 @@
 #include "runtime/os_perf.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
-#include "unittest.hpp"
 
+#include "utilities/vmassert_uninstall.hpp"
 #include <vector>
 #include <list>
 #include <map>
+#include "utilities/vmassert_reinstall.hpp"
+
+#include "unittest.hpp"
 
 namespace {
 
@@ -120,7 +123,7 @@ namespace {
    public:
     MockJfrOSInterface() {}
     static int network_utilization(NetworkInterface** network_interfaces) {
-      *network_interfaces = NULL;
+      *network_interfaces = nullptr;
       for (std::list<MockNetworkInterface>::const_iterator i = _interfaces.begin();
            i != _interfaces.end();
            ++i) {

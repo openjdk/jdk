@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -243,7 +243,7 @@ class GlobalValueNumbering: public ValueNumberingVisitor {
   Compilation*  compilation() const              { return _compilation; }
   ValueMap*     current_map()                    { return _current_map; }
   ValueMap*     value_map_of(BlockBegin* block)  { return _value_maps.at(block->linear_scan_number()); }
-  void          set_value_map_of(BlockBegin* block, ValueMap* map)   { assert(value_map_of(block) == NULL, ""); _value_maps.at_put(block->linear_scan_number(), map); }
+  void          set_value_map_of(BlockBegin* block, ValueMap* map) { assert(value_map_of(block) == nullptr, ""); _value_maps.at_put(block->linear_scan_number(), map); }
 
   bool          is_processed(Value v)            { return _processed_values.contains(v); }
   void          set_processed(Value v)           { _processed_values.put(v); }

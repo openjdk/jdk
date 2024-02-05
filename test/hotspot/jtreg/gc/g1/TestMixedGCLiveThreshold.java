@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,9 +109,7 @@ public class TestMixedGCLiveThreshold {
 
         basicOpts.add(GCTest.class.getName());
 
-        ProcessBuilder procBuilder =  ProcessTools.createJavaProcessBuilder(basicOpts);
-        OutputAnalyzer analyzer = new OutputAnalyzer(procBuilder.start());
-        return analyzer;
+        return ProcessTools.executeLimitedTestJava(basicOpts);
     }
 
     private static boolean regionsSelectedForRebuild(String output) throws Exception {
@@ -135,12 +133,7 @@ public class TestMixedGCLiveThreshold {
 
             // Memory objects have been promoted to old by full GC.
             // Concurrent cycle may select regions for rebuilding
-            wb.g1StartConcMarkCycle(); // concurrent-start, remark and cleanup
-
-            // Sleep to make sure concurrent cycle is done
-            while (wb.g1InConcurrentMark()) {
-                Thread.sleep(1000);
-            }
+            wb.g1RunConcurrentGC();
             System.out.println(used);
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -336,6 +336,7 @@ public abstract class Identity implements Principal, Serializable {
      *
      * @see #identityEquals
      */
+    @Override
     public final boolean equals(Object identity) {
         if (identity == this) {
             return true;
@@ -478,10 +479,9 @@ public abstract class Identity implements Principal, Serializable {
     }
 
     /**
-     * Returns a hashcode for this {@code Identity}.
-     *
-     * @return a hashcode for this {@code Identity}.
+     * {@return the hashcode for this {@code Identity}}
      */
+    @Override
     public int hashCode() {
         return name.hashCode();
     }

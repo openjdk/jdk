@@ -7,7 +7,7 @@
 
 public class BindingsTest1Merging {
     public static boolean Ktrue() { return true; }
-    public static void main(String[] args) {
+    public static void meth() {
         Object o1 = "hello";
         Integer i = 42;
         Object o2 = i;

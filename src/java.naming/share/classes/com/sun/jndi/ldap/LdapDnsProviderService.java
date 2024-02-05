@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package com.sun.jndi.ldap;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.*;
+import java.util.concurrent.locks.ReentrantLock;
 import javax.naming.NamingException;
 import javax.naming.ldap.spi.LdapDnsProvider;
 import javax.naming.ldap.spi.LdapDnsProviderResult;
@@ -43,7 +44,7 @@ import sun.security.util.SecurityConstants;
 final class LdapDnsProviderService {
 
     private static volatile LdapDnsProviderService service;
-    private static final Object LOCK = new int[0];
+    private static final ReentrantLock LOCK = new ReentrantLock();
     private final ServiceLoader<LdapDnsProvider> providers;
 
     /**
@@ -75,9 +76,12 @@ final class LdapDnsProviderService {
      */
     static LdapDnsProviderService getInstance() {
         if (service != null) return service;
-        synchronized (LOCK) {
+        LOCK.lock();
+        try {
             if (service != null) return service;
             service = new LdapDnsProviderService();
+        } finally {
+            LOCK.unlock();
         }
         return service;
     }
@@ -96,13 +100,16 @@ final class LdapDnsProviderService {
     {
         LdapDnsProviderResult result = null;
         Hashtable<?, ?> envCopy = new Hashtable<>(env);
-        synchronized (LOCK) {
+        LOCK.lock();
+        try {
             Iterator<LdapDnsProvider> iterator = providers.iterator();
             while (result == null && iterator.hasNext()) {
                 result = iterator.next().lookupEndpoints(url, envCopy)
                         .filter(r -> !r.getEndpoints().isEmpty())
                         .orElse(null);
             }
+        } finally {
+            LOCK.unlock();
         }
 
         if (result == null) {

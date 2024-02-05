@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -67,10 +67,12 @@ JVM_CFLAGS_TARGET_DEFINES += \
     #
 
 ifeq ($(DEBUG_LEVEL), release)
+  # release builds disable uses of assert macro from <assert.h>.
+  JVM_CFLAGS_DEBUGLEVEL := -DNDEBUG
   # For hotspot, release builds differ internally between "optimized" and "product"
   # in that "optimize" does not define PRODUCT.
   ifneq ($(HOTSPOT_DEBUG_LEVEL), optimized)
-    JVM_CFLAGS_DEBUGLEVEL := -DPRODUCT
+    JVM_CFLAGS_DEBUGLEVEL += -DPRODUCT
   endif
 else ifeq ($(DEBUG_LEVEL), fastdebug)
   JVM_CFLAGS_DEBUGLEVEL := -DASSERT

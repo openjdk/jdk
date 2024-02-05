@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ class LogDiagnosticCommand : public DCmdWithParser {
   LogDiagnosticCommand(outputStream* output, bool heap_allocated);
   void execute(DCmdSource source, TRAPS);
   static void registerCommand();
-  static int num_arguments();
+  static int num_arguments() { return 7; }
 
   static const char* name() {
     return "VM.log";
@@ -61,7 +61,7 @@ class LogDiagnosticCommand : public DCmdWithParser {
 
   // Used by SecurityManager. This DCMD requires ManagementPermission = control.
   static const JavaPermission permission() {
-    JavaPermission p = {"java.lang.management.ManagementPermission", "control", NULL};
+    JavaPermission p = {"java.lang.management.ManagementPermission", "control", nullptr};
     return p;
   }
 };

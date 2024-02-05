@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,6 @@ public class Resources_ja extends java.util.ListResourceBundle {
         {"provider.class.not.found", "\u30D7\u30ED\u30D0\u30A4\u30C0\"%s\"\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093"},
         {"jarsigner.error.", "jarsigner\u30A8\u30E9\u30FC: "},
         {"Illegal.option.", "\u4E0D\u6B63\u306A\u30AA\u30D7\u30B7\u30E7\u30F3: "},
-        {"This.option.is.forremoval", "\u3053\u306E\u30AA\u30D7\u30B7\u30E7\u30F3\u306F\u975E\u63A8\u5968\u3067\u3042\u308A\u3001\u5C06\u6765\u306E\u30EA\u30EA\u30FC\u30B9\u3067\u524A\u9664\u3055\u308C\u308B\u4E88\u5B9A\u3067\u3059: "},
         {".keystore.must.be.NONE.if.storetype.is.{0}",
                 "-storetype\u304C{0}\u306E\u5834\u5408\u3001-keystore\u306FNONE\u3067\u3042\u308B\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059"},
         {".keypass.can.not.be.specified.if.storetype.is.{0}",
@@ -97,10 +96,6 @@ public class Resources_ja extends java.util.ListResourceBundle {
                 "[-tsapolicyid <oid>]        \u30BF\u30A4\u30E0\u30B9\u30BF\u30F3\u30D7\u5C40\u306ETSAPolicyID"},
         {".tsadigestalg.algorithm.of.digest.data.in.timestamping.request",
                 "[-tsadigestalg <algorithm>] \u30BF\u30A4\u30E0\u30B9\u30BF\u30F3\u30D7\u30FB\u30EA\u30AF\u30A8\u30B9\u30C8\u306E\u30C0\u30A4\u30B8\u30A7\u30B9\u30C8\u30FB\u30C7\u30FC\u30BF\u306E\u30A2\u30EB\u30B4\u30EA\u30BA\u30E0"},
-        {".altsigner.class.class.name.of.an.alternative.signing.mechanism",
-                "[-altsigner <class>]        \u4EE3\u66FF\u7F72\u540D\u30E1\u30AB\u30CB\u30BA\u30E0\u306E\u30AF\u30E9\u30B9\u540D\n                            (\u3053\u306E\u30AA\u30D7\u30B7\u30E7\u30F3\u306F\u975E\u63A8\u5968\u3067\u3042\u308A\u3001\u5C06\u6765\u306E\u30EA\u30EA\u30FC\u30B9\u3067\u524A\u9664\u3055\u308C\u308B\u4E88\u5B9A\u3067\u3059\u3002)"},
-        {".altsignerpath.pathlist.location.of.an.alternative.signing.mechanism",
-                "[-altsignerpath <pathlist>] \u4EE3\u66FF\u7F72\u540D\u30E1\u30AB\u30CB\u30BA\u30E0\u306E\u5834\u6240\n                            (\u3053\u306E\u30AA\u30D7\u30B7\u30E7\u30F3\u306F\u975E\u63A8\u5968\u3067\u3042\u308A\u3001\u5C06\u6765\u306E\u30EA\u30EA\u30FC\u30B9\u3067\u524A\u9664\u3055\u308C\u308B\u4E88\u5B9A\u3067\u3059\u3002)"},
         {".internalsf.include.the.SF.file.inside.the.signature.block",
                 "[-internalsf]               \u30B7\u30B0\u30CD\u30C1\u30E3\u30FB\u30D6\u30ED\u30C3\u30AF\u306B.SF\u30D5\u30A1\u30A4\u30EB\u3092\u542B\u3081\u308B"},
         {".sectionsonly.don.t.compute.hash.of.entire.manifest",
@@ -236,8 +231,6 @@ public class Resources_ja extends java.util.ListResourceBundle {
         {"or", "\u307E\u305F\u306F"},
         {"Certificate.not.found.for.alias.alias.must.reference.a.valid.KeyStore.entry.containing.an.X.509.public.key.certificate.for.the",
                 "\u8A3C\u660E\u66F8\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093\u3067\u3057\u305F: {0}\u3002{1}\u306F\u30BF\u30A4\u30E0\u30B9\u30BF\u30F3\u30D7\u5C40\u306EX.509\u516C\u958B\u30AD\u30FC\u8A3C\u660E\u66F8\u304C\u542B\u307E\u308C\u3066\u3044\u308B\u6709\u52B9\u306AKeyStore\u30A8\u30F3\u30C8\u30EA\u3092\u53C2\u7167\u3059\u308B\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059\u3002"},
-        {"using.an.alternative.signing.mechanism",
-                "\u4EE3\u66FF\u7F72\u540D\u30E1\u30AB\u30CB\u30BA\u30E0\u306E\u4F7F\u7528"},
         {"entry.was.signed.on", "\u30A8\u30F3\u30C8\u30EA\u306F{0}\u306B\u7F72\u540D\u3055\u308C\u307E\u3057\u305F"},
         {"Warning.", "\u8B66\u544A: "},
         {"Error.", "\u30A8\u30E9\u30FC: "},

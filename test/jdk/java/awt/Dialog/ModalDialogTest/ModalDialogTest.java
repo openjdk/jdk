@@ -211,7 +211,7 @@ class WindowPanel extends Panel {
         win.add(center, BorderLayout.CENTER);
         win.add(bottom, BorderLayout.SOUTH);
         win.pack();
-        if (windows != 0) {
+        if (windows != 0 || frames != 1 || dialogs != 0 || modalDialogs != 0) {
             win.setVisible(true);
         }
 

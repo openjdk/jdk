@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,9 @@
  * @bug 8294916 8297075 8297149
  * @summary Tests that closing a streaming handler (ofInputStream()/ofLines())
  *      without reading all the bytes unregisters the underlying subscriber.
- * @library /test/lib http2/server
- * @build jdk.test.lib.net.SimpleSSLContext HttpServerAdapters
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
  *        ReferenceTracker CancelStreamedBodyTest
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
  * @run testng/othervm -Djdk.internal.httpclient.debug=true
  *                     CancelStreamedBodyTest
  */
@@ -82,9 +78,13 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.http2.Http2TestServer;
 
 import static java.lang.System.arraycopy;
 import static java.lang.System.out;
+import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
@@ -104,6 +104,7 @@ public class CancelStreamedBodyTest implements HttpServerAdapters {
 
     static final long SERVER_LATENCY = 75;
     static final int ITERATION_COUNT = 3;
+    static final long CLIENT_SHUTDOWN_GRACE_DELAY = 1500; // milliseconds
     // a shared executor helps reduce the amount of threads created by the test
     static final Executor executor = new TestExecutor(Executors.newCachedThreadPool());
     static final ConcurrentMap<String, Throwable> FAILURES = new ConcurrentHashMap<>();
@@ -287,7 +288,7 @@ public class CancelStreamedBodyTest implements HttpServerAdapters {
             if (sameClient) continue;
             client = null;
             System.gc();
-            var error = TRACKER.check(tracker, 500);
+            var error = TRACKER.check(tracker, CLIENT_SHUTDOWN_GRACE_DELAY);
             if (error != null) throw error;
         }
     }
@@ -329,7 +330,7 @@ public class CancelStreamedBodyTest implements HttpServerAdapters {
             if (sameClient) continue;
             client = null;
             System.gc();
-            var error = TRACKER.check(tracker, 1);
+            var error = TRACKER.check(tracker, CLIENT_SHUTDOWN_GRACE_DELAY);
             if (error != null) throw error;
         }
     }
@@ -344,25 +345,22 @@ public class CancelStreamedBodyTest implements HttpServerAdapters {
 
         // HTTP/1.1
         HttpTestHandler h1_chunkHandler = new HTTPSlowHandler();
-        InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
-        httpTestServer = HttpTestServer.of(HttpServer.create(sa, 0));
+        httpTestServer = HttpTestServer.create(HTTP_1_1);
         httpTestServer.addHandler(h1_chunkHandler, "/http1/x/");
         httpURI = "http://" + httpTestServer.serverAuthority() + "/http1/x/";
 
-        HttpsServer httpsServer = HttpsServer.create(sa, 0);
-        httpsServer.setHttpsConfigurator(new HttpsConfigurator(sslContext));
-        httpsTestServer = HttpTestServer.of(httpsServer);
+        httpsTestServer = HttpTestServer.create(HTTP_1_1, sslContext);
         httpsTestServer.addHandler(h1_chunkHandler, "/https1/x/");
         httpsURI = "https://" + httpsTestServer.serverAuthority() + "/https1/x/";
 
         // HTTP/2
         HttpTestHandler h2_chunkedHandler = new HTTPSlowHandler();
 
-        http2TestServer = HttpTestServer.of(new Http2TestServer("localhost", false, 0));
+        http2TestServer = HttpTestServer.create(HTTP_2);
         http2TestServer.addHandler(h2_chunkedHandler, "/http2/x/");
         http2URI = "http://" + http2TestServer.serverAuthority() + "/http2/x/";
 
-        https2TestServer = HttpTestServer.of(new Http2TestServer("localhost", true, sslContext));
+        https2TestServer = HttpTestServer.create(HTTP_2, sslContext);
         https2TestServer.addHandler(h2_chunkedHandler, "/https2/x/");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/x/";
 

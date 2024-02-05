@@ -25,28 +25,38 @@
  */
 package org.jcp.xml.dsig.internal.dom;
 
-import javax.xml.crypto.*;
-import javax.xml.crypto.dom.DOMCryptoContext;
-import javax.xml.crypto.dsig.*;
-import javax.xml.crypto.dsig.spec.RSAPSSParameterSpec;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.IOException;
 import java.security.Provider;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.PSSParameterSpec;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import javax.xml.crypto.MarshalException;
+import javax.xml.crypto.XMLCryptoContext;
+import javax.xml.crypto.dom.DOMCryptoContext;
+import javax.xml.crypto.dsig.CanonicalizationMethod;
+import javax.xml.crypto.dsig.Reference;
+import javax.xml.crypto.dsig.SignatureMethod;
+import javax.xml.crypto.dsig.SignedInfo;
+import javax.xml.crypto.dsig.TransformException;
+import javax.xml.crypto.dsig.XMLSignature;
+import javax.xml.crypto.dsig.XMLSignatureException;
+import javax.xml.crypto.dsig.spec.RSAPSSParameterSpec;
 
 import com.sun.org.apache.xml.internal.security.algorithms.implementations.SignatureBaseRSA;
+import com.sun.org.apache.xml.internal.security.utils.UnsyncBufferedOutputStream;
+import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-import com.sun.org.apache.xml.internal.security.utils.UnsyncBufferedOutputStream;
-import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
+
 
 /**
  * DOM-based implementation of SignedInfo.
@@ -57,9 +67,9 @@ public final class DOMSignedInfo extends DOMStructure implements SignedInfo {
     private static final com.sun.org.slf4j.internal.Logger LOG =
         com.sun.org.slf4j.internal.LoggerFactory.getLogger(DOMSignedInfo.class);
 
-    private List<Reference> references;
-    private CanonicalizationMethod canonicalizationMethod;
-    private SignatureMethod signatureMethod;
+    private final List<Reference> references;
+    private final CanonicalizationMethod canonicalizationMethod;
+    private final SignatureMethod signatureMethod;
     private String id;
     private Document ownerDoc;
     private Element localSiElem;
@@ -86,17 +96,13 @@ public final class DOMSignedInfo extends DOMStructure implements SignedInfo {
         }
         this.canonicalizationMethod = cm;
         this.signatureMethod = sm;
-        this.references = Collections.unmodifiableList(
-            new ArrayList<>(references));
+        this.references = Collections.unmodifiableList(new ArrayList<>(references));
         if (this.references.isEmpty()) {
-            throw new IllegalArgumentException("list of references must " +
-                "contain at least one entry");
+            throw new IllegalArgumentException("list of references must contain at least one entry");
         }
-        for (int i = 0, size = this.references.size(); i < size; i++) {
-            Object obj = this.references.get(i);
+        for (Object obj : this.references) {
             if (!(obj instanceof Reference)) {
-                throw new ClassCastException("list of references contains " +
-                    "an illegal type");
+                throw new ClassCastException("list of references contains an illegal " + obj.getClass());
             }
         }
     }
@@ -210,22 +216,27 @@ public final class DOMSignedInfo extends DOMStructure implements SignedInfo {
         references = Collections.unmodifiableList(refList);
     }
 
+    @Override
     public CanonicalizationMethod getCanonicalizationMethod() {
         return canonicalizationMethod;
     }
 
+    @Override
     public SignatureMethod getSignatureMethod() {
         return signatureMethod;
     }
 
+    @Override
     public String getId() {
         return id;
     }
 
+    @Override
     public List<Reference> getReferences() {
         return references;
     }
 
+    @Override
     public InputStream getCanonicalizedData() {
         return canonData;
     }
@@ -249,8 +260,8 @@ public final class DOMSignedInfo extends DOMStructure implements SignedInfo {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Canonicalized SignedInfo:");
                 StringBuilder sb = new StringBuilder(signedInfoBytes.length);
-                for (int i = 0; i < signedInfoBytes.length; i++) {
-                    sb.append((char)signedInfoBytes[i]);
+                for (byte signedInfoByte : signedInfoBytes) {
+                    sb.append((char) signedInfoByte);
                 }
                 LOG.debug(sb.toString());
                 LOG.debug("Data to be signed/verified:" + XMLUtils.encodeToString(signedInfoBytes));

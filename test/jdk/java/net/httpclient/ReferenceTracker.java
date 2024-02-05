@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,14 @@ public class ReferenceTracker {
         return diagnose(warnings, (t) -> t.getOutstandingHttpOperations() > 0);
     }
 
+    public StringBuilder diagnose(Tracker tracker) {
+        return diagnose(tracker, new StringBuilder(), (t) -> t.getOutstandingHttpOperations() > 0);
+    }
+
+    public StringBuilder diagnose(HttpClient client) {
+        return diagnose(getTracker(client));
+    }
+
     public StringBuilder diagnose(Tracker tracker, StringBuilder warnings, Predicate<Tracker> hasOutstanding) {
         checkOutstandingOperations(warnings, tracker, hasOutstanding);
         return warnings;
@@ -105,6 +113,14 @@ public class ReferenceTracker {
                         .or(Tracker::isFacadeReferenced)
                         .or(Tracker::isSelectorAlive),
                 "outstanding operations or unreleased resources", true);
+    }
+
+    public AssertionError checkFinished(Tracker tracker, long graceDelayMs) {
+        Predicate<Tracker> hasOperations = (t) -> t.getOutstandingOperations() > 0;
+        Predicate<Tracker> hasSubscribers = (t) -> t.getOutstandingSubscribers() > 0;
+        return check(tracker, graceDelayMs,
+                hasOperations.or(hasSubscribers),
+                "outstanding operations or unreleased resources", false);
     }
 
     public AssertionError check(long graceDelayMs) {
@@ -214,12 +230,15 @@ public class ReferenceTracker {
         long waitStart = System.nanoTime();
         long waited = 0;
         long toWait = Math.min(graceDelayMs, Math.max(delay, 1));
-        for (int i = 0; i < count; i++) {
+        int i = 0;
+        for (i = 0; i < count; i++) {
             if (hasOutstanding.test(tracker)) {
                 System.gc();
                 try {
                     if (i == 0) {
                         System.out.println("Waiting for HTTP operations to terminate...");
+                        System.out.println("\tgracedelay: " + graceDelayMs
+                                + " ms, iterations: " + count + ", wait/iteration: " + toWait + "ms");
                     }
                     waited += toWait;
                     Thread.sleep(toWait);
@@ -235,6 +254,11 @@ public class ReferenceTracker {
         }
         long duration = Duration.ofNanos(System.nanoTime() - waitStart).toMillis();
         if (hasOutstanding.test(tracker)) {
+            if (i == 0 && waited == 0) {
+                // we found nothing and didn't wait expecting success, but then found
+                // something. Respin to make sure we wait.
+                return check(tracker, graceDelayMs, hasOutstanding, description, printThreads);
+            }
             StringBuilder warnings = diagnose(tracker, new StringBuilder(), hasOutstanding);
             if (hasOutstanding.test(tracker)) {
                 fail = new AssertionError(warnings.toString());
@@ -250,7 +274,8 @@ public class ReferenceTracker {
                 printThreads(msg, System.err);
             }
             System.out.println("AssertionError: Found some " + description + " in "
-                    + tracker.getName() + " after " + duration + " ms, waited " + waited + " ms");
+                    + tracker.getName() + " after " + i + " iterations and " + duration
+                    + " ms, waited " + waited + " ms");
         }
         return fail;
     }
@@ -261,22 +286,40 @@ public class ReferenceTracker {
                                 boolean printThreads) {
         AssertionError fail = null;
         graceDelayMs = Math.max(graceDelayMs, 100);
+        long waitStart = System.nanoTime();
         long delay = Math.min(graceDelayMs, 10);
+        long toWait = Math.min(graceDelayMs, Math.max(delay, 1));
+        long waited = 0;
         var count = delay > 0 ? graceDelayMs / delay : 1;
-        for (int i = 0; i < count; i++) {
+        int i = 0;
+        for (i = 0; i < count; i++) {
             if (TRACKERS.stream().anyMatch(hasOutstanding)) {
                 System.gc();
                 try {
                     if (i == 0) {
                         System.out.println("Waiting for HTTP operations to terminate...");
+                        System.out.println("\tgracedelay: " + graceDelayMs
+                                + " ms, iterations: " + count + ", wait/iteration: " + toWait + "ms");
                     }
-                    Thread.sleep(Math.min(graceDelayMs, Math.max(delay, 1)));
+                    waited += toWait;
+                    Thread.sleep(toWait);
                 } catch (InterruptedException x) {
                     // OK
                 }
-            } else break;
+            } else {
+                System.out.println("No outstanding HTTP operations remaining after "
+                        + i + "/" + count + " iterations and " + waited + "/" + graceDelayMs
+                        + " ms, (wait/iteration " + toWait + " ms)");
+                break;
+            }
         }
+        long duration = Duration.ofNanos(System.nanoTime() - waitStart).toMillis();
         if (TRACKERS.stream().anyMatch(hasOutstanding)) {
+            if (i == 0 && waited == 0) {
+                // we found nothing and didn't wait expecting success, but then found
+                // something. Respin to make sure we wait.
+                return check(graceDelayMs, hasOutstanding, description, printThreads);
+            }
             StringBuilder warnings = diagnose(new StringBuilder(), hasOutstanding);
             addSummary(warnings);
             if (TRACKERS.stream().anyMatch(hasOutstanding)) {
@@ -284,7 +327,7 @@ public class ReferenceTracker {
             }
         } else {
             System.out.println("PASSED: No " + description + " found in "
-                    + getTrackedClientCount() + " clients");
+                    + getTrackedClientCount() + " clients in " + duration + " ms");
         }
         if (fail != null) {
             Predicate<Tracker> isAlive = Tracker::isSelectorAlive;
@@ -292,6 +335,9 @@ public class ReferenceTracker {
                 printThreads("Some selector manager threads are still alive: ", System.out);
                 printThreads("Some selector manager threads are still alive: ", System.err);
             }
+            System.out.println("AssertionError: Found some " + description + " in "
+                    + getTrackedClientCount() + " clients after " + i + " iterations and " + duration
+                    + " ms, waited " + waited + " ms");
         }
         return fail;
     }

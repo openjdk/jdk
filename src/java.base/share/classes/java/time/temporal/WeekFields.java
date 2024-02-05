@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -293,6 +293,14 @@ public final class WeekFields implements Serializable {
      * Unicode extensions</a>, returned instance will reflect the values specified with
      * those extensions. If both "fw" and "rg" are specified, the value from
      * the "fw" extension supersedes the implicit one from the "rg" extension.
+     *
+     * <p>For example, users who are interested in using an English locale,
+     * but want the first day of the week that corresponds with the ISO-8601
+     * standard can call
+     * {@snippet lang=java :
+     * Locale enIsoLoc = Locale.forLanguageTag("en-u-fw-mon");
+     * WeekFields.of(enIsoLoc).getFirstDayOfWeek(); // returns MONDAY
+     * }
      *
      * @param locale  the locale to use, not null
      * @return the week-definition, not null

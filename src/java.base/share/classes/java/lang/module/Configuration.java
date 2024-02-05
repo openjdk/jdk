@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,8 +48,8 @@ import jdk.internal.vm.annotation.Stable;
 
 /**
  * A configuration that is the result of <a href="package-summary.html#resolution">
- * resolution</a> or resolution with
- * <a href="{@docRoot}/java.base/java/lang/module/Configuration.html#service-binding">service binding</a>.
+ * resolution</a> or resolution with {@linkplain
+ * Configuration##service-binding service binding}.
  *
  * <p> A configuration encapsulates the <em>readability graph</em> that is the
  * output of resolution. A readability graph is a directed graph whose vertices

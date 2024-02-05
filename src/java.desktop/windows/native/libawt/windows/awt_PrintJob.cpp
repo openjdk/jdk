@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,9 @@
  * questions.
  */
 
+#include <cmath>
 #include "awt.h"
-#include <math.h>
+#include <strsafe.h>
 #include <windef.h>
 #include <wtypes.h>
 #include <winuser.h>
@@ -841,9 +842,9 @@ Java_sun_awt_windows_WPrinterJob_getDefaultPage(JNIEnv *env, jobject self,
 
           // set margins to 1"
           margins.left = convertFromPoints(72, units);
-          margins.top = convertFromPoints(72, units);;
-          margins.right = convertFromPoints(72, units);;
-          margins.bottom = convertFromPoints(72, units);;
+          margins.top = convertFromPoints(72, units);
+          margins.right = convertFromPoints(72, units);
+          margins.bottom = convertFromPoints(72, units);
 
           jobject paper = getPaper(env, page);
           if (paper == NULL) {
@@ -2408,7 +2409,7 @@ static jboolean jFontToWFontW(JNIEnv *env, HDC printDC, jstring fontName,
     size_t nameLen = wcslen(fontNameW);
     if (nameLen < (sizeof(lf.lfFaceName) / sizeof(lf.lfFaceName[0]))) {
 
-        wcscpy(lf.lfFaceName, fontNameW);
+        StringCchCopyW(lf.lfFaceName, LF_FACESIZE, fontNameW);
 
         lf.lfCharSet = DEFAULT_CHARSET;
         lf.lfPitchAndFamily = 0;
@@ -2636,7 +2637,7 @@ JNIEXPORT jint JNICALL Java_sun_awt_windows_WPrinterJob_getGDIAdvance
  */
 JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_textOut
 (JNIEnv *env, jobject self, jlong printDC, jstring text, jint strLen,
-     boolean glyphCodes, jfloat x, jfloat y, jfloatArray positions)
+     jboolean glyphCodes, jfloat x, jfloat y, jfloatArray positions)
 {
 
     long posX = ROUND_TO_LONG(x);
@@ -3924,9 +3925,13 @@ static void throwPrinterException(JNIEnv *env, DWORD err) {
                   sizeof(t_errStr),
                   NULL );
 
-    WideCharToMultiByte(CP_UTF8, 0, t_errStr, -1,
+    int nb = WideCharToMultiByte(CP_UTF8, 0, t_errStr, -1,
                         errStr, sizeof(errStr), NULL, NULL);
-    JNU_ThrowByName(env, PRINTEREXCEPTION_STR, errStr);
+    if (nb > 0) {
+        JNU_ThrowByName(env, PRINTEREXCEPTION_STR, errStr);
+    } else {
+        JNU_ThrowByName(env, PRINTEREXCEPTION_STR, "secondary error during OS message extraction");
+    }
 }
 
 
@@ -4297,7 +4302,7 @@ Java_sun_awt_windows_WPrinterJob_setNativePrintService(JNIEnv *env,
       hDevMode = NULL;
     }
 
-    HANDLE hDevNames = AwtPrintControl::getPrintHDName(env, name);;
+    HANDLE hDevNames = AwtPrintControl::getPrintHDName(env, name);
     if (hDevNames != NULL) {
       ::GlobalFree(hDevNames);
       hDevNames = NULL;

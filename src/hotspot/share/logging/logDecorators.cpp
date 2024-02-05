@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ LogDecorators::Decorator LogDecorators::from_string(const char* str) {
 }
 
 bool LogDecorators::parse(const char* decorator_args, outputStream* errstream) {
-  if (decorator_args == NULL || strlen(decorator_args) == 0) {
+  if (decorator_args == nullptr || strlen(decorator_args) == 0) {
     _decorators = DefaultDecoratorsMask;
     return true;
   }
@@ -73,12 +73,12 @@ bool LogDecorators::parse(const char* decorator_args, outputStream* errstream) {
   char* comma_pos;
   do {
     comma_pos = strchr(token, ',');
-    if (comma_pos != NULL) {
+    if (comma_pos != nullptr) {
       *comma_pos = '\0';
     }
     Decorator d = from_string(token);
     if (d == Invalid) {
-      if (errstream != NULL) {
+      if (errstream != nullptr) {
         errstream->print_cr("Invalid decorator '%s'.", token);
       }
       result = false;
@@ -86,7 +86,7 @@ bool LogDecorators::parse(const char* decorator_args, outputStream* errstream) {
     }
     tmp_decorators |= mask(d);
     token = comma_pos + 1;
-  } while (comma_pos != NULL);
+  } while (comma_pos != nullptr);
   os::free(args_copy);
   if (result) {
     _decorators = tmp_decorators;

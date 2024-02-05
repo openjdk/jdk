@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2012, 2022 SAP SE. All rights reserved.
+// Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2012, 2023 SAP SE. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -982,6 +982,7 @@ source_hpp %{
 
 source %{
 
+#include "opto/c2_CodeStubs.hpp"
 #include "oops/klass.inline.hpp"
 
 void PhaseOutput::pd_perform_mach_node_analysis() {
@@ -1025,7 +1026,7 @@ bool followed_by_acquire(const Node *load) {
   assert(load->is_Load(), "So far implemented only for loads.");
 
   // Find MemBarAcquire.
-  const Node *mba = NULL;
+  const Node *mba = nullptr;
   for (DUIterator_Fast imax, i = load->fast_outs(imax); i < imax; i++) {
     const Node *out = load->fast_out(i);
     if (out->Opcode() == Op_MemBarAcquire) {
@@ -1042,7 +1043,7 @@ bool followed_by_acquire(const Node *load) {
   // edge to assure no other operations are in between the two nodes.
   //
   // So first get the Proj node, mem_proj, to use it to iterate forward.
-  Node *mem_proj = NULL;
+  Node *mem_proj = nullptr;
   for (DUIterator_Fast imax, i = mba->fast_outs(imax); i < imax; i++) {
     mem_proj = mba->fast_out(i);      // Runs out of bounds and asserts if Proj not found.
     assert(mem_proj->is_Proj(), "only projections here");
@@ -1269,7 +1270,7 @@ source %{
 
 void CallStubImpl::emit_trampoline_stub(C2_MacroAssembler &_masm, int destination_toc_offset, int insts_call_instruction_offset) {
   address stub = __ emit_trampoline_stub(destination_toc_offset, insts_call_instruction_offset);
-  if (stub == NULL) {
+  if (stub == nullptr) {
     ciEnv::current()->record_out_of_memory_failure();
   }
 }
@@ -1304,11 +1305,11 @@ EmitCallOffsets emit_call_with_trampoline_stub(C2_MacroAssembler &_masm, address
   offsets.insts_call_instruction_offset = __ offset();
 
   // No entry point given, use the current pc.
-  if (entry_point == NULL) entry_point = __ pc();
+  if (entry_point == nullptr) entry_point = __ pc();
 
   // Put the entry point as a constant into the constant pool.
   const address entry_point_toc_addr   = __ address_constant(entry_point, RelocationHolder::none);
-  if (entry_point_toc_addr == NULL) {
+  if (entry_point_toc_addr == nullptr) {
     ciEnv::current()->record_out_of_memory_failure();
     return offsets;
   }
@@ -1354,8 +1355,8 @@ void MachConstantBaseNode::postalloc_expand(GrowableArray <Node *> *nodes, Phase
   MachNode *m1 = new loadToc_hiNode();
   MachNode *m2 = new loadToc_loNode();
 
-  m1->add_req(NULL);
-  m2->add_req(NULL, m1);
+  m1->add_req(nullptr);
+  m2->add_req(nullptr, m1);
   m1->_opnds[0] = op_dst;
   m2->_opnds[0] = op_dst;
   m2->_opnds[1] = op_dst;
@@ -1397,7 +1398,7 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
     st->print("push frame %ld\n\t", -framesize);
   }
 
-  if (C->stub_function() == NULL) {
+  if (C->stub_function() == nullptr) {
     st->print("nmethod entry barrier\n\t");
   }
 }
@@ -1553,7 +1554,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     __ std(return_pc, _abi0(lr), callers_sp);
   }
 
-  if (C->stub_function() == NULL) {
+  if (C->stub_function() == nullptr) {
     BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
     bs->nmethod_entry_barrier(&_masm, push_frame_temp);
   }
@@ -1616,7 +1617,9 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     Label dummy_label;
     Label* code_stub = &dummy_label;
     if (!UseSIGTRAP && !C->output()->in_scratch_emit_size()) {
-      code_stub = &C->output()->safepoint_poll_table()->add_safepoint(__ offset());
+      C2SafepointPollStub* stub = new (C->comp_arena()) C2SafepointPollStub(__ offset());
+      C->output()->add_stub(stub);
+      code_stub = &stub->entry();
       __ relocate(relocInfo::poll_return_type);
     }
     __ safepoint_poll(*code_stub, temp, true /* at_return */, true /* in_nmethod */);
@@ -1721,7 +1724,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
   if (src_lo == dst_lo && src_hi == dst_hi)
     return size;            // Self copy, no move.
 
-  if (bottom_type()->isa_vect() != NULL && ideal_reg() == Op_VecX) {
+  if (bottom_type()->isa_vect() != nullptr && ideal_reg() == Op_VecX) {
     // Memory->Memory Spill.
     if (src_lo_rc == rc_stack && dst_lo_rc == rc_stack) {
       int src_offset = ra_->reg2offset(src_lo);
@@ -1907,16 +1910,16 @@ void MachSpillCopyNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   if (!ra_)
     st->print("N%d = SpillCopy(N%d)", _idx, in(1)->_idx);
   else
-    implementation(NULL, ra_, false, st);
+    implementation(nullptr, ra_, false, st);
 }
 #endif
 
 void MachSpillCopyNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
-  implementation(&cbuf, ra_, false, NULL);
+  implementation(&cbuf, ra_, false, nullptr);
 }
 
 uint MachSpillCopyNode::size(PhaseRegAlloc *ra_) const {
-  return implementation(NULL, ra_, true, NULL);
+  return implementation(nullptr, ra_, true, nullptr);
 }
 
 #ifndef PRODUCT
@@ -1941,7 +1944,7 @@ uint MachNopNode::size(PhaseRegAlloc *ra_) const {
 void BoxLockNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   int offset = ra_->reg2offset(in_RegMask(0).find_first_elem());
   char reg_str[128];
-  ra_->dump_register(this, reg_str);
+  ra_->dump_register(this, reg_str, sizeof(reg_str));
   st->print("ADDI    %s, SP, %d \t// box node", reg_str, offset);
 }
 #endif
@@ -1982,7 +1985,7 @@ void MachUEPNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   assert_different_registers(ic_klass, receiver_klass, R11_scratch1, R3_ARG1);
   assert(R11_scratch1 == R11, "need prologue scratch register");
 
-  // Check for NULL argument if we don't have implicit null checks.
+  // Check for nullptr argument if we don't have implicit null checks.
   if (!ImplicitNullChecks || !os::zero_page_read_protected()) {
     if (TrapBasedNullChecks) {
       __ trap_null_check(R3_ARG1);
@@ -1996,7 +1999,7 @@ void MachUEPNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
       __ bind(valid);
     }
   }
-  // Assume argument is not NULL, load klass from receiver.
+  // Assume argument is not nullptr, load klass from receiver.
   __ load_klass(receiver_klass, R3_ARG1);
 
   if (TrapBasedICMissChecks) {
@@ -2059,7 +2062,7 @@ int HandlerImpl::emit_exception_handler(CodeBuffer &cbuf) {
   C2_MacroAssembler _masm(&cbuf);
 
   address base = __ start_a_stub(size_exception_handler());
-  if (base == NULL) return 0; // CodeBuffer::expand failed
+  if (base == nullptr) return 0; // CodeBuffer::expand failed
 
   int offset = __ offset();
   __ b64_patchable((address)OptoRuntime::exception_blob()->content_begin(),
@@ -2076,7 +2079,7 @@ int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf) {
   C2_MacroAssembler _masm(&cbuf);
 
   address base = __ start_a_stub(size_deopt_handler());
-  if (base == NULL) return 0; // CodeBuffer::expand failed
+  if (base == nullptr) return 0; // CodeBuffer::expand failed
 
   int offset = __ offset();
   __ bl64_patchable((address)SharedRuntime::deopt_blob()->unpack(),
@@ -2097,7 +2100,7 @@ static int frame_slots_bias(int reg_enc, PhaseRegAlloc* ra_) {
   return 0;
 }
 
-const bool Matcher::match_rule_supported(int opcode) {
+bool Matcher::match_rule_supported(int opcode) {
   if (!has_match_rule(opcode)) {
     return false; // no match rule present
   }
@@ -2145,6 +2148,9 @@ const bool Matcher::match_rule_supported(int opcode) {
       return SuperwordUseVSX;
     case Op_PopCountVI:
       return (SuperwordUseVSX && UsePopCountInstruction);
+    case Op_FmaF:
+    case Op_FmaD:
+      return UseFMA;
     case Op_FmaVF:
     case Op_FmaVD:
       return (SuperwordUseVSX && UseFMA);
@@ -2167,35 +2173,35 @@ const bool Matcher::match_rule_supported(int opcode) {
   return true; // Per default match rules are supported.
 }
 
-const bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
+bool Matcher::match_rule_supported_auto_vectorization(int opcode, int vlen, BasicType bt) {
   return match_rule_supported_vector(opcode, vlen, bt);
 }
 
-const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
+bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
   if (!match_rule_supported(opcode) || !vector_size_supported(bt, vlen)) {
     return false;
   }
   return true; // Per default match rules are supported.
 }
 
-const bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt) {
+bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt) {
   return false;
 }
 
-const bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
+bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
   return false;
 }
 
 const RegMask* Matcher::predicate_reg_mask(void) {
-  return NULL;
+  return nullptr;
 }
 
 const TypeVectMask* Matcher::predicate_reg_type(const Type* elemTy, int length) {
-  return NULL;
+  return nullptr;
 }
 
 // Vector calling convention not yet implemented.
-const bool Matcher::supports_vector_calling_convention(void) {
+bool Matcher::supports_vector_calling_convention(void) {
   return false;
 }
 
@@ -2205,7 +2211,7 @@ OptoRegPair Matcher::vector_return_value(uint ideal_reg) {
 }
 
 // Vector width in bytes.
-const int Matcher::vector_width_in_bytes(BasicType bt) {
+int Matcher::vector_width_in_bytes(BasicType bt) {
   if (SuperwordUseVSX) {
     assert(MaxVectorSize == 16, "");
     return 16;
@@ -2216,7 +2222,7 @@ const int Matcher::vector_width_in_bytes(BasicType bt) {
 }
 
 // Vector ideal reg.
-const uint Matcher::vector_ideal_reg(int size) {
+uint Matcher::vector_ideal_reg(int size) {
   if (SuperwordUseVSX) {
     assert(MaxVectorSize == 16 && size == 16, "");
     return Op_VecX;
@@ -2227,16 +2233,20 @@ const uint Matcher::vector_ideal_reg(int size) {
 }
 
 // Limits on vector size (number of elements) loaded into vector.
-const int Matcher::max_vector_size(const BasicType bt) {
+int Matcher::max_vector_size(const BasicType bt) {
   assert(is_java_primitive(bt), "only primitive type vectors");
   return vector_width_in_bytes(bt)/type2aelembytes(bt);
 }
 
-const int Matcher::min_vector_size(const BasicType bt) {
+int Matcher::min_vector_size(const BasicType bt) {
   return max_vector_size(bt); // Same as max.
 }
 
-const int Matcher::scalable_vector_reg_size(const BasicType bt) {
+int Matcher::max_vector_size_auto_vectorization(const BasicType bt) {
+  return Matcher::max_vector_size(bt);
+}
+
+int Matcher::scalable_vector_reg_size(const BasicType bt) {
   return -1;
 }
 
@@ -2265,7 +2275,7 @@ bool Matcher::is_short_branch_offset(int rule, int br_size, int offset) {
 /* TODO: PPC port
 // Make a new machine dependent decode node (with its operands).
 MachTypeNode *Matcher::make_decode_node() {
-  assert(CompressedOops::base() == NULL && CompressedOops::shift() == 0,
+  assert(CompressedOops::base() == nullptr && CompressedOops::shift() == 0,
          "This method is only implemented for unscaled cOops mode so far");
   MachTypeNode *decode = new decodeN_unscaledNode();
   decode->set_opnd_array(0, new iRegPdstOper());
@@ -2276,7 +2286,7 @@ MachTypeNode *Matcher::make_decode_node() {
 
 MachOper* Matcher::pd_specialize_generic_vector_operand(MachOper* original_opnd, uint ideal_reg, bool is_temp) {
   ShouldNotReachHere(); // generic vector operands not supported
-  return NULL;
+  return nullptr;
 }
 
 bool Matcher::is_reg2reg_move(MachNode* m) {
@@ -2535,7 +2545,7 @@ encode %{
     // Create a non-oop constant, no relocation needed.
     // If it is an IC, it has a virtual_call_Relocation.
     const_toc_addr = __ long_constant((jlong)$src$$constant);
-    if (const_toc_addr == NULL) {
+    if (const_toc_addr == nullptr) {
       ciEnv::current()->record_out_of_memory_failure();
       return;
     }
@@ -2558,7 +2568,7 @@ encode %{
       // Create a non-oop constant, no relocation needed.
       // If it is an IC, it has a virtual_call_Relocation.
       const_toc_addr = __ long_constant((jlong)$src$$constant);
-      if (const_toc_addr == NULL) {
+      if (const_toc_addr == nullptr) {
         ciEnv::current()->record_out_of_memory_failure();
         return;
       }
@@ -2597,8 +2607,8 @@ loadConLNodesTuple loadConLNodesTuple_create(PhaseRegAlloc *ra_, Node *toc, immL
     loadConL_loNode *m2 = new loadConL_loNode();
 
     // inputs for new nodes
-    m1->add_req(NULL, toc);
-    m2->add_req(NULL, m1);
+    m1->add_req(nullptr, toc);
+    m2->add_req(nullptr, m1);
 
     // operands for new nodes
     m1->_opnds[0] = new iRegLdstOper(); // dst
@@ -2622,14 +2632,14 @@ loadConLNodesTuple loadConLNodesTuple_create(PhaseRegAlloc *ra_, Node *toc, immL
     // Create result.
     nodes._large_hi = m1;
     nodes._large_lo = m2;
-    nodes._small = NULL;
+    nodes._small = nullptr;
     nodes._last = nodes._large_lo;
     assert(m2->bottom_type()->isa_long(), "must be long");
   } else {
     loadConLNode *m2 = new loadConLNode();
 
     // inputs for new nodes
-    m2->add_req(NULL, toc);
+    m2->add_req(nullptr, toc);
 
     // operands for new nodes
     m2->_opnds[0] = new iRegLdstOper(); // dst
@@ -2643,8 +2653,8 @@ loadConLNodesTuple loadConLNodesTuple_create(PhaseRegAlloc *ra_, Node *toc, immL
     ra_->set_pair(m2->_idx, reg_second, reg_first);
 
     // Create result.
-    nodes._large_hi = NULL;
-    nodes._large_lo = NULL;
+    nodes._large_hi = nullptr;
+    nodes._large_lo = nullptr;
     nodes._small = m2;
     nodes._last = nodes._small;
     assert(m2->bottom_type()->isa_long(), "must be long");
@@ -2677,10 +2687,10 @@ loadConLReplicatedNodesTuple loadConLReplicatedNodesTuple_create(Compile *C, Pha
     xxspltdNode *m4 = new  xxspltdNode();
 
     // inputs for new nodes
-    m1->add_req(NULL, toc);
-    m2->add_req(NULL, m1);
-    m3->add_req(NULL, m2);
-    m4->add_req(NULL, m3);
+    m1->add_req(nullptr, toc);
+    m2->add_req(nullptr, m1);
+    m3->add_req(nullptr, m2);
+    m4->add_req(nullptr, m3);
 
     // operands for new nodes
     m1->_opnds[0] = new  iRegLdstOper(); // dst
@@ -2717,7 +2727,7 @@ loadConLReplicatedNodesTuple loadConLReplicatedNodesTuple_create(Compile *C, Pha
     nodes._large_lo = m2;
     nodes._moved = m3;
     nodes._replicated = m4;
-    nodes._small = NULL;
+    nodes._small = nullptr;
     nodes._last = nodes._replicated;
     assert(m2->bottom_type()->isa_long(), "must be long");
   } else {
@@ -2726,7 +2736,7 @@ loadConLReplicatedNodesTuple loadConLReplicatedNodesTuple_create(Compile *C, Pha
     xxspltdNode *m4 = new  xxspltdNode();
 
     // inputs for new nodes
-    m2->add_req(NULL, toc);
+    m2->add_req(nullptr, toc);
 
     // operands for new nodes
     m2->_opnds[0] = new  iRegLdstOper(); // dst
@@ -2750,8 +2760,8 @@ loadConLReplicatedNodesTuple loadConLReplicatedNodesTuple_create(Compile *C, Pha
     ra_->set_pair(m2->_idx, reg_second, reg_first);
 
     // Create result.
-    nodes._large_hi = NULL;
-    nodes._large_lo = NULL;
+    nodes._large_hi = nullptr;
+    nodes._large_lo = nullptr;
     nodes._small = m2;
     nodes._moved = m3;
     nodes._replicated = m4;
@@ -2805,7 +2815,7 @@ encode %{
       const_toc_addr = __ long_constant((jlong)$src$$constant);
     }
 
-    if (const_toc_addr == NULL) {
+    if (const_toc_addr == nullptr) {
       ciEnv::current()->record_out_of_memory_failure();
       return;
     }
@@ -2836,7 +2846,7 @@ encode %{
         const_toc_addr = __ long_constant((jlong)$src$$constant);
       }
 
-      if (const_toc_addr == NULL) {
+      if (const_toc_addr == nullptr) {
         ciEnv::current()->record_out_of_memory_failure();
         return;
       }
@@ -2860,8 +2870,8 @@ encode %{
       loadConP_loNode *m2 = new loadConP_loNode();
 
       // inputs for new nodes
-      m1->add_req(NULL, n_toc);
-      m2->add_req(NULL, m1);
+      m1->add_req(nullptr, n_toc);
+      m2->add_req(nullptr, m1);
 
       // operands for new nodes
       m1->_opnds[0] = new iRegPdstOper(); // dst
@@ -2886,7 +2896,7 @@ encode %{
       loadConPNode *m2 = new loadConPNode();
 
       // inputs for new nodes
-      m2->add_req(NULL, n_toc);
+      m2->add_req(nullptr, n_toc);
 
       // operands for new nodes
       m2->_opnds[0] = new iRegPdstOper(); // dst
@@ -2913,7 +2923,7 @@ encode %{
       m2 = new loadConFNode();
     }
     // inputs for new nodes
-    m2->add_req(NULL, n_toc);
+    m2->add_req(nullptr, n_toc);
 
     // operands for new nodes
     m2->_opnds[0] = op_dst;
@@ -2937,7 +2947,7 @@ encode %{
       m2 = new loadConDNode();
     }
     // inputs for new nodes
-    m2->add_req(NULL, n_toc);
+    m2->add_req(nullptr, n_toc);
 
     // operands for new nodes
     m2->_opnds[0] = op_dst;
@@ -3248,9 +3258,9 @@ encode %{
     Label d;   // dummy
     __ bind(d);
     Label* p = ($lbl$$label);
-    // `p' is `NULL' when this encoding class is used only to
+    // `p' is `nullptr' when this encoding class is used only to
     // determine the size of the encoded instruction.
-    Label& l = (NULL == p)? d : *(p);
+    Label& l = (nullptr == p)? d : *(p);
     int cc = $cmp$$cmpcode;
     int flags_reg = $crx$$reg;
     assert((Assembler::bcondCRbiIs1 & ~Assembler::bcondCRbiIs0) == 8, "check encoding");
@@ -3277,9 +3287,9 @@ encode %{
     Label d;    // dummy
     __ bind(d);
     Label* p = ($lbl$$label);
-    // `p' is `NULL' when this encoding class is used only to
+    // `p' is `nullptr' when this encoding class is used only to
     // determine the size of the encoded instruction.
-    Label& l = (NULL == p)? d : *(p);
+    Label& l = (nullptr == p)? d : *(p);
     int cc = $cmp$$cmpcode;
     int flags_reg = $crx$$reg;
     int bhint = Assembler::bhintNoHint;
@@ -3409,6 +3419,7 @@ encode %{
     if (!_method) {
       // A call to a runtime wrapper, e.g. new, new_typeArray_Java, uncommon_trap.
       emit_call_with_trampoline_stub(_masm, entry_point, relocInfo::runtime_call_type);
+      if (ciEnv::current()->failing()) { return; } // Code cache may be full.
     } else {
       // Remember the offset not the address.
       const int start_offset = __ offset();
@@ -3420,7 +3431,7 @@ encode %{
 
       // Put the entry point as a constant into the constant pool.
       const address entry_point_toc_addr = __ address_constant(entry_point, RelocationHolder::none);
-      if (entry_point_toc_addr == NULL) {
+      if (entry_point_toc_addr == nullptr) {
         ciEnv::current()->record_out_of_memory_failure();
         return;
       }
@@ -3442,7 +3453,7 @@ encode %{
 
       // The stub for call to interpreter.
       address stub = CompiledStaticCall::emit_to_interp_stub(cbuf);
-      if (stub == NULL) {
+      if (stub == nullptr) {
         ciEnv::current()->record_failure("CodeCache is full");
         return;
       }
@@ -3459,7 +3470,7 @@ encode %{
       // Create a call trampoline stub for the given method.
       const address entry_point = !($meth$$method) ? 0 : (address)$meth$$method;
       const address entry_point_const = __ address_constant(entry_point, RelocationHolder::none);
-      if (entry_point_const == NULL) {
+      if (entry_point_const == nullptr) {
         ciEnv::current()->record_out_of_memory_failure();
         return;
       }
@@ -3468,13 +3479,13 @@ encode %{
       if (ra_->C->env()->failing()) { return; } // Code cache may be full.
 
       // Build relocation at call site with ic position as data.
-      assert((_load_ic_hi_node != NULL && _load_ic_node == NULL) ||
-             (_load_ic_hi_node == NULL && _load_ic_node != NULL),
+      assert((_load_ic_hi_node != nullptr && _load_ic_node == nullptr) ||
+             (_load_ic_hi_node == nullptr && _load_ic_node != nullptr),
              "must have one, but can't have both");
-      assert((_load_ic_hi_node != NULL && _load_ic_hi_node->_cbuf_insts_offset != -1) ||
-             (_load_ic_node != NULL    && _load_ic_node->_cbuf_insts_offset != -1),
+      assert((_load_ic_hi_node != nullptr && _load_ic_hi_node->_cbuf_insts_offset != -1) ||
+             (_load_ic_node != nullptr    && _load_ic_node->_cbuf_insts_offset != -1),
              "must contain instruction offset");
-      const int virtual_call_oop_addr_offset = _load_ic_hi_node != NULL
+      const int virtual_call_oop_addr_offset = _load_ic_hi_node != nullptr
         ? _load_ic_hi_node->_cbuf_insts_offset
         : _load_ic_node->_cbuf_insts_offset;
       const address virtual_call_oop_addr = __ addr_at(virtual_call_oop_addr_offset);
@@ -3579,6 +3590,7 @@ encode %{
       // to determine who we intended to call.
       __ relocate(virtual_call_Relocation::spec(virtual_call_meta_addr));
       emit_call_with_trampoline_stub(_masm, (address)$meth$$method, relocInfo::none);
+      if (ciEnv::current()->failing()) { return; } // Code cache may be full.
       assert(((MachCallDynamicJavaNode*)this)->ret_addr_offset() == __ offset() - start_offset,
              "Fix constant in ret_addr_offset(), expected %d", __ offset() - start_offset);
     } else {
@@ -3590,7 +3602,7 @@ encode %{
       __ load_klass(R11_scratch1, R3);
 
       int entry_offset = in_bytes(Klass::vtable_start_offset()) + vtable_index * vtableEntry::size_in_bytes();
-      int v_off = entry_offset + vtableEntry::method_offset_in_bytes();
+      int v_off = entry_offset + in_bytes(vtableEntry::method_offset());
       __ li(R19_method, v_off);
       __ ldx(R19_method/*method*/, R19_method/*method offset*/, R11_scratch1/*class*/);
       // NOTE: for vtable dispatches, the vtable entry will never be
@@ -3613,7 +3625,7 @@ encode %{
     const address start_pc = __ pc();
 
 #if defined(ABI_ELFv2)
-    address entry= !($meth$$method) ? NULL : (address)$meth$$method;
+    address entry= !($meth$$method) ? nullptr : (address)$meth$$method;
     __ call_c(entry, relocInfo::runtime_call_type);
     __ post_call_nop();
 #else
@@ -3670,13 +3682,13 @@ encode %{
 
 
     // Create nodes and operands for loading the env pointer.
-    if (fd->env() != NULL) {
+    if (fd->env() != nullptr) {
       loadConLNodes_Env = loadConLNodesTuple_create(ra_, n_toc, new immLOper((jlong) fd->env()),
                                                     OptoReg::Name(R11_H_num), OptoReg::Name(R11_num));
     } else {
-      loadConLNodes_Env._large_hi = NULL;
-      loadConLNodes_Env._large_lo = NULL;
-      loadConLNodes_Env._small    = NULL;
+      loadConLNodes_Env._large_hi = nullptr;
+      loadConLNodes_Env._large_lo = nullptr;
+      loadConLNodes_Env._small    = nullptr;
       loadConLNodes_Env._last = new loadConL16Node();
       loadConLNodes_Env._last->_opnds[0] = new iRegLdstOper();
       loadConLNodes_Env._last->_opnds[1] = new immL16Oper(0);
@@ -3690,7 +3702,7 @@ encode %{
     // mtctr node
     MachNode *mtctr = new CallLeafDirect_mtctrNode();
 
-    assert(loadConLNodes_Entry._last != NULL, "entry must exist");
+    assert(loadConLNodes_Entry._last != nullptr, "entry must exist");
     mtctr->add_req(0, loadConLNodes_Entry._last);
 
     mtctr->_opnds[0] = new iRegLdstOper();
@@ -3710,7 +3722,7 @@ encode %{
     call->_guaranteed_safepoint = false;
     call->_oop_map     = _oop_map;
     guarantee(!_jvms, "You must clone the jvms and adapt the offsets by fix_jvms().");
-    call->_jvms        = NULL;
+    call->_jvms        = nullptr;
     call->_jvmadj      = _jvmadj;
     call->_in_rms      = _in_rms;
     call->_nesting     = _nesting;
@@ -3786,7 +3798,7 @@ frame %{
   // out_preserve_stack_slots for calls to C. Supports the var-args
   // backing area for register parms.
   //
-  varargs_C_out_slots_killed(((frame::abi_reg_args_size - frame::jit_out_preserve_size) / VMRegImpl::stack_slot_size));
+  varargs_C_out_slots_killed(((frame::native_abi_reg_args_size - frame::jit_out_preserve_size) / VMRegImpl::stack_slot_size));
 
   // The after-PROLOG location of the return address. Location of
   // return address specifies a type (REG or STACK) and a number
@@ -3814,7 +3826,7 @@ frame %{
   // opcodes. This simplifies the register allocator.
   c_return_value %{
     assert((ideal_reg >= Op_RegI && ideal_reg <= Op_RegL) ||
-            (ideal_reg == Op_RegN && CompressedOops::base() == NULL && CompressedOops::shift() == 0),
+            (ideal_reg == Op_RegN && CompressedOops::base() == nullptr && CompressedOops::shift() == 0),
             "only return normal values");
     // enum names from opcodes.hpp:    Op_Node Op_Set Op_RegN       Op_RegI       Op_RegP       Op_RegF       Op_RegD       Op_RegL
     static int typeToRegLo[Op_RegL+1] = { 0,   0,     R3_num,   R3_num,   R3_num,   F1_num,   F1_num,   R3_num };
@@ -3825,7 +3837,7 @@ frame %{
   // Location of compiled Java return values.  Same as C
   return_value %{
     assert((ideal_reg >= Op_RegI && ideal_reg <= Op_RegL) ||
-            (ideal_reg == Op_RegN && CompressedOops::base() == NULL && CompressedOops::shift() == 0),
+            (ideal_reg == Op_RegN && CompressedOops::base() == nullptr && CompressedOops::shift() == 0),
             "only return normal values");
     // enum names from opcodes.hpp:    Op_Node Op_Set Op_RegN       Op_RegI       Op_RegP       Op_RegF       Op_RegD       Op_RegL
     static int typeToRegLo[Op_RegL+1] = { 0,   0,     R3_num,   R3_num,   R3_num,   F1_num,   F1_num,   R3_num };
@@ -4098,7 +4110,7 @@ operand immN() %{
   interface(CONST_INTER);
 %}
 
-// NULL Pointer Immediate
+// Null Pointer Immediate
 operand immN_0() %{
   predicate(n->get_narrowcon() == 0);
   match(ConN);
@@ -4670,7 +4682,7 @@ operand iRegN2P(iRegNsrc reg) %{
 %}
 
 operand iRegN2P_klass(iRegNsrc reg) %{
-  predicate(CompressedKlassPointers::base() == NULL && CompressedKlassPointers::shift() == 0);
+  predicate(CompressedKlassPointers::base() == nullptr && CompressedKlassPointers::shift() == 0);
   constraint(ALLOC_IN_RC(bits32_reg_ro));
   match(DecodeNKlass reg);
   format %{ "$reg" %}
@@ -4739,7 +4751,7 @@ operand indirectNarrow(iRegNsrc reg) %{
 %}
 
 operand indirectNarrow_klass(iRegNsrc reg) %{
-  predicate(CompressedKlassPointers::base() == NULL && CompressedKlassPointers::shift() == 0);
+  predicate(CompressedKlassPointers::base() == nullptr && CompressedKlassPointers::shift() == 0);
   constraint(ALLOC_IN_RC(bits64_reg_ro));
   match(DecodeNKlass reg);
   op_cost(100);
@@ -4768,7 +4780,7 @@ operand indOffset16Narrow(iRegNsrc reg, immL16 offset) %{
 %}
 
 operand indOffset16Narrow_klass(iRegNsrc reg, immL16 offset) %{
-  predicate(CompressedKlassPointers::base() == NULL && CompressedKlassPointers::shift() == 0);
+  predicate(CompressedKlassPointers::base() == nullptr && CompressedKlassPointers::shift() == 0);
   constraint(ALLOC_IN_RC(bits64_reg_ro));
   match(AddP (DecodeNKlass reg) offset);
   op_cost(100);
@@ -4797,7 +4809,7 @@ operand indOffset16NarrowAlg4(iRegNsrc reg, immL16Alg4 offset) %{
 %}
 
 operand indOffset16NarrowAlg4_klass(iRegNsrc reg, immL16Alg4 offset) %{
-  predicate(CompressedKlassPointers::base() == NULL && CompressedKlassPointers::shift() == 0);
+  predicate(CompressedKlassPointers::base() == nullptr && CompressedKlassPointers::shift() == 0);
   constraint(ALLOC_IN_RC(bits64_reg_ro));
   match(AddP (DecodeNKlass reg) offset);
   op_cost(100);
@@ -5532,7 +5544,7 @@ instruct loadN2P_unscaled(iRegPdst dst, memory mem) %{
 
 instruct loadN2P_klass_unscaled(iRegPdst dst, memory mem) %{
   match(Set dst (DecodeNKlass (LoadNKlass mem)));
-  predicate(CompressedKlassPointers::base() == NULL && CompressedKlassPointers::shift() == 0 &&
+  predicate(CompressedKlassPointers::base() == nullptr && CompressedKlassPointers::shift() == 0 &&
             _kids[0]->_leaf->as_Load()->is_unordered());
   ins_cost(MEMORY_REF_COST);
 
@@ -5942,7 +5954,7 @@ instruct loadConL_Ex(iRegLdst dst, immL src) %{
   postalloc_expand( postalloc_expand_load_long_constant(dst, src, constanttablebase) );
 %}
 
-// Load NULL as compressed oop.
+// Load nullptr as compressed oop.
 instruct loadConN0(iRegNdst dst, immN_0 src) %{
   match(Set dst src);
   ins_cost(DEFAULT_COST);
@@ -6033,9 +6045,9 @@ instruct loadConN_Ex(iRegNdst dst, immN src) %{
     MachNode *m1 = new loadConN_hiNode();
     MachNode *m2 = new loadConN_loNode();
     MachNode *m3 = new clearMs32bNode();
-    m1->add_req(NULL);
-    m2->add_req(NULL, m1);
-    m3->add_req(NULL, m2);
+    m1->add_req(nullptr);
+    m2->add_req(nullptr, m1);
+    m3->add_req(nullptr, m2);
     m1->_opnds[0] = op_dst;
     m1->_opnds[1] = op_src;
     m2->_opnds[0] = op_dst;
@@ -6111,7 +6123,7 @@ instruct loadConNKlass_Ex(iRegNdst dst, immNKlass src) %{
   postalloc_expand %{
     // Load high bits into register. Sign extended.
     MachNode *m1 = new loadConNKlass_hiNode();
-    m1->add_req(NULL);
+    m1->add_req(nullptr);
     m1->_opnds[0] = op_dst;
     m1->_opnds[1] = op_src;
     ra_->set_pair(m1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
@@ -6121,7 +6133,7 @@ instruct loadConNKlass_Ex(iRegNdst dst, immNKlass src) %{
     if (!Assembler::is_uimm((jlong)CompressedKlassPointers::encode((Klass *)op_src->constant()), 31)) {
       // Value might be 1-extended. Mask out these bits.
       m2 = new loadConNKlass_maskNode();
-      m2->add_req(NULL, m1);
+      m2->add_req(nullptr, m1);
       m2->_opnds[0] = op_dst;
       m2->_opnds[1] = op_src;
       m2->_opnds[2] = op_dst;
@@ -6130,7 +6142,7 @@ instruct loadConNKlass_Ex(iRegNdst dst, immNKlass src) %{
     }
 
     MachNode *m3 = new loadConNKlass_loNode();
-    m3->add_req(NULL, m2);
+    m3->add_req(nullptr, m2);
     m3->_opnds[0] = op_dst;
     m3->_opnds[1] = op_src;
     m3->_opnds[2] = op_dst;
@@ -6231,7 +6243,7 @@ instruct loadConF(regF dst, immF src, iRegLdst toc) %{
   size(4);
   ins_encode %{
     address float_address = __ float_constant($src$$constant);
-    if (float_address == NULL) {
+    if (float_address == nullptr) {
       ciEnv::current()->record_out_of_memory_failure();
       return;
     }
@@ -6255,7 +6267,7 @@ instruct loadConFComp(regF dst, immF src, iRegLdst toc) %{
     FloatRegister Rdst    = $dst$$FloatRegister;
     Register Rtoc         = $toc$$Register;
     address float_address = __ float_constant($src$$constant);
-    if (float_address == NULL) {
+    if (float_address == nullptr) {
       ciEnv::current()->record_out_of_memory_failure();
       return;
     }
@@ -6293,7 +6305,7 @@ instruct loadConD(regD dst, immD src, iRegLdst toc) %{
   size(4);
   ins_encode %{
     address float_address = __ double_constant($src$$constant);
-    if (float_address == NULL) {
+    if (float_address == nullptr) {
       ciEnv::current()->record_out_of_memory_failure();
       return;
     }
@@ -6318,7 +6330,7 @@ instruct loadConDComp(regD dst, immD src, iRegLdst toc) %{
     FloatRegister Rdst    = $dst$$FloatRegister;
     Register      Rtoc    = $toc$$Register;
     address float_address = __ double_constant($src$$constant);
-    if (float_address == NULL) {
+    if (float_address == nullptr) {
       ciEnv::current()->record_out_of_memory_failure();
       return;
     }
@@ -6534,6 +6546,7 @@ instruct storeNKlass(memory dst, iRegN_P2N src) %{
 // Store Pointer
 instruct storeP(memoryAlg4 dst, iRegPsrc src) %{
   match(Set dst (StoreP dst src));
+  predicate(n->as_Store()->barrier_data() == 0);
   ins_cost(MEMORY_REF_COST);
 
   format %{ "STD     $src, $dst \t// ptr" %}
@@ -6619,7 +6632,7 @@ instruct cond_sub_base(iRegNdst dst, flagsRegSrc crx, iRegPsrc src1) %{
   predicate(false);
 
   format %{ "BEQ     $crx, done\n\t"
-            "SUB     $dst, $src1, heapbase \t// encode: subtract base if != NULL\n"
+            "SUB     $dst, $src1, heapbase \t// encode: subtract base if != nullptr\n"
             "done:" %}
   ins_encode %{
     Label done;
@@ -6688,7 +6701,7 @@ instruct encodeP_not_null_base_null(iRegNdst dst, iRegPsrc src) %{
   predicate(CompressedOops::shift() != 0 &&
             CompressedOops::base() ==0);
 
-  format %{ "SRDI    $dst, $src, #3 \t// encodeP, $src != NULL" %}
+  format %{ "SRDI    $dst, $src, #3 \t// encodeP, $src != nullptr" %}
   size(4);
   ins_encode %{
     __ srdi($dst$$Register, $src$$Register, CompressedOops::shift() & 0x3f);
@@ -6749,7 +6762,7 @@ instruct cond_add_base(iRegPdst dst, flagsRegSrc crx, iRegPsrc src) %{
   predicate(false);
 
   format %{ "BEQ     $crx, done\n\t"
-            "ADD     $dst, $src, heapbase \t// DecodeN: add oop base if $src != NULL\n"
+            "ADD     $dst, $src, heapbase \t// DecodeN: add oop base if $src != nullptr\n"
             "done:" %}
   ins_encode %{
     Label done;
@@ -6837,7 +6850,7 @@ instruct decodeN_Disjoint_notNull_Ex(iRegPdst dst, iRegNsrc src) %{
             "RLDIMI  $dst, $src, shift, 32-shift \t// decode with disjoint base" %}
   postalloc_expand %{
     loadBaseNode *n1 = new loadBaseNode();
-    n1->add_req(NULL);
+    n1->add_req(nullptr);
     n1->_opnds[0] = op_dst;
 
     decodeN_mergeDisjointNode *n2 = new decodeN_mergeDisjointNode();
@@ -6869,7 +6882,7 @@ instruct decodeN_Disjoint_isel_Ex(iRegPdst dst, iRegNsrc src, flagsReg crx) %{
   format %{ "DecodeN  $dst, $src \t// decode with disjoint base using isel" %}
   postalloc_expand %{
     loadBaseNode *n1 = new loadBaseNode();
-    n1->add_req(NULL);
+    n1->add_req(nullptr);
     n1->_opnds[0] = op_dst;
 
     cmpN_reg_imm0Node *n_compare  = new cmpN_reg_imm0Node();
@@ -6916,7 +6929,7 @@ instruct decodeN_notNull_addBase_Ex(iRegPdst dst, iRegNsrc src) %{
             CompressedOops::base() != 0);
   ins_cost(2 * DEFAULT_COST);
 
-  format %{ "DecodeN $dst, $src \t// $src != NULL, postalloc expanded" %}
+  format %{ "DecodeN $dst, $src \t// $src != nullptr, postalloc expanded" %}
   postalloc_expand( postalloc_expand_decode_oop_not_null(dst, src));
 %}
 
@@ -7073,7 +7086,7 @@ instruct decodeNKlass_notNull_addBase_Ex(iRegPdst dst, iRegLsrc base, iRegNsrc s
   //effect(kill src); // We need a register for the immediate result after shifting.
   predicate(false);
 
-  format %{ "DecodeNKlass $dst =  $base + ($src << 3) \t// $src != NULL, postalloc expanded" %}
+  format %{ "DecodeNKlass $dst =  $base + ($src << 3) \t// $src != nullptr, postalloc expanded" %}
   postalloc_expand %{
     decodeNKlass_add_baseNode *n1 = new decodeNKlass_add_baseNode();
     n1->add_req(n_region, n_base, n_src);
@@ -7102,7 +7115,7 @@ instruct decodeNKlass_notNull_addBase_ExEx(iRegPdst dst, iRegNsrc src) %{
   // predicate(CompressedKlassPointers::shift() != 0 &&
   //           CompressedKlassPointers::base() != 0);
 
-  //format %{ "DecodeNKlass $dst, $src \t// $src != NULL, expanded" %}
+  //format %{ "DecodeNKlass $dst, $src \t// $src != nullptr, expanded" %}
 
   ins_cost(DEFAULT_COST*2);  // Don't count constant.
   expand %{
@@ -7589,7 +7602,7 @@ instruct compareAndSwapL_regP_regL_regL(iRegIdst res, iRegPdst mem_ptr, iRegLsrc
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgd(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
-                $res$$Register, NULL, true);
+                $res$$Register, nullptr, true);
     if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
       __ isync();
     } else {
@@ -7608,7 +7621,7 @@ instruct compareAndSwapP_regP_regP_regP(iRegIdst res, iRegPdst mem_ptr, iRegPsrc
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgd(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
-                $res$$Register, NULL, true);
+                $res$$Register, nullptr, true);
     if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
       __ isync();
     } else {
@@ -7802,7 +7815,7 @@ instruct weakCompareAndSwapL_regP_regL_regL(iRegIdst res, iRegPdst mem_ptr, iReg
     // value is never passed to caller.
     __ cmpxchgd(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone,
-                MacroAssembler::cmpxchgx_hint_atomic_update(), $res$$Register, NULL, true, /*weak*/ true);
+                MacroAssembler::cmpxchgx_hint_atomic_update(), $res$$Register, nullptr, true, /*weak*/ true);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -7818,7 +7831,7 @@ instruct weakCompareAndSwapL_acq_regP_regL_regL(iRegIdst res, iRegPdst mem_ptr, 
     // value is never passed to caller.
     __ cmpxchgd(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 support_IRIW_for_not_multiple_copy_atomic_cpu ? MacroAssembler::MemBarAcq : MacroAssembler::MemBarFenceAfter,
-                MacroAssembler::cmpxchgx_hint_atomic_update(), $res$$Register, NULL, true, /*weak*/ true);
+                MacroAssembler::cmpxchgx_hint_atomic_update(), $res$$Register, nullptr, true, /*weak*/ true);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -7832,7 +7845,7 @@ instruct weakCompareAndSwapP_regP_regP_regP(iRegIdst res, iRegPdst mem_ptr, iReg
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgd(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone,
-                MacroAssembler::cmpxchgx_hint_atomic_update(), $res$$Register, NULL, true, /*weak*/ true);
+                MacroAssembler::cmpxchgx_hint_atomic_update(), $res$$Register, nullptr, true, /*weak*/ true);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -7848,7 +7861,7 @@ instruct weakCompareAndSwapP_acq_regP_regP_regP(iRegIdst res, iRegPdst mem_ptr, 
     // value is never passed to caller.
     __ cmpxchgd(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 support_IRIW_for_not_multiple_copy_atomic_cpu ? MacroAssembler::MemBarAcq : MacroAssembler::MemBarFenceAfter,
-                MacroAssembler::cmpxchgx_hint_atomic_update(), $res$$Register, NULL, true, /*weak*/ true);
+                MacroAssembler::cmpxchgx_hint_atomic_update(), $res$$Register, nullptr, true, /*weak*/ true);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -8068,7 +8081,7 @@ instruct compareAndExchangeL_regP_regL_regL(iRegLdst res, iRegPdst mem_ptr, iReg
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgd(CCR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
-                noreg, NULL, true);
+                noreg, nullptr, true);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -8082,7 +8095,7 @@ instruct compareAndExchangeL_acq_regP_regL_regL(iRegLdst res, iRegPdst mem_ptr, 
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgd(CCR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
-                noreg, NULL, true);
+                noreg, nullptr, true);
     if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
       __ isync();
     } else {
@@ -8103,7 +8116,7 @@ instruct compareAndExchangeP_regP_regP_regP(iRegPdst res, iRegPdst mem_ptr, iReg
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgd(CCR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
-                noreg, NULL, true);
+                noreg, nullptr, true);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -8118,7 +8131,7 @@ instruct compareAndExchangeP_acq_regP_regP_regP(iRegPdst res, iRegPdst mem_ptr, 
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     __ cmpxchgd(CCR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
-                noreg, NULL, true);
+                noreg, nullptr, true);
     if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
       __ isync();
     } else {
@@ -9642,6 +9655,7 @@ instruct maddF_reg_reg(regF dst, regF src1, regF src2, regF src3) %{
   format %{ "FMADDS  $dst, $src1, $src2, $src3" %}
   size(4);
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fmadds($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -9654,58 +9668,63 @@ instruct maddD_reg_reg(regD dst, regD src1, regD src2, regD src3) %{
   format %{ "FMADD   $dst, $src1, $src2, $src3" %}
   size(4);
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fmadd($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
 %}
 
-// -src1 * src2 + src3 = -(src1*src2-src3)
+// src1 * (-src2) + src3 = -(src1*src2-src3)
+// "(-src1) * src2 + src3" has been idealized to "src2 * (-src1) + src3"
 instruct mnsubF_reg_reg(regF dst, regF src1, regF src2, regF src3) %{
-  match(Set dst (FmaF src3 (Binary (NegF src1) src2)));
   match(Set dst (FmaF src3 (Binary src1 (NegF src2))));
 
   format %{ "FNMSUBS $dst, $src1, $src2, $src3" %}
   size(4);
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fnmsubs($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
 %}
 
-// -src1 * src2 + src3 = -(src1*src2-src3)
+// src1 * (-src2) + src3 = -(src1*src2-src3)
+// "(-src1) * src2 + src3" has been idealized to "src2 * (-src1) + src3"
 instruct mnsubD_reg_reg(regD dst, regD src1, regD src2, regD src3) %{
-  match(Set dst (FmaD src3 (Binary (NegD src1) src2)));
   match(Set dst (FmaD src3 (Binary src1 (NegD src2))));
 
   format %{ "FNMSUB  $dst, $src1, $src2, $src3" %}
   size(4);
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fnmsub($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
 %}
 
-// -src1 * src2 - src3 = -(src1*src2+src3)
+// src1 * (-src2) - src3 = -(src1*src2+src3)
+// "(-src1) * src2 - src3" has been idealized to "src2 * (-src1) - src3"
 instruct mnaddF_reg_reg(regF dst, regF src1, regF src2, regF src3) %{
-  match(Set dst (FmaF (NegF src3) (Binary (NegF src1) src2)));
   match(Set dst (FmaF (NegF src3) (Binary src1 (NegF src2))));
 
   format %{ "FNMADDS $dst, $src1, $src2, $src3" %}
   size(4);
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fnmadds($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
 %}
 
-// -src1 * src2 - src3 = -(src1*src2+src3)
+// src1 * (-src2) - src3 = -(src1*src2+src3)
+// "(-src1) * src2 - src3" has been idealized to "src2 * (-src1) - src3"
 instruct mnaddD_reg_reg(regD dst, regD src1, regD src2, regD src3) %{
-  match(Set dst (FmaD (NegD src3) (Binary (NegD src1) src2)));
   match(Set dst (FmaD (NegD src3) (Binary src1 (NegD src2))));
 
   format %{ "FNMADD  $dst, $src1, $src2, $src3" %}
   size(4);
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fnmadd($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -9718,6 +9737,7 @@ instruct msubF_reg_reg(regF dst, regF src1, regF src2, regF src3) %{
   format %{ "FMSUBS  $dst, $src1, $src2, $src3" %}
   size(4);
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fmsubs($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -9730,6 +9750,7 @@ instruct msubD_reg_reg(regD dst, regD src1, regD src2, regD src3) %{
   format %{ "FMSUB   $dst, $src1, $src2, $src3" %}
   size(4);
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fmsub($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -11427,7 +11448,7 @@ instruct cmpL3_reg_reg(iRegIdst dst, iRegLsrc src1, iRegLsrc src2, flagsRegCR0 c
   match(Set dst (CmpL3 src1 src2));
   effect(KILL cr0);
   ins_cost(DEFAULT_COST * 5);
-  size(VM_Version::has_brw() ? 16 : 20);
+  size((VM_Version::has_brw() ? 16 : 20));
 
   format %{ "cmpL3_reg_reg $dst, $src1, $src2" %}
 
@@ -11762,7 +11783,7 @@ instruct cmpF3_reg_reg(iRegIdst dst, regF src1, regF src2, flagsRegCR0 cr0) %{
   match(Set dst (CmpF3 src1 src2));
   effect(KILL cr0);
   ins_cost(DEFAULT_COST * 6);
-  size(VM_Version::has_brw() ? 20 : 24);
+  size((VM_Version::has_brw() ? 20 : 24));
 
   format %{ "cmpF3_reg_reg $dst, $src1, $src2" %}
 
@@ -11846,7 +11867,7 @@ instruct cmpD3_reg_reg(iRegIdst dst, regD src1, regD src2, flagsRegCR0 cr0) %{
   match(Set dst (CmpD3 src1 src2));
   effect(KILL cr0);
   ins_cost(DEFAULT_COST * 6);
-  size(VM_Version::has_brw() ? 20 : 24);
+  size((VM_Version::has_brw() ? 20 : 24));
 
   format %{ "cmpD3_reg_reg $dst, $src1, $src2" %}
 
@@ -12022,9 +12043,9 @@ instruct branch(label labl) %{
      Label d;    // dummy
      __ bind(d);
      Label* p = $labl$$label;
-     // `p' is `NULL' when this encoding class is used only to
+     // `p' is `nullptr' when this encoding class is used only to
      // determine the size of the encoded instruction.
-     Label& l = (NULL == p)? d : *(p);
+     Label& l = (nullptr == p)? d : *(p);
      __ b(l);
   %}
   ins_pipe(pipe_class_default);
@@ -12118,17 +12139,16 @@ instruct partialSubtypeCheck(iRegPdst result, iRegP_N2P subklass, iRegP_N2P supe
   format %{ "PartialSubtypeCheck $result = ($subklass instanceOf $superklass) tmp: $tmp_klass, $tmp_arrayptr" %}
   ins_encode %{
     __ check_klass_subtype_slow_path($subklass$$Register, $superklass$$Register, $tmp_arrayptr$$Register,
-                                     $tmp_klass$$Register, NULL, $result$$Register);
+                                     $tmp_klass$$Register, nullptr, $result$$Register);
   %}
   ins_pipe(pipe_class_default);
 %}
 
 // inlined locking and unlocking
 
-instruct cmpFastLock(flagsReg crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2) %{
+instruct cmpFastLock(flagsRegCR0 crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2) %{
   match(Set crx (FastLock oop box));
   effect(TEMP tmp1, TEMP tmp2);
-  predicate(!Compile::current()->use_rtm());
 
   format %{ "FASTLOCK  $oop, $box, $tmp1, $tmp2" %}
   ins_encode %{
@@ -12141,53 +12161,14 @@ instruct cmpFastLock(flagsReg crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iR
   ins_pipe(pipe_class_compare);
 %}
 
-// Separate version for TM. Use bound register for box to enable USE_KILL.
-instruct cmpFastLock_tm(flagsReg crx, iRegPdst oop, rarg2RegP box, iRegPdst tmp1, iRegPdst tmp2, iRegPdst tmp3) %{
-  match(Set crx (FastLock oop box));
-  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, USE_KILL box);
-  predicate(Compile::current()->use_rtm());
-
-  format %{ "FASTLOCK  $oop, $box, $tmp1, $tmp2, $tmp3 (TM)" %}
-  ins_encode %{
-    __ compiler_fast_lock_object($crx$$CondRegister, $oop$$Register, $box$$Register,
-                                 $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
-                                 _rtm_counters, _stack_rtm_counters,
-                                 ((Method*)(ra_->C->method()->constant_encoding()))->method_data(),
-                                 /*RTM*/ true, ra_->C->profile_rtm());
-    // If locking was successful, crx should indicate 'EQ'.
-    // The compiler generates a branch to the runtime call to
-    // _complete_monitor_locking_Java for the case where crx is 'NE'.
-  %}
-  ins_pipe(pipe_class_compare);
-%}
-
-instruct cmpFastUnlock(flagsReg crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2, iRegPdst tmp3) %{
+instruct cmpFastUnlock(flagsRegCR0 crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2, iRegPdst tmp3) %{
   match(Set crx (FastUnlock oop box));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3);
-  predicate(!Compile::current()->use_rtm());
 
   format %{ "FASTUNLOCK  $oop, $box, $tmp1, $tmp2" %}
   ins_encode %{
     __ compiler_fast_unlock_object($crx$$CondRegister, $oop$$Register, $box$$Register,
-                                   $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
-                                   false);
-    // If unlocking was successful, crx should indicate 'EQ'.
-    // The compiler generates a branch to the runtime call to
-    // _complete_monitor_unlocking_Java for the case where crx is 'NE'.
-  %}
-  ins_pipe(pipe_class_compare);
-%}
-
-instruct cmpFastUnlock_tm(flagsReg crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2, iRegPdst tmp3) %{
-  match(Set crx (FastUnlock oop box));
-  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3);
-  predicate(Compile::current()->use_rtm());
-
-  format %{ "FASTUNLOCK  $oop, $box, $tmp1, $tmp2 (TM)" %}
-  ins_encode %{
-    __ compiler_fast_unlock_object($crx$$CondRegister, $oop$$Register, $box$$Register,
-                                   $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
-                                   /*RTM*/ true);
+                                   $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
     // If unlocking was successful, crx should indicate 'EQ'.
     // The compiler generates a branch to the runtime call to
     // _complete_monitor_unlocking_Java for the case where crx is 'NE'.
@@ -12689,7 +12670,7 @@ instruct indexOf_U(iRegIdst result, iRegPsrc haystack, rscratch1RegI haycnt, iRe
   ins_encode %{
     __ string_indexof($result$$Register,
                       $haystack$$Register, $haycnt$$Register,
-                      $needle$$Register, NULL, $needlecnt$$Register, 0,  // needlecnt not constant.
+                      $needle$$Register, nullptr, $needlecnt$$Register, 0,  // needlecnt not constant.
                       $tmp1$$Register, $tmp2$$Register, $tmp3$$Register, $tmp4$$Register, StrIntrinsicNode::UU);
   %}
   ins_pipe(pipe_class_compare);
@@ -12710,7 +12691,7 @@ instruct indexOf_L(iRegIdst result, iRegPsrc haystack, rscratch1RegI haycnt, iRe
   ins_encode %{
     __ string_indexof($result$$Register,
                       $haystack$$Register, $haycnt$$Register,
-                      $needle$$Register, NULL, $needlecnt$$Register, 0,  // needlecnt not constant.
+                      $needle$$Register, nullptr, $needlecnt$$Register, 0,  // needlecnt not constant.
                       $tmp1$$Register, $tmp2$$Register, $tmp3$$Register, $tmp4$$Register, StrIntrinsicNode::LL);
   %}
   ins_pipe(pipe_class_compare);
@@ -12731,7 +12712,7 @@ instruct indexOf_UL(iRegIdst result, iRegPsrc haystack, rscratch1RegI haycnt, iR
   ins_encode %{
     __ string_indexof($result$$Register,
                       $haystack$$Register, $haycnt$$Register,
-                      $needle$$Register, NULL, $needlecnt$$Register, 0,  // needlecnt not constant.
+                      $needle$$Register, nullptr, $needlecnt$$Register, 0,  // needlecnt not constant.
                       $tmp1$$Register, $tmp2$$Register, $tmp3$$Register, $tmp4$$Register, StrIntrinsicNode::UL);
   %}
   ins_pipe(pipe_class_compare);
@@ -12746,16 +12727,8 @@ instruct string_compress(rarg1RegP src, rarg2RegP dst, iRegIsrc len, iRegIdst re
   ins_cost(300);
   format %{ "String Compress $src,$dst,$len -> $result \t// KILL $tmp1, $tmp2, $tmp3, $tmp4, $tmp5" %}
   ins_encode %{
-    Label Lskip, Ldone;
-    __ li($result$$Register, 0);
-    __ string_compress_16($src$$Register, $dst$$Register, $len$$Register, $tmp1$$Register,
-                          $tmp2$$Register, $tmp3$$Register, $tmp4$$Register, $tmp5$$Register, Ldone);
-    __ rldicl_($tmp1$$Register, $len$$Register, 0, 64-3); // Remaining characters.
-    __ beq(CCR0, Lskip);
-    __ string_compress($src$$Register, $dst$$Register, $tmp1$$Register, $tmp2$$Register, Ldone);
-    __ bind(Lskip);
-    __ mr($result$$Register, $len$$Register);
-    __ bind(Ldone);
+    __ encode_iso_array($src$$Register, $dst$$Register, $len$$Register, $tmp1$$Register, $tmp2$$Register,
+                        $tmp3$$Register, $tmp4$$Register, $tmp5$$Register, $result$$Register, false);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -13474,8 +13447,9 @@ instruct repl56(iRegLdst dst) %{
 %}
 
 instruct repl8B_reg_Ex(iRegLdst dst, iRegIsrc src) %{
-  match(Set dst (ReplicateB src));
-  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 8 &&
+            Matcher::vector_element_basic_type(n) == T_BYTE);
   expand %{
     moveReg(dst, src);
     repl56(dst);
@@ -13485,8 +13459,9 @@ instruct repl8B_reg_Ex(iRegLdst dst, iRegIsrc src) %{
 %}
 
 instruct repl8B_immI0(iRegLdst dst, immI_0 zero) %{
-  match(Set dst (ReplicateB zero));
-  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (Replicate zero));
+  predicate(n->as_Vector()->length() == 8 &&
+            Matcher::vector_element_basic_type(n) == T_BYTE);
   format %{ "LI      $dst, #0 \t// replicate8B" %}
   size(4);
   ins_encode %{
@@ -13496,8 +13471,9 @@ instruct repl8B_immI0(iRegLdst dst, immI_0 zero) %{
 %}
 
 instruct repl8B_immIminus1(iRegLdst dst, immI_minus1 src) %{
-  match(Set dst (ReplicateB src));
-  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 8 &&
+            Matcher::vector_element_basic_type(n) == T_BYTE);
   format %{ "LI      $dst, #-1 \t// replicate8B" %}
   size(4);
   ins_encode %{
@@ -13507,8 +13483,9 @@ instruct repl8B_immIminus1(iRegLdst dst, immI_minus1 src) %{
 %}
 
 instruct repl16B_reg_Ex(vecX dst, iRegIsrc src) %{
-  match(Set dst (ReplicateB src));
-  predicate(n->as_Vector()->length() == 16);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 16 &&
+            Matcher::vector_element_basic_type(n) == T_BYTE);
 
   expand %{
     iRegLdst tmpL;
@@ -13523,8 +13500,9 @@ instruct repl16B_reg_Ex(vecX dst, iRegIsrc src) %{
 %}
 
 instruct repl16B_immI0(vecX dst, immI_0 zero) %{
-  match(Set dst (ReplicateB zero));
-  predicate(n->as_Vector()->length() == 16);
+  match(Set dst (Replicate zero));
+  predicate(n->as_Vector()->length() == 16 &&
+            Matcher::vector_element_basic_type(n) == T_BYTE);
 
   format %{ "XXLXOR      $dst, $zero \t// replicate16B" %}
   size(4);
@@ -13535,8 +13513,9 @@ instruct repl16B_immI0(vecX dst, immI_0 zero) %{
 %}
 
 instruct repl16B_immIminus1(vecX dst, immI_minus1 src) %{
-  match(Set dst (ReplicateB src));
-  predicate(n->as_Vector()->length() == 16);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 16 &&
+            Matcher::vector_element_basic_type(n) == T_BYTE);
 
   format %{ "XXLEQV      $dst, $src \t// replicate16B" %}
   size(4);
@@ -13547,8 +13526,9 @@ instruct repl16B_immIminus1(vecX dst, immI_minus1 src) %{
 %}
 
 instruct repl4S_reg_Ex(iRegLdst dst, iRegIsrc src) %{
-  match(Set dst (ReplicateS src));
-  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 4 &&
+            Matcher::vector_element_basic_type(n) == T_SHORT);
   expand %{
     moveReg(dst, src);
     repl48(dst);
@@ -13557,8 +13537,9 @@ instruct repl4S_reg_Ex(iRegLdst dst, iRegIsrc src) %{
 %}
 
 instruct repl4S_immI0(iRegLdst dst, immI_0 zero) %{
-  match(Set dst (ReplicateS zero));
-  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (Replicate zero));
+  predicate(n->as_Vector()->length() == 4 &&
+            Matcher::vector_element_basic_type(n) == T_SHORT);
   format %{ "LI      $dst, #0 \t// replicate4S" %}
   size(4);
   ins_encode %{
@@ -13568,8 +13549,9 @@ instruct repl4S_immI0(iRegLdst dst, immI_0 zero) %{
 %}
 
 instruct repl4S_immIminus1(iRegLdst dst, immI_minus1 src) %{
-  match(Set dst (ReplicateS src));
-  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 4 &&
+            Matcher::vector_element_basic_type(n) == T_SHORT);
   format %{ "LI      $dst, -1 \t// replicate4S" %}
   size(4);
   ins_encode %{
@@ -13579,8 +13561,9 @@ instruct repl4S_immIminus1(iRegLdst dst, immI_minus1 src) %{
 %}
 
 instruct repl8S_reg_Ex(vecX dst, iRegIsrc src) %{
-  match(Set dst (ReplicateS src));
-  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 8 &&
+            Matcher::vector_element_basic_type(n) == T_SHORT);
 
   expand %{
     iRegLdst tmpL;
@@ -13595,8 +13578,9 @@ instruct repl8S_reg_Ex(vecX dst, iRegIsrc src) %{
 %}
 
 instruct repl8S_immI0(vecX dst, immI_0 zero) %{
-  match(Set dst (ReplicateS zero));
-  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (Replicate zero));
+  predicate(n->as_Vector()->length() == 8 &&
+            Matcher::vector_element_basic_type(n) == T_SHORT);
 
   format %{ "XXLXOR      $dst, $zero \t// replicate8S" %}
   size(4);
@@ -13607,8 +13591,9 @@ instruct repl8S_immI0(vecX dst, immI_0 zero) %{
 %}
 
 instruct repl8S_immIminus1(vecX dst, immI_minus1 src) %{
-  match(Set dst (ReplicateS src));
-  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 8 &&
+            Matcher::vector_element_basic_type(n) == T_SHORT);
 
   format %{ "XXLEQV      $dst, $src \t// replicate8S" %}
   size(4);
@@ -13619,8 +13604,9 @@ instruct repl8S_immIminus1(vecX dst, immI_minus1 src) %{
 %}
 
 instruct repl2I_reg_Ex(iRegLdst dst, iRegIsrc src) %{
-  match(Set dst (ReplicateI src));
-  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_INT);
   ins_cost(2 * DEFAULT_COST);
   expand %{
     moveReg(dst, src);
@@ -13629,8 +13615,9 @@ instruct repl2I_reg_Ex(iRegLdst dst, iRegIsrc src) %{
 %}
 
 instruct repl2I_immI0(iRegLdst dst, immI_0 zero) %{
-  match(Set dst (ReplicateI zero));
-  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (Replicate zero));
+  predicate(n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_INT);
   format %{ "LI      $dst, #0 \t// replicate2I" %}
   size(4);
   ins_encode %{
@@ -13640,8 +13627,9 @@ instruct repl2I_immI0(iRegLdst dst, immI_0 zero) %{
 %}
 
 instruct repl2I_immIminus1(iRegLdst dst, immI_minus1 src) %{
-  match(Set dst (ReplicateI src));
-  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_INT);
   format %{ "LI      $dst, -1 \t// replicate2I" %}
   size(4);
   ins_encode %{
@@ -13651,8 +13639,9 @@ instruct repl2I_immIminus1(iRegLdst dst, immI_minus1 src) %{
 %}
 
 instruct repl4I_reg_Ex(vecX dst, iRegIsrc src) %{
-  match(Set dst (ReplicateI src));
-  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 4 &&
+            Matcher::vector_element_basic_type(n) == T_INT);
   ins_cost(2 * DEFAULT_COST);
 
   expand %{
@@ -13667,8 +13656,9 @@ instruct repl4I_reg_Ex(vecX dst, iRegIsrc src) %{
 %}
 
 instruct repl4I_immI0(vecX dst, immI_0 zero) %{
-  match(Set dst (ReplicateI zero));
-  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (Replicate zero));
+  predicate(n->as_Vector()->length() == 4 &&
+            Matcher::vector_element_basic_type(n) == T_INT);
 
   format %{ "XXLXOR      $dst, $zero \t// replicate4I" %}
   size(4);
@@ -13679,8 +13669,9 @@ instruct repl4I_immI0(vecX dst, immI_0 zero) %{
 %}
 
 instruct repl4I_immIminus1(vecX dst, immI_minus1 src) %{
-  match(Set dst (ReplicateI src));
-  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 4 &&
+            Matcher::vector_element_basic_type(n) == T_INT);
 
   format %{ "XXLEQV      $dst, $dst, $dst \t// replicate4I" %}
   size(4);
@@ -13692,8 +13683,9 @@ instruct repl4I_immIminus1(vecX dst, immI_minus1 src) %{
 
 // Move float to int register via stack, replicate.
 instruct repl2F_reg_Ex(iRegLdst dst, regF src) %{
-  match(Set dst (ReplicateF src));
-  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_FLOAT);
   ins_cost(2 * MEMORY_REF_COST + DEFAULT_COST);
   expand %{
     stackSlotL tmpS;
@@ -13707,8 +13699,9 @@ instruct repl2F_reg_Ex(iRegLdst dst, regF src) %{
 
 // Replicate scalar constant to packed float values in Double register
 instruct repl2F_immF_Ex(iRegLdst dst, immF src) %{
-  match(Set dst (ReplicateF src));
-  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_FLOAT);
   ins_cost(5 * DEFAULT_COST);
 
   format %{ "LD      $dst, offset, $constanttablebase\t// load replicated float $src $src from table, postalloc expanded" %}
@@ -13717,8 +13710,9 @@ instruct repl2F_immF_Ex(iRegLdst dst, immF src) %{
 
 // Replicate scalar zero constant to packed float values in Double register
 instruct repl2F_immF0(iRegLdst dst, immF_0 zero) %{
-  match(Set dst (ReplicateF zero));
-  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (Replicate zero));
+  predicate(n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_FLOAT);
 
   format %{ "LI      $dst, #0 \t// replicate2F" %}
   ins_encode %{
@@ -14087,7 +14081,7 @@ instruct vpopcnt_reg(vecX dst, vecX src) %{
 %}
 
 // --------------------------------- FMA --------------------------------------
-// dst + src1 * src2
+// src1 * src2 + dst
 instruct vfma4F(vecX dst, vecX src1, vecX src2) %{
   match(Set dst (FmaVF dst (Binary src1 src2)));
   predicate(n->as_Vector()->length() == 4);
@@ -14096,14 +14090,15 @@ instruct vfma4F(vecX dst, vecX src1, vecX src2) %{
 
   size(4);
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ xvmaddasp($dst$$VectorSRegister, $src1$$VectorSRegister, $src2$$VectorSRegister);
   %}
   ins_pipe(pipe_class_default);
 %}
 
-// dst - src1 * src2
+// src1 * (-src2) + dst
+// "(-src1) * src2 + dst" has been idealized to "src2 * (-src1) + dst"
 instruct vfma4F_neg1(vecX dst, vecX src1, vecX src2) %{
-  match(Set dst (FmaVF dst (Binary (NegVF src1) src2)));
   match(Set dst (FmaVF dst (Binary src1 (NegVF src2))));
   predicate(n->as_Vector()->length() == 4);
 
@@ -14111,12 +14106,13 @@ instruct vfma4F_neg1(vecX dst, vecX src1, vecX src2) %{
 
   size(4);
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ xvnmsubasp($dst$$VectorSRegister, $src1$$VectorSRegister, $src2$$VectorSRegister);
   %}
   ins_pipe(pipe_class_default);
 %}
 
-// - dst + src1 * src2
+// src1 * src2 - dst
 instruct vfma4F_neg2(vecX dst, vecX src1, vecX src2) %{
   match(Set dst (FmaVF (NegVF dst) (Binary src1 src2)));
   predicate(n->as_Vector()->length() == 4);
@@ -14125,12 +14121,13 @@ instruct vfma4F_neg2(vecX dst, vecX src1, vecX src2) %{
 
   size(4);
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ xvmsubasp($dst$$VectorSRegister, $src1$$VectorSRegister, $src2$$VectorSRegister);
   %}
   ins_pipe(pipe_class_default);
 %}
 
-// dst + src1 * src2
+// src1 * src2 + dst
 instruct vfma2D(vecX dst, vecX src1, vecX src2) %{
   match(Set dst (FmaVD  dst (Binary src1 src2)));
   predicate(n->as_Vector()->length() == 2);
@@ -14139,14 +14136,15 @@ instruct vfma2D(vecX dst, vecX src1, vecX src2) %{
 
   size(4);
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ xvmaddadp($dst$$VectorSRegister, $src1$$VectorSRegister, $src2$$VectorSRegister);
   %}
   ins_pipe(pipe_class_default);
 %}
 
-// dst - src1 * src2
+// src1 * (-src2) + dst
+// "(-src1) * src2 + dst" has been idealized to "src2 * (-src1) + dst"
 instruct vfma2D_neg1(vecX dst, vecX src1, vecX src2) %{
-  match(Set dst (FmaVD  dst (Binary (NegVD src1) src2)));
   match(Set dst (FmaVD  dst (Binary src1 (NegVD src2))));
   predicate(n->as_Vector()->length() == 2);
 
@@ -14154,12 +14152,13 @@ instruct vfma2D_neg1(vecX dst, vecX src1, vecX src2) %{
 
   size(4);
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ xvnmsubadp($dst$$VectorSRegister, $src1$$VectorSRegister, $src2$$VectorSRegister);
   %}
   ins_pipe(pipe_class_default);
 %}
 
-// - dst + src1 * src2
+// src1 * src2 - dst
 instruct vfma2D_neg2(vecX dst, vecX src1, vecX src2) %{
   match(Set dst (FmaVD (NegVD dst) (Binary src1 src2)));
   predicate(n->as_Vector()->length() == 2);
@@ -14168,6 +14167,7 @@ instruct vfma2D_neg2(vecX dst, vecX src1, vecX src2) %{
 
   size(4);
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ xvmsubadp($dst$$VectorSRegister, $src1$$VectorSRegister, $src2$$VectorSRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -14228,8 +14228,9 @@ instruct overflowMulL_reg_reg(flagsRegCR0 cr0, iRegLsrc op1, iRegLsrc op2) %{
 %}
 
 instruct repl4F_reg_Ex(vecX dst, regF src) %{
-  match(Set dst (ReplicateF src));
-  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 4 &&
+            Matcher::vector_element_basic_type(n) == T_FLOAT);
   ins_cost(DEFAULT_COST);
   expand %{
     vecX tmpV;
@@ -14241,8 +14242,9 @@ instruct repl4F_reg_Ex(vecX dst, regF src) %{
 %}
 
 instruct repl4F_immF_Ex(vecX dst, immF src, iRegLdst tmp) %{
-  match(Set dst (ReplicateF src));
-  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 4 &&
+            Matcher::vector_element_basic_type(n) == T_FLOAT);
   effect(TEMP tmp);
   ins_cost(10 * DEFAULT_COST);
 
@@ -14250,8 +14252,9 @@ instruct repl4F_immF_Ex(vecX dst, immF src, iRegLdst tmp) %{
 %}
 
 instruct repl4F_immF0(vecX dst, immF_0 zero) %{
-  match(Set dst (ReplicateF zero));
-  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (Replicate zero));
+  predicate(n->as_Vector()->length() == 4 &&
+            Matcher::vector_element_basic_type(n) == T_FLOAT);
 
   format %{ "XXLXOR      $dst, $zero \t// replicate4F" %}
   ins_encode %{
@@ -14261,8 +14264,9 @@ instruct repl4F_immF0(vecX dst, immF_0 zero) %{
 %}
 
 instruct repl2D_reg_Ex(vecX dst, regD src) %{
-  match(Set dst (ReplicateD src));
-  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_DOUBLE);
 
   format %{ "XXPERMDI      $dst, $src, $src, 0 \t// Splat doubleword" %}
   size(4);
@@ -14273,8 +14277,9 @@ instruct repl2D_reg_Ex(vecX dst, regD src) %{
 %}
 
 instruct repl2D_immD0(vecX dst, immD_0 zero) %{
-  match(Set dst (ReplicateD zero));
-  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (Replicate zero));
+  predicate(n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_DOUBLE);
 
   format %{ "XXLXOR      $dst, $zero \t// replicate2D" %}
   size(4);
@@ -14319,7 +14324,8 @@ instruct xxpermdi(vecX dst, vecX src1, vecX src2, immI8 zero) %{
 %}
 
 instruct repl2L_reg_Ex(vecX dst, iRegLsrc src) %{
-  match(Set dst (ReplicateL src));
+  predicate(Matcher::vector_element_basic_type(n) == T_LONG);
+  match(Set dst (Replicate src));
   predicate(n->as_Vector()->length() == 2);
   expand %{
     vecX tmpV;
@@ -14330,8 +14336,9 @@ instruct repl2L_reg_Ex(vecX dst, iRegLsrc src) %{
 %}
 
 instruct repl2L_immI0(vecX dst, immI_0 zero) %{
-  match(Set dst (ReplicateL zero));
-  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (Replicate zero));
+  predicate(n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_LONG);
 
   format %{ "XXLXOR      $dst, $zero \t// replicate2L" %}
   size(4);
@@ -14342,8 +14349,9 @@ instruct repl2L_immI0(vecX dst, immI_0 zero) %{
 %}
 
 instruct repl2L_immIminus1(vecX dst, immI_minus1 src) %{
-  match(Set dst (ReplicateL src));
-  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_LONG);
 
   format %{ "XXLEQV      $dst, $src \t// replicate2L" %}
   size(4);
@@ -14374,6 +14382,12 @@ instruct safePoint_poll(iRegPdst poll) %{
 
 // Call Java Static Instruction
 
+source %{
+
+#include "runtime/continuation.hpp"
+
+%}
+
 // Schedulable version of call static node.
 instruct CallStaticJavaDirect(method meth) %{
   match(CallStaticJava);
@@ -14383,7 +14397,7 @@ instruct CallStaticJavaDirect(method meth) %{
   ins_num_consts(3 /* up to 3 patchable constants: inline cache, 2 call targets. */);
 
   format %{ "CALL,static $meth \t// ==> " %}
-  size(Continuations::enabled() ? 8 : 4);
+  size((Continuations::enabled() ? 8 : 4));
   ins_encode( enc_java_static_call(meth) );
   ins_pipe(pipe_class_call);
 %}
@@ -14404,7 +14418,7 @@ instruct CallDynamicJavaDirectSched(method meth) %{
   ins_num_consts(1 /* 1 patchable constant: call destination */);
 
   format %{ "BL        \t// dynamic $meth ==> " %}
-  size(Continuations::enabled() ? 8 : 4);
+  size((Continuations::enabled() ? 8 : 4));
   ins_encode( enc_java_dynamic_call_sched(meth) );
   ins_pipe(pipe_class_call);
 %}
@@ -14482,7 +14496,7 @@ instruct CallLeafDirect(method meth) %{
   predicate(false);  // but never match.
 
   format %{ "BCTRL     \t// leaf call $meth ==> " %}
-  size(Continuations::enabled() ? 8 : 4);
+  size((Continuations::enabled() ? 8 : 4));
   ins_encode %{
     __ bctrl();
     __ post_call_nop();

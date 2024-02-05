@@ -76,9 +76,8 @@ public class ForkJoinWorkerThread extends Thread {
                          boolean clearThreadLocals) {
         super(group, null, pool.nextWorkerThreadName(), 0L, !clearThreadLocals);
         UncaughtExceptionHandler handler = (this.pool = pool).ueh;
-        this.workQueue = new ForkJoinPool.WorkQueue(this, 0);
-        if (clearThreadLocals)
-            workQueue.setClearThreadLocals();
+        this.workQueue = new ForkJoinPool.WorkQueue(this, 0, (int)pool.config,
+                                                    clearThreadLocals);
         super.setDaemon(true);
         if (handler != null)
             super.setUncaughtExceptionHandler(handler);
@@ -136,6 +135,17 @@ public class ForkJoinWorkerThread extends Thread {
      */
     public int getPoolIndex() {
         return workQueue.getPoolIndex();
+    }
+
+    /**
+     * {@return a (non-negative) estimate of the number of tasks in the
+     * thread's queue}
+     *
+     * @since 20
+     * @see ForkJoinPool#getQueuedTaskCount()
+     */
+    public int getQueuedTaskCount() {
+        return workQueue.queueSize();
     }
 
     /**

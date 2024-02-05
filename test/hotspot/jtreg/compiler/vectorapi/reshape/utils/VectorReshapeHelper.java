@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,22 +71,13 @@ public class VectorReshapeHelper {
     public static final VectorSpecies<Float>   FSPEC512 =  FloatVector.SPECIES_512;
     public static final VectorSpecies<Double>  DSPEC512 = DoubleVector.SPECIES_512;
 
-    public static final String B2X_NODE  = IRNode.VECTOR_CAST_B2X;
-    public static final String S2X_NODE  = IRNode.VECTOR_CAST_S2X;
-    public static final String I2X_NODE  = IRNode.VECTOR_CAST_I2X;
-    public static final String L2X_NODE  = IRNode.VECTOR_CAST_L2X;
-    public static final String F2X_NODE  = IRNode.VECTOR_CAST_F2X;
-    public static final String D2X_NODE  = IRNode.VECTOR_CAST_D2X;
-    public static final String UB2X_NODE = IRNode.VECTOR_UCAST_B2X;
-    public static final String US2X_NODE = IRNode.VECTOR_UCAST_S2X;
-    public static final String UI2X_NODE = IRNode.VECTOR_UCAST_I2X;
     public static final String REINTERPRET_NODE = IRNode.VECTOR_REINTERPRET;
 
     public static void runMainHelper(Class<?> testClass, Stream<VectorSpeciesPair> testMethods, String... flags) {
         var test = new TestFramework(testClass);
         test.setDefaultWarmup(1);
         test.addHelperClasses(VectorReshapeHelper.class);
-        test.addFlags("--add-modules=jdk.incubator.vector", "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED", "--enable-preview");
+        test.addFlags("--add-modules=jdk.incubator.vector", "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED");
         test.addFlags(flags);
         String testMethodNames = testMethods
                 .filter(p -> p.isp().length() <= VectorSpecies.ofLargestShape(p.isp().elementType()).length())

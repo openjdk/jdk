@@ -42,7 +42,7 @@ public class TestHtmlTableTags extends JavadocTester {
 
 
     public static void main(String... args) throws Exception {
-        TestHtmlTableTags tester = new TestHtmlTableTags();
+        var tester = new TestHtmlTableTags();
         tester.runTests();
     }
 
@@ -84,24 +84,24 @@ public class TestHtmlTableTags extends JavadocTester {
         //Package summary
         checkOutput("pkg1/package-summary.html", true,
                 """
-                    <div class="summary-table two-column-summary" aria-labelledby="class-summary-tab0">""");
+                    <div class="summary-table two-column-summary">""");
 
         checkOutput("pkg2/package-summary.html", true,
                 """
-                    <div class="summary-table two-column-summary" aria-labelledby="class-summary-tab0">""");
+                    <div class="summary-table two-column-summary">""");
 
         // Class documentation
         checkOutput("pkg1/C1.html", true,
                 """
                     <div class="summary-table three-column-summary">""",
                 """
-                    <div class="summary-table three-column-summary" aria-labelledby="method-summary-table-tab0">""");
+                    <div class="summary-table three-column-summary">""");
 
         checkOutput("pkg2/C2.html", true,
                 """
                     <div class="summary-table three-column-summary">""",
                 """
-                    <div class="summary-table three-column-summary" aria-labelledby="method-summary-table-tab0">""");
+                    <div class="summary-table three-column-summary">""");
 
         checkOutput("pkg2/C2.ModalExclusionType.html", true,
                 """

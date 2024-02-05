@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,73 +58,75 @@ import jdk.jfr.SettingDescriptor;
 import jdk.jfr.Timespan;
 import jdk.jfr.Timestamp;
 import jdk.jfr.ValueDescriptor;
+import jdk.jfr.internal.util.Utils;
+import jdk.jfr.internal.util.ImplicitFields;
+import jdk.internal.module.Modules;
 
 public final class TypeLibrary {
-
-    private static TypeLibrary instance;
     private static boolean implicitFieldTypes;
     private static final Map<Long, Type> types = LinkedHashMap.newLinkedHashMap(350);
+    private static volatile boolean initialized;
     static final ValueDescriptor DURATION_FIELD = createDurationField();
     static final ValueDescriptor THREAD_FIELD = createThreadField();
     static final ValueDescriptor STACK_TRACE_FIELD = createStackTraceField();
     static final ValueDescriptor START_TIME_FIELD = createStartTimeField();
 
-    private TypeLibrary(List<Type> jvmTypes) {
+    private TypeLibrary() {
+        throw new InternalError("Don't instantiate");
+    }
+
+    private static ValueDescriptor createStartTimeField() {
+        var annos = createStandardAnnotations("Start Time", null);
+        annos.add(new jdk.jfr.AnnotationElement(Timestamp.class, Timestamp.TICKS));
+        return PrivateAccess.getInstance().newValueDescriptor(ImplicitFields.START_TIME, Type.LONG, annos, 0, false,
+                ImplicitFields.START_TIME);
+    }
+
+    private static ValueDescriptor createStackTraceField() {
+        var annos = createStandardAnnotations("Stack Trace", "Stack Trace starting from the method the event was committed in");
+        return PrivateAccess.getInstance().newValueDescriptor(ImplicitFields.STACK_TRACE, Type.STACK_TRACE, annos, 0, true,
+                ImplicitFields.STACK_TRACE);
+    }
+
+    private static ValueDescriptor createThreadField() {
+        var annos = createStandardAnnotations("Event Thread", "Thread in which event was committed in");
+        return PrivateAccess.getInstance().newValueDescriptor(ImplicitFields.EVENT_THREAD, Type.THREAD, annos, 0, true,
+                ImplicitFields.EVENT_THREAD);
+    }
+
+    private static ValueDescriptor createDurationField() {
+        var annos = createStandardAnnotations("Duration", null);
+        annos.add(new jdk.jfr.AnnotationElement(Timespan.class, Timespan.TICKS));
+        return PrivateAccess.getInstance().newValueDescriptor(ImplicitFields.DURATION, Type.LONG, annos, 0, false, ImplicitFields.DURATION);
+    }
+
+    public static synchronized void initialize() {
+        // The usual case is that TypeLibrary is initialized only once by the MetadataRepository singleton.
+        // However, this check is needed to ensure some tools (ie. GraalVM Native Image) do not perform the initialization routine twice.
+        if (initialized) {
+            return;
+        }
+        List<Type> jvmTypes;
+        try {
+            jvmTypes = MetadataLoader.createTypes();
+            jvmTypes.sort(Comparator.comparingLong(Type::getId));
+        } catch (IOException e) {
+            throw new Error("JFR: Could not read metadata");
+        }
         visitReachable(jvmTypes, t -> !types.containsKey(t.getId()), t -> types.put(t.getId(), t));
+        initialized = true;
         if (Logger.shouldLog(LogTag.JFR_SYSTEM_METADATA, LogLevel.INFO)) {
             Stream<Type> s = types.values().stream().sorted((x, y) -> Long.compare(x.getId(), y.getId()));
             s.forEach(t -> t.log("Added", LogTag.JFR_SYSTEM_METADATA, LogLevel.INFO));
         }
     }
 
-    private static ValueDescriptor createStartTimeField() {
-        var annos = createStandardAnnotations("Start Time", null);
-        annos.add(new jdk.jfr.AnnotationElement(Timestamp.class, Timestamp.TICKS));
-        return PrivateAccess.getInstance().newValueDescriptor(EventInstrumentation.FIELD_START_TIME, Type.LONG, annos, 0, false,
-                EventInstrumentation.FIELD_START_TIME);
-
-    }
-
-    private static ValueDescriptor createStackTraceField() {
-        var annos = createStandardAnnotations("Stack Trace", "Stack Trace starting from the method the event was committed in");
-        return PrivateAccess.getInstance().newValueDescriptor(EventInstrumentation.FIELD_STACK_TRACE, Type.STACK_TRACE, annos, 0, true,
-                EventInstrumentation.FIELD_STACK_TRACE);
-    }
-
-    private static ValueDescriptor createThreadField() {
-        var annos = createStandardAnnotations("Event Thread", "Thread in which event was committed in");
-        return PrivateAccess.getInstance().newValueDescriptor(EventInstrumentation.FIELD_EVENT_THREAD, Type.THREAD, annos, 0, true,
-                EventInstrumentation.FIELD_EVENT_THREAD);
-    }
-
-    private static ValueDescriptor createDurationField() {
-        var annos = createStandardAnnotations("Duration", null);
-        annos.add(new jdk.jfr.AnnotationElement(Timespan.class, Timespan.TICKS));
-        return PrivateAccess.getInstance().newValueDescriptor(EventInstrumentation.FIELD_DURATION, Type.LONG, annos, 0, false, EventInstrumentation.FIELD_DURATION);
-    }
-
-    public static TypeLibrary getInstance() {
-        synchronized (TypeLibrary.class) {
-            if (instance == null) {
-                List<Type> jvmTypes;
-                try {
-                    jvmTypes = MetadataLoader.createTypes();
-                    jvmTypes.sort(Comparator.comparingLong(Type::getId));
-                } catch (IOException e) {
-                    throw new Error("JFR: Could not read metadata");
-                }
-                instance = new TypeLibrary(jvmTypes);
-            }
-            return instance;
-        }
-    }
-
-    public Collection<Type> getTypes() {
-        return types.values();
+    public static synchronized Collection<Type> getTypes() {
+        return new ArrayList<>(types.values());
     }
 
     // Returned list should be mutable (for in-place sorting)
-    public List<Type> getVisibleTypes() {
+    public static synchronized List<Type> getVisibleTypes() {
         List<Type> visible = new ArrayList<>(types.size());
         types.values().forEach(t -> {
             if (t.isVisible()) {
@@ -134,7 +136,7 @@ public final class TypeLibrary {
         return visible;
     }
 
-    public static Type createAnnotationType(Class<? extends Annotation> a) {
+    public static synchronized Type createAnnotationType(Class<? extends Annotation> a) {
         if (shouldPersist(a)) {
             Type type = defineType(a, Type.SUPER_TYPE_ANNOTATION, false);
             if (type != null) {
@@ -156,7 +158,7 @@ public final class TypeLibrary {
         return null;
     }
 
-    static AnnotationElement createAnnotation(Annotation annotation) {
+    public static synchronized AnnotationElement createAnnotation(Annotation annotation) {
         Class<? extends Annotation> annotationType = annotation.annotationType();
         Type type = createAnnotationType(annotationType);
         if (type != null) {
@@ -164,7 +166,6 @@ public final class TypeLibrary {
             for (ValueDescriptor v : type.getFields()) {
                 values.add(invokeAnnotation(annotation, v.getName()));
             }
-
             return PrivateAccess.getInstance().newAnnotation(type, values, annotation.annotationType().getClassLoader() == null);
         }
         return null;
@@ -176,6 +177,15 @@ public final class TypeLibrary {
             m = annotation.getClass().getMethod(methodName, new Class<?>[0]);
         } catch (NoSuchMethodException e1) {
             throw (Error) new InternalError("Could not locate method " + methodName + " in annotation " + annotation.getClass().getName());
+        }
+        // Add export from JDK proxy module
+        if (annotation.getClass().getClassLoader() == null) {
+            if (annotation.getClass().getName().contains("Proxy")) {
+                Module proxyModule = annotation.getClass().getModule();
+                String proxyPackage = annotation.getClass().getPackageName();
+                Module jfrModule = TypeLibrary.class.getModule();
+                Modules.addExports(proxyModule, proxyPackage, jfrModule);
+            }
         }
         SecuritySupport.setAccessible(m);
         try {
@@ -219,11 +229,12 @@ public final class TypeLibrary {
         }
         return null;
     }
-    public static Type createType(Class<?> clazz) {
+
+    public static synchronized Type createType(Class<?> clazz) {
         return createType(clazz, Collections.emptyList(), Collections.emptyList());
     }
 
-    public static Type createType(Class<?> clazz, List<AnnotationElement> dynamicAnnotations, List<ValueDescriptor> dynamicFields) {
+    public static synchronized Type createType(Class<?> clazz, List<AnnotationElement> dynamicAnnotations, List<ValueDescriptor> dynamicFields) {
 
         if (Thread.class == clazz) {
             return Type.THREAD;
@@ -265,7 +276,8 @@ public final class TypeLibrary {
         Type type = getType(clazz);
 
         if (eventType) {
-            addImplicitFields(type, true, true, true, true ,false);
+            ImplicitFields ifs = new ImplicitFields(clazz);
+            addImplicitFields(type, true, ifs.hasDuration(), ifs.hasEventThread(), ifs.hasStackTrace(), false);
             addUserFields(clazz, type, dynamicFields);
             type.trimFields();
         }
@@ -327,7 +339,7 @@ public final class TypeLibrary {
     }
 
     // By convention all events have these fields.
-    static void addImplicitFields(Type type, boolean requestable, boolean hasDuration, boolean hasThread, boolean hasStackTrace, boolean hasCutoff) {
+    public synchronized static void addImplicitFields(Type type, boolean requestable, boolean hasDuration, boolean hasThread, boolean hasStackTrace, boolean hasCutoff) {
         if (!implicitFieldTypes) {
             createAnnotationType(Timespan.class);
             createAnnotationType(Timestamp.class);
@@ -423,7 +435,7 @@ public final class TypeLibrary {
     // from registered event types. Those types that are not reachable can
     // safely be removed
     // Returns true if type was removed
-    public boolean clearUnregistered() {
+    public static synchronized boolean clearUnregistered() {
         Logger.log(LogTag.JFR_METADATA, LogLevel.TRACE, "Cleaning out obsolete metadata");
         List<Type> registered = new ArrayList<>();
         for (Type type : types.values()) {
@@ -452,11 +464,11 @@ public final class TypeLibrary {
         return !removeIds.isEmpty();
     }
 
-    public void addType(Type type) {
+    public static synchronized void addType(Type type) {
         addTypes(Collections.singletonList(type));
     }
 
-    public static void addTypes(List<Type> ts) {
+    public static synchronized void addTypes(List<Type> ts) {
         if (!ts.isEmpty()) {
             visitReachable(ts, t -> !types.containsKey(t.getId()), t -> types.put(t.getId(), t));
         }
@@ -504,7 +516,7 @@ public final class TypeLibrary {
         }
     }
 
-    public void removeType(long id) {
+    public static synchronized void removeType(long id) {
         types.remove(id);
     }
 }

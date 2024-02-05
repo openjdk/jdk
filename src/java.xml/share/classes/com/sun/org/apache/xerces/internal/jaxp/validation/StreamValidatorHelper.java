@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  */
  /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -23,7 +23,7 @@ import com.sun.org.apache.xerces.internal.impl.Constants;
 import com.sun.org.apache.xerces.internal.impl.XMLErrorReporter;
 import com.sun.org.apache.xerces.internal.impl.msg.XMLMessageFormatter;
 import com.sun.org.apache.xerces.internal.parsers.XML11Configuration;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
+import jdk.xml.internal.XMLSecurityManager;
 import com.sun.org.apache.xerces.internal.xni.XNIException;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLInputSource;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLParseException;
@@ -31,18 +31,15 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLParserConfiguration;
 import java.io.IOException;
 import java.lang.ref.SoftReference;
 import javax.xml.XMLConstants;
-import javax.xml.catalog.CatalogFeatures;
 import javax.xml.transform.Result;
 import javax.xml.transform.Source;
 import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.TransformerFactoryConfigurationError;
 import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import jdk.xml.internal.JdkConstants;
-import jdk.xml.internal.JdkXmlFeatures;
 import jdk.xml.internal.JdkXmlUtils;
 import org.xml.sax.SAXException;
 
@@ -52,7 +49,7 @@ import org.xml.sax.SAXException;
  *
  * @author Michael Glavassevich, IBM
  * @author Sunitha Reddy
- * @LastModified: May 2021
+ * @LastModified: July 2023
  */
 final class StreamValidatorHelper implements ValidatorHelper {
 
@@ -141,6 +138,7 @@ final class StreamValidatorHelper implements ValidatorHelper {
             if (result != null) {
                 try {
                     SAXTransformerFactory tf = JdkXmlUtils.getSAXTransformFactory(
+                            (XMLSecurityManager)fComponentManager.getProperty(Constants.SECURITY_MANAGER),
                             fComponentManager.getFeature(JdkConstants.OVERRIDE_PARSER));
 
                     identityTransformerHandler = tf.newTransformerHandler();

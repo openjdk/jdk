@@ -33,6 +33,7 @@
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
 #include "gc/g1/g1FullCollector.inline.hpp"
 #include "gc/g1/g1FullGCOopClosures.inline.hpp"
+#include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.hpp"
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
@@ -44,21 +45,10 @@
 #include "utilities/debug.hpp"
 
 inline bool G1FullGCMarker::mark_object(oop obj) {
-  if (_collector->is_skip_marking(obj)) {
-    return false;
-  }
-
   // Try to mark.
   if (!_bitmap->par_mark(obj)) {
     // Lost mark race.
     return false;
-  }
-
-  // Marked by us, preserve if needed.
-  if (_collector->is_compacting(obj)) {
-    // It is not necessary to preserve marks for objects in regions we do not
-    // compact because we do not change their headers (i.e. forward them).
-    preserved_stack()->push_if_necessary(obj, obj->mark());
   }
 
   // Check if deduplicatable string.
@@ -82,11 +72,8 @@ template <class T> inline void G1FullGCMarker::mark_and_push(T* p) {
     oop obj = CompressedOops::decode_not_null(heap_oop);
     if (mark_object(obj)) {
       _oop_stack.push(obj);
-      assert(_bitmap->is_marked(obj), "Must be marked now - map self");
-    } else {
-      assert(_bitmap->is_marked(obj) || _collector->is_skip_marking(obj),
-             "Must be marked by other or object in skip marking region");
     }
+    assert(_bitmap->is_marked(obj), "Must be marked");
   }
 }
 
@@ -101,7 +88,7 @@ inline void G1FullGCMarker::push_objarray(oop obj, size_t index) {
 }
 
 inline void G1FullGCMarker::follow_array(objArrayOop array) {
-  follow_klass(array->klass());
+  mark_closure()->do_klass(array->klass());
   // Don't push empty arrays to avoid unnecessary work.
   if (array->length() > 0) {
     push_objarray(array, 0);
@@ -122,14 +109,6 @@ void G1FullGCMarker::follow_array_chunk(objArrayOop array, int index) {
   }
 
   array->oop_iterate_range(mark_closure(), beg_index, end_index);
-
-  if (VerifyDuringGC) {
-    _verify_closure.set_containing_obj(array);
-    array->oop_iterate_range(&_verify_closure, beg_index, end_index);
-    if (_verify_closure.failures()) {
-      assert(false, "Failed");
-    }
-  }
 }
 
 inline void G1FullGCMarker::follow_object(oop obj) {
@@ -140,17 +119,6 @@ inline void G1FullGCMarker::follow_object(oop obj) {
     follow_array((objArrayOop)obj);
   } else {
     obj->oop_iterate(mark_closure());
-    if (VerifyDuringGC) {
-      if (obj->is_instanceRef()) {
-        return;
-      }
-      _verify_closure.set_containing_obj(obj);
-      obj->oop_iterate(&_verify_closure);
-      if (_verify_closure.failures()) {
-        log_warning(gc, verify)("Failed after %d", _verify_closure._cc);
-        assert(false, "Failed");
-      }
-    }
   }
 }
 
@@ -191,15 +159,6 @@ void G1FullGCMarker::follow_marking_stacks() {
       follow_array_chunk(objArrayOop(task.obj()), task.index());
     }
   } while (!is_empty());
-}
-
-inline void G1FullGCMarker::follow_klass(Klass* k) {
-  oop op = k->class_loader_data()->holder_no_keepalive();
-  mark_and_push(&op);
-}
-
-inline void G1FullGCMarker::follow_cld(ClassLoaderData* cld) {
-  _cld_closure.do_cld(cld);
 }
 
 #endif // SHARE_GC_G1_G1FULLGCMARKER_INLINE_HPP

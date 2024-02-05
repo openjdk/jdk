@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,11 +33,12 @@ import java.security.SignatureException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 
-import jdk.internal.util.jar.JarIndex;
 import sun.security.util.ManifestDigester;
 import sun.security.util.ManifestEntryVerifier;
 import sun.security.util.SignatureFileVerifier;
 import sun.security.util.Debug;
+
+import static sun.security.util.SignatureFileVerifier.isInMetaInf;
 
 /**
  *
@@ -135,17 +136,16 @@ class JarVerifier {
          */
 
         if (parsingMeta) {
-            String uname = name.toUpperCase(Locale.ENGLISH);
-            if ((uname.startsWith("META-INF/") ||
-                 uname.startsWith("/META-INF/"))) {
+
+            if (isInMetaInf(name)) {
 
                 if (je.isDirectory()) {
                     mev.setEntry(null, je);
                     return;
                 }
-
+                String uname = name.toUpperCase(Locale.ENGLISH);
                 if (uname.equals(JarFile.MANIFEST_NAME) ||
-                        uname.equals(JarIndex.INDEX_NAME)) {
+                        uname.equals(JarFile.INDEX_NAME)) {
                     return;
                 }
 

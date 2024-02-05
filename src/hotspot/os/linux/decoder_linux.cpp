@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ bool ElfDecoder::demangle(const char* symbol, char *buf, int buflen) {
   // Don't pass buf to __cxa_demangle. In case of the 'buf' is too small,
   // __cxa_demangle will call system "realloc" for additional memory, which
   // may use different malloc/realloc mechanism that allocates 'buf'.
-  if ((result = abi::__cxa_demangle(symbol, NULL, NULL, &status)) != NULL) {
+  if ((result = abi::__cxa_demangle(symbol, nullptr, nullptr, &status)) != nullptr) {
     jio_snprintf(buf, buflen, "%s", result);
       // call c library's free
       ALLOW_C_FUNCTION(::free, ::free(result);)
@@ -58,10 +58,10 @@ bool ElfDecoder::demangle(const char* symbol, char *buf, int buflen) {
 // Returns false if the elf file requires an executable stack, the stack flag
 // is not set at all, or if the file can not be read.
 bool ElfFile::specifies_noexecstack(const char* filepath) {
-  if (filepath == NULL) return true;
+  if (filepath == nullptr) return true;
 
   FILE* file = os::fopen(filepath, "r");
-  if (file == NULL)  return true;
+  if (file == nullptr)  return true;
 
   // AARCH64 defaults to noexecstack. All others default to execstack.
   bool result = AARCH64_ONLY(true) NOT_AARCH64(false);

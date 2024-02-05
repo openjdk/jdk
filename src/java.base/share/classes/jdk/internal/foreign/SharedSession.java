@@ -27,7 +27,6 @@ package jdk.internal.foreign;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
-import java.lang.ref.Cleaner;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.vm.annotation.ForceInline;
 
@@ -40,12 +39,12 @@ import jdk.internal.vm.annotation.ForceInline;
  * Since it is the responsibility of the closing thread to make sure that no concurrent access is possible,
  * checking the liveness bit upon access can be performed in plain mode, as in the confined case.
  */
-class SharedSession extends MemorySessionImpl {
+sealed class SharedSession extends MemorySessionImpl permits ImplicitSession {
 
     private static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
 
-    SharedSession(Cleaner cleaner) {
-        super(null, new SharedResourceList(), cleaner);
+    SharedSession() {
+        super(null, new SharedResourceList());
     }
 
     @Override
@@ -78,17 +77,13 @@ class SharedSession extends MemorySessionImpl {
     }
 
     void justClose() {
-        int prevState = (int) STATE.compareAndExchange(this, OPEN, CLOSING);
+        int prevState = (int) STATE.compareAndExchange(this, OPEN, CLOSED);
         if (prevState < 0) {
             throw alreadyClosed();
         } else if (prevState != OPEN) {
             throw alreadyAcquired(prevState);
         }
-        boolean success = SCOPED_MEMORY_ACCESS.closeScope(this);
-        STATE.setVolatile(this, success ? CLOSED : OPEN);
-        if (!success) {
-            throw alreadyAcquired(1);
-        }
+        SCOPED_MEMORY_ACCESS.closeScope(this, ALREADY_CLOSED);
     }
 
     /**

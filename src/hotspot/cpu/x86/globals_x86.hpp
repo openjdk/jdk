@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,9 @@
 
 define_pd_global(bool, ImplicitNullChecks,       true);  // Generate code for implicit null checks
 define_pd_global(bool, TrapBasedNullChecks,      false); // Not needed on x86.
-define_pd_global(bool, UncommonNullCast,         true);  // Uncommon-trap NULLs passed to check cast
+define_pd_global(bool, UncommonNullCast,         true);  // Uncommon-trap nulls passed to check cast
+
+define_pd_global(bool, DelayCompilerStubsGeneration, COMPILER2_OR_JVMCI);
 
 define_pd_global(uintx, CodeCacheSegmentSize,    64 COMPILER1_AND_COMPILER2_PRESENT(+64)); // Tiered compilation has large code-entry alignment.
 // See 4827828 for this change. There is no globals_core_i486.hpp. I can't
@@ -211,6 +213,10 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
                                                                             \
   product(bool, UseLibmIntrinsic, true, DIAGNOSTIC,                         \
           "Use Libm Intrinsics")                                            \
+                                                                            \
+  /* Autodetected, see vm_version_x86.cpp */                                \
+  product(bool, EnableX86ECoreOpts, false, DIAGNOSTIC,                      \
+          "Perform Ecore Optimization")                                     \
                                                                             \
   /* Minimum array size in bytes to use AVX512 intrinsics */                \
   /* for copy, inflate and fill which don't bail out early based on any */  \

@@ -27,6 +27,7 @@
  * @summary Verify constant/immediate char values are correctly enhanced to ints when used in unary
  *          operators
  * @library /tools/lib
+ * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.code
  *          jdk.compiler/com.sun.tools.javac.comp
@@ -34,7 +35,7 @@
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.tree
  *          jdk.compiler/com.sun.tools.javac.util
- *          jdk.jdeps/com.sun.tools.classfile
+ *          java.base/jdk.internal.classfile.impl
  *          jdk.jdeps/com.sun.tools.javap
  * @build toolbox.JarTask toolbox.JavacTask toolbox.JavapTask toolbox.ToolBox
  * @compile CharImmediateValue.java
@@ -53,11 +54,8 @@ import com.sun.source.util.Plugin;
 import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
 
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.Code_attribute;
-import com.sun.tools.classfile.Instruction;
-import com.sun.tools.classfile.Opcode;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.CodeAttribute;
 
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.tree.JCTree.JCIdent;
@@ -134,12 +132,11 @@ public class CharImmediateValue implements Plugin {
         }
 
         Path testClass = classes.resolve("Test.class");
-        ClassFile cf = ClassFile.read(testClass);
-        Code_attribute codeAttr =
-                (Code_attribute) cf.methods[1].attributes.get(Attribute.Code);
+        ClassModel cf = ClassFile.of().parse(testClass);
+        CodeAttribute codeAttr = cf.methods().get(1).findAttribute(Attributes.CODE).orElseThrow();
         boolean seenCast = false;
-        for (Instruction i : codeAttr.getInstructions()) {
-            if (i.getOpcode() == Opcode.I2C) {
+        for (CodeElement i : codeAttr.elementList()) {
+            if (i instanceof Instruction ins && ins.opcode() == Opcode.I2C) {
                 seenCast = true;
             }
         }

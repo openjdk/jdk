@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,8 @@
 
 static const ZStatCounter ZCounterUncommit("Memory", "Uncommit", ZStatUnitBytesPerSecond);
 
-ZUncommitter::ZUncommitter(ZPageAllocator* page_allocator) :
-    _page_allocator(page_allocator),
+ZUncommitter::ZUncommitter(ZPageAllocator* page_allocator)
+  : _page_allocator(page_allocator),
     _lock(),
     _stop(false) {
   set_name("ZUncommitter");
@@ -59,7 +59,7 @@ bool ZUncommitter::should_continue() const {
   return !_stop;
 }
 
-void ZUncommitter::run_service() {
+void ZUncommitter::run_thread() {
   uint64_t timeout = 0;
 
   while (wait(timeout)) {
@@ -89,7 +89,7 @@ void ZUncommitter::run_service() {
   }
 }
 
-void ZUncommitter::stop_service() {
+void ZUncommitter::terminate() {
   ZLocker<ZConditionLock> locker(&_lock);
   _stop = true;
   _lock.notify_all();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -141,7 +141,7 @@ public:
   static void create_for(JavaThread* thread);
 
   static GrowableArray<jvmtiDeferredLocalVariableSet*>* deferred_locals(JavaThread* jt) {
-    return jt->deferred_updates() == NULL ? NULL : jt->deferred_updates()->deferred_locals();
+    return jt->deferred_updates() == nullptr ? nullptr : jt->deferred_updates()->deferred_locals();
   }
 
   // Relocking has to be deferred if the lock owning thread is currently waiting on the monitor.
