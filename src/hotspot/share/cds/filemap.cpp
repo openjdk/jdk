@@ -848,6 +848,10 @@ bool FileMapInfo::validate_boot_class_paths() {
   return true;
 }
 
+static int sort_string(const char** a, const char** b) {
+  return strcmp(*a,*b);
+}
+
 bool FileMapInfo::validate_app_class_paths(int shared_app_paths_len) {
   const char *appcp = Arguments::get_appclasspath();
   assert(appcp != nullptr, "null app classpath");
@@ -897,12 +901,46 @@ bool FileMapInfo::validate_app_class_paths(int shared_app_paths_len) {
                                dumptime_prefix_len, runtime_prefix_len);
       }
       if (mismatch) {
-        return classpath_failure("[APP classpath mismatch, actual: -Djava.class.path=", appcp);
+        //Handle run java with wildcard classpath like this: java -cp "lib/*"
+        // at dump time, the classpath expands to: a.jar:b.jar
+        // at using shared space-time, the classpath may expand to: b.jar:a.jar
+        // the order of 'lib/*' is undefined, depending on filesystem.
+        mismatch = !is_out_of_order_path(header()->app_class_paths_start_index(),
+                                         shared_app_paths_len, rp_array);
+        if (mismatch) {
+          return classpath_failure("[APP classpath mismatch, actual: -Djava.class.path=", appcp);
+        }
       }
     }
   }
   return true;
 }
+
+bool FileMapInfo::is_out_of_order_path(int shared_path_start_idx, int num_paths,
+                                        GrowableArray<const char*>* rp_array) {
+  GrowableArray<const char*>* sp_array = new GrowableArray<const char*>(num_paths);
+  for(int i = shared_path_start_idx; i < shared_path_start_idx + num_paths; i++) {
+    if (shared_path(i)->from_class_path_attr()) {
+      continue;
+    }
+    sp_array->append(shared_path(i)->name());
+  }
+  //only handle same jars but with different orders.
+  if (rp_array->length() != sp_array->length()) {
+    return false;
+  }
+
+  rp_array->sort(sort_string);
+  sp_array->sort(sort_string);
+
+  for(int i = 0; i < sp_array->length(); i++) {
+    if (!os::same_files(sp_array->at(i), rp_array->at(i))) {
+      return false;
+    }
+  }
+  return true;
+}
+
 
 void FileMapInfo::log_paths(const char* msg, int start_idx, int end_idx) {
   LogTarget(Info, class, path) lt;

@@ -548,6 +548,7 @@ public:
   void  init_heap_region_relocation();
   MapArchiveResult map_region(int i, intx addr_delta, char* mapped_base_address, ReservedSpace rs);
   bool  relocate_pointers_in_core_regions(intx addr_delta);
+  bool  is_out_of_order_path(int shared_path_start_idx, int num_paths, GrowableArray<const char*>* rp_array);
 
   static MemRegion _mapped_heap_memregion;
 
