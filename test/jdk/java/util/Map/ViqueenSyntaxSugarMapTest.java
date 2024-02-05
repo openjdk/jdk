@@ -20,7 +20,18 @@ public class ViqueenSyntaxSugarMapTest {
     public void testSingletonMap() {
         Map singleton = {
                 "sweden": "stockholm"
-    };
+        };
         assertEquals(singleton.size(), 1);
+    }
+
+    @Test
+    public void testFullMapWithStringKeyValuePairs() {
+        Map<String, String> capitals = {
+                "norway": "oslo",
+                "australia": "canberra",
+                "morocco": "rabat",
+                "sweden": "stockholm"
+        };
+        assertEquals(capitals.size(), 4);
     }
 }

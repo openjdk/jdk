@@ -2717,13 +2717,23 @@ public class JavacParser implements Parser {
 
     public JCExpression variableInitializer(JCExpression type) {
         if (token.kind == LBRACE) {
-            if (type instanceof JCIdent && ((JCIdent) type).name.equals(names.fromString("Map"))) {
+            if (isMapType(type)) {
                 return mapInitializer(token.pos);
             } else {
                 return arrayInitializer(token.pos, null);
             }
         }
         return parseExpression();
+    }
+
+    private boolean isMapType(JCExpression type) {
+        final Object localType;
+        if (type instanceof JCTypeApply) {
+            localType = ((JCTypeApply) type).getType();
+        } else {
+            localType = type;
+        }
+        return (localType instanceof JCIdent && ((JCIdent) localType).name.equals(names.fromString("Map")));
     }
 
     private JCExpression mapInitializer(int pos) {
@@ -2734,8 +2744,11 @@ public class JavacParser implements Parser {
     private List<JCExpression> mapEntries(int pos) {
         accept(LBRACE);
         ListBuffer<JCExpression> entries = new ListBuffer<>();
-        if (token.kind != RBRACE) {
+        while (token.kind != RBRACE) {
             entries.append(mapEntry(pos));
+            if (token.kind != RBRACE) {
+                accept(COMMA);
+            }
         }
         accept(RBRACE);
         return entries.toList();
