@@ -2430,12 +2430,12 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
 //------------------------------expand_macro_nodes----------------------
 //  Returns true if a failure occurred.
 bool PhaseMacroExpand::expand_macro_nodes() {
-  // Last attempt to eliminate macro nodes.
-  eliminate_macro_nodes();
-  if (C->failing())  return true;
   if (StressMacroExpansion) {
     C->shuffle_macro_nodes();
   }
+  // Last attempt to eliminate macro nodes.
+  eliminate_macro_nodes();
+  if (C->failing())  return true;
 
   // Eliminate Opaque and LoopLimit nodes. Do it after all loop optimizations.
   bool progress = true;
@@ -2514,7 +2514,9 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       }
       assert(!success || (C->macro_count() == (old_macro_count - 1)), "elimination must have deleted one node from macro list");
       progress = progress || success;
-      if (success) { C->print_method(PHASE_AFTER_MACRO_EXPANSION_ELIMINATE, 4, n); }
+      if (success) {
+        C->print_method(PHASE_AFTER_MACRO_EXPANSION_ELIMINATE, 4, n);
+      }
     }
   }
 
