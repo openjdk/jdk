@@ -57,7 +57,7 @@ public class InstructionModelToCodeBuilder {
             case InvokeDynamicInstruction im ->
                 cb.invokedynamic(DynamicCallSiteDesc.of(im.bootstrapMethod(), im.name().stringValue(), MethodTypeDesc.ofDescriptor(im.type().stringValue()), im.bootstrapArgs().toArray(ConstantDesc[]::new)));
             case NewObjectInstruction im ->
-                cb.newObject(im.className().asSymbol());
+                cb.new_(im.className().asSymbol());
             case NewPrimitiveArrayInstruction im ->
                 cb.newarray(im.typeKind());
             case NewReferenceArrayInstruction im ->

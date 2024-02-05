@@ -263,7 +263,7 @@ class LvtTest {
                                       c0.localVariable(2, l, juList, beforeRet, end)
                                         .localVariableType(1, u, TU, start, end)
                                         .labelBinding(start)
-                                        .newObject(ClassDesc.of("java.util.ArrayList"))
+                                        .new_(ClassDesc.of("java.util.ArrayList"))
                                         .dup()
                                         .invokespecial(CD_ArrayList, "<init>", MTD_VOID, false)
                                         .astore(2)

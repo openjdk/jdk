@@ -500,25 +500,6 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Generate an instruction to create a new object
-     * @param type the object type
-     * @return this builder
-     */
-    default CodeBuilder newObject(ClassEntry type) {
-        return with(NewObjectInstruction.of(type));
-    }
-
-    /**
-     * Generate an instruction to create a new object
-     * @param type the object type
-     * @return this builder
-     * @throws IllegalArgumentException if {@code type} represents a primitive type
-     */
-    default CodeBuilder newObject(ClassDesc type) {
-        return newObject(constantPool().classEntry(type));
-    }
-
-    /**
      * Generate an instruction to load from an array
      * @param tk the array element type
      * @return this builder
@@ -2205,7 +2186,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder new_(ClassEntry clazz) {
-        return newObject(clazz);
+        return with(NewObjectInstruction.of(clazz));
     }
 
     /**
@@ -2215,7 +2196,7 @@ public sealed interface CodeBuilder
      * @throws IllegalArgumentException if {@code clazz} represents a primitive type
      */
     default CodeBuilder new_(ClassDesc clazz) {
-        return newObject(constantPool().classEntry(clazz));
+        return new_(constantPool().classEntry(clazz));
     }
 
     /**

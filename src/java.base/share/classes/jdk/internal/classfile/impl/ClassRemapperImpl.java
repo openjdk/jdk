@@ -243,7 +243,7 @@ public record ClassRemapperImpl(Function<ClassDesc, ClassDesc> mapFunction) impl
                             mapMethodDesc(idi.typeSymbol()),
                             idi.bootstrapArgs().stream().map(this::mapConstantValue).toArray(ConstantDesc[]::new)));
                 case NewObjectInstruction c ->
-                    cob.newObject(map(c.className().asSymbol()));
+                    cob.new_(map(c.className().asSymbol()));
                 case NewReferenceArrayInstruction c ->
                     cob.anewarray(map(c.componentType().asSymbol()));
                 case NewMultiArrayInstruction c ->
