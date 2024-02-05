@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,13 +67,13 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     NSK_DISPLAY1("    options:  \"%s\"\n", nsk_null_string(options));
     NSK_DISPLAY1("    reserved: 0x%p\n", (void*)jvm);
 
-    if (jvm == NULL) {
-        NSK_COMPLAIN1("First parameter 'vm' in JVM_OnLoad() is NULL: 0x%p\n", (void*)jvm);
+    if (jvm == nullptr) {
+        NSK_COMPLAIN1("First parameter 'vm' in JVM_OnLoad() is null: 0x%p\n", (void*)jvm);
         status = STATUS_FAILED;
     }
 
-    if (options == NULL) {
-        NSK_COMPLAIN1("Second parameter 'options' in JVM_OnLoad() is NULL: 0x%p\n", (void*)options);
+    if (options == nullptr) {
+        NSK_COMPLAIN1("Second parameter 'options' in JVM_OnLoad() is null: 0x%p\n", (void*)options);
         status = STATUS_FAILED;
     }
 

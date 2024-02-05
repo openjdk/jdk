@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,8 @@ extern "C" {
 /* ============================================================================= */
 
 /* scaffold objects */
-static JNIEnv* jni = NULL;
-static jvmtiEnv *jvmti = NULL;
+static JNIEnv* jni = nullptr;
+static jvmtiEnv *jvmti = nullptr;
 static jlong timeout = 0;
 
 /* constant names */
@@ -71,8 +71,8 @@ typedef struct {
 
 /* descriptions of tested methods */
 static MethodDesc methodsDesc[METHODS_COUNT] = {
-    { "javaMethod", "(I)I", NULL, 0, {}, {} },
-    { "nativeMethod", "(I)I", NULL, 0, {}, {} }
+    { "javaMethod", "(I)I", nullptr, 0, {}, {} },
+    { "nativeMethod", "(I)I", nullptr, 0, {}, {} }
 };
 
 /* current compilation moment */
@@ -166,15 +166,15 @@ static int generateEvents() {
  *    - enable events
  */
 static int prepare() {
-    jclass debugeeClass = NULL;
-    jclass threadClass = NULL;
-    jfieldID threadFieldID = NULL;
-    jthread thread = NULL;
+    jclass debugeeClass = nullptr;
+    jclass threadClass = nullptr;
+    jfieldID threadFieldID = nullptr;
+    jthread thread = nullptr;
     int i;
 
     for (i = 0; i < METHODS_COUNT; i++) {
         int j;
-        methodsDesc[i].method = (jmethodID)NULL;
+        methodsDesc[i].method = (jmethodID)nullptr;
         methodsDesc[i].compiled = NSK_FALSE;
         for (j = 0; j < MOMENTS_COUNT; j++) {
             methodsDesc[i].loadEvents[j] = 0;
@@ -182,31 +182,31 @@ static int prepare() {
         }
     }
 
-    if (!NSK_JNI_VERIFY(jni, (debugeeClass = jni->FindClass(DEBUGEE_CLASS_NAME)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (debugeeClass = jni->FindClass(DEBUGEE_CLASS_NAME)) != nullptr))
         return NSK_FALSE;
 
     if (!NSK_JNI_VERIFY(jni, (threadFieldID =
-            jni->GetStaticFieldID(debugeeClass, THREAD_FIELD_NAME, THREAD_FIELD_SIG)) != NULL))
+            jni->GetStaticFieldID(debugeeClass, THREAD_FIELD_NAME, THREAD_FIELD_SIG)) != nullptr))
         return NSK_FALSE;
 
     if (!NSK_JNI_VERIFY(jni, (thread = (jthread)
-            jni->GetStaticObjectField(debugeeClass, threadFieldID)) != NULL))
+            jni->GetStaticObjectField(debugeeClass, threadFieldID)) != nullptr))
         return NSK_FALSE;
 
-    if (!NSK_JNI_VERIFY(jni, (threadClass = jni->GetObjectClass(thread)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (threadClass = jni->GetObjectClass(thread)) != nullptr))
         return NSK_FALSE;
 
     NSK_DISPLAY0("Find tested methods:\n");
     for (i = 0; i < METHODS_COUNT; i++) {
         if (!NSK_JNI_VERIFY(jni, (methodsDesc[i].method =
-                jni->GetMethodID(threadClass, methodsDesc[i].methodName, methodsDesc[i].methodSig)) != NULL))
+                jni->GetMethodID(threadClass, methodsDesc[i].methodName, methodsDesc[i].methodSig)) != nullptr))
             return NSK_FALSE;
         NSK_DISPLAY3("    method #%d (%s): 0x%p\n",
                                 i, methodsDesc[i].methodName, (void*)methodsDesc[i].method);
     }
 
     NSK_DISPLAY0("Enable events\n");
-    if (!nsk_jvmti_enableEvents(JVMTI_ENABLE, EVENTS_COUNT, eventsList, NULL))
+    if (!nsk_jvmti_enableEvents(JVMTI_ENABLE, EVENTS_COUNT, eventsList, nullptr))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -282,7 +282,7 @@ static int checkEvents() {
  */
 static int clean() {
     NSK_DISPLAY0("Disable events\n");
-    if (!nsk_jvmti_enableEvents(JVMTI_DISABLE, EVENTS_COUNT, eventsList, NULL))
+    if (!nsk_jvmti_enableEvents(JVMTI_DISABLE, EVENTS_COUNT, eventsList, nullptr))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -383,7 +383,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     timeout = nsk_jvmti_getWaitTime() * 60 * 1000;
 
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     {
@@ -403,7 +403,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
             return JNI_ERR;
     }
 
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     return JNI_OK;

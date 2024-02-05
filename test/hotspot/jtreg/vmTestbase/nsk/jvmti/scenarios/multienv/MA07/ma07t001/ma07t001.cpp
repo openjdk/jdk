@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ static jlong timeout = 0;
 
 /* test objects */
 static jint klass_byte_count = 0;
-static unsigned char *klass_bytes = NULL;
+static unsigned char *klass_bytes = nullptr;
 static int ClassFileLoadHookEventFlag = NSK_FALSE;
 
 const char* CLASS_NAME = "nsk/jvmti/scenarios/multienv/MA07/ma07t001a";
@@ -62,11 +62,11 @@ ClassFileLoadHook(jvmtiEnv *jvmti_env, JNIEnv *jni_env,
     jint magicIndex = 0;
     jint i;
 
-    if (name != NULL && (strcmp(name, CLASS_NAME) == 0)) {
+    if (name != nullptr && (strcmp(name, CLASS_NAME) == 0)) {
         ClassFileLoadHookEventFlag = NSK_TRUE;
         NSK_DISPLAY0("ClassFileLoadHook event\n");
 
-        if (!NSK_VERIFY(class_being_redefined == NULL)) {
+        if (!NSK_VERIFY(class_being_redefined == nullptr)) {
             nsk_jvmti_setFailStatus();
             return;
         }
@@ -151,7 +151,7 @@ JNIEXPORT jint JNI_OnLoad_ma07t001(JavaVM *jvm, char *options, void *reserved) {
 }
 #endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
-    jvmtiEnv* jvmti = NULL;
+    jvmtiEnv* jvmti = nullptr;
     jvmtiEventCallbacks callbacks;
 
     NSK_DISPLAY0("Agent_OnLoad\n");
@@ -162,10 +162,10 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     timeout = nsk_jvmti_getWaitTime() * 60 * 1000;
 
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     memset(&callbacks, 0, sizeof(callbacks));
@@ -173,7 +173,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     if (!NSK_VERIFY(nsk_jvmti_init_MA(&callbacks)))
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, nullptr)))
         return JNI_ERR;
 
     return JNI_OK;

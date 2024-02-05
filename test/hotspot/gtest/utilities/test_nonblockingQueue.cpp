@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ static void initialize(Element* elements, size_t size, TestQueue* queue) {
   ASSERT_TRUE(queue->empty());
   ASSERT_EQ(0u, queue->length());
   ASSERT_TRUE(queue->is_end(queue->first()));
-  ASSERT_TRUE(queue->pop() == NULL);
+  ASSERT_TRUE(queue->pop() == nullptr);
 
   for (size_t id = 0; id < size; ++id) {
     ASSERT_EQ(id, queue->length());
@@ -97,13 +97,13 @@ TEST_F(NonblockingQueueTestBasics, pop) {
     ASSERT_FALSE(queue.empty());
     ASSERT_EQ(nelements - i, queue.length());
     Element* e = queue.pop();
-    ASSERT_TRUE(e != NULL);
+    ASSERT_TRUE(e != nullptr);
     ASSERT_EQ(&elements[i], e);
     ASSERT_EQ(i, e->id());
   }
   ASSERT_TRUE(queue.empty());
   ASSERT_EQ(0u, queue.length());
-  ASSERT_TRUE(queue.pop() == NULL);
+  ASSERT_TRUE(queue.pop() == nullptr);
 }
 
 TEST_F(NonblockingQueueTestBasics, append) {
@@ -111,7 +111,7 @@ TEST_F(NonblockingQueueTestBasics, append) {
   ASSERT_TRUE(other_queue.empty());
   ASSERT_EQ(0u, other_queue.length());
   ASSERT_TRUE(other_queue.is_end(other_queue.first()));
-  ASSERT_TRUE(other_queue.pop() == NULL);
+  ASSERT_TRUE(other_queue.pop() == nullptr);
 
   Pair<Element*, Element*> pair = queue.take_all();
   other_queue.append(*pair.first, *pair.second);
@@ -119,22 +119,22 @@ TEST_F(NonblockingQueueTestBasics, append) {
   ASSERT_TRUE(queue.empty());
   ASSERT_EQ(0u, queue.length());
   ASSERT_TRUE(queue.is_end(queue.first()));
-  ASSERT_TRUE(queue.pop() == NULL);
+  ASSERT_TRUE(queue.pop() == nullptr);
 
   for (size_t i = 0; i < nelements; ++i) {
     ASSERT_EQ(nelements - i, other_queue.length());
     Element* e = other_queue.pop();
-    ASSERT_TRUE(e != NULL);
+    ASSERT_TRUE(e != nullptr);
     ASSERT_EQ(&elements[i], e);
     ASSERT_EQ(i, e->id());
   }
   ASSERT_EQ(0u, other_queue.length());
-  ASSERT_TRUE(other_queue.pop() == NULL);
+  ASSERT_TRUE(other_queue.pop() == nullptr);
 }
 
 TEST_F(NonblockingQueueTestBasics, two_queues) {
   TestQueue1 queue1;
-  ASSERT_TRUE(queue1.pop() == NULL);
+  ASSERT_TRUE(queue1.pop() == nullptr);
 
   for (size_t id = 0; id < nelements; ++id) {
     queue1.push(elements[id]);
@@ -142,8 +142,8 @@ TEST_F(NonblockingQueueTestBasics, two_queues) {
   ASSERT_EQ(nelements, queue1.length());
   Element* e0 = queue.first();
   Element* e1 = queue1.first();
-  ASSERT_TRUE(e0 != NULL);
-  ASSERT_TRUE(e1 != NULL);
+  ASSERT_TRUE(e0 != nullptr);
+  ASSERT_TRUE(e1 != nullptr);
   ASSERT_FALSE(queue.is_end(e0));
   ASSERT_FALSE(queue1.is_end(e1));
   while (!queue.is_end(e0) && !queue1.is_end(e1)) {
@@ -159,12 +159,12 @@ TEST_F(NonblockingQueueTestBasics, two_queues) {
     ASSERT_EQ(nelements - i, queue1.length());
 
     Element* e = queue.pop();
-    ASSERT_TRUE(e != NULL);
+    ASSERT_TRUE(e != nullptr);
     ASSERT_EQ(&elements[i], e);
     ASSERT_EQ(i, e->id());
 
     Element* e1 = queue1.pop();
-    ASSERT_TRUE(e1 != NULL);
+    ASSERT_TRUE(e1 != nullptr);
     ASSERT_EQ(&elements[i], e1);
     ASSERT_EQ(i, e1->id());
 
@@ -172,8 +172,8 @@ TEST_F(NonblockingQueueTestBasics, two_queues) {
   }
   ASSERT_EQ(0u, queue.length());
   ASSERT_EQ(0u, queue1.length());
-  ASSERT_TRUE(queue.pop() == NULL);
-  ASSERT_TRUE(queue1.pop() == NULL);
+  ASSERT_TRUE(queue.pop() == nullptr);
+  ASSERT_TRUE(queue1.pop() == nullptr);
 }
 
 class NonblockingQueueTestThread : public JavaTestThread {
@@ -206,7 +206,7 @@ public:
     Atomic::release_store_fence(&_ready, true);
     while (true) {
       Element* e = _from->pop();
-      if (e != NULL) {
+      if (e != nullptr) {
         _to->push(*e);
         Atomic::inc(_processed);
         ++_local_processed;
@@ -278,7 +278,7 @@ TEST_VM(NonblockingQueueTest, stress) {
   ASSERT_EQ(0u, start_queue.length());
   ASSERT_EQ(0u, middle_queue.length());
   ASSERT_EQ(nelements, final_queue.length());
-  while (final_queue.pop() != NULL) {}
+  while (final_queue.pop() != nullptr) {}
 
   FREE_C_HEAP_ARRAY(Element, elements);
 }

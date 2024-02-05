@@ -51,7 +51,7 @@ class NativeInstruction {
   friend class Relocation;
 
  public:
-  bool is_nop() const { return Assembler::is_nop(long_at(0)); }
+  bool is_post_call_nop() const { return MacroAssembler::is_post_call_nop(long_at(0)); }
 
   bool is_jump() const { return Assembler::is_b(long_at(0)); } // See NativeGeneralJump.
 
@@ -506,10 +506,50 @@ class NativeMovRegMem: public NativeInstruction {
 };
 
 class NativePostCallNop: public NativeInstruction {
+
+    // We use CMPI/CMPLI to represent Post Call Nops (PCN)
+
+    //   Bit |0         5|6    |9 |10|11     |16                          31|
+    //       +--------------------------------------------------------------+
+    // Field |OPCODE     |BF   |/ |L |RA     |SI                            |
+    //       +--------------------------------------------------------------+
+    //       |0 0 1 0 1|DATA HI| 1|        DATA LO                          |
+    //       |         |4 bits |  |        22 bits                          |
+    //
+    // Bit 9 is always 1 for PCNs to distinguish them from regular CMPI/CMPLI
+    //
+    // Using both, CMPLI (opcode 10 = 0b001010) and CMPI (opcode 11 = 0b001011) for
+    // PCNs allows using bit 5 from the opcode to encode DATA HI.
+
+    enum {
+      ppc_data_lo_bits = 31 - 9,
+      ppc_data_lo_mask = right_n_bits(ppc_data_lo_bits),
+      ppc_data_hi_bits = 9 - 5,
+      ppc_data_hi_shift = ppc_data_lo_bits + 1,
+      ppc_data_hi_mask = right_n_bits(ppc_data_hi_bits) << ppc_data_hi_shift,
+      ppc_data_bits = ppc_data_lo_bits + ppc_data_hi_bits,
+
+      ppc_oopmap_slot_bits = 9,
+      ppc_oopmap_slot_mask = right_n_bits(ppc_oopmap_slot_bits),
+      ppc_cb_offset_bits = ppc_data_bits - ppc_oopmap_slot_bits,
+      ppc_cb_offset_mask = right_n_bits(ppc_cb_offset_bits),
+};
+
 public:
-  bool check() const { return is_nop(); }
-  bool decode(int32_t& oopmap_slot, int32_t& cb_offset) const { return false; }
-  bool patch(int32_t oopmap_slot, int32_t cb_offset) { return false; }
+  bool check() const { return is_post_call_nop(); }
+  bool decode(int32_t& oopmap_slot, int32_t& cb_offset) const {
+    uint32_t instr_bits = long_at(0);
+    uint32_t data_lo = instr_bits & ppc_data_lo_mask;
+    uint32_t data_hi = (instr_bits & ppc_data_hi_mask) >> 1;
+    uint32_t data = data_hi | data_lo;
+    if (data == 0) {
+      return false; // no data found
+    }
+    cb_offset = (data & ppc_cb_offset_mask) << 2;
+    oopmap_slot = data >> ppc_cb_offset_bits;
+    return true; // decoding succeeded
+  }
+  bool patch(int32_t oopmap_slot, int32_t cb_offset);
   void make_deopt();
 };
 
