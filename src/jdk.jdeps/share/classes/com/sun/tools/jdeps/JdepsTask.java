@@ -32,6 +32,7 @@ import static java.util.stream.Collectors.*;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.module.FindException;
 import java.lang.module.ResolutionException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -534,7 +535,7 @@ class JdepsTask {
                 log.println(getMessage("main.usage.summary", PROGNAME));
             }
             return EXIT_CMDERR;
-        } catch (ResolutionException e) {
+        } catch (ResolutionException | FindException e) {
             reportError("err.exception.message", e.getMessage());
             return EXIT_CMDERR;
         } catch (IOException e) {
