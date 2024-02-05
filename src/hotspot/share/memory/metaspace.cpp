@@ -841,6 +841,14 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
   // Try to allocate metadata.
   MetaWord* result = loader_data->metaspace_non_null()->allocate(word_size, mdtype);
 
+  // Allocation failed.
+  if (is_init_completed() && Thread::current()->is_Java_thread()) {
+    // Only start a GC if the bootstrapping has completed, and this is a JavaThread.
+    // Try to clean out some heap memory and retry. This can prevent premature
+    // expansion of the metaspace.
+    result = Universe::heap()->satisfy_failed_metadata_allocation(loader_data, word_size, mdtype);
+  }
+
   if (result != nullptr) {
     // Zero initialize.
     Copy::fill_to_words((HeapWord*)result, word_size, 0);
