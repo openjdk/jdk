@@ -25,23 +25,19 @@
  * @test
  * @bug 4645152 4785453
  * @summary javac compiler incorrectly inserts <clinit> when -g is specified
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
+ * @enablePreview
  * @run compile -g ConstDebugTest.java
  * @run main ConstDebugTest
  */
 import java.nio.file.Paths;
-import jdk.internal.classfile.*;
+import java.lang.classfile.*;
 
 public class ConstDebugTest {
 
     public static final long l = 12;
 
     public static void main(String args[]) throws Exception {
-        ClassModel classModel = Classfile.of().parse(Paths.get(System.getProperty("test.classes"),
+        ClassModel classModel = ClassFile.of().parse(Paths.get(System.getProperty("test.classes"),
                 ConstDebugTest.class.getSimpleName() + ".class"));
         for (MethodModel method: classModel.methods()) {
             if (method.methodName().equalsString("<clinit>")) {

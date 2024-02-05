@@ -126,20 +126,20 @@ class Argument {
   int _number;  // The number of the argument.
  public:
   enum {
-    // Only 8 registers may contain integer parameters.
-    n_register_parameters = 8,
-    // Can have up to 8 floating registers.
-    n_float_register_parameters = 8,
-
     // PPC C calling conventions.
     // The first eight arguments are passed in int regs if they are int.
     n_int_register_parameters_c = 8,
     // The first thirteen float arguments are passed in float regs.
     n_float_register_parameters_c = 13,
-    // Only the first 8 parameters are not placed on the stack. Aix disassembly
-    // shows that xlC places all float args after argument 8 on the stack AND
-    // in a register. This is not documented, but we follow this convention, too.
-    n_regs_not_on_stack_c = 8,
+
+#ifdef VM_LITTLE_ENDIAN
+    // Floats are in the least significant word of an argument slot.
+    float_on_stack_offset_in_bytes_c = 0,
+#else
+    // Although AIX runs on big endian CPU, float is in the most
+    // significant word of an argument slot.
+    float_on_stack_offset_in_bytes_c = AIX_ONLY(0) NOT_AIX(4),
+#endif
 
     n_int_register_parameters_j   = 8,  // duplicates num_java_iarg_registers
     n_float_register_parameters_j = 13, // num_java_farg_registers
@@ -150,7 +150,7 @@ class Argument {
   int  number() const { return _number; }
 
   // Locating register-based arguments:
-  bool is_register() const { return _number < n_register_parameters; }
+  bool is_register() const { return _number < n_int_register_parameters_c; }
 
   Register as_register() const {
     assert(is_register(), "must be a register argument");

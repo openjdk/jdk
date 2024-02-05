@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -70,6 +71,7 @@ import com.sun.source.doctree.EndElementTree;
 import com.sun.source.doctree.EntityTree;
 import com.sun.source.doctree.ErroneousTree;
 import com.sun.source.doctree.EscapeTree;
+import com.sun.source.doctree.IndexTree;
 import com.sun.source.doctree.InheritDocTree;
 import com.sun.source.doctree.InlineTagTree;
 import com.sun.source.doctree.LinkTree;
@@ -82,11 +84,13 @@ import com.sun.source.util.SimpleDocTreeVisitor;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.Head;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlDocument;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Links;
+import jdk.javadoc.internal.doclets.formats.html.markup.ListBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.Script;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
@@ -162,6 +166,8 @@ public abstract class HtmlDocletWriter {
 
     private final Set<String> headingIds = new HashSet<>();
 
+    protected final TableOfContents tableOfContents;
+
     /**
      * To check whether the repeated annotations is documented or not.
      */
@@ -217,6 +223,7 @@ public abstract class HtmlDocletWriter {
         this.pathToRoot = path.parent().invert();
         this.docPaths = configuration.docPaths;
         this.mainBodyScript = new Script();
+        this.tableOfContents = new TableOfContents(this);
 
         if (generating) {
             writeGenerating();
@@ -412,6 +419,20 @@ public abstract class HtmlDocletWriter {
     }
 
     /**
+     * {@return true if the page written by this writer should be indexed,
+     * false otherwise}
+     *
+     * Some pages merely aggregate filtered information available on other pages
+     * and, thus, have no indexing value. In fact, if indexed, they would
+     * clutter the index and mislead the reader.
+     *
+     * @implSpec The default implementation returns {@code false}.
+     */
+    public boolean isIndexable() {
+        return false;
+    }
+
+    /**
      * Generates the HTML document tree and prints it out.
      *
      * @param metakeywords Array of String keywords for META tag. Each element
@@ -504,7 +525,7 @@ public abstract class HtmlDocletWriter {
      *
      * @return the {@code <header>} element
      */
-    protected HtmlTree getHeader(Navigation.PageMode pageMode) {
+    protected Content getHeader(Navigation.PageMode pageMode) {
         return getHeader(pageMode, null);
     }
 
@@ -517,10 +538,10 @@ public abstract class HtmlDocletWriter {
      *
      * @return the {@code <header>} element
      */
-    protected HtmlTree getHeader(Navigation.PageMode pageMode, Element element) {
+    protected Content getHeader(Navigation.PageMode pageMode, Element element) {
         return HtmlTree.HEADER()
-                .add(RawHtml.of(replaceDocRootDir(options.top())))
-                .add(getNavBar(pageMode, element).getContent());
+                        .add(RawHtml.of(replaceDocRootDir(options.top())))
+                        .add(getNavBar(pageMode, element).getContent());
     }
 
     /**
@@ -1369,7 +1390,8 @@ public abstract class HtmlDocletWriter {
                 @Override
                 public Boolean visitStartElement(StartElementTree node, Content content) {
                     Content attrs = new ContentBuilder();
-                    if (node.getName().toString().matches("(?i)h[1-6]")) {
+                    if (node.getName().toString().matches("(?i)h[1-6]")
+                            && isIndexable()) {
                         createSectionIdAndIndex(node, trees, attrs, element, context);
                     }
                     for (DocTree dt : node.getAttributes()) {
@@ -1450,6 +1472,15 @@ public abstract class HtmlDocletWriter {
                 sb.append(text.getBody());
             } else if (docTree instanceof LiteralTree literal) {
                 sb.append(literal.getBody().getBody());
+            } else if (docTree instanceof IndexTree index) {
+                DocTree searchTerm = index.getSearchTerm();
+                String tagText = (searchTerm instanceof TextTree tt) ? tt.getBody() : "";
+                if (tagText.charAt(0) == '"' && tagText.charAt(tagText.length() - 1) == '"') {
+                    tagText = tagText.substring(1, tagText.length() - 1);
+                }
+                sb.append(tagText);
+            } else if (docTree instanceof EntityTree entity) {
+                sb.append(utils.docTrees.getCharacters(entity));
             } else if (docTree instanceof LinkTree link) {
                 var label = link.getLabel();
                 sb.append(label.isEmpty() ? link.getReference().getSignature() : label.toString());
@@ -1468,6 +1499,8 @@ public abstract class HtmlDocletWriter {
             HtmlId htmlId = htmlIds.forHeading(headingContent, headingIds);
             id = htmlId.name();
             attrs.add("id=\"").add(htmlId.name()).add("\"");
+        } else {
+            headingIds.add(id);
         }
         // Generate index item
         if (!headingContent.isEmpty() && configuration.indexBuilder != null) {
@@ -1477,6 +1510,10 @@ public abstract class HtmlDocletWriter {
                     resources.getText("doclet.Section"),
                     new DocLink(path, id));
             configuration.indexBuilder.add(item);
+        }
+        // Record second-level headings for use in table of contents
+        if (tableOfContents != null && node.getName().toString().equalsIgnoreCase("h2")) {
+            tableOfContents.addLink(HtmlId.of(id), Text.of(headingContent));
         }
     }
 
@@ -2053,6 +2090,14 @@ public abstract class HtmlDocletWriter {
         }
     }
 
+    public void addRestrictedSummary(Element forWhat, Content target) {
+        if (utils.isRestrictedAPI(forWhat)) {
+            var div = HtmlTree.DIV(HtmlStyle.block);
+            div.add(HtmlTree.SPAN(HtmlStyle.restrictedLabel, contents.restrictedPhrase));
+            target.add(div);
+        }
+    }
+
     public void addPreviewInfo(Element forWhat, Content target) {
         if (utils.isPreviewAPI(forWhat)) {
             //in Java platform:
@@ -2201,6 +2246,26 @@ public abstract class HtmlDocletWriter {
             specURI = baseURI.resolve(specURI);
         }
         return specURI;
+    }
+
+    public void addRestrictedInfo(ExecutableElement forWhat, Content target) {
+        if (utils.isRestrictedAPI(forWhat)) {
+            //in Java platform:
+            var restrictedDiv = HtmlTree.DIV(HtmlStyle.restrictedBlock);
+            restrictedDiv.setId(htmlIds.forRestrictedSection(forWhat));
+            String name = forWhat.getSimpleName().toString();
+            var nameCode = HtmlTree.CODE(Text.of(name));
+            String leadingNoteKey = "doclet.RestrictedLeadingNote";
+            Content leadingNote =
+                    contents.getContent(leadingNoteKey, nameCode);
+            restrictedDiv.add(HtmlTree.SPAN(HtmlStyle.restrictedLabel,
+                    leadingNote));
+            Content note1 = contents.getContent("doclet.RestrictedTrailingNote1", nameCode);
+            restrictedDiv.add(HtmlTree.DIV(HtmlStyle.restrictedComment, note1));
+            Content note2 = contents.getContent("doclet.RestrictedTrailingNote2", nameCode);
+            restrictedDiv.add(HtmlTree.DIV(HtmlStyle.restrictedComment, note2));
+            target.add(restrictedDiv);
+        }
     }
 
 }

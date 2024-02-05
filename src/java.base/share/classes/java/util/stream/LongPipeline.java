@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,10 +168,10 @@ abstract class LongPipeline<E_IN>
     }
 
     private <U> Stream<U> mapToObj(LongFunction<? extends U> mapper, int opFlags) {
-        return new ReferencePipeline.StatelessOp<Long, U>(this, StreamShape.LONG_VALUE, opFlags) {
+        return new ReferencePipeline.StatelessOp<>(this, StreamShape.LONG_VALUE, opFlags) {
             @Override
             Sink<Long> opWrapSink(int flags, Sink<U> sink) {
-                return new Sink.ChainedLong<U>(sink) {
+                return new Sink.ChainedLong<>(sink) {
                     @Override
                     public void accept(long t) {
                         downstream.accept(mapper.apply(t));
@@ -197,10 +197,10 @@ abstract class LongPipeline<E_IN>
 
     @Override
     public final DoubleStream asDoubleStream() {
-        return new DoublePipeline.StatelessOp<Long>(this, StreamShape.LONG_VALUE, StreamOpFlag.NOT_DISTINCT) {
+        return new DoublePipeline.StatelessOp<>(this, StreamShape.LONG_VALUE, StreamOpFlag.NOT_DISTINCT) {
             @Override
             Sink<Long> opWrapSink(int flags, Sink<Double> sink) {
-                return new Sink.ChainedLong<Double>(sink) {
+                return new Sink.ChainedLong<>(sink) {
                     @Override
                     public void accept(long t) {
                         downstream.accept((double) t);
@@ -218,11 +218,11 @@ abstract class LongPipeline<E_IN>
     @Override
     public final LongStream map(LongUnaryOperator mapper) {
         Objects.requireNonNull(mapper);
-        return new StatelessOp<Long>(this, StreamShape.LONG_VALUE,
-                                     StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT) {
+        return new StatelessOp<>(this, StreamShape.LONG_VALUE,
+                StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT) {
             @Override
             Sink<Long> opWrapSink(int flags, Sink<Long> sink) {
-                return new Sink.ChainedLong<Long>(sink) {
+                return new Sink.ChainedLong<>(sink) {
                     @Override
                     public void accept(long t) {
                         downstream.accept(mapper.applyAsLong(t));
@@ -241,11 +241,11 @@ abstract class LongPipeline<E_IN>
     @Override
     public final IntStream mapToInt(LongToIntFunction mapper) {
         Objects.requireNonNull(mapper);
-        return new IntPipeline.StatelessOp<Long>(this, StreamShape.LONG_VALUE,
-                                                 StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT) {
+        return new IntPipeline.StatelessOp<>(this, StreamShape.LONG_VALUE,
+                StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT) {
             @Override
             Sink<Long> opWrapSink(int flags, Sink<Integer> sink) {
-                return new Sink.ChainedLong<Integer>(sink) {
+                return new Sink.ChainedLong<>(sink) {
                     @Override
                     public void accept(long t) {
                         downstream.accept(mapper.applyAsInt(t));
@@ -258,11 +258,11 @@ abstract class LongPipeline<E_IN>
     @Override
     public final DoubleStream mapToDouble(LongToDoubleFunction mapper) {
         Objects.requireNonNull(mapper);
-        return new DoublePipeline.StatelessOp<Long>(this, StreamShape.LONG_VALUE,
-                                                    StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT) {
+        return new DoublePipeline.StatelessOp<>(this, StreamShape.LONG_VALUE,
+                StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT) {
             @Override
             Sink<Long> opWrapSink(int flags, Sink<Double> sink) {
-                return new Sink.ChainedLong<Double>(sink) {
+                return new Sink.ChainedLong<>(sink) {
                     @Override
                     public void accept(long t) {
                         downstream.accept(mapper.applyAsDouble(t));
@@ -275,11 +275,11 @@ abstract class LongPipeline<E_IN>
     @Override
     public final LongStream flatMap(LongFunction<? extends LongStream> mapper) {
         Objects.requireNonNull(mapper);
-        return new StatelessOp<Long>(this, StreamShape.LONG_VALUE,
-                                     StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT | StreamOpFlag.NOT_SIZED) {
+        return new StatelessOp<>(this, StreamShape.LONG_VALUE,
+                StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT | StreamOpFlag.NOT_SIZED) {
             @Override
             Sink<Long> opWrapSink(int flags, Sink<Long> sink) {
-                return new Sink.ChainedLong<Long>(sink) {
+                return new Sink.ChainedLong<>(sink) {
                     // true if cancellationRequested() has been called
                     boolean cancellationRequestedCalled;
 
@@ -297,10 +297,10 @@ abstract class LongPipeline<E_IN>
                             if (result != null) {
                                 if (!cancellationRequestedCalled) {
                                     result.sequential().forEach(downstreamAsLong);
-                                }
-                                else {
+                                } else {
                                     var s = result.sequential().spliterator();
-                                    do { } while (!downstream.cancellationRequested() && s.tryAdvance(downstreamAsLong));
+                                    do {
+                                    } while (!downstream.cancellationRequested() && s.tryAdvance(downstreamAsLong));
                                 }
                             }
                         }
@@ -348,7 +348,7 @@ abstract class LongPipeline<E_IN>
     public LongStream unordered() {
         if (!isOrdered())
             return this;
-        return new StatelessOp<Long>(this, StreamShape.LONG_VALUE, StreamOpFlag.NOT_ORDERED) {
+        return new StatelessOp<>(this, StreamShape.LONG_VALUE, StreamOpFlag.NOT_ORDERED) {
             @Override
             Sink<Long> opWrapSink(int flags, Sink<Long> sink) {
                 return sink;
@@ -359,11 +359,11 @@ abstract class LongPipeline<E_IN>
     @Override
     public final LongStream filter(LongPredicate predicate) {
         Objects.requireNonNull(predicate);
-        return new StatelessOp<Long>(this, StreamShape.LONG_VALUE,
-                                     StreamOpFlag.NOT_SIZED) {
+        return new StatelessOp<>(this, StreamShape.LONG_VALUE,
+                StreamOpFlag.NOT_SIZED) {
             @Override
             Sink<Long> opWrapSink(int flags, Sink<Long> sink) {
-                return new Sink.ChainedLong<Long>(sink) {
+                return new Sink.ChainedLong<>(sink) {
                     @Override
                     public void begin(long size) {
                         downstream.begin(-1);
@@ -382,11 +382,11 @@ abstract class LongPipeline<E_IN>
     @Override
     public final LongStream peek(LongConsumer action) {
         Objects.requireNonNull(action);
-        return new StatelessOp<Long>(this, StreamShape.LONG_VALUE,
-                                     0) {
+        return new StatelessOp<>(this, StreamShape.LONG_VALUE,
+                0) {
             @Override
             Sink<Long> opWrapSink(int flags, Sink<Long> sink) {
-                return new Sink.ChainedLong<Long>(sink) {
+                return new Sink.ChainedLong<>(sink) {
                     @Override
                     public void accept(long t) {
                         action.accept(t);
@@ -435,7 +435,7 @@ abstract class LongPipeline<E_IN>
     public final LongStream distinct() {
         // While functional and quick to implement, this approach is not very efficient.
         // An efficient version requires a long-specific map/set implementation.
-        return boxed().distinct().mapToLong(i -> (long) i);
+        return boxed().distinct().mapToLong(i -> i);
     }
 
     // Terminal ops from LongStream

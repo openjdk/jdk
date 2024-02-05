@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -318,12 +318,12 @@ public class JTextArea extends JTextComponent {
     }
 
     /**
-     * Gets the line-wrapping policy of the text area.  If set
-     * to true the lines will be wrapped if they are too long
-     * to fit within the allocated width.  If set to false,
-     * the lines will always be unwrapped.
+     * Gets the line-wrapping policy of the text area. If set to {@code true}
+     * the lines will be wrapped if they are too long to fit within the
+     * allocated width. If set to {@code false}, the lines will always be
+     * unwrapped.
      *
-     * @return if lines will be wrapped
+     * @return {@code true} if lines will be wrapped, otherwise {@code false}
      */
     public boolean getLineWrap() {
         return wrap;
@@ -350,14 +350,13 @@ public class JTextArea extends JTextComponent {
     }
 
     /**
-     * Gets the style of wrapping used if the text area is wrapping
-     * lines.  If set to true the lines will be wrapped at word
-     * boundaries (ie whitespace) if they are too long
-     * to fit within the allocated width.  If set to false,
-     * the lines will be wrapped at character boundaries.
+     * Gets the style of wrapping used if the text area is wrapping lines. If
+     * set to {@code true} the lines will be wrapped at word boundaries (ie
+     * whitespace) if they are too long to fit within the allocated width. If
+     * set to {@code false}, the lines will be wrapped at character boundaries.
      *
-     * @return if the wrap style should be word boundaries
-     *  instead of character boundaries
+     * @return {@code true} if the wrap style should be word boundaries instead
+     *         of character boundaries, otherwise {@code false}
      * @see #setWrapStyleWord
      */
     public boolean getWrapStyleWord() {

@@ -23,8 +23,8 @@
 package com.sun.org.apache.xml.internal.security.utils;
 
 import java.math.BigInteger;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.sun.org.apache.xml.internal.security.exceptions.XMLSecurityException;
 import org.w3c.dom.Attr;

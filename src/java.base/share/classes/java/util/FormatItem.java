@@ -61,7 +61,7 @@ class FormatItem {
     private static final MethodHandle STRING_PREPEND =
             JLA.stringConcatHelper("prepend",
                     MethodType.methodType(long.class, long.class, byte[].class,
-                            String.class, String.class));
+                            String.class));
 
     private static final MethodHandle SELECT_GETCHAR_MH =
             JLA.stringConcatHelper("selectGetChar",
@@ -87,8 +87,7 @@ class FormatItem {
 
     private static long stringPrepend(long lengthCoder, byte[] buffer,
                                             String value) throws Throwable {
-        return (long)STRING_PREPEND.invokeExact(lengthCoder, buffer, value,
-                (String)null);
+        return (long)STRING_PREPEND.invokeExact(lengthCoder, buffer, value);
     }
 
     private static MethodHandle selectGetChar(long indexCoder) throws Throwable {

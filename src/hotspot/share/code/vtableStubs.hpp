@@ -80,10 +80,11 @@ class VtableStubs : AllStatic {
     mask = N - 1
   };
 
+  static_assert(is_power_of_2((int)N), "N must be a power of 2");
+
  private:
   friend class VtableStub;
-  static VtableStub* _table[N];                  // table of existing stubs
-  static int         _number_of_vtable_stubs;    // number of stubs created so far (for statistics)
+  static VtableStub* volatile _table[N];                  // table of existing stubs
   static int         _vtab_stub_size;            // current size estimate for vtable stub (quasi-constant)
   static int         _itab_stub_size;            // current size estimate for itable stub (quasi-constant)
 
@@ -106,9 +107,9 @@ class VtableStubs : AllStatic {
   static address     find_itable_stub(int itable_index) { return find_stub(false, itable_index); }
 
   static VtableStub* entry_point(address pc);                        // vtable stub entry point for a pc
+  static bool        is_icholder_entry(address pc);                  // is the blob containing pc (which must be a vtable blob) an icholder?
   static bool        contains(address pc);                           // is pc within any stub?
   static VtableStub* stub_containing(address pc);                    // stub containing pc or nullptr
-  static int         number_of_vtable_stubs() { return _number_of_vtable_stubs; }
   static void        initialize();
   static void        vtable_stub_do(void f(VtableStub*));            // iterates over all vtable stubs
 };

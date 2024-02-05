@@ -36,6 +36,7 @@
 #include "oops/klass.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/os.hpp"
@@ -650,6 +651,53 @@ void CodeInstaller::initialize_dependencies(HotSpotCompiledCodeStream* stream, u
   }
 }
 
+JVMCI::CodeInstallResult CodeInstaller::install_runtime_stub(CodeBlob*& cb,
+                                                             const char* name,
+                                                             CodeBuffer* buffer,
+                                                             int stack_slots,
+                                                             JVMCI_TRAPS) {
+  if (name == nullptr) {
+    JVMCI_ERROR_OK("stub should have a name");
+  }
+
+  name = os::strdup(name);
+  GrowableArray<RuntimeStub*> *stubs_to_free = nullptr;
+#ifdef ASSERT
+  const char* val = Arguments::PropertyList_get_value(Arguments::system_properties(), "test.jvmci.forceRuntimeStubAllocFail");
+  if (val != nullptr && strstr(name , val) != 0) {
+    stubs_to_free = new GrowableArray<RuntimeStub*>();
+    JVMCI_event_1("forcing allocation of %s in code cache to fail", name);
+  }
+#endif
+
+  do {
+    RuntimeStub* stub = RuntimeStub::new_runtime_stub(name,
+                                       buffer,
+                                       _offsets.value(CodeOffsets::Frame_Complete),
+                                       stack_slots,
+                                       _debug_recorder->_oopmaps,
+                                       /* caller_must_gc_arguments */ false,
+                                       /* alloc_fail_is_fatal */ false);
+    cb = stub;
+    if (stub == nullptr) {
+      // Allocation failed
+#ifdef ASSERT
+      if (stubs_to_free != nullptr) {
+        JVMCI_event_1("allocation of %s in code cache failed, freeing %d stubs", name, stubs_to_free->length());
+        for (GrowableArrayIterator<RuntimeStub*> iter = stubs_to_free->begin(); iter != stubs_to_free->end(); ++iter) {
+          RuntimeStub::free(*iter);
+        }
+      }
+#endif
+      return JVMCI::cache_full;
+    }
+    if (stubs_to_free == nullptr) {
+      return JVMCI::ok;
+    }
+    stubs_to_free->append(stub);
+  } while (true);
+}
+
 JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
     jlong compiled_code_buffer,
     bool with_type_info,
@@ -707,17 +755,7 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
   int stack_slots = _total_frame_size / HeapWordSize; // conversion to words
 
   if (!is_nmethod) {
-    if (name == nullptr) {
-      JVMCI_ERROR_OK("stub should have a name");
-    }
-    name = os::strdup(name); // Note: this leaks. See JDK-8289632
-    cb = RuntimeStub::new_runtime_stub(name,
-                                       &buffer,
-                                       _offsets.value(CodeOffsets::Frame_Complete),
-                                       stack_slots,
-                                       _debug_recorder->_oopmaps,
-                                       false);
-    result = JVMCI::ok;
+    return install_runtime_stub(cb, name, &buffer, stack_slots, JVMCI_CHECK_OK);
   } else {
     if (compile_state != nullptr) {
       jvmci_env()->set_compile_state(compile_state);

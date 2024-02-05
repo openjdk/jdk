@@ -25,7 +25,7 @@
   @test
   @bug 4190081
   @summary  Confirm that the you see "Z" shapes on the printed page.
-  @author prr/rbi: area=PrinterJob
+  @key printer
   @run main/manual ThinLines
 */
 

@@ -387,8 +387,7 @@ class SharedRuntime: AllStatic {
   // to be filled by the c_calling_convention method. On other architectures,
   // null is being passed as the second VMRegPair array, so arguments are either
   // passed in a register OR in a stack slot.
-  static int c_calling_convention(const BasicType *sig_bt, VMRegPair *regs, VMRegPair *regs2,
-                                  int total_args_passed);
+  static int c_calling_convention(const BasicType *sig_bt, VMRegPair *regs, int total_args_passed);
 
   static int vector_calling_convention(VMRegPair *regs,
                                        uint num_bits,
@@ -575,10 +574,11 @@ class SharedRuntime: AllStatic {
   static address nof_interface_calls_addr()             { return (address)&_nof_interface_calls; }
   static address nof_inlined_interface_calls_addr()     { return (address)&_nof_inlined_interface_calls; }
   static void print_call_statistics(uint64_t comp_total);
-  static void print_statistics();
   static void print_ic_miss_histogram();
 
 #endif // PRODUCT
+
+  static void print_statistics() PRODUCT_RETURN;
 };
 
 

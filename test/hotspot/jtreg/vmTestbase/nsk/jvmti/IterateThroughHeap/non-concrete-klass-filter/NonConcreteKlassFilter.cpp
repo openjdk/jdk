@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,7 +141,7 @@ agent(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
   int i;
 
   NSK_DISPLAY0("Waiting debugee.\n");
-  if (!NSK_VERIFY(nsk_jvmti_enableEvents(JVMTI_ENABLE, 1, &event, NULL))) {
+  if (!NSK_VERIFY(nsk_jvmti_enableEvents(JVMTI_ENABLE, 1, &event, nullptr))) {
     return;
   }
   if (!NSK_VERIFY(nsk_jvmti_waitForSync(timeout))) {
@@ -156,13 +156,13 @@ agent(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
   phase = ZERO_INVOCATIONS_PHASE;
   for (i = 0; i < FILTER_COUNT; i++) {
-    if (!NSK_VERIFY(NULL != (klass = jni->FindClass(types[i])))) {
+    if (!NSK_VERIFY(nullptr != (klass = jni->FindClass(types[i])))) {
       NSK_COMPLAIN1("Can't find class %s.\n",types[i]);
       nsk_jvmti_setFailStatus();
       return;
     }
     NSK_DISPLAY1("Iterating through heap with klass-filter '%s'.\n",types[i]);
-    if (!NSK_JVMTI_VERIFY(jvmti->IterateThroughHeap(0, klass, &primitive_callbacks, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->IterateThroughHeap(0, klass, &primitive_callbacks, nullptr))) {
       nsk_jvmti_setFailStatus();
       return;
     }
@@ -170,12 +170,12 @@ agent(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
   phase = STATIC_FIELDS_FINDING_PHASE;
   NSK_DISPLAY0("Iterating through heap with klass-filter 'java/lang/Class'.\n");
-  if (!NSK_VERIFY(NULL != (klass = jni->FindClass("java/lang/Class")))) {
+  if (!NSK_VERIFY(nullptr != (klass = jni->FindClass("java/lang/Class")))) {
     NSK_COMPLAIN0("Can't find class java/lang/Class.\n");
     nsk_jvmti_setFailStatus();
     return;
   }
-  if (!NSK_JVMTI_VERIFY(jvmti->IterateThroughHeap(0, klass, &primitive_callbacks, NULL))) {
+  if (!NSK_JVMTI_VERIFY(jvmti->IterateThroughHeap(0, klass, &primitive_callbacks, nullptr))) {
     nsk_jvmti_setFailStatus();
     return;
   }
@@ -209,7 +209,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jvmtiEventCallbacks event_callbacks;
 
   jvmti = nsk_jvmti_createJVMTIEnv(jvm, reserved);
-  if (!NSK_VERIFY(jvmti != NULL)) {
+  if (!NSK_VERIFY(jvmti != nullptr)) {
     return JNI_ERR;
   }
 
@@ -230,7 +230,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     return JNI_ERR;
   }
 
-  if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agent, NULL))) {
+  if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agent, nullptr))) {
     return JNI_ERR;
   }
 

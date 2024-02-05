@@ -1,0 +1,3 @@
+CyclicHierarchyTest.java:9:37: compiler.err.invalid.permits.clause: (compiler.misc.doesnt.extend.sealed: CyclicHierarchyTest.Add)
+CyclicHierarchyTest.java:11:55: compiler.err.invalid.permits.clause: (compiler.misc.must.not.be.same.class)
+2 errors

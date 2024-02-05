@@ -14,10 +14,10 @@ function callJavaInfo(dump_spec, regularPos, trapPos) {
   }
   return "trap: " + tm[2];
 }
-editProperty(matches("name", "CallStaticJava|CallDynamicJava|CallJava"), "dump_spec", "extra_label",
-             function(dump_spec) {return callJavaInfo(dump_spec, 2, 2);});
-editProperty(matches("name", "CallStaticJavaDirect|CallDynamicJavaDirect"), "dump_spec", "extra_label",
-             function(dump_spec) {return callJavaInfo(dump_spec, 1, 3);});
+editProperty(matches("name", "CallStaticJava|CallDynamicJava|CallJava"), ["dump_spec"], "extra_label",
+             function(dump_spec) {return callJavaInfo(dump_spec[0], 2, 2);});
+editProperty(matches("name", "CallStaticJavaDirect|CallDynamicJavaDirect"), ["dump_spec"], "extra_label",
+             function(dump_spec) {return callJavaInfo(dump_spec[0], 1, 3);});
 
 function callLeafInfo(dump_spec, pos) {
   dump_components = split_string(dump_spec);
@@ -26,21 +26,7 @@ function callLeafInfo(dump_spec, pos) {
   }
   return dump_components[pos];
 }
-editProperty(matches("name", "CallLeaf|CallLeafNoFP"), "dump_spec", "extra_label",
-             function(dump_spec) {return callLeafInfo(dump_spec, 1);});
-editProperty(matches("name", "CallLeafDirect|CallLeafDirectVector|CallLeafNoFPDirect"), "dump_spec", "extra_label",
-             function(dump_spec) {return callLeafInfo(dump_spec, 0);});
-
-// Add extra line to exception creation nodes with the name of the exception.
-function exceptionInfo(dump_spec) {
-  dump_spec2 = dump_spec.replace('#','')
-  dump_components = split_string(dump_spec2);
-  if (dump_components.length < 1) {
-    return null;
-  }
-  // dump_components[0] has a form like e.g. java/lang/NumberFormatException:NotNull,
-  // we want to return only the simple class name ("NumberFormatException").
-  simple_classname = dump_components[0].split("/").pop();
-  return simple_classname.split(":")[0];
-}
-editProperty(matches("name", "CreateEx|CreateException"), "dump_spec", "extra_label", exceptionInfo);
+editProperty(matches("name", "CallLeaf|CallLeafNoFP"), ["dump_spec"], "extra_label",
+             function(dump_spec) {return callLeafInfo(dump_spec[0], 1);});
+editProperty(matches("name", "CallLeafDirect|CallLeafDirectVector|CallLeafNoFPDirect"), ["dump_spec"], "extra_label",
+             function(dump_spec) {return callLeafInfo(dump_spec[0], 0);});

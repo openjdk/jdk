@@ -23,6 +23,7 @@
 
 /**
  * @bug 8041902
+ * @key printer
  * @summary Test printing of wide poly lines.
  * @run main/manual=yesno PolylinePrintingTest
  */

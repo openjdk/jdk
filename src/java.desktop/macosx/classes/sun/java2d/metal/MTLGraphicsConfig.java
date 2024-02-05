@@ -72,7 +72,6 @@ import static sun.java2d.metal.MTLContext.MTLContextCaps.CAPS_EXT_BIOP_SHADER;
 public final class MTLGraphicsConfig extends CGraphicsConfig
         implements AccelGraphicsConfig, SurfaceManager.ProxiedGraphicsConfig
 {
-    private static boolean mtlAvailable;
     private static ImageCapabilities imageCaps = new MTLImageCaps();
 
     @SuppressWarnings("removal")
@@ -89,7 +88,6 @@ public final class MTLGraphicsConfig extends CGraphicsConfig
     private final Object disposerReferent = new Object();
     private final int maxTextureSize;
 
-    private static native boolean isMetalFrameworkAvailable();
     private static native boolean tryLoadMetalLibrary(int displayID, String shaderLib);
     private static native long getMTLConfigInfo(int displayID, String mtlShadersLib);
 
@@ -98,10 +96,6 @@ public final class MTLGraphicsConfig extends CGraphicsConfig
      * called under MTLRQ lock.
      */
     private static native int nativeGetMaxTextureSize();
-
-    static {
-        mtlAvailable = isMetalFrameworkAvailable();
-    }
 
     private MTLGraphicsConfig(CGraphicsDevice device,
                               long configInfo, int maxTextureSize,
@@ -133,10 +127,6 @@ public final class MTLGraphicsConfig extends CGraphicsConfig
     public static MTLGraphicsConfig getConfig(CGraphicsDevice device,
                                               int displayID)
     {
-        if (!mtlAvailable) {
-            return null;
-        }
-
         if (!tryLoadMetalLibrary(displayID, mtlShadersLib)) {
             return null;
         }
@@ -169,10 +159,6 @@ public final class MTLGraphicsConfig extends CGraphicsConfig
                         CAPS_EXT_BIOP_SHADER | CAPS_EXT_GRAD_SHADER,
                 null);
         return new MTLGraphicsConfig(device, cfginfo, textureSize, caps);
-    }
-
-    public static boolean isMetalAvailable() {
-        return mtlAvailable;
     }
 
     /**

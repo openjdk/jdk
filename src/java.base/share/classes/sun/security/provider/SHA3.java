@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,15 @@ abstract class SHA3 extends DigestBase {
             throw new ProviderException("Incorrect pad size: " + numOfPadding);
         }
         implCompress(buffer, 0);
-        System.arraycopy(state, 0, out, ofs, engineGetDigestLength());
+        int availableBytes = buffer.length;
+        int numBytes = engineGetDigestLength();
+        while (numBytes > availableBytes) {
+            System.arraycopy(state, 0, out, ofs, availableBytes);
+            numBytes -= availableBytes;
+            ofs += availableBytes;
+            keccak();
+        }
+        System.arraycopy(state, 0, out, ofs, numBytes);
     }
 
     /**
@@ -162,7 +170,7 @@ abstract class SHA3 extends DigestBase {
 
     /**
      * The function Keccak as defined in section 5.2 with
-     * rate r = 1600 and capacity c = (digest length x 2).
+     * rate r = 1600 and capacity c.
      */
     private void keccak() {
         // convert the 200-byte state into 25 lanes

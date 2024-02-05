@@ -77,11 +77,24 @@ Deoptimization::DeoptReason RuntimePredicate::uncommon_trap_reason(IfProjNode* i
 }
 
 bool RuntimePredicate::is_success_proj(Node* node, Deoptimization::DeoptReason deopt_reason) {
-  if (node->is_IfProj() && !node->in(0)->is_ParsePredicate()) {
+  if (may_be_runtime_predicate_if(node)) {
     return deopt_reason == uncommon_trap_reason(node->as_IfProj());
   } else {
     return false;
   }
+}
+
+// A Runtime Predicate must have an If or a RangeCheck node, while the If should not be a zero trip guard check.
+bool RuntimePredicate::may_be_runtime_predicate_if(Node* node) {
+  if (node->is_IfProj()) {
+    const IfNode* if_node = node->in(0)->as_If();
+    const int opcode_if = if_node->Opcode();
+    if ((opcode_if == Op_If && !if_node->is_zero_trip_guard())
+        || opcode_if == Op_RangeCheck) {
+      return true;
+    }
+  }
+  return false;
 }
 
 ParsePredicateIterator::ParsePredicateIterator(const Predicates& predicates) : _current_index(0) {
@@ -118,6 +131,7 @@ void PredicateBlock::verify_block() {
     const int opcode = next->Opcode();
     assert(next->is_IfProj() || opcode == Op_If || opcode == Op_RangeCheck,
            "Regular Predicates consist of an IfProj and an If or RangeCheck node");
+    assert(opcode != Op_If || !next->as_If()->is_zero_trip_guard(), "should not be zero trip guard");
     next = next->in(0);
   }
 }

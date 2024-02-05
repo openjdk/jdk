@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -220,6 +220,7 @@ public abstract class AbstractMemberWriter {
             Content member = getMemberSummaryHeader(target);
             summaryTreeList.forEach(member::add);
             buildSummary(target, member);
+            writer.tableOfContents.addLink(HtmlIds.forMemberSummary(kind), getSummaryLabel());
         }
     }
 
@@ -304,6 +305,20 @@ public abstract class AbstractMemberWriter {
         SortedSet<Element> out = new TreeSet<>(summariesComparator);
         out.addAll(members);
         return out;
+    }
+
+    private Content getSummaryLabel() {
+        return switch (kind) {
+            case FIELDS -> contents.fieldSummaryLabel;
+            case METHODS -> contents.methodSummary;
+            case CONSTRUCTORS -> contents.constructorSummaryLabel;
+            case ENUM_CONSTANTS -> contents.enumConstantSummary;
+            case NESTED_CLASSES -> contents.nestedClassSummary;
+            case PROPERTIES -> contents.propertySummaryLabel;
+            case ANNOTATION_TYPE_MEMBER_OPTIONAL -> contents.annotateTypeOptionalMemberSummaryLabel;
+            case ANNOTATION_TYPE_MEMBER_REQUIRED -> contents.annotateTypeRequiredMemberSummaryLabel;
+            default -> throw new IllegalArgumentException(kind.toString());
+        };
     }
 
     /**
@@ -535,6 +550,16 @@ public abstract class AbstractMemberWriter {
      */
     protected void addPreviewInfo(Element member, Content content) {
         writer.addPreviewInfo(member, content);
+    }
+
+    /**
+     * Add the restricted information for the given method.
+     *
+     * @param method the method being documented.
+     * @param content the content to which the preview information will be added.
+     */
+    protected void addRestrictedInfo(ExecutableElement method, Content content) {
+        writer.addRestrictedInfo(method, content);
     }
 
     protected String name(Element member) {

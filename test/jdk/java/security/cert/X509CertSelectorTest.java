@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,10 +60,11 @@ import sun.security.x509.PolicyInformation;
 import sun.security.x509.PrivateKeyUsageExtension;
 import sun.security.x509.SubjectAlternativeNameExtension;
 import sun.security.x509.X500Name;
+import sun.security.util.Debug;
 
 /*
  * @test
- * @bug 8074931
+ * @bug 8074931 8296787
  * @summary This class tests the X509CertSelector. The tests check particular criteria
  *          by setting them to a value that should match our test certificate and
  *          ensuring that they do match, then setting them to a value that should not
@@ -191,6 +192,14 @@ public class X509CertSelectorTest {
         // good match
         selector.setSerialNumber(cert.getSerialNumber());
         checkMatch(selector, cert, true);
+
+        // check serial number format
+        String serialNum = Debug.toString(selector.getSerialNumber());
+        String expected = "38:df:82:b8";
+        if (!serialNum.equals(expected)) {
+            throw new RuntimeException("Serial number toString format is incorrect. Got: "
+                + serialNum + " Expected: " + expected);
+        }
     }
 
     // Tests matching on the issuer name contained in the certificate.

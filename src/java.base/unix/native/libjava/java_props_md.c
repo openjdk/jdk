@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -238,6 +238,11 @@ static int ParseLocale(JNIEnv* env, int cat, char ** std_language, char ** std_s
         *std_language = "en";
         if (language != NULL && mapLookup(language_names, language, std_language) == 0) {
             *std_language = malloc(strlen(language)+1);
+            if (*std_language == NULL) {
+                free(encoding_variant);
+                JNU_ThrowOutOfMemoryError(env, NULL);
+                return 0;
+            }
             strcpy(*std_language, language);
         }
     }
@@ -246,6 +251,11 @@ static int ParseLocale(JNIEnv* env, int cat, char ** std_language, char ** std_s
     if (std_country != NULL && country != NULL) {
         if (mapLookup(country_names, country, std_country) == 0) {
             *std_country = malloc(strlen(country)+1);
+            if (*std_country == NULL) {
+                free(encoding_variant);
+                JNU_ThrowOutOfMemoryError(env, NULL);
+                return 0;
+            }
             strcpy(*std_country, country);
         }
     }

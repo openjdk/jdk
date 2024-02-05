@@ -24,6 +24,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "gc/g1/g1Arguments.hpp"
 #include "gc/g1/g1CardSet.hpp"
 #include "gc/g1/g1CardSetContainers.inline.hpp"
@@ -125,7 +126,6 @@ void G1Arguments::initialize_mark_stack_size() {
     FLAG_SET_ERGO(MarkStackSize, mark_stack_size);
   }
 
-  log_trace(gc)("MarkStackSize: %uk  MarkStackSizeMax: %uk", (uint)(MarkStackSize / K), (uint)(MarkStackSizeMax / K));
 }
 
 
@@ -142,11 +142,6 @@ void G1Arguments::initialize_card_set_configuration() {
     FLAG_SET_ERGO(G1RemSetArrayOfCardsEntries, MAX2(max_cards_in_inline_ptr * 2,
                                                     G1RemSetArrayOfCardsEntriesBase << region_size_log_mb));
   }
-
-  // Round to next 8 byte boundary for array to maximize space usage.
-  size_t const cur_size = G1CardSetArray::size_in_bytes(G1RemSetArrayOfCardsEntries);
-  FLAG_SET_ERGO(G1RemSetArrayOfCardsEntries,
-                G1RemSetArrayOfCardsEntries + (uint)(align_up(cur_size, G1CardSetAllocOptions::SlotAlignment) - cur_size) / sizeof(G1CardSetArray::EntryDataType));
 
   // Howl card set container globals.
   if (FLAG_IS_DEFAULT(G1RemSetHowlNumBuckets)) {
@@ -173,10 +168,10 @@ void G1Arguments::initialize() {
     vm_exit_during_initialization("The flag -XX:+UseG1GC can not be combined with -XX:ParallelGCThreads=0", nullptr);
   }
 
-  // When dumping the CDS archive we want to reduce fragmentation by
+  // When dumping the CDS heap we want to reduce fragmentation by
   // triggering a full collection. To get as low fragmentation as
   // possible we only use one worker thread.
-  if (DumpSharedSpaces) {
+  if (CDSConfig::is_dumping_heap()) {
     FLAG_SET_ERGO(ParallelGCThreads, 1);
   }
 

@@ -27,7 +27,7 @@
 #include "gc/z/zNMT.hpp"
 #include "gc/z/zVirtualMemory.hpp"
 #include "memory/allocation.hpp"
-#include "services/memTracker.hpp"
+#include "nmt/memTracker.hpp"
 #include "utilities/nativeCallStack.hpp"
 
 ZNMT::Reservation ZNMT::_reservations[ZMaxVirtualReservations] = {};

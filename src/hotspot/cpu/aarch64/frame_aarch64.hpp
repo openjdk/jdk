@@ -93,7 +93,7 @@
     // Entry frames
     // n.b. these values are determined by the layout defined in
     // stubGenerator for the Java call stub
-    entry_frame_after_call_words                     = 27,
+    entry_frame_after_call_words                     = 29,
     entry_frame_call_wrapper_offset                  = -8,
 
     // we don't need a save area
@@ -156,8 +156,6 @@
   static void verify_deopt_original_pc(   CompiledMethod* nm, intptr_t* unextended_sp);
 #endif
 
-  const ImmutableOopMap* get_oop_map() const;
-
  public:
   // Constructors
 
@@ -165,7 +163,7 @@
 
   frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc);
 
-  frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc, CodeBlob* cb);
+  frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc, CodeBlob* cb, bool allow_cb_null = false);
   // used for fast frame construction by continuations
   frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc, CodeBlob* cb, const ImmutableOopMap* oop_map, bool on_heap);
 

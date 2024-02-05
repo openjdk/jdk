@@ -22,6 +22,8 @@
  */
 
  // key: compiler.note.preview.filename
+ // key: compiler.err.cant.resolve.location.args
+ // key: compiler.misc.location
  // key: compiler.note.preview.recompile
  // key: compiler.err.not.a.processor.type
  // options: --enable-preview  -source ${jdk.version}
