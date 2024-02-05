@@ -525,7 +525,6 @@ void ObjectSynchronizer::enter_for(Handle obj, BasicLock* lock, JavaThread* lock
       assert(monitor->is_being_async_deflated(), "must be");
     }
   }
-
 }
 
 void ObjectSynchronizer::enter(Handle obj, BasicLock* lock, JavaThread* current) {
