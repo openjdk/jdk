@@ -95,7 +95,7 @@ class ObjectSynchronizer : AllStatic {
   static void enter(Handle obj, BasicLock* lock, JavaThread* current);
   static void exit(oop obj, BasicLock* lock, JavaThread* current);
   // Used to enter a monitor for another thread. This requires that the
-  // that the locking_thread is suspended, and that entering on a potential
+  // locking_thread is suspended, and that entering on a potential
   // inflated monitor may only contend with deflation. That is the obj being
   // locked on is either already locked by the locking_thread or cannot
   // escape the locking_thread.
