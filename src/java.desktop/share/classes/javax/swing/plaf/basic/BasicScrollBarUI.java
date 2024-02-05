@@ -1188,8 +1188,7 @@ public class BasicScrollBarUI
      */
     protected void scrollByUnit(int direction)  {
         scrollByUnits(scrollbar, direction, 1, false);
-        Rectangle r = getTrackBounds();
-        scrollbar.repaint(r.x, r.y, r.width, r.height);
+        scrollbar.repaint(getTrackBounds());
     }
 
     /**
@@ -1378,8 +1377,7 @@ public class BasicScrollBarUI
                 updateThumbState(currentMouseX, currentMouseY);
                 startScrollTimerIfNecessary();
             }
-            Rectangle r = getTrackBounds();
-            scrollbar.repaint(r.x, r.y, r.width, r.height);
+            scrollbar.repaint(getTrackBounds());
         }
 
         private void setValueFrom(MouseEvent e) {

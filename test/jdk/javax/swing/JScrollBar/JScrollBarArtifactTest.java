@@ -30,7 +30,8 @@ import javax.swing.SwingUtilities;
 /*
  * @test
  * @bug 8309460
- * @summary Verifies clicking JComboBox during frame closure causes Exception
+ * @summary Verifies JScrollBar doesn't leaves behind clutter when dragged
+            or clicked on right arrow button
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual JScrollBarArtifactTest
@@ -39,7 +40,7 @@ import javax.swing.SwingUtilities;
 public class JScrollBarArtifactTest {
     private static final String instructionsText = """
             This test is used to verify that dragging scrollbar or clicking
-            on right scrollbar thumb does nto leave behing lines or artifacts.
+            on right scrollbar thumb does not leave behing lines or artifacts.
 
             A horizontal JScrollBar is shown.
             Drag the scrollbar without releasing mouse.
