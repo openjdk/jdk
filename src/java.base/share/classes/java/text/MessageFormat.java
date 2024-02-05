@@ -1768,14 +1768,14 @@ public class MessageFormat extends Format {
         // Modified for neater exception value if needed
         String type = fType.name().charAt(0) + fType.name().substring(1).toLowerCase(Locale.ROOT);
         try {
-            return switch(fType) {
+            return switch (fType) {
                 case NUMBER -> new DecimalFormat(pattern, DecimalFormatSymbols.getInstance(locale));
                 case DATE, TIME -> new SimpleDateFormat(pattern, locale);
                 case DTF_DATE, DTF_TIME, DTF_DATETIME ->
                         DateTimeFormatter.ofPattern(pattern).toFormat();
                 case CHOICE -> new ChoiceFormat(pattern);
                 // These classe(s) do not support String patterns
-                default ->  throw new IllegalArgumentException(String.format(
+                default -> throw new IllegalArgumentException(String.format(
                             "Unexpected modifier for %s: %s", type, pattern));
             };
         } catch (Exception e) {
