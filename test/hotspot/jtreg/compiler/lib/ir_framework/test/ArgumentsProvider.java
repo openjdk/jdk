@@ -106,12 +106,12 @@ final class ValueArgumentsProvider implements ArgumentsProvider {
 
     @Override
     public Object[] getArguments(Object invocationTarget, int invocationCounter) {
-        return Arrays.stream(argumentValues).map(v -> v.getValue(invocationCounter)).toArray();
+        return Arrays.stream(argumentValues).map(v -> v.getValue()).toArray();
     }
 }
 
 /**
- * Used for @Arguments(setup = {"setupMethodName"}) to specify a setup method to provide arguments
+ * Used for @Arguments(setup = "setupMethodName") to specify a setup method to provide arguments
  * and possibly set fields.
  */
 final class SetupArgumentsProvider implements ArgumentsProvider {

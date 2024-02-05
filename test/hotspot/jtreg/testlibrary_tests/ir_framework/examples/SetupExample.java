@@ -35,7 +35,7 @@ import compiler.lib.ir_framework.SetupInfo;
 
 /**
  * This file shows some examples of how to use a setup method, annotated with {@link Setup}, and referenced by
- * a test method with @Arguments(setup = {"setupMethodName"}).
+ * a test method with @Arguments(setup = "setupMethodName").
  *
  * @see Setup
  * @see Arguments

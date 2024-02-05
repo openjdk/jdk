@@ -506,7 +506,7 @@ public class TestVM {
 
     /**
      *  Collect all @Setup annotated methods and add them to setupMethodMap, for convenience to reference later from
-     *  tests with @Arguments(setup = {"setupMethodName"}).
+     *  tests with @Arguments(setup = "setupMethodName").
      */
     private void collectSetupMethods() {
         for (Method m : testClass.getDeclaredMethods()) {
