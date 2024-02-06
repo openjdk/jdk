@@ -2951,9 +2951,8 @@ uint64_t VM_Version::feature_flags() {
       result |= CPU_F16C;
     if (_cpuid_info.sef_cpuid7_ebx.bits.avx2 != 0) {
       result |= CPU_AVX2;
-      if (_cpuid_info.sef_cpuid7_ecx1_eax.bits.avx_ifma != 0) {
+      if (_cpuid_info.sef_cpuid7_ecx1_eax.bits.avx_ifma != 0)
         result |= CPU_AVX_IFMA;
-      }
     }
     if (_cpuid_info.sef_cpuid7_ebx.bits.avx512f != 0 &&
         _cpuid_info.xem_xcr0_eax.bits.opmask != 0 &&
