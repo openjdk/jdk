@@ -679,7 +679,6 @@ public abstract class Charset
                     defaultCharset = cs;
                 else
                     defaultCharset = sun.nio.cs.UTF_8.INSTANCE;
-                Charset.forName("UTF-8");
             }
         }
         return defaultCharset;
