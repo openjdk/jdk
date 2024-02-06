@@ -112,7 +112,9 @@ record RelevantJavacOptions(List<String> forProgramCompilation,
                     programOptions.add(opt);
                     subsequentOptions.add(opt);
                     if (sourceOpt == null) {
-                        throw new Fault(Errors.EnablePreviewRequiresSource);
+                        String feature = String.valueOf(Runtime.version().feature());
+                        programOptions.addAll(List.of("--release", feature));
+                        subsequentOptions.addAll(List.of("--release", feature));
                     }
                 }
                 default -> {
