@@ -46,6 +46,7 @@
 
 #if defined(_AIX)
   #define statvfs statvfs64
+  #define fstatvfs fstatvfs64
 #endif
 
 JNIEXPORT jint JNICALL
