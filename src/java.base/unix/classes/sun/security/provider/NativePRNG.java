@@ -202,16 +202,14 @@ public final class NativePRNG extends SecureRandomSpi {
         return INSTANCE != null;
     }
 
-    // constructor, unused argument to speed up lookups from Provider
-    public NativePRNG(SecureRandomParameters ignored) {
-        this();
-    }
-
     // constructor, called by the JCA framework
-    public NativePRNG() {
+    public NativePRNG(SecureRandomParameters params) {
         super();
         if (INSTANCE == null) {
             throw new AssertionError("NativePRNG not available");
+        }
+        if (params != null) {
+            throw new IllegalArgumentException("Unsupported params: " + params.getClass());
         }
     }
 
@@ -255,16 +253,14 @@ public final class NativePRNG extends SecureRandomSpi {
             return INSTANCE != null;
         }
 
-        // constructor, unused argument to speed up lookups from Provider
-        public Blocking(SecureRandomParameters ignored) {
-            this();
-        }
-
         // constructor, called by the JCA framework
-        public Blocking() {
+        public Blocking(SecureRandomParameters params) {
             super();
             if (INSTANCE == null) {
                 throw new AssertionError("NativePRNG$Blocking not available");
+            }
+            if (params != null) {
+                throw new IllegalArgumentException("Unsupported params: " + params.getClass());
             }
         }
 
@@ -309,17 +305,15 @@ public final class NativePRNG extends SecureRandomSpi {
             return INSTANCE != null;
         }
 
-        // constructor, unused argument to speed up lookups from Provider
-        public NonBlocking(SecureRandomParameters ignored) {
-            this();
-        }
-
         // constructor, called by the JCA framework
-        public NonBlocking() {
+        public NonBlocking(SecureRandomParameters params) {
             super();
             if (INSTANCE == null) {
                 throw new AssertionError(
                     "NativePRNG$NonBlocking not available");
+            }
+            if (params != null) {
+                throw new IllegalArgumentException("Unsupported params: " + params.getClass());
             }
         }
 
