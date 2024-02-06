@@ -58,7 +58,7 @@ interface ArgumentsProvider {
  */
 class ArgumentsProviderBuilder {
    public static ArgumentsProvider build(Method method,
-                                          HashMap<String, Method> setupMethodMap) {
+                                         HashMap<String, Method> setupMethodMap) {
         Arguments argumentsAnnotation = method.getAnnotation(Arguments.class);
         if (argumentsAnnotation == null) {
             return new DefaultArgumentsProvider();
@@ -67,7 +67,7 @@ class ArgumentsProviderBuilder {
         Argument[] values = argumentsAnnotation.values();
         String setupMethodName = argumentsAnnotation.setup();
 
-        if (setupMethodName.length() > 0) {
+        if (!setupMethodName.isEmpty()) {
             TestFormat.check(values.length == 0,
                              "@Arguments: Can only specify \"setup\" or \"values\" but not both in " + method);
             TestFormat.check(setupMethodMap.containsKey(setupMethodName),

@@ -34,7 +34,7 @@ There are various ways how to set up and run a test within the `main()` method o
 The framework offers various annotations and flags to control how your test code should be invoked and being checked. This section gives an overview over all these features.
 
 ### 2.1 Different Tests
-There are two ways a test can be formulated, depending on how much control is needed over the test invocation.
+There are two ways a test can be written, depending on how much control is needed over the test invocation.
 
 #### Normal Test
 The normal and simplest form of testing provides a single `@Test` annotated method which the framework invokes directly as part of the testing. The test method either has no arguments, or they must be specified with an `@Arguments` annotation.
