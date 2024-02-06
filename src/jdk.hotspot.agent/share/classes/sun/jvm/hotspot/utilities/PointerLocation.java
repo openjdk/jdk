@@ -291,13 +291,14 @@ public class PointerLocation {
         if (getGeneration() != null) {
           // Address is in SerialGC heap
           if (isInNewGen()) {
-              tty.print("In heap new generation:");
+              tty.print("In new generation of SerialGC heap");
           } else if (isInOldGen()) {
-              tty.print("In heap old generation:");
+              tty.print("In old generation of SerialGC heap");
           } else {
-              tty.print("In unknown heap generation:");
+              tty.print("In unknown generation of SerialGC heap");
           }
           if (verbose) {
+              tty.print(":");
               getGeneration().printOn(tty); // does not include "\n"
           }
           tty.println();
