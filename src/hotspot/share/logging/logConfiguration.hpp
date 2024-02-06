@@ -62,7 +62,13 @@ class LogConfiguration : public AllStatic {
 
   static UpdateListenerFunction*    _listener_callbacks;
   static size_t                     _n_listener_callbacks;
-  static bool                       _async_mode;
+
+ public:
+  enum class AsyncMode {
+    Off, Drop, Stall
+  };
+ private:
+  static AsyncMode _async_mode;
 
   // Create a new output. Returns null if failed.
   static LogOutput* new_output(const char* name, const char* options, outputStream* errstream);
@@ -129,9 +135,9 @@ class LogConfiguration : public AllStatic {
   // Rotates all LogOutput
   static void rotate_all_outputs();
 
-  static bool is_async_mode() { return _async_mode; }
-  static void set_async_mode(bool value) {
-    _async_mode = value;
+  static bool is_async_mode() { return _async_mode != AsyncMode::Off; }
+  static void set_async_mode(AsyncMode mode) {
+    _async_mode = mode;
   }
 };
 

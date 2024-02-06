@@ -716,4 +716,4 @@ void LogConfiguration::notify_update_listeners() {
   }
 }
 
-bool LogConfiguration::_async_mode = false;
+LogConfiguration::AsyncMode LogConfiguration::_async_mode = AsyncMode::Off;
