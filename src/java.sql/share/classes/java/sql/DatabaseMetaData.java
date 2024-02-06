@@ -3358,7 +3358,7 @@ public interface DatabaseMetaData extends Wrapper {
      *      <LI> functionColumnIn - IN parameter
      *      <LI> functionColumnInOut - INOUT parameter
      *      <LI> functionColumnOut - OUT parameter
-     *      <LI> functionColumnReturn - function return value
+     *      <LI> functionReturn - function return value
      *      <LI> functionColumnResult - Indicates that the parameter or column
      *  is a column in the {@code ResultSet}
      *      </UL>
