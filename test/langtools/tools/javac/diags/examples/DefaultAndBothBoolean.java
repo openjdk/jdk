@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,22 +21,16 @@
  * questions.
  */
 
-/* @test
-   @bug 4635869
-   @summary Zip files with no extension signature would get rejected
-   */
-
-import java.io.*;
-import java.util.zip.*;
-
-public class NoExtensionSignature {
-
-    public static void main(String[] args) throws Exception {
-
-        File f = new File(System.getProperty("test.src", "."), "test.zip");
-        ZipInputStream zis = new ZipInputStream (new FileInputStream(f));
-        ZipEntry entry;
-        while ((entry = zis.getNextEntry()) != null)
-            while (zis.read() != -1 );
+// key: compiler.err.default.and.both.boolean.values
+// key: compiler.note.preview.filename
+// key: compiler.note.preview.recompile
+// options: --enable-preview --source 23
+public class DefaultAndBothBoolean {
+    private int test(boolean sel) {
+        return switch (sel) {
+            case true -> 1;
+            case false -> 2;
+            default -> 3;
+        };
     }
 }
