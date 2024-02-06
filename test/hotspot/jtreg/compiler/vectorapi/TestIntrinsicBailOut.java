@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2021, 2022, THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (c) 2024 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +34,17 @@ import java.nio.ByteOrder;
  * @summary Vector API intrinsincs should not modify IR when bailing out
  * @modules jdk.incubator.vector
  * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:UseAVX=1
+ *                   -XX:-TieredCompilation compiler.vectorapi.TestIntrinsicBailOut
+ */
+
+/*
+ * @test
+ * @bug 8317299
+ * @summary Vector API intrinsincs should handle JVM state correctly whith late inlining when compiling with -InlineUnsafeOps
+ * @modules jdk.incubator.vector
+ * @requires vm.cpu.features ~= ".*avx512.*"
+ * @run main/othervm -Xcomp -XX:+UnlockDiagnosticVMOptions -XX:-InlineUnsafeOps -XX:+IgnoreUnrecognizedVMOptions -XX:UseAVX=3
+ *                   -XX:CompileCommand=compileonly,compiler.vectorapi.TestIntrinsicBailOut::test -XX:CompileCommand=quiet
  *                   -XX:-TieredCompilation compiler.vectorapi.TestIntrinsicBailOut
  */
 
