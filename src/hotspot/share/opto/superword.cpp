@@ -50,7 +50,6 @@ SuperWord::SuperWord(PhaseIdealLoop* phase) :
   _packset(arena(), 8,  0, nullptr),                        // packs for the current block
   _bb_idx(arena(), (int)(1.10 * phase->C->unique()), 0, 0), // node idx to index in bb
   _block(arena(), 8,  0, nullptr),                          // nodes in current block
-  _data_entry(arena(), 8,  0, nullptr),                     // nodes with all inputs from outside
   _mem_slice_head(arena(), 8,  0, nullptr),                 // memory slice heads
   _mem_slice_tail(arena(), 8,  0, nullptr),                 // memory slice tails
   _node_info(arena(), 8,  0, SWNodeInfo::initial),          // info needed per node
@@ -521,10 +520,33 @@ bool SuperWord::SLP_extract() {
   CountedLoopNode* cl = lpt()->_head->as_CountedLoop();
   assert(cl->is_main_loop(), "SLP should only work on main loops");
 
+  // Find memory slices
+  find_memory_slices();
+
+  if (!is_marked_reduction_loop() &&
+      _mem_slice_head.is_empty()) {
+#ifndef PRODUCT
+    if (is_trace_superword_any()) {
+      tty->print_cr("\nNo reductions or memory slices found, abort SuperWord.");
+      tty->cr();
+    }
+#endif
+    return false;
+  }
+
   // Ready the block
   if (!construct_bb()) {
-    return false; // Exit if no interesting nodes or complex graph.
+#ifndef PRODUCT
+    if (is_trace_superword_any()) {
+      tty->print_cr("\nSuperWord::construct_bb failed: abort SuperWord");
+      tty->cr();
+    }
+#endif
+    return false;
   }
+
+  // Ensure extra info is allocated.
+  initialize_node_info();
 
   // build _dg
   dependence_graph();
@@ -895,6 +917,36 @@ void SuperWord::dependence_graph() {
     _nlist.clear();
   }
 }
+
+void SuperWord::find_memory_slices() {
+  assert(_mem_slice_head.length() == 0, "mem_slice_head is empty");
+  assert(_mem_slice_tail.length() == 0, "mem_slice_tail is empty");
+
+  // Iterate over all memory phis
+  for (DUIterator_Fast imax, i = lp()->fast_outs(imax); i < imax; i++) {
+    PhiNode* phi = lp()->fast_out(i)->isa_Phi();
+    if (phi != nullptr && in_bb(phi) && phi->is_memory_phi()) {
+      Node* phi_tail = phi->in(LoopNode::LoopBackControl);
+      if (phi_tail != phi->in(LoopNode::EntryControl)) {
+        _mem_slice_head.push(phi);
+        _mem_slice_tail.push(phi_tail->as_Mem());
+      }
+    }
+  }
+
+  NOT_PRODUCT( if (is_trace_superword_memory_slices()) { print_memory_slices(); } )
+}
+
+#ifndef PRODUCT
+void SuperWord::print_memory_slices() {
+  tty->print_cr("\nSuperWord::print_memory_slices: %s",
+                _mem_slice_head.length() > 0 ? "" : "NONE");
+  for (int m = 0; m < _mem_slice_head.length(); m++) {
+    tty->print("%6d ", m);  _mem_slice_head.at(m)->dump();
+    tty->print("       ");  _mem_slice_tail.at(m)->dump();
+  }
+}
+#endif
 
 //---------------------------mem_slice_preds---------------------------
 // Return a memory slice (node list) in predecessor order starting at "start"
@@ -2950,175 +3002,108 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) {
 //------------------------------construct_bb---------------------------
 // Construct reverse postorder list of block members
 bool SuperWord::construct_bb() {
-  Node* entry = bb();
-
   assert(_block.length() == 0,          "block is empty");
-  assert(_data_entry.length() == 0,     "data_entry is empty");
-  assert(_mem_slice_head.length() == 0, "mem_slice_head is empty");
-  assert(_mem_slice_tail.length() == 0, "mem_slice_tail is empty");
 
-  // Find non-control nodes with no inputs from within block,
-  // create a temporary map from node _idx to bb_idx for use
-  // by the visited and post_visited sets,
-  // and count number of nodes in block.
-  int bb_ct = 0;
+  // First pass over loop body:
+  //  (1) Check that there are no unwanted nodes (LoadStore, MergeMem, data Proj).
+  //  (2) Count number of nodes, and create a temporary map (_idx -> bb_idx).
+  //  (3) Verify that all non-ctrl nodes have an input inside the loop.
+  int block_count = 0;
   for (uint i = 0; i < lpt()->_body.size(); i++) {
-    Node *n = lpt()->_body.at(i);
+    Node* n = lpt()->_body.at(i);
     set_bb_idx(n, i); // Create a temporary map
     if (in_bb(n)) {
+      block_count++;
+
       if (n->is_LoadStore() || n->is_MergeMem() ||
           (n->is_Proj() && !n->as_Proj()->is_CFG())) {
         // Bailout if the loop has LoadStore, MergeMem or data Proj
         // nodes. Superword optimization does not work with them.
+#ifndef PRODUCT
+        if (is_trace_superword_any()) {
+          tty->print_cr("SuperWord::construct_bb: fails because of unhandled node:");
+          n->dump();
+        }
+#endif
         return false;
       }
-      bb_ct++;
+
+#ifdef ASSERT
       if (!n->is_CFG()) {
         bool found = false;
         for (uint j = 0; j < n->req(); j++) {
           Node* def = n->in(j);
-          if (def && in_bb(def)) {
+          if (def != nullptr && in_bb(def)) {
             found = true;
             break;
           }
         }
-        if (!found) {
-          assert(n != entry, "can't be entry");
-          _data_entry.push(n);
-        }
+        assert(found, "every non-cfg node must have an input that is also inside the loop");
       }
+#endif
     }
   }
 
-  // Find memory slices (head and tail)
-  for (DUIterator_Fast imax, i = lp()->fast_outs(imax); i < imax; i++) {
-    Node *n = lp()->fast_out(i);
-    if (in_bb(n) && n->is_memory_phi()) {
-      Node* n_tail  = n->in(LoopNode::LoopBackControl);
-      if (n_tail != n->in(LoopNode::EntryControl)) {
-        if (!n_tail->is_Mem()) {
-          assert(n_tail->is_Mem(), "unexpected node for memory slice: %s", n_tail->Name());
-          return false; // Bailout
-        }
-        _mem_slice_head.push(n);
-        _mem_slice_tail.push(n_tail);
-      }
-    }
-  }
-
-  // Create an RPO list of nodes in block
-
+  // Create a reverse-post-order list of nodes in block
   ResourceMark rm;
   GrowableArray<Node*> stack;
   VectorSet visited;
   VectorSet post_visited;
 
-  // Push all non-control nodes with no inputs from within block, then control entry
-  for (int j = 0; j < _data_entry.length(); j++) {
-    Node* n = _data_entry.at(j);
-    visited.set(bb_idx(n));
-    stack.push(n);
-  }
-  visited.set(bb_idx(entry));
-  stack.push(entry);
+  visited.set(bb_idx(bb()));
+  stack.push(bb());
 
   // Do a depth first walk over out edges
-  int rpo_idx = bb_ct - 1;
-  int size;
-  int reduction_uses = 0;
-  while ((size = stack.length()) > 0) {
+  int rpo_idx = block_count - 1;
+  while (!stack.is_empty()) {
     Node* n = stack.top(); // Leave node on stack
     if (!visited.test_set(bb_idx(n))) {
       // forward arc in graph
     } else if (!post_visited.test(bb_idx(n))) {
       // cross or back arc
+      const int old_length = stack.length();
       for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
-        Node *use = n->fast_out(i);
+        Node* use = n->fast_out(i);
         if (in_bb(use) && !visited.test(bb_idx(use)) &&
             // Don't go around backedge
-            (!use->is_Phi() || n == entry)) {
-          if (is_marked_reduction(use)) {
-            // First see if we can map the reduction on the given system we are on, then
-            // make a data entry operation for each reduction we see.
-            BasicType bt = use->bottom_type()->basic_type();
-            if (ReductionNode::implemented(use->Opcode(), Matcher::max_vector_size_auto_vectorization(bt), bt)) {
-              reduction_uses++;
-            }
-          }
+            (!use->is_Phi() || n == bb())) {
           stack.push(use);
         }
       }
-      if (stack.length() == size) {
+      if (stack.length() == old_length) {
         // There were no additional uses, post visit node now
         stack.pop(); // Remove node from stack
-        assert(rpo_idx >= 0, "");
+        assert(rpo_idx >= 0, "must still have idx to pass out");
         _block.at_put_grow(rpo_idx, n);
         rpo_idx--;
         post_visited.set(bb_idx(n));
-        assert(rpo_idx >= 0 || stack.is_empty(), "");
+        assert(rpo_idx >= 0 || stack.is_empty(), "still have idx left or are finished");
       }
     } else {
       stack.pop(); // Remove post-visited node from stack
     }
-  }//while
+  }
 
-  int ii_current = -1;
-  unsigned int load_idx = (unsigned int)-1;
   // Create real map of block indices for nodes
   for (int j = 0; j < _block.length(); j++) {
     Node* n = _block.at(j);
     set_bb_idx(n, j);
-  }//for
-
-  // Ensure extra info is allocated.
-  initialize_bb();
+  }
 
 #ifndef PRODUCT
   if (is_trace_superword_info()) {
     print_bb();
-    tty->print_cr("\ndata entry nodes: %s", _data_entry.length() > 0 ? "" : "NONE");
-    for (int m = 0; m < _data_entry.length(); m++) {
-      tty->print("%3d ", m);
-      _data_entry.at(m)->dump();
-    }
-  }
-  if (is_trace_superword_memory_slices()) {
-    tty->print_cr("\nmemory slices: %s", _mem_slice_head.length() > 0 ? "" : "NONE");
-    for (int m = 0; m < _mem_slice_head.length(); m++) {
-      tty->print("%3d ", m); _mem_slice_head.at(m)->dump();
-      tty->print("    ");    _mem_slice_tail.at(m)->dump();
-    }
   }
 #endif
-  assert(rpo_idx == -1 && bb_ct == _block.length(), "all block members found");
-  return (_mem_slice_head.length() > 0) || (reduction_uses > 0) || (_data_entry.length() > 0);
+
+  assert(rpo_idx == -1 && block_count == _block.length(), "all block members found");
+  return true;
 }
 
-//------------------------------initialize_bb---------------------------
 // Initialize per node info
-void SuperWord::initialize_bb() {
+void SuperWord::initialize_node_info() {
   Node* last = _block.at(_block.length() - 1);
   grow_node_info(bb_idx(last));
-}
-
-//------------------------------bb_insert_after---------------------------
-// Insert n into block after pos
-void SuperWord::bb_insert_after(Node* n, int pos) {
-  int n_pos = pos + 1;
-  // Make room
-  for (int i = _block.length() - 1; i >= n_pos; i--) {
-    _block.at_put_grow(i+1, _block.at(i));
-  }
-  for (int j = _node_info.length() - 1; j >= n_pos; j--) {
-    _node_info.at_put_grow(j+1, _node_info.at(j));
-  }
-  // Set value
-  _block.at_put_grow(n_pos, n);
-  _node_info.at_put_grow(n_pos, SWNodeInfo::initial);
-  // Adjust map from node->_idx to _block index
-  for (int i = n_pos; i < _block.length(); i++) {
-    set_bb_idx(_block.at(i), i);
-  }
 }
 
 //------------------------------compute_max_depth---------------------------
@@ -3776,7 +3761,6 @@ void SuperWord::init() {
   _dg.init();
   _packset.clear();
   _block.clear();
-  _data_entry.clear();
   _mem_slice_head.clear();
   _mem_slice_tail.clear();
   _node_info.clear();
