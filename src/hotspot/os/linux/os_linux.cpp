@@ -289,6 +289,34 @@ julong os::Linux::free_memory() {
   return free_mem;
 }
 
+jlong os::total_swap_space() {
+  if (OSContainer::is_containerized()) {
+    if (OSContainer::memory_limit_in_bytes() > 0) {
+      return (jlong)(OSContainer::memory_and_swap_limit_in_bytes() - OSContainer::memory_limit_in_bytes());
+    }
+  }
+  struct sysinfo si;
+  int ret = sysinfo(&si);
+  if (ret != 0) {
+    return -1;
+  }
+  return  (jlong)(si.totalswap * si.mem_unit);
+}
+
+jlong os::free_swap_space() {
+  if (OSContainer::is_containerized()) {
+    // TODO add a good implementation
+    return -1;
+  } else {
+    struct sysinfo si;
+    int ret = sysinfo(&si);
+    if (ret != 0) {
+      return -1;
+    }
+    return (jlong)(si.freeswap * si.mem_unit);
+  }
+}
+
 julong os::physical_memory() {
   jlong phys_mem = 0;
   if (OSContainer::is_containerized()) {

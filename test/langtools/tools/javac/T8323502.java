@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,23 +20,16 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
-/* @test
-   @bug 4635869
-   @summary Zip files with no extension signature would get rejected
-   */
-
-import java.io.*;
-import java.util.zip.*;
-
-public class NoExtensionSignature {
-
-    public static void main(String[] args) throws Exception {
-
-        File f = new File(System.getProperty("test.src", "."), "test.zip");
-        ZipInputStream zis = new ZipInputStream (new FileInputStream(f));
-        ZipEntry entry;
-        while ((entry = zis.getNextEntry()) != null)
-            while (zis.read() != -1 );
+/*
+ * @test
+ * @bug 8323502
+ * @summary javac crash with wrongly typed method block in Flow
+ * @compile/fail/ref=T8323502.out -XDrawDiagnostics --should-stop=at=FLOW -XDdev T8323502.java
+ */
+public class T8323502 {
+    public void m(Object o) {
+        return switch(o) {
+            default -> System.out.println("boom");
+        };
     }
 }

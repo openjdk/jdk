@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ extern "C" {
 #define PASSED 0
 #define STATUS_FAILED 2
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiEventCallbacks callbacks;
 static jint result = PASSED;
 static jboolean isVirtualExpected = JNI_FALSE;
@@ -40,7 +40,7 @@ static int MethodEntriesExpected = 0;
 static int MethodExitsExpected = 0;
 static int MethodEntriesCount = 0;
 static int MethodExitsCount = 0;
-static jmethodID mid = NULL;
+static jmethodID mid = nullptr;
 
 void JNICALL MethodEntry(jvmtiEnv *jvmti, JNIEnv *jni,
                          jthread thread_obj, jmethodID method) {
@@ -75,7 +75,7 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jvmtiError err;
 
   res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     LOG("Wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }
@@ -116,7 +116,7 @@ JNIEXPORT void JNICALL
 Java_mentry02_getReady(JNIEnv *jni, jclass cls, jint i) {
   jvmtiError err;
 
-  if (jvmti == NULL) {
+  if (jvmti == nullptr) {
     LOG("JVMTI client was not properly loaded!\n");
     return;
   }
@@ -130,13 +130,13 @@ Java_mentry02_getReady(JNIEnv *jni, jclass cls, jint i) {
   isVirtualExpected = jni->IsVirtualThread(thread);
 
   mid = jni->GetStaticMethodID(cls, "emptyMethod", "()V");
-  if (mid == NULL) {
+  if (mid == nullptr) {
     LOG("Cannot find Method ID for emptyMethod\n");
     result = STATUS_FAILED;
     return;
   }
 
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_METHOD_ENTRY, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_METHOD_ENTRY, nullptr);
   if (err == JVMTI_ERROR_NONE) {
     MethodEntriesCount = 0;
     MethodEntriesExpected = i;
@@ -145,7 +145,7 @@ Java_mentry02_getReady(JNIEnv *jni, jclass cls, jint i) {
     result = STATUS_FAILED;
   }
 
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_METHOD_EXIT, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_METHOD_EXIT, nullptr);
   if (err == JVMTI_ERROR_NONE) {
     MethodExitsCount = 0;
     MethodExitsExpected = i;

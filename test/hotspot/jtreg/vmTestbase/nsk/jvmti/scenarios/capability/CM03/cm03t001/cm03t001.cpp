@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,12 +62,12 @@ extern "C" {
 static jlong timeout = 0;
 
 /* test objects */
-static jthread thread = NULL;
-static jclass klass = NULL;
-static jmethodID method = NULL;
-static jfieldID field = NULL;
+static jthread thread = nullptr;
+static jclass klass = nullptr;
+static jmethodID method = nullptr;
+static jfieldID field = nullptr;
 static jint klass_byte_count = 0;
-static unsigned char *klass_bytes = NULL;
+static unsigned char *klass_bytes = nullptr;
 
 /* event counts */
 static int FieldAccessEventsCount = 0;
@@ -93,7 +93,7 @@ ClassFileLoadHook(jvmtiEnv *jvmti_env, JNIEnv *jni_env,
         jint class_data_len, const unsigned char* class_data,
         jint *new_class_data_len, unsigned char** new_class_data) {
 
-    if (name != NULL && (strcmp(name, CLASS_NAME) == 0)) {
+    if (name != nullptr && (strcmp(name, CLASS_NAME) == 0)) {
         NSK_DISPLAY1("ClassFileLoadHook: %s\n", name);
         if (!NSK_JVMTI_VERIFY(jvmti_env->Allocate(class_data_len, &klass_bytes)))
             nsk_jvmti_setFailStatus();
@@ -103,7 +103,7 @@ ClassFileLoadHook(jvmtiEnv *jvmti_env, JNIEnv *jni_env,
         }
         NSK_JVMTI_VERIFY(
             jvmti_env->SetEventNotificationMode(
-                JVMTI_DISABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, NULL));
+                JVMTI_DISABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, nullptr));
     }
 }
 
@@ -111,22 +111,22 @@ static void JNICALL
 FieldAccess(jvmtiEnv *jvmti_env, JNIEnv *jni_env,
         jthread thread, jmethodID method, jlocation location,
         jclass field_klass, jobject object, jfieldID field) {
-    char *name = NULL;
-    char *signature = NULL;
+    char *name = nullptr;
+    char *signature = nullptr;
 
     FieldAccessEventsCount++;
 
     if (!NSK_JVMTI_VERIFY(jvmti_env->ClearFieldAccessWatch(klass, field)))
         return;
 
-    if (!NSK_JVMTI_VERIFY(jvmti_env->GetFieldName(field_klass, field, &name, &signature, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetFieldName(field_klass, field, &name, &signature, nullptr))) {
         nsk_jvmti_setFailStatus();
         return;
     }
     NSK_DISPLAY2("FieldAccess event: %s:%s\n", name, signature);
-    if (name != NULL)
+    if (name != nullptr)
         jvmti_env->Deallocate((unsigned char*)name);
-    if (signature != NULL)
+    if (signature != nullptr)
         jvmti_env->Deallocate((unsigned char*)signature);
 }
 
@@ -135,42 +135,42 @@ FieldModification(jvmtiEnv *jvmti_env, JNIEnv *jni_env,
         jthread thread, jmethodID method, jlocation location,
         jclass field_klass, jobject object,
         jfieldID field, char sig, jvalue new_value) {
-    char *name = NULL;
-    char *signature = NULL;
+    char *name = nullptr;
+    char *signature = nullptr;
 
     FieldModificationEventsCount++;
 
-    if (!NSK_JVMTI_VERIFY(jvmti_env->GetFieldName(field_klass, field, &name, &signature, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetFieldName(field_klass, field, &name, &signature, nullptr))) {
         nsk_jvmti_setFailStatus();
         return;
     }
     NSK_DISPLAY2("FieldModification event: %s:%s\n", name, signature);
-    if (name != NULL)
+    if (name != nullptr)
         jvmti_env->Deallocate((unsigned char*)name);
-    if (signature != NULL)
+    if (signature != nullptr)
         jvmti_env->Deallocate((unsigned char*)signature);
 }
 
 static void JNICALL
 SingleStep(jvmtiEnv *jvmti_env, JNIEnv* jni_env, jthread thread,
         jmethodID method, jlocation location) {
-    char *name = NULL;
-    char *signature = NULL;
+    char *name = nullptr;
+    char *signature = nullptr;
 
     SingleStepEventsCount++;
 
     NSK_JVMTI_VERIFY(
         jvmti_env->SetEventNotificationMode(
-            JVMTI_DISABLE, JVMTI_EVENT_SINGLE_STEP, NULL));
+            JVMTI_DISABLE, JVMTI_EVENT_SINGLE_STEP, nullptr));
 
-    if (!NSK_JVMTI_VERIFY(jvmti_env->GetMethodName(method, &name, &signature, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetMethodName(method, &name, &signature, nullptr))) {
         nsk_jvmti_setFailStatus();
         return;
     }
     NSK_DISPLAY2("SingleStep event: %s%s\n", name, signature);
-    if (name != NULL)
+    if (name != nullptr)
         jvmti_env->Deallocate((unsigned char*)name);
-    if (signature != NULL)
+    if (signature != nullptr)
         jvmti_env->Deallocate((unsigned char*)signature);
 }
 
@@ -178,60 +178,60 @@ static void JNICALL
 Exception(jvmtiEnv *jvmti_env, JNIEnv *jni_env, jthread thread,
         jmethodID method, jlocation location, jobject exception,
         jmethodID catch_method, jlocation catch_location) {
-    jclass klass = NULL;
-    char *signature = NULL;
+    jclass klass = nullptr;
+    char *signature = nullptr;
 
     ExceptionEventsCount++;
 
-    if (!NSK_JNI_VERIFY(jni_env, (klass = jni_env->GetObjectClass(exception)) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni_env, (klass = jni_env->GetObjectClass(exception)) != nullptr)) {
         nsk_jvmti_setFailStatus();
         return;
     }
-    if (!NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(klass, &signature, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(klass, &signature, nullptr))) {
         nsk_jvmti_setFailStatus();
         return;
     }
     NSK_DISPLAY1("Exception event: %s\n", signature);
-    if (signature != NULL)
+    if (signature != nullptr)
         jvmti_env->Deallocate((unsigned char*)signature);
 }
 
 void JNICALL
 ExceptionCatch(jvmtiEnv *jvmti_env, JNIEnv *jni_env, jthread thread,
         jmethodID method, jlocation location, jobject exception) {
-    jclass klass = NULL;
-    char *signature = NULL;
+    jclass klass = nullptr;
+    char *signature = nullptr;
 
     ExceptionCatchEventsCount++;
 
-    if (!NSK_JNI_VERIFY(jni_env, (klass = jni_env->GetObjectClass(exception)) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni_env, (klass = jni_env->GetObjectClass(exception)) != nullptr)) {
         nsk_jvmti_setFailStatus();
         return;
     }
-    if (!NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(klass, &signature, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(klass, &signature, nullptr))) {
         nsk_jvmti_setFailStatus();
         return;
     }
     NSK_DISPLAY1("ExceptionCatch event: %s\n", signature);
-    if (signature != NULL)
+    if (signature != nullptr)
         jvmti_env->Deallocate((unsigned char*)signature);
 }
 
 static void JNICALL
 Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *jni_env,
         jthread thread, jmethodID method, jlocation location) {
-    char *name = NULL;
-    char *signature = NULL;
+    char *name = nullptr;
+    char *signature = nullptr;
 
     BreakpointEventsCount++;
-    if (!NSK_JVMTI_VERIFY(jvmti_env->GetMethodName(method, &name, &signature, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetMethodName(method, &name, &signature, nullptr))) {
         nsk_jvmti_setFailStatus();
         return;
     }
     NSK_DISPLAY2("Breakpoint event: %s%s\n", name, signature);
-    if (name != NULL)
+    if (name != nullptr)
         jvmti_env->Deallocate((unsigned char*)name);
-    if (signature != NULL)
+    if (signature != nullptr)
         jvmti_env->Deallocate((unsigned char*)signature);
 
     jvmti_env->NotifyFramePop(thread, 0);
@@ -241,36 +241,36 @@ static void JNICALL
 FramePop(jvmtiEnv *jvmti_env, JNIEnv *jni_env,
         jthread thread, jmethodID method,
         jboolean wasPopedByException) {
-    char *name = NULL;
-    char *signature = NULL;
+    char *name = nullptr;
+    char *signature = nullptr;
 
     FramePopEventsCount++;
-    if (!NSK_JVMTI_VERIFY(jvmti_env->GetMethodName(method, &name, &signature, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetMethodName(method, &name, &signature, nullptr))) {
         nsk_jvmti_setFailStatus();
         return;
     }
     NSK_DISPLAY2("FramePop event: %s%s\n", name, signature);
-    if (name != NULL)
+    if (name != nullptr)
         jvmti_env->Deallocate((unsigned char*)name);
-    if (signature != NULL)
+    if (signature != nullptr)
         jvmti_env->Deallocate((unsigned char*)signature);
 }
 
 static void JNICALL
 MethodEntry(jvmtiEnv *jvmti_env, JNIEnv *jni_env,
         jthread thread, jmethodID method) {
-    char *name = NULL;
-    char *signature = NULL;
+    char *name = nullptr;
+    char *signature = nullptr;
 
     MethodEntryEventsCount++;
-    if (!NSK_JVMTI_VERIFY(jvmti_env->GetMethodName(method, &name, &signature, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetMethodName(method, &name, &signature, nullptr))) {
         nsk_jvmti_setFailStatus();
         return;
     }
     NSK_DISPLAY2("MethodEntry event: %s%s\n", name, signature);
-    if (name != NULL)
+    if (name != nullptr)
         jvmti_env->Deallocate((unsigned char*)name);
-    if (signature != NULL)
+    if (signature != nullptr)
         jvmti_env->Deallocate((unsigned char*)signature);
 }
 
@@ -278,18 +278,18 @@ static void JNICALL
 MethodExit(jvmtiEnv *jvmti_env, JNIEnv *jni_env,
         jthread thread, jmethodID method,
         jboolean was_poped_by_exception, jvalue return_value) {
-    char *name = NULL;
-    char *signature = NULL;
+    char *name = nullptr;
+    char *signature = nullptr;
 
     MethodExitEventsCount++;
-    if (!NSK_JVMTI_VERIFY(jvmti_env->GetMethodName(method, &name, &signature, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetMethodName(method, &name, &signature, nullptr))) {
         nsk_jvmti_setFailStatus();
         return;
     }
     NSK_DISPLAY2("MethodExit event: %s%s\n", name, signature);
-    if (name != NULL)
+    if (name != nullptr)
         jvmti_env->Deallocate((unsigned char*)name);
-    if (signature != NULL)
+    if (signature != nullptr)
         jvmti_env->Deallocate((unsigned char*)signature);
 }
 
@@ -298,7 +298,7 @@ MethodExit(jvmtiEnv *jvmti_env, JNIEnv *jni_env,
 static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
     const char* THREAD_NAME = "Debuggee Thread";
     jvmtiThreadInfo info;
-    jthread *threads = NULL;
+    jthread *threads = nullptr;
     jint threads_count = 0;
     int i;
 
@@ -308,12 +308,12 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
     if (!NSK_JVMTI_VERIFY(jvmti->GetAllThreads(&threads_count, &threads)))
         return NSK_FALSE;
 
-    if (!NSK_VERIFY(threads_count > 0 && threads != NULL))
+    if (!NSK_VERIFY(threads_count > 0 && threads != nullptr))
         return NSK_FALSE;
 
     /* find tested thread */
     for (i = 0; i < threads_count; i++) {
-        if (!NSK_VERIFY(threads[i] != NULL))
+        if (!NSK_VERIFY(threads[i] != nullptr))
             return NSK_FALSE;
 
         /* get thread information */
@@ -323,12 +323,12 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
         NSK_DISPLAY3("    thread #%d (%s): %p\n", i, info.name, threads[i]);
 
         /* find by name */
-        if (info.name != NULL && (strcmp(info.name, THREAD_NAME) == 0)) {
+        if (info.name != nullptr && (strcmp(info.name, THREAD_NAME) == 0)) {
             thread = threads[i];
         }
     }
 
-    if (!NSK_JNI_VERIFY(jni, (thread = jni->NewGlobalRef(thread)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (thread = jni->NewGlobalRef(thread)) != nullptr))
         return NSK_FALSE;
 
     /* deallocate threads list */
@@ -336,19 +336,19 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
         return NSK_FALSE;
 
     /* get tested thread class */
-    if (!NSK_JNI_VERIFY(jni, (klass = jni->GetObjectClass(thread)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (klass = jni->GetObjectClass(thread)) != nullptr))
         return NSK_FALSE;
 
     /* klass is used by other threads - convert to global handle */
-    if (!NSK_JNI_VERIFY(jni, (klass = (jclass)jni->NewGlobalRef(klass)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (klass = (jclass)jni->NewGlobalRef(klass)) != nullptr))
         return NSK_FALSE;
 
     /* get tested thread method 'delay' */
-    if (!NSK_JNI_VERIFY(jni, (method = jni->GetMethodID(klass, "delay", "()V")) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (method = jni->GetMethodID(klass, "delay", "()V")) != nullptr))
         return NSK_FALSE;
 
     /* get tested thread field 'waitingFlag' */
-    if (!NSK_JNI_VERIFY(jni, (field = jni->GetFieldID(klass, "waitingFlag", "Z")) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (field = jni->GetFieldID(klass, "waitingFlag", "Z")) != nullptr))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -358,11 +358,11 @@ static int prepareEvents(jvmtiEnv* jvmti, JNIEnv* jni) {
     NSK_DISPLAY0("Prepare events ...\n");
 
     /* get tested thread method 'letItGo' */
-    if (!NSK_JNI_VERIFY(jni, (method = jni->GetMethodID(klass, "letItGo", "()V")) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (method = jni->GetMethodID(klass, "letItGo", "()V")) != nullptr))
         return NSK_FALSE;
 
     /* get tested thread field 'waitingFlag' */
-    if (!NSK_JNI_VERIFY(jni, (field = jni->GetFieldID(klass, "waitingFlag", "Z")) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (field = jni->GetFieldID(klass, "waitingFlag", "Z")) != nullptr))
         return NSK_FALSE;
 
     if (!NSK_JVMTI_VERIFY(jvmti->SetFieldAccessWatch(klass, field)))
@@ -376,13 +376,13 @@ static int prepareEvents(jvmtiEnv* jvmti, JNIEnv* jni) {
 
     /* enable events */
     if (!NSK_JVMTI_VERIFY(
-            jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_SINGLE_STEP, NULL)))
+            jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_SINGLE_STEP, nullptr)))
         return JNI_ERR;
     if (!NSK_JVMTI_VERIFY(
-            jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_EXCEPTION, NULL)))
+            jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_EXCEPTION, nullptr)))
         return JNI_ERR;
     if (!NSK_JVMTI_VERIFY(
-            jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_EXCEPTION_CATCH, NULL)))
+            jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_EXCEPTION_CATCH, nullptr)))
         return JNI_ERR;
     if (!NSK_JVMTI_VERIFY(
             jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_METHOD_ENTRY, thread)))
@@ -483,7 +483,7 @@ static int checkRedefineClasses(jvmtiEnv* jvmti) {
     jvmtiClassDefinition class_def;
     jboolean is_obsolete;
 
-    if (!NSK_VERIFY(klass_byte_count != 0 && klass_bytes != NULL))
+    if (!NSK_VERIFY(klass_byte_count != 0 && klass_bytes != nullptr))
         return NSK_FALSE;
 
     NSK_DISPLAY0("Checking positive: RedefineClasses\n");
@@ -516,7 +516,7 @@ static int checkGetSourceFileName(jvmtiEnv* jvmti) {
  */
 static int checkGetLineNumberTable(jvmtiEnv* jvmti) {
     jint count;
-    jvmtiLineNumberEntry *line_number_table = NULL;
+    jvmtiLineNumberEntry *line_number_table = nullptr;
 
     NSK_DISPLAY0("Checking positive: GetLineNumberTable\n");
     if (!NSK_JVMTI_VERIFY(jvmti->GetLineNumberTable(method, &count, &line_number_table)))
@@ -542,7 +542,7 @@ static int checkGetSourceDebugExtension(jvmtiEnv* jvmti) {
  */
 static int checkLocalVariableFunctions(jvmtiEnv* jvmti) {
     jint count;
-    jvmtiLocalVariableEntry *local_variable_table = NULL;
+    jvmtiLocalVariableEntry *local_variable_table = nullptr;
     jobject object_value;
     jint int_value;
     jlong long_value;
@@ -680,18 +680,18 @@ static int checkSignalThread(jvmtiEnv* jvmti, JNIEnv* jni) {
     const char* THREAD_DEATH_CLASS_NAME = "java/lang/ThreadDeath";
     const char* THREAD_DEATH_CTOR_NAME = "<init>";
     const char* THREAD_DEATH_CTOR_SIGNATURE = "()V";
-    jclass cls = NULL;
-    jmethodID ctor = NULL;
-    jobject exception = NULL;
+    jclass cls = nullptr;
+    jmethodID ctor = nullptr;
+    jobject exception = nullptr;
 
-    if (!NSK_JNI_VERIFY(jni, (cls = jni->FindClass(THREAD_DEATH_CLASS_NAME)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (cls = jni->FindClass(THREAD_DEATH_CLASS_NAME)) != nullptr))
         return NSK_FALSE;
 
     if (!NSK_JNI_VERIFY(jni, (ctor =
-            jni->GetMethodID(cls, THREAD_DEATH_CTOR_NAME, THREAD_DEATH_CTOR_SIGNATURE)) != NULL))
+            jni->GetMethodID(cls, THREAD_DEATH_CTOR_NAME, THREAD_DEATH_CTOR_SIGNATURE)) != nullptr))
         return NSK_FALSE;
 
-    if (!NSK_JNI_VERIFY(jni, (exception = jni->NewObject(cls, ctor)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (exception = jni->NewObject(cls, ctor)) != nullptr))
         return NSK_FALSE;
 
     NSK_DISPLAY0("Checking positive: InterruptThread\n");
@@ -848,7 +848,7 @@ JNIEXPORT jint JNI_OnLoad_cm03t001(JavaVM *jvm, char *options, void *reserved) {
 }
 #endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
-    jvmtiEnv* jvmti = NULL;
+    jvmtiEnv* jvmti = nullptr;
     jvmtiCapabilities caps;
     jvmtiEventCallbacks callbacks;
 
@@ -861,7 +861,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     /* create JVMTI environment */
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     /* add capabilities */
@@ -904,23 +904,23 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     /* enable events */
     if (!NSK_JVMTI_VERIFY(
-            jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, NULL)))
+            jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, nullptr)))
         return JNI_ERR;
     if (!NSK_JVMTI_VERIFY(
-            jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_FIELD_ACCESS, NULL)))
+            jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_FIELD_ACCESS, nullptr)))
         return JNI_ERR;
     if (!NSK_JVMTI_VERIFY(
-            jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_FIELD_MODIFICATION, NULL)))
+            jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_FIELD_MODIFICATION, nullptr)))
         return JNI_ERR;
     if (!NSK_JVMTI_VERIFY(
-            jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, NULL)))
+            jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, nullptr)))
         return JNI_ERR;
     if (!NSK_JVMTI_VERIFY(
-            jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_FRAME_POP, NULL)))
+            jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_FRAME_POP, nullptr)))
         return JNI_ERR;
 
     /* register agent proc and arg */
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     return JNI_OK;

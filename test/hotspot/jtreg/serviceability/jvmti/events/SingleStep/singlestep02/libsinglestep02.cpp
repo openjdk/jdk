@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ extern "C" {
 static volatile jint result = PASSED;
 static volatile long wrongStepEv = 0;
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 
 /** callback functions **/
 void JNICALL
@@ -78,7 +78,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jint res;
 
   res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     LOG("Wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }
@@ -113,11 +113,11 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   }
 
   LOG("setting event callbacks done\nenabling JVMTI events ...\n");
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_SINGLE_STEP, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_SINGLE_STEP, nullptr);
   if (err != JVMTI_ERROR_NONE) {
     return JNI_ERR;
   }
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, nullptr);
   if (err != JVMTI_ERROR_NONE) {
     return JNI_ERR;
   }

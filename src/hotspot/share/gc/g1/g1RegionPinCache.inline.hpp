@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,25 +19,42 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-/**
- * @test
- * @bug 7200264
- * @summary 7192963 changes disabled shift vectors
- * @requires vm.cpu.features ~= ".*sse4\\.1.*" & vm.debug & vm.flavor == "server"
- * @requires !vm.emulatedClient & !vm.graal.enabled
- * @library /test/lib /
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:StressLongCountedLoop=0
- *                   compiler.c2.cr7200264.TestSSE4IntVect
- */
+#ifndef SHARE_GC_G1_G1REGIONPINCACHE_INLINE_HPP
+#define SHARE_GC_G1_G1REGIONPINCACHE_INLINE_HPP
 
-package compiler.c2.cr7200264;
+#include "gc/g1/g1RegionPinCache.hpp"
 
-public class TestSSE4IntVect {
-    public static void main(String[] args) throws Throwable {
-        TestDriver test = new TestDriver();
-        test.addExpectedVectorization("MulVI", 2);
-        test.run();
-    }
+#include "gc/g1/g1CollectedHeap.inline.hpp"
+
+inline void G1RegionPinCache::inc_count(uint region_idx) {
+  if (region_idx == _region_idx) {
+    ++_count;
+  } else {
+    flush_and_set(region_idx, (size_t)1);
+  }
 }
+
+inline void G1RegionPinCache::dec_count(uint region_idx) {
+  if (region_idx == _region_idx) {
+    --_count;
+  } else {
+    flush_and_set(region_idx, ~(size_t)0);
+  }
+}
+
+inline void G1RegionPinCache::flush_and_set(uint new_region_idx, size_t new_count) {
+  if (_count != 0) {
+    G1CollectedHeap::heap()->region_at(_region_idx)->add_pinned_object_count(_count);
+  }
+  _region_idx = new_region_idx;
+  _count = new_count;
+}
+
+inline void G1RegionPinCache::flush() {
+  flush_and_set(G1_NO_HRM_INDEX, 0);
+}
+
+#endif /* SHARE_GC_G1_G1REGIONPINCACHE_INLINE_HPP */
