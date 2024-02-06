@@ -404,7 +404,7 @@ void Matcher::match( ) {
       assert(C->failure_reason() != nullptr, "graph lost: reason unknown");
       ss.print("graph lost: reason unknown");
     }
-    C->record_method_not_compilable(ss.as_arena_string(ciEnv::current()->task()->arena()));
+    C->record_method_not_compilable(ss.as_arena_string(ciEnv::current()->task()->resource_area()));
   }
   if (C->failing()) {
     // delete old;

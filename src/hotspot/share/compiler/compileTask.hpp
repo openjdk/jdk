@@ -110,14 +110,14 @@ class CompileTask : public CHeapObj<mtCompiler> {
   int                  _hot_count;    // information about its invocation counter
   CompileReason        _compile_reason;      // more info about the task
 
-  Arena                 _arena;
-  const char*          _failure_reason; // may be allocated from arena
+  ResourceArea         _resource_area; // TODO when active?
+  const char*          _failure_reason; // can be static strings, or allocated from resource_area
   // Specifies if _failure_reason is on the C heap.
   bool                 _failure_reason_on_C_heap; // TODO maybe remove?
 
  public:
   CompileTask() :
-    _arena(mtCompiler),
+    _resource_area(mtCompiler),
     _failure_reason(nullptr),
     _failure_reason_on_C_heap(false)
   {
@@ -230,7 +230,7 @@ public:
   void         log_task_start(CompileLog* log);
   void         log_task_done(CompileLog* log);
 
-  Arena* arena() { return &_arena; }
+  ResourceArea* resource_area() { return &_resource_area; }
 
   void         set_failure_reason(const char* reason, bool on_C_heap = false) {
     _failure_reason = reason;

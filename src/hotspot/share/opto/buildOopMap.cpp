@@ -255,7 +255,7 @@ OopMap *OopFlow::build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, i
         ss.print("illegal oopMap register name: ");
         r->print_on(&ss);
         assert(false, "%s", ss.as_string());
-        regalloc->C->record_method_not_compilable(ss.as_arena_string(ciEnv::current()->task()->arena()));
+        regalloc->C->record_method_not_compilable(ss.as_arena_string(ciEnv::current()->task()->resource_area()));
         continue;
       }
       if( t->is_ptr()->_offset == 0 ) { // Not derived?
@@ -326,7 +326,7 @@ OopMap *OopFlow::build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, i
         ss.print("illegal oopMap register name: ");
         r->print_on(&ss);
         assert(false, "%s", ss.as_string());
-        regalloc->C->record_method_not_compilable(ss.as_arena_string(ciEnv::current()->task()->arena()));
+        regalloc->C->record_method_not_compilable(ss.as_arena_string(ciEnv::current()->task()->resource_area()));
         continue;
       }
       if( mcall ) {
