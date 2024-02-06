@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -766,7 +766,7 @@ SafePointScalarObjectNode* PhaseMacroExpand::create_scalarized_object_descriptio
     }
   }
 
-  SafePointScalarObjectNode* sobj = new SafePointScalarObjectNode(res_type, alloc, first_ind, nfields);
+  SafePointScalarObjectNode* sobj = new SafePointScalarObjectNode(res_type, alloc, first_ind, sfpt->jvms()->depth(), nfields);
   sobj->init_req(0, C->root());
   transform_later(sobj);
 
