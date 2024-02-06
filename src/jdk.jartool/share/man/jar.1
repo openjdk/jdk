@@ -35,7 +35,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "JAR" "1" "2024" "JDK 22-ea" "JDK Commands"
+.TH "JAR" "1" "2024" "JDK 22" "JDK Commands"
 .hy
 .SH NAME
 .PP
@@ -186,7 +186,8 @@ created or a non-modular JAR file being updated.
 Specifies the location of module dependence for generating the hash.
 .TP
 \f[V]\[at]\f[R]\f[I]file\f[R]
-Reads \f[V]jar\f[R] options and file names from a text file.
+Reads \f[V]jar\f[R] options and file names from a text file as if they
+were supplied on the command line
 .SH OPERATION MODIFIERS VALID ONLY IN CREATE, UPDATE, AND GENERATE-INDEX MODES
 .PP
 You can use the following options to customize the actions of the create
@@ -330,11 +331,14 @@ class files from the file \f[V]classes.list\f[R].
 .PP
 \f[B]Note:\f[R]
 .PP
-To shorten or simplify the \f[V]jar\f[R] command, you can specify
-arguments in a separate text file and pass it to the \f[V]jar\f[R]
-command with the at sign (\f[V]\[at]\f[R]) as a prefix.
+To shorten or simplify the \f[V]jar\f[R] command, you can provide an arg
+file that lists the files to include in the JAR file and pass it to the
+\f[V]jar\f[R] command with the at sign (\f[V]\[at]\f[R]) as a prefix.
 .RS
 .PP
 \f[V]jar --create --file my.jar \[at]classes.list\f[R]
 .RE
+.PP
+If one or more entries in the arg file cannot be found then the jar
+command fails without creating the JAR file.
 .RE

@@ -36,7 +36,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "JAVA" "1" "2024" "JDK 22-ea" "JDK Commands"
+.TH "JAVA" "1" "2024" "JDK 22" "JDK Commands"
 .hy
 .SH NAME
 .PP
@@ -63,7 +63,7 @@ or
 \f[V]java\f[R] [\f[I]options\f[R]] \f[V]--module\f[R]
 \f[I]module\f[R][\f[V]/\f[R]\f[I]mainclass\f[R]] [\f[I]args\f[R] ...]
 .PP
-To launch a single source-file program:
+To launch a source-file program:
 .PP
 \f[V]java\f[R] [\f[I]options\f[R]] \f[I]source-file\f[R] [\f[I]args\f[R]
 \&...]
@@ -100,11 +100,10 @@ See \f[B]Standard Options for Java\f[R].
 .RE
 .TP
 \f[I]source-file\f[R]
-Only used to launch a single source-file program.
+Only used to launch a source-file program.
 Specifies the source file that contains the main class when using
 source-file mode.
-See \f[B]Using Source-File Mode to Launch Single-File Source-Code
-Programs\f[R]
+See \f[B]Using Source-File Mode to Launch Source-Code Programs\f[R]
 .TP
 \f[I]args\f[R] ...
 Optional: Arguments following \f[I]mainclass\f[R],
@@ -128,8 +127,8 @@ The method declaration has the following form:
 .PP
 In source-file mode, the \f[V]java\f[R] command can launch a class
 declared in a source file.
-See \f[B]Using Source-File Mode to Launch Single-File Source-Code
-Programs\f[R] for a description of using the source-file mode.
+See \f[B]Using Source-File Mode to Launch Source-Code Programs\f[R] for
+a description of using the source-file mode.
 .RS
 .PP
 \f[B]Note:\f[R] You can use the \f[V]JDK_JAVA_OPTIONS\f[R] launcher
@@ -157,7 +156,7 @@ Use \f[V]javaw\f[R] when you don\[aq]t want a command prompt window to
 appear.
 The \f[V]javaw\f[R] launcher will, however, display a dialog box with
 error information if a launch fails.
-.SH USING SOURCE-FILE MODE TO LAUNCH SINGLE-FILE SOURCE-CODE PROGRAMS
+.SH USING SOURCE-FILE MODE TO LAUNCH SOURCE-CODE PROGRAMS
 .PP
 To launch a class declared in a source file, run the \f[V]java\f[R]
 launcher in source-file mode.
@@ -205,25 +204,24 @@ Any arguments placed after the name of the source file in the original
 command line are passed to the compiled class when it is executed.
 .PP
 For example, if a file were named \f[V]HelloWorld.java\f[R] and
-contained a class named \f[V]hello.World\f[R], then the source-file mode
+contained a class named \f[V]HelloWorld\f[R], then the source-file mode
 command to launch the class would be:
 .RS
 .PP
 \f[V]java HelloWorld.java\f[R]
 .RE
 .PP
-The example illustrates that the class can be in a named package, and
-does not need to be in the unnamed package.
 This use of source-file mode is informally equivalent to using the
-following two commands where \f[V]hello.World\f[R] is the name of the
-class in the package:
+following two commands:
 .IP
 .nf
 \f[CB]
-javac -d <memory> HelloWorld.java
-java -cp <memory> hello.World
+javac -d <memory> --source-path <source-root> HelloWorld.java
+java --class-path <memory> HelloWorld
 \f[R]
 .fi
+.PP
+where \f[V]<source-root>\f[R] is computed
 .PP
 \f[B]In source-file mode, any additional command-line options are
 processed as follows:\f[R]
@@ -253,9 +251,24 @@ filename with an \f[V]\[at]\f[R] character.
 .IP \[bu] 2
 Any command-line options that are relevant to the compilation
 environment are taken into account.
+These include:
+\f[V]--class-path\f[R]/\f[V]-classpath\f[R]/\f[V]-cp\f[R],
+\f[V]--module-path\f[R]/\f[V]-p\f[R], \f[V]--add-exports\f[R],
+\f[V]--add-modules\f[R], \f[V]--limit-modules\f[R],
+\f[V]--patch-module\f[R], \f[V]--upgrade-module-path\f[R],
+\f[V]--enable-preview\f[R].
 .IP \[bu] 2
-No other source files are found and compiled, as if the source path is
-set to an empty value.
+The root of the source tree, \f[V]<source-root>\f[R] is computed from
+the package of the class being launched.
+For example, if \f[V]HelloWorld.java\f[R] declared its classes to be in
+the \f[V]hello\f[R] package, then the file \f[V]HelloWorld.java\f[R] is
+expected to reside in the directory \f[V]somedir/hello/\f[R].
+In this case, \f[V]somedir\f[R] is computed to be the root of the source
+tree.
+.IP \[bu] 2
+The root of the source tree serves as the source-path for compilation,
+so that other source files found in that tree and are needed by
+\f[V]HelloWorld\f[R] could be compiled.
 .IP \[bu] 2
 Annotation processing is disabled, as if \f[V]-proc:none\f[R] is in
 effect.
@@ -266,45 +279,54 @@ the compilation.
 This sets both the source version accepted by compiler and the system
 API that may be used by the code in the source file.
 .IP \[bu] 2
-The source file is compiled in the context of an unnamed module.
+If a \f[V]module-info.java\f[R] file exists in the
+\f[V]<source-root>\f[R] directory, its module declaration is used to
+define a named module that will contain all the classes compiled from
+\f[V].java\f[R] files in the source tree.
+If \f[V]module-info.java\f[R] does not exist, all the classes compiled
+from source files will be compiled in the context of the unnamed module.
 .IP \[bu] 2
-The source file should contain one or more top-level classes, the first
-of which is taken as the class to be executed.
+The source file that is launched should contain one or more top-level
+classes, the first of which is taken as the class to be executed.
 .IP \[bu] 2
-The compiler does not enforce the optional restriction defined at the
-end of JLS 7.6, that a type in a named package should exist in a file
-whose name is composed from the type name followed by the
-\f[V].java\f[R] extension.
+For the source file that is launched, the compiler does not enforce the
+optional restriction defined at the end of JLS 7.6, that a type in a
+named package should exist in a file whose name is composed from the
+type name followed by the \f[V].java\f[R] extension.
 .IP \[bu] 2
-If the source file contains errors, appropriate error messages are
-written to the standard error stream, and the launcher exits with a
-non-zero exit code.
+If a source file contains errors, appropriate error messages are written
+to the standard error stream, and the launcher exits with a non-zero
+exit code.
 .PP
 \f[B]In source-file mode, execution proceeds as follows:\f[R]
 .IP \[bu] 2
 The class to be executed is the first top-level class found in the
 source file.
-It must contain a declaration of the standard
-\f[V]public static void main(String[])\f[R] method.
+It must contain a declaration of an entry \f[V]main\f[R] method.
 .IP \[bu] 2
 The compiled classes are loaded by a custom class loader, that delegates
 to the application class loader.
 This implies that classes appearing on the application class path cannot
-refer to any classes declared in the source file.
+refer to any classes declared in source files.
 .IP \[bu] 2
-The compiled classes are executed in the context of an unnamed module,
-as though \f[V]--add-modules=ALL-DEFAULT\f[R] is in effect.
+If a \f[V]module-info.java\f[R] file exists in the
+\f[V]<source-root>\f[R] directory, then all the classes compiled from
+\f[V].java\f[R] files in the source tree will be in that module, which
+will serve as the root module for the execution of the program.
+If \f[V]module-info.java\f[R] does not exist, the compiled classes are
+executed in the context of an unnamed module, as though
+\f[V]--add-modules=ALL-DEFAULT\f[R] is in effect.
 This is in addition to any other \f[V]--add-module\f[R] options that may
 be have been specified on the command line.
 .IP \[bu] 2
 Any arguments appearing after the name of the file on the command line
-are passed to the standard main method in the obvious way.
+are passed to the main method in the obvious way.
 .IP \[bu] 2
 It is an error if there is a class on the application class path whose
 name is the same as that of the class to be executed.
 .PP
-See \f[B]JEP 330: Launch Single-File Source-Code Programs\f[R]
-[https://openjdk.org/jeps/330] for complete details.
+See \f[B]JEP 458: Launch Multi-File Source-Code Programs\f[R]
+[https://openjdk.org/jeps/458] for complete details.
 .SH USING THE JDK_JAVA_OPTIONS LAUNCHER ENVIRONMENT VARIABLE
 .PP
 \f[V]JDK_JAVA_OPTIONS\f[R] prepends its content to the options parsed

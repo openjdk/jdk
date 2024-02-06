@@ -36,7 +36,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "KEYTOOL" "1" "2024" "JDK 22-ea" "JDK Commands"
+.TH "KEYTOOL" "1" "2024" "JDK 22" "JDK Commands"
 .hy
 .SH NAME
 .PP
@@ -452,17 +452,32 @@ The certificate chain and private key are stored in a new keystore entry
 that is identified by its alias.
 .PP
 The \f[V]-keyalg\f[R] value specifies the algorithm to be used to
-generate the key pair, and the \f[V]-keysize\f[R] value specifies the
-size of each key to be generated.
-The \f[V]-sigalg\f[R] value specifies the algorithm that should be used
-to sign the certificate.
-This algorithm must be compatible with the \f[V]-keyalg\f[R] value.
-.PP
+generate the key pair.
+The \f[V]-keysize\f[R] value specifies the size of each key to be
+generated.
 The \f[V]-groupname\f[R] value specifies the named group (for example,
 the standard or predefined name of an Elliptic Curve) of the key to be
 generated.
+.PP
+When a \f[V]-keysize\f[R] value is provided, it will be used to
+initialize a \f[V]KeyPairGenerator\f[R] object using the
+\f[V]initialize(int keysize)\f[R] method.
+When a \f[V]-groupname\f[R] value is provided, it will be used to
+initialize a \f[V]KeyPairGenerator\f[R] object using the
+\f[V]initialize(AlgorithmParameterSpec params)\f[R] method where
+\f[V]params\f[R] is \f[V]new NamedParameterSpec(groupname)\f[R].
+.PP
 Only one of \f[V]-groupname\f[R] and \f[V]-keysize\f[R] can be
 specified.
+If an algorithm has multiple named groups that have the same key size,
+the \f[V]-groupname\f[R] option should usually be used.
+In this case, if \f[V]-keysize\f[R] is specified, it\[aq]s up to the
+security provider to determine which named group is chosen when
+generating a key pair.
+.PP
+The \f[V]-sigalg\f[R] value specifies the algorithm that should be used
+to sign the certificate.
+This algorithm must be compatible with the \f[V]-keyalg\f[R] value.
 .PP
 The \f[V]-signer\f[R] value specifies the alias of a
 \f[V]PrivateKeyEntry\f[R] for the signer that already exists in the
@@ -1570,9 +1585,12 @@ The following examples show the defaults for various option values:
     2048 (when using -genkeypair and -keyalg is \[dq]DSA\[dq])
     3072 (when using -genkeypair and -keyalg is \[dq]RSA\[dq], \[dq]RSASSA-PSS\[dq], or \[dq]DH\[dq])
     384 (when using -genkeypair and -keyalg is \[dq]EC\[dq])
-    255 (when using -genkeypair and -keyalg is \[dq]EdDSA\[dq], or \[dq]XDH)
     56 (when using -genseckey and -keyalg is \[dq]DES\[dq])
     168 (when using -genseckey and -keyalg is \[dq]DESede\[dq])
+
+-groupname
+    ed25519 (when using -genkeypair and -keyalg is \[dq]EdDSA\[dq], key size is 255)
+    x25519 (when using -genkeypair and -keyalg is \[dq]XDH\[dq], key size is 255)
 
 -validity 90
 
@@ -1604,7 +1622,7 @@ l l l.
 T{
 keyalg
 T}@T{
-keysize
+key size
 T}@T{
 default sigalg
 T}
@@ -1621,7 +1639,7 @@ RSA
 T}@T{
 < 624
 T}@T{
-SHA256withRSA (keysize is too small for using SHA-384)
+SHA256withRSA (key size is too small for using SHA-384)
 T}
 T{
 T}@T{
@@ -1653,7 +1671,7 @@ RSASSA-PSS
 T}@T{
 < 624
 T}@T{
-RSASSA-PSS (with SHA-256, keysize is too small for
+RSASSA-PSS (with SHA-256, key size is too small for
 T}
 T{
 T}@T{
@@ -1701,28 +1719,29 @@ Ed448
 T}
 .TE
 .IP \[bu] 2
+The key size, measured in bits, corresponds to the size of the private
+key.
+This size is determined by the value of the \f[V]-keysize\f[R] or
+\f[V]-groupname\f[R] options or the value derived from a default
+setting.
+.IP \[bu] 2
 An RSASSA-PSS signature algorithm uses a \f[V]MessageDigest\f[R]
 algorithm as its hash and MGF1 algorithms.
 .IP \[bu] 2
-EdDSA supports 2 key sizes: Ed25519 and Ed448.
-When generating an EdDSA key pair using \f[V]-keyalg EdDSA\f[R], a user
-can specify \f[V]-keysize 255\f[R] or \f[V]-keysize 448\f[R] to generate
-Ed25519 or Ed448 key pairs.
-When no \f[V]-keysize\f[R] is specified, an Ed25519 key pair is
-generated.
-A user can also directly specify \f[V]-keyalg Ed25519\f[R] or
-\f[V]-keyalg Ed448\f[R] to generate a key pair with the expected key
-size.
+If neither a default \f[V]-keysize\f[R] or \f[V]-groupname\f[R] is
+defined for an algorithm, the security provider will choose a default
+setting.
 .PP
 \f[B]Note:\f[R]
 .PP
-To improve out of the box security, default key size and signature
-algorithm names are periodically updated to stronger values with each
-release of the JDK.
+To improve out of the box security, default keysize, groupname, and
+signature algorithm names are periodically updated to stronger values
+with each release of the JDK.
 If interoperability with older releases of the JDK is important, make
 sure that the defaults are supported by those releases.
-Alternatively, you can use the \f[V]-keysize\f[R] or \f[V]-sigalg\f[R]
-options to override the default values at your own risk.
+Alternatively, you can use the \f[V]-keysize\f[R], \f[V]-groupname\f[R],
+or \f[V]-sigalg\f[R] options to override the default values at your own
+risk.
 .SH SUPPORTED NAMED EXTENSIONS
 .PP
 The \f[V]keytool\f[R] command supports these named extensions.
