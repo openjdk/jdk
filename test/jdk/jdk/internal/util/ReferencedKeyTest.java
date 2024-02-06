@@ -127,6 +127,11 @@ public class ReferencedKeyTest {
         assertTrue(element1 == intern1, "intern failed"); // must be same object
         assertTrue(intern2 != null, "intern failed");
         assertTrue(element3 == intern3, "intern failed");
+
+        Long value1 = new Long(BASE_KEY + 999);
+        Long value2 = new Long(BASE_KEY + 999);
+        assertTrue(set.add(value1), "key not added");
+        assertTrue(!set.add(value2), "key should not have been added");
     }
 
     // Borrowed from jdk.test.lib.util.ForceGC but couldn't use from java.base/jdk.internal.util
