@@ -3682,7 +3682,9 @@ public class ObjectInputStream
                 if (avail >= utflen) {
                     ascii = JLA.countPositives(buf, pos, (int)utflen);
                     if (ascii == utflen) {
-                        String utf = new String(buf, pos, (int)utflen, StandardCharsets.UTF_8);
+                        // For ASCII-only bytes we can treat the bytes as ISO-8859-1 and
+                        // avoid a redundant scan
+                        String utf = new String(buf, pos, (int)utflen, StandardCharsets.ISO_8859_1);
                         pos += (int)utflen;
                         return utf;
                     }

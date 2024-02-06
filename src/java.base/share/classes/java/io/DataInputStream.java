@@ -593,7 +593,9 @@ loop:   while (true) {
         // fast-path as regular UTF-8
         int count = JLA.countPositives(bytearr, 0, utflen);
         if (count == utflen) {
-            return new String(bytearr, 0, utflen, StandardCharsets.UTF_8);
+            // For ASCII-only bytes ISO-8859-1 is equivalent to UTF-8, but using the
+            // former charset avoids a redundant scan
+            return new String(bytearr, 0, utflen, StandardCharsets.ISO_8859_1);
         }
         return readUTFChars(in, bytearr, utflen, count);
     }
