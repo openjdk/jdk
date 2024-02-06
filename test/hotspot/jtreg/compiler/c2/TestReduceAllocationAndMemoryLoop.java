@@ -28,7 +28,6 @@
  * @library /test/lib /
  * @run main/othervm -XX:CompileCommand=compileonly,*TestReduceAllocationAndMemoryLoop*::test*
  *                   -XX:-TieredCompilation -Xbatch
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+TraceReduceAllocationMerges
  *                   compiler.c2.TestReduceAllocationAndMemoryLoop
  */
 
