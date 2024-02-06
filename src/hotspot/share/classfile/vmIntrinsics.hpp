@@ -292,6 +292,9 @@ class methodHandle;
   do_intrinsic(_setScopedValueCache,      java_lang_Thread,       setScopedValueCache_name, setScopedValueCache_signature, F_SN) \
    do_name(     setScopedValueCache_name,                        "setScopedValueCache")                                 \
    do_signature(setScopedValueCache_signature,                   "([Ljava/lang/Object;)V")                              \
+  do_intrinsic(_myTrap,      java_lang_System,       myTrap_name, void_method_signature, F_SN) \
+   do_name(     myTrap_name,                        "myTrap")                                 \
+            \
   do_intrinsic(_findScopedValueBindings,  java_lang_Thread,       findScopedValueBindings_name, void_object_signature, F_SN) \
    do_name(     findScopedValueBindings_name,                    "findScopedValueBindings")                             \
                                                                                                                         \

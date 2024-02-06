@@ -311,6 +311,9 @@ JVM_ScopedValueCache(JNIEnv *env, jclass threadClass);
 JNIEXPORT void JNICALL
 JVM_SetScopedValueCache(JNIEnv *env, jclass threadClass, jobject theCache);
 
+JNIEXPORT void JNICALL
+JVM_MyTrap(JNIEnv *env, jclass theClass);
+
 JNIEXPORT jobject JNICALL
 JVM_FindScopedValueBindings(JNIEnv *env, jclass threadClass);
 
