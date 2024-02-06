@@ -69,7 +69,7 @@ public class IntrinsicPredicates {
 
     public static final BooleanSupplier SHA1_INSTRUCTION_AVAILABLE
             = new OrPredicate(new CPUSpecificPredicate("aarch64.*", new String[] { "sha1" }, null),
-              // on riscv64, SHA-1 intrinsic is implemented with basic instructions
+              // SHA-1 intrinsic is implemented with scalar instructions on riscv64
               new OrPredicate(new CPUSpecificPredicate("riscv64.*", null, null),
               new OrPredicate(new CPUSpecificPredicate("s390.*",    new String[] { "sha1" }, null),
               // x86 variants

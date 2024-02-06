@@ -4829,7 +4829,7 @@ class StubGenerator: public StubCodeGenerator {
   // W't =
   //    M't,                                      0 <=  t <= 15
   //    ROTL'1(W't-3 ^ W't-8 ^ W't-14 ^ W't-16),  16 <= t <= 79
-  void sha1_prepare_w(int round, Register cur_w, Register ws[], Register buf, Register tmp) {
+  void sha1_prepare_w(int round, Register cur_w, Register ws[], Register buf) {
     assert(round >= 0 && round < 80, "must be");
 
     if (round < 16) {
@@ -4857,9 +4857,9 @@ class StubGenerator: public StubCodeGenerator {
       __ srli(t1, ws[(idx-8)/2], 32);
       __ xorr(t0, t0, t1);
 
-      __ srli(tmp, ws[(idx-14)/2], 32);
+      __ srli(t1, ws[(idx-14)/2], 32);
       __ srli(cur_w, ws[(idx-16)/2], 32);
-      __ xorr(cur_w, cur_w, tmp);
+      __ xorr(cur_w, cur_w, t1);
 
       __ xorr(cur_w, cur_w, t0);
       __ rolw_imm(cur_w, cur_w, 1, t0);
@@ -4880,9 +4880,9 @@ class StubGenerator: public StubCodeGenerator {
     __ mv(t1, ws[(idx-8)/2]);
     __ xorr(t0, t0, t1);
 
-    __ mv(tmp, ws[(idx-14)/2]);
+    __ mv(t1, ws[(idx-14)/2]);
     __ mv(cur_w, ws[(idx-16)/2]);
-    __ xorr(cur_w, cur_w, tmp);
+    __ xorr(cur_w, cur_w, t1);
 
     __ xorr(cur_w, cur_w, t0);
     __ rolw_imm(cur_w, cur_w, 1, t0);
@@ -4948,7 +4948,7 @@ class StubGenerator: public StubCodeGenerator {
       // so, we can reuse it as a temp register here.
       __ add(cur_w, cur_k, cur_w);
       __ add(t, t, cur_w);
-      __ rolw_imm(cur_w, a, 5, t1);
+      __ rolw_imm(cur_w, a, 5, t0);
       // as pointed above, we can use cur_w as temporary register here.
       sha1_f(round, tmp, b, c, d);
       __ add(cur_w, cur_w, tmp);
@@ -5110,7 +5110,7 @@ class StubGenerator: public StubCodeGenerator {
       sha1_prepare_k(round, cur_k);
 
       // prepare W't value
-      sha1_prepare_w(round, cur_w, ws, buf, t2);
+      sha1_prepare_w(round, cur_w, ws, buf);
 
       // one round process
       sha1_process_round(round, a, b, c, d, e, cur_k, cur_w, t2);
