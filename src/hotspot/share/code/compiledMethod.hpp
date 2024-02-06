@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -227,7 +227,7 @@ public:
   virtual bool is_osr_method() const = 0;
   virtual int osr_entry_bci() const = 0;
   Method* method() const                          { return _method; }
-  virtual void print_pcs() = 0;
+  virtual void print_pcs_on(outputStream* st) = 0;
   bool is_native_method() const { return _method != nullptr && _method->is_native(); }
   bool is_java_method() const { return _method != nullptr && !_method->is_native(); }
 
