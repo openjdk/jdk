@@ -25,8 +25,11 @@
 
 package java.io;
 
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.ByteArray;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 /**
@@ -550,6 +553,8 @@ loop:   while (true) {
         return readUTF(this);
     }
 
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+
     /**
      * Reads from the
      * stream {@code in} a representation
@@ -573,33 +578,39 @@ loop:   while (true) {
      */
     public static final String readUTF(DataInput in) throws IOException {
         int utflen = in.readUnsignedShort();
-        byte[] bytearr = null;
-        char[] chararr = null;
+        byte[] bytearr;
         if (in instanceof DataInputStream dis) {
             if (dis.bytearr.length < utflen) {
-                dis.bytearr = new byte[utflen*2];
-                dis.chararr = new char[utflen*2];
+                dis.bytearr = new byte[utflen * 2];
             }
-            chararr = dis.chararr;
             bytearr = dis.bytearr;
         } else {
             bytearr = new byte[utflen];
-            chararr = new char[utflen];
         }
-
-        int c, char2, char3;
-        int count = 0;
-        int chararr_count=0;
-
         in.readFully(bytearr, 0, utflen);
 
-        while (count < utflen) {
-            c = (int) bytearr[count] & 0xff;
-            if (c > 127) break;
-            count++;
-            chararr[chararr_count++]=(char)c;
+        // When all codepoints are 0-127, the modified UTF-8 stream can be use a similar
+        // fast-path as regular UTF-8
+        int count = JLA.countPositives(bytearr, 0, utflen);
+        if (count == utflen) {
+            return new String(bytearr, 0, utflen, StandardCharsets.UTF_8);
         }
+        return readUTFChars(in, bytearr, utflen, count);
+    }
 
+    private static String readUTFChars(DataInput in, byte[] bytearr, int utflen, int count) throws IOException {
+        int c, char2, char3;
+        int chararr_count = count;
+        char[] chararr;
+        if (in instanceof DataInputStream dis) {
+            if (dis.chararr.length < utflen) {
+                dis.chararr = new char[utflen * 2];
+            }
+            chararr = dis.chararr;
+        } else {
+            chararr = new char[utflen];
+        }
+        JLA.inflateBytesToChars(bytearr, 0, chararr, 0, count);
         while (count < utflen) {
             c = (int) bytearr[count] & 0xff;
             switch (c >> 4) {

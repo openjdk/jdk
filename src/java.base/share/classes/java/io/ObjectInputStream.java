@@ -33,6 +33,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
+import java.nio.charset.StandardCharsets;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -42,6 +43,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 
+import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.event.DeserializationEvent;
 import jdk.internal.misc.Unsafe;
@@ -3670,6 +3672,21 @@ public class ObjectInputStream
          * utflen bytes.
          */
         private String readUTFBody(long utflen) throws IOException {
+            int ascii = 0;
+            if (!blkmode) {
+                end = pos = 0;
+            } else {
+                int avail = end - pos;
+                if (avail >= utflen) {
+                    ascii = JLA.countPositives(buf, pos, (int)utflen);
+                    if (ascii == utflen) {
+                        String utf = new String(buf, pos, (int)utflen, StandardCharsets.UTF_8);
+                        pos += (int)utflen;
+                        return utf;
+                    }
+                }
+            }
+
             StringBuilder sbuf;
             if (utflen > 0 && utflen < Integer.MAX_VALUE) {
                 // a reasonable initial capacity based on the UTF length
@@ -3679,8 +3696,11 @@ public class ObjectInputStream
                 sbuf = new StringBuilder();
             }
 
-            if (!blkmode) {
-                end = pos = 0;
+            if (ascii > 3) {
+                JLA.inflateBytesToChars(buf, pos, cbuf, 0, ascii);
+                pos += ascii;
+                utflen -= ascii;
+                sbuf.append(cbuf, 0, ascii);
             }
 
             while (utflen > 0) {
@@ -3706,6 +3726,8 @@ public class ObjectInputStream
             return sbuf.toString();
         }
 
+        private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+
         /**
          * Reads span of UTF-encoded characters out of internal buffer
          * (starting at offset pos and ending at or before offset end),
@@ -3719,7 +3741,7 @@ public class ObjectInputStream
             int start = pos;
             int avail = Math.min(end - pos, CHAR_BUF_SIZE);
             // stop short of last char unless all of utf bytes in buffer
-            int stop = pos + ((utflen > avail) ? avail - 2 : (int) utflen);
+            int stop = start + ((utflen > avail) ? avail - 2 : (int) utflen);
             boolean outOfBounds = false;
 
             try {
