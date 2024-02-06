@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -666,40 +666,73 @@ public class IPAddressUtil {
      * {@code false} otherwise.
      */
     public static boolean isBsdParsableV4(String input) {
+        return parseBsdLiteralV4(input) != null;
+    }
+
+    /**
+     * Parse String as IPv4 address literal by following
+     * BSD-style formatting rules.
+     *
+     * @param input a String representing an IPv4 address in BSD format
+     * @return a byte array representing the IPv4 numeric address
+     * if input string is a parsable BSD style IPv4 address literal,
+     * {@code null} otherwise.
+     */
+    public static byte[] parseBsdLiteralV4(String input) {
+
+        byte[] res = new byte[]{0,0,0,0};
+
         char firstSymbol = input.charAt(0);
         // Check if first digit is not a decimal digit
         if (parseAsciiDigit(firstSymbol, DECIMAL) == -1) {
-            return false;
+            return null;
         }
 
         // Last character is dot OR is not a supported digit: [0-9,A-F,a-f]
         char lastSymbol = input.charAt(input.length() - 1);
         if (lastSymbol == '.' || parseAsciiHexDigit(lastSymbol) == -1) {
-            return false;
+            return null;
         }
 
         // Parse IP address fields
         CharBuffer charBuffer = CharBuffer.wrap(input);
         int fieldNumber = 0;
+        long fieldValue = -1L;
         while (charBuffer.hasRemaining()) {
-            long fieldValue = -1L;
+            fieldValue = -1L;
             // Try to parse fields in all supported radixes
             for (int radix : SUPPORTED_RADIXES) {
                 fieldValue = parseV4FieldBsd(radix, charBuffer, fieldNumber);
                 if (fieldValue >= 0) {
+                    if (fieldValue < 256) {
+                        res[fieldNumber] = (byte) fieldValue;
+                    }
                     fieldNumber++;
                     break;
                 } else if (fieldValue == TERMINAL_PARSE_ERROR) {
-                    return false;
+                    return null;
                 }
             }
             // If field can't be parsed as one of supported radixes stop
             // parsing
             if (fieldValue < 0) {
-                return false;
+                return null;
             }
         }
-        return true;
+        // The last field value must be non-negative
+        if (fieldValue < 0) {
+            return null;
+        }
+        // If the last fieldValue is greater than 255 (fieldNumer < 4),
+        // it is written to the last (4 - (fieldNumber - 1)) octets
+        // in the network order
+        if (fieldNumber < 4) {
+            for (int i = 3; i >= fieldNumber - 1; --i) {
+                res[i] = (byte) (fieldValue & 255);
+                fieldValue >>= 8;
+            }
+        }
+        return res;
     }
 
     /**
