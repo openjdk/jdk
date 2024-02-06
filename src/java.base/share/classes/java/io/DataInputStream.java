@@ -579,7 +579,9 @@ loop:   while (true) {
     public static final String readUTF(DataInput in) throws IOException {
         int utflen = in.readUnsignedShort();
         byte[] bytearr;
-        if (in instanceof DataInputStream dis) {
+        DataInputStream dis = null;
+        if (in instanceof DataInputStream) {
+            dis = (DataInputStream)in;
             if (dis.bytearr.length < utflen) {
                 dis.bytearr = new byte[utflen * 2];
             }
@@ -597,14 +599,8 @@ loop:   while (true) {
             // former charset avoids a redundant scan
             return new String(bytearr, 0, utflen, StandardCharsets.ISO_8859_1);
         }
-        return readUTFChars(in, bytearr, utflen, count);
-    }
-
-    private static String readUTFChars(DataInput in, byte[] bytearr, int utflen, int count) throws IOException {
-        int c, char2, char3;
-        int chararr_count = count;
         char[] chararr;
-        if (in instanceof DataInputStream dis) {
+        if (dis != null) {
             if (dis.chararr.length < utflen) {
                 dis.chararr = new char[utflen * 2];
             }
@@ -613,6 +609,12 @@ loop:   while (true) {
             chararr = new char[utflen];
         }
         JLA.inflateBytesToChars(bytearr, 0, chararr, 0, count);
+        return readUTFChars(bytearr, count, chararr, utflen);
+    }
+
+    private static String readUTFChars(byte[] bytearr, int count, char[] chararr, int utflen) throws IOException {
+        int c, char2, char3;
+        int chararr_count = count;
         while (count < utflen) {
             c = (int) bytearr[count] & 0xff;
             switch (c >> 4) {
