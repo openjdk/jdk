@@ -46,6 +46,8 @@ import com.sun.source.doctree.TextTree;
 import com.sun.source.util.DocTreeFactory;
 import com.sun.source.util.DocTrees;
 
+import com.sun.tools.javac.api.JavacTrees;
+
 import javadoc.tester.JavadocTester;
 import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.doclet.StandardDoclet;
@@ -62,7 +64,7 @@ public class TestTransformer extends JavadocTester {
     @Test
     public void testFindStandardTransformer_raw() {
         int count = 0;
-        var sl = ServiceLoader.load(DocTrees.DocCommentTreeTransformer.class);
+        var sl = ServiceLoader.load(JavacTrees.DocCommentTreeTransformer.class);
         for (var t : sl) {
             if (t.name().equals("standard")) {
                 out.println("Found " + t);
@@ -89,15 +91,15 @@ public class TestTransformer extends JavadocTester {
         }
     }
 
-    private Optional<DocTrees.DocCommentTreeTransformer> getTransformer(String name) {
-        var sl = ServiceLoader.load(DocTrees.DocCommentTreeTransformer.class);
+    private Optional<JavacTrees.DocCommentTreeTransformer> getTransformer(String name) {
+        var sl = ServiceLoader.load(JavacTrees.DocCommentTreeTransformer.class);
         return sl.stream()
                 .map(ServiceLoader.Provider::get)
                 .filter(t -> t.name().equals(name))
                 .findFirst();
     }
 
-    public static class MyTransformer implements DocTrees.DocCommentTreeTransformer {
+    public static class MyTransformer implements JavacTrees.DocCommentTreeTransformer {
 
         private DocTreeFactory m;
         @Override
@@ -134,7 +136,7 @@ public class TestTransformer extends JavadocTester {
     public static class MyDoclet extends StandardDoclet {
         @Override
         public boolean run(DocletEnvironment docEnv) {
-            docEnv.getDocTrees().setDocCommentTreeTransformer(new MyTransformer());
+            ((JavacTrees) docEnv.getDocTrees()).setDocCommentTreeTransformer(new MyTransformer());
             return super.run(docEnv);
         }
     }
@@ -156,6 +158,7 @@ public class TestTransformer extends JavadocTester {
 
         javadoc("-d", base.resolve("api").toString(),
                 "-Xdoclint:none",
+                "-XDaccessInternalAPI", // required to access JavacTrees
                 "-doclet", "TestTransformer$MyDoclet",
                 "-docletpath", System.getProperty("test.classes"),
                 "-sourcepath", src.toString(),

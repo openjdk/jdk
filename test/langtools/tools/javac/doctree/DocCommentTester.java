@@ -94,6 +94,7 @@ import com.sun.source.util.JavacTask;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.TreePathScanner;
 import com.sun.tools.javac.api.JavacTool;
+import com.sun.tools.javac.api.JavacTrees;
 import com.sun.tools.javac.tree.DCTree;
 import com.sun.tools.javac.tree.DCTree.DCDocComment;
 import com.sun.tools.javac.tree.DCTree.DCErroneous;
@@ -140,7 +141,10 @@ public class DocCommentTester {
         Iterable<? extends JavaFileObject> fos = fm.getJavaFileObjectsFromPaths(files);
 
         JavacTask t = javac.getTask(null, fm, null, null, null, fos);
-        final DocTrees trees = DocTrees.instance(t);
+        final JavacTrees trees = (JavacTrees) DocTrees.instance(t);
+        // disable default use of the "standard" transformer, so that we can examine
+        // the trees as created by DocCommentParser.
+        trees.setDocCommentTreeTransformer(new JavacTrees.IdentityTransformer());
 
         if (useBreakIterator) {
             // BreakIterators are locale dependent wrt. behavior

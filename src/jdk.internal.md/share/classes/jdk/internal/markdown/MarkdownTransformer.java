@@ -68,7 +68,7 @@ import static com.sun.tools.javac.util.Position.NOPOS;
  * <p>The primary extension is to allow references to program elements to be
  * translated to {@code {@link ...}} or {@code {@linkplain ...}} tags.
  */
-public class MarkdownTransformer implements DocTrees.DocCommentTreeTransformer {
+public class MarkdownTransformer implements JavacTrees.DocCommentTreeTransformer {
 
     /**
      * Public no-args constructor, suitable for use with {@link java.util.ServiceLoader}.

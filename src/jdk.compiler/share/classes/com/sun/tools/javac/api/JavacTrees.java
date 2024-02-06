@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.WeakHashMap;
 
@@ -1119,16 +1120,6 @@ public class JavacTrees extends DocTrees {
         return Entity.getCharacters(tree);
     }
 
-    @Override @DefinedBy(Api.COMPILER_TREE)
-    public DocCommentTreeTransformer getDocCommentTreeTransformer() {
-        return docCommentTreeTransformer;
-    }
-
-    @Override @DefinedBy(Api.COMPILER_TREE)
-    public void setDocCommentTreeTransformer(DocTrees.DocCommentTreeTransformer transformer) {
-        docCommentTreeTransformer = transformer;
-    }
-
     /**
      * {@return the doc comment tree for a given comment}
      *
@@ -1141,15 +1132,81 @@ public class JavacTrees extends DocTrees {
     }
 
     /**
-     * Transforms the given tree using the current
-     * {@linkplain #setDocCommentTreeTransformer(DocCommentTreeTransformer) transformer}.
-     * If there is no current transformer, the tree is returned unmodified.
+     * An interface for transforming a {@code DocCommentTree}.
+     * It is primarily used as the service-provider interface for an implementation
+     * that embodies the JDK extensions to CommonMark, such as reference links to
+     * program elements.
+     */
+    public interface DocCommentTreeTransformer {
+        /**
+         * The name used by the implementation that embodies the JDK extensions to CommonMark.
+         */
+        public final String STANDARD = "standard";
+
+        /**
+         * {@return the name of this transformer}
+         */
+        String name();
+
+        /**
+         * Transforms a documentation comment tree.
+         *
+         * @param trees an instance of the {@link DocTrees} utility interface.
+         * @param tree the tree to be transformed
+         * @return the transformed tree
+         */
+        DocCommentTree transform(DocTrees trees, DocCommentTree tree);
+    }
+
+    /**
+     * A class that provides the identity transform on instances of {@code DocCommentTree}.
+     */
+    public static class IdentityTransformer implements DocCommentTreeTransformer {
+        @Override
+        public String name() {
+            return "identity";
+        }
+
+        @Override
+        public DocCommentTree transform(DocTrees trees, DocCommentTree tree) {
+            return tree;
+        }
+    }
+
+    public DocCommentTreeTransformer getDocCommentTreeTransformer() {
+        return docCommentTreeTransformer;
+    }
+
+    public void setDocCommentTreeTransformer(DocCommentTreeTransformer transformer) {
+        docCommentTreeTransformer = transformer;
+    }
+
+    /**
+     * Initialize {@link #docCommentTreeTransformer} if it is {@code null},
+     * using a service provider to look up an implementation with the name "standard".
+     * If none is found, an identity transformer is used, with the name "identity".
+     */
+    public void initDocCommentTreeTransformer() {
+        if (docCommentTreeTransformer == null) {
+            var sl = ServiceLoader.load(DocCommentTreeTransformer.class);
+            docCommentTreeTransformer = sl.stream()
+                    .map(ServiceLoader.Provider::get)
+                    .filter(t -> t.name().equals(DocCommentTreeTransformer.STANDARD))
+                    .findFirst()
+                    .orElseGet(() -> new IdentityTransformer());
+        }
+    }
+
+    /**
+     * Transforms the given tree using the current {@linkplain #getDocCommentTreeTransformer() transformer},
+     * after ensuring it has been {@linkplain #initDocCommentTreeTransformer() initialized}.
      *
      * @param tree the tree
      * @return the transformed tree
      */
     private DocCommentTree transform(DocCommentTree tree) {
-        return docCommentTreeTransformer == null ? tree : docCommentTreeTransformer.transform(this, tree);
+        initDocCommentTreeTransformer();
+        return docCommentTreeTransformer.transform(this, tree);
     }
 
     /**
