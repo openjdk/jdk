@@ -64,7 +64,7 @@ public class TestStress {
 
     static String macroExpansionTrace(int stressSeed) throws Exception {
         return phaseTrace("StressMacroExpansion",
-                          "CompileCommand=PrintIdealPhase,*::*,AFTER_MACRO_EXPANSION_ELIMINATE,AFTER_MACRO_EXPANSION_ARRAYCOPY,AFTER_MACRO_EXPANSION_ALLOCATE",
+                          "CompileCommand=PrintIdealPhase,*::*,AFTER_MACRO_EXPANSION_STEP",
                           stressSeed);
     }
 
