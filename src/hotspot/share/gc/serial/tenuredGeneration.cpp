@@ -268,8 +268,8 @@ void TenuredGeneration::space_iterate(SpaceClosure* blk,
   blk->do_space(space());
 }
 
-void TenuredGeneration::younger_refs_iterate() {
-  _rs->younger_refs_in_space_iterate(space());
+void TenuredGeneration::process_old_to_young_refs() {
+  _rs->process_old_to_young_refs(space());
 }
 
 TenuredGeneration::TenuredGeneration(ReservedSpace rs,

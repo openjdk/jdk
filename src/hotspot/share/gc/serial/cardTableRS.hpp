@@ -29,10 +29,10 @@
 #include "memory/memRegion.hpp"
 #include "oops/oop.hpp"
 
+class OldGenScanClosure;
 class Space;
 class TenuredGeneration;
 class TenuredSpace;
-class OldGenScanClosure;
 
 // This RemSet uses a card table both as shared data structure
 // for a mod ref barrier set and for the rem set information.
@@ -62,7 +62,7 @@ class CardTableRS : public CardTable {
 public:
   CardTableRS(MemRegion whole_heap);
 
-  void younger_refs_in_space_iterate(TenuredSpace* sp);
+  void process_old_to_young_refs(TenuredSpace* sp);
 
   virtual void verify_used_region_at_save_marks(Space* sp) const NOT_DEBUG_RETURN;
 

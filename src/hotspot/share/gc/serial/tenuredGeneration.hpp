@@ -100,7 +100,7 @@ class TenuredGeneration: public Generation {
 
   void space_iterate(SpaceClosure* blk, bool usedOnly = false);
 
-  void younger_refs_iterate();
+  void process_old_to_young_refs();
 
   bool is_in(const void* p) const;
 

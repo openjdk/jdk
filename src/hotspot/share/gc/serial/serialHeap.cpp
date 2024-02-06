@@ -155,7 +155,7 @@ void SerialHeap::young_process_roots(OopClosure* root_closure, CLDClosure* cld_c
   process_roots(SO_ScavengeCodeCache, root_closure,
                 cld_closure, cld_closure, &mark_code_closure);
 
-  old_gen()->younger_refs_iterate();
+  old_gen()->process_old_to_young_refs();
 }
 
 void SerialHeap::safepoint_synchronize_begin() {

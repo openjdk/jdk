@@ -31,7 +31,7 @@
 #include "memory/iterator.inline.hpp"
 #include "utilities/align.hpp"
 
-void CardTableRS::younger_refs_in_space_iterate(TenuredSpace* sp) {
+void CardTableRS::process_old_to_young_refs(TenuredSpace* sp) {
   verify_used_region_at_save_marks(sp);
 
   const MemRegion urasm = sp->used_region_at_save_marks();
