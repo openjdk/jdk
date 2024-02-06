@@ -381,7 +381,8 @@ class JavaThread: public Thread {
   jlong      _jvmci_reserved1;
   oop        _jvmci_reserved_oop0;
 
-  // This field is used to keep an nmethod visible to the GC so that it can be kept alive
+  // This field is used to keep an nmethod visible to the GC so that it and its contained oops can
+  // be kept alive
   nmethod*  _live_nmethod;
 
  public:

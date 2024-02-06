@@ -385,7 +385,7 @@ public:
 
   void fthrow_error(const char* file, int line, const char* format, ...) ATTRIBUTE_PRINTF(4, 5);
 
-  // Given an instance of HotSpotInstalledCode return the corresponding CodeBlob*.
+  // Given an instance of HotSpotInstalledCode, return the corresponding CodeBlob*.
   CodeBlob* get_code_blob(JVMCIObject code);
 
   // Given an instance of HotSpotInstalledCode return the corresponding nmethod.
