@@ -54,6 +54,5 @@ module jdk.internal.md {
             jdk.jshell;
 
     provides com.sun.source.util.DocTrees.DocCommentTreeTransformer
-            with jdk.internal.markdown.StandardMarkdownTransformer,
-                 jdk.internal.markdown.ToHTMLMarkdownTransformer;
+            with jdk.internal.markdown.MarkdownTransformer;
 }

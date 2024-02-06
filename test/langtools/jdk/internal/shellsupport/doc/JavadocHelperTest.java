@@ -28,7 +28,7 @@
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.compiler/jdk.internal.shellsupport.doc
+ *          jdk.jshell/jdk.internal.shellsupport.doc
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
  * @run testng/timeout=900/othervm -Xmx1024m JavadocHelperTest
  */
@@ -307,6 +307,7 @@ public class JavadocHelperTest {
                       getSubTest,
                       "Prefix javadoc1 suffix.\n" +
                       "<p><em>Another</em> <strong>paragraph</strong>.\n" +
+                      "\n" +
                       "@param p1 prefix param1 suffix\n" +
                       "@param p2 prefix param2 suffix\n" +
                       "@param p3 prefix param3 suffix\n" +

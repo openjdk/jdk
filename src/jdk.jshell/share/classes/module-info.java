@@ -71,6 +71,7 @@ module jdk.jshell {
     requires jdk.compiler;
     requires jdk.internal.ed;
     requires jdk.internal.le;
+    requires jdk.internal.md;
     requires jdk.internal.opt;
 
     requires transitive java.compiler;
@@ -82,6 +83,7 @@ module jdk.jshell {
     exports jdk.jshell.spi;
     exports jdk.jshell.tool;
 
+    uses com.sun.source.util.DocTrees.DocCommentTreeTransformer;
     uses jdk.jshell.spi.ExecutionControlProvider;
     uses jdk.internal.editor.spi.BuildInEditorProvider;
 

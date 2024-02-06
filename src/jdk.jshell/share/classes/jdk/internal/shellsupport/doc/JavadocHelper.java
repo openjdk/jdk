@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,7 @@ import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.InheritDocTree;
 import com.sun.source.doctree.ParamTree;
+import com.sun.source.doctree.RawTextTree;
 import com.sun.source.doctree.ReturnTree;
 import com.sun.source.doctree.ThrowsTree;
 import com.sun.source.tree.ClassTree;
@@ -82,7 +83,6 @@ import com.sun.source.util.DocTreePath;
 import com.sun.source.util.DocTreeScanner;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.DocTrees.CommentKind;
-import com.sun.source.util.DocTrees.DocCommentTreeTransformer;
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.TreePathScanner;
@@ -93,6 +93,13 @@ import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.Pair;
 import java.util.ServiceLoader;
+import java.util.regex.Pattern;
+import java.util.stream.StreamSupport;
+import jdk.internal.org.commonmark.ext.gfm.tables.TablesExtension;
+import jdk.internal.org.commonmark.node.Node;
+import jdk.internal.org.commonmark.parser.IncludeSourceSpans;
+import jdk.internal.org.commonmark.parser.Parser;
+import jdk.internal.org.commonmark.renderer.html.HtmlRenderer;
 
 /**Helper to find javadoc and resolve @inheritDoc.
  */
@@ -258,7 +265,21 @@ public abstract class JavadocHelper implements AutoCloseable {
                 private long insertPos = offset;
                 @Override
                 public Void scan(Iterable<? extends DocTree> nodes, Void p) {
-                    return super.scan(nodes, p); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/OverriddenMethodBody
+                    if (containsMarkdown(nodes)) {
+                        JoinedMarkdown joinedMarkdowns = joinMarkdown(trees, dcTree, nodes);
+                        String source = joinedMarkdowns.source();
+                        Parser parser = Parser.builder()
+                                .extensions(List.of(TablesExtension.create()))
+                                .includeSourceSpans(IncludeSourceSpans.BLOCKS_AND_INLINES)
+                                .build();
+                        Node document = parser.parse(source);
+
+                        String htmlWithPlaceHolders = stripParagraphs(HtmlRenderer.builder().build().render(document));
+                        for (String part : htmlWithPlaceHolders.split(PLACEHOLDER_PATTERN, -1)) {
+                            replace.put(joinedMarkdowns.replaceSpans.remove(0), List.of(part));
+                        }
+                    }
+                    return super.scan(nodes, p);
                 }
                 @Override @DefinedBy(Api.COMPILER_TREE)
                 public Void visitDocComment(DocCommentTree node, Void p) {
@@ -274,15 +295,13 @@ public abstract class JavadocHelper implements AutoCloseable {
                             boolean prevInSynthetic = inSynthetic;
                             try {
                                 inSynthetic = true;
-                                scan(dc.getFirstSentence(), p);
-                                scan(dc.getBody(), p);
+                                scan(dc.getFullBody(), p);
                             } finally {
                                 inSynthetic = prevInSynthetic;
                                 interestingParent.pop();
                             }
                         } else {
-                            scan(node.getFirstSentence(), p);
-                            scan(node.getBody(), p);
+                            scan(node.getFullBody(), p);
                         }
                         //add missing @param, @throws and @return, augmented with {@inheritDoc}
                         //which will be resolved in visitInheritDoc:
@@ -563,36 +582,20 @@ public abstract class JavadocHelper implements AutoCloseable {
                 private final List<DocTree.Kind> tagOrder = Arrays.asList(DocTree.Kind.PARAM, DocTree.Kind.THROWS, DocTree.Kind.RETURN);
             }.scan(docCommentTree, null);
 
-            String newDocText;
+            if (replace.isEmpty())
+                return docComment;
 
-            if (!replace.isEmpty()) {
-                //do actually replace {@inheritDoc} with the new text (as scheduled by the visitor
-                //above):
-                StringBuilder replacedInheritDoc = new StringBuilder(docComment);
+            //do actually replace {@inheritDoc} with the new text (as scheduled by the visitor
+            //above):
+            StringBuilder replacedInheritDoc = new StringBuilder(docComment);
 
-                for (Entry<int[], List<String>> e : replace.entrySet()) {
-                    replacedInheritDoc.delete(e.getKey()[0] - offset, e.getKey()[1] - offset);
-                    replacedInheritDoc.insert(e.getKey()[0] - offset,
-                                              e.getValue().stream().collect(Collectors.joining("")));
-                }
-
-                newDocText = replacedInheritDoc.toString();
-            } else {
-                newDocText = docComment;
+            for (Entry<int[], List<String>> e : replace.entrySet()) {
+                replacedInheritDoc.delete(e.getKey()[0] - offset, e.getKey()[1] - offset);
+                replacedInheritDoc.insert(e.getKey()[0] - offset,
+                                          e.getValue().stream().collect(Collectors.joining("")));
             }
 
-            if (docCommentKind == CommentKind.LINE) {
-                for (DocCommentTreeTransformer transformer : ServiceLoader.load(DocTree.class.getModule().getLayer(), DocCommentTreeTransformer.class)) {
-                    if ("markdown2html".equals(transformer.name())) {
-                        Pair<DocCommentTree, Integer> parsedNewDoc = parseDocComment(task, newDocText, CommentKind.LINE);
-                        DocCommentTree transformed = transformer.transform(trees, parsedNewDoc.fst);
-                        newDocText = transformed.toString();
-                        break;
-                    }
-                }
-            }
-
-            return newDocText;
+            return replacedInheritDoc.toString();
         }
 
         /* Find methods from which the given method may inherit javadoc, in the proper order.*/
@@ -801,12 +804,13 @@ public abstract class JavadocHelper implements AutoCloseable {
             Iterable<? extends CompilationUnitTree> cuts = task.parse();
 
             task.enter();
-            for (DocCommentTreeTransformer transformer : ServiceLoader.load(DocTree.class.getModule().getLayer(), DocCommentTreeTransformer.class)) {
-                if ("standard".equals(transformer.name())) {
-                    DocTrees.instance(task).setDocCommentTreeTransformer(transformer);
-                    break;
-                }
-            }
+            //TODO: the standard transformer breaks text tree positions:
+//            for (DocCommentTreeTransformer transformer : ServiceLoader.load(DocTree.class.getModule().getLayer(), DocCommentTreeTransformer.class)) {
+//                if ("standard".equals(transformer.name())) {
+//                    DocTrees.instance(task).setDocCommentTreeTransformer(transformer);
+//                    break;
+//                }
+//            }
 
             return Pair.of(task, cuts.iterator().next());
         }
@@ -815,6 +819,70 @@ public abstract class JavadocHelper implements AutoCloseable {
         public void close() throws IOException {
             fm.close();
         }
+
+        private static boolean containsMarkdown(Iterable<? extends DocTree> trees) {
+            return StreamSupport.stream(trees.spliterator(), false)
+                                .anyMatch(t -> t.getKind() == DocTree.Kind.MARKDOWN);
+        }
+
+        private static final char PLACEHOLDER = '\uFFFC'; // Unicode Object Replacement Character
+
+        private static JoinedMarkdown joinMarkdown(DocTrees treeUtils, DocCommentTree comment, Iterable<? extends DocTree> trees) {
+            StringBuilder sourceBuilder = new StringBuilder();
+            List<int[]> replaceSpans = new ArrayList<>();
+            DocSourcePositions sp = treeUtils.getSourcePositions();
+            int currentSpanStart = (int) sp.getStartPosition(null, comment, trees.iterator().next());
+            DocTree lastTree = null;
+
+            for (DocTree tree : trees) {
+                if (tree instanceof RawTextTree t) {
+                    //TODO: handle FFFC appearing in the text
+//                    if (t.getKind() != DocTree.Kind.MARKDOWN) {
+//                        throw new IllegalStateException(t.getKind().toString());
+//                    }
+                    String code = t.getContent();
+//                    // handle the (unlikely) case of any U+FFFC characters existing in the code
+//                    int start = 0;
+//                    int pos;
+//                    while ((pos = code.indexOf(PLACEHOLDER, start)) != -1) {
+//                        replacements.add(PLACEHOLDER);
+//                        start = pos + 1;
+//                    }
+                    sourceBuilder.append(code);
+                } else {
+                    int treeStart = (int) sp.getStartPosition(null, comment, tree);
+                    int treeEnd = (int) sp.getEndPosition(null, comment, tree);
+                    replaceSpans.add(new int[] {currentSpanStart, treeStart});
+                    currentSpanStart = treeEnd;
+                    sourceBuilder.append(PLACEHOLDER);
+                }
+                lastTree = tree;
+            }
+
+            int end = (int) sp.getEndPosition(null, comment, lastTree);
+
+            replaceSpans.add(new int[] {currentSpanStart, end});
+
+            return new JoinedMarkdown(sourceBuilder.toString(), replaceSpans);
+        }
+
+        private static String stripParagraphs(String input) {
+            input = input.replace("</p>", "");
+
+            if (input.startsWith("<p>")) {
+                input = input.substring(3);
+            }
+
+            if (input.endsWith("\n")) {
+                input = input.substring(0, input.length() - 1);
+            }
+
+            return input;
+        }
+
+        private static final String PLACEHOLDER_PATTERN = Pattern.quote("" + PLACEHOLDER);
+
+        private record JoinedMarkdown(String source, List<int[]> replaceSpans) {}
 
         private static final class PatchModuleFileManager
                 extends ForwardingJavaFileManager<JavaFileManager> {

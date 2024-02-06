@@ -43,6 +43,7 @@ import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Modifier;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
@@ -58,9 +59,10 @@ import com.sun.source.util.TreePath;
 import com.sun.tools.javac.model.JavacTypes;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.MatchingUtils;
+import com.sun.tools.javac.util.StringUtils;
 import jdk.javadoc.internal.tool.AccessLevel;
 
-import jdk.internal.markdown.StandardMarkdownTransformer;
+import jdk.internal.markdown.MarkdownTransformer;
 
 /**
  * Utility container for current execution environment,
@@ -135,7 +137,7 @@ public class Env {
         this.types = types;
 
         if (this.trees.getDocCommentTreeTransformer()== null) {
-            this.trees.setDocCommentTreeTransformer(new StandardMarkdownTransformer());
+            this.trees.setDocCommentTreeTransformer(new MarkdownTransformer());
         }
     }
 
