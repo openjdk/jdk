@@ -643,9 +643,13 @@ public class MessageFormat extends Format {
      *
      * The string is constructed from internal information and therefore
      * does not necessarily equal the previously applied pattern.
-     * @implSpec If a subformat cannot be converted to a String pattern, the {@code
-     * FormatType} and {@code FormatStyle} will be omitted from the {@code
-     * FormatElement}.
+     *
+     * @implSpec The implementation in {@link MessageFormat} returns a
+     * string that, when passed to a {@code MessageFormat()} constructor
+     * or {@link #applyPattern applyPattern()}, produces an instance that
+     * is semantically equivalent to this instance. If a subformat cannot be
+     * converted to a String pattern, the {@code FormatType} and {@code FormatStyle}
+     * will be omitted from the {@code FormatElement}.
      */
     public String toPattern() {
         // later, make this more extensible
@@ -695,9 +699,11 @@ public class MessageFormat extends Format {
             } else {
                 // No pre-defined styles match, return the SubformatPattern
                 if (fmt instanceof DecimalFormat dFmt) {
-                    return ",number," + dFmt.toPattern();
+                    // Quote eligible mFmt pattern characters: '{' and '}'
+                    // Here, and in other subformatPattern instances
+                    return ",number," + copyAndQuoteBraces(dFmt.toPattern());
                 } else if (fmt instanceof ChoiceFormat cFmt) {
-                    return ",choice," + cFmt.toPattern();
+                    return ",choice," + copyAndQuoteBraces(cFmt.toPattern());
                 }
             }
         } else if (fmt instanceof DateFormat) {
@@ -714,7 +720,7 @@ public class MessageFormat extends Format {
             }
             // If no styles match, return the SubformatPattern
             if (fmt instanceof SimpleDateFormat sdFmt) {
-                return ",date," + sdFmt.toPattern();
+                return ",date," + copyAndQuoteBraces(sdFmt.toPattern());
             }
         } else if (fmt instanceof ListFormat) {
             for (ListFormat.Type type : ListFormat.Type.values()) {
@@ -1820,6 +1826,57 @@ public class MessageFormat extends Format {
         }
     }
 
+    // The subformat pattern comes already quoted, but only for those characters that are
+    // special to the subformat. Therefore, we may need to quote additional characters.
+    // The ones we care about at the MessageFormat level are '{' and '}'.
+    private static String copyAndQuoteBraces(String source) {
+
+        // Analyze existing string for already quoted and newly quotable characters
+        record Qchar(char ch, boolean quoted) { };
+        ArrayList<Qchar> qchars = new ArrayList<>();
+        boolean quoted = false;
+        boolean anyChangeNeeded = false;
+        StringBuilder quotedSource = new StringBuilder();
+        for (int i = 0; i < source.length(); i++) {
+            char ch = source.charAt(i);
+            if (ch == '\'') {
+                if (i + 1 < source.length() && source.charAt(i + 1) == '\'') {
+                    qchars.add(new Qchar('\'', quoted));
+                    i++;
+                } else {
+                    quoted = !quoted;
+                }
+            } else {
+                boolean quotable = ch == '{' || ch == '}';
+                anyChangeNeeded |= quotable && !quoted;
+                qchars.add(new Qchar(ch, quoted || quotable));
+            }
+        }
+
+        // Was any change needed?
+        if (!anyChangeNeeded) {
+            return source;
+        }
+
+        // Build new string, automatically consolidating adjacent runs of quoted chars
+        quoted = false;
+        for (Qchar qchar : qchars) {
+            char ch = qchar.ch;
+            if (ch == '\'') {
+                quotedSource.append(ch);          // doubling works whether quoted or not
+            } else if (qchar.quoted() != quoted) {
+                quotedSource.append('\'');
+                quoted = qchar.quoted();
+            }
+            quotedSource.append(ch);
+        }
+        if (quoted) {
+            quotedSource.append('\'');
+        }
+
+        return quotedSource.toString();
+    }
+
     // Corresponding to the FormatType pattern
     private enum FormatType {
         NUMBER,
@@ -1869,7 +1926,7 @@ public class MessageFormat extends Format {
 
         // Differs from FormatType in that the text String is
         // not guaranteed to match the Enum name, thus a text field is used
-        FormatStyle(String text){
+        FormatStyle(String text) {
             this.text = text;
         }
 
@@ -1885,6 +1942,7 @@ public class MessageFormat extends Format {
             throw new IllegalArgumentException();
         }
     }
+
 
     /**
      * After reading an object from the input stream, do a simple verification

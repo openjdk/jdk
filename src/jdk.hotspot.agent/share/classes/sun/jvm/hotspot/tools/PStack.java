@@ -72,7 +72,7 @@ public class PStack extends Tool {
          // compute and cache java Vframes.
          initJFrameCache();
          if (concurrentLocks) {
-            concLocksPrinter = new ConcurrentLocksPrinter();
+            concLocksPrinter = new ConcurrentLocksPrinter(out);
          }
          // print Java level deadlocks
          try {
@@ -192,7 +192,7 @@ public class PStack extends Tool {
             if (concurrentLocks) {
                JavaThread jthread = proxyToThread.get(th);
                if (jthread != null) {
-                   concLocksPrinter.print(jthread, out);
+                   concLocksPrinter.print(jthread);
                }
             }
          } // for threads

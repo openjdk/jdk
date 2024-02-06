@@ -41,10 +41,6 @@ inline size_t TenuredGeneration::free() const {
   return space()->free();
 }
 
-inline MemRegion TenuredGeneration::used_region() const {
-  return space()->used_region();
-}
-
 inline bool TenuredGeneration::is_in(const void* p) const {
   return space()->is_in(p);
 }

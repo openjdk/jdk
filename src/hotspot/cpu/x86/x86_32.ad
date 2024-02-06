@@ -614,7 +614,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   int framesize = C->output()->frame_size_in_bytes();
   int bangsize = C->output()->bang_size_in_bytes();
 
-  __ verified_entry(framesize, C->output()->need_stack_bang(bangsize)?bangsize:0, C->in_24_bit_fp_mode(), C->stub_function() != NULL);
+  __ verified_entry(framesize, C->output()->need_stack_bang(bangsize)?bangsize:0, C->in_24_bit_fp_mode(), C->stub_function() != nullptr);
 
   C->output()->set_frame_complete(cbuf.insts_size());
 
@@ -1052,7 +1052,7 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bo
   if( src_first == dst_first && src_second == dst_second )
     return size;            // Self copy, no move
 
-  if (bottom_type()->isa_vect() != NULL && bottom_type()->isa_vectmask() == NULL) {
+  if (bottom_type()->isa_vect() != nullptr && bottom_type()->isa_vectmask() == nullptr) {
     uint ireg = ideal_reg();
     assert((src_first_rc != rc_int && dst_first_rc != rc_int), "sanity");
     assert((src_first_rc != rc_float && dst_first_rc != rc_float), "sanity");
@@ -1320,12 +1320,12 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bo
 
 #ifndef PRODUCT
 void MachSpillCopyNode::format(PhaseRegAlloc *ra_, outputStream* st) const {
-  implementation( NULL, ra_, false, st );
+  implementation( nullptr, ra_, false, st );
 }
 #endif
 
 void MachSpillCopyNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
-  implementation( &cbuf, ra_, false, NULL );
+  implementation( &cbuf, ra_, false, nullptr );
 }
 
 uint MachSpillCopyNode::size(PhaseRegAlloc *ra_) const {
@@ -1725,7 +1725,7 @@ encode %{
 
     MacroAssembler _masm(&cbuf);
     __ check_klass_subtype_slow_path(Resi, Reax, Recx, Redi,
-                                     NULL, &miss,
+                                     nullptr, &miss,
                                      /*set_cond_codes:*/ true);
     if ($primary) {
       __ xorptr(Redi, Redi);
@@ -1843,7 +1843,7 @@ encode %{
       } else {
         // Emit stubs for static call.
         address stub = CompiledStaticCall::emit_to_interp_stub(cbuf, mark);
-        if (stub == NULL) {
+        if (stub == nullptr) {
           ciEnv::current()->record_failure("CodeCache is full");
           return;
         }
@@ -3396,7 +3396,7 @@ operand immP() %{
   interface(CONST_INTER);
 %}
 
-// NULL Pointer Immediate
+// Null Pointer Immediate
 operand immP0() %{
   predicate( n->get_ptr() == 0 );
   match(ConP);

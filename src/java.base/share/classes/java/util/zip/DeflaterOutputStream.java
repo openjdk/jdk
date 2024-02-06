@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -240,14 +240,30 @@ public class DeflaterOutputStream extends FilterOutputStream {
      */
     public void close() throws IOException {
         if (!closed) {
+            closed = true;
+            IOException finishException = null;
             try {
                 finish();
+            } catch (IOException ioe){
+                finishException = ioe;
+                throw ioe;
             } finally {
-                if (usesDefaultDeflater)
+                if (usesDefaultDeflater) {
                     def.end();
+                }
+                if (finishException == null) {
+                    out.close();
+                } else {
+                    try {
+                        out.close();
+                    } catch (IOException ioe) {
+                        if (finishException != ioe) {
+                            ioe.addSuppressed(finishException);
+                        }
+                        throw ioe;
+                    }
+                }
             }
-            out.close();
-            closed = true;
         }
     }
 
