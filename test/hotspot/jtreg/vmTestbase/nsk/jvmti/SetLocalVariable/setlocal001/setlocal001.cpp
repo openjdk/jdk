@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ extern "C" {
 #define PASSED  0
 #define STATUS_FAILED  2
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiCapabilities caps;
 static jvmtiEventCallbacks callbacks;
 static jint result = PASSED;
@@ -50,7 +50,7 @@ void JNICALL Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *env,
     jmethodID mid;
     jlocation loc;
     jint entryCount;
-    jvmtiLocalVariableEntry *table = NULL;
+    jvmtiLocalVariableEntry *table = nullptr;
     int i;
 
     err = jvmti_env->GetFrameLocation(thr, 1, &mid, &loc);
@@ -234,7 +234,7 @@ void JNICALL Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *env,
         result = STATUS_FAILED;
     }
 
-    if (table != NULL) {
+    if (table != nullptr) {
         for (i = 0; i < entryCount; i++) {
             jvmti_env->Deallocate((unsigned char*)table[i].name);
             jvmti_env->Deallocate((unsigned char*)table[i].signature);
@@ -259,7 +259,7 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jvmtiError err;
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv !\n");
         return JNI_ERR;
     }
@@ -308,7 +308,7 @@ Java_nsk_jvmti_SetLocalVariable_setlocal001_getMethReady(JNIEnv *env,
     jvmtiError err;
     jmethodID mid;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("JVMTI client was not properly loaded!\n");
         result = STATUS_FAILED;
         return;
@@ -338,7 +338,7 @@ Java_nsk_jvmti_SetLocalVariable_setlocal001_getMethReady(JNIEnv *env,
     }
 
     err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-        JVMTI_EVENT_BREAKPOINT, NULL);
+        JVMTI_EVENT_BREAKPOINT, nullptr);
     if (err != JVMTI_ERROR_NONE) {
         printf("Failed to enable BREAKPOINT event: %s (%d)\n",
                TranslateError(err), err);

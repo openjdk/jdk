@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@
 
 // Test the default level for each tagset
 TEST_VM(LogTagSet, defaults) {
-  for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
+  for (LogTagSet* ts = LogTagSet::first(); ts != nullptr; ts = ts->next()) {
     char buf[256];
     ts->label(buf, sizeof(buf));
     SCOPED_TRACE(buf);
@@ -49,7 +49,7 @@ TEST_VM(LogTagSet, has_output) {
   LogTagSet& ts = LogTagSetMapping<LOG_TAGS(logging)>::tagset();
   ts.set_output_level(LogConfiguration::StderrLog, LogLevel::Trace);
   EXPECT_TRUE(ts.has_output(LogConfiguration::StderrLog));
-  EXPECT_FALSE(ts.has_output(NULL));
+  EXPECT_FALSE(ts.has_output(nullptr));
   ts.set_output_level(LogConfiguration::StderrLog, LogLevel::Off);
   EXPECT_FALSE(ts.has_output(LogConfiguration::StderrLog));
 }
@@ -140,7 +140,7 @@ TEST_VM(LogTagSet, label) {
 }
 
 TEST_VM(LogTagSet, duplicates) {
-  for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
+  for (LogTagSet* ts = LogTagSet::first(); ts != nullptr; ts = ts->next()) {
     char ts_name[512];
     ts->label(ts_name, sizeof(ts_name), ",");
 
@@ -155,7 +155,7 @@ TEST_VM(LogTagSet, duplicates) {
     }
 
     // verify that there are no duplicate tagsets (same tags in different order)
-    for (LogTagSet* other = ts->next(); other != NULL; other = other->next()) {
+    for (LogTagSet* other = ts->next(); other != nullptr; other = other->next()) {
       if (ts->ntags() != other->ntags()) {
         continue;
       }

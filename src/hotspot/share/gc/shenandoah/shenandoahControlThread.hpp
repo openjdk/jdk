@@ -89,7 +89,6 @@ private:
   void service_concurrent_cycle(ShenandoahGeneration* generation, GCCause::Cause cause, bool reset_old_bitmap_specially);
   void service_stw_full_cycle(GCCause::Cause cause);
   void service_stw_degenerated_cycle(GCCause::Cause cause, ShenandoahGC::ShenandoahDegenPoint point);
-  void service_uncommit(double shrink_before, size_t shrink_until);
 
   // Return true if setting the flag which indicates allocation failure succeeds.
   bool try_set_alloc_failure_gc(bool is_humongous);
@@ -114,9 +113,6 @@ private:
 
   // Returns true if the old generation marking was interrupted to allow a young cycle.
   bool preempt_old_marking(ShenandoahGenerationType generation);
-
-  // Returns true if the soft maximum heap has been changed using management APIs.
-  bool check_soft_max_changed() const;
 
   void process_phase_timings(const ShenandoahHeap* heap);
 

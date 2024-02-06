@@ -37,7 +37,8 @@ EXCLUDE_FILES += \
 
 EXCLUDES += java/lang/doc-files \
     java/lang/classfile/snippet-files \
-    java/lang/classfile/components/snippet-files
+    java/lang/classfile/components/snippet-files \
+    java/lang/foreign/snippet-files
 
 # Exclude BreakIterator classes that are just used in compile process to generate
 # data files and shouldn't go in the product

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,9 +39,9 @@ extern "C" {
 static jlong timeout = 0;
 
 /* test objects */
-static jobject testedObject = NULL;
-static jobject testedInstance = NULL;
-static jclass testedClass = NULL;
+static jobject testedObject = nullptr;
+static jobject testedInstance = nullptr;
+static jclass testedClass = nullptr;
 static int ObjectsCount = 0;
 
 /* ========================================================================== */
@@ -76,33 +76,33 @@ static int prepare(JNIEnv* jni) {
     const char* FIELD_SIGNATURE = "Ljava/lang/Object;";
     const char* INSTANCE_NAME = "testedInstance1";
     const char* INSTANCE_SIGNATURE = "Lnsk/jvmti/scenarios/multienv/MA04/ma04t002;";
-    jfieldID fid = NULL;
+    jfieldID fid = nullptr;
 
     NSK_DISPLAY0("Obtain tested object from a static field of debugee class\n");
 
     NSK_DISPLAY1("Find class: %s\n", CLASS_NAME);
-    if (!NSK_JNI_VERIFY(jni, (testedClass = jni->FindClass(CLASS_NAME)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (testedClass = jni->FindClass(CLASS_NAME)) != nullptr))
         return NSK_FALSE;
 
-    if (!NSK_JNI_VERIFY(jni, (testedClass = (jclass) jni->NewGlobalRef(testedClass)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (testedClass = (jclass) jni->NewGlobalRef(testedClass)) != nullptr))
         return NSK_FALSE;
 
     NSK_DISPLAY2("Find field: %s:%s\n", FIELD_NAME, FIELD_SIGNATURE);
     if (!NSK_JNI_VERIFY(jni, (fid =
-            jni->GetStaticFieldID(testedClass, FIELD_NAME, FIELD_SIGNATURE)) != NULL))
+            jni->GetStaticFieldID(testedClass, FIELD_NAME, FIELD_SIGNATURE)) != nullptr))
         return NSK_FALSE;
 
-    if (!NSK_JNI_VERIFY(jni, (testedObject = jni->GetStaticObjectField(testedClass, fid)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (testedObject = jni->GetStaticObjectField(testedClass, fid)) != nullptr))
         return NSK_FALSE;
 
     NSK_DISPLAY2("Find class instance: %s:%s\n",
         INSTANCE_NAME, INSTANCE_SIGNATURE);
     if (!NSK_JNI_VERIFY(jni, (fid =
-            jni->GetStaticFieldID(testedClass, INSTANCE_NAME, INSTANCE_SIGNATURE)) != NULL))
+            jni->GetStaticFieldID(testedClass, INSTANCE_NAME, INSTANCE_SIGNATURE)) != nullptr))
         return NSK_FALSE;
 
     if (!NSK_JNI_VERIFY(jni, (testedInstance =
-            jni->GetStaticObjectField(testedClass, fid)) != NULL))
+            jni->GetStaticObjectField(testedClass, fid)) != nullptr))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -305,7 +305,7 @@ JNIEXPORT jint JNI_OnLoad_ma04t002(JavaVM *jvm, char *options, void *reserved) {
 }
 #endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
-    jvmtiEnv* jvmti = NULL;
+    jvmtiEnv* jvmti = nullptr;
     jvmtiEventCallbacks callbacks;
     jvmtiCapabilities caps;
 
@@ -317,7 +317,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     timeout = nsk_jvmti_getWaitTime() * 60 * 1000;
 
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     memset(&caps, 0, sizeof(caps));
@@ -327,14 +327,14 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         return JNI_ERR;
     }
 
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     memset(&callbacks, 0, sizeof(callbacks));
     if (!NSK_VERIFY(nsk_jvmti_init_MA(&callbacks)))
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_OBJECT_FREE, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_OBJECT_FREE, nullptr)))
         return JNI_ERR;
 
     return JNI_OK;

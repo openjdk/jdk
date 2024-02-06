@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ static const char *classSig =
     "Lnsk/jvmti/scenarios/jni_interception/JI06/ji06t001a;";
 
 static JavaVM *vm;
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 
 static volatile int verbose = 0;
 
@@ -72,10 +72,10 @@ static volatile jobject clsObj;
 static jrawMonitorID countLock;
 
 /* the original JNI function table */
-static jniNativeInterface *orig_jni_functions = NULL;
+static jniNativeInterface *orig_jni_functions = nullptr;
 
 /* the redirected JNI function table */
-static jniNativeInterface *redir_jni_functions = NULL;
+static jniNativeInterface *redir_jni_functions = nullptr;
 
 /* number of the redirected JNI function calls */
 static volatile int monent_calls = 0;
@@ -315,21 +315,21 @@ Java_nsk_jvmti_scenarios_jni_1interception_JI06_ji06t001_check(JNIEnv *env, jobj
     char *ownContext = (char*) "ownerThr";
     char *redirContext = (char*) "redirectorThr";
     int exitCode = PASSED;
-    void *ownThr = NULL;
-    void *redirThr = NULL;
+    void *ownThr = nullptr;
+    void *redirThr = nullptr;
     void *waitThr[MAX_THREADS];
     int waitContElem[MAX_THREADS]; /* context of a particular waiting thread */
     int i;
     int tries = 0;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         NSK_COMPLAIN0("TEST FAILURE: JVMTI client was not properly loaded\n");
         return STATUS_FAILED;
     }
 
 /* prepare the testing */
     clsObj = env->NewGlobalRef(getObjectFromField(env, obj));
-    if (clsObj == NULL) {
+    if (clsObj == nullptr) {
         NSK_COMPLAIN1("TEST FAILURE: cannot create a new global reference of class \"%s\"\n",
             classSig);
         env->FatalError("failed to create a new global reference");
@@ -337,7 +337,7 @@ Java_nsk_jvmti_scenarios_jni_1interception_JI06_ji06t001_check(JNIEnv *env, jobj
 
     NSK_DISPLAY0("starting monitor owner thread ...\n");
     ownThr = THREAD_new(ownerThread, ownContext);
-    if (THREAD_start(ownThr) == NULL) {
+    if (THREAD_start(ownThr) == nullptr) {
         NSK_COMPLAIN0("TEST FAILURE: cannot start monitor owner thread\n");
         exit(STATUS_FAILED);
     }
@@ -360,7 +360,7 @@ Java_nsk_jvmti_scenarios_jni_1interception_JI06_ji06t001_check(JNIEnv *env, jobj
         waitContElem[i] = i+1;
         /* 4932877 fix in accordance with ANSI C: thread context of type int -> int* -> void*  */
         waitThr[i] = THREAD_new(waitingThread, (void *) &(waitContElem[i]));
-        if (THREAD_start(waitThr[i]) == NULL) {
+        if (THREAD_start(waitThr[i]) == nullptr) {
             NSK_COMPLAIN1("TEST FAILURE: cannot start waiting thread #%d\n",
                 i+1);
             exit(STATUS_FAILED);
@@ -384,7 +384,7 @@ Java_nsk_jvmti_scenarios_jni_1interception_JI06_ji06t001_check(JNIEnv *env, jobj
     NSK_DISPLAY0(">>> TEST CASE a) Trying to redirect the JNI function ...\n\n"
                  "starting redirector thread ...\n");
     redirThr = THREAD_new(redirectorThread, redirContext);
-    if (THREAD_start(redirThr) == NULL) {
+    if (THREAD_start(redirThr) == nullptr) {
         NSK_COMPLAIN0("TEST FAILURE: cannot start redirector thread\n");
         exit(STATUS_FAILED);
     }
@@ -431,7 +431,7 @@ Java_nsk_jvmti_scenarios_jni_1interception_JI06_ji06t001_check(JNIEnv *env, jobj
     /* 4932877 fix in accordance with ANSI C: thread context of type int -> int* -> void*  */
     waitThr[MAX_THREADS-1] = THREAD_new(waitingThread,
         (void *) &(waitContElem[MAX_THREADS-1]));
-    if (THREAD_start(waitThr[MAX_THREADS-1]) == NULL) {
+    if (THREAD_start(waitThr[MAX_THREADS-1]) == nullptr) {
         NSK_COMPLAIN0("TEST FAILURE: cannot start verification thread\n");
         exit(STATUS_FAILED);
     }
@@ -482,7 +482,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     /* create JVMTI environment */
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     vm = jvm;

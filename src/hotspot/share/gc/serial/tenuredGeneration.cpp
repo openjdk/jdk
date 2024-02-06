@@ -450,10 +450,6 @@ TenuredGeneration::expand_and_allocate(size_t word_size, bool is_tlab) {
   return _the_space->allocate(word_size);
 }
 
-size_t TenuredGeneration::unsafe_max_alloc_nogc() const {
-  return _the_space->free();
-}
-
 size_t TenuredGeneration::contiguous_available() const {
   return _the_space->free() + _virtual_space.uncommitted_size();
 }

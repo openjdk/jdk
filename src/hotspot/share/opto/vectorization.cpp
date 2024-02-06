@@ -46,7 +46,7 @@ VPointer::VPointer(const MemNode* mem,
 #endif
   _nstack(nstack), _analyze_only(analyze_only), _stack_idx(0)
 #ifndef PRODUCT
-  , _tracer((phase->C->directive()->VectorizeDebugOption & 2) > 0)
+  , _tracer(phase->C->directive()->trace_auto_vectorization_tags().at(TraceAutoVectorizationTag::POINTER_ANALYSIS))
 #endif
 {
   NOT_PRODUCT(_tracer.ctor_1(mem);)
