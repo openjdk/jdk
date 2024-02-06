@@ -5147,7 +5147,7 @@ void Assembler::vpmadd52luq(XMMRegister dst, XMMRegister src1, Address src2, int
 }
 
 void Assembler::vpmadd52luq(XMMRegister dst, XMMRegister src1, Address src2, bool merge, int vector_len) {
-  //assert(VM_Version::supports_avx512ifma(), ""); //TODO: AVXIFMA
+  assert(VM_Version::supports_avxifma(), "");
   InstructionMark im(this);
   InstructionAttr attributes(vector_len, /* rex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
   if (merge) {
@@ -5164,7 +5164,7 @@ void Assembler::vpmadd52luq(XMMRegister dst, XMMRegister src1, XMMRegister src2,
 }
 
 void Assembler::vpmadd52luq(XMMRegister dst, XMMRegister src1, XMMRegister src2, bool merge, int vector_len) {
-  //assert(VM_Version::supports_avx512ifma(), ""); //TODO: AVXIFMA
+  assert(VM_Version::supports_avxifma(), "");
   InstructionAttr attributes(vector_len, /* rex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
   if (merge) {
     attributes.reset_is_clear_context();
@@ -5196,7 +5196,7 @@ void Assembler::vpmadd52huq(XMMRegister dst, XMMRegister src1, Address src2, int
 }
 
 void Assembler::vpmadd52huq(XMMRegister dst, XMMRegister src1, Address src2, bool merge, int vector_len) {
-  //assert(VM_Version::supports_avx512ifma(), ""); //TODO: AVXIFMA
+  assert(VM_Version::supports_avxifma(), "");
   InstructionMark im(this);
   InstructionAttr attributes(vector_len, /* rex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
   if (merge) {
@@ -5213,7 +5213,7 @@ void Assembler::vpmadd52huq(XMMRegister dst, XMMRegister src1, XMMRegister src2,
 }
 
 void Assembler::vpmadd52huq(XMMRegister dst, XMMRegister src1, XMMRegister src2, bool merge, int vector_len) {
-  //assert(VM_Version::supports_avx512ifma(), ""); TODO: AVX-IFMA
+  assert(VM_Version::supports_avxifma(), "");
   InstructionAttr attributes(vector_len, /* rex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
   if (merge) {
     attributes.reset_is_clear_context();
