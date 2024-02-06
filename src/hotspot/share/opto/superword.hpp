@@ -214,9 +214,8 @@ class SuperWord : public ResourceObj {
   GrowableArray<int> _bb_idx;            // Map from Node _idx to index within block
 
   GrowableArray<Node*> _block;           // Nodes in current block
-  GrowableArray<Node*> _data_entry;      // Nodes with all inputs from outside
-  GrowableArray<Node*> _mem_slice_head;  // Memory slice head nodes
-  GrowableArray<Node*> _mem_slice_tail;  // Memory slice tail nodes
+  GrowableArray<PhiNode*> _mem_slice_head; // Memory slice head nodes
+  GrowableArray<MemNode*> _mem_slice_tail; // Memory slice tail nodes
   GrowableArray<SWNodeInfo> _node_info;  // Info needed per node
   CloneMap&            _clone_map;       // map of nodes created in cloning
   MemNode const* _align_to_ref;          // Memory reference that pre-loop will align to
@@ -467,8 +466,13 @@ private:
   int get_iv_adjustment(MemNode* mem);
   // Construct dependency graph.
   void dependence_graph();
+
+  // Analyze the memory slices
+  void find_memory_slices();
+  NOT_PRODUCT( void print_memory_slices(); )
   // Return a memory slice (node list) in predecessor order starting at "start"
   void mem_slice_preds(Node* start, Node* stop, GrowableArray<Node*> &preds);
+
   // Can s1 and s2 be in a pack with s1 immediately preceding s2 and  s1 aligned at "align"
   bool stmts_can_pack(Node* s1, Node* s2, int align);
   // Does s exist in a pack at position pos?
@@ -537,9 +541,7 @@ private:
   // Construct reverse postorder list of block members
   bool construct_bb();
   // Initialize per node info
-  void initialize_bb();
-  // Insert n into block after pos
-  void bb_insert_after(Node* n, int pos);
+  void initialize_node_info();
   // Compute max depth for expressions from beginning of block
   void compute_max_depth();
   // Return the longer type for vectorizable type-conversion node or illegal type for other nodes.
