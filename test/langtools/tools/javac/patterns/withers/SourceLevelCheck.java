@@ -23,41 +23,14 @@
 
 /**
  * @test
- * @enablePreview
- * @compile WithPriority.java
- * @run main WithPriority
+ * @compile/fail/ref=SourceLevelCheck.out --release 22 -XDrawDiagnostics SourceLevelCheck.java
  */
-
-import java.util.Objects;
-
-public class WithPriority {
+public class SourceLevelCheck {
     public static void main(String... args) {
-        new WithPriority().run();
+        R r = new R(0);
+        r = r with {
+            val = -1;
+        };
     }
-
-    private void run() {
-        assertEquals(new R("true"), ternary(true, new R("")));
-        assertEquals(new R("false"), ternary(false, new R("")));
-        assertEquals(new R("nue"), new R("") with { value = "nue"; });
-        assertEquals("nue", new R("") with { value = "nue"; }.value());
-    }
-
-    private R ternary(boolean c, R input) {
-        R trueInput = input with { value = "true"; };
-        return c ? trueInput : input with { value = "false"; };
-    }
-
-    private void forWithDisambiguation(String[] values) {
-        for (var with : values) {}
-        for (int with = 0; ;) {}
-    }
-
-    record R(String value) {}
-
-    private static void assertEquals(Object expected, Object actual) {
-        if (!Objects.equals(expected, actual)) {
-            throw new AssertionError("Expected: " + expected + ", but got: " + actual);
-        }
-    }
-
+    record R(int val) {}
 }

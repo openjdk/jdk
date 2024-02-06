@@ -1801,6 +1801,8 @@ public class JavacParser implements Parser {
             } else if (isMode(EXPR) && token.kind == IDENTIFIER && token.name().contentEquals("with") && peekToken(LBRACE)) {
                 int pos = token.pos;
 
+                checkSourceLevel(pos, Feature.DERIVED_INSTANCE);
+
                 nextToken();
 
                 JCBlock block = block();

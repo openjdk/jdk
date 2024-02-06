@@ -1,6 +1,3 @@
-
-import java.util.List;
-
 /*
  * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -26,8 +23,12 @@ import java.util.List;
 
 /**
  * @test
+ * @enablePreview
  * @compile/fail/ref=WithErrors.out -XDrawDiagnostics -XDshould-stop.at=FLOW WithErrors.java
  */
+
+import java.util.List;
+
 public class WithErrors {
 
     private int field;
