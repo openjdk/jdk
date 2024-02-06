@@ -1535,7 +1535,6 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
       }
       if (nWait > 0) {
         // we have threads in Object.wait()
-        int offset = nWant;  // add after any contending threads
         ObjectWaiter *waiter = mon->first_waiter();
         for (int i = 0, j = 0; i < nWait; i++) {
           if (waiter == nullptr) {
@@ -1549,13 +1548,7 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
             // it has not been notified. This thread can't change the
             // state of the monitor so it doesn't need to be suspended.
             Handle th(current_thread, get_vthread_or_thread_oop(w));
-            if (java_lang_Thread::get_thread_status(w->threadObj()) ==
-                JavaThreadStatus::BLOCKED_ON_MONITOR_ENTER) {
-              // thread is re-entering the monitor in an Object.wait() call
-              ret.waiters[nWant++] = (jthread)jni_reference(calling_thread, th);
-            } else {
-              ret.notify_waiters[j++] = (jthread)jni_reference(calling_thread, th);
-            }
+            ret.notify_waiters[j++] = (jthread)jni_reference(calling_thread, th);
           }
           waiter = mon->next_waiter(waiter);
         }
