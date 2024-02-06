@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,7 +191,7 @@ class os: AllStatic {
   static PageSizes          _page_sizes;
 
   // The default value for os::vm_min_address() unless the platform knows better. This value
-  // is chosen to give us reasonable protection against NULL pointer dereferences while being
+  // is chosen to give us reasonable protection against null pointer dereferences while being
   // low enough to leave most of the valuable low-4gb address space open.
   static constexpr size_t _vm_min_address_default = 16 * M;
 
@@ -789,6 +789,7 @@ class os: AllStatic {
   static void print_siginfo(outputStream* st, const void* siginfo);
   static void print_signal_handlers(outputStream* st, char* buf, size_t buflen);
   static void print_date_and_time(outputStream* st, char* buf, size_t buflen);
+  static void print_elapsed_time(outputStream* st, double time);
 
   static void print_user_info(outputStream* st);
   static void print_active_locale(outputStream* st);
@@ -1062,6 +1063,7 @@ class os: AllStatic {
                                 char pathSep);
   static bool set_boot_path(char fileSep, char pathSep);
 
+  static bool pd_dll_unload(void* libhandle, char* ebuf, int ebuflen);
 };
 
 // Note that "PAUSE" is almost always used with synchronization

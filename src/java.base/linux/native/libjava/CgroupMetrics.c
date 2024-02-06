@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Red Hat, Inc.
+ * Copyright (c) 2020, 2024, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,5 +54,5 @@ Java_jdk_internal_platform_CgroupMetrics_getTotalSwapSize0
     if (retval < 0) {
          return 0; // syinfo failed, treat as no swap
     }
-    return (jlong)si.totalswap;
+    return (jlong)(si.totalswap * si.mem_unit);
 }

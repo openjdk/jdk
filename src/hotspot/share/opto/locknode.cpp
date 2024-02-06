@@ -179,8 +179,6 @@ void FastLockNode::create_rtm_lock_counter(JVMState* state) {
 void Parse::do_monitor_enter() {
   kill_dead_locals();
 
-  C->set_has_monitors(true);
-
   // Null check; get casted pointer.
   Node* obj = null_check(peek());
   // Check for locking null object
@@ -197,10 +195,6 @@ void Parse::do_monitor_enter() {
 //------------------------------do_monitor_exit--------------------------------
 void Parse::do_monitor_exit() {
   kill_dead_locals();
-
-  // need to set it for monitor exit as well.
-  // OSR compiled methods can start with lock taken
-  C->set_has_monitors(true);
 
   pop();                        // Pop oop to unlock
   // Because monitors are guaranteed paired (else we bail out), we know

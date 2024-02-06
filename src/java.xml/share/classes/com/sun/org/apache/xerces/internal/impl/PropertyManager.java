@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import jdk.xml.internal.XMLSecurityManager;
  * @author K Venugopal
  * @author Sunitha Reddy
  *
- * @LastModified: Nov 2023
+ * @LastModified: Jan 2024
  */
 public class PropertyManager {
 
@@ -184,6 +184,9 @@ public class PropertyManager {
      * @return the value of a property
      */
     public Object getProperty(String property) {
+        if (XMLInputFactory.SUPPORT_DTD.equals(property)) {
+            return fSecurityManager.is(XMLSecurityManager.Limit.STAX_SUPPORT_DTD);
+        }
         /**
          * Check to see if the property is managed by the security manager *
          */

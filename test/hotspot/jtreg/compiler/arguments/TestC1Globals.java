@@ -57,6 +57,17 @@
  *
  */
 
+/**
+ * @test
+ * @bug 8322781
+ * @requires vm.debug
+ * @summary Test flag with c1 value numbering
+ *
+ * @run main/othervm -XX:+PrintValueNumbering -XX:+Verbose -XX:-UseLocalValueNumbering
+ *                   -Xcomp -XX:TieredStopAtLevel=1
+ *                   compiler.arguments.TestC1Globals
+ */
+
 package compiler.arguments;
 
 public class TestC1Globals {

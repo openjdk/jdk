@@ -26,11 +26,21 @@
 
 #include "gc/z/zIterator.hpp"
 
+#include "gc/z/zVerify.hpp"
 #include "memory/iterator.inline.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 
 inline bool ZIterator::is_invisible_object(oop obj) {
+  // This is a good place to make sure that we can't concurrently iterate over
+  // objects while VMThread operations think they have exclusive access to the
+  // object graph.
+  //
+  // One example that have caused problems is the JFR Leak Profiler, which
+  // sets the mark word to a value that makes the object arrays look like
+  // invisible objects.
+  z_verify_safepoints_are_blocked();
+
   return obj->mark_acquire().is_marked();
 }
 

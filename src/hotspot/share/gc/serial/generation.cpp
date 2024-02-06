@@ -113,14 +113,6 @@ size_t Generation::max_contiguous_available() const {
   return MAX2(avail, old_avail);
 }
 
-bool Generation::promotion_attempt_is_safe(size_t max_promotion_in_bytes) const {
-  size_t available = max_contiguous_available();
-  bool   res = (available >= max_promotion_in_bytes);
-  log_trace(gc)("Generation: promo attempt is%s safe: available(" SIZE_FORMAT ") %s max_promo(" SIZE_FORMAT ")",
-                res? "":" not", available, res? ">=":"<", max_promotion_in_bytes);
-  return res;
-}
-
 // Ignores "ref" and calls allocate().
 oop Generation::promote(oop obj, size_t obj_size) {
   assert(obj_size == obj->size(), "bad obj_size passed in");
@@ -173,18 +165,6 @@ HeapWord* Generation::block_start(const void* p) const {
   return blk._start;
 }
 
-class GenerationBlockSizeClosure : public SpaceClosure {
- public:
-  const HeapWord* _p;
-  size_t size;
-  virtual void do_space(Space* s) {
-    if (size == 0 && s->is_in_reserved(_p)) {
-      size = s->block_size(_p);
-    }
-  }
-  GenerationBlockSizeClosure(const HeapWord* p) { _p = p; size = 0; }
-};
-
 class GenerationBlockIsObjClosure : public SpaceClosure {
  public:
   const HeapWord* _p;
@@ -202,50 +182,4 @@ bool Generation::block_is_obj(const HeapWord* p) const {
   // Cast away const
   ((Generation*)this)->space_iterate(&blk);
   return blk.is_obj;
-}
-
-class GenerationObjIterateClosure : public SpaceClosure {
- private:
-  ObjectClosure* _cl;
- public:
-  virtual void do_space(Space* s) {
-    s->object_iterate(_cl);
-  }
-  GenerationObjIterateClosure(ObjectClosure* cl) : _cl(cl) {}
-};
-
-void Generation::object_iterate(ObjectClosure* cl) {
-  GenerationObjIterateClosure blk(cl);
-  space_iterate(&blk);
-}
-
-void Generation::prepare_for_compaction(CompactPoint* cp) {
-  // Generic implementation, can be specialized
-  ContiguousSpace* space = first_compaction_space();
-  while (space != nullptr) {
-    space->prepare_for_compaction(cp);
-    space = space->next_compaction_space();
-  }
-}
-
-class AdjustPointersClosure: public SpaceClosure {
- public:
-  void do_space(Space* sp) {
-    sp->adjust_pointers();
-  }
-};
-
-void Generation::adjust_pointers() {
-  // Note that this is done over all spaces, not just the compactible
-  // ones.
-  AdjustPointersClosure blk;
-  space_iterate(&blk, true);
-}
-
-void Generation::compact() {
-  ContiguousSpace* sp = first_compaction_space();
-  while (sp != nullptr) {
-    sp->compact();
-    sp = sp->next_compaction_space();
-  }
 }
