@@ -41,7 +41,7 @@ The normal and simplest form of testing provides a single `@Test` annotated meth
 
 Arguments can be provided with `@Arguments(values = {...})` by providing well-specified inputs for each individual argument. Alternatively, a setup method can be chosen with `@Arguments(setup = "setupMethodName")`, which computes arguments and can also set fields.
 
-More information on normal test methods with a precise definition can be found in the Javadocs of [Test](./Test.java). Concrete examples on how to specify a normal test can be found in [BaseTestsExample](../../../testlibrary_tests/ir_framework/examples/BaseTestExample.java).
+More information on normal test methods with a precise definition can be found in the Javadocs of [Test](./Test.java). Concrete examples on how to specify a normal test can be found in [NormalTestsExample](../../../testlibrary_tests/ir_framework/examples/NormalTestExample.java).
 
 ##### Setup Method
 A `@Setup` annotated method can provide custom arguments and set fields before a normal test is run. A `@Test` annotated method can additionally be annotated with `@Arguments(setup = "setupMethodName")` to define the dedicated `@Setup` method.
