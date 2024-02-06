@@ -21,7 +21,6 @@
  * questions.
  */
 
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -99,7 +98,6 @@ import com.sun.tools.javac.tree.DCTree;
 import com.sun.tools.javac.tree.DCTree.DCDocComment;
 import com.sun.tools.javac.tree.DCTree.DCErroneous;
 import com.sun.tools.javac.tree.DocPretty;
-import com.sun.tools.javac.tree.JCTree;
 
 /**
  * A class to test doc comment trees.
