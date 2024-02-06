@@ -56,6 +56,7 @@ public class TestBadFormat {
         expectTestFormatException(BadWarmup.class);
         expectTestFormatException(BadBaseTests.class);
         expectTestFormatException(BadRunTests.class);
+        expectTestFormatException(BadSetupTest.class);
         expectTestFormatException(BadCheckTest.class);
         expectTestFormatException(BadIRAnnotationBeforeFlagVM.class);
         expectTestFormatException(BadIRAnnotations.class);
@@ -621,6 +622,57 @@ class BadRunTests {
     @FailCount(0)
     @Run(test = {"testInvalidReuse2", "testInvalidReuse3"})
     public void runInvalidReuse2() {}
+}
+
+class BadSetupTest {
+    // ----------- Bad Combinations of Annotations -----------------
+    @Setup
+    @Test
+    public Object[] badSetupTestAnnotation() {
+      return new Object[]{1, 2, 3};
+    }
+
+    @NoFail
+    @Test
+    public void testForBadSetupCheckAnnotation() {}
+
+    @Setup
+    @Check(test = "testForBadSetupCheckAnnotation")
+    public void badSetupCheckAnnotation() {}
+
+    @Setup
+    @Arguments(values = {Argument.NUMBER_42, Argument.NUMBER_42})
+    public void badSetupArgumentsAnnotation(int a, int b) {}
+
+    @NoFail
+    @Test
+    public void testForBadSetupRunAnnotation() {}
+
+    @Setup
+    @Run(test = "testForBadSetupRunAnnotation")
+    public void badSetupRunAnnotation() {}
+
+    // ----------- Ok: Setup Without Test Method -----------------
+    @NoFail
+    @Setup
+    public void setupWithNoTest() {}
+
+    // ----------- Bad: Test where Setup Method does not exist ---
+    @Test
+    @Arguments(setup = "nonExistingMethod")
+    public void testWithNonExistingMethod() {}
+
+    // ----------- Bad Arguments Annotation ----------------------
+    @NoFail
+    @Setup
+    public Object[] setupForTestSetupAndValues() {
+        return new Object[]{1, 2};
+    }
+
+    @Test
+    @Arguments(setup = "setupForTestSetupAndValues",
+               values = {Argument.NUMBER_42, Argument.NUMBER_42})
+    public void testSetupAndValues(int a, int b) {}
 }
 
 class BadCheckTest {

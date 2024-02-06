@@ -518,8 +518,14 @@ public class TestVM {
     }
 
     private void addSetupMethod(Method m) {
-        TestFormat.check(getAnnotation(m, Test.class) == null,
-                         "@Setup method cannot have @Test annotation: " + m);
+        TestFormat.checkNoThrow(getAnnotation(m, Test.class) == null,
+                                "@Setup method cannot have @Test annotation: " + m);
+        TestFormat.checkNoThrow(getAnnotation(m, Check.class) == null,
+                                "@Setup method cannot have @Check annotation: " + m);
+        TestFormat.checkNoThrow(getAnnotation(m, Arguments.class) == null,
+                                "@Setup method cannot have @Arguments annotation: " + m);
+        TestFormat.checkNoThrow(getAnnotation(m, Run.class) == null,
+                                "@Setup method cannot have @Run annotation: " + m);
         m.setAccessible(true);
         setupMethodMap.put(m.getName(), m);
     }
@@ -759,7 +765,8 @@ public class TestVM {
         TestFormat.check(attachedMethod == null,
                          "Cannot use @Test " + testMethod + " for more than one @Run/@Check method. Found: "
                          + m + ", " + attachedMethod);
-        TestFormat.check(!setupMethodMap.containsKey(testMethod.getName()),
+        Arguments argumentsAnno = getAnnotation(testMethod, Arguments.class);
+        TestFormat.check(argumentsAnno == null,
                          "Cannot use @Arguments at test method " + testMethod + " in combination with @Run method " + m);
         Warmup warmupAnno = getAnnotation(testMethod, Warmup.class);
         TestFormat.checkNoThrow(warmupAnno == null,
