@@ -972,6 +972,9 @@ class GTKPainter extends SynthPainter {
         JTabbedPane pane = (JTabbedPane)context.getComponent();
         int placement = pane.getTabPlacement();
 
+        // Fill the tab rect area
+        g.fillRect(x, y, w, h);
+
         synchronized (UNIXToolkit.GTK_LOCK) {
             if (! ENGINE.paintCachedImage(g, x, y, w, h,
                     id, gtkState, placement, tabIndex)) {
