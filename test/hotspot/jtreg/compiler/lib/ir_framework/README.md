@@ -44,18 +44,18 @@ Arguments can be provided with `@Arguments(values = {...})` by providing well-sp
 More information on normal test methods with a precise definition can be found in the Javadocs of [Test](./Test.java). Concrete examples on how to specify a normal test can be found in [BaseTestsExample](../../../testlibrary_tests/ir_framework/examples/BaseTestExample.java).
 
 ##### Setup Method
-A `@Setup` annotated method can provide custom arguments and set fields before a normal test is run. A normal test method can be annotated with `@Arguments(setup = "setupMethodName")` to specify which setup method is to be used.
+A `@Setup` annotated method can provide custom arguments and set fields before a normal test is run. A `@Test` annotated method can additionally be annotated with `@Arguments(setup = "setupMethodName")` to define the dedicated `@Setup` method.
 
-More information on checked tests with a precise definition can be found in the Javadocs of [Setup](./Setup.java). Concrete examples on how to specify a setup method can be found in [SetupExample](../../../testlibrary_tests/ir_framework/examples/SetupExample.java).
+More information on normal tests with `@Setup` methods together with a precise definition can be found in the Javadocs of [Setup](./Setup.java). Concrete examples on how to specify a setup method can be found in [SetupExample](../../../testlibrary_tests/ir_framework/examples/SetupExample.java).
 
 ##### Check Method
-A `@Check` annotated method is invoked directly after a corresponding normal `@Test` annotated method. The user can perform various checks, such as test method return value and field value verification.
+A `@Check(test = "checkMethodName")` annotated method is invoked directly after the `@Test` annotated method `checkMethodName()` is executed. The user can perform various checks, such as test method return value and field value verification.
 
 More information on check methods with a precise definition can be found in the Javadocs of [Check](./Check.java). Concrete examples on how to specify check methods can be found in [CheckedTestsExample](../../../testlibrary_tests/ir_framework/examples/CheckedTestExample.java).
 
 #### Custom Run Tests
 The normal test method is invoked directly by the framework, and hence the user does not have control over the invokation.
-A custom run test gives full control over the invocation of the `@Test` annotated method to the user. The framework calls a dedicated `@Run` annotated method from which the user can invoke the `@Test` method according to their needs.
+A custom run test gives full control over the invocation of the `@Test` annotated method to the user which includes argument and field setup as well as result and field value verification. The framework calls a dedicated `@Run` annotated method from which the user can invoke the `@Test` method according to their needs.
 
 More information on checked tests with a precise definition can be found in the Javadocs of [Run](./Run.java). Concrete examples on how to specify a custom run test can be found in [CustomRunTestsExample](../../../testlibrary_tests/ir_framework/examples/CustomRunTestExample.java).
 
