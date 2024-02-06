@@ -3684,10 +3684,12 @@ instruct vround_f(vReg dst, vReg src, fRegF tmp, vRegMask_V0 v0) %{
   effect(TEMP_DEF dst, TEMP tmp);
   format %{ "java_round_float_v $dst, $src\t" %}
   ins_encode %{
+    __ csrwi(CSR_FRM, C2_MacroAssembler::rdn);
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
     __ java_round_float_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg),
                           as_FloatRegister($tmp$$reg));
+    __ csrwi(CSR_FRM, C2_MacroAssembler::rne);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -3697,10 +3699,12 @@ instruct vround_d(vReg dst, vReg src, fRegD tmp, vRegMask_V0 v0) %{
   effect(TEMP_DEF dst, TEMP tmp);
   format %{ "java_round_double_v $dst, $src\t" %}
   ins_encode %{
+    __ csrwi(CSR_FRM, C2_MacroAssembler::rdn);
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
     __ java_round_double_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg),
-                          as_FloatRegister($tmp$$reg));
+                           as_FloatRegister($tmp$$reg));
+    __ csrwi(CSR_FRM, C2_MacroAssembler::rne);
   %}
   ins_pipe(pipe_slow);
 %}
