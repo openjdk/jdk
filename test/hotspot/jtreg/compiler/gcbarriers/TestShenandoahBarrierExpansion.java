@@ -1,6 +1,7 @@
 package compiler.gcbarriers;
 
 import compiler.lib.ir_framework.CompilePhase;
+import compiler.lib.ir_framework.DontInline;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.Test;
@@ -17,9 +18,7 @@ import compiler.lib.ir_framework.TestFramework;
 public class TestShenandoahBarrierExpansion {
     public static void main(String[] args) {
         TestFramework test = new TestFramework(TestShenandoahBarrierExpansion.class);
-        test.addFlags(
-                "-XX:+UseShenandoahGC",
-                "-XX:CompileCommand=dontinline," + TestShenandoahBarrierExpansion.class.getName() + "::notInlined");
+        test.addFlags("-XX:+UseShenandoahGC");
         test.start();
     }
 
@@ -56,6 +55,7 @@ public class TestShenandoahBarrierExpansion {
         notInlined(field2, field3);
     }
 
+    @DontInline
     private static void notInlined(A field2, A field3) {
         // noop
     }
