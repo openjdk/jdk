@@ -244,11 +244,13 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
                                                x + w, y + h);
                 bsg.setClip(x, y, w, h);
 
-                final SunGraphics2D g2d = (SunGraphics2D) bsg;
-                final Color oldBg = g2d.getBackground();
-                g2d.setBackground(paintingComponent.getBackground());
-                g2d.clearRect(x, y, w, h);
-                g2d.setBackground(oldBg);
+                if (!bufferComponent.isOpaque()) {
+                    final SunGraphics2D g2d = (SunGraphics2D) bsg;
+                    final Color oldBg = g2d.getBackground();
+                    g2d.setBackground(paintingComponent.getBackground());
+                    g2d.clearRect(x, y, w, h);
+                    g2d.setBackground(oldBg);
+                }
 
                 paintingComponent.paintToOffscreen(bsg, x, y, w, h,
                                                    x + w, y + h);
