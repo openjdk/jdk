@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,10 +39,13 @@ import java.io.IOException;
  * @since 1.1
  */
 public class CheckedOutputStream extends FilterOutputStream {
-    private Checksum cksum;
+    private final Checksum cksum;
 
     /**
-     * Creates an output stream with the specified Checksum.
+     * Creates an output stream with the specified Checksum. A null
+     * value to either {@code out} or {@code cksum} can cause the
+     * {@code write} methods of this {@code CheckedOutputStream} to
+     * throw a {@link NullPointerException}.
      * @param out the output stream
      * @param cksum the checksum
      */
@@ -67,6 +70,7 @@ public class CheckedOutputStream extends FilterOutputStream {
      * @param b the data to be written
      * @param off the start offset of the data
      * @param len the number of bytes to be written
+     * @throws    NullPointerException if {@code b} is null
      * @throws    IOException if an I/O error has occurred
      */
     public void write(byte[] b, int off, int len) throws IOException {
