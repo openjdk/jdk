@@ -584,6 +584,9 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     # no-strict-aliasing everywhere!)
     TOOLCHAIN_CFLAGS_JDK_CONLY="-fno-strict-aliasing"
 
+    TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM -pedantic -Wpedantic"
+    TOOLCHAIN_CFLAGS_JDK="$TOOLCHAIN_CFLAGS_JDK -pedantic -Wpedantic"
+
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
     # Restrict the debug information created by Clang to avoid
     # too big object files and speed the build up a little bit
