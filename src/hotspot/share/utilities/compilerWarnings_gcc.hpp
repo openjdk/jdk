@@ -82,8 +82,7 @@
 // *before* the attribute check.  We use fortification in fastdebug builds,
 // so uses of functions that are both forbidden and fortified won't cause
 // forbidden warnings in such builds.
-#define FORBID_C_FUNCTION(signature, alternative) \
-  extern "C" __attribute__((__warning__(alternative))) signature;
+#define FORBID_C_FUNCTION(signature, alternative) [[gnu::__warning__(alternative)]] signature;
 
 // Disable warning attribute over the scope of the affected statement.
 // The name serves only to document the intended function.
