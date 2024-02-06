@@ -2996,6 +2996,8 @@ public class ObjectInputStream
         private static final int CHAR_BUF_SIZE = 256;
         /** readBlockHeader() return value indicating header read may block */
         private static final int HEADER_BLOCKED = -2;
+        /** access to internal methods to count ASCII and inflate latin1/ASCII bytes to char */
+        private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
         /** buffer for reading general/block data */
         private final byte[] buf = new byte[MAX_BLOCK_SIZE];
@@ -3725,8 +3727,6 @@ public class ObjectInputStream
 
             return sbuf.toString();
         }
-
-        private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
         /**
          * Reads span of UTF-encoded characters out of internal buffer
