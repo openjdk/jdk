@@ -43,9 +43,9 @@ public class CheckedOutputStream extends FilterOutputStream {
 
     /**
      * Creates an output stream with the specified Checksum. A null
-     * value to either {@code out} or {@code cksum} can cause the
-     * {@code write} methods of this {@code CheckedOutputStream} to
-     * throw a {@link NullPointerException}.
+     * value to either {@code out} or {@code cksum} will cause
+     * a {@link NullPointerException} to be thrown from the
+     * {@code write} methods of this {@code CheckedOutputStream}.
      * @param out the output stream
      * @param cksum the checksum
      */

@@ -42,9 +42,9 @@ public class CheckedInputStream extends FilterInputStream {
 
     /**
      * Creates an input stream using the specified Checksum. A null
-     * value to either {@code in} or {@code cksum} can cause the
-     * {@code read} methods of this {@code CheckedInputStream} to
-     * throw a {@link NullPointerException}.
+     * value to either {@code in} or {@code cksum} will cause
+     * a {@link NullPointerException} to be thrown from the
+     * {@code read} methods of this {@code CheckedInputStream}.
      * @param in the input stream
      * @param cksum the Checksum
      */
