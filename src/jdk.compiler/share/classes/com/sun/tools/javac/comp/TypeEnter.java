@@ -114,7 +114,6 @@ public class TypeEnter implements Completer {
     private final Lint lint;
     private final TypeEnvs typeEnvs;
     private final Dependencies dependencies;
-    private final ParserFactory parserFactory;
     private final Preview preview;
 
     public static TypeEnter instance(Context context) {
@@ -143,7 +142,6 @@ public class TypeEnter implements Completer {
         lint = Lint.instance(context);
         typeEnvs = TypeEnvs.instance(context);
         dependencies = Dependencies.instance(context);
-        parserFactory = ParserFactory.instance(context);
         preview = Preview.instance(context);
         Source source = Source.instance(context);
         allowDeprecationOnImport = Feature.DEPRECATION_ON_IMPORT.allowedInSource(source);
@@ -348,31 +346,30 @@ public class TypeEnter implements Completer {
                 log.error(Errors.NoJavaLang);
                 throw new Abort();
             }
-            importAll(make.at(tree.pos()).Import(make.Select(make.QualIdent(javaLang.owner), javaLang), false),
+            importAll(make.at(tree.pos()).Import(make.Select(make.QualIdent(javaLang.owner), javaLang), false, false),
                 javaLang, env);
 
-            String implicitImports = "";
-
-            try {
-                TypeSymbol stringTemplateSym = syms.stringTemplateType.tsym;
-                if (allowStringTemplates && tree.getModuleDecl() == null &&
-                        tree.modle.visiblePackages != null &&
-                        !stringTemplateSym.members().isEmpty() &&
-                        (stringTemplateSym.flags() & PREVIEW_API) == 0) {
-                    implicitImports += """
-                            import static java.lang.StringTemplate.STR;
-                            """;
+            if (tree.getModuleDecl() == null) {
+                try {
+                    TypeSymbol stringTemplateSym = syms.stringTemplateType.tsym;
+                    if (allowStringTemplates &&
+                            tree.modle.visiblePackages != null &&
+                            !stringTemplateSym.members().isEmpty() &&
+                            (stringTemplateSym.flags() & PREVIEW_API) == 0) {
+                        doImport(make.Import(make.Select(make.QualIdent(stringTemplateSym), names.STR), true, false));
+                    }
+                } catch (CompletionFailure ex) {
+                    // fall thru - StringTemplate not available for completion
                 }
-            } catch (CompletionFailure ex) {
-                // fall thru - StringTemplate not available for completion
-            }
 
-            if (!implicitImports.isEmpty()) {
-                Parser parser = parserFactory.newParser(implicitImports, false, false, false, false);
-                JCCompilationUnit importTree = parser.parseCompilationUnit();
-
-                for (JCImport imp : importTree.getImports()) {
-                    doImport(imp);
+                List<JCTree> defs = tree.defs;
+                boolean isImplicitClass = !defs.isEmpty() &&
+                        defs.head instanceof JCClassDecl cls &&
+                        (cls.mods.flags & IMPLICIT_CLASS) != 0;
+                if (isImplicitClass) {
+                    doImport(make.Import(make.Select(make.Ident(names.java), names.base), false, true));
+                    doImport(make.Import(make.Select((JCFieldAccess)make.QualIdent(syms.simpleIOType.tsym),
+                            names.asterisk), true, false));
                 }
             }
         }
@@ -459,25 +456,41 @@ public class TypeEnter implements Completer {
             // effects of other imports in Resolve.findGlobalType
             Env<AttrContext> localEnv = env.dup(tree);
 
-            TypeSymbol p = attr.attribImportQualifier(tree, localEnv).tsym;
-            if (name == names.asterisk) {
-                // Import on demand.
-                chk.checkCanonical(imp.selected);
-                if (tree.staticImport)
-                    importStaticAll(tree, p, env);
-                else
-                    importAll(tree, p, env);
-            } else {
-                // Named type import.
-                if (tree.staticImport) {
-                    importNamedStatic(tree, p, name, localEnv);
-                    chk.checkCanonical(imp.selected);
+            if (tree.isModule()) {
+                Name moduleName = TreeInfo.fullName(imp);
+                ModuleSymbol module = syms.getModule(moduleName);
+                if (module != null) {
+                    for (Directive.ExportsDirective export : module.exports) {
+                        PackageSymbol pkg = export.getPackage();
+                        JCImport moduleImport = make.at(tree.pos)
+                                .Import(make.Select(make.QualIdent(pkg), names.asterisk), false, false);
+                        TypeSymbol p = attr.attribImportQualifier(moduleImport, localEnv).tsym;
+                        importAll(moduleImport, p, env);
+                    }
                 } else {
-                    Type importedType = attribImportType(imp, localEnv);
-                    Type originalType = importedType.getOriginalType();
-                    TypeSymbol c = originalType.hasTag(CLASS) ? originalType.tsym : importedType.tsym;
-                    chk.checkCanonical(imp);
-                    importNamed(tree.pos(), c, env, tree);
+                    log.error(tree.pos, Errors.ImportModuleNotFound(moduleName));
+                }
+            } else {
+                TypeSymbol p = attr.attribImportQualifier(tree, localEnv).tsym;
+                if (name == names.asterisk) {
+                    // Import on demand.
+                    chk.checkCanonical(imp.selected);
+                    if (tree.staticImport)
+                        importStaticAll(tree, p, env);
+                    else
+                        importAll(tree, p, env);
+                } else {
+                    // Named type import.
+                    if (tree.staticImport) {
+                        importNamedStatic(tree, p, name, localEnv);
+                        chk.checkCanonical(imp.selected);
+                    } else {
+                        Type importedType = attribImportType(imp, localEnv);
+                        Type originalType = importedType.getOriginalType();
+                        TypeSymbol c = originalType.hasTag(CLASS) ? originalType.tsym : importedType.tsym;
+                        chk.checkCanonical(imp);
+                        importNamed(tree.pos(), c, env, tree);
+                    }
                 }
             }
         }
