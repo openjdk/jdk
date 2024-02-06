@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,9 @@ import java.util.Objects;
  * This class implements a stream filter for uncompressing data in the
  * "deflate" compression format. It is also used as the basis for other
  * decompression filters, such as GZIPInputStream.
- *
+ * <p> Unless otherwise noted, passing a {@code null} argument to a constructor
+ * or method in this class will cause a {@link NullPointerException} to be
+ * thrown.
  * @see         Inflater
  * @author      David Connelly
  * @since 1.1
@@ -106,11 +108,14 @@ public class InflaterInputStream extends FilterInputStream {
      * @param in the input stream
      */
     public InflaterInputStream(InputStream in) {
+        // "in" being null isn't allowed. we use a null check for "in"
+        // merely to avoid an unnecessary instance creation of the Inflater
+        // for such erroneous cases.
         this(in, in != null ? new Inflater() : null);
         usesDefaultInflater = true;
     }
 
-    private byte[] singleByteBuf = new byte[1];
+    private final byte[] singleByteBuf = new byte[1];
 
     /**
      * Reads a byte of uncompressed data. This method will block until

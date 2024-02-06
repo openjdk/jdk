@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,9 @@ import static java.util.zip.ZipUtils.*;
  * An input stream for reading compressed and uncompressed
  * {@linkplain ZipEntry ZIP file entries} from a stream of bytes in the ZIP file
  * format.
- *
+ * <p> Unless otherwise noted, passing a {@code null} argument to a constructor
+ * or method in this class will cause a {@link NullPointerException} to be
+ * thrown.
  * <H2>Reading Zip File Entries</H2>
  *
  * The {@link #getNextEntry()} method is used to read the next ZIP file entry

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,9 @@ public class DeflaterInputStream extends FilterInputStream {
      * @throws NullPointerException if {@code in} is null
      */
     public DeflaterInputStream(InputStream in) {
+        // "in" being null isn't allowed. we use a null check for "in"
+        // merely to avoid an unnecessary instance creation of the Deflater
+        // for such erroneous cases.
         this(in, in != null ? new Deflater() : null);
         usesDefaultDeflater = true;
     }
@@ -164,6 +167,7 @@ public class DeflaterInputStream extends FilterInputStream {
      * @param len maximum number of compressed bytes to read into {@code b}
      * @return the actual number of bytes read, or -1 if the end of the
      * uncompressed input stream is reached
+     * @throws NullPointerException if {@code b} is null
      * @throws IndexOutOfBoundsException  if {@code len > b.length - off}
      * @throws IOException if an I/O error occurs or if this input stream is
      * already closed

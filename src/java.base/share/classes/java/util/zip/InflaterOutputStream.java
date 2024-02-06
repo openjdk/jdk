@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,9 @@ public class InflaterOutputStream extends FilterOutputStream {
      * @throws NullPointerException if {@code out} is null
      */
     public InflaterOutputStream(OutputStream out) {
+        // "out" being null isn't allowed. we use a null check for "out"
+        // merely to avoid an unnecessary instance creation of the Inflater
+        // for such erroneous cases.
         this(out, out != null ? new Inflater() : null);
         usesDefaultInflater = true;
     }

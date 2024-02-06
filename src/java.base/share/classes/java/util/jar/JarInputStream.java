@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,9 @@ import sun.security.util.ManifestEntryVerifier;
  * <a href="{@docRoot}/../specs/jar/jar.html#jar-manifest">Manifest</a>
  * entry. The {@code Manifest} can be used to store
  * meta-information about the JAR file and its entries.
- *
+ * <p> Unless otherwise noted, passing a {@code null} argument to a constructor
+ * or method in this class will cause a {@link NullPointerException} to be
+ * thrown.
  * <h2>Accessing the Manifest</h2>
  * <p>
  * The {@link #getManifest() getManifest} method is used to return the

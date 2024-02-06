@@ -34,6 +34,9 @@ import java.io.IOException;
  * This class implements an output stream filter for compressing data in
  * the "deflate" compression format. It is also used as the basis for other
  * types of compression filters, such as GZIPOutputStream.
+ * <p> Unless otherwise noted, passing a {@code null} argument to a constructor
+ * or method in this class will cause a {@link NullPointerException} to be
+ * thrown.
  *
  * @see         Deflater
  * @author      David Connelly
@@ -158,6 +161,9 @@ public class DeflaterOutputStream extends FilterOutputStream {
      * @since 1.7
      */
     public DeflaterOutputStream(OutputStream out, boolean syncFlush) {
+        // "out" being null isn't allowed. we use a null check for "out"
+        // merely to avoid an unnecessary instance creation of the Deflater
+        // for such erroneous cases.
         this(out, out != null ? new Deflater() : null, 512, syncFlush);
         usesDefaultDeflater = true;
     }
