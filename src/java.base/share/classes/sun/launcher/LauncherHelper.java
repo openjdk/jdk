@@ -590,12 +590,9 @@ public final class LauncherHelper {
         ostream = ps;
     }
 
-    private static record MainClassNameAndJarFile(String name, JarFile jar) {}
-
-    private static MainClassAndJarFile getMainClassNameAndJarFile(String jarname) {
+    private static String getMainClassFromJar(String jarname, JarFile jarFile) {
         String mainValue;
-        JarFile jarFile = new JarFile(jarname);
-        try { // do not auto-close jar file to keep it in ZipFile's cache
+        try {
             Manifest manifest = jarFile.getManifest();
             if (manifest == null) {
                 abort(null, "java.launcher.jar.error2", jarname);
@@ -652,10 +649,10 @@ public final class LauncherHelper {
             if (mainAttrs.containsKey(
                     new Attributes.Name(JAVAFX_APPLICATION_MARKER))) {
                 FXHelper.setFXLaunchParameters(jarname, LM_JAR);
-                return new MainClassNameAndJarFile(FXHelper.class.getName(), jarFile);
+                return FXHelper.class.getName();
             }
 
-            return new MainClassNameAndJarFile(mainValue.trim(), jarFile);
+            return mainValue.trim();
         } catch (IOException ioe) {
             abort(ioe, "java.launcher.jar.error1", jarname);
         }
@@ -823,15 +820,15 @@ public final class LauncherHelper {
     private static Class<?> loadMainClass(int mode, String what) {
         // get the class name
         String cn;
-        // keep jar file open
-        MainClassNameAndJarFile mainClassNameAndJarFile;
+        // store the jar file
+        JarFile jarFile;
         switch (mode) {
             case LM_CLASS:
                 cn = what;
                 break;
             case LM_JAR:
-                jar = getMainClassNameAndJarFile(what);
-                cn = mainClassNameAndJarFile.name();
+                jarFile = new JarFile(what);
+                cn = getMainClassFromJar(what, jarFile);
                 break;
             default:
                 // should never happen
@@ -867,12 +864,14 @@ public final class LauncherHelper {
         } catch (LinkageError le) {
             abort(le, "java.launcher.cls.error4", cn,
                     le.getClass().getName() + ": " + le.getLocalizedMessage());
-        }
-        // release direct jar file handle, the mainClass reference should keep it open
-        if (mainClassNameAndJarFile != null) try {
-            mainClassNameAndJarFile.jar().close();
-        } catch (IOException ioe) {
-            abort(ioe, "java.launcher.jar.error1", jarname);
+        } finally {
+            if (jarFile != null) {
+                try {
+                    jarFile.close();
+                } catch (IOException ioe) {
+                    abort(ioe, "java.launcher.jar.error1", what);
+                }
+            }
         }
         return mainClass;
     }
