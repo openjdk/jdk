@@ -1667,19 +1667,19 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
         // n has a control input inside a loop but get_ctrl() is member of an outer loop. This could happen, for example,
         // for Div nodes inside a loop (control input inside loop) without a use except for an UCT (outside the loop).
         // Rewire control of n to right outside of the loop, regardless if its input(s) are later sunk or not.
-        Node* x = n;
-        Node* c = place_outside_loop(n_ctrl, loop_ctrl);
+        Node* maybe_pinned_n = n;
+        Node* outside_ctrl = place_outside_loop(n_ctrl, loop_ctrl);
         if (n->depends_only_on_test()) {
-          Node* clone = n->pin_array_access_node();
-          if (clone != nullptr) {
+          Node* pinned_clone = n->pin_array_access_node();
+          if (pinned_clone != nullptr) {
             // Pin array access nodes: if this is an array load, it's going to be dependent on a condition that's not a
             // range check for that access. If that condition is replaced by an identical dominating one, then an
             // unpinned load would risk floating above its range check.
-            register_new_node(clone, c);
-            x = clone;
+            register_new_node(pinned_clone, outside_ctrl);
+            maybe_pinned_n = pinned_clone;
           }
         }
-        _igvn.replace_input_of(x, 0, c);
+        _igvn.replace_input_of(maybe_pinned_n, 0, outside_ctrl);
       }
     }
     if (n_loop != _ltree_root && n->outcnt() > 1) {
