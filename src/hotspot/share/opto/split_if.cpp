@@ -732,8 +732,8 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
     // into the region is left, an array load could become dependent on a condition that's not a range check for
     // that access. If that condition is replaced by an identical dominating one, then an unpinned load would risk
     // floating above its range check.
-    pin_array_access_nodes(new_true);
-    pin_array_access_nodes(new_false);
+    pin_array_access_nodes_dependent_on(new_true);
+    pin_array_access_nodes_dependent_on(new_false);
   }
 
   if (new_false_region != nullptr) {
