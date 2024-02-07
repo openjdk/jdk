@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef NSK_SHARE_NATIVE_NATIVE_THREAD_H
-#define NSK_SHARE_NATIVE_NATIVE_THREAD_H
+#ifndef NSK_SHARE_NATIVE_NATIVE_THREAD_HPP
+#define NSK_SHARE_NATIVE_NATIVE_THREAD_HPP
 
 extern "C" {
 
@@ -33,38 +33,38 @@ extern "C" {
 typedef int(*PROCEDURE)(void*);
 
 /**
- * Return a thread mirror, or NULL if failed.
+ * Return a thread mirror, or null if failed.
  */
 void* THREAD_new(PROCEDURE procedure, void* context);
 
 /**
- * Return the thread if started OK, or NULL if failed.
+ * Return the thread if started OK, or null if failed.
  */
 void* THREAD_start(void* thread);
 
 /**
  * Return 1 if the thread has been started, or 0 if not,
- * or -1 if thread==NULL.
+ * or -1 if thread==nullptr.
  */
 int THREAD_isStarted(void* thread);
 
 /**
  * Return 1 if the thread has been started and already has finished,
  * or 0 if the thread hasn't finish (or even hasn't been started),
- * or -1 if thread==NULL.
+ * or -1 if thread==nullptr.
  */
 int THREAD_hasFinished(void* thread);
 
 /**
  * Return thread->status if thread has finished,
  * or return 0 if thread hasn't finished,
- * or retuen -1 if thread==NULL.
+ * or retuen -1 if thread==nullptr.
  */
 int THREAD_status(void* thread);
 
 /**
  * Cycle with 1 second sleeps until the thread has finished;
- * or return immediately, if thread==NULL.
+ * or return immediately, if thread==nullptr.
  */
 void THREAD_waitFor(void* thread);
 

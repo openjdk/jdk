@@ -94,7 +94,6 @@ SerialHeap::SerialHeap() :
     _young_gen(nullptr),
     _old_gen(nullptr),
     _rem_set(nullptr),
-    _soft_ref_policy(),
     _gc_policy_counters(new GCPolicyCounters("Copy:MSC", 2, 2)),
     _incremental_collection_failed(false),
     _young_manager(nullptr),
