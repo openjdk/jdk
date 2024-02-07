@@ -51,6 +51,9 @@ public class TestArrayAccessAboveRCAfterSinking {
         }
         try {
             test1(allTrue, array, -1, true, 0);
+        } catch (ArrayIndexOutOfBoundsException arrayIndexOutOfBoundsException) {
+        }
+        try {
             test2(allTrue, array, -1, true, 0);
         } catch (ArrayIndexOutOfBoundsException arrayIndexOutOfBoundsException) {
         }

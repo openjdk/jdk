@@ -1740,7 +1740,7 @@ public:
 
   bool can_move_to_inner_loop(Node* n, LoopNode* n_loop, Node* x);
 
-  void pin_array_access_nodes(Node* ctrl);
+  void pin_array_access_nodes_dependent_on(Node* ctrl);
 };
 
 
