@@ -155,7 +155,7 @@ bool CircularStringBuffer::has_message() {
 void CircularStringBuffer::await_message() {
   while (true) {
     ReadLocker rl(this);
-    while (!has_message()) {
+    while (head == tail) {
       _read_lock.wait(0 /* no timeout */);
     }
     break;
