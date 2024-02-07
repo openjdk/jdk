@@ -2016,7 +2016,7 @@ class EARelockingNestedInflated_03Target extends EATestCaseBaseTarget {
                     } catch (InterruptedException e) { /* ignored */ }
                 }
             }
-            synchronized(lockInflatedByContention) { // will block and trigger inflation
+            synchronized (lockInflatedByContention) { // will block and trigger inflation
                 msg(Thread.currentThread().getName() + ": acquired lockInflatedByContention");
             }
             }, testCaseName + ": Lock Contender (test thread)").start();
