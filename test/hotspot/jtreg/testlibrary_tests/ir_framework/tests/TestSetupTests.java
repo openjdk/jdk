@@ -51,6 +51,12 @@ public class TestSetupTests {
 	// Positive tests in TestSetupTests class
         TestFramework.run();
 
+        // Positive tests in TestSetupTestsWithFields class
+        TestFramework.run(TestSetupTestsWithFields.class);
+
+        // Positive tests in TestSetupTestsSetupInfo class
+        TestFramework.run(TestSetupTestsSetupInfo.class);
+
         // Positive tests with expected exceptions
         try {
             TestFramework.run(TestSetupTestsWithExpectedExceptions.class);
@@ -161,6 +167,54 @@ public class TestSetupTests {
 //            throw new RuntimeException("must be 42");
 //        }
 //    }
+}
+
+class TestSetupTestsWithFields {
+    int iFld1, iFld2, iFld3;
+
+    @Setup
+    Object[] setupTest1(SetupInfo info) {
+        iFld1 = info.invocationCounter() + 1;
+        iFld2 = info.invocationCounter() + 2;
+        iFld3 = info.invocationCounter() + 3;
+        return new Object[]{info.invocationCounter()}; // -> argument x in test
+    }
+
+    @Test
+    @Arguments(setup = "setupTest1")
+    int test1(int x) {
+        if (iFld1 != x + 1) { throw new RuntimeException("iFld1 wrong value: " + iFld1 + " != " + (x + 1)); }
+        if (iFld2 != x + 2) { throw new RuntimeException("iFld2 wrong value: " + iFld2 + " != " + (x + 2)); }
+        if (iFld3 != x + 3) { throw new RuntimeException("iFld3 wrong value: " + iFld3 + " != " + (x + 3)); }
+        return x + 5; // -> argument y in check
+    }
+
+    @Check(test = "test1")
+    void checkTest1(int y) {
+        if (iFld1 != y - 4) { throw new RuntimeException("iFld1 wrong value: " + iFld1 + " != " + (y - 4)); }
+        if (iFld2 != y - 3) { throw new RuntimeException("iFld2 wrong value: " + iFld2 + " != " + (y - 3)); }
+        if (iFld3 != y - 2) { throw new RuntimeException("iFld3 wrong value: " + iFld3 + " != " + (y - 2)); }
+    }
+}
+
+class TestSetupTestsSetupInfo {
+    static int lastCnt = -1;
+
+    @Setup
+    Object[] setupTest1(SetupInfo info) {
+        int cnt = info.invocationCounter();
+        // Check that we increment every time
+        if (cnt - 1 != lastCnt) {
+            throw new RuntimeException("SetupInfo invocationCounter does not increment correctly: " +
+                                       cnt + ", vs last: " + lastCnt);
+        }
+        lastCnt = cnt;
+        return new Object[]{1, 2};
+    }
+
+    @Test
+    @Arguments(setup = "setupTest1")
+    void test1(int a, int b) {}
 }
 
 class TestSetupTestsWithExpectedExceptions {

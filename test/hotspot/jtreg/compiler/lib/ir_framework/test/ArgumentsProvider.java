@@ -133,7 +133,7 @@ final class SetupArgumentsProvider implements ArgumentsProvider {
             }
         } catch (Exception e) {
             throw new TestRunException("There was an error while invoking setup method " +
-                                       setupMethod + " on " + target + ", " + e);
+                                       setupMethod + " on " + target, e);
         }
     }
 }

@@ -75,7 +75,7 @@ class BaseTest extends AbstractTest {
      * Compute arguments (and possibly set fields), and invoke the test method.
      */
     private Object invokeTestMethod() {
-        Object[] arguments = test.getArguments(invocationTarget, invocationCounter);
+        Object[] arguments = test.getArguments(invocationTarget, invocationCounter++);
         try {
             return testMethod.invoke(invocationTarget, arguments);
         } catch (Exception e) {
