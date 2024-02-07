@@ -204,7 +204,6 @@ public final class NativePRNG extends SecureRandomSpi {
 
     // constructor, called by the JCA framework
     public NativePRNG(SecureRandomParameters params) {
-        super();
         if (INSTANCE == null) {
             throw new AssertionError("NativePRNG not available");
         }
@@ -255,7 +254,6 @@ public final class NativePRNG extends SecureRandomSpi {
 
         // constructor, called by the JCA framework
         public Blocking(SecureRandomParameters params) {
-            super();
             if (INSTANCE == null) {
                 throw new AssertionError("NativePRNG$Blocking not available");
             }
@@ -307,7 +305,6 @@ public final class NativePRNG extends SecureRandomSpi {
 
         // constructor, called by the JCA framework
         public NonBlocking(SecureRandomParameters params) {
-            super();
             if (INSTANCE == null) {
                 throw new AssertionError(
                     "NativePRNG$NonBlocking not available");
