@@ -519,16 +519,18 @@ void ObjectSynchronizer::enter(Handle obj, BasicLock* lock, JavaThread* current)
       LockStack& lock_stack = current->lock_stack();
       if (lock_stack.can_push()) {
         markWord mark = obj()->mark_acquire();
-        if (mark.is_neutral()) {
-          assert(!lock_stack.contains(obj()), "thread must not already hold the lock");
+        while (mark.is_neutral()) {
+          // Retry until a lock state change has been observed.  cas_set_mark() may collide with non lock bits modifications.
           // Try to swing into 'fast-locked' state.
-          markWord locked_mark = mark.set_fast_locked();
-          markWord old_mark = obj()->cas_set_mark(locked_mark, mark);
+          assert(!lock_stack.contains(obj()), "thread must not already hold the lock");
+          const markWord locked_mark = mark.set_fast_locked();
+          const markWord old_mark = obj()->cas_set_mark(locked_mark, mark);
           if (old_mark == mark) {
             // Successfully fast-locked, push object to lock-stack and return.
             lock_stack.push(obj());
             return;
           }
+          mark = old_mark;
         }
       }
       // All other paths fall-through to inflate-enter.
@@ -578,23 +580,15 @@ void ObjectSynchronizer::exit(oop object, BasicLock* lock, JavaThread* current) 
     markWord mark = object->mark();
     if (LockingMode == LM_LIGHTWEIGHT) {
       // Fast-locking does not use the 'lock' argument.
-      if (mark.is_fast_locked()) {
-        markWord unlocked_mark = mark.set_unlocked();
-        markWord old_mark = object->cas_set_mark(unlocked_mark, mark);
-        if (old_mark != mark) {
-          // Another thread won the CAS, it must have inflated the monitor.
-          // It can only have installed an anonymously locked monitor at this point.
-          // Fetch that monitor, set owner correctly to this thread, and
-          // exit it (allowing waiting threads to enter).
-          assert(old_mark.has_monitor(), "must have monitor");
-          ObjectMonitor* monitor = old_mark.monitor();
-          assert(monitor->is_owner_anonymous(), "must be anonymous owner");
-          monitor->set_owner_from_anonymous(current);
-          monitor->exit(current);
+      while (mark.is_fast_locked()) {
+        // Retry until a lock state change has been observed.  cas_set_mark() may collide with non lock bits modifications.
+        const markWord unlocked_mark = mark.set_unlocked();
+        const markWord old_mark = object->cas_set_mark(unlocked_mark, mark);
+        if (old_mark == mark) {
+          current->lock_stack().remove(object);
+          return;
         }
-        LockStack& lock_stack = current->lock_stack();
-        lock_stack.remove(object);
-        return;
+        mark = old_mark;
       }
     } else if (LockingMode == LM_LEGACY) {
       markWord dhw = lock->displaced_header();
@@ -908,13 +902,6 @@ static inline intptr_t get_next_hash(Thread* current, oop obj) {
   return value;
 }
 
-// Can be called from non JavaThreads (e.g., VMThread) for FastHashCode
-// calculations as part of JVM/TI tagging.
-static bool is_lock_owned(Thread* thread, oop obj) {
-  assert(LockingMode == LM_LIGHTWEIGHT, "only call this with new lightweight locking enabled");
-  return thread->is_Java_thread() ? JavaThread::cast(thread)->lock_stack().contains(obj) : false;
-}
-
 intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
 
   while (true) {
@@ -926,7 +913,7 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
       assert(LockingMode == LM_MONITOR, "+VerifyHeavyMonitors requires LockingMode == 0 (LM_MONITOR)");
       guarantee((obj->mark().value() & markWord::lock_mask_in_place) != markWord::locked_value, "must not be lightweight/stack-locked");
     }
-    if (mark.is_neutral()) {               // if this is a normal header
+    if (mark.is_neutral() || (LockingMode == LM_LIGHTWEIGHT && mark.is_fast_locked())) {
       hash = mark.hash();
       if (hash != 0) {                     // if it has a hash, just return it
         return hash;
@@ -937,6 +924,10 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
       test = obj->cas_set_mark(temp, mark);
       if (test == mark) {                  // if the hash was installed, return it
         return hash;
+      }
+      if (LockingMode == LM_LIGHTWEIGHT) {
+        // CAS failed, retry
+        continue;
       }
       // Failed to install the hash. It could be that another thread
       // installed the hash just before our attempt or inflation has
@@ -969,13 +960,6 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
       }
       // Fall thru so we only have one place that installs the hash in
       // the ObjectMonitor.
-    } else if (LockingMode == LM_LIGHTWEIGHT && mark.is_fast_locked() && is_lock_owned(current, obj)) {
-      // This is a fast-lock owned by the calling thread so use the
-      // markWord from the object.
-      hash = mark.hash();
-      if (hash != 0) {                  // if it has a hash, just return it
-        return hash;
-      }
     } else if (LockingMode == LM_LEGACY && mark.has_locker() && current->is_lock_owned((address)mark.locker())) {
       // This is a stack-lock owned by the calling thread so fetch the
       // displaced markWord from the BasicLock on the stack.
@@ -1303,6 +1287,13 @@ void ObjectSynchronizer::inflate_helper(oop obj) {
     return;
   }
   (void)inflate(Thread::current(), obj, inflate_cause_vm_internal);
+}
+
+// Can be called from non JavaThreads (e.g., VMThread) for FastHashCode
+// calculations as part of JVM/TI tagging.
+static bool is_lock_owned(Thread* thread, oop obj) {
+  assert(LockingMode == LM_LIGHTWEIGHT, "only call this with new lightweight locking enabled");
+  return thread->is_Java_thread() ? JavaThread::cast(thread)->lock_stack().contains(obj) : false;
 }
 
 ObjectMonitor* ObjectSynchronizer::inflate(Thread* current, oop object,
