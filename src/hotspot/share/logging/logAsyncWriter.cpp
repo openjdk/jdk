@@ -105,22 +105,20 @@ void AsyncLogWriter::run() {
   while (true) {
     ResourceMark rm;
     AsyncLogMap<AnyObj::RESOURCE_AREA> snapshot;
-    {
-      _circular_buffer.await_message();
+    _circular_buffer.await_message();
 
-      // move counters to snapshot and reset them.
-      {
-        _stats_lock.lock();
-        _stats.iterate([&](LogFileStreamOutput* output, uint32_t& counter) {
-          if (counter > 0) {
-            bool created = snapshot.put(output, counter);
-            assert(created == true, "sanity check");
-            counter = 0;
-          }
-          return true;
-        });
-        _stats_lock.unlock();
-      }
+    // move counters to snapshot and reset them.
+    {
+      _stats_lock.lock();
+      _stats.iterate([&](LogFileStreamOutput* output, uint32_t& counter) {
+        if (counter > 0) {
+          bool created = snapshot.put(output, counter);
+          assert(created == true, "sanity check");
+          counter = 0;
+        }
+        return true;
+      });
+      _stats_lock.unlock();
     }
     bool success = write(snapshot, write_buffer, write_buffer_size);
     if (!success) {
