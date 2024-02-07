@@ -553,6 +553,11 @@ public class MessageFormat extends Format {
      * The string is constructed from internal information and therefore
      * does not necessarily equal the previously applied pattern.
      *
+     * @implSpec The implementation in {@link MessageFormat} returns a
+     * string that, when passed to a {@code MessageFormat()} constructor
+     * or {@link #applyPattern applyPattern()}, produces an instance that
+     * is semantically equivalent to this instance.
+     *
      * @return a pattern representing the current state of the message format
      */
     public String toPattern() {
@@ -564,6 +569,7 @@ public class MessageFormat extends Format {
             lastOffset = offsets[i];
             result.append('{').append(argumentNumbers[i]);
             Format fmt = formats[i];
+            String subformatPattern = null;
             if (fmt == null) {
                 // do nothing, string format
             } else if (fmt instanceof NumberFormat) {
@@ -576,10 +582,12 @@ public class MessageFormat extends Format {
                 } else if (fmt.equals(NumberFormat.getIntegerInstance(locale))) {
                     result.append(",number,integer");
                 } else {
-                    if (fmt instanceof DecimalFormat) {
-                        result.append(",number,").append(((DecimalFormat)fmt).toPattern());
-                    } else if (fmt instanceof ChoiceFormat) {
-                        result.append(",choice,").append(((ChoiceFormat)fmt).toPattern());
+                    if (fmt instanceof DecimalFormat dfmt) {
+                        result.append(",number");
+                        subformatPattern = dfmt.toPattern();
+                    } else if (fmt instanceof ChoiceFormat cfmt) {
+                        result.append(",choice");
+                        subformatPattern = cfmt.toPattern();
                     } else {
                         // UNKNOWN
                     }
@@ -601,8 +609,9 @@ public class MessageFormat extends Format {
                     }
                 }
                 if (index >= DATE_TIME_MODIFIERS.length) {
-                    if (fmt instanceof SimpleDateFormat) {
-                        result.append(",date,").append(((SimpleDateFormat)fmt).toPattern());
+                    if (fmt instanceof SimpleDateFormat sdfmt) {
+                        result.append(",date");
+                        subformatPattern = sdfmt.toPattern();
                     } else {
                         // UNKNOWN
                     }
@@ -611,6 +620,14 @@ public class MessageFormat extends Format {
                 }
             } else {
                 //result.append(", unknown");
+            }
+            if (subformatPattern != null) {
+                result.append(',');
+
+                // The subformat pattern comes already quoted, but only for those characters that are
+                // special to the subformat. Therefore, we may need to quote additional characters.
+                // The ones we care about at the MessageFormat level are '{' and '}'.
+                copyAndQuoteBraces(subformatPattern, result);
             }
             result.append('}');
         }
@@ -1645,6 +1662,53 @@ public class MessageFormat extends Format {
                 }
                 target.append(ch);
             }
+        }
+        if (quoted) {
+            target.append('\'');
+        }
+    }
+
+    // Copy the text, but add quotes around any quotables that aren't already quoted
+    private static void copyAndQuoteBraces(String source, StringBuilder target) {
+
+        // Analyze existing string for already quoted and newly quotable characters
+        record Qchar(char ch, boolean quoted) { };
+        ArrayList<Qchar> qchars = new ArrayList<>();
+        boolean quoted = false;
+        boolean anyChangeNeeded = false;
+        for (int i = 0; i < source.length(); i++) {
+            char ch = source.charAt(i);
+            if (ch == '\'') {
+                if (i + 1 < source.length() && source.charAt(i + 1) == '\'') {
+                    qchars.add(new Qchar('\'', quoted));
+                    i++;
+                } else {
+                    quoted = !quoted;
+                }
+            } else {
+                boolean quotable = ch == '{' || ch == '}';
+                anyChangeNeeded |= quotable && !quoted;
+                qchars.add(new Qchar(ch, quoted || quotable));
+            }
+        }
+
+        // Was any change needed?
+        if (!anyChangeNeeded) {
+            target.append(source);
+            return;
+        }
+
+        // Build new string, automatically consolidating adjacent runs of quoted chars
+        quoted = false;
+        for (Qchar qchar : qchars) {
+            char ch = qchar.ch;
+            if (ch == '\'') {
+                target.append(ch);          // doubling works whether quoted or not
+            } else if (qchar.quoted() != quoted) {
+                target.append('\'');
+                quoted = qchar.quoted();
+            }
+            target.append(ch);
         }
         if (quoted) {
             target.append('\'');
