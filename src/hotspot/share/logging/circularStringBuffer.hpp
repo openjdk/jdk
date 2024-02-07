@@ -151,6 +151,7 @@ public:
                                         AnyObj::C_HEAP, mtLogging>;
 private:
   static const LogDecorations& None;
+  const bool _should_stall; // Should a producer stall until a consumer has made room for its message?
 
   // Need to perform accounting of statistics under a separate lock.
   StatisticsMap& _stats;
@@ -228,7 +229,7 @@ private:
 
 public:
   NONCOPYABLE(CircularStringBuffer);
-  CircularStringBuffer(StatisticsMap& stats, PlatformMonitor& stats_lock, size_t size);
+  CircularStringBuffer(StatisticsMap& stats, PlatformMonitor& stats_lock, size_t size, bool should_stall = false);
 
   void enqueue(const char* msg, size_t size, LogFileStreamOutput* output,
                const LogDecorations decorations);

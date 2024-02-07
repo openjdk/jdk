@@ -30,8 +30,9 @@
 const LogDecorations& CircularStringBuffer::None = LogDecorations(
     LogLevel::Warning, LogTagSetMapping<LogTag::__NO_TAG>::tagset(), LogDecorators::None);
 
-CircularStringBuffer::CircularStringBuffer(StatisticsMap& map, PlatformMonitor& stats_lock, size_t size)
-  : _stats(map),
+CircularStringBuffer::CircularStringBuffer(StatisticsMap& map, PlatformMonitor& stats_lock, size_t size, bool should_stall)
+  : _should_stall(should_stall),
+    _stats(map),
     _stats_lock(stats_lock),
     circular_mapping(size),
     tail(0),
@@ -58,16 +59,25 @@ size_t CircularStringBuffer::calc_mem(size_t sz) {
 void CircularStringBuffer::enqueue_locked(const char* str, size_t size, LogFileStreamOutput* output,
                                    const LogDecorations decorations) {
   const size_t required_memory = calc_mem(size);
-  const size_t unused = unused_locked();
+  size_t unused = unused_locked();
+  auto not_enough_memory = [&]() {
+    return unused < (required_memory + sizeof(Message)*(output == nullptr ? 1 : 2));
+  };
   // We need space for an additional Message in case of a flush token
   assert(!(output == nullptr) || unused >= sizeof(Message), "invariant");
-  if (unused < (required_memory + sizeof(Message)*(output == nullptr ? 1 : 2))) {
-    _stats_lock.lock();
-    bool p_created;
-    uint32_t* counter = _stats.put_if_absent(output, 0, &p_created);
-    *counter = *counter + 1;
-    _stats_lock.unlock();
-    return;
+  if (not_enough_memory()) {
+    if (_should_stall) {
+      while (not_enough_memory()) {
+        _write_lock.wait(0);
+      }
+    } else {
+      _stats_lock.lock();
+      bool p_created;
+      uint32_t* counter = _stats.put_if_absent(output, 0, &p_created);
+      *counter = *counter + 1;
+      _stats_lock.unlock();
+      return;
+    }
   }
   // Load the tail.
   size_t t = tail;
@@ -120,6 +130,8 @@ CircularStringBuffer::DequeueResult CircularStringBuffer::dequeue(Message* out_m
   circular_mapping.read_bytes(h + sizeof(Message), out, str_size);
   // Done, move the head
   head = (h + out_msg->size + sizeof(Message)) % circular_mapping.size;
+  // Notify a writer that more memory is available
+  _write_lock.notify();
   // Release the lock
   return OK;
 }
