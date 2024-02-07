@@ -62,6 +62,9 @@ public class OctalNumberTest extends TestRunner {
                     int c = 02389;
                     int d = 028a;
                     int e = 02a8;
+                    int f = 0b;
+                    int g = 0b2;
+                    int h = 0b12;
                 }""";
         List<String> output = new JavacTask(tb)
                 .sources(code)
@@ -77,7 +80,10 @@ public class OctalNumberTest extends TestRunner {
                 "Digit.java:5:17: compiler.err.expected: token.identifier",
                 "Digit.java:6:15: compiler.err.expected: ';'",
                 "Digit.java:6:17: compiler.err.expected: token.identifier",
-                "7 errors");
+                "Digit.java:7:13: compiler.err.invalid.binary.number",
+                "Digit.java:8:13: compiler.err.illegal.digit.in.binary.literal",
+                "Digit.java:9:14: compiler.err.illegal.digit.in.binary.literal",
+                "10 errors");
         tb.checkEqual(expected, output);
     }
 }

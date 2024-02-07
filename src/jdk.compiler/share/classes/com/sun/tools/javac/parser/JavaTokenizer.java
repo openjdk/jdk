@@ -742,8 +742,9 @@ public class JavaTokenizer extends UnicodeReader {
     private void scanNumber(int pos, int radix) {
         // for octal, allow base-10 digit in case it's a float literal
         this.radix = radix;
-        int digitRadix = (radix == 8 ? 10 : radix);
-        int firstDigit = digit(pos, Math.max(10, digitRadix));
+        boolean permitFloatingPoint = radix == 8 || radix == 10;
+        int digitRadix = Math.max(10, radix);
+        int firstDigit = digit(pos, digitRadix);
         boolean seendigit = firstDigit >= 0;
         boolean seenValidDigit = firstDigit >= 0 && firstDigit < digitRadix;
 
@@ -755,10 +756,10 @@ public class JavaTokenizer extends UnicodeReader {
             scanHexFractionAndSuffix(pos, seendigit);
         } else if (seendigit && radix == 16 && isOneOf('p', 'P')) {
             scanHexExponentAndSuffix(pos);
-        } else if (digitRadix == 10 && is('.')) {
+        } else if (permitFloatingPoint && is('.')) {
             putThenNext();
             scanFractionAndSuffix(pos);
-        } else if (digitRadix == 10 && isOneOf('e', 'E', 'f', 'F', 'd', 'D')) {
+        } else if (permitFloatingPoint && isOneOf('e', 'E', 'f', 'F', 'd', 'D')) {
             scanFractionAndSuffix(pos);
         } else {
             if (!seenValidDigit) {

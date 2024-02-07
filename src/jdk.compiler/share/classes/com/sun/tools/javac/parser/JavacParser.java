@@ -864,7 +864,7 @@ public class JavacParser implements Parser {
         }
         void reportIntegralLiteralError(Name prefix, int pos) {
             int radix = token.radix();
-            if (radix == 8) {
+            if (radix == 2 || radix == 8) {
                 //attempt to produce more user-friendly error message for
                 //binary and octal literals with wrong digits:
                 String value = strval(prefix);
@@ -873,9 +873,11 @@ public class JavacParser implements Parser {
                     char c = cs[i];
                     int d = Character.digit(c, radix);
                     if (d == (-1)) {
+                        Error err = radix == 2 ? Errors.IllegalDigitInBinaryLiteral
+                                               : Errors.IllegalDigitInOctalLiteral;
                         log.error(DiagnosticFlag.SYNTAX,
                                   token.pos + i,
-                                  Errors.IllegalDigitInOctalLiteral);
+                                  err);
                         return ;
                     }
                 }
