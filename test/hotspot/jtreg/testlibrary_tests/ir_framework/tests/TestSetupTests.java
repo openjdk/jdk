@@ -75,11 +75,15 @@ public class TestSetupTests {
             Asserts.assertTrue(e.getExceptionInfo().contains("testSetupWrongArgumentType"));
             Asserts.assertTrue(e.getExceptionInfo().contains("argument type mismatch"));
 
+            Asserts.assertTrue(e.getExceptionInfo().contains("testSetupNull"));
+            Asserts.assertTrue(e.getExceptionInfo().contains("wrong number of arguments: 0 expected: 1"));
+            Asserts.assertTrue(e.getExceptionInfo().contains("Arguments: <null>"));
+
             // Check number of total failures:
             Asserts.assertEQ(e.getExceptionInfo().split("argument type mismatch").length - 1, 2);
             Asserts.assertEQ(e.getExceptionInfo().split("There was an error while invoking setup").length - 1, 4);
-            Asserts.assertEQ(e.getExceptionInfo().split("There was an error while invoking @Test").length - 1, 3);
-            Asserts.assertTrue(e.getExceptionInfo().contains("Test Failures (7)"));
+            Asserts.assertEQ(e.getExceptionInfo().split("There was an error while invoking @Test").length - 1, 4);
+            Asserts.assertTrue(e.getExceptionInfo().contains("Test Failures (8)"));
         }
 
 // TODO make sure asserts from setup get out properly
@@ -99,10 +103,19 @@ public class TestSetupTests {
     // TODO try other bad return values
     @Setup
     public void setupVoid() {}
- 
+
     @Test
     @Arguments(setup = "setupVoid")
     public void testSetupVoid() {}
+
+    @Setup
+    public Object[] setupEmpty() {
+        return new Object[]{};
+    }
+
+    @Test
+    @Arguments(setup = "setupEmpty")
+    public void testSetupEmpty() {}
 
     // TODO
     // - SetupInfo
@@ -218,6 +231,15 @@ class TestSetupTestsWithExpectedExceptions {
     @Arguments(setup = "setupWrongArgumentType")
     public void testSetupWrongArgumentType(long a, int b) {}
 
+    // ----------------- setup returns null ------
+    @Setup
+    public Object[] setupNull() {
+        return null;
+    }
+
+    @Test
+    @Arguments(setup = "setupNull")
+    public void testSetupNull(Object x) {}
 }
 
 // class TestSetupTestsWithBadRunExceptions {

@@ -76,16 +76,18 @@ public class DeclaredTest {
      * Format an array of arguments to string for error reporting.
      */
     public String formatArguments(Object[] arguments) {
-        if (arguments.length > 0) {
-            StringBuilder builder = new StringBuilder();
-            for (int i = 0; i < arguments.length; i++) {
-                builder.append("arg ").append(i).append(": ").append(arguments[i]).append(", ");
-            }
-            builder.setLength(builder.length() - 2);
-            return builder.toString();
-        } else {
+        if (arguments == null) {
+            return "<null>";
+        }
+        if (arguments.length == 0) {
             return "<void>";
         }
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < arguments.length; i++) {
+            builder.append("arg ").append(i).append(": ").append(arguments[i]).append(", ");
+        }
+        builder.setLength(builder.length() - 2);
+        return builder.toString();
     }
 
     public Object invoke(Object obj, Object... args) {

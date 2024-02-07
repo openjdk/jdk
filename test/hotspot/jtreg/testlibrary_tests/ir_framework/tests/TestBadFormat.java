@@ -673,6 +673,23 @@ class BadSetupTest {
     @Arguments(setup = "setupForTestSetupAndValues",
                values = {Argument.NUMBER_42, Argument.NUMBER_42})
     public void testSetupAndValues(int a, int b) {}
+
+    // ----------- Overloaded Setup Method ----------------------
+    @NoFail
+    @Setup
+    Object[] setupOverloaded() {
+        return new Object[]{3, 2, 1};
+    }
+
+    @Setup
+    Object[] setupOverloaded(SetupInfo info) {
+        return new Object[]{1, 2, 3};
+    }
+
+    @NoFail
+    @Test
+    @Arguments(setup = "setupOverloaded")
+    void testOverloaded(int a, int b, int c) {}
 }
 
 class BadCheckTest {
