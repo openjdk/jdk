@@ -589,11 +589,11 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
   // Find the continuous interval of $num regions, starting from $beg and ending in $end,
   // inclusive. Contiguous allocations are biased to the beginning.
 
-  size_t beg = _partitions.leftmost(Mutator);
+  size_t beg = _partitions.leftmost_empty(Mutator);
   size_t end = beg;
 
   while (true) {
-    if (end >= _partitions.max()) {
+    if (end > _partitions.rightmost_empty(Mutator)) {
       // Hit the end, goodbye
       return nullptr;
     }
@@ -679,8 +679,8 @@ void ShenandoahFreeSet::flip_to_gc(ShenandoahHeapRegion* r) {
   assert(_partitions.partition_id_matches(idx, Mutator), "Should be in mutator view");
   assert(can_allocate_from(r), "Should not be allocated");
 
-  size_t region_capacity = alloc_capacity(r);
-  _partitions.move_to_partition(idx, Collector, region_capacity);
+  size_t ac = alloc_capacity(r);
+  _partitions.move_to_partition(idx, Collector, ac);
   _partitions.assert_bounds();
 
   // We do not ensure that the region is no longer trash, relying on try_allocate_in(), which always comes next,
@@ -779,6 +779,7 @@ void ShenandoahFreeSet::move_regions_from_collector_to_mutator(size_t max_xfer_r
     ShenandoahHeapLocker locker(_heap->lock());
     for (size_t idx = _partitions.leftmost_empty(Collector);
          (max_xfer_regions > 0) && (idx <= _partitions.rightmost_empty(Collector)); idx++) {
+      // Note: can_allocate_from() denotes that region is entirely empty
       if (_partitions.partition_id_matches(idx, Collector) && can_allocate_from(idx)) {
         _partitions.move_to_partition(idx, Mutator, region_size_bytes);
         max_xfer_regions--;
@@ -792,11 +793,11 @@ void ShenandoahFreeSet::move_regions_from_collector_to_mutator(size_t max_xfer_r
     ShenandoahHeapLocker locker(_heap->lock());
     for (size_t idx = _partitions.leftmost(Collector);
          (max_xfer_regions > 0) && (idx <= _partitions.rightmost(Collector)); idx++) {
-      size_t alloc_capacity = this->alloc_capacity(idx);
-      if (_partitions.partition_id_matches(idx, Collector) && (alloc_capacity > 0)) {
-        _partitions.move_to_partition(idx, Mutator, alloc_capacity);
+      size_t ac = alloc_capacity(idx);
+      if (_partitions.partition_id_matches(idx, Collector) && (ac > 0)) {
+        _partitions.move_to_partition(idx, Mutator, ac);
         max_xfer_regions--;
-        collector_not_empty_xfer += alloc_capacity;
+        collector_not_empty_xfer += ac;
       }
     }
   }

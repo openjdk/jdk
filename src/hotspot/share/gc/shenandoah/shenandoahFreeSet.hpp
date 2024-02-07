@@ -41,10 +41,10 @@ enum ShenandoahFreeSetPartitionId : uint8_t {
 // in no partition.  NumPartitions represents the size of an array that may be indexed by Mutator or Collector.
 #define NumPartitions NotFree
 
-
-
-// This class implements partitioning of regions into distinct sets.  Each ShenandoahHeapRegion is either in the Mutator free set,
-// the Collector free set, or in neither free set (NotFree).
+// ShenandoahRegionPartitions provides an abstraction to help organize the implementation of ShenandoahFreeSet.  This
+// class implements partitioning of regions into distinct sets.  Each ShenandoahHeapRegion is either in the Mutator free set,
+// the Collector free set, or in neither free set (NotFree).  When we speak of a "free partition", we mean partitions that
+// for which the ShenandoahFreeSetPartitionId is not equal to NotFree.
 class ShenandoahRegionPartitions {
 
 private:
@@ -106,8 +106,9 @@ public:
   // Place region idx into free set which_partition.  Requires that idx is currently NotFree.
   void make_free(size_t idx, ShenandoahFreeSetPartitionId which_partition, size_t region_capacity);
 
-  // Place region idx into free partition new_partition.  Requires that idx is currently not NotFree.
-  void move_to_partition(size_t idx, ShenandoahFreeSetPartitionId new_partition, size_t region_capacity);
+  // Place region idx into free partition new_partition, adjusting used and capacity totals for the original and new partition
+  // given that available bytes can still be allocated within this region.  Requires that idx is currently not NotFree.
+  void move_to_partition(size_t idx, ShenandoahFreeSetPartitionId new_partition, size_t available);
 
   // Returns the ShenandoahFreeSetPartitionId affiliation of region idx, NotFree if this region is not currently in any partition.
   // This does not enforce that free_set membership implies allocation capacity.
@@ -184,6 +185,30 @@ public:
   void assert_bounds() NOT_DEBUG_RETURN;
 };
 
+// Publicly, ShenandoahFreeSet represents memory that is available to mutator threads.  The public capacity(), used(),
+// and available() methods represent this public notion of memory that is under control of the mutator.  Separately,
+// ShenandoahFreeSet also represents memory available to garbage collection activities for compaction purposes.
+//
+// The Shenandoah garbage collector evacuates live objects out of specific regions that are identified as members of the
+// collection set (cset).
+//
+// The ShenandoahFreeSet endeavors to congregrate survivor objects (objects that have been evacuated at least once) at the
+// high end of memory.  New mutator allocations are taken from the low end of memory.  Within the mutator's range of regions,
+// humongous allocations are taken from the lowest addresses, and LAB (local allocation buffers) and regular shared allocations
+// are taken from the higher address of the mutator's range of regions.  This approach allows longer lasting survivor regions
+// to congregate at the top of the heap and longer lasting humongous regions to congregate at the bottom of the heap, with
+// short-lived frequently evacuated regions occupying the middle of the heap.
+//
+// Mutator and garbage collection activities tend to scramble the content of regions.  Twice, during each GC pass, we rebuild
+// the free set in an effort to restore the efficient segregation of Collector and Mutator regions:
+//
+//  1. At the start of evacuation, we know exactly how much memory is going to be evacuated, and this guides our
+//     sizing of the Collector free set.
+//
+//  2. At the end of GC, we have reclaimed all of the memory that was spanned by the cset.  We rebuild here to make
+//     sure there is enough memory reserved at the high end of memory to hold the objects that might need to be evacuated
+//     during the next GC pass.
+
 class ShenandoahFreeSet : public CHeapObj<mtGC> {
 private:
   ShenandoahHeap* const _heap;
@@ -197,8 +222,9 @@ private:
   // Precondition: req.size() <= ShenandoahHeapRegion::humongous_threshold_words().
   HeapWord* allocate_single(ShenandoahAllocRequest& req, bool& in_new_region);
 
-  // While holding the heap lock, allocate memory for a humongous object which will span multiple contiguous heap
-  // regions.
+  // While holding the heap lock, allocate memory for a humongous object which spans one or more regions that
+  // were previously empty.  Regions that represent humongous objects are entirely dedicated to the humongous
+  // object.  No other objects are packed into these regions.
   //
   // Precondition: req.size() > ShenandoahHeapRegion::humongous_threshold_words().
   HeapWord* allocate_contiguous(ShenandoahAllocRequest& req);
