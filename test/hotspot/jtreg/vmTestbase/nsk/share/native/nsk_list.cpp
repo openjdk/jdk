@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,16 +48,16 @@ const void* nsk_list_create() {
 
     /* create nsk_list_info */
     list_info = (nsk_list_info *)malloc(sizeof(nsk_list_info));
-    if (list_info == NULL) {
-        return NULL;
+    if (list_info == nullptr) {
+        return nullptr;
     }
 
     list_info->allocated_count = NSK_LIST_INIT_COUNT;
     list_info->elements_count = 0;
     list_info->arr = (const void **)malloc(list_info->allocated_count * nsk_list_size_void);
-    if (list_info->arr == NULL) {
+    if (list_info->arr == nullptr) {
         free(list_info);
-        return NULL;
+        return nullptr;
     }
 
     return list_info;
@@ -84,7 +84,7 @@ int nsk_list_add(const void *plist, const void *p) {
     if (list_info->elements_count >= list_info->allocated_count) {
         list_info->allocated_count += NSK_LIST_INIT_COUNT;
         list_info->arr = (const void **)realloc((void *)list_info->arr, list_info->allocated_count * nsk_list_size_void);
-        if (list_info->arr == NULL) {
+        if (list_info->arr == nullptr) {
             return NSK_FALSE;
         }
     }
@@ -131,7 +131,7 @@ const void* nsk_list_get(const void *plist, int i) {
         return list_info->arr[i];
     }
 
-    return NULL;
+    return nullptr;
 }
 
 }

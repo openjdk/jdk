@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,7 @@ TEST_VM(LogDecorations, uptime) {
   for (int i = 0; i < 3; i++) {
     os::naked_short_sleep(10);
     LogDecorations d(LogLevel::Info, tagset, default_decorators);
-    double cur = strtod(d.decoration(LogDecorators::uptime_decorator, buf, sizeof(buf)), NULL);
+    double cur = strtod(d.decoration(LogDecorators::uptime_decorator, buf, sizeof(buf)), nullptr);
     ASSERT_LT(prev, cur);
     prev = cur;
   }
@@ -123,7 +123,7 @@ TEST_VM(LogDecorations, timestamps) {
       // at 15-16ms, so we use 20.
       os::naked_short_sleep(20);
       LogDecorations d(LogLevel::Info, tagset, decorator_selection);
-      julong val = strtoull(d.decoration(decorator, buf, sizeof(buf)), NULL, 10);
+      julong val = strtoull(d.decoration(decorator, buf, sizeof(buf)), nullptr, 10);
       tty->print_cr("Read value: " UINT64_FORMAT, val);
       ASSERT_LT(prev, val);
       prev = val;
@@ -139,7 +139,7 @@ TEST(LogDecorations, iso8601_time) {
   LogDecorations decorations(LogLevel::Info, tagset, decorator_selection);
 
   const char *timestr = decorations.decoration(LogDecorators::time_decorator, buf, sizeof(buf));
-  time_t expected_ts = time(NULL);
+  time_t expected_ts = time(nullptr);
 
   // Verify format
   int y, M, d, h, m, s, ms;
@@ -174,7 +174,7 @@ TEST(LogDecorations, iso8601_utctime) {
   LogDecorations decorations(LogLevel::Info, tagset, decorator_selection);
 
   const char *timestr = decorations.decoration(LogDecorators::utctime_decorator, buf, sizeof(buf));
-  time_t expected_ts = time(NULL);
+  time_t expected_ts = time(nullptr);
 
   // Verify format
   char trailing_character;
@@ -234,6 +234,6 @@ TEST(LogDecorations, identifiers) {
     EXPECT_EQ('\0', *str) << "Should only contain digits";
 
     // Verify value
-    EXPECT_EQ(ids[i].expected, strtol(reported, NULL, 10));
+    EXPECT_EQ(ids[i].expected, strtol(reported, nullptr, 10));
   }
 }

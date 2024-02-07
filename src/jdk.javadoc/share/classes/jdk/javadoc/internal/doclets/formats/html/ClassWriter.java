@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,6 @@ import com.sun.source.doctree.DocTree;
 
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -61,7 +60,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
-import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
 /**
  * Generate the Class Information Page.
@@ -435,24 +433,6 @@ public class ClassWriter extends SubWriterHolderWriter {
     protected Content getHeader(String header) {
         HtmlTree body = getBody(getWindowTitle(utils.getSimpleName(typeElement)));
         var div = HtmlTree.DIV(HtmlStyle.header);
-        if (configuration.showModules) {
-            ModuleElement mdle = configuration.docEnv.getElementUtils().getModuleOf(typeElement);
-            var classModuleLabel = HtmlTree.SPAN(HtmlStyle.moduleLabelInType, contents.moduleLabel);
-            var moduleNameDiv = HtmlTree.DIV(HtmlStyle.subTitle, classModuleLabel);
-            moduleNameDiv.add(Entity.NO_BREAK_SPACE);
-            moduleNameDiv.add(getModuleLink(mdle,
-                    Text.of(mdle.getQualifiedName())));
-            div.add(moduleNameDiv);
-        }
-        PackageElement pkg = utils.containingPackage(typeElement);
-        if (!pkg.isUnnamed()) {
-            var classPackageLabel = HtmlTree.SPAN(HtmlStyle.packageLabelInType, contents.packageLabel);
-            var pkgNameDiv = HtmlTree.DIV(HtmlStyle.subTitle, classPackageLabel);
-            pkgNameDiv.add(Entity.NO_BREAK_SPACE);
-            Content pkgNameContent = getPackageLink(pkg, getLocalizedPackageName(pkg));
-            pkgNameDiv.add(pkgNameContent);
-            div.add(pkgNameDiv);
-        }
         HtmlLinkInfo linkInfo = new HtmlLinkInfo(configuration,
                 HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_AND_BOUNDS, typeElement)
                 .linkToSelf(false);  // Let's not link to ourselves in the header
@@ -472,21 +452,17 @@ public class ClassWriter extends SubWriterHolderWriter {
 
     @Override
     protected Navigation getNavBar(PageMode pageMode, Element element) {
-        Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(element),
-                contents.moduleLabel);
-        return super.getNavBar(pageMode, element)
-                .setNavLinkModule(linkContent)
-                .setSubNavLinks(() -> {
-                    List<Content> list = new ArrayList<>();
-                    VisibleMemberTable vmt = configuration.getVisibleMemberTable(typeElement);
-                    Set<VisibleMemberTable.Kind> summarySet =
-                            VisibleMemberTable.Kind.forSummariesOf(element.getKind());
-                    for (VisibleMemberTable.Kind kind : summarySet) {
-                        list.add(links.createLink(HtmlIds.forMemberSummary(kind),
-                                contents.getNavLinkLabelContent(kind), vmt.hasVisibleMembers(kind)));
-                    }
-                    return list;
-                });
+        List<Content> subnavLinks = new ArrayList<>();
+        if (configuration.showModules) {
+            ModuleElement mdle = configuration.docEnv.getElementUtils().getModuleOf(typeElement);
+            subnavLinks.add(getModuleLink(mdle, Text.of(mdle.getQualifiedName())));
+        }
+        PackageElement pkg = utils.containingPackage(typeElement);
+        subnavLinks.add(getPackageLink(pkg, getLocalizedPackageName(pkg)));
+        subnavLinks.add(getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.PLAIN, typeElement)
+                        .style(HtmlStyle.currentSelection)
+                        .skipPreview(true)));
+        return super.getNavBar(pageMode, element).setSubNavLinks(subnavLinks);
     }
 
     protected void addFooter() {
@@ -520,10 +496,13 @@ public class ClassWriter extends SubWriterHolderWriter {
 
     protected void addClassDescription(Content classInfo) {
         addPreviewInfo(classInfo);
+        tableOfContents.addLink(HtmlIds.TOP_OF_PAGE, contents.descriptionLabel);
         if (!options.noComment()) {
             // generate documentation for the class.
             if (!utils.getFullBody(typeElement).isEmpty()) {
+                tableOfContents.pushNestedList();
                 addInlineComment(typeElement, classInfo);
+                tableOfContents.popNestedList();
             }
         }
     }
@@ -535,7 +514,9 @@ public class ClassWriter extends SubWriterHolderWriter {
     protected void addClassTagInfo(Content classInfo) {
         if (!options.noComment()) {
             // Print Information about all the tags here
+            tableOfContents.pushNestedList();
             addTagsInfo(typeElement, classInfo);
+            tableOfContents.popNestedList();
         }
     }
 

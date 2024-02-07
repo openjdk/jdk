@@ -187,7 +187,7 @@ address CompiledIC::stub_address() const {
 // Clears the IC stub if the compiled IC is in transition state
 void CompiledIC::clear_ic_stub() {
   if (is_in_transition_state()) {
-    ICStub* stub = ICStub_from_destination_address(stub_address());
+    ICStub* stub = ICStub::from_destination_address(stub_address());
     stub->clear();
   }
 }

@@ -395,8 +395,9 @@ abstract class P11Key implements Key, Length {
                     new CK_ATTRIBUTE(CKA_EXTRACTABLE),
         });
 
-        boolean keySensitive = (attrs[0].getBoolean() ||
-                attrs[1].getBoolean() || !attrs[2].getBoolean());
+        boolean keySensitive =
+                (attrs[0].getBoolean() && P11Util.isNSS(session.token)) ||
+                attrs[1].getBoolean() || !attrs[2].getBoolean();
 
         return switch (algorithm) {
             case "RSA" -> P11RSAPrivateKeyInternal.of(session, keyID, algorithm,

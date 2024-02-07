@@ -82,14 +82,6 @@ class Space: public CHeapObj<mtGC> {
 
   HeapWord* saved_mark_word() const  { return _saved_mark_word; }
 
-  void set_saved_mark_word(HeapWord* p) { _saved_mark_word = p; }
-
-  // Returns true if this object has been allocated since a
-  // generation's "save_marks" call.
-  bool obj_allocated_since_save_marks(const oop obj) const {
-    return cast_from_oop<HeapWord*>(obj) >= saved_mark_word();
-  }
-
   // Returns a subregion of the space containing only the allocated objects in
   // the space.
   virtual MemRegion used_region() const = 0;
@@ -133,9 +125,6 @@ class Space: public CHeapObj<mtGC> {
   // given address.
   bool is_in_reserved(const void* p) const { return _bottom <= p && p < _end; }
 
-  // Returns true iff the given block is not allocated.
-  virtual bool is_free_block(const HeapWord* p) const = 0;
-
   // Test whether p is double-aligned
   static bool is_aligned(void* p) {
     return ::is_aligned(p, sizeof(double));
@@ -145,11 +134,6 @@ class Space: public CHeapObj<mtGC> {
   size_t capacity()     const { return byte_size(bottom(), end()); }
   virtual size_t used() const = 0;
   virtual size_t free() const = 0;
-
-  // Iterate over all objects in the space, calling "cl.do_object" on
-  // each.  Objects allocated by applications of the closure are not
-  // included in the iteration.
-  virtual void object_iterate(ObjectClosure* blk) = 0;
 
   // If "p" is in the space, returns the address of the start of the
   // "block" that contains "p".  We say "block" instead of "object" since
@@ -273,8 +257,6 @@ protected:
   size_t used() const override   { return byte_size(bottom(), top()); }
   size_t free() const override   { return byte_size(top(),    end()); }
 
-  bool is_free_block(const HeapWord* p) const override;
-
   // In a contiguous space we have a more obvious bound on what parts
   // contain objects.
   MemRegion used_region() const override { return MemRegion(bottom(), top()); }
@@ -284,7 +266,7 @@ protected:
   HeapWord* par_allocate(size_t word_size) override;
 
   // Iteration
-  void object_iterate(ObjectClosure* blk) override;
+  void object_iterate(ObjectClosure* blk);
 
   // Apply "blk->do_oop" to the addresses of all reference fields in objects
   // starting with the _saved_mark_word, which was noted during a generation's
@@ -296,11 +278,6 @@ protected:
   template <typename OopClosureType>
   void oop_since_save_marks_iterate(OopClosureType* blk);
 
-  // Same as object_iterate, but starting from "mark", which is required
-  // to denote the start of an object.  Objects allocated by
-  // applications of the closure *are* included in the iteration.
-  virtual void object_iterate_from(HeapWord* mark, ObjectClosure* blk);
-
   // Very inefficient implementation.
   HeapWord* block_start_const(const void* p) const override;
   size_t block_size(const HeapWord* p) const override;
@@ -309,7 +286,6 @@ protected:
 
   // Addresses for inlined allocation
   HeapWord** top_addr() { return &_top; }
-  HeapWord** end_addr() { return &_end; }
 
   void print_on(outputStream* st) const override;
 

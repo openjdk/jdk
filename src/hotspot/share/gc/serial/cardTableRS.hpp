@@ -29,8 +29,8 @@
 #include "memory/memRegion.hpp"
 #include "oops/oop.hpp"
 
-class Generation;
 class Space;
+class TenuredGeneration;
 class TenuredSpace;
 
 // This RemSet uses a card table both as shared data structure
@@ -38,10 +38,6 @@ class TenuredSpace;
 
 class CardTableRS : public CardTable {
   friend class VMStructs;
-  // Below are private classes used in impl.
-  friend class VerifyCTSpaceClosure;
-
-  void verify_space(Space* s, HeapWord* gen_start);
 
   static bool is_dirty(const CardValue* const v) {
     return !is_clean(v);
@@ -74,13 +70,18 @@ public:
     *byte = dirty_card_val();
   }
 
+  bool is_dirty_for_addr(const void* p) const {
+    CardValue* card = byte_for(p);
+    return is_dirty(card);
+  }
+
   void verify();
 
   // Update old gen cards to maintain old-to-young-pointer invariant: Clear
   // the old generation card table completely if the young generation had been
   // completely evacuated, otherwise dirties the whole old generation to
   // conservatively not loose any old-to-young pointer.
-  void maintain_old_to_young_invariant(Generation* old_gen, bool is_young_gen_empty);
+  void maintain_old_to_young_invariant(TenuredGeneration* old_gen, bool is_young_gen_empty);
 
   // Iterate over the portion of the card-table which covers the given
   // region mr in the given space and apply cl to any dirty sub-regions

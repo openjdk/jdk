@@ -649,6 +649,12 @@ size_t DefNewGeneration::max_capacity() const {
   return reserved_bytes - compute_survivor_size(reserved_bytes, SpaceAlignment);
 }
 
+bool DefNewGeneration::is_in(const void* p) const {
+  return eden()->is_in(p)
+      || from()->is_in(p)
+      || to()  ->is_in(p);
+}
+
 size_t DefNewGeneration::unsafe_max_alloc_nogc() const {
   return eden()->free();
 }
@@ -1102,11 +1108,6 @@ void DefNewGeneration::print_on(outputStream* st) const {
 
 const char* DefNewGeneration::name() const {
   return "def new generation";
-}
-
-// Moved from inline file as they are not called inline
-ContiguousSpace* DefNewGeneration::first_compaction_space() const {
-  return eden();
 }
 
 HeapWord* DefNewGeneration::allocate(size_t word_size, bool is_tlab) {
