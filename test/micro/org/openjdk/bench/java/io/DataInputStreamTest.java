@@ -47,6 +47,8 @@ public class DataInputStreamTest {
     private ByteArrayInputStream utfDataAscii;
     private ByteArrayInputStream utfData;
 
+    private static final int REPEATS = 20;
+
     @Setup(Level.Iteration)
     public void setup() throws IOException, ClassNotFoundException, NoSuchMethodException, IllegalAccessException {
         byte[] bytes = new byte[size];
@@ -54,15 +56,19 @@ public class DataInputStreamTest {
         bais = new ByteArrayInputStream(bytes);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream dataOut = new DataOutputStream(baos);
-        dataOut.writeUTF("small");
-        dataOut.writeUTF("slightly longer string that is more likely to trigger use of simd intrinsics");
+        for (int i = 0; i < REPEATS; i++) {
+            dataOut.writeUTF("small");
+            dataOut.writeUTF("slightly longer string that is more likely to trigger use of simd intrinsics");
+        }
         dataOut.flush();
         utfDataAscii = new ByteArrayInputStream(baos.toByteArray());
 
         baos = new ByteArrayOutputStream();
         dataOut = new DataOutputStream(baos);
-        dataOut.writeUTF("sm\u0132ll");
-        dataOut.writeUTF("slightly longer string th\u0131t is more likely to trigger use of simd intrinsics");
+        for (int i = 0; i < REPEATS; i++) {
+            dataOut.writeUTF("sm\u0132ll");
+            dataOut.writeUTF("slightly longer string th\u0131t is more likely to trigger use of simd intrinsics");
+        }
         dataOut.flush();
         utfData = new ByteArrayInputStream(baos.toByteArray());
     }
@@ -86,32 +92,22 @@ public class DataInputStreamTest {
     }
 
     @Benchmark
-    public void readUTFSmall(Blackhole bh) throws Exception {
-        utfDataAscii.reset();
-        DataInputStream dis = new DataInputStream(utfDataAscii);
-        bh.consume(dis.readUTF());
-    }
-
-    @Benchmark
     public void readUTF(Blackhole bh) throws Exception {
         utfDataAscii.reset();
         DataInputStream dis = new DataInputStream(utfDataAscii);
-        bh.consume(dis.readUTF());
-        bh.consume(dis.readUTF());
-    }
-
-    @Benchmark
-    public void readUTFMixedSmall(Blackhole bh) throws Exception {
-        utfData.reset();
-        DataInputStream dis = new DataInputStream(utfData);
-        bh.consume(dis.readUTF());
+        for (int i = 0; i < REPEATS; i++) {
+            bh.consume(dis.readUTF());
+            bh.consume(dis.readUTF());
+        }
     }
 
     @Benchmark
     public void readUTFMixed(Blackhole bh) throws Exception {
         utfData.reset();
         DataInputStream dis = new DataInputStream(utfData);
-        bh.consume(dis.readUTF());
-        bh.consume(dis.readUTF());
+        for (int i = 0; i < REPEATS; i++) {
+            bh.consume(dis.readUTF());
+            bh.consume(dis.readUTF());
+        }
     }
 }

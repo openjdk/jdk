@@ -3674,37 +3674,33 @@ public class ObjectInputStream
          * utflen bytes.
          */
         private String readUTFBody(long utflen) throws IOException {
-            int ascii = 0;
             if (!blkmode) {
                 end = pos = 0;
-            } else {
-                int avail = end - pos;
-                if (avail >= utflen) {
-                    ascii = JLA.countPositives(buf, pos, (int)utflen);
-                    if (ascii == utflen) {
-                        // For ASCII-only bytes we can treat the bytes as ISO-8859-1 and
-                        // avoid a redundant scan
-                        String utf = new String(buf, pos, (int)utflen, StandardCharsets.ISO_8859_1);
-                        pos += (int)utflen;
-                        return utf;
-                    }
-                }
             }
 
             StringBuilder sbuf;
             if (utflen > 0 && utflen < Integer.MAX_VALUE) {
+                // Scan for leading ASCII chars
+                int avail = end - pos;
+                int ascii = JLA.countPositives(buf, pos, Math.min(avail, (int)utflen));
+                if (ascii == utflen) {
+                    // Complete match, consume the buf[pos ... pos + ascii] range and return.
+                    // Modified UTF-8 and ISO-8859-1 are both ASCII-compatible encodings bytes
+                    // thus we can treat the range as ISO-8859-1 and avoid a redundant scan
+                    // in the String constructor
+                    String utf = new String(buf, pos, ascii, StandardCharsets.ISO_8859_1);
+                    pos += ascii;
+                    return utf;
+                }
                 // a reasonable initial capacity based on the UTF length
                 int initialCapacity = Math.min((int)utflen, 0xFFFF);
                 sbuf = new StringBuilder(initialCapacity);
+                if (ascii > 3) {
+                    appendAsASCII(sbuf, ascii);
+                    utflen -= ascii;
+                }
             } else {
                 sbuf = new StringBuilder();
-            }
-
-            if (ascii > 3) {
-                JLA.inflateBytesToChars(buf, pos, cbuf, 0, ascii);
-                pos += ascii;
-                utflen -= ascii;
-                sbuf.append(cbuf, 0, ascii);
             }
 
             while (utflen > 0) {
@@ -3728,6 +3724,11 @@ public class ObjectInputStream
             }
 
             return sbuf.toString();
+        }
+
+        private void appendAsASCII(StringBuilder sbuf, int ascii) {
+            sbuf.append(new String(buf, pos, ascii, StandardCharsets.ISO_8859_1));
+            pos += ascii;
         }
 
         /**
