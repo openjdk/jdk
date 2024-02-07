@@ -85,9 +85,26 @@ public class PointerFinder {
 
     // Check if address is in the java heap.
     CollectedHeap heap = VM.getVM().getUniverse().heap();
-    if (heap instanceof SerialHeap) {
-      SerialHeap sh = (SerialHeap) heap;
-      if (sh.isIn(a)) {
+    if (heap.isIn(a)) {
+      loc.heap = heap;
+
+      // See if the address is in a TLAB
+      if (VM.getVM().getUseTLAB()) {
+        // Try to find thread containing it
+        for (int i = 0; i < threads.getNumberOfThreads(); i++) {
+          JavaThread t = threads.getJavaThreadAt(i);
+          ThreadLocalAllocBuffer tlab = t.tlab();
+          if (tlab.contains(a)) {
+            loc.tlabThread = t;
+            loc.tlab = tlab;
+            break;
+          }
+        }
+      }
+
+      // If we are using the SerialHeap, find out which generation the address is in
+      if (heap instanceof SerialHeap) {
+        SerialHeap sh = (SerialHeap) heap;
         loc.heap = heap;
         for (int i = 0; i < sh.nGens(); i++) {
           Generation g = sh.getGen(i);
@@ -98,30 +115,11 @@ public class PointerFinder {
         }
 
         if (Assert.ASSERTS_ENABLED) {
-          Assert.that(loc.gen != null, "Should have found this in a generation");
+          Assert.that(loc.gen != null, "Should have found this address in a generation");
         }
-
-        if (VM.getVM().getUseTLAB()) {
-          // Try to find thread containing it
-          for (int i = 0; i < threads.getNumberOfThreads(); i++) {
-            JavaThread t = threads.getJavaThreadAt(i);
-            ThreadLocalAllocBuffer tlab = t.tlab();
-            if (tlab.contains(a)) {
-              loc.inTLAB = true;
-              loc.tlabThread = t;
-              loc.tlab = tlab;
-              break;
-            }
-          }
-        }
-
-        return loc;
       }
-    } else {
-      if (heap.isIn(a)) {
-        loc.heap = heap;
-        return loc;
-      }
+
+      return loc;
     }
 
     // Check if address is in the interpreter

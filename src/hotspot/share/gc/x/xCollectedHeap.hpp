@@ -42,7 +42,6 @@ class XCollectedHeap : public CollectedHeap {
   friend class ::VMStructs;
 
 private:
-  SoftRefPolicy     _soft_ref_policy;
   XBarrierSet       _barrier_set;
   XInitialize       _initialize;
   XHeap             _heap;
@@ -64,8 +63,6 @@ public:
   jint initialize() override;
   void initialize_serviceability() override;
   void stop() override;
-
-  SoftRefPolicy* soft_ref_policy() override;
 
   size_t max_capacity() const override;
   size_t capacity() const override;

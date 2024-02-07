@@ -1237,7 +1237,7 @@ source %{
 
     // r27 is not allocatable when compressed oops is on and heapbase is not
     // zero, compressed klass pointers doesn't use r27 after JDK-8234794
-    if (UseCompressedOops && (CompressedOops::ptrs_base() != NULL)) {
+    if (UseCompressedOops && (CompressedOops::ptrs_base() != nullptr)) {
       _NO_SPECIAL_REG32_mask.Remove(OptoReg::as_OptoReg(r27->as_VMReg()));
       _NO_SPECIAL_REG_mask.Remove(OptoReg::as_OptoReg(r27->as_VMReg()));
       _NO_SPECIAL_PTR_REG_mask.Remove(OptoReg::as_OptoReg(r27->as_VMReg()));
@@ -1581,7 +1581,7 @@ bool needs_releasing_store(const Node *n)
 {
   // assert n->is_Store();
   StoreNode *st = n->as_Store();
-  return st->trailing_membar() != NULL;
+  return st->trailing_membar() != nullptr;
 }
 
 // predicate controlling translation of CAS
@@ -1593,9 +1593,9 @@ bool needs_acquiring_load_exclusive(const Node *n)
   assert(is_CAS(n->Opcode(), true), "expecting a compare and swap");
   LoadStoreNode* ldst = n->as_LoadStore();
   if (is_CAS(n->Opcode(), false)) {
-    assert(ldst->trailing_membar() != NULL, "expected trailing membar");
+    assert(ldst->trailing_membar() != nullptr, "expected trailing membar");
   } else {
-    return ldst->trailing_membar() != NULL;
+    return ldst->trailing_membar() != nullptr;
   }
 
   // so we can just return true here
@@ -1734,7 +1734,7 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
     st->print("mov  rscratch1, #%d\n\t", framesize - 2 * wordSize);
     st->print("sub  sp, sp, rscratch1");
   }
-  if (C->stub_function() == NULL && BarrierSet::barrier_set()->barrier_set_nmethod() != NULL) {
+  if (C->stub_function() == nullptr && BarrierSet::barrier_set()->barrier_set_nmethod() != nullptr) {
     st->print("\n\t");
     st->print("ldr  rscratch1, [guard]\n\t");
     st->print("dmb ishld\n\t");
@@ -1783,9 +1783,9 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
   __ build_frame(framesize);
 
-  if (C->stub_function() == NULL) {
+  if (C->stub_function() == nullptr) {
     BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-    if (BarrierSet::barrier_set()->barrier_set_nmethod() != NULL) {
+    if (BarrierSet::barrier_set()->barrier_set_nmethod() != nullptr) {
       // Dummy labels for just measuring the code size
       Label dummy_slow_path;
       Label dummy_continuation;
@@ -2153,12 +2153,12 @@ void MachSpillCopyNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   if (!ra_)
     st->print("N%d = SpillCopy(N%d)", _idx, in(1)->_idx);
   else
-    implementation(NULL, ra_, false, st);
+    implementation(nullptr, ra_, false, st);
 }
 #endif
 
 void MachSpillCopyNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
-  implementation(&cbuf, ra_, false, NULL);
+  implementation(&cbuf, ra_, false, nullptr);
 }
 
 uint MachSpillCopyNode::size(PhaseRegAlloc *ra_) const {
@@ -2249,7 +2249,7 @@ int HandlerImpl::emit_exception_handler(CodeBuffer& cbuf)
   // That's why we must use the macroassembler to generate a handler.
   C2_MacroAssembler _masm(&cbuf);
   address base = __ start_a_stub(size_exception_handler());
-  if (base == NULL) {
+  if (base == nullptr) {
     ciEnv::current()->record_failure("CodeCache is full");
     return 0;  // CodeBuffer::expand failed
   }
@@ -2267,7 +2267,7 @@ int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf)
   // That's why we must use the macroassembler to generate a handler.
   C2_MacroAssembler _masm(&cbuf);
   address base = __ start_a_stub(size_deopt_handler());
-  if (base == NULL) {
+  if (base == nullptr) {
     ciEnv::current()->record_failure("CodeCache is full");
     return 0;  // CodeBuffer::expand failed
   }
@@ -2410,7 +2410,7 @@ MachOper* Matcher::pd_specialize_generic_vector_operand(MachOper* generic_opnd, 
     case Op_VecX: return new vecXOper();
   }
   ShouldNotReachHere();
-  return NULL;
+  return nullptr;
 }
 
 bool Matcher::is_reg2reg_move(MachNode* m) {
@@ -2583,7 +2583,7 @@ Assembler::Condition to_assembler_cond(BoolTest::mask cond) {
 
 // Binary src (Replicate con)
 bool is_valid_sve_arith_imm_pattern(Node* n, Node* m) {
-  if (n == NULL || m == NULL) {
+  if (n == nullptr || m == nullptr) {
     return false;
   }
 
@@ -2624,7 +2624,7 @@ bool is_valid_sve_arith_imm_pattern(Node* n, Node* m) {
 // (XorV src (Replicate m1))
 // (XorVMask src (MaskAll m1))
 bool is_vector_bitwise_not_pattern(Node* n, Node* m) {
-  if (n != NULL && m != NULL) {
+  if (n != nullptr && m != nullptr) {
     return (n->Opcode() == Op_XorV || n->Opcode() == Op_XorVMask) &&
            VectorNode::is_all_ones_vector(m);
   }
@@ -3430,7 +3430,7 @@ encode %{
     C2_MacroAssembler _masm(&cbuf);
     Register dst_reg = as_Register($dst$$reg);
     address con = (address)$src$$constant;
-    if (con == NULL || con == (address)1) {
+    if (con == nullptr || con == (address)1) {
       ShouldNotReachHere();
     } else {
       relocInfo::relocType rtype = $src->constant_reloc();
@@ -3473,7 +3473,7 @@ encode %{
     C2_MacroAssembler _masm(&cbuf);
     Register dst_reg = as_Register($dst$$reg);
     address con = (address)$src$$constant;
-    if (con == NULL) {
+    if (con == nullptr) {
       ShouldNotReachHere();
     } else {
       relocInfo::relocType rtype = $src->constant_reloc();
@@ -3492,7 +3492,7 @@ encode %{
     C2_MacroAssembler _masm(&cbuf);
     Register dst_reg = as_Register($dst$$reg);
     address con = (address)$src$$constant;
-    if (con == NULL) {
+    if (con == nullptr) {
       ShouldNotReachHere();
     } else {
       relocInfo::relocType rtype = $src->constant_reloc();
@@ -3675,7 +3675,7 @@ encode %{
      Label miss;
      C2_MacroAssembler _masm(&cbuf);
      __ check_klass_subtype_slow_path(sub_reg, super_reg, temp_reg, result_reg,
-                                     NULL, &miss,
+                                     nullptr, &miss,
                                      /*set_cond_codes:*/ true);
      if ($primary) {
        __ mov(result_reg, zr);
@@ -3691,7 +3691,7 @@ encode %{
     if (!_method) {
       // A call to a runtime wrapper, e.g. new, new_typeArray_Java, uncommon_trap.
       call = __ trampoline_call(Address(addr, relocInfo::runtime_call_type));
-      if (call == NULL) {
+      if (call == nullptr) {
         ciEnv::current()->record_failure("CodeCache is full");
         return;
       }
@@ -3705,7 +3705,7 @@ encode %{
       RelocationHolder rspec = _optimized_virtual ? opt_virtual_call_Relocation::spec(method_index)
                                                   : static_call_Relocation::spec(method_index);
       call = __ trampoline_call(Address(addr, rspec));
-      if (call == NULL) {
+      if (call == nullptr) {
         ciEnv::current()->record_failure("CodeCache is full");
         return;
       }
@@ -3716,7 +3716,7 @@ encode %{
       } else {
         // Emit stub for static call
         address stub = CompiledStaticCall::emit_to_interp_stub(cbuf, call);
-        if (stub == NULL) {
+        if (stub == nullptr) {
           ciEnv::current()->record_failure("CodeCache is full");
           return;
         }
@@ -3735,7 +3735,7 @@ encode %{
     C2_MacroAssembler _masm(&cbuf);
     int method_index = resolved_method_index(cbuf);
     address call = __ ic_call((address)$meth$$method, method_index);
-    if (call == NULL) {
+    if (call == nullptr) {
       ciEnv::current()->record_failure("CodeCache is full");
       return;
     }
@@ -3764,7 +3764,7 @@ encode %{
     CodeBlob *cb = CodeCache::find_blob(entry);
     if (cb) {
       address call = __ trampoline_call(Address(entry, relocInfo::runtime_call_type));
-      if (call == NULL) {
+      if (call == nullptr) {
         ciEnv::current()->record_failure("CodeCache is full");
         return;
       }
@@ -4663,7 +4663,7 @@ operand immP()
   interface(CONST_INTER);
 %}
 
-// NULL Pointer Immediate
+// Null Pointer Immediate
 operand immP0()
 %{
   predicate(n->get_ptr() == 0);
@@ -4795,7 +4795,7 @@ operand immN()
   interface(CONST_INTER);
 %}
 
-// Narrow NULL Pointer Immediate
+// Narrow Null Pointer Immediate
 operand immN0()
 %{
   predicate(n->get_narrowcon() == 0);
@@ -7219,7 +7219,7 @@ instruct loadConP0(iRegPNoSp dst, immP0 con)
   match(Set dst con);
 
   ins_cost(INSN_COST);
-  format %{ "mov  $dst, $con\t# NULL ptr" %}
+  format %{ "mov  $dst, $con\t# null pointer" %}
 
   ins_encode(aarch64_enc_mov_p0(dst, con));
 
@@ -7233,7 +7233,7 @@ instruct loadConP1(iRegPNoSp dst, immP_1 con)
   match(Set dst con);
 
   ins_cost(INSN_COST);
-  format %{ "mov  $dst, $con\t# NULL ptr" %}
+  format %{ "mov  $dst, $con\t# null pointer" %}
 
   ins_encode(aarch64_enc_mov_p1(dst, con));
 
@@ -7275,7 +7275,7 @@ instruct loadConN0(iRegNNoSp dst, immN0 con)
   match(Set dst con);
 
   ins_cost(INSN_COST);
-  format %{ "mov  $dst, $con\t# compressed NULL ptr" %}
+  format %{ "mov  $dst, $con\t# compressed null pointer" %}
 
   ins_encode(aarch64_enc_mov_n0(dst, con));
 
@@ -15257,7 +15257,7 @@ instruct clearArray_reg_reg(iRegL_R11 cnt, iRegP_R10 base, Universe dummy, rFlag
 
   ins_encode %{
     address tpc = __ zero_words($base$$Register, $cnt$$Register);
-    if (tpc == NULL) {
+    if (tpc == nullptr) {
       ciEnv::current()->record_failure("CodeCache is full");
       return;
     }
@@ -15278,7 +15278,7 @@ instruct clearArray_imm_reg(immL cnt, iRegP_R10 base, iRegL_R11 temp, Universe d
 
   ins_encode %{
     address tpc = __ zero_words($base$$Register, (uint64_t)$cnt$$constant);
-    if (tpc == NULL) {
+    if (tpc == nullptr) {
       ciEnv::current()->record_failure("CodeCache is full");
       return;
     }
@@ -17105,23 +17105,7 @@ instruct string_equalsL(iRegP_R1 str1, iRegP_R3 str2, iRegI_R4 cnt,
   ins_encode %{
     // Count is in 8-bit bytes; non-Compact chars are 16 bits.
     __ string_equals($str1$$Register, $str2$$Register,
-                     $result$$Register, $cnt$$Register, 1);
-  %}
-  ins_pipe(pipe_class_memory);
-%}
-
-instruct string_equalsU(iRegP_R1 str1, iRegP_R3 str2, iRegI_R4 cnt,
-                        iRegI_R0 result, rFlagsReg cr)
-%{
-  predicate(((StrEqualsNode*)n)->encoding() == StrIntrinsicNode::UU);
-  match(Set result (StrEquals (Binary str1 str2) cnt));
-  effect(USE_KILL str1, USE_KILL str2, USE_KILL cnt, KILL cr);
-
-  format %{ "String Equals $str1,$str2,$cnt -> $result" %}
-  ins_encode %{
-    // Count is in 8-bit bytes; non-Compact chars are 16 bits.
-    __ string_equals($str1$$Register, $str2$$Register,
-                     $result$$Register, $cnt$$Register, 2);
+                     $result$$Register, $cnt$$Register);
   %}
   ins_pipe(pipe_class_memory);
 %}
@@ -17143,7 +17127,7 @@ instruct array_equalsB(iRegP_R1 ary1, iRegP_R2 ary2, iRegI_R0 result,
     address tpc = __ arrays_equals($ary1$$Register, $ary2$$Register,
                                    $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
                                    $result$$Register, $tmp$$Register, 1);
-    if (tpc == NULL) {
+    if (tpc == nullptr) {
       ciEnv::current()->record_failure("CodeCache is full");
       return;
     }
@@ -17168,7 +17152,7 @@ instruct array_equalsC(iRegP_R1 ary1, iRegP_R2 ary2, iRegI_R0 result,
     address tpc = __ arrays_equals($ary1$$Register, $ary2$$Register,
                                    $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
                                    $result$$Register, $tmp$$Register, 2);
-    if (tpc == NULL) {
+    if (tpc == nullptr) {
       ciEnv::current()->record_failure("CodeCache is full");
       return;
     }
@@ -17183,7 +17167,7 @@ instruct count_positives(iRegP_R1 ary1, iRegI_R2 len, iRegI_R0 result, rFlagsReg
   format %{ "count positives byte[] $ary1,$len -> $result" %}
   ins_encode %{
     address tpc = __ count_positives($ary1$$Register, $len$$Register, $result$$Register);
-    if (tpc == NULL) {
+    if (tpc == nullptr) {
       ciEnv::current()->record_failure("CodeCache is full");
       return;
     }
@@ -17226,7 +17210,7 @@ instruct string_inflate(Universe dummy, iRegP_R0 src, iRegP_R1 dst, iRegI_R2 len
     address tpc = __ byte_array_inflate($src$$Register, $dst$$Register, $len$$Register,
                                         $vtmp0$$FloatRegister, $vtmp1$$FloatRegister,
                                         $vtmp2$$FloatRegister, $tmp$$Register);
-    if (tpc == NULL) {
+    if (tpc == nullptr) {
       ciEnv::current()->record_failure("CodeCache is full");
       return;
     }
