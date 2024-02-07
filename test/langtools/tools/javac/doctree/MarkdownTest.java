@@ -31,6 +31,7 @@
  *          jdk.compiler/com.sun.tools.javac.util
  * @build DocCommentTester
  * @run main DocCommentTester MarkdownTest.java
+ * @run main DocCommentTester -useStandardTransformer MarkdownTest.java
  */
 
 /*
