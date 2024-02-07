@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1095,11 +1095,11 @@ class BadIRNodeForPhase {
 
     @Test
     @FailCount(4)
-    @IR(failOn = IRNode.ALLOC, phase = {CompilePhase.FINAL_CODE, CompilePhase.MACRO_EXPANSION})
+    @IR(failOn = IRNode.ALLOC, phase = {CompilePhase.FINAL_CODE, CompilePhase.AFTER_MACRO_EXPANSION})
     @IR(failOn = IRNode.ALLOC, phase = CompilePhase.PRINT_IDEAL)
     @IR(failOn = IRNode.ALLOC, phase = {CompilePhase.ITER_GVN1, CompilePhase.AFTER_PARSING,
                                         CompilePhase.PRINT_OPTO_ASSEMBLY}) // works
-    @IR(failOn = IRNode.ALLOC_ARRAY, phase = {CompilePhase.FINAL_CODE, CompilePhase.MACRO_EXPANSION})
+    @IR(failOn = IRNode.ALLOC_ARRAY, phase = {CompilePhase.FINAL_CODE, CompilePhase.AFTER_MACRO_EXPANSION})
     @IR(failOn = IRNode.ALLOC_ARRAY, phase = CompilePhase.PRINT_IDEAL)
     @IR(failOn = IRNode.ALLOC_ARRAY, phase = {CompilePhase.ITER_GVN1, CompilePhase.AFTER_PARSING,
                                         CompilePhase.PRINT_OPTO_ASSEMBLY}) // works
