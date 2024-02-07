@@ -57,12 +57,32 @@ public class TestSetupTests {
             Asserts.fail("Should have thrown exception");
         } catch (TestVMException e) {
             System.setOut(oldOut);
-            Asserts.assertTrue(e.getExceptionInfo().contains("Test Failures (2)"));
             Asserts.assertTrue(e.getExceptionInfo().contains("testTooManyArgs"));
+            Asserts.assertTrue(e.getExceptionInfo().contains("IllegalArgumentException: wrong number of arguments: 3 expected: 1"));
             Asserts.assertTrue(e.getExceptionInfo().contains("testTooFewArgs"));
-            Asserts.assertTrue(e.getExceptionInfo().split("There was an error while invoking @Test").length == 3);
+            Asserts.assertTrue(e.getExceptionInfo().contains("IllegalArgumentException: wrong number of arguments: 2 expected: 3"));
+
+            Asserts.assertTrue(e.getExceptionInfo().contains("setupTestBadSetupArgsTooMany"));
+            Asserts.assertTrue(e.getExceptionInfo().contains("wrong number of arguments: 0 expected: 2"));
+            Asserts.assertTrue(e.getExceptionInfo().contains("setupTestBadSetupArgsWrongType"));
+            Asserts.assertTrue(e.getExceptionInfo().contains("argument type mismatch"));
+
+            Asserts.assertTrue(e.getExceptionInfo().contains("setupReturnIntArray"));
+            Asserts.assertTrue(e.getExceptionInfo().contains("class [I cannot be cast to class [Ljava.lang.Object;"));
+            Asserts.assertTrue(e.getExceptionInfo().contains("setupReturnInt"));
+            Asserts.assertTrue(e.getExceptionInfo().contains("class java.lang.Integer cannot be cast to class [Ljava.lang.Object;"));
+
+            Asserts.assertTrue(e.getExceptionInfo().contains("testSetupWrongArgumentType"));
+            Asserts.assertTrue(e.getExceptionInfo().contains("argument type mismatch"));
+
+            // Check number of total failures:
+            Asserts.assertEQ(e.getExceptionInfo().split("argument type mismatch").length - 1, 2);
+            Asserts.assertEQ(e.getExceptionInfo().split("There was an error while invoking setup").length - 1, 4);
+            Asserts.assertEQ(e.getExceptionInfo().split("There was an error while invoking @Test").length - 1, 3);
+            Asserts.assertTrue(e.getExceptionInfo().contains("Test Failures (7)"));
         }
 
+// TODO make sure asserts from setup get out properly
 //         // Negative test with run into TestRunException
 //         System.setOut(ps);
 //         try {
@@ -78,11 +98,17 @@ public class TestSetupTests {
     // TODO investigate if the values are really right here, e.g. if fields are set
     // TODO try other bad return values
     @Setup
-    public void setupTestGood1() {}
+    public void setupVoid() {}
  
     @Test
-    @Arguments(setup = "setupTestGood1")
-    public void testGood1() {}
+    @Arguments(setup = "setupVoid")
+    public void testSetupVoid() {}
+
+    // TODO
+    // - SetupInfo
+    // - Object only used once
+    // - move the examples here, make examples more "real examples"
+
 
 //    @Test
 //    @IR(counts = {IRNode.STORE_I, "1"})
@@ -125,11 +151,12 @@ public class TestSetupTests {
 }
 
 class TestSetupTestsWithExpectedExceptions {
+    // ----------------- wrong number of arguments ------------------
     @Setup
     public Object[] setupTooManyArgs() {
       return new Object[]{1, 2, 3};
     }
-    
+
     @Test
     @Arguments(setup = "setupTooManyArgs")
     public void testTooManyArgs(int a) {}
@@ -138,10 +165,59 @@ class TestSetupTestsWithExpectedExceptions {
     public Object[] setupTooFewArgs() {
       return new Object[]{1, 2};
     }
-    
+
     @Test
     @Arguments(setup = "setupTooFewArgs")
     public void testTooFewArgs(int a, int b, int c) {}
+
+    // ----------------- wrong arguments for setup ------------------
+    @Setup
+    public Object[] setupTestBadSetupArgsTooMany(SetupInfo setupInfo, int bad) {
+      return new Object[]{1, 2};
+    }
+
+    @Test
+    @Arguments(setup = "setupTestBadSetupArgsTooMany")
+    public void testBadSetupArgsTooMany(int a, int b) {}
+
+    @Setup
+    public Object[] setupTestBadSetupArgsWrongType(int bad) {
+      return new Object[]{1, 2};
+    }
+
+    @Test
+    @Arguments(setup = "setupTestBadSetupArgsWrongType")
+    public void testBadSetupArgsWrongType(int a, int b) {}
+
+    // ----------------- setup wrong return type ------------------
+    @Setup
+    public int[] setupReturnIntArray() {
+        return new int[]{1, 2, 3};
+    }
+
+    @Test
+    @Arguments(setup = "setupReturnIntArray")
+    public void testSetupReturnIntArray(int a, int b, int c) {}
+
+    @Setup
+    public int setupReturnInt(SetupInfo setupInfo) {
+        return setupInfo.invocationCounter();
+    }
+
+    @Test
+    @Arguments(setup = "setupReturnInt")
+    public void testSetupReturnInt(int a) {}
+
+    // ----------------- setup provides wrong argument types ------
+    @Setup
+    public Object[] setupWrongArgumentType(SetupInfo setupInfo) {
+        return new Object[]{(int)1, (long)2};
+    }
+
+    @Test
+    @Arguments(setup = "setupWrongArgumentType")
+    public void testSetupWrongArgumentType(long a, int b) {}
+
 }
 
 // class TestSetupTestsWithBadRunExceptions {
