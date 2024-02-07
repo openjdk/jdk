@@ -1541,6 +1541,8 @@ enum VectorMask {
   // Vector Single-Width Integer Add and Subtract
   INSN(vsub_vx,  0b1010111, 0b100, 0b000010);
   INSN(vadd_vx,  0b1010111, 0b100, 0b000000);
+
+  // Vector Integer reverse subtract
   INSN(vrsub_vx, 0b1010111, 0b100, 0b000011);
 
   // Vector Slide Instructions
@@ -1603,17 +1605,26 @@ enum VectorMask {
     patch_VArith(op, Vd, funct3, (uint32_t)(imm & 0x1f), Vs2, vm, funct6);                         \
   }
 
+  // Vector Integer Comparison Instructions
   INSN(vmsgt_vi,  0b1010111, 0b011, 0b011111);
   INSN(vmsgtu_vi, 0b1010111, 0b011, 0b011110);
   INSN(vmsle_vi,  0b1010111, 0b011, 0b011101);
   INSN(vmsleu_vi, 0b1010111, 0b011, 0b011100);
   INSN(vmsne_vi,  0b1010111, 0b011, 0b011001);
   INSN(vmseq_vi,  0b1010111, 0b011, 0b011000);
+
+  // Vector Bitwise Logical Instructions
   INSN(vxor_vi,   0b1010111, 0b011, 0b001011);
   INSN(vor_vi,    0b1010111, 0b011, 0b001010);
   INSN(vand_vi,   0b1010111, 0b011, 0b001001);
+
+  // Vector Single-Width Integer Add and Subtract
   INSN(vadd_vi,   0b1010111, 0b011, 0b000000);
+
+  // Vector Integer reverse subtract
   INSN(vrsub_vi,  0b1010111, 0b011, 0b000011);
+
+  // Vector Narrowing Integer Right Shift Instructions
   INSN(vnsra_wi,  0b1010111, 0b011, 0b101101);
 
 #undef INSN
