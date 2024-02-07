@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -770,13 +770,6 @@ public class JavaTokenizer extends UnicodeReader {
                     lexError(pos, Errors.InvalidHexNumber);
                     break;
                 }
-            }
-            // If it is not a floating point literal,
-            // the octal number should be rescanned correctly.
-            if (radix == 8) {
-                sb.setLength(0);
-                reset(pos);
-                scanDigits(pos, 8);
             }
 
             if (acceptOneOf('l', 'L')) {
