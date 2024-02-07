@@ -13571,7 +13571,7 @@ void Assembler::notq(Register dst) {
   emit_int16((unsigned char)0xF7, (0xD0 | encode));
 }
 
-void Assembler::bt(Register dst, Register src) {
+void Assembler::btq(Register dst, Register src) {
   int encode = prefixq_and_encode(src->encoding(), dst->encoding());
   emit_int24(0x0F, (unsigned char)0xA3, (encode | 0xC0));
 }

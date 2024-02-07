@@ -1572,16 +1572,19 @@ void C2_MacroAssembler::vinsert(BasicType typ, XMMRegister dst, XMMRegister src,
 }
 
 #ifdef _LP64
-void C2_MacroAssembler::vgather8b_masked(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base,
-                                          Register mask, Register midx, Register rtmp, int vlen_enc) {
+void C2_MacroAssembler::vgather8b_masked(BasicType elem_bt, XMMRegister dst,
+                                         Register base, Register idx_base,
+                                         Register mask, Register midx,
+                                         Register rtmp, int vlen_enc) {
   vpxor(dst, dst, dst, vlen_enc);
   if (elem_bt == T_SHORT) {
     Label case0, case1, case2, case3;
-    Label* larr[] = { &case0, &case1, &case2, &case3 };
+    Label *larr[] = {&case0, &case1, &case2, &case3};
     for (int i = 0; i < 4; i++) {
-      bt(mask, midx);
+      // dst[i] = mask ? src[index[i]] : 0
+      btq(mask, midx);
       jccb(Assembler::carryClear, *larr[i]);
-      movl(rtmp, Address(idx_base, i*4));
+      movl(rtmp, Address(idx_base, i * 4));
       pinsrw(dst, Address(base, rtmp, Address::times_2), i);
       bind(*larr[i]);
       incq(midx);
@@ -1589,11 +1592,13 @@ void C2_MacroAssembler::vgather8b_masked(BasicType elem_bt, XMMRegister dst, Reg
   } else {
     assert(elem_bt == T_BYTE, "");
     Label case0, case1, case2, case3, case4, case5, case6, case7;
-    Label* larr[] = { &case0, &case1, &case2, &case3, &case4, &case5, &case6, &case7 };
+    Label *larr[] = {&case0, &case1, &case2, &case3,
+                     &case4, &case5, &case6, &case7};
     for (int i = 0; i < 8; i++) {
-      bt(mask, midx);
+      // dst[i] = mask ? src[index[i]] : 0
+      btq(mask, midx);
       jccb(Assembler::carryClear, *larr[i]);
-      movl(rtmp, Address(idx_base, i*4));
+      movl(rtmp, Address(idx_base, i * 4));
       pinsrb(dst, Address(base, rtmp), i);
       bind(*larr[i]);
       incq(midx);
@@ -1601,16 +1606,21 @@ void C2_MacroAssembler::vgather8b_masked(BasicType elem_bt, XMMRegister dst, Reg
   }
 }
 
-void C2_MacroAssembler::vgather8b_masked_offset(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base,
-                                                 Register offset, Register mask, Register midx, Register rtmp, int vlen_enc) {
+void C2_MacroAssembler::vgather8b_masked_offset(BasicType elem_bt,
+                                                XMMRegister dst, Register base,
+                                                Register idx_base,
+                                                Register offset, Register mask,
+                                                Register midx, Register rtmp,
+                                                int vlen_enc) {
   vpxor(dst, dst, dst, vlen_enc);
   if (elem_bt == T_SHORT) {
     Label case0, case1, case2, case3;
-    Label* larr[] = { &case0, &case1, &case2, &case3 };
+    Label *larr[] = {&case0, &case1, &case2, &case3};
     for (int i = 0; i < 4; i++) {
-      bt(mask, midx);
+      // dst[i] = mask ? src[offset + index[i]] : 0
+      btq(mask, midx);
       jccb(Assembler::carryClear, *larr[i]);
-      movl(rtmp, Address(idx_base, i*4));
+      movl(rtmp, Address(idx_base, i * 4));
       addl(rtmp, offset);
       pinsrw(dst, Address(base, rtmp, Address::times_2), i);
       bind(*larr[i]);
@@ -1619,11 +1629,13 @@ void C2_MacroAssembler::vgather8b_masked_offset(BasicType elem_bt, XMMRegister d
   } else {
     assert(elem_bt == T_BYTE, "");
     Label case0, case1, case2, case3, case4, case5, case6, case7;
-    Label* larr[] = { &case0, &case1, &case2, &case3, &case4, &case5, &case6, &case7 };
+    Label *larr[] = {&case0, &case1, &case2, &case3,
+                     &case4, &case5, &case6, &case7};
     for (int i = 0; i < 8; i++) {
-      bt(mask, midx);
+      // dst[i] = mask ? src[offset + index[i]] : 0
+      btq(mask, midx);
       jccb(Assembler::carryClear, *larr[i]);
-      movl(rtmp, Address(idx_base, i*4));
+      movl(rtmp, Address(idx_base, i * 4));
       addl(rtmp, offset);
       pinsrb(dst, Address(base, rtmp), i);
       bind(*larr[i]);
@@ -1633,35 +1645,43 @@ void C2_MacroAssembler::vgather8b_masked_offset(BasicType elem_bt, XMMRegister d
 }
 #endif // _LP64
 
-void C2_MacroAssembler::vgather8b(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base, Register rtmp, int vlen_enc) {
+void C2_MacroAssembler::vgather8b(BasicType elem_bt, XMMRegister dst,
+                                  Register base, Register idx_base,
+                                  Register rtmp, int vlen_enc) {
   vpxor(dst, dst, dst, vlen_enc);
   if (elem_bt == T_SHORT) {
     for (int i = 0; i < 4; i++) {
-      movl(rtmp, Address(idx_base, i*4));
+      // dst[i] = src[index[i]]
+      movl(rtmp, Address(idx_base, i * 4));
       pinsrw(dst, Address(base, rtmp, Address::times_2), i);
     }
   } else {
     assert(elem_bt == T_BYTE, "");
     for (int i = 0; i < 8; i++) {
-      movl(rtmp, Address(idx_base, i*4));
+      // dst[i] = src[index[i]]
+      movl(rtmp, Address(idx_base, i * 4));
       pinsrb(dst, Address(base, rtmp), i);
     }
   }
 }
 
-void C2_MacroAssembler::vgather8b_offset(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base,
-                                          Register offset, Register rtmp, int vlen_enc) {
+void C2_MacroAssembler::vgather8b_offset(BasicType elem_bt, XMMRegister dst,
+                                         Register base, Register idx_base,
+                                         Register offset, Register rtmp,
+                                         int vlen_enc) {
   vpxor(dst, dst, dst, vlen_enc);
   if (elem_bt == T_SHORT) {
     for (int i = 0; i < 4; i++) {
-      movl(rtmp, Address(idx_base, i*4));
+      // dst[i] = src[offset + index[i]]
+      movl(rtmp, Address(idx_base, i * 4));
       addl(rtmp, offset);
       pinsrw(dst, Address(base, rtmp, Address::times_2), i);
     }
   } else {
     assert(elem_bt == T_BYTE, "");
     for (int i = 0; i < 8; i++) {
-      movl(rtmp, Address(idx_base, i*4));
+      // dst[i] = src[offset + index[i]]
+      movl(rtmp, Address(idx_base, i * 4));
       addl(rtmp, offset);
       pinsrb(dst, Address(base, rtmp), i);
     }
@@ -1676,18 +1696,17 @@ void C2_MacroAssembler::vgather8b_offset(BasicType elem_bt, XMMRegister dst, Reg
  *
  * DST_VEC = ZERO_VEC
  * PERM_INDEX = {0, 1, 2, 3, 4, 5, 6, 7, 8..}
- * TWO_VEC = {2, 2, 2, 2, 2, 2, 2, 2..}
+ * TWO_VEC    = {2, 2, 2, 2, 2, 2, 2, 2, 2..}
  * FOREACH_ITER:
  *     TMP_VEC_64 = PICK_SUB_WORDS_FROM_GATHER_INDICES
  *     TEMP_PERM_VEC = PERMUTE TMP_VEC_64 PERM_INDEX
  *     DST_VEC = DST_VEC OR TEMP_PERM_VEC
  *     PERM_INDEX = PERM_INDEX - TWO_VEC
  *
- * With each iteration permute index 0,1 holding assembled quadword
- * gets right shifted by two lane position.
+ * With each iteration, doubleword permute indices (0,1) corresponding
+ * to assembled quadword gets right shifted by two lane position.
  *
  */
-
 void C2_MacroAssembler::vgather_subword(BasicType elem_ty, XMMRegister dst,
                                         Register base, Register idx_base,
                                         Register offset, Register mask,
