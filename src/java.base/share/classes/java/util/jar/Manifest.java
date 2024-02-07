@@ -73,6 +73,7 @@ public class Manifest implements Cloneable {
      * @param is the input stream containing manifest data
      * @throws IOException if an I/O error has occurred
      */
+    @SuppressWarnings("this-escape")
     public Manifest(InputStream is) throws IOException {
         this(null, is, null);
     }
