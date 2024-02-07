@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,13 +38,10 @@ import java.io.IOException;
  * @since 1.1
  */
 public class CheckedInputStream extends FilterInputStream {
-    private final Checksum cksum;
+    private Checksum cksum;
 
     /**
-     * Creates an input stream using the specified Checksum. A null
-     * value to either {@code in} or {@code cksum} will cause
-     * a {@link NullPointerException} to be thrown from the
-     * {@code read} methods of this {@code CheckedInputStream}.
+     * Creates an input stream using the specified Checksum.
      * @param in the input stream
      * @param cksum the Checksum
      */
