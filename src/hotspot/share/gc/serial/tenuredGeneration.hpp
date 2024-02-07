@@ -98,7 +98,7 @@ class TenuredGeneration: public Generation {
   MemRegion prev_used_region() const { return _prev_used_region; }
   void save_used_region()   { _prev_used_region = used_region(); }
 
-  void space_iterate(SpaceClosure* blk, bool usedOnly = false);
+  HeapWord* block_start(const void* p) const;
 
   void younger_refs_iterate(OopIterateClosure* blk);
 

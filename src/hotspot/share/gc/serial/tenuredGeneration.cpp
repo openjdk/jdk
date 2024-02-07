@@ -263,9 +263,8 @@ void TenuredGeneration::compute_new_size_inner() {
   }
 }
 
-void TenuredGeneration::space_iterate(SpaceClosure* blk,
-                                                 bool usedOnly) {
-  blk->do_space(space());
+HeapWord* TenuredGeneration::block_start(const void* p) const {
+  return space()->block_start_const(p);
 }
 
 void TenuredGeneration::younger_refs_iterate(OopIterateClosure* blk) {
