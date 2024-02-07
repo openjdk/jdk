@@ -1060,7 +1060,8 @@ void LIRGenerator::do_Clone(Intrinsic* x) {
   LIRItem array(src.value(), this);
   array.load_item();
   LIR_Opr len = new_register(T_INT);
-  __ load(new LIR_Address(array.result(), arrayOopDesc::length_offset_in_bytes(), T_INT), len);
+  CodeEmitInfo* null_check_info = state_for(x);
+  __ load(new LIR_Address(array.result(), arrayOopDesc::length_offset_in_bytes(), T_INT), len, null_check_info);
   LIR_Opr len_rbx = FrameMap::rbx_opr;
   __ move(len, len_rbx);
 
