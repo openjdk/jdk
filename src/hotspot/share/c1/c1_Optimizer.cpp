@@ -885,7 +885,8 @@ void NullCheckEliminator::iterate_one(BlockBegin* block) {
     // visiting instructions more than once.
     mark_visitable(instr);
     if (instr->is_pinned() || instr->can_trap() || (instr->as_NullCheck() != nullptr)
-        || (instr->as_Constant() != nullptr && instr->as_Constant()->type()->is_object())) {
+        || (instr->as_Constant() != nullptr && instr->as_Constant()->type()->is_object())
+        || (instr->as_IfOp() != nullptr)) {
       mark_visited(instr);
       instr->input_values_do(this);
       instr->visit(&_visitor);
