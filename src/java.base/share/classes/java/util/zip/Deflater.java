@@ -43,7 +43,8 @@ import static java.util.zip.ZipUtils.NIO_ACCESS;
  * protected by patents. It is fully described in the specifications at
  * the <a href="package-summary.html#package-description">java.util.zip
  * package description</a>.
- * <p> Unless otherwise noted, passing a {@code null} argument to a method
+ * <p>
+ * Unless otherwise noted, passing a {@code null} argument to a method
  * in this class will cause a {@link NullPointerException} to be
  * thrown.
  * <p>

@@ -36,9 +36,11 @@ import sun.security.util.ManifestEntryVerifier;
  * <a href="{@docRoot}/../specs/jar/jar.html#jar-manifest">Manifest</a>
  * entry. The {@code Manifest} can be used to store
  * meta-information about the JAR file and its entries.
- * <p> Unless otherwise noted, passing a {@code null} argument to a constructor
+ * <p>
+ * Unless otherwise noted, passing a {@code null} argument to a constructor
  * or method in this class will cause a {@link NullPointerException} to be
  * thrown.
+ * </p>
  * <h2>Accessing the Manifest</h2>
  * <p>
  * The {@link #getManifest() getManifest} method is used to return the
