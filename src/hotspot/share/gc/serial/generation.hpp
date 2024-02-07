@@ -58,9 +58,6 @@ class GCStats;
 class Generation: public CHeapObj<mtGC> {
   friend class VMStructs;
  private:
-  MemRegion _prev_used_region; // for collectors that want to "remember" a value for
-                               // used region at some specific point during collection.
-
   GCMemoryManager* _gc_manager;
 
  protected:
@@ -116,20 +113,10 @@ class Generation: public CHeapObj<mtGC> {
 
   MemRegion reserved() const { return _reserved; }
 
-  // Returns a region guaranteed to contain all the objects in the
-  // generation.
-  virtual MemRegion used_region() const { return _reserved; }
-
-  MemRegion prev_used_region() const { return _prev_used_region; }
-  virtual void  save_used_region()   { _prev_used_region = used_region(); }
-
   /* Returns "TRUE" iff "p" points into the reserved area of the generation. */
   bool is_in_reserved(const void* p) const {
     return _reserved.contains(p);
   }
-
-  // Iteration - do not use for time critical operations
-  virtual void space_iterate(SpaceClosure* blk, bool usedOnly = false) = 0;
 
   // Returns "true" iff this generation should be used to allocate an
   // object of the given size.  Young generations might
@@ -211,14 +198,6 @@ class Generation: public CHeapObj<mtGC> {
   // Printing
   virtual const char* name() const = 0;
   virtual const char* short_name() const = 0;
-
-  // Block abstraction.
-
-  // Returns the address of the start of the "block" that contains the
-  // address "addr".  We say "blocks" instead of "object" since some heaps
-  // may not pack objects densely; a chunk may either be an object or a
-  // non-object.
-  virtual HeapWord* block_start(const void* addr) const;
 
   virtual void print() const;
   virtual void print_on(outputStream* st) const;

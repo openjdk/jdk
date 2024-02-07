@@ -104,7 +104,7 @@ class UnixLaunchersAsServices extends ShellCustomAction {
         return launchers.isEmpty();
     }
 
-    static abstract class UnixLauncherAsService extends LauncherAsService {
+    abstract static class UnixLauncherAsService extends LauncherAsService {
 
         UnixLauncherAsService(String name, Map<String, Object> mainParams,
                 OverridableResource resource) {
