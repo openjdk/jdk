@@ -746,16 +746,16 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
   DEBUG_ONLY( if (VerifyLoopOptimizations) { verify(); } );
 }
 
-void PhaseIdealLoop::pin_array_access_nodes(Node* ctrl) {
+void PhaseIdealLoop::pin_array_access_nodes_dependent_on(Node* ctrl) {
   for (DUIterator i = ctrl->outs(); ctrl->has_out(i); i++) {
-    Node* u = ctrl->out(i);
-    if (!u->depends_only_on_test()) {
+    Node* use = ctrl->out(i);
+    if (!use->depends_only_on_test()) {
       continue;
     }
-    Node* clone = u->pin_array_access_node();
-    if (clone != nullptr) {
-      register_new_node(clone, get_ctrl(u));
-      _igvn.replace_node(u, clone);
+    Node* pinned_clone = use->pin_array_access_node();
+    if (pinned_clone != nullptr) {
+      register_new_node(pinned_clone, get_ctrl(use));
+      _igvn.replace_node(use, pinned_clone);
       --i;
     }
   }
