@@ -51,7 +51,7 @@ public class TestSetupTests {
         PrintStream oldOut = System.out;
         System.setOut(ps);
 
-	// Positive tests in TestSetupTests class
+        // Positive tests in TestSetupTests class
         TestFramework.run();
 
         // Positive tests in TestSetupTestsWithFields class
@@ -140,7 +140,7 @@ public class TestSetupTests {
             int y = a[i] - b[i];
             if (y != 2 * i) {
                 throw new RuntimeException("bad values for i=" + i + " a[i]=" + a[i] + " b[i]=" + b[i]);
-	    }
+            }
         }
     }
 
