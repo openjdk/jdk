@@ -26,6 +26,9 @@ package ir_framework.examples;
 import compiler.lib.ir_framework.*;
 import compiler.lib.ir_framework.SetupInfo;
 
+import jdk.test.lib.Utils;
+import java.util.Random;
+
 /*
  * @test
  * @summary Example test to use setup method (provide arguments and set fields).
@@ -42,73 +45,114 @@ import compiler.lib.ir_framework.SetupInfo;
  * @see Test
  */
 public class SetupExample {
-    int iFld, iFld2, iFld3;
+    private static final Random RANDOM = Utils.getRandomInstance();
+
+    int iFld1, iFld2;
+
     public static void main(String[] args) {
         TestFramework.run();
     }
 
-    // Test with static setup, test and check method.
+    // ----------------- Random but Linked --------------
     @Setup
-    static Object[] setupTwoIntArrays() {
-        int[] a = new int[10_000];
-        int[] b = new int[10_000];
-        for (int i = 0; i < a.length; i++) {
-            a[i] = i - 2;
-            b[i] = i + 2;
-        }
-        return new Object[]{a, b}; // passed as arguments to test method
+    static Object[] setupLinkedII() {
+        int r = RANDOM.nextInt();
+        return new Object[]{ r, r + 42};
     }
 
     @Test
-    @Arguments(setup = "setupTwoIntArrays")
-    static Object[] testWithSetupRandomIntArray(int[] a, int[] b) {
-        for (int i = 0; i < a.length; i++) {
-            int aa = a[i];
-            int bb = b[i];
-            a[i] = aa + bb;
-            b[i] = aa - bb;
-        }
-        return new Object[]{a, b}; // passed as argument to check method
+    @Arguments(setup = "setupLinkedII")
+    static int testSetupLinkedII(int a, int b) {
+        return b - a;
     }
 
-    @Check(test = "testWithSetupRandomIntArray")
-    void checkTestWithSetupRandomIntArray(Object[] args) {
-        int[] a = (int[])args[0]; // parse return values of test method
-        int[] b = (int[])args[1];
+    @Check(test = "testSetupLinkedII")
+    static void checkSetupLinkedII(int res) {
+        if (res != 42) { throw new RuntimeException("wrong result " + res); }
+    }
 
-        if (a.length != 10_000 || b.length != 10_000) {
-            throw new RuntimeException("bad length");
+    // ----------------- Random Arrays --------------
+    static int[] generateI(int len) {
+        int[] a = new int[len];
+        for (int i = 0; i < len; i++) {
+            a[i] = RANDOM.nextInt();
         }
+        return a;
+    }
 
+    @Setup
+    static Object[] setupRandomArrayII() {
+        // Random length, so that AutoVectorization pre/main/post and drain loops are tested
+        int len = RANDOM.nextInt(20_000);
+        int[] a = generateI(len);
+        int[] b = generateI(len);
+        return new Object[] { a, b };
+    }
+
+    @Test
+    @Arguments(setup = "setupRandomArrayII")
+    static Object[] testAdd(int[] a, int[] b) {
+        int[] c = new int[a.length];
         for (int i = 0; i < a.length; i++) {
-            if ((a[i] != 2 * i) || (b[i] != -4)) {
-                throw new RuntimeException("bad value: " + i + ": " + a[i] + " " + b[i]);
+            c[i] = a[i] + b[i];
+        }
+        return new Object[] { a, b, c };
+    }
+
+    @Check(test = "testAdd")
+    static void checkAdd(Object[] res) {
+        int[] a = (int[])res[0];
+        int[] b = (int[])res[1];
+        int[] c = (int[])res[2];
+        for (int i = 0; i < a.length; i++) {
+            if (c[i] != a[i] + b[i]) {
+                throw new RuntimeException("wrong values: " + a[i] + " " + b[i] + " " + c[i]);
             }
         }
     }
 
-    // Test with non-static setup, test and check method.
+    // ----------------- Setup Fields ---------------
     @Setup
-    Object[] setupTestSetupArgumentsAndFields(SetupInfo info) {
-        iFld  = info.invocationCounter();
-        iFld2 = info.invocationCounter() + 1;
-        iFld3 = info.invocationCounter() + 2;
-        return new Object[]{info.invocationCounter()}; // passed as arguments to test method
+    void setupFields() {
+        int r = RANDOM.nextInt();
+        iFld1 = r;
+        iFld2 = r + 42;
     }
 
     @Test
-    @Arguments(setup = "setupTestSetupArgumentsAndFields")
-    int testSetupArgumentsAndFields(int argVal) {
-        if ((iFld != argVal) || (iFld2 != argVal + 1) || (iFld3 != argVal + 2)) {
-            throw new RuntimeException("bad values: setup -> test");
-        }
-        return argVal + 2; // passed as argument to check method
+    @Arguments(setup = "setupFields")
+    int testSetupFields() {
+        return iFld2 - iFld1;
     }
 
-    @Check(test = "testSetupArgumentsAndFields")
-    void checkTestSetupArgumentsAndFields(int retVal) {
-        if ((iFld + 2 != retVal) || (iFld2 + 1 != retVal) || (iFld3 != retVal)) {
-            throw new RuntimeException("bad values: test -> check");
+    @Check(test = "testSetupFields")
+    static void checkSetupFields(int res) {
+        if (res != 42) { throw new RuntimeException("wrong result " + res); }
+    }
+
+    // ----------------- Deterministic Values -------
+    @Setup
+    Object[] setupDeterministic(SetupInfo info) {
+        // This value increments with every invocation of the setup method: 0, 1, 2, ...
+        int cnt = info.invocationCounter();
+
+        // Return true with low frequency. If we did this randomly, we can get unlucky
+        // and never return true. So doing it deterministically can be helpful when we
+        // want "low frequency" but a guaranteed "true" at some point.
+        return new Object[]{ (long)(cnt % 1_000) };
+    }
+
+    @Test
+    @Arguments(setup = "setupDeterministic")
+    @IR(counts = {IRNode.STORE_OF_FIELD, "iFld1", "1",
+                  IRNode.STORE_OF_FIELD, "iFld2", "1"})
+    void testLowProbabilityBranchDeterministic(long x) {
+        if (x == 7) {
+            // unlikely branch -> guaranteed taken -> in profile -> not trapped -> in IR
+            iFld1 = 42;
+        } else {
+            // likely branch
+            iFld2 = 77;
         }
     }
 }
