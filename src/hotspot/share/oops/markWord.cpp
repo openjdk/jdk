@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,8 +80,8 @@ void markWord::print_on(outputStream* st, bool print_monitor_info) const {
     st->print(" locked(" INTPTR_FORMAT ")", value());
   } else {
     st->print(" mark(");
-    if (is_neutral()) {   // last bits = 01
-      st->print("is_neutral");
+    if (is_unlocked()) {   // last bits = 01
+      st->print("is_unlocked");
       if (has_no_hash()) {
         st->print(" no_hash");
       } else {
