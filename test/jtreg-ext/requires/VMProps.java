@@ -140,7 +140,7 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("jdk.containerized", this::jdkContainerized);
         map.put("vm.flagless", this::isFlagless);
         map.put("jdk.foreign.linker", this::jdkForeignLinker);
-        map.putAll(xOptFlags()); // -Xmx4g -> @requires vm.opt.x.Xmx == "4g" )
+        map.putAll(xFlags()); // -Xmx4g -> @requires vm.opt.x.Xmx == "4g" )
         vmGC(map); // vm.gc.X = true/false
         vmGCforCDS(map); // may set vm.gc
         vmOptFinalFlags(map);
@@ -715,8 +715,55 @@ public class VMProps implements Callable<Map<String, String>> {
         return "" + result;
     }
 
-    private Stream<String> allFlags() {
+    private static Stream<String> allFlags() {
         return Stream.of((System.getProperty("test.vm.opts", "") + " " + System.getProperty("test.java.opts", "")).trim().split("\\s+"));
+    }
+
+    public record Flag(String name, String value) {}
+
+    /**
+     * Split an -Xflag string into a name part (without leading dash)
+       and a value part ("true" if no value was given)
+     */
+    public static Flag parseXFlag(String xflag) {
+        Matcher m = Pattern.compile("-([a-zA-Z]+)(.*)").matcher(xflag);
+        if (!m.matches()) {
+            throw new RuntimeException("Could not parse flag: " + xflag);
+        }
+
+        String name = m.group(1);
+        String value = m.group(2);
+
+        if (value.equals("")) {
+            return new Flag(name, "true");  // xflag does not contain explicit value, e.g. ["Xnoclassgc"], use value "true"
+        }
+
+        if (value.startsWith(":")) {        // xflag uses colon separator, e.g. ["XshowSettings", ":", "system"]
+            return new Flag(name, value.substring(1));
+        }
+
+        return new Flag(name, value);       // xflag uses numeric separator, e.g. ["Xmx", "4", "g"], concatenate last two elements
+    }
+
+    /**
+     * Check if flag is an -Xflag
+     */
+    private static boolean isXFlag(String flag) {
+        return flag.startsWith("-X") && !flag.startsWith("-XX:") && !flag.equals("-X");
+    }
+
+    /**
+     * The problem with multiple -Xlog is that all values /together/
+     * create meaning, it is therefore not meaningful to only use the
+     * latest value of -Xlog. To guard against bad usage of @require
+     * against such a composite value, the value is changed to a
+     * nonsense value.
+     */
+    private static Flag xlogWorkaround(Flag flag) {
+        if (flag.name.equals("Xlog")) {
+            return new Flag(flag.name(), "NONEMPTY_TEST_SENTINEL");
+        }
+        return flag;
     }
 
     /**
@@ -729,21 +776,16 @@ public class VMProps implements Callable<Map<String, String>> {
      *
      * Multiple invocations of the same flag will overwrite the flag
      * value with the latest value. Except for -Xlog where the value
-     * will always be NONEMPTY_TEST_SENTINEL (when pressent).
+     * will always be NONEMPTY_TEST_SENTINEL (when present).
      */
-    private Map<String, String> xOptFlags() {
+    public static Map<String, String> xFlags() {
         return allFlags()
-            .filter(s -> s.startsWith("-X") && !s.startsWith("-XX:") && !s.equals("-X"))
-            .map(s -> s.replaceFirst("-Xlog:.*", "-Xlog:NONEMPTY_TEST_SENTINEL")) // the value should never be tested, replace to be sure
-            .map(s -> s.replaceFirst("-", ""))
-            .map(flag -> flag.splitWithDelimiters("[:0123456789]", 2))
-            .collect(Collectors.toMap(a -> "vm.opt.x." + a[0],
-                                      a -> (a.length == 1)
-                                          ? "true" // -Xnoclassgc
-                                          : (a[1].equals(":")
-                                              ? a[2]            // ["-XshowSettings", ":", "system"]
-                                              : a[1] + a[2]),   // ["-Xmx", "4", "g"]
-                                      (a, b) -> b));
+            .filter(VMProps::isXFlag)
+            .map(VMProps::parseXFlag)
+            .map(VMProps::xlogWorkaround)
+            .collect(Collectors.toMap(flag -> "vm.opt.x." + flag.name(),
+                                      flag -> flag.value(),
+                                      (a, b) -> b)); // use the latest flag value if multiple are offered
     }
 
     /*
