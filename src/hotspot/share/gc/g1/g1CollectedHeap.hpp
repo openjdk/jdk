@@ -178,8 +178,6 @@ private:
 
   Ticks _collection_pause_end;
 
-  SoftRefPolicy      _soft_ref_policy;
-
   static size_t _humongous_object_threshold_in_words;
 
   // These sets keep track of old and humongous regions respectively.
@@ -926,8 +924,6 @@ public:
   G1CollectionSet* collection_set() { return &_collection_set; }
 
   inline bool is_collection_set_candidate(const HeapRegion* r) const;
-
-  SoftRefPolicy* soft_ref_policy() override;
 
   void initialize_serviceability() override;
   MemoryUsage memory_usage() override;

@@ -186,6 +186,7 @@ public class EventNames {
     public static final String NativeLibraryLoad = PREFIX + "NativeLibraryLoad";
     public static final String NativeLibraryUnload = PREFIX + "NativeLibraryUnload";
     public static final String PhysicalMemory = PREFIX + "PhysicalMemory";
+    public static final String SwapSpace = PREFIX + "SwapSpace";
     public static final String NetworkUtilization = PREFIX + "NetworkUtilization";
     public static final String ProcessStart = PREFIX + "ProcessStart";
     public static final String ResidentSetSize = PREFIX + "ResidentSetSize";
