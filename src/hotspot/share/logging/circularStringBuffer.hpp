@@ -139,7 +139,7 @@ struct CircularMapping {
   ~CircularMapping() {
     os::release_memory(buffer, size);
   }
-}
+};
 #endif
 
 class CircularStringBuffer {
