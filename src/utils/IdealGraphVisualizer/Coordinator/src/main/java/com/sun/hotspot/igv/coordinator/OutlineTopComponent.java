@@ -554,7 +554,8 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
 
     private InputGraph findGraph(int groupIdx, int graphIdx) {
         FolderElement folderElement = document.getElements().get(groupIdx);
-        if (folderElement instanceof Group group) {
+        if (folderElement instanceof Group) {
+            Group group = (Group) folderElement;
             return group.getGraphs().get(graphIdx);
         }
         return null;
