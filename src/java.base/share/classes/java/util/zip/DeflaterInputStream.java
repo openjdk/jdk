@@ -75,9 +75,6 @@ public class DeflaterInputStream extends FilterInputStream {
      * @throws NullPointerException if {@code in} is null
      */
     public DeflaterInputStream(InputStream in) {
-        // "in" being null isn't allowed. we use a null check for "in"
-        // merely to avoid an unnecessary instance creation of the Deflater
-        // for such erroneous cases.
         this(in, in != null ? new Deflater() : null);
         usesDefaultDeflater = true;
     }

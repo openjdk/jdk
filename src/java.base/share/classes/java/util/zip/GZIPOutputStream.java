@@ -94,9 +94,6 @@ public class GZIPOutputStream extends DeflaterOutputStream {
     public GZIPOutputStream(OutputStream out, int size, boolean syncFlush)
         throws IOException
     {
-        // "out" being null isn't allowed. we use a null check for "out"
-        // merely to avoid an unnecessary instance creation of the Deflater
-        // for such erroneous cases.
         super(out, out != null ? new Deflater(Deflater.DEFAULT_COMPRESSION, true) : null,
               size,
               syncFlush);

@@ -132,9 +132,6 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
      * @since 1.7
      */
     public ZipOutputStream(OutputStream out, Charset charset) {
-        // "out" being null isn't allowed. we use a null check for "out"
-        // merely to avoid an unnecessary instance creation of the Deflater
-        // for such erroneous cases.
         super(out, out != null ? new Deflater(Deflater.DEFAULT_COMPRESSION, true) : null);
         if (charset == null)
             throw new NullPointerException("charset is null");

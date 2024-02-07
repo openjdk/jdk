@@ -75,9 +75,6 @@ public class GZIPInputStream extends InflaterInputStream {
      * @throws    IllegalArgumentException if {@code size <= 0}
      */
     public GZIPInputStream(InputStream in, int size) throws IOException {
-        // "in" being null isn't allowed. we use a null check for "in"
-        // merely to avoid an unnecessary instance creation of the Inflater
-        // for such erroneous cases.
         super(in, in != null ? new Inflater(true) : null, size);
         usesDefaultInflater = true;
         readHeader(in);

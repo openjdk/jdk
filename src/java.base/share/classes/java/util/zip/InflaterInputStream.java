@@ -108,9 +108,6 @@ public class InflaterInputStream extends FilterInputStream {
      * @param in the input stream
      */
     public InflaterInputStream(InputStream in) {
-        // "in" being null isn't allowed. we use a null check for "in"
-        // merely to avoid an unnecessary instance creation of the Inflater
-        // for such erroneous cases.
         this(in, in != null ? new Inflater() : null);
         usesDefaultInflater = true;
     }
