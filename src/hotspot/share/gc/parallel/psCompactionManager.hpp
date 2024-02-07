@@ -111,7 +111,82 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   static RegionTaskQueueSet* region_task_queues()      { return _region_task_queues; }
   OopTaskQueue*  oop_stack()       { return &_oop_stack; }
 
- public:
+  class MarkingStatsCache : public CHeapObj<mtGC> {
+    constexpr static size_t num_entries = 1024;
+    static_assert(is_power_of_2(num_entries), "inv");
+    static_assert(num_entries > 0, "inv");
+
+    constexpr static size_t entry_mask = num_entries - 1;
+
+    struct CacheEntry {
+      size_t region_id;
+      size_t live_words;
+    };
+
+    CacheEntry entries[num_entries] = {};
+
+    void push(size_t region_id, size_t live_words) {
+      size_t index = (region_id & entry_mask);
+      if (entries[index].region_id == region_id) {
+        // Hit
+        entries[index].live_words += live_words;
+        return;
+      }
+      // Miss
+      if (entries[index].live_words != 0) {
+        evict(index);
+      }
+      entries[index].region_id = region_id;
+      entries[index].live_words = live_words;
+    }
+
+  public:
+    void push(oop obj, size_t live_words) {
+      ParallelCompactData& data = PSParallelCompact::summary_data();
+      const size_t region_size = ParallelCompactData::RegionSize;
+
+      HeapWord* addr = cast_from_oop<HeapWord*>(obj);
+      const size_t start_region_id = data.addr_to_region_idx(addr);
+      const size_t end_region_id = data.addr_to_region_idx(addr + live_words - 1);
+      if (start_region_id == end_region_id) {
+        // Completely inside this region
+        push(start_region_id, live_words);
+        return;
+      }
+
+      // First region
+      push(start_region_id, region_size - data.region_offset(addr));
+
+      // Middle regions; bypass cache
+      for (size_t i = start_region_id + 1; i < end_region_id; ++i) {
+        data.region(i)->set_partial_obj_size(region_size);
+        data.region(i)->set_partial_obj_addr(addr);
+      }
+
+      // Last region; bypass cache
+      const size_t end_offset = data.region_offset(addr + live_words - 1);
+      data.region(end_region_id)->set_partial_obj_size(end_offset + 1);
+      data.region(end_region_id)->set_partial_obj_addr(addr);
+    }
+
+    void evict(size_t index) {
+      ParallelCompactData& data = PSParallelCompact::summary_data();
+      // flush to global data
+      data.region(entries[index].region_id)->add_live_obj(entries[index].live_words);
+    }
+
+    void evict_all() {
+      for (size_t i = 0; i < num_entries; ++i) {
+        if (entries[i].live_words != 0) {
+          evict(i);
+          entries[i].live_words = 0;
+        }
+      }
+    }
+  };
+
+  MarkingStatsCache* _marking_stats_cache;
+public:
   static const size_t InvalidShadow = ~0;
   static size_t  pop_shadow_region_mt_safe(PSParallelCompact::RegionData* region_ptr);
   static void    push_shadow_region_mt_safe(size_t shadow_region);
@@ -197,6 +272,17 @@ class ParCompactionManager : public CHeapObj<mtGC> {
       : _compaction_manager(cm), _terminator(terminator), _worker_id(worker_id) { }
     virtual void do_void();
   };
+
+  void create_marking_stats_cache() {
+    assert(_marking_stats_cache == nullptr, "precondition");
+    _marking_stats_cache = new MarkingStatsCache();
+  }
+
+  void destroy_marking_stats_cache() {
+    _marking_stats_cache->evict_all();
+    delete _marking_stats_cache;
+    _marking_stats_cache = nullptr;
+  }
 
   // Called after marking.
   static void verify_all_marking_stack_empty() NOT_DEBUG_RETURN;

@@ -1969,6 +1969,7 @@ public:
 
   virtual void work(uint worker_id) {
     ParCompactionManager* cm = ParCompactionManager::gc_thread_compaction_manager(worker_id);
+    cm->create_marking_stats_cache();
     PCMarkAndPushClosure mark_and_push_closure(cm);
 
     {
@@ -2044,6 +2045,18 @@ void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
 
     gc_tracer->report_gc_reference_stats(stats);
     pt.print_all_references();
+  }
+  {
+    GCTraceTime(Debug, gc, phases) tm("Flush Marking Stats", &_gc_timer);
+
+    struct FlushMarkingStatsCache : public WorkerTask {
+      FlushMarkingStatsCache() : WorkerTask("FlushMarkingStatsCache") {}
+      void work(uint worker_id) override {
+        ParCompactionManager* cm = ParCompactionManager::gc_thread_compaction_manager(worker_id);
+        cm->destroy_marking_stats_cache();
+      }
+    } task;
+    ParallelScavengeHeap::heap()->workers().run_task(&task);
   }
 
   // This is the point where the entire marking should have completed.

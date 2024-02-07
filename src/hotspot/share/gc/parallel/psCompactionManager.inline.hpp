@@ -107,6 +107,8 @@ inline void ParCompactionManager::mark_and_push(T* p) {
     assert(ParallelScavengeHeap::heap()->is_in(obj), "should be in heap");
 
     if (mark_bitmap()->is_unmarked(obj) && PSParallelCompact::mark_obj(obj)) {
+      assert(_marking_stats_cache != nullptr, "inv");
+      _marking_stats_cache->push(obj, obj->size());
       push(obj);
 
       if (StringDedup::is_enabled() &&
