@@ -87,6 +87,17 @@ public:
   // Remove all regions from all partitions and reset all bounds
   void make_all_regions_unavailable();
 
+  // Set the partition id for a particular region without adjusting interval bounds or usage/capacity tallies
+  inline void raw_set_membership(size_t idx, ShenandoahFreeSetPartitionId p) {
+    _membership[idx] = p;
+  }
+
+  // Set the Mutator intervals, usage, and capacity according to arguments.  Reset the Collector intervals, used, capacity
+  // to represent empty Collector free set.
+  void establish_intervals(size_t mutator_leftmost, size_t mutator_rightmost,
+                           size_t mutator_leftmost_empty, size_t mutator_rightmost_empty,
+                           size_t mutator_region_count, size_t mutator_used);
+
   // Retire region idx from within its partition.  Requires that region idx is in in Mutator or Collector partitions.
   // Moves this region to the NotFree partition.  Any remnant of available memory at the time of retirement is added to the
   // original partition's total of used bytes.
@@ -105,6 +116,10 @@ public:
   // Returns true iff region idx's membership is which_partition.  If which_partition represents a free set, asserts
   // that the region has allocation capacity.
   inline bool partition_id_matches(size_t idx, ShenandoahFreeSetPartitionId which_partition) const;
+
+  inline size_t max_regions() const { return _max; }
+
+  inline size_t region_size_bytes() const { return _region_size_bytes; };
 
   // The following four methods return the left-most and right-most bounds on ranges of regions representing
   // the requested set.  The _empty variants represent bounds on the range that holds completely empty
@@ -190,7 +205,6 @@ private:
 
   void flip_to_gc(ShenandoahHeapRegion* r);
   void clear_internal();
-
   void try_recycle_trashed(ShenandoahHeapRegion *r);
 
   inline bool can_allocate_from(ShenandoahHeapRegion *r) const;

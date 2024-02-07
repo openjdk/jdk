@@ -102,6 +102,30 @@ void ShenandoahRegionPartitions::make_all_regions_unavailable() {
   _region_counts[Mutator] = _region_counts[Collector] = 0;
 }
 
+void ShenandoahRegionPartitions::establish_intervals(size_t mutator_leftmost, size_t mutator_rightmost,
+                                                     size_t mutator_leftmost_empty, size_t mutator_rightmost_empty,
+                                                     size_t mutator_region_count, size_t mutator_used) {
+  _region_counts[Mutator] = mutator_region_count;
+  _leftmosts[Mutator] = mutator_leftmost;
+  _rightmosts[Mutator] = mutator_rightmost;
+  _leftmosts_empty[Mutator] = mutator_leftmost_empty;
+  _rightmosts_empty[Mutator] = mutator_rightmost_empty;
+
+  _region_counts[Mutator] = mutator_region_count;
+  _used[Mutator] = mutator_used;
+  _capacity[Mutator] = mutator_region_count * _region_size_bytes;
+
+  _leftmosts[Collector] = _max;
+  _rightmosts[Collector] = 0;
+  _leftmosts_empty[Collector] = _max;
+  _rightmosts_empty[Collector] = 0;
+
+  _region_counts[Collector] = 0;
+  _used[Collector] = 0;
+  _capacity[Collector] = 0;
+}
+
+
 void ShenandoahRegionPartitions::increase_used(ShenandoahFreeSetPartitionId which_partition, size_t bytes) {
   assert (which_partition < NumPartitions, "Partition must be valid");
   _used[which_partition] += bytes;
@@ -672,11 +696,24 @@ void ShenandoahFreeSet::clear_internal() {
   _partitions.make_all_regions_unavailable();
 }
 
-// This function places all regions that have allocation capacity into the mutator_partition.  Subsequently, we will
-// move some of the mutator regions into the collector partition with the intent of packing collector memory into the
-//  highest (rightmost) addresses of the heap, with mutator memory consuming the lowest addresses of the heap.
+// This function places all regions that have allocation capacity into the mutator_partition, identifying regions
+// that have no allocation capacity as NotFree.  Subsequently, we will move some of the mutator regions into the
+// collector partition with the intent of packing collector memory into the highest (rightmost) addresses of the
+// heap, with mutator memory consuming the lowest addresses of the heap.
 void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &cset_regions) {
   cset_regions = 0;
+  
+  size_t mutator_regions = 0;
+  size_t mutator_used = 0;
+
+  size_t max_regions = _partitions.max_regions();
+  size_t region_size_bytes = _partitions.region_size_bytes();
+
+  size_t mutator_leftmost = max_regions;
+  size_t mutator_rightmost = 0;
+  size_t mutator_leftmost_empty = max_regions;
+  size_t mutator_rightmost_empty = 0;
+
   for (size_t idx = 0; idx < _heap->num_regions(); idx++) {
     ShenandoahHeapRegion* region = _heap->get_region(idx);
     if (region->is_trash()) {
@@ -685,26 +722,45 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &cset_regions) {
       cset_regions++;
     }
     if (region->is_alloc_allowed() || region->is_trash()) {
-      assert(!region->is_cset(), "Shouldn't be adding cset regions to the free partition");
-      assert(_partitions.partition_id_matches(idx, NotFree), "We are about to make region free; it should not be free already");
 
       // Do not add regions that would almost surely fail allocation
       size_t ac = alloc_capacity(region);
       if (ac > PLAB::min_size() * HeapWordSize) {
-        _partitions.make_free(idx, Mutator, ac);
+        _partitions.raw_set_membership(idx, Mutator);
+
+        if (idx < mutator_leftmost) {
+          mutator_leftmost = idx;
+        }
+        if (idx > mutator_rightmost) {
+          mutator_rightmost = idx;
+        }
+        if (ac == region_size_bytes) {
+          if (idx < mutator_leftmost_empty) {
+            mutator_leftmost_empty = idx;
+          }
+          if (idx > mutator_rightmost_empty) {
+            mutator_rightmost_empty = idx;
+          }
+        }
+        mutator_regions++;
+        mutator_used += (region_size_bytes - ac);
+
         log_debug(gc, free)(
           "  Adding Region " SIZE_FORMAT " (Free: " SIZE_FORMAT "%s, Used: " SIZE_FORMAT "%s) to mutator partition",
           idx, byte_size_in_proper_unit(region->free()), proper_unit_for_byte_size(region->free()),
           byte_size_in_proper_unit(region->used()), proper_unit_for_byte_size(region->used()));
       } else {
-        assert(_partitions.membership(idx) == NotFree,
-               "Region " SIZE_FORMAT " should not be in free partition because capacity is " SIZE_FORMAT, idx, ac);
+        // Region has some capacity, but it's too small to be useful.
+        _partitions.raw_set_membership(idx, NotFree);
       }
     } else {
-      assert(_partitions.membership(idx) == NotFree,
-             "Region " SIZE_FORMAT " should not be in free partition because alloc is not allowed and not is trash", idx);
+      // Region has no capacity.
+      _partitions.raw_set_membership(idx, NotFree);
     }
   }
+
+  _partitions.establish_intervals(mutator_leftmost, mutator_rightmost, mutator_leftmost_empty, mutator_rightmost_empty,
+                                  mutator_regions, mutator_used);
 }
 
 // Move no more than max_xfer_regions from the existing Collector partition to the Mutator partition.
@@ -755,8 +811,6 @@ void ShenandoahFreeSet::move_regions_from_collector_to_mutator(size_t max_xfer_r
 void ShenandoahFreeSet::prepare_to_rebuild(size_t &cset_regions) {
   shenandoah_assert_heaplocked();
 
-  // Clear() resets all state information, marking every region as NotFree.
-  clear();
   log_debug(gc, free)("Rebuilding FreeSet");
 
   // This places regions that have alloc_capacity into the mutator partition.
