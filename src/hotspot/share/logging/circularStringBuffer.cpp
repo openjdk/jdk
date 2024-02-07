@@ -135,19 +135,23 @@ CircularStringBuffer::DequeueResult CircularStringBuffer::dequeue(Message* out_m
   // Release the lock
   return OK;
 }
+
 void CircularStringBuffer::flush() {
   enqueue("", 0, nullptr, CircularStringBuffer::None);
   _read_lock.notify();
   _flush_sem.wait();
 }
+
 void CircularStringBuffer::signal_flush() {
   _flush_sem.signal();
 }
+
 bool CircularStringBuffer::has_message() {
   size_t h = Atomic::load(&head);
   size_t t = Atomic::load(&tail);
   return !(h == t);
 }
+
 void CircularStringBuffer::await_message() {
   while (true) {
     WriteLocker wl(this);
