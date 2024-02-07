@@ -575,7 +575,9 @@ bool ObjectSynchronizer::enter_fast_impl(Handle obj, BasicLock* lock, JavaThread
           mark = old_mark;
         }
       }
-      // All other paths fall-through to inflate-enter.
+
+      // Failed to fast lock.
+      return false;
     } else if (LockingMode == LM_LEGACY) {
       markWord mark = obj->mark();
       if (mark.is_neutral()) {
@@ -598,6 +600,9 @@ bool ObjectSynchronizer::enter_fast_impl(Handle obj, BasicLock* lock, JavaThread
       // must be non-zero to avoid looking like a re-entrant lock,
       // and must not look locked either.
       lock->set_displaced_header(markWord::unused_mark());
+
+      // Failed to fast lock.
+      return false;
     }
   } else if (VerifyHeavyMonitors) {
     guarantee((obj->mark().value() & markWord::lock_mask_in_place) != markWord::locked_value, "must not be lightweight/stack-locked");
