@@ -2789,6 +2789,44 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::riscv::_string_indexof_linear_ul = generate_string_indexof_linear(true, false);
   }
 
+  /**
+  *  Arguments:
+  *
+  *  Input:
+  *    c_rarg0   - obja     address
+  *    c_rarg1   - objb     address
+  *    c_rarg3   - length   length               (number of elements)
+  *    c_rarg4   - scale    log2_array_indxscale (element size)
+  *
+  *  Output:
+  *        x10   - int >= 0 mismatched index, < 0 bitwise complement of tail
+  */
+  address generate_vectorizedMismatch()
+  {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "vectorizedMismatch");
+    address entry = __ pc();
+
+    const Register result = c_rarg0;
+    const Register obja   = c_rarg0;
+    const Register objb   = c_rarg1;
+    const Register length = c_rarg2;
+    const Register scale  = c_rarg3;
+    const Register tmp1   = x28;
+    const Register tmp2   = x29;
+    const VectorRegister vrm = v0;
+    const VectorRegister vra = v8;
+    const VectorRegister vrb = v16;
+
+    BLOCK_COMMENT("Entry:");
+    __ enter();
+    __ vectorized_mismatch(obja, objb, length, scale, result, tmp1, tmp2, vrm, vra, vrb);
+    __ leave();
+    __ ret();
+
+    return entry;
+  }
+
 #ifdef COMPILER2
   address generate_mulAdd()
   {
@@ -5207,6 +5245,10 @@ static const int64_t right_3_bits = right_n_bits(3);
     }
 
     StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
+
+    if (UseVectorizedMismatchIntrinsic) {
+      StubRoutines::_vectorizedMismatch = generate_vectorizedMismatch();
+    }
 
     StubRoutines::riscv::set_completed();
   }

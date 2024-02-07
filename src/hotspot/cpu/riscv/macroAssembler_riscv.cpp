@@ -4234,6 +4234,48 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
 }
 #endif
 
+void MacroAssembler::vectorized_mismatch(Register obja, Register objb, Register length,
+                                         Register log2_array_indxscale, Register result,
+                                         Register tmp1, Register tmp2,
+                                         VectorRegister vrm, VectorRegister vra, VectorRegister vrb) {
+  assert(UseVectorizedMismatchIntrinsic, "sanity");
+  assert_different_registers(obja, objb, length, log2_array_indxscale, tmp1, tmp2, t0, t1);
+  assert_different_registers(vra, vrb, vrm);
+
+  const Register consumed = t1;
+  const Register cnt = tmp1;
+  const Register idx = tmp2;
+  Label MISMATCH_FOUND, NO_MISMATCH_FOUND, VEC_LOOP, DONE;
+
+  beqz(length, NO_MISMATCH_FOUND);
+
+  sll(cnt, length, log2_array_indxscale);
+  mv(consumed, 0);
+
+  bind(VEC_LOOP);
+  vsetvli(t0, cnt, Assembler::e8, Assembler::m8);
+  vle8_v(vra, obja);
+  vle8_v(vrb, objb);
+  vmsne_vv(vrm, vra, vrb);
+  vfirst_m(idx, vrm);
+  bgez(idx, MISMATCH_FOUND);
+  sub(cnt, cnt, t0);
+  add(obja, obja, t0);
+  add(objb, objb, t0);
+  add(consumed, consumed, t0);
+  bnez(cnt, VEC_LOOP);
+
+  bind(NO_MISMATCH_FOUND);
+  mv(result, -1);
+  j(DONE);
+
+  bind(MISMATCH_FOUND);
+  add(idx, consumed, idx);
+  srl(result, idx, log2_array_indxscale);
+
+  bind(DONE);
+}
+
 // Count bits of trailing zero chars from lsb to msb until first non-zero element.
 // For LL case, one byte for one element, so shift 8 bits once, and for other case,
 // shift 16 bits once.
