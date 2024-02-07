@@ -275,14 +275,39 @@ void oopDesc::forward_to(oop p) {
   set_mark(m);
 }
 
+void oopDesc::forward_to_self() {
+  set_mark(markWord::prototype().set_self_forwarded());
+}
+
 oop oopDesc::forward_to_atomic(oop p, markWord compare, atomic_memory_order order) {
   markWord m = markWord::encode_pointer_as_mark(p);
-  assert(m.decode_pointer() == p, "encoding must be reversible");
+  assert(forwardee(m) == p, "encoding must be reversible");
   markWord old_mark = cas_set_mark(m, compare, order);
   if (old_mark == compare) {
     return nullptr;
   } else {
-    return cast_to_oop(old_mark.decode_pointer());
+    assert(old_mark.is_marked(), "must be marked here");
+    return forwardee(old_mark);
+  }
+}
+
+oop oopDesc::forward_to_self_atomic(markWord compare, atomic_memory_order order) {
+  markWord new_mark = markWord::prototype().set_self_forwarded();
+  assert(forwardee(new_mark) == cast_to_oop(this), "encoding must be reversible");
+  markWord old_mark = cas_set_mark(new_mark, compare, order);
+  if (old_mark == compare) {
+    return nullptr;
+  } else {
+    assert(old_mark.is_marked(), "must be marked here");
+    return forwardee(old_mark);
+  }
+}
+oop oopDesc::forwardee(markWord mark) const {
+  assert(mark.is_marked(), "only decode when actually forwarded");
+  if (mark.self_forwarded()) {
+    return cast_to_oop(this);
+  } else {
+    return cast_to_oop(mark.decode_pointer());
   }
 }
 
@@ -291,7 +316,7 @@ oop oopDesc::forward_to_atomic(oop p, markWord compare, atomic_memory_order orde
 // It does need to clear the low two locking- and GC-related bits.
 oop oopDesc::forwardee() const {
   assert(is_forwarded(), "only decode when actually forwarded");
-  return cast_to_oop(mark().decode_pointer());
+  return forwardee(mark());
 }
 
 // The following method needs to be MT safe.

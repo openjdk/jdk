@@ -212,7 +212,7 @@ void G1ParScanThreadState::do_oop_evac(T* p) {
 
   markWord m = obj->mark();
   if (m.is_marked()) {
-    obj = cast_to_oop(m.decode_pointer());
+    obj = obj->forwardee();
   } else {
     obj = do_copy_to_survivor_space(region_attr, obj, m);
   }
@@ -627,7 +627,7 @@ NOINLINE
 oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, size_t word_sz) {
   assert(_g1h->is_in_cset(old), "Object " PTR_FORMAT " should be in the CSet", p2i(old));
 
-  oop forward_ptr = old->forward_to_atomic(old, m, memory_order_relaxed);
+  oop forward_ptr = old->forward_to_self_atomic(m, memory_order_relaxed);
   if (forward_ptr == nullptr) {
     // Forward-to-self succeeded. We are the "owner" of the object.
     HeapRegion* r = _g1h->heap_region_containing(old);
