@@ -2254,15 +2254,15 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
       _igvn.add_users_to_worklist(old);
       if (idx == 0 &&
           use->depends_only_on_test()) {
-        Node* clone = use->pin_array_access_node();
-        if (clone != nullptr) {
+        Node* pinned_clone = use->pin_array_access_node();
+        if (pinned_clone != nullptr) {
           // Pin array access nodes: control is updated here to a region. If, after some transformations, only one path
           // into the region is left, an array load could become dependent on a condition that's not a range check for
           // that access. If that condition is replaced by an identical dominating one, then an unpinned load would risk
           // floating above its range check.
-          clone->set_req(0, phi);
-          register_new_node(clone, get_ctrl(use));
-          _igvn.replace_node( use, clone);
+          pinned_clone->set_req(0, phi);
+          register_new_node(pinned_clone, get_ctrl(use));
+          _igvn.replace_node(use, pinned_clone);
           continue;
         }
       }
