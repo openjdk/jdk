@@ -702,7 +702,7 @@ void ShenandoahFreeSet::clear_internal() {
 // heap, with mutator memory consuming the lowest addresses of the heap.
 void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &cset_regions) {
   cset_regions = 0;
-  
+
   size_t mutator_regions = 0;
   size_t mutator_used = 0;
 
