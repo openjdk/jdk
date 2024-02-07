@@ -1680,8 +1680,9 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
             // Pin array access nodes: if this is an array load, it's going to be dependent on a condition that's not a
             // range check for that access. If that condition is replaced by an identical dominating one, then an
             // unpinned load would risk floating above its range check.
-            register_new_node(pinned_clone, outside_ctrl);
+            register_new_node(pinned_clone, n_ctrl);
             maybe_pinned_n = pinned_clone;
+            _igvn.replace_node(n, pinned_clone);
           }
         }
         _igvn.replace_input_of(maybe_pinned_n, 0, outside_ctrl);
