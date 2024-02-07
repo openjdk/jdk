@@ -1491,8 +1491,10 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
           C->set_major_progress();
           // Split if: pin array accesses that are control dependent on a range check and moved to a regular if,
           // to prevent an array load from floating above its range check. There are three cases:
-          // 1. Move from RangeCheck "a" to RangeCheck "b": don't need to pin. If we ever remove b, then we pin all its array accesses at that point.
-          // 2. We move from RangeCheck "a" to regular if "b": need to pin. If we ever remove b, then its array accesses would start to float, since we don't pin at that point.
+          // 1. Move from RangeCheck "a" to RangeCheck "b": don't need to pin. If we ever remove b, then we pin
+          //    all its array accesses at that point.
+          // 2. We move from RangeCheck "a" to regular if "b": need to pin. If we ever remove b, then its array
+          //    accesses would start to float, since we don't pin at that point.
           // 3. If we move from regular if: don't pin. All array accesses are already assumed to be pinned.
           bool pin_array_access_nodes =  n->Opcode() == Op_RangeCheck &&
                                          prevdom->in(0)->Opcode() != Op_RangeCheck;
