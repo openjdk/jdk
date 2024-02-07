@@ -88,8 +88,8 @@ void CircularStringBuffer::enqueue_locked(const char* str, size_t size, LogFileS
   circular_mapping.write_bytes(t + sizeof(Message), str, size);
   // Finally move the tail, making the message available for consumers.
   tail = (t + required_memory + sizeof(Message)) % circular_mapping.size;
-  // We're done, notify the writer.
-  _write_lock.notify();
+  // We're done, notify the reader.
+  _read_lock.notify();
   return;
 }
 
@@ -154,9 +154,9 @@ bool CircularStringBuffer::has_message() {
 
 void CircularStringBuffer::await_message() {
   while (true) {
-    WriteLocker wl(this);
+    ReadLocker wl(this);
     while (!has_message()) {
-      _write_lock.wait(0 /* no timeout */);
+      _read_lock.wait(0 /* no timeout */);
     }
     break;
   }
