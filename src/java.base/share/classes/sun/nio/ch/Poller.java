@@ -368,7 +368,7 @@ abstract class Poller {
 
             // check power of 2
             if (count != Integer.highestOneBit(count)) {
-                String msg = propName + " is set to a vale that is not a power of 2";
+                String msg = propName + " is set to a value that is not a power of 2";
                 throw new IllegalArgumentException(msg);
             }
             return count;

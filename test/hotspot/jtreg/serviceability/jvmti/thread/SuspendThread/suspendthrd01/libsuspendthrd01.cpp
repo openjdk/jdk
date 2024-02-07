@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ agentProc(jvmtiEnv *jvmti, JNIEnv *jni, void *arg) {
   {
     LOG("Find thread: %s\n", THREAD_NAME);
     jthread tested_thread = find_thread_by_name(jvmti, jni, THREAD_NAME);
-    if (tested_thread == NULL) {
+    if (tested_thread == nullptr) {
       return;
     }
     LOG("  ... found thread: %p\n", (void *) tested_thread);
@@ -97,12 +97,12 @@ agentProc(jvmtiEnv *jvmti, JNIEnv *jni, void *arg) {
 
 JNIEXPORT jint JNICALL
 Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
-  jvmtiEnv *jvmti = NULL;
+  jvmtiEnv *jvmti = nullptr;
 
   timeout = 60 * 1000;
 
   jint res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_9);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     LOG("Wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }
@@ -122,7 +122,7 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   }
 
   /* register agent proc and arg */
-  if (!set_agent_proc(agentProc, NULL)) {
+  if (!set_agent_proc(agentProc, nullptr)) {
     return JNI_ERR;
   }
 

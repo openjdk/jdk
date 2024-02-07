@@ -93,7 +93,7 @@ public class DebugReportsOneExtraByte extends SSLEngineTemplate {
     public static void main(String args[]) throws Exception {
 
         if (args.length == 0) {
-            OutputAnalyzer output = ProcessTools.executeTestJvm(
+            OutputAnalyzer output = ProcessTools.executeTestJava(
                 "-Dtest.src=" + System.getProperty("test.src"),
                 "-Djavax.net.debug=all", "DebugReportsOneExtraByte", "p");
             output.shouldContain("WRITE: TLSv1 application_data, length = 8");

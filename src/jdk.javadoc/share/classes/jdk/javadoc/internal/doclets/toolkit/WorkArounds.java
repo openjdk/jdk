@@ -423,4 +423,10 @@ public class WorkArounds {
         return Map.of();
     }
 
+    /*
+     * If a similar query is ever added to javax.lang.model, use that instead.
+     */
+    public static boolean isImplicitlyDeclaredClass(Element e) {
+        return e instanceof ClassSymbol c && c.isImplicit();
+    }
 }

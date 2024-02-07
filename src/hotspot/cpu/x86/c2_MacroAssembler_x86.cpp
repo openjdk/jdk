@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1089,37 +1089,84 @@ void C2_MacroAssembler::vminmax_fp(int opcode, BasicType elem_bt,
   assert(opcode == Op_MinV || opcode == Op_MinReductionV ||
          opcode == Op_MaxV || opcode == Op_MaxReductionV, "sanity");
   assert(elem_bt == T_FLOAT || elem_bt == T_DOUBLE, "sanity");
-  assert_different_registers(a, b, tmp, atmp, btmp);
+  assert_different_registers(a, tmp, atmp, btmp);
+  assert_different_registers(b, tmp, atmp, btmp);
 
   bool is_min = (opcode == Op_MinV || opcode == Op_MinReductionV);
   bool is_double_word = is_double_word_type(elem_bt);
 
+  /* Note on 'non-obvious' assembly sequence:
+   *
+   * While there are vminps/vmaxps instructions, there are two important differences between hardware
+   * and Java on how they handle floats:
+   *  a. -0.0 and +0.0 are considered equal (vminps/vmaxps will return second parameter when inputs are equal)
+   *  b. NaN is not necesarily propagated (vminps/vmaxps will return second parameter when either input is NaN)
+   *
+   * It is still more efficient to use vminps/vmaxps, but with some pre/post-processing:
+   *  a. -0.0/+0.0: Bias negative (positive) numbers to second parameter before vminps (vmaxps)
+   *                (only useful when signs differ, noop otherwise)
+   *  b. NaN: Check if it was the first parameter that had the NaN (with vcmp[UNORD_Q])
+
+   *  Following pseudo code describes the algorithm for max[FD] (Min algorithm is on similar lines):
+   *   btmp = (b < +0.0) ? a : b
+   *   atmp = (b < +0.0) ? b : a
+   *   Tmp  = Max_Float(atmp , btmp)
+   *   Res  = (atmp == NaN) ? atmp : Tmp
+   */
+
+  void (MacroAssembler::*vblend)(XMMRegister, XMMRegister, XMMRegister, XMMRegister, int, bool, XMMRegister);
+  void (MacroAssembler::*vmaxmin)(XMMRegister, XMMRegister, XMMRegister, int);
+  void (MacroAssembler::*vcmp)(XMMRegister, XMMRegister, XMMRegister, int, int);
+  XMMRegister mask;
+
   if (!is_double_word && is_min) {
-    vblendvps(atmp, a, b, a, vlen_enc);
-    vblendvps(btmp, b, a, a, vlen_enc);
-    vminps(tmp, atmp, btmp, vlen_enc);
-    vcmpps(btmp, atmp, atmp, Assembler::UNORD_Q, vlen_enc);
-    vblendvps(dst, tmp, atmp, btmp, vlen_enc);
+    mask = a;
+    vblend = &MacroAssembler::vblendvps;
+    vmaxmin = &MacroAssembler::vminps;
+    vcmp = &MacroAssembler::vcmpps;
   } else if (!is_double_word && !is_min) {
-    vblendvps(btmp, b, a, b, vlen_enc);
-    vblendvps(atmp, a, b, b, vlen_enc);
-    vmaxps(tmp, atmp, btmp, vlen_enc);
-    vcmpps(btmp, atmp, atmp, Assembler::UNORD_Q, vlen_enc);
-    vblendvps(dst, tmp, atmp, btmp, vlen_enc);
+    mask = b;
+    vblend = &MacroAssembler::vblendvps;
+    vmaxmin = &MacroAssembler::vmaxps;
+    vcmp = &MacroAssembler::vcmpps;
   } else if (is_double_word && is_min) {
-    vblendvpd(atmp, a, b, a, vlen_enc);
-    vblendvpd(btmp, b, a, a, vlen_enc);
-    vminpd(tmp, atmp, btmp, vlen_enc);
-    vcmppd(btmp, atmp, atmp, Assembler::UNORD_Q, vlen_enc);
-    vblendvpd(dst, tmp, atmp, btmp, vlen_enc);
+    mask = a;
+    vblend = &MacroAssembler::vblendvpd;
+    vmaxmin = &MacroAssembler::vminpd;
+    vcmp = &MacroAssembler::vcmppd;
   } else {
     assert(is_double_word && !is_min, "sanity");
-    vblendvpd(btmp, b, a, b, vlen_enc);
-    vblendvpd(atmp, a, b, b, vlen_enc);
-    vmaxpd(tmp, atmp, btmp, vlen_enc);
-    vcmppd(btmp, atmp, atmp, Assembler::UNORD_Q, vlen_enc);
-    vblendvpd(dst, tmp, atmp, btmp, vlen_enc);
+    mask = b;
+    vblend = &MacroAssembler::vblendvpd;
+    vmaxmin = &MacroAssembler::vmaxpd;
+    vcmp = &MacroAssembler::vcmppd;
   }
+
+  // Make sure EnableX86ECoreOpts isn't disabled on register overlaps
+  XMMRegister maxmin, scratch;
+  if (dst == btmp) {
+    maxmin = btmp;
+    scratch = tmp;
+  } else {
+    maxmin = tmp;
+    scratch = btmp;
+  }
+
+  bool precompute_mask = EnableX86ECoreOpts && UseAVX>1;
+  if (precompute_mask && !is_double_word) {
+    vpsrad(tmp, mask, 32, vlen_enc);
+    mask = tmp;
+  } else if (precompute_mask && is_double_word) {
+    vpxor(tmp, tmp, tmp, vlen_enc);
+    vpcmpgtq(tmp, tmp, mask, vlen_enc);
+    mask = tmp;
+  }
+
+  (this->*vblend)(atmp, a, b, mask, vlen_enc, !precompute_mask, btmp);
+  (this->*vblend)(btmp, b, a, mask, vlen_enc, !precompute_mask, tmp);
+  (this->*vmaxmin)(maxmin, atmp, btmp, vlen_enc);
+  (this->*vcmp)(scratch, atmp, atmp, Assembler::UNORD_Q, vlen_enc);
+  (this->*vblend)(dst, maxmin, atmp, scratch, vlen_enc, false, scratch);
 }
 
 void C2_MacroAssembler::evminmax_fp(int opcode, BasicType elem_bt,
@@ -1130,7 +1177,8 @@ void C2_MacroAssembler::evminmax_fp(int opcode, BasicType elem_bt,
   assert(opcode == Op_MinV || opcode == Op_MinReductionV ||
          opcode == Op_MaxV || opcode == Op_MaxReductionV, "sanity");
   assert(elem_bt == T_FLOAT || elem_bt == T_DOUBLE, "sanity");
-  assert_different_registers(dst, a, b, atmp, btmp);
+  assert_different_registers(dst, a, atmp, btmp);
+  assert_different_registers(dst, b, atmp, btmp);
 
   bool is_min = (opcode == Op_MinV || opcode == Op_MinReductionV);
   bool is_double_word = is_double_word_type(elem_bt);
@@ -5177,8 +5225,8 @@ void C2_MacroAssembler::vector_mask_operation(int opc, Register dst, KRegister m
 
 void C2_MacroAssembler::vector_mask_operation(int opc, Register dst, XMMRegister mask, XMMRegister xtmp,
                                               Register tmp, int masklen, BasicType bt, int vec_enc) {
-  assert(vec_enc == AVX_128bit && VM_Version::supports_avx() ||
-         vec_enc == AVX_256bit && (VM_Version::supports_avx2() || type2aelembytes(bt) >= 4), "");
+  assert((vec_enc == AVX_128bit && VM_Version::supports_avx()) ||
+         (vec_enc == AVX_256bit && (VM_Version::supports_avx2() || type2aelembytes(bt) >= 4)), "");
   assert(VM_Version::supports_popcnt(), "");
 
   bool need_clip = false;
@@ -5233,6 +5281,42 @@ void C2_MacroAssembler::vector_mask_compress(KRegister dst, KRegister src, Regis
   pextq(rtmp2, rtmp2, rtmp1);
   kmov(dst, rtmp2);
 }
+
+#ifdef _LP64
+void C2_MacroAssembler::vector_compress_expand_avx2(int opcode, XMMRegister dst, XMMRegister src,
+                                                    XMMRegister mask, Register rtmp, Register rscratch,
+                                                    XMMRegister permv, XMMRegister xtmp, BasicType bt,
+                                                    int vec_enc) {
+  assert(type2aelembytes(bt) >= 4, "");
+  assert(opcode == Op_CompressV || opcode == Op_ExpandV, "");
+  address compress_perm_table = nullptr;
+  address expand_perm_table = nullptr;
+  if (type2aelembytes(bt) == 8) {
+    compress_perm_table = StubRoutines::x86::compress_perm_table64();
+    expand_perm_table  = StubRoutines::x86::expand_perm_table64();
+    vmovmskpd(rtmp, mask, vec_enc);
+  } else {
+    compress_perm_table = StubRoutines::x86::compress_perm_table32();
+    expand_perm_table = StubRoutines::x86::expand_perm_table32();
+    vmovmskps(rtmp, mask, vec_enc);
+  }
+  shlq(rtmp, 5); // for 32 byte permute row.
+  if (opcode == Op_CompressV) {
+    lea(rscratch, ExternalAddress(compress_perm_table));
+  } else {
+    lea(rscratch, ExternalAddress(expand_perm_table));
+  }
+  addptr(rtmp, rscratch);
+  vmovdqu(permv, Address(rtmp));
+  vpermps(dst, permv, src, Assembler::AVX_256bit);
+  vpxor(xtmp, xtmp, xtmp, vec_enc);
+  // Blend the result with zero vector using permute mask, each column entry
+  // in a permute table row contains either a valid permute index or a -1 (default)
+  // value, this can potentially be used as a blending mask after
+  // compressing/expanding the source vector lanes.
+  vblendvps(dst, dst, xtmp, permv, vec_enc, false, permv);
+}
+#endif
 
 void C2_MacroAssembler::vector_compress_expand(int opcode, XMMRegister dst, XMMRegister src, KRegister mask,
                                                bool merge, BasicType bt, int vec_enc) {
@@ -5318,18 +5402,18 @@ void C2_MacroAssembler::vector_signum_avx(int opcode, XMMRegister dst, XMMRegist
   if (opcode == Op_SignumVD) {
     vsubpd(dst, zero, one, vec_enc);
     // if src < 0 ? -1 : 1
-    vblendvpd(dst, one, dst, src, vec_enc);
+    vblendvpd(dst, one, dst, src, vec_enc, true, xtmp1);
     // if src == NaN, -0.0 or 0.0 return src.
     vcmppd(xtmp1, src, zero, Assembler::EQ_UQ, vec_enc);
-    vblendvpd(dst, dst, src, xtmp1, vec_enc);
+    vblendvpd(dst, dst, src, xtmp1, vec_enc, false, xtmp1);
   } else {
     assert(opcode == Op_SignumVF, "");
     vsubps(dst, zero, one, vec_enc);
     // if src < 0 ? -1 : 1
-    vblendvps(dst, one, dst, src, vec_enc);
+    vblendvps(dst, one, dst, src, vec_enc, true, xtmp1);
     // if src == NaN, -0.0 or 0.0 return src.
     vcmpps(xtmp1, src, zero, Assembler::EQ_UQ, vec_enc);
-    vblendvps(dst, dst, src, xtmp1, vec_enc);
+    vblendvps(dst, dst, src, xtmp1, vec_enc, false, xtmp1);
   }
 }
 

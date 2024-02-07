@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ extern "C" {
 #define STATUS_FAILED 2
 #define MONITOR_WAIT_TIMEOUT ((jlong)100)
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
 static char bad_buf[] = "this is a bad raw monitor";
@@ -54,12 +54,12 @@ JNIEXPORT jint JNI_OnLoad_rawmnwait003(JavaVM *jvm, char *options, void *reserve
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jint res;
 
-    if (options != NULL && strcmp(options, "printdump") == 0) {
+    if (options != nullptr && strcmp(options, "printdump") == 0) {
         printdump = JNI_TRUE;
     }
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
     }
@@ -71,7 +71,7 @@ JNIEXPORT jint JNICALL
 Java_nsk_jvmti_RawMonitorWait_rawmnwait003_check(JNIEnv *env, jclass cls) {
     jvmtiError err;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("JVMTI client was not properly loaded!\n");
         return STATUS_FAILED;
     }

@@ -66,11 +66,11 @@ public:
 // collected (and processed) buffers reverts back to collecting, allowing
 // the set to be reused for another round of redirtying.
 class G1RedirtyCardsQueueSet : public PtrQueueSet {
-  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, 0);
+  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_PADDING_SIZE, 0);
   BufferNode::Stack _list;
-  DEFINE_PAD_MINUS_SIZE(2, DEFAULT_CACHE_LINE_SIZE, sizeof(size_t));
+  DEFINE_PAD_MINUS_SIZE(2, DEFAULT_PADDING_SIZE, sizeof(size_t));
   volatile size_t _entry_count;
-  DEFINE_PAD_MINUS_SIZE(3, DEFAULT_CACHE_LINE_SIZE, sizeof(BufferNode*));
+  DEFINE_PAD_MINUS_SIZE(3, DEFAULT_PADDING_SIZE, sizeof(BufferNode*));
   BufferNode* _tail;
   DEBUG_ONLY(mutable bool _collecting;)
 

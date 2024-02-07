@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1DirtyCardQueue.hpp"
+#include "gc/g1/g1RegionPinCache.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/satbMarkQueue.hpp"
 #include "runtime/javaThread.hpp"
@@ -37,9 +38,15 @@ private:
   SATBMarkQueue _satb_mark_queue;
   G1DirtyCardQueue _dirty_card_queue;
 
+  // Per-thread cache of pinned object count to reduce atomic operation traffic
+  // due to region pinning. Holds the last region where the mutator pinned an
+  // object and the number of pin operations since the last change of the region.
+  G1RegionPinCache _pin_cache;
+
   G1ThreadLocalData() :
       _satb_mark_queue(&G1BarrierSet::satb_mark_queue_set()),
-      _dirty_card_queue(&G1BarrierSet::dirty_card_queue_set()) {}
+      _dirty_card_queue(&G1BarrierSet::dirty_card_queue_set()),
+      _pin_cache() {}
 
   static G1ThreadLocalData* data(Thread* thread) {
     assert(UseG1GC, "Sanity");
@@ -89,6 +96,10 @@ public:
 
   static ByteSize dirty_card_queue_buffer_offset() {
     return dirty_card_queue_offset() + G1DirtyCardQueue::byte_offset_of_buf();
+  }
+
+  static G1RegionPinCache& pin_count_cache(Thread* thread) {
+    return data(thread)->_pin_cache;
   }
 };
 

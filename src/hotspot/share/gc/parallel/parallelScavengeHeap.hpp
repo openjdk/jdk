@@ -80,8 +80,6 @@ class ParallelScavengeHeap : public CollectedHeap {
   static PSAdaptiveSizePolicy*       _size_policy;
   static PSGCAdaptivePolicyCounters* _gc_policy_counters;
 
-  SoftRefPolicy _soft_ref_policy;
-
   unsigned int _death_march_count;
 
   GCMemoryManager* _young_manager;
@@ -100,6 +98,8 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   // Allocate in oldgen and record the allocation with the size_policy.
   HeapWord* allocate_old_gen_and_record(size_t word_size);
+
+  void update_parallel_worker_threads_cpu_time();
 
  protected:
   HeapWord* allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size) override;
@@ -132,8 +132,6 @@ class ParallelScavengeHeap : public CollectedHeap {
   const char* name() const override {
     return "Parallel";
   }
-
-  SoftRefPolicy* soft_ref_policy() override { return &_soft_ref_policy; }
 
   GrowableArray<GCMemoryManager*> memory_managers() override;
   GrowableArray<MemoryPool*> memory_pools() override;
@@ -174,6 +172,7 @@ class ParallelScavengeHeap : public CollectedHeap {
   void verify_nmethod(nmethod* nm) override;
 
   void prune_scavengable_nmethods();
+  void prune_unlinked_nmethods();
 
   size_t max_capacity() const override;
 

@@ -128,6 +128,9 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   const CallRegs call_regs = ForeignGlobals::parse_call_regs(jconv);
   int code_size = upcall_stub_code_base_size + (total_out_args * upcall_stub_size_per_arg);
   CodeBuffer buffer("upcall_stub", code_size, /* locs_size = */ 1);
+  if (buffer.blob() == nullptr) {
+    return nullptr;
+  }
 
   Register callerSP            = R2, // C/C++ uses R2 as TOC, but we can reuse it here
            tmp                 = R11_scratch1, // same as shuffle_reg
@@ -332,6 +335,10 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
                          &buffer,
                          receiver,
                          in_ByteSize(frame_data_offset));
+  if (blob == nullptr) {
+    return nullptr;
+  }
+
 #ifndef ABI_ELFv2
   // Need to patch the FunctionDescriptor after relocating.
   address fd_addr = blob->code_begin();

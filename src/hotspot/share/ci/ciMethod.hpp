@@ -200,6 +200,7 @@ class ciMethod : public ciMetadata {
   bool intrinsic_candidate()    const { return get_Method()->intrinsic_candidate();    }
   bool is_static_initializer()  const { return get_Method()->is_static_initializer();  }
   bool changes_current_thread() const { return get_Method()->changes_current_thread(); }
+  bool deprecated()             const { return is_loaded() && get_Method()->deprecated(); }
 
   bool check_intrinsic_candidate() const {
     if (intrinsic_id() == vmIntrinsics::_blackhole) {

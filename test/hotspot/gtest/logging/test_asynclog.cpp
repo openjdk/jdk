@@ -86,7 +86,7 @@ public:
   bool write_to_file(const std::string& output) {
     FILE* f = os::fopen(TestLogFileName, "w");
 
-    if (f != NULL) {
+    if (f != nullptr) {
       size_t sz = output.size();
       size_t written = fwrite(output.c_str(), sizeof(char), output.size(), f);
       return fclose(f) == 0 && sz == written;
@@ -170,7 +170,7 @@ TEST_VM_F(AsyncLogTest, logMessage) {
 
   ResourceMark rm;
   const char* strs[MULTI_LINES + 1];
-  strs[MULTI_LINES] = NULL;
+  strs[MULTI_LINES] = nullptr;
   for (int i = 0; i < MULTI_LINES; ++i) {
     stringStream ss;
     ss.print_cr("nonbreakable log message line-%02d", i);

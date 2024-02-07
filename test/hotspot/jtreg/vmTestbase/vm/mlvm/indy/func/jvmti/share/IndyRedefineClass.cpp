@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 
 extern "C" {
 
-static jvmtiEnv* gJvmtiEnv = NULL;
+static jvmtiEnv* gJvmtiEnv = nullptr;
 
 static jboolean gIsMethodEntryWorking = JNI_FALSE;
 static jboolean gIsSingleStepWorking = JNI_FALSE;
@@ -88,13 +88,13 @@ static void popFrameLogic(jvmtiEnv * jvmti_env, jthread thread) {
     if (tls->countOfFramesToPop <= 0) {
 
         NSK_DISPLAY0("Disabling single step\n");
-        if (!NSK_JVMTI_VERIFY(jvmti_env->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_SINGLE_STEP, NULL)))
+        if (!NSK_JVMTI_VERIFY(jvmti_env->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_SINGLE_STEP, nullptr)))
             gIsErrorOccured = JNI_TRUE;
 
     } else {
 
         NSK_DISPLAY0("Enabling single step\n");
-        if (!NSK_JVMTI_VERIFY(jvmti_env->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_SINGLE_STEP, NULL)))
+        if (!NSK_JVMTI_VERIFY(jvmti_env->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_SINGLE_STEP, nullptr)))
             gIsErrorOccured = JNI_TRUE;
 
         if (tls->countOfFramesToPop == 1) {
@@ -132,7 +132,7 @@ MethodEntry(jvmtiEnv *jvmti_env,
     }
 
     NSK_DISPLAY2("Entering redefine tigger method: %s.%s\n", mn->classSig, mn->methodName);
-    free(mn); mn = NULL;
+    free(mn); mn = nullptr;
 
     if (gIsClassRedefined) {
         NSK_DISPLAY0("Class is already redefined.\n");
@@ -168,7 +168,7 @@ SingleStep(jvmtiEnv *jvmti_env,
     gIsSingleStepWorking = JNI_TRUE;
     locStr = locationToString(jvmti_env, method, location);
 
-    if (locStr == NULL) {
+    if (locStr == nullptr) {
         NSK_DISPLAY0("Error in Single step event: locationToString failed\n");
         gIsErrorOccured = JNI_TRUE;
     } else {
@@ -186,7 +186,7 @@ jint Agent_Initialize(JavaVM * vm, char * options, void * reserved) {
     if (!NSK_VERIFY(nsk_jvmti_parseOptions(options)))
         return JNI_ERR;
 
-    if (!NSK_VERIFY((gJvmtiEnv = nsk_jvmti_createJVMTIEnv(vm, reserved)) != NULL))
+    if (!NSK_VERIFY((gJvmtiEnv = nsk_jvmti_createJVMTIEnv(vm, reserved)) != nullptr))
         return JNI_ERR;
 
     if (nsk_jvmti_findOptionValue("debuggerCompatible")) {
@@ -210,10 +210,10 @@ jint Agent_Initialize(JavaVM * vm, char * options, void * reserved) {
     if (!NSK_JVMTI_VERIFY(gJvmtiEnv->SetEventCallbacks(&callbacks, sizeof(callbacks))))
             return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(gJvmtiEnv->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_METHOD_ENTRY, NULL)))
+    if (!NSK_JVMTI_VERIFY(gJvmtiEnv->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_METHOD_ENTRY, nullptr)))
             return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(gJvmtiEnv->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_SINGLE_STEP, NULL)))
+    if (!NSK_JVMTI_VERIFY(gJvmtiEnv->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_SINGLE_STEP, nullptr)))
             return JNI_ERR;
 
     return JNI_OK;

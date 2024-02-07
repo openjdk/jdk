@@ -124,6 +124,7 @@ class ShenandoahHeap : public CollectedHeap, public ShenandoahSpaceInfo {
   friend class ShenandoahGCStateResetter;
   friend class ShenandoahParallelObjectIterator;
   friend class ShenandoahSafepoint;
+
   // Supported GC
   friend class ShenandoahConcurrentGC;
   friend class ShenandoahDegenGC;
@@ -206,6 +207,15 @@ public:
 
   void set_soft_max_capacity(size_t v);
 
+// ---------- Periodic Tasks
+//
+private:
+  void notify_heap_changed();
+
+public:
+  void set_forced_counters_update(bool value);
+  void handle_force_counters_update();
+
 // ---------- Workers handling
 //
 private:
@@ -283,6 +293,7 @@ public:
   };
 
 private:
+  bool _gc_state_changed;
   ShenandoahSharedBitmap _gc_state;
   ShenandoahSharedFlag   _degenerated_gc_in_progress;
   ShenandoahSharedFlag   _full_gc_in_progress;
@@ -291,11 +302,19 @@ private:
 
   size_t _gc_no_progress_count;
 
-  void set_gc_state_all_threads(char state);
-  void set_gc_state_mask(uint mask, bool value);
+  // This updates the singlular, global gc state. This must happen on a safepoint.
+  void set_gc_state(uint mask, bool value);
 
 public:
   char gc_state() const;
+
+  // This copies the global gc state into a thread local variable for java threads.
+  // It is primarily intended to support quick access at barriers.
+  void propagate_gc_state_to_java_threads();
+
+  // This is public to support assertions that the state hasn't been changed off of
+  // a safepoint and that any changes were propagated to java threads after the safepoint.
+  bool has_gc_state_changed() const { return _gc_state_changed; }
 
   void set_concurrent_mark_in_progress(bool in_progress);
   void set_evacuation_in_progress(bool in_progress);
@@ -345,9 +364,13 @@ public:
   void cancel_gc(GCCause::Cause cause);
 
 public:
-  // Elastic heap support
-  void entry_uncommit(double shrink_before, size_t shrink_until);
+  // These will uncommit empty regions if heap::committed > shrink_until
+  // and there exists at least one region which was made empty before shrink_before.
+  void maybe_uncommit(double shrink_before, size_t shrink_until);
   void op_uncommit(double shrink_before, size_t shrink_until);
+
+  // Returns true if the soft maximum heap has been changed using management APIs.
+  bool check_soft_max_changed();
 
 private:
   // GC support
@@ -409,15 +432,12 @@ private:
   GCMemoryManager              _stw_memory_manager;
   GCMemoryManager              _cycle_memory_manager;
   ConcurrentGCTimer*           _gc_timer;
-  SoftRefPolicy                _soft_ref_policy;
-
   // For exporting to SA
   int                          _log_min_obj_alignment_in_bytes;
 public:
   ShenandoahMonitoringSupport* monitoring_support()          { return _monitoring_support;    }
   GCMemoryManager* cycle_memory_manager()                    { return &_cycle_memory_manager; }
   GCMemoryManager* stw_memory_manager()                      { return &_stw_memory_manager;   }
-  SoftRefPolicy* soft_ref_policy()                  override { return &_soft_ref_policy;      }
 
   GrowableArray<GCMemoryManager*> memory_managers() override;
   GrowableArray<MemoryPool*> memory_pools() override;

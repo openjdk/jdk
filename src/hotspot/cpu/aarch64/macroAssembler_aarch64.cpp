@@ -2066,14 +2066,21 @@ void MacroAssembler::membar(Membar_mask_bits order_constraint) {
   address last = code()->last_insn();
   if (last != nullptr && nativeInstruction_at(last)->is_Membar() && prev == last) {
     NativeMembar *bar = NativeMembar_at(prev);
-    // We are merging two memory barrier instructions.  On AArch64 we
-    // can do this simply by ORing them together.
-    bar->set_kind(bar->get_kind() | order_constraint);
-    BLOCK_COMMENT("merged membar");
-  } else {
-    code()->set_last_insn(pc());
-    dmb(Assembler::barrier(order_constraint));
+    // Don't promote DMB ST|DMB LD to DMB (a full barrier) because
+    // doing so would introduce a StoreLoad which the caller did not
+    // intend
+    if (AlwaysMergeDMB || bar->get_kind() == order_constraint
+        || bar->get_kind() == AnyAny
+        || order_constraint == AnyAny) {
+      // We are merging two memory barrier instructions.  On AArch64 we
+      // can do this simply by ORing them together.
+      bar->set_kind(bar->get_kind() | order_constraint);
+      BLOCK_COMMENT("merged membar");
+      return;
+    }
   }
+  code()->set_last_insn(pc());
+  dmb(Assembler::barrier(order_constraint));
 }
 
 bool MacroAssembler::try_merge_ldst(Register rt, const Address &adr, size_t size_in_bytes, bool is_store) {
@@ -4258,108 +4265,117 @@ void MacroAssembler::kernel_crc32_common_fold_using_crypto_pmull(Register crc, R
     }
     add(table, table, table_offset);
 
+    // Registers v0..v7 are used as data registers.
+    // Registers v16..v31 are used as tmp registers.
     sub(buf, buf, 0x10);
-    ldrq(v1, Address(buf, 0x10));
-    ldrq(v2, Address(buf, 0x20));
-    ldrq(v3, Address(buf, 0x30));
-    ldrq(v4, Address(buf, 0x40));
-    ldrq(v5, Address(buf, 0x50));
-    ldrq(v6, Address(buf, 0x60));
-    ldrq(v7, Address(buf, 0x70));
-    ldrq(v8, Address(pre(buf, 0x80)));
+    ldrq(v0, Address(buf, 0x10));
+    ldrq(v1, Address(buf, 0x20));
+    ldrq(v2, Address(buf, 0x30));
+    ldrq(v3, Address(buf, 0x40));
+    ldrq(v4, Address(buf, 0x50));
+    ldrq(v5, Address(buf, 0x60));
+    ldrq(v6, Address(buf, 0x70));
+    ldrq(v7, Address(pre(buf, 0x80)));
 
-    movi(v25, T4S, 0);
-    mov(v25, S, 0, crc);
-    eor(v1, T16B, v1, v25);
+    movi(v31, T4S, 0);
+    mov(v31, S, 0, crc);
+    eor(v0, T16B, v0, v31);
 
-    ldrq(v0, Address(table));
+    // Register v16 contains constants from the crc table.
+    ldrq(v16, Address(table));
     b(CRC_by128_loop);
 
     align(OptoLoopAlignment);
   BIND(CRC_by128_loop);
-    pmull (v9,  T1Q, v1, v0, T1D);
-    pmull2(v10, T1Q, v1, v0, T2D);
-    ldrq(v1, Address(buf, 0x10));
-    eor3(v1, T16B, v9,  v10, v1);
+    pmull (v17,  T1Q, v0, v16, T1D);
+    pmull2(v18, T1Q, v0, v16, T2D);
+    ldrq(v0, Address(buf, 0x10));
+    eor3(v0, T16B, v17,  v18, v0);
 
-    pmull (v11, T1Q, v2, v0, T1D);
-    pmull2(v12, T1Q, v2, v0, T2D);
-    ldrq(v2, Address(buf, 0x20));
-    eor3(v2, T16B, v11, v12, v2);
+    pmull (v19, T1Q, v1, v16, T1D);
+    pmull2(v20, T1Q, v1, v16, T2D);
+    ldrq(v1, Address(buf, 0x20));
+    eor3(v1, T16B, v19, v20, v1);
 
-    pmull (v13, T1Q, v3, v0, T1D);
-    pmull2(v14, T1Q, v3, v0, T2D);
-    ldrq(v3, Address(buf, 0x30));
-    eor3(v3, T16B, v13, v14, v3);
+    pmull (v21, T1Q, v2, v16, T1D);
+    pmull2(v22, T1Q, v2, v16, T2D);
+    ldrq(v2, Address(buf, 0x30));
+    eor3(v2, T16B, v21, v22, v2);
 
-    pmull (v15, T1Q, v4, v0, T1D);
-    pmull2(v16, T1Q, v4, v0, T2D);
-    ldrq(v4, Address(buf, 0x40));
-    eor3(v4, T16B, v15, v16, v4);
+    pmull (v23, T1Q, v3, v16, T1D);
+    pmull2(v24, T1Q, v3, v16, T2D);
+    ldrq(v3, Address(buf, 0x40));
+    eor3(v3, T16B, v23, v24, v3);
 
-    pmull (v17, T1Q, v5, v0, T1D);
-    pmull2(v18, T1Q, v5, v0, T2D);
-    ldrq(v5, Address(buf, 0x50));
-    eor3(v5, T16B, v17, v18, v5);
+    pmull (v25, T1Q, v4, v16, T1D);
+    pmull2(v26, T1Q, v4, v16, T2D);
+    ldrq(v4, Address(buf, 0x50));
+    eor3(v4, T16B, v25, v26, v4);
 
-    pmull (v19, T1Q, v6, v0, T1D);
-    pmull2(v20, T1Q, v6, v0, T2D);
-    ldrq(v6, Address(buf, 0x60));
-    eor3(v6, T16B, v19, v20, v6);
+    pmull (v27, T1Q, v5, v16, T1D);
+    pmull2(v28, T1Q, v5, v16, T2D);
+    ldrq(v5, Address(buf, 0x60));
+    eor3(v5, T16B, v27, v28, v5);
 
-    pmull (v21, T1Q, v7, v0, T1D);
-    pmull2(v22, T1Q, v7, v0, T2D);
-    ldrq(v7, Address(buf, 0x70));
-    eor3(v7, T16B, v21, v22, v7);
+    pmull (v29, T1Q, v6, v16, T1D);
+    pmull2(v30, T1Q, v6, v16, T2D);
+    ldrq(v6, Address(buf, 0x70));
+    eor3(v6, T16B, v29, v30, v6);
 
-    pmull (v23, T1Q, v8, v0, T1D);
-    pmull2(v24, T1Q, v8, v0, T2D);
-    ldrq(v8, Address(pre(buf, 0x80)));
-    eor3(v8, T16B, v23, v24, v8);
+    // Reuse registers v23, v24.
+    // Using them won't block the first instruction of the next iteration.
+    pmull (v23, T1Q, v7, v16, T1D);
+    pmull2(v24, T1Q, v7, v16, T2D);
+    ldrq(v7, Address(pre(buf, 0x80)));
+    eor3(v7, T16B, v23, v24, v7);
 
     subs(len, len, 0x80);
     br(Assembler::GE, CRC_by128_loop);
 
     // fold into 512 bits
-    ldrq(v0, Address(table, 0x10));
+    // Use v31 for constants because v16 can be still in use.
+    ldrq(v31, Address(table, 0x10));
 
-    pmull (v10,  T1Q, v1, v0, T1D);
-    pmull2(v11, T1Q, v1, v0, T2D);
-    eor3(v1, T16B, v10, v11, v5);
+    pmull (v17,  T1Q, v0, v31, T1D);
+    pmull2(v18, T1Q, v0, v31, T2D);
+    eor3(v0, T16B, v17, v18, v4);
 
-    pmull (v12, T1Q, v2, v0, T1D);
-    pmull2(v13, T1Q, v2, v0, T2D);
-    eor3(v2, T16B, v12, v13, v6);
+    pmull (v19, T1Q, v1, v31, T1D);
+    pmull2(v20, T1Q, v1, v31, T2D);
+    eor3(v1, T16B, v19, v20, v5);
 
-    pmull (v14, T1Q, v3, v0, T1D);
-    pmull2(v15, T1Q, v3, v0, T2D);
-    eor3(v3, T16B, v14, v15, v7);
+    pmull (v21, T1Q, v2, v31, T1D);
+    pmull2(v22, T1Q, v2, v31, T2D);
+    eor3(v2, T16B, v21, v22, v6);
 
-    pmull (v16, T1Q, v4, v0, T1D);
-    pmull2(v17, T1Q, v4, v0, T2D);
-    eor3(v4, T16B, v16, v17, v8);
+    pmull (v23, T1Q, v3, v31, T1D);
+    pmull2(v24, T1Q, v3, v31, T2D);
+    eor3(v3, T16B, v23, v24, v7);
 
     // fold into 128 bits
-    ldrq(v5, Address(table, 0x20));
-    pmull (v10, T1Q, v1, v5, T1D);
-    pmull2(v11, T1Q, v1, v5, T2D);
-    eor3(v4, T16B, v4, v10, v11);
+    // Use v17 for constants because v31 can be still in use.
+    ldrq(v17, Address(table, 0x20));
+    pmull (v25, T1Q, v0, v17, T1D);
+    pmull2(v26, T1Q, v0, v17, T2D);
+    eor3(v3, T16B, v3, v25, v26);
 
-    ldrq(v6, Address(table, 0x30));
-    pmull (v12, T1Q, v2, v6, T1D);
-    pmull2(v13, T1Q, v2, v6, T2D);
-    eor3(v4, T16B, v4, v12, v13);
+    // Use v18 for constants because v17 can be still in use.
+    ldrq(v18, Address(table, 0x30));
+    pmull (v27, T1Q, v1, v18, T1D);
+    pmull2(v28, T1Q, v1, v18, T2D);
+    eor3(v3, T16B, v3, v27, v28);
 
-    ldrq(v7, Address(table, 0x40));
-    pmull (v14, T1Q, v3, v7, T1D);
-    pmull2(v15, T1Q, v3, v7, T2D);
-    eor3(v1, T16B, v4, v14, v15);
+    // Use v19 for constants because v18 can be still in use.
+    ldrq(v19, Address(table, 0x40));
+    pmull (v29, T1Q, v2, v19, T1D);
+    pmull2(v30, T1Q, v2, v19, T2D);
+    eor3(v0, T16B, v3, v29, v30);
 
     add(len, len, 0x80);
     add(buf, buf, 0x10);
 
-    mov(tmp0, v1, D, 0);
-    mov(tmp1, v1, D, 1);
+    mov(tmp0, v0, D, 0);
+    mov(tmp1, v0, D, 1);
 }
 
 SkipIfEqual::SkipIfEqual(
@@ -4425,6 +4441,23 @@ void MacroAssembler::load_klass(Register dst, Register src) {
     decode_klass_not_null(dst);
   } else {
     ldr(dst, Address(src, oopDesc::klass_offset_in_bytes()));
+  }
+}
+
+void MacroAssembler::restore_cpu_control_state_after_jni(Register tmp1, Register tmp2) {
+  if (RestoreMXCSROnJNICalls) {
+    Label OK;
+    get_fpcr(tmp1);
+    mov(tmp2, tmp1);
+    // Set FPCR to the state we need. We do want Round to Nearest. We
+    // don't want non-IEEE rounding modes or floating-point traps.
+    bfi(tmp1, zr, 22, 4); // Clear DN, FZ, and Rmode
+    bfi(tmp1, zr, 8, 5);  // Clear exception-control bits (8-12)
+    bfi(tmp1, zr, 0, 2);  // Clear AH:FIZ
+    eor(tmp2, tmp1, tmp2);
+    cbz(tmp2, OK);        // Only reset FPCR if it's wrong
+    set_fpcr(tmp1);
+    bind(OK);
   }
 }
 
@@ -5322,28 +5355,25 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
 
 // For Strings we're passed the address of the first characters in a1
 // and a2 and the length in cnt1.
-// elem_size is the element size in bytes: either 1 or 2.
 // There are two implementations.  For arrays >= 8 bytes, all
 // comparisons (including the final one, which may overlap) are
 // performed 8 bytes at a time.  For strings < 8 bytes, we compare a
 // halfword, then a short, and then a byte.
 
 void MacroAssembler::string_equals(Register a1, Register a2,
-                                   Register result, Register cnt1, int elem_size)
+                                   Register result, Register cnt1)
 {
   Label SAME, DONE, SHORT, NEXT_WORD;
   Register tmp1 = rscratch1;
   Register tmp2 = rscratch2;
   Register cnt2 = tmp2;  // cnt2 only used in array length compare
 
-  assert(elem_size == 1 || elem_size == 2, "must be 2 or 1 byte");
   assert_different_registers(a1, a2, result, cnt1, rscratch1, rscratch2);
 
 #ifndef PRODUCT
   {
-    const char kind = (elem_size == 2) ? 'U' : 'L';
     char comment[64];
-    snprintf(comment, sizeof comment, "{string_equals%c", kind);
+    snprintf(comment, sizeof comment, "{string_equalsL");
     BLOCK_COMMENT(comment);
   }
 #endif
@@ -5391,14 +5421,12 @@ void MacroAssembler::string_equals(Register a1, Register a2,
     cbnzw(tmp1, DONE);
   }
   bind(TAIL01);
-  if (elem_size == 1) { // Only needed when comparing 1-byte elements
-    tbz(cnt1, 0, SAME); // 0-1 bytes left.
+  tbz(cnt1, 0, SAME); // 0-1 bytes left.
     {
-      ldrb(tmp1, a1);
-      ldrb(tmp2, a2);
-      eorw(tmp1, tmp1, tmp2);
-      cbnzw(tmp1, DONE);
-    }
+    ldrb(tmp1, a1);
+    ldrb(tmp2, a2);
+    eorw(tmp1, tmp1, tmp2);
+    cbnzw(tmp1, DONE);
   }
   // Arrays are equal.
   bind(SAME);
@@ -5651,7 +5679,7 @@ void MacroAssembler::fill_words(Register base, Register cnt, Register value)
 // - sun/nio/cs/ISO_8859_1$Encoder.implEncodeISOArray
 //     return the number of characters copied.
 // - java/lang/StringUTF16.compress
-//     return zero (0) if copy fails, otherwise 'len'.
+//     return index of non-latin1 character if copy fails, otherwise 'len'.
 //
 // This version always returns the number of characters copied, and does not
 // clobber the 'len' register. A successful copy will complete with the post-
@@ -5868,15 +5896,15 @@ address MacroAssembler::byte_array_inflate(Register src, Register dst, Register 
 }
 
 // Compress char[] array to byte[].
+// Intrinsic for java.lang.StringUTF16.compress(char[] src, int srcOff, byte[] dst, int dstOff, int len)
+// Return the array length if every element in array can be encoded,
+// otherwise, the index of first non-latin1 (> 0xff) character.
 void MacroAssembler::char_array_compress(Register src, Register dst, Register len,
                                          Register res,
                                          FloatRegister tmp0, FloatRegister tmp1,
                                          FloatRegister tmp2, FloatRegister tmp3,
                                          FloatRegister tmp4, FloatRegister tmp5) {
   encode_iso_array(src, dst, len, res, false, tmp0, tmp1, tmp2, tmp3, tmp4, tmp5);
-  // Adjust result: res == len ? len : 0
-  cmp(len, res);
-  csel(res, res, zr, EQ);
 }
 
 // java.math.round(double a)
