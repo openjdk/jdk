@@ -1350,7 +1350,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">telefonkatalogssorteringsordning</type>
 			<type key="collation" type="phonetic">fonetisk sorteringsordning</type>
 			<type key="collation" type="pinyin">pinyin-sorteringsordning</type>
-			<type key="collation" type="reformed">reformerad sorteringsordning</type>
 			<type key="collation" type="search">allmän sökning</type>
 			<type key="collation" type="searchjl" draft="contributed">söksorteringsordning för att söka på inledande Hangul-konsonant</type>
 			<type key="collation" type="standard">normal sorteringsordning</type>
@@ -4289,11 +4288,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Macaotid</generic>
 					<standard>Macaonormaltid</standard>
 					<daylight>Macaosommartid</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Macquarietid</standard>
 				</long>
 			</metazone>
 			<metazone type="Magadan">

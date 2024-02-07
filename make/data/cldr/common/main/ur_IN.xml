@@ -383,11 +383,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>کرغستان ٹائم</standard>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>مکوآری آئلینڈ ٹائم</standard>
-				</long>
-			</metazone>
 			<metazone type="Maldives">
 				<long>
 					<standard>مالدیپ ٹائم</standard>

@@ -1116,7 +1116,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">razvrščanje po sistemu telefonskega imenika</type>
 			<type key="collation" type="phonetic">fonetično razvrščanje</type>
 			<type key="collation" type="pinyin">razvrščanje po sistemu pinjin</type>
-			<type key="collation" type="reformed">reformirano razvrščanje</type>
 			<type key="collation" type="search">Splošno iskanje</type>
 			<type key="collation" type="searchjl" draft="contributed">Iskanje po začetnem soglasniku hangul</type>
 			<type key="collation" type="standard">Standardno razvrščanje</type>
@@ -3471,11 +3470,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Čas otoka Lord Howe</generic>
 					<standard>Standardni čas otoka Lord Howe</standard>
 					<daylight>Poletni čas otoka Lord Howe</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Macquarieski čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Magadan">

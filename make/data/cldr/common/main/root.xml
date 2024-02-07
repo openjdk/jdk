@@ -4516,6 +4516,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol>EC$</symbol>
 				<symbol alt="narrow">$</symbol>
 			</currency>
+			<currency type="XCG">
+				<symbol>Cg.</symbol>
+			</currency>
 			<currency type="XOF">
 				<symbol>F CFA</symbol>
 			</currency>

@@ -1386,7 +1386,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">puhelinluettelojärjestys</type>
 			<type key="collation" type="phonetic">äänteellinen järjestys</type>
 			<type key="collation" type="pinyin">pinyin-järjestys</type>
-			<type key="collation" type="reformed">uudistettu järjestys</type>
 			<type key="collation" type="search">yleishakujärjestys</type>
 			<type key="collation" type="searchjl">haku hangul-alkukonsonantin mukaan</type>
 			<type key="collation" type="standard">normaalijärjestys</type>
@@ -4126,11 +4125,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Macaon aika</generic>
 					<standard>Macaon normaaliaika</standard>
 					<daylight>Macaon kesäaika</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Macquariensaaren aika</standard>
 				</long>
 			</metazone>
 			<metazone type="Magadan">

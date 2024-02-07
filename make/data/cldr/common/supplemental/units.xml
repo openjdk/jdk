@@ -342,6 +342,8 @@ For terms of use, see http://www.unicode.org/copyright.html
        
         <!-- speed -->
         <convertUnit source='knot' baseUnit='meter-per-second' factor='1852/3600' systems="ussystem uksystem si_acceptable"/>
+        <convertUnit source='beaufort' baseUnit='meter-per-second' special='beaufort' systems="metric_adjacent"/>
+
         
         <!-- magnetic-induction -->
         <convertUnit source='tesla' baseUnit='kilogram-per-square-second-ampere' systems='si metric prefixable'/>

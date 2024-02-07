@@ -363,7 +363,8 @@ The printed version of ISO-4217:2001
             <currency iso4217="PTE" from="1911-05-22" to="1975-07-05"/>
         </region>
         <region iso3166="CW">
-            <currency iso4217="ANG" from="2010-10-10"/>
+            <currency iso4217="XCG" from="2024-03-31"/>
+            <currency iso4217="ANG" from="2010-10-10" to="2024-06-30"/>
         </region>
         <region iso3166="CX">
             <currency iso4217="AUD" from="1966-02-14"/>
@@ -545,8 +546,8 @@ The printed version of ISO-4217:2001
             <currency iso4217="HNL" from="1926-04-03"/>
         </region>
         <region iso3166="HR">
-            <currency iso4217="EUR" from="2023-01-01" />
-            <currency iso4217="HRK" from="1994-05-30" to="2023-01-14"/>
+            <currency iso4217="EUR" from="2023-01-01" tz="Europe/Zagreb"/>
+            <currency iso4217="HRK" from="1994-05-30" to="2023-01-14" to-tz="Europe/Zagreb"/>
             <currency iso4217="HRD" from="1991-12-23" to="1995-01-01"/>
             <currency iso4217="YUN" from="1990-01-01" to="1991-12-23"/>
             <currency iso4217="YUD" from="1966-01-01" to="1990-01-01"/>
@@ -957,8 +958,8 @@ The printed version of ISO-4217:2001
             <currency iso4217="CSK" from="1953-06-01" to="1992-12-31"/>
         </region>
         <region iso3166="SL">
-            <currency iso4217="SLE" from="2022-07-01"/>
-            <currency iso4217="SLL" from="1964-08-04" to="2023-12-31"/>
+            <currency iso4217="SLE" from="2022-07-01" tz="Africa/Freetown"/>
+            <currency iso4217="SLL" from="1964-08-04" to="2023-12-31" to-tz="Africa/Freetown"/>
             <currency iso4217="GBP" from="1808-11-30" to="1966-02-04"/>
         </region>
         <region iso3166="SM">
@@ -995,7 +996,8 @@ The printed version of ISO-4217:2001
             <currency iso4217="SVC" from="1919-11-11" to="2001-01-01"/>
         </region>
         <region iso3166="SX">
-            <currency iso4217="ANG" from="2010-10-10"/>
+            <currency iso4217="XCG" from="2024-03-31"/>
+            <currency iso4217="ANG" from="2010-10-10" to="2024-06-30"/>
         </region>
         <region iso3166="SY">
             <currency iso4217="SYP" from="1948-01-01"/>

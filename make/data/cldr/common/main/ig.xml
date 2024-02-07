@@ -1965,11 +1965,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Oge Ihe Lord Howe</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Oge Macquarie Island</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Oge Magadan</generic>

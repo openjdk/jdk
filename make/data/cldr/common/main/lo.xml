@@ -1157,7 +1157,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="gb2312han">ລຽງຕາມອັກສອນຈີນປະຍຸກ</type>
 			<type key="collation" type="phonebook">ລຽງຕາມສະໝຸດໂທລະສັບ</type>
 			<type key="collation" type="pinyin">ລຽງຕາມການອອກສຽງພາສາຈີນ</type>
-			<type key="collation" type="reformed">ລຽງຕາມລຳດັບສຸດທ້າຍ</type>
 			<type key="collation" type="search">ການຊອກຫາທົ່ວໄປ</type>
 			<type key="collation" type="searchjl">ຄົ້ນຫາຕາມພະຍັນຊະນະຂຶ້ນຕົ້ນທີ່ເປັນຮັງກີຣ</type>
 			<type key="collation" type="standard">ຮຽງຕາມມາດຕະຖານ</type>
@@ -4579,11 +4578,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>ເວລາມາເກົາ</generic>
 					<standard>ເວລາມາດຕະຖານມາເກົາ</standard>
 					<daylight>ເວລາລະດູຮ້ອນມາເກົາ</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>ເວ​ລາ​ເກາະ​ແມັກ​ຄົວ​ຣີ</standard>
 				</long>
 			</metazone>
 			<metazone type="Magadan">

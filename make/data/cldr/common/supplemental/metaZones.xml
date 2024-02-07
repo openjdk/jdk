@@ -1601,7 +1601,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<mapZone other="America_Eastern" territory="PA" type="America/Panama"/>
 			<mapZone other="America_Mountain" territory="001" type="America/Denver"/>
 			<mapZone other="America_Mountain" territory="CA" type="America/Edmonton"/>
-			<mapZone other="America_Mountain" territory="MX" type="America/Hermosillo"/>
 			<mapZone other="America_Pacific" territory="001" type="America/Los_Angeles"/>
 			<mapZone other="America_Pacific" territory="CA" type="America/Vancouver"/>
 			<mapZone other="America_Pacific" territory="MX" type="America/Tijuana"/>
@@ -1789,7 +1788,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<mapZone other="Line_Islands" territory="001" type="Pacific/Kiritimati"/>
 			<mapZone other="Lord_Howe" territory="001" type="Australia/Lord_Howe"/>
 			<mapZone other="Macau" territory="001" type="Asia/Macau"/>
-			<mapZone other="Macquarie" territory="001" type="Antarctica/Macquarie"/>
 			<mapZone other="Magadan" territory="001" type="Asia/Magadan"/>
 			<mapZone other="Malaya" territory="001" type="Asia/Kuala_Lumpur"/>
 			<mapZone other="Malaysia" territory="001" type="Asia/Kuching"/>
@@ -1963,7 +1961,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazoneId shortId="liis" longId="Line_Islands" />
 			<metazoneId shortId="loho" longId="Lord_Howe" />
 			<metazoneId shortId="maca" longId="Macau" />
-			<metazoneId shortId="macq" longId="Macquarie" />
 			<metazoneId shortId="maga" longId="Magadan" />
 			<metazoneId shortId="mala" longId="Malaysia" />
 			<metazoneId shortId="mald" longId="Maldives" />

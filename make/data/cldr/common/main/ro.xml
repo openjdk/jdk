@@ -1263,7 +1263,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">ordine de sortare după cartea de telefon</type>
 			<type key="collation" type="phonetic">ordine de sortare fonetică</type>
 			<type key="collation" type="pinyin">ordine de sortare pinyin</type>
-			<type key="collation" type="reformed">ordine de sortare reformată</type>
 			<type key="collation" type="search">căutare cu scop general</type>
 			<type key="collation" type="searchjl" draft="contributed">Căutați în funcție de consoana inițială hangul</type>
 			<type key="collation" type="standard">ordine de sortare standard</type>
@@ -3717,11 +3716,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Ora din Lord Howe</generic>
 					<standard>Ora standard din Lord Howe</standard>
 					<daylight>Ora de vară din Lord Howe</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Ora din Macquarie</standard>
 				</long>
 			</metazone>
 			<metazone type="Magadan">

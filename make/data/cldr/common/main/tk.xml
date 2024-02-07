@@ -3615,11 +3615,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Lord-Hau tomusky wagty</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Makkuori adasy wagty</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Magadan wagty</generic>

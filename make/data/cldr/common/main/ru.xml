@@ -1170,7 +1170,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">порядок телефонной книги</type>
 			<type key="collation" type="phonetic">фонетический порядок сортировки</type>
 			<type key="collation" type="pinyin">пиньинь</type>
-			<type key="collation" type="reformed">реформированный порядок сортировки</type>
 			<type key="collation" type="search">поиск</type>
 			<type key="collation" type="searchjl" draft="contributed">Поиск по первой согласной хангыль</type>
 			<type key="collation" type="standard">стандартная сортировка</type>
@@ -5164,11 +5163,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic draft="contributed">Макао</generic>
 					<standard draft="contributed">Макао, стандартное время</standard>
 					<daylight draft="contributed">Макао, летнее время</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Маккуори</standard>
 				</long>
 			</metazone>
 			<metazone type="Magadan">

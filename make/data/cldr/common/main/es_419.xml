@@ -733,11 +733,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>hora de India</standard>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>hora de la Isla Macquarie</standard>
-				</long>
-			</metazone>
 			<metazone type="Marshall_Islands">
 				<long>
 					<standard>hora de Islas Marshall</standard>

@@ -1245,7 +1245,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">ordre de la guia telefònica</type>
 			<type key="collation" type="phonetic">ordre fonètic</type>
 			<type key="collation" type="pinyin">ordre pinyin</type>
-			<type key="collation" type="reformed">ordre reformat</type>
 			<type key="collation" type="search">cerca de propòsit general</type>
 			<type key="collation" type="searchjl" draft="contributed">cerca per consonant inicial del hangul</type>
 			<type key="collation" type="standard">ordre estàndard</type>
@@ -3510,11 +3509,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Hora de Macau</generic>
 					<standard>Hora estàndard de Macau</standard>
 					<daylight>Hora d’estiu de Macau</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Hora de Macquarie</standard>
 				</long>
 			</metazone>
 			<metazone type="Magadan">

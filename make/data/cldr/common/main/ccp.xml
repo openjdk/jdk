@@ -1042,7 +1042,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="collation" type="phonebook">𑄜𑄮𑄚𑄴𑄝𑄪𑄇𑄴 𑄥𑄎𑄚</type>
 			<type key="collation" type="phonetic">𑄢𑄳𑄦𑄧 𑄝𑄬𑄭𑄣𑄧𑄚</type>
 			<type key="collation" type="pinyin">𑄛𑄨𑄚𑄨𑄚𑄴 𑄥𑄎𑄚</type>
-			<type key="collation" type="reformed">𑄢𑄨𑄜𑄧𑄟𑄴𑄓𑄨 𑄝𑄬𑄭𑄣𑄧𑄚</type>
 			<type key="collation" type="search">𑄃𑄧𑄎𑄧𑄃𑄧𑄌𑄴-𑄅𑄪𑄘𑄨𑄌𑄴𑄥𑄳𑄠 𑄖𑄮𑄉𑄚</type>
 			<type key="collation" type="searchjl">𑄦𑄋𑄴𑄉𑄪𑄣𑄴 𑄛𑄧𑄖𑄴𑄗𑄧𑄟𑄴 𑄝𑄧𑄣𑄬𑄟𑄖𑄳𑄠𑄬 𑄦𑄧𑄢𑄧𑄇𑄴 𑄘𑄨𑄚𑄬𑄭 𑄖𑄮𑄉𑄚</type>
 			<type key="collation" type="standard">𑄉𑄧𑄟𑄴 𑄘𑄮𑄣𑄴 𑄝𑄬𑄭𑄣𑄧𑄚</type>
@@ -3741,11 +3740,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic draft="provisional">𑄟𑄇𑄃𑄮 𑄃𑄧𑄇𑄴𑄖𑄧</generic>
 					<standard draft="provisional">𑄟𑄇𑄃𑄮 𑄟𑄚𑄴 𑄃𑄧𑄇𑄴𑄖𑄧</standard>
 					<daylight draft="provisional">𑄟𑄇𑄃𑄮 𑄉𑄧𑄢𑄧𑄟𑄴𑄇𑄣𑄧𑄢𑄴 𑄃𑄧𑄇𑄴𑄖𑄧</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>𑄟𑄳𑄠𑄇𑄴𑄇𑄪𑄢𑄨 𑄉𑄭 𑄉𑄭 𑄞𑄬𑄘 𑄃𑄧𑄇𑄴𑄖𑄧</standard>
 				</long>
 			</metazone>
 			<metazone type="Magadan">

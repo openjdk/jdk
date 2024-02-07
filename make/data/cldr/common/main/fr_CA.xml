@@ -152,7 +152,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="collation" type="gb2312han">ordre de tri chinois simplifié - GB2312</type>
 			<type key="collation" type="phonebook">ordre de tri de l’annuaire</type>
 			<type key="collation" type="pinyin">ordre de tri pinyin</type>
-			<type key="collation" type="reformed">ordre de tri réformé</type>
 			<type key="collation" type="searchjl" draft="contributed">Rechercher par consonne initiale en hangeul</type>
 			<type key="collation" type="stroke">ordre de tri des traits</type>
 			<type key="collation" type="traditional">ordre de tri traditionnel</type>

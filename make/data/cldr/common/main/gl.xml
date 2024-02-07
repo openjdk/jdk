@@ -911,7 +911,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">orde de clasificación da guía telefónica</type>
 			<type key="collation" type="phonetic">Orde de clasificación fonética</type>
 			<type key="collation" type="pinyin">Orde de clasificación pinyin</type>
-			<type key="collation" type="reformed">Criterio de ordenación reformado</type>
 			<type key="collation" type="search">busca de carácter xeral</type>
 			<type key="collation" type="searchjl">Clasificar por consonante inicial hangul</type>
 			<type key="collation" type="standard">criterio de ordenación estándar</type>
@@ -3061,11 +3060,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>hora de Lord Howe</generic>
 					<standard>hora estándar de Lord Howe</standard>
 					<daylight>hora de verán de Lord Howe</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>hora da Illa Macquarie</standard>
 				</long>
 			</metazone>
 			<metazone type="Magadan">

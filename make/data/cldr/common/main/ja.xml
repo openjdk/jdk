@@ -1287,7 +1287,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">電話帳順</type>
 			<type key="collation" type="phonetic">音声順による並べ替え</type>
 			<type key="collation" type="pinyin">ピンイン順</type>
-			<type key="collation" type="reformed">リフォーム</type>
 			<type key="collation" type="search">汎用検索</type>
 			<type key="collation" type="searchjl">ハングル語頭子音による並べ替え</type>
 			<type key="collation" type="standard">標準並べ替え順序</type>
@@ -5469,11 +5468,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>マカオ時間</generic>
 					<standard>マカオ標準時</standard>
 					<daylight>マカオ夏時間</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>マッコーリー島時間</standard>
 				</long>
 			</metazone>
 			<metazone type="Magadan">

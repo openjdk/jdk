@@ -3780,11 +3780,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>ਮਕਾਉ ਗਰਮੀ-ਰੁੱਤ ਸਮਾਂ</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>ਮੈਕਕਵੇਰੀ ਆਈਲੈਂਡ ਵੇਲਾ</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>ਮੈਗੇਡਨ ਵੇਲਾ</generic>

@@ -2097,11 +2097,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Lokacin Rana na Vote Lord Howe</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Lokacin Macquarie Island</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Lokacin Magadan</generic>

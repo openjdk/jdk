@@ -3777,11 +3777,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Լորդ Հաուի ամառային ժամանակ</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Մակկուորի կղզու ժամանակ</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Մագադանի ժամանակ</generic>

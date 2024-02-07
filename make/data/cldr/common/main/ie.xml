@@ -2239,11 +2239,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">témpor estival del Insul Lord-Howe</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard draft="unconfirmed">témpor del Insul Macquarie</standard>
-				</long>
-			</metazone>
 			<metazone type="Marquesas">
 				<long>
 					<standard draft="unconfirmed">témpor del Marquesas</standard>

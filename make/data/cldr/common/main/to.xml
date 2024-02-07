@@ -3444,11 +3444,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>houa fakamakau taimi liliu</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>houa fakamotumakuali</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>houa fakalūsia-makatani</generic>

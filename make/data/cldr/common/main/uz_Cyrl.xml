@@ -1762,11 +1762,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Лорд Хове кундузги вақти</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Маквари ороли вақти</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Магадан вақти</generic>

@@ -1098,7 +1098,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">Terefuni sesewara muakaresawa</type>
 			<type key="collation" type="phonetic" draft="contributed">Yupurawakasawa terefuniara mukaresawa</type>
 			<type key="collation" type="pinyin">Pin-yin mukaresawa</type>
-			<type key="collation" type="reformed">Muakaresawa amũrupisawaira</type>
 			<type key="collation" type="search">Sikaisá purusawa panhérupí</type>
 			<type key="collation" type="searchjl" draft="contributed">Resikai kũsuãti uyupiruwa hangul rupí</type>
 			<type key="collation" type="standard">Mukaresawa retewa</type>
@@ -4003,11 +4002,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Makau Hurariyu</generic>
 					<standard>Makau Hurariyu Retewa</standard>
 					<daylight>Makau Kurasí Ara Hurariyu</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Kapuãma Makikuari Hurariyu</standard>
 				</long>
 			</metazone>
 			<metazone type="Magadan">

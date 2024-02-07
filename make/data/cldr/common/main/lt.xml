@@ -1251,7 +1251,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">telefonų knygos rūšiavimo tvarka</type>
 			<type key="collation" type="phonetic">Fonetinė rikiavimo tvarka</type>
 			<type key="collation" type="pinyin">supaprastinta kiniškų hieroglifų rūšiavimo tvarka</type>
-			<type key="collation" type="reformed">reformuota rūšiavimo tvarka</type>
 			<type key="collation" type="search">bendroji paieška</type>
 			<type key="collation" type="searchjl" draft="provisional">ieškoti pagal hangul pirmines priebalses</type>
 			<type key="collation" type="standard">standartinis rikiavimas</type>
@@ -4636,11 +4635,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Makau laikas</generic>
 					<standard>Makau žiemos laikas</standard>
 					<daylight>Makau vasaros laikas</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Makvorio Salos laikas</standard>
 				</long>
 			</metazone>
 			<metazone type="Magadan">

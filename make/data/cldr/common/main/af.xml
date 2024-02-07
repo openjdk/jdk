@@ -909,7 +909,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">Foonboek-sorteervolgorde</type>
 			<type key="collation" type="phonetic">Fonetiese sorteerorde</type>
 			<type key="collation" type="pinyin">Pinyin-sorteervolgorde</type>
-			<type key="collation" type="reformed">Gereformeerde sorteervolgorde</type>
 			<type key="collation" type="search">Algemenedoel-soektog</type>
 			<type key="collation" type="searchjl">Soek volgens Hangul-beginkonsonant</type>
 			<type key="collation" type="standard">Standaard rangskikvolgorde</type>
@@ -2880,11 +2879,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Lord Howe-tyd</generic>
 					<standard>Lord Howe-standaardtyd</standard>
 					<daylight>Lord Howe-dagligtyd</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Macquarie-eiland-tyd</standard>
 				</long>
 			</metazone>
 			<metazone type="Magadan">

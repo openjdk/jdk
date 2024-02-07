@@ -3573,11 +3573,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>ලෝර්ඩ් හෝව් දිවා වේලාව</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>මැක්කුඅරි දුපත් වේලාව</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>මෙගඩන් වේලාව</generic>

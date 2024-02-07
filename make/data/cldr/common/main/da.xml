@@ -1194,7 +1194,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">sorteringsrækkefølge i telefonbøger</type>
 			<type key="collation" type="phonetic">fonetisk sorteringsrækkefølge</type>
 			<type key="collation" type="pinyin">pinyin-baseret sorteringsrækkefølge</type>
-			<type key="collation" type="reformed">ny sorteringsrækkefølge</type>
 			<type key="collation" type="search">generel søgning</type>
 			<type key="collation" type="searchjl" draft="contributed">sortér efter den første konsonant i hangul</type>
 			<type key="collation" type="standard">standardsorteringsrækkefølge</type>
@@ -3437,11 +3436,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Macao-tid</generic>
 					<standard>Macao-normaltid</standard>
 					<daylight>Macao-sommertid</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Macquarie-tid</standard>
 				</long>
 			</metazone>
 			<metazone type="Magadan">

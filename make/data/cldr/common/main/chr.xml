@@ -3844,11 +3844,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>ᎤᎬᏫᏳᎯ ᎭᏫ ᎪᎯ ᎢᎦ ᎠᏟᎢᎵᏒ</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>ᎹᏇᎵ ᎤᎦᏚᏛᎢ ᎠᏟᎢᎵᏒ</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>ᎹᎦᏓᏂ ᎠᏟᎢᎵᏒ</generic>

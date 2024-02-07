@@ -1202,7 +1202,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">Thứ tự sắp xếp theo danh bạ điện thoại</type>
 			<type key="collation" type="phonetic">Thứ tự sắp xếp theo ngữ âm</type>
 			<type key="collation" type="pinyin">Thứ tự sắp xếp theo bính âm</type>
-			<type key="collation" type="reformed">Thứ tự sắp xếp đã sửa đổi</type>
 			<type key="collation" type="search">Tìm kiếm mục đích chung</type>
 			<type key="collation" type="searchjl" draft="contributed">Tìm kiếm theo Phụ âm Đầu Hangul</type>
 			<type key="collation" type="standard">Thứ tự sắp xếp chuẩn</type>
@@ -3516,11 +3515,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic draft="contributed">Giờ Ma Cao</generic>
 					<standard draft="contributed">Giờ Chuẩn Ma Cao</standard>
 					<daylight draft="contributed">Giờ Mùa Hè Ma Cao</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Giờ đảo Macquarie</standard>
 				</long>
 			</metazone>
 			<metazone type="Magadan">

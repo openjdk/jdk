@@ -1527,11 +1527,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 					<daylight>Oras sa Tag-init sa Lord Howe</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Oras sa Macquarie Island</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Oras sa Magadan</generic>

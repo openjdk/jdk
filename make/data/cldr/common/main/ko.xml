@@ -1194,7 +1194,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">전화번호부순</type>
 			<type key="collation" type="phonetic">소리나는 대로 정렬 순서</type>
 			<type key="collation" type="pinyin">병음순</type>
-			<type key="collation" type="reformed">개정 정렬순</type>
 			<type key="collation" type="search">범용 검색</type>
 			<type key="collation" type="searchjl" draft="contributed">한글 자음으로 검색</type>
 			<type key="collation" type="standard">표준 정렬 순서</type>
@@ -4771,11 +4770,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>마카오 시간</generic>
 					<standard>마카오 표준 시간</standard>
 					<daylight>마카오 하계 표준시</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>매쿼리섬 시간</standard>
 				</long>
 			</metazone>
 			<metazone type="Magadan">

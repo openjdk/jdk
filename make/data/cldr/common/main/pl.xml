@@ -1255,7 +1255,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">porządek sortowania książki telefonicznej</type>
 			<type key="collation" type="phonetic">sortowanie fonetyczne</type>
 			<type key="collation" type="pinyin">porządek sortowania pinyin</type>
-			<type key="collation" type="reformed">sortowanie zreformowane</type>
 			<type key="collation" type="search">wyszukiwanie ogólnego zastosowania</type>
 			<type key="collation" type="searchjl" draft="contributed">Wyszukiwanie według początkowej spółgłoski hangul</type>
 			<type key="collation" type="standard">standardowa kolejność sortowania</type>
@@ -3784,11 +3783,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>czas Lord Howe</generic>
 					<standard>Lord Howe (czas standardowy)</standard>
 					<daylight>Lord Howe (czas letni)</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>czas Macquarie</standard>
 				</long>
 			</metazone>
 			<metazone type="Magadan">

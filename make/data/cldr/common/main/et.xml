@@ -1291,7 +1291,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">telefoniraamatu sortimisjärjestus</type>
 			<type key="collation" type="phonetic">foneetiline sortimisjärjestus</type>
 			<type key="collation" type="pinyin">pinyin’i sortimisjärjestus</type>
-			<type key="collation" type="reformed">reformitud sortimisjärjestus</type>
 			<type key="collation" type="search">üldeesmärgiline otsing</type>
 			<type key="collation" type="searchjl">otsing korea alguskonsonandi järgi</type>
 			<type key="collation" type="standard">standardne järjestus</type>
@@ -3534,11 +3533,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic draft="contributed">Macau aeg</generic>
 					<standard draft="contributed">Macau standardaeg</standard>
 					<daylight draft="contributed">Macau suveaeg</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Macquarie saare aeg</standard>
 				</long>
 			</metazone>
 			<metazone type="Magadan">

@@ -1058,7 +1058,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">tālruņu grāmatas kārtošanas secība</type>
 			<type key="collation" type="phonetic">Fonētiskā kārtošanas secība</type>
 			<type key="collation" type="pinyin">piņjiņa kārtošanas secība</type>
-			<type key="collation" type="reformed">Reformētā kārtošanas secība</type>
 			<type key="collation" type="search">vispārīga meklēšana</type>
 			<type key="collation" type="searchjl">Meklēt pēc Hangul sākuma līdzskaņa</type>
 			<type key="collation" type="standard">standarta kārtošanas secība</type>
@@ -1146,9 +1145,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[aā b c č d eē f g ģ h iī j k ķ l ļ m n ņ o p r s š t uū v z ž]</exemplarCharacters>
+		<exemplarCharacters>[a ā b c č d e ē f g ģ h i ī j k ķ l ļ m n ņ o p r s š t u ū v z ž]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[y ō q ŗ w x]</exemplarCharacters>
-		<exemplarCharacters type="index">[AĀ B C Č D EĒ F G Ģ H IĪY J K Ķ L Ļ M N Ņ O P Q R S Š T UŪ V W X Z Ž]</exemplarCharacters>
+		<exemplarCharacters type="index">[A Ā B C Č D E Ē F G Ģ H I Y Ī J K Ķ L Ļ M N Ņ O P Q R S Š T U Ū V W X Z Ž]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[  \- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’‚ &quot;“”„ ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<ellipsis type="word-final">{0}…</ellipsis>
@@ -4113,11 +4112,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Lorda Hava salas laiks</generic>
 					<standard>Lorda Hava salas ziemas laiks</standard>
 					<daylight>Lorda Hava salas vasaras laiks</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Makvorija salas laiks</standard>
 				</long>
 			</metazone>
 			<metazone type="Magadan">

@@ -1284,7 +1284,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">telefonkatalogsortering</type>
 			<type key="collation" type="phonetic">fonetisk sortering</type>
 			<type key="collation" type="pinyin">pinyinsortering</type>
-			<type key="collation" type="reformed">reformert sortering</type>
 			<type key="collation" type="search">generelt søk</type>
 			<type key="collation" type="searchjl" draft="contributed">Søk etter første konsonant i hangul</type>
 			<type key="collation" type="standard">standard sorteringsrekkefølge</type>
@@ -4120,11 +4119,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic draft="contributed">Macau-tid</generic>
 					<standard draft="contributed">Macau, standardtid</standard>
 					<daylight draft="contributed">Macau, sommertid</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>tidssone for Macquarieøya</standard>
 				</long>
 			</metazone>
 			<metazone type="Magadan">

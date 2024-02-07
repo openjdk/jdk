@@ -1220,7 +1220,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">Řazení telefonního seznamu</type>
 			<type key="collation" type="phonetic">Fonetické řazení</type>
 			<type key="collation" type="pinyin">Řazení podle pchin-jinu</type>
-			<type key="collation" type="reformed">Reformované řazení</type>
 			<type key="collation" type="search">Obecné hledání</type>
 			<type key="collation" type="searchjl" draft="contributed">Vyhledávat podle počáteční souhlásky písma hangul</type>
 			<type key="collation" type="standard">Standardní řazení</type>
@@ -3913,11 +3912,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Macajský čas</generic>
 					<standard>Macajský standardní čas</standard>
 					<daylight>Macajský letní čas</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>čas ostrova Macquarie</standard>
 				</long>
 			</metazone>
 			<metazone type="Magadan">

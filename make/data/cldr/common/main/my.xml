@@ -3499,11 +3499,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>မကာအို နွေရာသီ အချိန်</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>မက်ကွယ်ရီကျွန်း အချိန်</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>မာဂါဒန်း အချိန်</generic>

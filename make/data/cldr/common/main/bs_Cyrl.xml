@@ -4358,11 +4358,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Макао летње рачунање вемена</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Макверијско вријеме</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Магадан вријеме</generic>

@@ -2496,11 +2496,6 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 					<daylight draft="contributed">ئاۋمېن يازلىق ۋاقتى</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard draft="contributed">ماككۇۋارى ئاراللىرى ۋاقتى</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic draft="contributed">ماگادان ۋاقتى</generic>

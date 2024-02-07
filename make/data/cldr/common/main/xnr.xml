@@ -1829,11 +1829,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>लॉर्ड होवे दे ध्याड़े दे उजाले दा टैम</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>मक्वारी टापू दा टैम</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>मागादान दा टैम</generic>

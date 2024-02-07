@@ -1356,7 +1356,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">Telefoonboeksorteervolgorde</type>
 			<type key="collation" type="phonetic">Fonetische sorteervolgorde</type>
 			<type key="collation" type="pinyin">Pinyinsorteervolgorde</type>
-			<type key="collation" type="reformed">Herziene sorteervolgorde</type>
 			<type key="collation" type="search">algemeen zoeken</type>
 			<type key="collation" type="searchjl" draft="contributed">Zoeken op eerste Hangul-medeklinker</type>
 			<type key="collation" type="standard">standaard sorteervolgorde</type>
@@ -4496,11 +4495,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight draft="contributed">Macause zomertijd</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Macquarie-eilandse tijd</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Magadan-tijd</generic>
@@ -6038,6 +6032,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="XCD">
 				<displayName>Oost-Caribische dollar</displayName>
+			</currency>
+			<currency type="XCG">
+				<displayName>Caribische gulden</displayName>
+				<symbol alt="narrow">Cg</symbol>
 			</currency>
 			<currency type="XDR">
 				<displayName>Special Drawing Rights</displayName>

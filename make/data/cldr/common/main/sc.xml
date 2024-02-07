@@ -1106,7 +1106,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="collation" type="gb2312han">ordinamentu de su tzinesu semplificadu - GB2312</type>
 			<type key="collation" type="phonebook">ordinamentu de s’elencu telefònicu</type>
 			<type key="collation" type="pinyin">ordinamentu pinyin</type>
-			<type key="collation" type="reformed">ordinamentu riformadu</type>
 			<type key="collation" type="search">chirca genèrica</type>
 			<type key="collation" type="searchjl">chirca pro consonante hangul initziale</type>
 			<type key="collation" type="standard">ordinamentu istandard</type>
@@ -3829,11 +3828,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Ora de Macao</generic>
 					<standard>Ora istandard de Macao</standard>
 					<daylight>Ora legale de Macao</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Ora de s’Ìsula Macquarie</standard>
 				</long>
 			</metazone>
 			<metazone type="Magadan">

@@ -2695,11 +2695,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Lord Howe summartíð</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Macquariesoyggj tíð</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Magadan tíð</generic>

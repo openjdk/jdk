@@ -3013,11 +3013,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Лорд-Хау, аьхкенан хан</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Маккуори</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Магадан</generic>

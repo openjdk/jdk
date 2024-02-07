@@ -80,7 +80,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="collation" type="dictionary">redoslijed sortiranja u rječniku</type>
 			<type key="collation" type="ducet">podrazumijevani Unicode redoslijed sortiranja</type>
 			<type key="collation" type="phonetic">fonetski redoslijed sortiranja</type>
-			<type key="collation" type="reformed">reformisani redoslijed sortiranja</type>
 			<type key="collation" type="search">pretraga opšte namjene</type>
 			<type key="collation" type="standard">standardni redoslijed sortiranja</type>
 			<type key="collation" type="unihan">redoslijed sortiranja radikalnih poteza</type>
@@ -1080,11 +1079,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Lord Hov vrijeme</generic>
 					<standard>Lord Hov, standardno vrijeme</standard>
 					<daylight>Lord Hov, ljetnje vrijeme</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>ostrvo Makvori vrijeme</standard>
 				</long>
 			</metazone>
 			<metazone type="Magadan">

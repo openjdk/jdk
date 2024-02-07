@@ -2628,11 +2628,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>laṛ hawe ḍelāiṭ belā</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>makwārī dīp belā</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>māgādan belā</generic>

@@ -1321,7 +1321,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="collation" type="gb2312han">Òrdugh seòrsachaidh na Sìnise Simplichte - GB2312</type>
 			<type key="collation" type="phonebook">Òrdugh seòrsachaidh nan leabhraichean-fòn</type>
 			<type key="collation" type="pinyin">Òrdugh seòrsachaidh Pinyin</type>
-			<type key="collation" type="reformed">Òrdugh seòrsachaidh ath-leasaichte</type>
 			<type key="collation" type="search">Lorg coitcheann</type>
 			<type key="collation" type="searchjl">Lorg leis a’ chiad chonnrag Hangul</type>
 			<type key="collation" type="standard">Òrdugh seòrsachaidh stannardach</type>
@@ -4267,11 +4266,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Àm Macàthu</generic>
 					<standard>Bun-àm Macàthu</standard>
 					<daylight>Tìde samhraidh Macàthu</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Àm Eilein MhicGuaire</standard>
 				</long>
 			</metazone>
 			<metazone type="Magadan">

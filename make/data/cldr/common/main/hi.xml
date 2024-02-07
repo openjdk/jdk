@@ -1116,7 +1116,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">फ़ोनबुक वर्गीकरण क्रम</type>
 			<type key="collation" type="phonetic">ध्वन्यात्मक वर्गीकरण क्रम</type>
 			<type key="collation" type="pinyin">पिनयिन वर्गीकरण क्रम</type>
-			<type key="collation" type="reformed">संशोधित वर्गीकरण क्रम</type>
 			<type key="collation" type="search">सामान्य-उद्देश्य खोज</type>
 			<type key="collation" type="searchjl" draft="contributed">हांगुल आरंभिक व्‍यंजन द्वारा खोजें</type>
 			<type key="collation" type="standard">मानक वर्गीकरण क्रम</type>
@@ -4331,11 +4330,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>लॉर्ड होवे समय</generic>
 					<standard>लॉर्ड होवे मानक समय</standard>
 					<daylight>लॉर्ड होवे डेलाइट समय</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>मक्वारी द्वीप समय</standard>
 				</long>
 			</metazone>
 			<metazone type="Magadan">

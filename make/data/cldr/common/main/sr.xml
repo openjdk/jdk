@@ -1116,7 +1116,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">сортирање као телефонски именик</type>
 			<type key="collation" type="phonetic">фонетски редослед сортирања</type>
 			<type key="collation" type="pinyin">пинјин сортирање</type>
-			<type key="collation" type="reformed">реформисани редослед сортирања</type>
 			<type key="collation" type="search">претрага опште намене</type>
 			<type key="collation" type="searchjl" draft="contributed">Претрага према хангул почетном сугласнику</type>
 			<type key="collation" type="standard">стандардни редослед сортирања</type>
@@ -4525,11 +4524,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Макао време</generic>
 					<standard>Макао стандардно време</standard>
 					<daylight>Макао летње рачунање времена</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Острво Маквери време</standard>
 				</long>
 			</metazone>
 			<metazone type="Magadan">

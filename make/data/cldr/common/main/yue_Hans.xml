@@ -1259,7 +1259,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="collation" type="phonebook">电话簿排序</type>
 			<type key="collation" type="phonetic">发音排序</type>
 			<type key="collation" type="pinyin">拼音排序</type>
-			<type key="collation" type="reformed">改良排序</type>
 			<type key="collation" type="search">一般用途搜寻</type>
 			<type key="collation" type="searchjl" draft="contributed">韩文子音排序</type>
 			<type key="collation" type="standard">标准排序</type>
@@ -5095,11 +5094,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>澳门时间</generic>
 					<standard>澳门标准时间</standard>
 					<daylight>澳门夏令时间</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>麦觉理时间</standard>
 				</long>
 			</metazone>
 			<metazone type="Magadan">

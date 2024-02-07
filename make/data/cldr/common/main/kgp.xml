@@ -1098,7 +1098,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">Terefonĩ Risita to ke</type>
 			<type key="collation" type="phonetic" draft="contributed">Fonẽtika to ke kuprãg</type>
 			<type key="collation" type="pinyin">Pin-yin to nỹtĩ</type>
-			<type key="collation" type="reformed">Hár tãg nỹtĩ</type>
 			<type key="collation" type="search">Jẽnfĩn to ke Kar</type>
 			<type key="collation" type="searchjl" draft="contributed">Hangul kãsonỹte ve jãnfĩn</type>
 			<type key="collation" type="standard">to ke pẽ</type>
@@ -4072,11 +4071,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Óra Mỹkav tá</generic>
 					<standard>Óra Pã Mỹkav tá</standard>
 					<daylight>Rỹ kã óra Mỹkav tá</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Óra Mỹkikuari Goj-vẽso tá</standard>
 				</long>
 			</metazone>
 			<metazone type="Magadan">

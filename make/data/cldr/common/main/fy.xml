@@ -2894,11 +2894,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="contributed">Macause simmertiid</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard draft="contributed">Macquarie-eilânske tiid</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic draft="contributed">Magadan-tiid</generic>

@@ -88,7 +88,6 @@ annotations.
 			<type key="colCaseLevel" type="yes">Case sensitive sorting karein</type>
 			<type key="collation" type="compat">Compatibility ke liye, picchla sort order</type>
 			<type key="collation" type="dictionary">Dictionary kaa sort order</type>
-			<type key="collation" type="reformed">Reform kiya gaya Sort Order</type>
 			<type key="collation" type="searchjl">Hangul initial consonant se search karein</type>
 			<type key="colNormalization" type="no">Bina normalization ke sort karein</type>
 			<type key="colNormalization" type="yes">Sort Unicode Normalized</type>

@@ -927,7 +927,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">Mpangilio wa Orodha za Nambari za Simu</type>
 			<type key="collation" type="phonetic">Utaratibu wa Kupanga Fonetiki</type>
 			<type key="collation" type="pinyin">Mpangilio wa Kipinyin</type>
-			<type key="collation" type="reformed">Mpangilio Uliorekebishwa</type>
 			<type key="collation" type="search">Utafutaji wa Kijumla</type>
 			<type key="collation" type="searchjl">Tafuta kwa Konsonanti Halisi ya Hangul</type>
 			<type key="collation" type="standard">Mpangilio wa Kawaida</type>
@@ -2455,11 +2454,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Saa za Lord Howe</generic>
 					<standard>Saa za Wastani za Lord Howe</standard>
 					<daylight>Saa za Mchana za Lord Howe</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Saa za kisiwa cha Macquarie</standard>
 				</long>
 			</metazone>
 			<metazone type="Magadan">

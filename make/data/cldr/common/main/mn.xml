@@ -1004,7 +1004,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="gb2312han">Хялбаршуулсан хятад Эрэмбэлэх дараалал - GB2312</type>
 			<type key="collation" type="phonebook">Утасны дэвтрийн эрэмбэлэх дараалал</type>
 			<type key="collation" type="pinyin">Пиньян эрэмбэлэх дараалал</type>
-			<type key="collation" type="reformed">Шинэчилсэн эрэмбэлэх дараалал</type>
 			<type key="collation" type="search">ерөнхий хайлт</type>
 			<type key="collation" type="searchjl">Хангүлээр эхний гийгүүлэгчээр хайх</type>
 			<type key="collation" type="standard">стандарт эрэмбэлэх дараалал</type>
@@ -3836,11 +3835,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Лорд Хоугийн цаг</generic>
 					<standard>Лорд Хоугийн стандарт цаг</standard>
 					<daylight>Лорд Хоугийн зуны цаг</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Маккуори Арлын цаг</standard>
 				</long>
 			</metazone>
 			<metazone type="Magadan">

@@ -2553,11 +2553,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Wektu Ketigo Lord Howe</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Wektu Pulo Macquarie</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Wektu Magadan</generic>

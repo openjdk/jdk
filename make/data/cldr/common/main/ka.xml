@@ -3886,11 +3886,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>ლორდ-ჰაუს ზაფხულის დრო</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>მაქკუორის კუნძულის დრო</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>მაგადანის დრო</generic>

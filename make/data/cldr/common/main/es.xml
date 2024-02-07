@@ -1137,7 +1137,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">orden de listín telefónico</type>
 			<type key="collation" type="phonetic">orden fonético</type>
 			<type key="collation" type="pinyin">orden pinyin</type>
-			<type key="collation" type="reformed">orden reformado</type>
 			<type key="collation" type="search">búsqueda de uso general</type>
 			<type key="collation" type="searchjl" draft="contributed">Buscar por consonante inicial de hangul</type>
 			<type key="collation" type="standard">orden estándar</type>
@@ -3771,11 +3770,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight draft="contributed">Hora de verano de Macao</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>hora de la isla Macquarie</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>hora de Magadán</generic>
@@ -5540,6 +5534,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">dólar del Caribe Oriental</displayName>
 				<displayName count="other">dólares del Caribe Oriental</displayName>
 				<symbol>XCD</symbol>
+			</currency>
+			<currency type="XCG">
+				<displayName>florín caribeño</displayName>
+				<displayName count="one">florín caribeño</displayName>
+				<displayName count="other">florines caribeños</displayName>
 			</currency>
 			<currency type="XDR">
 				<displayName>derechos especiales de giro</displayName>

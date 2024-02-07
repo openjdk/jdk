@@ -3511,11 +3511,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>لارډ هوي د ورځې روښانه وخت</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>مکواري ټاپو وخت</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>ميګډان وخت</generic>

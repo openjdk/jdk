@@ -1208,7 +1208,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="collation" type="gb2312han">orde de clasificación chinu simplificáu - GB2312</type>
 			<type key="collation" type="phonebook">orde de clasificación de llista telefónica</type>
 			<type key="collation" type="pinyin">orde de clasificación pinyin</type>
-			<type key="collation" type="reformed">orde de clasificación reformáu</type>
 			<type key="collation" type="search">gueta xeneral</type>
 			<type key="collation" type="searchjl">gueta por consonante Hangul d’aniciu</type>
 			<type key="collation" type="standard">orde de clasificación estándar</type>
@@ -4362,11 +4361,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Hora de Macáu</generic>
 					<standard>Hora estándar de Macáu</standard>
 					<daylight>Hora braniega de Macáu</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Hora de la Islla Macquarie</standard>
 				</long>
 			</metazone>
 			<metazone type="Magadan">

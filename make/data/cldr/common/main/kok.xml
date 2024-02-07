@@ -3492,11 +3492,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>लॉर्ड होवे डेलायट वेळ</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>मॅक्वेरी आयलँड वेळ</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>मगादान वेळ</generic>

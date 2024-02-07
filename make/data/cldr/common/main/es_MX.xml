@@ -587,11 +587,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>hora de las Islas Gilbert</standard>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>hora de la isla Macquarie</standard>
-				</long>
-			</metazone>
 			<metazone type="Marshall_Islands">
 				<long>
 					<standard>hora de las Islas Marshall</standard>

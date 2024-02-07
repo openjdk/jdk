@@ -1155,7 +1155,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="collation" type="gb2312han">urzh rummañ sinaek eeunaet - GB2312</type>
 			<type key="collation" type="phonebook">urzh rummañ al levr-pellgomz</type>
 			<type key="collation" type="pinyin">urzh rummañ pinyin</type>
-			<type key="collation" type="reformed">urzh rummañ adreizhet</type>
 			<type key="collation" type="search">enklask hollek</type>
 			<type key="collation" type="standard">urzh rummañ standart</type>
 			<type key="collation" type="stroke">urzh rummañ an tresoù</type>
@@ -3706,11 +3705,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>eur Macau</generic>
 					<standard>eur cʼhoañv Macau</standard>
 					<daylight>eur hañv Macau</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>eur Enez Macquarie</standard>
 				</long>
 			</metazone>
 			<metazone type="Magadan">

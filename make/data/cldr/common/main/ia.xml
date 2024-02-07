@@ -2607,11 +2607,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>hora estive de Lord Howe</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>hora del Insula Macquarie</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>hora de Magadan</generic>

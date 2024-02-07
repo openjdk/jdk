@@ -3069,11 +3069,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>lěśojski cas kupy Lord-Howe</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>cas kupy Macquarie</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Magadański cas</generic>

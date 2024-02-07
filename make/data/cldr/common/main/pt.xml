@@ -1140,7 +1140,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">Ordem de lista telefônica</type>
 			<type key="collation" type="phonetic">Ordem de classificação fonética</type>
 			<type key="collation" type="pinyin">Ordem Pin-yin</type>
-			<type key="collation" type="reformed">Ordem reformulada</type>
 			<type key="collation" type="search">Pesquisa de uso geral</type>
 			<type key="collation" type="searchjl" draft="contributed">Pesquisar por consonante inicial hangul</type>
 			<type key="collation" type="standard">Ordem padrão</type>
@@ -3367,11 +3366,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Horário de Macau</generic>
 					<standard>Horário Padrão de Macau</standard>
 					<daylight>Horário de Verão de Macau</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Horário da Ilha Macquarie</standard>
 				</long>
 			</metazone>
 			<metazone type="Magadan">

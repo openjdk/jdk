@@ -419,11 +419,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="provisional">Ástréliáay, Ládhaway garmági wahd</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard draft="provisional">Makwáriay anjári wahd</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic draft="provisional">Mágadánay wahd</generic>

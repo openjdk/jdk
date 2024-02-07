@@ -1140,7 +1140,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">Σειρά ταξινόμησης τηλεφωνικού καταλόγου</type>
 			<type key="collation" type="phonetic">Φωνητική σειρά ταξινόμησης</type>
 			<type key="collation" type="pinyin">Σειρά ταξινόμησης Πινγίν</type>
-			<type key="collation" type="reformed">Ανασχηματισμένη σειρά ταξινόμησης</type>
 			<type key="collation" type="search">Αναζήτηση γενικού τύπου</type>
 			<type key="collation" type="searchjl" draft="contributed">Αναζήτηση κατά αρχικό σύμφωνο Χανγκούλ</type>
 			<type key="collation" type="standard">Τυπική σειρά ταξινόμησης</type>
@@ -4390,11 +4389,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic draft="contributed">Ώρα Μακάο</generic>
 					<standard draft="contributed">Χειμερινή ώρα Μακάο</standard>
 					<daylight draft="contributed">Θερινή ώρα Μακάο</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Ώρα Νησιού Μακουάρι</standard>
 				</long>
 			</metazone>
 			<metazone type="Magadan">

@@ -914,7 +914,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">فون بک کی چھٹنی کی ترتیب</type>
 			<type key="collation" type="phonetic">صوتی چھٹائی کی ترتیب</type>
 			<type key="collation" type="pinyin">پن ین کی چھٹنی کی ترتیب</type>
-			<type key="collation" type="reformed">دوبارہ تشکیل شدہ چھٹنی کی ترتیب</type>
 			<type key="collation" type="search">عمومی تلاش</type>
 			<type key="collation" type="searchjl">Hangul Initial Consonant کے لحاظ سے تلاش کریں</type>
 			<type key="collation" type="standard">معیاری چھانٹی کی ترتیب</type>
@@ -3837,11 +3836,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>لارڈ ہووے ٹائم</generic>
 					<standard>لارڈ ہووے اسٹینڈرڈ ٹائم</standard>
 					<daylight>لارڈ ہووے ڈے لائٹ ٹائم</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>مکوآری آئلینڈ کا وقت</standard>
 				</long>
 			</metazone>
 			<metazone type="Magadan">

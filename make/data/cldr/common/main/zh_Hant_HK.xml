@@ -209,7 +209,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="collation" type="big5han">繁體中文排序 (Big5)</type>
 			<type key="collation" type="dictionary">詞典排序</type>
 			<type key="collation" type="gb2312han">簡體中文排序 (GB2312)</type>
-			<type key="collation" type="reformed">改革版排序</type>
 			<type key="ms" type="uksystem">英制</type>
 			<type key="ms" type="ussystem">美制</type>
 			<type key="numbers" type="deva">天城體數字</type>
@@ -1640,11 +1639,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Kosrae">
 				<long>
 					<standard>科斯雷時間</standard>
-				</long>
-			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>麥夸里群島時間</standard>
 				</long>
 			</metazone>
 			<metazone type="Maldives">

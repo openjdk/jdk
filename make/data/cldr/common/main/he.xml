@@ -1253,7 +1253,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">מיון ספר טלפונים</type>
 			<type key="collation" type="phonetic">סדר מיון פונטי</type>
 			<type key="collation" type="pinyin">מיון פיניין</type>
-			<type key="collation" type="reformed">סדר מיון מתוקן</type>
 			<type key="collation" type="search">חיפוש למטרה כללית</type>
 			<type key="collation" type="searchjl" draft="contributed">חפש לפי העיצור הראשון באותיות הנגול</type>
 			<type key="collation" type="standard">סדר מיון רגיל</type>
@@ -4697,11 +4696,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic draft="contributed">שעון מקאו</generic>
 					<standard draft="contributed">שעון חורף מקאו</standard>
 					<daylight draft="contributed">שעון קיץ מקאו</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>שעון מקווארי</standard>
 				</long>
 			</metazone>
 			<metazone type="Magadan">

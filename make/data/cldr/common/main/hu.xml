@@ -1179,7 +1179,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">Telefonkönyv sorrend</type>
 			<type key="collation" type="phonetic">Fonetikus rendezési sorrend</type>
 			<type key="collation" type="pinyin">Pinyin sorrend</type>
-			<type key="collation" type="reformed">Átalakított rendezési elv</type>
 			<type key="collation" type="search">Általános célú keresés</type>
 			<type key="collation" type="searchjl" draft="contributed">Keresés hangul kezdő mássalhangzó szerint</type>
 			<type key="collation" type="standard">Normál rendezési sorrend</type>
@@ -3458,11 +3457,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Macaui idő</generic>
 					<standard>Macaui zónaidő</standard>
 					<daylight>Macaui nyári idő</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>macquarie-szigeti téli idő</standard>
 				</long>
 			</metazone>
 			<metazone type="Magadan">

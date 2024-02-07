@@ -4130,11 +4130,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>മകൌ വേനൽക്കാല സമയം</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>മക്വാറി ദ്വീപ് സമയം</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>മഗാദൻ സമയം</generic>

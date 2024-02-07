@@ -1242,7 +1242,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">Aturan Pengurutan Buku Telepon</type>
 			<type key="collation" type="phonetic">Aturan Pengurutan Fonetik</type>
 			<type key="collation" type="pinyin">Aturan Pengurutan Pinyin</type>
-			<type key="collation" type="reformed">Aturan Pengurutan yang Diubah Bentuknya</type>
 			<type key="collation" type="search">Pencarian Tujuan Umum</type>
 			<type key="collation" type="searchjl">Pencarian Menurut Konsonan Awal Hangul</type>
 			<type key="collation" type="standard">Aturan Pengurutan Standar</type>
@@ -3598,11 +3597,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Waktu Makau</generic>
 					<standard>Waktu Standar Makau</standard>
 					<daylight>Waktu Musim Panas Makau</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Waktu Kepulauan Macquarie</standard>
 				</long>
 			</metazone>
 			<metazone type="Magadan">

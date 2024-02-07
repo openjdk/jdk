@@ -3383,11 +3383,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Lọd Haú Délaít Taim</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Makwuéí Aíland Taim</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Mágádan Taim</generic>

@@ -1375,7 +1375,6 @@ annotations.
 			<type key="collation" type="phonebook">Phonebook Sort Order</type>
 			<type key="collation" type="phonetic">Phonetic Sort Order</type>
 			<type key="collation" type="pinyin">Pinyin Sort Order</type>
-			<type key="collation" type="reformed">Reformed Sort Order</type>
 			<type key="collation" type="search">General-Purpose Search</type>
 			<type key="collation" type="searchjl">Search By Hangul Initial Consonant</type>
 			<type key="collation" type="standard">Standard Sort Order</type>
@@ -4544,11 +4543,6 @@ annotations.
 					<daylight>Macao Summer Time</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Macquarie Island Time</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Magadan Time</generic>
@@ -6484,6 +6478,11 @@ annotations.
 				<displayName>East Caribbean Dollar</displayName>
 				<displayName count="one">East Caribbean dollar</displayName>
 				<displayName count="other">East Caribbean dollars</displayName>
+			</currency>
+			<currency type="XCG">
+				<displayName>Caribbean guilder</displayName>
+				<displayName count="one">Caribbean guilder</displayName>
+				<displayName count="other">Caribbean guilders</displayName>
 			</currency>
 			<currency type="XDR">
 				<displayName>Special Drawing Rights</displayName>

@@ -16,7 +16,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="frp" draft="contributed">franco-provençal</language>
 			<language type="goh" draft="contributed">ancien haut-allemand</language>
 			<language type="gu" draft="contributed">gujarati</language>
-			<language type="njo" draft="contributed">ao</language>
 		</languages>
 		<territories>
 			<territory type="GS" draft="contributed">Îles Géorgie du Sud et Sandwich du Sud</territory>

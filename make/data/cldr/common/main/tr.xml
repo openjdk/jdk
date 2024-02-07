@@ -1263,7 +1263,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">Telefon Defteri Sıralama Düzeni</type>
 			<type key="collation" type="phonetic">Fonetik Sıralama Düzeni</type>
 			<type key="collation" type="pinyin">Pinyin Sıralama Düzeni</type>
-			<type key="collation" type="reformed">Yeni Sıralama Düzeni</type>
 			<type key="collation" type="search">Genel Amaçlı Arama</type>
 			<type key="collation" type="searchjl">Hangul İlk Sessiz Harfe Göre Arama</type>
 			<type key="collation" type="standard">Standart Sıralama Düzeni</type>
@@ -3452,11 +3451,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Makao Saati</generic>
 					<standard>Makao Standart Saati</standard>
 					<daylight>Makao Yaz Saati</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Macquarie Adası Saati</standard>
 				</long>
 			</metazone>
 			<metazone type="Magadan">

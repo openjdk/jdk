@@ -1115,7 +1115,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="collation" type="phonebook">sortiranje kao telefonski imenik</type>
 			<type key="collation" type="phonetic">fonetski redosled sortiranja</type>
 			<type key="collation" type="pinyin">pinjin sortiranje</type>
-			<type key="collation" type="reformed">reformisani redosled sortiranja</type>
 			<type key="collation" type="search">pretraga opšte namene</type>
 			<type key="collation" type="searchjl" draft="contributed">Pretraga prema hangul početnom suglasniku</type>
 			<type key="collation" type="standard">standardni redosled sortiranja</type>
@@ -4525,11 +4524,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Makao vreme</generic>
 					<standard>Makao standardno vreme</standard>
 					<daylight>Makao letnje računanje vremena</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Ostrvo Makveri vreme</standard>
 				</long>
 			</metazone>
 			<metazone type="Magadan">

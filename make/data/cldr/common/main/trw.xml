@@ -2857,11 +2857,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">لارڈ ہووے ڈے لائٹ ٹائم</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard draft="unconfirmed">مکوآری آئلینڈ سی وَخ</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic draft="unconfirmed">میگیدن ٹائم</generic>

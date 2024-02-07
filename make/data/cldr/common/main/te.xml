@@ -1110,7 +1110,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">ఫోన్‌బుక్ క్రమబద్ధీకరణ క్రమం</type>
 			<type key="collation" type="phonetic">ధ్వని ఉచ్ఛారిత క్రమబద్ధీకరణ క్రమం</type>
 			<type key="collation" type="pinyin">పిన్‌యిన్ క్రమబద్ధీకరణ క్రమం</type>
-			<type key="collation" type="reformed">మళ్ళీ ఆకృతీకరించబడిన క్రమబద్ధీకరణ క్రమం</type>
 			<type key="collation" type="search">సాధారణ-ప్రయోజన శోధన</type>
 			<type key="collation" type="searchjl">హాంగుల్ ప్రారంభ హల్లు ద్వారా శోధించు</type>
 			<type key="collation" type="standard">ప్రామాణిక క్రమబద్ధీకరణ క్రమం</type>
@@ -4135,11 +4134,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>మకావ్ సమయం</generic>
 					<standard>మకావ్ ప్రామాణిక సమయం</standard>
 					<daylight>మకావ్ వేసవి సమయం</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>మాక్క్వారీ దీవి సమయం</standard>
 				</long>
 			</metazone>
 			<metazone type="Magadan">

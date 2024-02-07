@@ -3110,11 +3110,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܡܐܟܐܘ</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>ܥܕܢܐ ܕܓܙܪܬܐ ܡܐܟܐܘܪܝ</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>ܥܕܢܐ ܕܡܐܓܐܕܐܢ</generic>

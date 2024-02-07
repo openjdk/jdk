@@ -530,11 +530,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>hora del Océano Índico</standard>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>hora de la isla Macquarie</standard>
-				</long>
-			</metazone>
 			<metazone type="Marquesas">
 				<long>
 					<standard>hora de las islas Marquesas</standard>

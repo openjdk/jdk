@@ -3556,11 +3556,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>ម៉ោង​ពេល​ថ្ងៃ​នៅ​ឡតហៅ</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>ម៉ោង​នៅ​កោះ​ម៉ាកគែរី</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>ម៉ោង​នៅ​ម៉ាហ្កាដាន</generic>

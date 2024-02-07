@@ -1674,11 +1674,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Lord Howe geasseáigi</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>MacQuarie sullo áigi</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Magadana áigi</generic>

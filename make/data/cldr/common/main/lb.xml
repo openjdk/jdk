@@ -1128,7 +1128,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="collation" type="gb2312han">Vereinfacht Chinesesch - GB2312</type>
 			<type key="collation" type="phonebook">Telefonsbuch-Zortéierung</type>
 			<type key="collation" type="pinyin">Pinyin-Zortéierregelen</type>
-			<type key="collation" type="reformed">Reforméiert Zortéierreiefolleg</type>
 			<type key="collation" type="search">Allgemeng Sich</type>
 			<type key="collation" type="searchjl">Sich no Ufanksbuschtawen aus dem koreaneschen Alphabet</type>
 			<type key="collation" type="standard">Standard Zortéierreiefolleg</type>
@@ -2879,11 +2878,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Lord-Howe-Zäit</generic>
 					<standard>Lord-Howe-Normalzäit</standard>
 					<daylight>Lord-Howe-Summerzäit</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Macquarieinsel-Zäit</standard>
 				</long>
 			</metazone>
 			<metazone type="Magadan">

@@ -1062,7 +1062,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">Símaskráarröðun</type>
 			<type key="collation" type="phonetic">Hljóðfræðileg röð</type>
 			<type key="collation" type="pinyin">Pinyin-röðun</type>
-			<type key="collation" type="reformed">Endurbætt röð</type>
 			<type key="collation" type="search">Almenn leit</type>
 			<type key="collation" type="searchjl">Leita eftir upphafssamhljóða í Hangul</type>
 			<type key="collation" type="standard">Stöðluð röðun</type>
@@ -3324,11 +3323,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Tími á Lord Howe-eyju</generic>
 					<standard>Staðaltími á Lord Howe-eyju</standard>
 					<daylight>Sumartími á Lord Howe-eyju</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Macquarie-eyjartími</standard>
 				</long>
 			</metazone>
 			<metazone type="Magadan">

@@ -426,11 +426,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="provisional">لۆرڈ هئو اُسترالیائے گرماگی ساهت</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard draft="provisional">ماکواریئے گیشّتگێن ساهت</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic draft="provisional">مَگَدَنئے ساهت</generic>

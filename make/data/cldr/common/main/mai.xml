@@ -3071,11 +3071,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>लार्ड होबे डेलाइट टाइम</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>मेक्वैरी द्वीप टाइम</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>मगादान टाइम</generic>

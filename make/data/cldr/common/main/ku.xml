@@ -2571,11 +2571,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Saeta Havînê ya Lord Howeyê</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Saeta Girava Macquarieyê</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Saeta Magadanê</generic>

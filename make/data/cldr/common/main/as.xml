@@ -3565,11 +3565,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>লৰ্ড হাওৰ ডেলাইট সময়</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>মেক্‌কুৱেৰী দ্বীপৰ সময়</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>মাগাদানৰ সময়</generic>

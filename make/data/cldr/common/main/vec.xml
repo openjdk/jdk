@@ -2799,11 +2799,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Ora d’istà de l’Ìzola Lord Howe</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Ora de l’Ìzola Macquarie</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Ora de Magadan</generic>

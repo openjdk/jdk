@@ -915,7 +915,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">Pagkakasunud-sunod ng Pag-uuri ng Phonebook</type>
 			<type key="collation" type="phonetic">Phonetic na Ayos ng Pag-uuri-uri</type>
 			<type key="collation" type="pinyin">Pagkakasunud-sunod ng Pag-uuri ng Pinyin</type>
-			<type key="collation" type="reformed">Pagkakasunud-sunod ng Pag-uuri ng Na-reform</type>
 			<type key="collation" type="search">Pangkalahatang Paghahanap</type>
 			<type key="collation" type="searchjl">Maghanap Ayon sa Unang Katinig ng Hangul</type>
 			<type key="collation" type="standard">Karaniwang Pagkakasunud-sunod ng Ayos</type>
@@ -2748,11 +2747,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Oras sa Lord Howe</generic>
 					<standard>Standard na Oras sa Lord Howe</standard>
 					<daylight>Daylight Time sa Lorde Howe</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Oras sa Macquarie Island</standard>
 				</long>
 			</metazone>
 			<metazone type="Magadan">
