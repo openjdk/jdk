@@ -62,7 +62,7 @@ class CardTableRS : public CardTable {
 public:
   CardTableRS(MemRegion whole_heap);
 
-  void process_old_to_young_refs(TenuredSpace* sp);
+  void scan_old_to_young_refs(TenuredSpace* sp);
 
   virtual void verify_used_region_at_save_marks(Space* sp) const NOT_DEBUG_RETURN;
 

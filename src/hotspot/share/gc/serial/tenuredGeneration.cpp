@@ -267,8 +267,8 @@ HeapWord* TenuredGeneration::block_start(const void* p) const {
   return space()->block_start_const(p);
 }
 
-void TenuredGeneration::process_old_to_young_refs() {
-  _rs->process_old_to_young_refs(space());
+void TenuredGeneration::scan_old_to_young_refs() {
+  _rs->scan_old_to_young_refs(space());
 }
 
 TenuredGeneration::TenuredGeneration(ReservedSpace rs,

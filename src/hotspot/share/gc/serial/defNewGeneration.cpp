@@ -700,10 +700,19 @@ void DefNewGeneration::collect(bool   full,
   {
     StrongRootsScope srs(0);
     RootScanClosure root_cl{this};
-    CLDScanClosure cld_scan_closure{this};
+    CLDScanClosure cld_cl{this};
 
-    heap->young_process_roots(&root_cl,
-                              &cld_scan_closure);
+    MarkingCodeBlobClosure code_cl(&root_cl,
+                                   CodeBlobToOopClosure::FixRelocations,
+                                   false /* keepalive nmethods */);
+
+    heap->process_roots(SerialHeap::SO_ScavengeCodeCache,
+                        &root_cl,
+                        &cld_cl,
+                        &cld_cl,
+                        &code_cl);
+
+    _old_gen->scan_old_to_young_refs();
   }
 
   // "evacuate followers".
