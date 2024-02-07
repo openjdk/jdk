@@ -243,7 +243,6 @@ public class JarInputStream extends ZipInputStream {
      * @param len the maximum number of bytes to read
      * @return the actual number of bytes read, or -1 if the end of the
      *         entry is reached
-     * @throws     NullPointerException If {@code b} is {@code null}.
      * @throws     IndexOutOfBoundsException If {@code off} is negative,
      * {@code len} is negative, or {@code len} is greater than
      * {@code b.length - off}

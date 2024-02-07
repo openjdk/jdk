@@ -306,7 +306,6 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
      * may be in an inconsistent state. It is strongly recommended that the
      * stream be promptly closed if an I/O error occurs.
      *
-     * @throws NullPointerException {@inheritDoc}
      * @throws IndexOutOfBoundsException {@inheritDoc}
      *
      * @since 9
@@ -361,8 +360,6 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
      * one, or both, streams may be in an inconsistent state. It is strongly
      * recommended that both streams be promptly closed if an I/O error occurs.
      *
-     * @throws NullPointerException {@inheritDoc}
-     *
      * @since 9
      */
     @Override
@@ -392,7 +389,6 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
      * @param len the maximum number of bytes read
      * @return the actual number of bytes read, or -1 if the end of the
      *         entry is reached
-     * @throws     NullPointerException if {@code b} is {@code null}.
      * @throws     IndexOutOfBoundsException if {@code off} is negative,
      * {@code len} is negative, or {@code len} is greater than
      * {@code b.length - off}

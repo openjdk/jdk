@@ -148,7 +148,6 @@ public class InflaterInputStream extends FilterInputStream {
      * @param len the maximum number of bytes read
      * @return the actual number of bytes inflated, or -1 if the end of the
      *         compressed input is reached or a preset dictionary is needed
-     * @throws     NullPointerException If {@code b} is {@code null}.
      * @throws     IndexOutOfBoundsException If {@code off} is negative,
      * {@code len} is negative, or {@code len} is greater than
      * {@code b.length - off}
