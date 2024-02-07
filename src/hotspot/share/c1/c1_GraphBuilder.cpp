@@ -3671,7 +3671,7 @@ void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee, bool ignore_retur
   // create intrinsic node
   const bool has_receiver = !callee->is_static();
   ValueType* result_type = as_ValueType(callee->return_type());
-  ValueStack* state_before = copy_state_for_exception();
+  ValueStack* state_before = id == vmIntrinsics::_clone ? copy_state_before() : copy_state_for_exception();
 
   Values* args = state()->pop_arguments(callee->arg_size());
 

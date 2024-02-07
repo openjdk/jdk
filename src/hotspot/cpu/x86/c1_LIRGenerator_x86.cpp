@@ -1077,6 +1077,7 @@ void LIRGenerator::do_Clone(Intrinsic* x) {
   __ metadata2reg(array_klass->constant_encoding(), klass_reg);
 
   CodeEmitInfo* info = state_for(x, x->state_before());
+  info->set_force_reexecute();
   CodeStub* slow_path = new NewTypeArrayStub(klass_reg, len_rbx, array_reg, info);
   __ allocate_array(array_reg, len_rbx, tmp1, tmp2, tmp3, tmp4, elem_type, klass_reg, slow_path, false);
 
