@@ -2430,6 +2430,9 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
 //------------------------------expand_macro_nodes----------------------
 //  Returns true if a failure occurred.
 bool PhaseMacroExpand::expand_macro_nodes() {
+  if (StressMacroExpansion) {
+    C->shuffle_macro_nodes();
+  }
   // Last attempt to eliminate macro nodes.
   eliminate_macro_nodes();
   if (C->failing())  return true;
@@ -2511,6 +2514,9 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       }
       assert(!success || (C->macro_count() == (old_macro_count - 1)), "elimination must have deleted one node from macro list");
       progress = progress || success;
+      if (success) {
+        C->print_method(PHASE_AFTER_MACRO_EXPANSION_STEP, 5, n);
+      }
     }
   }
 
@@ -2571,6 +2577,7 @@ bool PhaseMacroExpand::expand_macro_nodes() {
     }
     assert(C->macro_count() == (old_macro_count - 1), "expansion must have deleted one node from macro list");
     if (C->failing())  return true;
+    C->print_method(PHASE_AFTER_MACRO_EXPANSION_STEP, 5, n);
 
     // Clean up the graph so we're less likely to hit the maximum node
     // limit
@@ -2613,6 +2620,7 @@ bool PhaseMacroExpand::expand_macro_nodes() {
     }
     assert(C->macro_count() < macro_count, "must have deleted a node from macro list");
     if (C->failing())  return true;
+    C->print_method(PHASE_AFTER_MACRO_EXPANSION_STEP, 5, n);
 
     // Clean up the graph so we're less likely to hit the maximum node
     // limit
