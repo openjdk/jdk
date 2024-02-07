@@ -73,7 +73,7 @@ public final class ImportAction extends CallableSystemAction {
                 Settings.get().put(Settings.DIRECTORY, dir.getAbsolutePath());
                 try {
                     final OutlineTopComponent component = OutlineTopComponent.findInstance();
-                    component.loadFile(file.getAbsolutePath());
+                    component.loadGraphDocument(file.getAbsolutePath());
                 } catch (IOException ex) {
                     Exceptions.printStackTrace(ex);
                 }

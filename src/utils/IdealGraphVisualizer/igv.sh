@@ -20,13 +20,13 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 
-DEFAULT_USERDIR="$(pwd)/igv_userdir"
+DEFAULT_USERDIR="$(pwd)/userdir"
 DEFAULT_USERDIR=${IGV_USERDIR:-$DEFAULT_USERDIR}
 USERDIR=${1:-$DEFAULT_USERDIR}
 echo "The IGV user directory in which the settings are saved can be set as follows :"
-echo "  1) export IGV_USERDIR=path/to/igv_userdir"
-echo "  2) ./igv.sh path/to/igv_userdir"
-echo "  3) default is ./igv_userdir"
+echo "  1) export IGV_USERDIR=path/to/userdir"
+echo "  2) ./igv.sh path/to/userdir"
+echo "  3) default is ./userdir"
 echo
 echo "IGV user directory : $USERDIR";
 mvn --batch-mode -f application/pom.xml --define netbeans.userdir=$USERDIR nbm:run-platform >.igv.log 2>&1

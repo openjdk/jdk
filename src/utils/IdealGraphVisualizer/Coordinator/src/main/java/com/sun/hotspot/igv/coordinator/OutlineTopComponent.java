@@ -28,9 +28,11 @@ import com.sun.hotspot.igv.coordinator.actions.*;
 import com.sun.hotspot.igv.data.*;
 import com.sun.hotspot.igv.data.serialization.ParseMonitor;
 import com.sun.hotspot.igv.data.serialization.Parser;
+import com.sun.hotspot.igv.data.serialization.Printer;
 import com.sun.hotspot.igv.data.services.GraphViewer;
 import com.sun.hotspot.igv.data.services.GroupCallback;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
+import com.sun.hotspot.igv.settings.Settings;
 import com.sun.hotspot.igv.util.LookupHistory;
 import com.sun.hotspot.igv.view.DiagramViewModel;
 import com.sun.hotspot.igv.view.EditorTopComponent;
@@ -38,8 +40,12 @@ import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.io.*;
 import java.nio.channels.FileChannel;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
+import javax.swing.JFileChooser;
+import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.border.Border;
@@ -71,7 +77,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     public static OutlineTopComponent instance;
     public static final String PREFERRED_ID = "OutlineTopComponent";
     private ExplorerManager manager;
-    private final GraphDocument document;
+    private static final GraphDocument document = new GraphDocument();
     private FolderNode root;
     private SaveAllAction saveAllAction;
     private RemoveAllAction removeAllAction;
@@ -87,7 +93,6 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         setName(NbBundle.getMessage(OutlineTopComponent.class, "CTL_OutlineTopComponent"));
         setToolTipText(NbBundle.getMessage(OutlineTopComponent.class, "HINT_OutlineTopComponent"));
 
-        document = new GraphDocument();
         initListView();
         initToolbar();
         initReceivers();
@@ -110,12 +115,12 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         this.add(toolbar, BorderLayout.NORTH);
 
         toolbar.add(ImportAction.get(ImportAction.class));
-        toolbar.add(SaveAsAction.get(SaveAsAction.class).createContextAwareInstance(this.getLookup()));
 
         saveAllAction = SaveAllAction.get(SaveAllAction.class);
         saveAllAction.setEnabled(false);
         toolbar.add(saveAllAction);
 
+        toolbar.add(SaveAsAction.get(SaveAsAction.class).createContextAwareInstance(this.getLookup()));
         toolbar.add(RemoveAction.get(RemoveAction.class).createContextAwareInstance(this.getLookup()));
 
         removeAllAction = RemoveAllAction.get(RemoveAllAction.class);
@@ -129,7 +134,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         }
 
         document.getChangedEvent().addListener(g -> documentChanged());
-        loadState();
+        loadWorkspace();
     }
 
     private void documentChanged() {
@@ -161,7 +166,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         return manager;
     }
 
-    public GraphDocument getDocument() {
+    public static GraphDocument getDocument() {
         return document;
     }
 
@@ -281,28 +286,101 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         }
     }
 
-    private void loadState() {
+    private void loadWorkspace() {
         ((BeanTreeView) this.treeView).setRootVisible(false);
 
-        String graphsPath = getGraphsPath();
+        String graphsPath = getWorkspaceGraphsPath();
         if (graphsPath.isEmpty()) {
             return;
         }
         try {
-            loadFile(graphsPath);
+            loadGraphDocument(graphsPath);
         } catch (IOException ex) {
             Exceptions.printStackTrace(ex);
             return;
         }
 
-        final String openedPath = getOpenedPath();
-        if (openedPath.isEmpty()) {
+        final String statesPath = getWorkspaceStatesPath();
+        if (statesPath.isEmpty()) {
             return;
         }
 
+        try {
+            loadStates(statesPath);
+        } catch (IOException ex) {
+            Exceptions.printStackTrace(ex);
+        }
+    }
+
+    @Override
+    public void readExternal(ObjectInput objectInput) throws IOException, ClassNotFoundException {
+        super.readExternal(objectInput);
+    }
+
+    private String getWorkspacePath() {
+        String userDirectory = Places.getUserDirectory().getAbsolutePath();
+        assert !userDirectory.isEmpty();
+        return userDirectory;
+    }
+
+    private String getWorkspaceGraphsPath() {
+        String igvSettingsPath = getWorkspacePath();
+        if (!igvSettingsPath.isEmpty()) {
+            igvSettingsPath += "/graphs.xml";
+        }
+        return igvSettingsPath;
+    }
+
+    private String getWorkspaceStatesPath() {
+        String igvSettingsPath = getWorkspacePath();
+        if (!igvSettingsPath.isEmpty()) {
+            igvSettingsPath += "/state.igv";
+        }
+        return igvSettingsPath;
+    }
+
+    @Override
+    public void writeExternal(ObjectOutput objectOutput) throws IOException {
+        super.writeExternal(objectOutput);
+        saveWorkspace();
+    }
+
+    private static File chooseFile() {
+        JFileChooser fc = new JFileChooser();
+        fc.setFileFilter(ImportAction.getFileFilter());
+        fc.setCurrentDirectory(new File(Settings.get().get(Settings.DIRECTORY, Settings.DIRECTORY_DEFAULT)));
+
+        if (fc.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
+            File file = fc.getSelectedFile();
+            if (!file.getName().contains(".")) {
+                file = new File(file.getAbsolutePath() + ".xml");
+            }
+
+            File dir = file;
+            if (!dir.isDirectory()) {
+                dir = dir.getParentFile();
+            }
+            Settings.get().put(Settings.DIRECTORY, dir.getAbsolutePath());
+            return file;
+        }
+        return null;
+    }
+
+    public void saveWorkspace() throws IOException {
+        String graphsPath = getWorkspaceGraphsPath();
+        saveGraphDocument(getDocument(), graphsPath);
+
+        String statesPath = getWorkspaceStatesPath();
+        saveStates(statesPath);
+    }
+
+    private void loadStates(String path) throws IOException {
         RP.post(() -> {
             try {
-                FileInputStream fis = new FileInputStream(openedPath);
+                if (Files.notExists(Path.of(path))) {
+                    return;
+                }
+                FileInputStream fis = new FileInputStream(path);
                 ObjectInputStream in = new ObjectInputStream(fis);
 
                 int formatVersion = in.readInt();
@@ -363,50 +441,8 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         });
     }
 
-    @Override
-    public void readExternal(ObjectInput objectInput) throws IOException, ClassNotFoundException {
-        super.readExternal(objectInput);
-    }
-
-    private String getCustomSettingsPath() {
-        return Places.getUserDirectory().getAbsolutePath();
-    }
-
-    private String getGraphsPath() {
-        String igvSettingsPath = getCustomSettingsPath();
-        if (!igvSettingsPath.isEmpty()) {
-            igvSettingsPath += "/graphs.xml";
-        }
-        return igvSettingsPath;
-    }
-
-    private String getOpenedPath() {
-        String igvSettingsPath = getCustomSettingsPath();
-        if (!igvSettingsPath.isEmpty()) {
-            igvSettingsPath += "/state.igv";
-        }
-        return igvSettingsPath;
-    }
-
-    @Override
-    public void writeExternal(ObjectOutput objectOutput) throws IOException {
-        super.writeExternal(objectOutput);
-        saveState();
-    }
-
-    private void saveState() throws IOException {
-        String graphsPath = getGraphsPath();
-        if (graphsPath.isEmpty()) {
-            return;
-        }
-        File file = new File(graphsPath);
-        SaveAsAction.export(file, getDocument());
-
-        String openedPath = getOpenedPath();
-        if (openedPath.isEmpty()) {
-            return;
-        }
-        FileOutputStream fos = new FileOutputStream(openedPath);
+    private void saveStates(String path) throws IOException {
+        FileOutputStream fos = new FileOutputStream(path);
         ObjectOutputStream out = new ObjectOutputStream(fos);
 
         List<EditorTopComponent> editorTabs = new ArrayList<>();
@@ -452,10 +488,12 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         out.close();
     }
 
-    public void loadFile(String absolutePath) throws IOException {
+    public void loadGraphDocument(String path) throws IOException {
         RP.post(() -> {
-            File file = new File(absolutePath);
-
+            if (Files.notExists(Path.of(path))) {
+                return;
+            }
+            File file = new File(path);
             final FileChannel channel;
             final long start;
             try {
@@ -498,10 +536,25 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         });
     }
 
-    public InputGraph findGraph(int groupIdx, int graphIdx) {
+    public static void saveGraphDocument(GraphDocument doc, String path) throws IOException {
+        final File graphFile;
+        if (path == null || path.isEmpty()) {
+            graphFile = OutlineTopComponent.chooseFile();
+        } else {
+            graphFile = new File(path);
+        }
+        if (graphFile == null) {
+            return;
+        }
+        try (Writer writer = new OutputStreamWriter(Files.newOutputStream(graphFile.toPath()))) {
+            Printer printer = new Printer();
+            printer.export(writer, doc);
+        }
+    }
+
+    private InputGraph findGraph(int groupIdx, int graphIdx) {
         FolderElement folderElement = document.getElements().get(groupIdx);
-        if (folderElement instanceof Group) {
-            Group group = (Group) folderElement;
+        if (folderElement instanceof Group group) {
             return group.getGraphs().get(graphIdx);
         }
         return null;
@@ -517,11 +570,11 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
 
         treeView = new BeanTreeView();
 
-        setLayout(new java.awt.BorderLayout());
-        add(treeView, java.awt.BorderLayout.CENTER);
+        setLayout(new BorderLayout());
+        add(treeView, BorderLayout.CENTER);
     }// </editor-fold>//GEN-END:initComponents
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JScrollPane treeView;
+    private JScrollPane treeView;
     // End of variables declaration//GEN-END:variables
 }
