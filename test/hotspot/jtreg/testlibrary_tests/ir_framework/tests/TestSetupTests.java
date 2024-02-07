@@ -26,9 +26,12 @@ package ir_framework.tests;
 import compiler.lib.ir_framework.*;
 import compiler.lib.ir_framework.driver.TestVMException;
 import compiler.lib.ir_framework.shared.TestRunException;
+
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
+import java.util.Random;
 
 /*
  * @test
@@ -40,7 +43,7 @@ import jdk.test.lib.Asserts;
  */
 
 public class TestSetupTests {
-    public int iFld;
+    private static final Random RANDOM = Utils.getRandomInstance();
 
     public static void main(String[] args) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -85,28 +88,24 @@ public class TestSetupTests {
             Asserts.assertTrue(e.getExceptionInfo().contains("wrong number of arguments: 0 expected: 1"));
             Asserts.assertTrue(e.getExceptionInfo().contains("Arguments: <null>"));
 
+            Asserts.assertTrue(e.getExceptionInfo().contains("setupThrowInSetup"));
+            Asserts.assertTrue(e.getExceptionInfo().contains("BadCheckedTestException: expected setup"));
+            Asserts.assertTrue(e.getExceptionInfo().contains("testThrowInTest"));
+            Asserts.assertTrue(e.getExceptionInfo().contains("BadCheckedTestException: expected test"));
+            Asserts.assertTrue(e.getExceptionInfo().contains("checkThrowInCheck"));
+            Asserts.assertTrue(e.getExceptionInfo().contains("BadCheckedTestException: expected check"));
+
             // Check number of total failures:
             Asserts.assertEQ(e.getExceptionInfo().split("argument type mismatch").length - 1, 2);
-            Asserts.assertEQ(e.getExceptionInfo().split("There was an error while invoking setup").length - 1, 4);
-            Asserts.assertEQ(e.getExceptionInfo().split("There was an error while invoking @Test").length - 1, 4);
-            Asserts.assertTrue(e.getExceptionInfo().contains("Test Failures (8)"));
+            Asserts.assertEQ(e.getExceptionInfo().split("There was an error while invoking setup").length - 1, 5);
+            Asserts.assertEQ(e.getExceptionInfo().split("There was an error while invoking @Test").length - 1, 5);
+            Asserts.assertEQ(e.getExceptionInfo().split("There was an error while invoking @Check").length - 1, 1);
+            Asserts.assertEQ(e.getExceptionInfo().split("BadCheckedTestException").length - 1, 3);
+            Asserts.assertTrue(e.getExceptionInfo().contains("Test Failures (11)"));
         }
-
-// TODO make sure asserts from setup get out properly
-//         // Negative test with run into TestRunException
-//         System.setOut(ps);
-//         try {
-//             TestFramework.run(TestSetupTestsWithBadRunExceptions.class);
-//             Asserts.fail("Should have thrown exception");
-//         } catch (TestRunException e) {
-//             System.setOut(oldOut);
-// //            Asserts.assertTrue(e.getExceptionInfo().contains("Failed IR Rules (3)"));
-//         }
     }
 
-    // ----------- Bad Setup Return Type -------------------------
-    // TODO investigate if the values are really right here, e.g. if fields are set
-    // TODO try other bad return values
+    // ---------- Setup Nothing ---------------
     @Setup
     public void setupVoid() {}
 
@@ -123,50 +122,45 @@ public class TestSetupTests {
     @Arguments(setup = "setupEmpty")
     public void testSetupEmpty() {}
 
-    // TODO
-    // - SetupInfo
-    // - Object only used once
-    // - move the examples here, make examples more "real examples"
+    // ---------- Setup Arrays ---------------
+    @Setup
+    static Object[] setupArrayII(SetupInfo info) {
+        int[] a = new int[1_000];
+        int[] b = new int[1_000];
+        int x = info.invocationCounter();
+        for (int i = 0; i < a.length; i++) { a[i] = x + i; }
+        for (int i = 0; i < a.length; i++) { b[i] = x - i; }
+        return new Object[]{a, b};
+    }
 
+    @Test
+    @Arguments(setup = "setupArrayII")
+    static void testSetupArrayII(int[] a, int[] b) {
+        for (int i = 0; i < a.length; i++) {
+            int y = a[i] - b[i];
+            if (y != 2 * i) {
+                throw new RuntimeException("bad values for i=" + i + " a[i]=" + a[i] + " b[i]=" + b[i]);
+	    }
+        }
+    }
 
-//    @Test
-//    @IR(counts = {IRNode.STORE_I, "1"})
-//    public void testGood1() {
-//        iFld = 3;
-//    }
-//
-//    @Check(test = "testGood1")
-//    public void checkTestGood1(TestInfo info) {
-//    }
-//
-//    @Test
-//    @IR(failOn = IRNode.LOAD)
-//    public int testGood2() {
-//        iFld = 3;
-//        return 3;
-//    }
-//
-//    @Check(test = "testGood2")
-//    public void sameName(int retValue) {
-//        if (retValue != 3) {
-//            throw new RuntimeException("must be 3 but was " + retValue);
-//        }
-//    }
-//
-//    @Test
-//    @Arguments(values = Argument.NUMBER_42)
-//    @IR(failOn = IRNode.LOAD)
-//    @IR(counts = {IRNode.STORE_I, "0"})
-//    public int testGood3(int x) {
-//        return x;
-//    }
-//
-//    @Check(test = "testGood3")
-//    public void sameName(int retValue, TestInfo info) {
-//        if (retValue != 42) {
-//            throw new RuntimeException("must be 42");
-//        }
-//    }
+    // ---------- Setup "linked" random values ---------------
+    @Setup
+    static Object[] setupLinkedII() {
+        int r = RANDOM.nextInt();
+        return new Object[]{ r, r + 42};
+    }
+
+    @Test
+    @Arguments(setup = "setupLinkedII")
+    static int testSetupLinkedII(int a, int b) {
+        return b - a;
+    }
+
+    @Check(test = "testSetupLinkedII")
+    static void checkSetupLinkedII(int res) {
+        if (res != 42) { throw new RuntimeException("wrong result " + res); }
+    }
 }
 
 class TestSetupTestsWithFields {
@@ -186,14 +180,17 @@ class TestSetupTestsWithFields {
         if (iFld1 != x + 1) { throw new RuntimeException("iFld1 wrong value: " + iFld1 + " != " + (x + 1)); }
         if (iFld2 != x + 2) { throw new RuntimeException("iFld2 wrong value: " + iFld2 + " != " + (x + 2)); }
         if (iFld3 != x + 3) { throw new RuntimeException("iFld3 wrong value: " + iFld3 + " != " + (x + 3)); }
+        iFld1++;
+        iFld2++;
+        iFld3++;
         return x + 5; // -> argument y in check
     }
 
     @Check(test = "test1")
     void checkTest1(int y) {
-        if (iFld1 != y - 4) { throw new RuntimeException("iFld1 wrong value: " + iFld1 + " != " + (y - 4)); }
-        if (iFld2 != y - 3) { throw new RuntimeException("iFld2 wrong value: " + iFld2 + " != " + (y - 3)); }
-        if (iFld3 != y - 2) { throw new RuntimeException("iFld3 wrong value: " + iFld3 + " != " + (y - 2)); }
+        if (iFld1 != y - 3) { throw new RuntimeException("iFld1 wrong value: " + iFld1 + " != " + (y - 3)); }
+        if (iFld2 != y - 2) { throw new RuntimeException("iFld2 wrong value: " + iFld2 + " != " + (y - 2)); }
+        if (iFld3 != y - 1) { throw new RuntimeException("iFld3 wrong value: " + iFld3 + " != " + (y - 1)); }
     }
 }
 
@@ -294,50 +291,53 @@ class TestSetupTestsWithExpectedExceptions {
     @Test
     @Arguments(setup = "setupNull")
     public void testSetupNull(Object x) {}
-}
 
-// class TestSetupTestsWithBadRunExceptions {
-// //    public int iFld;
-// //
-// //    @Test
-// //    @IR(counts = {IRNode.STORE_I, "2"})
-// //    public void testBad1() {
-// //        iFld = 3;
-// //    }
-// //
-// //    @Check(test = "testBad1")
-// //    public void checkTestBad1(TestInfo info) {
-// //    }
-// //
-// //    @Test
-// //    @IR(failOn = IRNode.STORE_I)
-// //    public int testBad2() {
-// //        iFld = 3;
-// //        return 3;
-// //    }
-// //
-// //    @Check(test = "testBad2")
-// //    public void sameName(int retValue) {
-// //        if (retValue != 3) {
-// //            throw new RuntimeException("must be 3");
-// //        }
-// //    }
-// //
-// //    @Test
-// //    @Arguments(values = Argument.NUMBER_42)
-// //    @IR(failOn = IRNode.LOAD)
-// //    @IR(counts = {IRNode.STORE_I, "1"})
-// //    public int testBad4(int x) {
-// //        return x;
-// //    }
-// //
-// //    @Check(test = "testBad4")
-// //    public void sameName(int retValue, TestInfo info) {
-// //        if (retValue != 42) {
-// //            throw new RuntimeException("must be 42");
-// //        }
-// //    }
-// }
+    // ----------------- Throw in Setup -----------
+    @Setup
+    public Object[] setupThrowInSetup() {
+        throw new BadCheckedTestException("expected setup");
+    }
+
+    @Test
+    @Arguments(setup = "setupThrowInSetup")
+    public void testThrowInSetup() {
+        throw new RuntimeException("should have thrown in setup");
+    }
+
+    // ----------------- Throw in Test  -----------
+    @Setup
+    public Object[] setupThrowInTest(SetupInfo info) {
+        return new Object[]{ info.invocationCounter() };
+    }
+
+    @Test
+    @Arguments(setup = "setupThrowInTest")
+    public int testThrowInTest(int x) {
+        throw new BadCheckedTestException("expected test");
+    }
+
+    @Check(test = "testThrowInTest")
+    public void checkThrowInTest(int x) {
+        throw new RuntimeException("should have thrown in test");
+    }
+
+    // ----------------- Throw in Check -----------
+    @Setup
+    public Object[] setupThrowInCheck(SetupInfo info) {
+        return new Object[]{ info.invocationCounter() };
+    }
+
+    @Test
+    @Arguments(setup = "setupThrowInCheck")
+    public int testThrowInCheck(int x) {
+        return x + 1;
+    }
+
+    @Check(test = "testThrowInCheck")
+    public void checkThrowInCheck(int x) {
+        throw new BadCheckedTestException("expected check");
+    }
+}
 
 class BadCheckedTestException extends RuntimeException {
     BadCheckedTestException(String s) {
