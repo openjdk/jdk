@@ -1031,7 +1031,6 @@ ClassPathEntry* find_first_module_cpe(ModuleEntry* mod_entry,
 // Search either the patch-module or exploded build entries for class.
 ClassFileStream* ClassLoader::search_module_entries(JavaThread* current,
                                                     const GrowableArray<ModuleClassPathList*>* const module_list,
-                                                    Symbol* name,
                                                     PackageEntry* pkg_entry,
                                                     const char* const file_name) {
   ClassFileStream* stream = nullptr;
@@ -1128,7 +1127,7 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, PackageEntry* pkg_entry, bo
     // is not supported with UseSharedSpaces, we can never come here during dynamic dumping.
     assert(!CDSConfig::is_dumping_dynamic_archive(), "sanity");
     if (!CDSConfig::is_dumping_static_archive()) {
-      stream = search_module_entries(THREAD, _patch_mod_entries, name, pkg_entry, file_name);
+      stream = search_module_entries(THREAD, _patch_mod_entries, pkg_entry, file_name);
     }
   }
 
@@ -1140,7 +1139,7 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, PackageEntry* pkg_entry, bo
     } else {
       // Exploded build - attempt to locate class in its defining module's location.
       assert(_exploded_entries != nullptr, "No exploded build entries present");
-      stream = search_module_entries(THREAD, _exploded_entries, name, pkg_entry, file_name);
+      stream = search_module_entries(THREAD, _exploded_entries, pkg_entry, file_name);
     }
   }
 
