@@ -35,9 +35,10 @@
  * @summary testing parsing of -Xflags
  */
 
-import static jdk.test.lib.Asserts.assertTrue;
-import static jdk.test.lib.Asserts.assertEQ;
+import java.util.Map;
 import requires.VMProps;
+import static jdk.test.lib.Asserts.assertEQ;
+import static jdk.test.lib.Asserts.assertTrue;
 
 /**
  * This tests parsing of -Xflags.
@@ -52,9 +53,14 @@ public class VMPropsTest {
         assertEQ(VMProps.parseXFlag("-name4g").value(), "4g");
         assertEQ(VMProps.parseXFlag("-name43g").name(), "name");
         assertEQ(VMProps.parseXFlag("-name43g").value(), "43g");
+        assertEQ(VMProps.parseXFlag("-Xbootclasspath/a:path").name(), "Xbootclasspath/a");
+        assertEQ(VMProps.parseXFlag("-Xbootclasspath/a:path").value(), "path");
 
         // Make sure that we handle several flags that are equal
         System.setProperty("test.java.opts", "-Xlog:gc* -Xlog:gc*");
-        VMProps.xFlags();
+        Map<String, String> xFlagsMap = VMProps.xFlags();
+
+        // check special handling of -Xlog
+        assertEQ(xFlagsMap.get("vm.opt.x.Xlog"), "NONEMPTY_TEST_SENTINEL");
     }
 }

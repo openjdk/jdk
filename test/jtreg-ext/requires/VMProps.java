@@ -726,7 +726,7 @@ public class VMProps implements Callable<Map<String, String>> {
        and a value part ("true" if no value was given)
      */
     public static Flag parseXFlag(String xflag) {
-        Matcher m = Pattern.compile("-([a-zA-Z]+)(.*)").matcher(xflag);
+        Matcher m = Pattern.compile("-([a-zA-Z/]+)(.*)").matcher(xflag);
         if (!m.matches()) {
             throw new RuntimeException("Could not parse flag: " + xflag);
         }
