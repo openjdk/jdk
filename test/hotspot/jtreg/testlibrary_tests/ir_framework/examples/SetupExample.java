@@ -68,8 +68,8 @@ public class SetupExample {
 
     @Check(test = "testSetupLinkedII")
     static void checkSetupLinkedII(int res) {
-        if (res != 42) { 
-            throw new RuntimeException("wrong result " + res); 
+        if (res != 42) {
+            throw new RuntimeException("wrong result " + res);
         }
     }
 
@@ -129,8 +129,8 @@ public class SetupExample {
 
     @Check(test = "testSetupFields")
     static void checkSetupFields(int res) {
-        if (res != 42) { 
-            throw new RuntimeException("wrong result " + res); 
+        if (res != 42) {
+            throw new RuntimeException("wrong result " + res);
         }
     }
 
