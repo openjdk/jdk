@@ -40,7 +40,7 @@ import jtreg.SkippedException;
  * @bug 4185019
  * @key printer
  * @summary Confirm that all of the drawString methods on Graphics2D
- *          work for printer graphics objects.
+ * work for printer graphics objects.
  * @library /test/lib /java/awt/regtesthelpers
  * @build PassFailJFrame jtreg.SkippedException
  * @run main/manual DrawStringMethods
@@ -48,15 +48,16 @@ import jtreg.SkippedException;
 public class DrawStringMethods implements Printable {
 
     private static final String INSTRUCTIONS =
+            " This test will automatically initiate a print\n" +
+            "\n" +
             " Confirm that the methods are printed.\n" +
             " For Graphics: drawString, drawString, drawChars, drawBytes\n" +
             " For Graphics2D: drawString, drawString, drawGlyphVector";
 
-    public static void main(String args[]) throws Exception {
+    public static void main(String[] args) throws Exception {
 
         if (PrinterJob.lookupPrintServices().length == 0) {
-            throw new SkippedException("Printer not configured or available."
-                    + " Test cannot continue.");
+            throw new SkippedException("Printer not configured or available.");
         }
 
         PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
@@ -108,7 +109,7 @@ public class DrawStringMethods implements Printable {
 
         iy += 30;
         s = "drawBytes(byte data[], int offset, int length, int x, int y)";
-        byte data[] = new byte[s.length()];
+        byte[] data = new byte[s.length()];
         for (int i = 0; i < data.length; i++) {
             data[i] = (byte) s.charAt(i);
         }
@@ -131,7 +132,7 @@ public class DrawStringMethods implements Printable {
 
             iy += 30;
             s = "drawString(AttributedCharacterIterator iterator, "+
-                    "float x, float y)";
+                "float x, float y)";
             g.drawLine(ix, iy, ix+10, iy);
             g2d.drawString(getIterator(s), (float) ix+20, (float) iy);
 

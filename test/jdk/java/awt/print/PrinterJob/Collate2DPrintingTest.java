@@ -36,8 +36,6 @@ import java.awt.Graphics;
 import java.awt.Panel;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.awt.print.PageFormat;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
@@ -50,7 +48,7 @@ import java.io.Reader;
  * @bug 6362683 8012381
  * @summary Collation should work.
  * @key printer
- * @library /java/awt/regtesthelpers /test/lib
+ * @library /test/lib /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual Collate2DPrintingTest
  */
@@ -107,9 +105,8 @@ public class Collate2DPrintingTest
                 DocPrintJob pj = defService.createPrintJob();
                 pj.print(this, prSet);
             }
-            System.out.println("DONE");
         } catch (Exception e) {
-            e.printStackTrace();
+            PassFailJFrame.forceFail( ae.getActionCommand() + " test Failed");
         }
     }
 
@@ -135,8 +132,13 @@ public class Collate2DPrintingTest
     }
 
     private static final String INSTRUCTIONS =
-            "You must have a printer available to perform this test\n" +
-            "The print result should be collated.";
+            "Click on the '2D Print' button.\n" +
+            "Choose copies as '2' with 'Collated' checkbox and Print\n" +
+            "\n" +
+            "Click on the 'PrintService', should get a print from default printer\n" +
+            "\n" +
+            "If you get only one copy or non 'Collated' prints from any of the above case, " +
+            "test failed";
 
     public static void main(String[] args) throws Exception {
 
@@ -144,7 +146,7 @@ public class Collate2DPrintingTest
                 .instructions(INSTRUCTIONS)
                 .testUI(Collate2DPrintingTest::new)
                 .rows((int) INSTRUCTIONS.lines().count() + 1)
-                .columns(40)
+                .columns(45)
                 .build()
                 .awaitAndCheck();
     }

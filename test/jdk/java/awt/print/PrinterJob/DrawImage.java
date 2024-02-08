@@ -32,6 +32,7 @@ import java.awt.image.BufferedImageOp;
 import java.awt.image.RescaleOp;
 import java.awt.print.PageFormat;
 import java.awt.print.Printable;
+import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
 
 import jtreg.SkippedException;
@@ -47,58 +48,49 @@ import jtreg.SkippedException;
  */
 public class DrawImage {
 
-    protected static final int _objectBorder = 15;
+    protected static final int objectBorder = 15;
 
-    protected BufferedImage _image;
+    private final BufferedImage image;
 
-    protected PageFormat _pageFormat;
+    private final PageFormat pageFormat;
 
     public DrawImage(BufferedImage image) {
-        _image = image;
+        this.image = image;
         PrinterJob pj = PrinterJob.getPrinterJob();
-        _pageFormat = pj.defaultPage();
+        pageFormat = pj.defaultPage();
     }
 
-    protected int printImage(Graphics g, PageFormat pf, BufferedImage image) {
-
+    protected int printImage(Graphics g, PageFormat pf, int pageIndex) {
+        if (pageIndex == 0) {
+            return Printable.NO_SUCH_PAGE;
+        }
         Graphics2D g2D = (Graphics2D) g;
-        g2D.transform(new AffineTransform(_pageFormat.getMatrix()));
+        g2D.transform(new AffineTransform(pageFormat.getMatrix()));
 
-        int paperW = (int) pf.getImageableWidth(), paperH =
-                (int) pf.getImageableHeight();
+        int paperW = (int) pageFormat.getImageableWidth();
+        int paperH = (int) pageFormat.getImageableHeight();
 
-        int x = (int) pf.getImageableX(), y = (int) pf.getImageableY();
+        int x = (int) pageFormat.getImageableX();
+        int y = (int) pageFormat.getImageableY();
         g2D.setClip(x, y, paperW, paperH);
 
         // make slightly smaller (25) than max possible width
-        float scaleFactor = ((float) ((paperW - 25) - _objectBorder -
-                _objectBorder) / (float) (image.getWidth()));
+        float scaleFactor = ((float) ((paperW - 25) - objectBorder -
+                objectBorder) / (float) (image.getWidth()));
 
         BufferedImageOp scaleOp = new RescaleOp(scaleFactor, 0, null);
-        g2D.drawImage(image, scaleOp, x + _objectBorder, y + _objectBorder);
+        g2D.drawImage(image, scaleOp, x + objectBorder, y + objectBorder);
 
-        g2D.dispose();
         return Printable.PAGE_EXISTS;
     }
 
-    public void print() {
-        try {
+    public void print() throws PrinterException {
             final PrinterJob pj = PrinterJob.getPrinterJob();
             pj.setJobName("Print Image");
-            pj.setPrintable((g, pf, pageIndex) -> {
-                int result = Printable.NO_SUCH_PAGE;
-                if (pageIndex == 0 && _image != null) {
-                    result = printImage(g, _pageFormat, _image);
-                }
-                return result;
-            });
+            pj.setPrintable(this::printImage);
             if (pj.printDialog()) {
                 pj.print();
             }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     private static final String INSTRUCTIONS =
@@ -110,8 +102,12 @@ public class DrawImage {
     public static void main(String[] args) throws Exception {
 
         if (PrinterJob.lookupPrintServices().length == 0) {
-            throw new SkippedException("Printer not configured or available."
-                    + " Test cannot continue.");
+            throw new SkippedException("Printer not configured or available.");
+        }
+
+        BufferedImage image = prepareFrontImage();
+        if (image == null) {
+            throw new RuntimeException("Image creation failed");
         }
 
         PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
@@ -120,7 +116,6 @@ public class DrawImage {
                 .columns(45)
                 .build();
 
-        BufferedImage image = prepareFrontImage();
         DrawImage pt = new DrawImage(image);
         pt.print();
         passFailJFrame.awaitAndCheck();
@@ -146,6 +141,7 @@ public class DrawImage {
         g2D.transform(originXform);
 
         g2D.drawString("Front Side", 20, h / 2);
+        g2D.dispose();
 
         return result;
     }

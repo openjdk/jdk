@@ -43,16 +43,15 @@ public class NumCopies implements Printable {
 
     private static final String INSTRUCTIONS =
             "You must have a printer available to perform this test\n" +
-            "This test should print a total of four pages which are two\n" +
-            " copies of each of two pages which consist of the text :-\n" +
+            "This test should print four pages, which are \n" +
+            "two copies of each page with the text :-\n" +
             "'This is page number N', where N is 0 and 1.\n" +
             "The pages should be uncollated.";
 
     public static void main(String[] args) throws Exception {
 
         if (PrinterJob.lookupPrintServices().length == 0) {
-            throw new SkippedException("Printer not configured or available."
-                    + " Test cannot continue.");
+            throw new SkippedException("Printer not configured or available.");
         }
 
         PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
@@ -76,7 +75,7 @@ public class NumCopies implements Printable {
         }
         g.translate((int) pf.getImageableX(), (int) pf.getImageableY());
         g.setColor(Color.black);
-        g.drawString("This is page number " + Integer.toString(pageIndex), 50, 50);
+        g.drawString("This is page number " + pageIndex, 50, 50);
         return PAGE_EXISTS;
     }
 }

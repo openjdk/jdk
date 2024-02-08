@@ -27,6 +27,8 @@ import java.awt.print.PageFormat;
 import java.awt.print.Printable;
 import java.awt.print.PrinterJob;
 
+import jtreg.SkippedException;
+
 /*
  * @test
  * @bug 4205601
@@ -38,17 +40,17 @@ import java.awt.print.PrinterJob;
  */
 public class PrinterJobName implements Printable {
 
-    static String theName = "Testing the Jobname setting";
+    private static final String THE_NAME = "Testing the Jobname setting";
 
     private static final String INSTRUCTIONS =
             "You must have a printer available to perform this test\n" +
-            "This test prints a page with a banner/job name of\n" + theName;
+            "This test prints a page with a banner/job name of\n" +
+            THE_NAME;
 
     public static void main(String[] args) throws Exception {
 
         if (PrinterJob.lookupPrintServices().length == 0) {
-            throw new SkippedException("Printer not configured or available."
-                    + " Test cannot continue.");
+            throw new SkippedException("Printer not configured or available.");
         }
 
         PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
@@ -58,7 +60,7 @@ public class PrinterJobName implements Printable {
                 .build();
 
         PrinterJob job = PrinterJob.getPrinterJob();
-        job.setJobName(theName);
+        job.setJobName(THE_NAME);
         job.setPrintable(new PrinterJobName());
         job.print();
         passFailJFrame.awaitAndCheck();
@@ -71,8 +73,7 @@ public class PrinterJobName implements Printable {
 
         Graphics2D g2d = (Graphics2D) g;
         g2d.translate(pgFmt.getImageableX(), pgFmt.getImageableY());
-        g2d.drawString("Name is: " + theName, 20, 20);
-        g2d.dispose();
+        g2d.drawString("Name is: " + THE_NAME, 20, 20);
         return Printable.PAGE_EXISTS;
     }
 }

@@ -28,8 +28,6 @@ import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Panel;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.print.PageFormat;
 import java.awt.print.Paper;
 import java.awt.print.Printable;
@@ -68,7 +66,7 @@ public class InvalidPage extends Frame implements Printable {
                 try {
                     pJob.print();
                 } catch (PrinterException pe) {
-                    pe.printStackTrace();
+                    PassFailJFrame.forceFail("Test Failed");
                 }
             }
         });
@@ -89,14 +87,16 @@ public class InvalidPage extends Frame implements Printable {
         g2d.drawString("ORIGIN", 30, 30);
         g2d.drawString("X THIS WAY", 200, 50);
         g2d.drawString("Y THIS WAY", 60, 200);
-        g2d.drawRect(0, 0, (int) pageFormat.getImageableWidth(),
+        g2d.drawRect(0, 0,
+                (int) pageFormat.getImageableWidth(),
                 (int) pageFormat.getImageableHeight());
         if (pageIndex == 0) {
             g2d.setColor(Color.black);
         } else {
             g2d.setColor(new Color(0, 0, 0, 128));
         }
-        g2d.drawRect(1, 1, (int) pageFormat.getImageableWidth() - 2,
+        g2d.drawRect(1, 1,
+                (int) pageFormat.getImageableWidth() - 2,
                 (int) pageFormat.getImageableHeight() - 2);
 
         g2d.drawLine(0, 0,
@@ -104,30 +104,29 @@ public class InvalidPage extends Frame implements Printable {
                 (int) pageFormat.getImageableHeight());
         g2d.drawLine((int) pageFormat.getImageableWidth(), 0,
                 0, (int) pageFormat.getImageableHeight());
-        g2d.dispose();
+
         return Printable.PAGE_EXISTS;
     }
 
     private static final String INSTRUCTIONS =
             " You must have a printer available to perform this test\n" +
-            " Press the print button, which brings up a print dialog and\n" +
-            " in the dialog select a printer and press the print button\n" +
-            " in the dialog. Repeat for as many printers as you have installed\n" +
-            " On solaris and linux just one printer is sufficient\n" +
+            " Press the print button, which brings up a print dialog.\n" +
+            " In the dialog select a printer and press the print button.\n" +
+            " Repeat for all the printers as you have installed\n" +
+            " On Solaris and Linux just one printer is sufficient.\n" +
             " Collect the output and examine it, each print job has two pages\n" +
             " of very similar output, except that the 2nd page of the job may\n" +
             " appear in a different colour, and the output near the edge of\n" +
             " the page may be clipped. This is OK. Hold up both pieces of paper\n" +
             " to the light and confirm that the lines and text (where present)\n" +
             " are positioned identically on both pages\n" +
-            " The test fails if the JRE crashes, or if the output from the two\n" +
+            " The test fails if the output from the two\n" +
             " pages of a job is aligned differently";
 
     public static void main(String[] args) throws Exception {
 
         if (PrinterJob.lookupPrintServices().length == 0) {
-            throw new SkippedException("Printer not configured or available."
-                    + " Test cannot continue.");
+            throw new SkippedException("Printer not configured or available.");
         }
 
         PassFailJFrame.builder()
