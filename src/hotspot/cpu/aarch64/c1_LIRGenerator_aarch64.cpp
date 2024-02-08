@@ -922,7 +922,8 @@ void LIRGenerator::do_Clone(Intrinsic* x) {
     LIRItem array(src.value(), this);
     array.load_item();
     LIR_Opr len = new_register(T_INT);
-    CodeEmitInfo* null_check_info = state_for(x);
+    CodeEmitInfo* null_check_info = state_for(x, x->state_before());
+    null_check_info->set_force_reexecute();
     __ load(new LIR_Address(array.result(), arrayOopDesc::length_offset_in_bytes(), T_INT), len, null_check_info);
     LIR_Opr len_r19 = FrameMap::r19_opr;
     __ move(len, len_r19);
@@ -939,8 +940,7 @@ void LIRGenerator::do_Clone(Intrinsic* x) {
 
     __ metadata2reg(array_klass->constant_encoding(), klass_reg);
 
-    CodeEmitInfo* info = state_for(x, x->state_before());
-    info->set_force_reexecute();
+    CodeEmitInfo* info = new CodeEmitInfo(null_check_info);
     CodeStub* slow_path = new NewTypeArrayStub(klass_reg, len_r19, array_reg, info);
     __ allocate_array(array_reg, len_r19, tmp1, tmp2, tmp3, tmp4, elem_type, klass_reg, slow_path, false);
 
