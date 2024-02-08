@@ -48,7 +48,6 @@
 #define EPOCH_0_CLEARED_BIT                       (EPOCH_0_CLEARED_META_BIT << META_SHIFT)
 #define EPOCH_1_CLEARED_META_BIT                  (BIT << 1)
 #define EPOCH_1_CLEARED_BIT                       (EPOCH_1_CLEARED_META_BIT << META_SHIFT)
-#define EPOCH_CLEARED_BITS                        (EPOCH_1_CLEARED_BIT | EPOCH_0_CLEARED_BIT)
 #define LEAKP_META_BIT                            (BIT << 2)
 #define LEAKP_BIT                                 (LEAKP_META_BIT << META_SHIFT)
 #define TRANSIENT_META_BIT                        (BIT << 3)

@@ -44,13 +44,11 @@
 #define REMOVE_METHOD_ID(method) JfrTraceId::remove(method);
 #define RESTORE_ID(k) JfrTraceId::restore(k);
 
-static constexpr const uint16_t cleared_epoch_bits = 512 | 256;
-
 class JfrTraceFlag {
  private:
   mutable uint16_t _flags;
  public:
-  JfrTraceFlag() : _flags(cleared_epoch_bits) {}
+  JfrTraceFlag() : _flags(0) {}
   bool is_set(uint16_t flag) const {
     return (_flags & flag) != 0;
   }

@@ -50,7 +50,7 @@ static traceid atomic_inc(traceid volatile* const dest, traceid stride = 1) {
 
 static traceid next_class_id() {
   static volatile traceid class_id_counter = LAST_TYPE_ID + 1; // + 1 is for the void.class primitive
-  return (atomic_inc(&class_id_counter) << TRACE_ID_SHIFT) | EPOCH_CLEARED_BITS;
+  return atomic_inc(&class_id_counter) << TRACE_ID_SHIFT;
 }
 
 static traceid next_module_id() {
@@ -212,7 +212,7 @@ void JfrTraceId::remove(const Klass* k) {
 void JfrTraceId::remove(const Method* method) {
   assert(method != nullptr, "invariant");
   // Clear all bits.
-  method->set_trace_flags(static_cast<uint16_t>(EPOCH_CLEARED_BITS));
+  method->set_trace_flags(0);
 }
 
 // used by CDS / APPCDS as part of "restore_unshareable_info"
