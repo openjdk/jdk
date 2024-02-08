@@ -31,7 +31,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.EnumSet;
-import java.util.List;
 import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -53,11 +52,11 @@ public class Zip64SizeTest {
     // ZIP file to create
     private static final String ZIP_FILE_NAME = "Zip64SizeTest.zip";
     // File that will be created with a size greater than 0xFFFFFFFF
-    private static final String LARGE_FILE_NAME = "LargeZipEntry.txt";
+    private static final String LARGE_ENTRY_NAME = "LargeZipEntry.txt";
+    private static final long LARGE_ENTRY_SIZE = 5L * 1024L * 1024L * 1024L; // 5GB
     // File that will be created with a size less than 0xFFFFFFFF
-    private static final String SMALL_FILE_NAME = "SmallZipEntry.txt";
-    private static final long LARGE_FILE_SIZE = 5L * 1024L * 1024L * 1024L; // 5GB
-    private static final long SMALL_FILE_SIZE = 0x1024L * 1024L; // 1MB
+    private static final String SMALL_ENTRY_NAME = "SmallZipEntry.txt";
+    private static final long SMALL_ENTRY_SIZE = 0x1024L * 1024L; // 1MB
 
     /**
      * Validate that if the size of a ZIP entry exceeds 0xFFFFFFFF, that the
@@ -70,12 +69,12 @@ public class Zip64SizeTest {
         createZipFile();
         System.out.println("Validating Zip Entry Sizes");
         try (ZipFile zip = new ZipFile(ZIP_FILE_NAME)) {
-            ZipEntry ze = zip.getEntry(LARGE_FILE_NAME);
+            ZipEntry ze = zip.getEntry(LARGE_ENTRY_NAME);
             System.out.printf("Entry: %s, size= %s%n", ze.getName(), ze.getSize());
-            assertTrue(ze.getSize() == LARGE_FILE_SIZE);
-            ze = zip.getEntry(SMALL_FILE_NAME);
+            assertTrue(ze.getSize() == LARGE_ENTRY_SIZE);
+            ze = zip.getEntry(SMALL_ENTRY_NAME);
             System.out.printf("Entry: %s, size= %s%n", ze.getName(), ze.getSize());
-            assertTrue(ze.getSize() == SMALL_FILE_SIZE);
+            assertTrue(ze.getSize() == SMALL_ENTRY_SIZE);
         }
     }
 
@@ -85,8 +84,6 @@ public class Zip64SizeTest {
      */
     private static void deleteFiles() throws IOException {
         Files.deleteIfExists(Path.of(ZIP_FILE_NAME));
-        Files.deleteIfExists(Path.of(LARGE_FILE_NAME));
-        Files.deleteIfExists(Path.of(SMALL_FILE_NAME));
     }
 
     /**
@@ -107,8 +104,8 @@ public class Zip64SizeTest {
 
             System.out.printf("Creating Zip file: %s%n", ZIP_FILE_NAME);
 
-            addEntry(LARGE_FILE_NAME, LARGE_FILE_SIZE, zos);
-            addEntry(SMALL_FILE_NAME, SMALL_FILE_SIZE, zos);
+            addEntry(LARGE_ENTRY_NAME, LARGE_ENTRY_SIZE, zos);
+            addEntry(SMALL_ENTRY_NAME, SMALL_ENTRY_SIZE, zos);
         }
     }
 
@@ -150,7 +147,7 @@ public class Zip64SizeTest {
      */
     @AfterMethod
     public void tearDown() throws IOException {
-        deleteFiles();
+        //deleteFiles();
     }
 
     /**
