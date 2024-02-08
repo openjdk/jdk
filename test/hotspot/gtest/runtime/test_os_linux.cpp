@@ -37,7 +37,7 @@
 
 #include <sys/mman.h>
 
-static bool using_static_hugepages()  { return UseLargePages && !UseTransparentHugePages; }
+static bool using_explicit_hugepages()  { return UseLargePages && !UseTransparentHugePages; }
 
 namespace {
   static void small_page_write(void* addr, size_t size) {
@@ -75,7 +75,7 @@ namespace {
 }
 
 TEST_VM(os_linux, reserve_memory_special_huge_tlbfs_size_aligned) {
-  if (!using_static_hugepages()) {
+  if (!using_explicit_hugepages()) {
     return;
   }
   size_t lp = os::large_page_size();
@@ -91,7 +91,7 @@ TEST_VM(os_linux, reserve_memory_special_huge_tlbfs_size_aligned) {
 }
 
 TEST_VM(os_linux, reserve_memory_special_huge_tlbfs_size_not_aligned_without_addr) {
-  if (!using_static_hugepages()) {
+  if (!using_explicit_hugepages()) {
     return;
   }
   size_t lp = os::large_page_size();
@@ -118,7 +118,7 @@ TEST_VM(os_linux, reserve_memory_special_huge_tlbfs_size_not_aligned_without_add
 }
 
 TEST_VM(os_linux, reserve_memory_special_huge_tlbfs_size_not_aligned_with_good_req_addr) {
-  if (!using_static_hugepages()) {
+  if (!using_explicit_hugepages()) {
     return;
   }
   size_t lp = os::large_page_size();
@@ -159,7 +159,7 @@ TEST_VM(os_linux, reserve_memory_special_huge_tlbfs_size_not_aligned_with_good_r
 
 
 TEST_VM(os_linux, reserve_memory_special_huge_tlbfs_size_not_aligned_with_bad_req_addr) {
-  if (!using_static_hugepages()) {
+  if (!using_explicit_hugepages()) {
     return;
   }
   size_t lp = os::large_page_size();
@@ -221,7 +221,7 @@ class TestReserveMemorySpecial : AllStatic {
   }
 
   static void test_reserve_memory_special_huge_tlbfs_size_aligned(size_t size, size_t alignment, size_t page_size) {
-    if (!using_static_hugepages()) {
+    if (!using_explicit_hugepages()) {
       return;
     }
     char* addr = os::reserve_memory_special(size, alignment, page_size, nullptr, false);
@@ -232,7 +232,7 @@ class TestReserveMemorySpecial : AllStatic {
   }
 
   static void test_reserve_memory_special_huge_tlbfs_size_aligned() {
-    if (!using_static_hugepages()) {
+    if (!using_explicit_hugepages()) {
       return;
     }
     size_t lp = os::large_page_size();
@@ -323,7 +323,7 @@ class TestReserveMemorySpecial : AllStatic {
   }
 
   static void test() {
-    if (!using_static_hugepages()) {
+    if (!using_explicit_hugepages()) {
       return;
     }
     test_reserve_memory_special_huge_tlbfs_size_aligned();
