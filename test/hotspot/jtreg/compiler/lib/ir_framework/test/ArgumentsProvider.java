@@ -48,7 +48,7 @@ interface ArgumentsProvider {
      *                          invocations of the test method.
      * @return Returns the arguments to be passed into the test method.
      */
-    public abstract Object[] getArguments(Object invocationTarget, int invocationCounter);
+    Object[] getArguments(Object invocationTarget, int invocationCounter);
 
 }
 

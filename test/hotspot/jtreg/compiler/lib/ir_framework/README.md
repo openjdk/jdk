@@ -41,7 +41,7 @@ The normal and simplest form of testing provides a single `@Test` annotated meth
 
 Arguments can be provided with `@Arguments(values = {...})` by providing well-specified inputs for each individual argument. Alternatively, a setup method can be chosen with `@Arguments(setup = "setupMethodName")`, which computes arguments and can also set fields.
 
-More information on normal test methods with a precise definition can be found in the Javadocs of [Test](./Test.java). Concrete examples on how to specify a normal test can be found in [NormalTestsExample](../../../testlibrary_tests/ir_framework/examples/NormalTestExample.java).
+More information on normal test methods with a precise definition can be found in the Javadocs of [Test](./Test.java). Concrete examples on how to specify a normal test can be found in [NormalTestExample](../../../testlibrary_tests/ir_framework/examples/NormalTestExample.java).
 
 ##### Setup Method
 A `@Setup` annotated method can provide custom arguments and set fields before a normal test is run. A `@Test` annotated method can additionally be annotated with `@Arguments(setup = "setupMethodName")` to define the dedicated `@Setup` method.
@@ -51,7 +51,7 @@ More information on normal tests with `@Setup` methods together with a precise d
 ##### Check Method
 A `@Check(test = "checkMethodName")` annotated method is invoked directly after the `@Test` annotated method `checkMethodName()` is executed. The user can perform various checks, such as test method return value and field value verification.
 
-More information on check methods with a precise definition can be found in the Javadocs of [Check](./Check.java). Concrete examples on how to specify check methods can be found in [CheckedTestsExample](../../../testlibrary_tests/ir_framework/examples/CheckedTestExample.java).
+More information on check methods with a precise definition can be found in the Javadocs of [Check](./Check.java). Concrete examples on how to specify check methods can be found in [CheckedTestExample](../../../testlibrary_tests/ir_framework/examples/CheckedTestExample.java).
 
 Note: `@Setup` and `@Check` methods can only be specified for normal but not for custom run tests (see next section).
 

@@ -57,7 +57,7 @@ public class SetupExample {
     @Setup
     static Object[] setupLinkedII() {
         int r = RANDOM.nextInt();
-        return new Object[]{ r, r + 42};
+        return new Object[]{ r, r + 42 };
     }
 
     @Test
@@ -68,7 +68,9 @@ public class SetupExample {
 
     @Check(test = "testSetupLinkedII")
     static void checkSetupLinkedII(int res) {
-        if (res != 42) { throw new RuntimeException("wrong result " + res); }
+        if (res != 42) { 
+            throw new RuntimeException("wrong result " + res); 
+        }
     }
 
     // ----------------- Random Arrays --------------
@@ -127,7 +129,9 @@ public class SetupExample {
 
     @Check(test = "testSetupFields")
     static void checkSetupFields(int res) {
-        if (res != 42) { throw new RuntimeException("wrong result " + res); }
+        if (res != 42) { 
+            throw new RuntimeException("wrong result " + res); 
+        }
     }
 
     // ----------------- Deterministic Values -------
