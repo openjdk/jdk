@@ -34,6 +34,7 @@ import jdk.test.lib.Asserts;
  * @run driver compiler.c2.loopopts.InvariantCodeMotionReassociateCmp
  */
 public class InvariantCodeMotionReassociateCmp {
+    private static final int size = 500;
 
     public static void main(String[] args) {
         TestFramework.run();
@@ -45,24 +46,46 @@ public class InvariantCodeMotionReassociateCmp {
     @Test
     @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     @IR(counts = {IRNode.SUB_I, "1"})
-    public void equalsAddInt(int inv1, int inv2) {
-        for (int i = 0; i < 500; ++i) {
+    public int[] equalsAddInt(int inv1, int inv2) {
+        int i = 0;
+        for (; i < size; ++i) {
             // Reassociate to `inv2 - inv1 == i`
             if (inv1 + i == inv2) {
                 blackhole();
+                break;
             }
+        }
+        return new int[]{i, inv1, inv2};
+    }
+
+    @Check(test = "equalsAddInt")
+    public void checkEqualsAddInt(int[] returnValue) {
+        if (returnValue[0] != size && returnValue[0] + returnValue[1] != returnValue[2]) {
+            throw new RuntimeException("Illegal reassociation: i=" + returnValue[0] + ", inv1=" + returnValue[1]
+                    + ", inv2=" + returnValue[2]);
         }
     }
 
     @Test
     @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     @IR(counts = {IRNode.SUB_L, "1"})
-    public void equalsAddLong(long inv1, long inv2) {
-        for (int i = 0; i < 500; ++i) {
+    public long[] equalsAddLong(long inv1, long inv2) {
+        int i = 0;
+        for (; i < size; ++i) {
             // Reassociate to `inv2 - inv1 == i`
             if (inv1 + i == inv2) {
                 blackhole();
+                break;
             }
+        }
+        return new long[]{i, inv1, inv2};
+    }
+
+    @Check(test = "equalsAddLong")
+    public void checkEqualsAddLong(long[] returnValue) {
+        if (returnValue[0] != size && returnValue[0] + returnValue[1] != returnValue[2]) {
+            throw new RuntimeException("Illegal reassociation: i=" + returnValue[0] + ", inv1=" + returnValue[1]
+                    + ", inv2=" + returnValue[2]);
         }
     }
 
@@ -71,7 +94,7 @@ public class InvariantCodeMotionReassociateCmp {
     @IR(counts = {IRNode.SUB_I, "1"})
     public int equalsInvariantSubVariantInt(int inv1, int inv2) {
         int i = 0;
-        for (; i < 500; ++i) {
+        for (; i < size; ++i) {
             // Reassociate to `inv1 - inv2 == i`
             if (inv1 - i == inv2) {
                 blackhole();
@@ -93,7 +116,7 @@ public class InvariantCodeMotionReassociateCmp {
     @IR(counts = {IRNode.SUB_L, "1"})
     public int equalsInvariantSubVariantLong(long inv1, long inv2) {
         int i = 0;
-        for (; i < 500; ++i) {
+        for (; i < size; ++i) {
             // Reassociate to `inv1 - inv2 == i`
             if (inv1 - i == inv2) {
                 blackhole();
@@ -114,7 +137,7 @@ public class InvariantCodeMotionReassociateCmp {
     @Arguments({Argument.NUMBER_42, Argument.NUMBER_42})
     @IR(counts = {IRNode.ADD_I, "2"})
     public void equalsVariantSubInvariantInt(int inv1, int inv2) {
-        for (int i = 0; i < 500; ++i) {
+        for (int i = 0; i < size; ++i) {
             // Reassociate to `inv1 + inv2 == i`
             if (i - inv1 == inv2) {
                 blackhole();
@@ -126,7 +149,7 @@ public class InvariantCodeMotionReassociateCmp {
     @Arguments({Argument.NUMBER_42, Argument.NUMBER_42})
     @IR(counts = {IRNode.ADD_L, "1"})
     public void equalsVariantSubInvariantLong(long inv1, long inv2) {
-        for (int i = 0; i < 500; ++i) {
+        for (int i = 0; i < size; ++i) {
             // Reassociate to `inv1 + inv2 == i`
             if (i - inv1 == inv2) {
                 blackhole();
@@ -150,7 +173,7 @@ public class InvariantCodeMotionReassociateCmp {
     @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     @IR(counts = {IRNode.SUB_L, "1"})
     public void notEqualsAddLong(long inv1, long inv2) {
-        for (int i = 0; i < 500; ++i) {
+        for (int i = 0; i < size; ++i) {
             // Reassociate to `inv1 - inv2 != i`
             if (inv1 + i != inv2) {
                 blackhole();
@@ -163,7 +186,7 @@ public class InvariantCodeMotionReassociateCmp {
     @IR(counts = {IRNode.SUB_I, "1"})
     public int notEqualsInvariantSubVariantInt(int inv1, int inv2) {
         int i = 0;
-        for (; i < 500; ++i) {
+        for (; i < size; ++i) {
             // Reassociate to `inv2 - inv1 != i`
             if (inv1 - i != inv2) {
                 blackhole();
@@ -185,7 +208,7 @@ public class InvariantCodeMotionReassociateCmp {
     @IR(counts = {IRNode.SUB_L, "1"})
     public int notEqualsInvariantSubVariantLong(long inv1, long inv2) {
         int i = 0;
-        for (; i < 500; ++i) {
+        for (; i < size; ++i) {
             // Reassociate to `inv2 - inv1 != i`
             if (inv1 - i != inv2) {
                 blackhole();
@@ -218,7 +241,7 @@ public class InvariantCodeMotionReassociateCmp {
     @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     @IR(counts = {IRNode.ADD_L, "1"})
     public void notEqualsVariantSubInvariantLong(long inv1, long inv2) {
-        for (int i = 0; i < 500; ++i) {
+        for (int i = 0; i < size; ++i) {
             // Reassociate to `inv1 + inv2 != i`
             if (i - inv1 != inv2) {
                 blackhole();
@@ -231,7 +254,7 @@ public class InvariantCodeMotionReassociateCmp {
     @IR(failOn = {IRNode.SUB_I})
     public int leDontReassociate(int inv1, int inv2) {
         int i = 0;
-        for (; i < 500; ++i) {
+        for (; i < size; ++i) {
             if (inv1 + i <= inv2) {
                 blackhole();
                 break;
@@ -252,7 +275,7 @@ public class InvariantCodeMotionReassociateCmp {
     @IR(failOn = {IRNode.SUB_I})
     public int gtDontReassociate(int inv1, int inv2) {
         int i = 0;
-        for (; i < 500; ++i) {
+        for (; i < size; ++i) {
             if (inv1 + i > inv2) {
                 blackhole();
                 break;
@@ -273,7 +296,7 @@ public class InvariantCodeMotionReassociateCmp {
     @IR(failOn = {IRNode.SUB_I})
     public int geDontReassociate(int inv1, int inv2) {
         int i = 0;
-        for (; i < 500; ++i) {
+        for (; i < size; ++i) {
             if (inv1 + i >= inv2) {
                 blackhole();
                 break;
