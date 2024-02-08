@@ -1162,8 +1162,8 @@ static void* dll_load_library(const char *filename, char *ebuf, int ebuflen) {
  Load library named <filename>
  dll_build_name constructs the entire path as libfilename.so
  Search order:
- Load "libfilename.so" first,then load libfilename.a,on failure.
- In,OpenJ9,the libary with .so extension is loaded first and then .a extension,on failure.
+ Load "libfilename.so" first, then load libfilename.a, on failure.
+ In OpenJ9, the libary with .so extension is loaded first and then .a extension, on failure.
 */
 void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   void* result = nullptr;
