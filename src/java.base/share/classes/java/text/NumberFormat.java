@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -675,6 +675,33 @@ public abstract class NumberFormat extends Format  {
         Objects.requireNonNull(locale);
         Objects.requireNonNull(formatStyle);
         return getInstance(locale, formatStyle, COMPACTSTYLE);
+    }
+
+    /**
+     * This method compares the passed NumberFormat to a number of pre-defined
+     * style NumberFormat instances, (created with the passed locale). Returns a
+     * matching FormatStyle string if found, otherwise null.
+     * This method is used by MessageFormat to provide string pattens for NumberFormat
+     * Subformats. Any future pre-defined NumberFormat styles should be added to this method.
+     */
+    static String matchToStyle(NumberFormat fmt, Locale locale) {
+        if (fmt.equals(NumberFormat.getInstance(locale))) {
+            return "";
+        } else if (fmt.equals(NumberFormat.getCurrencyInstance(locale))) {
+            return "currency";
+        } else if (fmt.equals(NumberFormat.getPercentInstance(locale))) {
+            return "percent";
+        } else if (fmt.equals(NumberFormat.getIntegerInstance(locale))) {
+            return "integer";
+        } else if (fmt.equals(NumberFormat.getCompactNumberInstance(locale,
+                NumberFormat.Style.SHORT))) {
+            return "compact_short";
+        } else if (fmt.equals(NumberFormat.getCompactNumberInstance(locale,
+                NumberFormat.Style.LONG))) {
+            return "compact_long";
+        } else {
+            return null;
+        }
     }
 
     /**

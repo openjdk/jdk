@@ -738,34 +738,22 @@ public class MessageFormat extends Format {
      * compare the two ClassicFormats.
      */
     private String patternFromFormat(Format fmt) {
-        if (fmt instanceof NumberFormat) {
-            // Add any instances returned from the NumberFormat factory methods
-            if (fmt.equals(NumberFormat.getInstance(locale))) {
-                return ",number";
-            } else if (fmt.equals(NumberFormat.getCurrencyInstance(locale))) {
-                return ",number,currency";
-            } else if (fmt.equals(NumberFormat.getPercentInstance(locale))) {
-                return ",number,percent";
-            } else if (fmt.equals(NumberFormat.getIntegerInstance(locale))) {
-                return ",number,integer";
-            } else if (fmt.equals(NumberFormat.getCompactNumberInstance(locale,
-                    NumberFormat.Style.SHORT))) {
-                return ",number,compact_short";
-            } else if (fmt.equals(NumberFormat.getCompactNumberInstance(locale,
-                    NumberFormat.Style.LONG))) {
-                return ",number,compact_long";
-            } else {
-                // No pre-defined styles match, return the SubformatPattern
-                if (fmt instanceof DecimalFormat dFmt) {
-                    // Quote eligible mFmt pattern characters: '{' and '}'
-                    // Here, and in other subformatPattern instances
-                    return ",number," + copyAndQuoteBraces(dFmt.toPattern());
-                } else if (fmt instanceof ChoiceFormat cFmt) {
-                    return ",choice," + copyAndQuoteBraces(cFmt.toPattern());
-                }
+        if (fmt instanceof NumberFormat nFmt) {
+            // Check nFmt factory instances
+            String nStyle = NumberFormat.matchToStyle(nFmt, locale);
+            if (nStyle != null) {
+                return ",number" + (nStyle.equals("") ? nStyle : "," + nStyle);
+            }
+            // Check SubformatPattern
+            if (fmt instanceof DecimalFormat dFmt) {
+                // Quote eligible mFmt pattern characters: '{' and '}'
+                // Here, and in other subformatPattern instances
+                return ",number," + copyAndQuoteBraces(dFmt.toPattern());
+            } else if (fmt instanceof ChoiceFormat cFmt) {
+                return ",choice," + copyAndQuoteBraces(cFmt.toPattern());
             }
         } else if (fmt instanceof DateFormat) {
-            // Match to any pre-defined DateFormat styles
+            // Check dFmt factory instances
             for (DateFormat.Style style : DateFormat.Style.values()) {
                 if (fmt.equals(DateFormat.getDateInstance(style.getValue(), locale))) {
                     return ",date" + ((style.getValue() != DateFormat.DEFAULT)
@@ -776,11 +764,12 @@ public class MessageFormat extends Format {
                             ? "," + style.name().toLowerCase(Locale.ROOT) : "");
                 }
             }
-            // If no styles match, return the SubformatPattern
+            // Check SubformatPattern
             if (fmt instanceof SimpleDateFormat sdFmt) {
                 return ",date," + copyAndQuoteBraces(sdFmt.toPattern());
             }
         } else if (fmt instanceof ListFormat) {
+            // Check lFmt factory instances
             for (ListFormat.Type type : ListFormat.Type.values()) {
                 if (fmt.equals(ListFormat.getInstance(locale, type, ListFormat.Style.FULL))) {
                     return ",list" + ((type != ListFormat.Type.STANDARD)
@@ -1994,7 +1983,7 @@ public class MessageFormat extends Format {
         private static FormatStyle fromString(String text) {
             for (FormatStyle style : values()) {
                 // Also check trimmed case-insensitive for historical reasons
-                if (!style.equals(FormatStyle.SUBFORMATPATTERN) &&
+                if (style != FormatStyle.SUBFORMATPATTERN &&
                         text.trim().compareToIgnoreCase(style.text) == 0) {
                     return style;
                 }
