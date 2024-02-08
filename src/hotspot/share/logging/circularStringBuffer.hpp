@@ -41,7 +41,7 @@
 // an interface for writing and reading bytes in a circular buffer
 // correctly. This indirection is necessary because there are two
 // underlying implementations: Linux, and all others.
-#ifdef LINUX
+#ifndef LINUX
 // Implements a circular buffer by using the virtual memory mapping facilities of the OS.
 // Specifically, it reserves virtual memory with twice the size of the requested buffer.
 // The latter half of this buffer is then mapped back to the start of the first buffer.
@@ -109,7 +109,8 @@ struct CircularMapping {
   CircularMapping()
   : buffer(nullptr), size(0) {
   };
-  CircularMapping(size_t size) {
+  CircularMapping(size_t size)
+  : buffer(nullptr), size(size) {
     buffer = os::reserve_memory(size, false, mtLogging);
     if (buffer == nullptr) {
       vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "Failed to allocate async logging buffer");
@@ -119,13 +120,15 @@ struct CircularMapping {
       vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "Failed to allocate async logging buffer");
     }
   }
+
   void write_bytes(size_t at, const char* bytes, size_t size) {
     const size_t part1_size = MIN2(size, this->size - at);
     const size_t part2_size = size - part1_size;
 
     ::memcpy(&buffer[at], bytes, part1_size);
-    ::memcpy(&buffer, &bytes[part1_size], part2_size);
+    ::memcpy(buffer, &bytes[part1_size], part2_size);
   }
+
   void read_bytes(size_t at, char* out, size_t size) {
     const size_t part1_size = MIN2(size, this->size - at);
     const size_t part2_size = size - part1_size;

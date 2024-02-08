@@ -84,10 +84,12 @@ void CircularStringBuffer::enqueue_locked(const char* str, size_t size, LogFileS
   // Write the Message
   Message msg{required_memory, output, decorations};
   circular_mapping.write_bytes(t, (char*)&msg, sizeof(Message));
+  // Move t forward
+  t = (t +  sizeof(Message)) % circular_mapping.size;
   // Write the string
-  circular_mapping.write_bytes(t + sizeof(Message), str, size);
+  circular_mapping.write_bytes(t, str, size);
   // Finally move the tail, making the message available for consumers.
-  tail = (t + required_memory + sizeof(Message)) % circular_mapping.size;
+  tail = (t + required_memory) % circular_mapping.size;
   // We're done, notify the reader.
   _read_lock.notify();
   return;
@@ -95,7 +97,7 @@ void CircularStringBuffer::enqueue_locked(const char* str, size_t size, LogFileS
 
 void CircularStringBuffer::enqueue(const char* msg, size_t size, LogFileStreamOutput* output,
                                    const LogDecorations decorations) {
-  WriteLocker rl(this);
+  WriteLocker wl(this);
   enqueue_locked(msg, size, output, decorations);
 }
 
@@ -125,11 +127,13 @@ CircularStringBuffer::DequeueResult CircularStringBuffer::dequeue(Message* out_m
     // Not enough space
     return TooSmall;
   }
+  // Move h forward
+  h = (h + sizeof(Message)) % circular_mapping.size;
 
-  // OK, we can read
-  circular_mapping.read_bytes(h + sizeof(Message), out, str_size);
-  // Done, move the head
-  head = (h + out_msg->size + sizeof(Message)) % circular_mapping.size;
+  // Now read the string
+  circular_mapping.read_bytes(h, out, str_size);
+  // Done, move the head forward
+  head = (h + out_msg->size) % circular_mapping.size;
   // Notify a writer that more memory is available
   _write_lock.notify();
   // Release the lock
