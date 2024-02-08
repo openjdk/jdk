@@ -742,7 +742,7 @@ public class MessageFormat extends Format {
             // Check nFmt factory instances
             String nStyle = NumberFormat.matchToStyle(nFmt, locale);
             if (nStyle != null) {
-                return ",number" + (nStyle.equals("") ? nStyle : "," + nStyle);
+                return ",number" + (nStyle.isEmpty() ? nStyle : "," + nStyle);
             }
             // Check SubformatPattern
             if (fmt instanceof DecimalFormat dFmt) {
@@ -777,10 +777,8 @@ public class MessageFormat extends Format {
                 }
             }
         }
-        else if (fmt != null) {
-            // By here, this is an instanceof Format that is unknown to MessageFormat.
-            // Since it is unknown, do nothing
-        }
+        // By here, this is an instanceof Format that is unknown to MessageFormat.
+        // Since it is unknown, nothing can be done.
         return "";
     }
 
