@@ -4,6 +4,7 @@ grant {
     permission java.util.PropertyPermission "test.jdk","read";
     permission java.util.PropertyPermission "test.src","read";
     permission java.util.PropertyPermission "user.dir","read";
+    permission java.util.PropertyPermission "os.name","read";
     permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.module";
     permission java.lang.RuntimePermission "accessUserInformation";
 };

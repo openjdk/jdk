@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,21 +36,21 @@ extern "C" {
 #define PASSED  0
 #define STATUS_FAILED  2
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jint result = PASSED;
 static int verbose = 0;
 // test thread
-static jthread testThread = NULL;
+static jthread testThread = nullptr;
 
 static const char *javaField = "exc";
 static const char *excClassSig =
     "Lnsk/jvmti/scenarios/jni_interception/JI03/ji03t003Exc;";
 
 /* the original JNI function table */
-static jniNativeInterface *orig_jni_functions = NULL;
+static jniNativeInterface *orig_jni_functions = nullptr;
 
 /* the redirected JNI function table */
-static jniNativeInterface *redir_jni_functions = NULL;
+static jniNativeInterface *redir_jni_functions = nullptr;
 
 /* number of the redirected JNI function calls */
 int throw_calls = 0;
@@ -58,18 +58,18 @@ int thrownew_calls = 0;
 int excoccur_calls = 0;
 
 void setTestThread(JNIEnv *env) {
-    jthread curThread = NULL;
+    jthread curThread = nullptr;
     NSK_JVMTI_VERIFY(jvmti->GetCurrentThread(&curThread));
     testThread = env->NewGlobalRef(curThread);
 }
 
 void resetTestThread(JNIEnv *env) {
      env->DeleteGlobalRef(testThread);
-     testThread = NULL;
+     testThread = nullptr;
 }
 
 bool isOnTestThread(JNIEnv *env) {
-    jthread curThread = NULL;
+    jthread curThread = nullptr;
     NSK_JVMTI_VERIFY(jvmti->GetCurrentThread(&curThread));
     return env->IsSameObject(testThread, curThread);
 }
@@ -290,7 +290,7 @@ Java_nsk_jvmti_scenarios_jni_1interception_JI03_ji03t003_check(JNIEnv *env, jobj
     jclass thrw;
     jclass objCls;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("(%s,%d): TEST FAILURE: JVMTI client was not properly loaded\n",
             __FILE__, __LINE__);
         return STATUS_FAILED;
@@ -357,14 +357,14 @@ JNIEXPORT jint JNI_OnLoad_ji03t003(JavaVM *jvm, char *options, void *reserved) {
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jint res;
 
-    if (options != NULL && strcmp(options, "-verbose") == 0)
+    if (options != nullptr && strcmp(options, "-verbose") == 0)
         verbose = 1;
 
     if (verbose)
         printf("verbose mode on\n");
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("(%s,%d): Failed to call GetEnv\n", __FILE__, __LINE__);
         return JNI_ERR;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ extern "C" {
 
 #define STARTED_THREAD_NAME "ThreadStartedByAgent"
 
-static Options* options = NULL;
+static Options* options = nullptr;
 static const char* agentName;
 
 static jvmtiEvent testEvents[] = { JVMTI_EVENT_THREAD_START, JVMTI_EVENT_THREAD_END };
@@ -52,7 +52,7 @@ volatile int threadWasExecuted = 0;
 void JNICALL startedThreadFunction(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
     char threadName[MAX_STRING_LENGTH];
 
-    if (!nsk_jvmti_aod_getThreadName(jvmti, NULL, threadName)) {
+    if (!nsk_jvmti_aod_getThreadName(jvmti, nullptr, threadName)) {
         nsk_jvmti_aod_disableEventsAndFinish(agentName, testEvents, testEventsNumber, 0, jvmti, jni);
         return;
     }
@@ -66,10 +66,10 @@ int startNewThread(jvmtiEnv* jvmti, JNIEnv* jni) {
     jthread thread;
 
     thread = nsk_jvmti_aod_createThreadWithName(jni, STARTED_THREAD_NAME);
-    if (!NSK_VERIFY(thread != NULL))
+    if (!NSK_VERIFY(thread != nullptr))
         return NSK_FALSE;
 
-    if (!NSK_JVMTI_VERIFY(jvmti->RunAgentThread(thread, startedThreadFunction, NULL, JVMTI_THREAD_NORM_PRIORITY))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->RunAgentThread(thread, startedThreadFunction, nullptr, JVMTI_THREAD_NORM_PRIORITY))) {
         return NSK_FALSE;
     }
 
@@ -142,17 +142,17 @@ Agent_OnAttach(JavaVM *vm, char *optionsString, void *reserved)
     JNIEnv* jni;
 
     options = (Options*) nsk_aod_createOptions(optionsString);
-    if (!NSK_VERIFY(options != NULL))
+    if (!NSK_VERIFY(options != nullptr))
         return JNI_ERR;
 
     agentName = nsk_aod_getOptionValue(options, NSK_AOD_AGENT_NAME_OPTION);
 
     jni = (JNIEnv*) nsk_aod_createJNIEnv(vm);
-    if (jni == NULL)
+    if (jni == nullptr)
         return JNI_ERR;
 
     jvmti = nsk_jvmti_createJVMTIEnv(vm, reserved);
-    if (!NSK_VERIFY(jvmti != NULL))
+    if (!NSK_VERIFY(jvmti != nullptr))
         return JNI_ERR;
 
     memset(&eventCallbacks,0, sizeof(eventCallbacks));

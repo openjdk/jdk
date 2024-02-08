@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,13 +60,13 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
     {
         StorageStructure storageData;
         StorageStructure* initialStorage = &storageData;
-        StorageStructure* obtainedStorage = NULL;
+        StorageStructure* obtainedStorage = nullptr;
 
         memset(storageData.data, STORAGE_DATA_CHAR, STORAGE_DATA_SIZE);
 
         NSK_DISPLAY1("SetThreadLocalStorage() for current agent thread with pointer: %p\n",
                                                     (void*)initialStorage);
-        if (!NSK_JVMTI_VERIFY(jvmti->SetThreadLocalStorage(NULL, (void*)initialStorage))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->SetThreadLocalStorage(nullptr, (void*)initialStorage))) {
             nsk_jvmti_setFailStatus();
             return;
         }
@@ -80,7 +80,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
             return;
 
         NSK_DISPLAY0("GetThreadLocalStorage() for current agent thread\n");
-        if (!NSK_JVMTI_VERIFY(jvmti->GetThreadLocalStorage(NULL, (void**)&obtainedStorage))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->GetThreadLocalStorage(nullptr, (void**)&obtainedStorage))) {
             nsk_jvmti_setFailStatus();
             return;
         }
@@ -133,7 +133,7 @@ JNIEXPORT jint JNI_OnLoad_setthrdstor002(JavaVM *jvm, char *options, void *reser
 }
 #endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
-    jvmtiEnv* jvmti = NULL;
+    jvmtiEnv* jvmti = nullptr;
 
     /* init framework and parse options */
     if (!NSK_VERIFY(nsk_jvmti_parseOptions(options)))
@@ -143,11 +143,11 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     /* create JVMTI environment */
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     /* register agent proc and arg */
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     return JNI_OK;

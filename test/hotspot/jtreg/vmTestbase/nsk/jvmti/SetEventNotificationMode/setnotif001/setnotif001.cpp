@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,11 +34,11 @@ extern "C" {
 #define STATUS_FAILED 2
 #define SCALE_SIZE (JVMTI_MAX_EVENT_TYPE_VAL + 1)
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiCapabilities caps;
 static jvmtiEventCallbacks callbacks;
 static jrawMonitorID access_lock;
-static jobject notifyFramePopThread = NULL;
+static jobject notifyFramePopThread = nullptr;
 static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
 static int flag = 0;
@@ -78,7 +78,7 @@ void disable(jvmtiEnv *jvmti_env, jvmtiEvent kind) {
         printf(">>> disabling %s\n", TranslateEvent(kind));
     }
     err = jvmti_env->SetEventNotificationMode(
-        JVMTI_DISABLE, kind, NULL);
+        JVMTI_DISABLE, kind, nullptr);
     if (err != JVMTI_ERROR_NONE) {
         printf("Fail to disable %s: %s (%d)\n",
                TranslateEvent(kind), TranslateError(err), err);
@@ -99,7 +99,7 @@ void enable(jvmtiEnv *jvmti_env, jvmtiEvent kind) {
         result = STATUS_FAILED;
     }
     err = jvmti_env->SetEventNotificationMode(
-        JVMTI_ENABLE, kind, NULL);
+        JVMTI_ENABLE, kind, nullptr);
     if (err != JVMTI_ERROR_NONE) {
         printf("Fail to enable %s: %s (%d)\n",
                TranslateEvent(kind), TranslateError(err), err);
@@ -121,8 +121,8 @@ void setWatches(jvmtiEnv *jvmti_env, JNIEnv *env, jclass cls) {
     jmethodID mid;
 
     mid = env->GetStaticMethodID(cls, "meth01", "(I)V");
-    if (mid == NULL) {
-      printf("(GetStaticMethodID) returns NULL");
+    if (mid == nullptr) {
+      printf("(GetStaticMethodID) returns null");
       result = STATUS_FAILED;
       return;
     }
@@ -309,7 +309,7 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jint res;
     jvmtiError err;
 
-    if (options != NULL && strcmp(options, "printdump") == 0) {
+    if (options != nullptr && strcmp(options, "printdump") == 0) {
         printdump = JNI_TRUE;
     }
 
@@ -317,7 +317,7 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     memset(ev_scale, 0, SCALE_SIZE);
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv !\n");
         return JNI_ERR;
     }

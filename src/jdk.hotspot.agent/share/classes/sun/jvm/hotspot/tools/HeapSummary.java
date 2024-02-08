@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,10 +93,10 @@ public class HeapSummary extends Tool {
       System.out.println();
       System.out.println("Heap Usage:");
 
-      if (heap instanceof GenCollectedHeap) {
-         GenCollectedHeap genHeap = (GenCollectedHeap) heap;
-         for (int n = 0; n < genHeap.nGens(); n++) {
-            Generation gen = genHeap.getGen(n);
+      if (heap instanceof SerialHeap) {
+         SerialHeap sh = (SerialHeap) heap;
+         for (int n = 0; n < sh.nGens(); n++) {
+            Generation gen = sh.getGen(n);
             if (gen instanceof DefNewGeneration) {
                System.out.println("New Generation (Eden + 1 Survivor Space):");
                printGen(gen);

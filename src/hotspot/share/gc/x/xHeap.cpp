@@ -249,7 +249,7 @@ void XHeap::mark_start() {
   // Enter mark phase
   XGlobalPhase = XPhaseMark;
 
-  // Reset marking information and mark roots
+  // Reset marking information
   _mark.start();
 
   // Update statistics

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -621,7 +621,6 @@ public:
 #if defined(SUPPORT_DATA_STRUCTS)
   // print output in opt build for disassembler library
   void print_relocations()                        PRODUCT_RETURN;
-  void print_pcs() { print_pcs_on(tty); }
   void print_pcs_on(outputStream* st);
   void print_scopes() { print_scopes_on(tty); }
   void print_scopes_on(outputStream* st)          PRODUCT_RETURN;
@@ -635,8 +634,7 @@ public:
   void print_oops(outputStream* st);     // oops from the underlying CodeBlob.
   void print_metadata(outputStream* st); // metadata in metadata pool.
 #else
-  // void print_pcs()                             PRODUCT_RETURN;
-  void print_pcs()                                { return; }
+  void print_pcs_on(outputStream* st) { return; }
 #endif
 
   void print_calls(outputStream* st)              PRODUCT_RETURN;

@@ -2148,8 +2148,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       if (phi_type->isa_ptr()) {
         const Type* uin_type = phase->type(uin);
         if (!phi_type->isa_oopptr() && !uin_type->isa_oopptr()) {
-          cast = ConstraintCastNode::make_cast(Op_CastPP, r, uin, phi_type, ConstraintCastNode::StrongDependency,
-                                               extra_types);
+          cast = new CastPPNode(r, uin, phi_type, ConstraintCastNode::StrongDependency, extra_types);
         } else {
           // Use a CastPP for a cast to not null and a CheckCastPP for
           // a cast to a new klass (and both if both null-ness and
@@ -2159,8 +2158,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           // null, uin's type must be casted to not null
           if (phi_type->join(TypePtr::NOTNULL) == phi_type->remove_speculative() &&
               uin_type->join(TypePtr::NOTNULL) != uin_type->remove_speculative()) {
-            cast = ConstraintCastNode::make_cast(Op_CastPP, r, uin, TypePtr::NOTNULL,
-                                                 ConstraintCastNode::StrongDependency, extra_types);
+            cast = new CastPPNode(r, uin, TypePtr::NOTNULL, ConstraintCastNode::StrongDependency, extra_types);
           }
 
           // If the type of phi and uin, both casted to not null,
@@ -2172,12 +2170,10 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
               cast = phase->transform(cast);
               n = cast;
             }
-            cast = ConstraintCastNode::make_cast(Op_CheckCastPP, r, n, phi_type, ConstraintCastNode::StrongDependency,
-                                                 extra_types);
+            cast = new CheckCastPPNode(r, n, phi_type, ConstraintCastNode::StrongDependency, extra_types);
           }
           if (cast == nullptr) {
-            cast = ConstraintCastNode::make_cast(Op_CastPP, r, uin, phi_type, ConstraintCastNode::StrongDependency,
-                                                 extra_types);
+            cast = new CastPPNode(r, uin, phi_type, ConstraintCastNode::StrongDependency, extra_types);
           }
         }
       } else {
