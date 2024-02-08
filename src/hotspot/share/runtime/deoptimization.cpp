@@ -1646,13 +1646,13 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
           // We have lost information about the correct state of the lock stack.
           // Inflate the locks instead. Enter then inflate to avoid races with
           // deflation.
-          ObjectSynchronizer::enter(obj, nullptr, deoptee_thread);
+          ObjectSynchronizer::enter_for(obj, nullptr, deoptee_thread);
           assert(mon_info->owner()->is_locked(), "object must be locked now");
-          ObjectMonitor* mon = ObjectSynchronizer::inflate(deoptee_thread, obj(), ObjectSynchronizer::inflate_cause_vm_internal);
+          ObjectMonitor* mon = ObjectSynchronizer::inflate_for(deoptee_thread, obj(), ObjectSynchronizer::inflate_cause_vm_internal);
           assert(mon->owner() == deoptee_thread, "must be");
         } else {
           BasicLock* lock = mon_info->lock();
-          ObjectSynchronizer::enter(obj, lock, deoptee_thread);
+          ObjectSynchronizer::enter_for(obj, lock, deoptee_thread);
           assert(mon_info->owner()->is_locked(), "object must be locked now");
         }
       }
