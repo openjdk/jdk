@@ -263,9 +263,8 @@ void TenuredGeneration::compute_new_size_inner() {
   }
 }
 
-void TenuredGeneration::space_iterate(SpaceClosure* blk,
-                                                 bool usedOnly) {
-  blk->do_space(space());
+HeapWord* TenuredGeneration::block_start(const void* p) const {
+  return space()->block_start_const(p);
 }
 
 void TenuredGeneration::younger_refs_iterate(OopIterateClosure* blk) {
@@ -448,10 +447,6 @@ TenuredGeneration::expand_and_allocate(size_t word_size, bool is_tlab) {
   assert(!is_tlab, "TenuredGeneration does not support TLAB allocation");
   expand(word_size*HeapWordSize, _min_heap_delta_bytes);
   return _the_space->allocate(word_size);
-}
-
-size_t TenuredGeneration::unsafe_max_alloc_nogc() const {
-  return _the_space->free();
 }
 
 size_t TenuredGeneration::contiguous_available() const {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -615,6 +615,10 @@ void SharedRuntime::throw_and_post_jvmti_exception(JavaThread* current, Handle h
       Bytecode_invoke call = Bytecode_invoke_check(method, bci);
       if (call.is_valid()) {
         ResourceMark rm(current);
+
+        // Lock to read ProfileData, and ensure lock is not broken by a safepoint
+        MutexLocker ml(trap_mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
+
         ProfileData* pdata = trap_mdo->allocate_bci_to_data(bci, nullptr);
         if (pdata != nullptr && pdata->is_BitData()) {
           BitData* bit_data = (BitData*) pdata;

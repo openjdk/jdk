@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ static jvmtiEvent eventsList[EVENTS_COUNT] = {
 };
 
 static volatile int eventsReceived = 0;
-static jthread testedThread = NULL;
+static jthread testedThread = nullptr;
 
 /** Agent algorithm. */
 static void JNICALL
@@ -61,14 +61,14 @@ agentProc(jvmtiEnv *jvmti, JNIEnv *jni, void *arg) {
   {
     LOG("Find thread: %s\n", THREAD_NAME);
     testedThread = find_thread_by_name(jvmti, jni, THREAD_NAME);
-    if (testedThread == NULL) {
+    if (testedThread == nullptr) {
       return;
     }
     LOG("  ... found thread: %p\n", (void *) testedThread);
 
     eventsReceived = 0;
     LOG("Enable event: %s\n", "THREAD_END");
-    enable_events_notifications(jvmti, jni, JVMTI_ENABLE, EVENTS_COUNT, eventsList, NULL);
+    enable_events_notifications(jvmti, jni, JVMTI_ENABLE, EVENTS_COUNT, eventsList, nullptr);
 
     LOG("Suspend thread: %p\n", (void *) testedThread);
     err = jvmti->SuspendThread(testedThread);
@@ -96,7 +96,7 @@ agentProc(jvmtiEnv *jvmti, JNIEnv *jni, void *arg) {
     }
 
     LOG("Disable event: %s\n", "THREAD_END");
-    enable_events_notifications(jvmti, jni, JVMTI_DISABLE, EVENTS_COUNT, eventsList, NULL);
+    enable_events_notifications(jvmti, jni, JVMTI_DISABLE, EVENTS_COUNT, eventsList, nullptr);
 
     LOG("Resume thread: %p\n", (void *) testedThread);
     err = jvmti->ResumeThread(testedThread);
@@ -122,7 +122,7 @@ agentProc(jvmtiEnv *jvmti, JNIEnv *jni, void *arg) {
 JNIEXPORT void JNICALL
 callbackThreadEnd(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread) {
   /* check if event is for tested thread */
-  if (thread != NULL && jni->IsSameObject(testedThread, thread)) {
+  if (thread != nullptr && jni->IsSameObject(testedThread, thread)) {
     LOG("  ... received THREAD_END event for tested thread: %p\n", (void *) thread);
     eventsReceived++;
   } else {
@@ -132,12 +132,12 @@ callbackThreadEnd(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread) {
 
 JNIEXPORT jint JNICALL
 Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
-  jvmtiEnv *jvmti = NULL;
+  jvmtiEnv *jvmti = nullptr;
 
   timeout = 60 * 1000;
 
   jint res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_9);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     LOG("Wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }
@@ -168,7 +168,7 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
     return JNI_ERR;
   }
   /* register agent proc and arg */
-  if (!set_agent_proc(agentProc, NULL)) {
+  if (!set_agent_proc(agentProc, nullptr)) {
     return JNI_ERR;
   }
 
