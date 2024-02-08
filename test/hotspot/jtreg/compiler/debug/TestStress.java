@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,22 +30,22 @@ import jdk.test.lib.Asserts;
 /*
  * @test
  * @key stress randomness
- * @bug 8252219 8256535
+ * @bug 8252219 8256535 8317349
  * @requires vm.debug == true & vm.compiler2.enabled
  * @summary Tests that stress compilations with the same seed yield the same
- *          IGVN and CCP traces.
+ *          IGVN, CCP, and macro expansion traces.
  * @library /test/lib /
- * @run driver compiler.debug.TestStressIGVNAndCCP
+ * @run driver compiler.debug.TestStress
  */
 
-public class TestStressIGVNAndCCP {
+public class TestStress {
 
     static String phaseTrace(String stressOption, String traceOption,
                              int stressSeed) throws Exception {
-        String className = TestStressIGVNAndCCP.class.getName();
+        String className = TestStress.class.getName();
         String[] procArgs = {
             "-Xcomp", "-XX:-TieredCompilation", "-XX:-Inline", "-XX:+CICountNative",
-            "-XX:CompileOnly=" + className + "::sum", "-XX:+" + traceOption,
+            "-XX:CompileOnly=" + className + "::sum", "-XX:" + traceOption,
             "-XX:+" + stressOption, "-XX:StressSeed=" + stressSeed,
             className, "10"};
         ProcessBuilder pb  = ProcessTools.createLimitedTestJavaProcessBuilder(procArgs);
@@ -55,11 +55,17 @@ public class TestStressIGVNAndCCP {
     }
 
     static String igvnTrace(int stressSeed) throws Exception {
-        return phaseTrace("StressIGVN", "TraceIterativeGVN", stressSeed);
+        return phaseTrace("StressIGVN", "+TraceIterativeGVN", stressSeed);
     }
 
     static String ccpTrace(int stressSeed) throws Exception {
-        return phaseTrace("StressCCP", "TracePhaseCCP", stressSeed);
+        return phaseTrace("StressCCP", "+TracePhaseCCP", stressSeed);
+    }
+
+    static String macroExpansionTrace(int stressSeed) throws Exception {
+        return phaseTrace("StressMacroExpansion",
+                          "CompileCommand=PrintIdealPhase,*::*,AFTER_MACRO_EXPANSION_STEP",
+                          stressSeed);
     }
 
     static void sum(int n) {
@@ -75,6 +81,8 @@ public class TestStressIGVNAndCCP {
                     "got different IGVN traces for the same seed");
                 Asserts.assertEQ(ccpTrace(s), ccpTrace(s),
                     "got different CCP traces for the same seed");
+                Asserts.assertEQ(macroExpansionTrace(s), macroExpansionTrace(s),
+                    "got different macro expansion traces for the same seed");
             }
         } else if (args.length > 0) {
             sum(Integer.parseInt(args[0]));
