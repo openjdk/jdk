@@ -64,7 +64,9 @@ class oopDesc {
   // make use of the C++ copy/assign incorrect.
   NONCOPYABLE(oopDesc);
 
- public:
+  inline oop cas_set_forwardee(markWord new_mark, markWord old_mark, atomic_memory_order order);
+
+public:
   // Must be trivial; see verifying static assert after the class.
   oopDesc() = default;
 
