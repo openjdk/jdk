@@ -29,6 +29,7 @@
  * @run main TreeCellRendererLeakTest
  */
 
+import java.awt.BorderLayout;
 import java.awt.Component;
 import java.lang.ref.PhantomReference;
 import java.lang.ref.Reference;
@@ -108,23 +109,22 @@ public final class TreeCellRendererLeakTest {
         infoThread.start();
     }
 
-    // <editor-fold defaultstate="collapsed" desc=" Generated Code ">
     private void initComponents() {
-        jTabbedPane1 = new javax.swing.JTabbedPane();
-        jPanel1 = new javax.swing.JPanel();
-        jScrollPane1 = new javax.swing.JScrollPane();
-        jTree1 = new javax.swing.JTree();
-        jPanel2 = new javax.swing.JPanel();
+        jTabbedPane1 = new JTabbedPane();
+        jPanel1 = new JPanel();
+        jScrollPane1 = new JScrollPane();
+        jTree1 = new JTree();
+        jPanel2 = new JPanel();
 
-        jPanel1.setLayout(new java.awt.BorderLayout());
+        jPanel1.setLayout(new BorderLayout());
 
         jScrollPane1.setViewportView(jTree1);
 
-        jPanel1.add(jScrollPane1, java.awt.BorderLayout.CENTER);
+        jPanel1.add(jScrollPane1, BorderLayout.CENTER);
 
         jTabbedPane1.addTab("tab1", jPanel1);
 
-        jPanel2.setLayout(new java.awt.BorderLayout());
+        jPanel2.setLayout(new BorderLayout());
 
         jTabbedPane1.addTab("tab2", jPanel2);
 
@@ -137,7 +137,7 @@ public final class TreeCellRendererLeakTest {
         frame = new JFrame();
         frame.getContentPane().add(jTabbedPane1, java.awt.BorderLayout.CENTER);
 
-        frame.pack();
+        frame.setSize(200, 200);
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }// </editor-fold>
