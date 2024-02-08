@@ -1256,6 +1256,9 @@ void Method::link_method(const methodHandle& h_method, TRAPS) {
     if (Continuations::enabled()) {
       assert(!Threads::is_vm_complete(), "should only be called during vm init");
       AdapterHandlerLibrary::create_native_wrapper(h_method);
+      if (!h_method->has_compiled_code()) {
+        THROW_MSG(vmSymbols::java_lang_OutOfMemoryError(), "Initial size of CodeCache is too small");
+      }
       assert(_from_interpreted_entry == get_i2c_entry(), "invariant");
     }
   }
