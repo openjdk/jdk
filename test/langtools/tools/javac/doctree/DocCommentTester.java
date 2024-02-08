@@ -1011,17 +1011,6 @@ public class DocCommentTester {
             }
         }
 
-//        Tokens.Comment getComment(TreePath path) {
-//            CompilationUnitTree t = path.getCompilationUnit();
-//            Tree leaf = path.getLeaf();
-//            if (t instanceof JCTree.JCCompilationUnit compilationUnit && leaf instanceof JCTree tree) {
-//                if (compilationUnit.docComments != null) {
-//                    return compilationUnit.docComments.getComment(tree);
-//                }
-//            }
-//            return null;
-//        }
-
         /**
          * Normalize whitespace in places where the tree does not preserve it.
          * Maintain contents of inline tags unless {@code normalizeTags} is
