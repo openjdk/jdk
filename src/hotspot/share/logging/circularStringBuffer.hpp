@@ -41,7 +41,7 @@
 // an interface for writing and reading bytes in a circular buffer
 // correctly. This indirection is necessary because there are two
 // underlying implementations: Linux, and all others.
-#ifndef LINUX
+#ifdef LINUX
 // Implements a circular buffer by using the virtual memory mapping facilities of the OS.
 // Specifically, it reserves virtual memory with twice the size of the requested buffer.
 // The latter half of this buffer is then mapped back to the start of the first buffer.
