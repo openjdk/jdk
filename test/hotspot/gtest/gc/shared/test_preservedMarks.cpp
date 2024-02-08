@@ -29,7 +29,7 @@
 // Class to create a "fake" oop with a mark that will
 // return true for calls to must_be_preserved().
 class FakeOop {
-  oopDesc _oop;
+  alignas(ObjectAlignmentInBytes) oopDesc _oop;
 
 public:
   FakeOop() : _oop() { _oop.set_mark(originalMark()); }
