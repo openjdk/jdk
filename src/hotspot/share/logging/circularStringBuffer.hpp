@@ -32,7 +32,6 @@
 #include "utilities/resourceHash.hpp"
 
 #include <string.h>
-#include <sys/mman.h>
 
 #ifndef SHARE_LOGGING_CIRCULARSTRINGBUFFER_HPP
 #define SHARE_LOGGING_CIRCULARSTRINGBUFFER_HPP
@@ -42,6 +41,7 @@
 // correctly. This indirection is necessary because there are two
 // underlying implementations: Linux, and all others.
 #ifdef LINUX
+#include <sys/mman.h>
 // Implements a circular buffer by using the virtual memory mapping facilities of the OS.
 // Specifically, it reserves virtual memory with twice the size of the requested buffer.
 // The latter half of this buffer is then mapped back to the start of the first buffer.
