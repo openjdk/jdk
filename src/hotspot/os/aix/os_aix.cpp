@@ -1111,7 +1111,6 @@ bool os::dll_address_to_library_name(address addr, char* buf,
 static void* dll_load_library(const char *filename, char *ebuf, int ebuflen) {
 
   log_info(os)("attempting shared library load of %s", filename);
-
   if (ebuf && ebuflen > 0) {
     ebuf[0] = '\0';
     ebuf[ebuflen - 1] = '\0';
