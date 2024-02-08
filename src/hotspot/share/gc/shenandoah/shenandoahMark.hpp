@@ -27,7 +27,6 @@
 
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskTerminator.hpp"
-#include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 
