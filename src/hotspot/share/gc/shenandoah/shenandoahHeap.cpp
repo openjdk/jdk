@@ -834,9 +834,7 @@ void ShenandoahHeap::notify_heap_changed() {
   monitoring_support()->notify_heap_changed();
 
   // This is called from allocation path, and thus should be fast.
-  if (_heap_changed.is_set()) {
-    _heap_changed.set();
-  }
+  _heap_changed.try_set();
 }
 
 void ShenandoahHeap::set_forced_counters_update(bool value) {
