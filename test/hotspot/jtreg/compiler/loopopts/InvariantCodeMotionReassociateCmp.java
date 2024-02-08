@@ -67,26 +67,46 @@ public class InvariantCodeMotionReassociateCmp {
     }
 
     @Test
-    @Arguments({Argument.NUMBER_42, Argument.NUMBER_42})
+    @Arguments({Argument.NUMBER_42, Argument.DEFAULT})
     @IR(counts = {IRNode.SUB_I, "1"})
-    public void equalsInvariantSubVariantInt(int inv1, int inv2) {
-        for (int i = 0; i < 500; ++i) {
+    public int equalsInvariantSubVariantInt(int inv1, int inv2) {
+        int i = 0;
+        for (; i < 500; ++i) {
             // Reassociate to `inv1 - inv2 == i`
             if (inv1 - i == inv2) {
                 blackhole();
+                break;
             }
+        }
+        return i;
+    }
+
+    @Check(test = "equalsInvariantSubVariantInt")
+    public void checkEqualsInvariantSubVariantInt(int returnValue) {
+        if (returnValue != 42) {
+            throw new RuntimeException("Illegal reassociation");
         }
     }
 
     @Test
-    @Arguments({Argument.NUMBER_42, Argument.NUMBER_42})
+    @Arguments({Argument.NUMBER_42, Argument.DEFAULT})
     @IR(counts = {IRNode.SUB_L, "1"})
-    public void equalsInvariantSubVariantLong(long inv1, long inv2) {
-        for (int i = 0; i < 500; ++i) {
+    public int equalsInvariantSubVariantLong(long inv1, long inv2) {
+        int i = 0;
+        for (; i < 500; ++i) {
             // Reassociate to `inv1 - inv2 == i`
             if (inv1 - i == inv2) {
                 blackhole();
+                break;
             }
+        }
+        return i;
+    }
+
+    @Check(test = "equalsInvariantSubVariantLong")
+    public void checkEqualsInvariantSubVariantLong(int returnValue) {
+        if (returnValue != 42) {
+            throw new RuntimeException("Illegal reassociation");
         }
     }
 
@@ -141,24 +161,44 @@ public class InvariantCodeMotionReassociateCmp {
     @Test
     @Arguments({Argument.NUMBER_42, Argument.NUMBER_42})
     @IR(counts = {IRNode.SUB_I, "1"})
-    public void notEqualsInvariantSubVariantInt(int inv1, int inv2) {
-        for (int i = 0; i < 500; ++i) {
+    public int notEqualsInvariantSubVariantInt(int inv1, int inv2) {
+        int i = 0;
+        for (; i < 500; ++i) {
             // Reassociate to `inv2 - inv1 != i`
             if (inv1 - i != inv2) {
                 blackhole();
+                break;
             }
+        }
+        return i;
+    }
+
+    @Check(test = "notEqualsInvariantSubVariantInt")
+    public void checkNotEqualsInvariantSubVariantInt(int returnValue) {
+        if (returnValue != 1) {
+            throw new RuntimeException("Illegal reassociation");
         }
     }
 
     @Test
     @Arguments({Argument.NUMBER_42, Argument.NUMBER_42})
     @IR(counts = {IRNode.SUB_L, "1"})
-    public void notEqualsInvariantSubVariantLong(long inv1, long inv2) {
-        for (int i = 0; i < 500; ++i) {
+    public int notEqualsInvariantSubVariantLong(long inv1, long inv2) {
+        int i = 0;
+        for (; i < 500; ++i) {
             // Reassociate to `inv2 - inv1 != i`
             if (inv1 - i != inv2) {
                 blackhole();
+                break;
             }
+        }
+        return i;
+    }
+
+    @Check(test = "notEqualsInvariantSubVariantLong")
+    public void checkNotEqualsInvariantSubVariantLong(int returnValue) {
+        if (returnValue != 1) {
+            throw new RuntimeException("Illegal reassociation");
         }
     }
 
