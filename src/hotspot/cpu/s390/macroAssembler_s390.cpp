@@ -3027,7 +3027,8 @@ void MacroAssembler::check_klass_subtype_slow_path(Register Rsubklass,
                                                    Label* L_failure) {
   // Input registers must not overlap.
   // Also check for R1 which is explicitly used here.
-  assert_different_registers(Z_R1, Rsubklass, Rsuperklass, Rarray_ptr, Rlength);
+  const Register temp = Z_R1_scratch;
+  assert_different_registers(temp, Rsubklass, Rsuperklass, Rarray_ptr, Rlength);
   NearLabel L_fallthrough;
   int label_nulls = 0;
   if (L_success == nullptr) { L_success = &L_fallthrough; label_nulls++; }
@@ -3036,6 +3037,7 @@ void MacroAssembler::check_klass_subtype_slow_path(Register Rsubklass,
 
   const int ss_offset = in_bytes(Klass::secondary_supers_offset());
   const int sc_offset = in_bytes(Klass::secondary_super_cache_offset());
+  const int sm_offset = in_bytes(JavaThread::backoff_secondary_super_miss_offset());
 
   const int length_offset = Array<Klass*>::length_offset_in_bytes();
   const int base_offset   = Array<Klass*>::base_offset_in_bytes();
@@ -3060,7 +3062,7 @@ void MacroAssembler::check_klass_subtype_slow_path(Register Rsubklass,
   // No match yet, so we must walk the array's elements.
   z_lngfr(Rlength, Rlength);
   z_sllg(Rlength, Rlength, LogBytesPerWord); // -#bytes of cache array
-  z_llill(Z_R1, BytesPerWord);               // Set increment/end index.
+  z_llill(temp, BytesPerWord);               // Set increment/end index.
   add2reg(Rlength, 2 * BytesPerWord);        // start index  = -(n-2)*BytesPerWord
   z_slgr(Rarray_ptr, Rlength);               // start addr: +=  (n-2)*BytesPerWord
   z_bru(loop_count);
@@ -3069,7 +3071,7 @@ void MacroAssembler::check_klass_subtype_slow_path(Register Rsubklass,
   z_cg(Rsuperklass, base_offset, Rlength, Rarray_ptr); // Check array element for match.
   z_bre(match);
   BIND(loop_count);
-  z_brxlg(Rlength, Z_R1, loop_iterate);
+  z_brxlg(Rlength, temp, loop_iterate);
 
   // Rsuperklass not found among secondary super classes -> failure.
   branch_optimized(Assembler::bcondAlways, *L_failure);
@@ -3079,7 +3081,22 @@ void MacroAssembler::check_klass_subtype_slow_path(Register Rsubklass,
 
   BIND(match);
 
-  z_stg(Rsuperklass, sc_offset, Rsubklass); // Save result to cache.
+  // Success. Try to cache the super we found and proceed in triumph.
+  uint32_t super_cache_backoff = checked_cast<uint32_t>(SecondarySuperMissBackoff);
+  if (super_cache_backoff > 0 && VM_Version::has_MemWithImmALUOps()) {
+    NearLabel L_skip;
+    z_asi(Address(Z_thread, sm_offset), -1);
+    branch_optimized(Assembler::bcondNotLow, L_skip);
+
+    load_const_optimized(temp, super_cache_backoff);
+    z_st(temp, sm_offset, Z_thread);
+
+    z_stg(Rsuperklass, sc_offset, Rsubklass); // Save result to cache.
+
+    bind(L_skip);
+  } else {
+    z_stg(Rsuperklass, sc_offset, Rsubklass); // Save result to cache.
+  }
 
   final_jmp(*L_success);
 

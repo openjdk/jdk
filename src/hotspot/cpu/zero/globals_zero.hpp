@@ -49,6 +49,9 @@ define_pd_global(intx,  InlineSmallCode,      1000);
 //     violate the constraint verifier on JVM start-up.
 define_pd_global(intx,  InitArrayShortSize,   0);
 
+// not used
+define_pd_global(uint, SecondarySuperMissBackoff, 0);
+
 #define DEFAULT_STACK_YELLOW_PAGES (2)
 #define DEFAULT_STACK_RED_PAGES (1)
 #define DEFAULT_STACK_SHADOW_PAGES (5 LP64_ONLY(+1) DEBUG_ONLY(+3))

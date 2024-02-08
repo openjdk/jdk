@@ -142,6 +142,10 @@ class JavaThread: public Thread {
   oop           _vm_result;    // oop result is GC-preserved
   Metadata*     _vm_result_2;  // non-oop result
 
+  // Used to back off on secondary super cache updates to mitigate contention on it.
+  void*         _backoff_secondary_super_value;
+  uint32_t      _backoff_secondary_super_miss;
+
   // See ReduceInitialCardMarks: this holds the precise space interval of
   // the most recent slow path allocation for which compiled code has
   // elided card-marks for performance along the fast-path.
@@ -744,6 +748,10 @@ private:
 
   // Misc. accessors/mutators
   static ByteSize scopedValueCache_offset()       { return byte_offset_of(JavaThread, _scopedValueCache); }
+
+  // Backoff counters support
+  static ByteSize backoff_secondary_super_miss_offset() { return byte_offset_of(JavaThread, _backoff_secondary_super_miss); }
+  static ByteSize backoff_secondary_super_value_offset() { return byte_offset_of(JavaThread, _backoff_secondary_super_value); }
 
   // For assembly stub generation
   static ByteSize threadObj_offset()             { return byte_offset_of(JavaThread, _threadObj); }
