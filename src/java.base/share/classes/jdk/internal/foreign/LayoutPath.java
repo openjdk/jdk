@@ -462,11 +462,6 @@ public class LayoutPath {
         }
 
         @Override
-        public int hashCode() {
-            return 31;
-        }
-
-        @Override
         public String toString() {
             return "sequenceElement()";
         }
@@ -487,9 +482,11 @@ public class LayoutPath {
             return layoutPath.derefElement();
         }
 
+        // Overriding here will ensure DereferenceElement will have a hash code
+        // that is different from the hash code of SequenceElement.
         @Override
         public int hashCode() {
-            return 63;
+            return 31;
         }
 
         @Override
