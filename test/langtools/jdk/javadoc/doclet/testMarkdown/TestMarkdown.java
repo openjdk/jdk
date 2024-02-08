@@ -1041,19 +1041,19 @@ public class TestMarkdown extends JavadocTester {
                         /// First sentence.
                         /// Control: [MyObject]
                         public void m1() { }
-                                            
+
                         /// Simple autoref in first sentence [MyObject].
                         /// More.
                         public void m2() { }
-                                            
+
                         /// Qualified autoref in first sentence [q.MyObject].
                         /// More.
                         public void m3() { }
-                                            
+
                         /// Standard link with periods [example.com](http://example.com).
                         /// More.
                         public void m4() { }
-                                            
+
                         /// Manual ref link [foo].
                         /// More.
                         ///
@@ -1124,8 +1124,6 @@ public class TestMarkdown extends JavadocTester {
                         }
                         """);
 
-
-
         javadoc("-d", base.resolve("api").toString(),
                 "-Xdoclint:none",
                 (useBreakIterator ? "-breakiterator" : "-XDdummy"),
@@ -1148,5 +1146,96 @@ public class TestMarkdown extends JavadocTester {
                     <div class="block">Link <a href="http://example.com">example.com</a> end.</div>""",
                 "<!-- ============ METHOD DETAIL ========== -->"
         );
+    }
+
+    @Test
+    public void testDeprecated(Path base) throws Exception {
+        Path src = base.resolve("src");
+
+        tb.writeJavaFiles(src,
+                """
+                    package p;
+                    public class Control {
+                        /**
+                         * First sentence. Second sentence.
+                         */
+                         @Deprecated
+                         public void annoNoTag() { }
+                        /**
+                         * First sentence. Second sentence.
+                         * @deprecated deprecated-text
+                         */
+                         public void noAnno_tag() { }
+                        /**
+                         * First sentence. Second sentence.
+                         * @deprecated deprecated-text
+                         */
+                        @Deprecated
+                        public void anno_tag() { }
+                    }""",
+                """
+                    package p;
+                    public class MarkdownComments {
+                        /// First sentence. Second sentence.
+                        @Deprecated
+                        public void anno_noTag() { }
+                        /// First sentence. Second sentence.
+                        /// @deprecated deprecated-text.
+                        public void noAnno_tag() { }
+                        /// First sentence. Second sentence.
+                        /// @deprecated deprecated-text
+                        @Deprecated
+                        public void anno_tag() { }
+                    }""");
+
+        javadoc("-d", base.resolve("api").toString(),
+                "-Xdoclint:none",
+                "--no-platform-links",
+                "--source-path", src.toString(),
+                "p");
+        checkExit(Exit.OK);
+
+        // Note: javadoc does not generate warnings about any mismatch
+        // between @Deprecated annotations and @deprecated tags:
+        // the mismatch is detected and reported by javac Attr phase.
+
+        // in the following checks we check from the signature,
+        // beginning at the name, through to the end of the main description.
+
+        checkOutput("p/Control.html", true,
+                """
+                    <span class="element-name">annoNoTag</span>()</div>
+                    <div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>
+                    <div class="block">First sentence. Second sentence.</div>""",
+                """
+                    <span class="element-name">noAnno_tag</span>()</div>
+                    <div class="deprecation-block"><span class="deprecated-label">Deprecated.</span>
+                    <div class="deprecation-comment">deprecated-text</div>
+                    </div>
+                    <div class="block">First sentence. Second sentence.</div>""",
+                """
+                    <span class="element-name">anno_tag</span>()</div>
+                    <div class="deprecation-block"><span class="deprecated-label">Deprecated.</span>
+                    <div class="deprecation-comment">deprecated-text</div>
+                    </div>
+                    <div class="block">First sentence. Second sentence.</div>""");
+
+        checkOutput("p/MarkdownComments.html", true,
+                """
+                    <span class="element-name">anno_noTag</span>()</div>
+                    <div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>
+                    <div class="block">First sentence. Second sentence.</div>""",
+                // the following is the interesting case:
+                // with no @Deprecated annotation, any @deprecated tag is discarded
+                """
+                    <span class="element-name">noAnno_tag</span>()</div>
+                    <div class="block">First sentence. Second sentence.</div>""",
+                """
+                    <span class="element-name">anno_tag</span>()</div>
+                    <div class="deprecation-block"><span class="deprecated-label">Deprecated.</span>
+                    <div class="deprecation-comment">deprecated-text</div>
+                    </div>
+                    <div class="block">First sentence. Second sentence.</div>""");
+
     }
 }
