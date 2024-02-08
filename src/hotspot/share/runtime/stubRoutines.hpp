@@ -453,14 +453,14 @@ class StubRoutines: AllStatic {
   static address hf2f_adr()            { return _hf2f; }
 
   static jshort f2hf(jfloat x) {
-    MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec, Thread::current());) // About to call into code cache
     assert(_f2hf != nullptr, "stub is not implemented on this platform");
+    MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec, Thread::current());) // About to call into code cache
     typedef jshort (*f2hf_stub_t)(jfloat x);
     return ((f2hf_stub_t)_f2hf)(x);
   }
   static jfloat hf2f(jshort x) {
-    MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec, Thread::current());) // About to call into code cache
     assert(_hf2f != nullptr, "stub is not implemented on this platform");
+    MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec, Thread::current());) // About to call into code cache
     typedef jfloat (*hf2f_stub_t)(jshort x);
     return ((hf2f_stub_t)_hf2f)(x);
   }
