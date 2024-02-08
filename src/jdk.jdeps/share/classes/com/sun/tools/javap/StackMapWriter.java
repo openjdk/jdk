@@ -28,13 +28,13 @@ package com.sun.tools.javap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import jdk.internal.classfile.Attributes;
-import jdk.internal.classfile.Classfile;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.ClassFile;
 
-import jdk.internal.classfile.Instruction;
-import jdk.internal.classfile.attribute.CodeAttribute;
-import jdk.internal.classfile.attribute.StackMapFrameInfo;
-import jdk.internal.classfile.attribute.StackMapTableAttribute;
+import java.lang.classfile.Instruction;
+import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.attribute.StackMapFrameInfo;
+import java.lang.classfile.attribute.StackMapTableAttribute;
 
 /**
  * Annotate instructions with stack map.
@@ -69,7 +69,7 @@ public class StackMapWriter extends InstructionDetailWriter {
             return;
         }
         var m = code.parent().get();
-        if ((m.flags().flagsMask() & Classfile.ACC_STATIC) == 0) {
+        if ((m.flags().flagsMask() & ClassFile.ACC_STATIC) == 0) {
             thisClassName =  m.parent().get().thisClass().asInternalName();
         } else {
             thisClassName = null;

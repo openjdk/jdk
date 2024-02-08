@@ -24,17 +24,17 @@
 /**
  * @test id=default
  * @bug 8284161
- * @summary Test virtual threads doing blocking I/O on java.net sockets
+ * @summary Test virtual threads doing blocking I/O on java.net Sockets
  * @library /test/lib
  * @run junit BlockingSocketOps
  */
 
 /**
- * @test id=direct-register
- * @summary Test virtual threads doing blocking I/O on java.net sockets and with
- *    the I/O poller configured to use direct registration
+ * @test id=poller-modes
+ * @requires (os.family == "linux") | (os.family == "mac")
  * @library /test/lib
- * @run junit/othervm -Djdk.useDirectRegister BlockingSocketOps
+ * @run junit/othervm -Djdk.pollerMode=1 BlockingSocketOps
+ * @run junit/othervm -Djdk.pollerMode=2 BlockingSocketOps
  */
 
 /**
@@ -685,7 +685,7 @@ class BlockingSocketOps {
                 Socket s1 = new Socket();
                 Socket s2;
                 try {
-                    s1.connect(listener.getLocalSocketAddress(), 10_000);
+                    s1.connect(listener.getLocalSocketAddress());
                     s2 = listener.accept();
                 } catch (IOException ioe) {
                     s1.close();

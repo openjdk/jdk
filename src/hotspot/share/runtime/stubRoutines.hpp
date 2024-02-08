@@ -256,6 +256,8 @@ class StubRoutines: AllStatic {
   static address _f2hf;
   static address _hf2f;
 
+  static address _method_entry_barrier;
+
   static address _cont_thaw;
   static address _cont_returnBarrier;
   static address _cont_returnBarrierExc;
@@ -268,6 +270,8 @@ class StubRoutines: AllStatic {
   // Vector Math Routines
   static address _vector_f_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP];
   static address _vector_d_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP];
+
+  static address _upcall_stub_exception_handler;
 
  public:
   // Initialization/Testing
@@ -458,12 +462,19 @@ class StubRoutines: AllStatic {
     return ((hf2f_stub_t)_hf2f)(x);
   }
 
+  static address method_entry_barrier() { return _method_entry_barrier; }
+
   static address cont_thaw()           { return _cont_thaw; }
   static address cont_returnBarrier()  { return _cont_returnBarrier; }
   static address cont_returnBarrierExc(){return _cont_returnBarrierExc; }
 
   JFR_ONLY(static address jfr_write_checkpoint() { return _jfr_write_checkpoint; })
   JFR_ONLY(static address jfr_return_lease() { return _jfr_return_lease; })
+
+  static address upcall_stub_exception_handler() {
+    assert(_upcall_stub_exception_handler != nullptr, "not implemented");
+    return _upcall_stub_exception_handler;
+  }
 
   static address select_fill_function(BasicType t, bool aligned, const char* &name);
 

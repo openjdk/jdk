@@ -524,6 +524,10 @@ public abstract class CountedCompleter<T> extends ForkJoinTask<T> {
         return pending;
     }
 
+    final void initPending(int count) {
+        U.putInt(this, PENDING, count);
+    }
+
     /**
      * Sets the pending count to the given value.
      *
@@ -724,26 +728,27 @@ public abstract class CountedCompleter<T> extends ForkJoinTask<T> {
      *                 processed.
      */
     public final void helpComplete(int maxTasks) {
-        ForkJoinPool.WorkQueue q; Thread t; boolean owned;
-        if (owned = (t = Thread.currentThread()) instanceof ForkJoinWorkerThread)
+        ForkJoinPool.WorkQueue q; Thread t; boolean internal;
+        if (internal =
+            (t = Thread.currentThread()) instanceof ForkJoinWorkerThread)
             q = ((ForkJoinWorkerThread)t).workQueue;
         else
             q = ForkJoinPool.commonQueue();
         if (q != null && maxTasks > 0)
-            q.helpComplete(this, owned, maxTasks);
+            q.helpComplete(this, internal, maxTasks);
     }
+
     // ForkJoinTask overrides
 
     /**
      * Supports ForkJoinTask exception propagation.
      */
     @Override
-    final int trySetException(Throwable ex) {
+    final void onAuxExceptionSet(Throwable ex) {
         CountedCompleter<?> a = this, p = a;
-        do {} while (isExceptionalStatus(a.trySetThrown(ex)) &&
-                     a.onExceptionalCompletion(ex, p) &&
-                     (a = (p = a).completer) != null && a.status >= 0);
-        return status;
+        do {} while (a.onExceptionalCompletion(ex, p) &&
+                     (a = (p = a).completer) != null &&
+                     a.trySetThrown(ex));
     }
 
     /**

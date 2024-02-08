@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -809,14 +809,14 @@ void VM_Version::get_processor_features() {
   _stepping = cpu_stepping();
 
   if (cpu_family() > 4) { // it supports CPUID
-    _features = feature_flags();
+    _features = feature_flags(); // These can be changed by VM settings
+    _cpu_features = _features;   // Preserve features
     // Logical processors are only available on P4s and above,
     // and only if hyperthreading is available.
     _logical_processors_per_package = logical_processor_count();
     _L1_data_cache_line_size = L1_line_size();
   }
 
-  _supports_cx8 = supports_cmpxchg8();
   // xchg and xadd instructions
   _supports_atomic_getset4 = true;
   _supports_atomic_getadd4 = true;
@@ -856,6 +856,12 @@ void VM_Version::get_processor_features() {
     _data_cache_line_flush_size = _cpuid_info.std_cpuid1_ebx.bits.clflush_size * 8;
   }
 #endif
+
+  // Check if processor has Intel Ecore
+  if (FLAG_IS_DEFAULT(EnableX86ECoreOpts) && is_intel() && cpu_family() == 6 &&
+    (_model == 0x97 || _model == 0xAA || _model == 0xAC || _model == 0xAF)) {
+    FLAG_SET_DEFAULT(EnableX86ECoreOpts, true);
+  }
 
   if (UseSSE < 4) {
     _features &= ~CPU_SSE4_1;
@@ -1125,6 +1131,7 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
   }
 
+#ifdef _LP64
   // ChaCha20 Intrinsics
   // As long as the system supports AVX as a baseline we can do a
   // SIMD-enabled block function.  StubGenerator makes the determination
@@ -1140,6 +1147,13 @@ void VM_Version::get_processor_features() {
       }
       FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
   }
+#else
+  // No support currently for ChaCha20 intrinsics on 32-bit platforms
+  if (UseChaCha20Intrinsics) {
+      warning("ChaCha20 intrinsics are not available on this CPU.");
+      FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
+  }
+#endif // _LP64
 
   // Base64 Intrinsics (Check the condition for which the intrinsic will be active)
   if (UseAVX >= 2) {
@@ -1165,7 +1179,7 @@ void VM_Version::get_processor_features() {
     UseMD5Intrinsics = true;
   }
 
-  if (supports_sha() LP64_ONLY(|| supports_avx2() && supports_bmi2())) {
+  if (supports_sha() LP64_ONLY(|| (supports_avx2() && supports_bmi2()))) {
     if (FLAG_IS_DEFAULT(UseSHA)) {
       UseSHA = true;
     }
@@ -3230,4 +3244,3 @@ bool VM_Version::is_intrinsic_supported(vmIntrinsicID id) {
   }
   return true;
 }
-

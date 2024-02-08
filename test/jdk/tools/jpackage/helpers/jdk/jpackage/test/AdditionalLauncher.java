@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,6 +76,11 @@ public class AdditionalLauncher {
         return this;
     }
 
+    final public AdditionalLauncher setVerifyUninstalled(boolean value) {
+        verifyUninstalled = value;
+        return this;
+    }
+
     final public AdditionalLauncher setLauncherAsService() {
         return addRawProperties(LAUNCHER_AS_SERVICE);
     }
@@ -141,6 +146,13 @@ public class AdditionalLauncher {
     final public void applyTo(PackageTest test) {
         test.addInitializer(this::initialize);
         test.addInstallVerifier(this::verify);
+        if (verifyUninstalled) {
+            test.addUninstallVerifier(this::verifyUninstalled);
+        }
+    }
+
+    final public void verifyRemovedInUpgrade(PackageTest test) {
+        test.addInstallVerifier(this::verifyUninstalled);
     }
 
     static void forEachAdditionalLauncher(JPackageCommand cmd,
@@ -318,10 +330,40 @@ public class AdditionalLauncher {
         }
     }
 
+    private void verifyInstalled(JPackageCommand cmd, boolean installed) throws IOException {
+        if (TKit.isLinux() && !cmd.isImagePackageType() && !cmd.
+                isPackageUnpacked(String.format(
+                        "Not verifying package and system .desktop files for [%s] launcher",
+                        cmd.appLauncherPath(name)))) {
+            Path packageDesktopFile = LinuxHelper.getDesktopFile(cmd, name);
+            Path systemDesktopFile = LinuxHelper.getSystemDesktopFilesFolder().
+                    resolve(packageDesktopFile.getFileName());
+            if (Files.exists(packageDesktopFile) && installed) {
+                TKit.assertFileExists(systemDesktopFile);
+                TKit.assertStringListEquals(Files.readAllLines(
+                        packageDesktopFile),
+                        Files.readAllLines(systemDesktopFile), String.format(
+                        "Check [%s] and [%s] files are equal",
+                        packageDesktopFile,
+                        systemDesktopFile));
+            } else {
+                TKit.assertPathExists(packageDesktopFile, false);
+                TKit.assertPathExists(systemDesktopFile, false);
+            }
+        }
+    }
+
+    protected void verifyUninstalled(JPackageCommand cmd) throws IOException {
+        verifyInstalled(cmd, false);
+        Path launcherPath = cmd.appLauncherPath(name);
+        TKit.assertPathExists(launcherPath, false);
+    }
+
     protected void verify(JPackageCommand cmd) throws IOException {
         verifyIcon(cmd);
         verifyShortcuts(cmd);
         verifyDescription(cmd);
+        verifyInstalled(cmd, true);
 
         Path launcherPath = cmd.appLauncherPath(name);
 
@@ -394,6 +436,7 @@ public class AdditionalLauncher {
         return str;
     }
 
+    private boolean verifyUninstalled;
     private List<String> javaOptions;
     private List<String> defaultArguments;
     private Path icon;

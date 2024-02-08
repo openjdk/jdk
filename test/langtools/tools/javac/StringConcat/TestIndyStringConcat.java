@@ -21,11 +21,10 @@
  * questions.
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
-import jdk.internal.classfile.constantpool.InvokeDynamicEntry;
-import jdk.internal.classfile.constantpool.MethodHandleEntry;
-import jdk.internal.classfile.instruction.InvokeDynamicInstruction;
+import com.sun.tools.classfile.*;
+import com.sun.tools.classfile.BootstrapMethods_attribute.BootstrapMethodSpecifier;
+import com.sun.tools.classfile.ConstantPool.CONSTANT_InvokeDynamic_info;
+import com.sun.tools.classfile.ConstantPool.CONSTANT_MethodHandle_info;
 
 import java.io.File;
 
@@ -33,12 +32,7 @@ import java.io.File;
  * @test
  * @bug     8148483 8151516 8151223
  * @summary Test that StringConcat is working for JDK >= 9
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @modules jdk.jdeps/com.sun.tools.classfile
  *
  * @clean *
  * @compile -source 8 -target 8 TestIndyStringConcat.java
@@ -65,7 +59,7 @@ public class TestIndyStringConcat {
     }
 
     public static void main(String[] args) throws Exception {
-        boolean expected = Boolean.parseBoolean(args[0]);
+        boolean expected = Boolean.valueOf(args[0]);
         boolean actual = hasStringConcatFactoryCall("test");
         if (expected != actual) {
             throw new AssertionError("expected = " + expected + ", actual = " + actual);
@@ -73,18 +67,30 @@ public class TestIndyStringConcat {
     }
 
     public static boolean hasStringConcatFactoryCall(String methodName) throws Exception {
-        ClassModel classFile = Classfile.of().parse(new File(System.getProperty("test.classes", "."),
-                TestIndyStringConcat.class.getName() + ".class").toPath());
+        ClassFile classFile = ClassFile.read(new File(System.getProperty("test.classes", "."),
+                TestIndyStringConcat.class.getName() + ".class"));
+        ConstantPool constantPool = classFile.constant_pool;
 
-        for (MethodModel method : classFile.methods()) {
-            if (method.methodName().equalsString(methodName)) {
-                CodeAttribute code = method.findAttribute(Attributes.CODE).orElseThrow();
-                for (CodeElement i : code.elementList()) {
-                    if (i instanceof InvokeDynamicInstruction) {
-                        InvokeDynamicInstruction indy = (InvokeDynamicInstruction) i;
-                        BootstrapMethodEntry bsmSpec = indy.invokedynamic().bootstrap();
-                        MethodHandleEntry bsmInfo = bsmSpec.bootstrapMethod();
-                        if (bsmInfo.reference().owner().asInternalName().equals("java/lang/invoke/StringConcatFactory")) {
+        BootstrapMethods_attribute bsm_attr =
+                (BootstrapMethods_attribute)classFile
+                        .getAttribute(Attribute.BootstrapMethods);
+
+        for (Method method : classFile.methods) {
+            if (method.getName(constantPool).equals(methodName)) {
+                Code_attribute code = (Code_attribute) method.attributes
+                        .get(Attribute.Code);
+                for (Instruction i : code.getInstructions()) {
+                    if (i.getOpcode() == Opcode.INVOKEDYNAMIC) {
+                        CONSTANT_InvokeDynamic_info indyInfo =
+                                (CONSTANT_InvokeDynamic_info) constantPool.get(i.getUnsignedShort(1));
+
+                        BootstrapMethodSpecifier bsmSpec =
+                                bsm_attr.bootstrap_method_specifiers[indyInfo.bootstrap_method_attr_index];
+
+                        CONSTANT_MethodHandle_info bsmInfo =
+                                (CONSTANT_MethodHandle_info) constantPool.get(bsmSpec.bootstrap_method_ref);
+
+                        if (bsmInfo.getCPRefInfo().getClassName().equals("java/lang/invoke/StringConcatFactory")) {
                             return true;
                         }
                     }
@@ -93,5 +99,28 @@ public class TestIndyStringConcat {
         }
         return false;
     }
+
+// this version of the code can be used when ClassFile API in not in a preview
+//    public static boolean hasStringConcatFactoryCall(String methodName) throws Exception {
+//        ClassModel classFile = ClassFile.of().parse(new File(System.getProperty("test.classes", "."),
+//                TestIndyStringConcat.class.getName() + ".class").toPath());
+//
+//        for (MethodModel method : classFile.methods()) {
+//            if (method.methodName().equalsString(methodName)) {
+//                CodeAttribute code = method.findAttribute(Attributes.CODE).orElseThrow();
+//                for (CodeElement i : code.elementList()) {
+//                    if (i instanceof InvokeDynamicInstruction) {
+//                        InvokeDynamicInstruction indy = (InvokeDynamicInstruction) i;
+//                        BootstrapMethodEntry bsmSpec = indy.invokedynamic().bootstrap();
+//                        MethodHandleEntry bsmInfo = bsmSpec.bootstrapMethod();
+//                        if (bsmInfo.reference().owner().asInternalName().equals("java/lang/invoke/StringConcatFactory")) {
+//                            return true;
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//        return false;
+//    }
 
 }

@@ -283,7 +283,7 @@ public class TestInstrumentation implements ClassFileTransformer {
             "-classpath", classpath,
             "-javaagent:" + testClassDir + "TestInstrumentation.jar",
             "jdk.jfr.event.io.TestInstrumentation$TestMain" };
-        OutputAnalyzer output = ProcessTools.executeTestJvm(args);
+        OutputAnalyzer output = ProcessTools.executeTestJava(args);
         output.shouldHaveExitValue(0);
     }
 

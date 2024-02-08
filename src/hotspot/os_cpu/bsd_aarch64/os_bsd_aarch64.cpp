@@ -193,15 +193,6 @@ NOINLINE frame os::current_frame() {
   }
 }
 
-ATTRIBUTE_PRINTF(6, 7)
-static void report_and_die(Thread* thread, void* context, const char* filename, int lineno, const char* message,
-                             const char* detail_fmt, ...) {
-  va_list va;
-  va_start(va, detail_fmt);
-  VMError::report_and_die(thread, context, filename, lineno, message, detail_fmt, va);
-  va_end(va);
-}
-
 bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                                              ucontext_t* uc, JavaThread* thread) {
   // Enable WXWrite: this function is called by the signal handler at arbitrary
@@ -288,7 +279,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 
         // End life with a fatal error, message and detail message and the context.
         // Note: no need to do any post-processing here (e.g. signal chaining)
-        report_and_die(thread, uc, nullptr, 0, msg, "%s", detail_msg);
+        VMError::report_and_die(thread, uc, nullptr, 0, msg, "%s", detail_msg);
         ShouldNotReachHere();
 
       } else if (sig == SIGFPE &&
@@ -523,7 +514,39 @@ static inline void atomic_copy64(const volatile void *src, volatile void *dst) {
 
 extern "C" {
   int SpinPause() {
-    return 0;
+    // We don't use StubRoutines::aarch64::spin_wait stub in order to
+    // avoid a costly call to os::current_thread_enable_wx() on MacOS.
+    // We should return 1 if SpinPause is implemented, and since there
+    // will be a sequence of 11 instructions for NONE and YIELD and 12
+    // instructions for NOP and ISB, SpinPause will always return 1.
+    uint64_t br_dst;
+    const int instructions_per_case = 2;
+    int64_t off = VM_Version::spin_wait_desc().inst() * instructions_per_case * Assembler::instruction_size;
+
+    assert(VM_Version::spin_wait_desc().inst() >= SpinWait::NONE &&
+           VM_Version::spin_wait_desc().inst() <= SpinWait::YIELD, "must be");
+    assert(-1 == SpinWait::NONE,  "must be");
+    assert( 0 == SpinWait::NOP,   "must be");
+    assert( 1 == SpinWait::ISB,   "must be");
+    assert( 2 == SpinWait::YIELD, "must be");
+
+    asm volatile(
+        "  adr  %[d], 20          \n" // 20 == PC here + 5 instructions => address
+                                      // to entry for case SpinWait::NOP
+        "  add  %[d], %[d], %[o]  \n"
+        "  br   %[d]              \n"
+        "  b    SpinPause_return  \n" // case SpinWait::NONE  (-1)
+        "  nop                    \n" // padding
+        "  nop                    \n" // case SpinWait::NOP   ( 0)
+        "  b    SpinPause_return  \n"
+        "  isb                    \n" // case SpinWait::ISB   ( 1)
+        "  b    SpinPause_return  \n"
+        "  yield                  \n" // case SpinWait::YIELD ( 2)
+        "SpinPause_return:        \n"
+        : [d]"=&r"(br_dst)
+        : [o]"r"(off)
+        : "memory");
+    return 1;
   }
 
   void _Copy_conjoint_jshorts_atomic(const jshort* from, jshort* to, size_t count) {

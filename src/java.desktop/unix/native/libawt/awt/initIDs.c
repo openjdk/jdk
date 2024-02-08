@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,10 @@
  * questions.
  */
 
-#include "java_awt_Color.h"
 #include "java_awt_Dimension.h"
 #include "java_awt_MenuBar.h"
 #include "java_awt_FontMetrics.h"
 #include "java_awt_event_MouseEvent.h"
-#include "java_awt_Rectangle.h"
 #include "java_awt_ScrollPaneAdjustable.h"
 #include "java_awt_Toolkit.h"
 #include "java_awt_CheckboxMenuItem.h"
@@ -39,15 +37,6 @@
  * This file contains stubs for JNI field and method id initializers
  * which are used in the win32 awt.
  */
-
-JNIEXPORT jfieldID colorValueID;
-
-JNIEXPORT void JNICALL
-Java_java_awt_Color_initIDs
-  (JNIEnv *env, jclass clazz)
-{
-    colorValueID = (*env)->GetFieldID(env, clazz, "value", "I");
-}
 
 JNIEXPORT void JNICALL
 Java_java_awt_MenuBar_initIDs
@@ -93,12 +82,6 @@ Java_java_awt_Choice_initIDs
 
 JNIEXPORT void JNICALL
 Java_java_awt_Dimension_initIDs
-  (JNIEnv *env, jclass clazz)
-{
-}
-
-JNIEXPORT void JNICALL
-Java_java_awt_Rectangle_initIDs
   (JNIEnv *env, jclass clazz)
 {
 }

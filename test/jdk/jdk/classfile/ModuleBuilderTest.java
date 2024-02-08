@@ -23,19 +23,19 @@
 
 /*
  * @test
- * @summary Testing Classfile building module.
+ * @summary Testing ClassFile building module.
  * @run junit ModuleBuilderTest
  */
-import jdk.internal.classfile.*;
+import java.lang.classfile.*;
 
-import jdk.internal.classfile.attribute.ModuleAttribute;
-import jdk.internal.classfile.attribute.ModuleExportInfo;
-import jdk.internal.classfile.attribute.ModuleMainClassAttribute;
-import jdk.internal.classfile.attribute.ModuleOpenInfo;
-import jdk.internal.classfile.attribute.ModulePackagesAttribute;
-import jdk.internal.classfile.attribute.ModuleProvideInfo;
-import jdk.internal.classfile.attribute.ModuleRequireInfo;
-import jdk.internal.classfile.Attributes;
+import java.lang.classfile.attribute.ModuleAttribute;
+import java.lang.classfile.attribute.ModuleExportInfo;
+import java.lang.classfile.attribute.ModuleMainClassAttribute;
+import java.lang.classfile.attribute.ModuleOpenInfo;
+import java.lang.classfile.attribute.ModulePackagesAttribute;
+import java.lang.classfile.attribute.ModuleProvideInfo;
+import java.lang.classfile.attribute.ModuleRequireInfo;
+import java.lang.classfile.Attributes;
 import java.lang.constant.ModuleDesc;
 import java.lang.constant.PackageDesc;
 import org.junit.jupiter.api.Test;
@@ -62,7 +62,7 @@ class ModuleBuilderTest {
     private final ModuleAttribute attr;
 
     public ModuleBuilderTest() {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         byte[] modInfo = cc.buildModule(
                 ModuleAttribute.of(modName, mb -> mb
                         .moduleVersion(modVsn)
@@ -97,7 +97,7 @@ class ModuleBuilderTest {
     @Test
     void testCreateModuleInfo() {
         // Build the module-info.class bytes
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         byte[] modBytes = cc.buildModule(ModuleAttribute.of(modName, mb -> mb.moduleVersion(modVsn)));
 
         // Verify
@@ -195,7 +195,7 @@ class ModuleBuilderTest {
     void verifyIsModuleInfo() throws Exception {
         assertTrue(moduleModel.isModuleInfo());
 
-        ClassModel m = Classfile.of().parse(Paths.get(URI.create(ModuleBuilderTest.class.getResource("ModuleBuilderTest.class").toString())));
+        ClassModel m = ClassFile.of().parse(Paths.get(URI.create(ModuleBuilderTest.class.getResource("ModuleBuilderTest.class").toString())));
         assertFalse(m.isModuleInfo());
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,16 +134,16 @@ jint Agent_Initialize(JavaVM * jvm, char *options, void *reserved) {
     res = jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks));
     JVMTI_ERROR_CHECK("SetEventCallbacks returned error", res);
 
-    res = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, NULL);
+    res = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, nullptr);
     JVMTI_ERROR_CHECK("SetEventNotificationMode for VM_INIT returned error", res);
 
-    res = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, NULL);
+    res = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, nullptr);
     JVMTI_ERROR_CHECK("SetEventNotificationMode for vm death event returned error", res);
 
-    res = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_GARBAGE_COLLECTION_START, NULL);
+    res = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_GARBAGE_COLLECTION_START, nullptr);
     JVMTI_ERROR_CHECK("SetEventNotificationMode for gc start returned error", res);
 
-    res = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_GARBAGE_COLLECTION_FINISH, NULL);
+    res = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_GARBAGE_COLLECTION_FINISH, nullptr);
     JVMTI_ERROR_CHECK("SetEventNotificationMode for gc finish returned error", res);
 
     return JNI_OK;

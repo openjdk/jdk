@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,9 @@
  * questions.
  */
 
+// key: compiler.err.feature.not.supported.in.source.plural
 // key: compiler.misc.feature.unnamed.variables
-// key: compiler.warn.preview.feature.use.plural
-// options: --enable-preview -source ${jdk.version} -Xlint:preview
+// options: --release 21
 
 public class UnderscoreInLambdaExpression {
     java.util.function.Function<String,String> f = _ -> "x";

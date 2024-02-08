@@ -172,6 +172,7 @@ class JVMCIEnv : public ResourceObj {
   int              _init_error;  // JNI code returned when creating or attaching to a libjvmci isolate.
                                  // If not JNI_OK, the JVMCIEnv is invalid and should not be used apart from
                                  // calling init_error().
+  const char*  _init_error_msg;  // Message for _init_error if available. C heap allocated.
 
   // Translates an exception on the HotSpot heap (i.e., hotspot_env) to an exception on
   // the shared library heap (i.e., jni_env). The translation includes the stack and cause(s) of `throwable`.
@@ -215,6 +216,12 @@ public:
   // this JVMCIEnv context was created for.
   int init_error() {
     return _init_error;
+  }
+
+  // Gets a message describing a non-zero init_error().
+  // Valid as long as this JVMCIEnv is valid.
+  const char* init_error_msg() {
+    return _init_error_msg;
   }
 
   // Checks the value of init_error() and throws an exception in `JVMCI_TRAPS`

@@ -15,14 +15,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="moh">Kanienʼkéha</language>
 		</languages>
 	</localeDisplayNames>
-	<layout>
-		<orientation>
-			<characterOrder>left-to-right</characterOrder>
-			<lineOrder>top-to-bottom</lineOrder>
-		</orientation>
-	</layout>
 	<characters>
-		<exemplarCharacters>[a á à {a\:} {á\:} {à\:} e é è {e\:} {é\:} {è\:} h i í ì {i\:} {í\:} {ì\:} k n o ó ò {o\:} {ó\:} {ò\:} r s t w y ʼ]</exemplarCharacters>
+		<exemplarCharacters>[aáà {a\:}{á\:}{à\:} eéè {e\:}{é\:}{è\:} h iíì {i\:}{í\:}{ì\:} k n oóò {o\:}{ó\:}{ò\:} r s t w y ʼ]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[b c d f g j l m p q u v x z]</exemplarCharacters>
 		<exemplarCharacters type="index">[A E H I K N O R S T W Y]</exemplarCharacters>
 	</characters>

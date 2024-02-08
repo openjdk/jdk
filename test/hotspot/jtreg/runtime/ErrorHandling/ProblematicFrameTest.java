@@ -47,7 +47,7 @@ public class ProblematicFrameTest {
     }
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-Xmx64m", "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED", "-XX:-CreateCoredumpOnCrash", Crasher.class.getName());
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldNotContain("Exception in thread");

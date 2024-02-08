@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.io.*;
 import sun.jvm.hotspot.code.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
+import sun.jvm.hotspot.gc.serial.*;
 import sun.jvm.hotspot.gc.shared.*;
 import sun.jvm.hotspot.interpreter.*;
 import sun.jvm.hotspot.memory.*;
@@ -60,7 +61,6 @@ public class PointerLocation {
 
   // If UseTLAB was enabled and the pointer was found in a
   // currently-active TLAB, these will be set
-  boolean inTLAB;
   JavaThread tlabThread;
   ThreadLocalAllocBuffer tlab;
 
@@ -111,11 +111,11 @@ public class PointerLocation {
   }
 
   public boolean isInNewGen() {
-    return ((gen != null) && (gen.equals(((GenCollectedHeap)heap).getGen(0))));
+    return ((gen != null) && (gen.equals(((SerialHeap)heap).getGen(0))));
   }
 
   public boolean isInOldGen() {
-    return ((gen != null) && (gen.equals(((GenCollectedHeap)heap).getGen(1))));
+    return ((gen != null) && (gen.equals(((SerialHeap)heap).getGen(1))));
   }
 
   public boolean inOtherGen() {
@@ -128,7 +128,7 @@ public class PointerLocation {
 
   /** This may be true if isInNewGen is also true */
   public boolean isInTLAB() {
-    return inTLAB;
+    return (tlab != null);
   }
 
   /** Only valid if isInTLAB() returns true */
@@ -268,10 +268,16 @@ public class PointerLocation {
         tty.println();
     } else if (isInHeap()) {
       if (isInTLAB()) {
-        tty.print("In thread-local allocation buffer for thread (");
-        getTLABThread().printThreadInfoOn(tty);
-        tty.print(") ");
-        getTLAB().printOn(tty); // includes "\n"
+        tty.print("In TLAB for thread ");
+        JavaThread thread = getTLABThread();
+        if (verbose) {
+          tty.print("(");
+          thread.printThreadInfoOn(tty);
+          tty.print(") ");
+          getTLAB().printOn(tty); // includes "\n"
+        } else {
+          tty.format("\"%s\" %s\n", thread.getThreadName(), thread);
+        }
       } else {
         if (isInNewGen()) {
           tty.print("In new generation ");

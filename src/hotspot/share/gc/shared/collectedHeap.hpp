@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,8 +84,7 @@ public:
 
 //
 // CollectedHeap
-//   GenCollectedHeap
-//     SerialHeap
+//   SerialHeap
 //   G1CollectedHeap
 //   ParallelScavengeHeap
 //   ShenandoahHeap
@@ -165,8 +164,10 @@ class CollectedHeap : public CHeapObj<mtGC> {
 
   // Filler object utilities.
   static inline size_t filler_array_hdr_size();
-  static inline size_t filler_array_min_size();
 
+  static size_t filler_array_min_size();
+
+protected:
   static inline void zap_filler_array_with(HeapWord* start, size_t words, juint value);
   DEBUG_ONLY(static void fill_args_check(HeapWord* start, size_t words);)
   DEBUG_ONLY(static void zap_filler_array(HeapWord* start, size_t words, bool zap = true);)

@@ -26,10 +26,10 @@
 #include "gc/parallel/parMarkBitMap.inline.hpp"
 #include "gc/parallel/psCompactionManager.inline.hpp"
 #include "gc/parallel/psParallelCompact.inline.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 

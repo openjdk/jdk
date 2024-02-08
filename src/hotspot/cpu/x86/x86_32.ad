@@ -1,5 +1,5 @@
 //
-// Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -614,7 +614,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   int framesize = C->output()->frame_size_in_bytes();
   int bangsize = C->output()->bang_size_in_bytes();
 
-  __ verified_entry(framesize, C->output()->need_stack_bang(bangsize)?bangsize:0, C->in_24_bit_fp_mode(), C->stub_function() != NULL);
+  __ verified_entry(framesize, C->output()->need_stack_bang(bangsize)?bangsize:0, C->in_24_bit_fp_mode(), C->stub_function() != nullptr);
 
   C->output()->set_frame_complete(cbuf.insts_size());
 
@@ -1052,7 +1052,7 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bo
   if( src_first == dst_first && src_second == dst_second )
     return size;            // Self copy, no move
 
-  if (bottom_type()->isa_vect() != NULL && bottom_type()->isa_vectmask() == NULL) {
+  if (bottom_type()->isa_vect() != nullptr && bottom_type()->isa_vectmask() == nullptr) {
     uint ireg = ideal_reg();
     assert((src_first_rc != rc_int && dst_first_rc != rc_int), "sanity");
     assert((src_first_rc != rc_float && dst_first_rc != rc_float), "sanity");
@@ -1320,12 +1320,12 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bo
 
 #ifndef PRODUCT
 void MachSpillCopyNode::format(PhaseRegAlloc *ra_, outputStream* st) const {
-  implementation( NULL, ra_, false, st );
+  implementation( nullptr, ra_, false, st );
 }
 #endif
 
 void MachSpillCopyNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
-  implementation( &cbuf, ra_, false, NULL );
+  implementation( &cbuf, ra_, false, nullptr );
 }
 
 uint MachSpillCopyNode::size(PhaseRegAlloc *ra_) const {
@@ -1725,7 +1725,7 @@ encode %{
 
     MacroAssembler _masm(&cbuf);
     __ check_klass_subtype_slow_path(Resi, Reax, Recx, Redi,
-                                     NULL, &miss,
+                                     nullptr, &miss,
                                      /*set_cond_codes:*/ true);
     if ($primary) {
       __ xorptr(Redi, Redi);
@@ -1843,7 +1843,7 @@ encode %{
       } else {
         // Emit stubs for static call.
         address stub = CompiledStaticCall::emit_to_interp_stub(cbuf, mark);
-        if (stub == NULL) {
+        if (stub == nullptr) {
           ciEnv::current()->record_failure("CodeCache is full");
           return;
         }
@@ -3396,7 +3396,7 @@ operand immP() %{
   interface(CONST_INTER);
 %}
 
-// NULL Pointer Immediate
+// Null Pointer Immediate
 operand immP0() %{
   predicate( n->get_ptr() == 0 );
   match(ConP);
@@ -7281,7 +7281,6 @@ instruct castDD_PR( regDPR dst ) %{
 // No flag versions for CompareAndSwap{P,I,L} because matcher can't match them
 
 instruct compareAndSwapL( rRegI res, eSIRegP mem_ptr, eADXRegL oldval, eBCXRegL newval, eFlagsReg cr ) %{
-  predicate(VM_Version::supports_cx8());
   match(Set res (CompareAndSwapL mem_ptr (Binary oldval newval)));
   match(Set res (WeakCompareAndSwapL mem_ptr (Binary oldval newval)));
   effect(KILL cr, KILL oldval);
@@ -7350,7 +7349,6 @@ instruct compareAndSwapI( rRegI res, pRegP mem_ptr, eAXRegI oldval, eCXRegI newv
 %}
 
 instruct compareAndExchangeL( eSIRegP mem_ptr, eADXRegL oldval, eBCXRegL newval, eFlagsReg cr ) %{
-  predicate(VM_Version::supports_cx8());
   match(Set oldval (CompareAndExchangeL mem_ptr (Binary oldval newval)));
   effect(KILL cr);
   format %{ "CMPXCHG8 [$mem_ptr],$newval\t# If EDX:EAX==[$mem_ptr] Then store $newval into [$mem_ptr]\n\t" %}
@@ -11144,7 +11142,7 @@ instruct convI2FPR_mem(regFPR dst, memory mem) %{
 
 // Convert an int to a float in xmm; no rounding step needed.
 instruct convI2F_reg(regF dst, rRegI src) %{
-  predicate( UseSSE==1 || UseSSE>=2 && !UseXmmI2F );
+  predicate( UseSSE==1 || ( UseSSE>=2 && !UseXmmI2F ));
   match(Set dst (ConvI2F src));
   format %{ "CVTSI2SS $dst, $src" %}
   ins_encode %{
@@ -13163,7 +13161,7 @@ instruct cmovPP_reg_LTGE_U(cmpOpU cmp, flagsReg_ulong_LTGE flags, eRegP dst, eRe
 
 // Compare 2 longs and CMOVE doubles
 instruct cmovDDPR_reg_LTGE(cmpOp cmp, flagsReg_long_LTGE flags, regDPR dst, regDPR src) %{
-  predicate( UseSSE<=1 && _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge );
+  predicate( UseSSE<=1 && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge ));
   match(Set dst (CMoveD (Binary cmp flags) (Binary dst src)));
   ins_cost(200);
   expand %{
@@ -13173,7 +13171,7 @@ instruct cmovDDPR_reg_LTGE(cmpOp cmp, flagsReg_long_LTGE flags, regDPR dst, regD
 
 // Compare 2 longs and CMOVE doubles
 instruct cmovDD_reg_LTGE(cmpOp cmp, flagsReg_long_LTGE flags, regD dst, regD src) %{
-  predicate( UseSSE>=2 && _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge );
+  predicate( UseSSE>=2 && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge ));
   match(Set dst (CMoveD (Binary cmp flags) (Binary dst src)));
   ins_cost(200);
   expand %{
@@ -13182,7 +13180,7 @@ instruct cmovDD_reg_LTGE(cmpOp cmp, flagsReg_long_LTGE flags, regD dst, regD src
 %}
 
 instruct cmovFFPR_reg_LTGE(cmpOp cmp, flagsReg_long_LTGE flags, regFPR dst, regFPR src) %{
-  predicate( UseSSE==0 && _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge );
+  predicate( UseSSE==0 && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge ));
   match(Set dst (CMoveF (Binary cmp flags) (Binary dst src)));
   ins_cost(200);
   expand %{
@@ -13191,7 +13189,7 @@ instruct cmovFFPR_reg_LTGE(cmpOp cmp, flagsReg_long_LTGE flags, regFPR dst, regF
 %}
 
 instruct cmovFF_reg_LTGE(cmpOp cmp, flagsReg_long_LTGE flags, regF dst, regF src) %{
-  predicate( UseSSE>=1 && _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge );
+  predicate( UseSSE>=1 && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge ));
   match(Set dst (CMoveF (Binary cmp flags) (Binary dst src)));
   ins_cost(200);
   expand %{
@@ -13354,7 +13352,7 @@ instruct cmovPP_reg_EQNE_U(cmpOpU cmp, flagsReg_ulong_EQNE flags, eRegP dst, eRe
 
 // Compare 2 longs and CMOVE doubles
 instruct cmovDDPR_reg_EQNE(cmpOp cmp, flagsReg_long_EQNE flags, regDPR dst, regDPR src) %{
-  predicate( UseSSE<=1 && _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne );
+  predicate( UseSSE<=1 && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne ));
   match(Set dst (CMoveD (Binary cmp flags) (Binary dst src)));
   ins_cost(200);
   expand %{
@@ -13364,7 +13362,7 @@ instruct cmovDDPR_reg_EQNE(cmpOp cmp, flagsReg_long_EQNE flags, regDPR dst, regD
 
 // Compare 2 longs and CMOVE doubles
 instruct cmovDD_reg_EQNE(cmpOp cmp, flagsReg_long_EQNE flags, regD dst, regD src) %{
-  predicate( UseSSE>=2 && _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne );
+  predicate( UseSSE>=2 && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne ));
   match(Set dst (CMoveD (Binary cmp flags) (Binary dst src)));
   ins_cost(200);
   expand %{
@@ -13373,7 +13371,7 @@ instruct cmovDD_reg_EQNE(cmpOp cmp, flagsReg_long_EQNE flags, regD dst, regD src
 %}
 
 instruct cmovFFPR_reg_EQNE(cmpOp cmp, flagsReg_long_EQNE flags, regFPR dst, regFPR src) %{
-  predicate( UseSSE==0 && _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne );
+  predicate( UseSSE==0 && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne ));
   match(Set dst (CMoveF (Binary cmp flags) (Binary dst src)));
   ins_cost(200);
   expand %{
@@ -13382,7 +13380,7 @@ instruct cmovFFPR_reg_EQNE(cmpOp cmp, flagsReg_long_EQNE flags, regFPR dst, regF
 %}
 
 instruct cmovFF_reg_EQNE(cmpOp cmp, flagsReg_long_EQNE flags, regF dst, regF src) %{
-  predicate( UseSSE>=1 && _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne );
+  predicate( UseSSE>=1 && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne ));
   match(Set dst (CMoveF (Binary cmp flags) (Binary dst src)));
   ins_cost(200);
   expand %{
@@ -13573,7 +13571,7 @@ instruct cmovPP_reg_LEGT_U(cmpOpU_commute cmp, flagsReg_ulong_LEGT flags, eRegP 
 
 // Compare 2 longs and CMOVE doubles
 instruct cmovDDPR_reg_LEGT(cmpOp_commute cmp, flagsReg_long_LEGT flags, regDPR dst, regDPR src) %{
-  predicate( UseSSE<=1 && _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt );
+  predicate( UseSSE<=1 && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt ));
   match(Set dst (CMoveD (Binary cmp flags) (Binary dst src)));
   ins_cost(200);
   expand %{
@@ -13583,7 +13581,7 @@ instruct cmovDDPR_reg_LEGT(cmpOp_commute cmp, flagsReg_long_LEGT flags, regDPR d
 
 // Compare 2 longs and CMOVE doubles
 instruct cmovDD_reg_LEGT(cmpOp_commute cmp, flagsReg_long_LEGT flags, regD dst, regD src) %{
-  predicate( UseSSE>=2 && _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt );
+  predicate( UseSSE>=2 && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt ));
   match(Set dst (CMoveD (Binary cmp flags) (Binary dst src)));
   ins_cost(200);
   expand %{
@@ -13592,7 +13590,7 @@ instruct cmovDD_reg_LEGT(cmpOp_commute cmp, flagsReg_long_LEGT flags, regD dst, 
 %}
 
 instruct cmovFFPR_reg_LEGT(cmpOp_commute cmp, flagsReg_long_LEGT flags, regFPR dst, regFPR src) %{
-  predicate( UseSSE==0 && _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt );
+  predicate( UseSSE==0 && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt ));
   match(Set dst (CMoveF (Binary cmp flags) (Binary dst src)));
   ins_cost(200);
   expand %{
@@ -13602,7 +13600,7 @@ instruct cmovFFPR_reg_LEGT(cmpOp_commute cmp, flagsReg_long_LEGT flags, regFPR d
 
 
 instruct cmovFF_reg_LEGT(cmpOp_commute cmp, flagsReg_long_LEGT flags, regF dst, regF src) %{
-  predicate( UseSSE>=1 && _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt );
+  predicate( UseSSE>=1 && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt ));
   match(Set dst (CMoveF (Binary cmp flags) (Binary dst src)));
   ins_cost(200);
   expand %{

@@ -53,11 +53,7 @@ class ppc {
   friend class StubGenerator;
 
  private:
-  static address _nmethod_entry_barrier;
-
  public:
-  static address nmethod_entry_barrier();
-
   static address generate_crc_constants(juint reverse_poly);
 };
 

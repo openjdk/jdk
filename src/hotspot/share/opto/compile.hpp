@@ -53,6 +53,7 @@ class Bundle;
 class CallGenerator;
 class CallStaticJavaNode;
 class CloneMap;
+class CompilationFailureInfo;
 class ConnectionGraph;
 class IdealGraphPrinter;
 class InlineTree;
@@ -343,6 +344,7 @@ class Compile : public Phase {
   bool                  _print_intrinsics;      // True if we should print intrinsics for this compilation
 #ifndef PRODUCT
   uint                  _igv_idx;               // Counter for IGV node identifiers
+  uint                  _igv_phase_iter[PHASE_NUM_TYPES]; // Counters for IGV phase iterations
   bool                  _trace_opto_output;
   bool                  _parsed_irreducible_loop; // True if ciTypeFlow detected irreducible loops during parsing
 #endif
@@ -362,6 +364,7 @@ class Compile : public Phase {
   DirectiveSet*         _directive;             // Compiler directive
   CompileLog*           _log;                   // from CompilerThread
   const char*           _failure_reason;        // for record_failure/failing pattern
+  CompilationFailureInfo* _first_failure_details; // Details for the first failure happening during compilation
   GrowableArray<CallGenerator*> _intrinsics;    // List of intrinsics.
   GrowableArray<Node*>  _macro_nodes;           // List of nodes which need to be expanded before matching.
   GrowableArray<ParsePredicateNode*> _parse_predicates; // List of Parse Predicates.
@@ -460,6 +463,9 @@ private:
   int                           _late_inlines_pos;    // Where in the queue should the next late inlining candidate go (emulate depth first inlining)
   uint                          _number_of_mh_late_inlines; // number of method handle late inlining still pending
 
+  // "MemLimit" directive was specified and the memory limit was hit during compilation
+  bool                          _oom;
+
   // Inlining may not happen in parse order which would make
   // PrintInlining output confusing. Keep track of PrintInlining
   // pieces in order.
@@ -503,6 +509,8 @@ private:
   void log_late_inline_failure(CallGenerator* cg, const char* msg);
   DEBUG_ONLY(bool _exception_backedge;)
 
+  void record_method_not_compilable_oom();
+
  public:
 
   void* barrier_set_state() const { return _barrier_set_state; }
@@ -526,6 +534,7 @@ private:
 
 #ifndef PRODUCT
   IdealGraphPrinter* igv_printer() { return _igv_printer; }
+  void reset_igv_phase_iter(CompilerPhaseType cpt) { _igv_phase_iter[cpt] = 0; }
 #endif
 
   void log_late_inline(CallGenerator* cg);
@@ -802,6 +811,7 @@ private:
   CompileLog* log() const            { return _log; }
   bool        failing() const        { return _env->failing() || _failure_reason != nullptr; }
   const char* failure_reason() const { return (_env->failing()) ? _env->failure_reason() : _failure_reason; }
+  const CompilationFailureInfo* first_failure_details() const { return _first_failure_details; }
 
   bool failure_reason_is(const char* r) const {
     return (r == _failure_reason) || (r != nullptr && _failure_reason != nullptr && strcmp(r, _failure_reason) == 0);
@@ -814,6 +824,10 @@ private:
     record_failure(reason);
   }
   bool check_node_count(uint margin, const char* reason) {
+    if (oom()) {
+      record_method_not_compilable_oom();
+      return true;
+    }
     if (live_nodes() + margin > max_node_limit()) {
       record_method_not_compilable(reason);
       return true;
@@ -821,6 +835,8 @@ private:
       return false;
     }
   }
+  bool oom() const { return _oom; }
+  void set_oom()   { _oom = true; }
 
   // Node management
   uint         unique() const              { return _unique; }
@@ -1058,6 +1074,7 @@ private:
   bool inline_incrementally_one();
   void inline_incrementally_cleanup(PhaseIterGVN& igvn);
   void inline_incrementally(PhaseIterGVN& igvn);
+  bool should_delay_inlining() { return AlwaysIncrementalInline || (StressIncrementalInlining && (random() % 2) == 0); }
   void inline_string_calls(bool parse_time);
   void inline_boxing_calls(PhaseIterGVN& igvn);
   bool optimize_loops(PhaseIterGVN& igvn, LoopOptsMode mode);
@@ -1111,9 +1128,7 @@ private:
           int is_fancy_jump, bool pass_tls,
           bool return_pc, DirectiveSet* directive);
 
-  ~Compile() {
-    delete _print_inlining_stream;
-  };
+  ~Compile();
 
   // Are we compiling a method?
   bool has_method() { return method() != nullptr; }

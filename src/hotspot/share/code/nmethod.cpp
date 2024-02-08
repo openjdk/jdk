@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@
 #include "compiler/oopMap.inline.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
+#include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "interpreter/bytecode.hpp"
 #include "jvm.h"
@@ -394,6 +395,7 @@ PcDesc* PcDescCache::find_pc_desc(int pc_offset, bool approximate) {
 }
 
 void PcDescCache::add_pc_desc(PcDesc* pc_desc) {
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, Thread::current());)
   NOT_PRODUCT(++pc_nmethod_stats.pc_desc_adds);
   // Update the LRU cache by shifting pc_desc forward.
   for (int i = 0; i < cache_size; i++)  {
@@ -638,7 +640,7 @@ nmethod::nmethod(
   ByteSize basic_lock_sp_offset,
   OopMapSet* oop_maps )
   : CompiledMethod(method, "native nmethod", type, nmethod_size, sizeof(nmethod), code_buffer, offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false, true),
-  _unlinked_next(nullptr),
+  _is_unlinked(false),
   _native_receiver_sp_offset(basic_lock_owner_sp_offset),
   _native_basic_lock_sp_offset(basic_lock_sp_offset),
   _is_unloading_state(0)
@@ -782,7 +784,7 @@ nmethod::nmethod(
 #endif
   )
   : CompiledMethod(method, "nmethod", type, nmethod_size, sizeof(nmethod), code_buffer, offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false, true),
-  _unlinked_next(nullptr),
+  _is_unlinked(false),
   _native_receiver_sp_offset(in_ByteSize(-1)),
   _native_basic_lock_sp_offset(in_ByteSize(-1)),
   _is_unloading_state(0)
@@ -1019,7 +1021,7 @@ void nmethod::print_nmethod(bool printmethod) {
       tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
       print_metadata(tty);
       tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
-      print_pcs();
+      print_pcs_on(tty);
       tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
       if (oop_maps() != nullptr) {
         tty->print("oop maps:"); // oop_maps()->print_on(tty) outputs a cr() at the beginning
@@ -1135,10 +1137,7 @@ static void install_post_call_nop_displacement(nmethod* nm, address pc) {
   int oopmap_slot = nm->oop_maps()->find_slot_for_offset(int((intptr_t) pc - (intptr_t) nm->code_begin()));
   if (oopmap_slot < 0) { // this can happen at asynchronous (non-safepoint) stackwalks
     log_debug(codecache)("failed to find oopmap for cb: " INTPTR_FORMAT " offset: %d", cbaddr, (int) offset);
-  } else if (((oopmap_slot & 0xff) == oopmap_slot) && ((offset & 0xffffff) == offset)) {
-    jint value = (oopmap_slot << 24) | (jint) offset;
-    nop->patch(value);
-  } else {
+  } else if (!nop->patch(oopmap_slot, offset)) {
     log_debug(codecache)("failed to encode %d %d", oopmap_slot, (int) offset);
   }
 }
@@ -1405,7 +1404,7 @@ bool nmethod::make_not_entrant() {
 
 // For concurrent GCs, there must be a handshake between unlink and flush
 void nmethod::unlink() {
-  if (_unlinked_next != nullptr) {
+  if (_is_unlinked) {
     // Already unlinked. It can be invoked twice because concurrent code cache
     // unloading might need to restart when inline cache cleaning fails due to
     // running out of ICStubs, which can only be refilled at safepoints
@@ -1439,10 +1438,12 @@ void nmethod::unlink() {
   // Register for flushing when it is safe. For concurrent class unloading,
   // that would be after the unloading handshake, and for STW class unloading
   // that would be when getting back to the VM thread.
-  CodeCache::register_unlinked(this);
+  ClassUnloadingContext::context()->register_unlinked_nmethod(this);
 }
 
-void nmethod::flush() {
+void nmethod::purge(bool free_code_cache_data, bool unregister_nmethod) {
+  assert(!free_code_cache_data, "must only call not freeing code cache data");
+
   MutexLocker ml(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
   // completely deallocate this method
@@ -1462,11 +1463,13 @@ void nmethod::flush() {
     ec = next;
   }
 
-  Universe::heap()->unregister_nmethod(this);
+  if (unregister_nmethod) {
+    Universe::heap()->unregister_nmethod(this);
+  }
+
   CodeCache::unregister_old_nmethod(this);
 
-  CodeBlob::flush();
-  CodeCache::free(this);
+  CodeBlob::purge(free_code_cache_data, unregister_nmethod);
 }
 
 oop nmethod::oop_at(int index) const {
@@ -2706,9 +2709,6 @@ void nmethod::decode2(outputStream* ost) const {
                                                                   AbstractDisassembler::show_block_comment());
 #endif
 
-  // Decoding an nmethod can write to a PcDescCache (see PcDescCache::add_pc_desc)
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, Thread::current());)
-
   st->cr();
   this->print(st);
   st->cr();
@@ -3016,7 +3016,7 @@ void nmethod::print_nmethod_labels(outputStream* stream, address block_begin, bo
         assert(sig_index == sizeargs, "");
       }
       const char* spname = "sp"; // make arch-specific?
-      intptr_t out_preserve = SharedRuntime::java_calling_convention(sig_bt, regs, sizeargs);
+      SharedRuntime::java_calling_convention(sig_bt, regs, sizeargs);
       int stack_slot_offset = this->frame_size() * wordSize;
       int tab1 = 14, tab2 = 24;
       int sig_index = 0;

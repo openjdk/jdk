@@ -597,7 +597,7 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
         for (DUIterator_Fast kmax, k = use->fast_outs(kmax);
                                    k < kmax && can_eliminate; k++) {
           Node* n = use->fast_out(k);
-          if (!n->is_Store() && n->Opcode() != Op_CastP2X && !bs->is_gc_pre_barrier_node(n)) {
+          if (!n->is_Store() && n->Opcode() != Op_CastP2X && !bs->is_gc_pre_barrier_node(n) && !reduce_merge_precheck) {
             DEBUG_ONLY(disq_node = n;)
             if (n->is_Load() || n->is_LoadStore()) {
               NOT_PRODUCT(fail_eliminate = "Field load";)
@@ -674,6 +674,11 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
       }
 #endif /*ASSERT*/
     }
+  }
+
+  if (TraceReduceAllocationMerges && !can_eliminate && reduce_merge_precheck) {
+    tty->print_cr("\tCan't eliminate allocation because '%s': ", fail_eliminate != nullptr ? fail_eliminate : "");
+    DEBUG_ONLY(if (disq_node != nullptr) disq_node->dump();)
   }
 #endif
   return can_eliminate;

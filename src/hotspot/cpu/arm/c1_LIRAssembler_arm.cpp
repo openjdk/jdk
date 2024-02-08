@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1385,7 +1385,6 @@ void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
     __ mov(dest, 1, eq);
     __ mov(dest, 0, ne);
   } else if (op->code() == lir_cas_long) {
-    assert(VM_Version::supports_cx8(), "wrong machine");
     Register cmp_value_lo = op->cmp_value()->as_register_lo();
     Register cmp_value_hi = op->cmp_value()->as_register_hi();
     Register new_value_lo = op->new_value()->as_register_lo();
@@ -2641,8 +2640,8 @@ void LIR_Assembler::rt_call(LIR_Opr result, address dest, const LIR_OprList* arg
 
 
 void LIR_Assembler::volatile_move_op(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmitInfo* info) {
-  assert(src->is_double_cpu() && dest->is_address() ||
-         src->is_address() && dest->is_double_cpu(),
+  assert((src->is_double_cpu() && dest->is_address()) ||
+         (src->is_address() && dest->is_double_cpu()),
          "Simple move_op is called for all other cases");
 
   int null_check_offset;
