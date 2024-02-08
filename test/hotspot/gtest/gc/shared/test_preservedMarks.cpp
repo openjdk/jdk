@@ -29,7 +29,10 @@
 // Class to create a "fake" oop with a mark that will
 // return true for calls to must_be_preserved().
 class FakeOop {
-  alignas(ObjectAlignmentInBytes) oopDesc _oop;
+  // Align at least to 8 bytes, otherwise the lowest address bit
+  // could be interpreted as 'self-forwarded' when encoded as
+  // forwardee in the mark-word.
+  alignas(BytesPerLong) oopDesc _oop;
 
 public:
   FakeOop() : _oop() { _oop.set_mark(originalMark()); }
