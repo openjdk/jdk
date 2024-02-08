@@ -937,6 +937,7 @@ public abstract class DateFormat extends Format {
          *        be used, but {@code -1} should be used for values
          *        that don't correspond to legal {@code Calendar} values
          */
+        @SuppressWarnings("this-escape")
         protected Field(String name, int calendarField) {
             super(name);
             this.calendarField = calendarField;

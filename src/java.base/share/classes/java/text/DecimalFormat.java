@@ -449,6 +449,7 @@ public class DecimalFormat extends NumberFormat {
      * @see java.text.NumberFormat#getCurrencyInstance
      * @see java.text.NumberFormat#getPercentInstance
      */
+    @SuppressWarnings("this-escape")
     public DecimalFormat() {
         // Get the pattern for the default locale.
         Locale def = Locale.getDefault(Locale.Category.FORMAT);
@@ -485,6 +486,7 @@ public class DecimalFormat extends NumberFormat {
      * @see java.text.NumberFormat#getCurrencyInstance
      * @see java.text.NumberFormat#getPercentInstance
      */
+    @SuppressWarnings("this-escape")
     public DecimalFormat(String pattern) {
         // Always applyPattern after the symbols are set
         this.symbols = DecimalFormatSymbols.getInstance(Locale.getDefault(Locale.Category.FORMAT));
@@ -515,6 +517,7 @@ public class DecimalFormat extends NumberFormat {
      * @see java.text.NumberFormat#getPercentInstance
      * @see java.text.DecimalFormatSymbols
      */
+    @SuppressWarnings("this-escape")
     public DecimalFormat (String pattern, DecimalFormatSymbols symbols) {
         // Always applyPattern after the symbols are set
         this.symbols = (DecimalFormatSymbols)symbols.clone();
@@ -4199,6 +4202,7 @@ public class DecimalFormat extends NumberFormat {
      * @see #getMaximumIntegerDigits
      * @since 1.5
      */
+    @SuppressWarnings("this-escape")
     private int    maximumIntegerDigits = super.getMaximumIntegerDigits();
 
     /**
@@ -4211,6 +4215,7 @@ public class DecimalFormat extends NumberFormat {
      * @see #getMinimumIntegerDigits
      * @since 1.5
      */
+    @SuppressWarnings("this-escape")
     private int    minimumIntegerDigits = super.getMinimumIntegerDigits();
 
     /**
@@ -4223,6 +4228,7 @@ public class DecimalFormat extends NumberFormat {
      * @see #getMaximumFractionDigits
      * @since 1.5
      */
+    @SuppressWarnings("this-escape")
     private int    maximumFractionDigits = super.getMaximumFractionDigits();
 
     /**
@@ -4235,6 +4241,7 @@ public class DecimalFormat extends NumberFormat {
      * @see #getMinimumFractionDigits
      * @since 1.5
      */
+    @SuppressWarnings("this-escape")
     private int    minimumFractionDigits = super.getMinimumFractionDigits();
 
     /**
