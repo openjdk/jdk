@@ -49,11 +49,6 @@
 
 #if defined(_AIX)
   #include <sys/procfs.h>
-  #define DIR DIR64
-  #define dirent dirent64
-  #define opendir opendir64
-  #define readdir readdir64
-  #define closedir closedir64
 #endif
 
 /**

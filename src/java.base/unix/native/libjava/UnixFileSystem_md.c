@@ -55,11 +55,6 @@
   #if !defined(NAME_MAX)
     #define NAME_MAX MAXNAMLEN
   #endif
-  #define DIR DIR64
-  #define dirent dirent64
-  #define opendir opendir64
-  #define readdir readdir64
-  #define closedir closedir64
   #define statvfs statvfs64
 #endif
 /* -- Field IDs -- */
