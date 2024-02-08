@@ -27,6 +27,7 @@
 
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskTerminator.hpp"
+#include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 
 enum StringDedupMode {
@@ -34,6 +35,9 @@ enum StringDedupMode {
   ENQUEUE_DEDUP, // Enqueue candidate Strings for deduplication, if meet age threshold
   ALWAYS_DEDUP   // Enqueue Strings for deduplication
 };
+
+class ShenandoahMarkingContext;
+class ShenandoahReferenceProcessor;
 
 // Base class for mark
 // Mark class does not maintain states. Instead, mark states are
