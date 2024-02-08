@@ -773,10 +773,6 @@ public class CLDRConverter {
 
             Object data = map.get(TIMEZONE_ID_PREFIX + tzKey);
 
-//if (id.equals("en") && (tzid.contains("Gambier") || tzid.contains("YST9"))) {
-//if (id.equals("en") && (tzid.contains("Moscow"))) {
-//int ika =5;
-//}
             if (data instanceof String[] tznames) {
                 // Hack for UTC. UTC is an alias to Etc/UTC in CLDR
                 if (tzid.equals("Etc/UTC") && !map.containsKey(TIMEZONE_ID_PREFIX + "UTC")) {
@@ -791,28 +787,16 @@ public class CLDRConverter {
                 }
             } else {
                 String meta = handlerMetaZones.get(tzKey);
-//if (id.equals("en") && (tzid.contains("Midway") || tzid.contains("Pago_Pago"))) {
-//int ika =5;
-//}
                 if (meta != null) {
                     String metaKey = METAZONE_ID_PREFIX + meta;
-if (id.equals("en") && (meta.equals("Moscow"))) {
-int ika =5;
-}
                     data = map.get(metaKey);
                     if (data instanceof String[] tznames) {
                         // TZDB short names
                         tznames = Arrays.copyOf((String[])names.getOrDefault(metaKey, tznames), 6);
                         fillTZDBShortNames(tzid, tznames);
-//                        if (tzKey.equals(tzid)) {
-                            // Keep the metazone prefix here.
-                            names.putIfAbsent(metaKey, tznames);
-                            names.put(tzid, meta);
-//                        } else {
-//                            // deprecated tzid. Do not use metazone names as they may be different,
-//                            // e.g. SystemV/YST9 vs. Pacific/Gambier
-//                            names.put(tzid, tznames);
-//                        }
+                        // Keep the metazone prefix here.
+                        names.putIfAbsent(metaKey, tznames);
+                        names.put(tzid, meta);
                     }
                 } else if (id.equals("root")) {
                     // supply TZDB short names if available
@@ -1325,7 +1309,6 @@ int ika =5;
      */
     private static void generateTZDBShortNamesMap() throws IOException {
         Files.walk(Path.of(tzDataDir), 1, FileVisitOption.FOLLOW_LINKS)
-//            .filter(p -> p.toFile().isFile() && !p.endsWith("jdk11_backward"))
             .filter(p -> p.toFile().isFile())
             .forEach(p -> {
                 try {
@@ -1374,9 +1357,6 @@ int ika =5;
                             zone = zl[1];
                             rule = zl[3];
                             format = zl[4];
-if (zone.contains("Moscow")) {
-    int baka = 4;
-}
                         } else {
                             if (zone != null) {
                                 if (line.startsWith("Rule") ||
@@ -1400,9 +1380,6 @@ if (zone.contains("Moscow")) {
                                     rl[9].replace(NO_SUBST, ""));
                         }
 
-if (line.contains("Zaporo")) {
-    int baka = 4;
-}
                         // Link line
                         if (line.startsWith("Link")) {
                             var ll = line.split("[ \t]+", -1);

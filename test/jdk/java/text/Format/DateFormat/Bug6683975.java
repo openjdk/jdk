@@ -59,6 +59,7 @@ public class Bug6683975 {
 
         String str_th = ((SimpleDateFormat)df_th).toPattern();
         String str_th_TH = ((SimpleDateFormat)df_th_TH).toPattern();
+        // CLDR has different patterns for Gregorian and Buddhist calendars, thus they don't match
 //        if (!str_th.equals(str_th_TH)) {
 //            err = true;
 //            System.err.println("Error: Pattern for th locale should be the same as pattern for th_TH locale. (" + stylePattern[style] + ")");

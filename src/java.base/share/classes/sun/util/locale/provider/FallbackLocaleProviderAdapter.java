@@ -25,11 +25,7 @@
 
 package sun.util.locale.provider;
 
-import jdk.internal.vm.annotation.Stable;
-
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;

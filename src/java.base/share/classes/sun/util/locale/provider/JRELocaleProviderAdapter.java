@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -452,7 +452,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
     protected Set<String> createLanguageTagSet(String category) {
         String supportedLocaleString = createSupportedLocaleString(category);
         return supportedLocaleString != null ?
-            Set.of(supportedLocaleString.split(" +")) :
+            Set.of(supportedLocaleString.split("\s+")) :
             Collections.emptySet();
     }
 
@@ -510,7 +510,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
             throw new InternalError("No available locales for JRE");
         }
 
-        return Arrays.stream(supportedLocaleString.split(" +"))
+        return Arrays.stream(supportedLocaleString.split("\s+"))
             .map(t -> {
                 return switch (t) {
                     case "ja-JP-JP" -> JRELocaleConstants.JA_JP_JP;
