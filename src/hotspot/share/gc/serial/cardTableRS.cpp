@@ -26,19 +26,18 @@
 #include "classfile/classLoaderDataGraph.hpp"
 #include "gc/serial/cardTableRS.hpp"
 #include "gc/serial/generation.hpp"
-#include "gc/serial/serialHeap.hpp"
-#include "gc/serial/tenuredGeneration.hpp"
+#include "gc/serial/serialHeap.inline.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "memory/iterator.inline.hpp"
 #include "utilities/align.hpp"
 
-void CardTableRS::younger_refs_in_space_iterate(TenuredSpace* sp,
-                                                OopIterateClosure* cl) {
+void CardTableRS::scan_old_to_young_refs(TenuredSpace* sp) {
   verify_used_region_at_save_marks(sp);
 
   const MemRegion urasm = sp->used_region_at_save_marks();
   if (!urasm.is_empty()) {
-    non_clean_card_iterate(sp, urasm, cl, this);
+    OldGenScanClosure cl(SerialHeap::heap()->young_gen());
+    non_clean_card_iterate(sp, urasm, &cl, this);
   }
 }
 
@@ -225,7 +224,7 @@ static void prefetch_write(void *p) {
 }
 
 static void scan_obj_with_limit(oop obj,
-                                OopIterateClosure* cl,
+                                OldGenScanClosure* cl,
                                 HeapWord* start,
                                 HeapWord* end) {
   if (!obj->is_typeArray()) {
@@ -236,7 +235,7 @@ static void scan_obj_with_limit(oop obj,
 
 void CardTableRS::non_clean_card_iterate(TenuredSpace* sp,
                                          MemRegion mr,
-                                         OopIterateClosure* cl,
+                                         OldGenScanClosure* cl,
                                          CardTableRS* ct) {
   struct {
     HeapWord* start_addr;
@@ -267,7 +266,6 @@ void CardTableRS::non_clean_card_iterate(TenuredSpace* sp,
 
   for (CardValue* current_card = start_card; current_card < end_card; /* empty */) {
     CardValue* const dirty_l = find_first_dirty_card(current_card, end_card);
-
     if (dirty_l == end_card) {
       // No dirty cards to iterate.
       return;

@@ -267,14 +267,8 @@ HeapWord* TenuredGeneration::block_start(const void* p) const {
   return space()->block_start_const(p);
 }
 
-void TenuredGeneration::younger_refs_iterate(OopIterateClosure* blk) {
-  // Apply "cl->do_oop" to (the address of) (exactly) all the ref fields in
-  // "sp" that point into the young generation.
-  // The iteration is only over objects allocated at the start of the
-  // iterations; objects allocated as a result of applying the closure are
-  // not included.
-
-  _rs->younger_refs_in_space_iterate(space(), blk);
+void TenuredGeneration::scan_old_to_young_refs() {
+  _rs->scan_old_to_young_refs(space());
 }
 
 TenuredGeneration::TenuredGeneration(ReservedSpace rs,
