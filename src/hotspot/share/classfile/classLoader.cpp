@@ -1028,7 +1028,7 @@ ClassPathEntry* find_first_module_cpe(ModuleEntry* mod_entry,
 }
 
 
-// Search either the patch-module or exploded build entries for class.
+// Search either the patch-module or exploded build entries for package entry.
 ClassFileStream* ClassLoader::search_module_entries(JavaThread* current,
                                                     const GrowableArray<ModuleClassPathList*>* const module_list,
                                                     PackageEntry* pkg_entry,
