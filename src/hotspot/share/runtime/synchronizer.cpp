@@ -594,7 +594,7 @@ bool ObjectSynchronizer::enter_fast_impl(Handle obj, BasicLock* lock, JavaThread
         // The least recently locked lock is chosen as it is the lock
         // with the longest critical section.
 
-        log_info(fastlock)("LockStack capacity exceeded, inflating.");
+        log_info(monitorinflation)("LockStack capacity exceeded, inflating.");
         ObjectMonitor* monitor = inflate_for(locking_thread, lock_stack.bottom(), inflate_cause_vm_internal);
         assert(monitor->owner() == Thread::current(), "must be owner=" PTR_FORMAT " current=" PTR_FORMAT " mark=" PTR_FORMAT,
                p2i(monitor->owner()), p2i(Thread::current()), monitor->object()->mark_acquire().value());
