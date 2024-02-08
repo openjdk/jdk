@@ -43,6 +43,7 @@
     <packaging>nbm-application</packaging>
     <name>IdealGraphVisualizer-app</name>
     <properties>
+        <maven.compiler.release>17</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <all.clusters>${project.build.directory}/${brandingToken}</all.clusters>
     </properties>
