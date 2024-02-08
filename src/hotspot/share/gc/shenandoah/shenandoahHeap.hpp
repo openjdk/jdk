@@ -295,6 +295,8 @@ public:
 private:
   bool _gc_state_changed;
   ShenandoahSharedBitmap _gc_state;
+
+  // tracks if new regions have been allocated or retired since last check
   ShenandoahSharedFlag   _heap_changed;
   ShenandoahSharedFlag   _degenerated_gc_in_progress;
   ShenandoahSharedFlag   _full_gc_in_progress;
