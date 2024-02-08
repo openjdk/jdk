@@ -39,12 +39,10 @@
 // Checks an individual oop for missing precise marks. Mark
 // may be either dirty or newgen.
 class CheckForUnmarkedOops : public BasicOopIterateClosure {
- private:
   PSYoungGen*  _young_gen;
   PSCardTable* _card_table;
   HeapWord*    _unmarked_addr;
 
- protected:
   template <class T> void do_oop_work(T* p) {
     oop obj = RawAccess<>::oop_load(p);
     if (_young_gen->is_in_reserved(obj) &&
@@ -60,8 +58,8 @@ class CheckForUnmarkedOops : public BasicOopIterateClosure {
   CheckForUnmarkedOops(PSYoungGen* young_gen, PSCardTable* card_table) :
     _young_gen(young_gen), _card_table(card_table), _unmarked_addr(nullptr) { }
 
-  virtual void do_oop(oop* p)       { CheckForUnmarkedOops::do_oop_work(p); }
-  virtual void do_oop(narrowOop* p) { CheckForUnmarkedOops::do_oop_work(p); }
+  void do_oop(oop* p)       override { do_oop_work(p); }
+  void do_oop(narrowOop* p) override { do_oop_work(p); }
 
   bool has_unmarked_oop() {
     return _unmarked_addr != nullptr;
