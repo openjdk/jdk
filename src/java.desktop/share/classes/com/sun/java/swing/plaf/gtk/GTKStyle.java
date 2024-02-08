@@ -182,6 +182,14 @@ class GTKStyle extends SynthStyle implements GTKConstants {
             }
         }
 
+        if (id == Region.LABEL && type == ColorType.FOREGROUND
+                && (state & SynthConstants.ENABLED) != 0) {
+            Color c = (Color) get(context, "Label.foreground");
+            if (c != null) {
+                return c;
+            }
+        }
+
         return getStyleSpecificColor(context, state, type);
     }
 
