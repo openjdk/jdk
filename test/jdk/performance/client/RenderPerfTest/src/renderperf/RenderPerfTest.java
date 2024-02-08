@@ -167,7 +167,7 @@ public final class RenderPerfTest {
     // Test attributes:
     private static String TEXT_STR = TEXT_VERSION ? VERSION : "The quick brown fox jumps over the lazy dog";
 
-    private static String TEXT_FONT = "Dialog";
+    private static String TEXT_FONT = Font.DIALOG;
     private static int TEXT_SIZE_DEFAULT = 12;
     private static int TEXT_SIZE_LARGE = 32;
 
