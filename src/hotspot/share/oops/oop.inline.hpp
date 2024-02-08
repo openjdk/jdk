@@ -263,9 +263,7 @@ bool oopDesc::is_gc_marked() const {
 
 // Used by scavengers
 bool oopDesc::is_forwarded() const {
-  // The extra heap check is needed since the obj might be locked, in which case the
-  // mark would point to a stack location and have the sentinel bit cleared
-  return mark().is_marked();
+  return mark().is_forwarded();
 }
 
 // Used by scavengers
@@ -302,7 +300,7 @@ oop oopDesc::forward_to_self_atomic(markWord compare, atomic_memory_order order)
 }
 
 oop oopDesc::forwardee(markWord mark) const {
-  assert(mark.is_marked(), "only decode when actually forwarded");
+  assert(mark.is_forwarded(), "only decode when actually forwarded");
   if (mark.self_forwarded()) {
     return cast_to_oop(this);
   } else {
