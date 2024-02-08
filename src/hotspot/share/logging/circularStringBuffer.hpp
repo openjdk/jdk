@@ -30,11 +30,9 @@
 #include "runtime/semaphore.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/resourceHash.hpp"
-#include <algorithm>
-#include <stddef.h>
+
 #include <string.h>
 #include <sys/mman.h>
-#include <unistd.h>
 
 #ifndef SHARE_LOGGING_CIRCULARSTRINGBUFFER_HPP
 #define SHARE_LOGGING_CIRCULARSTRINGBUFFER_HPP
