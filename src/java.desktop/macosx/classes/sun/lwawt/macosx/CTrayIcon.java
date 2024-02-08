@@ -57,7 +57,7 @@ import static sun.awt.AWTAccessor.MenuComponentAccessor;
 import static sun.awt.AWTAccessor.getMenuComponentAccessor;
 
 public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
-    private TrayIcon target;
+    private final TrayIcon target;
     private PopupMenu popup;
 
     // In order to construct MouseEvent object, we need to specify a
