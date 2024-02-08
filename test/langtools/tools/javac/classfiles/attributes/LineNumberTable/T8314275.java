@@ -46,19 +46,34 @@ public class T8314275 extends LineNumberTestBase {
 
     private static final TestCase[] TEST_CASE = new TestCase[] {
         new TestCase("""
-                 public class T8314275 {                               // 1
-                     private static double multiply(Integer i) {       // 2
-                          double cr = 15;                              // 3
-                          cr = switch (i) {                            // 4
-                              case 1 -> cr * 1;                        // 5
-                              case 2 -> cr * 2;                        // 6
-                              default -> cr * 4;                       // 7
-                          };                                           // 8
-                          return cr;                                   // 9
-                      }                                                // 10
-                 }                                                     // 11
-                 """,
-                List.of(1, 3, 4, 5, 6, 7, 8, 9),
-                "T8314275")
+             public class T8314275Expression {                     // 1
+                 private static double multiply(Integer i) {       // 2
+                      double cr = 15;                              // 3
+                      cr = switch (i) {                            // 4
+                          case 1 -> cr * 1;                        // 5
+                          case 2 -> cr * 2;                        // 6
+                          default -> cr * 4;                       // 7
+                      };                                           // 8
+                      return cr;                                   // 9
+                  }                                                //10
+             }                                                     //11
+             """,
+            List.of(1, 3, 4, 5, 6, 7, 8, 9),
+            "T8314275Expression"),
+        new TestCase("""
+             public class T8314275Statement {                      // 1
+                 private static double multiply(Integer i) {       // 2
+                      double cr = 15;                              // 3
+                      switch (i) {                                 // 4
+                          case 1: cr *= 1; break;                  // 5
+                          case 2: cr *= 2; break;                  // 6
+                          default: cr *= 4;                        // 7
+                      };                                           // 8
+                      return cr;                                   // 9
+                  }                                                //10
+             }                                                     //11
+             """,
+                List.of(1, 3, 4, 5, 6, 7, 9),
+                "T8314275Statement")
     };
 }

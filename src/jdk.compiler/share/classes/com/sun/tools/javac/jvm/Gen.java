@@ -1429,8 +1429,10 @@ public class Gen extends JCTree.Visitor {
                 }
             }
 
-            // Emit line position for the end of the switch
-            code.statBegin(TreeInfo.endPos(swtch));
+            if (swtch instanceof JCSwitchExpression) {
+                 // Emit line position for the end of a switch expression
+                 code.statBegin(TreeInfo.endPos(swtch));
+            }
         }
         code.endScopes(limit);
     }
