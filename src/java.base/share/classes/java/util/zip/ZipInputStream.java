@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,9 @@ import static java.util.zip.ZipUtils.*;
  * An input stream for reading compressed and uncompressed
  * {@linkplain ZipEntry ZIP file entries} from a stream of bytes in the ZIP file
  * format.
- *
+ * <p> Unless otherwise noted, passing a {@code null} argument to a constructor
+ * or method in this class will cause a {@link NullPointerException} to be
+ * thrown.
  * <H2>Reading Zip File Entries</H2>
  *
  * The {@link #getNextEntry()} method is used to read the next ZIP file entry
@@ -304,7 +306,6 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
      * may be in an inconsistent state. It is strongly recommended that the
      * stream be promptly closed if an I/O error occurs.
      *
-     * @throws NullPointerException {@inheritDoc}
      * @throws IndexOutOfBoundsException {@inheritDoc}
      *
      * @since 9
@@ -359,8 +360,6 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
      * one, or both, streams may be in an inconsistent state. It is strongly
      * recommended that both streams be promptly closed if an I/O error occurs.
      *
-     * @throws NullPointerException {@inheritDoc}
-     *
      * @since 9
      */
     @Override
@@ -390,7 +389,6 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
      * @param len the maximum number of bytes read
      * @return the actual number of bytes read, or -1 if the end of the
      *         entry is reached
-     * @throws     NullPointerException if {@code b} is {@code null}.
      * @throws     IndexOutOfBoundsException if {@code off} is negative,
      * {@code len} is negative, or {@code len} is greater than
      * {@code b.length - off}

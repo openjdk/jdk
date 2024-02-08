@@ -62,7 +62,7 @@ public class JavaTokenizer extends UnicodeReader {
     /**
      * Sentinel for non-value.
      */
-    private final static int NOT_FOUND = -1;
+    private static final int NOT_FOUND = -1;
 
     /**
      * The source language setting. Copied from scanner factory.
