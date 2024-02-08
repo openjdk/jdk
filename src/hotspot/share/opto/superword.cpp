@@ -572,8 +572,15 @@ bool SuperWord::SLP_extract() {
 
   extend_packlist();
 
+  // Chain together pairs, creating maximally large packs
   combine_packs();
 
+  // Split packs that are too large, for some reason
+  split_packs_for_max_vector_size();
+
+  // Filter out problematic packs
+  filter_packs_for_power_of_2_size();
+  filter_packs_for_mutual_independence();
   filter_packs_for_alignment();
 
   construct_my_pack_map();
@@ -1567,35 +1574,58 @@ int SuperWord::unpack_cost(int ct) { return ct; }
 //------------------------------combine_packs---------------------------
 // Combine packs A and B with A.last == B.first into A.first..,A.last,B.second,..B.last
 void SuperWord::combine_packs() {
-#ifdef ASSERT
+  ResourceMark rm;
+  // Map the elements of the pairs: bb_idx -> bb_idx. (-1 means not mapped)
+  int block_length = _block.length();
+  GrowableArray<int> first_to_second(block_length, block_length, -1);
+  GrowableArray<int> second_to_first(block_length, block_length, -1);
+
   for (int i = 0; i < _packset.length(); i++) {
-    assert(_packset.at(i) != nullptr, "no nullptr in packset");
+    Node_List* p = _packset.at(i);
+    assert(p != nullptr, "no nullptr in packset");
+    assert(p->size() == 2, "all pairs are packs");
+    int bb_idx_first  = bb_idx(p->at(0));
+    int bb_idx_second = bb_idx(p->at(1));
+    assert(first_to_second.at(bb_idx_first) == -1, "not yet mapped");
+    assert(second_to_first.at(bb_idx_second) == -1, "not yet mapped");
+    first_to_second.at_put(bb_idx_first, bb_idx_second);
+    second_to_first.at_put(bb_idx_second, bb_idx_first);
+  }
+
+  // Now we have all the info about the pairs in the mapping.
+  _packset.clear();
+
+  // Start at a node that is not a second element in a pair.
+  // Then hop "forward" through the second pair mapping.
+  for (int bb_idx_first = 0; bb_idx_first < block_length; bb_idx_first++) {
+    if (first_to_second.at(bb_idx_first) == -1) {
+      continue; // node is not the first element of any pair
+    }
+    if (second_to_first.at(bb_idx_first) != -1) {
+      continue; // don't start with a node that is a second element in some pair.
+    }
+    Node_List* pack = new (arena()) Node_List(arena()); // TODO allocation elsewhere?
+    for (int idx = bb_idx_first; idx != -1; idx = first_to_second.at(idx)) {
+      Node* n = _block.at(idx);
+      pack->push(n);
+    }
+    _packset.append(pack);
+  }
+
+  assert(!_packset.is_empty(), "must have combined some packs");
+
+#ifndef PRODUCT
+  if (is_trace_superword_packset()) {
+    tty->print_cr("\nAfter Superword::combine_packs");
+    print_packset();
   }
 #endif
+}
 
-  bool changed = true;
-  // Combine packs regardless max vector size.
-  while (changed) {
-    changed = false;
-    for (int i = 0; i < _packset.length(); i++) {
-      Node_List* p1 = _packset.at(i);
-      if (p1 == nullptr) continue;
-      // Because of sorting we can start at i + 1
-      for (int j = i + 1; j < _packset.length(); j++) {
-        Node_List* p2 = _packset.at(j);
-        if (p2 == nullptr) continue;
-        if (p1->at(p1->size()-1) == p2->at(0)) {
-          for (uint k = 1; k < p2->size(); k++) {
-            p1->push(p2->at(k));
-          }
-          _packset.at_put(j, nullptr);
-          changed = true;
-        }
-      }
-    }
-  }
+// Split packs which have size greater then max vector size.
+void SuperWord::split_packs_for_max_vector_size() {
+  // TODO intro
 
-  // Split packs which have size greater then max vector size.
   for (int i = 0; i < _packset.length(); i++) {
     Node_List* p1 = _packset.at(i);
     if (p1 != nullptr) {
@@ -1628,7 +1658,15 @@ void SuperWord::combine_packs() {
       }
     }
   }
+  // TODO outro
+}
 
+void SuperWord::filter_packs_for_power_of_2_size() {
+  // TODO intro
+}
+
+void SuperWord::filter_packs_for_mutual_independence() {
+  // TODO intro
   // We know that the nodes in a pair pack were independent - this gives us independence
   // at distance 1. But now that we may have more than 2 nodes in a pack, we need to check
   // if they are all mutually independent. If there is a dependence we remove the pack.
