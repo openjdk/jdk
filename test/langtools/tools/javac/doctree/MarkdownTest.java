@@ -529,12 +529,18 @@ DocComment[DOC_COMMENT, pos:0
 ]
 */
 
-// While this is an important test case, it is also a negative one.
+// While this is an important test case, it is also a negative one
+// (that is, the AST contains an Erroneous node).
 // Note how the backticks "match" across the end of the inline tag.
 // That's unfortunate, but cannot reasonably be detected without
 // examining the contents of a code span.
-// Not surprisingly, most of the checks fail for this (bad) test case.
-//    ///
+// Not surprisingly, some of the checks fail for this (bad) test case.
+// * PrettyChecker fails because it does not handle an unterminated inline tag.
+// * StartEndPosChecker fails because it does not handle an unterminated inline tag.
+//
+// Disabled until we can either enhance the checkers or select which
+// checkers to use.
+
 //    ///{@summary abc `
 //    ///def}
 //    ///rest `more`
@@ -543,11 +549,11 @@ DocComment[DOC_COMMENT, pos:0
 ///*
 //DocComment[DOC_COMMENT, pos:0
 //  firstSentence: 1
-//    Summary[SUMMARY, pos:4
+//    Summary[SUMMARY, pos:0
 //      summary: 1
-//        Erroneous[ERRONEOUS, pos:14, prefPos:37
+//        Erroneous[ERRONEOUS, pos:10, prefPos:31
 //          code: compiler.err.dc.unterminated.inline.tag
-//          body: abc_`|_def}|_rest_`more`
+//          body: abc_`|def}|rest_`more`
 //        ]
 //    ]
 //  body: empty
