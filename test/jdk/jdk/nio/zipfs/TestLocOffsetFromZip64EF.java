@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,17 +21,17 @@
  * questions.
  */
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.FileSystem;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
@@ -59,19 +59,21 @@ public class TestLocOffsetFromZip64EF {
 
     private static final String ZIP_FILE_NAME = "LocOffsetFromZip64.zip";
 
-    // Size of a Zip64 extended information field with long fields
-    // for 'uncompressed size', 'compressed size' and 'local header offset'
-    public static final int ZIP64_SIZE = Short.BYTES // Tag
-            + Short.BYTES    // Data size
-            + Long.BYTES     // Uncompressed size
+    // Size of the data block of a Zip64 extended information field with long
+    // fields for 'uncompressed size', 'compressed size' and 'local header offset'
+    private static short ZIP64_DATA_SIZE = (short) Long.BYTES // Uncompressed size
             + Long.BYTES     // Compressed size
             + Long.BYTES;    // Loc offset
-    // Size of the extra field header (2 byte tag + 2 byte data size)
-    public static short EXTRA_HEADER_SIZE = 2 * Short.BYTES;
-    // Size of the data part of the Zip64 field  ( field size minus the header)
-    public static short ZIP64_DATA_SIZE = (short) (ZIP64_SIZE - EXTRA_HEADER_SIZE);
+
+    // Size of the extra field header
+    private static short EXTRA_HEADER_SIZE = Short.BYTES // tag
+            + Short.BYTES; // data size
+
+    // Size of a Zip64 extended information field including the header
+    private static final int ZIP64_SIZE = EXTRA_HEADER_SIZE + ZIP64_DATA_SIZE;
+
     // The Zip64 Magic value for 32-bit fields
-    public static final int ZIP64_MAGIC_VALUE = 0XFFFFFFFF;
+    private static final int ZIP64_MAGIC_VALUE = 0XFFFFFFFF;
     // The 'unknown' tag, see APPNOTE.txt
     private static final short UNKNOWN_TAG = (short) 0x9902;
     // The 'Zip64 extended information' tag, see APPNOTE.txt
