@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,8 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-#ifndef __FollowRefObject_h
-#define __FollowRefObject_h
+#ifndef __FollowRefObject_hpp
+#define __FollowRefObject_hpp
 
 #include <jvmti.h>
 
@@ -34,7 +34,7 @@ void jvmti_FollowRefObject_init();
 /* ============================================================================= */
 
 #define DBG(x) x
-#define DEREF(ptr) (((ptr) == NULL ? 0 : *(ptr)))
+#define DEREF(ptr) (((ptr) == nullptr ? 0 : *(ptr)))
 
 extern jvmtiHeapCallbacks g_wrongHeapCallbacks; /* Callbacks that blame */
 

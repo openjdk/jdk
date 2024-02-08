@@ -330,6 +330,7 @@ private:
     void operator()(JavaThread* current);
   };
  public:
+  bool      enter_for(JavaThread* locking_thread);
   bool      enter(JavaThread* current);
   void      exit(JavaThread* current, bool not_suspended = true);
   void      wait(jlong millis, bool interruptible, TRAPS);

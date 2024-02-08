@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -268,7 +268,8 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
 
     @DontInline
     static $abstractvectortype$ fromArray($type$[] a, int i) {
-        return $abstractvectortype$.fromArray(SPECIES, a, i);
+        // Tests the species method and the equivalent vector method it defers to
+        return ($abstractvectortype$) SPECIES.fromArray(a, i);
     }
 
     @DontInline
@@ -288,7 +289,8 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
 
     @DontInline
     static $abstractvectortype$ fromMemorySegment(MemorySegment a, int i, ByteOrder bo) {
-        return $abstractvectortype$.fromMemorySegment(SPECIES, a, i, bo);
+        // Tests the species method and the equivalent vector method it defers to
+        return ($abstractvectortype$) SPECIES.fromMemorySegment(a, i, bo);
     }
 
     @DontInline
