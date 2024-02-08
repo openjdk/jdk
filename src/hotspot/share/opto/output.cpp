@@ -903,7 +903,7 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
       break;
     case Type::FloatCon: {
       float f = t->is_float_constant()->getf();
-      array->append(new ConstantIntValue(jint_cast(f)));
+      array->append(new ConstantIntValue(PrimitiveConversions::cast<jint>(f)));
       break;
     }
     case Type::DoubleCon: {
@@ -920,7 +920,7 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
     // (If, on some machine, the interpreter's Java locals or stack
     // were to grow upwards, the embedded doubles would be word-swapped.)
     jlong_accessor acc;
-    acc.long_value = jlong_cast(d);
+    acc.long_value = PrimitiveConversions::cast<jlong>(d);
     array->append(new ConstantIntValue(acc.words[1]));
     array->append(new ConstantIntValue(acc.words[0]));
 #endif

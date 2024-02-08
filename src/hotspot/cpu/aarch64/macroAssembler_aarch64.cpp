@@ -5909,7 +5909,7 @@ void MacroAssembler::java_round_double(Register dst, FloatRegister src,
   fcvtasd(dst, src);
   // Test if src >= 0 || abs(src) >= 0x1.0p52
   eor(rscratch1, rscratch1, UCONST64(1) << 63); // flip sign bit
-  mov(rscratch2, julong_cast(0x1.0p52));
+  mov(rscratch2, PrimitiveConversions::cast<julong>(0x1.0p52));
   cmp(rscratch1, rscratch2);
   br(HS, DONE); {
     // src < 0 && abs(src) < 0x1.0p52
@@ -5932,7 +5932,7 @@ void MacroAssembler::java_round_float(Register dst, FloatRegister src,
   fcvtassw(dst, src);
   // Test if src >= 0 || abs(src) >= 0x1.0p23
   eor(rscratch1, rscratch1, 0x80000000); // flip sign bit
-  mov(rscratch2, jint_cast(0x1.0p23f));
+  mov(rscratch2, PrimitiveConversions::cast<jint>(0x1.0p23f));
   cmp(rscratch1, rscratch2);
   br(HS, DONE); {
     // src < 0 && |src| < 0x1.0p23

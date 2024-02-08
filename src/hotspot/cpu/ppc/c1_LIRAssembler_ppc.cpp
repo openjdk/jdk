@@ -1021,7 +1021,7 @@ void LIR_Assembler::const2reg(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_cod
           __ lfsx(to_reg->as_float_reg(), R0);
         } else {
           assert(to_reg->is_single_cpu(), "Must be a cpu register.");
-          __ load_const_optimized(to_reg->as_register(), jint_cast(c->as_jfloat()), R0);
+          __ load_const_optimized(to_reg->as_register(), PrimitiveConversions::cast<jint>(c->as_jfloat()), R0);
         }
       }
       break;
@@ -1040,7 +1040,7 @@ void LIR_Assembler::const2reg(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_cod
           __ lfdx(to_reg->as_double_reg(), R0);
         } else {
           assert(to_reg->is_double_cpu(), "Must be a long register.");
-          __ load_const_optimized(to_reg->as_register_lo(), jlong_cast(c->as_jdouble()), R0);
+          __ load_const_optimized(to_reg->as_register_lo(), PrimitiveConversions::cast<jlong>(c->as_jdouble()), R0);
         }
       }
       break;

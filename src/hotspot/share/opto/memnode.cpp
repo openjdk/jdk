@@ -4175,8 +4175,8 @@ InitializeNode::coalesce_subword_stores(intptr_t header_size,
     switch (type) {
     case T_INT:    con = val->is_int()->get_con();  break;
     case T_LONG:   con = val->is_long()->get_con(); break;
-    case T_FLOAT:  con = jint_cast(val->getf());    break;
-    case T_DOUBLE: con = jlong_cast(val->getd());   break;
+    case T_FLOAT:  con = PrimitiveConversions::cast<jint>(val->getf());    break;
+    case T_DOUBLE: con = PrimitiveConversions::cast<jlong>(val->getd());   break;
     default:                              continue; //skip (odd store type)
     }
 

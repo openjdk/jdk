@@ -71,13 +71,13 @@ void Canonicalizer::do_Op2(Op2* x) {
   if (x->x() == x->y()) {
     switch (x->op()) {
     case Bytecodes::_isub: set_constant(0); return;
-    case Bytecodes::_lsub: set_constant(jlong_cast(0)); return;
+    case Bytecodes::_lsub: set_constant(PrimitiveConversions::cast<jlong>(0ll)); return;
     case Bytecodes::_iand: // fall through
     case Bytecodes::_land: // fall through
     case Bytecodes::_ior : // fall through
     case Bytecodes::_lor : set_canonical(x->x()); return;
     case Bytecodes::_ixor: set_constant(0); return;
-    case Bytecodes::_lxor: set_constant(jlong_cast(0)); return;
+    case Bytecodes::_lxor: set_constant(PrimitiveConversions::cast<jlong>(0ll)); return;
     default              : break;
     }
   }
@@ -354,7 +354,7 @@ void Canonicalizer::do_ShiftOp        (ShiftOp*         x) {
   if (t->is_constant()) {
     switch (t->tag()) {
     case intTag   : if (t->as_IntConstant()->value() == 0)         { set_constant(0); return; } break;
-    case longTag  : if (t->as_LongConstant()->value() == (jlong)0) { set_constant(jlong_cast(0)); return; } break;
+    case longTag  : if (t->as_LongConstant()->value() == (jlong)0) { set_constant(PrimitiveConversions::cast<jlong>(0ll)); return; } break;
     default       : ShouldNotReachHere();
     }
     if (t2->is_constant()) {

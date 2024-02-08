@@ -42,7 +42,7 @@ jint CompressedReadStream::read_signed_int() {
 jfloat CompressedReadStream::read_float() {
   int rf = read_int();
   int f  = reverse_bits(rf);
-  return jfloat_cast(f);
+  return PrimitiveConversions::cast<jfloat>(f);
 }
 
 // The treatment of doubles is similar.  We could bit-reverse each
@@ -56,7 +56,7 @@ jdouble CompressedReadStream::read_double() {
   jint rl = read_int();
   jint h  = reverse_bits(rh);
   jint l  = reverse_bits(rl);
-  return jdouble_cast(jlong_from(h, l));
+  return PrimitiveConversions::cast<jdouble>(jlong_from(h, l));
 }
 
 // A 64-bit long is encoded into distinct 32-bit halves.  This saves
@@ -91,15 +91,15 @@ void CompressedWriteStream::grow() {
 }
 
 void CompressedWriteStream::write_float(jfloat value) {
-  juint f = jint_cast(value);
+  juint f = PrimitiveConversions::cast<jint>(value);
   juint rf = reverse_bits(f);
   assert(f == reverse_bits(rf), "can re-read same bits");
   write_int(rf);
 }
 
 void CompressedWriteStream::write_double(jdouble value) {
-  juint h  = high(jlong_cast(value));
-  juint l  = low( jlong_cast(value));
+  juint h  = high(PrimitiveConversions::cast<jlong>(value));
+  juint l  = low( PrimitiveConversions::cast<jlong>(value));
   juint rh = reverse_bits(h);
   juint rl = reverse_bits(l);
   assert(h == reverse_bits(rh), "can re-read same bits");

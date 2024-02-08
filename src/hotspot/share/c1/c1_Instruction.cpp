@@ -379,10 +379,10 @@ intx Constant::hash() const {
         return HASH3(name(), high(temp), low(temp));
       }
     case floatTag:
-      return HASH2(name(), jint_cast(type()->as_FloatConstant()->value()));
+      return HASH2(name(), PrimitiveConversions::cast<jint>(type()->as_FloatConstant()->value()));
     case doubleTag:
       {
-        jlong temp = jlong_cast(type()->as_DoubleConstant()->value());
+        jlong temp = PrimitiveConversions::cast<jlong>(type()->as_DoubleConstant()->value());
         return HASH3(name(), high(temp), low(temp));
       }
     case objectTag:
@@ -421,14 +421,14 @@ bool Constant::is_equal(Value v) const {
         FloatConstant* t1 =    type()->as_FloatConstant();
         FloatConstant* t2 = v->type()->as_FloatConstant();
         return (t1 != nullptr && t2 != nullptr &&
-                jint_cast(t1->value()) == jint_cast(t2->value()));
+                PrimitiveConversions::cast<jint>(t1->value()) == PrimitiveConversions::cast<jint>(t2->value()));
       }
     case doubleTag:
       {
         DoubleConstant* t1 =    type()->as_DoubleConstant();
         DoubleConstant* t2 = v->type()->as_DoubleConstant();
         return (t1 != nullptr && t2 != nullptr &&
-                jlong_cast(t1->value()) == jlong_cast(t2->value()));
+                PrimitiveConversions::cast<jlong>(t1->value()) == PrimitiveConversions::cast<jlong>(t2->value()));
       }
     case objectTag:
       {

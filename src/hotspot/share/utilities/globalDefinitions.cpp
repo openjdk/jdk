@@ -419,9 +419,9 @@ STATIC_ASSERT(right_n_bits(1|2) == 0x7);
 // performed at runtime. _small_subnormal is volatile so that
 // expressions involving it cannot be evaluated at compile time.
 static const double large_subnormal_double
-  = jdouble_cast(0x0030000000000000); // 0x1.0p-1020;
+  = PrimitiveConversions::cast<jdouble>(0x0030000000000000ll); // 0x1.0p-1020;
 static const volatile double small_subnormal_double
-  = jdouble_cast(0x0000000000000003); // 0x0.0000000000003p-1022;
+  = PrimitiveConversions::cast<jdouble>(0x0000000000000003ll); // 0x0.0000000000003p-1022;
 
 // Quickly test to make sure IEEE-754 subnormal numbers are correctly
 // handled.

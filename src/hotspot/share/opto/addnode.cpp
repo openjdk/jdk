@@ -1407,7 +1407,7 @@ const Type* MinFNode::add_ring(const Type* t0, const Type* t1 ) const {
   }
 
   // handle min of 0.0, -0.0 case.
-  return (jint_cast(f0) < jint_cast(f1)) ? r0 : r1;
+  return (PrimitiveConversions::cast<jint>(f0) < PrimitiveConversions::cast<jint>(f1)) ? r0 : r1;
 }
 
 //------------------------------add_ring---------------------------------------
@@ -1432,7 +1432,7 @@ const Type* MinDNode::add_ring(const Type* t0, const Type* t1) const {
   }
 
   // handle min of 0.0, -0.0 case.
-  return (jlong_cast(d0) < jlong_cast(d1)) ? r0 : r1;
+  return (PrimitiveConversions::cast<jlong>(d0) < PrimitiveConversions::cast<jlong>(d1)) ? r0 : r1;
 }
 
 //------------------------------add_ring---------------------------------------
@@ -1457,7 +1457,7 @@ const Type* MaxFNode::add_ring(const Type* t0, const Type* t1) const {
   }
 
   // handle max of 0.0,-0.0 case.
-  return (jint_cast(f0) > jint_cast(f1)) ? r0 : r1;
+  return (PrimitiveConversions::cast<jint>(f0) > PrimitiveConversions::cast<jint>(f1)) ? r0 : r1;
 }
 
 //------------------------------add_ring---------------------------------------
@@ -1482,5 +1482,5 @@ const Type* MaxDNode::add_ring(const Type* t0, const Type* t1) const {
   }
 
   // handle max of 0.0, -0.0 case.
-  return (jlong_cast(d0) > jlong_cast(d1)) ? r0 : r1;
+  return (PrimitiveConversions::cast<jlong>(d0) > PrimitiveConversions::cast<jlong>(d1)) ? r0 : r1;
 }

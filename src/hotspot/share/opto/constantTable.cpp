@@ -51,8 +51,8 @@ bool ConstantTable::Constant::operator==(const Constant& other) {
         case T_SHORT:   is_eq = ele1.s == ele2.s; break;
         case T_INT:     is_eq = ele1.i == ele2.i; break;
         case T_LONG:    is_eq = ele1.j == ele2.j; break;
-        case T_FLOAT:   is_eq = jint_cast(ele1.f)  == jint_cast(ele2.f);  break;
-        case T_DOUBLE:  is_eq = jlong_cast(ele1.d) == jlong_cast(ele2.d); break;
+        case T_FLOAT:   is_eq = PrimitiveConversions::cast<jint>(ele1.f)  == PrimitiveConversions::cast<jint>(ele2.f);  break;
+        case T_DOUBLE:  is_eq = PrimitiveConversions::cast<jlong>(ele1.d) == PrimitiveConversions::cast<jlong>(ele2.d); break;
         default: ShouldNotReachHere(); is_eq = false;
       }
       if (!is_eq) {
@@ -64,9 +64,9 @@ bool ConstantTable::Constant::operator==(const Constant& other) {
   // For floating point values we compare the bit pattern.
   switch (type()) {
   case T_INT:     return (_v._value.i == other._v._value.i);
-  case T_FLOAT:   return jint_cast(_v._value.f) == jint_cast(other._v._value.f);
+  case T_FLOAT:   return PrimitiveConversions::cast<jint>(_v._value.f) == PrimitiveConversions::cast<jint>(other._v._value.f);
   case T_LONG:    return (_v._value.j == other._v._value.j);
-  case T_DOUBLE:  return jlong_cast(_v._value.d) == jlong_cast(other._v._value.d);
+  case T_DOUBLE:  return PrimitiveConversions::cast<jlong>(_v._value.d) == PrimitiveConversions::cast<jlong>(other._v._value.d);
   case T_OBJECT:
   case T_ADDRESS: return (_v._value.l == other._v._value.l);
   case T_VOID:    return (_v._value.l == other._v._value.l);  // jump-table entries

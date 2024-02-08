@@ -2996,7 +2996,7 @@ operand immDpm0() %{
 
 // Double Immediate: +0
 operand immDp0() %{
-  predicate(jlong_cast(n->getd()) == 0);
+  predicate(PrimitiveConversions::cast<jlong>(n->getd()) == 0);
   match(ConD);
   op_cost(1);
   format %{ %}
@@ -3022,7 +3022,7 @@ operand immFpm0() %{
 
 // Float Immediate: +0
 operand immFp0() %{
-  predicate(jint_cast(n->getf()) == 0);
+  predicate(PrimitiveConversions::cast<jint>(n->getf()) == 0);
   match(ConF);
   op_cost(1);
   format %{ %}

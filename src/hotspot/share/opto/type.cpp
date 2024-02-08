@@ -453,15 +453,15 @@ void Type::Initialize_shared(Compile* current) {
   TypeF::MIN = TypeF::make(min_jfloat); // Float MIN
   TypeF::ZERO = TypeF::make(0.0); // Float 0 (positive zero)
   TypeF::ONE  = TypeF::make(1.0); // Float 1
-  TypeF::POS_INF = TypeF::make(jfloat_cast(POSITIVE_INFINITE_F));
-  TypeF::NEG_INF = TypeF::make(-jfloat_cast(POSITIVE_INFINITE_F));
+  TypeF::POS_INF = TypeF::make(PrimitiveConversions::cast<jfloat>(POSITIVE_INFINITE_F));
+  TypeF::NEG_INF = TypeF::make(-PrimitiveConversions::cast<jfloat>(POSITIVE_INFINITE_F));
 
   TypeD::MAX = TypeD::make(max_jdouble); // Double MAX
   TypeD::MIN = TypeD::make(min_jdouble); // Double MIN
   TypeD::ZERO = TypeD::make(0.0); // Double 0 (positive zero)
   TypeD::ONE  = TypeD::make(1.0); // Double 1
-  TypeD::POS_INF = TypeD::make(jdouble_cast(POSITIVE_INFINITE_D));
-  TypeD::NEG_INF = TypeD::make(-jdouble_cast(POSITIVE_INFINITE_D));
+  TypeD::POS_INF = TypeD::make(PrimitiveConversions::cast<jdouble>(POSITIVE_INFINITE_D));
+  TypeD::NEG_INF = TypeD::make(-PrimitiveConversions::cast<jdouble>(POSITIVE_INFINITE_D));
 
   TypeInt::MAX = TypeInt::make(max_jint); // Int MAX
   TypeInt::MIN = TypeInt::make(min_jint); // Int MIN
@@ -1334,7 +1334,7 @@ const Type *TypeF::xmeet( const Type *t ) const {
     typerr(t);
 
   case FloatCon:                // Float-constant vs Float-constant?
-    if( jint_cast(_f) != jint_cast(t->getf()) )         // unequal constants?
+    if( PrimitiveConversions::cast<jint>(_f) != PrimitiveConversions::cast<jint>(t->getf()) )         // unequal constants?
                                 // must compare bitwise as positive zero, negative zero and NaN have
                                 // all the same representation in C++
       return FLOAT;             // Return generic float
@@ -1357,7 +1357,7 @@ const Type *TypeF::xdual() const {
 bool TypeF::eq(const Type *t) const {
   // Bitwise comparison to distinguish between +/-0. These values must be treated
   // as different to be consistent with C1 and the interpreter.
-  return (jint_cast(_f) == jint_cast(t->getf()));
+  return (PrimitiveConversions::cast<jint>(_f) == PrimitiveConversions::cast<jint>(t->getf()));
 }
 
 //------------------------------hash-------------------------------------------
@@ -1447,7 +1447,7 @@ const Type *TypeD::xmeet( const Type *t ) const {
     typerr(t);
 
   case DoubleCon:               // Double-constant vs Double-constant?
-    if( jlong_cast(_d) != jlong_cast(t->getd()) )       // unequal constants? (see comment in TypeF::xmeet)
+    if( PrimitiveConversions::cast<jlong>(_d) != PrimitiveConversions::cast<jlong>(t->getd()) )       // unequal constants? (see comment in TypeF::xmeet)
       return DOUBLE;            // Return generic double
   case Top:
   case DoubleTop:
@@ -1467,7 +1467,7 @@ const Type *TypeD::xdual() const {
 bool TypeD::eq(const Type *t) const {
   // Bitwise comparison to distinguish between +/-0. These values must be treated
   // as different to be consistent with C1 and the interpreter.
-  return (jlong_cast(_d) == jlong_cast(t->getd()));
+  return (PrimitiveConversions::cast<jlong>(_d) == PrimitiveConversions::cast<jlong>(t->getd()));
 }
 
 //------------------------------hash-------------------------------------------

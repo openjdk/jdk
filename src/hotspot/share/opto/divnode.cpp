@@ -1280,8 +1280,8 @@ const Type* ModFNode::Value(PhaseGVN* phase) const {
 
   float f1 = t1->getf();
   float f2 = t2->getf();
-  jint  x1 = jint_cast(f1);     // note:  *(int*)&f1, not just (int)f1
-  jint  x2 = jint_cast(f2);
+  jint  x1 = PrimitiveConversions::cast<jint>(f1);     // note:  *(int*)&f1, not just (int)f1
+  jint  x2 = PrimitiveConversions::cast<jint>(f2);
 
   // If either is a NaN, return an input NaN
   if (g_isnan(f1))    return t1;
@@ -1293,12 +1293,12 @@ const Type* ModFNode::Value(PhaseGVN* phase) const {
 
   // We must be modulo'ing 2 float constants.
   // Make sure that the sign of the fmod is equal to the sign of the dividend
-  jint xr = jint_cast(fmod(f1, f2));
+  jint xr = PrimitiveConversions::cast<jint>((float) fmod(f1, f2));
   if ((x1 ^ xr) < 0) {
     xr ^= min_jint;
   }
 
-  return TypeF::make(jfloat_cast(xr));
+  return TypeF::make(PrimitiveConversions::cast<jfloat>(xr));
 }
 
 //=============================================================================
@@ -1332,8 +1332,8 @@ const Type* ModDNode::Value(PhaseGVN* phase) const {
 
   double f1 = t1->getd();
   double f2 = t2->getd();
-  jlong  x1 = jlong_cast(f1);   // note:  *(long*)&f1, not just (long)f1
-  jlong  x2 = jlong_cast(f2);
+  jlong  x1 = PrimitiveConversions::cast<jlong>(f1);   // note:  *(long*)&f1, not just (long)f1
+  jlong  x2 = PrimitiveConversions::cast<jlong>(f2);
 
   // If either is a NaN, return an input NaN
   if (g_isnan(f1))    return t1;
@@ -1345,12 +1345,12 @@ const Type* ModDNode::Value(PhaseGVN* phase) const {
 
   // We must be modulo'ing 2 double constants.
   // Make sure that the sign of the fmod is equal to the sign of the dividend
-  jlong xr = jlong_cast(fmod(f1, f2));
+  jlong xr = PrimitiveConversions::cast<jlong>(fmod(f1, f2));
   if ((x1 ^ xr) < 0) {
     xr ^= min_jlong;
   }
 
-  return TypeD::make(jdouble_cast(xr));
+  return TypeD::make(PrimitiveConversions::cast<jdouble>(xr));
 }
 
 //=============================================================================
