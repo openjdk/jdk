@@ -526,11 +526,10 @@ public class TestVM {
                                 "@Setup method cannot have @Arguments annotation: " + m);
         TestFormat.checkNoThrow(getAnnotation(m, Run.class) == null,
                                 "@Setup method cannot have @Run annotation: " + m);
-        Method mOverloaded = setupMethodMap.get(m.getName());
+        Method mOverloaded = setupMethodMap.put(m.getName(), m);
         TestFormat.checkNoThrow(mOverloaded == null,
                                 "@Setup method cannot be overloaded: " + mOverloaded + " with " + m);
         m.setAccessible(true);
-        setupMethodMap.put(m.getName(), m);
     }
 
     /**

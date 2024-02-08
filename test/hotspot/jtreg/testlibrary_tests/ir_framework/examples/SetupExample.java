@@ -143,14 +143,14 @@ public class SetupExample {
         // Return true with low frequency. If we did this randomly, we can get unlucky
         // and never return true. So doing it deterministically can be helpful when we
         // want "low frequency" but a guaranteed "true" at some point.
-        return new Object[]{ (long)(cnt % 1_000) };
+        return new Object[]{ cnt % 1_000 };
     }
 
     @Test
     @Arguments(setup = "setupDeterministic")
     @IR(counts = {IRNode.STORE_OF_FIELD, "iFld1", "1",
                   IRNode.STORE_OF_FIELD, "iFld2", "1"})
-    void testLowProbabilityBranchDeterministic(long x) {
+    void testLowProbabilityBranchDeterministic(int x) {
         if (x == 7) {
             // unlikely branch -> guaranteed taken -> in profile -> not trapped -> in IR
             iFld1 = 42;

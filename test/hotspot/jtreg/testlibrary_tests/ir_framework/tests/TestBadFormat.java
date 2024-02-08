@@ -652,7 +652,7 @@ class BadSetupTest {
     @Run(test = "testForBadSetupRunAnnotation")
     public void badSetupRunAnnotation() {}
 
-    // ----------- Ok: Setup Without Test Method -----------------
+    // ----------- Useless but ok: Setup Without Test Method -----
     @NoFail
     @Setup
     public void setupWithNoTest() {}

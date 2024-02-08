@@ -71,6 +71,11 @@ public class TestSetupTests {
             Asserts.assertTrue(e.getExceptionInfo().contains("testTooFewArgs"));
             Asserts.assertTrue(e.getExceptionInfo().contains("IllegalArgumentException: wrong number of arguments: 2 expected: 3"));
 
+            Asserts.assertTrue(e.getExceptionInfo().contains("testTooManyArgs2"));
+            Asserts.assertTrue(e.getExceptionInfo().contains("IllegalArgumentException: wrong number of arguments: 3 expected: 0"));
+            Asserts.assertTrue(e.getExceptionInfo().contains("testTooFewArgs2"));
+            Asserts.assertTrue(e.getExceptionInfo().contains("IllegalArgumentException: wrong number of arguments: 0 expected: 3"));
+
             Asserts.assertTrue(e.getExceptionInfo().contains("setupTestBadSetupArgsTooMany"));
             Asserts.assertTrue(e.getExceptionInfo().contains("wrong number of arguments: 0 expected: 2"));
             Asserts.assertTrue(e.getExceptionInfo().contains("setupTestBadSetupArgsWrongType"));
@@ -98,10 +103,10 @@ public class TestSetupTests {
             // Check number of total failures:
             Asserts.assertEQ(e.getExceptionInfo().split("argument type mismatch").length - 1, 2);
             Asserts.assertEQ(e.getExceptionInfo().split("There was an error while invoking setup").length - 1, 5);
-            Asserts.assertEQ(e.getExceptionInfo().split("There was an error while invoking @Test").length - 1, 5);
+            Asserts.assertEQ(e.getExceptionInfo().split("There was an error while invoking @Test").length - 1, 7);
             Asserts.assertEQ(e.getExceptionInfo().split("There was an error while invoking @Check").length - 1, 1);
             Asserts.assertEQ(e.getExceptionInfo().split("BadCheckedTestException").length - 1, 3);
-            Asserts.assertTrue(e.getExceptionInfo().contains("Test Failures (11)"));
+            Asserts.assertTrue(e.getExceptionInfo().contains("Test Failures (13)"));
         }
     }
 
@@ -233,6 +238,24 @@ class TestSetupTestsWithExpectedExceptions {
     @Test
     @Arguments(setup = "setupTooFewArgs")
     public void testTooFewArgs(int a, int b, int c) {}
+
+    @Setup
+    public Object[] setupTooManyArgs2() {
+      return new Object[]{1, 2, 3};
+    }
+
+    @Test
+    @Arguments(setup = "setupTooManyArgs2")
+    public void testTooManyArgs2() {}
+
+    @Setup
+    public Object[] setupTooFewArgs2() {
+      return new Object[]{};
+    }
+
+    @Test
+    @Arguments(setup = "setupTooFewArgs2")
+    public void testTooFewArgs2(int a, int b, int c) {}
 
     // ----------------- wrong arguments for setup ------------------
     @Setup
