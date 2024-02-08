@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!--
- Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -808,7 +808,7 @@
   </Event>
 
   <Event name="SystemProcess" category="Operating System" label="System Process" period="endChunk">
-    <Field type="string" name="pid" label="Process Identifier" />
+    <Field type="long" name="pid" label="Process Identifier" />
     <Field type="string" name="commandLine" label="Command Line" />
   </Event>
 

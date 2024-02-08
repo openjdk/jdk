@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -240,7 +240,6 @@ TRACE_REQUEST_FUNC(CPUTimeStampCounter) {
 }
 
 TRACE_REQUEST_FUNC(SystemProcess) {
-  char pid_buf[16];
   SystemProcess* processes = nullptr;
   int num_of_processes = 0;
   JfrTicks start_time = JfrTicks::now();
@@ -249,10 +248,10 @@ TRACE_REQUEST_FUNC(SystemProcess) {
     log_debug(jfr, system)( "Unable to generate requestable event SystemProcesses");
     return;
   }
-  JfrTicks end_time = JfrTicks::now();
   if (ret_val == FUNCTIONALITY_NOT_IMPLEMENTED) {
     return;
   }
+  JfrTicks end_time = JfrTicks::now();
   if (ret_val == OS_OK) {
     // feature is implemented, write real event
     while (processes != nullptr) {
@@ -267,9 +266,8 @@ TRACE_REQUEST_FUNC(SystemProcess) {
       if (info == nullptr) {
          info = "?";
       }
-      jio_snprintf(pid_buf, sizeof(pid_buf), "%d", processes->pid());
       EventSystemProcess event(UNTIMED);
-      event.set_pid(pid_buf);
+      event.set_pid(processes->pid());
       event.set_commandLine(info);
       event.set_starttime(start_time);
       event.set_endtime(end_time);
