@@ -72,7 +72,7 @@ void CardTableRS::maintain_old_to_young_invariant(TenuredGeneration* old_gen,
   }
 }
 
-class CheckForUnmarkedOops : public BasicOopIterateClosure {
+class SerialCheckForUnmarkedOops : public BasicOopIterateClosure {
   DefNewGeneration* _young_gen;
   CardTableRS* _card_table;
   HeapWord*    _unmarked_addr;
@@ -89,7 +89,7 @@ class CheckForUnmarkedOops : public BasicOopIterateClosure {
   }
 
  public:
-  CheckForUnmarkedOops(DefNewGeneration* young_gen, CardTableRS* card_table) :
+  SerialCheckForUnmarkedOops(DefNewGeneration* young_gen, CardTableRS* card_table) :
     _young_gen(young_gen),
     _card_table(card_table),
     _unmarked_addr(nullptr) {}
@@ -115,7 +115,7 @@ void CardTableRS::verify() {
     }
 
     void do_object(oop obj) override {
-      CheckForUnmarkedOops object_check(_young_gen, _card_table);
+      SerialCheckForUnmarkedOops object_check(_young_gen, _card_table);
       obj->oop_iterate(&object_check);
       // If this obj is imprecisely-marked, the card for obj-start must be dirty.
       if (object_check.has_unmarked_oop()) {
