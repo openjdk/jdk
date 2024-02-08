@@ -34,17 +34,12 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
-#include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
-#include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
-#include "memory/iterator.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/metaspaceStats.hpp"
-#include "memory/universe.hpp"
-#include "runtime/atomic.hpp"
 
 ShenandoahControlThread::ShenandoahControlThread() :
   ConcurrentGCThread(),
