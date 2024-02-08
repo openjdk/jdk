@@ -113,17 +113,10 @@ class Generation: public CHeapObj<mtGC> {
 
   MemRegion reserved() const { return _reserved; }
 
-  // Returns a region guaranteed to contain all the objects in the
-  // generation.
-  virtual MemRegion used_region() const { return _reserved; }
-
   /* Returns "TRUE" iff "p" points into the reserved area of the generation. */
   bool is_in_reserved(const void* p) const {
     return _reserved.contains(p);
   }
-
-  // Iteration - do not use for time critical operations
-  virtual void space_iterate(SpaceClosure* blk, bool usedOnly = false) = 0;
 
   // Returns "true" iff this generation should be used to allocate an
   // object of the given size.  Young generations might
@@ -205,14 +198,6 @@ class Generation: public CHeapObj<mtGC> {
   // Printing
   virtual const char* name() const = 0;
   virtual const char* short_name() const = 0;
-
-  // Block abstraction.
-
-  // Returns the address of the start of the "block" that contains the
-  // address "addr".  We say "blocks" instead of "object" since some heaps
-  // may not pack objects densely; a chunk may either be an object or a
-  // non-object.
-  virtual HeapWord* block_start(const void* addr) const;
 
   virtual void print() const;
   virtual void print_on(outputStream* st) const;
