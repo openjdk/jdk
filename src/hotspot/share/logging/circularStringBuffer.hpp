@@ -121,14 +121,14 @@ struct CircularMapping {
   }
   void write_bytes(size_t at, const char* bytes, size_t size) {
     const size_t part1_size = MIN2(size, this->size - at);
-    const size_t part2_size = this->size - size;
+    const size_t part2_size = size - part1_size;
 
     ::memcpy(&buffer[at], bytes, part1_size);
-    ::memcpy(buffer, &bytes[part1_size], part2_size);
+    ::memcpy(&buffer, &bytes[part1_size], part2_size);
   }
   void read_bytes(size_t at, char* out, size_t size) {
     const size_t part1_size = MIN2(size, this->size - at);
-    const size_t part2_size = this->size - size;
+    const size_t part2_size = size - part1_size;
 
     ::memcpy(out, &buffer[at], part1_size);
     ::memcpy(&out[part1_size], buffer, part2_size);
