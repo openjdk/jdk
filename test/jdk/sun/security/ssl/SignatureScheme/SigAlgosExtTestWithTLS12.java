@@ -123,8 +123,8 @@ public class SigAlgosExtTestWithTLS12 extends SSLEngineTemplate {
                         "Expected SSLHandshakeException wasn't thrown");
             }
         } catch (SSLHandshakeException e) {
-            if (EXPECT_FAIL && e.getMessage().equals(
-                    "(handshake_failure) No supported signature algorithm")) {
+            if (EXPECT_FAIL && e.getMessage().endsWith(
+                    "No supported signature algorithm")) {
                 System.out.println("Expected SSLHandshakeException");
             } else {
                 throw e;

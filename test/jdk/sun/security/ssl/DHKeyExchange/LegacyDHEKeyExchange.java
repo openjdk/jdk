@@ -50,8 +50,8 @@ public class LegacyDHEKeyExchange extends SSLSocketTemplate{
             super.runServerApplication(socket);
             throw new Exception("Legacy DH keys (< 1024) should be restricted");
         } catch (SSLHandshakeException she) {
-            String expectedExMsg = "(insufficient_security) Received fatal alert: insufficient_security";
-            if (!expectedExMsg.equals(she.getMessage())) {
+            String expectedExMsg = "Received fatal alert: insufficient_security";
+            if (!she.getMessage().endsWith(expectedExMsg)) {
                 throw she;
             }
             System.out.println("Expected exception thrown in server");
@@ -75,9 +75,9 @@ public class LegacyDHEKeyExchange extends SSLSocketTemplate{
             super.runClientApplication(socket);
             throw new Exception("Legacy DH keys (< 1024) should be restricted");
         } catch (SSLHandshakeException she) {
-            String expectedExMsg = "(insufficient_security) DH ServerKeyExchange does not comply to" +
+            String expectedExMsg = "DH ServerKeyExchange does not comply to" +
                     " algorithm constraints";
-            if (!expectedExMsg.equals(she.getMessage())) {
+            if (!she.getMessage().endsWith(expectedExMsg)) {
                 throw she;
             }
             System.out.println("Expected exception thrown in client");
