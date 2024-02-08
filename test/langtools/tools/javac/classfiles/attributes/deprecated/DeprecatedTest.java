@@ -223,7 +223,7 @@ public class DeprecatedTest extends TestResult {
             for (String src : sources) {
                 test(src);
                 test(src.replaceAll("@Deprecated", "/** @deprecated */"));
-                test(src.replaceAll("deprecated", "notDeprecated2") // change class name
+                test(src.replaceAll("deprecated", "notDeprecated2") // change element name
                         .replaceAll("@Deprecated", "/// @deprecated\n"));
             }
         } catch (Exception e) {
