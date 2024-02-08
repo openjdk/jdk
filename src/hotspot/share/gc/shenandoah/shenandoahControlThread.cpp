@@ -40,6 +40,7 @@
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/metaspaceStats.hpp"
+#include "runtime/atomic.hpp"
 
 ShenandoahControlThread::ShenandoahControlThread() :
   ConcurrentGCThread(),
