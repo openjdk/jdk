@@ -1111,6 +1111,7 @@ bool os::dll_address_to_library_name(address addr, char* buf,
 static void* dll_load_library(const char *filename, char *ebuf, int ebuflen) {
 
   log_info(os)("attempting shared library load of %s", filename);
+  printf("Loading the filename %s\n",filename);
 
   if (ebuf && ebuflen > 0) {
     ebuf[0] = '\0';
@@ -1175,6 +1176,7 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   char* const pointer_to_dot = strrchr(file_path, '.');
   if (pointer_to_dot == nullptr) {
     log_info(os)("Attempting to load a shared object without extension %s", filename);
+    FREE_C_HEAP_ARRAY(char, file_path);
     return result;
   }    
   // First try to load the existing file.
