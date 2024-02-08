@@ -248,11 +248,8 @@ TRACE_REQUEST_FUNC(SystemProcess) {
     log_debug(jfr, system)( "Unable to generate requestable event SystemProcesses");
     return;
   }
-  if (ret_val == FUNCTIONALITY_NOT_IMPLEMENTED) {
-    return;
-  }
-  JfrTicks end_time = JfrTicks::now();
   if (ret_val == OS_OK) {
+    JfrTicks end_time = JfrTicks::now();
     // feature is implemented, write real event
     while (processes != nullptr) {
       SystemProcess* tmp = processes;
