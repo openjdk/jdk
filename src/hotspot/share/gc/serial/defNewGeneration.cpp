@@ -704,7 +704,7 @@ void DefNewGeneration::collect(bool   full,
 
     MarkingCodeBlobClosure code_cl(&root_cl,
                                    CodeBlobToOopClosure::FixRelocations,
-                                   false /* keepalive nmethods */);
+                                   false /* keepalive_nmethods */);
 
     heap->process_roots(SerialHeap::SO_ScavengeCodeCache,
                         &root_cl,
