@@ -57,8 +57,7 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>${mvncompilerplugin.version}</version>
                     <configuration>
-                        <source>17</source>
-                        <target>17</target>
+                        <release>17</release>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -114,7 +113,7 @@
         <netbeans.version>RELEASE200</netbeans.version>
         <swinglayouts.version>1.0.2</swinglayouts.version>
         <nbmmvnplugin.version>3.7</nbmmvnplugin.version>
-        <mvncompilerplugin.version>3.11.0</mvncompilerplugin.version>
+        <mvncompilerplugin.version>3.12.1</mvncompilerplugin.version>
         <mvnjarplugin.version>3.3.0</mvnjarplugin.version>
         <mvnenforcerplugin.version>3.4.1</mvnenforcerplugin.version>
         <junit.version>4.13.2</junit.version>
