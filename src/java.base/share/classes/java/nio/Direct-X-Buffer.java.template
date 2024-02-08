@@ -79,8 +79,8 @@ class Direct$Type$Buffer$RW$$BO$
 
     private static final class Deallocator implements Runnable {
 
-        private static final long INVOKED_OFFSET = Unsafe.getUnsafe()
-                .objectFieldOffset(Deallocator.class, "invoked");
+        private static final long INVOKED_OFFSET =
+                UNSAFE.objectFieldOffset(Deallocator.class, "invoked");
 
         private final long address;
         private final long size;
@@ -96,7 +96,7 @@ class Direct$Type$Buffer$RW$$BO$
 
         public void run() {
             // Ensure idempotency (paranoia)
-            if (Unsafe.getUnsafe().compareAndSetInt(this, INVOKED_OFFSET, 0, 1)) {
+            if (UNSAFE.compareAndSetInt(this, INVOKED_OFFSET, 0, 1)) {
                 UNSAFE.freeMemory(address);
                 Bits.unreserveMemory(size, capacity);
             }
