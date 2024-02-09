@@ -64,7 +64,7 @@ public:
     const size_t msg_number = AsyncLogBufferSize / strlen(large_message);
     LogMessage(logging) lm;
     // + 5 to go past the buffer size, forcing it to drop the message.
-    for (int i = 0; i < (msg_number + 5); i++) {
+    for (size_t i = 0; i < (msg_number + 5); i++) {
       lm.debug("%s", large_message);
     }
     lm.flush();
