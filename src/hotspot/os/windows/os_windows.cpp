@@ -4083,7 +4083,10 @@ DWORD os::win32::active_processors_in_job_object() {
               processors += population_count(group_affinity);
             }
 
-            assert(processors > 0, "Must find at least 1 logical processor");
+            if (processors == 0) {
+              warning("Could not determine processor count from the job object.");
+              assert(false, "Must find at least 1 logical processor");
+            }
           } else {
             warning("QueryInformationJobObject() failed: GetLastError->%ld.", GetLastError());
           }
@@ -4123,7 +4126,10 @@ DWORD os::win32::system_logical_processor_count() {
           logical_processors += group_info.ActiveProcessorCount;
         }
 
-        assert(logical_processors > 0, "Must find at least 1 logical processor");
+        if (logical_processors == 0) {
+          warning("Could not determine logical processor count from GetLogicalProcessorInformationEx()");
+          assert(false, "Must find at least 1 logical processor");
+        }
       }
 
       os::free(system_logical_processor_info);
