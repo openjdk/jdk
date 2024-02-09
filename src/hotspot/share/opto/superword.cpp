@@ -502,7 +502,7 @@ void SuperWord::mark_reductions() {
 //
 // 5) One of the memory references is picked to be an aligned vector reference.
 //    The pre-loop trip count is adjusted to align this reference in the
-//    unrolled body. TODO wrong now
+//    main-loop.
 //
 // 6) The initial set of pack pairs is seeded with memory references.
 //
