@@ -117,7 +117,7 @@ class SCCompacter {
     // skip large chunk of live objects at the beginning of compaction.
     HeapWord* _first_dead;
 
-    void init(ContiguousSpace* space) {
+    void init(ContiguousSpace* space, HeapWord** _bot) {
       _space = space;
       _compaction_top = space->bottom();
       _first_dead = nullptr;
@@ -197,7 +197,7 @@ class SCCompacter {
     HeapWord* top = space->top();
 
     // Clear table (only required for assertion in forwardee()).
-    DEBUG_ONLY(clear(bottom, space->top());)
+    DEBUG_ONLY(clear(bottom, top);)
 
     bool record_first_dead_done = false;
 
@@ -282,40 +282,58 @@ class SCCompacter {
     _spaces[_index]._compaction_top = compact_top;
   }
 
-  // Allocate the block-offset-table.
-  static HeapWord** allocate_table() {
+  // Reserves memory for the block-offset-table (does not commit any memory, yet).
+  static HeapWord** reserve_table() {
     // TODO: Allocate table only for relevant (bottom-top) parts of spaces and keep them in
     // the CompactionSpace structure.
     MemRegion covered = SerialHeap::heap()->reserved_region();
     HeapWord* start = covered.start();
     HeapWord* end = covered.end();
     size_t num_blocks = align_up(pointer_delta(end, start), words_per_block()) / words_per_block();
-    return NEW_C_HEAP_ARRAY(HeapWord*, num_blocks, mtGC);
+    char* table_mem = os::reserve_memory(sizeof(HeapWord*) * num_blocks, false, mtGC);
+    return reinterpret_cast<HeapWord**>(table_mem);
+  }
+
+  void commit_bot() {
+    for (uint i = 0; i < _num_spaces; ++i) {
+      ContiguousSpace* space = _spaces[i]._space;
+      HeapWord** addr = align_down(&_bot[addr_to_block_idx(space->bottom())], os::vm_page_size());
+      size_t num_blocks = align_up(space->used(), bytes_per_block()) / bytes_per_block();
+      if (num_blocks > 0) {
+        size_t size_in_bytes = align_up(num_blocks * sizeof(HeapWord*), os::vm_page_size());
+        const char* msg = "Not enough memory to allocate block-offset-table for Serial Full GC";
+        os::commit_memory_or_exit(reinterpret_cast<char*>(addr), size_in_bytes, false /* exec */, msg);
+      }
+    }
   }
 
 public:
   explicit SCCompacter(SerialHeap* heap, MarkBitMap& mark_bitmap) :
-    _bot(allocate_table()),
+    _bot(reserve_table()),
     _covered(heap->reserved_region()),
     _mark_bitmap(mark_bitmap)
- {
+  {
     // In this order so that heap is compacted towards old-gen.
-    _spaces[0].init(heap->old_gen()->space());
-    _spaces[1].init(heap->young_gen()->eden());
-    _spaces[2].init(heap->young_gen()->from());
+    _spaces[0].init(heap->old_gen()->space(), _bot);
+    _spaces[1].init(heap->young_gen()->eden(), _bot);
+    _spaces[2].init(heap->young_gen()->from(), _bot);
 
     bool is_promotion_failed = (heap->young_gen()->from()->next_compaction_space() != nullptr);
     if (is_promotion_failed) {
-      _spaces[3].init(heap->young_gen()->to());
+      _spaces[3].init(heap->young_gen()->to(), _bot);
       _num_spaces = 4;
     } else {
       _num_spaces = 3;
     }
     _index = 0;
+    commit_bot();
   }
 
   ~SCCompacter() {
-    FREE_C_HEAP_ARRAY(HeapWord*, _bot);
+    HeapWord* start = _covered.start();
+    HeapWord* end = _covered.end();
+    size_t num_blocks = align_up(pointer_delta(end, start), words_per_block()) / words_per_block();
+    os::release_memory(reinterpret_cast<char*>(_bot), num_blocks * sizeof(HeapWord*));
   }
 
   void phase2_prepare() {
