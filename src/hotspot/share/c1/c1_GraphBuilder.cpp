@@ -2133,11 +2133,23 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
     if ((code == Bytecodes::_invokestatic && klass->is_initialized()) || // invokestatic involves an initialization barrier on declaring class
         code == Bytecodes::_invokespecial ||
         (code == Bytecodes::_invokevirtual && target->is_final_method()) ||
-        code == Bytecodes::_invokedynamic) {
+        code == Bytecodes::_invokedynamic ||
+        target->get_Method()->intrinsic_id() == vmIntrinsics::_clone) {
       // static binding => check if callee is ok
       ciMethod* inline_target = (cha_monomorphic_target != nullptr) ? cha_monomorphic_target : target;
       bool holder_known = (cha_monomorphic_target != nullptr) || (exact_target != nullptr);
-      bool success = try_inline(inline_target, holder_known, false /* ignore_return */, code, better_receiver);
+      bool success;
+      // Clone intrinsic and inlining can only kick when instance is a primitive array,
+      // or when the target of the clone is not a Phi node
+      ciType* receiver_type;
+      if (target->get_Method()->intrinsic_id() == vmIntrinsics::_clone &&
+          ((receiver_type = state()->stack_at(state()->stack_size() - inline_target->arg_size())->exact_type()) == nullptr || // clone target is phi
+           !receiver_type->is_array_klass() || // not array
+           !receiver_type->as_array_klass()->element_type()->is_primitive_type())) { // not primitive array
+        success = false;
+      } else {
+        success = try_inline(inline_target, holder_known, false /* ignore_return */, code, better_receiver);
+      }
 
       CHECK_BAILOUT();
       clear_inline_bailout();
@@ -2244,7 +2256,7 @@ void GraphBuilder::new_instance(int klass_index) {
 
 void GraphBuilder::new_type_array() {
   ValueStack* state_before = copy_state_exhandling();
-  apush(append_split(new NewTypeArray(ipop(), (BasicType)stream()->get_index(), state_before)));
+  apush(append_split(new NewTypeArray(ipop(), (BasicType)stream()->get_index(), state_before, true)));
 }
 
 
@@ -3651,6 +3663,7 @@ void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee, bool ignore_retur
   case vmIntrinsics::_getAndSetReference     : append_unsafe_get_and_set(callee, false); return;
   case vmIntrinsics::_getCharStringU         : append_char_access(callee, false); return;
   case vmIntrinsics::_putCharStringU         : append_char_access(callee, true); return;
+  case vmIntrinsicID::_clone                 : append_alloc_array_copy(callee); return;
   default:
     break;
   }
@@ -4426,6 +4439,32 @@ void GraphBuilder::append_char_access(ciMethod* callee, bool is_store) {
     load->set_flag(Instruction::NeedsRangeCheckFlag, false);
     push(load->type(), load);
   }
+}
+
+void GraphBuilder::append_alloc_array_copy(ciMethod* callee) {
+  ValueStack* state_before = copy_state_before();
+  state_before->set_force_reexecute();
+  Value src = apop();
+  BasicType basic_type = src->exact_type()->as_array_klass()->element_type()->basic_type();
+  Value length = append(new ArrayLength(src, state_before));
+  Value new_array = append_split(new NewTypeArray(length, basic_type, state_before, false));
+
+  ValueType* result_type = as_ValueType(callee->return_type());
+  vmIntrinsics::ID id = vmIntrinsics::_arraycopy;
+  Values* args = new Values(5);
+  args->push(src);
+  args->push(append(new Constant(new IntConstant(0))));
+  args->push(new_array);
+  args->push(append(new Constant(new IntConstant(0))));
+  args->push(length);
+  const bool has_receiver = true;
+  Intrinsic* array_copy = new Intrinsic(result_type, id,
+                                    args, has_receiver, state_before,
+                                    vmIntrinsics::preserves_state(id),
+                                    vmIntrinsics::can_trap(id));
+  array_copy->set_flag(Instruction::OmitChecksFlag, true);
+  append_split(array_copy);
+  apush(new_array);
 }
 
 void GraphBuilder::print_inlining(ciMethod* callee, const char* msg, bool success) {
