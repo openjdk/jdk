@@ -26,7 +26,7 @@
 #ifndef SHARE_MEMORY_METASPACE_COMMITMASK_HPP
 #define SHARE_MEMORY_METASPACE_COMMITMASK_HPP
 
-#include "utilities/bitMap.hpp"
+#include "utilities/bitMap.inline.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 

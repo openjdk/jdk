@@ -177,15 +177,6 @@ void BitMap::pretouch() {
   os::pretouch_memory(word_addr(0), word_addr(size()));
 }
 
-void BitMap::set_range_within_word(idx_t beg, idx_t end) {
-  // With a valid range (beg <= end), this test ensures that end != 0, as
-  // required by inverted_bit_mask_for_range.  Also avoids an unnecessary write.
-  if (beg != end) {
-    bm_word_t mask = inverted_bit_mask_for_range(beg, end);
-    *word_addr(beg) |= ~mask;
-  }
-}
-
 void BitMap::clear_range_within_word(idx_t beg, idx_t end) {
   // With a valid range (beg <= end), this test ensures that end != 0, as
   // required by inverted_bit_mask_for_range.  Also avoids an unnecessary write.
@@ -210,25 +201,6 @@ void BitMap::par_put_range_within_word(idx_t beg, idx_t end, bool value) {
       w  = res;
       nw = value ? (w | ~mr) : (w & mr);
     }
-  }
-}
-
-void BitMap::set_range(idx_t beg, idx_t end) {
-  verify_range(beg, end);
-
-  idx_t beg_full_word = to_words_align_up(beg);
-  idx_t end_full_word = to_words_align_down(end);
-
-  if (beg_full_word < end_full_word) {
-    // The range includes at least one full word.
-    set_range_within_word(beg, bit_index(beg_full_word));
-    set_range_of_words(beg_full_word, end_full_word);
-    set_range_within_word(bit_index(end_full_word), end);
-  } else {
-    // The range spans at most 2 partial words.
-    idx_t boundary = MIN2(bit_index(beg_full_word), end);
-    set_range_within_word(beg, boundary);
-    set_range_within_word(boundary, end);
   }
 }
 
@@ -593,46 +565,6 @@ bool BitMap::is_empty() const {
 
 void BitMap::clear_large() {
   clear_large_range_of_words(0, size_in_words());
-}
-
-BitMap::idx_t BitMap::count_one_bits_in_range_of_words(idx_t beg_full_word, idx_t end_full_word) const {
-  idx_t sum = 0;
-  for (idx_t i = beg_full_word; i < end_full_word; i++) {
-    bm_word_t w = map()[i];
-    sum += population_count(w);
-  }
-  return sum;
-}
-
-BitMap::idx_t BitMap::count_one_bits() const {
-  return count_one_bits(0, size());
-}
-
-// Returns the number of bits set within  [beg, end).
-BitMap::idx_t BitMap::count_one_bits(idx_t beg, idx_t end) const {
-  verify_range(beg, end);
-
-  idx_t beg_full_word = to_words_align_up(beg);
-  idx_t end_full_word = to_words_align_down(end);
-
-  idx_t sum = 0;
-
-  if (beg_full_word < end_full_word) {
-    // The range includes at least one full word.
-    sum += count_one_bits_within_word(beg, bit_index(beg_full_word));
-    sum += count_one_bits_in_range_of_words(beg_full_word, end_full_word);
-    sum += count_one_bits_within_word(bit_index(end_full_word), end);
-  } else {
-    // The range spans at most 2 partial words.
-    idx_t boundary = MIN2(bit_index(beg_full_word), end);
-    sum += count_one_bits_within_word(beg, boundary);
-    sum += count_one_bits_within_word(boundary, end);
-  }
-
-  assert(sum <= (end - beg), "must be");
-
-  return sum;
-
 }
 
 void BitMap::print_on_error(outputStream* st, const char* prefix) const {

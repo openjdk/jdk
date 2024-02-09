@@ -53,6 +53,16 @@ inline HeapWord* MarkBitMap::get_next_unmarked_addr(const HeapWord* const addr,
   return offset_to_addr(nextOffset);
 }
 
+inline HeapWord* MarkBitMap::get_last_unmarked_addr(const HeapWord* const start,
+                                                    HeapWord* const limit) const {
+  assert(limit != nullptr, "limit must not be null");
+  // Round addr up to a possible object boundary to be safe.
+  size_t const start_offset = addr_to_offset(align_up(start, HeapWordSize << _shifter));
+  size_t const limit_offset = addr_to_offset(limit);
+  size_t const nextOffset = _bm.find_last_clear_bit(start_offset, limit_offset);
+  return offset_to_addr(nextOffset);
+}
+
 inline void MarkBitMap::mark(HeapWord* addr) {
   check_mark(addr);
   _bm.set_bit(addr_to_offset(addr));
@@ -91,6 +101,10 @@ inline void MarkBitMap::clear(oop obj) {
 }
 
 inline size_t MarkBitMap::count_marked_words(HeapWord* start, HeapWord* end) const {
+  return _bm.count_one_bits(addr_to_offset(start), addr_to_offset(end)) /*<< _shifter */;
+}
+
+inline size_t MarkBitMap::count_marked_words_in_block(HeapWord* start, HeapWord* end) const {
   return _bm.count_one_bits_within_word(addr_to_offset(start), addr_to_offset(end)) /*<< _shifter */;
 }
 

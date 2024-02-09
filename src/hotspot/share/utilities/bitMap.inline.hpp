@@ -30,8 +30,8 @@
 #include "runtime/atomic.hpp"
 #include "utilities/align.hpp"
 #include "utilities/count_trailing_zeros.hpp"
-#include "utilities/powerOfTwo.hpp"
 #include "utilities/population_count.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 inline void BitMap::set_bit(idx_t bit) {
   verify_index(bit);
@@ -308,6 +308,86 @@ inline BitMap::idx_t
 BitMap::find_last_set_bit_aligned_left(idx_t beg, idx_t end) const {
   return find_last_bit_impl<find_ones_flip, true>(beg, end);
 }
+
+inline BitMap::idx_t BitMap::count_one_bits_in_range_of_words(idx_t beg_full_word, idx_t end_full_word) const {
+  idx_t sum = 0;
+  for (idx_t i = beg_full_word; i < end_full_word; i++) {
+    bm_word_t w = map()[i];
+    sum += population_count(w);
+  }
+  return sum;
+}
+
+inline BitMap::idx_t BitMap::count_one_bits_within_word(idx_t beg, idx_t end) const {
+  if (beg != end) {
+    assert(end > beg, "must be");
+    bm_word_t mask = ~inverted_bit_mask_for_range(beg, end);
+    bm_word_t w = *word_addr(beg);
+    w &= mask;
+    return population_count(w);
+  }
+  return 0;
+}
+
+inline BitMap::idx_t BitMap::count_one_bits() const {
+  return count_one_bits(0, size());
+}
+
+// Returns the number of bits set within  [beg, end).
+inline BitMap::idx_t BitMap::count_one_bits(idx_t beg, idx_t end) const {
+  verify_range(beg, end);
+
+  idx_t beg_full_word = to_words_align_up(beg);
+  idx_t end_full_word = to_words_align_down(end);
+
+  idx_t sum = 0;
+
+  if (beg_full_word < end_full_word) {
+    // The range includes at least one full word.
+    sum += count_one_bits_within_word(beg, bit_index(beg_full_word));
+    sum += count_one_bits_in_range_of_words(beg_full_word, end_full_word);
+    sum += count_one_bits_within_word(bit_index(end_full_word), end);
+  } else {
+    // The range spans at most 2 partial words.
+    idx_t boundary = MIN2(bit_index(beg_full_word), end);
+    sum += count_one_bits_within_word(beg, boundary);
+    sum += count_one_bits_within_word(boundary, end);
+  }
+
+  assert(sum <= (end - beg), "must be");
+
+  return sum;
+
+}
+
+void BitMap::set_range_within_word(idx_t beg, idx_t end) {
+  // With a valid range (beg <= end), this test ensures that end != 0, as
+  // required by inverted_bit_mask_for_range.  Also avoids an unnecessary write.
+  if (beg != end) {
+    bm_word_t mask = inverted_bit_mask_for_range(beg, end);
+    *word_addr(beg) |= ~mask;
+  }
+}
+
+void BitMap::set_range(idx_t beg, idx_t end) {
+  verify_range(beg, end);
+
+  idx_t beg_full_word = to_words_align_up(beg);
+  idx_t end_full_word = to_words_align_down(end);
+
+  if (beg_full_word < end_full_word) {
+    // The range includes at least one full word.
+    set_range_within_word(beg, bit_index(beg_full_word));
+    set_range_of_words(beg_full_word, end_full_word);
+    set_range_within_word(bit_index(end_full_word), end);
+  } else {
+    // The range spans at most 2 partial words.
+    idx_t boundary = MIN2(bit_index(beg_full_word), end);
+    set_range_within_word(beg, boundary);
+    set_range_within_word(boundary, end);
+  }
+}
+
 
 // IterateInvoker supports conditionally stopping iteration early.  The
 // invoker is called with the function to apply to each set index, along with
@@ -586,17 +666,5 @@ inline void BitMap2D::at_put_grow(idx_t slot_index, idx_t bit_within_slot_index,
   }
   _map.at_put(bit, value);
 }
-
-inline BitMap::idx_t BitMap::count_one_bits_within_word(idx_t beg, idx_t end) const {
-  if (beg != end) {
-    assert(end > beg, "must be");
-    bm_word_t mask = ~inverted_bit_mask_for_range(beg, end);
-    bm_word_t w = *word_addr(beg);
-    w &= mask;
-    return population_count(w);
-  }
-  return 0;
-}
-
 
 #endif // SHARE_UTILITIES_BITMAP_INLINE_HPP

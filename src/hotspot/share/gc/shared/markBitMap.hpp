@@ -85,6 +85,8 @@ public:
                                         HeapWord* limit) const;
   inline HeapWord* get_next_unmarked_addr(const HeapWord* addr,
                                           HeapWord* limit) const;
+  inline HeapWord* get_last_unmarked_addr(const HeapWord* start,
+                                          HeapWord* limit) const;
 
   void print_on_error(outputStream* st, const char* prefix) const;
 
@@ -105,6 +107,7 @@ public:
 
   // Count the number of marked words in the range [start, end).
   inline size_t count_marked_words(HeapWord* start, HeapWord* end) const;
+  inline size_t count_marked_words_in_block(HeapWord* start, HeapWord* end) const;
 };
 
 #endif // SHARE_GC_SHARED_MARKBITMAP_HPP

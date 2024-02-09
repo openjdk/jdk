@@ -155,7 +155,7 @@ class SCCompacter {
     HeapWord* block_base = align_down(addr, bytes_per_block());
     size_t block = addr_to_block_idx(addr);
     assert(_bot[block] != nullptr, "must have initialized BOT entry");
-    HeapWord* fwd = _bot[block] + _mark_bitmap.count_marked_words(block_base, addr);
+    HeapWord* fwd = _bot[block] + _mark_bitmap.count_marked_words_in_block(block_base, addr);
     assert(SerialHeap::heap()->is_in_reserved(fwd), "forward addresses must be in heap: addr: " PTR_FORMAT ", fwd: " PTR_FORMAT ", block: " SIZE_FORMAT ", bot[block]: " PTR_FORMAT ", block_base: " PTR_FORMAT, p2i(addr), p2i(fwd), block, p2i(_bot[block]), p2i(block_base));
     return fwd;
   }
@@ -190,6 +190,25 @@ class SCCompacter {
     _spaces[index]._first_dead = first_dead;
   }
 
+  // Find the start of the first object at or after addr (but not after limit).
+  HeapWord* first_object_in_block(HeapWord* addr, HeapWord* start, HeapWord* limit) {
+    if (addr >= limit) return limit;
+    if (!_mark_bitmap.is_marked(addr)) {
+      // Easy: find next marked address.
+      return _mark_bitmap.get_next_marked_addr(addr, limit);
+    } else {
+      // Find beginning of live chunk.
+      HeapWord* current = _mark_bitmap.get_last_unmarked_addr(start, addr) + 1;
+      // Forward-search to first object >= addr.
+      while (current < addr) {
+        size_t obj_size = cast_to_oop(current)->size();
+        current += obj_size;
+      }
+      assert(current >= addr, "found object start must be >= addr");
+      return addr;
+    }
+  }
+
   // Build the block-offset-table for space at index.
   void build_table_for_space(uint idx) {
     ContiguousSpace* space = get_space(idx);
@@ -205,8 +224,13 @@ class SCCompacter {
 
     HeapWord* compact_top = get_compaction_top(_index);
     HeapWord* current = bottom;
-    // Scan all live objects in the space.
-    while (current < top) {
+
+    // Scan all live blocks in the space.
+    HeapWord* first_obj_this_block = _mark_bitmap.get_next_marked_addr(current, top);
+    current = align_down(first_obj_this_block, bytes_per_block());
+    while (first_obj_this_block < top) {
+      assert(is_aligned(current, bytes_per_block()), "iterate at block granularity");
+      /*
       HeapWord* next_marked = _mark_bitmap.get_next_marked_addr(current, top);
       // Handle unmarked chunk - either skip it, or dead-space it, to avoid excessive
       // copying by keeping subsequent objects in place.
@@ -219,18 +243,17 @@ class SCCompacter {
           }
           // Store address of next live chunk into first non-live word to allow fast skip to next live during compaction.
           *(HeapWord**)current = next_marked;
-          current = next_marked;
+          current = align_down(next_marked, words_per_block());
         }
       }
-      HeapWord* chunk_end = _mark_bitmap.get_next_unmarked_addr(next_marked, top);
-      HeapWord* next_dead = chunk_end;
-      HeapWord* next_live = _mark_bitmap.get_next_marked_addr(next_dead, top);
-      while (addr_to_block_idx(next_dead) == addr_to_block_idx(next_live) && next_dead < top) {
-        next_dead = _mark_bitmap.get_next_unmarked_addr(next_live, top);
-        next_live = _mark_bitmap.get_next_marked_addr(next_dead, top);
-      }
-      size_t live_in_block = pointer_delta(next_dead, current);
+      */
 
+      // Determine if we need to switch to the next compaction space.
+      // Find first object that starts after this block and count
+      // live words up to that object. This is how many words we
+      // must fit into the current compaction space.
+      HeapWord* first_obj_after_block = first_object_in_block(current + words_per_block(), first_obj_this_block, top);
+      size_t live_in_block = _mark_bitmap.count_marked_words(first_obj_this_block, first_obj_after_block);
       while (live_in_block > pointer_delta(_spaces[_index]._space->end(),
                                            compact_top)) {
         // out-of-memory in this space
@@ -240,41 +263,12 @@ class SCCompacter {
         compact_top = _spaces[_index]._compaction_top;
       }
 
-      // Record addresses of the first live word of all blocks covered by the live span.
-      current = next_marked;
-      live_in_block = pointer_delta(chunk_end, current);
-      size_t head = MIN2(pointer_delta(align_up(current, bytes_per_block()), current), live_in_block);
-      if (head > 0) {
-        HeapWord* block_start = align_down(current, bytes_per_block());
-        // Count number of live words preceding the first object in the block. This must
-        // be subtracted, because the BOT stores the forwarding address of the first live
-        // *word*, not the first live *object* in the block.
-        size_t num_live = _mark_bitmap.count_marked_words(block_start, current);
-        // Note that we only record the address for blocks with live words. That
-        // is ok, because we only ask for forwarding address of object-starts, i.e. live words.
-        HeapWord* block_offset = compact_top - num_live;
-        assert(SerialHeap::heap()->is_in_reserved(block_offset), "block-offset must be in heap: " PTR_FORMAT ", compact_top: " PTR_FORMAT ", num_live: " SIZE_FORMAT ", _bot[]: " PTR_FORMAT, p2i(block_offset), p2i(compact_top), num_live, p2i(_bot[addr_to_block_idx(current)]));
-        _bot[addr_to_block_idx(current)] = block_offset;
-        assert(forwardee(current) == compact_top, "must match");
-        compact_top += head;
-        current += head;
-      }
-      // Middle block.
-      while (pointer_delta(chunk_end, current) > words_per_block()) {
-        _bot[addr_to_block_idx(current)] = compact_top;
-        assert(forwardee(current) == compact_top, "must match");
-        current += words_per_block();
-        compact_top += words_per_block();
-      }
-      // Tail.
-      size_t tail = pointer_delta(chunk_end, current);
-      if (tail > 0) {
-        _bot[addr_to_block_idx(current)] = compact_top;
-        assert(forwardee(current) == compact_top, "must match");
-        compact_top += tail;
-        current += tail;
-      }
-      assert(current == chunk_end, "must arrive at next unmarked");
+      // Record address of the first live word of this block.
+      _bot[addr_to_block_idx(current)] = compact_top - _mark_bitmap.count_marked_words_in_block(current, first_obj_this_block);
+      compact_top += live_in_block;
+      // Continue to scan at next block that has an object header.
+      first_obj_this_block = first_obj_after_block;
+      current = align_down(first_obj_after_block, bytes_per_block());
     }
     if (!record_first_dead_done) {
       record_first_dead(idx, top);
