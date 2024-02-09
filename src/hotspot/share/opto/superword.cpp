@@ -502,7 +502,7 @@ void SuperWord::mark_reductions() {
 //
 // 5) One of the memory references is picked to be an aligned vector reference.
 //    The pre-loop trip count is adjusted to align this reference in the
-//    unrolled body.
+//    unrolled body. TODO wrong now
 //
 // 6) The initial set of pack pairs is seeded with memory references.
 //
@@ -570,7 +570,7 @@ bool SuperWord::SLP_extract() {
     return false;
   }
 
-  extend_packlist();
+  extend_pairs();
 
   combine_packs();
 
@@ -589,9 +589,8 @@ bool SuperWord::SLP_extract() {
 
 //------------------------------find_adjacent_refs---------------------------
 // Find the adjacent memory references and create pack pairs for them.
-// We can find adjacent memory references by comparing their relative
-// alignment. Whether the final vectors can be aligned is determined later
-// once all vectors are extended and combined.
+// We can find adjacent memory references by comparing their addresses,
+// and analyzing the difference in their offsets.
 void SuperWord::find_adjacent_refs() {
   // Create list with all memory references
   ResourceMark rm;
@@ -642,7 +641,7 @@ void SuperWord::find_adjacent_refs() {
         assert(are_adjacent_refs(mem1, mem2),  "implied by offsets");
 
         // TODO: maybe refactor?
-        if (!stmts_can_pack(mem1, mem2, 0)) { continue; }
+        if (!stmts_can_pack(mem1, mem2)) { continue; }
 
         // Only allow nodes from same origin idx to be packed?
         if (_do_vector_loop && !same_origin_idx(mem1, mem2)) { continue; }
@@ -667,8 +666,10 @@ void SuperWord::find_adjacent_refs() {
   }
 
   if (!_packset.is_empty()) {
-    // Pick first element of first pair. It has the lowest offset of all paired
-    // memory references in the first group.
+    // Chose a reference for which we try to ensure alignment in the main-loop.
+    // (see SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors)
+    // Pick the first element of the first pair. It has the lowest offset of all
+    // paired memory references in the first group, and is thus a reasonable choice.
     set_align_to_ref(_packset.at(0)->at(0)->as_Mem());
   }
 
@@ -719,105 +720,7 @@ void MemReference::dump() const {
 }
 #endif
 
-//------------------------------find_align_to_ref---------------------------
-// Find a memory reference to align the loop induction variable to.
-// Looks first at stores then at loads, looking for a memory reference
-// with the largest number of references similar to it.
-MemNode* SuperWord::find_align_to_ref(Node_List &memops, int &idx) {
-  GrowableArray<int> cmp_ct(arena(), memops.size(), memops.size(), 0);
-
-  // Count number of comparable memory ops
-  for (uint i = 0; i < memops.size(); i++) {
-    MemNode* s1 = memops.at(i)->as_Mem();
-    VPointer p1(s1, phase(), lpt(), nullptr, false);
-    for (uint j = i+1; j < memops.size(); j++) {
-      MemNode* s2 = memops.at(j)->as_Mem();
-      if (isomorphic(s1, s2)) {
-        VPointer p2(s2, phase(), lpt(), nullptr, false);
-        if (p1.comparable(p2)) {
-          (*cmp_ct.adr_at(i))++;
-          (*cmp_ct.adr_at(j))++;
-        }
-      }
-    }
-  }
-
-  // Find Store (or Load) with the greatest number of "comparable" references,
-  // biggest vector size, smallest data size and smallest iv offset.
-  int max_ct        = 0;
-  int max_vw        = 0;
-  int max_idx       = -1;
-  int min_size      = max_jint;
-  int min_iv_offset = max_jint;
-  for (uint j = 0; j < memops.size(); j++) {
-    MemNode* s = memops.at(j)->as_Mem();
-    if (s->is_Store()) {
-      int vw = vector_width_in_bytes(s);
-      assert(vw > 1, "sanity");
-      VPointer p(s, phase(), lpt(), nullptr, false);
-      if ( cmp_ct.at(j) >  max_ct ||
-          (cmp_ct.at(j) == max_ct &&
-            ( vw >  max_vw ||
-             (vw == max_vw &&
-              ( data_size(s) <  min_size ||
-               (data_size(s) == min_size &&
-                p.offset_in_bytes() < min_iv_offset)))))) {
-        max_ct = cmp_ct.at(j);
-        max_vw = vw;
-        max_idx = j;
-        min_size = data_size(s);
-        min_iv_offset = p.offset_in_bytes();
-      }
-    }
-  }
-  // If no stores, look at loads
-  if (max_ct == 0) {
-    for (uint j = 0; j < memops.size(); j++) {
-      MemNode* s = memops.at(j)->as_Mem();
-      if (s->is_Load()) {
-        int vw = vector_width_in_bytes(s);
-        assert(vw > 1, "sanity");
-        VPointer p(s, phase(), lpt(), nullptr, false);
-        if ( cmp_ct.at(j) >  max_ct ||
-            (cmp_ct.at(j) == max_ct &&
-              ( vw >  max_vw ||
-               (vw == max_vw &&
-                ( data_size(s) <  min_size ||
-                 (data_size(s) == min_size &&
-                  p.offset_in_bytes() < min_iv_offset)))))) {
-          max_ct = cmp_ct.at(j);
-          max_vw = vw;
-          max_idx = j;
-          min_size = data_size(s);
-          min_iv_offset = p.offset_in_bytes();
-        }
-      }
-    }
-  }
-
-#ifndef PRODUCT
-  if (is_trace_superword_verbose()) {
-    tty->print_cr("\nVector memops after find_align_to_ref");
-    for (uint i = 0; i < memops.size(); i++) {
-      MemNode* s = memops.at(i)->as_Mem();
-      s->dump();
-    }
-  }
-#endif
-
-  idx = max_idx;
-  if (max_ct > 0) {
-#ifndef PRODUCT
-    if (is_trace_superword_adjacent_memops()) {
-      tty->print("SuperWord::find_align_to_ref: ");
-      memops.at(max_idx)->as_Mem()->dump();
-    }
-#endif
-    return memops.at(max_idx)->as_Mem();
-  }
-  return nullptr;
-}
-
+// TODO delete?
 //---------------------------get_vw_bytes_special------------------------
 int SuperWord::get_vw_bytes_special(MemNode* s) {
   // Get the vector width in bytes.
@@ -845,38 +748,6 @@ int SuperWord::get_vw_bytes_special(MemNode* s) {
   }
 
   return vw;
-}
-
-//---------------------------get_iv_adjustment---------------------------
-// Calculate loop's iv adjustment for this memory ops.
-int SuperWord::get_iv_adjustment(MemNode* mem_ref) {
-  VPointer align_to_ref_p(mem_ref, phase(), lpt(), nullptr, false);
-  int offset = align_to_ref_p.offset_in_bytes();
-  int scale  = align_to_ref_p.scale_in_bytes();
-  int elt_size = align_to_ref_p.memory_size();
-  int vw       = get_vw_bytes_special(mem_ref);
-  assert(vw > 1, "sanity");
-  int iv_adjustment;
-  if (scale != 0) {
-    int stride_sign = (scale * iv_stride()) > 0 ? 1 : -1;
-    // At least one iteration is executed in pre-loop by default. As result
-    // several iterations are needed to align memory operations in main-loop even
-    // if offset is 0.
-    int iv_adjustment_in_bytes = (stride_sign * vw - (offset % vw));
-    iv_adjustment = iv_adjustment_in_bytes/elt_size;
-  } else {
-    // This memory op is not dependent on iv (scale == 0)
-    iv_adjustment = 0;
-  }
-
-#ifndef PRODUCT
-  if (is_trace_superword_alignment()) {
-    tty->print("SuperWord::get_iv_adjustment: n = %d, noffset = %d iv_adjust = %d elt_size = %d scale = %d iv_stride = %d vect_size %d: ",
-      mem_ref->_idx, offset, iv_adjustment, elt_size, scale, iv_stride(), vw);
-    mem_ref->dump();
-  }
-#endif
-  return iv_adjustment;
 }
 
 //---------------------------dependence_graph---------------------------
@@ -1031,9 +902,8 @@ void SuperWord::mem_slice_preds(Node* start, Node* stop, GrowableArray<Node*> &p
 }
 
 //------------------------------stmts_can_pack---------------------------
-// Can s1 and s2 be in a pack with s1 immediately preceding s2 and
-// s1 aligned at "align"
-bool SuperWord::stmts_can_pack(Node* s1, Node* s2, int align) {
+// TODO fix description: and this is basically too powerful, no?
+bool SuperWord::stmts_can_pack(Node* s1, Node* s2) {
 
   // Do not use superword for non-primitives
   BasicType bt1 = velt_basic_type(s1);
@@ -1050,13 +920,7 @@ bool SuperWord::stmts_can_pack(Node* s1, Node* s2, int align) {
     if ((independent(s1, s2) && have_similar_inputs(s1, s2)) || reduction(s1, s2)) {
       if (!exists_at(s1, 0) && !exists_at(s2, 1)) {
         if (!s1->is_Mem() || are_adjacent_refs(s1, s2)) {
-          int s1_align = alignment(s1);
-          int s2_align = alignment(s2);
-          if (s1_align == top_align || s1_align == align) {
-            if (s2_align == top_align || s2_align == align + data_size(s1)) {
-              return true;
-            }
-          }
+          return true;
         }
       }
     }
@@ -1240,16 +1104,6 @@ bool SuperWord::reduction(Node* s1, Node* s2) {
   return retValue;
 }
 
-//------------------------------set_alignment---------------------------
-void SuperWord::set_alignment(Node* s1, Node* s2, int align) {
-  set_alignment(s1, align);
-  if (align == top_align || align == bottom_align) {
-    set_alignment(s2, align);
-  } else {
-    set_alignment(s2, align + data_size(s1));
-  }
-}
-
 //------------------------------data_size---------------------------
 int SuperWord::data_size(Node* s) {
   int bsize = type2aelembytes(velt_basic_type(s));
@@ -1257,9 +1111,8 @@ int SuperWord::data_size(Node* s) {
   return bsize;
 }
 
-//------------------------------extend_packlist---------------------------
 // Extend packset by following use->def and def->use links from pack members.
-void SuperWord::extend_packlist() {
+void SuperWord::extend_pairs() {
   bool changed;
   do {
     changed = false;
@@ -1279,26 +1132,10 @@ void SuperWord::extend_packlist() {
 
 #ifndef PRODUCT
   if (is_trace_superword_packset()) {
-    tty->print_cr("\nAfter Superword::extend_packlist");
+    tty->print_cr("\nAfter Superword::extend_pairs");
     print_packset();
   }
 #endif
-}
-
-//------------------------------adjust_alignment_for_type_conversion---------------------------------
-// Adjust the target alignment if conversion between different data size exists in def-use nodes.
-int SuperWord::adjust_alignment_for_type_conversion(Node* s, Node* t, int align) {
-  // Do not use superword for non-primitives
-  BasicType bt1 = velt_basic_type(s);
-  BasicType bt2 = velt_basic_type(t);
-  if (!is_java_primitive(bt1) || !is_java_primitive(bt2)) {
-    return align;
-  }
-  if (longer_type_for_conversion(s) != T_ILLEGAL ||
-      longer_type_for_conversion(t) != T_ILLEGAL) {
-    align = align / data_size(s) * data_size(t);
-  }
-  return align;
 }
 
 //------------------------------follow_use_defs---------------------------
@@ -1311,37 +1148,30 @@ bool SuperWord::follow_use_defs(Node_List* p) {
 
   if (s1->is_Load()) return false;
 
-#ifndef PRODUCT
-  if (is_trace_superword_alignment()) {
-    tty->print_cr("SuperWord::follow_use_defs: s1 %d, align %d",
-                  s1->_idx, alignment(s1));
-  }
-#endif
   bool changed = false;
   int start = s1->is_Store() ? MemNode::ValueIn   : 1;
   int end   = s1->is_Store() ? MemNode::ValueIn+1 : s1->req();
   for (int j = start; j < end; j++) {
-    int align = alignment(s1);
     Node* t1 = s1->in(j);
     Node* t2 = s2->in(j);
     if (!in_bb(t1) || !in_bb(t2) || t1->is_Mem() || t2->is_Mem())  {
       // Only follow non-memory nodes in block - we do not want to resurrect misaligned packs.
       continue;
     }
-    align = adjust_alignment_for_type_conversion(s1, t1, align);
-    if (stmts_can_pack(t1, t2, align)) {
+    if (stmts_can_pack(t1, t2)) {
       if (est_savings(t1, t2) >= 0) {
         Node_List* pair = new (arena()) Node_List(arena());
         pair->push(t1);
         pair->push(t2);
         _packset.append(pair);
 #ifndef PRODUCT
-        if (is_trace_superword_alignment()) {
-          tty->print_cr("SuperWord::follow_use_defs: set_alignment(%d, %d, %d)",
-                        t1->_idx, t2->_idx, align);
+        if (is_trace_superword_extend_pairs()) {
+          tty->print_cr("\nSuperWord::extend_pairs: follow_use_def:");
+          pair->dump();
+          tty->print_cr("^ Added as *new def* (above) of existing use (below)");
+          p->dump();
         }
 #endif
-        set_alignment(t1, t2, align);
         changed = true;
       }
     }
@@ -1360,13 +1190,6 @@ bool SuperWord::follow_def_uses(Node_List* p) {
 
   if (s1->is_Store()) return false;
 
-  int align = alignment(s1);
-#ifndef PRODUCT
-  if (is_trace_superword_alignment()) {
-    tty->print_cr("SuperWord::follow_def_uses: s1 %d, align %d",
-                  s1->_idx, align);
-  }
-#endif
   int savings = -1;
   int num_s1_uses = 0;
   Node* u1 = nullptr;
@@ -1387,15 +1210,12 @@ bool SuperWord::follow_def_uses(Node_List* p) {
       if (t2->Opcode() == Op_AddI && t2 == _lp->as_CountedLoop()->incr()) continue; // don't mess with the iv
       if (!opnd_positions_match(s1, t1, s2, t2))
         continue;
-      int adjusted_align = alignment(s1);
-      adjusted_align = adjust_alignment_for_type_conversion(s1, t1, adjusted_align);
-      if (stmts_can_pack(t1, t2, adjusted_align)) {
+      if (stmts_can_pack(t1, t2)) {
         int my_savings = est_savings(t1, t2);
         if (my_savings > savings) {
           savings = my_savings;
           u1 = t1;
           u2 = t2;
-          align = adjusted_align;
         }
       }
     }
@@ -1409,12 +1229,13 @@ bool SuperWord::follow_def_uses(Node_List* p) {
     pair->push(u2);
     _packset.append(pair);
 #ifndef PRODUCT
-    if (is_trace_superword_alignment()) {
-      tty->print_cr("SuperWord::follow_def_uses: set_alignment(%d, %d, %d)",
-                    u1->_idx, u2->_idx, align);
+    if (is_trace_superword_extend_pairs()) {
+      tty->print_cr("\nSuperWord::extend_pairs: follow_def_uses:");
+      p->dump();
+      tty->print_cr("v Added as *new use* (below) of existing def (above)");
+      pair->dump();
     }
 #endif
-    set_alignment(u1, u2, align);
     changed = true;
   }
   return changed;
@@ -2999,46 +2820,24 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) {
   }
 
   if (VectorNode::is_muladds2i(use)) {
-    // MulAddS2I takes shorts and produces ints - hence the special checks
-    // on alignment and size.
+    // MulAddS2I takes shorts and produces ints:
+    //  size(shorts) * 2 == size(ints)
     if (u_pk->size() * 2 != d_pk->size()) {
       return false;
-    }
-    for (uint i = 0; i < MIN2(d_pk->size(), u_pk->size()); i++) {
-      Node* ui = u_pk->at(i);
-      Node* di = d_pk->at(i);
-      if (alignment(ui) != alignment(di) * 2) {
-        return false;
-      }
     }
     return true;
   }
 
-  if (u_pk->size() != d_pk->size())
+  if (u_pk->size() != d_pk->size()) {
     return false;
-
-  if (longer_type_for_conversion(use) != T_ILLEGAL) {
-    // These opcodes take a type of a kind of size and produce a type of
-    // another size - hence the special checks on alignment and size.
-    for (uint i = 0; i < u_pk->size(); i++) {
-      Node* ui = u_pk->at(i);
-      Node* di = d_pk->at(i);
-      if (ui->in(u_idx) != di) {
-        return false;
-      }
-      if (alignment(ui) / type2aelembytes(velt_basic_type(ui)) !=
-          alignment(di) / type2aelembytes(velt_basic_type(di))) {
-        return false;
-      }
-    }
-    return true;
   }
 
   for (uint i = 0; i < u_pk->size(); i++) {
     Node* ui = u_pk->at(i);
     Node* di = d_pk->at(i);
-    if (ui->in(u_idx) != di || alignment(ui) != alignment(di))
+    if (ui->in(u_idx) != di) {
       return false;
+    }
   }
   return true;
 }
@@ -3331,36 +3130,6 @@ void SuperWord::compute_vector_element_type() {
     }
   }
 #endif
-}
-
-//------------------------------memory_alignment---------------------------
-// Alignment within a vector memory reference
-int SuperWord::memory_alignment(MemNode* s, int iv_adjust) {
-#ifndef PRODUCT
-  if (is_trace_superword_alignment()) {
-    tty->print("SuperWord::memory_alignment within a vector memory reference for %d:  ", s->_idx); s->dump();
-  }
-#endif
-  VPointer p(s, phase(), lpt(), nullptr, false);
-  if (!p.valid()) {
-    NOT_PRODUCT(if(is_trace_superword_alignment()) tty->print_cr("SuperWord::memory_alignment: VPointer p invalid, return bottom_align");)
-    return bottom_align;
-  }
-  int vw = get_vw_bytes_special(s);
-  if (vw < 2) {
-    NOT_PRODUCT(if(is_trace_superword_alignment()) tty->print_cr("SuperWord::memory_alignment: vector_width_in_bytes < 2, return bottom_align");)
-    return bottom_align; // No vectors for this type
-  }
-  int offset  = p.offset_in_bytes();
-  offset     += iv_adjust*p.memory_size();
-  int off_rem = offset % vw;
-  int off_mod = off_rem >= 0 ? off_rem : off_rem + vw;
-#ifndef PRODUCT
-  if (is_trace_superword_alignment()) {
-    tty->print_cr("SuperWord::memory_alignment: off_rem = %d, off_mod = %d (offset = %d)", off_rem, off_mod, offset);
-  }
-#endif
-  return off_mod;
 }
 
 //---------------------------container_type---------------------------
@@ -3796,9 +3565,8 @@ void SuperWord::init() {
   _num_reductions = 0;
 }
 
-//------------------------------print_packset---------------------------
-void SuperWord::print_packset() {
 #ifndef PRODUCT
+void SuperWord::print_packset() const {
   tty->print_cr("packset");
   for (int i = 0; i < _packset.length(); i++) {
     tty->print_cr("Pack: %d", i);
@@ -3809,19 +3577,16 @@ void SuperWord::print_packset() {
       print_pack(p);
     }
   }
-#endif
 }
 
-//------------------------------print_pack---------------------------
-void SuperWord::print_pack(Node_List* p) {
-  for (uint i = 0; i < p->size(); i++) {
-    print_stmt(p->at(i));
+void SuperWord::print_pack(const Node_List* pack) const {
+  for (uint i = 0; i < pack->size(); i++) {
+    tty->print(" %3d: ", i);
+    pack->at(i)->dump();
   }
 }
 
-//------------------------------print_bb---------------------------
-void SuperWord::print_bb() {
-#ifndef PRODUCT
+void SuperWord::print_bb() const {
   tty->print_cr("\nBlock");
   for (int i = 0; i < _block.length(); i++) {
     Node* n = _block.at(i);
@@ -3830,16 +3595,8 @@ void SuperWord::print_bb() {
       n->dump();
     }
   }
-#endif
 }
-
-//------------------------------print_stmt---------------------------
-void SuperWord::print_stmt(Node* s) {
-#ifndef PRODUCT
-  tty->print(" align: %d \t", alignment(s));
-  s->dump();
 #endif
-}
 
 // ========================= SWNodeInfo =====================
 

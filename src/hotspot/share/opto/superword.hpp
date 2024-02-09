@@ -188,12 +188,11 @@ public:
 // Per node info needed by SuperWord
 class SWNodeInfo {
  public:
-  int         _alignment; // memory alignment for a node
   int         _depth;     // Max expression (DAG) depth from block start
   const Type* _velt_type; // vector element type
   Node_List*  _my_pack;   // pack containing this node
 
-  SWNodeInfo() : _alignment(-1), _depth(0), _velt_type(nullptr), _my_pack(nullptr) {}
+  SWNodeInfo() : _depth(0), _velt_type(nullptr), _my_pack(nullptr) {}
   static const SWNodeInfo initial;
 };
 
@@ -307,8 +306,6 @@ class SuperWord : public ResourceObj {
   Arena*          _arena;
   PhaseIterGVN   &_igvn;
 
-  enum consts { top_align = -1, bottom_align = -666 };
-
   GrowableArray<Node_List*> _packset;    // Packs for the current block
 
   GrowableArray<int> _bb_idx;            // Map from Node _idx to index within block
@@ -371,6 +368,11 @@ class SuperWord : public ResourceObj {
            _vtrace.is_trace(TraceAutoVectorizationTag::SW_ADJACENT_MEMOPS);
   }
 
+  bool is_trace_superword_extend_pairs() const {
+    // Too verbose for TraceSuperWord
+    return _vtrace.is_trace(TraceAutoVectorizationTag::SW_EXTEND_PAIRS);
+  }
+
   bool is_trace_superword_rejections() const {
     return TraceSuperWord ||
            _vtrace.is_trace(TraceAutoVectorizationTag::SW_REJECTIONS);
@@ -400,6 +402,7 @@ class SuperWord : public ResourceObj {
            _vtrace.is_trace(TraceAutoVectorizationTag::SW_MEMORY_SLICES) ||
            _vtrace.is_trace(TraceAutoVectorizationTag::SW_DEPENDENCE_GRAPH) ||
            _vtrace.is_trace(TraceAutoVectorizationTag::SW_ADJACENT_MEMOPS) ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_EXTEND_PAIRS) ||
            _vtrace.is_trace(TraceAutoVectorizationTag::SW_REJECTIONS) ||
            _vtrace.is_trace(TraceAutoVectorizationTag::SW_PACKSET) ||
            _vtrace.is_trace(TraceAutoVectorizationTag::SW_INFO) ||
@@ -469,10 +472,6 @@ class SuperWord : public ResourceObj {
 
   // should we align vector memory references on this platform?
   bool vectors_should_be_aligned() { return !Matcher::misaligned_vectors_ok() || AlignVector; }
-
-  // memory alignment for a node
-  int alignment(Node* n)                     { return _node_info.adr_at(bb_idx(n))->_alignment; }
-  void set_alignment(Node* n, int a)         { int i = bb_idx(n); grow_node_info(i); _node_info.adr_at(i)->_alignment = a; }
 
   // Max expression (DAG) depth from beginning of the block for each node
   int depth(Node* n) const                   { return _node_info.adr_at(bb_idx(n))->_depth; }
@@ -574,10 +573,6 @@ private:
     _packset.append(pair);
   }
 
-  // Find a memory reference to align the loop induction variable to.
-  MemNode* find_align_to_ref(Node_List &memops, int &idx);
-  // Calculate loop's iv adjustment for this memory ops.
-  int get_iv_adjustment(MemNode* mem);
   // Construct dependency graph.
   void dependence_graph();
 
@@ -587,8 +582,8 @@ private:
   // Return a memory slice (node list) in predecessor order starting at "start"
   void mem_slice_preds(Node* start, Node* stop, GrowableArray<Node*> &preds);
 
-  // Can s1 and s2 be in a pack with s1 immediately preceding s2 and  s1 aligned at "align"
-  bool stmts_can_pack(Node* s1, Node* s2, int align);
+  // TODO fix desc, too powerful?
+  bool stmts_can_pack(Node* s1, Node* s2);
   // Does s exist in a pack at position pos?
   bool exists_at(Node* s, uint pos);
   // Is s1 immediately before s2 in memory?
@@ -604,11 +599,10 @@ private:
   bool have_similar_inputs(Node* s1, Node* s2);
   // Is there a data path between s1 and s2 and both are reductions?
   bool reduction(Node* s1, Node* s2);
-  void set_alignment(Node* s1, Node* s2, int align);
   int data_size(Node* s);
   // Extend packset by following use->def and def->use links from pack members.
-  void extend_packlist();
-  int adjust_alignment_for_type_conversion(Node* s, Node* t, int align);
+  void extend_pairs();
+
   // Extend the packset by visiting operand definitions of nodes in pack p
   bool follow_use_defs(Node_List* p);
   // Extend the packset by visiting uses of nodes in pack p
@@ -669,8 +663,6 @@ private:
   // Remove the pack at position pos in the packset
   void remove_pack_at(int pos);
   static LoadNode::ControlDependency control_dependency(Node_List* p);
-  // Alignment within a vector memory reference
-  int memory_alignment(MemNode* s, int iv_adjust);
   // Smallest type containing range of values
   const Type* container_type(Node* n);
   // Ensure that the main loop vectors are aligned by adjusting the pre loop limit.
@@ -679,11 +671,12 @@ private:
   bool opnd_positions_match(Node* d1, Node* u1, Node* d2, Node* u2);
   void init();
 
+#ifndef PRODUCT
   // print methods
-  void print_packset();
-  void print_pack(Node_List* p);
-  void print_bb();
-  void print_stmt(Node* s);
+  void print_packset() const;
+  void print_pack(const Node_List* pack) const;
+  void print_bb() const;
+#endif
 };
 
 #endif // SHARE_OPTO_SUPERWORD_HPP

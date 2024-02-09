@@ -36,6 +36,7 @@
   flags(SW_MEMORY_SLICES,     "Trace SuperWord memory slices") \
   flags(SW_DEPENDENCE_GRAPH,  "Trace SuperWord::dependence_graph") \
   flags(SW_ADJACENT_MEMOPS,   "Trace SuperWord::find_adjacent_refs") \
+  flags(SW_EXTEND_PAIRS,      "Trace SuperWord::extend_pairs") \
   flags(SW_REJECTIONS,        "Trace SuperWord rejections (non vectorizations)") \
   flags(SW_PACKSET,           "Trace SuperWord packset at different stages") \
   flags(SW_INFO,              "Trace SuperWord info (equivalent to TraceSuperWord)") \
@@ -118,6 +119,7 @@ class TraceAutoVectorizationTagValidator {
         _tags.at_put(SW_MEMORY_SLICES, set_bit);
         _tags.at_put(SW_DEPENDENCE_GRAPH, set_bit);
         _tags.at_put(SW_ADJACENT_MEMOPS, set_bit);
+        _tags.at_put(SW_EXTEND_PAIRS, set_bit);
         _tags.at_put(SW_REJECTIONS, set_bit);
         _tags.at_put(SW_PACKSET, set_bit);
         _tags.at_put(SW_INFO, set_bit);
