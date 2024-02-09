@@ -295,7 +295,7 @@ void ShenandoahControlThread::run_service() {
     // Wait before performing the next action. If allocation happened during this wait,
     // we exit sooner, to let heuristics re-evaluate new conditions. If we are at idle,
     // back off exponentially.
-    if (_heap_changed.try_unset()) {
+    if (heap->has_changed()) {
       sleep = ShenandoahControlIntervalMin;
     } else if ((current - last_sleep_adjust_time) * 1000 > ShenandoahControlIntervalAdjustPeriod){
       sleep = MIN2<int>(ShenandoahControlIntervalMax, MAX2(1, sleep * 2));
@@ -510,14 +510,6 @@ void ShenandoahControlThread::notify_gc_waiters() {
   _gc_requested.unset();
   MonitorLocker ml(&_gc_waiters_lock);
   ml.notify_all();
-}
-
-void ShenandoahControlThread::notify_heap_changed() {
-  // This is called from allocation path, and thus should be fast.
-  // Notify that something had changed.
-  if (_heap_changed.is_unset()) {
-    _heap_changed.set();
-  }
 }
 
 void ShenandoahControlThread::pacing_notify_alloc(size_t words) {

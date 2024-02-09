@@ -187,6 +187,7 @@ public abstract class Provider extends Properties {
      * @deprecated use {@link #Provider(String, String, String)} instead.
      */
     @Deprecated(since="9")
+    @SuppressWarnings("this-escape")
     protected Provider(String name, double version, String info) {
         this.name = name;
         this.version = version;
@@ -227,6 +228,7 @@ public abstract class Provider extends Properties {
      *
      * @since 9
      */
+    @SuppressWarnings("this-escape")
     protected Provider(String name, String versionStr, String info) {
         this.name = name;
         this.versionStr = versionStr;
