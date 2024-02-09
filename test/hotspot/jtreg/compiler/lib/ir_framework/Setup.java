@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,23 +27,19 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- * This annotation is used for test methods (see {@link Test}) to specify what values should be passed as arguments.
- * One can either specify the individual arguments with values (see {@link Argument}), or use
- * a setup method (see {@link Setup}) to define more complex arguments and/or even set fields values.
- * This annotation can only be applied to a <b>normal test</b>.
+ * This annotation is used to identify Setup methods. These can be used to compute arbitrary arguments for a test
+ * method (see {@link Test}), as well as to set field values. A test method can use a setup method, by specifying
+ * it in a {@link Arguments} annotation. A setup method can optionally take a {@link SetupInfo} as an argument. The
+ * arguments for the test methods are returned as a new object array.
  *
- * @see Argument
+ * Examples on how to use test methods can be found in {@link ir_framework.examples.SetupExample} and also as part of the
+ * internal testing in the package {@link ir_framework.tests}.
+ *
+ * @see Arguments
+ * @see Setup
+ * @see SetupInfo
  * @see Test
- * @see Check
  */
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Arguments {
-    /**
-     * Get the argument values.
-     */
-    Argument[] values() default {};
-    /**
-     * Get the setup method name.
-     */
-    String setup() default "";
+public @interface Setup {
 }
