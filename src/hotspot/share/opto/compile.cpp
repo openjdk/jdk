@@ -4961,15 +4961,15 @@ void Compile::mark_coarsened_boxes() {
     if (size > 0) {
       AbstractLockNode* alock = locks_list->at(0)->as_AbstractLock();
       BoxLockNode* box = alock->box_node()->as_BoxLock();
-      if (alock->is_coarsened() && !box->is_coarsened()) { // Not marked already
+      if (alock->is_coarsened() && !box->is_unbalanced()) { // Not marked already
         assert(!box->is_eliminated(), "regions with coarsened locks should not be marked as eliminated");
         for (uint j = 1; j < size; j++) {
           assert(locks_list->at(j)->as_AbstractLock()->is_coarsened(), "only coarsened locks are expected here");
           BoxLockNode* this_box = locks_list->at(j)->as_AbstractLock()->box_node()->as_BoxLock();
           assert(!this_box->is_eliminated(), "regions with coarsened locks should not be marked as eliminated");
           if (box != this_box) {
-            box->set_coarsened();
-            this_box->set_coarsened();
+            box->set_unbalanced();
+            this_box->set_unbalanced();
           }
         }
       }

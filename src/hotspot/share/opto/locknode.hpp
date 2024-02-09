@@ -37,7 +37,8 @@ class BoxLockNode : public Node {
   RegMask     _inmask; // OptoReg corresponding to stack slot
   enum {
     Regular = 0,       // Normal locking region
-    Coarsened,         // Some lock/unlock in region were coarsened
+    Unbalanced,        // Some lock/unlock in region were coarsened,
+                       // as result this region become unbalanced
     Eliminated         // All lock/unlock in region were eliminated
   } _kind;
 
@@ -62,9 +63,9 @@ public:
   int stack_slot() const { return _slot; }
 
   bool is_eliminated() const { return _kind == Eliminated; }
-  bool is_coarsened()  const { return _kind == Coarsened; }
+  bool is_unbalanced() const { return _kind == Unbalanced; }
   void set_eliminated()      { _kind = Eliminated; }
-  void set_coarsened()       { _kind = Coarsened; }
+  void set_unbalanced()      { _kind = Unbalanced; }
 
   // Is BoxLock node used for one simple lock region?
   bool is_simple_lock_region(LockNode** unique_lock, Node* obj, Node** bad_lock);

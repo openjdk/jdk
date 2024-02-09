@@ -90,6 +90,9 @@ OptoReg::Name BoxLockNode::reg(Node* box) {
 
 // Is BoxLock node used for one simple lock region (same box and obj)?
 bool BoxLockNode::is_simple_lock_region(LockNode** unique_lock, Node* obj, Node** bad_lock) {
+  if (is_unbalanced()) {
+    return false;
+  }
   LockNode* lock = nullptr;
   bool has_one_lock = false;
   for (uint i = 0; i < this->outcnt(); i++) {

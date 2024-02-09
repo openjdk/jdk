@@ -2548,7 +2548,7 @@ void ConnectionGraph::optimize_ideal_graph(GrowableArray<Node*>& ptr_cmp_worklis
       if (n->is_AbstractLock()) { // Lock and Unlock nodes
         AbstractLockNode* alock = n->as_AbstractLock();
         BoxLockNode* box = alock->box_node()->as_BoxLock();
-        if (!box->is_coarsened() && !alock->is_non_esc_obj()) {
+        if (!box->is_unbalanced() && !alock->is_non_esc_obj()) {
           if (not_global_escape(alock->obj_node())) {
             assert(!alock->is_eliminated() || alock->is_coarsened(), "sanity");
             // The lock could be marked eliminated by lock coarsening

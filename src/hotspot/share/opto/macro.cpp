@@ -1943,6 +1943,7 @@ void PhaseMacroExpand::mark_eliminated_box(Node* oldbox, Node* obj) {
   if (oldbox->as_BoxLock()->is_eliminated()) {
     return; // This BoxLock node was processed already.
   }
+  assert(!oldbox->as_BoxLock()->is_unbalanced(), "this should not be called for unbalanced region");
   // New implementation (EliminateNestedLocks) has separate BoxLock
   // node for each locked region so mark all associated locks/unlocks as
   // eliminated even if different objects are referenced in one locked region
@@ -2033,7 +2034,7 @@ void PhaseMacroExpand::mark_eliminated_box(Node* oldbox, Node* obj) {
 
 //-----------------------mark_eliminated_locking_nodes-----------------------
 void PhaseMacroExpand::mark_eliminated_locking_nodes(AbstractLockNode *alock) {
-  if (alock->box_node()->as_BoxLock()->is_coarsened()) {
+  if (alock->box_node()->as_BoxLock()->is_unbalanced()) {
     return; // Can't do any more elimination for this locking region
   }
   if (EliminateNestedLocks) {
