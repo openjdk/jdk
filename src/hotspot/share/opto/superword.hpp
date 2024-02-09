@@ -620,26 +620,12 @@ private:
   int adjacent_profit(Node* s1, Node* s2);
   int pack_cost(int ct);
   int unpack_cost(int ct);
-
   // Combine packs A and B with A.last == B.first into A.first..,A.last,B.second,..B.last
   void combine_packs();
-  // Split packs that are too large
-  void split_packs_for_max_vector_size();
-  // TODO split_packs_for_implementability
-  // TODO split_packs_for_dependency
-  // TODO split_packs_for_use_def
-  // TODO split_packs_for_power_of_2_size
-
-  // Remove all packs that are not power of 2 size
-  void filter_packs_for_power_of_2_size();
-  // Remove all packs where the nodes are not mutually independend
-  void filter_packs_for_mutual_independence();
-
   // Ensure all packs are aligned, if AlignVector is on.
   void filter_packs_for_alignment();
   // Find the set of alignment solutions for load/store pack.
   const AlignmentSolution* pack_alignment_solution(Node_List* pack);
-
   // Compress packset, such that it has no nullptr entries.
   void compress_packset();
   // Construct the map from nodes to packs.

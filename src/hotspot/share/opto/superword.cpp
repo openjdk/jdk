@@ -572,15 +572,8 @@ bool SuperWord::SLP_extract() {
 
   extend_packlist();
 
-  // Chain together pairs, creating maximally large packs
   combine_packs();
 
-  // Split packs that are too large, for some reason
-  split_packs_for_max_vector_size();
-
-  // Filter out problematic packs
-  filter_packs_for_power_of_2_size();
-  filter_packs_for_mutual_independence();
   filter_packs_for_alignment();
 
   construct_my_pack_map();
@@ -1614,18 +1607,7 @@ void SuperWord::combine_packs() {
 
   assert(!_packset.is_empty(), "must have combined some packs");
 
-#ifndef PRODUCT
-  if (is_trace_superword_packset()) {
-    tty->print_cr("\nAfter Superword::combine_packs");
-    print_packset();
-  }
-#endif
-}
-
-// Split packs which have size greater then max vector size.
-void SuperWord::split_packs_for_max_vector_size() {
-  // TODO intro
-
+  // Split packs which have size greater then max vector size.
   for (int i = 0; i < _packset.length(); i++) {
     Node_List* p1 = _packset.at(i);
     if (p1 != nullptr) {
@@ -1658,15 +1640,7 @@ void SuperWord::split_packs_for_max_vector_size() {
       }
     }
   }
-  // TODO outro
-}
 
-void SuperWord::filter_packs_for_power_of_2_size() {
-  // TODO intro
-}
-
-void SuperWord::filter_packs_for_mutual_independence() {
-  // TODO intro
   // We know that the nodes in a pair pack were independent - this gives us independence
   // at distance 1. But now that we may have more than 2 nodes in a pack, we need to check
   // if they are all mutually independent. If there is a dependence we remove the pack.
