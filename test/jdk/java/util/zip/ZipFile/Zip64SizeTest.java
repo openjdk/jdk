@@ -91,11 +91,11 @@ public class Zip64SizeTest {
      * 0081 CENTRAL HEADER #1     02014B50
      * 0085 Created Zip Spec      14 '2.0'
      * 0086 Created OS            00 'MS-DOS'
-     * [...]
+     * [...] Omitted for brevity
      * 0091 CRC                   F7D18982
      * 0095 Compressed Length     00000007
      * 0099 Uncompressed Length   FFFFFFFF
-     * [..]
+     * [...] Omitted for brevity
      * 00AF Filename              'first'
      * 00B4 Extra ID #0001        0001 'ZIP64'
      * 00B6   Length              0008
