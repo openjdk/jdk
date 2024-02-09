@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2013, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3803,16 +3803,15 @@ void TemplateTable::_new() {
     __ sldi(Roffset, Rindex, LogBytesPerWord);
     __ load_resolved_klass_at_offset(Rcpool, Roffset, RinstanceKlass);
 
-    // Make sure klass is fully initialized and get instance_size.
-    __ lbz(Rscratch, in_bytes(InstanceKlass::init_state_offset()), RinstanceKlass);
+    // Make sure klass is initialized.
+    assert(VM_Version::supports_fast_class_init_checks(), "Optimization requires support for fast class initialization checks");
+    __ clinit_barrier(RinstanceKlass, R16_thread, nullptr /*L_fast_path*/, &Lslow_case);
+
     __ lwz(Rinstance_size, in_bytes(Klass::layout_helper_offset()), RinstanceKlass);
 
-    __ cmpdi(CCR1, Rscratch, InstanceKlass::fully_initialized);
     // Make sure klass does not have has_finalizer, or is abstract, or interface or java/lang/Class.
     __ andi_(R0, Rinstance_size, Klass::_lh_instance_slow_path_bit); // slow path bit equals 0?
-
-    __ crnand(CCR0, Assembler::equal, CCR1, Assembler::equal); // slow path bit set or not fully initialized?
-    __ beq(CCR0, Lslow_case);
+    __ bne(CCR0, Lslow_case);
 
     // --------------------------------------------------------------------------
     // Fast case:

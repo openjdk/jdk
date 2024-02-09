@@ -150,4 +150,3 @@ public class ModuleRemapper extends ModuleVisitor {
         super.visitProvide(remapper.mapType(service), remappedProviders);
     }
 }
-

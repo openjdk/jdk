@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,8 @@ extern "C" {
 /* ============================================================================= */
 
 /* scaffold objects */
-static JNIEnv* jni = NULL;
-static jvmtiEnv *jvmti = NULL;
+static JNIEnv* jni = nullptr;
+static jvmtiEnv *jvmti = nullptr;
 static jlong timeout = 0;
 
 /* constants */
@@ -54,12 +54,12 @@ typedef struct {
 
 /* descriptions of tested threads */
 static ThreadDesc threadsDesc[THREADS_COUNT] = {
-    { "threadRunning", "testedMethod", "()V", NULL, NULL, NULL, NSK_JVMTI_INVALID_JLOCATION },
-    { "threadEntering", "testedMethod", "()V", NULL, NULL, NULL, NSK_JVMTI_INVALID_JLOCATION },
-    { "threadWaiting", "testedMethod", "()V", NULL, NULL, NULL, NSK_JVMTI_INVALID_JLOCATION },
-    { "threadSleeping", "testedMethod", "()V", NULL, NULL, NULL, NSK_JVMTI_INVALID_JLOCATION },
-    { "threadRunningInterrupted", "testedMethod", "()V", NULL, NULL, NULL, NSK_JVMTI_INVALID_JLOCATION },
-    { "threadRunningNative", "testedMethod", "()V", NULL, NULL, NULL, NSK_JVMTI_INVALID_JLOCATION }
+    { "threadRunning", "testedMethod", "()V", nullptr, nullptr, nullptr, NSK_JVMTI_INVALID_JLOCATION },
+    { "threadEntering", "testedMethod", "()V", nullptr, nullptr, nullptr, NSK_JVMTI_INVALID_JLOCATION },
+    { "threadWaiting", "testedMethod", "()V", nullptr, nullptr, nullptr, NSK_JVMTI_INVALID_JLOCATION },
+    { "threadSleeping", "testedMethod", "()V", nullptr, nullptr, nullptr, NSK_JVMTI_INVALID_JLOCATION },
+    { "threadRunningInterrupted", "testedMethod", "()V", nullptr, nullptr, nullptr, NSK_JVMTI_INVALID_JLOCATION },
+    { "threadRunningNative", "testedMethod", "()V", nullptr, nullptr, nullptr, NSK_JVMTI_INVALID_JLOCATION }
 };
 
 /* indexes of known threads */
@@ -144,7 +144,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* agentJNI, void* arg) {
  *    - make global refs
  */
 static int prepare() {
-    jthread *allThreadsList = NULL;
+    jthread *allThreadsList = nullptr;
     jint allThreadsCount = 0;
     int found = 0;
     int i;
@@ -153,8 +153,8 @@ static int prepare() {
 
     /* clean threads list */
     for (i = 0; i < THREADS_COUNT; i++) {
-        threadsDesc[i].thread = (jthread)NULL;
-        threadsDesc[i].method = (jmethodID)NULL;
+        threadsDesc[i].thread = (jthread)nullptr;
+        threadsDesc[i].method = (jmethodID)nullptr;
         threadsDesc[i].location = NSK_JVMTI_INVALID_JLOCATION;
     }
 
@@ -162,14 +162,14 @@ static int prepare() {
     if (!NSK_JVMTI_VERIFY(jvmti->GetAllThreads(&allThreadsCount, &allThreadsList)))
         return NSK_FALSE;
 
-    if (!NSK_VERIFY(allThreadsCount > 0 && allThreadsList != NULL))
+    if (!NSK_VERIFY(allThreadsCount > 0 && allThreadsList != nullptr))
         return NSK_FALSE;
 
     /* find tested threads */
     for (i = 0; i < allThreadsCount; i++) {
         jvmtiThreadInfo threadInfo;
 
-        if (!NSK_VERIFY(allThreadsList[i] != NULL))
+        if (!NSK_VERIFY(allThreadsList[i] != nullptr))
             return NSK_FALSE;
 
         /* get thread name (info) */
@@ -177,7 +177,7 @@ static int prepare() {
             return NSK_FALSE;
 
         /* find by name */
-        if (threadInfo.name != NULL) {
+        if (threadInfo.name != nullptr) {
             int j;
 
             for (j = 0; j < THREADS_COUNT; j++) {
@@ -197,7 +197,7 @@ static int prepare() {
     /* check if all tested threads found */
     found = 0;
     for (i = 0; i < THREADS_COUNT; i++) {
-        if (threadsDesc[i].thread == NULL) {
+        if (threadsDesc[i].thread == nullptr) {
             NSK_COMPLAIN2("Not found tested thread #%d (%s)\n", i, threadsDesc[i].threadName);
         } else {
             found++;
@@ -212,11 +212,11 @@ static int prepare() {
     for (i = 0; i < THREADS_COUNT; i++) {
         /* get thread class */
         if (!NSK_JNI_VERIFY(jni, (threadsDesc[i].cls =
-                jni->GetObjectClass(threadsDesc[i].thread)) != NULL))
+                jni->GetObjectClass(threadsDesc[i].thread)) != nullptr))
             return NSK_FALSE;
         /* get frame method */
         if (!NSK_JNI_VERIFY(jni, (threadsDesc[i].method =
-                jni->GetMethodID(threadsDesc[i].cls, threadsDesc[i].methodName, threadsDesc[i].methodSig)) != NULL))
+                jni->GetMethodID(threadsDesc[i].cls, threadsDesc[i].methodName, threadsDesc[i].methodSig)) != nullptr))
             return NSK_FALSE;
 
         NSK_DISPLAY4("    thread #%d (%s): %p (%s)\n",
@@ -228,10 +228,10 @@ static int prepare() {
     /* make global refs */
     for (i = 0; i < THREADS_COUNT; i++) {
         if (!NSK_JNI_VERIFY(jni, (threadsDesc[i].thread = (jthread)
-                jni->NewGlobalRef(threadsDesc[i].thread)) != NULL))
+                jni->NewGlobalRef(threadsDesc[i].thread)) != nullptr))
             return NSK_FALSE;
         if (!NSK_JNI_VERIFY(jni, (threadsDesc[i].cls = (jclass)
-                jni->NewGlobalRef(threadsDesc[i].cls)) != NULL))
+                jni->NewGlobalRef(threadsDesc[i].cls)) != nullptr))
             return NSK_FALSE;
     }
 
@@ -297,7 +297,7 @@ static int checkThreads(int suspended, const char* kind) {
 
         found = 0;
         for (j = 0; j < frameStackSize; j++) {
-            jmethodID qMethod = (jmethodID)NULL;
+            jmethodID qMethod = (jmethodID)nullptr;
             jlocation qLocation = NSK_JVMTI_INVALID_JLOCATION;
 
             NSK_DISPLAY3("      %d frame: method: %p, location: %ld\n",
@@ -432,7 +432,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     /* create JVMTI environment */
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     /* add specific capabilities for suspending thread */    {
@@ -444,7 +444,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     }
 
     /* register agent proc and arg */
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     return JNI_OK;

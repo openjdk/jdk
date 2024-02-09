@@ -102,7 +102,6 @@ jint ParallelScavengeHeap::initialize() {
   assert(old_gen()->max_gen_size() == old_rs.size(), "Consistency check");
 
   double max_gc_pause_sec = ((double) MaxGCPauseMillis)/1000.0;
-  double max_gc_minor_pause_sec = ((double) MaxGCMinorPauseMillis)/1000.0;
 
   const size_t eden_capacity = _young_gen->eden_space()->capacity_in_bytes();
   const size_t old_capacity = _old_gen->capacity_in_bytes();
@@ -113,7 +112,6 @@ jint ParallelScavengeHeap::initialize() {
                              young_gen()->to_space()->capacity_in_bytes(),
                              GenAlignment,
                              max_gc_pause_sec,
-                             max_gc_minor_pause_sec,
                              GCTimeRatio
                              );
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ static jlong timeout = 0;
 
 static long objCounter = 0;
 static int userData = 0;
-static jvmtiEnv* st_jvmti = NULL;
+static jvmtiEnv* st_jvmti = nullptr;
 static jlong nanos = 0;
 static jvmtiTimerInfo timer_info1, timer_info2;
 
@@ -295,7 +295,7 @@ JNIEXPORT jint JNI_OnLoad_iterreachobj005(JavaVM *jvm, char *options, void *rese
 }
 #endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
-    jvmtiEnv* jvmti = NULL;
+    jvmtiEnv* jvmti = nullptr;
 
     if (!NSK_VERIFY(nsk_jvmti_parseOptions(options)))
         return JNI_ERR;
@@ -303,7 +303,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     timeout = nsk_jvmti_getWaitTime() * 60 * 1000;
 
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     /* save pointer to environment to use it in callbacks */
@@ -320,7 +320,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         }
     }
 
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     return JNI_OK;
