@@ -134,7 +134,7 @@ void ShenandoahRegulatorThread::regulator_sleep() {
   // back off exponentially.
   double current = os::elapsedTime();
 
-  if (_heap_changed.try_unset()) {
+  if (ShenandoahHeap::heap()->has_changed()) {
     _sleep = ShenandoahControlIntervalMin;
   } else if ((current - _last_sleep_adjust_time) * 1000 > ShenandoahControlIntervalAdjustPeriod){
     _sleep = MIN2<int>(ShenandoahControlIntervalMax, MAX2(1, _sleep * 2));

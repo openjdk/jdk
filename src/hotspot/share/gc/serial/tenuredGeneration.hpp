@@ -100,7 +100,7 @@ class TenuredGeneration: public Generation {
 
   HeapWord* block_start(const void* p) const;
 
-  void younger_refs_iterate(OopIterateClosure* blk);
+  void scan_old_to_young_refs();
 
   bool is_in(const void* p) const;
 

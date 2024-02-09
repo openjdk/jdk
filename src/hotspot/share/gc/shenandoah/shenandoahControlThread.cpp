@@ -36,23 +36,17 @@
 #include "gc/shenandoah/shenandoahGlobalGeneration.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
-#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahMark.inline.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
-#include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGC.hpp"
-#include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
+#include "gc/shenandoah/shenandoahPacer.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
-#include "gc/shenandoah/shenandoahVMOperations.hpp"
-#include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "logging/log.hpp"
-#include "memory/iterator.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/metaspaceStats.hpp"
-#include "memory/universe.hpp"
+#include "memory/resourceArea.hpp"
 #include "runtime/atomic.hpp"
 
 ShenandoahControlThread::ShenandoahControlThread() :
@@ -946,10 +940,6 @@ bool ShenandoahControlThread::is_alloc_failure_gc() {
 void ShenandoahControlThread::notify_gc_waiters() {
   MonitorLocker ml(&_gc_waiters_lock);
   ml.notify_all();
-}
-
-void ShenandoahControlThread::notify_heap_changed() {
-  // This is called from allocation path, and thus should be fast.
 }
 
 void ShenandoahControlThread::pacing_notify_alloc(size_t words) {

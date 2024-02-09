@@ -52,14 +52,6 @@ class ShenandoahRegulatorThread: public ConcurrentGCThread {
 
   const char* name() const { return "ShenandoahRegulatorThread";}
 
-  // This is called from allocation path, and thus should be fast.
-  void notify_heap_changed() {
-    // Notify that something had changed.
-    if (_heap_changed.is_unset()) {
-      _heap_changed.set();
-    }
-  }
-
  protected:
   void run_service();
   void stop_service();
@@ -87,7 +79,6 @@ class ShenandoahRegulatorThread: public ConcurrentGCThread {
   // Provides instrumentation to track how long it takes to acknowledge a request.
   bool request_concurrent_gc(ShenandoahGenerationType generation);
 
-  ShenandoahSharedFlag _heap_changed;
   ShenandoahControlThread* _control_thread;
   ShenandoahHeuristics* _young_heuristics;
   ShenandoahHeuristics* _old_heuristics;
