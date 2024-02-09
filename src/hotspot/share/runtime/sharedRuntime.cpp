@@ -1800,7 +1800,7 @@ JRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address cal
   address callsite_addr = (address)nativeCall_before(return_pc);
   RelocIterator iter(caller, callsite_addr, callsite_addr + 1);
   if (!iter.next()) {
-    // No reloc entry found; not a static or opt virutal call
+    // No reloc entry found; not a static or optimized virtual call
     return;
   }
 
