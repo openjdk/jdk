@@ -24,12 +24,63 @@
  */
 package sun.security.provider;
 
+import java.security.AlgorithmParameters;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.NoSuchAlgorithmException;
+import java.security.ProviderException;
+import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.IntegerParameterSpec;
+import java.security.spec.InvalidParameterSpecException;
+
 /*
  * The SHAKE128 extendable output function.
  */
-public final class SHAKE128 extends SHA3 {
+public sealed class SHAKE128 extends SHA3 {
+    public static final class WithoutLen extends SHAKE128 {
+        public WithoutLen() {
+            super("SHAKE128-LEN", 32);
+        }
+    }
+
+    public static final class WithLen extends SHAKE128 {
+        public WithLen(AlgorithmParameterSpec p)
+                throws InvalidAlgorithmParameterException {
+            super("SHAKE128-LEN", n(p));
+        }
+
+        private static int n(AlgorithmParameterSpec p)
+                throws InvalidAlgorithmParameterException {
+            if (p == null) {
+                throw new InvalidAlgorithmParameterException("Parameters required");
+            } else if (p instanceof IntegerParameterSpec is) {
+                int bitsLen = is.n();
+                if (bitsLen <= 0 || (bitsLen & 0x07) != 0) {
+                    throw new InvalidAlgorithmParameterException("Invalid length: " + bitsLen);
+                }
+                return bitsLen / 8;
+            } else {
+                throw new InvalidAlgorithmParameterException("Unknown spec: " + p);
+            }
+        }
+
+        @Override
+        protected AlgorithmParameters engineGetParameters() {
+            try {
+                AlgorithmParameters p = AlgorithmParameters.getInstance("SHAKE128-LEN");
+                p.init(new IntegerParameterSpec(engineGetDigestLength() * 8));
+                return p;
+            } catch (NoSuchAlgorithmException | InvalidParameterSpecException e) {
+                throw new ProviderException(e);
+            }
+        }
+    }
+
     public SHAKE128(int d) {
-        super("SHAKE128", d, (byte) 0x1F, 32);
+        this("SHAKE128", d);
+    }
+
+    public SHAKE128(String name, int d) {
+        super(name, d, (byte) 0x1F, 32);
     }
 
     public void update(byte in) {

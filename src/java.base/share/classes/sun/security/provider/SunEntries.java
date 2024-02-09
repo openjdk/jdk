@@ -252,6 +252,24 @@ public final class SunEntries {
         addWithAlias(p, "MessageDigest", "SHA3-512",
                 "sun.security.provider.SHA3$SHA512", attrs);
 
+        addWithAlias(p, "MessageDigest", "SHAKE256",
+                "sun.security.provider.SHAKE256$WithoutLen", attrs);
+
+        addWithAlias(p, "MessageDigest", "SHAKE256-LEN",
+                "sun.security.provider.SHAKE256$WithLen", attrs);
+
+        addWithAlias(p, "AlgorithmParameters", "SHAKE256-LEN",
+                "sun.security.provider.IntegerParameters", attrs);
+
+        addWithAlias(p, "MessageDigest", "SHAKE128",
+                "sun.security.provider.SHAKE128$WithoutLen", attrs);
+
+        addWithAlias(p, "MessageDigest", "SHAKE128-LEN",
+                "sun.security.provider.SHAKE128$WithLen", attrs);
+
+        addWithAlias(p, "AlgorithmParameters", "SHAKE128-LEN",
+                "sun.security.provider.IntegerParameters", attrs);
+
         /*
          * Certificates
          */

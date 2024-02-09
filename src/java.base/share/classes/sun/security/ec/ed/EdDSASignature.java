@@ -32,6 +32,7 @@ import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.InvalidParameterException;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.ProviderException;
@@ -55,9 +56,9 @@ public class EdDSASignature extends SignatureSpi {
     }
 
     private static class DigestAccumulator implements MessageAccumulator {
-        private final EdDSAParameters.Digester digester;
+        private final MessageDigest digester;
 
-        DigestAccumulator(EdDSAParameters.Digester digester) {
+        DigestAccumulator(MessageDigest digester) {
             this.digester = digester;
         }
 

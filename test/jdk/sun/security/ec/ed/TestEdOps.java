@@ -40,8 +40,6 @@ import java.security.spec.*;
 import java.util.Arrays;
 import java.util.HexFormat;
 
-import sun.security.provider.SHAKE256;
-
 public class TestEdOps {
 
     public static void main(String[] args) throws Exception {
@@ -52,7 +50,7 @@ public class TestEdOps {
         testInvalidPoints();
     }
 
-    private static void testShake() {
+    private static void testShake() throws Exception {
 
         runShakeTest(32, "765db6ab3af389b8c775c8eb99fe72",
         "ccb6564a655c94d714f80b9f8de9e2610c4478778eac1b9256237dbf90e50581");
@@ -70,10 +68,12 @@ public class TestEdOps {
         System.out.println("SHAKE256 tests passed");
     }
 
-    private static void runShakeTest(int outputLen, String msg, String digest) {
+    private static void runShakeTest(int outputLen, String msg, String digest)
+            throws Exception {
         byte[] msgBytes = HexFormat.of().parseHex(msg);
         byte[] digestBytes = HexFormat.of().parseHex(digest);
-        SHAKE256 md = new SHAKE256(outputLen);
+        MessageDigest md = MessageDigest.getInstance("SHAKE256-LEN",
+                new IntegerParameterSpec(outputLen * 8));
         md.update(msgBytes, 0, msgBytes.length);
         byte[] computed = md.digest();
         if (!Arrays.equals(digestBytes, computed)) {

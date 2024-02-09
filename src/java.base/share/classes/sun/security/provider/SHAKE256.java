@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,63 @@
  */
 package sun.security.provider;
 
+import java.security.AlgorithmParameters;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.NoSuchAlgorithmException;
+import java.security.ProviderException;
+import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.IntegerParameterSpec;
+import java.security.spec.InvalidParameterSpecException;
+
 /*
  * The SHAKE256 extendable output function.
  */
-public final class SHAKE256 extends SHA3 {
+public sealed class SHAKE256 extends SHA3 {
+    public static final class WithoutLen extends SHAKE256 {
+        public WithoutLen() {
+            super("SHAKE256-LEN", 64);
+        }
+    }
+
+    public static final class WithLen extends SHAKE256 {
+        public WithLen(AlgorithmParameterSpec p)
+                throws InvalidAlgorithmParameterException {
+            super("SHAKE256-LEN", n(p));
+        }
+
+        private static int n(AlgorithmParameterSpec p)
+                throws InvalidAlgorithmParameterException {
+            if (p == null) {
+                throw new InvalidAlgorithmParameterException("Parameters required");
+            } else if (p instanceof IntegerParameterSpec is) {
+                int bitsLen = is.n();
+                if (bitsLen <= 0 || (bitsLen & 0x07) != 0) {
+                    throw new InvalidAlgorithmParameterException("Invalid length: " + bitsLen);
+                }
+                return bitsLen / 8;
+            } else {
+                throw new InvalidAlgorithmParameterException("Unknown spec: " + p);
+            }
+        }
+
+        @Override
+        protected AlgorithmParameters engineGetParameters() {
+            try {
+                AlgorithmParameters p = AlgorithmParameters.getInstance("SHAKE256-LEN");
+                p.init(new IntegerParameterSpec(engineGetDigestLength() * 8));
+                return p;
+            } catch (NoSuchAlgorithmException | InvalidParameterSpecException e) {
+                throw new ProviderException(e);
+            }
+        }
+    }
+
     public SHAKE256(int d) {
-        super("SHAKE256", d, (byte) 0x1F, 64);
+        this("SHAKE256", d);
+    }
+
+    public SHAKE256(String name, int d) {
+        super(name, d, (byte) 0x1F, 64);
     }
 
     public void update(byte in) {
