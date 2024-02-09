@@ -93,7 +93,7 @@ public class TestJTabbedPaneOpaqueColor {
         PassFailJFrame.addTestWindow(frame);
         PassFailJFrame.positionTestWindow(
                 frame, PassFailJFrame.Position.HORIZONTAL);
-        for( int i = 0; i < NUM_TABS; ++i) {
+        for (int i = 0; i < NUM_TABS; ++i) {
             tabPane.addTab("Tab " + i , new JLabel("Content Area"));
         }
         JPanel panel = new JPanel(new BorderLayout());
