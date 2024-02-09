@@ -26,6 +26,7 @@
  * @bug 8322854
  * @summary Check that the RAM optimization works when there is a memory loop.
  * @library /test/lib /
+ * @requires vm.compiler2.enabled
  * @run main/othervm -XX:CompileCommand=compileonly,*TestReduceAllocationAndMemoryLoop*::test*
  *                   -XX:-TieredCompilation -Xbatch
  *                   compiler.c2.TestReduceAllocationAndMemoryLoop
