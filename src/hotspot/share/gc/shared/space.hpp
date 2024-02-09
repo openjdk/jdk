@@ -146,10 +146,6 @@ class Space: public CHeapObj<mtGC> {
   // of the active area of the heap.
   virtual size_t block_size(const HeapWord* addr) const = 0;
 
-  // Requires "addr" to be the start of a block, and returns "TRUE" iff
-  // the block is an object.
-  virtual bool block_is_obj(const HeapWord* addr) const = 0;
-
   // Allocation (return null if full).  Assumes the caller has established
   // mutually exclusive access to the space.
   virtual HeapWord* allocate(size_t word_size) = 0;
@@ -271,8 +267,6 @@ protected:
   // Very inefficient implementation.
   HeapWord* block_start_const(const void* p) const override;
   size_t block_size(const HeapWord* p) const override;
-  // If a block is in the allocated area, it is an object.
-  bool block_is_obj(const HeapWord* p) const override { return p < top(); }
 
   // Addresses for inlined allocation
   HeapWord** top_addr() { return &_top; }
