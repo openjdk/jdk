@@ -3998,8 +3998,6 @@ void os::win32::initialize_windows_version() {
   TCHAR kernel32_path[MAX_PATH];
   UINT len, ret;
 
-  bool is_workstation = !IsWindowsServer();
-
   // Get the full path to \Windows\System32\kernel32.dll and use that for
   // determining what version of Windows we're running on.
   len = MAX_PATH - (UINT)strlen("\\kernel32.dll") - 1;
