@@ -844,7 +844,8 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
 
   // If any phase is randomized for stress testing, seed random number
   // generation and log the seed for repeatability.
-  if (StressLCM || StressGCM || StressIGVN || StressCCP || StressIncrementalInlining) {
+  if (StressLCM || StressGCM || StressIGVN || StressCCP ||
+      StressIncrementalInlining || StressMacroExpansion) {
     if (FLAG_IS_DEFAULT(StressSeed) || (FLAG_IS_ERGO(StressSeed) && directive->RepeatCompilationOption)) {
       _stress_seed = static_cast<uint>(Ticks::now().nanoseconds());
       FLAG_SET_ERGO(StressSeed, _stress_seed);
@@ -2451,12 +2452,13 @@ void Compile::Optimize() {
 
   {
     TracePhase tp("macroExpand", &timers[_t_macroExpand]);
+    print_method(PHASE_BEFORE_MACRO_EXPANSION, 3);
     PhaseMacroExpand  mex(igvn);
     if (mex.expand_macro_nodes()) {
       assert(failing(), "must bail out w/ explicit message");
       return;
     }
-    print_method(PHASE_MACRO_EXPANSION, 2);
+    print_method(PHASE_AFTER_MACRO_EXPANSION, 2);
   }
 
   {
@@ -5121,6 +5123,16 @@ void CloneMap::dump(node_idx_t key, outputStream* st) const {
   }
 }
 
+void Compile::shuffle_macro_nodes() {
+  if (_macro_nodes.length() < 2) {
+    return;
+  }
+  for (uint i = _macro_nodes.length() - 1; i >= 1; i--) {
+    uint j = C->random() % (i + 1);
+    swap(_macro_nodes.at(i), _macro_nodes.at(j));
+  }
+}
+
 // Move Allocate nodes to the start of the list
 void Compile::sort_macro_nodes() {
   int count = macro_count();
@@ -5140,7 +5152,7 @@ void Compile::sort_macro_nodes() {
 
 void Compile::print_method(CompilerPhaseType cpt, int level, Node* n) {
   if (failing()) { return; }
-  EventCompilerPhase event;
+  EventCompilerPhase event(UNTIMED);
   if (event.should_commit()) {
     CompilerEvent::PhaseEvent::post(event, C->_latest_stage_start_counter, cpt, C->_compile_id, level);
   }
@@ -5179,7 +5191,7 @@ void Compile::begin_method() {
 
 // Only used from CompileWrapper
 void Compile::end_method() {
-  EventCompilerPhase event;
+  EventCompilerPhase event(UNTIMED);
   if (event.should_commit()) {
     CompilerEvent::PhaseEvent::post(event, C->_latest_stage_start_counter, PHASE_END, C->_compile_id, 1);
   }

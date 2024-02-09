@@ -26,7 +26,7 @@
 #include <atomic>
 #include "jni_tools.h"
 #include "jvmti_tools.h"
-#include "Injector.h"
+#include "Injector.hpp"
 #include "agent_common.h"
 
 #define PASSED 0
