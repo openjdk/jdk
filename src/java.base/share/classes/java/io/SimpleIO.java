@@ -126,8 +126,8 @@ public final class SimpleIO {
         if (console != null) {
             return console.readLine(prompt);
         } else {
-            // read from System.in, but don't prompt on System.out
             try {
+                System.out.print(prompt);
                 return stdinReader.readLine();
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
@@ -139,9 +139,7 @@ public final class SimpleIO {
     private static final BufferedReader stdinReader;
 
     static {
-        var con = System.console();
-        // if a console is not connected to a terminal, we don't use it
-        console = con != null && con.isTerminal() ? con : null;
+        console = System.console();
         if (console == null) {
             Charset charset;
             try {
