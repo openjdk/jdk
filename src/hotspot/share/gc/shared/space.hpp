@@ -141,12 +141,6 @@ class Space: public CHeapObj<mtGC> {
   // object or a non-object.  If "p" is not in the space, return null.
   virtual HeapWord* block_start_const(const void* p) const = 0;
 
-  // The non-const version may have benevolent side effects on the data
-  // structure supporting these calls, possibly speeding up future calls.
-  // The default implementation, however, is simply to call the const
-  // version.
-  HeapWord* block_start(const void* p);
-
   // Requires "addr" to be the start of a chunk, and returns its size.
   // "addr + size" is required to be the start of a new chunk, or the end
   // of the active area of the heap.
@@ -155,10 +149,6 @@ class Space: public CHeapObj<mtGC> {
   // Requires "addr" to be the start of a block, and returns "TRUE" iff
   // the block is an object.
   virtual bool block_is_obj(const HeapWord* addr) const = 0;
-
-  // Requires "addr" to be the start of a block, and returns "TRUE" iff
-  // the block is an object and the object is alive.
-  bool obj_is_alive(const HeapWord* addr) const;
 
   // Allocation (return null if full).  Assumes the caller has established
   // mutually exclusive access to the space.
