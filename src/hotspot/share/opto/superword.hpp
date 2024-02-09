@@ -506,12 +506,14 @@ private:
   int adjacent_profit(Node* s1, Node* s2);
   int pack_cost(int ct);
   int unpack_cost(int ct);
+
   // Combine packs A and B with A.last == B.first into A.first..,A.last,B.second,..B.last
   void combine_packs();
 
-  // TODO
+  // Split packs that are too long
   void split_packs_for_max_vector_size();
 
+  // Filter out packs with various filter predicates
   template <typename FilterPredicate>
   void filter_packs(const char* filter_name,
                     const char* error_message,

@@ -1609,6 +1609,15 @@ void SuperWord::split_packs_for_max_vector_size() {
     // remaining new_pack
     if (new_pack->size() > 1) {
       _packset.append(new_pack);
+    } else {
+#ifndef PRODUCT
+      if (is_trace_superword_rejections()) {
+        tty->cr();
+        tty->print_cr("WARNING: Node dropped out of odd size pack:");
+        new_pack->at(0)->dump();
+        print_pack(pack);
+      }
+#endif
     }
     // truncate
     while (pack->size() > max_vlen) {
