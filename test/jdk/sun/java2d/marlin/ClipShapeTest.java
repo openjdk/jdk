@@ -84,8 +84,10 @@ import javax.imageio.stream.ImageOutputStream;
  * Verifies that Marlin rendering generates the same images with and without
  * clipping optimization with all possible stroke (cap/join) and/or dashes or
  * fill modes (EO rules) for paths made of either 9 lines, 4 quads, 2 cubics
- * (random)
- * Note: Use the argument -slow to run more intensive tests (too much time)
+ * (random).
+ * <p>
+ * Note: Use the argument {@code -slow} to run more intensive tests (too much
+ * time).
  */
 public final class ClipShapeTest {
 
