@@ -1077,21 +1077,6 @@ public class JavacTrees extends DocTrees {
             public boolean isDeprecated() {
                 return false;
             }
-
-            private String info(FileObject fo) {
-                try {
-                    var text = fo.getCharContent(true).toString();
-                    int MAX_LENGTH = 48;
-                    String ELLIPSIS = "...";
-                    return fo.getName() + ": "
-                            + (text.length() < MAX_LENGTH ? text
-                                : text.substring(0, MAX_LENGTH / 2)
-                                    + ELLIPSIS
-                                    + text.substring(text.length() - MAX_LENGTH / 2));
-                } catch (IOException e) {
-                    return fo.getName() + ": " + e;
-                }
-            }
         };
 
         boolean isHtmlFile = jfo.getKind() == Kind.HTML;
@@ -1210,7 +1195,7 @@ public class JavacTrees extends DocTrees {
     }
 
     /**
-     * {@return the {@linkplain ParserFactory} parser factory}.
+     * {@return the {@linkplain ParserFactory} parser factory}
      * The factory can be used to create a {@link ReferenceParser}, to parse link references.
      */
     public ParserFactory getParserFactory() {
