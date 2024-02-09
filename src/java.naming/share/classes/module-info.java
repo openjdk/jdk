@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,10 @@
  *         <br> If this property is not specified, the default is to wait
  *         for the connection to be established or until the underlying
  *         network times out.
+ *         <br> If a custom socket factory is provided via property
+ *         {@code java.naming.ldap.factory.socket} and unconnected sockets
+ *         are not supported, the specified timeout is ignored
+ *         and the provider behaves as in no connection timeout was set.
  *     </li>
  *     <li>{@code com.sun.jndi.ldap.read.timeout}:
  *         <br>The value of this property is the string representation
