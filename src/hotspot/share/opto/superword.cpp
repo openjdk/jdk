@@ -1600,9 +1600,9 @@ void SuperWord::split_packs_for_max_vector_size() {
       Node* n = pack->at(j);
       // is new_pack full?
       if (new_pack->size() >= max_vlen) {
-        assert(is_power_of_2(new_pack->size()), "sanity");
+        assert(is_power_of_2(new_pack->size()), "sanity %d", new_pack->size());
         _packset.append(new_pack);
-        Node_List* new_pack = new Node_List();
+        new_pack = new Node_List();
       }
       new_pack->push(n);
     }
