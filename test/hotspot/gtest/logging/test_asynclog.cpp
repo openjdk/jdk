@@ -61,7 +61,7 @@ public:
   void test_asynclog_drop_messages() {
     // Write more messages than available in buffer.
     test_asynclog_ls(); // roughly 200 bytes.
-    const int msg_number = AsyncLogBufferSize / strlen(large_message);
+    const size_t msg_number = AsyncLogBufferSize / strlen(large_message);
     LogMessage(logging) lm;
     // + 5 to go past the buffer size, forcing it to drop the message.
     for (int i = 0; i < (msg_number + 5); i++) {
@@ -127,11 +127,11 @@ public:
     PlatformMonitor lock; // For statistics
     CircularStringBuffer::StatisticsMap map;
     CircularStringBuffer cb(map, lock, os::vm_page_size());
-    const int count = (cb.circular_mapping.size / (strlen(large_message)+1 + sizeof(CircularStringBuffer::Message))) - 1;
+    const size_t count = (cb.circular_mapping.size / (strlen(large_message)+1 + sizeof(CircularStringBuffer::Message))) - 1;
     stringStream ss;
     ss.print("file=%s", TestLogFileName);
     LogFileOutput out(ss.freeze());
-    for (int i = 0; i < count; i++) {
+    for (size_t i = 0; i < count; i++) {
       cb.enqueue_locked(large_message, strlen(large_message), &out, CircularStringBuffer::None);
     }
     unsigned int* missing = map.get(&out);
