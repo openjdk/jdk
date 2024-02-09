@@ -256,24 +256,24 @@ import java.util.Objects;
  *    <tr>
  *       <th scope="row" style="font-weight:normal" rowspan=6>{@code date}
  *       <th scope="row" style="font-weight:normal"><i>(none)</i>
- *       <td>{@link DateFormat#getDateInstance(int,Locale) DateFormat.getDateInstance}
- *       {@code (}{@link DateFormat#DEFAULT}{@code , getLocale())}
+ *       <td>{@link DateFormat#getDateInstance(int,Locale)
+ *       DateFormat.getDateInstance}{@code (}{@link DateFormat#DEFAULT}{@code , getLocale())}
  *    <tr>
  *       <th scope="row" style="font-weight:normal">{@code short}
- *       <td>{@link DateFormat#getDateInstance(int,Locale) DateFormat.getDateInstance}
- *       {@code (}{@link DateFormat#SHORT}{@code , getLocale())}
+ *       <td>{@link DateFormat#getDateInstance(int,Locale)
+ *       DateFormat.getDateInstance}{@code (}{@link DateFormat#SHORT}{@code , getLocale())}
  *    <tr>
  *       <th scope="row" style="font-weight:normal">{@code medium}
- *       <td>{@link DateFormat#getDateInstance(int,Locale) DateFormat.getDateInstance}
- *       {@code (}{@link DateFormat#MEDIUM}{@code , getLocale())}
+ *       <td>{@link DateFormat#getDateInstance(int,Locale)
+ *       DateFormat.getDateInstance}{@code (}{@link DateFormat#MEDIUM}{@code , getLocale())}
  *    <tr>
  *       <th scope="row" style="font-weight:normal">{@code long}
- *       <td>{@link DateFormat#getDateInstance(int,Locale) DateFormat.getDateInstance}
- *       {@code (}{@link DateFormat#LONG}{@code , getLocale())}
+ *       <td>{@link DateFormat#getDateInstance(int,Locale)
+ *       DateFormat.getDateInstance}{@code (}{@link DateFormat#LONG}{@code , getLocale())}
  *    <tr>
  *       <th scope="row" style="font-weight:normal">{@code full}
- *       <td>{@link DateFormat#getDateInstance(int,Locale) DateFormat.getDateInstance}
- *       {@code (}{@link DateFormat#FULL}{@code , getLocale())}
+ *       <td>{@link DateFormat#getDateInstance(int,Locale)
+ *       DateFormat.getDateInstance}{@code (}{@link DateFormat#FULL}{@code , getLocale())}
  *    <tr>
  *       <th scope="row" style="font-weight:normal"><i>SubformatPattern</i>
  *       <td>{@code new} {@link SimpleDateFormat#SimpleDateFormat(String,Locale)
@@ -281,24 +281,24 @@ import java.util.Objects;
  *    <tr>
  *       <th scope="row" style="font-weight:normal" rowspan=6>{@code time}
  *       <th scope="row" style="font-weight:normal"><i>(none)</i>
- *       <td>{@link DateFormat#getTimeInstance(int,Locale) DateFormat.getTimeInstance}
- *       {@code (}{@link DateFormat#DEFAULT}{@code , getLocale())}
+ *       <td>{@link DateFormat#getTimeInstance(int,Locale)
+ *       DateFormat.getTimeInstance}{@code (}{@link DateFormat#DEFAULT}{@code , getLocale())}
  *    <tr>
  *       <th scope="row" style="font-weight:normal">{@code short}
- *       <td>{@link DateFormat#getTimeInstance(int,Locale) DateFormat.getTimeInstance}
- *       {@code (}{@link DateFormat#SHORT}{@code , getLocale())}
+ *       <td>{@link DateFormat#getTimeInstance(int,Locale)
+ *       DateFormat.getTimeInstance}{@code (}{@link DateFormat#SHORT}{@code , getLocale())}
  *    <tr>
  *       <th scope="row" style="font-weight:normal">{@code medium}
- *       <td>{@link DateFormat#getTimeInstance(int,Locale) DateFormat.getTimeInstance}
- *       {@code (}{@link DateFormat#MEDIUM}{@code , getLocale())}
+ *       <td>{@link DateFormat#getTimeInstance(int,Locale)
+ *       DateFormat.getTimeInstance}{@code (}{@link DateFormat#MEDIUM}{@code , getLocale())}
  *    <tr>
  *       <th scope="row" style="font-weight:normal">{@code long}
- *       <td>{@link DateFormat#getTimeInstance(int,Locale) DateFormat.getTimeInstance}
- *       {@code (}{@link DateFormat#LONG}{@code , getLocale())}
+ *       <td>{@link DateFormat#getTimeInstance(int,Locale)
+ *       DateFormat.getTimeInstance}{@code (}{@link DateFormat#LONG}{@code , getLocale())}
  *    <tr>
  *       <th scope="row" style="font-weight:normal">{@code full}
- *       <td>{@link DateFormat#getTimeInstance(int,Locale) DateFormat.getTimeInstance}
- *       {@code (}{@link DateFormat#FULL}{@code , getLocale())}
+ *       <td>{@link DateFormat#getTimeInstance(int,Locale)
+ *       DateFormat.getTimeInstance}{@code (}{@link DateFormat#FULL}{@code , getLocale())}
  *    <tr>
  *       <th scope="row" style="font-weight:normal"><i>SubformatPattern</i>
  *       <td>{@code new} {@link SimpleDateFormat#SimpleDateFormat(String,Locale)
