@@ -640,11 +640,11 @@ void SuperWord::find_adjacent_refs() {
         if (ref1.offset() + element_size < ref2.offset()) { break; }
         assert(are_adjacent_refs(mem1, mem2),  "implied by offsets");
 
+        // Only allow nodes from same origin idx to be packed (CompileCommand Option Vectorize)
+        if (_do_vector_loop && !same_origin_idx(mem1, mem2)) { continue; }
+
         // TODO: maybe refactor?
         if (!stmts_can_pack(mem1, mem2)) { continue; }
-
-        // Only allow nodes from same origin idx to be packed?
-        if (_do_vector_loop && !same_origin_idx(mem1, mem2)) { continue; }
 
 #ifndef PRODUCT
         if (is_trace_superword_adjacent_memops()) {
@@ -660,7 +660,7 @@ void SuperWord::find_adjacent_refs() {
         if (!found) {
           found = true;
           add_pair(mem1, mem2);
-        } 
+        }
       }
     }
   }
@@ -698,7 +698,7 @@ MemReference SuperWord::get_mem_reference(MemNode* mem) const {
 #endif
     return MemReference::make_invalid();
   }
- 
+
   // TODO I dropped the get_vw_bytes_special / vw check here, is this ok?
 
   return MemReference(mem,
