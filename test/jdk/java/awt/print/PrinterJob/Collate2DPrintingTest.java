@@ -21,15 +21,6 @@
  * questions.
  */
 
-import javax.print.Doc;
-import javax.print.DocFlavor;
-import javax.print.DocPrintJob;
-import javax.print.PrintService;
-import javax.print.PrintServiceLookup;
-import javax.print.attribute.DocAttributeSet;
-import javax.print.attribute.HashPrintRequestAttributeSet;
-import javax.print.attribute.standard.Copies;
-import javax.print.attribute.standard.SheetCollate;
 import java.awt.Button;
 import java.awt.Frame;
 import java.awt.Graphics;
@@ -42,14 +33,25 @@ import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
 import java.io.InputStream;
 import java.io.Reader;
+import javax.print.Doc;
+import javax.print.DocFlavor;
+import javax.print.DocPrintJob;
+import javax.print.PrintService;
+import javax.print.PrintServiceLookup;
+import javax.print.attribute.DocAttributeSet;
+import javax.print.attribute.HashPrintRequestAttributeSet;
+import javax.print.attribute.standard.Copies;
+import javax.print.attribute.standard.SheetCollate;
+
+import jtreg.SkippedException;
 
 /*
  * @test
  * @bug 6362683 8012381
  * @summary Collation should work.
  * @key printer
- * @library /test/lib /java/awt/regtesthelpers
- * @build PassFailJFrame
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame jtreg.SkippedException
  * @run main/manual Collate2DPrintingTest
  */
 public class Collate2DPrintingTest
@@ -58,11 +60,10 @@ public class Collate2DPrintingTest
     Button print2D = new Button("2D Print");
     Button printMerlin = new Button("PrintService");
     PrinterJob pj = PrinterJob.getPrinterJob();
-    PrintService defService = null;
+    PrintService defService = PrintServiceLookup.lookupDefaultPrintService();
     HashPrintRequestAttributeSet prSet = new HashPrintRequestAttributeSet();
 
     public Collate2DPrintingTest() {
-
         Panel butPanel = new Panel();
         butPanel.add(print2D);
         butPanel.add(printMerlin);
@@ -70,15 +71,6 @@ public class Collate2DPrintingTest
         printMerlin.addActionListener(this);
         add("South", butPanel);
 
-        defService = PrintServiceLookup.lookupDefaultPrintService();
-        PrintService[] pservice;
-        if (defService == null) {
-            pservice = PrintServiceLookup.lookupPrintServices(null, null);
-            if (pservice.length == 0) {
-                throw new RuntimeException("No printer found.  TEST ABORTED");
-            }
-            defService = pservice[0];
-        }
         prSet.add(SheetCollate.COLLATED);
         prSet.add(new Copies(2));
         pj.setPrintable(Collate2DPrintingTest.this);
@@ -106,7 +98,8 @@ public class Collate2DPrintingTest
                 pj.print(this, prSet);
             }
         } catch (Exception e) {
-            PassFailJFrame.forceFail( ae.getActionCommand() + " test Failed");
+            PassFailJFrame.forceFail( "Test Failed");
+            e.printStackTrace();
         }
     }
 
@@ -115,8 +108,7 @@ public class Collate2DPrintingTest
     }
 
     public DocFlavor getDocFlavor() {
-        DocFlavor flavor = DocFlavor.SERVICE_FORMATTED.PRINTABLE;
-        return flavor;
+        return DocFlavor.SERVICE_FORMATTED.PRINTABLE;
     }
 
     public Object getPrintData() {
@@ -137,10 +129,14 @@ public class Collate2DPrintingTest
             "\n" +
             "Click on the 'PrintService', should get a print from default printer\n" +
             "\n" +
-            "If you get only one copy or non 'Collated' prints from any of the above case, " +
+            "If you get only one copy or non 'Collated' prints from any of the above cases, " +
             "test failed";
 
     public static void main(String[] args) throws Exception {
+
+        if (PrinterJob.lookupPrintServices().length == 0) {
+            throw new SkippedException("Printer not configured or available.");
+        }
 
         PassFailJFrame.builder()
                 .instructions(INSTRUCTIONS)

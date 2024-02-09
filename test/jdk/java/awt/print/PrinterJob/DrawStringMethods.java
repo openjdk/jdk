@@ -40,7 +40,7 @@ import jtreg.SkippedException;
  * @bug 4185019
  * @key printer
  * @summary Confirm that all of the drawString methods on Graphics2D
- * work for printer graphics objects.
+ *          work for printer graphics objects.
  * @library /test/lib /java/awt/regtesthelpers
  * @build PassFailJFrame jtreg.SkippedException
  * @run main/manual DrawStringMethods

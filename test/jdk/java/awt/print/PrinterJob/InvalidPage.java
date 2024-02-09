@@ -67,6 +67,7 @@ public class InvalidPage extends Frame implements Printable {
                     pJob.print();
                 } catch (PrinterException pe) {
                     PassFailJFrame.forceFail("Test Failed");
+                    pe.printStackTrace();
                 }
             }
         });

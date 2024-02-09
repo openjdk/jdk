@@ -48,7 +48,7 @@ import jtreg.SkippedException;
  */
 public class DrawImage {
 
-    protected static final int objectBorder = 15;
+    private static final int objectBorder = 15;
 
     private final BufferedImage image;
 
@@ -60,8 +60,8 @@ public class DrawImage {
         pageFormat = pj.defaultPage();
     }
 
-    protected int printImage(Graphics g, PageFormat pf, int pageIndex) {
-        if (pageIndex == 0) {
+    private int printImage(Graphics g, PageFormat pf, int pageIndex) {
+        if (pageIndex > 0) {
             return Printable.NO_SUCH_PAGE;
         }
         Graphics2D g2D = (Graphics2D) g;
@@ -75,8 +75,8 @@ public class DrawImage {
         g2D.setClip(x, y, paperW, paperH);
 
         // make slightly smaller (25) than max possible width
-        float scaleFactor = ((float) ((paperW - 25) - objectBorder -
-                objectBorder) / (float) (image.getWidth()));
+        float scaleFactor = ((float) ((paperW - 25) - objectBorder - objectBorder)
+                                   / (float) (image.getWidth()));
 
         BufferedImageOp scaleOp = new RescaleOp(scaleFactor, 0, null);
         g2D.drawImage(image, scaleOp, x + objectBorder, y + objectBorder);
@@ -85,12 +85,12 @@ public class DrawImage {
     }
 
     public void print() throws PrinterException {
-            final PrinterJob pj = PrinterJob.getPrinterJob();
-            pj.setJobName("Print Image");
-            pj.setPrintable(this::printImage);
-            if (pj.printDialog()) {
-                pj.print();
-            }
+        final PrinterJob pj = PrinterJob.getPrinterJob();
+        pj.setJobName("Print Image");
+        pj.setPrintable(this::printImage);
+        if (pj.printDialog()) {
+            pj.print();
+        }
     }
 
     private static final String INSTRUCTIONS =
@@ -124,11 +124,11 @@ public class DrawImage {
     public static BufferedImage prepareFrontImage() {
         // build my own test images
         BufferedImage result = new BufferedImage(400, 200,
-                BufferedImage.TYPE_BYTE_GRAY);
+                                   BufferedImage.TYPE_BYTE_GRAY);
 
         Graphics2D g2D = (Graphics2D) result.getGraphics();
         g2D.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-                RenderingHints.VALUE_ANTIALIAS_OFF);
+                             RenderingHints.VALUE_ANTIALIAS_OFF);
         int w = result.getWidth(), h = result.getHeight();
 
         g2D.setColor(Color.gray);
@@ -136,8 +136,8 @@ public class DrawImage {
 
         g2D.setColor(Color.white);
 
-        AffineTransform originXform = AffineTransform.getTranslateInstance(w /
-                5.0, h / 5.0);
+        AffineTransform originXform = AffineTransform.getTranslateInstance(
+                w / 5.0, h / 5.0);
         g2D.transform(originXform);
 
         g2D.drawString("Front Side", 20, h / 2);
