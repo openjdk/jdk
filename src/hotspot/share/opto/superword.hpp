@@ -493,7 +493,7 @@ private:
   void set_alignment(Node* s1, Node* s2, int align);
   int data_size(Node* s);
   // Extend packset by following use->def and def->use links from pack members.
-  void extend_packlist();
+  void extend_packset_with_more_pairs_by_following_use_and_def();
   int adjust_alignment_for_type_conversion(Node* s, Node* t, int align);
   // Extend the packset by visiting operand definitions of nodes in pack p
   bool follow_use_defs(Node_List* p);
@@ -508,10 +508,10 @@ private:
   int unpack_cost(int ct);
 
   // Combine packs A and B with A.last == B.first into A.first..,A.last,B.second,..B.last
-  void combine_packs();
+  void combine_pairs_to_longer_packs();
 
   // Split packs that are too long
-  void split_packs_for_max_vector_size();
+  void split_packs_longer_than_max_vector_size();
 
   // Filter out packs with various filter predicates
   template <typename FilterPredicate>

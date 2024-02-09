@@ -570,13 +570,13 @@ bool SuperWord::SLP_extract() {
     return false;
   }
 
-  extend_packlist();
+  extend_packset_with_more_pairs_by_following_use_and_def();
 
   // Combine pairs to longer packs
-  combine_packs();
+  combine_pairs_to_longer_packs();
 
   // Split packs if they are too long
-  split_packs_for_max_vector_size();
+  split_packs_longer_than_max_vector_size();
 
   // Now we only remove packs:
   construct_my_pack_map();
@@ -1228,9 +1228,8 @@ int SuperWord::data_size(Node* s) {
   return bsize;
 }
 
-//------------------------------extend_packlist---------------------------
 // Extend packset by following use->def and def->use links from pack members.
-void SuperWord::extend_packlist() {
+void SuperWord::extend_packset_with_more_pairs_by_following_use_and_def() {
   bool changed;
   do {
     packset_sort(_packset.length());
@@ -1251,7 +1250,7 @@ void SuperWord::extend_packlist() {
 
 #ifndef PRODUCT
   if (is_trace_superword_packset()) {
-    tty->print_cr("\nAfter Superword::extend_packlist");
+    tty->print_cr("\nAfter Superword::extend_packset_with_more_pairs_by_following_use_and_def");
     print_packset();
   }
 #endif
@@ -1537,13 +1536,13 @@ int SuperWord::adjacent_profit(Node* s1, Node* s2) { return 2; }
 int SuperWord::pack_cost(int ct)   { return ct; }
 int SuperWord::unpack_cost(int ct) { return ct; }
 
-//------------------------------combine_packs---------------------------
 // Combine packs A and B with A.last == B.first into A.first..,A.last,B.second,..B.last
-void SuperWord::combine_packs() {
-  assert(!_packset.is_empty(), "packset not empty");
+void SuperWord::combine_pairs_to_longer_packs() {
 #ifdef ASSERT
+  assert(!_packset.is_empty(), "packset not empty");
   for (int i = 0; i < _packset.length(); i++) {
     assert(_packset.at(i) != nullptr, "no nullptr in packset");
+    assert(_packset.at(i)->size() == 2, "all packs are pairs");
   }
 #endif
 
@@ -1576,14 +1575,15 @@ void SuperWord::combine_packs() {
 
 #ifndef PRODUCT
   if (is_trace_superword_packset()) {
-    tty->print_cr("\nAfter Superword::combine_packs");
+    tty->print_cr("\nAfter Superword::combine_pairs_to_longer_packs");
     print_packset();
   }
 #endif
 }
 
-void SuperWord::split_packs_for_max_vector_size() {
+void SuperWord::split_packs_longer_than_max_vector_size() {
   assert(!_packset.is_empty(), "packset not empty");
+  DEBUG_ONLY( int old_packset_length = _packset.length(); )
 
   for (int i = 0; i < _packset.length(); i++) {
     Node_List* pack = _packset.at(i);
@@ -1625,11 +1625,11 @@ void SuperWord::split_packs_for_max_vector_size() {
     }
   }
 
-  assert(!_packset.is_empty(), "we only increased the number of packs");
+  assert(old_packset_length <= _packset.length(), "we only increased the number of packs");
 
 #ifndef PRODUCT
   if (is_trace_superword_packset()) {
-    tty->print_cr("\nAfter Superword::split_packs_for_max_vector_size");
+    tty->print_cr("\nAfter Superword::split_packs_longer_than_max_vector_size");
     print_packset();
   }
 #endif
@@ -1837,7 +1837,7 @@ void SuperWord::compress_packset() {
 
 //-----------------------------construct_my_pack_map--------------------------
 // Construct the map from nodes to packs.  Only valid after the
-// point where a node is only in one pack (after combine_packs).
+// point where a node is only in one pack (after combine_pairs_to_longer_packs).
 void SuperWord::construct_my_pack_map() {
   for (int i = 0; i < _packset.length(); i++) {
     Node_List* p = _packset.at(i);
