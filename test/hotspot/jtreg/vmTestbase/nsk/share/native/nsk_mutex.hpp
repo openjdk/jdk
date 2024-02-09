@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,29 +21,37 @@
  * questions.
  */
 
-package compiler.lib.ir_framework;
+#ifndef NSK_MUTEX_HPP
+#define NSK_MUTEX_HPP
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
+extern "C" {
 
 /**
- * This annotation is used for test methods (see {@link Test}) to specify what values should be passed as arguments.
- * One can either specify the individual arguments with values (see {@link Argument}), or use
- * a setup method (see {@link Setup}) to define more complex arguments and/or even set fields values.
- * This annotation can only be applied to a <b>normal test</b>.
- *
- * @see Argument
- * @see Test
- * @see Check
+ * Structure to hold mutex data (the content is platform-specific)
  */
-@Retention(RetentionPolicy.RUNTIME)
-public @interface Arguments {
-    /**
-     * Get the argument values.
-     */
-    Argument[] values() default {};
-    /**
-     * Get the setup method name.
-     */
-    String setup() default "";
+typedef struct _MUTEX MUTEX;
+
+/**
+ * Create a mutex
+ */
+MUTEX* MUTEX_create();
+
+/**
+ * Acquire a mutex
+ */
+void MUTEX_acquire(MUTEX* mutex);
+
+/**
+ * Release a mutex
+ */
+void MUTEX_release(MUTEX* mutex);
+
+/**
+ * Destroy a mutex
+ */
+void MUTEX_destroy(MUTEX* mutex);
+
+
 }
+
+#endif

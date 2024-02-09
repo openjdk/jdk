@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,27 +23,19 @@
 
 package compiler.lib.ir_framework;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-
 /**
- * This annotation is used for test methods (see {@link Test}) to specify what values should be passed as arguments.
- * One can either specify the individual arguments with values (see {@link Argument}), or use
- * a setup method (see {@link Setup}) to define more complex arguments and/or even set fields values.
- * This annotation can only be applied to a <b>normal test</b>.
+ * Info optionally passed to {@link Setup} annotated methods.
  *
- * @see Argument
- * @see Test
- * @see Check
+ * @see Setup
  */
-@Retention(RetentionPolicy.RUNTIME)
-public @interface Arguments {
+public record SetupInfo(int invocationCounter) {
+
     /**
-     * Get the argument values.
+     * Get the invocation counter, which increments with every invocation of the setup method. It allows the creation
+     * of deterministically different inputs to the test method for every invocation.
      */
-    Argument[] values() default {};
-    /**
-     * Get the setup method name.
-     */
-    String setup() default "";
+    @Override
+    public int invocationCounter() {
+        return invocationCounter;
+    }
 }

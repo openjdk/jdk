@@ -372,10 +372,6 @@ public:
   void oop_since_save_marks_iterate(OopClosureType1* cur,
                                     OopClosureType2* older);
 
-  void young_process_roots(OopClosure* root_closure,
-                           OopIterateClosure* old_gen_closure,
-                           CLDClosure* cld_closure);
-
   void safepoint_synchronize_begin() override;
   void safepoint_synchronize_end() override;
 
