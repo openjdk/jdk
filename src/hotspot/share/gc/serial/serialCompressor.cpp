@@ -23,6 +23,7 @@
 #include "gc/shared/weakProcessor.hpp"
 #include "memory/iterator.hpp"
 #include "memory/universe.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/access.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "utilities/copy.hpp"
@@ -467,6 +468,7 @@ SerialCompressor::SerialCompressor(STWGCTimer* gc_timer):
   MemRegion reserved = heap->reserved_region();
   size_t bitmap_size = MarkBitMap::compute_size(reserved.byte_size());
   ReservedSpace bitmap(bitmap_size);
+  MemTracker::record_virtual_memory_type(bitmap.base(), mtGC);
   _mark_bitmap_region = MemRegion((HeapWord*) bitmap.base(), bitmap.size() / HeapWordSize);
   os::commit_memory_or_exit((char *)_mark_bitmap_region.start(), _mark_bitmap_region.byte_size(), false,
                             "Cannot commit bitmap memory");
