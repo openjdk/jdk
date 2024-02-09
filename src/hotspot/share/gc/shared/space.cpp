@@ -140,11 +140,6 @@ void ContiguousSpace::verify() const {
   guarantee(p == top(), "end of last object must match end of space");
 }
 
-bool Space::obj_is_alive(const HeapWord* p) const {
-  assert (block_is_obj(p), "The address should point to an object");
-  return true;
-}
-
 void ContiguousSpace::object_iterate(ObjectClosure* blk) {
   HeapWord* addr = bottom();
   while (addr < top()) {

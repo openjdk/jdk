@@ -27,6 +27,7 @@ package sun.jvm.hotspot.utilities;
 import sun.jvm.hotspot.code.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
+import sun.jvm.hotspot.gc.g1.*;
 import sun.jvm.hotspot.gc.serial.*;
 import sun.jvm.hotspot.gc.shared.*;
 import sun.jvm.hotspot.interpreter.*;
@@ -104,8 +105,7 @@ public class PointerFinder {
 
       // If we are using the SerialHeap, find out which generation the address is in
       if (heap instanceof SerialHeap) {
-        SerialHeap sh = (SerialHeap) heap;
-        loc.heap = heap;
+        SerialHeap sh = (SerialHeap)heap;
         for (int i = 0; i < sh.nGens(); i++) {
           Generation g = sh.getGen(i);
           if (g.isIn(a)) {
@@ -117,6 +117,18 @@ public class PointerFinder {
         if (Assert.ASSERTS_ENABLED) {
           Assert.that(loc.gen != null, "Should have found this address in a generation");
         }
+      }
+
+      // If we are using the G1CollectedHeap, find out which region the address is in
+      if (heap instanceof G1CollectedHeap) {
+        G1CollectedHeap g1 = (G1CollectedHeap)heap;
+        loc.hr = g1.heapRegionForAddress(a);
+        // We don't assert that loc.hr is not null like we do for the SerialHeap. This is
+        // because heap.isIn(a) can return true if the address is anywhere in G1's mapped
+        // memory, even if that area of memory is not in use by a G1 HeapRegion. So there
+        // may in fact be no HeapRegion for the address even though it is in the heap.
+        // Leaving loc.hr == null in this case will result in PointerFinder saying that
+        // the address is "In unknown section of Java the heap", which is what we want.
       }
 
       return loc;
