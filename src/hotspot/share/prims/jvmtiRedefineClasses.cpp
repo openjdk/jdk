@@ -1825,6 +1825,7 @@ jvmtiError VM_RedefineClasses::merge_cp_and_rewrite(
 
   // ensure merged constant pool size does not overflow u2
   if (merge_cp_length > 0xFFFF) {
+    log_warning(redefine, class, constantpool)("Merged constant pool overflow: %d entries", merge_cp_length);
     return JVMTI_ERROR_INTERNAL;
   }
 
