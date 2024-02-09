@@ -152,9 +152,12 @@ public:
   }
 
   GrowableArray<int>& node_idx_to_loop_body_idx() {
-    // Since this is a shared resource, we clear before every individual use.
-    _node_idx_to_loop_body_idx.clear();
     return _node_idx_to_loop_body_idx;
+  }
+
+  // Must be cleared before each AutoVectorization use
+  void clear() {
+    _node_idx_to_loop_body_idx.clear();
   }
 
 private:
