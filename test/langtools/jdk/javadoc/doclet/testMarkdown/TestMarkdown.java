@@ -35,6 +35,7 @@ import javadoc.tester.JavadocTester;
 import toolbox.ToolBox;
 
 import java.nio.file.Path;
+import java.util.List;
 
 public class TestMarkdown extends JavadocTester {
 
@@ -1160,7 +1161,7 @@ public class TestMarkdown extends JavadocTester {
                          * First sentence. Second sentence.
                          */
                          @Deprecated
-                         public void annoNoTag() { }
+                         public void anno_noTag() { }
                         /**
                          * First sentence. Second sentence.
                          * @deprecated deprecated-text
@@ -1197,45 +1198,42 @@ public class TestMarkdown extends JavadocTester {
 
         // Note: javadoc does not generate warnings about any mismatch
         // between @Deprecated annotations and @deprecated tags:
-        // the mismatch is detected and reported by javac Attr phase.
+        // the mismatch is detected and reported by javac Attr phase,
+        // when enabled by -Xlint:dep-ann.
 
-        // in the following checks we check from the signature,
-        // beginning at the name, through to the end of the main description.
+        // the output for these two files should be the same, except where it is not
+        for (var f : List.of("p/Control.html", "p/MarkdownComments.html")) {
+            // in the following checks we check from the signature,
+            // beginning at the name, through to the end of the main description.
+            checkOutput(f, true,
+                    """
+                        <span class="element-name">anno_noTag</span>()</div>
+                        <div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>
+                        <div class="block">First sentence. Second sentence.</div>""",
 
-        checkOutput("p/Control.html", true,
-                """
-                    <span class="element-name">annoNoTag</span>()</div>
-                    <div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>
-                    <div class="block">First sentence. Second sentence.</div>""",
-                """
-                    <span class="element-name">noAnno_tag</span>()</div>
-                    <div class="deprecation-block"><span class="deprecated-label">Deprecated.</span>
-                    <div class="deprecation-comment">deprecated-text</div>
-                    </div>
-                    <div class="block">First sentence. Second sentence.</div>""",
-                """
-                    <span class="element-name">anno_tag</span>()</div>
-                    <div class="deprecation-block"><span class="deprecated-label">Deprecated.</span>
-                    <div class="deprecation-comment">deprecated-text</div>
-                    </div>
-                    <div class="block">First sentence. Second sentence.</div>""");
+                    switch (f) {
+                        // @deprecated but no annotation in a traditional comment implies deprecation
+                        case "p/Control.html" -> """
+                            <span class="element-name">noAnno_tag</span>()</div>
+                            <div class="deprecation-block"><span class="deprecated-label">Deprecated.</span>
+                            <div class="deprecation-comment">deprecated-text</div>
+                            </div>
+                            <div class="block">First sentence. Second sentence.</div>""";
 
-        checkOutput("p/MarkdownComments.html", true,
-                """
-                    <span class="element-name">anno_noTag</span>()</div>
-                    <div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>
-                    <div class="block">First sentence. Second sentence.</div>""",
-                // the following is the interesting case:
-                // with no @Deprecated annotation, any @deprecated tag is discarded
-                """
-                    <span class="element-name">noAnno_tag</span>()</div>
-                    <div class="block">First sentence. Second sentence.</div>""",
-                """
-                    <span class="element-name">anno_tag</span>()</div>
-                    <div class="deprecation-block"><span class="deprecated-label">Deprecated.</span>
-                    <div class="deprecation-comment">deprecated-text</div>
-                    </div>
-                    <div class="block">First sentence. Second sentence.</div>""");
+                        // @deprecated but no annotation in a Markdown comment does not imply deprecation
+                        case "p/MarkdownComments.html" -> """
+                            <span class="element-name">noAnno_tag</span>()</div>
+                            <div class="block">First sentence. Second sentence.</div>""";
 
+                        default -> throw new Error();
+                    },
+
+                    """
+                        <span class="element-name">anno_tag</span>()</div>
+                        <div class="deprecation-block"><span class="deprecated-label">Deprecated.</span>
+                        <div class="deprecation-comment">deprecated-text</div>
+                        </div>
+                        <div class="block">First sentence. Second sentence.</div>""");
+        }
     }
 }
