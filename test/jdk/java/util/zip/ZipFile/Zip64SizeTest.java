@@ -135,7 +135,13 @@ public class Zip64SizeTest {
 
     /**
      * Update the CEN entry of the "first" entry to use ZIP64 format for the
-     * 'uncompressed size' field
+     * 'uncompressed size' field. The updated extra field will have the following
+     * structure:
+     *
+     * 00B4 Extra ID #0001        0001 'ZIP64'
+     * 00B6   Length              0008
+     * 00B8   Uncompressed Size   0000000000000005
+     *
      * @param zip the ZIP file to update to ZIP64
      */
     private static void updateCENHeaderToZip64(byte[] zip) {
