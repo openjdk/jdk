@@ -37,7 +37,7 @@ void CardTableRS::scan_old_to_young_refs(TenuredSpace* sp) {
   const MemRegion urasm = sp->used_region_at_save_marks();
   if (!urasm.is_empty()) {
     OldGenScanClosure cl(SerialHeap::heap()->young_gen());
-    non_clean_card_iterate(sp, urasm, &cl, this);
+    non_clean_card_iterate(sp, urasm, &cl);
   }
 }
 
@@ -175,7 +175,6 @@ CardTable::CardValue* CardTableRS::find_first_dirty_card(CardValue* const start_
 template<typename Func>
 CardTable::CardValue* CardTableRS::find_first_clean_card(CardValue* const start_card,
                                                          CardValue* const end_card,
-                                                         CardTableRS* ct,
                                                          Func& object_start) {
   for (CardValue* current_card = start_card; current_card < end_card; /* empty */) {
     if (is_dirty(current_card)) {
@@ -184,7 +183,7 @@ CardTable::CardValue* CardTableRS::find_first_clean_card(CardValue* const start_
     }
 
     // A potential candidate.
-    HeapWord* addr = ct->addr_for(current_card);
+    HeapWord* addr = addr_for(current_card);
     HeapWord* obj_start_addr = object_start(addr);
 
     if (obj_start_addr == addr) {
@@ -200,7 +199,7 @@ CardTable::CardValue* CardTableRS::find_first_clean_card(CardValue* const start_
     }
 
     // Final card occupied by obj.
-    CardValue* obj_final_card = ct->byte_for(obj_start_addr + obj->size() - 1);
+    CardValue* obj_final_card = byte_for(obj_start_addr + obj->size() - 1);
     if (is_clean(obj_final_card)) {
       return obj_final_card;
     }
@@ -235,8 +234,7 @@ static void scan_obj_with_limit(oop obj,
 
 void CardTableRS::non_clean_card_iterate(TenuredSpace* sp,
                                          MemRegion mr,
-                                         OldGenScanClosure* cl,
-                                         CardTableRS* ct) {
+                                         OldGenScanClosure* cl) {
   struct {
     HeapWord* start_addr;
     HeapWord* end_addr;
@@ -255,8 +253,8 @@ void CardTableRS::non_clean_card_iterate(TenuredSpace* sp,
     return result;
   };
 
-  CardValue* const start_card = ct->byte_for(mr.start());
-  CardValue* const end_card = ct->byte_for(mr.last()) + 1;
+  CardValue* const start_card = byte_for(mr.start());
+  CardValue* const end_card = byte_for(mr.last()) + 1;
 
   // if mr.end() is not card-aligned, that final card should not be cleared
   // because it can be annotated dirty due to old-to-young pointers in
@@ -271,16 +269,15 @@ void CardTableRS::non_clean_card_iterate(TenuredSpace* sp,
       return;
     }
 
-    HeapWord* const addr_l = ct->addr_for(dirty_l);
+    HeapWord* const addr_l = addr_for(dirty_l);
     HeapWord* obj_addr = object_start(addr_l);
 
     CardValue* const dirty_r = find_first_clean_card(dirty_l + 1,
                                                      end_card,
-                                                     ct,
                                                      object_start);
     assert(dirty_l < dirty_r, "inv");
     HeapWord* const addr_r = dirty_r == end_card ? mr.end()
-                                                 : ct->addr_for(dirty_r);
+                                                 : addr_for(dirty_r);
 
     clear_cards(MIN2(dirty_l, clear_limit_card),
                 MIN2(dirty_r, clear_limit_card));
