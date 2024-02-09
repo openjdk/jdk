@@ -38,17 +38,17 @@ CircularStringBuffer::CircularStringBuffer(StatisticsMap& map, PlatformMonitor& 
     tail(0),
     head(0) {}
 
-size_t CircularStringBuffer::used_locked() {
-  size_t h = head;
-  size_t t = tail;
+size_t CircularStringBuffer::used() {
+  size_t h = Atomic::load(&head);
+  size_t t = Atomic::load(&tail);
   if (h <= t) {
     return t - h;
   } else {
     return circular_mapping.size - (h - t);
   }
 }
-size_t CircularStringBuffer::unused_locked() {
-  return circular_mapping.size - used_locked();
+size_t CircularStringBuffer::unused() {
+  return circular_mapping.size - used();
 }
 
 size_t CircularStringBuffer::calc_mem(size_t sz) {
@@ -59,7 +59,7 @@ size_t CircularStringBuffer::calc_mem(size_t sz) {
 void CircularStringBuffer::enqueue_locked(const char* str, size_t size, LogFileStreamOutput* output,
                                    const LogDecorations decorations) {
   const size_t required_memory = calc_mem(size);
-  size_t unused = unused_locked();
+  size_t unused = this->unused();
   auto not_enough_memory = [&]() {
     return unused < (required_memory + sizeof(Message)*(output == nullptr ? 1 : 2));
   };
@@ -69,6 +69,7 @@ void CircularStringBuffer::enqueue_locked(const char* str, size_t size, LogFileS
     if (_should_stall) {
       while (not_enough_memory()) {
         _write_lock.wait(0);
+        unused = this->unused();
       }
     } else {
       _stats_lock.lock();

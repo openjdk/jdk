@@ -135,6 +135,7 @@ class LogConfiguration : public AllStatic {
   // Rotates all LogOutput
   static void rotate_all_outputs();
 
+  static AsyncMode async_mode() { return _async_mode; }
   static bool is_async_mode() { return _async_mode != AsyncMode::Off; }
   static void set_async_mode(AsyncMode mode) {
     _async_mode = mode;

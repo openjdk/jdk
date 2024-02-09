@@ -43,11 +43,11 @@ void AsyncLogWriter::enqueue(LogFileStreamOutput& output, LogMessageBuffer::Iter
   _circular_buffer.enqueue(output, msg_iterator);
 }
 
-AsyncLogWriter::AsyncLogWriter()
+AsyncLogWriter::AsyncLogWriter(bool should_stall)
 :
   _stats_lock(),
   _stats(),
-  _circular_buffer(_stats, _stats_lock, align_up(AsyncLogBufferSize, os::vm_page_size())),
+  _circular_buffer(_stats, _stats_lock, align_up(AsyncLogBufferSize, os::vm_page_size()), should_stall),
   _initialized(false) {
 
   log_info(logging)("AsyncLogBuffer estimates memory use: " SIZE_FORMAT " bytes", align_up(AsyncLogBufferSize, os::vm_page_size()));
@@ -137,7 +137,7 @@ void AsyncLogWriter::initialize() {
 
   assert(_instance == nullptr, "initialize() should only be invoked once.");
 
-  AsyncLogWriter* self = new AsyncLogWriter();
+  AsyncLogWriter* self = new AsyncLogWriter(LogConfiguration::async_mode() == LogConfiguration::AsyncMode::Stall);
   if (self->_initialized) {
     Atomic::release_store_fence(&AsyncLogWriter::_instance, self);
     // All readers of _instance after the fence see non-null.
