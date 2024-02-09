@@ -2839,6 +2839,21 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) {
       return false;
     }
   }
+
+  // Can we see if the data_size matches? But what about conversions?
+  // data_size
+  // longer_type_for_conversion also figures out in/out type
+  // maybe we can find the bt for input?
+  // Also: this means that byte <-> char conversions are not possible
+  //       especially sad for string inflate etc. But we probably would
+  //       need some sort of convert node, and have to insert it...
+  // TODO
+  Node* u0 = u_pk->at(0);
+  Node* d0 = d_pk->at(0);
+  if (data_size(u0) != data_size(d0)) {
+    return false;
+  }
+
   return true;
 }
 
