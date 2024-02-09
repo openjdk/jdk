@@ -1949,7 +1949,6 @@ void CompileBroker::compiler_thread_loop() {
       // CompileTaskWrapper also keeps the Method* from being deallocated if redefinition
       // occurs after fetching the compile task off the queue.
       CompileTaskWrapper ctw(task);
-      ResourceMark(task->resource_area());
       methodHandle method(thread, task->method());
 
       // Never compile a method if breakpoints are present in it
