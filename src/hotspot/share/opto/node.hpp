@@ -1704,8 +1704,8 @@ public:
   // Allow move constructor for && (eg. capture return of function)
   Unique_Node_List(Unique_Node_List&&) = default;
 
-  void remove( Node *n );
-  bool member( Node *n ) { return _in_worklist.test(n->_idx) != 0; }
+  void remove(Node *n);
+  bool member(Node *n) const { return _in_worklist.test(n->_idx) != 0; }
   VectorSet& member_set(){ return _in_worklist; }
 
   void push(Node* b) {

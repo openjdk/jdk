@@ -67,6 +67,9 @@ class GraphKit : public Phase {
   ciMethod*         _method;    // JVM Current Method
   BarrierSetC2*     _barrier_set;
 
+  const Type* scopedValueCache_type();
+  Node* scopedValueCache_helper();
+
  private:
   int               _sp;        // JVM Expression Stack Pointer; don't modify directly!
 
@@ -907,6 +910,8 @@ class GraphKit : public Phase {
   Node* box_vector(Node* in, const TypeInstPtr* vbox_type, BasicType elem_bt, int num_elem, bool deoptimize_on_exception = false);
   Node* unbox_vector(Node* in, const TypeInstPtr* vbox_type, BasicType elem_bt, int num_elem, bool shuffle_to_vector = false);
   Node* vector_shift_count(Node* cnt, int shift_op, BasicType bt, int num_elem);
+
+  Node* scopedValueCache();
 };
 
 // Helper class to support building of control flow branches. Upon

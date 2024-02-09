@@ -1088,7 +1088,7 @@ private:
   bool should_delay_inlining() { return AlwaysIncrementalInline || (StressIncrementalInlining && (random() % 2) == 0); }
   void inline_string_calls(bool parse_time);
   void inline_boxing_calls(PhaseIterGVN& igvn);
-  void inline_scoped_value_calls(PhaseIterGVN& igvn);
+  void inline_scoped_value_get_calls(PhaseIterGVN& igvn);
   bool optimize_loops(PhaseIterGVN& igvn, LoopOptsMode mode);
   void remove_root_to_sfpts_edges(PhaseIterGVN& igvn);
 

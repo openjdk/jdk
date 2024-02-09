@@ -219,7 +219,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
           } else if (should_delay_vector_reboxing_inlining(callee, jvms)) {
             return CallGenerator::for_vector_reboxing_late_inline(callee, cg);
           } else if (callee->intrinsic_id() == vmIntrinsics::_ScopedValue_get && IncrementalInline) {
-            return CallGenerator::for_scoped_value_late_inline(callee, cg, true);
+            return CallGenerator::for_scoped_value_get_late_inline(callee, cg, true);
           } else if (callee->intrinsic_id() == vmIntrinsics::_ScopedValue_slowGet && IncrementalInline) {
             return CallGenerator::for_late_inline(callee, cg);
           } else {

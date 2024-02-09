@@ -2039,7 +2039,7 @@ void Compile::inline_boxing_calls(PhaseIterGVN& igvn) {
   }
 }
 
-void Compile::inline_scoped_value_calls(PhaseIterGVN& igvn) {
+void Compile::inline_scoped_value_get_calls(PhaseIterGVN& igvn) {
   if (_scoped_value_late_inlines.is_empty()) {
     return;
   }
@@ -2052,6 +2052,7 @@ void Compile::inline_scoped_value_calls(PhaseIterGVN& igvn) {
 
   while (_scoped_value_late_inlines.length() > 0) {
     CallGenerator* cg = _scoped_value_late_inlines.pop();
+    assert(cg->method()->intrinsic_id() == vmIntrinsics::_ScopedValue_get, "only calls to ScopedValue.get() here");
     if (has_scoped_value_invalidate()) {
       // ScopedValue$Cache.invalidate() is called so pessimistically assume we can't optimize ScopedValue.get() and
       // enqueue the call for regular late inlining
@@ -2347,7 +2348,7 @@ void Compile::Optimize() {
 
   if (failing())  return;
 
-  inline_scoped_value_calls(igvn);
+    inline_scoped_value_get_calls(igvn);
 
   print_method(PHASE_INCREMENTAL_SCOPED_VALUE_INLINE, 2);
 

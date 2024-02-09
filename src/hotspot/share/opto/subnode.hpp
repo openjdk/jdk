@@ -303,10 +303,13 @@ class ScopedValueGetLoadFromCacheNode;
 class ScopedValueGetHitsInCacheNode : public CmpNode {
 private:
   // There are multiple checks involved, keep track of their profile data
-  struct {
+  struct ProfileData {
       float _cnt;
       float _prob;
-  } _profile_data[3];
+  };
+  ProfileData _cache_exists;
+  ProfileData _first_cache_probe_fails;
+  ProfileData _second_cache_probe_fails;
 
   virtual uint size_of() const { return sizeof(*this); }
   uint hash() const { return NO_HASH; }
@@ -320,8 +323,13 @@ public:
   };
 
   ScopedValueGetHitsInCacheNode(Compile* C, Node* c, Node* scoped_value_cache, Node* null_con, Node* mem, Node* sv,
-                                Node* index1, Node* index2) :
-          CmpNode(scoped_value_cache, null_con) {
+                                Node* index1, Node* index2, float cnt_cache_exists, float prob_cache_exists,
+                                float cnt_first_cache_probe_fails, float prob_first_cache_probe_fails,
+                                float cnt_second_cache_probe_fails, float prob_second_cache_probe_fails) :
+          CmpNode(scoped_value_cache, null_con),
+          _cache_exists({cnt_cache_exists, prob_cache_exists }),
+          _first_cache_probe_fails({cnt_first_cache_probe_fails, prob_first_cache_probe_fails }),
+          _second_cache_probe_fails({cnt_second_cache_probe_fails, prob_second_cache_probe_fails }) {
     init_class_id(Class_ScopedValueGetHitsInCache);
     init_req(0, c);
     assert(req() == ScopedValue, "wrong of inputs for ScopedValueGetHitsInCacheNode");
@@ -360,20 +368,28 @@ public:
     return CmpNode::bottom_type();
   }
 
-  void set_profile_data(uint i, float cnt, float prob) {
-    assert(i < sizeof(_profile_data) / sizeof(_profile_data[0]), "out of bounds");
-    _profile_data[i]._cnt = cnt;
-    _profile_data[i]._prob = prob;
+  float prob_cache_exists() const {
+    return _cache_exists._prob;
   }
 
- float prob(uint i) const {
-    assert(i < sizeof(_profile_data) / sizeof(_profile_data[0]), "out of bounds");
-    return _profile_data[i]._prob;
+  float cnt_cache_exists() const {
+    return _cache_exists._cnt;
   }
 
- float cnt(uint i) const {
-    assert(i < sizeof(_profile_data) / sizeof(_profile_data[0]), "out of bounds");
-    return _profile_data[i]._cnt;
+  float prob_first_cache_probe_fails() const {
+    return _first_cache_probe_fails._prob;
+  }
+
+  float cnt_first_cache_probe_fails() const {
+    return _first_cache_probe_fails._cnt;
+  }
+
+  float prob_second_cache_probe_fails() const {
+    return _second_cache_probe_fails._prob;
+  }
+
+  float cnt_second_cache_probe_fails() const {
+    return _second_cache_probe_fails._cnt;
   }
 
   IfProjNode* success_proj() const;

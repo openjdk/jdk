@@ -5035,8 +5035,8 @@ void PhaseIdealLoop::expand_sv_get_hits_in_cache_and_load_from_cache(ScopedValue
   Node* cache_not_null_bol = new BoolNode(cache_not_null_cmp, BoolTest::ne);
   _igvn.register_new_node_with_optimizer(cache_not_null_bol);
   set_subtree_ctrl(cache_not_null_bol, true);
-  IfNode* cache_not_null_iff = new IfNode(iff->in(0), cache_not_null_bol, hits_in_cache->prob(0),
-                                          hits_in_cache->cnt(0));
+  IfNode* cache_not_null_iff = new IfNode(iff->in(0), cache_not_null_bol, hits_in_cache->prob_cache_exists(),
+                                          hits_in_cache->cnt_cache_exists());
   IdealLoopTree* loop = get_loop(iff->in(0));
   register_control(cache_not_null_iff, loop, iff->in(0));
   Node* cache_not_null_proj = new IfTrueNode(cache_not_null_iff);
@@ -5100,10 +5100,10 @@ void PhaseIdealLoop::find_most_likely_cache_index(const ScopedValueGetHitsInCach
                                                   Node*& second_index, float& prob_cache_miss_at_first_if,
                                                   float& first_if_cnt, float& prob_cache_miss_at_second_if,
                                                   float& second_if_cnt) const {
-  prob_cache_miss_at_first_if= hits_in_cache->prob(1);
-  first_if_cnt= hits_in_cache->cnt(1);
-  prob_cache_miss_at_second_if= hits_in_cache->prob(2);
-  second_if_cnt= hits_in_cache->cnt(2);
+  prob_cache_miss_at_first_if= hits_in_cache->prob_first_cache_probe_fails();
+  first_if_cnt= hits_in_cache->cnt_first_cache_probe_fails();
+  prob_cache_miss_at_second_if= hits_in_cache->prob_second_cache_probe_fails();
+  second_if_cnt= hits_in_cache->cnt_second_cache_probe_fails();
   if (prob_cache_miss_at_first_if != PROB_UNKNOWN && prob_cache_miss_at_second_if != PROB_UNKNOWN) {
     float prob_cache_miss_at_first_index = prob_cache_miss_at_first_if;
     float prob_cache_hit_at_second_if = 1 - prob_cache_miss_at_second_if;

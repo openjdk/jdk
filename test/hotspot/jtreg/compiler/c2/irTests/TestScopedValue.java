@@ -27,6 +27,7 @@ import compiler.lib.ir_framework.*;
 import jdk.test.whitebox.WhiteBox;
 import java.lang.reflect.Method;
 import compiler.whitebox.CompilerWhiteBoxTest;
+import jdk.test.lib.Platform;
 
 import java.util.Arrays;
 import java.util.List;
@@ -53,13 +54,17 @@ public class TestScopedValue {
     private static volatile int volatileField;
 
     public static void main(String[] args) {
-        // Fast path tests need to be run one at a time to prevent profile pollution
-        List<String> tests = List.of("testFastPath1", "testFastPath2", "testFastPath3", "testFastPath4",
-                "testFastPath5", "testFastPath6", "testFastPath7", "testFastPath8", "testFastPath9",
-                "testFastPath10", "testFastPath11", "testFastPath12", "testFastPath13", "testFastPath14",
-                "testSlowPath1,testSlowPath2,testSlowPath3,testSlowPath4,testSlowPath5,testSlowPath6,testSlowPath7,testSlowPath8,testSlowPath9,testSlowPath10");
-        for (String test : tests) {
-            TestFramework.runWithFlags("-XX:+TieredCompilation", "--enable-preview", "-XX:CompileCommand=dontinline,java.lang.ScopedValue::slowGet", "-DTest=" + test);
+        if (Platform.isComp()) {
+            TestFramework.runWithFlags("--enable-preview");
+        } else {
+            // Fast path tests need to be run one at a time to prevent profile pollution
+            List<String> tests = List.of("testFastPath1", "testFastPath2", "testFastPath3", "testFastPath4",
+                    "testFastPath5", "testFastPath6", "testFastPath7", "testFastPath8", "testFastPath9",
+                    "testFastPath10", "testFastPath11", "testFastPath12", "testFastPath13", "testFastPath14", "testFastPath15",
+                    "testSlowPath1,testSlowPath2,testSlowPath3,testSlowPath4,testSlowPath5,testSlowPath6,testSlowPath7,testSlowPath8,testSlowPath9,testSlowPath10");
+            for (String test : tests) {
+                TestFramework.runWithFlags("-XX:+TieredCompilation", "--enable-preview", "-XX:CompileCommand=dontinline,java.lang.ScopedValue::slowGet", "-DTest=" + test);
+            }
         }
     }
 
@@ -458,6 +463,44 @@ public class TestScopedValue {
                     }
                 });
         forceCompilation("testFastPath14", double[].class, double[].class);
+    }
+
+    // Check uncommon trap is recorded at the right byte code (a cache miss) so on re-compilation,
+    // the cache null check still branches to an uncommon trap
+    @Test
+    @IR(counts = {IRNode.UNSTABLE_IF_TRAP, ">= 1" })
+    public static Object testFastPath15() {
+        return svObject.get();
+    }
+
+    @Run(test = "testFastPath15", mode = RunMode.STANDALONE)
+    private void testFastPath15Runner() throws Exception {
+        // Profile data will report a single of the 2 cache locations as a hit
+        runAndCompiler15();
+        // Force a cache miss
+        ScopedValue.where(svObject, new Object()).run(
+                () -> {
+                    testFastPath15();
+                });
+        Method m = TestScopedValue.class.getDeclaredMethod("testFastPath15");
+        if (tieredStopAtLevel == CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION &&
+                WHITE_BOX.isMethodCompiled(m) &&
+                WHITE_BOX.getMethodCompilationLevel(m) == CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION) {
+            throw new RuntimeException("should have deoptimized");
+        }
+        // Compile again
+        runAndCompiler15();
+    }
+
+    private static void runAndCompiler15() throws NoSuchMethodException {
+        ScopedValue.where(svObject, new Object()).run(
+                () -> {
+                    Object unused = svObject.get();
+                    for (int i = 0; i < 20_000; i++) {
+                        testFastPath15();
+                    }
+                });
+        forceCompilation("testFastPath15");
     }
 
     @Test

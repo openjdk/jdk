@@ -4250,3 +4250,32 @@ Node* GraphKit::make_constant_from_field(ciField* field, Node* obj) {
   }
   return nullptr;
 }
+
+const Type* GraphKit::scopedValueCache_type() {
+  ciKlass* objects_klass = ciObjArrayKlass::make(env()->Object_klass());
+  const TypeOopPtr* etype = TypeOopPtr::make_from_klass(env()->Object_klass());
+  const TypeAry* arr0 = TypeAry::make(etype, TypeInt::POS);
+
+  // Because we create the scopedValue cache lazily we have to make the
+  // type of the result BotPTR.
+  bool xk = etype->klass_is_exact();
+  const Type* objects_type = TypeAryPtr::make(TypePtr::BotPTR, arr0, objects_klass, xk, 0);
+  return objects_type;
+}
+
+Node* GraphKit::scopedValueCache_helper() {
+  Node* thread = _gvn.transform(new ThreadLocalNode());
+  Node* p = basic_plus_adr(top()/*!oop*/, thread, in_bytes(JavaThread::scopedValueCache_offset()));
+  // We cannot use immutable_memory() because we might flip onto a
+  // different carrier thread, at which point we'll need to use that
+  // carrier thread's cache.
+  // return _gvn.transform(LoadNode::make(_gvn, nullptr, immutable_memory(), p, p->bottom_type()->is_ptr(),
+  //       TypeRawPtr::NOTNULL, T_ADDRESS, MemNode::unordered));
+  return make_load(nullptr, p, p->bottom_type()->is_ptr(), T_ADDRESS, MemNode::unordered);
+}
+
+Node* GraphKit::scopedValueCache() {
+  Node* cache_obj_handle = scopedValueCache_helper();
+  const Type* objects_type = scopedValueCache_type();
+  return access_load(cache_obj_handle, objects_type, T_OBJECT, IN_NATIVE);
+}
