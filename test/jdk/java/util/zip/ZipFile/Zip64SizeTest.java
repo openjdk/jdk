@@ -50,7 +50,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class Zip64SizeTest {
     // ZIP file to create
     private static final Path ZIP_FILE = Path.of("Zip64SizeTest.zip");
-    // ontents to write to ZIP entries
+    // Contents to write to ZIP entries
     private static final byte[] CONTENT = "Hello".getBytes(StandardCharsets.UTF_8);
     // This opaque tag will be ignored by ZipEntry.setExtra0
     private static final int UNKNOWN_TAG = 0x9902;
