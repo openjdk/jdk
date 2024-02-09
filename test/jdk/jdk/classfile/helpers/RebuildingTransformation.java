@@ -437,8 +437,8 @@ class RebuildingTransformation {
                                              SwitchCase.of(sc.caseValue(), labels.computeIfAbsent(sc.target(), l -> cob.newLabel()))).toList());
                 case MonitorInstruction i -> {
                     switch (i.opcode()) {
-                        case MONITORENTER ->  cob.monitorenter();
-                        case MONITOREXIT ->  cob.monitorexit();
+                        case MONITORENTER -> cob.monitorenter();
+                        case MONITOREXIT -> cob.monitorexit();
                         default -> throw new AssertionError("Should not reach here");
                     }
                 }
