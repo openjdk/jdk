@@ -54,7 +54,7 @@ public:
   static bool is_safe(address code);
 };
 
-// A CompiledICData* is a helper object for the inline cache implementation.
+// A CompiledICData is a helper object for the inline cache implementation.
 // It comprises:
 // (1) The first receiver klass and its selected method
 // (2) Itable call metadata
