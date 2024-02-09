@@ -282,6 +282,7 @@ public class InfoTest {
     public static void test3() {
         try {
             for (long sleepTime : Arrays.asList(Utils.adjustTimeout(30), Utils.adjustTimeout(32))) {
+                boolean timeIsLastParam = false;
                 Process p = spawn("sleep", String.valueOf(sleepTime));
 
                 ProcessHandle.Info info = p.info();
@@ -292,12 +293,18 @@ public class InfoTest {
                 if (info.command().isPresent()) {
                     String command = info.command().get();
                     String expected = "sleep";
+
                     if (Platform.isWindows()) {
                         expected = "sleep.exe";
                     } else if (Platform.isBusybox("/bin/sleep")) {
                         // With busybox sleep is just a sym link to busybox.
                         // The busbox executable is seen as ProcessHandle.Info command.
                         expected = "busybox";
+                    } else if (Platform.isCoreutilsSingleExecutable("sleep")) {
+                        // With coreutils single executable sleep is just a script around coreutils.
+                        // The coreutils executable is seen as ProcessHandle.Info command.
+                        expected = "/usr/bin/coreutils";
+                        timeIsLastParam = true;
                     }
                     Assert.assertTrue(command.endsWith(expected), "Command: expected: \'" +
                             expected + "\', actual: " + command);
@@ -307,10 +314,15 @@ public class InfoTest {
                     Assert.assertTrue(exe.exists(), "command must exist: " + exe);
                     Assert.assertTrue(exe.canExecute(), "command must be executable: " + exe);
                 }
+
                 if (info.arguments().isPresent()) {
                     String[] args = info.arguments().get();
                     if (args.length > 0) {
-                        Assert.assertEquals(args[0], String.valueOf(sleepTime));
+                        if (timeIsLastParam) {
+                            Assert.assertEquals(args[args.length - 1], String.valueOf(sleepTime));
+                        } else {
+                            Assert.assertEquals(args[0], String.valueOf(sleepTime));
+                        }
                     }
                 }
                 p.destroy();

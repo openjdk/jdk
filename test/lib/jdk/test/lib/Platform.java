@@ -125,6 +125,23 @@ public class Platform {
         }
     }
 
+    public static boolean isCoreutilsSingleExecutable(String tool) {
+        try {
+            ProcessBuilder pb = new ProcessBuilder("coreutils", "--help");
+            pb.redirectErrorStream(true);
+            Process p = pb.start();
+            BufferedReader b = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            String line;
+            while ((line = b.readLine()) != null) {
+                if (line.contains(tool)) {
+                    return true;
+                }
+            }
+        } catch(Exception e) {
+        }
+        return false;
+    }
+
     public static boolean isOSX() {
         return isOs("mac");
     }
