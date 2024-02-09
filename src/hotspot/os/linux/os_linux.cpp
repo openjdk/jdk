@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2015, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -289,6 +289,34 @@ julong os::Linux::free_memory() {
   return free_mem;
 }
 
+jlong os::total_swap_space() {
+  if (OSContainer::is_containerized()) {
+    if (OSContainer::memory_limit_in_bytes() > 0) {
+      return (jlong)(OSContainer::memory_and_swap_limit_in_bytes() - OSContainer::memory_limit_in_bytes());
+    }
+  }
+  struct sysinfo si;
+  int ret = sysinfo(&si);
+  if (ret != 0) {
+    return -1;
+  }
+  return  (jlong)(si.totalswap * si.mem_unit);
+}
+
+jlong os::free_swap_space() {
+  if (OSContainer::is_containerized()) {
+    // TODO add a good implementation
+    return -1;
+  } else {
+    struct sysinfo si;
+    int ret = sysinfo(&si);
+    if (ret != 0) {
+      return -1;
+    }
+    return (jlong)(si.freeswap * si.mem_unit);
+  }
+}
+
 julong os::physical_memory() {
   jlong phys_mem = 0;
   if (OSContainer::is_containerized()) {
@@ -417,7 +445,7 @@ pid_t os::Linux::gettid() {
 julong os::Linux::host_swap() {
   struct sysinfo si;
   sysinfo(&si);
-  return (julong)si.totalswap;
+  return (julong)(si.totalswap * si.mem_unit);
 }
 
 // Most versions of linux have a bug where the number of processors are
@@ -1813,6 +1841,13 @@ void * os::Linux::dlopen_helper(const char *filename, char *ebuf, int ebuflen) {
   if (!ieee_handling) {
     Events::log_dll_message(nullptr, "IEEE subnormal handling check failed before loading %s", filename);
     log_info(os)("IEEE subnormal handling check failed before loading %s", filename);
+    if (CheckJNICalls) {
+      tty->print_cr("WARNING: IEEE subnormal handling check failed before loading %s", filename);
+      Thread* current = Thread::current();
+      if (current->is_Java_thread()) {
+        JavaThread::cast(current)->print_jni_stack();
+      }
+    }
   }
 
   // Save and restore the floating-point environment around dlopen().
@@ -1867,6 +1902,13 @@ void * os::Linux::dlopen_helper(const char *filename, char *ebuf, int ebuflen) {
       } else {
         Events::log_dll_message(nullptr, "IEEE subnormal handling could not be corrected after loading %s", filename);
         log_info(os)("IEEE subnormal handling could not be corrected after loading %s", filename);
+        if (CheckJNICalls) {
+          tty->print_cr("WARNING: IEEE subnormal handling could not be corrected after loading %s", filename);
+          Thread* current = Thread::current();
+          if (current->is_Java_thread()) {
+            JavaThread::cast(current)->print_jni_stack();
+          }
+        }
         assert(false, "fesetenv didn't work");
       }
     }
@@ -2097,7 +2139,6 @@ const char* distro_files[] = {
   "/etc/mandrake-release",
   "/etc/sun-release",
   "/etc/redhat-release",
-  "/etc/SuSE-release",
   "/etc/lsb-release",
   "/etc/turbolinux-release",
   "/etc/gentoo-release",
@@ -2105,6 +2146,7 @@ const char* distro_files[] = {
   "/etc/angstrom-version",
   "/etc/system-release",
   "/etc/os-release",
+  "/etc/SuSE-release", // Deprecated in favor of os-release since SuSE 12
   nullptr };
 
 void os::Linux::print_distro_info(outputStream* st) {
@@ -2216,7 +2258,7 @@ void os::Linux::print_system_memory_info(outputStream* st) {
   // https://www.kernel.org/doc/Documentation/vm/transhuge.txt
   _print_ascii_file_h("/sys/kernel/mm/transparent_hugepage/enabled",
                       "/sys/kernel/mm/transparent_hugepage/enabled", st);
-  _print_ascii_file_h("/sys/kernel/mm/transparent_hugepage/hpage_pdm_size",
+  _print_ascii_file_h("/sys/kernel/mm/transparent_hugepage/hpage_pmd_size",
                       "/sys/kernel/mm/transparent_hugepage/hpage_pmd_size", st);
   _print_ascii_file_h("/sys/kernel/mm/transparent_hugepage/shmem_enabled",
                       "/sys/kernel/mm/transparent_hugepage/shmem_enabled", st);
@@ -2398,6 +2440,8 @@ bool os::Linux::print_container_info(outputStream* st) {
   OSContainer::print_container_helper(st, OSContainer::memory_soft_limit_in_bytes(), "memory_soft_limit_in_bytes");
   OSContainer::print_container_helper(st, OSContainer::memory_usage_in_bytes(), "memory_usage_in_bytes");
   OSContainer::print_container_helper(st, OSContainer::memory_max_usage_in_bytes(), "memory_max_usage_in_bytes");
+  OSContainer::print_container_helper(st, OSContainer::rss_usage_in_bytes(), "rss_usage_in_bytes");
+  OSContainer::print_container_helper(st, OSContainer::cache_usage_in_bytes(), "cache_usage_in_bytes");
 
   OSContainer::print_version_specific_info(st);
 
@@ -2756,6 +2800,8 @@ void os::jvm_path(char *buf, jint buflen) {
 void linux_wrap_code(char* base, size_t size) {
   static volatile jint cnt = 0;
 
+  static_assert(sizeof(off_t) == 8, "Expected Large File Support in this file");
+
   if (!UseOprofile) {
     return;
   }
@@ -2880,6 +2926,15 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
   #define MADV_HUGEPAGE 14
 #endif
 
+// Define MADV_POPULATE_WRITE here so we can build HotSpot on old systems.
+#define MADV_POPULATE_WRITE_value 23
+#ifndef MADV_POPULATE_WRITE
+  #define MADV_POPULATE_WRITE MADV_POPULATE_WRITE_value
+#else
+  // Sanity-check our assumed default value if we build with a new enough libc.
+  static_assert(MADV_POPULATE_WRITE == MADV_POPULATE_WRITE_value);
+#endif
+
 // Note that the value for MAP_FIXED_NOREPLACE differs between architectures, but all architectures
 // supported by OpenJDK share the same flag value.
 #define MAP_FIXED_NOREPLACE_value 0x100000
@@ -2937,6 +2992,31 @@ void os::pd_free_memory(char *addr, size_t bytes, size_t alignment_hint) {
   if (alignment_hint <= os::vm_page_size() || can_commit_large_page_memory()) {
     commit_memory(addr, bytes, alignment_hint, !ExecMem);
   }
+}
+
+size_t os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
+  const size_t len = pointer_delta(last, first, sizeof(char)) + page_size;
+  // Use madvise to pretouch on Linux when THP is used, and fallback to the
+  // common method if unsupported. THP can form right after madvise rather than
+  // being assembled later.
+  if (HugePages::thp_mode() == THPMode::always || UseTransparentHugePages) {
+    int err = 0;
+    if (UseMadvPopulateWrite &&
+        ::madvise(first, len, MADV_POPULATE_WRITE) == -1) {
+      err = errno;
+    }
+    if (!UseMadvPopulateWrite || err == EINVAL) { // Not to use or not supported
+      // When using THP we need to always pre-touch using small pages as the
+      // OS will initially always use small pages.
+      return os::vm_page_size();
+    } else if (err != 0) {
+      log_info(gc, os)("::madvise(" PTR_FORMAT ", " SIZE_FORMAT ", %d) failed; "
+                       "error='%s' (errno=%d)", p2i(first), len,
+                       MADV_POPULATE_WRITE, os::strerror(err), err);
+    }
+    return 0;
+  }
+  return page_size;
 }
 
 void os::numa_make_global(char *addr, size_t bytes) {
@@ -3658,14 +3738,14 @@ bool os::unguard_memory(char* addr, size_t size) {
 }
 
 static int hugetlbfs_page_size_flag(size_t page_size) {
-  if (page_size != HugePages::default_static_hugepage_size()) {
+  if (page_size != HugePages::default_explicit_hugepage_size()) {
     return (exact_log2(page_size) << MAP_HUGE_SHIFT);
   }
   return 0;
 }
 
 static bool hugetlbfs_sanity_check(size_t page_size) {
-  const os::PageSizes page_sizes = HugePages::static_info().pagesizes();
+  const os::PageSizes page_sizes = HugePages::explicit_hugepage_info().pagesizes();
   assert(page_sizes.contains(page_size), "Invalid page sizes passed");
 
   // Include the page size flag to ensure we sanity check the correct page size.
@@ -3845,8 +3925,8 @@ void os::Linux::large_page_init() {
     return;
   }
 
-  // Check if the OS supports static hugepages.
-  if (!UseTransparentHugePages && !HugePages::supports_static_hugepages()) {
+  // Check if the OS supports explicit hugepages.
+  if (!UseTransparentHugePages && !HugePages::supports_explicit_hugepages()) {
     warn_no_large_pages_configured();
     UseLargePages = false;
     return;
@@ -3865,12 +3945,12 @@ void os::Linux::large_page_init() {
 
   } else {
 
-    // In static hugepage mode:
-    // - os::large_page_size() is the default static hugepage size (/proc/meminfo "Hugepagesize")
+    // In explicit hugepage mode:
+    // - os::large_page_size() is the default explicit hugepage size (/proc/meminfo "Hugepagesize")
     // - os::pagesizes() contains all hugepage sizes the kernel supports, regardless whether there
     //   are pages configured in the pool or not (from /sys/kernel/hugepages/hugepage-xxxx ...)
-    os::PageSizes all_large_pages = HugePages::static_info().pagesizes();
-    const size_t default_large_page_size = HugePages::default_static_hugepage_size();
+    os::PageSizes all_large_pages = HugePages::explicit_hugepage_info().pagesizes();
+    const size_t default_large_page_size = HugePages::default_explicit_hugepage_size();
 
     // 3) Consistency check and post-processing
 
@@ -3954,7 +4034,7 @@ static bool commit_memory_special(size_t bytes,
                                       char* req_addr,
                                       bool exec) {
   assert(UseLargePages, "Should only get here for huge pages");
-  assert(!UseTransparentHugePages, "Should only get here for static hugepage mode");
+  assert(!UseTransparentHugePages, "Should only get here for explicit hugepage mode");
   assert(is_aligned(bytes, page_size), "Unaligned size");
   assert(is_aligned(req_addr, page_size), "Unaligned address");
   assert(req_addr != nullptr, "Must have a requested address for special mappings");
@@ -3988,7 +4068,7 @@ static char* reserve_memory_special_huge_tlbfs(size_t bytes,
                                                size_t page_size,
                                                char* req_addr,
                                                bool exec) {
-  const os::PageSizes page_sizes = HugePages::static_info().pagesizes();
+  const os::PageSizes page_sizes = HugePages::explicit_hugepage_info().pagesizes();
   assert(UseLargePages, "only for Huge TLBFS large pages");
   assert(is_aligned(req_addr, alignment), "Must be");
   assert(is_aligned(req_addr, page_size), "Must be");
@@ -4067,7 +4147,7 @@ size_t os::large_page_size() {
   return _large_page_size;
 }
 
-// static hugepages (hugetlbfs) allow application to commit large page memory
+// explicit hugepages (hugetlbfs) allow application to commit large page memory
 // on demand.
 // However, when committing memory with hugepages fails, the region
 // that was supposed to be committed will lose the old reservation
@@ -4118,7 +4198,7 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
 
 size_t os::vm_min_address() {
   // Determined by sysctl vm.mmap_min_addr. It exists as a safety zone to prevent
-  // NULL pointer dereferences.
+  // null pointer dereferences.
   // Most distros set this value to 64 KB. It *can* be zero, but rarely is. Here,
   // we impose a minimum value if vm.mmap_min_addr is too low, for increased protection.
   static size_t value = 0;
@@ -4246,7 +4326,7 @@ jlong os::Linux::fast_thread_cpu_time(clockid_t clockid) {
 // the number of bytes written to out_fd is returned if transfer was successful
 // otherwise, returns -1 that implies an error
 jlong os::Linux::sendfile(int out_fd, int in_fd, jlong* offset, jlong count) {
-  return ::sendfile64(out_fd, in_fd, (off64_t*)offset, (size_t)count);
+  return ::sendfile(out_fd, in_fd, (off_t*)offset, (size_t)count);
 }
 
 // Determine if the vmid is the parent pid for a child in a PID namespace.
@@ -4360,6 +4440,9 @@ void os::init(void) {
     (int(*)(pthread_t, const char*))dlsym(RTLD_DEFAULT, "pthread_setname_np");
 
   check_pax();
+
+  // Check the availability of MADV_POPULATE_WRITE.
+  FLAG_SET_DEFAULT(UseMadvPopulateWrite, (::madvise(0, 0, MADV_POPULATE_WRITE) == 0));
 
   os::Posix::init();
 }
@@ -4924,14 +5007,14 @@ int os::open(const char *path, int oflag, int mode) {
   oflag |= O_CLOEXEC;
 #endif
 
-  int fd = ::open64(path, oflag, mode);
+  int fd = ::open(path, oflag, mode);
   if (fd == -1) return -1;
 
   //If the open succeeded, the file might still be a directory
   {
-    struct stat64 buf64;
-    int ret = ::fstat64(fd, &buf64);
-    int st_mode = buf64.st_mode;
+    struct stat buf;
+    int ret = ::fstat(fd, &buf);
+    int st_mode = buf.st_mode;
 
     if (ret != -1) {
       if ((st_mode & S_IFMT) == S_IFDIR) {
@@ -4968,17 +5051,17 @@ int os::open(const char *path, int oflag, int mode) {
 int os::create_binary_file(const char* path, bool rewrite_existing) {
   int oflags = O_WRONLY | O_CREAT;
   oflags |= rewrite_existing ? O_TRUNC : O_EXCL;
-  return ::open64(path, oflags, S_IREAD | S_IWRITE);
+  return ::open(path, oflags, S_IREAD | S_IWRITE);
 }
 
 // return current position of file pointer
 jlong os::current_file_offset(int fd) {
-  return (jlong)::lseek64(fd, (off64_t)0, SEEK_CUR);
+  return (jlong)::lseek(fd, (off_t)0, SEEK_CUR);
 }
 
 // move file pointer to the specified offset
 jlong os::seek_to_file_offset(int fd, jlong offset) {
-  return (jlong)::lseek64(fd, (off64_t)offset, SEEK_SET);
+  return (jlong)::lseek(fd, (off_t)offset, SEEK_SET);
 }
 
 // Map a block of memory.
@@ -5467,3 +5550,25 @@ bool os::trim_native_heap(os::size_change_t* rss_change) {
   return false; // musl
 #endif
 }
+
+bool os::pd_dll_unload(void* libhandle, char* ebuf, int ebuflen) {
+
+  if (ebuf && ebuflen > 0) {
+    ebuf[0] = '\0';
+    ebuf[ebuflen - 1] = '\0';
+  }
+
+  bool res = (0 == ::dlclose(libhandle));
+  if (!res) {
+    // error analysis when dlopen fails
+    const char* error_report = ::dlerror();
+    if (error_report == nullptr) {
+      error_report = "dlerror returned no error description";
+    }
+    if (ebuf != nullptr && ebuflen > 0) {
+      snprintf(ebuf, ebuflen - 1, "%s", error_report);
+    }
+  }
+
+  return res;
+} // end: os::pd_dll_unload()

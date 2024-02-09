@@ -114,7 +114,7 @@ public abstract sealed class AbstractInstruction
     @Override
     public abstract void writeTo(DirectCodeBuilder writer);
 
-    public static abstract sealed class BoundInstruction extends AbstractInstruction {
+    public abstract static sealed class BoundInstruction extends AbstractInstruction {
         final CodeImpl code;
         final int pos;
 
@@ -760,7 +760,7 @@ public abstract sealed class AbstractInstruction
 
     }
 
-    public static abstract sealed class UnboundInstruction extends AbstractInstruction {
+    public abstract static sealed class UnboundInstruction extends AbstractInstruction {
 
         UnboundInstruction(Opcode op) {
             super(op, op.sizeIfFixed());

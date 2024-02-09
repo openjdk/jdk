@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4857,8 +4857,8 @@ void IntervalWalker::next_interval() {
     // intervals may start at same position -> prefer fixed interval
     kind = fixed != Interval::end() && fixed->from() <= any->from() ? fixedKind : anyKind;
 
-    assert (kind == fixedKind && fixed->from() <= any->from() ||
-            kind == anyKind   && any->from() <= fixed->from(), "wrong interval!!!");
+    assert((kind == fixedKind && fixed->from() <= any->from()) ||
+           (kind == anyKind   && any->from() <= fixed->from()), "wrong interval!!!");
     assert(any == Interval::end() || fixed == Interval::end() || any->from() != fixed->from() || kind == fixedKind, "if fixed and any-Interval start at same position, fixed must be processed first");
 
   } else if (fixed != Interval::end()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "opto/phasetype.hpp"
+#include "opto/traceAutoVectorizationTag.hpp"
 #include "runtime/globals_extension.hpp"
 
 CompilerDirectives::CompilerDirectives() : _next(nullptr), _match(nullptr), _ref_count(0) {
@@ -300,7 +301,8 @@ void DirectiveSet::init_control_intrinsic() {
 DirectiveSet::DirectiveSet(CompilerDirectives* d) :
   _inlinematchers(nullptr),
   _directive(d),
-  _ideal_phase_name_set(PHASE_NUM_TYPES, mtCompiler)
+  _ideal_phase_name_set(PHASE_NUM_TYPES, mtCompiler),
+  _trace_auto_vectorization_tags(TRACE_AUTO_VECTORIZATION_TAG_NUM, mtCompiler)
 {
 #define init_defaults_definition(name, type, dvalue, compiler) this->name##Option = dvalue;
   compilerdirectives_common_flags(init_defaults_definition)
@@ -433,6 +435,16 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
     // Parse PrintIdealPhaseName and create a lookup set
 #ifndef PRODUCT
 #ifdef COMPILER2
+    if (!_modified[TraceAutoVectorizationIndex]) {
+      // Parse ccstr and create mask
+      ccstrlist option;
+      if (CompilerOracle::has_option_value(method, CompileCommand::TraceAutoVectorization, option)) {
+        TraceAutoVectorizationTagValidator validator(option, false);
+        if (validator.is_valid()) {
+          set.cloned()->set_trace_auto_vectorization_tags(validator.tags());
+        }
+      }
+    }
     if (!_modified[PrintIdealPhaseIndex]) {
       // Parse ccstr and create set
       ccstrlist option;

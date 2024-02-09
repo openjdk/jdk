@@ -572,6 +572,7 @@ required on all platforms except Windows and macOS.
 libfontconfig-dev`.
 * To install on an rpm-based Linux, try running `sudo yum install
 fontconfig-devel`.
+* To install on Alpine Linux, try running `sudo apk add fontconfig-dev`.
 
 Use `--with-fontconfig-include=<path>` and `--with-fontconfig=<path>` if
 `configure` does not automatically locate the platform Fontconfig files.
@@ -1315,9 +1316,6 @@ For example, cross-compiling to AArch64 from x86_64 could be done like this:
     ~/sysroot-arm64 \
     https://httpredir.debian.org/debian/
   ```
-
-  If the target architecture is `riscv64`, the path should be `debian-ports`
-  instead of `debian`.
 
 * To create an Ubuntu-based chroot:
 
