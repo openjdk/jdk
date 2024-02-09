@@ -56,29 +56,27 @@ import jtreg.SkippedException;
 
 public class AlphaPrintingOffsets {
     private static final String INSTRUCTIONS =
-                    "Tested bug occurs only on-paper printing so you mustn't use PDF printer\n" +
+                    "Tested bug occurs only on-paper printing so you mustn't use PDF printer\n\n" +
                     "1.Java print dialog should appear.\n" +
                     "2. Press the Print button on the Java Print dialog.\n" +
                     "3. Please check the page margin rectangle are properly drawn and visible on all sides on all pages.\n" +
-                    "If so, press PASS, else press FAIL.";
+                    "If so, press PASS, else press FAIL.\n\n" +
+                    "Also you may run this test in paper-saving mode. Due to tested bug affects pages printed with transparency in LANDSCAPE and REVERSE_LANDSCAPE orientations " +
+                    "there is an option to print only 2 pages affected. To do it pass PaperSavingMode parameter.";
 
-    private static boolean isAlphaTestModeSet = true;
-
-    public static boolean getAlphaTestModeSet() {
-        return isAlphaTestModeSet;
-    }
+    private static boolean isPaperSavingMode = false;
 
     public static void main(String[] args) throws Exception {
         if (PrinterJob.lookupPrintServices().length > 0) {
 
             String instructionsHeader = "This test prints 6 pages with page margin rectangle and a text message. \n";
             if (args.length > 0) {
-                isAlphaTestModeSet = !args[0].equals("testOpaque");
+                isPaperSavingMode = args[0].equals("PaperSavingMode");
             }
-            if (isAlphaTestModeSet) {
+            if (isPaperSavingMode) {
                 instructionsHeader = "This test prints 2 pages with page margin rectangle and a text message. \n";
             }
-            PassFailJFrame.builder().instructions(instructionsHeader + INSTRUCTIONS)
+            PassFailJFrame.builder().rows(15).instructions(instructionsHeader + INSTRUCTIONS)
                     .testUI(() -> createTestUI()).build().awaitAndCheck();
 
         } else {
@@ -125,22 +123,22 @@ public class AlphaPrintingOffsets {
         pageFormatRL.setOrientation(REVERSE_LANDSCAPE);
 
         Printable printableTransparent = new CustomPrintable(254);
-        if (isAlphaTestModeSet) {
-            Book bookAlphaTest = new Book();
-            bookAlphaTest.append(printableTransparent, pageFormatL);
-            bookAlphaTest.append(printableTransparent, pageFormatRL);
-            printerJob.setPageable(bookAlphaTest);
+        if (isPaperSavingMode) {
+            Book bookPageSavingTest = new Book();
+            bookPageSavingTest.append(printableTransparent, pageFormatL);
+            bookPageSavingTest.append(printableTransparent, pageFormatRL);
+            printerJob.setPageable(bookPageSavingTest);
         }
         else {
             Printable printableOpaque = new CustomPrintable(255);
-            Book bookNoAlphaTest = new Book();
-            bookNoAlphaTest.append(printableOpaque, pageFormatP);
-            bookNoAlphaTest.append(printableTransparent, pageFormatP);
-            bookNoAlphaTest.append(printableOpaque, pageFormatL);
-            bookNoAlphaTest.append(printableTransparent, pageFormatL);
-            bookNoAlphaTest.append(printableOpaque, pageFormatRL);
-            bookNoAlphaTest.append(printableTransparent, pageFormatRL);
-            printerJob.setPageable(bookNoAlphaTest);
+            Book bookDefaultTest = new Book();
+            bookDefaultTest.append(printableOpaque, pageFormatP);
+            bookDefaultTest.append(printableTransparent, pageFormatP);
+            bookDefaultTest.append(printableOpaque, pageFormatL);
+            bookDefaultTest.append(printableTransparent, pageFormatL);
+            bookDefaultTest.append(printableOpaque, pageFormatRL);
+            bookDefaultTest.append(printableTransparent, pageFormatRL);
+            printerJob.setPageable(bookDefaultTest);
         }
         PrintRequestAttributeSet aset = new HashPrintRequestAttributeSet();
         aset.add(Sides.ONE_SIDED);
@@ -192,10 +190,8 @@ class CustomPrintable implements Printable {
         drawRectangle(g, pageFormat.getImageableX(), pageFormat.getImageableY(),
                 pageFormat.getImageableWidth(), pageFormat.getImageableHeight());
 
-        if (AlphaPrintingOffsets.getAlphaTestModeSet()) {
-            drawSmallRectangle(g, pageFormat.getImageableX(), pageFormat.getImageableY(),
-                    pageFormat.getImageableWidth(), pageFormat.getImageableHeight());
-        }
+        drawSmallRectangle(g, pageFormat.getImageableX(), pageFormat.getImageableY(),
+                pageFormat.getImageableWidth(), pageFormat.getImageableHeight());
 
         drawMsg(g, 300, 300, pageFormat.getOrientation());
         return Printable.PAGE_EXISTS;
