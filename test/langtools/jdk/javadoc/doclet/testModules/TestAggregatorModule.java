@@ -88,7 +88,7 @@ public class TestAggregatorModule extends JavadocTester {
                 .getOutputLines(Task.OutputKind.DIRECT);
 
         out.println("Checking for error message");
-        if (outputLines.stream().anyMatch(l -> l.contains("No public classes"))) {
+        if (outputLines.stream().anyMatch(l -> l.contains("No public"))) {
             throw new Exception("unexpected error message");
         }
 
