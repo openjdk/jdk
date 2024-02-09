@@ -61,6 +61,11 @@ public class Deterministic {
     public static void main(String[] args) throws Exception {
 
         for (var p : Security.getProviders()) {
+            var name = p.getName();
+            if (name.equals("SunMSCAPI") || name.startsWith("SunPKCS11")) {
+                System.out.println("Skipped native provider " + name);
+                continue;
+            }
             for (var s : p.getServices()) {
                 switch (s.getType()) {
                     case "KeyPairGenerator" -> testKeyPairGenerator(s);
