@@ -179,7 +179,6 @@ class   MethodData;
 //      class Metadata
 class   Method;
 class   ConstantPool;
-//      class CHeapObj
 
 // The klass hierarchy is separate from the oop hierarchy.
 

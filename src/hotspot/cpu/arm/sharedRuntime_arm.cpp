@@ -817,7 +817,8 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   const Register receiver = R0; // see receiverOpr()
   __ verify_oop(receiver);
-  __ ic_check(1 /* end_alignment */);
+  // Inline cache check
+  __ ic_check(CodeEntryAlignment /* end_alignment */);
 
   int vep_offset = __ pc() - start;
 

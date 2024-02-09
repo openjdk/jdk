@@ -433,27 +433,16 @@ static void clean_ic_if_metadata_is_dead(CompiledIC *ic) {
 }
 
 // Clean references to unloaded nmethods at addr from this one, which is not unloaded.
-static void clean_if_nmethod_is_unloaded(CompiledIC *ic, CompiledMethod* from,
+template <typename CallsiteT>
+static void clean_if_nmethod_is_unloaded(CallsiteT* callsite, CompiledMethod* from,
                                          bool clean_all) {
-  CodeBlob* cb = CodeCache::find_blob(ic->destination());
+  CodeBlob* cb = CodeCache::find_blob(callsite->destination());
   if (!cb->is_compiled()) {
     return;
   }
   CompiledMethod* cm = cb->as_compiled_method();
   if (clean_all || !cm->is_in_use() || cm->is_unloading() || cm->method()->code() != cm) {
-    ic->set_to_clean();
-  }
-}
-
-static void clean_if_nmethod_is_unloaded(CompiledDirectCall *cdc, CompiledMethod* from,
-                                         bool clean_all) {
-  CodeBlob* cb = CodeCache::find_blob(cdc->destination());
-  if (!cb->is_compiled()) {
-    return;
-  }
-  CompiledMethod* cm = cb->as_compiled_method();
-  if (clean_all || !cm->is_in_use() || cm->is_unloading() || cm->method()->code() != cm) {
-    cdc->set_to_clean();
+    callsite->set_to_clean();
   }
 }
 

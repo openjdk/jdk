@@ -753,6 +753,9 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
 
   {
     __ block_comment("c2i_unverified_entry {");
+    // Method might have been compiled since the call site was patched to
+    // interpreted; if that is the case treat it as a miss so we can get
+    // the call site corrected.
     __ ic_check(1 /* end_alignment */);
     __ ldr(rmethod, Address(data, CompiledICData::speculated_method_offset()));
 
@@ -1547,6 +1550,8 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ mov_metadata(rscratch2, method->method_holder()); // InstanceKlass*
     __ clinit_barrier(rscratch2, rscratch1, &L_skip_barrier);
     __ far_jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub()));
+
+    // Verified entry point must be aligned
 
     __ bind(L_skip_barrier);
   }

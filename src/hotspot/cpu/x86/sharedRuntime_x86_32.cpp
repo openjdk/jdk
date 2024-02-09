@@ -1445,6 +1445,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   Label exception_pending;
 
   __ verify_oop(receiver);
+  // verified entry must be aligned for code patching.
   __ ic_check(8 /* end_alignment */);
 
   int vep_offset = ((intptr_t)__ pc()) - start;

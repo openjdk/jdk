@@ -877,7 +877,7 @@ void MachUEPNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
 
 void MachUEPNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   C2_MacroAssembler _masm(&cbuf);
-  __ ic_check(CodeEntryAlignment);
+  __ ic_check(InteriorEntryAlignment);
 }
 
 uint MachUEPNode::size(PhaseRegAlloc *ra_) const {

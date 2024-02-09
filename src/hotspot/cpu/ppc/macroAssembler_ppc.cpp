@@ -1222,6 +1222,10 @@ int MacroAssembler::ic_check(int end_alignment) {
   Register tmp1 = R11_scratch1;
   Register tmp2 = R12_scratch2;
 
+  // The UEP of a code blob ensures that the VEP is padded. However, the padding of the UEP is placed
+  // before the inline cache check, so we don't have to execute any nop instructions when dispatching
+  // through the UEP, yet we can ensure that the VEP is aligned appropriately. That's why we align
+  // before the inline cache check here, and not after
   align(end_alignment, end_alignment, end_alignment - ic_check_size());
 
   int uep_offset = offset();

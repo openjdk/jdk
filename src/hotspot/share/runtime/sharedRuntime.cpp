@@ -1360,13 +1360,12 @@ methodHandle SharedRuntime::resolve_helper(bool is_virtual, bool is_optimized, T
   // we are done patching the code.
 
 
+  CompiledICLocker ml(caller_nm);
   if (is_virtual && !is_optimized) {
-    CompiledICLocker ml(caller_nm);
     CompiledIC* inline_cache = CompiledIC_before(caller_nm, caller_frame.pc());
     inline_cache->update(&call_info, receiver->klass());
   } else {
     // Callsite is a direct call - set it to the destination method
-    CompiledICLocker ml(caller_nm);
     CompiledDirectCall* callsite = CompiledDirectCall::before(caller_frame.pc());
     callsite->set(callee_method);
   }
@@ -1594,9 +1593,6 @@ methodHandle SharedRuntime::handle_ic_miss_helper(TRAPS) {
   JvmtiDynamicCodeEventCollector event_collector;
 
   // Update inline cache to megamorphic. Skip update if we are called from interpreted.
-  // Transitioning IC caches may require transition stubs. If we run out
-  // of transition stubs, we have to drop locks and perform a safepoint
-  // that refills them.
   RegisterMap reg_map(current,
                       RegisterMap::UpdateMap::skip,
                       RegisterMap::ProcessFrames::include,
@@ -1661,8 +1657,6 @@ methodHandle SharedRuntime::reresolve_call_site(TRAPS) {
     CompiledICLocker ml(caller_nm);
     address call_addr = caller_nm->call_instruction_address(pc);
 
-    // Check relocations for the matching call to 1) avoid false positives,
-    // and 2) determine the type.
     if (call_addr != nullptr) {
       // On x86 the logic for finding a call instruction is blindly checking for a call opcode 5
       // bytes back in the instruction stream so we must also check for reloc info.
@@ -1804,7 +1798,6 @@ JRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address cal
     return;
   }
 
-  assert(iter.has_current(), "must have a reloc at java call site");
   relocInfo::relocType type = iter.reloc()->type();
   if (type != relocInfo::static_call_type &&
       type != relocInfo::opt_virtual_call_type) {
