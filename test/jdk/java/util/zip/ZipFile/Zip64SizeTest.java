@@ -80,9 +80,9 @@ public class Zip64SizeTest {
     }
 
     /**
-     * Create ZIP file with a CEN entry where the 'uncompressed size' is stored
-     * in the ZIP64 field. This makes the ZIP64 data block 8 bytes long which
-     * triggers the regression described in 8226530.
+     * Create a ZIP file with a CEN entry where the 'uncompressed size' is stored in
+     * the ZIP64 field, but the 'compressed size' is in the CEN field. This makes the
+     * ZIP64 data block 8 bytes long, which triggers the regression described in 8226530.
      *
      * The CEN entry for the "first" entry will have the following structure:
      * (Note the CEN 'Uncompressed Length' being 0xFFFFFFFF and the ZIP64
@@ -107,20 +107,28 @@ public class Zip64SizeTest {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (ZipOutputStream zos = new ZipOutputStream(baos)) {
 
+            // The 'first' entry will store 'uncompressed size' in the Zip64 format
             ZipEntry e1 = new ZipEntry("first");
-            // Make room for an 8-byte ZIP64 extra field
-            e1.setExtra(createOpaqueExtra((short) Long.BYTES));
+
+            // Make an extra field with the correct size for an 8-byte 'uncompressed size'
+            // Zip64 field. Temporarily use the 'unknown' tag 0x9902 to make
+            // ZipEntry.setExtra0 skip parsing this as a Zip64.
+            byte[] opaqueExtra = createBlankExtra((short) UNKNOWN_TAG, (short) Long.BYTES);
+            e1.setExtra(opaqueExtra);
 
             zos.putNextEntry(e1);
             zos.write(CONTENT);
 
+            // A second entry, not in Zip64 format
             ZipEntry e2 = new ZipEntry("second");
             zos.putNextEntry(e2);
             zos.write(CONTENT);
         }
 
         byte[] zip = baos.toByteArray();
-        updateToZip64(zip);
+
+        // Update the CEN of 'first' to use the Zip64 format
+        updateCENHeaderToZip64(zip);
         Files.write(ZIP_FILE, zip);
     }
 
@@ -129,7 +137,7 @@ public class Zip64SizeTest {
      * 'uncompressed size' field
      * @param zip the ZIP file to update to ZIP64
      */
-    private static void updateToZip64(byte[] zip) {
+    private static void updateCENHeaderToZip64(byte[] zip) {
         ByteBuffer buffer = ByteBuffer.wrap(zip).order(ByteOrder.LITTLE_ENDIAN);
         // Find the offset of the first CEN header
         int cenOffset = buffer.getInt(zip.length- ZipFile.ENDHDR + ZipFile.ENDOFF);
@@ -146,26 +154,25 @@ public class Zip64SizeTest {
         buffer.putLong(fieldOffset, CONTENT.length);
 
         // Set the 'uncompressed size' field of the CEN to 0xFFFFFFFF
-
         buffer.putInt(cenOffset + ZipFile.CENLEN, ZIP64_MAGIC_VALUE);
     }
 
     /**
-     * Create a ZIP64 extra field with an 'unknown' tag, right-sized
-     * for holding an 8-byte 'uncompressed size field'
-     * @return
-     * @param blockSize
+     * Create an extra field with the given tag and data block size, and a
+     * blank data block.
+     * @return an extra field with the specified tag and size
+     * @param tag the header id of the extra field
+     * @param blockSize the size of the extra field's data block
      */
-    private static byte[] createOpaqueExtra(short blockSize) {
+    private static byte[] createBlankExtra(short tag, short blockSize) {
         int size = Short.BYTES  // tag
-                + Short.BYTES   // data size
-                + blockSize;   // uncompressed size;
+                + Short.BYTES   // data block size
+                + blockSize;   // data block;
 
         byte[] extra = new byte[size];
         ByteBuffer.wrap(extra).order(ByteOrder.LITTLE_ENDIAN)
-                .putShort(0, (short) UNKNOWN_TAG)
+                .putShort(0, tag)
                 .putShort(Short.BYTES, blockSize);
-
         return extra;
     }
 
