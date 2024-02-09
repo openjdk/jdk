@@ -61,7 +61,7 @@ public class TestAggregatorModule extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput(Output.OUT, false,
-                "No public classes");
+                "No public");
         checkFiles(true,
                 "m/module-summary.html");
     }
