@@ -113,6 +113,7 @@ public class Zip64SizeTest {
             // Make an extra field with the correct size for an 8-byte 'uncompressed size'
             // Zip64 field. Temporarily use the 'unknown' tag 0x9902 to make
             // ZipEntry.setExtra0 skip parsing this as a Zip64.
+            // See APPNOTE.TXT, 4.6.1 Third Party Mappings
             byte[] opaqueExtra = createBlankExtra((short) UNKNOWN_TAG, (short) Long.BYTES);
             e1.setExtra(opaqueExtra);
 
