@@ -2134,8 +2134,8 @@ public final class RenderPerfTest {
 
         final GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
 
-        for (Font f : ge.getAllFonts()) {
-            fontNames.add(f.getName());
+        for (String name : ge.getAvailableFontFamilyNames()) {
+            fontNames.add(name);
         }
         // Check font:
         if (!fontNames.contains(TEXT_FONT)) {
@@ -2147,8 +2147,9 @@ public final class RenderPerfTest {
             System.out.print("# Available font names: ");
 
             for (String name : fontNames) {
+                System.out.print("'");
                 System.out.print(name);
-                System.out.print(" ");
+                System.out.print("' ");
             }
             System.out.println();
         }
