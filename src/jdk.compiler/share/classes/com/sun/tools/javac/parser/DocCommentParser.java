@@ -138,7 +138,7 @@ public class DocCommentParser {
     }
 
     /**
-     * Create a parser for a documentation comment.
+     * Creates a parser for a documentation comment.
      *
      * If the comment is the content of a standalone HTML file, it will be parsed
      * in three parts: a preamble (up to and including the {@code <main>} tag,
