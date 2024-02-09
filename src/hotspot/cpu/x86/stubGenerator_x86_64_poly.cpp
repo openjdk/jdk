@@ -1141,9 +1141,7 @@ void StubGenerator::poly1305_process_blocks_avx2(
   __ vpxor(YTMP6, YTMP6, YTMP6, Assembler::AVX_256bit);
 
   // Calculate R^2
-  __ movq(t0, r1);
-  __ shrq(t0, 2);
-  __ addq(t0, r1); // T0 = R1 + (R1 >> 2)
+  __ movq(t0, c1); // c1 = R1 + (R1 >> 2)
   __ movq(a0, r0);
   __ movq(a1, r1);
 
@@ -1340,10 +1338,9 @@ void StubGenerator::poly1305_process_blocks_avx2(
   __ shrq(a2, 40);
 
   // cleanup
-  __ vzeroall();
+  __ vzeroall(); // clears all ymm registers (ymm0 through ymm15)
 
   // SAFE DATA (clear powers of R)
-  //__ vpxor(YTMP1, YTMP1, YTMP1, Assembler::AVX_256bit);
   __ vmovdqu(Address(rsp, _r4_r1_save + 0), YTMP1);
   __ vmovdqu(Address(rsp, _r4_r1_save + 32), YTMP1);
   __ vmovdqu(Address(rsp, _r4_r1_save + 32*2), YTMP1);
