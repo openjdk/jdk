@@ -57,17 +57,17 @@ public enum GCCause {
 
   _dcmd_gc_run ("Diagnostic Command"),
 
+  _shenandoah_allocation_failure_evac ("Allocation Failure During Evacuation"),
+  _shenandoah_stop_vm ("Stopping VM"),
+  _shenandoah_concurrent_gc ("Concurrent GC"),
+  _shenandoah_upgrade_to_full_gc ("Upgrade To Full GC"),
+
   _z_timer ("Timer"),
   _z_warmup ("Warmup"),
   _z_allocation_rate ("Allocation Rate"),
   _z_allocation_stall ("Allocation Stall"),
   _z_proactive ("Proactive"),
   _z_high_usage ("High Usage"),
-
-  _shenandoah_allocation_failure_evac ("Allocation Failure During Evacuation"),
-  _shenandoah_stop_vm ("Stopping VM"),
-  _shenandoah_concurrent_gc ("Concurrent GC"),
-  _shenandoah_upgrade_to_full_gc ("Upgrade To Full GC"),
 
   _last_gc_cause ("ILLEGAL VALUE - last gc cause - ILLEGAL VALUE");
 
