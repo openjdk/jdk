@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,37 +21,25 @@
  * questions.
  */
 
-#ifndef NSK_MUTEX_H
-#define NSK_MUTEX_H
+package compiler.lib.ir_framework;
 
-extern "C" {
-
-/**
- * Structure to hold mutex data (the content is platform-specific)
- */
-typedef struct _MUTEX MUTEX;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
 /**
- * Create a mutex
+ * This annotation is used to identify Setup methods. These can be used to compute arbitrary arguments for a test
+ * method (see {@link Test}), as well as to set field values. A test method can use a setup method, by specifying
+ * it in a {@link Arguments} annotation. A setup method can optionally take a {@link SetupInfo} as an argument. The
+ * arguments for the test methods are returned as a new object array.
+ *
+ * Examples on how to use test methods can be found in {@link ir_framework.examples.SetupExample} and also as part of the
+ * internal testing in the package {@link ir_framework.tests}.
+ *
+ * @see Arguments
+ * @see Setup
+ * @see SetupInfo
+ * @see Test
  */
-MUTEX* MUTEX_create();
-
-/**
- * Acquire a mutex
- */
-void MUTEX_acquire(MUTEX* mutex);
-
-/**
- * Release a mutex
- */
-void MUTEX_release(MUTEX* mutex);
-
-/**
- * Destroy a mutex
- */
-void MUTEX_destroy(MUTEX* mutex);
-
-
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Setup {
 }
-
-#endif

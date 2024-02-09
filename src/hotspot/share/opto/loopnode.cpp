@@ -4865,6 +4865,7 @@ void PhaseIdealLoop::build_and_optimize() {
 
   // Convert scalar to superword operations at the end of all loop opts.
   if (C->do_superword() && C->has_loops() && !C->major_progress()) {
+    Compile::TracePhase tp("autoVectorize", &timers[_t_autoVectorize]);
     // SuperWord transform
     SuperWord sw(this);
     for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {

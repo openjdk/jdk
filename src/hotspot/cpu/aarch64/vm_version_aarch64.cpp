@@ -143,10 +143,18 @@ void VM_Version::initialize() {
     }
   }
 
-  // Ampere CPUs: Ampere-1 and Ampere-1A
-  if (_cpu == CPU_AMPERE && ((_model == CPU_MODEL_AMPERE_1) || (_model == CPU_MODEL_AMPERE_1A))) {
+  // Ampere CPUs
+  if (_cpu == CPU_AMPERE && ((_model == CPU_MODEL_AMPERE_1)  ||
+                             (_model == CPU_MODEL_AMPERE_1A) ||
+                             (_model == CPU_MODEL_AMPERE_1B))) {
     if (FLAG_IS_DEFAULT(UseSIMDForMemoryOps)) {
       FLAG_SET_DEFAULT(UseSIMDForMemoryOps, true);
+    }
+    if (FLAG_IS_DEFAULT(OnSpinWaitInst)) {
+      FLAG_SET_DEFAULT(OnSpinWaitInst, "isb");
+    }
+    if (FLAG_IS_DEFAULT(OnSpinWaitInstCount)) {
+      FLAG_SET_DEFAULT(OnSpinWaitInstCount, 2);
     }
   }
 
