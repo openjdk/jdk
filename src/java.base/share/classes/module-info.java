@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -326,7 +326,9 @@ module java.base {
     exports sun.security.internal.spec to
         jdk.crypto.cryptoki;
     exports sun.security.jca to
+        java.security.sasl,
         java.smartcardio,
+        java.xml.crypto,
         jdk.crypto.cryptoki,
         jdk.naming.dns;
     exports sun.security.pkcs to

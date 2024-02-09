@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import javax.xml.crypto.XMLStructure;
 import javax.xml.crypto.dom.DOMStructure;
 import javax.xml.crypto.dsig.*;
 
+import sun.security.jca.ProvidersFilter;
 
 /**
  * A factory for creating {@link KeyInfo} objects from scratch or for
@@ -156,7 +157,7 @@ public abstract class KeyInfoFactory {
         Provider[] provs = Security.getProviders();
         for (Provider p : provs) {
             Service s = p.getService("KeyInfoFactory", mechanismType);
-            if (s != null) {
+            if (s != null && ProvidersFilter.isAllowed(s)) {
                 Object obj = null;
                 try {
                     obj = s.newInstance(null);
@@ -206,7 +207,7 @@ public abstract class KeyInfoFactory {
         }
 
         Service s = provider.getService("KeyInfoFactory", mechanismType);
-        if (s != null) {
+        if (s != null && ProvidersFilter.isAllowed(s)) {
             Object obj = null;
             try {
                 obj = s.newInstance(null);
@@ -266,7 +267,7 @@ public abstract class KeyInfoFactory {
                                               provider);
         }
         Service s = p.getService("KeyInfoFactory", mechanismType);
-        if (s != null) {
+        if (s != null && ProvidersFilter.isAllowed(s)) {
             Object obj = null;
             try {
                 obj = s.newInstance(null);

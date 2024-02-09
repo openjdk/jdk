@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
 import sun.security.jca.GetInstance;
 import sun.security.jca.GetInstance.Instance;
 import sun.security.jca.Providers;
+import sun.security.jca.ProvidersFilter;
 import sun.security.provider.SunEntries;
 import sun.security.util.Debug;
 
@@ -277,7 +278,13 @@ public class SecureRandom extends java.util.Random {
             if (p.getName().equals("SUN")) {
                 prngAlgorithm = SunEntries.DEF_SECURE_RANDOM_ALGO;
                 prngService = p.getService("SecureRandom", prngAlgorithm);
-                break;
+                if (prngService != null) {
+                    if (ProvidersFilter.isAllowed(prngService)) {
+                        break;
+                    } else {
+                        prngService = null;
+                    }
+                }
             } else {
                 prngService = p.getDefaultSecureRandomService();
                 if (prngService != null) {
@@ -290,8 +297,13 @@ public class SecureRandom extends java.util.Random {
         // then an implementation-specific default is returned.
         if (prngService == null) {
             prngAlgorithm = "SHA1PRNG";
-            this.secureRandomSpi = new sun.security.provider.SecureRandom();
             this.provider = Providers.getSunProvider();
+            try {
+                this.secureRandomSpi = SecureRandom.getInstance(prngAlgorithm,
+                        this.provider).secureRandomSpi;
+            } catch (NoSuchAlgorithmException nsae) {
+                throw new RuntimeException("Default PRNG not found", nsae);
+            }
         } else {
             try {
                 this.secureRandomSpi = (SecureRandomSpi)

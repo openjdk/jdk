@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package sun.security.jgss.wrapper;
 
 import java.io.Serial;
-import java.util.HashMap;
 import java.security.Provider;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -35,7 +34,6 @@ import jdk.internal.util.OperatingSystem;
 import jdk.internal.util.StaticProperty;
 import org.ietf.jgss.Oid;
 import sun.security.action.GetBooleanAction;
-import sun.security.action.PutAllAction;
 import static sun.security.util.SecurityConstants.PROVIDER_VER;
 
 /**
@@ -69,10 +67,10 @@ public final class SunNativeProvider extends Provider {
     }
 
     @SuppressWarnings("removal")
-    private static final HashMap<String, String> MECH_MAP =
+    private static final Oid[] MECH_OIDS =
             AccessController.doPrivileged(
                 new PrivilegedAction<>() {
-                    public HashMap<String, String> run() {
+                    public Oid[] run() {
                         try {
                             // Ensure the InetAddress class is loaded before
                             // loading j2gss. The library will access this class
@@ -118,15 +116,12 @@ public final class SunNativeProvider extends Provider {
                                     debug("Loaded GSS library: " + libName);
                                 }
                                 Oid[] mechs = GSSLibStub.indicateMechs();
-                                HashMap<String,String> map = new HashMap<>();
-                                for (int i = 0; i < mechs.length; i++) {
-                                    if (DEBUG) {
-                                        debug("Native MF for " + mechs[i]);
+                                if (DEBUG) {
+                                    for (Oid mech : mechs) {
+                                        debug("Native MF for " + mech);
                                     }
-                                    map.put("GssApiMechanism." + mechs[i],
-                                            MF_CLASS);
                                 }
-                                return map;
+                                return mechs;
                             }
                         }
                         return null;
@@ -141,8 +136,15 @@ public final class SunNativeProvider extends Provider {
         /* We are the Sun NativeGSS provider */
         super(NAME, PROVIDER_VER, INFO);
 
-        if (MECH_MAP != null) {
-            AccessController.doPrivileged(new PutAllAction(this, MECH_MAP));
+        if (MECH_OIDS != null) {
+            final Provider p = this;
+            AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+                for (Oid mech : MECH_OIDS) {
+                    putService(new Service(p, "GssApiMechanism",
+                            mech.toString(), MF_CLASS, null, null));
+                }
+                return null;
+            });
         }
     }
 }

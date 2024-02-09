@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -456,7 +456,7 @@ public abstract class Signature extends SignatureSpi {
             throws NoSuchAlgorithmException {
         // try Signature first
         Service s = p.getService("Signature", RSA_SIGNATURE);
-        if (s != null) {
+        if (s != null && ProvidersFilter.isAllowed(s)) {
             Instance instance = GetInstance.getInstance(s, SignatureSpi.class);
             return getInstance(instance, RSA_SIGNATURE);
         }

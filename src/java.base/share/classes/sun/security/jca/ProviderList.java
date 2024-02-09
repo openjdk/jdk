@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -374,7 +374,7 @@ public final class ProviderList {
             for (i = 0; i < pList.size(); i++) {
                 Provider p = getProvider(pList.get(i).provider);
                 Service s = p.getService(type, name);
-                if (s != null) {
+                if (s != null && ProvidersFilter.isAllowed(s)) {
                     return s;
                 }
             }
@@ -383,7 +383,7 @@ public final class ProviderList {
         for (i = 0; i < configs.length; i++) {
             Provider p = getProvider(i);
             Service s = p.getService(type, name);
-            if (s != null) {
+            if (s != null && ProvidersFilter.isAllowed(s)) {
                 return s;
             }
         }
@@ -421,12 +421,17 @@ public final class ProviderList {
         return new ServiceList(ids);
     }
 
+    public List<Service> getCipherServices(List<ServiceId> ids) {
+        return new CipherServiceList(ids);
+    }
+
     /**
      * Inner class for a List of Services. Custom List implementation in
      * order to delay Provider initialization and lookup.
      * Not thread safe.
      */
-    private final class ServiceList extends AbstractList<Service> {
+    private sealed class ServiceList extends AbstractList<Service>
+            permits CipherServiceList {
 
         // type and algorithm for simple lookup
         // avoid allocating/traversing the ServiceId list for these lookups
@@ -518,20 +523,28 @@ public final class ProviderList {
 
                 if (type != null) {
                     // simple lookup
-                    Service s = p.getService(type, algorithm);
+                    Service s = tryGetService(p, type, algorithm);
                     if (s != null) {
                         addService(s);
                     }
                 } else {
                     // parallel lookup
                     for (ServiceId id : ids) {
-                        Service s = p.getService(id.type, id.algorithm);
+                        Service s = tryGetService(p, id.type, id.algorithm);
                         if (s != null) {
                             addService(s);
                         }
                     }
                 }
             }
+        }
+
+        Service tryGetService(Provider p, String type, String algorithm) {
+            Service s = p.getService(type, algorithm);
+            if (s == null || !ProvidersFilter.isAllowed(s)) {
+                return null;
+            }
+            return s;
         }
 
         public Service get(int index) {
@@ -583,6 +596,25 @@ public final class ProviderList {
                     throw new UnsupportedOperationException();
                 }
             };
+        }
+    }
+
+    private final class CipherServiceList extends ServiceList {
+        private final String canonicalTransform;
+
+        CipherServiceList(List<ServiceId> ids) {
+            super(ids);
+            canonicalTransform = ids.getFirst().algorithm;
+        }
+
+        @Override
+        Service tryGetService(Provider p, String type, String algorithm) {
+            ProvidersFilter.CipherTransformation ct =
+                    new ProvidersFilter.CipherTransformation(
+                            canonicalTransform, algorithm);
+            try (ct) {
+                return super.tryGetService(p, type, algorithm);
+            }
         }
     }
 
