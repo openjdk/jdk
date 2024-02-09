@@ -393,7 +393,7 @@ class SuperWord : public ResourceObj {
   // is pack good for converting into one vector node replacing bunches of Cmp, Bool, CMov nodes.
   static bool requires_long_to_int_conversion(int opc);
   // For pack p, are all idx operands the same?
-  bool same_inputs(Node_List* p, int idx);
+  bool same_inputs(const Node_List* p, int idx);
   // CloneMap utilities
   bool same_origin_idx(Node* a, Node* b) const;
   bool same_generation(Node* a, Node* b) const;
@@ -484,7 +484,7 @@ private:
   // Is there no data path from s1 to s2 or s2 to s1?
   bool independent(Node* s1, Node* s2);
   // Are all nodes in nodes list mutually independent?
-  bool mutually_independent(Node_List* nodes) const;
+  bool mutually_independent(const Node_List* nodes) const;
   // For a node pair (s1, s2) which is isomorphic and independent,
   // do s1 and s2 have similar input edges?
   bool have_similar_inputs(Node* s1, Node* s2);
@@ -508,6 +508,16 @@ private:
   int unpack_cost(int ct);
   // Combine packs A and B with A.last == B.first into A.first..,A.last,B.second,..B.last
   void combine_packs();
+
+  // TODO
+  void split_packs_for_max_vector_size();
+
+  template <typename FilterPredicate>
+  void filter_packs(const char* filter_name,
+                    const char* error_message,
+                    FilterPredicate filter);
+  void filter_packs_for_power_of_2_size();
+  void filter_packs_for_mutual_independence();
   // Ensure all packs are aligned, if AlignVector is on.
   void filter_packs_for_alignment();
   // Find the set of alignment solutions for load/store pack.
@@ -516,8 +526,10 @@ private:
   void compress_packset();
   // Construct the map from nodes to packs.
   void construct_my_pack_map();
-  // Remove packs that are not implemented or not profitable.
-  void filter_packs();
+  // Remove packs that are not implemented.
+  void filter_packs_for_implemented();
+  // Remove packs that are not profitable.
+  void filter_packs_for_profitable();
   // Verify that for every pack, all nodes are mutually independent.
   // Also verify that packset and my_pack are consistent.
   DEBUG_ONLY(void verify_packs();)
@@ -531,9 +543,9 @@ private:
   // Create a vector operand for the nodes in pack p for operand: in(opd_idx)
   Node* vector_opd(Node_List* p, int opd_idx);
   // Can code be generated for pack p?
-  bool implemented(Node_List* p);
+  bool implemented(const Node_List* p);
   // For pack p, are all operands and all uses (with in the block) vector?
-  bool profitable(Node_List* p);
+  bool profitable(const Node_List* p);
   // Verify that all uses of packs are also packs, i.e. we do not need extract operations.
   DEBUG_ONLY(void verify_no_extract();)
   // Is use->in(u_idx) a vector use?
