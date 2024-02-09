@@ -4076,9 +4076,13 @@ DWORD os::win32::active_processors_in_job_object() {
       job_object_information = os::malloc(job_object_information_length, mtInternal);
       if (job_object_information != nullptr) {
           if (QueryInformationJobObject(nullptr, JobObjectGroupInformationEx, job_object_information, job_object_information_length, &job_object_information_length)) {
-            assert(group_count == job_object_information_length / sizeof(GROUP_AFFINITY), "Unexpected group count");
+            DWORD groups_found = job_object_information_length / sizeof(GROUP_AFFINITY);
+            if (groups_found != group_count) {
+              warning("Unexpected processor group count->%ld. Expected %ld processor groups.", groups_found, group_count);
+              assert(false, "Unexpected group count");
+            }
 
-            for (DWORD i = 0; i < group_count; i++) {
+            for (DWORD i = 0; i < groups_found; i++) {
               KAFFINITY group_affinity = ((GROUP_AFFINITY*)job_object_information)[i].Mask;
               processors += population_count(group_affinity);
             }
