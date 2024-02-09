@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,11 @@ class RTMLockingCounters;
 class BoxLockNode : public Node {
   const int     _slot; // stack slot
   RegMask     _inmask; // OptoReg corresponding to stack slot
-  bool _is_eliminated; // Associated locks were safely eliminated
+  enum {
+    Regular = 0,       // Normal locking region
+    Coarsened,         // Some lock/unlock in region were coarsened
+    Eliminated         // All lock/unlock in region were eliminated
+  } _kind;
 
 public:
   BoxLockNode( int lock );
@@ -57,9 +61,10 @@ public:
   }
   int stack_slot() const { return _slot; }
 
-  bool is_eliminated() const { return _is_eliminated; }
-  // mark lock as eliminated.
-  void set_eliminated()      { _is_eliminated = true; }
+  bool is_eliminated() const { return _kind == Eliminated; }
+  bool is_coarsened()  const { return _kind == Coarsened; }
+  void set_eliminated()      { _kind = Eliminated; }
+  void set_coarsened()       { _kind = Coarsened; }
 
   // Is BoxLock node used for one simple lock region?
   bool is_simple_lock_region(LockNode** unique_lock, Node* obj, Node** bad_lock);

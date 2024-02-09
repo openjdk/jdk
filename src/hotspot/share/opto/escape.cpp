@@ -37,6 +37,7 @@
 #include "opto/compile.hpp"
 #include "opto/escape.hpp"
 #include "opto/macro.hpp"
+#include "opto/locknode.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/movenode.hpp"
 #include "opto/rootnode.hpp"
@@ -2546,7 +2547,8 @@ void ConnectionGraph::optimize_ideal_graph(GrowableArray<Node*>& ptr_cmp_worklis
       Node *n = C->macro_node(i);
       if (n->is_AbstractLock()) { // Lock and Unlock nodes
         AbstractLockNode* alock = n->as_AbstractLock();
-        if (!alock->is_non_esc_obj()) {
+        BoxLockNode* box = alock->box_node()->as_BoxLock();
+        if (!box->is_coarsened() && !alock->is_non_esc_obj()) {
           if (not_global_escape(alock->obj_node())) {
             assert(!alock->is_eliminated() || alock->is_coarsened(), "sanity");
             // The lock could be marked eliminated by lock coarsening

@@ -56,6 +56,7 @@
 #include "opto/divnode.hpp"
 #include "opto/escape.hpp"
 #include "opto/idealGraphPrinter.hpp"
+#include "opto/locknode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/machnode.hpp"
 #include "opto/macro.hpp"
@@ -4946,6 +4947,34 @@ bool Compile::coarsened_locks_consistent() {
     }
   }
   return true;
+}
+
+// Mark locking regions (identified by BoxLockNode) as coarsened
+// if locks coarsening optimization removed lock/unlock from them.
+// Such regions become unbalanced and we can't execute other
+// locks elimination optimization on them.
+void Compile::mark_coarsened_boxes() {
+  int count = coarsened_count();
+  for (int i = 0; i < count; i++) {
+    Node_List* locks_list = _coarsened_locks.at(i);
+    uint size = locks_list->size();
+    if (size > 0) {
+      AbstractLockNode* alock = locks_list->at(0)->as_AbstractLock();
+      BoxLockNode* box = alock->box_node()->as_BoxLock();
+      if (alock->is_coarsened() && !box->is_coarsened()) { // Not marked already
+        assert(!box->is_eliminated(), "regions with coarsened locks should not be marked as eliminated");
+        for (uint j = 1; j < size; j++) {
+          assert(locks_list->at(j)->as_AbstractLock()->is_coarsened(), "only coarsened locks are expected here");
+          BoxLockNode* this_box = locks_list->at(j)->as_AbstractLock()->box_node()->as_BoxLock();
+          assert(!this_box->is_eliminated(), "regions with coarsened locks should not be marked as eliminated");
+          if (box != this_box) {
+            box->set_coarsened();
+            this_box->set_coarsened();
+          }
+        }
+      }
+    }
+  }
 }
 
 /**

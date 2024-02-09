@@ -2033,6 +2033,9 @@ void PhaseMacroExpand::mark_eliminated_box(Node* oldbox, Node* obj) {
 
 //-----------------------mark_eliminated_locking_nodes-----------------------
 void PhaseMacroExpand::mark_eliminated_locking_nodes(AbstractLockNode *alock) {
+  if (alock->box_node()->as_BoxLock()->is_coarsened()) {
+    return; // Can't do any more elimination for this locking region
+  }
   if (EliminateNestedLocks) {
     if (alock->is_nested()) {
        assert(alock->box_node()->as_BoxLock()->is_eliminated(), "sanity");
@@ -2349,6 +2352,8 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
   // Re-marking may break consistency of Coarsened locks.
   if (!C->coarsened_locks_consistent()) {
     return; // recompile without Coarsened locks if broken
+  } else {
+    C->mark_coarsened_boxes();
   }
 
   // First, attempt to eliminate locks
