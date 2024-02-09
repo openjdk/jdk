@@ -1262,7 +1262,6 @@ int SuperWord::data_size(Node* s) {
 void SuperWord::extend_packlist() {
   bool changed;
   do {
-    // TODO // packset_sort(_packset.length());
     changed = false;
     for (int i = 0; i < _packset.length(); i++) {
       Node_List* p = _packset.at(i);
@@ -1332,7 +1331,7 @@ bool SuperWord::follow_use_defs(Node_List* p) {
     align = adjust_alignment_for_type_conversion(s1, t1, align);
     if (stmts_can_pack(t1, t2, align)) {
       if (est_savings(t1, t2) >= 0) {
-        Node_List* pair = new Node_List();
+        Node_List* pair = new (arena()) Node_List(arena());
         pair->push(t1);
         pair->push(t2);
         _packset.append(pair);
@@ -1405,7 +1404,7 @@ bool SuperWord::follow_def_uses(Node_List* p) {
     _race_possible = true;
   }
   if (savings >= 0) {
-    Node_List* pair = new Node_List();
+    Node_List* pair = new (arena()) Node_List(arena());
     pair->push(u1);
     pair->push(u2);
     _packset.append(pair);
@@ -1597,7 +1596,7 @@ void SuperWord::combine_packs() {
     if (second_to_first.at(bb_idx_first) != -1) {
       continue; // don't start with a node that is a second element in some pair.
     }
-    Node_List* pack = new (arena()) Node_List(arena()); // TODO allocation elsewhere?
+    Node_List* pack = new (arena()) Node_List(arena());
     for (int idx = bb_idx_first; idx != -1; idx = first_to_second.at(idx)) {
       Node* n = _block.at(idx);
       pack->push(n);
@@ -1627,13 +1626,13 @@ void SuperWord::combine_packs() {
         continue;
       }
       if (psize > max_vlen) {
-        Node_List* pack = new Node_List();
+        Node_List* pack = new (arena()) Node_List(arena());
         for (uint j = 0; j < psize; j++) {
           pack->push(p1->at(j));
           if (pack->size() >= max_vlen) {
             assert(is_power_of_2(pack->size()), "sanity");
             _packset.append(pack);
-            pack = new Node_List();
+            pack = new (arena()) Node_List(arena());
           }
         }
         _packset.at_put(i, nullptr);
@@ -3428,25 +3427,6 @@ void SuperWord::remove_pack_at(int pos) {
     set_my_pack(s, nullptr);
   }
   _packset.remove_at(pos);
-}
-
-void SuperWord::packset_sort(int n) {
-  // simple bubble sort so that we capitalize with O(n) when its already sorted
-  do {
-    int max_swap_index = 0;
-    for (int i = 1; i < n; i++) {
-      Node_List* q_low = _packset.at(i-1);
-      Node_List* q_i = _packset.at(i);
-
-      // only swap when we find something to swap
-      if (alignment(q_low->at(0)) > alignment(q_i->at(0))) {
-        *(_packset.adr_at(i)) = q_low;
-        *(_packset.adr_at(i-1)) = q_i;
-        max_swap_index = i;
-      }
-    }
-    n = max_swap_index;
-  } while (n > 1);
 }
 
 LoadNode::ControlDependency SuperWord::control_dependency(Node_List* p) {

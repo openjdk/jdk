@@ -684,8 +684,6 @@ private:
   void print_pack(Node_List* p);
   void print_bb();
   void print_stmt(Node* s);
-
-  void packset_sort(int n);
 };
 
 #endif // SHARE_OPTO_SUPERWORD_HPP
