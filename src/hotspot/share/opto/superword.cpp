@@ -1708,7 +1708,7 @@ void SuperWord::filter_packs_for_mutual_independence() {
 }
 
 // Find the set of alignment solutions for load/store pack.
-const AlignmentSolution* SuperWord::pack_alignment_solution(Node_List* pack) {
+const AlignmentSolution* SuperWord::pack_alignment_solution(const Node_List* pack) {
   assert(pack != nullptr && (pack->at(0)->is_Load() || pack->at(0)->is_Store()), "only load/store packs");
 
   const MemNode* mem_ref = pack->at(0)->as_Mem();
@@ -1752,51 +1752,36 @@ void SuperWord::filter_packs_for_alignment() {
   AlignmentSolution const* current = new TrivialAlignmentSolution();
   int mem_ops_count = 0;
   int mem_ops_rejected = 0;
-  int new_packset_length = 0;
-  for (int i = 0; i < _packset.length(); i++) {
-    Node_List* pack = _packset.at(i);
-    assert(pack != nullptr, "no nullptr in packset");
-    bool keep = true;
-    if (pack->at(0)->is_Load() || pack->at(0)->is_Store()) {
-      mem_ops_count++;
-      // Find solution for pack p, and filter with current solution.
-      const AlignmentSolution* s = pack_alignment_solution(pack);
-      const AlignmentSolution* intersect = current->filter(s);
+
+  filter_packs("SuperWord::filter_packs_for_alignment",
+               "rejected by AlignVector (strinct alignment requirement)",
+               [&](const Node_List* pack) {
+                 // Only memops need to be aligned.
+                 if (!pack->at(0)->is_Load() &&
+                     !pack->at(0)->is_Store()) {
+                   return true; // accept all non memops
+                 }
+
+                 mem_ops_count++;
+                 const AlignmentSolution* s = pack_alignment_solution(pack);
+                 const AlignmentSolution* intersect = current->filter(s);
 
 #ifndef PRODUCT
-      if (is_trace_align_vector()) {
-        tty->print("  solution for pack:         ");
-        s->print();
-        tty->print("  intersection with current: ");
-        intersect->print();
-      }
+                 if (is_trace_align_vector()) {
+                   tty->print("  solution for pack:         ");
+                   s->print();
+                   tty->print("  intersection with current: ");
+                   intersect->print();
+                 }
 #endif
+                 if (intersect->is_empty()) {
+                   mem_ops_rejected++;
+                   return false; // reject because of empty solution
+                 }
 
-      if (intersect->is_empty()) {
-        // Solution failed or is not compatible, remove pack i.
-#ifndef PRODUCT
-        if (is_trace_superword_rejections() || is_trace_align_vector()) {
-          tty->print_cr("Rejected by AlignVector:");
-          pack->at(0)->dump();
-        }
-#endif
-        keep = false;
-        mem_ops_rejected++;
-      } else {
-        // Solution is compatible.
-        current = intersect;
-      }
-    }
-    if (keep) {
-      assert(i >= new_packset_length, "only move packs down");
-      _packset.at_put(new_packset_length++, pack);
-    } else {
-      remove_pack_at(i);
-    }
-  }
-
-  assert(_packset.length() >= new_packset_length, "filter only reduces number of packs");
-  _packset.trunc_to(new_packset_length);
+                 current = intersect;
+                 return true; // accept because of non-empty solution
+               });
 
 #ifndef PRODUCT
   if (is_trace_superword_info() || is_trace_align_vector()) {
@@ -1813,13 +1798,6 @@ void SuperWord::filter_packs_for_alignment() {
     // -> must change pre-limit to achieve alignment
     set_align_to_ref(current->as_constrained()->mem_ref());
   }
-
-#ifndef PRODUCT
-  if (is_trace_superword_packset() || is_trace_align_vector()) {
-    tty->print_cr("\nAfter Superword::filter_packs_for_alignment");
-    print_packset();
-  }
-#endif
 }
 
 // Compress packset, such that it has no nullptr entries
