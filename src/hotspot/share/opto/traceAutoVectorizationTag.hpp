@@ -31,6 +31,7 @@
 #define COMPILER_TRACE_AUTO_VECTORIZATION_TAG(flags) \
   flags(POINTER_ANALYSIS,     "Trace VPointer") \
   flags(PRECONDITIONS,        "Trace VLoop::check_preconditions") \
+  flags(LOOP_ANALYZER,        "Trace VLoopAnalyzer::setup_submodules") \
   flags(SW_TYPES,             "Trace SuperWord::compute_vector_element_type") \
   flags(SW_ALIGNMENT,         "Trace SuperWord alignment analysis") \
   flags(SW_MEMORY_SLICES,     "Trace SuperWord memory slices") \

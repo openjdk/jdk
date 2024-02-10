@@ -111,6 +111,10 @@ public:
     return vtrace().is_trace(TraceAutoVectorizationTag::PRECONDITIONS);
   }
 
+  bool is_trace_loop_analyzer() const {
+    return vtrace().is_trace(TraceAutoVectorizationTag::LOOP_ANALYZER);
+  }
+
   bool is_trace_pointer_analysis() const {
     return vtrace().is_trace(TraceAutoVectorizationTag::POINTER_ANALYSIS);
   }
@@ -164,6 +168,52 @@ private:
   static int estimated_node_count() {
     return (int)(1.10 * Compile::current()->unique());
   }
+};
+
+// TODO submodules
+
+// Analyze the loop in preparation for auto-vectorization. This class is
+// deliberately structured into many submodules, which are as independent
+// as possible, though some submodules do require other submodules.
+class VLoopAnalyzer : StackObj {
+private:
+  // TODO check if all are really needed
+  static constexpr char const* SUCCESS                       = "success";
+  static constexpr char const* FAILURE_NO_MAX_UNROLL         = "slp max unroll analysis required";
+  static constexpr char const* FAILURE_NO_REDUCTION_OR_STORE = "no reduction and no store in loop";
+
+  const VLoop&               _vloop;
+
+  // Arena for all submodules
+  Arena                      _arena;
+
+  // If all submodules are setup successfully, we set this flag at the
+  // end of the constructor
+  bool                       _success;
+
+  // Submodules
+  // TODO
+
+public:
+  VLoopAnalyzer(const VLoop& vloop, VSharedData &vshared) :
+    _vloop(vloop),
+    _arena(mtCompiler),
+    _success(false)
+    // TODO modules
+  {
+    _success = setup_submodules();
+  }
+  NONCOPYABLE(VLoopAnalyzer);
+
+  bool success() const { return _success; }
+
+  // Read-only accessors for submodules
+  const VLoop& vloop()                           const { return _vloop; }
+  // TODO
+
+private:
+  bool setup_submodules();
+  const char* setup_submodules_helper();
 };
 
 // A vectorization pointer (VPointer) has information about an address for

@@ -399,16 +399,6 @@ bool SuperWord::transform_loop() {
   }
 #endif
 
-  // Skip any loop that has not been assigned max unroll by analysis
-  if (SuperWordLoopUnrollAnalysis && vloop().cl()->slp_max_unroll() == 0) {
-#ifndef PRODUCT
-    if (is_trace_superword_any()) {
-      tty->print_cr("\nSuperWord::transform_loop failed: slp max unroll analysis was not already done");
-    }
-#endif
-    return false;
-  }
-
   if (!SLP_extract()) {
 #ifndef PRODUCT
     if (is_trace_superword_any()) {

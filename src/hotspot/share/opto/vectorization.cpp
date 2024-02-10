@@ -114,6 +114,40 @@ const char* VLoop::check_preconditions_helper() {
   return VLoop::SUCCESS;
 }
 
+// Return true iff all submodules are loaded successfully
+bool VLoopAnalyzer::setup_submodules() {
+#ifndef PRODUCT
+  if (vloop().is_trace_loop_analyzer()) {
+    tty->print_cr("\nVLoopAnalyzer::setup_submodules");
+    vloop().lpt()->dump_head();
+    vloop().cl()->dump();
+  }
+#endif
+
+  const char* state = setup_submodules_helper();
+    if (state == VLoopAnalyzer::SUCCESS) {
+    return true; // success
+  }
+
+#ifndef PRODUCT
+  if (vloop().is_trace_loop_analyzer()) {
+    tty->print_cr("\nVLoopAnalyze::setup_submodules: failed: %s", state);
+  }
+#endif
+  return false; // failed
+}
+
+// Return SUCCESS string iff all submodules are setup successfully
+const char* VLoopAnalyzer::setup_submodules_helper() {
+  // Skip any loop that has not been assigned max unroll by analysis.
+  if (SuperWordLoopUnrollAnalysis && vloop().cl()->slp_max_unroll() == 0) {
+    return VLoopAnalyzer::FAILURE_NO_MAX_UNROLL;
+  }
+
+  // TODO
+  return VLoopAnalyzer::SUCCESS;
+}
+
 #ifndef PRODUCT
 int VPointer::Tracer::_depth = 0;
 #endif
