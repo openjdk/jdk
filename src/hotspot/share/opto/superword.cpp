@@ -1126,8 +1126,8 @@ BasicType SuperWord::input_velt_basic_type(const Node* n) const {
 
 // Check if output type of def is compatible with input type of use
 bool SuperWord::is_velt_basic_type_compatible_def_use(const Node* def, const Node* use) const {
-  BasicType def_out_t = input_velt_basic_type(def);
-  BasicType use_in_t  = velt_basic_type(use);
+  BasicType def_out_t = velt_basic_type(def);
+  BasicType use_in_t = input_velt_basic_type(use);
 
   assert(is_java_primitive(def_out_t), "sanity %s", type2name(def_out_t));
   assert(is_java_primitive(use_in_t), "sanity %s", type2name(use_in_t));
