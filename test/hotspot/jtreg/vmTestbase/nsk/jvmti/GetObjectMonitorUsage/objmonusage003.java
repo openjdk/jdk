@@ -28,9 +28,9 @@ import java.io.PrintStream;
 public class objmonusage003 {
 
     final static int JCK_STATUS_BASE = 95;
-    final static int NUMBER_OF_THREADS = 16;
-    final static int WAIT_TIME = 100;
-    volatile static boolean waiterInLockCheck = false;
+    final static int NUMBER_OF_ENTERER_THREADS = 4;
+    final static int NUMBER_OF_WAITER_THREADS  = 4;
+    final static int NUMBER_OF_THREADS = NUMBER_OF_ENTERER_THREADS + NUMBER_OF_WAITER_THREADS;
 
     static {
         try {
@@ -43,12 +43,11 @@ public class objmonusage003 {
         }
     }
 
-    static Object lockStart = new Object();
     static Object lockCheck = new Object();
 
     native static int getRes();
     native static void check(Object obj, Thread owner,
-                             int entryCount, int notifyWaiterCount);
+                             int entryCount, int waiterCount, int notifyWaiterCount);
 
     public static void main(String args[]) {
         args = nsk.share.jvmti.JVMTITest.commonInit(args);
@@ -58,40 +57,37 @@ public class objmonusage003 {
     }
 
     public static int run(String args[], PrintStream out) {
-        check(lockCheck, null, 0, 0);
+        check(lockCheck, null, 0, 0, 0);
 
         synchronized (lockCheck) {
-            check(lockCheck, Thread.currentThread(), 1, 0);
+            check(lockCheck, Thread.currentThread(), 1, 0, 0);
         }
 
-        WaiterThread thr[] = new WaiterThread[NUMBER_OF_THREADS];
-        for (int i = 0; i < NUMBER_OF_THREADS; i++) {
+        TestThread thr[] = new TestThread[NUMBER_OF_THREADS];
+        for (int i = NUMBER_OF_ENTERER_THREADS; i < NUMBER_OF_THREADS; i++) {
             thr[i] = new WaiterThread();
-            synchronized (lockStart) {
-                thr[i].start();
-                try {
-                    lockStart.wait();
-                } catch (InterruptedException e) {
-                    throw new Error("Unexpected " + e);
-                }
-            }
-            synchronized (lockCheck) {
-                while (!waiterInLockCheck) {
-                    try {
-                        lockCheck.wait(WAIT_TIME);
-                    } catch (InterruptedException e) {
-                        throw new Error("Unexpected " + e);
-                    }
-                }
-                waiterInLockCheck = false;
-            }
-            check(lockCheck, null, 0, i + 1);
+            thr[i].start();
+            // the WaiterThread has to wait to be notified in a lockCheck.wait()
+            thr[i].waitReady();
         }
-
         synchronized (lockCheck) {
-            lockCheck.notifyAll();
+            for (int i = 0; i < NUMBER_OF_ENTERER_THREADS; i++) {
+                thr[i] = new EntererThread();
+                thr[i].start();
+                // the EntererThread has to be blocked on the lockCheck enter
+                thr[i].waitReady();
+            }
+            check(lockCheck, Thread.currentThread(), 1,
+                  NUMBER_OF_ENTERER_THREADS,
+                  NUMBER_OF_WAITER_THREADS);
+            for (int i = 0; i < NUMBER_OF_WAITER_THREADS; i++) {
+                lockCheck.notify();
+                // now the notified WaiterThread has to be blocked on the lockCheck re-enter
+                check(lockCheck, Thread.currentThread(), 1,
+                      NUMBER_OF_ENTERER_THREADS + i + 1,
+                      NUMBER_OF_WAITER_THREADS  - i - 1);
+            }
         }
-
         for (int i = 0; i < NUMBER_OF_THREADS; i++) {
             try {
                 thr[i].join();
@@ -99,19 +95,36 @@ public class objmonusage003 {
                 throw new Error("Unexpected " + e);
             }
         }
-
-        check(lockCheck, null, 0, 0);
+        check(lockCheck, null, 0, 0, 0);
         return getRes();
     }
 
-    static class WaiterThread extends Thread {
-        public synchronized void run() {
-            synchronized (lockStart) {
-                lockStart.notify();
+    static class TestThread extends Thread {
+        public volatile boolean ready = false;
+        public void waitReady() {
+            try {
+                while (!ready) {
+                    Thread.sleep(10);
+                }
+            } catch (InterruptedException e) {
+                throw new Error("Unexpected " + e);
             }
+        }
+    }
+
+    static class EntererThread extends TestThread {
+        public void run() {
+            ready = true;
+            synchronized (lockCheck) {
+            }
+        }
+    }
+
+    static class WaiterThread extends TestThread {
+         public void run() {
             synchronized (lockCheck) {
                 try {
-                    waiterInLockCheck = true;
+                    ready = true;
                     lockCheck.wait();
                 } catch (InterruptedException e) {
                     throw new Error("Unexpected " + e);

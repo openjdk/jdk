@@ -158,7 +158,7 @@ Java_nsk_jvmti_GetObjectMonitorUsage_objmonusage001_check(JNIEnv *env,
     }
 
     if (inf.notify_waiter_count != notifyWaiterCount) {
-        printf("(%d) waiter_count expected: %d, actually: %d\n",
+        printf("(%d) notify_waiter_count expected: %d, actually: %d\n",
                i, notifyWaiterCount, inf.notify_waiter_count);
         result = STATUS_FAILED;
     }

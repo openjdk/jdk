@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1187,7 +1187,11 @@ GrowableArray<JavaThread*>* Threads::get_pending_threads(ThreadsList * t_list,
     // The first stage of async deflation does not affect any field
     // used by this comparison so the ObjectMonitor* is usable here.
     address pending = (address)p->current_pending_monitor();
-    if (pending == monitor) {             // found a match
+    address waiting = (address)p->current_waiting_monitor();
+    if (pending == monitor ||
+        (waiting == monitor && JavaThreadStatus::BLOCKED_ON_MONITOR_ENTER ==
+         java_lang_Thread::get_thread_status(p->vthread_or_thread()))
+    ) {  // found a match
       if (i < count) result->append(p);   // save the first count matches
       i++;
     }

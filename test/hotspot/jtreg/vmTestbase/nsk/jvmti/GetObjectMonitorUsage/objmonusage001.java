@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,8 @@ public class objmonusage001 {
     }
 
     native static int getResult();
-    native static void check(int i, Object o, Thread owner, int ec, int wc);
+    native static void check(int i, Object o, Thread owner,
+                             int entryCount, int notifyWaiterCount);
 
     public static void main(String argv[]) {
         argv = nsk.share.jvmti.JVMTITest.commonInit(argv);
