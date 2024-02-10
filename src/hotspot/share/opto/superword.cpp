@@ -632,13 +632,15 @@ void SuperWord::find_adjacent_refs() {
         MemReference ref2 = iter.current_at(j);
         MemNode* mem2 = ref2.mem();
         assert(mem1 != mem2,                   "not identical");
-        assert(isomorphic(mem1, mem2),         "isomorphically grouped");
-        assert(ref1.offset() <= ref2.offset(), "sorted by offset");
 
         // Distance too small or too large?
+        assert(ref1.offset() <= ref2.offset(), "sorted by offset");
         if (ref1.offset() + element_size > ref2.offset()) { continue; }
         if (ref1.offset() + element_size < ref2.offset()) { break; }
         assert(are_adjacent_refs(mem1, mem2),  "implied by offsets");
+
+        // Isomorphic (has more criteria than we group for)
+        if (!isomorphic(mem1, mem2)) { continue; }
 
         // Only allow nodes from same origin idx to be packed (CompileCommand Option Vectorize)
         if (_do_vector_loop && !same_origin_idx(mem1, mem2)) { continue; }
