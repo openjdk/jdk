@@ -376,7 +376,6 @@ void VLoopReductions::mark_reductions() {
     }
     // Reduction cycle found. Mark all nodes in the found path as reductions.
     current = first;
-    // TODO trace this
     for (int i = 0; i < path_nodes; i++) {
       _loop_reductions.set(current->_idx);
       current = original_input(current, reduction_input);
@@ -448,8 +447,6 @@ bool SuperWord::transform_loop() {
 //
 bool SuperWord::SLP_extract() {
   assert(cl()->is_main_loop(), "SLP should only work on main loops");
-
-  // TODO remove all the VLoopAnalyzer stuff
 
   // Ensure extra info is allocated.
   initialize_node_info();

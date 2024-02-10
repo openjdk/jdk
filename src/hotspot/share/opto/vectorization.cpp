@@ -165,7 +165,6 @@ const char* VLoopAnalyzer::setup_submodules_helper() {
 
   _types.compute_vector_element_type();
 
-  // TODO
   return VLoopAnalyzer::SUCCESS;
 }
 

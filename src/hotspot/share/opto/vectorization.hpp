@@ -425,7 +425,6 @@ private:
 // as possible, though some submodules do require other submodules.
 class VLoopAnalyzer : StackObj {
 private:
-  // TODO check if all are really needed
   static constexpr char const* SUCCESS                       = "success";
   static constexpr char const* FAILURE_NO_MAX_UNROLL         = "slp max unroll analysis required";
   static constexpr char const* FAILURE_NO_REDUCTION_OR_STORE = "no reduction and no store in loop";
@@ -440,12 +439,10 @@ private:
   bool                 _success;
 
   // Submodules
-  // TODO
   VLoopReductions      _reductions;
   VLoopMemorySlices    _memory_slices;
   VLoopBody            _body;
   VLoopTypes           _types;
-  //VLoopDependenceGraph _dependence_graph;
 
 public:
   VLoopAnalyzer(const VLoop& vloop, VSharedData &vshared) :
@@ -456,8 +453,6 @@ public:
     _memory_slices   (&_arena, vloop),
     _body            (&_arena, vloop, vshared),
     _types           (&_arena, vloop, body())
-    //_dependence_graph(&_arena, vloop, memory_slices(), body())
-    // TODO modules
   {
     _success = setup_submodules();
   }
@@ -473,8 +468,6 @@ public:
   const VLoopMemorySlices& memory_slices()       const { return _memory_slices; }
   const VLoopBody& body()                        const { return _body; }
   const VLoopTypes& types()                      const { return _types; }
-  //const VLoopDependenceGraph& dependence_graph() const { return _dependence_graph; }
-  // TODO
 
 private:
   bool setup_submodules();
