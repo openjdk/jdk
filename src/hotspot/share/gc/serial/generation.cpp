@@ -83,26 +83,6 @@ void Generation::print_summary_info_on(outputStream* st) {
                sr->invocations > 0 ? time / sr->invocations : 0.0);
 }
 
-// Utility iterator classes
-
-class GenerationIsInClosure : public SpaceClosure {
- public:
-  const void* _p;
-  Space* sp;
-  virtual void do_space(Space* s) {
-    if (sp == nullptr) {
-      if (s->is_in(_p)) sp = s;
-    }
-  }
-  GenerationIsInClosure(const void* p) : _p(p), sp(nullptr) {}
-};
-
-bool Generation::is_in(const void* p) const {
-  GenerationIsInClosure blk(p);
-  ((Generation*)this)->space_iterate(&blk);
-  return blk.sp != nullptr;
-}
-
 size_t Generation::max_contiguous_available() const {
   // The largest number of contiguous free words in this or any higher generation.
   size_t avail = contiguous_available();
@@ -141,26 +121,4 @@ oop Generation::promote(oop obj, size_t obj_size) {
   ContinuationGCSupport::transform_stack_chunk(new_obj);
 
   return new_obj;
-}
-
-// Some of these are mediocre general implementations.  Should be
-// overridden to get better performance.
-
-class GenerationBlockStartClosure : public SpaceClosure {
- public:
-  const void* _p;
-  HeapWord* _start;
-  virtual void do_space(Space* s) {
-    if (_start == nullptr && s->is_in_reserved(_p)) {
-      _start = s->block_start(_p);
-    }
-  }
-  GenerationBlockStartClosure(const void* p) { _p = p; _start = nullptr; }
-};
-
-HeapWord* Generation::block_start(const void* p) const {
-  GenerationBlockStartClosure blk(p);
-  // Cast away const
-  ((Generation*)this)->space_iterate(&blk);
-  return blk._start;
 }

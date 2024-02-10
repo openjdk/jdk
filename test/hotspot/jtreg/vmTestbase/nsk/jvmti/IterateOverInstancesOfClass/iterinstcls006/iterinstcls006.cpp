@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,9 @@ extern "C" {
 /* ============================================================================= */
 
 static jlong timeout = 0;
-static jvmtiEnv* st_jvmti = NULL;
+static jvmtiEnv* st_jvmti = nullptr;
 static const char *storage_data = "local_storage_data";
-static void *storage_ptr = NULL;
+static void *storage_ptr = nullptr;
 static const char debugeeClassSignature[] = "Lnsk/jvmti/IterateOverInstancesOfClass/iterinstcls006;";
 
 /* ============================================================================= */
@@ -68,11 +68,11 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         return;
 
     do {
-        jclass debugeeClass = NULL;
+        jclass debugeeClass = nullptr;
 
         NSK_DISPLAY1("Find debugee class: %s\n", debugeeClassSignature);
         debugeeClass = nsk_jvmti_classBySignature(debugeeClassSignature);
-        if (debugeeClass == NULL) {
+        if (debugeeClass == nullptr) {
             nsk_jvmti_setFailStatus();
             break;
         }
@@ -121,7 +121,7 @@ JNIEXPORT jint JNI_OnLoad_iterinstcls006(JavaVM *jvm, char *options, void *reser
 }
 #endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
-    jvmtiEnv* jvmti = NULL;
+    jvmtiEnv* jvmti = nullptr;
 
     if (!NSK_VERIFY(nsk_jvmti_parseOptions(options)))
         return JNI_ERR;
@@ -129,7 +129,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     timeout = nsk_jvmti_getWaitTime() * 60 * 1000;
 
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     /* save pointer to environment to use it in callbacks */
@@ -145,7 +145,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         }
     }
 
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     return JNI_OK;

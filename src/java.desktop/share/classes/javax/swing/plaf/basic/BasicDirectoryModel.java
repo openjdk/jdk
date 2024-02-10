@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -341,64 +341,66 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
             // execute the whole block on the COM thread
             runnable = ShellFolder.invoke(new Callable<DoChangeContents>() {
                 public DoChangeContents call() {
-                    int newSize = newFileCache.size();
-                    int oldSize = fileCache.size();
+                    synchronized (fileCache) {
+                        int newSize = newFileCache.size();
+                        int oldSize = fileCache.size();
 
-                    if (newSize > oldSize) {
-                        //see if interval is added
-                        int start = oldSize;
-                        int end = newSize;
-                        for (int i = 0; i < oldSize; i++) {
-                            if (!newFileCache.get(i).equals(fileCache.get(i))) {
-                                start = i;
-                                for (int j = i; j < newSize; j++) {
-                                    if (newFileCache.get(j).equals(fileCache.get(i))) {
-                                        end = j;
-                                        break;
+                        if (newSize > oldSize) {
+                            //see if interval is added
+                            int start = oldSize;
+                            int end = newSize;
+                            for (int i = 0; i < oldSize; i++) {
+                                if (!newFileCache.get(i).equals(fileCache.get(i))) {
+                                    start = i;
+                                    for (int j = i; j < newSize; j++) {
+                                        if (newFileCache.get(j).equals(fileCache.get(i))) {
+                                            end = j;
+                                            break;
+                                        }
                                     }
+                                    break;
                                 }
-                                break;
                             }
-                        }
 
-                        if (start >= 0 && end > start) {
-                            List<File> listStart_OldSize = new Vector<>(fileCache.subList(start, oldSize));
-                            if (newFileCache.subList(end, newSize).equals(listStart_OldSize)) {
+                            if (start >= 0 && end > start
+                                    && newFileCache.subList(end, newSize)
+                                                   .equals(fileCache.subList(start, oldSize))) {
                                 if (loadThread.isInterrupted()) {
                                     return null;
                                 }
-                                return new DoChangeContents(newFileCache.subList(start, end), start, null, 0, fid);
+                                return new DoChangeContents(newFileCache.subList(start, end),
+                                                            start, null, 0, fid);
                             }
-                        }
-                    } else if (newSize < oldSize) {
-                        //see if interval is removed
-                        int start = -1;
-                        int end = -1;
-                        for (int i = 0; i < newSize; i++) {
-                            if (!newFileCache.get(i).equals(fileCache.get(i))) {
-                                start = i;
-                                end = i + oldSize - newSize;
-                                break;
+                        } else if (newSize < oldSize) {
+                            //see if interval is removed
+                            int start = -1;
+                            int end = -1;
+                            for (int i = 0; i < newSize; i++) {
+                                if (!newFileCache.get(i).equals(fileCache.get(i))) {
+                                    start = i;
+                                    end = i + oldSize - newSize;
+                                    break;
+                                }
                             }
-                        }
 
-                        if (start >= 0 && end > start) {
-                            List<File> listEnd_OldSize = new Vector<>(fileCache.subList(end, oldSize));
-                            if (listEnd_OldSize.equals(newFileCache.subList(start, newSize))) {
+                            if (start >= 0 && end > start
+                                    && fileCache.subList(end, oldSize)
+                                                .equals(newFileCache.subList(start, newSize))) {
                                 if (loadThread.isInterrupted()) {
                                     return null;
                                 }
-                                return new DoChangeContents(null, 0, new Vector<>(fileCache.subList(start, end)), start, fid);
+                                return new DoChangeContents(null, 0,
+                                        new Vector<>(fileCache.subList(start, end)), start, fid);
                             }
                         }
-                    }
-                    if (!fileCache.equals(newFileCache)) {
-                        if (loadThread.isInterrupted()) {
-                            cancelRunnables();
+                        if (!fileCache.equals(newFileCache)) {
+                            if (loadThread.isInterrupted()) {
+                                cancelRunnables();
+                            }
+                            return new DoChangeContents(newFileCache, 0, fileCache, 0, fid);
                         }
-                        return new DoChangeContents(newFileCache, 0, fileCache, 0, fid);
+                        return null;
                     }
-                    return null;
                 }
             });
 

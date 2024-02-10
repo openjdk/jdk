@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -447,9 +447,6 @@ void InterpreterMacroAssembler::gen_subtype_check(Register Rsub_klass,
 
   // Do the check.
   check_klass_subtype(Rsub_klass, Rsuper_klass, Rtmp1, Rtmp2, ok_is_subtype);
-
-  // Profile the failure of the check.
-  profile_typecheck_failed(Rtmp1, Rtmp2);
 }
 
 // Pop topmost element from stack. It just disappears.
@@ -1425,7 +1422,7 @@ void InterpreterMacroAssembler::profile_virtual_call(Register receiver,
     }
 
     // Record the receiver type.
-    record_klass_in_profile(receiver, mdp, reg2, true);
+    record_klass_in_profile(receiver, mdp, reg2);
     bind(skip_receiver_profile);
 
     // The method data pointer needs to be updated to reflect the new target.
@@ -1448,11 +1445,9 @@ void InterpreterMacroAssembler::profile_virtual_call(Register receiver,
 void InterpreterMacroAssembler::record_klass_in_profile_helper(
                                         Register receiver, Register mdp,
                                         Register reg2, int start_row,
-                                        Label& done, bool is_virtual_call) {
+                                        Label& done) {
   if (TypeProfileWidth == 0) {
-    if (is_virtual_call) {
-      increment_mdp_data_at(mdp, in_bytes(CounterData::count_offset()));
-    }
+    increment_mdp_data_at(mdp, in_bytes(CounterData::count_offset()));
     return;
   }
 
@@ -1487,23 +1482,19 @@ void InterpreterMacroAssembler::record_klass_in_profile_helper(
       z_ltgr(reg2, reg2);
       if (start_row == last_row) {
         // The only thing left to do is handle the null case.
-        if (is_virtual_call) {
-          z_brz(found_null);
-          // Receiver did not match any saved receiver and there is no empty row for it.
-          // Increment total counter to indicate polymorphic case.
-          increment_mdp_data_at(mdp, in_bytes(CounterData::count_offset()));
-          z_bru(done);
-          bind(found_null);
-        } else {
-          z_brnz(done);
-        }
+        z_brz(found_null);
+        // Receiver did not match any saved receiver and there is no empty row for it.
+        // Increment total counter to indicate polymorphic case.
+        increment_mdp_data_at(mdp, in_bytes(CounterData::count_offset()));
+        z_bru(done);
+        bind(found_null);
         break;
       }
       // Since null is rare, make it be the branch-taken case.
       z_brz(found_null);
 
       // Put all the "Case 3" tests here.
-      record_klass_in_profile_helper(receiver, mdp, reg2, start_row + 1, done, is_virtual_call);
+      record_klass_in_profile_helper(receiver, mdp, reg2, start_row + 1, done);
 
       // Found a null. Keep searching for a matching receiver,
       // but remember that this is an empty (unused) slot.
@@ -1550,12 +1541,11 @@ void InterpreterMacroAssembler::record_klass_in_profile_helper(
 //   done:
 
 void InterpreterMacroAssembler::record_klass_in_profile(Register receiver,
-                                                        Register mdp, Register reg2,
-                                                        bool is_virtual_call) {
+                                                        Register mdp, Register reg2) {
   assert(ProfileInterpreter, "must be profiling");
   Label done;
 
-  record_klass_in_profile_helper(receiver, mdp, reg2, 0, done, is_virtual_call);
+  record_klass_in_profile_helper(receiver, mdp, reg2, 0, done);
 
   bind (done);
 }
@@ -1615,24 +1605,6 @@ void InterpreterMacroAssembler::profile_null_seen(Register mdp) {
   }
 }
 
-void InterpreterMacroAssembler::profile_typecheck_failed(Register mdp, Register tmp) {
-  if (ProfileInterpreter && TypeProfileCasts) {
-    Label profile_continue;
-
-    // If no method data exists, go to profile_continue.
-    test_method_data_pointer(mdp, profile_continue);
-
-    int count_offset = in_bytes(CounterData::count_offset());
-    // Back up the address, since we have already bumped the mdp.
-    count_offset -= in_bytes(VirtualCallData::virtual_call_data_size());
-
-    // *Decrement* the counter. We expect to see zero or small negatives.
-    increment_mdp_data_at(mdp, count_offset, tmp, true);
-
-    bind (profile_continue);
-  }
-}
-
 void InterpreterMacroAssembler::profile_typecheck(Register mdp, Register klass, Register reg2) {
   if (ProfileInterpreter) {
     Label profile_continue;
@@ -1646,7 +1618,7 @@ void InterpreterMacroAssembler::profile_typecheck(Register mdp, Register klass, 
       mdp_delta = in_bytes(VirtualCallData::virtual_call_data_size());
 
       // Record the object type.
-      record_klass_in_profile(klass, mdp, reg2, false);
+      record_klass_in_profile(klass, mdp, reg2);
     }
     update_mdp_by_constant(mdp, mdp_delta);
 
