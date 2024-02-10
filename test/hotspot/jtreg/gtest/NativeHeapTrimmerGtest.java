@@ -29,5 +29,5 @@
  * @modules java.base/jdk.internal.misc
  *          java.xml
  * @requires vm.flagless
- * @run main/native GTestWrapper --gtest_filter=os.trim* -Xlog:trimnative -XX:+UnlockExperimentalVMOptions -XX:TrimNativeHeapInterval=100
+ * @run main/native GTestWrapper --gtest_filter=os.trim* -Xlog:trimnative -XX:TrimNativeHeapInterval=100
  */

@@ -278,7 +278,7 @@ public class TestTrimNative {
                 long trimInterval = 500; // twice per second
                 long ms1 = System.currentTimeMillis();
                 OutputAnalyzer output = runTestWithOptions(
-                        new String[] { "-XX:+UnlockExperimentalVMOptions", "-XX:TrimNativeHeapInterval=" + trimInterval },
+                        new String[] { "-XX:TrimNativeHeapInterval=" + trimInterval },
                         new String[] { TestTrimNative.Tester.class.getName(), "5000" }
                 );
                 long ms2 = System.currentTimeMillis();
@@ -293,7 +293,7 @@ public class TestTrimNative {
 
             case "trimNativeHighInterval": {
                 OutputAnalyzer output = runTestWithOptions(
-                        new String[] { "-XX:+UnlockExperimentalVMOptions", "-XX:TrimNativeHeapInterval=" + Integer.MAX_VALUE },
+                        new String[] { "-XX:TrimNativeHeapInterval=" + Integer.MAX_VALUE },
                         new String[] { TestTrimNative.Tester.class.getName(), "5000" }
                 );
                 checkExpectedLogMessages(output, true, Integer.MAX_VALUE);
@@ -305,7 +305,7 @@ public class TestTrimNative {
             case "trimNativeLowIntervalStrict": {
                 long ms1 = System.currentTimeMillis();
                 OutputAnalyzer output = runTestWithOptions(
-                        new String[] { "-XX:+UnlockExperimentalVMOptions", "-XX:TrimNativeHeapInterval=1" },
+                        new String[] { "-XX:TrimNativeHeapInterval=1" },
                         new String[] { TestTrimNative.Tester.class.getName(), "0" }
                 );
                 long ms2 = System.currentTimeMillis();
@@ -316,7 +316,7 @@ public class TestTrimNative {
 
             case "testOffOnNonCompliantPlatforms": {
                 OutputAnalyzer output = runTestWithOptions(
-                        new String[] { "-XX:+UnlockExperimentalVMOptions", "-XX:TrimNativeHeapInterval=1" },
+                        new String[] { "-XX:TrimNativeHeapInterval=1" },
                         new String[] { "-version" }
                 );
                 checkExpectedLogMessages(output, false, 0);
@@ -327,7 +327,7 @@ public class TestTrimNative {
 
             case "testOffExplicit": {
                 OutputAnalyzer output = runTestWithOptions(
-                        new String[] { "-XX:+UnlockExperimentalVMOptions", "-XX:TrimNativeHeapInterval=0" },
+                        new String[] { "-XX:TrimNativeHeapInterval=0" },
                         new String[] { "-version" }
                 );
                 checkExpectedLogMessages(output, false, 0);
