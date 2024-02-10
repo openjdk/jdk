@@ -45,7 +45,7 @@ class PackagePrivate {
     }
 
     @Test
-    @Arguments(Argument.DEFAULT)
+    @Arguments(values = Argument.DEFAULT)
     public void test2(int x) {
     }
 

@@ -30,7 +30,7 @@ import compiler.lib.ir_framework.test.TestVM; // Only used for Javadocs
  * @test
  * @summary Example test to use the new test framework.
  * @library /test/lib /
- * @run driver ir_framework.examples.BaseTestExample
+ * @run driver ir_framework.examples.NormalTestExample
  */
 
 /**
@@ -58,11 +58,11 @@ import compiler.lib.ir_framework.test.TestVM; // Only used for Javadocs
  * @see Warmup
  * @see TestFramework
  */
-public class BaseTestExample {
+public class NormalTestExample {
     int iFld;
 
     public static void main(String[] args) {
-        TestFramework.run(); // equivalent to TestFramework.run(BaseTestExample.class)
+        TestFramework.run(); // equivalent to TestFramework.run(NormalTestExample.class)
     }
 
     // Test without arguments.
@@ -74,14 +74,14 @@ public class BaseTestExample {
     // Test with arguments. Use Argument class to choose a value.
     // Object arguments need to have an associated default constructor in its class.
     @Test
-    @Arguments({Argument.DEFAULT, Argument.MAX})
+    @Arguments(values = {Argument.DEFAULT, Argument.MAX})
     public void basicTestWithArguments(int x, long y) {
         iFld = x;
     }
 
     // @Warmup needs to be positive or zero. In case of zero, the method is directly compiled (simulated -Xcomp).
     @Test
-    @Arguments({Argument.DEFAULT, Argument.MAX})
+    @Arguments(values = {Argument.DEFAULT, Argument.MAX})
     @Warmup(100)
     public void basicTestWithDifferentWarmup(int x, long y) {
         iFld = x;
