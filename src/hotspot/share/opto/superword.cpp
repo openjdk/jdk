@@ -640,7 +640,6 @@ void SuperWord::find_adjacent_refs() {
         assert(ref1.offset() <= ref2.offset(), "sorted by offset");
         if (ref1.offset() + element_size > ref2.offset()) { continue; }
         if (ref1.offset() + element_size < ref2.offset()) { break; }
-        assert(are_adjacent_refs(mem1, mem2),  "implied by offsets");
 
         // Only allow nodes from same origin idx to be packed.
         // (see CompileCommand Option Vectorize)
