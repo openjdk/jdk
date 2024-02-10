@@ -404,7 +404,6 @@ public class Table<T> extends Content {
             } else {
                 tablist.add(getCaption(defaultTab));
             }
-            table.put(HtmlAttr.ARIA_LABELLEDBY, defaultTabId.name());
             if (renderTabs) {
                 for (var tab : tabs) {
                     if (occurringTabs.contains(tab)) {
@@ -417,7 +416,8 @@ public class Table<T> extends Content {
             }
             var tabpanel = new HtmlTree(TagName.DIV)
                     .setId(HtmlIds.forTabPanel(id))
-                    .put(HtmlAttr.ROLE, "tabpanel");
+                    .put(HtmlAttr.ROLE, "tabpanel")
+                    .put(HtmlAttr.ARIA_LABELLEDBY, defaultTabId.name());
             table.add(getTableBody());
             tabpanel.add(table);
             main.add(tablist);

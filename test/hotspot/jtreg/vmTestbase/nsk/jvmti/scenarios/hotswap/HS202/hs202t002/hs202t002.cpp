@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ extern "C" {
 #define METHOD_NAME "display"
 
 static jint redefineNumber = 0;
-static jvmtiEnv * jvmti = NULL;
+static jvmtiEnv * jvmti = nullptr;
 
 static volatile bool thread_suspend_error = false;
 
@@ -119,7 +119,7 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
             nsk_printf(" Agent:: Error occured while setting event callbacks \n");
             return JNI_ERR;
         }
-        if (nsk_jvmti_enableNotification(jvmti,JVMTI_EVENT_METHOD_EXIT, NULL)) {
+        if (nsk_jvmti_enableNotification(jvmti,JVMTI_EVENT_METHOD_EXIT, nullptr)) {
             nsk_printf(" Agent :: NOTIFICATIONS ARE ENABLED \n");
         } else {
             nsk_printf(" Agent :: Error Enabling Notifications..");
@@ -160,7 +160,7 @@ Java_nsk_jvmti_scenarios_hotswap_HS202_hs202t002_hs202t002_resumeThread(JNIEnv *
 
     // disable notifications before resuming thread
     // to avoid recursion on PopFrame issued reinvoke
-    if (nsk_jvmti_disableNotification(jvmti,JVMTI_EVENT_METHOD_EXIT, NULL)) {
+    if (nsk_jvmti_disableNotification(jvmti,JVMTI_EVENT_METHOD_EXIT, nullptr)) {
         nsk_printf("Agent :: nsk_jvmti_disabled notifications..\n");
     } else {
         nsk_printf("Agent :: Failed to disable notifications..");
@@ -194,7 +194,7 @@ Java_nsk_jvmti_scenarios_hotswap_HS202_hs202t002_hs202t002_isThreadSuspended(JNI
     // this again until we see thread_suspend_error is true.
 
     jint state = 0;
-    // No errors possible here: thread is valid, and state is not NULL
+    // No errors possible here: thread is valid, and state is not nullptr
     jvmti->GetThreadState(thread, &state);
     return (state & JVMTI_THREAD_STATE_SUSPENDED) != 0;
 }

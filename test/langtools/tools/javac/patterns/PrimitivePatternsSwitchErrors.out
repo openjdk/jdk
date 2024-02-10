@@ -1,0 +1,37 @@
+PrimitivePatternsSwitchErrors.java:15:18: compiler.err.pattern.dominated
+PrimitivePatternsSwitchErrors.java:24:18: compiler.err.pattern.dominated
+PrimitivePatternsSwitchErrors.java:31:24: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: int, java.lang.Long)
+PrimitivePatternsSwitchErrors.java:62:18: compiler.err.pattern.dominated
+PrimitivePatternsSwitchErrors.java:70:18: compiler.err.pattern.dominated
+PrimitivePatternsSwitchErrors.java:78:18: compiler.err.pattern.dominated
+PrimitivePatternsSwitchErrors.java:84:18: compiler.err.prob.found.req: (compiler.misc.possible.loss.of.precision: long, byte)
+PrimitivePatternsSwitchErrors.java:90:18: compiler.err.constant.label.not.compatible: int, float
+PrimitivePatternsSwitchErrors.java:92:18: compiler.err.constant.label.not.compatible: int, float
+PrimitivePatternsSwitchErrors.java:103:13: compiler.err.duplicate.case.label
+PrimitivePatternsSwitchErrors.java:114:13: compiler.err.default.and.both.boolean.values
+PrimitivePatternsSwitchErrors.java:122:13: compiler.err.default.and.both.boolean.values
+PrimitivePatternsSwitchErrors.java:130:18: compiler.err.unconditional.pattern.and.both.boolean.values
+PrimitivePatternsSwitchErrors.java:143:18: compiler.err.constant.label.not.compatible: long, float
+PrimitivePatternsSwitchErrors.java:145:18: compiler.err.prob.found.req: (compiler.misc.possible.loss.of.precision: double, float)
+PrimitivePatternsSwitchErrors.java:151:18: compiler.err.prob.found.req: (compiler.misc.possible.loss.of.precision: float, long)
+PrimitivePatternsSwitchErrors.java:152:18: compiler.err.prob.found.req: (compiler.misc.possible.loss.of.precision: double, long)
+PrimitivePatternsSwitchErrors.java:157:18: compiler.err.constant.label.not.compatible: long, double
+PrimitivePatternsSwitchErrors.java:158:18: compiler.err.constant.label.not.compatible: float, double
+PrimitivePatternsSwitchErrors.java:164:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: long, java.lang.Float)
+PrimitivePatternsSwitchErrors.java:166:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: double, java.lang.Float)
+PrimitivePatternsSwitchErrors.java:172:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: float, java.lang.Long)
+PrimitivePatternsSwitchErrors.java:173:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: double, java.lang.Long)
+PrimitivePatternsSwitchErrors.java:178:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: long, java.lang.Double)
+PrimitivePatternsSwitchErrors.java:179:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: float, java.lang.Double)
+PrimitivePatternsSwitchErrors.java:189:18: compiler.err.unconditional.pattern.and.both.boolean.values
+PrimitivePatternsSwitchErrors.java:196:18: compiler.err.duplicate.unconditional.pattern
+PrimitivePatternsSwitchErrors.java:216:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: compiler.misc.type.null, int)
+PrimitivePatternsSwitchErrors.java:30:16: compiler.err.not.exhaustive
+PrimitivePatternsSwitchErrors.java:37:16: compiler.err.not.exhaustive
+PrimitivePatternsSwitchErrors.java:44:16: compiler.err.not.exhaustive
+PrimitivePatternsSwitchErrors.java:52:16: compiler.err.not.exhaustive
+PrimitivePatternsSwitchErrors.java:201:16: compiler.err.not.exhaustive
+PrimitivePatternsSwitchErrors.java:207:9: compiler.err.not.exhaustive.statement
+- compiler.note.preview.filename: PrimitivePatternsSwitchErrors.java, DEFAULT
+- compiler.note.preview.recompile
+34 errors

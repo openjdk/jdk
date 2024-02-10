@@ -236,7 +236,7 @@ public class TransPatterns extends TreeTranslator {
 
                 Type principalType = types.erasure(TreeInfo.primaryPatternType((pattern)));
                 JCExpression resultExpression = (JCExpression) this.<JCTree>translate(pattern);
-                if (!tree.allowNull && !principalType.isPrimitive()) {
+                if (!tree.allowNull || !types.isSubtype(currentValue.type, principalType)) {
                     resultExpression =
                             makeBinary(Tag.AND,
                                        makeTypeTest(make.Ident(currentValue), make.Type(principalType)),
@@ -496,12 +496,14 @@ public class TransPatterns extends TreeTranslator {
                          .toArray(s -> new LoadableConstant[s]);
 
             boolean enumSelector = seltype.tsym.isEnum();
+            boolean primitiveSelector = seltype.isPrimitive();
             Name bootstrapName = enumSelector ? names.enumSwitch : names.typeSwitch;
             MethodSymbol bsm = rs.resolveInternalMethod(tree.pos(), env, syms.switchBootstrapsType,
                     bootstrapName, staticArgTypes, List.nil());
 
+            Type resolvedSelectorType = seltype;
             MethodType indyType = new MethodType(
-                    List.of(enumSelector ? seltype : syms.objectType, syms.intType),
+                    List.of(resolvedSelectorType, syms.intType),
                     syms.intType,
                     List.nil(),
                     syms.methodClass
@@ -735,6 +737,81 @@ public class TransPatterns extends TreeTranslator {
         }
     }
 
+    private Symbol.DynamicVarSymbol makePrimitive(DiagnosticPosition pos, Type primitiveType) {
+        Assert.checkNonNull(currentClass);
+
+        List<Type> bsm_staticArgs = List.of(syms.methodHandleLookupType,
+                syms.stringType,
+                new ClassType(syms.classType.getEnclosingType(),
+                        List.of(syms.constantBootstrapsType),
+                        syms.classType.tsym));
+
+        Name bootstrapName = names.fromString("primitiveClass");
+        MethodSymbol bsm = rs.resolveInternalMethod(pos, env, syms.constantBootstrapsType,
+                bootstrapName, bsm_staticArgs, List.nil());
+
+        PrimitiveGenerator primitiveGenerator = new PrimitiveGenerator();
+        primitiveGenerator.assembleSig(primitiveType);
+        return new Symbol.DynamicVarSymbol(names.fromString(primitiveGenerator.sb.toString()),
+                syms.noSymbol,
+                new Symbol.MethodHandleSymbol(bsm),
+                syms.classType,
+                new LoadableConstant[]{});
+    }
+
+    private Symbol.DynamicVarSymbol makeBooleanConstant(DiagnosticPosition pos, int constant) {
+        Assert.checkNonNull(currentClass);
+
+        List<Type> bsm_staticArgs = List.of(syms.methodHandleLookupType,
+                syms.stringType,
+                new ClassType(syms.classType.getEnclosingType(),
+                        List.of(syms.constantBootstrapsType),
+                        syms.classType.tsym));
+
+        Name bootstrapName = names.fromString("getStaticFinal");
+        MethodSymbol bsm = rs.resolveInternalMethod(pos, env, syms.constantBootstrapsType,
+                bootstrapName, bsm_staticArgs, List.nil());
+
+        return new Symbol.DynamicVarSymbol(constant == 0 ? names.fromString("FALSE") : names.fromString("TRUE"),
+                syms.noSymbol,
+                new Symbol.MethodHandleSymbol(bsm),
+                types.boxedTypeOrType(syms.booleanType),
+                new LoadableConstant[]{});
+    }
+
+    private class PrimitiveGenerator extends Types.SignatureGenerator {
+
+        /**
+         * An output buffer for type signatures.
+         */
+        StringBuilder sb = new StringBuilder();
+
+        PrimitiveGenerator() {
+            super(types);
+        }
+
+        @Override
+        protected void append(char ch) {
+            sb.append(ch);
+        }
+
+        @Override
+        protected void append(byte[] ba) {
+            sb.append(new String(ba));
+        }
+
+        @Override
+        protected void append(Name name) {
+            sb.append(name.toString());
+        }
+
+        @Override
+        public String toString() {
+            return sb.toString();
+        }
+    }
+
+
     JCMethodInvocation makeApply(JCExpression selector, Name name, List<JCExpression> args) {
         MethodSymbol method = rs.resolveInternalMethod(
                 currentClassTree.pos(), env,
@@ -823,7 +900,8 @@ public class TransPatterns extends TreeTranslator {
                         }
                         JCBindingPattern binding = (JCBindingPattern) instanceofCheck.pattern;
                         hasUnconditional =
-                                instanceofCheck.allowNull &&
+                                (!types.erasure(binding.type).isPrimitive() ? instanceofCheck.allowNull :
+                                types.isUnconditionallyExact(commonNestedExpression.type, types.erasure(binding.type))) &&
                                 accList.tail.isEmpty();
                         List<JCCaseLabel> newLabel;
 
@@ -854,6 +932,7 @@ public class TransPatterns extends TreeTranslator {
                     }
                     JCSwitch newSwitch = make.Switch(commonNestedExpression, nestedCases.toList());
                     newSwitch.patternSwitch = true;
+                    newSwitch.hasUnconditionalPattern = hasUnconditional;
                     JCPatternCaseLabel leadingTest =
                             (JCPatternCaseLabel) accummulator.first().labels.head;
                     leadingTest.syntheticGuard = null;
@@ -930,16 +1009,20 @@ public class TransPatterns extends TreeTranslator {
     }
 
     private Type principalType(JCTree p) {
-        return types.boxedTypeOrType(types.erasure(TreeInfo.primaryPatternType(p)));
+        return types.erasure(TreeInfo.primaryPatternType(p));
     }
 
     private LoadableConstant toLoadableConstant(JCCaseLabel l, Type selector) {
         if (l.hasTag(Tag.PATTERNCASELABEL)) {
             Type principalType = principalType(((JCPatternCaseLabel) l).pat);
-            if (types.isSubtype(selector, principalType)) {
-                return (LoadableConstant) selector;
+            if (((JCPatternCaseLabel) l).pat.type.isReference()) {
+                if (types.isSubtype(selector, principalType)) {
+                    return (LoadableConstant) selector;
+                } else {
+                    return (LoadableConstant) principalType;
+                }
             } else {
-                return (LoadableConstant) principalType;
+                return makePrimitive(l.pos(), principalType);
             }
         } else if (l.hasTag(Tag.CONSTANTCASELABEL) && !TreeInfo.isNullCaseLabel(l)) {
             JCExpression expr = ((JCConstantCaseLabel) l).expr;
@@ -954,8 +1037,11 @@ public class TransPatterns extends TreeTranslator {
                 Assert.checkNonNull(expr.type.constValue());
 
                 return switch (expr.type.getTag()) {
-                    case BYTE, CHAR,
-                         SHORT, INT -> LoadableConstant.Int((Integer) expr.type.constValue());
+                    case BOOLEAN -> makeBooleanConstant(l.pos(), (Integer) expr.type.constValue());
+                    case BYTE, CHAR, SHORT, INT -> LoadableConstant.Int((Integer) expr.type.constValue());
+                    case LONG -> LoadableConstant.Long((Long) expr.type.constValue());
+                    case FLOAT -> LoadableConstant.Float((Float) expr.type.constValue());
+                    case DOUBLE -> LoadableConstant.Double((Double) expr.type.constValue());
                     case CLASS -> LoadableConstant.String((String) expr.type.constValue());
                     default -> throw new AssertionError();
                 };

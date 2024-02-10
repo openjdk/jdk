@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,13 +143,13 @@ classFileLoadEvent(jvmtiEnv *jvmti_env, JNIEnv *env,
                         jint* new_class_data_len,
                         unsigned char** new_class_data) {
 
-    if (name != NULL && (strcmp(name, BOOT_CLASS) == 0)) {
+    if (name != nullptr && (strcmp(name, BOOT_CLASS) == 0)) {
         debug_printf("Received class file load hook event for class: \n\t%s\n",
             name);
         debug_printf("Received class loader: 0x%p \n", loader);
         /* Check to make sure Boot class got loaded from bootstrap class path.*/
 
-      if (loader == NULL) {
+      if (loader == nullptr) {
          boot_class_count++;
       }
    }
@@ -192,7 +192,7 @@ jint Agent_Initialize(JavaVM * jvm, char *options, void *reserved) {
         strncpy(segment, options, (size_t) sizeof(segment)/sizeof(char));
         segment[(size_t) sizeof(segment)/sizeof(char) - 1] = 0;
         idx = strchr(segment, ',');
-        if (idx != NULL) *idx = 0;
+        if (idx != nullptr) *idx = 0;
     }
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
@@ -214,19 +214,19 @@ jint Agent_Initialize(JavaVM * jvm, char *options, void *reserved) {
     res = jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks));
     JVMTI_ERROR_CHECK("SetEventCallbacks returned error", res);
 
-    res = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_START, NULL);
+    res = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_START, nullptr);
     JVMTI_ERROR_CHECK("SetEventNotificationMode for VM_START returned error", res);
 
-    res = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, NULL);
+    res = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, nullptr);
     JVMTI_ERROR_CHECK("SetEventNotificationMode for VM_INIT returned error", res);
 
-    res = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_NATIVE_METHOD_BIND, NULL);
+    res = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_NATIVE_METHOD_BIND, nullptr);
     JVMTI_ERROR_CHECK("SetEventNotificationMode for NATIVE_METHOD_BIND returned error", res);
 
-    res = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, NULL);
+    res = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, nullptr);
     JVMTI_ERROR_CHECK("SetEventNotificationMode for VM_DEATH returned error", res);
 
-    res = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, NULL);
+    res = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, nullptr);
     JVMTI_ERROR_CHECK("SetEventNotificationMode CLASS_FILE_LOAD_HOOK returned error", res);
 
     strcat(segment, "/newclass");
