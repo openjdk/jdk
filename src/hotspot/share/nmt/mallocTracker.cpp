@@ -106,24 +106,21 @@ bool MallocMemorySummary::total_limit_reached(size_t s, size_t so_far, const mal
   "MallocLimit: reached global limit (triggering allocation size: " PROPERFMT ", allocated so far: " PROPERFMT ", limit: " PROPERFMT ") ", \
   PROPERFMTARGS(s), PROPERFMTARGS(so_far), PROPERFMTARGS(limit->sz)
 
-  // If we hit the limit during error reporting, we print a message but otherwise ignore it.
-  // We ignore it because we want useful error reports; that is true twice for situations where
-  // the error reporting is result of hitting the malloc limit.
+  // If we hit the limit during error reporting, we print a short warning but otherwise ignore it.
+  // We don't want to risk recursive assertion or torn hs-err logs.
   if (VMError::is_error_reported()) {
-    // Don't flood output. Also, static is fine here; no need for more complex logic to
-    // prevent concurrency issues.
-    static int stopafter = 30;
-    if (stopafter > 0) {
-      stopafter --;
+    // Print warning, but only the first n times to avoid flooding output.
+    static int stopafter = 10;
+    if (stopafter-- > 0) {
       log_warning(nmt)(FORMATTED);
     }
     return false;
+  }
+
+  if (limit->mode == MallocLimitMode::trigger_fatal) {
+    fatal(FORMATTED);
   } else {
-    if (limit->mode == MallocLimitMode::trigger_fatal) {
-      fatal(FORMATTED);
-    } else {
-      log_warning(nmt)(FORMATTED);
-    }
+    log_warning(nmt)(FORMATTED);
   }
 #undef FORMATTED
 
@@ -132,14 +129,20 @@ bool MallocMemorySummary::total_limit_reached(size_t s, size_t so_far, const mal
 
 bool MallocMemorySummary::category_limit_reached(MEMFLAGS f, size_t s, size_t so_far, const malloclimit* limit) {
 
-  // Ignore the limit break during error reporting to prevent secondary errors.
-  if (VMError::is_error_reported()) {
-    return false;
-  }
-
 #define FORMATTED \
   "MallocLimit: reached category \"%s\" limit (triggering allocation size: " PROPERFMT ", allocated so far: " PROPERFMT ", limit: " PROPERFMT ") ", \
   NMTUtil::flag_to_enum_name(f), PROPERFMTARGS(s), PROPERFMTARGS(so_far), PROPERFMTARGS(limit->sz)
+
+  // If we hit the limit during error reporting, we print a short warning but otherwise ignore it.
+  // We don't want to risk recursive assertion or torn hs-err logs.
+  if (VMError::is_error_reported()) {
+    // Print warning, but only the first n times to avoid flooding output.
+    static int stopafter = 10;
+    if (stopafter-- > 0) {
+      log_warning(nmt)(FORMATTED);
+    }
+    return false;
+  }
 
   if (limit->mode == MallocLimitMode::trigger_fatal) {
     fatal(FORMATTED);
