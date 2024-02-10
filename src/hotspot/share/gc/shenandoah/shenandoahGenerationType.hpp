@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,33 +22,21 @@
  *
  */
 
-#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTMARK_HPP
-#define SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTMARK_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONTYPE_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONTYPE_HPP
 
-#include "gc/shenandoah/shenandoahMark.hpp"
-
-template <ShenandoahGenerationType GENERATION>
-class ShenandoahConcurrentMarkingTask;
-template <ShenandoahGenerationType GENERATION>
-class ShenandoahFinalMarkingTask;
-
-class ShenandoahConcurrentMark: public ShenandoahMark {
-  template <ShenandoahGenerationType GENERATION> friend class ShenandoahConcurrentMarkingTask;
-  template <ShenandoahGenerationType GENERATION> friend class ShenandoahFinalMarkingTask;
-
-public:
-  ShenandoahConcurrentMark();
-  // Concurrent mark roots
-  void mark_concurrent_roots();
-  // Concurrent mark
-  void concurrent_mark();
-  // Finish mark at a safepoint
-  void finish_mark();
-
-  static void cancel();
-
-private:
-  void finish_mark_work();
+enum ShenandoahGenerationType {
+  NON_GEN           // non-generational
 };
 
-#endif // SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTMARK_HPP
+inline const char* shenandoah_generation_name(ShenandoahGenerationType mode) {
+  switch (mode) {
+    case NON_GEN:
+      return "Non-Generational";
+    default:
+      ShouldNotReachHere();
+      return "Unknown";
+  }
+}
+
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONTYPE_HPP
