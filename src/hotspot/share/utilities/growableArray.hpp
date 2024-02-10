@@ -918,6 +918,67 @@ class GrowableArrayFilterIterator : public StackObj {
   }
 };
 
+// Assume you have an array of elements, that are already sorted by some group_compare.
+//
+// Example:
+//   [A1 A2 A3  B1 B2  C1 C2 C3 C4 ... ]
+//    +------+  +---+  +---------+
+//
+// Usage pattern:
+//   array.sort(my_group_cmp);
+//   typedef SortedGrowableArrayGroupIterator<E, my_group_cmp> MyIterator;
+//   // For each group:
+//   for (MyIterator iter(array); !iter.done(); iter.next()) {
+//     // For each element in group:
+//     for (int i = 0; i < iter.group_length(); i++) {
+//       const E& e = iter.group_at(i);
+//       ...
+//     }
+//   }
+//
+template <typename E, int group_compare(E*, E*)>
+class SortedGrowableArrayGroupIterator : public StackObj {
+private:
+  const GrowableArrayView<E>& _sorted_array;
+
+  // Range of current group
+  int _begin;
+  int _end;
+
+public:
+  SortedGrowableArrayGroupIterator(const GrowableArrayView<E>& sorted_array) :
+    _sorted_array(sorted_array), _begin(0), _end(0)
+  {
+    next(); // find first group (if any exists)
+  }
+  NONCOPYABLE(SortedGrowableArrayGroupIterator);
+
+  int group_length() const {
+    return _end - _begin;
+  }
+
+  const E& group_at(int i) const {
+    int idx = _begin + i;
+    assert(_begin <= idx && idx < _end, "in group range");
+    return _sorted_array.at(idx);
+  }
+
+  bool done() const {
+    return _begin >= _sorted_array.length();
+  }
+
+  void next() {
+    if (done()) { return; }
+    _begin = _end;
+    // Search for all elements in the same group
+    while (_end < _sorted_array.length() &&
+          group_compare(_sorted_array.adr_at(_begin),
+                        _sorted_array.adr_at(_end)) == 0) {
+      _end++;
+    }
+  }
+};
+
 // Arrays for basic types
 typedef GrowableArray<int> intArray;
 typedef GrowableArray<int> intStack;

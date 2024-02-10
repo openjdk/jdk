@@ -267,35 +267,6 @@ class MemReference {
   NOT_PRODUCT( void dump() const; )
 };
 
-// TODO template and move to GrowableArray
-// Iterator to extract groups (restricted array view) from a sorted array.
-class MemReferenceGroupIterator {
- private:
-  const GrowableArrayView<MemReference>& _sorted_mem_references;
-  int _begin;
-  int _end;
-
- public:
-  MemReferenceGroupIterator(const GrowableArrayView<MemReference>& sorted_mem_references) :
-    _sorted_mem_references(sorted_mem_references), _begin(0), _end(0) {
-    next();
-  }
-
-  int current_length()           const { return _end - _begin; }
-  MemReference current_at(int i) const { return _sorted_mem_references.at(_begin + i); }
-  bool done()                    const { return _begin >= _sorted_mem_references.length(); }
-
-  void next() {
-    if (done()) { return; }
-    _begin = _end;
-    while (_end < _sorted_mem_references.length() &&
-           MemReference::cmp_groups(_sorted_mem_references.adr_at(_begin),
-                                    _sorted_mem_references.adr_at(_end)) == 0) {
-      _end++;
-    }
-  }
-};
-
 // -----------------------------SuperWord---------------------------------
 // Transforms scalar operations into packed (superword) operations.
 class SuperWord : public ResourceObj {

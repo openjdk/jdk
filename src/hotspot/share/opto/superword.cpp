@@ -604,32 +604,35 @@ void SuperWord::find_adjacent_refs() {
     }
   }
 
-  // Sort into groups, and by offset
+  // Sort by: groups, and inside groups by offset. This allows us to look at
+  // each group separately, and find pairs with the correct offset difference
+  // more efficiently.
   mem_references.sort(MemReference::cmp);
 
-  // For each group, create pairs
-  MemReferenceGroupIterator iter(mem_references);
-  for ( ;  !iter.done(); iter.next()) {
+  // For each group:
+  typedef SortedGrowableArrayGroupIterator<MemReference, MemReference::cmp_groups> MyIterator;
+  for (MyIterator iter(mem_references); !iter.done(); iter.next()) {
 #ifndef PRODUCT
     if (is_trace_superword_adjacent_memops()) {
       tty->print_cr("\nSuperWord::find_adjacent_refs: group with %d of total %d mem_references",
-                    iter.current_length(), mem_references.length());
-      for (int i = 0; i < iter.current_length(); i++) {
-        iter.current_at(i).dump();
+                    iter.group_length(), mem_references.length());
+      for (int i = 0; i < iter.group_length(); i++) {
+        iter.group_at(i).dump();
       }
     }
 #endif
-    MemNode* first = iter.current_at(0).mem();
+    MemNode* first = iter.group_at(0).mem();
     int element_size = data_size(first);
 
-    // For each mem node in group, find others that can be paired
-    for (int i = 0; i < iter.current_length(); i++) {
-      MemReference ref1 = iter.current_at(i);
+    // For each ref in group: find others that can be paired
+    for (int i = 0; i < iter.group_length(); i++) {
+      const MemReference& ref1 = iter.group_at(i);
       MemNode* mem1 = ref1.mem();
 
       bool found = false;
-      for (int j = i + 1; j < iter.current_length(); j++) {
-        MemReference ref2 = iter.current_at(j);
+      // For each ref in group with larger or equal offset:
+      for (int j = i + 1; j < iter.group_length(); j++) {
+        const MemReference& ref2 = iter.group_at(j);
         MemNode* mem2 = ref2.mem();
         assert(mem1 != mem2,                   "not identical");
 
