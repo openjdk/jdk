@@ -158,6 +158,11 @@ const char* VLoopAnalyzer::setup_submodules_helper() {
     return VLoopAnalyzer::FAILURE_NO_REDUCTION_OR_STORE;
   }
 
+  const char* body_failure = _body.construct();
+  if (body_failure != nullptr) {
+    return body_failure;
+  }
+
   // TODO
   return VLoopAnalyzer::SUCCESS;
 }

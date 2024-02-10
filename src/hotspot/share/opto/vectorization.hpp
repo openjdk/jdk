@@ -120,6 +120,10 @@ public:
     return vtrace().is_trace(TraceAutoVectorizationTag::MEMORY_SLICES);
   }
 
+  bool is_trace_body() const {
+    return vtrace().is_trace(TraceAutoVectorizationTag::BODY);
+  }
+
   bool is_trace_pointer_analysis() const {
     return vtrace().is_trace(TraceAutoVectorizationTag::POINTER_ANALYSIS);
   }
@@ -284,6 +288,48 @@ public:
 #endif
 };
 
+// Submodule of VLoopAnalyzer.
+// Finds all nodes in the body, and creates a mapping node->_idx to a body_idx.
+// This mapping is used so that subsequent datastructures sizes only grow with
+// the body size, and not the number of all nodes in the compilation.
+class VLoopBody : public StackObj {
+private:
+  static constexpr char const* FAILURE_NODE_NOT_ALLOWED = "encontered unhandled node";
+
+  const VLoop& _vloop;
+
+  // Mapping body_idx -> Node*
+  GrowableArray<Node*> _body;
+
+  // Mapping node->_idx -> body_idx
+  // Can be very large, and thus lives in VSharedData
+  GrowableArray<int>&  _body_idx;
+
+  const VLoop& vloop() const { return _vloop; }
+
+public:
+  VLoopBody(Arena* arena, const VLoop& vloop, VSharedData& vshared) :
+    _vloop(vloop),
+    _body(arena, vloop.estimated_body_length(), 0, nullptr),
+    _body_idx(vshared.node_idx_to_loop_body_idx()) {}
+
+  NONCOPYABLE(VLoopBody);
+
+  const char* construct();
+  const GrowableArray<Node*>& body() const { return _body; }
+  NOT_PRODUCT( void print() const; )
+
+  int bb_idx(const Node* n) const {
+    assert(_vloop.in_bb(n), "must be in basic block");
+    return _body_idx.at(n->_idx);
+  }
+
+private:
+  void set_bb_idx(Node* n, int i) {
+    _body_idx.at_put_grow(n->_idx, i);
+  }
+};
+
 // Analyze the loop in preparation for auto-vectorization. This class is
 // deliberately structured into many submodules, which are as independent
 // as possible, though some submodules do require other submodules.
@@ -307,7 +353,7 @@ private:
   // TODO
   VLoopReductions            _reductions;
   VLoopMemorySlices    _memory_slices;
-  //VLoopBody            _body;
+  VLoopBody            _body;
   //VLoopTypes           _types;
   //VLoopDependenceGraph _dependence_graph;
 
@@ -317,8 +363,8 @@ public:
     _arena(mtCompiler),
     _success(false),
     _reductions      (&_arena, vloop),
-    _memory_slices   (&_arena, vloop)
-    //_body            (&_arena, vloop),
+    _memory_slices   (&_arena, vloop),
+    _body            (&_arena, vloop, vshared)
     //_types           (&_arena, vloop, body()),
     //_dependence_graph(&_arena, vloop, memory_slices(), body())
     // TODO modules
@@ -335,7 +381,7 @@ public:
   const VLoop& vloop()                           const { return _vloop; }
   const VLoopReductions& reductions()            const { return _reductions; }
   const VLoopMemorySlices& memory_slices()       const { return _memory_slices; }
-  //const VLoopBody& body()                        const { return _body; }
+  const VLoopBody& body()                        const { return _body; }
   //const VLoopTypes& types()                      const { return _types; }
   //const VLoopDependenceGraph& dependence_graph() const { return _dependence_graph; }
   // TODO

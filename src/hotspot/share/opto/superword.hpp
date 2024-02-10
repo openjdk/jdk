@@ -208,9 +208,6 @@ class SuperWord : public ResourceObj {
 
   GrowableArray<Node_List*> _packset;    // Packs for the current block
 
-  GrowableArray<int> &_bb_idx;           // Map from Node _idx to index within block
-
-  GrowableArray<Node*> _block;           // Nodes in current block
   GrowableArray<SWNodeInfo> _node_info;  // Info needed per node
   CloneMap&            _clone_map;       // map of nodes created in cloning
   MemNode const* _align_to_ref;          // Memory reference that pre-loop will align to
@@ -218,7 +215,7 @@ class SuperWord : public ResourceObj {
   DepGraph _dg; // Dependence graph
 
  public:
-  SuperWord(const VLoopAnalyzer &vloop_analyzer, VSharedData &vshared);
+  SuperWord(const VLoopAnalyzer &vloop_analyzer);
 
   // Attempt to run the SuperWord algorithm on the loop. Return true if we succeed.
   bool transform_loop();
@@ -251,6 +248,15 @@ class SuperWord : public ResourceObj {
   // VLoopMemorySlices Accessors
   bool same_memory_slice(MemNode* n1, MemNode* n2) const {
     return vloop_analyzer().memory_slices().same_memory_slice(n1, n2);
+  }
+
+  // VLoopAnalyzer body
+  const GrowableArray<Node*>& body() const {
+    return vloop_analyzer().body().body();
+  }
+
+  int bb_idx(const Node* n) const     {
+    return vloop_analyzer().body().bb_idx(n);
   }
 
 #ifndef PRODUCT
@@ -317,7 +323,6 @@ class SuperWord : public ResourceObj {
   bool     do_vector_loop()        { return _do_vector_loop; }
 
   const GrowableArray<Node_List*>& packset() const { return _packset; }
-  const GrowableArray<Node*>&      block()   const { return _block; }
   const DepGraph&                  dg()      const { return _dg; }
  private:
   bool           _race_possible;   // In cases where SDMU is true
@@ -339,12 +344,6 @@ class SuperWord : public ResourceObj {
   int get_vw_bytes_special(MemNode* s);
   const MemNode* align_to_ref() const { return _align_to_ref; }
   void set_align_to_ref(const MemNode* m) { _align_to_ref = m; }
-
-  // block accessors
- public:
-  int  bb_idx(const Node* n) const { assert(in_bb(n), "must be"); return _bb_idx.at(n->_idx); }
- private:
-  void set_bb_idx(Node* n, int i)  { _bb_idx.at_put_grow(n->_idx, i); }
 
   // Ensure node_info contains element "i"
   void grow_node_info(int i) { if (i >= _node_info.length()) _node_info.at_put_grow(i, SWNodeInfo::initial); }
@@ -453,8 +452,6 @@ private:
   DEBUG_ONLY(void verify_no_extract();)
   // Is use->in(u_idx) a vector use?
   bool is_vector_use(Node* use, int u_idx);
-  // Construct reverse postorder list of block members
-  bool construct_bb();
   // Initialize per node info
   void initialize_node_info();
   // Compute max depth for expressions from beginning of block
@@ -482,7 +479,6 @@ private:
   // print methods
   void print_packset();
   void print_pack(Node_List* p);
-  void print_bb();
   void print_stmt(Node* s);
 
   void packset_sort(int n);

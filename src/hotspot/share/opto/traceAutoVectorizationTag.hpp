@@ -33,6 +33,7 @@
   flags(PRECONDITIONS,        "Trace VLoop::check_preconditions") \
   flags(LOOP_ANALYZER,        "Trace VLoopAnalyzer::setup_submodules") \
   flags(MEMORY_SLICES,        "Trace VLoopMemorySlices") \
+  flags(BODY,                 "Trace VLoopBody") \
   flags(SW_TYPES,             "Trace SuperWord::compute_vector_element_type") \
   flags(SW_ALIGNMENT,         "Trace SuperWord alignment analysis") \
   flags(SW_DEPENDENCE_GRAPH,  "Trace SuperWord::dependence_graph") \
