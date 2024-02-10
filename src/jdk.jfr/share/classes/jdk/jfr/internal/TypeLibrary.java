@@ -339,7 +339,7 @@ public final class TypeLibrary {
     }
 
     // By convention all events have these fields.
-    public synchronized static void addImplicitFields(Type type, boolean requestable, boolean hasDuration, boolean hasThread, boolean hasStackTrace, boolean hasCutoff) {
+    public static synchronized void addImplicitFields(Type type, boolean requestable, boolean hasDuration, boolean hasThread, boolean hasStackTrace, boolean hasCutoff) {
         if (!implicitFieldTypes) {
             createAnnotationType(Timespan.class);
             createAnnotationType(Timestamp.class);

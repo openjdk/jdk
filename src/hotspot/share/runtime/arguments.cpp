@@ -504,7 +504,6 @@ static SpecialFlag const special_jvm_flags[] = {
 
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "CreateMinidumpOnCrash",        JDK_Version::jdk(9),  JDK_Version::undefined(), JDK_Version::undefined() },
-  { "TLABStats",                    JDK_Version::jdk(12), JDK_Version::undefined(), JDK_Version::undefined() },
 
   // -------------- Obsolete Flags - sorted by expired_in --------------
 
@@ -526,6 +525,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "MinRAMFraction",               JDK_Version::jdk(10),  JDK_Version::jdk(23), JDK_Version::jdk(24) },
   { "InitialRAMFraction",           JDK_Version::jdk(10),  JDK_Version::jdk(23), JDK_Version::jdk(24) },
   { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::jdk(23), JDK_Version::jdk(24) },
+  { "TLABStats",                    JDK_Version::jdk(12), JDK_Version::jdk(23), JDK_Version::jdk(24) },
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
 #endif

@@ -118,9 +118,6 @@ class Generation: public CHeapObj<mtGC> {
     return _reserved.contains(p);
   }
 
-  // Iteration - do not use for time critical operations
-  virtual void space_iterate(SpaceClosure* blk, bool usedOnly = false) = 0;
-
   // Returns "true" iff this generation should be used to allocate an
   // object of the given size.  Young generations might
   // wish to exclude very large objects, for example, since, if allocated
@@ -201,14 +198,6 @@ class Generation: public CHeapObj<mtGC> {
   // Printing
   virtual const char* name() const = 0;
   virtual const char* short_name() const = 0;
-
-  // Block abstraction.
-
-  // Returns the address of the start of the "block" that contains the
-  // address "addr".  We say "blocks" instead of "object" since some heaps
-  // may not pack objects densely; a chunk may either be an object or a
-  // non-object.
-  virtual HeapWord* block_start(const void* addr) const;
 
   virtual void print() const;
   virtual void print_on(outputStream* st) const;
