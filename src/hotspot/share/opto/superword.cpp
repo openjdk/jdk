@@ -460,9 +460,6 @@ bool SuperWord::SLP_extract() {
   // compute function depth(Node*)
   compute_max_depth();
 
-  // Compute vector element types
-  compute_vector_element_type();
-
   // Attempt vectorization
   find_adjacent_refs();
 
@@ -1118,13 +1115,6 @@ void SuperWord::set_alignment(Node* s1, Node* s2, int align) {
   } else {
     set_alignment(s2, align + data_size(s1));
   }
-}
-
-//------------------------------data_size---------------------------
-int SuperWord::data_size(Node* s) {
-  int bsize = type2aelembytes(velt_basic_type(s));
-  assert(bsize != 0, "valid size");
-  return bsize;
 }
 
 //------------------------------extend_packlist---------------------------
@@ -3094,30 +3084,29 @@ int SuperWord::max_vector_size_in_def_use_chain(Node* n) {
   return max < 2 ? Matcher::max_vector_size_auto_vectorization(bt) : max;
 }
 
-//-------------------------compute_vector_element_type-----------------------
-// Compute necessary vector element type for expressions
-// This propagates backwards a narrower integer type when the
-// upper bits of the value are not needed.
-// Example:  char a,b,c;  a = b + c;
-// Normally the type of the add is integer, but for packed character
-// operations the type of the add needs to be char.
-void SuperWord::compute_vector_element_type() {
+void VLoopTypes::compute_vector_element_type() {
 #ifndef PRODUCT
-  if (is_trace_superword_vector_element_type()) {
-    tty->print_cr("\ncompute_velt_type:");
+  if (vloop().is_trace_vector_element_type()) {
+    tty->print_cr("\nVLoopTypes::compute_vector_element_type:");
   }
 #endif
 
+  const GrowableArray<Node*>& body = _body.body();
+
+  assert(_velt_type.is_empty(), "must not yet be computed");
+  // reserve space
+  _velt_type.at_put_grow(body.length()-1, nullptr);
+
   // Initial type
-  for (int i = 0; i < body().length(); i++) {
-    Node* n = body().at(i);
+  for (int i = 0; i < body.length(); i++) {
+    Node* n = body.at(i);
     set_velt_type(n, container_type(n));
   }
 
   // Propagate integer narrowed type backwards through operations
   // that don't depend on higher order bits
-  for (int i = body().length() - 1; i >= 0; i--) {
-    Node* n = body().at(i);
+  for (int i = body.length() - 1; i >= 0; i--) {
+    Node* n = body.at(i);
     // Only integer types need be examined
     const Type* vtn = velt_type(n);
     if (vtn->basic_type() == T_INT) {
@@ -3127,12 +3116,14 @@ void SuperWord::compute_vector_element_type() {
       for (uint j = start; j < end; j++) {
         Node* in  = n->in(j);
         // Don't propagate through a memory
-        if (!in->is_Mem() && in_bb(in) && velt_type(in)->basic_type() == T_INT &&
+        if (!in->is_Mem() &&
+            vloop().in_bb(in) &&
+            velt_type(in)->basic_type() == T_INT &&
             data_size(n) < data_size(in)) {
           bool same_type = true;
           for (DUIterator_Fast kmax, k = in->fast_outs(kmax); k < kmax; k++) {
             Node *use = in->fast_out(k);
-            if (!in_bb(use) || !same_velt_type(use, n)) {
+            if (!vloop().in_bb(use) || !same_velt_type(use, n)) {
               same_type = false;
               break;
             }
@@ -3149,7 +3140,9 @@ void SuperWord::compute_vector_element_type() {
             int op = in->Opcode();
             if (VectorNode::is_shift_opcode(op) || op == Op_AbsI || op == Op_ReverseBytesI) {
               Node* load = in->in(1);
-              if (load->is_Load() && in_bb(load) && (velt_type(load)->basic_type() == T_INT)) {
+              if (load->is_Load() &&
+                  vloop().in_bb(load) &&
+                  (velt_type(load)->basic_type() == T_INT)) {
                 // Only Load nodes distinguish signed (LoadS/LoadB) and unsigned
                 // (LoadUS/LoadUB) values. Store nodes only have one version.
                 vt = velt_type(load);
@@ -3165,16 +3158,17 @@ void SuperWord::compute_vector_element_type() {
       }
     }
   }
-  for (int i = 0; i < body().length(); i++) {
-    Node* n = body().at(i);
+  for (int i = 0; i < body.length(); i++) {
+    Node* n = body.at(i);
     Node* nn = n;
     if (nn->is_Bool() && nn->in(0) == nullptr) {
       nn = nn->in(1);
       assert(nn->is_Cmp(), "always have Cmp above Bool");
     }
     if (nn->is_Cmp() && nn->in(0) == nullptr) {
-      assert(in_bb(nn->in(1)) || in_bb(nn->in(2)), "one of the inputs must be in the loop too");
-      if (in_bb(nn->in(1))) {
+      assert(vloop().in_bb(nn->in(1)) || vloop().in_bb(nn->in(2)),
+             "one of the inputs must be in the loop too");
+      if (vloop().in_bb(nn->in(1))) {
         set_velt_type(n, velt_type(nn->in(1)));
       } else {
         set_velt_type(n, velt_type(nn->in(2)));
@@ -3182,9 +3176,9 @@ void SuperWord::compute_vector_element_type() {
     }
   }
 #ifndef PRODUCT
-  if (is_trace_superword_vector_element_type()) {
-    for (int i = 0; i < body().length(); i++) {
-      Node* n = body().at(i);
+  if (vloop().is_trace_vector_element_type()) {
+    for (int i = 0; i < body.length(); i++) {
+      Node* n = body.at(i);
       velt_type(n)->dump();
       tty->print("\t");
       n->dump();
@@ -3223,9 +3217,8 @@ int SuperWord::memory_alignment(MemNode* s, int iv_adjust) {
   return off_mod;
 }
 
-//---------------------------container_type---------------------------
 // Smallest type containing range of values
-const Type* SuperWord::container_type(Node* n) {
+const Type* VLoopTypes::container_type(Node* n) const {
   if (n->is_Mem()) {
     BasicType bt = n->as_Mem()->memory_type();
     if (n->is_Store() && (bt == T_CHAR)) {
@@ -3242,23 +3235,13 @@ const Type* SuperWord::container_type(Node* n) {
     }
     return Type::get_const_basic_type(bt);
   }
-  const Type* t = igvn().type(n);
+  const Type* t = vloop().phase()->igvn().type(n);
   if (t->basic_type() == T_INT) {
     // A narrow type of arithmetic operations will be determined by
     // propagating the type of memory operations.
     return TypeInt::INT;
   }
   return t;
-}
-
-bool SuperWord::same_velt_type(Node* n1, Node* n2) {
-  const Type* vt1 = velt_type(n1);
-  const Type* vt2 = velt_type(n2);
-  if (vt1->basic_type() == T_INT && vt2->basic_type() == T_INT) {
-    // Compare vectors element sizes for integer types.
-    return data_size(n1) == data_size(n2);
-  }
-  return vt1 == vt2;
 }
 
 bool VLoopMemorySlices::same_memory_slice(MemNode* m1, MemNode* m2) const {

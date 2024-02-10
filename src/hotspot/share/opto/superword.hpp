@@ -187,10 +187,9 @@ class SWNodeInfo {
  public:
   int         _alignment; // memory alignment for a node
   int         _depth;     // Max expression (DAG) depth from block start
-  const Type* _velt_type; // vector element type
   Node_List*  _my_pack;   // pack containing this node
 
-  SWNodeInfo() : _alignment(-1), _depth(0), _velt_type(nullptr), _my_pack(nullptr) {}
+  SWNodeInfo() : _alignment(-1), _depth(0), _my_pack(nullptr) {}
   static const SWNodeInfo initial;
 };
 
@@ -250,7 +249,7 @@ class SuperWord : public ResourceObj {
     return vloop_analyzer().memory_slices().same_memory_slice(n1, n2);
   }
 
-  // VLoopAnalyzer body
+  // VLoopBody Accessors
   const GrowableArray<Node*>& body() const {
     return vloop_analyzer().body().body();
   }
@@ -259,13 +258,33 @@ class SuperWord : public ResourceObj {
     return vloop_analyzer().body().bb_idx(n);
   }
 
-#ifndef PRODUCT
-  // TraceAutoVectorization and TraceSuperWord
-  bool is_trace_superword_vector_element_type() const {
-    // Too verbose for TraceSuperWord
-    return vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_TYPES);
+  // VLoopTypes Accessors
+  const Type* velt_type(Node* n) const {
+    return vloop_analyzer().types().velt_type(n);
   }
 
+  BasicType velt_basic_type(Node* n) const {
+    return vloop_analyzer().types().velt_basic_type(n);
+  }
+
+  bool same_velt_type(Node* n1, Node* n2) const {
+    return vloop_analyzer().types().same_velt_type(n1, n2);
+  }
+
+  int data_size(Node* n) const {
+    return vloop_analyzer().types().data_size(n);
+  }
+
+  int vector_width(Node* n) const {
+    return vloop_analyzer().types().vector_width(n);
+  }
+
+  int vector_width_in_bytes(const Node* n) const {
+    return vloop_analyzer().types().vector_width_in_bytes(n);
+  }
+
+#ifndef PRODUCT
+  // TraceAutoVectorization and TraceSuperWord
   bool is_trace_superword_alignment() const {
     // Too verbose for TraceSuperWord
     return vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_ALIGNMENT);
@@ -304,7 +323,6 @@ class SuperWord : public ResourceObj {
   bool is_trace_superword_any() const {
     return TraceSuperWord ||
            is_trace_align_vector() ||
-           vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_TYPES) ||
            vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_ALIGNMENT) ||
            vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_DEPENDENCE_GRAPH) ||
            vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_ADJACENT_MEMOPS) ||
@@ -333,14 +351,6 @@ class SuperWord : public ResourceObj {
   // Accessors
   Arena* arena()                   { return &_arena; }
 
-  int vector_width(const Node* n) const {
-    BasicType bt = velt_basic_type(n);
-    return MIN2(ABS(iv_stride()), Matcher::max_vector_size(bt));
-  }
-  int vector_width_in_bytes(const Node* n) const {
-    BasicType bt = velt_basic_type(n);
-    return vector_width(n)*type2aelembytes(bt);
-  }
   int get_vw_bytes_special(MemNode* s);
   const MemNode* align_to_ref() const { return _align_to_ref; }
   void set_align_to_ref(const MemNode* m) { _align_to_ref = m; }
@@ -358,12 +368,6 @@ class SuperWord : public ResourceObj {
   // Max expression (DAG) depth from beginning of the block for each node
   int depth(Node* n) const                   { return _node_info.adr_at(bb_idx(n))->_depth; }
   void set_depth(Node* n, int d)             { int i = bb_idx(n); grow_node_info(i); _node_info.adr_at(i)->_depth = d; }
-
-  // vector element type
-  const Type* velt_type(const Node* n) const { return _node_info.adr_at(bb_idx(n))->_velt_type; }
-  BasicType velt_basic_type(const Node* n) const { return velt_type(n)->array_element_basic_type(); }
-  void set_velt_type(Node* n, const Type* t) { int i = bb_idx(n); grow_node_info(i); _node_info.adr_at(i)->_velt_type = t; }
-  bool same_velt_type(Node* n1, Node* n2);
 
   // my_pack
  public:
@@ -405,7 +409,6 @@ private:
   // do s1 and s2 have similar input edges?
   bool have_similar_inputs(Node* s1, Node* s2);
   void set_alignment(Node* s1, Node* s2, int align);
-  int data_size(Node* s);
   // Extend packset by following use->def and def->use links from pack members.
   void extend_packlist();
   int adjust_alignment_for_type_conversion(Node* s, Node* t, int align);
@@ -460,8 +463,6 @@ private:
   BasicType longer_type_for_conversion(Node* n);
   // Find the longest type in def-use chain for packed nodes, and then compute the max vector size.
   int max_vector_size_in_def_use_chain(Node* n);
-  // Compute necessary vector element type for expressions
-  void compute_vector_element_type();
   // Are s1 and s2 in a pack pair and ordered as s1,s2?
   bool in_packset(Node* s1, Node* s2);
   // Remove the pack at position pos in the packset
@@ -469,8 +470,6 @@ private:
   static LoadNode::ControlDependency control_dependency(Node_List* p);
   // Alignment within a vector memory reference
   int memory_alignment(MemNode* s, int iv_adjust);
-  // Smallest type containing range of values
-  const Type* container_type(Node* n);
   // Ensure that the main loop vectors are aligned by adjusting the pre loop limit.
   void adjust_pre_loop_limit_to_align_main_loop_vectors();
   // Is the use of d1 in u1 at the same operand position as d2 in u2?

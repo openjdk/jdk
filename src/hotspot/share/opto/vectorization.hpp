@@ -124,6 +124,10 @@ public:
     return vtrace().is_trace(TraceAutoVectorizationTag::BODY);
   }
 
+  bool is_trace_vector_element_type() const {
+    return vtrace().is_trace(TraceAutoVectorizationTag::TYPES);
+  }
+
   bool is_trace_pointer_analysis() const {
     return vtrace().is_trace(TraceAutoVectorizationTag::POINTER_ANALYSIS);
   }
@@ -330,6 +334,92 @@ private:
   }
 };
 
+// Submodule of VLoopAnalyzer.
+// Compute the vector element type for every node in the loop body.
+// We need to do this to be able to vectorize the narrower integer
+// types (byte, char, short). In the C2 IR, their operations are
+// done with full int type with 4 byte precision (e.g. AddI, MulI).
+// Example:  char a,b,c;  a = (char)(b + c);
+// However, if we can prove the the upper bits are only truncated,
+// and the lower bits for the narrower type computed correctly, we
+// can compute the operations in the narrower type directly (e.g we
+// perform the AddI or MulI with 1 or 2 bytes). This allows us to
+// fit more operations in a vector, and can remove the otherwise
+// required conversion (int <-> narrower type).
+// We compute the types backwards (use-to-def): If all use nodes
+// only require the lower bits, then the def node can do the operation
+// with only the lower bits, and we propagate the narrower type to it.
+class VLoopTypes : public StackObj {
+private:
+  const VLoop&     _vloop;
+  const VLoopBody& _body;
+
+  // bb_idx -> vector element type
+  GrowableArray<const Type*> _velt_type;
+
+  const VLoop& vloop() const    { return _vloop; }
+  const VLoopBody& body() const { return _body; }
+
+public:
+  VLoopTypes(Arena* arena,
+             const VLoop& vloop,
+             const VLoopBody& body) :
+    _vloop(vloop),
+    _body(body),
+    _velt_type(arena, vloop.estimated_body_length(), 0, nullptr) {}
+  NONCOPYABLE(VLoopTypes);
+
+  void compute_vector_element_type();
+  NOT_PRODUCT( void print() const; )
+
+  const Type* velt_type(const Node* n) const {
+    assert(vloop().in_bb(n), "only call on nodes in loop");
+    const Type* t = _velt_type.at(body().bb_idx(n));
+    assert(t != nullptr, "must have type");
+    return t;
+  }
+
+  BasicType velt_basic_type(const Node* n) const {
+    return velt_type(n)->array_element_basic_type();
+  }
+
+  int data_size(Node* s) const {
+    int bsize = type2aelembytes(velt_basic_type(s));
+    assert(bsize != 0, "valid size");
+    return bsize;
+  }
+
+  bool same_velt_type(Node* n1, Node* n2) const {
+    const Type* vt1 = velt_type(n1);
+    const Type* vt2 = velt_type(n2);
+    if (vt1->basic_type() == T_INT && vt2->basic_type() == T_INT) {
+      // Compare vectors element sizes for integer types.
+      return data_size(n1) == data_size(n2);
+    }
+    return vt1 == vt2;
+  }
+
+  int vector_width(const Node* n) const {
+    BasicType bt = velt_basic_type(n);
+    return MIN2(ABS(_vloop.iv_stride()), Matcher::max_vector_size(bt));
+  }
+
+  int vector_width_in_bytes(const Node* n) const {
+    BasicType bt = velt_basic_type(n);
+    return vector_width(n) * type2aelembytes(bt);
+  }
+
+private:
+  void set_velt_type(Node* n, const Type* t) {
+    assert(t != nullptr, "cannot set nullptr");
+    assert(vloop().in_bb(n), "only call on nodes in loop");
+    _velt_type.at_put(body().bb_idx(n), t);
+  }
+
+  // Smallest type containing range of values
+  const Type* container_type(Node* n) const;
+};
+
 // Analyze the loop in preparation for auto-vectorization. This class is
 // deliberately structured into many submodules, which are as independent
 // as possible, though some submodules do require other submodules.
@@ -340,21 +430,21 @@ private:
   static constexpr char const* FAILURE_NO_MAX_UNROLL         = "slp max unroll analysis required";
   static constexpr char const* FAILURE_NO_REDUCTION_OR_STORE = "no reduction and no store in loop";
 
-  const VLoop&               _vloop;
+  const VLoop&         _vloop;
 
   // Arena for all submodules
-  Arena                      _arena;
+  Arena                _arena;
 
   // If all submodules are setup successfully, we set this flag at the
   // end of the constructor
-  bool                       _success;
+  bool                 _success;
 
   // Submodules
   // TODO
-  VLoopReductions            _reductions;
+  VLoopReductions      _reductions;
   VLoopMemorySlices    _memory_slices;
   VLoopBody            _body;
-  //VLoopTypes           _types;
+  VLoopTypes           _types;
   //VLoopDependenceGraph _dependence_graph;
 
 public:
@@ -364,8 +454,8 @@ public:
     _success(false),
     _reductions      (&_arena, vloop),
     _memory_slices   (&_arena, vloop),
-    _body            (&_arena, vloop, vshared)
-    //_types           (&_arena, vloop, body()),
+    _body            (&_arena, vloop, vshared),
+    _types           (&_arena, vloop, body())
     //_dependence_graph(&_arena, vloop, memory_slices(), body())
     // TODO modules
   {
@@ -382,7 +472,7 @@ public:
   const VLoopReductions& reductions()            const { return _reductions; }
   const VLoopMemorySlices& memory_slices()       const { return _memory_slices; }
   const VLoopBody& body()                        const { return _body; }
-  //const VLoopTypes& types()                      const { return _types; }
+  const VLoopTypes& types()                      const { return _types; }
   //const VLoopDependenceGraph& dependence_graph() const { return _dependence_graph; }
   // TODO
 
