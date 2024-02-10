@@ -484,6 +484,11 @@ class SuperWord : public ResourceObj {
   bool same_velt_type(Node* n1, Node* n2);
   bool same_memory_slice(MemNode* best_align_to_mem_ref, MemNode* mem_ref) const;
 
+  // Compute the input basic velt type of a node
+  BasicType input_velt_basic_type(const Node* n) const;
+  // Check if output type of def is compatible with input type of use
+  bool is_velt_basic_type_compatible_def_use(const Node* def, const Node* use) const;
+
   // my_pack
  public:
   Node_List* my_pack(Node* n)                 { return !in_bb(n) ? nullptr : _node_info.adr_at(bb_idx(n))->_my_pack; }

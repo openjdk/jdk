@@ -1140,6 +1140,34 @@ void SuperWord::extend_pairs() {
 #endif
 }
 
+// Compute the input basic velt type of a node
+BasicType SuperWord::input_velt_basic_type(const Node* n) const {
+  // Special Case: Convert between any type
+  if (VectorNode::is_convert_opcode(n->Opcode())) {
+    return velt_basic_type(n->in(1));
+  }
+
+  // Special case: int -> long
+  if (requires_long_to_int_conversion(n->Opcode())) {
+    assert(velt_basic_type(n) == T_INT, "node converts to int");
+    return T_LONG;
+  }
+
+  // In all other cases, input and output type are the same.
+  return velt_basic_type(n);
+}
+
+// Check if output type of def is compatible with input type of use
+bool SuperWord::is_velt_basic_type_compatible_def_use(const Node* def, const Node* use) const {
+  BasicType def_out_t = input_velt_basic_type(def);
+  BasicType use_in_t  = velt_basic_type(use);
+
+  assert(is_java_primitive(def_out_t), "sanity %s", type2name(def_out_t));
+  assert(is_java_primitive(use_in_t), "sanity %s", type2name(use_in_t));
+
+  return (type2aelembytes(def_out_t) == type2aelembytes(use_in_t));
+}
+
 //------------------------------follow_use_defs---------------------------
 // Extend the packset by visiting operand definitions of nodes in pack p
 bool SuperWord::follow_use_defs(Node_List* p) {
@@ -2842,21 +2870,9 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) {
     }
   }
 
-  // Can we see if the data_size matches? But what about conversions?
-  // data_size
-  // longer_type_for_conversion also figures out in/out type
-  // maybe we can find the bt for input?
-  // Also: this means that byte <-> char conversions are not possible
-  //       especially sad for string inflate etc. But we probably would
-  //       need some sort of convert node, and have to insert it...
-  // TODO
-  Node* u0 = u_pk->at(0);
-  Node* d0 = d_pk->at(0);
-  if (data_size(u0) != data_size(d0)) {
-    return false;
-  }
-
-  return true;
+  Node* def0 = d_pk->at(0);
+  Node* use0 = u_pk->at(0);
+  return is_velt_basic_type_compatible_def_use(def0, use0);
 }
 
 //------------------------------construct_bb---------------------------
