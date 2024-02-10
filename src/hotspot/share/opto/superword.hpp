@@ -26,7 +26,6 @@
 
 #include "opto/vectorization.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/pair.hpp"
 
 //
 //                  S U P E R W O R D   T R A N S F O R M
@@ -199,7 +198,7 @@ class SWNodeInfo {
 // Transforms scalar operations into packed (superword) operations.
 class SuperWord : public ResourceObj {
  private:
-  const VLoop& _vloop;
+  const VLoopAnalyzer& _vloop_analyzer;
 
   // Arena for small data structures. Large data structures are allocated in
   // VSharedData, and reused over many AutoVectorizations.
@@ -224,7 +223,7 @@ class SuperWord : public ResourceObj {
   GrowableArray<Node*> _nlist; // List of nodes
 
  public:
-  SuperWord(const VLoop &vloop, VSharedData &vshared);
+  SuperWord(const VLoopAnalyzer &vloop_analyzer, VSharedData &vshared);
 
   // Attempt to run the SuperWord algorithm on the loop. Return true if we succeed.
   bool transform_loop();
@@ -232,15 +231,26 @@ class SuperWord : public ResourceObj {
   // Decide if loop can eventually be vectorized, and what unrolling factor is required.
   static void unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_factor);
 
+  // VLoopAnalyzer Accessors
+  const VLoopAnalyzer& vloop_analyzer() const { return _vloop_analyzer; }
+
   // VLoop Accessors
-  const VLoop& vloop()        const { return _vloop; }
-  PhaseIdealLoop* phase()     const { return vloop().phase(); }
-  PhaseIterGVN& igvn()        const { return vloop().phase()->igvn(); }
-  IdealLoopTree* lpt()        const { return vloop().lpt(); }
-  CountedLoopNode* cl()       const { return vloop().cl(); }
-  PhiNode* iv()               const { return vloop().iv(); }
-  int iv_stride()             const { return cl()->stride_con(); }
-  bool in_bb(const Node* n)   const { return vloop().in_bb(n); }
+  const VLoop& vloop()                  const { return vloop_analyzer().vloop(); }
+  PhaseIdealLoop* phase()               const { return vloop().phase(); }
+  PhaseIterGVN& igvn()                  const { return vloop().phase()->igvn(); }
+  IdealLoopTree* lpt()                  const { return vloop().lpt(); }
+  CountedLoopNode* cl()                 const { return vloop().cl(); }
+  PhiNode* iv()                         const { return vloop().iv(); }
+  int iv_stride()                       const { return cl()->stride_con(); }
+  bool in_bb(const Node* n)             const { return vloop().in_bb(n); }
+
+  // VLoopReductions Accessors
+  bool is_marked_reduction(const Node* n) const {
+    return vloop_analyzer().reductions().is_marked_reduction(n);
+  }
+  bool reduction(Node* s1, Node* s2) const {
+    return vloop_analyzer().reductions().is_marked_reduction_pair(s1, s2);
+  }
 
 #ifndef PRODUCT
   // TraceAutoVectorization and TraceSuperWord
@@ -315,7 +325,6 @@ class SuperWord : public ResourceObj {
   const GrowableArray<Node*>&      block()   const { return _block; }
   const DepGraph&                  dg()      const { return _dg; }
  private:
-  VectorSet      _loop_reductions; // Reduction nodes in the current loop
   bool           _race_possible;   // In cases where SDMU is true
   bool           _do_vector_loop;  // whether to do vectorization/simd style
   int            _num_work_vecs;   // Number of non memory vector operations
@@ -376,65 +385,7 @@ class SuperWord : public ResourceObj {
   bool same_origin_idx(Node* a, Node* b) const;
   bool same_generation(Node* a, Node* b) const;
 
-  // methods
-
-  typedef const Pair<const Node*, int> PathEnd;
-
-  // Search for a path P = (n_1, n_2, ..., n_k) such that:
-  // - original_input(n_i, input) = n_i+1 for all 1 <= i < k,
-  // - path(n) for all n in P,
-  // - k <= max, and
-  // - there exists a node e such that original_input(n_k, input) = e and end(e).
-  // Return <e, k>, if P is found, or <nullptr, -1> otherwise.
-  // Note that original_input(n, i) has the same behavior as n->in(i) except
-  // that it commutes the inputs of binary nodes whose edges have been swapped.
-  template <typename NodePredicate1, typename NodePredicate2>
-  static PathEnd find_in_path(const Node *n1, uint input, int max,
-                              NodePredicate1 path, NodePredicate2 end) {
-    const PathEnd no_path(nullptr, -1);
-    const Node* current = n1;
-    int k = 0;
-    for (int i = 0; i <= max; i++) {
-      if (current == nullptr) {
-        return no_path;
-      }
-      if (end(current)) {
-        return PathEnd(current, k);
-      }
-      if (!path(current)) {
-        return no_path;
-      }
-      current = original_input(current, input);
-      k++;
-    }
-    return no_path;
-  }
-
-public:
-  // Whether n is a reduction operator and part of a reduction cycle.
-  // This function can be used for individual queries outside the SLP analysis,
-  // e.g. to inform matching in target-specific code. Otherwise, the
-  // almost-equivalent but faster SuperWord::mark_reductions() is preferable.
-  static bool is_reduction(const Node* n);
-  // Whether n is marked as a reduction node.
-  bool is_marked_reduction(Node* n) { return _loop_reductions.test(n->_idx); }
-  // Whether the current loop has any reduction node.
-  bool is_marked_reduction_loop() { return !_loop_reductions.is_empty(); }
 private:
-  // Whether n is a standard reduction operator.
-  static bool is_reduction_operator(const Node* n);
-  // Whether n is part of a reduction cycle via the 'input' edge index. To bound
-  // the search, constrain the size of reduction cycles to LoopMaxUnroll.
-  static bool in_reduction_cycle(const Node* n, uint input);
-  // Reference to the i'th input node of n, commuting the inputs of binary nodes
-  // whose edges have been swapped. Assumes n is a commutative operation.
-  static Node* original_input(const Node* n, uint i);
-  // Find and mark reductions in a loop. Running mark_reductions() is similar to
-  // querying is_reduction(n) for every n in the SuperWord loop, but stricter in
-  // that it assumes counted loops and requires that reduction nodes are not
-  // used within the loop except by their reduction cycle predecessors.
-  void mark_reductions();
-  // Extract the superword level parallelism
   bool SLP_extract();
   // Find the adjacent memory references and create pack pairs for them.
   void find_adjacent_refs();
@@ -466,8 +417,6 @@ private:
   // For a node pair (s1, s2) which is isomorphic and independent,
   // do s1 and s2 have similar input edges?
   bool have_similar_inputs(Node* s1, Node* s2);
-  // Is there a data path between s1 and s2 and both are reductions?
-  bool reduction(Node* s1, Node* s2);
   void set_alignment(Node* s1, Node* s2, int align);
   int data_size(Node* s);
   // Extend packset by following use->def and def->use links from pack members.

@@ -144,6 +144,20 @@ const char* VLoopAnalyzer::setup_submodules_helper() {
     return VLoopAnalyzer::FAILURE_NO_MAX_UNROLL;
   }
 
+  if (SuperWordReductions) {
+    _reductions.mark_reductions();
+  }
+
+  // TODO _memory_slices.analyze();
+
+  // // If there is no memory slice detected, that means there is no store.
+  // // If there is no reduction and no store, then we give up, because
+  // // vectorization is not possible anyway (given current limitations).
+  // if (!reductions().is_marked_reduction_loop() &&
+  //     _memory_slices.heads().is_empty()) {
+  //   return VLoopAnalyzer::FAILURE_NO_REDUCTION_OR_STORE;
+  // }
+
   // TODO
   return VLoopAnalyzer::SUCCESS;
 }

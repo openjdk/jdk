@@ -38,20 +38,19 @@
 #include "opto/movenode.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-SuperWord::SuperWord(const VLoop &vloop, VSharedData &vshared) :
-  _vloop(vloop),
+SuperWord::SuperWord(const VLoopAnalyzer &vloop_analyzer, VSharedData &vshared) :
+  _vloop_analyzer(vloop_analyzer),
   _arena(mtCompiler),
   _packset(arena(), 8,  0, nullptr),                        // packs for the current block
   _bb_idx(vshared.node_idx_to_loop_body_idx()),             // node idx to index in bb
-  _block(arena(), vloop.estimated_body_length(), 0, nullptr), // nodes in current block
+  _block(arena(), vloop().estimated_body_length(), 0, nullptr), // nodes in current block
   _mem_slice_head(arena(), 8,  0, nullptr),                 // memory slice heads
   _mem_slice_tail(arena(), 8,  0, nullptr),                 // memory slice tails
-  _node_info(arena(), vloop.estimated_body_length(), 0, SWNodeInfo::initial), // info needed per node
+  _node_info(arena(), vloop().estimated_body_length(), 0, SWNodeInfo::initial), // info needed per node
   _clone_map(phase()->C->clone_map()),                      // map of nodes created in cloning
   _align_to_ref(nullptr),                                   // memory reference to align vectors to
   _dg(arena()),                                             // dependence graph
-  _nlist(arena(), vloop.estimated_body_length(), 0, nullptr), // scratch list of nodes
-  _loop_reductions(arena()),                                // reduction nodes in the current loop
+  _nlist(arena(), vloop().estimated_body_length(), 0, nullptr), // scratch list of nodes
   _race_possible(false),                                    // cases where SDMU is true
   _do_vector_loop(phase()->C->do_vector_loop()),            // whether to do vectorization/simd style
   _num_work_vecs(0),                                        // amount of vector work we have
@@ -255,7 +254,7 @@ void SuperWord::unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_fa
   }
 }
 
-bool SuperWord::is_reduction(const Node* n) {
+bool VLoopReductions::is_reduction(const Node* n) {
   if (!is_reduction_operator(n)) {
     return false;
   }
@@ -269,12 +268,12 @@ bool SuperWord::is_reduction(const Node* n) {
   return false;
 }
 
-bool SuperWord::is_reduction_operator(const Node* n) {
+bool VLoopReductions::is_reduction_operator(const Node* n) {
   int opc = n->Opcode();
   return (opc != ReductionNode::opcode(opc, n->bottom_type()->basic_type()));
 }
 
-bool SuperWord::in_reduction_cycle(const Node* n, uint input) {
+bool VLoopReductions::in_reduction_cycle(const Node* n, uint input) {
   // First find input reduction path to phi node.
   auto has_my_opcode = [&](const Node* m){ return m->Opcode() == n->Opcode(); };
   PathEnd path_to_phi = find_in_path(n, input, LoopMaxUnroll, has_my_opcode,
@@ -291,7 +290,7 @@ bool SuperWord::in_reduction_cycle(const Node* n, uint input) {
   return path_from_phi.first != nullptr;
 }
 
-Node* SuperWord::original_input(const Node* n, uint i) {
+Node* VLoopReductions::original_input(const Node* n, uint i) {
   if (n->has_swapped_edges()) {
     assert(n->is_Add() || n->is_Mul(), "n should be commutative");
     if (i == 1) {
@@ -303,21 +302,21 @@ Node* SuperWord::original_input(const Node* n, uint i) {
   return n->in(i);
 }
 
-void SuperWord::mark_reductions() {
-
-  _loop_reductions.clear();
+void VLoopReductions::mark_reductions() {
+  assert(_loop_reductions.is_empty(), "must not yet be computed");
+  CountedLoopNode* cl = vloop().cl();
 
   // Iterate through all phi nodes associated to the loop and search for
   // reduction cycles in the basic block.
-  for (DUIterator_Fast imax, i = cl()->fast_outs(imax); i < imax; i++) {
-    const Node* phi = cl()->fast_out(i);
+  for (DUIterator_Fast imax, i = cl->fast_outs(imax); i < imax; i++) {
+    const Node* phi = cl->fast_out(i);
     if (!phi->is_Phi()) {
       continue;
     }
     if (phi->outcnt() == 0) {
       continue;
     }
-    if (phi == iv()) {
+    if (phi == vloop().iv()) {
       continue;
     }
     // The phi's loop-back is considered the first node in the reduction cycle.
@@ -341,8 +340,9 @@ void SuperWord::mark_reductions() {
       // to the phi node following edge index 'input'.
       PathEnd path =
         find_in_path(
-          first, input, lpt()->_body.size(),
-          [&](const Node* n) { return n->Opcode() == first->Opcode() && in_bb(n); },
+          first, input, vloop().lpt()->_body.size(),
+          [&](const Node* n) { return n->Opcode() == first->Opcode() &&
+                                      vloop().in_bb(n); },
           [&](const Node* n) { return n == phi; });
       if (path.first != nullptr) {
         reduction_input = input;
@@ -361,7 +361,7 @@ void SuperWord::mark_reductions() {
     for (int i = 0; i < path_nodes; i++) {
       for (DUIterator_Fast jmax, j = current->fast_outs(jmax); j < jmax; j++) {
         Node* u = current->fast_out(j);
-        if (!in_bb(u)) {
+        if (!vloop().in_bb(u)) {
           continue;
         }
         if (u == succ) {
@@ -381,6 +381,7 @@ void SuperWord::mark_reductions() {
     }
     // Reduction cycle found. Mark all nodes in the found path as reductions.
     current = first;
+    // TODO trace this
     for (int i = 0; i < path_nodes; i++) {
       _loop_reductions.set(current->_idx);
       current = original_input(current, reduction_input);
@@ -453,23 +454,10 @@ bool SuperWord::transform_loop() {
 bool SuperWord::SLP_extract() {
   assert(cl()->is_main_loop(), "SLP should only work on main loops");
 
-  if (SuperWordReductions) {
-    mark_reductions();
-  }
+  // TODO remove all the VLoopAnalyzer stuff
 
   // Find memory slices
   find_memory_slices();
-
-  if (!is_marked_reduction_loop() &&
-      _mem_slice_head.is_empty()) {
-#ifndef PRODUCT
-    if (is_trace_superword_any()) {
-      tty->print_cr("\nNo reductions or memory slices found, abort SuperWord.");
-      tty->cr();
-    }
-#endif
-    return false;
-  }
 
   // Ready the block
   if (!construct_bb()) {
@@ -1120,26 +1108,19 @@ bool SuperWord::have_similar_inputs(Node* s1, Node* s2) {
   return true;
 }
 
-//------------------------------reduction---------------------------
-// Is there a data path between s1 and s2 and the nodes reductions?
-bool SuperWord::reduction(Node* s1, Node* s2) {
-  bool retValue = false;
-  int d1 = depth(s1);
-  int d2 = depth(s2);
-  if (d2 > d1) {
-    if (is_marked_reduction(s1) && is_marked_reduction(s2)) {
-      // This is an ordered set, so s1 should define s2
-      for (DUIterator_Fast imax, i = s1->fast_outs(imax); i < imax; i++) {
-        Node* t1 = s1->fast_out(i);
-        if (t1 == s2) {
-          // both nodes are reductions and connected
-          retValue = true;
-        }
+bool VLoopReductions::is_marked_reduction_pair(Node* s1, Node* s2) const {
+  if (is_marked_reduction(s1) &&
+      is_marked_reduction(s2)) {
+    // This is an ordered set, so s1 should define s2
+    for (DUIterator_Fast imax, i = s1->fast_outs(imax); i < imax; i++) {
+      Node* t1 = s1->fast_out(i);
+      if (t1 == s2) {
+        // both nodes are reductions and connected
+        return true;
       }
     }
   }
-
-  return retValue;
+  return false;
 }
 
 //------------------------------set_alignment---------------------------
@@ -1876,9 +1857,8 @@ bool SuperWord::profitable(Node_List* p) {
     Node* second_in = p0->in(2);
     Node_List* second_pk = my_pack(second_in);
     if ((second_pk == nullptr) || (_num_work_vecs == _num_reductions)) {
-      // Unmark reduction if no parent pack or if not enough work
+      // No parent pack or not enough work
       // to cover reduction expansion overhead
-      _loop_reductions.remove(p0->_idx);
       return false;
     } else if (second_pk->size() != p->size()) {
       return false;

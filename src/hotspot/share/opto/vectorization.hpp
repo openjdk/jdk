@@ -28,6 +28,7 @@
 #include "opto/node.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/traceAutoVectorizationTag.hpp"
+#include "utilities/pair.hpp"
 
 // Code in this file and the vectorization.cpp contains shared logics and
 // utilities for C2's loop auto-vectorization.
@@ -170,7 +171,81 @@ private:
   }
 };
 
-// TODO submodules
+// Submodule of VLoopAnalyzer.
+// Identify and mark all reductions in the loop.
+class VLoopReductions : public StackObj {
+private:
+  typedef const Pair<const Node*, int> PathEnd;
+
+  const VLoop& _vloop;
+  VectorSet _loop_reductions;
+
+public:
+  VLoopReductions(Arena* arena, const VLoop& vloop) :
+    _vloop(vloop),
+    _loop_reductions(arena){};
+
+  NONCOPYABLE(VLoopReductions);
+
+private:
+  const VLoop& vloop() const { return _vloop; }
+
+  // Search for a path P = (n_1, n_2, ..., n_k) such that:
+  // - original_input(n_i, input) = n_i+1 for all 1 <= i < k,
+  // - path(n) for all n in P,
+  // - k <= max, and
+  // - there exists a node e such that original_input(n_k, input) = e and end(e).
+  // Return <e, k>, if P is found, or <nullptr, -1> otherwise.
+  // Note that original_input(n, i) has the same behavior as n->in(i) except
+  // that it commutes the inputs of binary nodes whose edges have been swapped.
+  template <typename NodePredicate1, typename NodePredicate2>
+  static PathEnd find_in_path(const Node* n1, uint input, int max,
+                              NodePredicate1 path, NodePredicate2 end) {
+    const PathEnd no_path(nullptr, -1);
+    const Node* current = n1;
+    int k = 0;
+    for (int i = 0; i <= max; i++) {
+      if (current == nullptr) {
+        return no_path;
+      }
+      if (end(current)) {
+        return PathEnd(current, k);
+      }
+      if (!path(current)) {
+        return no_path;
+      }
+      current = original_input(current, input);
+      k++;
+    }
+    return no_path;
+  }
+
+public:
+  // Find and mark reductions in a loop. Running mark_reductions() is similar to
+  // querying is_reduction(n) for every node in the loop, but stricter in
+  // that it assumes counted loops and requires that reduction nodes are not
+  // used within the loop except by their reduction cycle predecessors.
+  void mark_reductions();
+  // Whether n is a reduction operator and part of a reduction cycle.
+  // This function can be used for individual queries outside auto-vectorization,
+  // e.g. to inform matching in target-specific code. Otherwise, the
+  // almost-equivalent but faster mark_reductions() is preferable.
+  static bool is_reduction(const Node* n);
+  // Whether n is marked as a reduction node.
+  bool is_marked_reduction(const Node* n) const { return _loop_reductions.test(n->_idx); }
+  bool is_marked_reduction_loop() const { return !_loop_reductions.is_empty(); }
+  // Are s1 and s2 reductions with a data path between them?
+  bool is_marked_reduction_pair(Node* s1, Node* s2) const;
+private:
+  // Whether n is a standard reduction operator.
+  static bool is_reduction_operator(const Node* n);
+  // Whether n is part of a reduction cycle via the 'input' edge index. To bound
+  // the search, constrain the size of reduction cycles to LoopMaxUnroll.
+  static bool in_reduction_cycle(const Node* n, uint input);
+  // Reference to the i'th input node of n, commuting the inputs of binary nodes
+  // whose edges have been swapped. Assumes n is a commutative operation.
+  static Node* original_input(const Node* n, uint i);
+};
 
 // Analyze the loop in preparation for auto-vectorization. This class is
 // deliberately structured into many submodules, which are as independent
@@ -193,12 +268,14 @@ private:
 
   // Submodules
   // TODO
+  VLoopReductions            _reductions;
 
 public:
   VLoopAnalyzer(const VLoop& vloop, VSharedData &vshared) :
     _vloop(vloop),
     _arena(mtCompiler),
-    _success(false)
+    _success(false),
+    _reductions      (&_arena, vloop)
     // TODO modules
   {
     _success = setup_submodules();
@@ -207,8 +284,11 @@ public:
 
   bool success() const { return _success; }
 
+  Arena* arena()       { return &_arena; }
+
   // Read-only accessors for submodules
   const VLoop& vloop()                           const { return _vloop; }
+  const VLoopReductions& reductions()            const { return _reductions; }
   // TODO
 
 private:

@@ -4237,7 +4237,7 @@ PhaseIdealLoop::auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared) {
     return AutoVectorizeStatus::TriedAndFailed;
   }
 
-  SuperWord sw(vloop, vshared);
+  SuperWord sw(vloop_analyzer, vshared);
   if (!sw.transform_loop()) {
     return AutoVectorizeStatus::TriedAndFailed;
   }
