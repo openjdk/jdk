@@ -31,7 +31,7 @@ Ideal graphs are dumped at the following points:
 * `N=2`: additionally, after every major phase
 * `N=3`: additionally, after every minor phase
 * `N=4`: additionally, after every loop optimization
-* `N=5`: additionally, after every effective IGVN step (slow)
+* `N=5`: additionally, after every effective IGVN and every macro expansion step (slow)
 * `N=6`: additionally, after parsing every bytecode (very slow)
 
 By default the JVM expects that it will connect to a visualizer on the local

@@ -29,7 +29,7 @@
 #include "agent_common.h"
 
 #include "nsk_tools.h"
-#include "native_thread.h"
+#include "native_thread.hpp"
 #include "JVMTITools.h"
 #include "jvmti_tools.h"
 
