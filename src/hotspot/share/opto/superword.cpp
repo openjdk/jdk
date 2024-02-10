@@ -44,13 +44,10 @@ SuperWord::SuperWord(const VLoopAnalyzer &vloop_analyzer, VSharedData &vshared) 
   _packset(arena(), 8,  0, nullptr),                        // packs for the current block
   _bb_idx(vshared.node_idx_to_loop_body_idx()),             // node idx to index in bb
   _block(arena(), vloop().estimated_body_length(), 0, nullptr), // nodes in current block
-  _mem_slice_head(arena(), 8,  0, nullptr),                 // memory slice heads
-  _mem_slice_tail(arena(), 8,  0, nullptr),                 // memory slice tails
   _node_info(arena(), vloop().estimated_body_length(), 0, SWNodeInfo::initial), // info needed per node
   _clone_map(phase()->C->clone_map()),                      // map of nodes created in cloning
   _align_to_ref(nullptr),                                   // memory reference to align vectors to
   _dg(arena()),                                             // dependence graph
-  _nlist(arena(), vloop().estimated_body_length(), 0, nullptr), // scratch list of nodes
   _race_possible(false),                                    // cases where SDMU is true
   _do_vector_loop(phase()->C->do_vector_loop()),            // whether to do vectorization/simd style
   _num_work_vecs(0),                                        // amount of vector work we have
@@ -456,9 +453,6 @@ bool SuperWord::SLP_extract() {
 
   // TODO remove all the VLoopAnalyzer stuff
 
-  // Find memory slices
-  find_memory_slices();
-
   // Ready the block
   if (!construct_bb()) {
 #ifndef PRODUCT
@@ -785,16 +779,22 @@ void SuperWord::dependence_graph() {
     }
   }
 
+  const GrowableArray<PhiNode*> &mem_slice_head = vloop_analyzer().memory_slices().heads();
+  const GrowableArray<MemNode*> &mem_slice_tail = vloop_analyzer().memory_slices().tails();
+
+  ResourceMark rm;
+  GrowableArray<Node*> slice_nodes;
+
   // For each memory slice, create the dependences
-  for (int i = 0; i < _mem_slice_head.length(); i++) {
-    Node* n      = _mem_slice_head.at(i);
-    Node* n_tail = _mem_slice_tail.at(i);
+  for (int i = 0; i < mem_slice_head.length(); i++) {
+    PhiNode* head = mem_slice_head.at(i);
+    MemNode* tail = mem_slice_tail.at(i);
 
     // Get slice in predecessor order (last is first)
-    mem_slice_preds(n_tail, n, _nlist);
+    vloop_analyzer().memory_slices().get_slice(head, tail, slice_nodes);
 
     // Make the slice dependent on the root
-    DepMem* slice = _dg.dep(n);
+    DepMem* slice = _dg.dep(head);
     _dg.make_edge(_dg.root(), slice);
 
     // Create a sink for the slice
@@ -802,8 +802,8 @@ void SuperWord::dependence_graph() {
     _dg.make_edge(slice_sink, _dg.tail());
 
     // Now visit each pair of memory ops, creating the edges
-    for (int j = _nlist.length() - 1; j >= 0 ; j--) {
-      Node* s1 = _nlist.at(j);
+    for (int j = slice_nodes.length() - 1; j >= 0 ; j--) {
+      Node* s1 = slice_nodes.at(j);
 
       // If no dependency yet, use slice
       if (_dg.dep(s1)->in_cnt() == 0) {
@@ -812,7 +812,7 @@ void SuperWord::dependence_graph() {
       VPointer p1(s1->as_Mem(), vloop());
       bool sink_dependent = true;
       for (int k = j - 1; k >= 0; k--) {
-        Node* s2 = _nlist.at(k);
+        Node* s2 = slice_nodes.at(k);
         if (s1->is_Load() && s2->is_Load())
           continue;
         VPointer p2(s2->as_Mem(), vloop());
@@ -831,68 +831,68 @@ void SuperWord::dependence_graph() {
 
 #ifndef PRODUCT
     if (is_trace_superword_dependence_graph()) {
-      tty->print_cr("\nDependence graph for slice: %d", n->_idx);
-      for (int q = 0; q < _nlist.length(); q++) {
-        _dg.print(_nlist.at(q));
+      tty->print_cr("\nDependence graph for slice: %d", head->_idx);
+      for (int q = 0; q < slice_nodes.length(); q++) {
+        _dg.print(slice_nodes.at(q));
       }
       tty->cr();
     }
 #endif
 
-    _nlist.clear();
+    slice_nodes.clear();
   }
 }
 
-void SuperWord::find_memory_slices() {
-  assert(_mem_slice_head.length() == 0, "mem_slice_head is empty");
-  assert(_mem_slice_tail.length() == 0, "mem_slice_tail is empty");
+void VLoopMemorySlices::find_memory_slices() {
+  assert(_heads.is_empty(), "not yet computed");
+  assert(_tails.is_empty(), "not yet computed");
+  CountedLoopNode* cl = vloop().cl();
 
   // Iterate over all memory phis
-  for (DUIterator_Fast imax, i = cl()->fast_outs(imax); i < imax; i++) {
-    PhiNode* phi = cl()->fast_out(i)->isa_Phi();
-    if (phi != nullptr && in_bb(phi) && phi->is_memory_phi()) {
+  for (DUIterator_Fast imax, i = cl->fast_outs(imax); i < imax; i++) {
+    PhiNode* phi = cl->fast_out(i)->isa_Phi();
+    if (phi != nullptr && vloop().in_bb(phi) && phi->is_memory_phi()) {
       Node* phi_tail = phi->in(LoopNode::LoopBackControl);
       if (phi_tail != phi->in(LoopNode::EntryControl)) {
-        _mem_slice_head.push(phi);
-        _mem_slice_tail.push(phi_tail->as_Mem());
+        _heads.push(phi);
+        _tails.push(phi_tail->as_Mem());
       }
     }
   }
 
-  NOT_PRODUCT( if (is_trace_superword_memory_slices()) { print_memory_slices(); } )
+  NOT_PRODUCT( if (vloop().is_trace_memory_slices()) { print(); } )
 }
 
 #ifndef PRODUCT
-void SuperWord::print_memory_slices() {
-  tty->print_cr("\nSuperWord::print_memory_slices: %s",
-                _mem_slice_head.length() > 0 ? "" : "NONE");
-  for (int m = 0; m < _mem_slice_head.length(); m++) {
-    tty->print("%6d ", m);  _mem_slice_head.at(m)->dump();
-    tty->print("       ");  _mem_slice_tail.at(m)->dump();
+void VLoopMemorySlices::print() const {
+  tty->print_cr("\nVLoopMemorySlices::print: %s",
+                heads().length() > 0 ? "" : "NONE");
+  for (int m = 0; m < heads().length(); m++) {
+    tty->print("%6d ", m);  heads().at(m)->dump();
+    tty->print("       ");  tails().at(m)->dump();
   }
 }
 #endif
 
-//---------------------------mem_slice_preds---------------------------
-// Return a memory slice (node list) in predecessor order starting at "start"
-void SuperWord::mem_slice_preds(Node* start, Node* stop, GrowableArray<Node*> &preds) {
-  assert(preds.length() == 0, "start empty");
-  Node* n = start;
+// Get all memory nodes of a slice, in reverse order
+void VLoopMemorySlices::get_slice(PhiNode* head, MemNode* tail, GrowableArray<Node*> &slice) const {
+  assert(slice.length() == 0, "start empty");
+  Node* n = tail;
   Node* prev = nullptr;
   while (true) {
-    assert(in_bb(n), "must be in block");
+    assert(vloop().in_bb(n), "must be in block");
     for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
       Node* out = n->fast_out(i);
       if (out->is_Load()) {
-        if (in_bb(out)) {
-          preds.push(out);
+        if (vloop().in_bb(out)) {
+          slice.push(out);
         }
       } else {
         // FIXME
-        if (out->is_MergeMem() && !in_bb(out)) {
+        if (out->is_MergeMem() && !vloop().in_bb(out)) {
           // Either unrolling is causing a memory edge not to disappear,
           // or need to run igvn.optimize() again before SLP
-        } else if (out->is_memory_phi() && !in_bb(out)) {
+        } else if (out->is_memory_phi() && !vloop().in_bb(out)) {
           // Ditto.  Not sure what else to check further.
         } else if (out->Opcode() == Op_StoreCM && out->in(MemNode::OopStore) == n) {
           // StoreCM has an input edge used as a precedence edge.
@@ -902,19 +902,19 @@ void SuperWord::mem_slice_preds(Node* start, Node* stop, GrowableArray<Node*> &p
         }
       }//else
     }//for
-    if (n == stop) break;
-    preds.push(n);
+    if (n == head) { break; }
+    slice.push(n);
     prev = n;
     assert(n->is_Mem(), "unexpected node %s", n->Name());
     n = n->in(MemNode::Memory);
   }
 
 #ifndef PRODUCT
-  if (is_trace_superword_memory_slices()) {
-    tty->print_cr("\nSuperWord::mem_slice_preds:");
-    stop->dump();
-    for (int j = preds.length() - 1; j >= 0 ; j--) {
-      preds.at(j)->dump();
+  if (vloop().is_trace_memory_slices()) {
+    tty->print_cr("\nVLoopMemorySlices::get_slice:");
+    head->dump();
+    for (int j = slice.length() - 1; j >= 0 ; j--) {
+      slice.at(j)->dump();
     }
   }
 #endif
@@ -2262,9 +2262,11 @@ void SuperWord::schedule_reorder_memops(Node_List &memops_schedule) {
   // loop we may have a different last store, and we need to adjust the uses accordingly.
   GrowableArray<Node*> old_last_store_in_slice(max_slices, max_slices, nullptr);
 
+  const GrowableArray<PhiNode*> &mem_slice_head = vloop_analyzer().memory_slices().heads();
+
   // (1) Set up the initial memory state from Phi. And find the old last store.
-  for (int i = 0; i < _mem_slice_head.length(); i++) {
-    Node* phi  = _mem_slice_head.at(i);
+  for (int i = 0; i < mem_slice_head.length(); i++) {
+    Node* phi  = mem_slice_head.at(i);
     assert(phi->is_Phi(), "must be phi");
     int alias_idx = phase()->C->get_alias_index(phi->adr_type());
     current_state_in_slice.at_put(alias_idx, phi);
@@ -2299,8 +2301,8 @@ void SuperWord::schedule_reorder_memops(Node_List &memops_schedule) {
   //     in the Phi. Further, we replace uses of the old last store
   //     with uses of the new last store (current_state).
   Node_List uses_after_loop;
-  for (int i = 0; i < _mem_slice_head.length(); i++) {
-    Node* phi  = _mem_slice_head.at(i);
+  for (int i = 0; i < mem_slice_head.length(); i++) {
+    Node* phi  = mem_slice_head.at(i);
     int alias_idx = phase()->C->get_alias_index(phi->adr_type());
     Node* current_state = current_state_in_slice.at(alias_idx);
     assert(current_state != nullptr, "slice is mapped");
@@ -3274,8 +3276,9 @@ bool SuperWord::same_velt_type(Node* n1, Node* n2) {
   return vt1 == vt2;
 }
 
-bool SuperWord::same_memory_slice(MemNode* best_align_to_mem_ref, MemNode* mem_ref) const {
-  return phase()->C->get_alias_index(mem_ref->adr_type()) == phase()->C->get_alias_index(best_align_to_mem_ref->adr_type());
+bool VLoopMemorySlices::same_memory_slice(MemNode* m1, MemNode* m2) const {
+  return vloop().phase()->C->get_alias_index(m1->adr_type()) ==
+         vloop().phase()->C->get_alias_index(m2->adr_type());
 }
 
 //------------------------------in_packset---------------------------

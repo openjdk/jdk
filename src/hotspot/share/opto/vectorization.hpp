@@ -116,6 +116,10 @@ public:
     return vtrace().is_trace(TraceAutoVectorizationTag::LOOP_ANALYZER);
   }
 
+  bool is_trace_memory_slices() const {
+    return vtrace().is_trace(TraceAutoVectorizationTag::MEMORY_SLICES);
+  }
+
   bool is_trace_pointer_analysis() const {
     return vtrace().is_trace(TraceAutoVectorizationTag::POINTER_ANALYSIS);
   }
@@ -189,7 +193,6 @@ public:
 
 private:
   const VLoop& vloop() const { return _vloop; }
-
   // Search for a path P = (n_1, n_2, ..., n_k) such that:
   // - original_input(n_i, input) = n_i+1 for all 1 <= i < k,
   // - path(n) for all n in P,
@@ -236,6 +239,7 @@ public:
   bool is_marked_reduction_loop() const { return !_loop_reductions.is_empty(); }
   // Are s1 and s2 reductions with a data path between them?
   bool is_marked_reduction_pair(Node* s1, Node* s2) const;
+
 private:
   // Whether n is a standard reduction operator.
   static bool is_reduction_operator(const Node* n);
@@ -245,6 +249,39 @@ private:
   // Reference to the i'th input node of n, commuting the inputs of binary nodes
   // whose edges have been swapped. Assumes n is a commutative operation.
   static Node* original_input(const Node* n, uint i);
+};
+
+// Submodule of VLoopAnalyzer.
+// Find the memory slices in the loop.
+class VLoopMemorySlices : public StackObj {
+private:
+  const VLoop& _vloop;
+
+  GrowableArray<PhiNode*> _heads;
+  GrowableArray<MemNode*> _tails;
+
+  const VLoop& vloop() const { return _vloop; }
+
+public:
+  VLoopMemorySlices(Arena* arena, const VLoop& vloop) :
+    _vloop(vloop),
+    _heads(arena, 8, 0, nullptr),
+    _tails(arena, 8, 0, nullptr) {};
+  NONCOPYABLE(VLoopMemorySlices);
+
+  void find_memory_slices();
+
+  const GrowableArray<PhiNode*> &heads() const { return _heads; }
+  const GrowableArray<MemNode*> &tails() const { return _tails; }
+
+  // Get all memory nodes of a slice, in reverse order
+  void get_slice(PhiNode* head, MemNode* tail, GrowableArray<Node*> &slice) const;
+
+  bool same_memory_slice(MemNode* m1, MemNode* m2) const;
+
+#ifndef PRODUCT
+  void print() const;
+#endif
 };
 
 // Analyze the loop in preparation for auto-vectorization. This class is
@@ -269,13 +306,21 @@ private:
   // Submodules
   // TODO
   VLoopReductions            _reductions;
+  VLoopMemorySlices    _memory_slices;
+  //VLoopBody            _body;
+  //VLoopTypes           _types;
+  //VLoopDependenceGraph _dependence_graph;
 
 public:
   VLoopAnalyzer(const VLoop& vloop, VSharedData &vshared) :
     _vloop(vloop),
     _arena(mtCompiler),
     _success(false),
-    _reductions      (&_arena, vloop)
+    _reductions      (&_arena, vloop),
+    _memory_slices   (&_arena, vloop)
+    //_body            (&_arena, vloop),
+    //_types           (&_arena, vloop, body()),
+    //_dependence_graph(&_arena, vloop, memory_slices(), body())
     // TODO modules
   {
     _success = setup_submodules();
@@ -289,6 +334,10 @@ public:
   // Read-only accessors for submodules
   const VLoop& vloop()                           const { return _vloop; }
   const VLoopReductions& reductions()            const { return _reductions; }
+  const VLoopMemorySlices& memory_slices()       const { return _memory_slices; }
+  //const VLoopBody& body()                        const { return _body; }
+  //const VLoopTypes& types()                      const { return _types; }
+  //const VLoopDependenceGraph& dependence_graph() const { return _dependence_graph; }
   // TODO
 
 private:

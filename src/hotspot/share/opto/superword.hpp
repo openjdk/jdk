@@ -211,16 +211,11 @@ class SuperWord : public ResourceObj {
   GrowableArray<int> &_bb_idx;           // Map from Node _idx to index within block
 
   GrowableArray<Node*> _block;           // Nodes in current block
-  GrowableArray<PhiNode*> _mem_slice_head; // Memory slice head nodes
-  GrowableArray<MemNode*> _mem_slice_tail; // Memory slice tail nodes
   GrowableArray<SWNodeInfo> _node_info;  // Info needed per node
   CloneMap&            _clone_map;       // map of nodes created in cloning
   MemNode const* _align_to_ref;          // Memory reference that pre-loop will align to
 
   DepGraph _dg; // Dependence graph
-
-  // Scratch pads
-  GrowableArray<Node*> _nlist; // List of nodes
 
  public:
   SuperWord(const VLoopAnalyzer &vloop_analyzer, VSharedData &vshared);
@@ -248,8 +243,14 @@ class SuperWord : public ResourceObj {
   bool is_marked_reduction(const Node* n) const {
     return vloop_analyzer().reductions().is_marked_reduction(n);
   }
-  bool reduction(Node* s1, Node* s2) const {
-    return vloop_analyzer().reductions().is_marked_reduction_pair(s1, s2);
+
+  bool reduction(Node* n1, Node* n2) const {
+    return vloop_analyzer().reductions().is_marked_reduction_pair(n1, n2);
+  }
+
+  // VLoopMemorySlices Accessors
+  bool same_memory_slice(MemNode* n1, MemNode* n2) const {
+    return vloop_analyzer().memory_slices().same_memory_slice(n1, n2);
   }
 
 #ifndef PRODUCT
@@ -262,11 +263,6 @@ class SuperWord : public ResourceObj {
   bool is_trace_superword_alignment() const {
     // Too verbose for TraceSuperWord
     return vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_ALIGNMENT);
-  }
-
-  bool is_trace_superword_memory_slices() const {
-    return TraceSuperWord ||
-           vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_MEMORY_SLICES);
   }
 
   bool is_trace_superword_dependence_graph() const {
@@ -304,7 +300,6 @@ class SuperWord : public ResourceObj {
            is_trace_align_vector() ||
            vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_TYPES) ||
            vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_ALIGNMENT) ||
-           vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_MEMORY_SLICES) ||
            vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_DEPENDENCE_GRAPH) ||
            vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_ADJACENT_MEMOPS) ||
            vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_REJECTIONS) ||
@@ -370,7 +365,6 @@ class SuperWord : public ResourceObj {
   BasicType velt_basic_type(const Node* n) const { return velt_type(n)->array_element_basic_type(); }
   void set_velt_type(Node* n, const Type* t) { int i = bb_idx(n); grow_node_info(i); _node_info.adr_at(i)->_velt_type = t; }
   bool same_velt_type(Node* n1, Node* n2);
-  bool same_memory_slice(MemNode* best_align_to_mem_ref, MemNode* mem_ref) const;
 
   // my_pack
  public:
@@ -395,12 +389,6 @@ private:
   int get_iv_adjustment(MemNode* mem);
   // Construct dependency graph.
   void dependence_graph();
-
-  // Analyze the memory slices
-  void find_memory_slices();
-  NOT_PRODUCT( void print_memory_slices(); )
-  // Return a memory slice (node list) in predecessor order starting at "start"
-  void mem_slice_preds(Node* start, Node* stop, GrowableArray<Node*> &preds);
 
   // Can s1 and s2 be in a pack with s1 immediately preceding s2 and  s1 aligned at "align"
   bool stmts_can_pack(Node* s1, Node* s2, int align);
