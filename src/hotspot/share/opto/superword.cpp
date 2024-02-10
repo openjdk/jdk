@@ -639,14 +639,11 @@ void SuperWord::find_adjacent_refs() {
         if (ref1.offset() + element_size < ref2.offset()) { break; }
         assert(are_adjacent_refs(mem1, mem2),  "implied by offsets");
 
-        // Isomorphic (has more criteria than we group for)
-        if (!isomorphic(mem1, mem2)) { continue; }
-
-        // Only allow nodes from same origin idx to be packed (CompileCommand Option Vectorize)
+        // Only allow nodes from same origin idx to be packed.
+        // (see CompileCommand Option Vectorize)
         if (_do_vector_loop && !same_origin_idx(mem1, mem2)) { continue; }
 
-        // TODO: maybe refactor?
-        if (!stmts_can_pack(mem1, mem2)) { continue; }
+        if (!can_pack_into_pair(mem1, mem2)) { continue; }
 
 #ifndef PRODUCT
         if (is_trace_superword_adjacent_memops()) {
@@ -871,9 +868,8 @@ void SuperWord::mem_slice_preds(Node* start, Node* stop, GrowableArray<Node*> &p
 #endif
 }
 
-//------------------------------stmts_can_pack---------------------------
-// TODO fix description: and this is basically too powerful, no?
-bool SuperWord::stmts_can_pack(Node* s1, Node* s2) {
+// Check if two nodes can be packed into a pair.
+bool SuperWord::can_pack_into_pair(Node* s1, Node* s2) {
 
   // Do not use superword for non-primitives
   BasicType bt1 = velt_basic_type(s1);
@@ -1156,7 +1152,7 @@ bool SuperWord::follow_use_defs(Node_List* p) {
       // Only follow non-memory nodes in block - we do not want to resurrect misaligned packs.
       continue;
     }
-    if (stmts_can_pack(t1, t2)) {
+    if (can_pack_into_pair(t1, t2)) {
       if (est_savings(t1, t2) >= 0) {
         Node_List* pair = new (arena()) Node_List(arena());
         pair->push(t1);
@@ -1208,7 +1204,7 @@ bool SuperWord::follow_def_uses(Node_List* p) {
       if (t2->Opcode() == Op_AddI && t2 == _lp->as_CountedLoop()->incr()) continue; // don't mess with the iv
       if (!opnd_positions_match(s1, t1, s2, t2))
         continue;
-      if (stmts_can_pack(t1, t2)) {
+      if (can_pack_into_pair(t1, t2)) {
         int my_savings = est_savings(t1, t2);
         if (my_savings > savings) {
           savings = my_savings;
@@ -3030,7 +3026,7 @@ int SuperWord::max_vector_size_in_def_use_chain(Node* n) {
 
   int max = Matcher::max_vector_size_auto_vectorization(vt);
   // If now there is no vectors for the longest type, the nodes with the longest
-  // type in the def-use chain are not packed in SuperWord::stmts_can_pack.
+  // type in the def-use chain are not packed in SuperWord::can_pack_into_pair.
   return max < 2 ? Matcher::max_vector_size_auto_vectorization(bt) : max;
 }
 

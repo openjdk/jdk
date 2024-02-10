@@ -586,8 +586,8 @@ private:
   // Return a memory slice (node list) in predecessor order starting at "start"
   void mem_slice_preds(Node* start, Node* stop, GrowableArray<Node*> &preds);
 
-  // TODO fix desc, too powerful?
-  bool stmts_can_pack(Node* s1, Node* s2);
+  // Check if two nodes can be packed into a pair.
+  bool can_pack_into_pair(Node* s1, Node* s2);
   // Does s exist in a pack at position pos?
   bool exists_at(Node* s, uint pos);
   // Is s1 immediately before s2 in memory?
