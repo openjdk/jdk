@@ -701,8 +701,6 @@ MemReference SuperWord::get_mem_reference(MemNode* mem) const {
     return MemReference::make_invalid();
   }
 
-  // TODO I dropped the get_vw_bytes_special / vw check here, is this ok?
-
   return MemReference(mem,
                       mem_p.base(),
                       mem_p.offset_in_bytes(),
@@ -721,36 +719,6 @@ void MemReference::dump() const {
   tty->print_cr("+ scale(%d) * iv", scale());
 }
 #endif
-
-// TODO delete?
-//---------------------------get_vw_bytes_special------------------------
-int SuperWord::get_vw_bytes_special(MemNode* s) {
-  // Get the vector width in bytes.
-  int vw = vector_width_in_bytes(s);
-
-  // Check for special case where there is an MulAddS2I usage where short vectors are going to need combined.
-  BasicType btype = velt_basic_type(s);
-  if (type2aelembytes(btype) == 2) {
-    bool should_combine_adjacent = true;
-    for (DUIterator_Fast imax, i = s->fast_outs(imax); i < imax; i++) {
-      Node* user = s->fast_out(i);
-      if (!VectorNode::is_muladds2i(user)) {
-        should_combine_adjacent = false;
-      }
-    }
-    if (should_combine_adjacent) {
-      vw = MIN2(Matcher::max_vector_size_auto_vectorization(btype)*type2aelembytes(btype), vw * 2);
-    }
-  }
-
-  // Check for special case where there is a type conversion between different data size.
-  int vectsize = max_vector_size_in_def_use_chain(s);
-  if (vectsize < Matcher::max_vector_size_auto_vectorization(btype)) {
-    vw = MIN2(vectsize * type2aelembytes(btype), vw);
-  }
-
-  return vw;
-}
 
 //---------------------------dependence_graph---------------------------
 // Construct dependency graph.
