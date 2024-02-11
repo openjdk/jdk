@@ -27,8 +27,8 @@
 
 #include "gc/g1/g1BiasedArray.hpp"
 #include "gc/g1/g1CommittedRegionMap.hpp"
-#include "gc/g1/g1RegionToSpaceMapper.hpp"
 #include "gc/g1/g1HeapRegionSet.hpp"
+#include "gc/g1/g1RegionToSpaceMapper.hpp"
 #include "memory/allocation.hpp"
 #include "services/memoryUsage.hpp"
 

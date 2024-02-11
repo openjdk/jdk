@@ -24,9 +24,9 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1CollectionSetChooser.hpp"
-#include "gc/g1/g1RemSetTrackingPolicy.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
+#include "gc/g1/g1RemSetTrackingPolicy.hpp"
 #include "runtime/safepoint.hpp"
 
 bool G1RemSetTrackingPolicy::needs_scan_for_rebuild(HeapRegion* r) const {
