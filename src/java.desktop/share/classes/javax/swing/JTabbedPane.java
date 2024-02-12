@@ -31,6 +31,7 @@ import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
+import java.awt.IllegalComponentStateException;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.FocusListener;
@@ -2337,7 +2338,12 @@ public class JTabbedPane extends JComponent
         }
 
         public Point getLocationOnScreen() {
-             Point parentLocation = parent.getLocationOnScreen();
+             Point parentLocation;
+             try {
+                 parentLocation = parent.getLocationOnScreen();
+             } catch (IllegalComponentStateException icse) {
+                 return null;
+             }
              Point componentLocation = getLocation();
              if (parentLocation == null || componentLocation == null) {
                  return null;
