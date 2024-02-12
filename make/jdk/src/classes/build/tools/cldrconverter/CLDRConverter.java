@@ -769,9 +769,13 @@ public class CLDRConverter {
             String tzKey = Optional.ofNullable((String)handlerSupplMeta.get(tzid))
                                    .orElse(tzid);
             // Follow link, if needed
-            tzKey = tzdbLinks.getOrDefault(tzKey, tzKey);
-
-            Object data = map.get(TIMEZONE_ID_PREFIX + tzKey);
+            var tzLink = tzdbLinks.getOrDefault(tzKey, tzKey);
+            Object data = map.get(TIMEZONE_ID_PREFIX + tzLink);
+            if (data == null) {
+                // Check for original tzkey, as some tz, such as America/Buenos_Aires,
+                // does have resources with the original tz
+                data = map.get(TIMEZONE_ID_PREFIX + tzKey);
+            }
 
             if (data instanceof String[] tznames) {
                 // Hack for UTC. UTC is an alias to Etc/UTC in CLDR
@@ -786,7 +790,12 @@ public class CLDRConverter {
                     names.put(tzid, tznames);
                 }
             } else {
-                String meta = handlerMetaZones.get(tzKey);
+                String meta = handlerMetaZones.get(tzLink);
+                if (meta == null) {
+                    // Check for original tzkey, as some tz, such as America/Buenos_Aires,
+                    // does have resources with the original tz
+                    meta = handlerMetaZones.get(tzKey);
+                }
                 if (meta != null) {
                     String metaKey = METAZONE_ID_PREFIX + meta;
                     data = map.get(metaKey);
