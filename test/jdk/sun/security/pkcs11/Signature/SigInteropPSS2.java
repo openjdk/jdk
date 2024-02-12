@@ -51,9 +51,13 @@ public class SigInteropPSS2 extends PKCS11Test {
     @Override
     public void main(Provider p) throws Exception {
 
+        Provider sunRsaSign = Security.getProvider("SunRsaSign");
+        Security.removeProvider("SunRsaSign");
+        Security.insertProviderAt(p, 1);
+
         Signature sigPkcs11;
         Signature sigSunRsaSign =
-                Signature.getInstance("RSASSA-PSS", "SunRsaSign");
+                Signature.getInstance("RSASSA-PSS", sunRsaSign);
 
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", p);
             kpg.initialize(3072);

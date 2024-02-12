@@ -426,28 +426,6 @@ public final class FipsModeTLS12 extends SecmodTest {
         //  1. SunPKCS11 (with an NSS FIPS mode backend)
         //  2. SUN (to handle X.509 certificates)
         //  3. SunJSSE (for a TLS engine)
-        //
-        // RSASSA-PSS algorithm is not currently supported in SunPKCS11
-        // but in SUN provider. As a result, it can be negotiated by the
-        // TLS engine. The problem is that SunPKCS11 keys are sensitive
-        // in FIPS mode and cannot be used in a SUN algorithm (conversion
-        // fails as plain values cannot be extracted).
-        //
-        // To workaround this issue, we disable RSASSA-PSS algorithm for
-        // TLS connections. Once JDK-8222937 is fixed, this workaround can
-        // (and should) be removed.
-        //
-        // On a final note, the list of disabled TLS algorithms
-        // (jdk.tls.disabledAlgorithms) has to be updated at this point,
-        // before it is read in sun.security.ssl.SSLAlgorithmConstraints
-        // class initialization.
-        String disabledAlgorithms =
-                Security.getProperty("jdk.tls.disabledAlgorithms");
-        if (disabledAlgorithms.length() > 0) {
-            disabledAlgorithms += ", ";
-        }
-        disabledAlgorithms += "RSASSA-PSS";
-        Security.setProperty("jdk.tls.disabledAlgorithms", disabledAlgorithms);
 
         if (initSecmod() == false) {
             return;
