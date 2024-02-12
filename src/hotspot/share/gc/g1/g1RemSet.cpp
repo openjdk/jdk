@@ -1174,9 +1174,6 @@ class G1MergeHeapRootsTask : public WorkerTask {
       }
 
       HeapRegion* r = g1h->region_at(region_index);
-      if (r->rem_set()->is_empty()) {
-        return false;
-      }
 
       guarantee(r->rem_set()->occupancy_less_or_equal_than(G1EagerReclaimRemSetThreshold),
                 "Found a not-small remembered set here. This is inconsistent with previous assumptions.");
