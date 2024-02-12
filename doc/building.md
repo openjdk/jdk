@@ -685,6 +685,14 @@ shells are supported.
 
 At least version 3.2 of GNU Bash must be used.
 
+### Graphviz and Pandoc
+
+In order to build the full docs (see the `--enable-full-docs`
+configure option) [Graphviz](https://www.graphviz.org) and
+[Pandoc](https://pandoc.org) are required. Any recent versions should
+work. For reference, and subject to change, Oracle builds use Graphviz
+9.0.0 and Pandoc 2.19.2.
+
 ## Running Configure
 
 To build the JDK, you need a "configuration", which consists of a directory
