@@ -83,7 +83,7 @@ public class TestPredicatesBasic {
     }
 
     @Test
-    @Arguments({Argument.NUMBER_42})
+    @Arguments(values = {Argument.NUMBER_42})
     // Null check, loop entrance check, array lower/upper bound check
     @IR(counts = {IRNode.IF, "4"})
     public void basicLimit(int limit) {
@@ -93,5 +93,4 @@ public class TestPredicatesBasic {
         }
     }
 }
-
 
