@@ -205,7 +205,7 @@ class SCCompacter {
         current += obj_size;
       }
       assert(current >= addr, "found object start must be >= addr");
-      return addr;
+      return MIN2(current, limit);
     }
   }
 
