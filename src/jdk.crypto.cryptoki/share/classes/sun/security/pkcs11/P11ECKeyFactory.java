@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,25 +64,25 @@ final class P11ECKeyFactory extends P11KeyFactory {
     }
 
     static ECParameterSpec getECParameterSpec(String name) {
-        return ECUtil.getECParameterSpec(getSunECProvider(), name);
+        return ECUtil.getECParameterSpec(name);
     }
 
     static ECParameterSpec getECParameterSpec(int keySize) {
-        return ECUtil.getECParameterSpec(getSunECProvider(), keySize);
+        return ECUtil.getECParameterSpec(keySize);
     }
 
     // Check that spec is a known supported curve and convert it to our
     // ECParameterSpec subclass. If not possible, return null.
     static ECParameterSpec getECParameterSpec(ECParameterSpec spec) {
-        return ECUtil.getECParameterSpec(getSunECProvider(), spec);
+        return ECUtil.getECParameterSpec(spec);
     }
 
     static ECParameterSpec decodeParameters(byte[] params) throws IOException {
-        return ECUtil.getECParameterSpec(getSunECProvider(), params);
+        return ECUtil.getECParameterSpec(params);
     }
 
     static byte[] encodeParameters(ECParameterSpec params) {
-        return ECUtil.encodeECParameterSpec(getSunECProvider(), params);
+        return ECUtil.encodeECParameterSpec(params);
     }
 
     static ECPoint decodePoint(byte[] encoded, EllipticCurve curve) throws IOException {
@@ -220,7 +220,7 @@ final class P11ECKeyFactory extends P11KeyFactory {
     private PublicKey generatePublic(ECPoint point, ECParameterSpec params)
             throws PKCS11Exception {
         byte[] encodedParams =
-            ECUtil.encodeECParameterSpec(getSunECProvider(), params);
+            ECUtil.encodeECParameterSpec(params);
         byte[] encodedPoint =
             ECUtil.encodePoint(point, params.getCurve());
 
@@ -254,7 +254,7 @@ final class P11ECKeyFactory extends P11KeyFactory {
     private PrivateKey generatePrivate(BigInteger s, ECParameterSpec params)
             throws PKCS11Exception {
         byte[] encodedParams =
-            ECUtil.encodeECParameterSpec(getSunECProvider(), params);
+            ECUtil.encodeECParameterSpec(params);
         CK_ATTRIBUTE[] attributes = new CK_ATTRIBUTE[] {
             new CK_ATTRIBUTE(CKA_CLASS, CKO_PRIVATE_KEY),
             new CK_ATTRIBUTE(CKA_KEY_TYPE, CKK_EC),

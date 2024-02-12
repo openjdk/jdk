@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,71 +152,39 @@ public final class ECUtil {
         }
     }
 
-    public static byte[] encodeECParameterSpec(Provider p,
-                                               ECParameterSpec spec) {
-        AlgorithmParameters parameters = getECParameters(p);
-
-        try {
-            parameters.init(spec);
-        } catch (InvalidParameterSpecException ipse) {
+    public static byte[] encodeECParameterSpec(ECParameterSpec spec) {
+        NamedCurve curve = CurveDB.lookup(spec);
+        if (curve == null) {
             throw new RuntimeException("Not a known named curve: " + spec);
         }
-
-        try {
-            return parameters.getEncoded();
-        } catch (IOException ioe) {
-            // it is a bug if this should happen
-            throw new RuntimeException(ioe);
-        }
+        return curve.getEncoded();
     }
 
-    public static ECParameterSpec getECParameterSpec(Provider p,
-                                                     ECParameterSpec spec) {
-        AlgorithmParameters parameters = getECParameters(p);
-
-        try {
-            parameters.init(spec);
-            return parameters.getParameterSpec(ECParameterSpec.class);
-        } catch (InvalidParameterSpecException ipse) {
-            return null;
-        }
+    public static ECParameterSpec getECParameterSpec(ECParameterSpec spec) {
+        return CurveDB.lookup(spec);
     }
 
-    public static ECParameterSpec getECParameterSpec(Provider p,
-                                                     byte[] params)
+    public static NamedCurve getECParameterSpec(byte[] params)
             throws IOException {
-        AlgorithmParameters parameters = getECParameters(p);
+        DerValue encodedParams = new DerValue(params);
+        if (encodedParams.tag == DerValue.tag_ObjectId) {
+            ObjectIdentifier oid = encodedParams.getOID();
+            NamedCurve spec = CurveDB.lookup(oid.toString());
+            if (spec == null) {
+                throw new IOException("Unknown named curve: " + oid);
+            }
 
-        parameters.init(params);
-
-        try {
-            return parameters.getParameterSpec(ECParameterSpec.class);
-        } catch (InvalidParameterSpecException ipse) {
-            return null;
+            return spec;
         }
+        return null;
     }
 
-    public static ECParameterSpec getECParameterSpec(Provider p, String name) {
-        AlgorithmParameters parameters = getECParameters(p);
-
-        try {
-            parameters.init(new ECGenParameterSpec(name));
-            return parameters.getParameterSpec(ECParameterSpec.class);
-        } catch (InvalidParameterSpecException ipse) {
-            return null;
-        }
+    public static ECParameterSpec getECParameterSpec(String name) {
+        return CurveDB.lookup(name);
     }
 
-    public static ECParameterSpec getECParameterSpec(Provider p, int keySize) {
-        AlgorithmParameters parameters = getECParameters(p);
-
-        try {
-            parameters.init(new ECKeySizeParameterSpec(keySize));
-            return parameters.getParameterSpec(ECParameterSpec.class);
-        } catch (InvalidParameterSpecException ipse) {
-            return null;
-        }
-
+    public static ECParameterSpec getECParameterSpec(int keySize) {
+        return CurveDB.lookup(keySize);
     }
 
     public static String getCurveName(Provider p, ECParameterSpec spec) {

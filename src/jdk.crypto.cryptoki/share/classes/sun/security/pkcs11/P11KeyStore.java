@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1378,7 +1378,7 @@ final class P11KeyStore extends KeyStoreSpi {
             byte[] encodedParams = attrs[0].getByteArray();
             try {
                 ECParameterSpec params =
-                    ECUtil.getECParameterSpec(null, encodedParams);
+                    ECUtil.getECParameterSpec(encodedParams);
                 keyLength = params.getCurve().getField().getFieldSize();
             } catch (IOException e) {
                 // we do not want to accept key with unsupported parameters
@@ -1776,7 +1776,7 @@ final class P11KeyStore extends KeyStoreSpi {
             }
 
             byte[] encodedParams =
-                ECUtil.encodeECParameterSpec(null, ecKey.getParams());
+                ECUtil.encodeECParameterSpec(ecKey.getParams());
             attrs = new CK_ATTRIBUTE[] {
                 ATTR_TOKEN_TRUE,
                 ATTR_CLASS_PKEY,

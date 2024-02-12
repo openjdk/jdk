@@ -418,6 +418,12 @@ public final class FipsModeTLS12 extends SecmodTest {
             if (!ffdheAvailable) {
                 throw new RuntimeException("No FFDHE named groups available");
             }
+            // verify that ECDHE named groups are available
+            boolean ecdheAvailable = Arrays.stream(sslParameters.getNamedGroups())
+                    .anyMatch(ng -> ng.startsWith("secp"));
+            if (!ecdheAvailable) {
+                throw new RuntimeException("No ECDHE named groups available");
+            }
             ssle.setSSLParameters(sslParameters);
 
             return ssle;
