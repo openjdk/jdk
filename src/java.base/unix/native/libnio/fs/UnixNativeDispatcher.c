@@ -253,7 +253,7 @@ static int fstatat_wrapper(int dfd, const char *path,
 #if defined(__linux__) && defined(_LP64) && defined(__NR_newfstatat)
 #define FSTATAT64_SYSCALL_AVAILABLE
 static int fstatat_wrapper(int dfd, const char *path,
-                             struct stat *statbuf, int flag)
+                           struct stat *statbuf, int flag)
 {
     return syscall(__NR_newfstatat, dfd, path, statbuf, flag);
 }
