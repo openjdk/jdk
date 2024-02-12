@@ -42,7 +42,7 @@ void CardTableRS::scan_old_to_young_refs(TenuredSpace* sp) {
 }
 
 #ifdef ASSERT
-void CardTableRS::verify_used_region_at_save_marks(Space* sp) const {
+void CardTableRS::verify_used_region_at_save_marks(TenuredSpace* sp) const {
   MemRegion ur    = sp->used_region();
   MemRegion urasm = sp->used_region_at_save_marks();
 

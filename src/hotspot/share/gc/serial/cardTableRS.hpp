@@ -30,7 +30,6 @@
 #include "oops/oop.hpp"
 
 class OldGenScanClosure;
-class Space;
 class TenuredGeneration;
 class TenuredSpace;
 
@@ -63,7 +62,7 @@ public:
 
   void scan_old_to_young_refs(TenuredSpace* sp);
 
-  virtual void verify_used_region_at_save_marks(Space* sp) const NOT_DEBUG_RETURN;
+  virtual void verify_used_region_at_save_marks(TenuredSpace* sp) const NOT_DEBUG_RETURN;
 
   void inline_write_ref_field_gc(void* field) {
     CardValue* byte = byte_for(field);
