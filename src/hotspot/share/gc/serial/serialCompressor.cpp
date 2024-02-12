@@ -291,8 +291,12 @@ class SCCompacter {
   void commit_bot() {
     for (uint i = 0; i < _num_spaces; ++i) {
       ContiguousSpace* space = _spaces[i]._space;
-      HeapWord** addr = align_down(&_bot[addr_to_block_idx(space->bottom())], os::vm_page_size());
-      size_t num_blocks = align_up(space->used(), bytes_per_block()) / bytes_per_block();
+      HeapWord* bottom = space->bottom();
+      HeapWord* top = space->top();
+      HeapWord** table_start = &_bot[addr_to_block_idx(bottom)];
+      HeapWord** addr = align_down(table_start, os::vm_page_size());
+      HeapWord** table_end = &_bot[addr_to_block_idx(top)];
+      size_t num_blocks = table_end - addr;
       if (num_blocks > 0) {
         size_t size_in_bytes = align_up(num_blocks * sizeof(HeapWord*), os::vm_page_size());
         const char* msg = "Not enough memory to allocate block-offset-table for Serial Full GC";
