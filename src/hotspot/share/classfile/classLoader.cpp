@@ -1028,14 +1028,14 @@ ClassPathEntry* find_first_module_cpe(ModuleEntry* mod_entry,
 }
 
 
-// Search either the patch-module or exploded build entries for package entry.
+// Search the module list for the class file stream based on the file name and java package
 ClassFileStream* ClassLoader::search_module_entries(JavaThread* current,
                                                     const GrowableArray<ModuleClassPathList*>* const module_list,
-                                                    PackageEntry* pkg_entry,
+                                                    PackageEntry* pkg_entry, // Java package entry derived from the class name
                                                     const char* const file_name) {
   ClassFileStream* stream = nullptr;
 
-  // Find the class' defining module in the boot loader's module entry table
+  // Find the defining module in the boot loader's module entry table
   ModuleEntry* mod_entry = (pkg_entry != nullptr) ? pkg_entry->module() : nullptr;
 
   // If the module system has not defined java.base yet, then

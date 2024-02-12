@@ -292,10 +292,10 @@ class ClassLoader: AllStatic {
   // Add a module's exploded directory to the boot loader's exploded module build list
   static void add_to_exploded_build_list(JavaThread* current, Symbol* module_name);
 
-  // Attempt load of individual class from either the patched or exploded modules build lists
+  // Search the module list for the class file stream based on the file name and java package
   static ClassFileStream* search_module_entries(JavaThread* current,
                                                 const GrowableArray<ModuleClassPathList*>* const module_list,
-                                                PackageEntry* pkg_entry,
+                                                PackageEntry* pkg_entry, // Java package entry derived from the class name
                                                 const char* const file_name);
 
   // Load individual .class file
