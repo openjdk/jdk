@@ -222,4 +222,29 @@ public class SimpleJavaFileObject implements JavaFileObject {
     public String toString() {
         return getClass().getName() + "[" + toUri() + "]";
     }
+
+    /**
+     * Creates a {@link JavaFileObject} which will be represents the given source content.
+     *
+     * <p>The provided {@code uri} will be returned from {@link #toUri()}.
+     * The provided {@code content} will be returned from {@link #getCharContent(boolean)}.
+     * The {@link #getKind()} method will return {@link Kind#SOURCE}.
+     *
+     * <p>All other methods will behave as described in the javadoc for this class,
+     * if the constructor is called with {@code uri} and {@code Kind.SOURCE}.
+     *
+     * @param uri that should be used for this {@code JavaFileObject}
+     * @param content the content of the {@code JavaFileObject}
+     * @return a {@code JavaFileObject} representing the given source content.
+     * @since 23
+     */
+    public static JavaFileObject forSource(URI uri, String content) {
+        return new SimpleJavaFileObject(uri, Kind.SOURCE) {
+            @Override
+            public CharSequence getCharContent(boolean ignoreEncodingErrors) {
+                return content;
+            }
+        };
+    }
+
 }
