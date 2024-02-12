@@ -1984,11 +1984,10 @@ void ObjectSynchronizer::chk_in_use_list(outputStream* out, int *error_cnt_p) {
 void ObjectSynchronizer::chk_in_use_entry(ObjectMonitor* n, outputStream* out,
                                           int* error_cnt_p) {
   if (n->owner_is_DEFLATER_MARKER()) {
-    // This should not happen, but if it does, it is not fatal.
-    out->print_cr("WARNING: monitor=" INTPTR_FORMAT ": in-use monitor is "
-                  "deflated.", p2i(n));
+    // This could happen when monitor deflation blocks for a safepoint.
     return;
   }
+
   if (n->header().value() == 0) {
     out->print_cr("ERROR: monitor=" INTPTR_FORMAT ": in-use monitor must "
                   "have non-null _header field.", p2i(n));
