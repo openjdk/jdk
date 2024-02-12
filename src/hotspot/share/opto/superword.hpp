@@ -64,21 +64,18 @@ class DepMem;
 
 //------------------------------DepEdge---------------------------
 // An edge in the dependence graph.  The edges incident to a dependence
-// node are threaded through _next_in for incoming edges and _next_out
-// for outgoing edges.
+// node are threaded through _next_in for incoming edges.
 class DepEdge : public ArenaObj {
  protected:
   DepMem* _pred;
   DepMem* _succ;
   DepEdge* _next_in;   // list of in edges, null terminated
-  DepEdge* _next_out;  // list of out edges, null terminated
 
  public:
-  DepEdge(DepMem* pred, DepMem* succ, DepEdge* next_in, DepEdge* next_out) :
-    _pred(pred), _succ(succ), _next_in(next_in), _next_out(next_out) {}
+  DepEdge(DepMem* pred, DepMem* succ, DepEdge* next_in) :
+    _pred(pred), _succ(succ), _next_in(next_in) {}
 
   DepEdge* next_in()  { return _next_in; }
-  DepEdge* next_out() { return _next_out; }
   DepMem*  pred()     { return _pred; }
   DepMem*  succ()     { return _succ; }
 
@@ -87,24 +84,20 @@ class DepEdge : public ArenaObj {
 
 //------------------------------DepMem---------------------------
 // A node in the dependence graph.  _in_head starts the threaded list of
-// incoming edges, and _out_head starts the list of outgoing edges.
+// incoming edges.
 class DepMem : public ArenaObj {
  protected:
   Node*    _node;     // Corresponding ideal node
   DepEdge* _in_head;  // Head of list of in edges, null terminated
-  DepEdge* _out_head; // Head of list of out edges, null terminated
 
  public:
-  DepMem(Node* node) : _node(node), _in_head(nullptr), _out_head(nullptr) {}
+  DepMem(Node* node) : _node(node), _in_head(nullptr) {}
 
   Node*    node()                { return _node;     }
   DepEdge* in_head()             { return _in_head;  }
-  DepEdge* out_head()            { return _out_head; }
   void set_in_head(DepEdge* hd)  { _in_head = hd;    }
-  void set_out_head(DepEdge* hd) { _out_head = hd;   }
 
   int in_cnt();  // Incoming edge count
-  int out_cnt(); // Outgoing edge count
 
   void print();
 };
@@ -113,7 +106,7 @@ class DepMem : public ArenaObj {
 class DepGraph {
  protected:
   Arena* _arena;
-  GrowableArray<DepMem*> _map;
+  GrowableArray<DepMem*> _map; // node->_idx -> DepMem*
   DepMem* _root;
   DepMem* _tail;
 
@@ -160,25 +153,6 @@ public:
   bool  done()    { return _done; }
   void  next();
 };
-
-//------------------------------DepSuccs---------------------------
-// Iterator over successors in the dependence graph and
-// non-memory-graph outputs of ideal nodes.
-class DepSuccs : public StackObj {
-private:
-  Node*    _n;
-  int      _next_idx, _end_idx;
-  DepEdge* _dep_next;
-  Node*    _current;
-  bool     _done;
-
-public:
-  DepSuccs(Node* n, DepGraph& dg);
-  Node* current() { return _current; }
-  bool  done()    { return _done; }
-  void  next();
-};
-
 
 // ========================= SuperWord =====================
 

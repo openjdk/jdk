@@ -3769,8 +3769,7 @@ DepMem* DepGraph::make_node(Node* node) {
 //------------------------------make_edge---------------------------
 // Make a new dependence graph edge from dpred -> dsucc
 DepEdge* DepGraph::make_edge(DepMem* dpred, DepMem* dsucc) {
-  DepEdge* e = new (_arena) DepEdge(dpred, dsucc, dsucc->in_head(), dpred->out_head());
-  dpred->set_out_head(e);
+  DepEdge* e = new (_arena) DepEdge(dpred, dsucc, dsucc->in_head());
   dsucc->set_in_head(e);
   return e;
 }
@@ -3784,13 +3783,6 @@ int DepMem::in_cnt() {
   return ct;
 }
 
-//------------------------------out_cnt---------------------------
-int DepMem::out_cnt() {
-  int ct = 0;
-  for (DepEdge* e = _out_head; e != nullptr; e = e->next_out()) ct++;
-  return ct;
-}
-
 //------------------------------print-----------------------------
 void DepMem::print() {
 #ifndef PRODUCT
@@ -3799,12 +3791,7 @@ void DepMem::print() {
     Node* pred = p->pred()->node();
     tty->print(" %d", pred != nullptr ? pred->_idx : 0);
   }
-  tty->print(") [");
-  for (DepEdge* s = _out_head; s != nullptr; s = s->next_out()) {
-    Node* succ = s->succ()->node();
-    tty->print(" %d", succ != nullptr ? succ->_idx : 0);
-  }
-  tty->print_cr(" ]");
+  tty->print(")");
 #endif
 }
 
@@ -3847,41 +3834,6 @@ void DepPreds::next() {
     _dep_next = _dep_next->next_in();
   } else if (_next_idx < _end_idx) {
     _current  = _n->in(_next_idx++);
-  } else {
-    _done = true;
-  }
-}
-
-// =========================== DepSuccs =========================
-// Iterator over successor edges in the dependence graph.
-
-//------------------------------DepSuccs---------------------------
-DepSuccs::DepSuccs(Node* n, DepGraph& dg) {
-  _n = n;
-  _done = false;
-  if (_n->is_Load()) {
-    _next_idx = 0;
-    _end_idx  = _n->outcnt();
-    _dep_next = dg.dep(_n)->out_head();
-  } else if (_n->is_Mem() || _n->is_memory_phi()) {
-    _next_idx = 0;
-    _end_idx  = 0;
-    _dep_next = dg.dep(_n)->out_head();
-  } else {
-    _next_idx = 0;
-    _end_idx  = _n->outcnt();
-    _dep_next = nullptr;
-  }
-  next();
-}
-
-//-------------------------------next---------------------------
-void DepSuccs::next() {
-  if (_dep_next != nullptr) {
-    _current  = _dep_next->succ()->node();
-    _dep_next = _dep_next->next_out();
-  } else if (_next_idx < _end_idx) {
-    _current  = _n->raw_out(_next_idx++);
   } else {
     _done = true;
   }
