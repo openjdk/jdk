@@ -700,7 +700,8 @@ public final class SunPKCS11 extends AuthProvider {
                     CKM_ECDSA, CKM_ECDSA_SHA1));
 
 
-        d(AGP, "GCM",            "sun.security.util.GCMParameters",
+        d(AGP, "GCM",
+                "com.sun.crypto.provider.GCMParameters",
                 m(CKM_AES_GCM));
 
         dA(AGP, "ChaCha20-Poly1305",
@@ -1493,7 +1494,7 @@ public final class SunPKCS11 extends AuthProvider {
                 if (algorithm == "EC") {
                     return new sun.security.util.ECParameters();
                 } else if (algorithm == "GCM") {
-                    return new sun.security.util.GCMParameters();
+                    return new com.sun.crypto.provider.GCMParameters();
                 } else if (algorithm == "ChaCha20-Poly1305") {
                     return new ChaCha20Poly1305Parameters(); // from SunJCE
                 } else {

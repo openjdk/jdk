@@ -61,13 +61,17 @@ public final class GCMParameters extends AlgorithmParametersSpi {
     protected void engineInit(AlgorithmParameterSpec paramSpec)
         throws InvalidParameterSpecException {
 
-        if (!(paramSpec instanceof GCMParameterSpec)) {
+        if (!(paramSpec instanceof GCMParameterSpec gps)) {
             throw new InvalidParameterSpecException
                 ("Inappropriate parameter specification");
         }
-        GCMParameterSpec gps = (GCMParameterSpec) paramSpec;
         // need to convert from bits to bytes for ASN.1 encoding
         this.tLen = gps.getTLen()/8;
+        if (this.tLen < 12 || this.tLen > 16 ) {
+            throw new InvalidParameterSpecException
+                ("GCM parameter parsing error: unsupported tag len: " +
+                 this.tLen);
+        }
         this.iv = gps.getIV();
     }
 
@@ -120,7 +124,10 @@ public final class GCMParameters extends AlgorithmParametersSpi {
         DerOutputStream bytes = new DerOutputStream();
 
         bytes.putOctetString(iv);
-        bytes.putInteger(tLen);
+        // Only put non-default values
+        if (tLen != 12) {
+            bytes.putInteger(tLen);
+        }
         out.write(DerValue.tag_Sequence, bytes);
         return out.toByteArray();
     }
@@ -136,11 +143,9 @@ public final class GCMParameters extends AlgorithmParametersSpi {
     protected String engineToString() {
         String LINE_SEP = System.lineSeparator();
         HexDumpEncoder encoder = new HexDumpEncoder();
-        StringBuilder sb
-            = new StringBuilder(LINE_SEP + "    iv:" + LINE_SEP + "["
-                + encoder.encodeBuffer(iv) + "]");
 
-        sb.append(LINE_SEP + "tLen(bits):" + LINE_SEP + tLen*8 + LINE_SEP);
-        return sb.toString();
+        return LINE_SEP + "    iv:" + LINE_SEP + "["
+                + encoder.encodeBuffer(iv) + "]" + LINE_SEP + "tLen(bits):"
+                + LINE_SEP + tLen * 8 + LINE_SEP;
     }
 }
