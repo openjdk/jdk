@@ -488,7 +488,6 @@ private:
   // Combine packs A and B with A.last == B.first into A.first..,A.last,B.second,..B.last
   void combine_pairs_to_longer_packs();
 
-  // Split packs that are too long
   void split_packs_longer_than_max_vector_size();
 
   // Filter out packs with various filter predicates

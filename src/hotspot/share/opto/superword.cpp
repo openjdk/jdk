@@ -519,10 +519,8 @@ bool SuperWord::SLP_extract() {
 
   extend_packset_with_more_pairs_by_following_use_and_def();
 
-  // Combine pairs to longer packs
   combine_pairs_to_longer_packs();
 
-  // Split packs if they are too long
   split_packs_longer_than_max_vector_size();
 
   // Now we only remove packs:
@@ -1701,7 +1699,7 @@ void SuperWord::filter_packs_for_alignment() {
   int mem_ops_rejected = 0;
 
   filter_packs("SuperWord::filter_packs_for_alignment",
-               "rejected by AlignVector (strinct alignment requirement)",
+               "rejected by AlignVector (strict alignment requirement)",
                [&](const Node_List* pack) {
                  // Only memops need to be aligned.
                  if (!pack->at(0)->is_Load() &&
