@@ -288,6 +288,8 @@ compare_file_types() {
 # Find all files to compare and separate them into different categories
 
 locate_files() {
+    THIS_DIR=$1
+
     ALL_ZIP_FILES=$(cd $THIS_DIR && $FIND . -type f -name "*.zip" -o -name "*.tar.gz" \
         | $SORT | $FILTER )
 
@@ -522,6 +524,8 @@ compare_all_zip_files() {
     OTHER_DIR=$2
     WORK_DIR=$3
 
+    locate_files $THIS_DIR
+
     if [ -n "$ALL_ZIP_FILES" ]; then
         echo Zip/tar.gz files...
 
@@ -548,6 +552,8 @@ compare_all_jmod_files() {
     OTHER_DIR=$2
     WORK_DIR=$3
 
+    locate_files $THIS_DIR
+
     if [ -n "$ALL_JMOD_FILES" ]; then
         echo Jmod files...
 
@@ -573,6 +579,8 @@ compare_all_jar_files() {
     THIS_DIR=$1
     OTHER_DIR=$2
     WORK_DIR=$3
+
+    locate_files $THIS_DIR
 
     if [ -n "$ALL_JAR_FILES" ]; then
         echo Jar files...
@@ -993,6 +1001,8 @@ compare_all_libs() {
     OTHER_DIR=$2
     WORK_DIR=$3
 
+    locate_files $THIS_DIR
+
     if [ -n "$ALL_LIB_FILES" ]; then
         echo Libraries...
         print_binary_diff_header
@@ -1018,6 +1028,8 @@ compare_all_execs() {
     OTHER_DIR=$2
     WORK_DIR=$3
 
+    locate_files $THIS_DIR
+
     if [ -n "$ALL_EXEC_FILES" ]; then
         echo Executables...
         print_binary_diff_header
@@ -1042,6 +1054,8 @@ compare_other_files() {
     THIS_DIR=$1
     OTHER_DIR=$2
     WORK_DIR=$3
+
+    locate_files $THIS_DIR
 
     echo Other files with binary differences...
     for f in $ALL_OTHER_FILES
@@ -1418,9 +1432,6 @@ if [ "$SKIP_DEFAULT" != "true" ]; then
         echo "WARNING! Test haven't been built and won't be compared."
     fi
 fi
-
-# Find all files and sort them up per type (e.g. libs, zips etc)
-locate_files
 
 ################################################################################
 # Do the work
