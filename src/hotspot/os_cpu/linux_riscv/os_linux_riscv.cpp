@@ -39,6 +39,7 @@
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
@@ -406,6 +407,15 @@ static inline void atomic_copy64(const volatile void *src, volatile void *dst) {
 
 extern "C" {
   int SpinPause() {
+    if (UseZihintpause) {
+      // PAUSE is encoded as a FENCE instruction with pred=W, succ=0, fm=0, rd=x0, and rs1=x0.
+      // fence   w, 0
+      // To do: __asm__ volatile("pause " : : : "memory");
+      // We need to compile against march with zihintpause.
+      // Currently we do not.
+      __asm__ volatile(".word 0x0100000f  " : : : "memory");
+      return 1;
+    }
     return 0;
   }
 
