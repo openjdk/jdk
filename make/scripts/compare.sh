@@ -289,49 +289,51 @@ compare_file_types() {
 
 locate_files() {
     THIS_DIR=$1
+    TEMP_DIR=$COMPARE_ROOT/support
+    $MKDIR -p $TEMP_DIR
 
-    ALL_ZIP_FILES=$(cd $THIS_DIR && $FIND . -type f -name "*.zip" -o -name "*.tar.gz" \
-        | $SORT | $FILTER )
+    ALL_FILES_PATH=$TEMP_DIR/all_files.txt
+    cd $THIS_DIR && $FIND . -type f | $SORT | $FILTER > $ALL_FILES_PATH
 
-    ALL_JMOD_FILES=$(cd $THIS_DIR && $FIND . -type f -name "*.jmod" | $SORT | $FILTER )
+    ZIP_FILES_PATH=$TEMP_DIR/zip_files.txt
+    ZIP_FILTER="-e '\.zip$' -e '\.tar.gz$'"
+    $CAT "$ALL_FILES_PATH" | eval $GREP $ZIP_FILTER > $ZIP_FILES_PATH
 
-    ALL_JAR_FILES=$(cd $THIS_DIR && $FIND . -type f -name "*.jar" -o -name "*.war" \
-        -o -name "modules" | $SORT | $FILTER)
+    JMOD_FILES_PATH=$TEMP_DIR/jmod_files.txt
+    JMOD_FILTER="-e '\.jmod$'"
+    $CAT "$ALL_FILES_PATH" | eval $GREP $JMOD_FILTER > $JMOD_FILES_PATH
 
-    ALL_LIB_FILES=$(cd $THIS_DIR && $FIND . -type f \( -name 'lib*.so' -o -name '*.dylib' \
-        -o -name '*.dll' -o -name '*.obj' -o -name '*.o' -o -name '*.a' \
-        -o -name '*.cpl' \) | $SORT | $FILTER)
+    JAR_FILES_PATH=$TEMP_DIR/jar_files.txt
+    JAR_FILTER="-e '\.jar$' -e '\.war$' -e '/module$'"
+    $CAT "$ALL_FILES_PATH" | eval $GREP $JAR_FILTER > $JAR_FILES_PATH
 
-    # On macos, filter out the dSYM debug symbols files as they are also
-    # named *.dylib.
-    if [ "$OPENJDK_TARGET_OS" = "macosx" ]; then
-        ALL_LIB_FILES=$(echo "$ALL_LIB_FILES" | $GREP -v '\.dSYM/')
-    fi
+    LIB_FILES_PATH=$TEMP_DIR/lib_files.txt
+    LIB_FILTER="-e '\.dylib$' -e '/lib.*\.so$' -e '\.dll$' -e '\.obj$' -e '\.o$' -e '\.a$' -e '\.cpl$'"
+    # On macos, filter out the dSYM debug symbols files. They are identically named .dylib files that reside
+    # under a *.dSYM directory
+    LIB_EXCLUDE="-e '/lib.*\.dSYM/'"
+    $CAT "$ALL_FILES_PATH" | eval $GREP $LIB_FILTER | eval $GREP -v $LIB_EXCLUDE > $LIB_FILES_PATH
 
+    EXEC_FILES_PATH=$TEMP_DIR/exec_files.txt
     if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
-        ALL_EXEC_FILES=$(cd $THIS_DIR && $FIND . -type f -name '*.exe' | $SORT | $FILTER)
+      EXEC_FILTER="-e '\.exe$'"
+      $CAT "$ALL_FILES_PATH" | eval $GREP $EXEC_FILTER > $EXEC_FILES_PATH
     else
-        ALL_EXEC_FILES=$(cd $THIS_DIR && $FIND . -name db -prune -o -type f -perm -100 \! \
-            \( -name '*.so' -o -name '*.dylib' -o -name '*.dll' -o -name '*.cgi' \
-            -o -name '*.jar' -o -name '*.diz' -o -name 'jcontrol' -o -name '*.properties' \
-            -o -name '*.data' -o -name '*.bfc' -o -name '*.src' -o -name '*.txt' \
-            -o -name '*.cfg' -o -name 'meta-index' -o -name '*.properties.ja' \
-            -o -name '*.xml' -o -name '*.html' -o -name '*.png' -o -name 'README' \
-            -o -name '*.zip' -o -name '*.jimage' -o -name '*.java' -o -name '*.mf' \
-            -o -name '*.jpg' -o -name '*.wsdl' -o -name '*.js' -o -name '*.sh' \
-            -o -name '*.bat' -o -name '*LICENSE' -o -name '*.d' -o -name '*store' \
-            -o -name 'blocked' -o -name '*certs' -o -name '*.ttf' \
-            -o -name '*.jfc' -o -name '*.dat'  -o -name 'release' -o -name '*.dir'\
-            -o -name '*.sym' -o -name '*.idl' -o -name '*.h' -o -name '*.access' \
-            -o -name '*.template' -o -name '*.policy' -o -name '*.security' \
-            -o -name 'COPYRIGHT' -o -name '*.1' -o -name '*.debuginfo' \
-            -o -name 'classlist' \) | $SORT | $FILTER)
+      # Find all files with the executable bit set
+      cd $THIS_DIR && $FIND . -type f -perm -100 | $SORT | $FILTER > $EXEC_FILES_PATH
     fi
 
-    ALL_OTHER_FILES=$(cd $THIS_DIR && $FIND . -type f ! -name "*.pdb" \
-        | $GREP -v "/hotspot/gtest/server/gtestLauncher" \
-        | $GREP -v "/hotspot/gtest/server/libjvm.dylib" \
-        | $SORT | $FILTER)
+    OTHER_FILES_PATH=$TEMP_DIR/other_files.txt
+    ACCOUNTED_FILES_PATH=$TEMP_DIR/accounted_files.txt
+    $CAT $ZIP_FILES_PATH $JMOD_FILES_PATH $JAR_FILES_PATH $LIB_FILES_PATH $EXEC_FILES_PATH > $ACCOUNTED_FILES_PATH
+    $CAT $ACCOUNTED_FILES_PATH $ALL_FILES_PATH | $SORT | $UNIQ -u > $OTHER_FILES_PATH
+
+    ALL_ZIP_FILES=$($CAT $ZIP_FILES_PATH)
+    ALL_JMOD_FILES=$($CAT $JMOD_FILES_PATH)
+    ALL_JAR_FILES=$($CAT $JAR_FILES_PATH)
+    ALL_LIB_FILES=$($CAT $LIB_FILES_PATH)
+    ALL_EXEC_FILES=$($CAT $EXEC_FILES_PATH)
+    ALL_OTHER_FILES=$($CAT $OTHER_FILES_PATH)
 }
 
 ################################################################################
