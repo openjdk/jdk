@@ -402,6 +402,7 @@ public class PKCS9Attribute implements DerEncoder {
      * @param derVal the DerValue representing the DER encoding of the attribute.
      * @exception IOException on parsing error.
      */
+    @SuppressWarnings("this-escape")
     public PKCS9Attribute(DerValue derVal) throws IOException {
 
         DerInputStream derIn = new DerInputStream(derVal.toByteArray());

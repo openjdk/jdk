@@ -84,7 +84,9 @@
   flags(CCP1,                           "PhaseCCP 1") \
   flags(ITER_GVN2,                      "Iter GVN 2") \
   flags(PHASEIDEALLOOP_ITERATIONS,      "PhaseIdealLoop iterations") \
-  flags(MACRO_EXPANSION,                "Macro expand") \
+  flags(BEFORE_MACRO_EXPANSION ,        "Before Macro Expansion") \
+  flags(AFTER_MACRO_EXPANSION_STEP,     "After Macro Expansion Step") \
+  flags(AFTER_MACRO_EXPANSION,          "After Macro Expansion") \
   flags(BARRIER_EXPANSION,              "Barrier expand") \
   flags(OPTIMIZE_FINISHED,              "Optimize finished") \
   flags(BEFORE_MATCHING,                "Before matching") \

@@ -146,17 +146,6 @@ GrowableArray<MemoryPool*> SerialHeap::memory_pools() {
   return memory_pools;
 }
 
-void SerialHeap::young_process_roots(OopClosure* root_closure,
-                                     OopIterateClosure* old_gen_closure,
-                                     CLDClosure* cld_closure) {
-  MarkingCodeBlobClosure mark_code_closure(root_closure, CodeBlobToOopClosure::FixRelocations, false /* keepalive nmethods */);
-
-  process_roots(SO_ScavengeCodeCache, root_closure,
-                cld_closure, cld_closure, &mark_code_closure);
-
-  old_gen()->younger_refs_iterate(old_gen_closure);
-}
-
 void SerialHeap::safepoint_synchronize_begin() {
   if (UseStringDeduplication) {
     SuspendibleThreadSet::synchronize();
