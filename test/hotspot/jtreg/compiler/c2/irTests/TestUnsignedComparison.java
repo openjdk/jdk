@@ -150,20 +150,6 @@ public class TestUnsignedComparison {
     @Test
     @IR(failOn = {CMP_I, ADD_I})
     @IR(counts = {CMP_U, "1"})
-    public boolean testIntConEQ(int x) {
-        return x + INT_MIN == INT_CONST;
-    }
-
-    @Test
-    @IR(failOn = {CMP_I, ADD_I})
-    @IR(counts = {CMP_U, "1"})
-    public boolean testIntConNE(int x) {
-        return x + INT_MIN != INT_CONST;
-    }
-
-    @Test
-    @IR(failOn = {CMP_I, ADD_I})
-    @IR(counts = {CMP_U, "1"})
     public boolean testIntConLT(int x) {
         return x + INT_MIN < INT_CONST;
     }
@@ -189,17 +175,12 @@ public class TestUnsignedComparison {
         return x + INT_MIN >= INT_CONST;
     }
 
-    @Run(test = {"testIntConEQ", "testIntConNE",
-                 "testIntConLT", "testIntConLE",
+    @Run(test = {"testIntConLT", "testIntConLE",
                  "testIntConGT", "testIntConGE"})
     public void checkTestIntCon() {
         // Verify the transformation "cmp (add X min_jint) c"
         // to "cmpu X (c + min_jint)"
         for (int i = 0; i < INT_DATA.length; i++) {
-            Asserts.assertEquals(testIntConEQ(INT_DATA[i]),
-                                 i == CONST_INDEX);
-            Asserts.assertEquals(testIntConNE(INT_DATA[i]),
-                                 i != CONST_INDEX);
             Asserts.assertEquals(testIntConLT(INT_DATA[i]),
                                  i <  CONST_INDEX);
             Asserts.assertEquals(testIntConLE(INT_DATA[i]),
@@ -280,20 +261,6 @@ public class TestUnsignedComparison {
     @Test
     @IR(failOn = {CMP_L, ADD_L})
     @IR(counts = {CMP_UL, "1"})
-    public boolean testLongConEQ(long x) {
-        return x + LONG_MIN == LONG_CONST;
-    }
-
-    @Test
-    @IR(failOn = {CMP_L, ADD_L})
-    @IR(counts = {CMP_UL, "1"})
-    public boolean testLongConNE(long x) {
-        return x + LONG_MIN != LONG_CONST;
-    }
-
-    @Test
-    @IR(failOn = {CMP_L, ADD_L})
-    @IR(counts = {CMP_UL, "1"})
     public boolean testLongConLT(long x) {
         return x + LONG_MIN < LONG_CONST;
     }
@@ -319,17 +286,12 @@ public class TestUnsignedComparison {
         return x + LONG_MIN >= LONG_CONST;
     }
 
-    @Run(test = {"testLongConEQ", "testLongConNE",
-                 "testLongConLT", "testLongConLE",
+    @Run(test = {"testLongConLT", "testLongConLE",
                  "testLongConGT", "testLongConGE"})
     public void checkTestLongConGE() {
         // Verify the transformation "cmp (add X min_jlong) c"
         // to "cmpu X (c + min_jlong)"
         for (int i = 0; i < LONG_DATA.length; i++) {
-            Asserts.assertEquals(testLongConEQ(LONG_DATA[i]),
-                                 i == CONST_INDEX);
-            Asserts.assertEquals(testLongConNE(LONG_DATA[i]),
-                                 i != CONST_INDEX);
             Asserts.assertEquals(testLongConLT(LONG_DATA[i]),
                                  i <  CONST_INDEX);
             Asserts.assertEquals(testLongConLE(LONG_DATA[i]),

@@ -556,8 +556,10 @@ protected:
 public:
   const short _widen;           // Limit on times we widen this sucker
 
+  virtual bool empty(void) const = 0;
   virtual jlong hi_as_long() const = 0;
   virtual jlong lo_as_long() const = 0;
+  virtual bool can_overflow(int opcode, const TypeInteger* other) const = 0;
   jlong get_con_as_long(BasicType bt) const;
   bool is_con() const { return lo_as_long() == hi_as_long(); }
   virtual short widen_limit() const { return _widen; }
@@ -606,6 +608,7 @@ public:
 
   virtual jlong hi_as_long() const { return _hi; }
   virtual jlong lo_as_long() const { return _lo; }
+  virtual bool can_overflow(int opcode, const TypeInteger* other) const;
 
   // Do not kill _widen bits.
   // Convenience common pre-built types.
@@ -671,6 +674,7 @@ public:
 
   virtual jlong hi_as_long() const { return _hi; }
   virtual jlong lo_as_long() const { return _lo; }
+  virtual bool can_overflow(int opcode, const TypeInteger* other) const;
 
   virtual const Type *xmeet( const Type *t ) const;
   virtual const Type *xdual() const;    // Compute dual right now.
@@ -2178,6 +2182,26 @@ inline bool Type::is_floatingpoint() const {
       (_base == DoubleCon) || (_base == DoubleBot) )
     return true;
   return false;
+}
+
+template<class T> static bool subtract_overflows(T x, T y) {
+  T s = java_subtract(x, y);
+  return (x >= 0) && (y < 0) && (s < 0);
+}
+
+template<class T> static bool subtract_underflows(T x, T y) {
+  T s = java_subtract(x, y);
+  return (x < 0) && (y > 0) && (s > 0);
+}
+
+template<class T> static bool add_overflows(T x, T y) {
+  T s = java_add(x, y);
+  return (x > 0) && (y > 0) && (s < 0);
+}
+
+template<class T> static bool add_underflows(T x, T y) {
+  T s = java_add(x, y);
+  return (x < 0) && (y < 0) && (s >= 0);
 }
 
 

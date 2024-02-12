@@ -1494,11 +1494,10 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
     if (tst != tst0) {
       // Canonicalize one more time since transform can change it.
       btest = tst->as_Bool()->_test._test;
-      if (!BoolTest(btest).is_canonical()) {
-        // Reverse edges one more time...
+      while (!BoolTest(btest).is_canonical()) {
+        // Reverse edges until the test is canonical
         tst   = _gvn.transform( tst->as_Bool()->negate(&_gvn) );
         btest = tst->as_Bool()->_test._test;
-        assert(BoolTest(btest).is_canonical(), "sanity");
         taken_if_true = !taken_if_true;
       }
       c = tst->in(1);
