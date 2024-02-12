@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.openjdk.bench.vm.gc;
+package org.openjdk.bench.vm.gc.system_gc;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -39,7 +39,7 @@ import java.util.concurrent.TimeUnit;
 @Fork(value=25, jvmArgsAppend={"-Xmx5g", "-Xms5g", "-Xmn3g"})
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
-public class SystemGCAllDead {
+public class AllDead {
 
     /*
      * Test the System GC when all allocated objects are dead.
@@ -51,12 +51,12 @@ public class SystemGCAllDead {
 
     @Setup(Level.Iteration)
     public void generateGarbage() {
-        holder = SystemGCHelper.generateObjectArrays();
+        holder = GarbageGenerator.generateObjectArrays();
         holder = null;
     }
 
     @Benchmark
-    public void bench() {
+    public void gc() {
         System.gc();
     }
 }

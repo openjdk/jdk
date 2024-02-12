@@ -20,13 +20,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.openjdk.bench.vm.gc;
+package org.openjdk.bench.vm.gc.system_gc;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.TreeMap;
 
-public class SystemGCHelper {
+public class GarbageGenerator {
     static final int K = 1024;
     static final int M = K * K;
 
@@ -38,10 +38,10 @@ public class SystemGCHelper {
      */
     static ArrayList<Object[]> generateObjectArrays() {
         ArrayList<Object[]>  tmp = new ArrayList<>();
-        for (int i = 0; i < SystemGCHelper.K; i++) {
-            Object[] x = new Object[SystemGCHelper.K];
-            for (int j=0; j < SystemGCHelper.K; j++) {
-                x[j] = new byte[SystemGCHelper.K];
+        for (int i = 0; i < GarbageGenerator.K; i++) {
+            Object[] x = new Object[GarbageGenerator.K];
+            for (int j=0; j < GarbageGenerator.K; j++) {
+                x[j] = new byte[GarbageGenerator.K];
             }
             tmp.add(x);
         }

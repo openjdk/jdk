@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.openjdk.bench.vm.gc;
+package org.openjdk.bench.vm.gc.system_gc;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -39,7 +39,7 @@ import java.util.concurrent.TimeUnit;
 @Fork(value=25, jvmArgsAppend={"-Xmx5g", "-Xms5g", "-Xmn3g"})
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
-public class SystemGCHalfHashedHalfDead {
+public class HalfHashedHalfDead {
 
     /*
      * Test the System GC when there is a big amount of objects
@@ -52,7 +52,7 @@ public class SystemGCHalfHashedHalfDead {
 
     @Setup(Level.Iteration)
     public void generateGarbage() {
-        holder = SystemGCHelper.generateObjectArrays();
+        holder = GarbageGenerator.generateObjectArrays();
         // Keeping half the objects and calculating the hash code to
         // force some GCs to preserve marks.
         for (Object[] objectArray: holder) {
@@ -67,7 +67,7 @@ public class SystemGCHalfHashedHalfDead {
     }
 
     @Benchmark
-    public void bench() {
+    public void gc() {
         System.gc();
     }
 }

@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.openjdk.bench.vm.gc;
+package org.openjdk.bench.vm.gc.system_gc;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -32,37 +32,39 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode(Mode.SingleShotTime)
 @Fork(value=25, jvmArgsAppend={"-Xmx5g", "-Xms5g", "-Xmn3g"})
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
-public class SystemGCHalfDeadInterleavedChunks {
+public class DifferentObjectSizesHashMap {
 
     /*
-     * Test the System GC when half of the objects are dead.
-     * In this test every other array of objects is cleared.
+     * Test the System GC when 2/3 of the objects are live
+     * and kept reachable through a HashMap.
      *
      * The jvmArgs are provided to avoid GCs during object creation.
      */
 
-    static ArrayList<Object[]> holder;
+    static HashMap<Integer, byte[]> largeMap;
 
     @Setup(Level.Iteration)
     public void generateGarbage() {
-        holder = SystemGCHelper.generateObjectArrays();
-        // Clearing every other object array in the holder
-        for (int i = 0; i < holder.size(); i++) {
-            if ((i & 1) == 1) {
-                holder.set(i, null);
+        largeMap = GarbageGenerator.generateAndFillHashMap(false);
+        int numberOfObjects = largeMap.size();
+        // Removing a third of the objects and keeping a good
+        // distribution of sizes.
+        for (int i = 0; i < numberOfObjects; i++) {
+            if (i%3 == 0) {
+                largeMap.remove(i);
             }
         }
     }
 
     @Benchmark
-    public void bench() {
+    public void gc() {
         System.gc();
     }
 }

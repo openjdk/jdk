@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.openjdk.bench.vm.gc;
+package org.openjdk.bench.vm.gc.system_gc;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -32,30 +32,35 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 
+import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode(Mode.SingleShotTime)
 @Fork(value=25, jvmArgsAppend={"-Xmx5g", "-Xms5g", "-Xmn3g"})
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
-public class SystemGCOneBig {
+public class HalfDeadFirstPart {
 
     /*
-     * Test the System GC when there is a single large object.
+     * Test the System GC when half of the objects are dead.
+     * In this test the first half of the objects are cleared.
      *
-     * The heap settings provided are the same as for the other
-     * test for consistency.
+     * The jvmArgs are provided to avoid GCs during object creation.
      */
 
-    static Object[] holder;
+    static ArrayList<Object[]> holder;
 
     @Setup(Level.Iteration)
     public void generateGarbage() {
-        holder = new Object[1024*1024*128];
+        holder = GarbageGenerator.generateObjectArrays();
+        // Clearing every other object array in the holder
+        for (int i = 0; i < holder.size() / 2; i++) {
+            holder.set(i, null);
+        }
     }
 
     @Benchmark
-    public void bench() {
+    public void gc() {
         System.gc();
     }
 }

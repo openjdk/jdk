@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.openjdk.bench.vm.gc;
+package org.openjdk.bench.vm.gc.system_gc;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -39,11 +39,11 @@ import java.util.concurrent.TimeUnit;
 @Fork(value=25, jvmArgsAppend={"-Xmx5g", "-Xms5g", "-Xmn3g"})
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
-public class SystemGCHalfDeadSecondPart {
+public class HalfDeadInterleavedChunks {
 
     /*
      * Test the System GC when half of the objects are dead.
-     * In this test the second half of the objects are cleared.
+     * In this test every other array of objects is cleared.
      *
      * The jvmArgs are provided to avoid GCs during object creation.
      */
@@ -52,15 +52,17 @@ public class SystemGCHalfDeadSecondPart {
 
     @Setup(Level.Iteration)
     public void generateGarbage() {
-        holder = SystemGCHelper.generateObjectArrays();
+        holder = GarbageGenerator.generateObjectArrays();
         // Clearing every other object array in the holder
-        for (int i = holder.size() / 2; i < holder.size(); i++) {
-            holder.set(i, null);
+        for (int i = 0; i < holder.size(); i++) {
+            if ((i & 1) == 1) {
+                holder.set(i, null);
+            }
         }
     }
 
     @Benchmark
-    public void bench() {
+    public void gc() {
         System.gc();
     }
 }

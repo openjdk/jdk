@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.openjdk.bench.vm.gc;
+package org.openjdk.bench.vm.gc.system_gc;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -39,7 +39,7 @@ import java.util.concurrent.TimeUnit;
 @Fork(value=25, jvmArgsAppend={"-Xmx5g", "-Xms5g", "-Xmn3g"})
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
-public class SystemGCHalfDeadInterleaved {
+public class HalfDeadInterleaved {
 
     /*
      * Test the System GC when half of the objects are dead.
@@ -52,7 +52,7 @@ public class SystemGCHalfDeadInterleaved {
 
     @Setup(Level.Iteration)
     public void generateGarbage() {
-        holder = SystemGCHelper.generateObjectArrays();
+        holder = GarbageGenerator.generateObjectArrays();
         for (Object[] objArray : holder) {
             for (int i=0; i < objArray.length; i++) {
                 if ((i & 1) == 1) {
@@ -63,7 +63,7 @@ public class SystemGCHalfDeadInterleaved {
     }
 
     @Benchmark
-    public void bench() {
+    public void gc() {
         System.gc();
     }
 }
