@@ -1180,6 +1180,7 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   // First try to load the existing file.
   result = dll_load_library(file_path, ebuf, ebuflen);
   // If the load fails,we try to reload by changing the extension to .a for .so files only.
+  // Shared object in .so format dont have braces, hence they get removed for archives with members.
   if (result == nullptr) {
     if (strcmp(pointer_to_dot, ".so") == 0) {
       sprintf(pointer_to_dot, ".a");
