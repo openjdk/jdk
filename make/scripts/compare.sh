@@ -285,6 +285,54 @@ compare_file_types() {
 }
 
 ################################################################################
+# Find all files to compare and separate them into different categories
+
+locate_files() {
+    ALL_ZIP_FILES=$(cd $THIS_DIR && $FIND . -type f -name "*.zip" -o -name "*.tar.gz" \
+        | $SORT | $FILTER )
+
+    ALL_JMOD_FILES=$(cd $THIS_DIR && $FIND . -type f -name "*.jmod" | $SORT | $FILTER )
+
+    ALL_JAR_FILES=$(cd $THIS_DIR && $FIND . -type f -name "*.jar" -o -name "*.war" \
+        -o -name "modules" | $SORT | $FILTER)
+
+    ALL_LIB_FILES=$(cd $THIS_DIR && $FIND . -type f \( -name 'lib*.so' -o -name '*.dylib' \
+        -o -name '*.dll' -o -name '*.obj' -o -name '*.o' -o -name '*.a' \
+        -o -name '*.cpl' \) | $SORT | $FILTER)
+
+    # On macos, filter out the dSYM debug symbols files as they are also
+    # named *.dylib.
+    if [ "$OPENJDK_TARGET_OS" = "macosx" ]; then
+        ALL_LIB_FILES=$(echo "$ALL_LIB_FILES" | $GREP -v '\.dSYM/')
+    fi
+
+    if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
+        ALL_EXEC_FILES=$(cd $THIS_DIR && $FIND . -type f -name '*.exe' | $SORT | $FILTER)
+    else
+        ALL_EXEC_FILES=$(cd $THIS_DIR && $FIND . -name db -prune -o -type f -perm -100 \! \
+            \( -name '*.so' -o -name '*.dylib' -o -name '*.dll' -o -name '*.cgi' \
+            -o -name '*.jar' -o -name '*.diz' -o -name 'jcontrol' -o -name '*.properties' \
+            -o -name '*.data' -o -name '*.bfc' -o -name '*.src' -o -name '*.txt' \
+            -o -name '*.cfg' -o -name 'meta-index' -o -name '*.properties.ja' \
+            -o -name '*.xml' -o -name '*.html' -o -name '*.png' -o -name 'README' \
+            -o -name '*.zip' -o -name '*.jimage' -o -name '*.java' -o -name '*.mf' \
+            -o -name '*.jpg' -o -name '*.wsdl' -o -name '*.js' -o -name '*.sh' \
+            -o -name '*.bat' -o -name '*LICENSE' -o -name '*.d' -o -name '*store' \
+            -o -name 'blocked' -o -name '*certs' -o -name '*.ttf' \
+            -o -name '*.jfc' -o -name '*.dat'  -o -name 'release' -o -name '*.dir'\
+            -o -name '*.sym' -o -name '*.idl' -o -name '*.h' -o -name '*.access' \
+            -o -name '*.template' -o -name '*.policy' -o -name '*.security' \
+            -o -name 'COPYRIGHT' -o -name '*.1' -o -name '*.debuginfo' \
+            -o -name 'classlist' \) | $SORT | $FILTER)
+    fi
+
+    ALL_OTHER_FILES=$(cd $THIS_DIR && $FIND . -type f ! -name "*.pdb" \
+        | $GREP -v "/hotspot/gtest/server/gtestLauncher" \
+        | $GREP -v "/hotspot/gtest/server/libjvm.dylib" \
+        | $SORT | $FILTER)
+}
+
+################################################################################
 # Compare the rest of the files
 
 compare_general_files() {
@@ -292,13 +340,8 @@ compare_general_files() {
     OTHER_DIR=$2
     WORK_DIR=$3
 
-    GENERAL_FILES=$(cd $THIS_DIR && $FIND . -type f ! -name "*.pdb" \
-        | $GREP -v "/hotspot/gtest/server/gtestLauncher" \
-        | $GREP -v "/hotspot/gtest/server/libjvm.dylib" \
-        | $SORT | $FILTER)
-
     echo Other files with binary differences...
-    for f in $GENERAL_FILES
+    for f in $ALL_OTHER_FILES
     do
         # Skip all files in test/*/native
         if [[ "$f" == */native/* ]]; then
@@ -541,14 +584,11 @@ compare_all_zip_files() {
     OTHER_DIR=$2
     WORK_DIR=$3
 
-    ZIPS=$(cd $THIS_DIR && $FIND . -type f -name "*.zip" -o -name "*.tar.gz" \
-        | $SORT | $FILTER )
-
-    if [ -n "$ZIPS" ]; then
+    if [ -n "$ALL_ZIP_FILES" ]; then
         echo Zip/tar.gz files...
 
         return_value=0
-        for f in $ZIPS; do
+        for f in $ALL_ZIP_FILES; do
             if [ -f "$OTHER_DIR/$f" ]; then
                 compare_zip_file $THIS_DIR $OTHER_DIR $WORK_DIR $f
                 if [ "$?" != "0" ]; then
@@ -570,13 +610,11 @@ compare_all_jmod_files() {
     OTHER_DIR=$2
     WORK_DIR=$3
 
-    JMODS=$(cd $THIS_DIR && $FIND . -type f -name "*.jmod" | $SORT | $FILTER )
-
-    if [ -n "$JMODS" ]; then
+    if [ -n "$ALL_JMOD_FILES" ]; then
         echo Jmod files...
 
         return_value=0
-        for f in $JMODS; do
+        for f in $ALL_JMOD_FILES; do
             if [ -f "$OTHER_DIR/$f" ]; then
                 compare_jmod_file $THIS_DIR $OTHER_DIR $WORK_DIR $f
                 if [ "$?" != "0" ]; then
@@ -598,15 +636,11 @@ compare_all_jar_files() {
     OTHER_DIR=$2
     WORK_DIR=$3
 
-    # TODO filter?
-    ZIPS=$(cd $THIS_DIR && $FIND . -type f -name "*.jar" -o -name "*.war" \
-        -o -name "modules" | $SORT | $FILTER)
-
-    if [ -n "$ZIPS" ]; then
+    if [ -n "$ALL_JAR_FILES" ]; then
         echo Jar files...
 
         return_value=0
-        for f in $ZIPS; do
+        for f in $ALL_JAR_FILES; do
             if [ -f "$OTHER_DIR/$f" ]; then
                 compare_zip_file $THIS_DIR $OTHER_DIR $WORK_DIR $f
                 if [ "$?" != "0" ]; then
@@ -1021,20 +1055,10 @@ compare_all_libs() {
     OTHER_DIR=$2
     WORK_DIR=$3
 
-    LIBS=$(cd $THIS_DIR && $FIND . -type f \( -name 'lib*.so' -o -name '*.dylib' \
-        -o -name '*.dll' -o -name '*.obj' -o -name '*.o' -o -name '*.a' \
-        -o -name '*.cpl' \) | $SORT | $FILTER)
-
-    # On macos, filter out the dSYM debug symbols files as they are also
-    # named *.dylib.
-    if [ "$OPENJDK_TARGET_OS" = "macosx" ]; then
-        LIBS=$(echo "$LIBS" | $GREP -v '\.dSYM/')
-    fi
-
-    if [ -n "$LIBS" ]; then
+    if [ -n "$ALL_LIB_FILES" ]; then
         echo Libraries...
         print_binary_diff_header
-        for l in $LIBS; do
+        for l in $ALL_LIB_FILES; do
             if [ -f "$OTHER_DIR/$l" ]; then
                 compare_bin_file $THIS_DIR $OTHER_DIR $WORK_DIR $l
                 if [ "$?" != "0" ]; then
@@ -1056,30 +1080,10 @@ compare_all_execs() {
     OTHER_DIR=$2
     WORK_DIR=$3
 
-    if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
-        EXECS=$(cd $THIS_DIR && $FIND . -type f -name '*.exe' | $SORT | $FILTER)
-    else
-        EXECS=$(cd $THIS_DIR && $FIND . -name db -prune -o -type f -perm -100 \! \
-            \( -name '*.so' -o -name '*.dylib' -o -name '*.dll' -o -name '*.cgi' \
-            -o -name '*.jar' -o -name '*.diz' -o -name 'jcontrol' -o -name '*.properties' \
-            -o -name '*.data' -o -name '*.bfc' -o -name '*.src' -o -name '*.txt' \
-            -o -name '*.cfg' -o -name 'meta-index' -o -name '*.properties.ja' \
-            -o -name '*.xml' -o -name '*.html' -o -name '*.png' -o -name 'README' \
-            -o -name '*.zip' -o -name '*.jimage' -o -name '*.java' -o -name '*.mf' \
-            -o -name '*.jpg' -o -name '*.wsdl' -o -name '*.js' -o -name '*.sh' \
-            -o -name '*.bat' -o -name '*LICENSE' -o -name '*.d' -o -name '*store' \
-            -o -name 'blocked' -o -name '*certs' -o -name '*.ttf' \
-            -o -name '*.jfc' -o -name '*.dat'  -o -name 'release' -o -name '*.dir'\
-            -o -name '*.sym' -o -name '*.idl' -o -name '*.h' -o -name '*.access' \
-            -o -name '*.template' -o -name '*.policy' -o -name '*.security' \
-            -o -name 'COPYRIGHT' -o -name '*.1' -o -name '*.debuginfo' \
-            -o -name 'classlist' \) | $SORT | $FILTER)
-    fi
-
-    if [ -n "$EXECS" ]; then
+    if [ -n "$ALL_EXEC_FILES" ]; then
         echo Executables...
         print_binary_diff_header
-        for e in $EXECS; do
+        for e in $ALL_EXEC_FILES; do
             if [ -f "$OTHER_DIR/$e" ]; then
                 compare_bin_file $THIS_DIR $OTHER_DIR $WORK_DIR $e
                 if [ "$?" != "0" ]; then
@@ -1414,6 +1418,9 @@ if [ "$SKIP_DEFAULT" != "true" ]; then
         echo "WARNING! Test haven't been built and won't be compared."
     fi
 fi
+
+# Find all files and sort them up per type (e.g. libs, zips etc)
+locate_files
 
 ################################################################################
 # Do the work
