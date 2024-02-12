@@ -1050,7 +1050,7 @@ compare_all_execs() {
 ################################################################################
 # Compare the rest of the files
 
-compare_other_files() {
+compare_all_other_files() {
     THIS_DIR=$1
     OTHER_DIR=$2
     WORK_DIR=$3
@@ -1509,22 +1509,22 @@ fi
 if [ "$CMP_GENERAL" = "true" ]; then
     if [ -n "$THIS_JDK" ] && [ -n "$OTHER_JDK" ]; then
         echo -n "JDK "
-        compare_other_files $THIS_JDK $OTHER_JDK $COMPARE_ROOT/jdk
+        compare_all_other_files $THIS_JDK $OTHER_JDK $COMPARE_ROOT/jdk
     fi
     if [ -n "$THIS_JDK_BUNDLE" ] && [ -n "$OTHER_JDK_BUNDLE" ]; then
         echo -n "JDK Bundle "
-        compare_other_files $THIS_JDK_BUNDLE $OTHER_JDK_BUNDLE $COMPARE_ROOT/jdk-bundle
+        compare_all_other_files $THIS_JDK_BUNDLE $OTHER_JDK_BUNDLE $COMPARE_ROOT/jdk-bundle
     fi
     if [ -n "$THIS_DOCS" ] && [ -n "$OTHER_DOCS" ]; then
         echo -n "Docs "
-        compare_other_files $THIS_DOCS $OTHER_DOCS $COMPARE_ROOT/docs
+        compare_all_other_files $THIS_DOCS $OTHER_DOCS $COMPARE_ROOT/docs
     fi
     if [ -n "$THIS_TEST" ] && [ -n "$OTHER_TEST" ]; then
         echo -n "Test "
-        compare_other_files $THIS_TEST $OTHER_TEST $COMPARE_ROOT/test
+        compare_all_other_files $THIS_TEST $OTHER_TEST $COMPARE_ROOT/test
     fi
     if [ -n "$THIS_BASE_DIR" ] && [ -n "$OTHER_BASE_DIR" ]; then
-        compare_other_files $THIS_BASE_DIR $OTHER_BASE_DIR $COMPARE_ROOT/base_dir
+        compare_all_other_files $THIS_BASE_DIR $OTHER_BASE_DIR $COMPARE_ROOT/base_dir
     fi
 fi
 
