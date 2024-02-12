@@ -3692,13 +3692,17 @@ public class ObjectInputStream
                     pos += ascii;
                     return utf;
                 }
+                // Avoid allocating a StringBuilder if there's enough data in buf and
+                // cbuf is large enough
+                if (avail >= utflen && utflen <= CHAR_BUF_SIZE) {
+                    JLA.inflateBytesToChars(buf, pos, cbuf, 0, ascii);
+                    pos += ascii;
+                    int cbufPos = readUTFSpan(ascii, utflen - ascii);
+                    return new String(cbuf, 0, cbufPos);
+                }
                 // a reasonable initial capacity based on the UTF length
                 int initialCapacity = Math.min((int)utflen, 0xFFFF);
                 sbuf = new StringBuilder(initialCapacity);
-                if (ascii > 3) {
-                    appendAsASCII(sbuf, ascii);
-                    utflen -= ascii;
-                }
             } else {
                 sbuf = new StringBuilder();
             }
@@ -3706,7 +3710,11 @@ public class ObjectInputStream
             while (utflen > 0) {
                 int avail = end - pos;
                 if (avail >= 3 || (long) avail == utflen) {
-                    utflen -= readUTFSpan(sbuf, utflen);
+                    int cbufPos = readUTFSpan(0, utflen);
+                    // pos has advanced: adjust utflen by the difference in
+                    // available bytes
+                    utflen -= avail - (end - pos);
+                    sbuf.append(cbuf, 0, cbufPos);
                 } else {
                     if (blkmode) {
                         // near block boundary, read one byte at a time
@@ -3726,21 +3734,15 @@ public class ObjectInputStream
             return sbuf.toString();
         }
 
-        private void appendAsASCII(StringBuilder sbuf, int ascii) {
-            sbuf.append(new String(buf, pos, ascii, StandardCharsets.ISO_8859_1));
-            pos += ascii;
-        }
-
         /**
          * Reads span of UTF-encoded characters out of internal buffer
-         * (starting at offset pos and ending at or before offset end),
-         * consuming no more than utflen bytes.  Appends read characters to
-         * sbuf.  Returns the number of bytes consumed.
+         * (starting at offset pos), consuming no more than utflen bytes.
+         * Appends read characters to cbuf. Returns the current position
+         * in cbuf.
          */
-        private long readUTFSpan(StringBuilder sbuf, long utflen)
+        private int readUTFSpan(int cpos, long utflen)
             throws IOException
         {
-            int cpos = 0;
             int start = pos;
             int avail = Math.min(end - pos, CHAR_BUF_SIZE);
             // stop short of last char unless all of utf bytes in buffer
@@ -3789,9 +3791,7 @@ public class ObjectInputStream
                     throw new UTFDataFormatException();
                 }
             }
-
-            sbuf.append(cbuf, 0, cpos);
-            return pos - start;
+            return cpos;
         }
 
         /**

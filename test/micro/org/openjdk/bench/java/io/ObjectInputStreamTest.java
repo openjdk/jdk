@@ -48,16 +48,19 @@ import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
-@Fork(value = 4, warmups = 0)
+@Fork(value = 3, warmups = 0)
 @Measurement(iterations = 5, time = 1)
 @Warmup(iterations = 2, time = 2)
 @State(Scope.Thread)
 public class ObjectInputStreamTest {
-    private final int size = 1024;
+    private ByteArrayInputStream utfDataAsciiMixed;
+    private ByteArrayInputStream utfDataMixed;
 
-    private ByteArrayInputStream bais;
-    private ByteArrayInputStream utfDataAscii;
-    private ByteArrayInputStream utfData;
+    private ByteArrayInputStream utfDataAsciiSmall;
+    private ByteArrayInputStream utfDataSmall;
+
+    private ByteArrayInputStream utfDataAsciiLarge;
+    private ByteArrayInputStream utfDataLarge;
 
     // Overhead of creating an ObjectInputStream is significant, need to increase the number of data elements
     // to balance work
@@ -66,9 +69,6 @@ public class ObjectInputStreamTest {
 
     @Setup(Level.Iteration)
     public void setup() throws IOException, ClassNotFoundException, NoSuchMethodException, IllegalAccessException {
-        byte[] bytes = new byte[size];
-        ThreadLocalRandom.current().nextBytes(bytes);
-        bais = new ByteArrayInputStream(bytes);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ObjectOutputStream dataOut = new ObjectOutputStream(baos);
         for (int i = 0; i < REPEATS; i++) {
@@ -76,35 +76,111 @@ public class ObjectInputStreamTest {
             dataOut.writeUTF("slightly longer string that is more likely to trigger use of simd intrinsics");
         }
         dataOut.flush();
-        utfDataAscii = new ByteArrayInputStream(baos.toByteArray());
+        utfDataAsciiMixed = new ByteArrayInputStream(baos.toByteArray());
 
         baos = new ByteArrayOutputStream();
         dataOut = new ObjectOutputStream(baos);
         for (int i = 0; i < REPEATS; i++) {
-            dataOut.writeUTF("sm\u0132ll");
+            dataOut.writeUTF("slightly longer string that is more likely to trigger use of simd intrinsics");
+            dataOut.writeUTF("slightly longer string that is more likely to trigger use of simd intrinsics");
+        }
+        dataOut.flush();
+        utfDataAsciiLarge = new ByteArrayInputStream(baos.toByteArray());
+
+        baos = new ByteArrayOutputStream();
+        dataOut = new ObjectOutputStream(baos);
+        for (int i = 0; i < REPEATS; i++) {
+            dataOut.writeUTF("smol");
+            dataOut.writeUTF("smally");
+        }
+        dataOut.flush();
+        utfDataAsciiSmall = new ByteArrayInputStream(baos.toByteArray());
+
+        baos = new ByteArrayOutputStream();
+        dataOut = new ObjectOutputStream(baos);
+        for (int i = 0; i < REPEATS; i++) {
+            dataOut.writeUTF("sm\u00FFll");
+            dataOut.writeUTF("slightly longer string th\u01F3t is more likely to trigger use of simd intrinsics");
+        }
+        dataOut.flush();
+        utfDataMixed = new ByteArrayInputStream(baos.toByteArray());
+
+        baos = new ByteArrayOutputStream();
+        dataOut = new ObjectOutputStream(baos);
+        for (int i = 0; i < REPEATS; i++) {
+            dataOut.writeUTF("sm\u00F3l");
+            dataOut.writeUTF("small\u0132");
+        }
+        dataOut.flush();
+        utfDataSmall = new ByteArrayInputStream(baos.toByteArray());
+
+        baos = new ByteArrayOutputStream();
+        dataOut = new ObjectOutputStream(baos);
+        for (int i = 0; i < REPEATS; i++) {
+            dataOut.writeUTF("slightly longer string that is more likely to trigg\u0131r use of simd intrinsics");
             dataOut.writeUTF("slightly longer string th\u0131t is more likely to trigger use of simd intrinsics");
         }
         dataOut.flush();
-        utfData = new ByteArrayInputStream(baos.toByteArray());
+        utfDataLarge = new ByteArrayInputStream(baos.toByteArray());
     }
 
     @Benchmark
-    public void readUTF(Blackhole bh) throws Exception {
-        utfDataAscii.reset();
-        ObjectInputStream dis = new ObjectInputStream(utfDataAscii);
+    public void readUTFAsciiMixed(Blackhole bh) throws Exception {
+        utfDataAsciiMixed.reset();
+        ObjectInputStream ois = new ObjectInputStream(utfDataAsciiMixed);
         for (int i = 0; i < REPEATS; i++) {
-            bh.consume(dis.readUTF());
-            bh.consume(dis.readUTF());
+            bh.consume(ois.readUTF());
+            bh.consume(ois.readUTF());
+        }
+    }
+
+    @Benchmark
+    public void readUTFAsciiSmall(Blackhole bh) throws Exception {
+        utfDataAsciiSmall.reset();
+        ObjectInputStream ois = new ObjectInputStream(utfDataAsciiSmall);
+        for (int i = 0; i < REPEATS; i++) {
+            bh.consume(ois.readUTF());
+            bh.consume(ois.readUTF());
+        }
+    }
+
+    @Benchmark
+    public void readUTFAsciiLarge(Blackhole bh) throws Exception {
+        utfDataAsciiLarge.reset();
+        ObjectInputStream ois = new ObjectInputStream(utfDataAsciiLarge);
+        for (int i = 0; i < REPEATS; i++) {
+            bh.consume(ois.readUTF());
+            bh.consume(ois.readUTF());
         }
     }
 
     @Benchmark
     public void readUTFMixed(Blackhole bh) throws Exception {
-        utfData.reset();
-        ObjectInputStream dis = new ObjectInputStream(utfData);
+        utfDataMixed.reset();
+        ObjectInputStream ois = new ObjectInputStream(utfDataMixed);
         for (int i = 0; i < REPEATS; i++) {
-            bh.consume(dis.readUTF());
-            bh.consume(dis.readUTF());
+            bh.consume(ois.readUTF());
+            bh.consume(ois.readUTF());
+        }
+    }
+
+    @Benchmark
+    public void readUTFSmall(Blackhole bh) throws Exception {
+        utfDataSmall.reset();
+        ObjectInputStream ois = new ObjectInputStream(utfDataSmall);
+        for (int i = 0; i < REPEATS; i++) {
+            bh.consume(ois.readUTF());
+            bh.consume(ois.readUTF());
+        }
+    }
+
+    @Benchmark
+    public void readUTFLarge(Blackhole bh) throws Exception {
+        utfDataLarge.reset();
+        ObjectInputStream ois = new ObjectInputStream(utfDataLarge);
+        for (int i = 0; i < REPEATS; i++) {
+            bh.consume(ois.readUTF());
+            bh.consume(ois.readUTF());
         }
     }
 }

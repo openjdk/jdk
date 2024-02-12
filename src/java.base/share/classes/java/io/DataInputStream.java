@@ -30,6 +30,7 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.ByteArray;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Objects;
 
 /**
@@ -583,7 +584,7 @@ loop:   while (true) {
         if (in instanceof DataInputStream) {
             dis = (DataInputStream)in;
             if (dis.bytearr.length < utflen) {
-                dis.bytearr = new byte[utflen * 2];
+                dis.bytearr = new byte[utflen << 1];
             }
             bytearr = dis.bytearr;
         } else {
@@ -602,17 +603,13 @@ loop:   while (true) {
         char[] chararr;
         if (dis != null) {
             if (dis.chararr.length < utflen) {
-                dis.chararr = new char[utflen * 2];
+                dis.chararr = new char[utflen << 1];
             }
             chararr = dis.chararr;
         } else {
             chararr = new char[utflen];
         }
         JLA.inflateBytesToChars(bytearr, 0, chararr, 0, count);
-        return readUTFChars(bytearr, count, chararr, utflen);
-    }
-
-    private static String readUTFChars(byte[] bytearr, int count, char[] chararr, int utflen) throws IOException {
         int c, char2, char3;
         int chararr_count = count;
         while (count < utflen) {
