@@ -54,6 +54,7 @@ import java.util.concurrent.TimeUnit;
 
 import jdk.test.lib.RandomFactory;
 
+import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class Transfer {
@@ -160,14 +161,14 @@ public class Transfer {
     }
 
     @Test
-    public void transferToTrusted() throws IOException { // for bug 8325382
+    public void transferToNoThrow() throws IOException { // for bug 8325382
         File source = File.createTempFile("before", "after");
         source.deleteOnExit();
 
         CharSequence csq = "Reality is greater than the sum of its parts.";
         Files.writeString(source.toPath(), csq);
         final long length = csq.length();
-        assert source.length() == length;
+        Assert.assertEquals(source.length(), length);
 
         File target = File.createTempFile("before", "after");
         target.deleteOnExit();
@@ -179,7 +180,10 @@ public class Transfer {
             // The count of bytes requested to transfer must exceed
             // FileChannelImpl.MAPPED_TRANSFER_THRESHOLD which is
             // currently 16384
-            chSource.transferTo(length, 16385, chTarget);
+            long n = chSource.transferTo(length, 16385, chTarget);
+
+            // At the end of the input so no bytes should be transferred
+            Assert.assertEquals(n, 0);
         }
     }
 
