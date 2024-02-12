@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,50 +21,36 @@
  * questions.
  */
 
-#ifndef NSK_LIST
-#define NSK_LIST
+#ifndef NSK_MUTEX_HPP
+#define NSK_MUTEX_HPP
 
 extern "C" {
 
 /**
- * Prepares array of pointers which has fixed INITIAL_SIZE.
- * Memory for this array will be reallocated at the nsk_list_add()
- * invocation if it is required.
- *
- * To release memory call nsk_list_destroy()
- *
+ * Structure to hold mutex data (the content is platform-specific)
  */
-const void* nsk_list_create();
+typedef struct _MUTEX MUTEX;
 
 /**
- * Releases memory allocated for array of pointer
- * Returns NSK_TRUE if array was successfully released
+ * Create a mutex
  */
-int nsk_list_destroy(const void *plist);
+MUTEX* MUTEX_create();
 
 /**
- * Returns number of elements
+ * Acquire a mutex
  */
-int nsk_list_getCount(const void *plist);
+void MUTEX_acquire(MUTEX* mutex);
 
 /**
- * Returns pointer to i-th element.
- * User must care for type cast of this pointer
+ * Release a mutex
  */
-const void* nsk_list_get(const void *plist, int i);
+void MUTEX_release(MUTEX* mutex);
 
 /**
- * Adds new element into array.
- * If array is full then memory is reallocated so as
- * array could contain additional INITIAL_SIZE elements
- * Returns NSK_TRUE if pointer was successfully added
+ * Destroy a mutex
  */
-int nsk_list_add(const void *plist, const void *p);
+void MUTEX_destroy(MUTEX* mutex);
 
-/**
- * Removes i-th pointer from array
- */
-int nsk_list_remove(const void *plist, int i);
 
 }
 
