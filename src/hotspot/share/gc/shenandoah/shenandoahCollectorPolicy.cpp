@@ -40,15 +40,15 @@ ShenandoahCollectorPolicy::ShenandoahCollectorPolicy() :
   _alloc_failure_degenerated_upgrade_to_full(0),
   _alloc_failure_full(0) {
 
-  Copy::zero_to_bytes(_degen_points, sizeof(size_t) * ShenandoahGC::_DEGENERATED_LIMIT);
-  Copy::zero_to_bytes(_collection_causes, sizeof(size_t) * GCCause::_last_gc_cause);
+  Copy::zero_to_bytes(_degen_point_counts, sizeof(size_t) * ShenandoahGC::_DEGENERATED_LIMIT);
+  Copy::zero_to_bytes(_collection_cause_counts, sizeof(size_t) * GCCause::_last_gc_cause);
 
   _tracer = new ShenandoahTracer();
 }
 
 void ShenandoahCollectorPolicy::record_collection_cause(GCCause::Cause cause) {
   assert(cause < GCCause::_last_gc_cause, "Invalid GCCause");
-  _collection_causes[cause]++;
+  _collection_cause_counts[cause]++;
 }
 
 void ShenandoahCollectorPolicy::record_alloc_failure_to_full() {
@@ -58,7 +58,7 @@ void ShenandoahCollectorPolicy::record_alloc_failure_to_full() {
 void ShenandoahCollectorPolicy::record_alloc_failure_to_degenerated(ShenandoahGC::ShenandoahDegenPoint point) {
   assert(point < ShenandoahGC::_DEGENERATED_LIMIT, "sanity");
   _alloc_failure_degenerated++;
-  _degen_points[point]++;
+  _degen_point_counts[point]++;
 }
 
 void ShenandoahCollectorPolicy::record_degenerated_upgrade_to_full() {
@@ -101,9 +101,9 @@ bool is_explicit_gc(GCCause::Cause cause) {
 }
 
 bool is_implicit_gc(GCCause::Cause cause) {
-  return !is_explicit_gc(cause) &&
-         cause != GCCause::_allocation_failure &&
-         cause != GCCause::_shenandoah_concurrent_gc;
+  return cause != GCCause::_allocation_failure &&
+         cause != GCCause::_shenandoah_concurrent_gc &&
+         !is_explicit_gc(cause);
 }
 
 void ShenandoahCollectorPolicy::print_gc_stats(outputStream* out) const {
@@ -120,7 +120,7 @@ void ShenandoahCollectorPolicy::print_gc_stats(outputStream* out) const {
   size_t explicit_requests = 0;
   size_t implicit_requests = 0;
   for (int c = 0; c < GCCause::_last_gc_cause; c++) {
-    size_t cause_count = _collection_causes[c];
+    size_t cause_count = _collection_cause_counts[c];
     if (cause_count > 0) {
       auto cause = (GCCause::Cause) c;
       if (is_explicit_gc(cause)) {
@@ -150,9 +150,9 @@ void ShenandoahCollectorPolicy::print_gc_stats(outputStream* out) const {
   out->print_cr("  " SIZE_FORMAT_W(5) " caused by allocation failure (%.2f%%)", _alloc_failure_degenerated, percent_of(_alloc_failure_degenerated, degenerated_gcs));
   out->print_cr("  " SIZE_FORMAT_W(5) " abbreviated (%.2f%%)",                  _abbreviated_degenerated_gcs, percent_of(_abbreviated_degenerated_gcs, degenerated_gcs));
   for (int c = 0; c < ShenandoahGC::_DEGENERATED_LIMIT; c++) {
-    if (_degen_points[c] > 0) {
+    if (_degen_point_counts[c] > 0) {
       const char* desc = ShenandoahGC::degen_point_to_string((ShenandoahGC::ShenandoahDegenPoint)c);
-      out->print_cr("    " SIZE_FORMAT_W(5) " happened at %s",         _degen_points[c], desc);
+      out->print_cr("    " SIZE_FORMAT_W(5) " happened at %s", _degen_point_counts[c], desc);
     }
   }
   out->cr();

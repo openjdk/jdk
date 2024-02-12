@@ -48,8 +48,8 @@ private:
   size_t _alloc_failure_degenerated;
   size_t _alloc_failure_degenerated_upgrade_to_full;
   size_t _alloc_failure_full;
-  size_t _collection_causes[GCCause::_last_gc_cause];
-  size_t _degen_points[ShenandoahGC::_DEGENERATED_LIMIT];
+  size_t _collection_cause_counts[GCCause::_last_gc_cause];
+  size_t _degen_point_counts[ShenandoahGC::_DEGENERATED_LIMIT];
 
   ShenandoahSharedFlag _in_shutdown;
   ShenandoahTracer* _tracer;
