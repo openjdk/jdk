@@ -872,10 +872,6 @@ void LIRGenerator::do_ArrayCopy(Intrinsic* x) {
                tmp, expected_type, flags, info);
 }
 
-void LIRGenerator::do_Clone(Intrinsic* x) {
-  Unimplemented();
-}
-
 void LIRGenerator::do_update_CRC32(Intrinsic* x) {
   fatal("CRC32 intrinsic is not implemented on this platform");
 }

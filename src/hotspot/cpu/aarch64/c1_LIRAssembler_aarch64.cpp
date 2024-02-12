@@ -1233,8 +1233,7 @@ void LIR_Assembler::emit_alloc_array(LIR_OpAllocArray* op) {
                       arrayOopDesc::header_size(op->type()),
                       array_element_size(op->type()),
                       op->klass()->as_register(),
-                      *op->stub()->entry(),
-                      op->zero_array());
+                      *op->stub()->entry());
   }
   __ bind(*op->stub()->continuation());
 }
@@ -2526,9 +2525,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
    __ call_VM_leaf(entry, 3);
  }
 
- if (stub != nullptr) {
-   __ bind(*stub->continuation());
- }
+  __ bind(*stub->continuation());
 }
 
 
