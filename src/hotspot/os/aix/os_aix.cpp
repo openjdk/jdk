@@ -1173,9 +1173,10 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   strncpy(file_path,filename, buffer_length + 1);
   char* const pointer_to_dot = strrchr(file_path, '.');
   if (pointer_to_dot == nullptr) {
+    log_info(os)("Attempting to load a shared object without extension %s", filename);
     FREE_C_HEAP_ARRAY(char, file_path);
     return result;
-  }    
+  }
   // First try to load the existing file.
   result = dll_load_library(file_path, ebuf, ebuflen);
   // If the load fails,we try to reload by changing the extension to .a for .so files only.
