@@ -40,16 +40,13 @@ import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.standard.Sides;
 import javax.swing.JFrame;
-import jtreg.SkippedException;
 
 /*
  * @test
  * @bug 8307246
  * @key printer
  * @library ../../../regtesthelpers
- * @library /test/lib
  * @build PassFailJFrame
- * @build jtreg.SkippedException
  * @summary Test for comparing offsets of images drawn with opaque and translucent colors printed in all orientations
  * @run main/manual AlphaPrintingOffsets
  */
@@ -80,10 +77,8 @@ public class AlphaPrintingOffsets {
                     .testUI(() -> createTestUI()).build().awaitAndCheck();
 
         } else {
-            System.out.println("Printer not configured or available."
-                    + " Test cannot continue.");
-            throw new SkippedException("Printer not configured or available."
-                    + " Test cannot continue.");
+            System.out.println("Test failed : Printer not configured or available.");
+            throw new RuntimeException("Test failed : Printer not configured or available.");
         }
 
     }
