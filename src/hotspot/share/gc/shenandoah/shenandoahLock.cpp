@@ -28,8 +28,55 @@
 
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/os.inline.hpp"
+
+void ShenandoahLock::contended_lock(bool allow_block_for_safepoint) {
+  Thread* thread = Thread::current();
+  if (allow_block_for_safepoint && thread->is_Java_thread()) {
+    contended_lock_or_block(JavaThread::cast(thread));
+  } else {
+    contended_lock_no_block();
+  }
+}
+
+void ShenandoahLock::contended_lock_no_block() {
+  int ctr = 0;
+  int yields = 0;
+  while (Atomic::cmpxchg(&_state, 0, 1) != 0) {
+    ++ctr;
+    if ((ctr & 0xFFF) == 0 || !os::is_MP()) {
+      if (yields > 5) {
+        os::naked_short_sleep(1);
+      } else {
+        os::naked_yield();
+        ++yields;
+      }
+    } else {
+      SpinPause();
+    }
+  }
+}
+
+void ShenandoahLock::contended_lock_or_block(JavaThread* java_thread) {
+  int ctr = 0;
+  int yields = 0;
+  while (Atomic::cmpxchg(&_state, 0, 1) != 0) {
+    ++ctr;
+    if ((ctr & 0xFFF) == 0 || !os::is_MP()) {
+      ThreadBlockInVM tbivm(java_thread);
+      if (yields > 5) {
+        os::naked_short_sleep(1);
+      } else {
+        os::naked_yield();
+        ++yields;
+      }
+    } else {
+      SpinPause();
+    }
+  }
+}
 
 ShenandoahSimpleLock::ShenandoahSimpleLock() {
   assert(os::mutex_init_done(), "Too early!");

@@ -32,40 +32,43 @@
 
 class ShenandoahLock  {
 private:
-  enum LockState { unlocked = 0, locked = 1 };
-
   shenandoah_padding(0);
   volatile int _state;
   shenandoah_padding(1);
   volatile Thread* _owner;
   shenandoah_padding(2);
 
-public:
-  ShenandoahLock() : _state(unlocked), _owner(nullptr) {};
+  void contended_lock_or_block(JavaThread* java_thread);
+  void contended_lock_no_block();
 
-  void lock() {
-#ifdef ASSERT
+public:
+  ShenandoahLock() : _state(0), _owner(nullptr) {};
+
+  void lock(bool allow_block_for_safepoint) {
     assert(_owner != Thread::current(), "reentrant locking attempt, would deadlock");
-#endif
-    Thread::SpinAcquire(&_state, "Shenandoah Heap Lock");
-#ifdef ASSERT
-    assert(_state == locked, "must be locked");
+
+    // Try to lock fast, or dive into contended lock handling.
+    if (Atomic::cmpxchg(&_state, 0, 1) != 0) {
+      contended_lock(allow_block_for_safepoint);
+    }
+
+    assert(_state == 1, "must be locked");
     assert(_owner == nullptr, "must not be owned");
-    _owner = Thread::current();
-#endif
+    DEBUG_ONLY(_owner = Thread::current();)
   }
 
   void unlock() {
-#ifdef ASSERT
-    assert (_owner == Thread::current(), "sanity");
-    _owner = nullptr;
-#endif
-    Thread::SpinRelease(&_state);
+    assert(_owner == Thread::current(), "sanity");
+    DEBUG_ONLY(_owner = nullptr;)
+    OrderAccess::fence();
+    Atomic::store(&_state, 0);
   }
+
+  void contended_lock(bool allow_block_for_safepoint);
 
   bool owned_by_self() {
 #ifdef ASSERT
-    return _state == locked && _owner == Thread::current();
+    return _state == 1 && _owner == Thread::current();
 #else
     ShouldNotReachHere();
     return false;
@@ -77,9 +80,9 @@ class ShenandoahLocker : public StackObj {
 private:
   ShenandoahLock* const _lock;
 public:
-  ShenandoahLocker(ShenandoahLock* lock) : _lock(lock) {
+  ShenandoahLocker(ShenandoahLock* lock, bool allow_block_for_safepoint = false) : _lock(lock) {
     if (_lock != nullptr) {
-      _lock->lock();
+      _lock->lock(allow_block_for_safepoint);
     }
   }
 
