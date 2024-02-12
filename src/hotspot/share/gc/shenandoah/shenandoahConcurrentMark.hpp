@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTMARK_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTMARK_HPP
 
+#include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahMark.hpp"
 
 template <ShenandoahGenerationType GENERATION>
