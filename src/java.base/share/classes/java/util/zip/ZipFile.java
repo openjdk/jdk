@@ -227,6 +227,7 @@ public class ZipFile implements ZipConstants, Closeable {
      *
      * @since 1.7
      */
+    @SuppressWarnings("this-escape")
     public ZipFile(File file, int mode, Charset charset) throws IOException
     {
         if (((mode & OPEN_READ) == 0) ||

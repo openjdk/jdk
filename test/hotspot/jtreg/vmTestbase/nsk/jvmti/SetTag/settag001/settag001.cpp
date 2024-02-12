@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,17 +51,17 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
     /* perform testing */
     {
-        jobject testedObject = NULL;
+        jobject testedObject = nullptr;
         jlong objectTag = 111;
 
         NSK_DISPLAY0(">>> Obtain tested object from a static field of debugee class\n");
         {
-            jclass debugeeClass = NULL;
-            jfieldID objectField = NULL;
+            jclass debugeeClass = nullptr;
+            jfieldID objectField = nullptr;
 
             NSK_DISPLAY1("Find debugee class: %s\n", DEBUGEE_CLASS_NAME);
             if (!NSK_JNI_VERIFY(jni, (debugeeClass =
-                    jni->FindClass(DEBUGEE_CLASS_NAME)) != NULL)) {
+                    jni->FindClass(DEBUGEE_CLASS_NAME)) != nullptr)) {
                 nsk_jvmti_setFailStatus();
                 return;
             }
@@ -69,7 +69,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
             NSK_DISPLAY1("Find static field: %s\n", OBJECT_FIELD_NAME);
             if (!NSK_JNI_VERIFY(jni, (objectField =
-                    jni->GetStaticFieldID(debugeeClass, OBJECT_FIELD_NAME, OBJECT_CLASS_SIG)) != NULL)) {
+                    jni->GetStaticFieldID(debugeeClass, OBJECT_FIELD_NAME, OBJECT_CLASS_SIG)) != nullptr)) {
                 nsk_jvmti_setFailStatus();
                 return;
             }
@@ -77,14 +77,14 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
             NSK_DISPLAY1("Get object from static field: %s\n", OBJECT_FIELD_NAME);
             if (!NSK_JNI_VERIFY(jni, (testedObject =
-                    jni->GetStaticObjectField(debugeeClass, objectField)) != NULL)) {
+                    jni->GetStaticObjectField(debugeeClass, objectField)) != nullptr)) {
                 nsk_jvmti_setFailStatus();
                 return;
             }
             NSK_DISPLAY1("  ... got object: 0x%p\n", (void*)testedObject);
 
             NSK_DISPLAY1("Create global reference for object: 0x%p\n", (void*)testedObject);
-            if (!NSK_JNI_VERIFY(jni, (testedObject = jni->NewGlobalRef(testedObject)) != NULL)) {
+            if (!NSK_JNI_VERIFY(jni, (testedObject = jni->NewGlobalRef(testedObject)) != nullptr)) {
                 nsk_jvmti_setFailStatus();
                 return;
             }
@@ -180,7 +180,7 @@ JNIEXPORT jint JNI_OnLoad_settag001(JavaVM *jvm, char *options, void *reserved) 
 }
 #endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
-    jvmtiEnv* jvmti = NULL;
+    jvmtiEnv* jvmti = nullptr;
 
     /* init framework and parse options */
     if (!NSK_VERIFY(nsk_jvmti_parseOptions(options)))
@@ -190,7 +190,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     /* create JVMTI environment */
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     /* add required capabilities */
@@ -205,7 +205,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     }
 
     /* register agent proc and arg */
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     return JNI_OK;

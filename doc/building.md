@@ -572,6 +572,7 @@ required on all platforms except Windows and macOS.
 libfontconfig-dev`.
 * To install on an rpm-based Linux, try running `sudo yum install
 fontconfig-devel`.
+* To install on Alpine Linux, try running `sudo apk add fontconfig-dev`.
 
 Use `--with-fontconfig-include=<path>` and `--with-fontconfig=<path>` if
 `configure` does not automatically locate the platform Fontconfig files.
@@ -683,6 +684,14 @@ The JDK build requires [GNU Bash](https://www.gnu.org/software/bash). No other
 shells are supported.
 
 At least version 3.2 of GNU Bash must be used.
+
+### Graphviz and Pandoc
+
+In order to build the full docs (see the `--enable-full-docs`
+configure option) [Graphviz](https://www.graphviz.org) and
+[Pandoc](https://pandoc.org) are required. Any recent versions should
+work. For reference, and subject to change, Oracle builds use Graphviz
+9.0.0 and Pandoc 2.19.2.
 
 ## Running Configure
 
