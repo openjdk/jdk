@@ -62,7 +62,7 @@ static char *skipNonWhitespace(char *p) {
 // input/output/error file descriptors will not be closed
 // by this function. This function returns 0 on failure
 // and 1 on success.
-int
+static int
 closeDescriptors(void)
 {
     DIR *dp;
