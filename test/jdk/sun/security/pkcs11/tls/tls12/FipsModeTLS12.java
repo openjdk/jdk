@@ -412,6 +412,12 @@ public final class FipsModeTLS12 extends SecmodTest {
             ssle = sslCtx.createSSLEngine("localhost", 443);
             ssle.setUseClientMode(client);
             SSLParameters sslParameters = ssle.getSSLParameters();
+            // verify that FFDHE named groups are available
+            boolean ffdheAvailable = Arrays.stream(sslParameters.getNamedGroups())
+                    .anyMatch(ng -> ng.startsWith("ffdhe"));
+            if (!ffdheAvailable) {
+                throw new RuntimeException("No FFDHE named groups available");
+            }
             ssle.setSSLParameters(sslParameters);
 
             return ssle;

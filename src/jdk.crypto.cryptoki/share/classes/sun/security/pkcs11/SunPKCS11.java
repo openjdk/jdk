@@ -42,6 +42,7 @@ import javax.security.auth.callback.PasswordCallback;
 
 import com.sun.crypto.provider.ChaCha20Poly1305Parameters;
 
+import com.sun.crypto.provider.DHParameters;
 import jdk.internal.misc.InnocuousThread;
 import sun.security.rsa.PSSParameters;
 import sun.security.util.Debug;
@@ -711,6 +712,10 @@ public final class SunPKCS11 extends AuthProvider {
         dA(AGP, "RSASSA-PSS",
                 "sun.security.rsa.PSSParameters",
                 m(CKM_RSA_PKCS_PSS));
+
+        dA(AGP, "DiffieHellman",
+                "com.sun.crypto.provider.DHParameters",
+                m(CKM_DH_PKCS_DERIVE));
 
         d(KA, "DH",             P11KeyAgreement,
                 dhAlias,
@@ -1503,6 +1508,8 @@ public final class SunPKCS11 extends AuthProvider {
                     return new ChaCha20Poly1305Parameters(); // from SunJCE
                 } else if (algorithm == "RSASSA-PSS") {
                     return new PSSParameters(); // from SunRsaSign
+                } else if (algorithm == "DiffieHellman") {
+                    return new DHParameters(); // from SunJCE
                 } else {
                     throw new NoSuchAlgorithmException("Unsupported algorithm: "
                             + algorithm);
