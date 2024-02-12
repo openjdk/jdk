@@ -558,16 +558,16 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
     }
   }
 
-  if (alloc_capacity(r) < PLAB::min_size() * HeapWordSize) {
+  if ((!ShenandoahPackEvacTightly && result == nullptr) || (alloc_capacity(r) < PLAB::min_size() * HeapWordSize)) {
     // Regardless of whether this allocation succeeded, if the remaining memory is less than PLAB:min_size(), retire this region.
     // Note that retire_from_partition() increases used to account for waste.
 
     // Note that a previous implementation of this function would retire a region following any failure to
     // allocate within.  This was observed to result in large amounts of available memory being ignored
     // following a failed shared allocation request.  In the current implementation, we only retire a region
-    // if the remaining capacity is less than PLAB::min_size().  Note that TLAB requests will generally downsize
-    // to absorb all memory available within the region even if the remaining memory is less than the desired size.
-
+    // if the remaining capacity is less than PLAB::min_size() or if !ShenandoahPackEvacTightly.  Note that TLAB
+    // requests will generally downsize to absorb all memory available within the region even if the remaining
+    // memory is less than the desired size.
     size_t idx = r->index();
     _partitions.retire_from_partition(idx, r->used());
     _partitions.assert_bounds();
@@ -848,6 +848,8 @@ void ShenandoahFreeSet::rebuild() {
 // the mutator partition into the collector partition in order to assure that the memory available for allocations within
 // the collector partition is at least to_reserve.
 void ShenandoahFreeSet::reserve_regions(size_t to_reserve) {
+  size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
+
   for (size_t i = _heap->num_regions(); i > 0; i--) {
     size_t idx = i - 1;
     ShenandoahHeapRegion* r = _heap->get_region(idx);
@@ -856,6 +858,11 @@ void ShenandoahFreeSet::reserve_regions(size_t to_reserve) {
     }
 
     size_t ac = alloc_capacity(r);
+    if (!ShenandoahPackEvacTightly && (ac != region_size_bytes)) {
+      // Only use fully empty regions for Collector reserve if !ShenandoahPackEvacTightly
+      continue;
+    }
+
     assert (ac > 0, "Membership in free partition implies has capacity");
 
     bool move_to_collector = _partitions.capacity_of(Collector) < to_reserve;
