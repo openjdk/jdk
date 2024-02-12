@@ -333,68 +333,6 @@ locate_files() {
 }
 
 ################################################################################
-# Compare the rest of the files
-
-compare_general_files() {
-    THIS_DIR=$1
-    OTHER_DIR=$2
-    WORK_DIR=$3
-
-    echo Other files with binary differences...
-    for f in $ALL_OTHER_FILES
-    do
-        # Skip all files in test/*/native
-        if [[ "$f" == */native/* ]]; then
-            continue
-        fi
-        if [ -e $OTHER_DIR/$f ]; then
-            SUFFIX="${f##*.}"
-            if [ "$(basename $f)" = "release" ]; then
-                # In release file, ignore differences in source rev numbers
-                OTHER_FILE=$WORK_DIR/$f.other
-                THIS_FILE=$WORK_DIR/$f.this
-                $MKDIR -p $(dirname $OTHER_FILE)
-                $MKDIR -p $(dirname $THIS_FILE)
-                RELEASE_FILTER="$SED -e 's/SOURCE=".*"/SOURCE=<src-rev>/g'"
-                $CAT $OTHER_DIR/$f | eval "$RELEASE_FILTER" > $OTHER_FILE
-                $CAT $THIS_DIR/$f  | eval "$RELEASE_FILTER" > $THIS_FILE
-            elif [ "$SUFFIX" = "svg" ]; then
-                # GraphViz has non-determinism when generating svg files
-                OTHER_FILE=$WORK_DIR/$f.other
-                THIS_FILE=$WORK_DIR/$f.this
-                $MKDIR -p $(dirname $OTHER_FILE) $(dirname $THIS_FILE)
-                SVG_FILTER="$SED \
-                    -e 's/edge[0-9][0-9]*/edgeX/g'
-                    "
-                $CAT $OTHER_DIR/$f | eval "$SVG_FILTER" > $OTHER_FILE
-                $CAT $THIS_DIR/$f | eval "$SVG_FILTER" > $THIS_FILE
-            elif [ "$SUFFIX" = "jar_contents" ]; then
-                # The jar_contents files may have some lines in random order
-                OTHER_FILE=$WORK_DIR/$f.other
-                THIS_FILE=$WORK_DIR/$f.this
-                $MKDIR -p $(dirname $OTHER_FILE) $(dirname $THIS_FILE)
-                $RM $OTHER_FILE $THIS_FILE
-                $CAT $OTHER_DIR/$f | $SORT > $OTHER_FILE
-                $CAT $THIS_DIR/$f  | $SORT > $THIS_FILE
-            else
-                OTHER_FILE=$OTHER_DIR/$f
-                THIS_FILE=$THIS_DIR/$f
-            fi
-            DIFF_OUT=$($DIFF $OTHER_FILE $THIS_FILE 2>&1)
-            if [ -n "$DIFF_OUT" ]; then
-                echo $f
-                REGRESSIONS=true
-                if [ "$SHOW_DIFFS" = "true" ]; then
-                    echo "$DIFF_OUT"
-                fi
-            fi
-        fi
-    done
-
-
-}
-
-################################################################################
 # Compare zip file
 
 compare_zip_file() {
@@ -1098,6 +1036,68 @@ compare_all_execs() {
 }
 
 ################################################################################
+# Compare the rest of the files
+
+compare_other_files() {
+    THIS_DIR=$1
+    OTHER_DIR=$2
+    WORK_DIR=$3
+
+    echo Other files with binary differences...
+    for f in $ALL_OTHER_FILES
+    do
+        # Skip all files in test/*/native
+        if [[ "$f" == */native/* ]]; then
+            continue
+        fi
+        if [ -e $OTHER_DIR/$f ]; then
+            SUFFIX="${f##*.}"
+            if [ "$(basename $f)" = "release" ]; then
+                # In release file, ignore differences in source rev numbers
+                OTHER_FILE=$WORK_DIR/$f.other
+                THIS_FILE=$WORK_DIR/$f.this
+                $MKDIR -p $(dirname $OTHER_FILE)
+                $MKDIR -p $(dirname $THIS_FILE)
+                RELEASE_FILTER="$SED -e 's/SOURCE=".*"/SOURCE=<src-rev>/g'"
+                $CAT $OTHER_DIR/$f | eval "$RELEASE_FILTER" > $OTHER_FILE
+                $CAT $THIS_DIR/$f  | eval "$RELEASE_FILTER" > $THIS_FILE
+            elif [ "$SUFFIX" = "svg" ]; then
+                # GraphViz has non-determinism when generating svg files
+                OTHER_FILE=$WORK_DIR/$f.other
+                THIS_FILE=$WORK_DIR/$f.this
+                $MKDIR -p $(dirname $OTHER_FILE) $(dirname $THIS_FILE)
+                SVG_FILTER="$SED \
+                    -e 's/edge[0-9][0-9]*/edgeX/g'
+                    "
+                $CAT $OTHER_DIR/$f | eval "$SVG_FILTER" > $OTHER_FILE
+                $CAT $THIS_DIR/$f | eval "$SVG_FILTER" > $THIS_FILE
+            elif [ "$SUFFIX" = "jar_contents" ]; then
+                # The jar_contents files may have some lines in random order
+                OTHER_FILE=$WORK_DIR/$f.other
+                THIS_FILE=$WORK_DIR/$f.this
+                $MKDIR -p $(dirname $OTHER_FILE) $(dirname $THIS_FILE)
+                $RM $OTHER_FILE $THIS_FILE
+                $CAT $OTHER_DIR/$f | $SORT > $OTHER_FILE
+                $CAT $THIS_DIR/$f  | $SORT > $THIS_FILE
+            else
+                OTHER_FILE=$OTHER_DIR/$f
+                THIS_FILE=$THIS_DIR/$f
+            fi
+            DIFF_OUT=$($DIFF $OTHER_FILE $THIS_FILE 2>&1)
+            if [ -n "$DIFF_OUT" ]; then
+                echo $f
+                REGRESSIONS=true
+                if [ "$SHOW_DIFFS" = "true" ]; then
+                    echo "$DIFF_OUT"
+                fi
+            fi
+        fi
+    done
+
+
+}
+
+################################################################################
 # Initiate configuration
 
 THIS="$SCRIPT_DIR"
@@ -1498,22 +1498,22 @@ fi
 if [ "$CMP_GENERAL" = "true" ]; then
     if [ -n "$THIS_JDK" ] && [ -n "$OTHER_JDK" ]; then
         echo -n "JDK "
-        compare_general_files $THIS_JDK $OTHER_JDK $COMPARE_ROOT/jdk
+        compare_other_files $THIS_JDK $OTHER_JDK $COMPARE_ROOT/jdk
     fi
     if [ -n "$THIS_JDK_BUNDLE" ] && [ -n "$OTHER_JDK_BUNDLE" ]; then
         echo -n "JDK Bundle "
-        compare_general_files $THIS_JDK_BUNDLE $OTHER_JDK_BUNDLE $COMPARE_ROOT/jdk-bundle
+        compare_other_files $THIS_JDK_BUNDLE $OTHER_JDK_BUNDLE $COMPARE_ROOT/jdk-bundle
     fi
     if [ -n "$THIS_DOCS" ] && [ -n "$OTHER_DOCS" ]; then
         echo -n "Docs "
-        compare_general_files $THIS_DOCS $OTHER_DOCS $COMPARE_ROOT/docs
+        compare_other_files $THIS_DOCS $OTHER_DOCS $COMPARE_ROOT/docs
     fi
     if [ -n "$THIS_TEST" ] && [ -n "$OTHER_TEST" ]; then
         echo -n "Test "
-        compare_general_files $THIS_TEST $OTHER_TEST $COMPARE_ROOT/test
+        compare_other_files $THIS_TEST $OTHER_TEST $COMPARE_ROOT/test
     fi
     if [ -n "$THIS_BASE_DIR" ] && [ -n "$OTHER_BASE_DIR" ]; then
-        compare_general_files $THIS_BASE_DIR $OTHER_BASE_DIR $COMPARE_ROOT/base_dir
+        compare_other_files $THIS_BASE_DIR $OTHER_BASE_DIR $COMPARE_ROOT/base_dir
     fi
 fi
 
