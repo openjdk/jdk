@@ -820,6 +820,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // Inline cache check
   __ ic_check(CodeEntryAlignment /* end_alignment */);
 
+  // Verified entry point
   int vep_offset = __ pc() - start;
 
   if ((InlineObjectHash && method->intrinsic_id() == vmIntrinsics::_hashCode) || (method->intrinsic_id() == vmIntrinsics::_identityHashCode)) {

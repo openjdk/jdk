@@ -1537,6 +1537,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ verify_oop(receiver);
   __ ic_check(8 /* end_alignment */);
 
+  // Verified entry point must be aligned
   int vep_offset = ((intptr_t)__ pc()) - start;
 
   // If we have to make this method not-entrant we'll overwrite its
@@ -1550,8 +1551,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ mov_metadata(rscratch2, method->method_holder()); // InstanceKlass*
     __ clinit_barrier(rscratch2, rscratch1, &L_skip_barrier);
     __ far_jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub()));
-
-    // Verified entry point must be aligned
 
     __ bind(L_skip_barrier);
   }
