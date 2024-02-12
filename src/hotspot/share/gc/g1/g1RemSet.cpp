@@ -1175,14 +1175,12 @@ class G1MergeHeapRootsTask : public WorkerTask {
 
       HeapRegion* r = g1h->region_at(region_index);
 
-      assert(r->rem_set()->is_complete(), "precondition");
+      assert(r->rem_set()->is_complete(), "humongous candidates must have complete remset");
 
       guarantee(r->rem_set()->occupancy_less_or_equal_than(G1EagerReclaimRemSetThreshold),
                 "Found a not-small remembered set here. This is inconsistent with previous assumptions.");
 
-      if (r->rem_set()->is_empty()) {
-        // Already empty.
-      } else {
+      if (!r->rem_set()->is_empty()) {
         _cl.merge_card_set_for_region(r);
 
         // We should only clear the card based remembered set here as we will not
@@ -1194,7 +1192,8 @@ class G1MergeHeapRootsTask : public WorkerTask {
         r->rem_set()->clear(true /* only_cardset */, true /* keep_tracked */);
       }
 
-      assert(r->rem_set()->is_empty(), "postcondition");
+      assert(r->rem_set()->is_empty(), "must be empty after flushing");
+      assert(r->rem_set()->is_complete(), "should still be after flushing");
 
       return false;
     }
