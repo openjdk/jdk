@@ -34,6 +34,7 @@
 public class CertMsgCheck {
 
     public static void main(String[] args) throws Exception {
+        // Start server
         TLSBase.Server server = new TLSBase.ServerBuilder().setClientAuth(true).
             build();
 
@@ -42,17 +43,19 @@ public class CertMsgCheck {
         if (server.getSession(client1).getSessionContext() == null) {
             boolean pass = false;
             for (Exception e : server.getExceptionList()) {
+                System.out.println("Looking at " + e.getClass() + " " +
+                    e.getMessage());
                 if (e.getMessage().contains(args[0])) {
                     pass = true;
                     System.out.println("Found correct exception: " + args[0] +
                     " in " + e.getMessage());
+                } else {
+                    System.out.println("No \"" + args[0] + "\" found.");
                 }
             }
             if (!pass) {
-                throw new Exception("Failed to find expected alert exception:" +
-                    args[0]);
+                throw new Exception("Failed to find expected alert: " + args[0]);
             }
         }
     }
 }
-
