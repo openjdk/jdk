@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,15 +40,15 @@ import static java.nio.file.StandardOpenOption.CREATE;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.Callable;
+import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
-import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 /* @test
- * @bug 8201276 8205058 8209576 8287541 8288589
+ * @bug 8201276 8205058 8209576 8287541 8288589 8325590
  * @build ReadWriteString PassThroughFileSystem
  * @run testng ReadWriteString
  * @summary Unit test for methods for Files readString and write methods.
@@ -61,6 +61,7 @@ public class ReadWriteString {
     // data for text files
     final String TEXT_UNICODE = "\u201CHello\u201D";
     final String TEXT_ASCII = "ABCDEFGHIJKLMNOPQRSTUVWXYZ\n abcdefghijklmnopqrstuvwxyz\n 1234567890\n";
+    final static String TEXT_PERSON_CART_WHEELING = "\ud83e\udd38";
     private static final String JA_STRING = "\u65e5\u672c\u8a9e\u6587\u5b57\u5217";
     private static final Charset WINDOWS_1252 = Charset.forName("windows-1252");
     private static final Charset WINDOWS_31J = Charset.forName("windows-31j");
@@ -154,7 +155,8 @@ public class ReadWriteString {
             {testFiles[1], TEXT_ASCII, US_ASCII, US_ASCII},
             {testFiles[1], TEXT_ASCII, US_ASCII, UTF_8},
             {testFiles[1], TEXT_UNICODE, UTF_8, null},
-            {testFiles[1], TEXT_UNICODE, UTF_8, UTF_8}
+            {testFiles[1], TEXT_UNICODE, UTF_8, UTF_8},
+            {testFiles[1], TEXT_PERSON_CART_WHEELING, UTF_16, UTF_16}
         };
     }
 
@@ -302,6 +304,21 @@ public class ReadWriteString {
             }
         }
         throw new RuntimeException("An instance of " + expected + " should be thrown");
+    }
+
+    // Verify File.readString with UTF16 to confirm proper string length and contents.
+    @Test
+    public void regression_8325590() throws IOException {
+        String original = "🤸";    // "\ud83e\udd38";
+        Path tmp = Files.createTempFile("tmp", ".txt");
+        Files.writeString(tmp, original, UTF_16);
+        String actual = Files.readString(tmp, UTF_16);
+        if (!actual.equals(original)) {
+            System.out.printf("expected (%s), was (%s)\n", original, actual);
+            System.out.printf("expected UTF_16 bytes: %s\n", Arrays.toString(original.getBytes(UTF_16)));
+            System.out.printf("actual UTF_16 bytes: %s\n", Arrays.toString(actual.getBytes(UTF_16)));
+        }
+        assertEquals(actual, original, "Round trip string mismatch with multi-byte encoding");
     }
 
     private void checkNullPointerException(Callable<?> c) {
