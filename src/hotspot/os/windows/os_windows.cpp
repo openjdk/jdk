@@ -895,6 +895,7 @@ int os::active_processor_count() {
   DWORD_PTR lpProcessAffinityMask = 0;
   DWORD_PTR lpSystemAffinityMask = 0;
   if (GetProcessAffinityMask(GetCurrentProcess(), &lpProcessAffinityMask, &lpSystemAffinityMask)) {
+    // Number of active processors is number of bits in process affinity mask
     logical_processors = population_count(lpProcessAffinityMask);
 
     if (logical_processors < si.dwNumberOfProcessors) {
