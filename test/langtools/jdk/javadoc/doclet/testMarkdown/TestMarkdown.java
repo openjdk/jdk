@@ -1236,4 +1236,39 @@ public class TestMarkdown extends JavadocTester {
                         <div class="block">First sentence. Second sentence.</div>""");
         }
     }
+
+    @Test
+    public void testEscape(Path base) throws Exception {
+        Path src = base.resolve("src");
+
+        tb.writeJavaFiles(src,
+                // In the following, note the need to double the escape character,
+                // so that the comment contains a single escape to precede the backtick.
+                // Also, note that because the first backtick is escaped, the comment
+                // is as-if there are two unmatched backticks, with an inline tag
+                // between them, and not a code span enclosing literal text.
+                """
+                    package p;
+                    public class C {
+                        /// Abc \\` def {@code xyz} ghi ` jkl.
+                        /// More.
+                        public void m() { }
+                    }
+                    """);
+
+        javadoc("-d", base.resolve("api").toString(),
+                "-Xdoclint:none",
+                "--no-platform-links",
+                "--source-path", src.toString(),
+                "p");
+        checkExit(Exit.OK);
+
+        checkOutput("p/C.html", true,
+                """
+                    <span class="element-name">m</span>()</div>
+                    <div class="block">Abc ` def <code>xyz</code> ghi ` jkl.
+                    More.</div>""");
+
+
+    }
 }

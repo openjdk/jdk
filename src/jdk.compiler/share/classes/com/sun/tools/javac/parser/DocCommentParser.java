@@ -409,6 +409,19 @@ public class DocCommentParser {
                     defaultContentCharacter();
                 }
 
+                case '\\' -> {
+                    switch (textKind) {
+                        case MARKDOWN -> {
+                            defaultContentCharacter();
+                            nextChar();
+                            defaultContentCharacter();
+                        }
+                        case TEXT -> {
+                            defaultContentCharacter();
+                        }
+                    }
+                }
+
                 case '`', '~' -> {
                     switch (textKind) {
                         case MARKDOWN -> {
@@ -1414,6 +1427,25 @@ public class DocCommentParser {
         CODE_FENCE(Pattern.compile("(`{3,}[^`]*+)|(~{3,}.*+)")),
 
         /**
+         * Bullet list item: * + - followed by a space
+         * @see <a href="https://spec.commonmark.org/0.30/#list-items">List items</a>
+         */
+        BULLETED_LIST_ITEM(Pattern.compile("[-+*] .*")),
+
+        /**
+         * Ordered list item: a sequence of 1-9 arabic digits (0-9), followed by
+         * either a . character or a )
+         * @see <a href="https://spec.commonmark.org/0.30/#list-items">List items</a>
+         */
+        ORDERED_LIST_ITEM(Pattern.compile("[0-9]{1,9}[.)].*")),
+
+        /**
+         * Block quote: >
+         * @see <a href="https://spec.commonmark.org/0.30/#block-quotes">Block quotes</a>
+         */
+        BLOCK_QUOTE(Pattern.compile(">.*")),
+
+        /**
          * Indented code blocks are defined by preceding lines and indentation,
          * not by any line-specific pattern.
          * @see <a href="https://spec.commonmark.org/0.30/#indented-code-block">Indented Code Block</a>
@@ -1436,7 +1468,8 @@ public class DocCommentParser {
 
     LineKind peekLineKind() {
         switch (ch) {
-            case '#', '=', '-', '+', '_', '`', '~' -> {
+            case '#', '=', '-', '+', '*', '_', '`', '~', '>',
+                    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' -> {
                 String line = peekLine();
                 for (LineKind lk : LineKind.values()) {
                     if (lk.pattern != null) {
