@@ -118,7 +118,7 @@ void ShenandoahControlThread::run_service() {
       log_info(gc)("Trigger: GC request (%s)", GCCause::to_string(cause));
       heuristics->record_requested_gc();
 
-      if (should_run_full_gc(cause)) {
+      if (ShenandoahCollectorPolicy::should_run_full_gc(cause)) {
         mode = stw_full;
       } else {
         mode = default_mode;
@@ -380,33 +380,8 @@ void ShenandoahControlThread::service_stw_degenerated_cycle(GCCause::Cause cause
   gc.collect(cause);
 }
 
-bool ShenandoahControlThread::should_run_full_gc(GCCause::Cause cause) {
-  return is_explicit_gc(cause) ? !ExplicitGCInvokesConcurrent : !ShenandoahImplicitGCInvokesConcurrent;
-}
-
-bool ShenandoahControlThread::is_explicit_gc(GCCause::Cause cause) {
-  return GCCause::is_user_requested_gc(cause) ||
-         GCCause::is_serviceability_requested_gc(cause);
-}
-
 void ShenandoahControlThread::request_gc(GCCause::Cause cause) {
-  assert(GCCause::is_user_requested_gc(cause) ||
-         GCCause::is_serviceability_requested_gc(cause) ||
-         cause == GCCause::_metadata_GC_clear_soft_refs ||
-         cause == GCCause::_codecache_GC_aggressive ||
-         cause == GCCause::_codecache_GC_threshold ||
-         cause == GCCause::_full_gc_alot ||
-         cause == GCCause::_wb_young_gc ||
-         cause == GCCause::_wb_full_gc ||
-         cause == GCCause::_wb_breakpoint ||
-         cause == GCCause::_scavenge_alot,
-         "only requested GCs here: %s", GCCause::to_string(cause));
-
-  if (is_explicit_gc(cause)) {
-    if (!DisableExplicitGC) {
-      handle_requested_gc(cause);
-    }
-  } else {
+  if (ShenandoahCollectorPolicy::should_handle_requested_gc(cause)) {
     handle_requested_gc(cause);
   }
 }

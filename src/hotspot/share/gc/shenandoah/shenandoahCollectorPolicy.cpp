@@ -96,14 +96,41 @@ bool ShenandoahCollectorPolicy::is_at_shutdown() {
 }
 
 bool is_explicit_gc(GCCause::Cause cause) {
-  return GCCause::is_user_requested_gc(cause) ||
-         GCCause::is_serviceability_requested_gc(cause);
+  return GCCause::is_user_requested_gc(cause)
+      || GCCause::is_serviceability_requested_gc(cause);
 }
 
 bool is_implicit_gc(GCCause::Cause cause) {
-  return cause != GCCause::_allocation_failure &&
-         cause != GCCause::_shenandoah_concurrent_gc &&
-         !is_explicit_gc(cause);
+  return cause != GCCause::_allocation_failure
+      && cause != GCCause::_shenandoah_concurrent_gc
+      && !is_explicit_gc(cause);
+}
+
+#ifdef ASSERT
+bool is_valid_request(GCCause::Cause cause) {
+  return is_explicit_gc(cause)
+      || cause == GCCause::_metadata_GC_clear_soft_refs
+      || cause == GCCause::_codecache_GC_aggressive
+      || cause == GCCause::_codecache_GC_threshold
+      || cause == GCCause::_full_gc_alot
+      || cause == GCCause::_wb_young_gc
+      || cause == GCCause::_wb_full_gc
+      || cause == GCCause::_wb_breakpoint
+      || cause == GCCause::_scavenge_alot;
+}
+#endif
+
+bool ShenandoahCollectorPolicy::should_run_full_gc(GCCause::Cause cause) {
+  return is_explicit_gc(cause) ? !ExplicitGCInvokesConcurrent : !ShenandoahImplicitGCInvokesConcurrent;
+}
+
+bool ShenandoahCollectorPolicy::should_handle_requested_gc(GCCause::Cause cause) {
+  assert(is_valid_request(cause), "only requested GCs here: %s", GCCause::to_string(cause));
+
+  if (DisableExplicitGC) {
+    return !is_explicit_gc(cause);
+  }
+  return true;
 }
 
 void ShenandoahCollectorPolicy::print_gc_stats(outputStream* out) const {

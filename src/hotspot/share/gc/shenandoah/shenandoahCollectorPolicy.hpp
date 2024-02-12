@@ -88,6 +88,9 @@ public:
   inline size_t consecutive_degenerated_gc_count() const {
     return _consecutive_degenerated_gcs;
   }
+
+  static bool should_run_full_gc(GCCause::Cause cause);
+  static bool should_handle_requested_gc(GCCause::Cause cause);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHCOLLECTORPOLICY_HPP

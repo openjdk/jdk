@@ -87,9 +87,6 @@ private:
   // Blocks until GC is over.
   void handle_requested_gc(GCCause::Cause cause);
 
-  static bool is_explicit_gc(GCCause::Cause cause);
-  static bool should_run_full_gc(GCCause::Cause cause);
-
 public:
   // Constructor
   ShenandoahControlThread();
