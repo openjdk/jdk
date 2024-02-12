@@ -153,7 +153,7 @@ public final class KeyUtil {
 
                 // Note: the ECGenParameterSpec case should be covered by the
                 // ECParameterSpec case above.
-                // See ECUtil.getECParameterSpec(Provider, String).
+                // See ECUtil.getECParameterSpec(String).
 
                 break;
             case "DiffieHellman":
