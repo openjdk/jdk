@@ -28,6 +28,8 @@
  * @summary JTextField's size is computed incorrectly when it contains Indic or Thai characters
  */
 
+import java.awt.Font;
+import java.awt.GraphicsEnvironment;
 import java.awt.GridLayout;
 import javax.swing.JFrame;
 import javax.swing.JTextField;
@@ -39,43 +41,61 @@ public class bug8001470 {
     private static JFrame frame;
     private static JTextField textField1;
     private static JTextField textField2;
+    private static boolean fontFound = false;
 
     private static volatile int height1;
     private static volatile int height2;
 
     public static void main(String[] args) throws Exception {
-        SwingUtilities.invokeAndWait(new Runnable() {
-            @Override
-            public void run() {
-                frame = new JFrame("JTextField Test");
-                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+                @Override
+                public void run() {
+                    GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+                    String[] names = ge.getAvailableFontFamilyNames();
+                    Font[] allFonts = ge.getAllFonts();
+                    for (int x = 0; x < allFonts.length; x++) {
+                        if ((allFonts[x].canDisplay('\u0e01')) && (allFonts[x].canDisplay('\u0c01'))) {
+                            fontFound = true;
+                        }
+                    }
+                    if (!fontFound) {
+                        return;
+                    }
+                    frame = new JFrame("JTextField Test");
+                    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-                JPanel container = (JPanel) frame.getContentPane();
-                container.setLayout(new GridLayout(2,1));
+                    JPanel container = (JPanel) frame.getContentPane();
+                    container.setLayout(new GridLayout(2,1));
 
+                    textField1 = new JTextField("\u0e01");
+                    textField2 = new JTextField("\u0c01");
 
-                textField1 = new JTextField("\u2588");
-                textField2 = new JTextField("\u2588");
-
-                container.add(textField1);
-                container.add(textField2);
-                frame.setVisible(true);
-                frame.pack();
+                    container.add(textField1);
+                    container.add(textField2);
+                    frame.setVisible(true);
+                    frame.pack();
+                }
+            });
+            Thread.sleep(1000);
+            if (!fontFound) {
+                System.out.println("system does not have Indic or Thai fonts");
+                return;
             }
-        });
-        Thread.sleep(1000);
-        SwingUtilities.invokeAndWait(() -> {
-            height1 = textField1.getHeight();
-            height2 = textField2.getHeight();
-        });
-        if( height1 < 10 || height2 < 10 ) {
-            throw new Exception("Wrong field height");
+            SwingUtilities.invokeAndWait(() -> {
+                height1 = textField1.getHeight();
+                height2 = textField2.getHeight();
+            });
+            if( height1 < 10 || height2 < 10 ) {
+                throw new Exception("Wrong field height");
+            }
+            System.out.println("ok");
+        } finally {
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
         }
-        System.out.println("ok");
-        SwingUtilities.invokeAndWait(() -> {
-            if (frame != null) {
-                frame.dispose();
-            }
-        });
     }
 }
