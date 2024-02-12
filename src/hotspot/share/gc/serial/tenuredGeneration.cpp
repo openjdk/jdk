@@ -264,19 +264,12 @@ void TenuredGeneration::compute_new_size_inner() {
   }
 }
 
-void TenuredGeneration::space_iterate(SpaceClosure* blk,
-                                                 bool usedOnly) {
-  blk->do_space(space());
+HeapWord* TenuredGeneration::block_start(const void* p) const {
+  return space()->block_start_const(p);
 }
 
-void TenuredGeneration::younger_refs_iterate(OopIterateClosure* blk) {
-  // Apply "cl->do_oop" to (the address of) (exactly) all the ref fields in
-  // "sp" that point into the young generation.
-  // The iteration is only over objects allocated at the start of the
-  // iterations; objects allocated as a result of applying the closure are
-  // not included.
-
-  _rs->younger_refs_in_space_iterate(space(), blk);
+void TenuredGeneration::scan_old_to_young_refs() {
+  _rs->scan_old_to_young_refs(space());
 }
 
 TenuredGeneration::TenuredGeneration(ReservedSpace rs,
@@ -454,10 +447,6 @@ TenuredGeneration::expand_and_allocate(size_t word_size, bool is_tlab) {
   assert(!is_tlab, "TenuredGeneration does not support TLAB allocation");
   expand(word_size*HeapWordSize, _min_heap_delta_bytes);
   return _the_space->allocate(word_size);
-}
-
-size_t TenuredGeneration::unsafe_max_alloc_nogc() const {
-  return _the_space->free();
 }
 
 size_t TenuredGeneration::contiguous_available() const {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,8 +58,8 @@ JNIEXPORT void JNICALL callbackClassPrepare(jvmtiEnv *jvmti_env,
     char * className;
     char * generic;
     redefineNumber=0;
-    className=NULL;
-    generic=NULL;
+    className=nullptr;
+    generic=nullptr;
     if (!NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(klass, &className, &generic))) {
         nsk_printf("#error Agent :: while getting classname Signature.\n");
         nsk_jvmti_agentFailed();
@@ -67,7 +67,7 @@ JNIEXPORT void JNICALL callbackClassPrepare(jvmtiEnv *jvmti_env,
         if (strcmp(className,CLASS_NAME) == 0) {
             jfieldID field;
             /* get the field id and set watch on that .*/
-            if (!NSK_JNI_VERIFY(jni, (field = jni->GetFieldID(klass, FIELDNAME, TYPE)) != NULL)) {
+            if (!NSK_JNI_VERIFY(jni, (field = jni->GetFieldID(klass, FIELDNAME, TYPE)) != nullptr)) {
                 nsk_printf(" Agent :: (*JNI)->GetFieldID(jni, ...) returns `null`.\n");
                 nsk_jvmti_agentFailed();
             } else  if (!NSK_JVMTI_VERIFY(jvmti_env->SetFieldAccessWatch(klass, field))) {
@@ -93,7 +93,7 @@ JNIEXPORT void JNICALL callbackFieldAccess(jvmtiEnv *jvmti_env,
         return;
     }
     redefineNumber=0;
-    if (!NSK_JNI_VERIFY(jni, (clas = jni->FindClass(SEARCH_NAME)) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni, (clas = jni->FindClass(SEARCH_NAME)) != nullptr)) {
         nsk_printf(" Agent :: (*JNI)->FindClass(jni, %s) returns `null`.\n",SEARCH_NAME);
         nsk_jvmti_agentFailed();
     } else  {
@@ -155,8 +155,8 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
             nsk_printf("#error Agent :: while setting event callbacks.\n");
             return JNI_ERR;
         }
-        if (nsk_jvmti_enableNotification(jvmti,JVMTI_EVENT_CLASS_PREPARE, NULL) &&
-                nsk_jvmti_enableNotification(jvmti,JVMTI_EVENT_FIELD_ACCESS, NULL)) {
+        if (nsk_jvmti_enableNotification(jvmti,JVMTI_EVENT_CLASS_PREPARE, nullptr) &&
+                nsk_jvmti_enableNotification(jvmti,JVMTI_EVENT_FIELD_ACCESS, nullptr)) {
             nsk_printf(" Agent :: Notifications are enabled.\n");
         } else {
             nsk_printf("#error Agent :: Eanableing Notifications.\n");
@@ -202,7 +202,7 @@ Java_nsk_jvmti_scenarios_hotswap_HS203_hs203t003_hs203t003_popThreadFrame(JNIEnv
             } else {
                 nsk_printf(" Agent :: poped thread frame.\n");
                 if (!NSK_JVMTI_VERIFY(
-                        jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_FIELD_ACCESS, NULL))) {
+                        jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_FIELD_ACCESS, nullptr))) {
                     nsk_printf("#error Agent :: failed to disable notification JVMTI_EVENT_FIELD ACCESS.\n");
                     nsk_jvmti_agentFailed();
                 } else {

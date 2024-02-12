@@ -205,7 +205,7 @@ public sealed class IntegerPolynomialModBinP extends IntegerPolynomial {
     /**
      * The field of integers modulo the order of the Curve25519 subgroup
      */
-    public final static class Curve25519OrderField extends IntegerPolynomialModBinP {
+    public static final class Curve25519OrderField extends IntegerPolynomialModBinP {
 
         public Curve25519OrderField() {
             super(26, 10, 252,
@@ -216,7 +216,7 @@ public sealed class IntegerPolynomialModBinP extends IntegerPolynomial {
     /**
      * The field of integers modulo the order of the Curve448 subgroup
      */
-    public final static class Curve448OrderField extends IntegerPolynomialModBinP {
+    public static final class Curve448OrderField extends IntegerPolynomialModBinP {
 
         public Curve448OrderField() {
             super(28, 16, 446,

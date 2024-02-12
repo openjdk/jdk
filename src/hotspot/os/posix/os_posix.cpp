@@ -265,7 +265,7 @@ bool os::dir_is_empty(const char* path) {
   return result;
 }
 
-static char* reserve_mmapped_memory(size_t bytes, char* requested_addr) {
+static char* reserve_mmapped_memory(size_t bytes, char* requested_addr, MEMFLAGS flag) {
   char * addr;
   int flags = MAP_PRIVATE NOT_AIX( | MAP_NORESERVE ) | MAP_ANONYMOUS;
   if (requested_addr != nullptr) {
@@ -280,7 +280,7 @@ static char* reserve_mmapped_memory(size_t bytes, char* requested_addr) {
                        flags, -1, 0);
 
   if (addr != MAP_FAILED) {
-    MemTracker::record_virtual_memory_reserve((address)addr, bytes, CALLER_PC);
+    MemTracker::record_virtual_memory_reserve((address)addr, bytes, CALLER_PC, flag);
     return addr;
   }
   return nullptr;
@@ -393,7 +393,7 @@ char* os::reserve_memory_aligned(size_t size, size_t alignment, bool exec) {
   return chop_extra_memory(size, alignment, extra_base, extra_size);
 }
 
-char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int file_desc) {
+char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int file_desc, MEMFLAGS flag) {
   size_t extra_size = calculate_aligned_extra_size(size, alignment);
   // For file mapping, we do not call os:map_memory_to_file(size,fd) since:
   // - we later chop away parts of the mapping using os::release_memory and that could fail if the
@@ -401,7 +401,7 @@ char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int file_des
   // - The memory API os::reserve_memory uses is an implementation detail. It may (and usually is)
   //   mmap but it also may System V shared memory which cannot be uncommitted as a whole, so
   //   chopping off and unmapping excess bits back and front (see below) would not work.
-  char* extra_base = reserve_mmapped_memory(extra_size, nullptr);
+  char* extra_base = reserve_mmapped_memory(extra_size, nullptr, flag);
   if (extra_base == nullptr) {
     return nullptr;
   }
