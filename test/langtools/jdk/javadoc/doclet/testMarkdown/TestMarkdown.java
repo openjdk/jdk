@@ -35,6 +35,7 @@ import javadoc.tester.JavadocTester;
 import toolbox.ToolBox;
 
 import java.nio.file.Path;
+import java.util.List;
 
 public class TestMarkdown extends JavadocTester {
 
@@ -967,6 +968,8 @@ public class TestMarkdown extends JavadocTester {
                     </div>""");
     }
 
+    /// Test the ability to include array elements in method signatures for
+    /// automatic links to program elements.
     @Test
     public void testReferenceWithArrays(Path base) throws Exception {
         Path src = base.resolve("src");
@@ -1017,6 +1020,220 @@ public class TestMarkdown extends JavadocTester {
                     Link 2b to <a href="../util/Arrays.html#equals(java.lang.Object%5B%5D,\
                     java.lang.Object%5B%5D)"><code>Arrays.equals(Object[],Object[])</code></a>"""
                 );
+    }
 
+    // Test the ability to put links in the first sentence of a description.
+    // Note that we user-defined reference links cannot be used in the first
+    // sentence, and so in that case we verify the behavior is "as expected".
+    @Test
+    public void testFirstSentenceLinks(Path base) throws Exception {
+        Path src = base.resolve("src");
+
+        // Apart from the (control) case, the other cases exercise
+        // various kinds of links in the first sentence of a description.
+        // Note the last case is an explicit test of a link that is
+        // _not_ currently supported, since the link reference definition
+        // is not part of the first sentence.
+        tb.writeJavaFiles(src,
+                """
+                    package p;
+                    import q.MyObject;
+                    public class C {
+                        /// First sentence.
+                        /// Control: [MyObject]
+                        public void m1() { }
+
+                        /// Simple autoref in first sentence [MyObject].
+                        /// More.
+                        public void m2() { }
+
+                        /// Qualified autoref in first sentence [q.MyObject].
+                        /// More.
+                        public void m3() { }
+
+                        /// Standard link with periods [example.com](http://example.com).
+                        /// More.
+                        public void m4() { }
+
+                        /// Manual ref link [foo].
+                        /// More.
+                        ///
+                        /// [foo]: http:example.com
+                        public void m5() { }
+                    }""",
+                // use a simple class in a different package, to avoid platform links to system classes
+                """
+                    package q;
+                    public class MyObject { }""");
+
+        javadoc("-d", base.resolve("api").toString(),
+                "-Xdoclint:none",
+                "--source-path", src.toString(),
+                "p", "q");
+        checkExit(Exit.OK);
+
+        // use checkOrder and the delimiter comments to ensure that
+        // we check the strings in the method summary table, and not
+        // subsequently in the method details section.
+        checkOrder("p/C.html",
+                "<!-- ========== METHOD SUMMARY =========== -->",
+                """
+                    <div class="block">Simple autoref in first sentence <a href="../q/MyObject.html" \
+                    title="class in q"><code>MyObject</code></a>.</div>""",
+                """
+                    <div class="block">Qualified autoref in first sentence <a href="../q/MyObject.html" \
+                    title="class in q"><code>MyObject</code></a>.</div>""",
+                """
+                    <div class="block">Standard link with periods \
+                    <a href="http://example.com">example.com</a>.</div>""",
+                // The following is a test of the regrettably expected behavior,
+                // because the link reference definition is not carried into
+                // the first sentence.
+                """
+                    <div class="block">Manual ref link [foo].</div>""",
+                "<!-- ============ METHOD DETAIL ========== -->"
+                );
+    }
+
+    // Test that periods within certain constructs do not prematurely terminate
+    // the first sentence.
+    @Test
+    public void testFirstSentencePeriods(Path base) throws Exception {
+        testFirstSentencePeriods(base.resolve("no-bi"), false);
+        testFirstSentencePeriods(base.resolve("bi"), true);
+    }
+
+    void testFirstSentencePeriods(Path base, boolean useBreakIterator) throws Exception {
+        Path src = base.resolve("src");
+
+        tb.writeJavaFiles(src,
+                """
+                        package p;
+                        public class C {
+                            /// Code span `1.0` end.
+                            /// More.
+                            public void m1() { }
+                            /// Complex code span ``` `1.0` ``` end.
+                            /// More.
+                            public void m2() { }
+                            /// Period space `1.  2.  3.` end.
+                            /// More.
+                            public void m3() { }
+                            /// Link [example.com](http://example.com) end.
+                            /// More.
+                            public void m4() { }
+                        }
+                        """);
+
+        javadoc("-d", base.resolve("api").toString(),
+                "-Xdoclint:none",
+                (useBreakIterator ? "-breakiterator" : "-XDdummy"),
+                "--source-path", src.toString(),
+                "p");
+        checkExit(Exit.OK);
+
+        // use checkOrder and the delimiter comments to ensure that
+        // we check the strings in the method summary table, and not
+        // subsequently in the method details section.
+        checkOrder("p/C.html",
+                "<!-- ========== METHOD SUMMARY =========== -->",
+                """
+                    <div class="block">Code span <code>1.0</code> end.</div>""",
+                """
+                    <div class="block">Complex code span <code>`1.0`</code> end.</div>""",
+                """
+                    <div class="block">Period space <code>1.  2.  3.</code> end.</div>""",
+                """
+                    <div class="block">Link <a href="http://example.com">example.com</a> end.</div>""",
+                "<!-- ============ METHOD DETAIL ========== -->"
+        );
+    }
+
+    @Test
+    public void testDeprecated(Path base) throws Exception {
+        Path src = base.resolve("src");
+
+        tb.writeJavaFiles(src,
+                """
+                    package p;
+                    public class Control {
+                        /**
+                         * First sentence. Second sentence.
+                         */
+                         @Deprecated
+                         public void anno_noTag() { }
+                        /**
+                         * First sentence. Second sentence.
+                         * @deprecated deprecated-text
+                         */
+                         public void noAnno_tag() { }
+                        /**
+                         * First sentence. Second sentence.
+                         * @deprecated deprecated-text
+                         */
+                        @Deprecated
+                        public void anno_tag() { }
+                    }""",
+                """
+                    package p;
+                    public class MarkdownComments {
+                        /// First sentence. Second sentence.
+                        @Deprecated
+                        public void anno_noTag() { }
+                        /// First sentence. Second sentence.
+                        /// @deprecated deprecated-text.
+                        public void noAnno_tag() { }
+                        /// First sentence. Second sentence.
+                        /// @deprecated deprecated-text
+                        @Deprecated
+                        public void anno_tag() { }
+                    }""");
+
+        javadoc("-d", base.resolve("api").toString(),
+                "-Xdoclint:none",
+                "--no-platform-links",
+                "--source-path", src.toString(),
+                "p");
+        checkExit(Exit.OK);
+
+        // Note: javadoc does not generate warnings about any mismatch
+        // between @Deprecated annotations and @deprecated tags:
+        // the mismatch is detected and reported by javac Attr phase,
+        // when enabled by -Xlint:dep-ann.
+
+        // the output for these two files should be the same, except where it is not
+        for (var f : List.of("p/Control.html", "p/MarkdownComments.html")) {
+            // in the following checks we check from the signature,
+            // beginning at the name, through to the end of the main description.
+            checkOutput(f, true,
+                    """
+                        <span class="element-name">anno_noTag</span>()</div>
+                        <div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>
+                        <div class="block">First sentence. Second sentence.</div>""",
+
+                    switch (f) {
+                        // @deprecated but no annotation in a traditional comment implies deprecation
+                        case "p/Control.html" -> """
+                            <span class="element-name">noAnno_tag</span>()</div>
+                            <div class="deprecation-block"><span class="deprecated-label">Deprecated.</span>
+                            <div class="deprecation-comment">deprecated-text</div>
+                            </div>
+                            <div class="block">First sentence. Second sentence.</div>""";
+
+                        // @deprecated but no annotation in a Markdown comment does not imply deprecation
+                        case "p/MarkdownComments.html" -> """
+                            <span class="element-name">noAnno_tag</span>()</div>
+                            <div class="block">First sentence. Second sentence.</div>""";
+
+                        default -> throw new Error();
+                    },
+
+                    """
+                        <span class="element-name">anno_tag</span>()</div>
+                        <div class="deprecation-block"><span class="deprecated-label">Deprecated.</span>
+                        <div class="deprecation-comment">deprecated-text</div>
+                        </div>
+                        <div class="block">First sentence. Second sentence.</div>""");
+        }
     }
 }

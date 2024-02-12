@@ -136,9 +136,6 @@ public class Env {
         this.elements = elements;
         this.types = types;
 
-        if (this.trees.getDocCommentTreeTransformer()== null) {
-            this.trees.setDocCommentTreeTransformer(new MarkdownTransformer());
-        }
     }
 
     void initTypes() {

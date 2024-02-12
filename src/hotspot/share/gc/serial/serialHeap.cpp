@@ -94,7 +94,6 @@ SerialHeap::SerialHeap() :
     _young_gen(nullptr),
     _old_gen(nullptr),
     _rem_set(nullptr),
-    _soft_ref_policy(),
     _gc_policy_counters(new GCPolicyCounters("Copy:MSC", 2, 2)),
     _incremental_collection_failed(false),
     _young_manager(nullptr),
@@ -292,11 +291,6 @@ size_t SerialHeap::capacity() const {
 
 size_t SerialHeap::used() const {
   return _young_gen->used() + _old_gen->used();
-}
-
-void SerialHeap::save_used_regions() {
-  _old_gen->save_used_region();
-  _young_gen->save_used_region();
 }
 
 size_t SerialHeap::max_capacity() const {

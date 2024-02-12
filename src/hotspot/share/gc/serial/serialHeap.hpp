@@ -90,8 +90,6 @@ private:
   // The singleton CardTable Remembered Set.
   CardTableRS* _rem_set;
 
-  SoftRefPolicy _soft_ref_policy;
-
   GCPolicyCounters* _gc_policy_counters;
 
   // Indicates that the most recent previous incremental collection failed.
@@ -154,16 +152,11 @@ public:
   MemRegion reserved_region() const { return _reserved; }
   bool is_in_reserved(const void* addr) const { return _reserved.contains(addr); }
 
-  SoftRefPolicy* soft_ref_policy() override { return &_soft_ref_policy; }
-
   // Performance Counter support
   GCPolicyCounters* counters()     { return _gc_policy_counters; }
 
   size_t capacity() const override;
   size_t used() const override;
-
-  // Save the "used_region" for both generations.
-  void save_used_regions();
 
   size_t max_capacity() const override;
 

@@ -907,7 +907,7 @@ public abstract class DCTree implements DocTree {
 
         DCRawText(Kind kind, String code) {
             if (kind != Kind.MARKDOWN) {
-                throw new IllegalArgumentException(kind.toString());
+                throw new IllegalArgumentException(String.valueOf(kind));
             }
             this.kind = kind;
             this.code = code;

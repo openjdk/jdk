@@ -21,7 +21,6 @@
  * questions.
  */
 
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -94,11 +93,11 @@ import com.sun.source.util.JavacTask;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.TreePathScanner;
 import com.sun.tools.javac.api.JavacTool;
+import com.sun.tools.javac.api.JavacTrees;
 import com.sun.tools.javac.tree.DCTree;
 import com.sun.tools.javac.tree.DCTree.DCDocComment;
 import com.sun.tools.javac.tree.DCTree.DCErroneous;
 import com.sun.tools.javac.tree.DocPretty;
-import com.sun.tools.javac.tree.JCTree;
 
 /**
  * A class to test doc comment trees.
@@ -114,17 +113,23 @@ public class DocCommentTester {
         ArrayList<String> list = new ArrayList<>(Arrays.asList(args));
         if (!list.isEmpty() && "-useBreakIterator".equals(list.get(0))) {
             list.remove(0);
-            new DocCommentTester(true).run(list);
+            new DocCommentTester(true, true).run(list);
+        } else if (!list.isEmpty() && "-useStandardTransformer".equals(list.get(0))) {
+            list.remove(0);
+            new DocCommentTester(false, false).run(list);
         } else {
-            new DocCommentTester(false).run(list);
+            new DocCommentTester(false, true).run(list);
         }
     }
 
     public static final String BI_MARKER = "BREAK_ITERATOR";
     public final boolean useBreakIterator;
 
-    public DocCommentTester(boolean useBreakIterator) {
+    public final boolean useIdentityTransformer;
+
+    public DocCommentTester(boolean useBreakIterator, boolean useIdentityTtransformer) {
         this.useBreakIterator = useBreakIterator;
+        this.useIdentityTransformer = useIdentityTtransformer;
     }
 
     public void run(List<String> args) throws Exception {
@@ -140,7 +145,13 @@ public class DocCommentTester {
         Iterable<? extends JavaFileObject> fos = fm.getJavaFileObjectsFromPaths(files);
 
         JavacTask t = javac.getTask(null, fm, null, null, null, fos);
-        final DocTrees trees = DocTrees.instance(t);
+        final JavacTrees trees = (JavacTrees) DocTrees.instance(t);
+
+        if (useIdentityTransformer) {
+            // disable default use of the "standard" transformer, so that we can examine
+            // the trees as created by DocCommentParser.
+            trees.setDocCommentTreeTransformer(new JavacTrees.IdentityTransformer());
+        }
 
         if (useBreakIterator) {
             // BreakIterators are locale dependent wrt. behavior
@@ -999,17 +1010,6 @@ public class DocCommentTester {
                 System.err.println(pretty.replace(" ", "_"));
             }
         }
-
-//        Tokens.Comment getComment(TreePath path) {
-//            CompilationUnitTree t = path.getCompilationUnit();
-//            Tree leaf = path.getLeaf();
-//            if (t instanceof JCTree.JCCompilationUnit compilationUnit && leaf instanceof JCTree tree) {
-//                if (compilationUnit.docComments != null) {
-//                    return compilationUnit.docComments.getComment(tree);
-//                }
-//            }
-//            return null;
-//        }
 
         /**
          * Normalize whitespace in places where the tree does not preserve it.

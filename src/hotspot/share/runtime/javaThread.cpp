@@ -745,6 +745,7 @@ static void ensure_join(JavaThread* thread) {
   // Clear the native thread instance - this makes isAlive return false and allows the join()
   // to complete once we've done the notify_all below. Needs a release() to obey Java Memory Model
   // requirements.
+  assert(java_lang_Thread::thread(threadObj()) == thread, "must be alive");
   java_lang_Thread::release_set_thread(threadObj(), nullptr);
   lock.notify_all(thread);
   // Ignore pending exception, since we are exiting anyway
@@ -2155,6 +2156,8 @@ void JavaThread::start_internal_daemon(JavaThread* current, JavaThread* target,
   // on a ThreadsList. We don't want to wait for the release when the
   // Theads_lock is dropped when the 'mu' destructor is run since the
   // JavaThread* is already visible to JVM/TI via the ThreadsList.
+
+  assert(java_lang_Thread::thread(thread_oop()) == nullptr, "must not be alive");
   java_lang_Thread::release_set_thread(thread_oop(), target); // isAlive == true now
   Thread::start(target);
 }

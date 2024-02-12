@@ -68,7 +68,7 @@ import static com.sun.tools.javac.util.Position.NOPOS;
  * <p>The primary extension is to allow references to program elements to be
  * translated to {@code {@link ...}} or {@code {@linkplain ...}} tags.
  */
-public class MarkdownTransformer implements DocTrees.DocCommentTreeTransformer {
+public class MarkdownTransformer implements JavacTrees.DocCommentTreeTransformer {
 
     /**
      * Public no-args constructor, suitable for use with {@link java.util.ServiceLoader}.
@@ -255,7 +255,8 @@ public class MarkdownTransformer implements DocTrees.DocCommentTreeTransformer {
                  *         DocTree nodes, as well as any new nodes created by converting
                  *         parts of the Markdown tree into nodes for old-style javadoc tags.
                  */
-                Lower v = new Lower(m, document, source, replacements, autorefScheme);
+                var firstTreePos = trees.getFirst().getStartPosition();
+                Lower v = new Lower(m, document, source, firstTreePos, replacements, autorefScheme);
                 document.accept(v);
 
                 return v.getTrees();
@@ -693,6 +694,12 @@ public class MarkdownTransformer implements DocTrees.DocCommentTreeTransformer {
         private final StringBuilder text;
 
         /**
+         * The initial position in the enclosing comment of the source
+         * being transformed.
+         */
+        private int mainStartPos;
+
+        /**
          * The start of source text to be copied literally when required.
          */
         private int copyStartPos;
@@ -728,10 +735,14 @@ public class MarkdownTransformer implements DocTrees.DocCommentTreeTransformer {
          *
          * @param document the document to be converted
          * @param source the source of the document to be converted
+         * @param sourcePos the position in the enclosing comment of the source to be converted
          * @param replacements the objects to be substituted when U+FFFC is encountered
          * @param autorefScheme the scheme used for auto-generated references
          */
-        public Lower(DocTreeMaker docTreeMaker, Node document, String source, List<?> replacements,
+        public Lower(DocTreeMaker docTreeMaker,
+                     Node document,
+                     String source, int sourcePos,
+                     List<?> replacements,
                      String autorefScheme) {
             this.m = docTreeMaker;
             this.document = document;
@@ -744,11 +755,11 @@ public class MarkdownTransformer implements DocTrees.DocCommentTreeTransformer {
                     .mapToInt(Integer::intValue)
                     .toArray();
 
-
             replaceIter = replacements.iterator();
 
             trees = new ArrayList<>();
             text = new StringBuilder();
+            mainStartPos = sourcePos;
             copyStartPos = 0;
             replaceAdjustPos = 0;
         }
@@ -847,7 +858,7 @@ public class MarkdownTransformer implements DocTrees.DocCommentTreeTransformer {
          * @param pos the position in {@code source}
          */
         private int sourcePosToTreePos(int pos) {
-            return pos == NOPOS ? NOPOS : pos + replaceAdjustPos;
+            return pos == NOPOS ? NOPOS : mainStartPos + pos + replaceAdjustPos;
         }
 
         /**

@@ -832,6 +832,9 @@ public class DocTreeMaker implements DocTreeFactory {
             };
         }
 
+        // Returns a string in which any periods that should not be considered
+        // as ending a sentence are replaced by dashes.  This specifically
+        // includes periods in code spans and links.
         private String normalizeMarkdown(String s) {
             StringBuilder sb = new StringBuilder();
             int slen = s.length();

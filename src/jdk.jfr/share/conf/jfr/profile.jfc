@@ -678,6 +678,11 @@
       <setting name="period">everyChunk</setting>
     </event>
 
+    <event name="jdk.SwapSpace">
+      <setting name="enabled">true</setting>
+      <setting name="period">everyChunk</setting>
+    </event>
+
     <event name="jdk.ObjectAllocationInNewTLAB">
       <setting name="enabled" control="gc-enabled-high">false</setting>
       <setting name="stackTrace">true</setting>

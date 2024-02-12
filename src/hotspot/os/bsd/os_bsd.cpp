@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,6 +179,32 @@ void os::Bsd::print_uptime_info(outputStream* st) {
     time_t currsec = time(nullptr);
     os::print_dhm(st, "OS uptime:", (long) difftime(currsec, bootsec));
   }
+}
+
+jlong os::total_swap_space() {
+#if defined(__APPLE__)
+  struct xsw_usage vmusage;
+  size_t size = sizeof(vmusage);
+  if (sysctlbyname("vm.swapusage", &vmusage, &size, NULL, 0) != 0) {
+    return -1;
+  }
+  return (jlong)vmusage.xsu_total;
+#else
+  return -1;
+#endif
+}
+
+jlong os::free_swap_space() {
+#if defined(__APPLE__)
+  struct xsw_usage vmusage;
+  size_t size = sizeof(vmusage);
+  if (sysctlbyname("vm.swapusage", &vmusage, &size, NULL, 0) != 0) {
+    return -1;
+  }
+  return (jlong)vmusage.xsu_avail;
+#else
+  return -1;
+#endif
 }
 
 julong os::physical_memory() {

@@ -50,7 +50,7 @@ public final class JVM {
      */
     public static final Object CHUNK_ROTATION_MONITOR = new ChunkRotationMonitor();
 
-    private volatile static boolean nativeOK;
+    private static volatile boolean nativeOK;
 
     private static native void registerNatives();
 
