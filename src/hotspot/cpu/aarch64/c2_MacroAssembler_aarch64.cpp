@@ -445,7 +445,8 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register t1, Regis
     ldr(rscratch1, Address(monitor, ObjectMonitor::EntryList_offset()));
     ldr(t, Address(monitor, ObjectMonitor::cxq_offset()));
     orr(rscratch1, rscratch1, t);
-    cbz(rscratch1, release);
+    cmp(rscratch1, zr);
+    br(Assembler::EQ, release);
 
     // The owner may be anonymous and we removed the last obj entry in
     // the lock-stack. This loses the information about the owner.
