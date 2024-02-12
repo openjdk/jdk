@@ -109,18 +109,12 @@ class CompileTask : public CHeapObj<mtCompiler> {
   jobject              _hot_method_holder;
   int                  _hot_count;    // information about its invocation counter
   CompileReason        _compile_reason;      // more info about the task
-
-  ResourceArea         _resource_area; // TODO when active?
-  const char*          _failure_reason; // can be static strings, or allocated from resource_area
+  const char*          _failure_reason;
   // Specifies if _failure_reason is on the C heap.
-  bool                 _failure_reason_on_C_heap; // TODO maybe remove?
+  bool                 _failure_reason_on_C_heap;
 
  public:
-  CompileTask() :
-    _resource_area(mtCompiler),
-    _failure_reason(nullptr),
-    _failure_reason_on_C_heap(false)
-  {
+  CompileTask() : _failure_reason(nullptr), _failure_reason_on_C_heap(false) {
     // May hold MethodCompileQueue_lock
     _lock = new Monitor(Mutex::safepoint-1, "CompileTask_lock");
   }
@@ -229,8 +223,6 @@ public:
   void         log_task_queued();
   void         log_task_start(CompileLog* log);
   void         log_task_done(CompileLog* log);
-
-  ResourceArea* resource_area() { return &_resource_area; }
 
   void         set_failure_reason(const char* reason, bool on_C_heap = false) {
     _failure_reason = reason;
