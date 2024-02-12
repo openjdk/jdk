@@ -61,8 +61,8 @@ ShenandoahControlThread::ShenandoahControlThread() :
 void ShenandoahControlThread::run_service() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
-  GCMode default_mode = concurrent_normal;
-  GCCause::Cause default_cause = GCCause::_shenandoah_concurrent_gc;
+  const GCMode default_mode = concurrent_normal;
+  const GCCause::Cause default_cause = GCCause::_shenandoah_concurrent_gc;
   int sleep = ShenandoahControlIntervalMin;
 
   double last_shrink_time = os::elapsedTime();
@@ -72,21 +72,21 @@ void ShenandoahControlThread::run_service() {
   // Having a period 10x lower than the delay would mean we hit the
   // shrinking with lag of less than 1/10-th of true delay.
   // ShenandoahUncommitDelay is in msecs, but shrink_period is in seconds.
-  double shrink_period = (double)ShenandoahUncommitDelay / 1000 / 10;
+  const double shrink_period = (double)ShenandoahUncommitDelay / 1000 / 10;
 
-  ShenandoahCollectorPolicy* policy = heap->shenandoah_policy();
-  ShenandoahHeuristics* heuristics = heap->heuristics();
+  ShenandoahCollectorPolicy* const policy = heap->shenandoah_policy();
+  ShenandoahHeuristics* const heuristics = heap->heuristics();
   while (!in_graceful_shutdown() && !should_terminate()) {
     // Figure out if we have pending requests.
-    bool alloc_failure_pending = _alloc_failure_gc.is_set();
-    bool is_gc_requested = _gc_requested.is_set();
-    GCCause::Cause requested_gc_cause = _requested_gc_cause;
+    const bool alloc_failure_pending = _alloc_failure_gc.is_set();
+    const bool is_gc_requested = _gc_requested.is_set();
+    const GCCause::Cause requested_gc_cause = _requested_gc_cause;
 
     // This control loop iteration has seen this much allocation.
-    size_t allocs_seen = Atomic::xchg(&_allocs_seen, (size_t)0, memory_order_relaxed);
+    const size_t allocs_seen = Atomic::xchg(&_allocs_seen, (size_t)0, memory_order_relaxed);
 
     // Check if we have seen a new target for soft max heap size.
-    bool soft_max_changed = heap->check_soft_max_changed();
+    const bool soft_max_changed = heap->check_soft_max_changed();
 
     // Choose which GC mode to run in. The block below should select a single mode.
     GCMode mode = none;
@@ -142,7 +142,7 @@ void ShenandoahControlThread::run_service() {
       heap->soft_ref_policy()->set_should_clear_all_soft_refs(true);
     }
 
-    bool gc_requested = (mode != none);
+    const bool gc_requested = (mode != none);
     assert (!gc_requested || cause != GCCause::_last_gc_cause, "GC cause should be set");
 
     if (gc_requested) {
@@ -251,7 +251,7 @@ void ShenandoahControlThread::run_service() {
       }
     }
 
-    double current = os::elapsedTime();
+    const double current = os::elapsedTime();
 
     if (ShenandoahUncommit && (is_gc_requested || soft_max_changed || (current - last_shrink_time > shrink_period))) {
       // Explicit GC tries to uncommit everything down to min capacity.
