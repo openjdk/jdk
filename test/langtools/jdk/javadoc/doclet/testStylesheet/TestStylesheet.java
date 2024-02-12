@@ -123,7 +123,6 @@ public class TestStylesheet extends JavadocTester {
                 """
                     .col-first, .col-second, .col-constructor-name {
                         vertical-align:top;
-                        overflow: auto;
                     }""",
                 """
                     .summary-table > div, .details-table > div {
