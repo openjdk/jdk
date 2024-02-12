@@ -4083,9 +4083,9 @@ DWORD os::win32::active_processors_in_job_object() {
               assert(false, "Unexpected group count");
             }
 
+            GROUP_AFFINITY* group_affinity_data = ((GROUP_AFFINITY*)job_object_information);
             for (DWORD i = 0; i < groups_found; i++) {
-              KAFFINITY group_affinity = ((GROUP_AFFINITY*)job_object_information)[i].Mask;
-              processors += population_count(group_affinity);
+              processors += population_count(group_affinity_data[i].Mask);
             }
 
             if (processors == 0) {
@@ -4126,9 +4126,9 @@ DWORD os::win32::system_logical_processor_count() {
       } else {
         DWORD processor_groups = system_logical_processor_info->Group.ActiveGroupCount;
 
+        PROCESSOR_GROUP_INFO* group_info = (PROCESSOR_GROUP_INFO*)system_logical_processor_info->Group.GroupInfo;
         for (DWORD i = 0; i < processor_groups; i++) {
-          PROCESSOR_GROUP_INFO group_info = system_logical_processor_info->Group.GroupInfo[i];
-          logical_processors += group_info.ActiveProcessorCount;
+          logical_processors += group_info[i].ActiveProcessorCount;
         }
 
         if (logical_processors == 0) {
