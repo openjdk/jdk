@@ -106,12 +106,14 @@ public class JFrameBackgroundRefreshTest {
             }
             System.out.println("Test Passed!");
         } finally {
-            if (frame != null) {
-                frame.dispose();
-            }
-            if (whiteFrame != null) {
-                whiteFrame.dispose();
-            }
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+                if (whiteFrame != null) {
+                    whiteFrame.dispose();
+                }
+            });
         }
     }
 
