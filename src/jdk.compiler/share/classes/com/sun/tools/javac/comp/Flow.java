@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1308,7 +1308,7 @@ public class Flow {
                 if (types.isUnconditionallyExact(seltype, bp.type)) {
                     return true;
                 }
-            } else if (seltype.isReference() && bp.type.isPrimitive() && types.isCastable(seltype, bp.type)) {
+            } else if (seltype.isReference() && bp.type.isPrimitive() && types.isUnconditionallyExact(types.unboxedType(seltype), bp.type)) {
                 return true;
             } else {
                 if (types.isSubtype(seltype, types.erasure(bp.type))) {
