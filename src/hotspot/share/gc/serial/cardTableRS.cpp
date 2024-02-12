@@ -32,20 +32,15 @@
 #include "utilities/align.hpp"
 
 void CardTableRS::scan_old_to_young_refs(TenuredSpace* sp) {
-#ifdef ASSERT
-  {
-    MemRegion ur    = sp->used_region();
-    MemRegion urasm = sp->used_region_at_save_marks();
-
-    assert(ur.contains(urasm),
-           "Did you forget to call save_marks()? "
-           "[" PTR_FORMAT ", " PTR_FORMAT ") is not contained in "
-           "[" PTR_FORMAT ", " PTR_FORMAT ")",
-           p2i(urasm.start()), p2i(urasm.end()), p2i(ur.start()), p2i(ur.end()));
-  }
-#endif
-
+  const MemRegion ur    = sp->used_region();
   const MemRegion urasm = sp->used_region_at_save_marks();
+
+  assert(ur.contains(urasm),
+         "Did you forget to call save_marks()? "
+         "[" PTR_FORMAT ", " PTR_FORMAT ") is not contained in "
+         "[" PTR_FORMAT ", " PTR_FORMAT ")",
+         p2i(urasm.start()), p2i(urasm.end()), p2i(ur.start()), p2i(ur.end()));
+
   if (!urasm.is_empty()) {
     OldGenScanClosure cl(SerialHeap::heap()->young_gen());
     non_clean_card_iterate(sp, urasm, &cl);
