@@ -832,7 +832,9 @@ void ShenandoahHeap::notify_heap_changed() {
   // Update monitoring counters when we took a new region. This amortizes the
   // update costs on slow path.
   monitoring_support()->notify_heap_changed();
-  control_thread()->notify_heap_changed();
+
+  // This is called from allocation path, and thus should be fast.
+  _heap_changed.try_set();
 }
 
 void ShenandoahHeap::set_forced_counters_update(bool value) {

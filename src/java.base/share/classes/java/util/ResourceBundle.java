@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -508,8 +508,8 @@ public abstract class ResourceBundle {
      * Gets a string for the given key from this resource bundle or one of its parents.
      * Calling this method is equivalent to calling
      * {@snippet lang=java :
-     *     // @link substring="getObject" target="#getObject(java.lang.String)"
-     *     (String[]) getObject(key);
+     *     // @link substring="getObject" target="#getObject(java.lang.String)" :
+     *     (String) getObject(key);
      * }
      *
      * @param key the key for the desired string
@@ -526,7 +526,7 @@ public abstract class ResourceBundle {
      * Gets a string array for the given key from this resource bundle or one of its parents.
      * Calling this method is equivalent to calling
      * {@snippet lang=java :
-     *     // @link substring="getObject" target="#getObject(java.lang.String)"
+     *     // @link substring="getObject" target="#getObject(java.lang.String)" :
      *     (String[]) getObject(key);
      * }
      *
