@@ -48,6 +48,8 @@ import java.awt.print.PrinterJob;
  */
 public class RasterTest extends Frame implements ActionListener {
 
+    private final RasterCanvas c;
+
     private static final String INSTRUCTIONS =
             "You must have a printer available to perform this test\n" +
             "This test uses rendering operations which force the implementation\n" +
@@ -76,7 +78,7 @@ public class RasterTest extends Frame implements ActionListener {
     public RasterTest() {
         super("Java 2D Raster Printing");
 
-        RasterCanvas c = new RasterCanvas();
+        c = new RasterCanvas();
         add("Center", c);
 
         Button printButton = new Button("Print");
