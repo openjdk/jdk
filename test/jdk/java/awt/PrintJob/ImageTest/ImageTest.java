@@ -21,7 +21,6 @@
  * questions.
  */
 
-import javax.imageio.ImageIO;
 import java.awt.Button;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -36,15 +35,14 @@ import java.awt.image.BufferedImage;
 import java.awt.print.PrinterJob;
 import java.io.File;
 import java.io.IOException;
-
-import jtreg.SkippedException;
+import javax.imageio.ImageIO;
 
 /*
  * @test
  * @bug 4242308 4255603
  * @key printer
  * @library /java/awt/regtesthelpers /test/lib
- * @build PassFailJFrame jtreg.SkippedException
+ * @build PassFailJFrame
  * @summary Tests printing of images
  * @run main/manual ImageTest
  */
@@ -59,6 +57,7 @@ public final class ImageTest {
             img = getToolkit().getImage("image.gif");
         }
 
+        @Override
         public void paint(Graphics g) {
             int width = img.getWidth(this);
             int height = img.getHeight(this);
@@ -75,10 +74,11 @@ public final class ImageTest {
             g.drawImage(img, 10, 75, width, height, this);
         }
 
-        public void setPrintJob(PrintJob pj) {
+        private void setPrintJob(PrintJob pj) {
             pjob = pj;
         }
 
+        @Override
         public boolean imageUpdate(Image img, int infoflags,
                                    int x, int y, int w, int h) {
             if ((infoflags & ALLBITS) != 0) {
@@ -105,7 +105,7 @@ public final class ImageTest {
             }
         });
         f.add(b);
-        f.setBounds(0, 50, 700, 350);
+        f.setSize(700, 350);
 
         return f;
     }
@@ -146,9 +146,9 @@ public final class ImageTest {
             """;
 
     public static void main(String[] args) throws Exception {
+
         if (PrinterJob.lookupPrintServices().length == 0) {
-            throw new SkippedException("Printer not configured or available."
-                    + " Test cannot continue.");
+            throw new RuntimeException("Printer not configured or available.");
         }
 
         createImage();
