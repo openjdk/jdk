@@ -162,14 +162,6 @@
           "other cleanup policy. This minimizes footprint at expense of"    \
           "more soft reference churn in applications.")                     \
                                                                             \
-  product(bool, ShenandoahPackEvacTightly, false, EXPERIMENTAL,             \
-          "When rebuilding the free set, allow the collector reserve "      \
-          "to include regions that are not entirely empty and do not "      \
-          "automatically retire regions within which an attempted "         \
-          "allocation has failed.  Setting this to true has been observed " \
-          "to increase concurrent evacuation times by up to 50% on certain "\
-          "workloads.")                                                     \
-                                                                            \
   product(bool, ShenandoahUncommit, true, EXPERIMENTAL,                     \
           "Allow to uncommit memory under unused regions and metadata. "    \
           "This optimizes footprint at expense of allocation latency in "   \
