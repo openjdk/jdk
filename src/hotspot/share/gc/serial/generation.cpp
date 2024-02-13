@@ -122,25 +122,3 @@ oop Generation::promote(oop obj, size_t obj_size) {
 
   return new_obj;
 }
-
-// Some of these are mediocre general implementations.  Should be
-// overridden to get better performance.
-
-class GenerationBlockStartClosure : public SpaceClosure {
- public:
-  const void* _p;
-  HeapWord* _start;
-  virtual void do_space(Space* s) {
-    if (_start == nullptr && s->is_in_reserved(_p)) {
-      _start = s->block_start(_p);
-    }
-  }
-  GenerationBlockStartClosure(const void* p) { _p = p; _start = nullptr; }
-};
-
-HeapWord* Generation::block_start(const void* p) const {
-  GenerationBlockStartClosure blk(p);
-  // Cast away const
-  ((Generation*)this)->space_iterate(&blk);
-  return blk._start;
-}

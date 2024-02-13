@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef MLVMJVMTIUTILS_H_
-#define MLVMJVMTIUTILS_H_
+#ifndef MLVMJVMTIUTILS_HPP_
+#define MLVMJVMTIUTILS_HPP_
 
 #include "jvmti.h"
 
@@ -42,4 +42,4 @@ char * locationToString(jvmtiEnv * pJvmtiEnv, jmethodID method, jlocation locati
 void * getTLS(jvmtiEnv * pJvmtiEnv, jthread thread, jsize sizeToAllocate);
 }
 
-#endif /* MLVMJVMTIUTILS_H_ */
+#endif /* MLVMJVMTIUTILS_HPP_ */

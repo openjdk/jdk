@@ -749,6 +749,13 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // cache the system and platform class loaders
   SystemDictionary::compute_java_loaders(CHECK_JNI_ERR);
 
+  if (Continuations::enabled()) {
+    // Initialize Continuation class now so that failure to create enterSpecial/doYield
+    // special nmethods due to limited CodeCache size can be treated as a fatal error at
+    // startup with the proper message that CodeCache size is too small.
+    initialize_class(vmSymbols::jdk_internal_vm_Continuation(), CHECK_JNI_ERR);
+  }
+
 #if INCLUDE_CDS
   // capture the module path info from the ModuleEntryTable
   ClassLoader::initialize_module_path(THREAD);
