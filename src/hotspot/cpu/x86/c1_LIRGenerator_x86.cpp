@@ -1022,6 +1022,13 @@ void LIRGenerator::do_ArrayCopy(Intrinsic* x) {
   // LinearScan will fail allocation (because arraycopy always needs a
   // call)
 
+  int flags;
+  ciArrayKlass* expected_type;
+  arraycopy_helper(x, &flags, &expected_type);
+  if (x->check_flag(Instruction::OmitChecksFlag)) {
+    flags = 0;
+  }
+
 #ifndef _LP64
   src.load_item_force     (FrameMap::rcx_oop_opr);
   src_pos.load_item_force (FrameMap::rdx_opr);
@@ -1029,6 +1036,11 @@ void LIRGenerator::do_ArrayCopy(Intrinsic* x) {
   dst_pos.load_item_force (FrameMap::rbx_opr);
   length.load_item_force  (FrameMap::rdi_opr);
   LIR_Opr tmp =           (FrameMap::rsi_opr);
+
+  if (expected_type != nullptr && flags == 0) {
+    FrameMap* f = Compilation::current()->frame_map();
+    f->update_reserved_argument_area_size(3 * BytesPerWord);
+  }
 #else
 
   // The java calling convention will give us enough registers
@@ -1049,13 +1061,6 @@ void LIRGenerator::do_ArrayCopy(Intrinsic* x) {
 #endif // LP64
 
   set_no_result(x);
-
-  int flags;
-  ciArrayKlass* expected_type;
-  arraycopy_helper(x, &flags, &expected_type);
-  if (x->check_flag(Instruction::OmitChecksFlag)) {
-    flags = 0;
-  }
 
   __ arraycopy(src.result(), src_pos.result(), dst.result(), dst_pos.result(), length.result(), tmp, expected_type, flags, info); // does add_safepoint
 }
