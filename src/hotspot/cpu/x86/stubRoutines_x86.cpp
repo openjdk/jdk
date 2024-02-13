@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,6 +82,10 @@ address StubRoutines::x86::_join_0_1_base64 = nullptr;
 address StubRoutines::x86::_join_1_2_base64 = nullptr;
 address StubRoutines::x86::_join_2_3_base64 = nullptr;
 address StubRoutines::x86::_decoding_table_base64 = nullptr;
+address StubRoutines::x86::_compress_perm_table32 = nullptr;
+address StubRoutines::x86::_compress_perm_table64 = nullptr;
+address StubRoutines::x86::_expand_perm_table32 = nullptr;
+address StubRoutines::x86::_expand_perm_table64 = nullptr;
 #endif
 address StubRoutines::x86::_pshuffle_byte_flip_mask_addr = nullptr;
 

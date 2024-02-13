@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -4481,6 +4481,57 @@ void MacroAssembler::zero_dcache_blocks(Register base, Register cnt, Register tm
   bge(cnt, tmp1, loop);
 }
 
+// java.lang.Math.round(float a)
+// Returns the closest int to the argument, with ties rounding to positive infinity.
+void MacroAssembler::java_round_float(Register dst, FloatRegister src, FloatRegister ftmp) {
+  // this instructions calling sequence provides performance improvement on all tested devices;
+  // don't change it without re-verification
+  Label done;
+  mv(t0, jint_cast(0.5f));
+  fmv_w_x(ftmp, t0);
+
+  // dst = 0 if NaN
+  feq_s(t0, src, src); // replacing fclass with feq as performance optimization
+  mv(dst, zr);
+  beqz(t0, done);
+
+  // dst = (src + 0.5f) rounded down towards negative infinity
+  //   Adding 0.5f to some floats exceeds the precision limits for a float and rounding takes place.
+  //   RDN is required for fadd_s, RNE gives incorrect results:
+  //     --------------------------------------------------------------------
+  //     fadd.s rne (src + 0.5f): src = 8388609.000000  ftmp = 8388610.000000
+  //     fcvt.w.s rdn: ftmp = 8388610.000000 dst = 8388610
+  //     --------------------------------------------------------------------
+  //     fadd.s rdn (src + 0.5f): src = 8388609.000000  ftmp = 8388609.000000
+  //     fcvt.w.s rdn: ftmp = 8388609.000000 dst = 8388609
+  //     --------------------------------------------------------------------
+  fadd_s(ftmp, src, ftmp, RoundingMode::rdn);
+  fcvt_w_s(dst, ftmp, RoundingMode::rdn);
+
+  bind(done);
+}
+
+// java.lang.Math.round(double a)
+// Returns the closest long to the argument, with ties rounding to positive infinity.
+void MacroAssembler::java_round_double(Register dst, FloatRegister src, FloatRegister ftmp) {
+  // this instructions calling sequence provides performance improvement on all tested devices;
+  // don't change it without re-verification
+  Label done;
+  mv(t0, julong_cast(0.5));
+  fmv_d_x(ftmp, t0);
+
+  // dst = 0 if NaN
+  feq_d(t0, src, src); // replacing fclass with feq as performance optimization
+  mv(dst, zr);
+  beqz(t0, done);
+
+  // dst = (src + 0.5) rounded down towards negative infinity
+  fadd_d(ftmp, src, ftmp, RoundingMode::rdn); // RDN is required here otherwise some inputs produce incorrect results
+  fcvt_l_d(dst, ftmp, RoundingMode::rdn);
+
+  bind(done);
+}
+
 #define FCVT_SAFE(FLOATCVT, FLOATSIG)                                                     \
 void MacroAssembler::FLOATCVT##_safe(Register dst, FloatRegister src, Register tmp) {     \
   Label done;                                                                             \
@@ -4627,41 +4678,54 @@ void MacroAssembler::shadd(Register Rd, Register Rs1, Register Rs2, Register tmp
 }
 
 void MacroAssembler::zero_extend(Register dst, Register src, int bits) {
-  if (UseZba && bits == 32) {
-    zext_w(dst, src);
-    return;
+  switch (bits) {
+    case 32:
+      if (UseZba) {
+        zext_w(dst, src);
+        return;
+      }
+      break;
+    case 16:
+      if (UseZbb) {
+        zext_h(dst, src);
+        return;
+      }
+      break;
+    case 8:
+      if (UseZbb) {
+        zext_b(dst, src);
+        return;
+      }
+      break;
+    default:
+      break;
   }
-
-  if (UseZbb && bits == 16) {
-    zext_h(dst, src);
-    return;
-  }
-
-  if (bits == 8) {
-    zext_b(dst, src);
-  } else {
-    slli(dst, src, XLEN - bits);
-    srli(dst, dst, XLEN - bits);
-  }
+  slli(dst, src, XLEN - bits);
+  srli(dst, dst, XLEN - bits);
 }
 
 void MacroAssembler::sign_extend(Register dst, Register src, int bits) {
-  if (UseZbb) {
-    if (bits == 8) {
-      sext_b(dst, src);
+  switch (bits) {
+    case 32:
+      sext_w(dst, src);
       return;
-    } else if (bits == 16) {
-      sext_h(dst, src);
-      return;
-    }
+    case 16:
+      if (UseZbb) {
+        sext_h(dst, src);
+        return;
+      }
+      break;
+    case 8:
+      if (UseZbb) {
+        sext_b(dst, src);
+        return;
+      }
+      break;
+    default:
+      break;
   }
-
-  if (bits == 32) {
-    sext_w(dst, src);
-  } else {
-    slli(dst, src, XLEN - bits);
-    srai(dst, dst, XLEN - bits);
-  }
+  slli(dst, src, XLEN - bits);
+  srai(dst, dst, XLEN - bits);
 }
 
 void MacroAssembler::cmp_x2i(Register dst, Register src1, Register src2,
@@ -4840,9 +4904,9 @@ void MacroAssembler::object_move(OopMap* map,
 
 // A float arg may have to do float reg int reg conversion
 void MacroAssembler::float_move(VMRegPair src, VMRegPair dst, Register tmp) {
-  assert(src.first()->is_stack() && dst.first()->is_stack() ||
-         src.first()->is_reg() && dst.first()->is_reg() ||
-         src.first()->is_stack() && dst.first()->is_reg(), "Unexpected error");
+  assert((src.first()->is_stack() && dst.first()->is_stack()) ||
+         (src.first()->is_reg() && dst.first()->is_reg()) ||
+         (src.first()->is_stack() && dst.first()->is_reg()), "Unexpected error");
   if (src.first()->is_stack()) {
     if (dst.first()->is_stack()) {
       lwu(tmp, Address(fp, reg2offset_in(src.first())));
@@ -4884,9 +4948,9 @@ void MacroAssembler::long_move(VMRegPair src, VMRegPair dst, Register tmp) {
 
 // A double move
 void MacroAssembler::double_move(VMRegPair src, VMRegPair dst, Register tmp) {
-  assert(src.first()->is_stack() && dst.first()->is_stack() ||
-         src.first()->is_reg() && dst.first()->is_reg() ||
-         src.first()->is_stack() && dst.first()->is_reg(), "Unexpected error");
+  assert((src.first()->is_stack() && dst.first()->is_stack()) ||
+         (src.first()->is_reg() && dst.first()->is_reg()) ||
+         (src.first()->is_stack() && dst.first()->is_reg()), "Unexpected error");
   if (src.first()->is_stack()) {
     if (dst.first()->is_stack()) {
       ld(tmp, Address(fp, reg2offset_in(src.first())));

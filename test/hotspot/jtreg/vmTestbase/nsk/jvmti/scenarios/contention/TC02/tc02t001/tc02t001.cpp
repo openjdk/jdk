@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,8 @@ extern "C" {
 static jlong timeout = 0;
 
 /* test objects */
-static jthread thread = NULL;
-static jobject object_M = NULL;
+static jthread thread = nullptr;
+static jobject object_M = nullptr;
 /* line numbers of "synchronized (M)" clauses in java part of the test */
 static jint lines[] = { 48, 53, 58 };
 static volatile int enterEventsCount = 0;
@@ -45,9 +45,9 @@ static volatile int enteredEventsCount = 0;
 /* ========================================================================== */
 
 static jint findLineNumber(jvmtiEnv *jvmti, jthread thread) {
-    jmethodID method = NULL;
+    jmethodID method = nullptr;
     jlocation location;
-    jvmtiLineNumberEntry* table = NULL;
+    jvmtiLineNumberEntry* table = nullptr;
     jint count = 0;
     jint line = 0;
     int i;
@@ -55,7 +55,7 @@ static jint findLineNumber(jvmtiEnv *jvmti, jthread thread) {
     if (!NSK_JVMTI_VERIFY(jvmti->GetFrameLocation(thread, 0, &method, &location)))
         return 0;
 
-    if (!NSK_VERIFY(method != NULL))
+    if (!NSK_VERIFY(method != nullptr))
         return 0;
 
     if (!NSK_VERIFY(location != -1))
@@ -64,7 +64,7 @@ static jint findLineNumber(jvmtiEnv *jvmti, jthread thread) {
     if (!NSK_JVMTI_VERIFY(jvmti->GetLineNumberTable(method, &count, &table)))
         return 0;
 
-    if (!NSK_VERIFY(table != NULL))
+    if (!NSK_VERIFY(table != nullptr))
         return 0;
 
     if (!NSK_VERIFY(count > 0))
@@ -78,7 +78,7 @@ static jint findLineNumber(jvmtiEnv *jvmti, jthread thread) {
 
     line = table[i-1].line_number;
 
-    if (table != NULL) {
+    if (table != nullptr) {
         if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)table)))
             return 0;
     }
@@ -92,13 +92,13 @@ void JNICALL
 MonitorContendedEnter(jvmtiEnv *jvmti, JNIEnv* jni, jthread thr, jobject obj) {
     jint line = 0;
 
-    if (!NSK_VERIFY(thr != NULL)) {
+    if (!NSK_VERIFY(thr != nullptr)) {
         nsk_jvmti_setFailStatus();
         NSK_COMPLAIN1("MonitorContendedEnter event: thread=%p\n", thr);
         return;
     }
 
-    if (!NSK_VERIFY(obj != NULL)) {
+    if (!NSK_VERIFY(obj != nullptr)) {
         nsk_jvmti_setFailStatus();
         NSK_COMPLAIN1("MonitorContendedEnter event: object=%p\n", obj);
         return;
@@ -137,13 +137,13 @@ void JNICALL
 MonitorContendedEntered(jvmtiEnv *jvmti, JNIEnv* jni, jthread thr, jobject obj) {
     jint line = 0;
 
-    if (!NSK_VERIFY(thr != NULL)) {
+    if (!NSK_VERIFY(thr != nullptr)) {
         nsk_jvmti_setFailStatus();
         NSK_COMPLAIN1("MonitorContendedEntered event: thread=%p\n", thr);
         return;
     }
 
-    if (!NSK_VERIFY(obj != NULL)) {
+    if (!NSK_VERIFY(obj != nullptr)) {
         nsk_jvmti_setFailStatus();
         NSK_COMPLAIN1("MonitorContendedEntered event: object=%p\n", obj);
         return;
@@ -184,10 +184,10 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
     const char* THREAD_NAME = "Debuggee Thread";
     const char* FIELD_SIG = "Ljava/lang/Object;";
     jvmtiThreadInfo info;
-    jthread *threads = NULL;
+    jthread *threads = nullptr;
     jint threads_count = 0;
-    jfieldID field = NULL;
-    jclass klass = NULL;
+    jfieldID field = nullptr;
+    jclass klass = nullptr;
     int i;
 
     NSK_DISPLAY0("Prepare: find tested thread\n");
@@ -196,12 +196,12 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
     if (!NSK_JVMTI_VERIFY(jvmti->GetAllThreads(&threads_count, &threads)))
         return NSK_FALSE;
 
-    if (!NSK_VERIFY(threads_count > 0 && threads != NULL))
+    if (!NSK_VERIFY(threads_count > 0 && threads != nullptr))
         return NSK_FALSE;
 
     /* find tested thread */
     for (i = 0; i < threads_count; i++) {
-        if (!NSK_VERIFY(threads[i] != NULL))
+        if (!NSK_VERIFY(threads[i] != nullptr))
             return NSK_FALSE;
 
         /* get thread information */
@@ -211,11 +211,11 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
         NSK_DISPLAY3("    thread #%d (%s): %p\n", i, info.name, threads[i]);
 
         /* find by name */
-        if (info.name != NULL && (strcmp(info.name, THREAD_NAME) == 0)) {
+        if (info.name != nullptr && (strcmp(info.name, THREAD_NAME) == 0)) {
             thread = threads[i];
         }
 
-        if (info.name != NULL) {
+        if (info.name != nullptr) {
             if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)info.name)))
                 return NSK_FALSE;
         }
@@ -225,40 +225,40 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
     if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)threads)))
         return NSK_FALSE;
 
-    if (thread == NULL) {
+    if (thread == nullptr) {
         NSK_COMPLAIN0("Debuggee thread not found");
         return NSK_FALSE;
     }
 
     /* make thread accessable for a long time */
-    if (!NSK_JNI_VERIFY(jni, (thread = jni->NewGlobalRef(thread)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (thread = jni->NewGlobalRef(thread)) != nullptr))
         return NSK_FALSE;
 
     /* get tested thread class */
-    if (!NSK_JNI_VERIFY(jni, (klass = jni->GetObjectClass(thread)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (klass = jni->GetObjectClass(thread)) != nullptr))
         return NSK_FALSE;
 
     /* get tested thread field 'M' */
-    if (!NSK_JNI_VERIFY(jni, (field = jni->GetFieldID(klass, "M", FIELD_SIG)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (field = jni->GetFieldID(klass, "M", FIELD_SIG)) != nullptr))
         return NSK_FALSE;
 
-    if (!NSK_JNI_VERIFY(jni, (object_M = jni->GetObjectField(thread, field)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (object_M = jni->GetObjectField(thread, field)) != nullptr))
         return NSK_FALSE;
 
     /* make object accessable for a long time */
-    if (!NSK_JNI_VERIFY(jni, (object_M = jni->NewGlobalRef(object_M)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (object_M = jni->NewGlobalRef(object_M)) != nullptr))
         return NSK_FALSE;
 
     /* enable MonitorContendedEntered event */
     if (!NSK_JVMTI_VERIFY(
             jvmti->SetEventNotificationMode(
-                JVMTI_ENABLE, JVMTI_EVENT_MONITOR_CONTENDED_ENTER, NULL)))
+                JVMTI_ENABLE, JVMTI_EVENT_MONITOR_CONTENDED_ENTER, nullptr)))
         return NSK_FALSE;
 
     /* enable MonitorContendedEntered event */
     if (!NSK_JVMTI_VERIFY(
             jvmti->SetEventNotificationMode(
-                JVMTI_ENABLE, JVMTI_EVENT_MONITOR_CONTENDED_ENTERED, NULL)))
+                JVMTI_ENABLE, JVMTI_EVENT_MONITOR_CONTENDED_ENTERED, nullptr)))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -269,7 +269,7 @@ static int clean(jvmtiEnv* jvmti, JNIEnv* jni) {
     /* disable MonitorContendedEntered event */
     if (!NSK_JVMTI_VERIFY(
             jvmti->SetEventNotificationMode(
-                JVMTI_DISABLE, JVMTI_EVENT_MONITOR_CONTENDED_ENTERED, NULL)))
+                JVMTI_DISABLE, JVMTI_EVENT_MONITOR_CONTENDED_ENTERED, nullptr)))
         nsk_jvmti_setFailStatus();
 
     return NSK_TRUE;
@@ -334,7 +334,7 @@ JNIEXPORT jint JNI_OnLoad_tc02t001(JavaVM *jvm, char *options, void *reserved) {
 }
 #endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
-    jvmtiEnv* jvmti = NULL;
+    jvmtiEnv* jvmti = nullptr;
     jvmtiCapabilities caps;
     jvmtiEventCallbacks callbacks;
 
@@ -347,7 +347,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     /* create JVMTI environment */
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     /* add capabilities */
@@ -364,7 +364,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         return JNI_ERR;
 
     /* register agent proc and arg */
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     return JNI_OK;

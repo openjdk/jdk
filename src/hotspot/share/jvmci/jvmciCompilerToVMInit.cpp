@@ -45,6 +45,7 @@
 #include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/klass.inline.hpp"
+#include "prims/jvmtiExport.hpp"
 #ifdef COMPILER2
 #include "opto/c2compiler.hpp"
 #endif
@@ -309,7 +310,6 @@ JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
   do_bool_flag(RestrictContended)                                          \
   do_intx_flag(StackReservedPages)                                         \
   do_intx_flag(StackShadowPages)                                           \
-  do_bool_flag(TLABStats)                                                  \
   do_uintx_flag(TLABWasteIncrement)                                        \
   do_intx_flag(TypeProfileWidth)                                           \
   do_bool_flag(UseAESIntrinsics)                                           \

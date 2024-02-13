@@ -1111,13 +1111,12 @@ InstanceKlass* SystemDictionary::load_shared_lambda_proxy_class(InstanceKlass* i
   if (loaded_ik != nullptr) {
     assert(shared_nest_host->is_same_class_package(ik),
            "lambda proxy class and its nest host must be in the same package");
+    // The lambda proxy class and its nest host have the same class loader and class loader data,
+    // as verified in SystemDictionaryShared::add_lambda_proxy_class()
+    assert(shared_nest_host->class_loader() == class_loader(), "mismatched class loader");
+    assert(shared_nest_host->class_loader_data() == class_loader_data(class_loader), "mismatched class loader data");
+    ik->set_nest_host(shared_nest_host);
   }
-
-  // The lambda proxy class and its nest host have the same class loader and class loader data,
-  // as verified in SystemDictionaryShared::add_lambda_proxy_class()
-  assert(shared_nest_host->class_loader() == class_loader(), "mismatched class loader");
-  assert(shared_nest_host->class_loader_data() == class_loader_data(class_loader), "mismatched class loader data");
-  ik->set_nest_host(shared_nest_host);
 
   return loaded_ik;
 }

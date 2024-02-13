@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -121,10 +121,10 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg,
 
   // Handle existing monitor.
   bind(object_has_monitor);
-  // The object's monitor m is unlocked iff m->owner == NULL,
+  // The object's monitor m is unlocked iff m->owner == nullptr,
   // otherwise m->owner may contain a thread or a stack address.
   //
-  // Try to CAS m->owner from NULL to current thread.
+  // Try to CAS m->owner from null to current thread.
   add(tmp, disp_hdr, (in_bytes(ObjectMonitor::owner_offset()) - markWord::monitor_value));
   cmpxchg(/*memory address*/tmp, /*expected value*/zr, /*new value*/xthread, Assembler::int64, Assembler::aq,
           Assembler::rl, /*result*/flag); // cas succeeds if flag == zr(expected)
@@ -1358,7 +1358,6 @@ void C2_MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
 
 // For Strings we're passed the address of the first characters in a1
 // and a2 and the length in cnt1.
-// elem_size is the element size in bytes: either 1 or 2.
 // There are two implementations.  For arrays >= 8 bytes, all
 // comparisons (for hw supporting unaligned access: including the final one,
 // which may overlap) are performed 8 bytes at a time.
@@ -1367,13 +1366,12 @@ void C2_MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
 // halfword, then a short, and then a byte.
 
 void C2_MacroAssembler::string_equals(Register a1, Register a2,
-                                      Register result, Register cnt1, int elem_size)
+                                      Register result, Register cnt1)
 {
   Label SAME, DONE, SHORT, NEXT_WORD;
   Register tmp1 = t0;
   Register tmp2 = t1;
 
-  assert(elem_size == 1 || elem_size == 2, "must be 2 or 1 byte");
   assert_different_registers(a1, a2, result, cnt1, tmp1, tmp2);
 
   BLOCK_COMMENT("string_equals {");
@@ -1439,15 +1437,13 @@ void C2_MacroAssembler::string_equals(Register a1, Register a2,
   }
 
   bind(TAIL01);
-  if (elem_size == 1) { // Only needed when comparing 1-byte elements
-    // 0-1 bytes left.
-    test_bit(tmp1, cnt1, 0);
-    beqz(tmp1, SAME);
-    {
-      lbu(tmp1, Address(a1, 0));
-      lbu(tmp2, Address(a2, 0));
-      bne(tmp1, tmp2, DONE);
-    }
+  // 0-1 bytes left.
+  test_bit(tmp1, cnt1, 0);
+  beqz(tmp1, SAME);
+  {
+    lbu(tmp1, Address(a1, 0));
+    lbu(tmp2, Address(a2, 0));
+    bne(tmp1, tmp2, DONE);
   }
 
   // Arrays are equal.
@@ -1783,6 +1779,95 @@ void C2_MacroAssembler::signum_fp(FloatRegister dst, FloatRegister one, bool is_
   bind(done);
 }
 
+static void float16_to_float_slow_path(C2_MacroAssembler& masm, C2GeneralStub<FloatRegister, Register, Register>& stub) {
+#define __ masm.
+  FloatRegister dst = stub.data<0>();
+  Register src = stub.data<1>();
+  Register tmp = stub.data<2>();
+  __ bind(stub.entry());
+
+  // following instructions mainly focus on NaN, as riscv does not handle
+  // NaN well with fcvt, but the code also works for Inf at the same time.
+
+  // construct a NaN in 32 bits from the NaN in 16 bits,
+  // we need the payloads of non-canonical NaNs to be preserved.
+  __ mv(tmp, 0x7f800000);
+  // sign-bit was already set via sign-extension if necessary.
+  __ slli(t0, src, 13);
+  __ orr(tmp, t0, tmp);
+  __ fmv_w_x(dst, tmp);
+
+  __ j(stub.continuation());
+#undef __
+}
+
+// j.l.Float.float16ToFloat
+void C2_MacroAssembler::float16_to_float(FloatRegister dst, Register src, Register tmp) {
+  auto stub = C2CodeStub::make<FloatRegister, Register, Register>(dst, src, tmp, 20, float16_to_float_slow_path);
+
+  // in riscv, NaN needs a special process as fcvt does not work in that case.
+  // in riscv, Inf does not need a special process as fcvt can handle it correctly.
+  // but we consider to get the slow path to process NaN and Inf at the same time,
+  // as both of them are rare cases, and if we try to get the slow path to handle
+  // only NaN case it would sacrifise the performance for normal cases,
+  // i.e. non-NaN and non-Inf cases.
+
+  // check whether it's a NaN or +/- Inf.
+  mv(t0, 0x7c00);
+  andr(tmp, src, t0);
+  // jump to stub processing NaN and Inf cases.
+  beq(t0, tmp, stub->entry());
+
+  // non-NaN or non-Inf cases, just use built-in instructions.
+  fmv_h_x(dst, src);
+  fcvt_s_h(dst, dst);
+
+  bind(stub->continuation());
+}
+
+static void float_to_float16_slow_path(C2_MacroAssembler& masm, C2GeneralStub<Register, FloatRegister, Register>& stub) {
+#define __ masm.
+  Register dst = stub.data<0>();
+  FloatRegister src = stub.data<1>();
+  Register tmp = stub.data<2>();
+  __ bind(stub.entry());
+
+  __ fmv_x_w(dst, src);
+
+  // preserve the payloads of non-canonical NaNs.
+  __ srai(dst, dst, 13);
+  // preserve the sign bit.
+  __ srai(tmp, dst, 13);
+  __ slli(tmp, tmp, 10);
+  __ mv(t0, 0x3ff);
+  __ orr(tmp, tmp, t0);
+
+  // get the result by merging sign bit and payloads of preserved non-canonical NaNs.
+  __ andr(dst, dst, tmp);
+
+  __ j(stub.continuation());
+#undef __
+}
+
+// j.l.Float.floatToFloat16
+void C2_MacroAssembler::float_to_float16(Register dst, FloatRegister src, FloatRegister ftmp, Register xtmp) {
+  auto stub = C2CodeStub::make<Register, FloatRegister, Register>(dst, src, xtmp, 130, float_to_float16_slow_path);
+
+  // in riscv, NaN needs a special process as fcvt does not work in that case.
+
+  // check whether it's a NaN.
+  // replace fclass with feq as performance optimization.
+  feq_s(t0, src, src);
+  // jump to stub processing NaN cases.
+  beqz(t0, stub->entry());
+
+  // non-NaN cases, just use built-in instructions.
+  fcvt_h_s(ftmp, src);
+  fmv_x_h(dst, ftmp);
+
+  bind(stub->continuation());
+}
+
 void C2_MacroAssembler::signum_fp_v(VectorRegister dst, VectorRegister one, BasicType bt, int vlen) {
   vsetvli_helper(bt, vlen);
 
@@ -1896,7 +1981,7 @@ void C2_MacroAssembler::element_compare(Register a1, Register a2, Register resul
   mv(result, true);
 }
 
-void C2_MacroAssembler::string_equals_v(Register a1, Register a2, Register result, Register cnt, int elem_size) {
+void C2_MacroAssembler::string_equals_v(Register a1, Register a2, Register result, Register cnt) {
   Label DONE;
   Register tmp1 = t0;
   Register tmp2 = t1;
@@ -1905,11 +1990,7 @@ void C2_MacroAssembler::string_equals_v(Register a1, Register a2, Register resul
 
   mv(result, false);
 
-  if (elem_size == 2) {
-    srli(cnt, cnt, 1);
-  }
-
-  element_compare(a1, a2, result, cnt, tmp1, tmp2, v2, v4, v2, elem_size == 1, DONE);
+  element_compare(a1, a2, result, cnt, tmp1, tmp2, v2, v4, v2, true, DONE);
 
   bind(DONE);
   BLOCK_COMMENT("} string_equals_v");
