@@ -49,7 +49,7 @@ public class PageDlgPrnButton implements Printable
 
     public static void main(String[] args) throws Exception {
 
-        if (PrinterJob.lookupPrintServices().length < 2) {
+        if (PrinterJob.lookupPrintServices().length == 0) {
             throw new RuntimeException("Printer not configured or available.");
         }
 
@@ -59,24 +59,20 @@ public class PageDlgPrnButton implements Printable
                 .columns(45)
                 .build();
 
-        new PageDlgPrnButton() ;
-        passFailJFrame.awaitAndCheck();
-    }
-
-    public PageDlgPrnButton() throws PrinterException {
         pageDialogExample();
+        passFailJFrame.awaitAndCheck();
     }
 
     // This example just displays the page dialog - you cannot change
     // the printer (press the "Printer..." button and choose one if you like).
-    public void pageDialogExample() throws PrinterException {
+    public static void pageDialogExample() throws PrinterException {
         PrinterJob job = PrinterJob.getPrinterJob();
         PageFormat originalPageFormat = job.defaultPage();
         PageFormat pageFormat = job.pageDialog(originalPageFormat);
 
         if (originalPageFormat == pageFormat) return;
 
-        job.setPrintable(this, pageFormat);
+        job.setPrintable(new PageDlgPrnButton(), pageFormat);
         job.print();
     }
 
