@@ -29,19 +29,17 @@ import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
 
-import jtreg.SkippedException;
-
 /*
  * @test
  * @bug 4956397
  * @key printer
+ * @requires os.family=="windows"
  * @library /test/lib /java/awt/regtesthelpers
- * @build PassFailJFrame jtreg.SkippedException
+ * @build PassFailJFrame
  * @run main/manual PageDlgPrnButton
  */
 public class PageDlgPrnButton implements Printable
 {
-
     private static final String INSTRUCTIONS =
             "For non-windows OS, this test PASSes.\n" +
             "You must have at least 2 printers available to perform this test.\n" +
@@ -49,7 +47,11 @@ public class PageDlgPrnButton implements Printable
             "Click on the Printer... button and change the selected printer. \n" +
             "Test passes if the printout comes from the new selected printer.";
 
-    public static void main (String[] args) throws Exception {
+    public static void main(String[] args) throws Exception {
+
+        if (PrinterJob.lookupPrintServices().length == 0) {
+            throw new RuntimeException("Printer not configured or available.");
+        }
 
         PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
                 .instructions(INSTRUCTIONS)
@@ -67,46 +69,43 @@ public class PageDlgPrnButton implements Printable
 
     // This example just displays the page dialog - you cannot change
     // the printer (press the "Printer..." button and choose one if you like).
-    public void pageDialogExample() throws PrinterException
-    {
+    public void pageDialogExample() throws PrinterException {
         PrinterJob job = PrinterJob.getPrinterJob();
         PageFormat originalPageFormat = job.defaultPage();
         PageFormat pageFormat = job.pageDialog(originalPageFormat);
 
-        if(originalPageFormat == pageFormat) return;
+        if (originalPageFormat == pageFormat) return;
 
-        job.setPrintable(this,pageFormat);
+        job.setPrintable(this, pageFormat);
         job.print();
     }
 
-    public int print(Graphics g, PageFormat pageFormat, int pageIndex)
-    {
+    public int print(Graphics g, PageFormat pageFormat, int pageIndex) {
         final int boxWidth = 100;
         final int boxHeight = 100;
-        final Rectangle rect = new Rectangle(0,0,boxWidth,boxHeight);
+        final Rectangle rect = new Rectangle(0, 0, boxWidth, boxHeight);
         final double pageH = pageFormat.getImageableHeight();
         final double pageW = pageFormat.getImageableWidth();
 
         if (pageIndex > 0) return (NO_SUCH_PAGE);
 
-        final Graphics2D g2d = (Graphics2D)g;
+        final Graphics2D g2d = (Graphics2D) g;
 
         // Move the (x,y) origin to account for the left-hand and top margins
         g2d.translate(pageFormat.getImageableX(), pageFormat.getImageableY());
 
         // Draw the page bounding box
-        g2d.drawRect(0,0,(int)pageW,(int)pageH);
+        g2d.drawRect(0, 0, (int) pageW, (int) pageH);
 
         // Select the smaller scaling factor so that the figure
         // fits on the page in both dimensions
-        final double scale = Math.min( (pageW/boxWidth), (pageH/boxHeight) );
+        final double scale = Math.min((pageW / boxWidth), (pageH / boxHeight));
 
-        if(scale < 1.0) g2d.scale(scale, scale);
+        if (scale < 1.0) g2d.scale(scale, scale);
 
         // Paint the scaled component on the printer
         g2d.fillRect(rect.x, rect.y, rect.width, rect.height);
 
-        g2d.dispose();
-        return(PAGE_EXISTS);
+        return (PAGE_EXISTS);
     }
 }

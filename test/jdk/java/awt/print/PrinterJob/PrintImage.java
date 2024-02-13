@@ -37,24 +37,19 @@ import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
 
-import jtreg.SkippedException;
-
 /*
  * @test %I %W
  * @bug 4298489
  * @summary Confirm that output is same as screen.
  * @key printer
  * @library /test/lib /java/awt/regtesthelpers
- * @build PassFailJFrame jtreg.SkippedException
+ * @build PassFailJFrame
  * @run main/manual PrintImage
  */
 public class PrintImage extends Frame implements ActionListener {
-
-    private PrintImageCanvas printImageCanvas;
-
+    private final PrintImageCanvas printImageCanvas = new PrintImageCanvas();
     private final MenuItem print1Menu = new MenuItem("PrintTest1");
     private final MenuItem print2Menu = new MenuItem("PrintTest2");
-    private final MenuItem exitMenu = new MenuItem("Exit");
 
     private static final String INSTRUCTIONS =
             "You must have a printer available to perform this test,\n" +
@@ -67,8 +62,7 @@ public class PrintImage extends Frame implements ActionListener {
     public static void main(String[] argv) throws Exception {
 
         if (PrinterJob.lookupPrintServices().length == 0) {
-            throw new SkippedException("Printer not configured or available."
-                    + " Test cannot continue.");
+            throw new RuntimeException("Printer not configured or available.");
         }
 
         PassFailJFrame.builder()
@@ -86,15 +80,10 @@ public class PrintImage extends Frame implements ActionListener {
     }
 
     public void initPrintImage() {
-
-        printImageCanvas = new PrintImageCanvas(this);
-
         initMenu();
-
         setLayout(new BorderLayout());
         add(printImageCanvas, BorderLayout.CENTER);
         pack();
-
         setSize(500, 500);
     }
 
@@ -103,14 +92,11 @@ public class PrintImage extends Frame implements ActionListener {
         Menu me = new Menu("File");
         me.add(print1Menu);
         me.add(print2Menu);
-        me.add("-");
-        me.add(exitMenu);
         mb.add(me);
         this.setMenuBar(mb);
 
         print1Menu.addActionListener(this);
         print2Menu.addActionListener(this);
-        exitMenu.addActionListener(this);
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -119,13 +105,10 @@ public class PrintImage extends Frame implements ActionListener {
             printMain1();
         } else if (target.equals(print2Menu)) {
             printMain2();
-        } else if (target.equals(exitMenu)) {
-            dispose();
         }
     }
 
     private void printMain1() {
-
         PrinterJob printerJob = PrinterJob.getPrinterJob();
         PageFormat pageFormat = printerJob.defaultPage();
 
@@ -135,6 +118,7 @@ public class PrintImage extends Frame implements ActionListener {
             try {
                 printerJob.print();
             } catch (PrinterException e) {
+                PassFailJFrame.forceFail(" Print Failed");
                 e.printStackTrace();
             }
         } else
@@ -142,7 +126,6 @@ public class PrintImage extends Frame implements ActionListener {
     }
 
     private void printMain2() {
-
         PrinterJob printerJob = PrinterJob.getPrinterJob();
         PageFormat pageFormat = printerJob.pageDialog(printerJob.defaultPage());
 
@@ -152,6 +135,7 @@ public class PrintImage extends Frame implements ActionListener {
             try {
                 printerJob.print();
             } catch (PrinterException e) {
+                PassFailJFrame.forceFail("Print Failed");
                 e.printStackTrace();
             }
         } else
@@ -160,9 +144,6 @@ public class PrintImage extends Frame implements ActionListener {
 }
 
 class PrintImageCanvas extends Canvas implements Printable {
-
-    public PrintImageCanvas(PrintImage pds) {
-    }
 
     public void paint(Graphics g) {
         Font drawFont = new Font("MS Mincho", Font.ITALIC, 50);
@@ -177,7 +158,6 @@ class PrintImageCanvas extends Canvas implements Printable {
             return NO_SUCH_PAGE;
         else {
             g.setColor(new Color(0, 0, 0, 200));
-
             Font drawFont = new Font("MS Mincho", Font.ITALIC, 50);
             g.setFont(drawFont);
             g.drawString("PrintSample!", 100, 150);

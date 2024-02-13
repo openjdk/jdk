@@ -32,19 +32,16 @@ import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
 
-import jtreg.SkippedException;
-
 /*
  * @test
  * @bug 4399442
  * @summary Brackets should be quoted in Postscript output
  * @key printer
  * @library /test/lib /java/awt/regtesthelpers
- * @build PassFailJFrame jtreg.SkippedException
+ * @build PassFailJFrame
  * @run main/manual PrintParenString
  */
 public class PrintParenString extends Frame {
-
     private final TextCanvas c;
 
     private static final String INSTRUCTIONS =
@@ -59,8 +56,7 @@ public class PrintParenString extends Frame {
     public static void main(String[] args) throws Exception {
 
         if (PrinterJob.lookupPrintServices().length == 0) {
-            throw new SkippedException("Printer not configured or available."
-                    + " Test cannot continue.");
+            throw new RuntimeException("Printer not configured or available.");
         }
 
         PassFailJFrame.builder()
@@ -87,6 +83,7 @@ public class PrintParenString extends Frame {
                 try {
                     pj.print();
                 } catch (PrinterException pe) {
+                    PassFailJFrame.forceFail("Print Failed");
                     pe.printStackTrace();
                 }
             }
@@ -108,7 +105,6 @@ public class PrintParenString extends Frame {
             String str = "String containing unclosed parenthesis (.";
             g2d.drawString(str, 20, 40);
 
-            g2d.dispose();
             return Printable.PAGE_EXISTS;
         }
 

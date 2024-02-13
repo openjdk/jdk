@@ -35,19 +35,16 @@ import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
 
-import jtreg.SkippedException;
-
 /*
  * @test
  * @bug 6359734
  * @key printer
  * @library /test/lib /java/awt/regtesthelpers
- * @build PassFailJFrame jtreg.SkippedException
+ * @build PassFailJFrame
  * @summary Test that fonts with a translation print where they should.
  * @run main/manual PrintTranslatedFont
  */
 public class PrintTranslatedFont extends Frame {
-
     private final TextCanvas c;
 
     private static final String INSTRUCTIONS =
@@ -63,8 +60,7 @@ public class PrintTranslatedFont extends Frame {
     public static void main(String[] args) throws Exception {
 
         if (PrinterJob.lookupPrintServices().length == 0) {
-            throw new SkippedException("Printer not configured or available."
-                    + " Test cannot continue.");
+            throw new RuntimeException("Printer not configured or available.");
         }
 
         PassFailJFrame.builder()
@@ -91,6 +87,7 @@ public class PrintTranslatedFont extends Frame {
                 try {
                     pj.print();
                 } catch (PrinterException pe) {
+                    PassFailJFrame.forceFail("Print Failed");
                     pe.printStackTrace();
                 }
             }
@@ -110,13 +107,10 @@ public class PrintTranslatedFont extends Frame {
             g2d.translate(pgFmt.getImageableX(), pgFmt.getImageableY());
 
             paint(g2d);
-
-            g2d.dispose();
             return Printable.PAGE_EXISTS;
         }
 
         public void paint(Graphics2D g2d) {
-
             Font f = new Font("Dialog", Font.PLAIN, 20);
             int tx = 20;
             int ty = 20;
@@ -127,7 +121,8 @@ public class PrintTranslatedFont extends Frame {
             FontMetrics fm = g2d.getFontMetrics();
             String str = "Basic ascii string";
             int sw = fm.stringWidth(str);
-            int posx = 20, posy = 40;
+            int posx = 20;
+            int posy = 40;
             g2d.drawString(str, posx, posy);
             g2d.drawLine(posx + tx, posy + ty + 2, posx + tx + sw, posy + ty + 2);
 
@@ -137,8 +132,6 @@ public class PrintTranslatedFont extends Frame {
             sw = fm.stringWidth(str);
             g2d.drawString(str, posx, posy);
             g2d.drawLine(posx + tx, posy + ty + 2, posx + tx + sw, posy + ty + 2);
-
-            g2d.dispose();
         }
 
         public Dimension getPreferredSize() {

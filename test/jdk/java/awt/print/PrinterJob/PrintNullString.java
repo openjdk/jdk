@@ -34,19 +34,16 @@ import java.awt.print.PrinterJob;
 import java.text.AttributedCharacterIterator;
 import java.text.AttributedString;
 
-import jtreg.SkippedException;
-
 /*
  * @test
  * @bug 4223328
  * @summary Printer graphics must behave the same as screen graphics
  * @key printer
  * @library /test/lib /java/awt/regtesthelpers
- * @build PassFailJFrame jtreg.SkippedException
+ * @build PassFailJFrame
  * @run main/manual PrintNullString
  */
 public class PrintNullString extends Frame {
-
     private final TextCanvas c;
 
     private static final String INSTRUCTIONS =
@@ -63,8 +60,7 @@ public class PrintNullString extends Frame {
     public static void main(String[] args) throws Exception {
 
         if (PrinterJob.lookupPrintServices().length == 0) {
-            throw new SkippedException("Printer not configured or available."
-                    + " Test cannot continue.");
+            throw new RuntimeException("Printer not configured or available.");
         }
 
         PassFailJFrame.builder()
@@ -91,6 +87,7 @@ public class PrintNullString extends Frame {
                 try {
                     pj.print();
                 } catch (PrinterException pe) {
+                    PassFailJFrame.forceFail("Print Failed");
                     pe.printStackTrace();
                 }
             }
@@ -100,7 +97,6 @@ public class PrintNullString extends Frame {
     }
 
     static class TextCanvas extends Panel implements Printable {
-
         String nullStr = null;
         String emptyStr = "";
         AttributedString emptyAttStr = new AttributedString(emptyStr);
@@ -114,67 +110,64 @@ public class PrintNullString extends Frame {
 
             Graphics2D g2d = (Graphics2D) g;
             g2d.translate(pgFmt.getImageableX(), pgFmt.getImageableY());
+            paint(g2d);
 
-            paint(g);
-            g2d.dispose();
             return Printable.PAGE_EXISTS;
         }
 
-        public void paint(Graphics g1) {
-            Graphics2D g = (Graphics2D) g1;
+        public void paint(Graphics2D g2d) {
 
             // API 1: null & empty drawString(String, int, int);
             try {
-                g.drawString(nullStr, 20, 40);
-                g.drawString("FAILURE: No NPE for null String, int", 20, 40);
+                g2d.drawString(nullStr, 20, 40);
+                g2d.drawString("FAILURE: No NPE for null String, int", 20, 40);
             } catch (NullPointerException e) {
-                g.drawString("caught expected NPE for null String, int", 20, 40);
+                g2d.drawString("caught expected NPE for null String, int", 20, 40);
             }
 
-            g.drawString(emptyStr, 20, 60);
-            g.drawString("OK for empty String, int", 20, 60);
+            g2d.drawString(emptyStr, 20, 60);
+            g2d.drawString("OK for empty String, int", 20, 60);
 
             // API 2: null & empty drawString(String, float, float);
             try {
-                g.drawString(nullStr, 20.0f, 80.0f);
-                g.drawString("FAILURE: No NPE for null String, float", 20, 80);
+                g2d.drawString(nullStr, 20.0f, 80.0f);
+                g2d.drawString("FAILURE: No NPE for null String, float", 20, 80);
             } catch (NullPointerException e) {
-                g.drawString("caught expected NPE for null String, float", 20, 80);
+                g2d.drawString("caught expected NPE for null String, float", 20, 80);
             }
 
-            g.drawString(emptyStr, 20.0f, 100.0f);
-            g.drawString("OK for empty String, float", 20.0f, 100.f);
+            g2d.drawString(emptyStr, 20.0f, 100.0f);
+            g2d.drawString("OK for empty String, float", 20.0f, 100.f);
 
             // API 3: null & empty drawString(Iterator, int, int);
             try {
-                g.drawString(nullIterator, 20, 120);
-                g.drawString("FAILURE: No NPE for null iterator, float", 20, 120);
+                g2d.drawString(nullIterator, 20, 120);
+                g2d.drawString("FAILURE: No NPE for null iterator, float", 20, 120);
             } catch (NullPointerException e) {
-                g.drawString("caught expected NPE for null iterator, int", 20, 120);
+                g2d.drawString("caught expected NPE for null iterator, int", 20, 120);
             }
 
             try {
-                g.drawString(emptyIterator, 20, 140);
-                g.drawString("FAILURE: No IAE for empty iterator, int", 20, 140);
+                g2d.drawString(emptyIterator, 20, 140);
+                g2d.drawString("FAILURE: No IAE for empty iterator, int", 20, 140);
             } catch (IllegalArgumentException e) {
-                g.drawString("caught expected IAE for empty iterator, int", 20, 140);
+                g2d.drawString("caught expected IAE for empty iterator, int", 20, 140);
             }
 
             // API 4: null & empty drawString(Iterator, float, int);
             try {
-                g.drawString(nullIterator, 20.0f, 160.0f);
-                g.drawString("FAILURE: No NPE for null iterator, float", 20, 160);
+                g2d.drawString(nullIterator, 20.0f, 160.0f);
+                g2d.drawString("FAILURE: No NPE for null iterator, float", 20, 160);
             } catch (NullPointerException e) {
-                g.drawString("caught expected NPE for null iterator, float", 20, 160);
+                g2d.drawString("caught expected NPE for null iterator, float", 20, 160);
             }
 
             try {
-                g.drawString(emptyIterator, 20, 180);
-                g.drawString("FAILURE: No IAE for empty iterator, float", 20, 180);
+                g2d.drawString(emptyIterator, 20, 180);
+                g2d.drawString("FAILURE: No IAE for empty iterator, float", 20, 180);
             } catch (IllegalArgumentException e) {
-                g.drawString("caught expected IAE for empty iterator, float", 20, 180);
+                g2d.drawString("caught expected IAE for empty iterator, float", 20, 180);
             }
-            g.dispose();
         }
 
         public Dimension getPreferredSize() {
