@@ -241,7 +241,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         ForceTranslateFailure(String.class, null, "Forces HotSpotJVMCIRuntime.translate to throw an exception in the context " +
                 "of the peer runtime. The value is a filter that can restrict the forced failure to matching translated " +
                 "objects. See HotSpotJVMCIRuntime.postTranslation for more details. This option exists solely to test " +
-                "correct handling of translation failure."),
+                "correct handling of translation failures."),
         PrintConfig(Boolean.class, false, "Prints VM configuration available via JVMCI."),
         AuditHandles(Boolean.class, false, "Record stack trace along with scoped foreign object reference wrappers " +
                 "to debug issue with a wrapper being used after its scope has closed."),
