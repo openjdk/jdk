@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2011, 2023, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,15 +36,15 @@
 
 #include <dirent.h>
 
-StaticHugePageSupport::StaticHugePageSupport() :
+ExplicitHugePageSupport::ExplicitHugePageSupport() :
   _initialized(false), _pagesizes(), _default_hugepage_size(SIZE_MAX), _inconsistent(false) {}
 
-os::PageSizes StaticHugePageSupport::pagesizes() const {
+os::PageSizes ExplicitHugePageSupport::pagesizes() const {
   assert(_initialized, "Not initialized");
   return _pagesizes;
 }
 
-size_t StaticHugePageSupport::default_hugepage_size() const {
+size_t ExplicitHugePageSupport::default_hugepage_size() const {
   assert(_initialized, "Not initialized");
   return _default_hugepage_size;
 }
@@ -132,9 +132,9 @@ static os::PageSizes scan_hugepages() {
   return pagesizes;
 }
 
-void StaticHugePageSupport::print_on(outputStream* os) {
+void ExplicitHugePageSupport::print_on(outputStream* os) {
   if (_initialized) {
-    os->print_cr("Static hugepage support:");
+    os->print_cr("Explicit hugepage support:");
     for (size_t s = _pagesizes.smallest(); s != 0; s = _pagesizes.next_larger(s)) {
       os->print_cr("  hugepage size: " EXACTFMT, EXACTFMTARGS(s));
     }
@@ -143,18 +143,18 @@ void StaticHugePageSupport::print_on(outputStream* os) {
     os->print_cr("  unknown.");
   }
   if (_inconsistent) {
-    os->print_cr("  Support inconsistent. JVM will not use static hugepages.");
+    os->print_cr("  Support inconsistent. JVM will not use explicit hugepages.");
   }
 }
 
-void StaticHugePageSupport::scan_os() {
+void ExplicitHugePageSupport::scan_os() {
   _default_hugepage_size = scan_default_hugepagesize();
   if (_default_hugepage_size > 0) {
     _pagesizes = scan_hugepages();
     // See https://www.kernel.org/doc/Documentation/vm/hugetlbpage.txt: /proc/meminfo should match
     // /sys/kernel/mm/hugepages/hugepages-xxxx. However, we may run on a broken kernel (e.g. on WSL)
     // that only exposes /proc/meminfo but not /sys/kernel/mm/hugepages. In that case, we are not
-    // sure about the state of hugepage support by the kernel, so we won't use static hugepages.
+    // sure about the state of hugepage support by the kernel, so we won't use explicit hugepages.
     if (!_pagesizes.contains(_default_hugepage_size)) {
       log_info(pagesize)("Unexpected configuration: default pagesize (" SIZE_FORMAT ") "
                          "has no associated directory in /sys/kernel/mm/hugepages..", _default_hugepage_size);
@@ -307,18 +307,18 @@ void ShmemTHPSupport::print_on(outputStream* os) {
   }
 }
 
-StaticHugePageSupport HugePages::_static_hugepage_support;
+ExplicitHugePageSupport HugePages::_explicit_hugepage_support;
 THPSupport HugePages::_thp_support;
 ShmemTHPSupport HugePages::_shmem_thp_support;
 
 void HugePages::initialize() {
-  _static_hugepage_support.scan_os();
+  _explicit_hugepage_support.scan_os();
   _thp_support.scan_os();
   _shmem_thp_support.scan_os();
 }
 
 void HugePages::print_on(outputStream* os) {
-  _static_hugepage_support.print_on(os);
+  _explicit_hugepage_support.print_on(os);
   _thp_support.print_on(os);
   _shmem_thp_support.print_on(os);
 }

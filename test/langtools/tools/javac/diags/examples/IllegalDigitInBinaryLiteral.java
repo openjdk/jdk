@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,22 +21,8 @@
  * questions.
  */
 
-/* @test
-   @bug 4635869
-   @summary Zip files with no extension signature would get rejected
-   */
+// key:  compiler.err.illegal.digit.in.binary.literal
 
-import java.io.*;
-import java.util.zip.*;
-
-public class NoExtensionSignature {
-
-    public static void main(String[] args) throws Exception {
-
-        File f = new File(System.getProperty("test.src", "."), "test.zip");
-        ZipInputStream zis = new ZipInputStream (new FileInputStream(f));
-        ZipEntry entry;
-        while ((entry = zis.getNextEntry()) != null)
-            while (zis.read() != -1 );
-    }
+class IllegalDigitInOctalLiteral {
+    int i = 0b8;
 }
