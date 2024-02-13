@@ -100,7 +100,7 @@ public class TestLockStackCapacity {
         }
 
         if (!WB.supportsRecursiveLightweightLocking()) {
-            throw new SkippedException("Test only valid is LM_LIGHTWEIGHT supports recursion");
+            throw new SkippedException("Test only valid if LM_LIGHTWEIGHT supports recursion");
         }
 
         SynchronizedObject.runTest();
