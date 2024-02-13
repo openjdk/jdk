@@ -925,10 +925,10 @@ void universe_oopstorage_init() {
 }
 
 static void initialize_known_method(LatestMethodCache* method_cache,
-                             InstanceKlass* ik,
-                             const char* method,
-                             Symbol* signature,
-                             bool is_static, TRAPS)
+                                    InstanceKlass* ik,
+                                    const char* method,
+                                    Symbol* signature,
+                                    bool is_static, TRAPS)
 {
   TempNewSymbol name = SymbolTable::new_symbol(method);
   Method* m = nullptr;

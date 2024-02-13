@@ -559,9 +559,9 @@ static void emit_cmpfp3(MacroAssembler& _masm, Register dst) {
 // |-jz -> a | b # a & b
 // |    -> a     #
 static void emit_fp_min_max(MacroAssembler& _masm, XMMRegister dst,
-                     XMMRegister a, XMMRegister b,
-                     XMMRegister xmmt, Register rt,
-                     bool min, bool single) {
+                            XMMRegister a, XMMRegister b,
+                            XMMRegister xmmt, Register rt,
+                            bool min, bool single) {
 
   Label nan, zero, below, above, done;
 

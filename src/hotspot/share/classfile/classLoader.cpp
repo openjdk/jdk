@@ -1012,7 +1012,7 @@ const char* ClassLoader::file_name_for_class_name(const char* class_name,
 }
 
 static ClassPathEntry* find_first_module_cpe(ModuleEntry* mod_entry,
-                                      const GrowableArray<ModuleClassPathList*>* const module_list) {
+                                             const GrowableArray<ModuleClassPathList*>* const module_list) {
   int num_of_entries = module_list->length();
   const Symbol* class_module_name = mod_entry->name();
 

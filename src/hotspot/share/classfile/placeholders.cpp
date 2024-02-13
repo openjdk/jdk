@@ -199,7 +199,7 @@ void PlaceholderEntry::set_supername(Symbol* supername) {
 // SystemDictionary_lock, so we don't need special precautions
 // on store ordering here.
 static PlaceholderEntry* add_entry(Symbol* class_name, ClassLoaderData* loader_data,
-                            Symbol* supername){
+                                   Symbol* supername){
   assert_locked_or_safepoint(SystemDictionary_lock);
   assert(class_name != nullptr, "adding nullptr obj");
 

@@ -34,7 +34,7 @@
 // mov d, s1; shl d, s2 into
 // lea d, [s1 << s2]    with s2 = 1, 2, 3
 static bool lea_coalesce_helper(Block* block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc* ra_,
-                         MachNode* (*new_root)(), uint inst0_rule, bool imm) {
+                                MachNode* (*new_root)(), uint inst0_rule, bool imm) {
   MachNode* inst0 = block->get_node(block_index)->as_Mach();
   assert(inst0->rule() == inst0_rule, "sanity");
 

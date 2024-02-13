@@ -232,7 +232,7 @@ static uint64_t replicate(uint64_t bits, int nbits, int count)
 // more convoluted than is really necessary.
 
 static int expandLogicalImmediate(uint32_t immN, uint32_t immr,
-                            uint32_t imms, uint64_t &bimm)
+                                  uint32_t imms, uint64_t &bimm)
 {
   int len;                 // ought to be <= 6
   uint32_t levels;         // 6 bits
