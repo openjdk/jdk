@@ -30,40 +30,37 @@ import java.awt.print.PrinterAbortException;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
 
-import jtreg.SkippedException;
-
 /*
  * @test
  * @bug 4245280
  * @key printer
  * @summary PrinterJob not cancelled when PrinterJob.cancel() is used
  * @library /test/lib /java/awt/regtesthelpers
- * @build PassFailJFrame jtreg.SkippedException
+ * @build PassFailJFrame
  * @run main/manual PrinterJobCancel
  */
 public class PrinterJobCancel extends Thread implements Printable {
 
-    PrinterJob pj;
-    boolean okayed;
+    private final PrinterJob pj;
+    private final boolean okayed;
 
     private static final String INSTRUCTIONS =
-             "Test that print job cancellation works.\n" +
-             "You must have a printer available to perform this test.\n" +
-             "This test silently starts a print job and while the job is\n" +
-             "still being printed, cancels the print job\n" +
-             "You should see a message on System.out that the job\n" +
-             "was properly cancelled.\n" +
-             "You will need to kill the application manually since regression\n" +
-             "tests apparently aren't supposed to call System.exit()";
+            "Test that print job cancellation works.\n" +
+            "You must have a printer available to perform this test.\n" +
+            "This test silently starts a print job and while the job is\n" +
+            "still being printed, cancels the print job\n" +
+            "You should see a message on System.out that the job\n" +
+            "was properly cancelled.\n" +
+            "You will need to kill the application manually since regression\n" +
+            "tests apparently aren't supposed to call System.exit()";
 
     public static void main(String[] args) throws Exception {
 
         if (PrinterJob.lookupPrintServices().length == 0) {
-            throw new SkippedException("Printer not configured or available."
-                    + " Test cannot continue.");
+            throw new RuntimeException("Printer not configured or available.");
         }
 
-        PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
+        PassFailJFrame passFailJFrame = PassFailJFrame.builder()
                 .instructions(INSTRUCTIONS)
                 .rows((int) INSTRUCTIONS.lines().count() + 1)
                 .columns(45)
@@ -72,18 +69,14 @@ public class PrinterJobCancel extends Thread implements Printable {
         PrinterJobCancel pjc = new PrinterJobCancel();
         if (pjc.okayed) {
             pjc.start();
-            try {
-                Thread.sleep(5000);
-                pjc.pj.cancel();
-            } catch (InterruptedException e) {
-            }
+            Thread.sleep(5000);
+            pjc.pj.cancel();
         }
 
         passFailJFrame.awaitAndCheck();
     }
 
     public PrinterJobCancel() {
-
         pj = PrinterJob.getPrinterJob();
         pj.setPrintable(this);
         okayed = pj.printDialog();
@@ -97,16 +90,16 @@ public class PrinterJobCancel extends Thread implements Printable {
             cancelWorked = true;
             System.out.println("Job was properly cancelled and we");
             System.out.println("got the expected PrintAbortException");
+            PassFailJFrame.forcePass();
         } catch (PrinterException prex) {
-            System.out.println("This is wrong .. we shouldn't be here");
-            System.out.println("Looks like a test failure");
+            PassFailJFrame.forceFail("This is wrong .. we shouldn't be here, " +
+                                     "Looks like a test failure");
             prex.printStackTrace();
-            //throw prex;
         } finally {
             System.out.println("DONE PRINTING");
             if (!cancelWorked) {
-                System.out.println("Looks like the test failed - we didn't get");
-                System.out.println("the expected PrintAbortException ");
+                PassFailJFrame.forceFail("Looks like the test failed - we didn't get " +
+                                         "the expected PrintAbortException ");
             }
         }
     }
@@ -122,7 +115,6 @@ public class PrinterJobCancel extends Thread implements Printable {
         g2d.setColor(Color.black);
 
         g2d.drawString(("This is page" + (pidx + 1)), 60, 80);
-        g2d.dispose();
         // Need to slow things down a bit .. important not to try this
         // on the event dispathching thread of course.
         try {

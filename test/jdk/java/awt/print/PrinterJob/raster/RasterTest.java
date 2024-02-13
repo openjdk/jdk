@@ -37,20 +37,16 @@ import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
 
-import jtreg.SkippedException;
-
 /*
  * @test
  * @bug 4242639
  * @summary Printing quality problem on Canon and NEC
  * @key printer
  * @library /test/lib /java/awt/regtesthelpers
- * @build PassFailJFrame jtreg.SkippedException
+ * @build PassFailJFrame
  * @run main/manual RasterTest
  */
 public class RasterTest extends Frame implements ActionListener {
-
-    private final RasterCanvas c;
 
     private static final String INSTRUCTIONS =
             "You must have a printer available to perform this test\n" +
@@ -65,8 +61,7 @@ public class RasterTest extends Frame implements ActionListener {
     public static void main(String[] args) throws Exception {
 
         if (PrinterJob.lookupPrintServices().length == 0) {
-            throw new SkippedException("Printer not configured or available."
-                    + " Test cannot continue.");
+            throw new RuntimeException("Printer not configured or available.");
         }
 
         PassFailJFrame.builder()
@@ -81,20 +76,17 @@ public class RasterTest extends Frame implements ActionListener {
     public RasterTest() {
         super("Java 2D Raster Printing");
 
-        c = new RasterCanvas();
+        RasterCanvas c = new RasterCanvas();
         add("Center", c);
 
         Button printButton = new Button("Print");
         printButton.addActionListener(this);
         add("South", printButton);
-
         pack();
-
         setBackground(Color.white);
     }
 
     public void actionPerformed(ActionEvent e) {
-
         PrinterJob pj = PrinterJob.getPrinterJob();
 
         if (pj != null && pj.printDialog()) {
@@ -102,9 +94,8 @@ public class RasterTest extends Frame implements ActionListener {
             try {
                 pj.print();
             } catch (PrinterException pe) {
+                PassFailJFrame.forceFail( "Test Failed");
                 pe.printStackTrace();
-            } finally {
-                System.out.println("PRINT RETURNED");
             }
         }
     }
@@ -118,7 +109,7 @@ public class RasterTest extends Frame implements ActionListener {
             Graphics2D g2d = (Graphics2D) g;
             g2d.translate(pgFmt.getImageableX(), pgFmt.getImageableY());
             doPaint(g2d);
-            g2d.dispose();
+
             return Printable.PAGE_EXISTS;
         }
 
@@ -131,10 +122,6 @@ public class RasterTest extends Frame implements ActionListener {
         }
 
         public void doPaint(Graphics g) {
-            Graphics2D g2 = (Graphics2D) g;
-
-            g2.setColor(Color.black);
-
             BufferedImage bimg = new BufferedImage(200, 200,
                     BufferedImage.TYPE_INT_ARGB);
             Graphics ig = bimg.getGraphics();
@@ -151,6 +138,8 @@ public class RasterTest extends Frame implements ActionListener {
 
             GradientPaint gp =
                     new GradientPaint(10.0f, 10.0f, alphablue, 210.0f, 210.0f, alphared, true);
+
+            Graphics2D g2 = (Graphics2D) g;
             g2.setPaint(gp);
             g2.fillRect(10, 240, 200, 200);
         }

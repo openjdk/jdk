@@ -29,40 +29,36 @@ import java.awt.print.PageFormat;
 import java.awt.print.Printable;
 import java.awt.print.PrinterJob;
 
-import jtreg.SkippedException;
-
 /*
  * @test
  * @bug 4884389 7183516
  * @key printer
  * @library /test/lib /java/awt/regtesthelpers
- * @build PassFailJFrame jtreg.SkippedException
+ * @build PassFailJFrame
  * @summary Font specified with face name loses style on printing
  * @run main/manual PrintAllFonts
  */
 public class PrintAllFonts implements Printable {
 
-    static Font[] allFonts;
-    int fontNum = 0;
-    int startNum = 0;
-    int lineHeight = 18;
-    int thisPage = 0;
+    private static Font[] allFonts;
+    private int lineHeight = 18;
+    private int fontNum = 0;
+    private int startNum = 0;
+    private int thisPage = 0;
 
     private static final String INSTRUCTIONS =
-             "You must have a printer available to perform this test.\n" +
-             "\n" +
-             "This bug is system dependent and is not always reproducible.\n" +
-             "A passing test will have all text printed with correct font style.";
+            "You must have a printer available to perform this test.\n" +
+            "\n" +
+            "This bug is system dependent and is not always reproducible.\n" +
+            "A passing test will have all text printed with correct font style.";
 
     public static void main(String[] args) throws Exception {
 
         if (PrinterJob.lookupPrintServices().length == 0) {
-            throw new SkippedException("Printer not configured or available."
-                    + " Test cannot continue.");
+            throw new RuntimeException("Printer not configured or available.");
         }
 
         PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
-                .title("PrintAllFonts Test Instructions")
                 .instructions(INSTRUCTIONS)
                 .rows((int) INSTRUCTIONS.lines().count() + 1)
                 .columns(45)
@@ -91,18 +87,20 @@ public class PrintAllFonts implements Printable {
         } else {
             fontNum = startNum;
         }
+
+        int fontsPerPage = (int) pf.getImageableHeight() / lineHeight;
+        int x = (int) pf.getImageableX() + 10;
+        int y = (int) pf.getImageableY() + lineHeight;
+
         g.setColor(Color.black);
-
-        int hgt = (int)pf.getImageableHeight();
-        int fontsPerPage = hgt/lineHeight;
-        int x = (int)pf.getImageableX()+10;
-        int y = (int)pf.getImageableY()+lineHeight;
-
         for (int n = 0; n < fontsPerPage; n++) {
-            Font f = allFonts[fontNum].deriveFont(Font.PLAIN, 16);
+            Font f = allFonts[fontNum].deriveFont(Font.PLAIN, 14);
+            Font fi = allFonts[fontNum].deriveFont(Font.ITALIC, 14);
             g.setFont(f);
             g.drawString(f.getFontName(), x, y);
-            y+= lineHeight;
+            g.setFont(fi);
+            g.drawString(f.getFontName(), (int) (x + pf.getImageableWidth() / 2), y);
+            y += lineHeight;
             fontNum++;
             if (fontNum >= allFonts.length) {
                 break;

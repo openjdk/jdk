@@ -38,15 +38,13 @@ import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
 
-import jtreg.SkippedException;
-
 /*
  * @test
  * @bug 4252108 6229507
  * @key printer
  * @summary PrinterJob.validatePage() is unimplemented.
  * @library /test/lib /java/awt/regtesthelpers
- * @build PassFailJFrame jtreg.SkippedException
+ * @build PassFailJFrame
  * @run main/manual ValidatePage
  */
 public class ValidatePage extends Frame implements Printable {
@@ -68,27 +66,26 @@ public class ValidatePage extends Frame implements Printable {
     protected void displayPageFormatAttributes() {
         myWidthLabel.setText("Format Width = " + drnd(myPageFormat.getWidth()));
         myHeightLabel.setText("Format Height = " + drnd(myPageFormat.getHeight()));
-        myImageableXLabel.setText
-                ("Format Left Margin = " + drnd(myPageFormat.getImageableX()));
-        myImageableRightLabel.setText
-                ("Format Right Margin = " + drnd(myPageFormat.getWidth() -
-                (myPageFormat.getImageableX() + myPageFormat.getImageableWidth())));
-        myImageableWidthLabel.setText
-                ("Format ImageableWidth = " + drnd(myPageFormat.getImageableWidth()));
-        myImageableYLabel.setText
-                ("Format Top Margin = " + drnd(myPageFormat.getImageableY()));
-        myImageableBottomLabel.setText
-                ("Format Bottom Margin = " + drnd(myPageFormat.getHeight() -
-                (myPageFormat.getImageableY() + myPageFormat.getImageableHeight())));
-        myImageableHeightLabel.setText
-                ("Format ImageableHeight = " + drnd(myPageFormat.getImageableHeight()));
+        myImageableXLabel.setText("Format Left Margin = " + drnd(myPageFormat.getImageableX()));
+        myImageableRightLabel.setText("Format Right Margin = " + drnd(myPageFormat.getWidth()
+                - (myPageFormat.getImageableX() + myPageFormat.getImageableWidth())));
+        myImageableWidthLabel.setText("Format ImageableWidth = "
+                + drnd(myPageFormat.getImageableWidth()));
+        myImageableYLabel.setText("Format Top Margin = "
+                + drnd(myPageFormat.getImageableY()));
+        myImageableBottomLabel.setText("Format Bottom Margin = " + drnd(myPageFormat.getHeight()
+                - (myPageFormat.getImageableY() + myPageFormat.getImageableHeight())));
+        myImageableHeightLabel.setText("Format ImageableHeight = "
+                + drnd(myPageFormat.getImageableHeight()));
         int o = myPageFormat.getOrientation();
         myOrientationLabel.setText
                 ("Format Orientation = " +
-                        (o == PageFormat.PORTRAIT ? "PORTRAIT" :
-                                o == PageFormat.LANDSCAPE ? "LANDSCAPE" :
-                                        o == PageFormat.REVERSE_LANDSCAPE ? "REVERSE_LANDSCAPE" :
-                                                "<invalid>"));
+                        (switch (o) {
+                            case PageFormat.PORTRAIT -> "PORTRAIT";
+                            case PageFormat.LANDSCAPE -> "LANDSCAPE";
+                            case PageFormat.REVERSE_LANDSCAPE -> "REVERSE_LANDSCAPE";
+                            default -> "<invalid>";
+                        }));
         Paper p = myPageFormat.getPaper();
         pw.setText("Paper Width = " + drnd(p.getWidth()));
         ph.setText("Paper Height = " + drnd(p.getHeight()));
@@ -96,11 +93,11 @@ public class ValidatePage extends Frame implements Printable {
         pgiw.setText("Paper Imageable Width = " + drnd(p.getImageableWidth()));
         pgih.setText("Paper Imageable Height = " + drnd(p.getImageableHeight()));
 
-        pgrm.setText("Paper Right Margin = " +
-                drnd(p.getWidth() - (p.getImageableX() + p.getImageableWidth())));
+        pgrm.setText("Paper Right Margin = " + drnd(p.getWidth()
+                - (p.getImageableX() + p.getImageableWidth())));
         pgtm.setText("Paper Top Margin = " + drnd(p.getImageableY()));
-        pgbm.setText("Paper Bottom Margin = " +
-                drnd(p.getHeight() - (p.getImageableY() + p.getImageableHeight())));
+        pgbm.setText("Paper Bottom Margin = " + drnd(p.getHeight()
+                - (p.getImageableY() + p.getImageableHeight())));
     }
 
     static String drnd(double d) {
@@ -188,6 +185,7 @@ public class ValidatePage extends Frame implements Printable {
                 myPrinterJob.setPrintable(ValidatePage.this, myPageFormat);
                 myPrinterJob.print();
             } catch (PrinterException pe) {
+                PassFailJFrame.forceFail( "Test Failed");
                 pe.printStackTrace();
             }
         });
@@ -215,6 +213,7 @@ public class ValidatePage extends Frame implements Printable {
                 myPageFormat.setPaper(p1);
                 displayPageFormatAttributes();
             } catch (NumberFormatException nfe) {
+                PassFailJFrame.forceFail( "Test Failed");
                 nfe.printStackTrace();
             }
         });
@@ -248,29 +247,31 @@ public class ValidatePage extends Frame implements Printable {
             return Printable.NO_SUCH_PAGE;
         }
 
+        System.out.println("Format Orientation = " +
+                (switch (pageFormat.getOrientation()) {
+                    case PageFormat.PORTRAIT -> "PORTRAIT";
+                    case PageFormat.LANDSCAPE -> "LANDSCAPE";
+                    case PageFormat.REVERSE_LANDSCAPE -> "REVERSE_LANDSCAPE";
+                    default -> "<invalid>";
+                }));
+
         Graphics2D g2d = (Graphics2D) graphics;
 
-        int o = pageFormat.getOrientation();
-
-        System.out.println("Format Orientation = " +
-                (o == PageFormat.PORTRAIT ? "PORTRAIT" :
-                        o == PageFormat.LANDSCAPE ? "LANDSCAPE" :
-                                o == PageFormat.REVERSE_LANDSCAPE ? "REVERSE_LANDSCAPE" :
-                                        "<invalid>"));
         System.out.println(g2d.getTransform());
         System.out.println("ix=" + pageFormat.getImageableX() +
-                " iy=" + pageFormat.getImageableY());
+                           " iy=" + pageFormat.getImageableY());
         g2d.translate(pageFormat.getImageableX(), pageFormat.getImageableY());
         g2d.drawString("ORIGIN", 20, 20);
         g2d.drawString("X THIS WAY", 200, 50);
         g2d.drawString("Y THIS WAY", 60, 200);
-        g2d.drawRect(0, 0, (int) pageFormat.getImageableWidth(),
-                (int) pageFormat.getImageableHeight());
+        g2d.drawRect(0, 0,
+                    (int) pageFormat.getImageableWidth(),
+                    (int) pageFormat.getImageableHeight());
         g2d.setColor(Color.blue);
-        g2d.drawRect(1, 1, (int) pageFormat.getImageableWidth() - 2,
-                (int) pageFormat.getImageableHeight() - 2);
+        g2d.drawRect(1, 1,
+                    (int) pageFormat.getImageableWidth() - 2,
+                    (int) pageFormat.getImageableHeight() - 2);
 
-        g2d.dispose();
         return Printable.PAGE_EXISTS;
     }
 
@@ -293,14 +294,12 @@ public class ValidatePage extends Frame implements Printable {
             "or valid papers with varying margins etc, this should always find\n" +
             "the closest\n" +
             "match within the limits of what is possible on the current printer.\n" +
-            "Print: to the current printer. Not vital for this test.\n" +
-            "request.";
+            "Print: to the current printer. Not vital for this test request.";
 
     public static void main(String[] args) throws Exception {
 
         if (PrinterJob.lookupPrintServices().length == 0) {
-            throw new SkippedException("Printer not configured or available."
-                    + " Test cannot continue.");
+            throw new RuntimeException("Printer not configured or available.");
         }
 
         PassFailJFrame.builder()

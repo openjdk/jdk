@@ -38,15 +38,13 @@ import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
 
-import jtreg.SkippedException;
-
 /*
  * @test
  * @bug 4197377 4299145 6358747 6574633
  * @key printer
  * @summary Page setup dialog settings
  * @library /test/lib /java/awt/regtesthelpers
- * @build PassFailJFrame jtreg.SkippedException
+ * @build PassFailJFrame
  * @run main/manual PageSetupDialog
  */
 public class PageSetupDialog extends Frame implements Printable {
@@ -75,23 +73,20 @@ public class PageSetupDialog extends Frame implements Printable {
             " and margins and print pages and compare the results with the request.";
 
     protected void displayPageFormatAttributes() {
-
-        myWidthLabel.setText("Format Width = " + (float) myPageFormat.getWidth());
-        myHeightLabel.setText("Format Height = " + (float) myPageFormat.getHeight());
-        myImageableXLabel.setText
-                ("Format Left Margin = " + (float) myPageFormat.getImageableX());
-        myImageableRightLabel.setText
-                ("Format Right Margin = " + (float) (myPageFormat.getWidth() -
-                (myPageFormat.getImageableX() + myPageFormat.getImageableWidth())));
-        myImageableWidthLabel.setText
-                ("Format ImageableWidth = " + (float) myPageFormat.getImageableWidth());
-        myImageableYLabel.setText
-                ("Format Top Margin = " + (float) myPageFormat.getImageableY());
-        myImageableBottomLabel.setText
-                ("Format Bottom Margin = " + (float) (myPageFormat.getHeight() -
-                (myPageFormat.getImageableY() + myPageFormat.getImageableHeight())));
-        myImageableHeightLabel.setText
-                ("Format ImageableHeight = " + (float) myPageFormat.getImageableHeight());
+        myWidthLabel.setText("Format Width = " + myPageFormat.getWidth());
+        myHeightLabel.setText("Format Height = " + myPageFormat.getHeight());
+        myImageableXLabel.setText("Format Left Margin = "
+                + myPageFormat.getImageableX());
+        myImageableRightLabel.setText("Format Right Margin = " + (myPageFormat.getWidth()
+                - (myPageFormat.getImageableX() + myPageFormat.getImageableWidth())));
+        myImageableWidthLabel.setText("Format ImageableWidth = "
+                + myPageFormat.getImageableWidth());
+        myImageableYLabel.setText("Format Top Margin = "
+                + myPageFormat.getImageableY());
+        myImageableBottomLabel.setText("Format Bottom Margin = " + (myPageFormat.getHeight()
+                - (myPageFormat.getImageableY() + myPageFormat.getImageableHeight())));
+        myImageableHeightLabel.setText("Format ImageableHeight = "
+                + myPageFormat.getImageableHeight());
         int o = myPageFormat.getOrientation();
         if (o == PageFormat.LANDSCAPE && reverse) {
             o = PageFormat.REVERSE_LANDSCAPE;
@@ -102,21 +97,23 @@ public class PageSetupDialog extends Frame implements Printable {
         }
         myOrientationLabel.setText
                 ("Format Orientation = " +
-                        (o == PageFormat.PORTRAIT ? "PORTRAIT" :
-                                o == PageFormat.LANDSCAPE ? "LANDSCAPE" :
-                                        o == PageFormat.REVERSE_LANDSCAPE ? "REVERSE_LANDSCAPE" :
-                                                "<invalid>"));
+                        (switch (o) {
+                            case PageFormat.PORTRAIT -> "PORTRAIT";
+                            case PageFormat.LANDSCAPE -> "LANDSCAPE";
+                            case PageFormat.REVERSE_LANDSCAPE -> "REVERSE_LANDSCAPE";
+                            default -> "<invalid>";
+                        }));
         Paper p = myPageFormat.getPaper();
-        pw.setText("Paper Width = " + (float) p.getWidth());
-        ph.setText("Paper Height = " + (float) p.getHeight());
-        pglm.setText("Paper Left Margin = " + (float) p.getImageableX());
-        pgiw.setText("Paper Imageable Width = " + (float) p.getImageableWidth());
-        pgrm.setText("Paper Right Margin = " +
-                (float) (p.getWidth() - (p.getImageableX() + p.getImageableWidth())));
-        pgtm.setText("Paper Top Margin = " + (float) p.getImageableY());
-        pgih.setText("Paper Imageable Height = " + (float) p.getImageableHeight());
-        pgbm.setText("Paper Bottom Margin = " +
-                (float) (p.getHeight() - (p.getImageableY() + p.getImageableHeight())));
+        pw.setText("Paper Width = " + p.getWidth());
+        ph.setText("Paper Height = " + p.getHeight());
+        pglm.setText("Paper Left Margin = " + p.getImageableX());
+        pgiw.setText("Paper Imageable Width = " + p.getImageableWidth());
+        pgrm.setText("Paper Right Margin = " + (p.getWidth()
+                - (p.getImageableX() + p.getImageableWidth())));
+        pgtm.setText("Paper Top Margin = " + p.getImageableY());
+        pgih.setText("Paper Imageable Height = " + p.getImageableHeight());
+        pgbm.setText("Paper Bottom Margin = " + (p.getHeight()
+                - (p.getImageableY() + p.getImageableHeight())));
     }
 
     public PageSetupDialog() {
@@ -176,6 +173,7 @@ public class PageSetupDialog extends Frame implements Printable {
                 try {
                     myPrinterJob.print();
                 } catch (PrinterException pe) {
+                    PassFailJFrame.forceFail( "Test Failed");
                     pe.printStackTrace();
                 }
             }
@@ -188,6 +186,7 @@ public class PageSetupDialog extends Frame implements Printable {
                 try {
                     myPrinterJob.print();
                 } catch (PrinterException pe) {
+                    PassFailJFrame.forceFail( "Test Failed");
                     pe.printStackTrace();
                 }
             }
@@ -212,29 +211,28 @@ public class PageSetupDialog extends Frame implements Printable {
         g2d.drawString("X THIS WAY", 200, 50);
         g2d.drawString("Y THIS WAY", 60, 200);
         g2d.drawString("Graphics is " + g2d.getClass().getName(), 100, 100);
-        g2d.drawRect(0, 0, (int) pageFormat.getImageableWidth(),
+        g2d.drawRect(0, 0,
+                (int) pageFormat.getImageableWidth(),
                 (int) pageFormat.getImageableHeight());
         if (alpha) {
             g2d.setColor(new Color(0, 0, 255, 192));
         } else {
             g2d.setColor(Color.blue);
         }
-        g2d.drawRect(1, 1, (int) pageFormat.getImageableWidth() - 2,
+        g2d.drawRect(1, 1,
+                (int) pageFormat.getImageableWidth() - 2,
                 (int) pageFormat.getImageableHeight() - 2);
 
-        g2d.dispose();
         return Printable.PAGE_EXISTS;
     }
 
     public static void main(String[] args) throws Exception {
 
         if (PrinterJob.lookupPrintServices().length == 0) {
-            throw new SkippedException("Printer not configured or available."
-                    + " Test cannot continue.");
+            throw new RuntimeException("Printer not configured or available.");
         }
 
         PassFailJFrame.builder()
-                .title("PageSetupDialog Test Instructions")
                 .instructions(INSTRUCTIONS)
                 .testUI(PageSetupDialog::new)
                 .rows((int) INSTRUCTIONS.lines().count() + 1)
