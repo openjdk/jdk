@@ -1227,13 +1227,10 @@ inline TableStatistics ConcurrentHashTable<CONFIG, F>::
   size_t literal_bytes = 0;
   InternalTable* table = get_table();
   size_t num_batches = table->_size / batch_size;
-  for (size_t start_batch = 0; start_batch < _table->_size; start_batch += batch_size) {
-    size_t batch_end = MIN2(start_batch + batch_size, _table->_size);
-    }
+  for (size_t batch_start = 0; batch_start < _table->_size; batch_start += batch_size) {
+    size_t batch_end = MIN2(batch_start + batch_size, _table->_size);
     ScopedCS cs(thread, this);
-    for (size_t bucket_it = batch_start;
-         bucket_it < batch_end;
-         bucket_it++) {
+    for (size_t bucket_it = batch_start; bucket_it < batch_end; bucket_it++) {
       size_t count = 0;
       Bucket* bucket = table->get_bucket(bucket_it);
       if (bucket->have_redirect() || bucket->is_locked()) {
