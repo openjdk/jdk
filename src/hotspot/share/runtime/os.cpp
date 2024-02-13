@@ -1825,7 +1825,8 @@ char* os::attempt_reserve_memory_at(char* addr, size_t bytes, bool executable, M
     MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC, flag);
     log_debug(os, map)("Reserved " RANGEFMT, RANGEFMTARGS(result, bytes));
   } else {
-    log_info(os, map)("Attempt to reserve " RANGEFMT " failed", RANGEFMTARGS(addr, bytes));
+    log_info(os, map)("Attempt to reserve " RANGEFMT " failed",
+                      RANGEFMTARGS(addr, bytes));
   }
   return result;
 }
