@@ -4084,8 +4084,8 @@ DWORD os::win32::active_processors_in_job_object() {
             }
 
             GROUP_AFFINITY* group_affinity_data = ((GROUP_AFFINITY*)job_object_information);
-            for (DWORD i = 0; i < groups_found; i++) {
-              processors += population_count(group_affinity_data[i].Mask);
+            for (DWORD i = 0; i < groups_found; i++, group_affinity_data++) {
+              processors += population_count(group_affinity_data->Mask);
             }
 
             if (processors == 0) {
@@ -4127,8 +4127,8 @@ DWORD os::win32::system_logical_processor_count() {
         DWORD processor_groups = system_logical_processor_info->Group.ActiveGroupCount;
 
         PROCESSOR_GROUP_INFO* group_info = (PROCESSOR_GROUP_INFO*)system_logical_processor_info->Group.GroupInfo;
-        for (DWORD i = 0; i < processor_groups; i++) {
-          logical_processors += group_info[i].ActiveProcessorCount;
+        for (DWORD i = 0; i < processor_groups; i++, group_info++) {
+          logical_processors += group_info->ActiveProcessorCount;
         }
 
         if (logical_processors == 0) {
