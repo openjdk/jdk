@@ -592,24 +592,23 @@ loop:   while (true) {
         }
         in.readFully(bytearr, 0, utflen);
 
-        // When all codepoints are 0-127, the modified UTF-8 stream can be use a similar
-        // fast-path as regular UTF-8
-        int count = JLA.countPositives(bytearr, 0, utflen);
-        if (count == utflen) {
-            // For ASCII-only bytes ISO-8859-1 is equivalent to UTF-8, but using the
-            // former charset avoids a redundant scan
-            return new String(bytearr, 0, utflen, StandardCharsets.ISO_8859_1);
-        }
+        int count;
         char[] chararr;
-        if (dis != null) {
-            if (dis.chararr.length < utflen) {
-                dis.chararr = new char[utflen << 1];
+        if (utflen > 7) {
+            // When there's a chunk of ASCII 0-127, the modified UTF-8 stream can use a similar
+            // fast-path as regular UTF-8.
+            count = JLA.countPositives(bytearr, 0, utflen);
+            if (count == utflen) {
+                // For ASCII ISO-8859-1 is equivalent to UTF-8, while avoiding a redundant
+                // scan
+                return new String(bytearr, 0, utflen, StandardCharsets.ISO_8859_1);
             }
-            chararr = dis.chararr;
+            chararr = getCharBuf(utflen, dis);
+            JLA.inflateBytesToChars(bytearr, 0, chararr, 0, count);
         } else {
-            chararr = new char[utflen];
+            chararr = getCharBuf(utflen, dis);
+            count = 0;
         }
-        JLA.inflateBytesToChars(bytearr, 0, chararr, 0, count);
         int c, char2, char3;
         int chararr_count = count;
         while (count < utflen) {
@@ -656,5 +655,17 @@ loop:   while (true) {
         }
         // The number of chars produced may be less than utflen
         return new String(chararr, 0, chararr_count);
+    }
+
+    private static char[] getCharBuf(int utflen, DataInputStream dis) {
+        if (dis != null) {
+            char[] chararr = dis.chararr;
+            if (chararr.length < utflen) {
+                dis.chararr = chararr = new char[utflen << 1];
+            }
+            return chararr;
+        } else {
+            return new char[utflen];
+        }
     }
 }
