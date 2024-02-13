@@ -60,7 +60,7 @@ public abstract class NMTBenchmark_wb {
     @Param({"4", "8", "16", "32", "64"})
     public int SUB_REGIONS;
 
-    private static final int PageSize = 1024 * 4;
+    private static final int PAGE_SIZE = 1024 * 4;
 
     // Need to wrap WhiteBox in a holder class so that it doesn't get initialized on the host VM (which won't
     // have WB enabled.
@@ -83,19 +83,20 @@ public abstract class NMTBenchmark_wb {
         }
     }
 
-    private static long reserve (long size           ) { return WhiteBoxHolder.WB.NMTReserveMemory (size                           ); }
-    private static void commit  (long base, int pno  ) {        WhiteBoxHolder.WB.NMTCommitMemory  (base + pno * PageSize, PageSize); }
-    private static void uncommit(long base, int pno  ) {        WhiteBoxHolder.WB.NMTUncommitMemory(base + pno * PageSize, PageSize); }
-    private static void release (long base, long size) {        WhiteBoxHolder.WB.NMTReleaseMemory (base                 , size    ); }
+    private static long reserve (long size           ) { return WhiteBoxHolder.WB.NMTReserveMemory (size                             ); }
+    private static void commit  (long base, int pno  ) {        WhiteBoxHolder.WB.NMTCommitMemory  (base + pno * PAGE_SIZE, PAGE_SIZE); }
+    private static void uncommit(long base, int pno  ) {        WhiteBoxHolder.WB.NMTUncommitMemory(base + pno * PAGE_SIZE, PAGE_SIZE); }
+    private static void release (long base, long size) {        WhiteBoxHolder.WB.NMTReleaseMemory (base                  , size     ); }
 
-    public static void doAllMemoryOps(int nR, int region_count) {
-        long region_size = region_count * PageSize;
-        long[] base_array = new long[nR];
-        for (int i = 0; i < nR; i++)
+    public static void doAllMemoryOps(int reserved_regions_count, int committed_regions_count) {
+        long region_size = committed_regions_count * PAGE_SIZE;
+        long[] base_array = new long[reserved_regions_count];
+
+        for (int i = 0; i < reserved_regions_count; i++)
           base_array[i] = reserve(region_size);
 
-        for (int R = 0; R < nR; R++) {
-          long base = base_array[R];
+        for (int r = 0; r < reserved_regions_count; r++) {
+          long base = base_array[r];
           for (int i = 0; i < region_count; i += 4) commit  (base, i    );
           for (int i = 1; i < region_count; i += 4) commit  (base, i    ); // causes merge from right
           for (int i = 4; i < region_count; i += 4) commit  (base, i - 1); // causes merge from left
@@ -104,14 +105,15 @@ public abstract class NMTBenchmark_wb {
           for (int i = 0; i < region_count; i += 4) uncommit(base, i    ); // remove the regions
         }
 
-        for (int i = 0; i < nR; i++)
+        for (int i = 0; i < reserved_regions_count; i++)
           release(base_array[i], region_size);
     }
-    public static void doTest(int nR, int nT, int nr) throws InterruptedException{
-        int RT = nR / nT;
-        Thread[] threads =  new Thread[nT];
-        for (int t = 0; t < nT; t++) {
-            threads[t] = new Thread(() -> doAllMemoryOps(RT, nr));
+
+    public static void doTest(int reserved_regions_count, int threads_count, int committed_regions_count) throws InterruptedException{
+        int regions_per_thread = reserved_regions_count / threads_count;
+        Thread[] threads =  new Thread[threads_count];
+        for (int t = 0; t < threads_count; t++) {
+            threads[t] = new Thread(() -> doAllMemoryOps(regions_per_thread, committed_regions_count));
             threads[t].start();
         }
         for (Thread t: threads) t.join();
@@ -142,6 +144,6 @@ public abstract class NMTBenchmark_wb {
     public static class NMTSummary extends NMTBenchmark_wb { }
 
     @Fork(value = 2, jvmArgsPrepend = { WB_JAR_APPEND, WB_UNLOCK_OPTION, WB_API, ADD_EXPORTS, MISC_PACKAGE, "-XX:NativeMemoryTracking=detail"})
-    public static class NMTDetails extends NMTBenchmark_wb { }
+    public static class NMTDetail extends NMTBenchmark_wb { }
 
 }
