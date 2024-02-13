@@ -1227,15 +1227,8 @@ inline TableStatistics ConcurrentHashTable<CONFIG, F>::
   size_t literal_bytes = 0;
   InternalTable* table = get_table();
   size_t num_batches = table->_size / batch_size;
-  for (size_t current_batch = 0; current_batch <= num_batches; current_batch++) {
-    size_t batch_start = current_batch * batch_size;
-    size_t batch_end;
-    if (current_batch == num_batches) {
-      // Last batch; walk over the remaining part of the table
-      batch_end = batch_start + table->_size % batch_size;
-    } else {
-      // Not last batch; walk over the current batch
-      batch_end = batch_start + batch_size;
+  for (size_t start_batch = 0; start_batch < _table->_size; start_batch += batch_size) {
+    size_t batch_end = MIN2(start_batch + batch_size, _table->_size);
     }
     ScopedCS cs(thread, this);
     for (size_t bucket_it = batch_start;
