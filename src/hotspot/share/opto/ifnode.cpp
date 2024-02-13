@@ -454,6 +454,14 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
   return new ConINode(TypeInt::ZERO);
 }
 
+IfNode* IfNode::make_with_same_profile(IfNode* if_node_profile, Node* ctrl, BoolNode* bol) {
+  if (if_node_profile->Opcode() == Op_If) {
+    return new IfNode(ctrl, bol, if_node_profile->_prob, if_node_profile->_fcnt);
+  } else {
+    return new RangeCheckNode(ctrl, bol, if_node_profile->_prob, if_node_profile->_fcnt);
+  }
+}
+
 // if this IfNode follows a range check pattern return the projection
 // for the failed path
 ProjNode* IfNode::range_check_trap_proj(int& flip_test, Node*& l, Node*& r) {

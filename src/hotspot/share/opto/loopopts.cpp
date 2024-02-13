@@ -2867,8 +2867,7 @@ ProjNode* PhaseIdealLoop::insert_if_before_proj(Node* left, bool Signed, BoolTes
 
   int opcode = iff->Opcode();
   assert(opcode == Op_If || opcode == Op_RangeCheck, "unexpected opcode");
-  IfNode* new_if = (opcode == Op_If) ? new IfNode(proj2, bol, iff->_prob, iff->_fcnt):
-    new RangeCheckNode(proj2, bol, iff->_prob, iff->_fcnt);
+  IfNode* new_if = IfNode::make_with_same_profile(iff, proj2, bol);
   register_node(new_if, loop, proj2, ddepth);
 
   proj->set_req(0, new_if); // reattach
