@@ -4949,10 +4949,12 @@ bool Compile::coarsened_locks_consistent() {
   return true;
 }
 
-// Mark locking regions (identified by BoxLockNode) as coarsened
-// if locks coarsening optimization removed lock/unlock from them.
-// Such regions become unbalanced and we can't execute other
-// locks elimination optimization on them.
+// Mark locking regions (identified by BoxLockNode) as unbalanced if
+// locks coarsening optimization removed Lock/Unlock nodes from them.
+// Such regions become unbalanced because coarsening only removes part
+// of Lock/Unlock nodes in region. As result we can't execute other
+// locks elimination optimizations which assume all code paths have
+// corresponding pair of Lock/Unlock nodes - they are balanced.
 void Compile::mark_coarsened_boxes() {
   int count = coarsened_count();
   for (int i = 0; i < count; i++) {
@@ -4961,7 +4963,9 @@ void Compile::mark_coarsened_boxes() {
     if (size > 0) {
       AbstractLockNode* alock = locks_list->at(0)->as_AbstractLock();
       BoxLockNode* box = alock->box_node()->as_BoxLock();
-      if (alock->is_coarsened() && !box->is_unbalanced()) { // Not marked already
+      if (alock->is_coarsened()) {
+        // coarsened_locks_consistent(), which is called before this method, verifies
+        // that the rest of Lock/Unlock nodes on locks_list are also coarsened.
         assert(!box->is_eliminated(), "regions with coarsened locks should not be marked as eliminated");
         for (uint j = 1; j < size; j++) {
           assert(locks_list->at(j)->as_AbstractLock()->is_coarsened(), "only coarsened locks are expected here");
