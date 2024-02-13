@@ -77,8 +77,8 @@ class Space: public CHeapObj<mtGC> {
   // Accessors
   HeapWord* bottom() const         { return _bottom; }
   HeapWord* end() const            { return _end;    }
-  virtual void set_bottom(HeapWord* value) { _bottom = value; }
-  virtual void set_end(HeapWord* value)    { _end = value; }
+  void set_bottom(HeapWord* value) { _bottom = value; }
+  void set_end(HeapWord* value)    { _end = value; }
 
   HeapWord* saved_mark_word() const  { return _saved_mark_word; }
 
