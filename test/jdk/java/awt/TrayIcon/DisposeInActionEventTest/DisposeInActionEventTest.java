@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,42 +21,36 @@
  * questions.
  */
 
-
-/*
-  test
-  @bug 6299866
-  @summary Tests that no NPE is thrown when the tray icon is disposed from the
-  handler of action event caused by clicking on this icon.
-  @library ../../regtesthelpers
-  @build Sysout
-  @author artem.ananiev: area=awt.tray
-  @run applet/manual=yesno DisposeInActionEventTest.html
-*/
-
-import java.applet.*;
-
-import java.awt.*;
-import java.awt.image.*;
+import java.awt.AWTException;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.SystemTray;
+import java.awt.TrayIcon;
+import java.awt.image.BufferedImage;
+import javax.swing.JFrame;
 
 import jdk.test.lib.Platform;
 import test.java.awt.regtesthelpers.Sysout;
 
-public class DisposeInActionEventTest extends Applet {
-    private boolean traySupported;
+/*
+ * @test
+ * @bug 6299866
+ * @summary Tests that no NPE is thrown when the tray icon is disposed from the
+ * handler of action event caused by clicking on this icon.
+ * @library ../../regtesthelpers /test/lib
+ * @build Sysout jtreg.SkippedException
+ * @run main/manual DisposeInActionEventTest
+ */
+public class DisposeInActionEventTest {
+    private static boolean traySupported;
 
-    private SystemTray systemTray;
-    private TrayIcon trayIcon;
-
-    public void init() {
-        this.setLayout(new BorderLayout());
-
-        String[] instructions;
+    public static void main(String[] args) throws Exception {
+        String instructions;
         traySupported = SystemTray.isSupported();
         if (!traySupported) {
-            instructions = new String[]{
-                    "The test cannot be run because SystemTray is not supported.",
-                    "Simply press PASS button."
-            };
+            instructions = "The test cannot be run because SystemTray is not supported.\n" +
+                           "Simply press PASS button.";
         } else {
             String clickInstruction;
             if (Platform.isOSX()) {
@@ -64,33 +58,40 @@ public class DisposeInActionEventTest extends Applet {
             } else {
                 clickInstruction = "left";
             }
-            instructions = new String[]{
-                    "When the test starts, it adds the icon to the tray aread. If you",
-                    "  don't see a tray icon, please, make sure that the tray area",
-                    "  (also called Taskbar Status Area on MS Windows, Notification",
-                    "  Area on Gnome or System Tray on KDE) is visible.",
-                    "Double-click with " + clickInstruction + " button on the tray icon to trigger the",
-                    "  action event. Brief information about action events is printed",
-                    "  below. After each action event the tray icon is removed from",
-                    "  the tray and then added back in a second.",
-                    "The test performs some automatic checks when removing the icon. If",
-                    "  something is wrong the corresponding message is displayed below.",
-                    "  Repeat double-clicks several times. If no 'Test FAILED' messages",
-                    "  are printed, press PASS button else FAIL button."
-            };
+
+            instructions = "When the test starts, it adds the icon to the tray aread. If you\n" +
+                           "  don't see a tray icon, please, make sure that the tray area\n" +
+                           "  (also called Taskbar Status Area on MS Windows, Notification\n" +
+                           "  Area on Gnome or System Tray on KDE) is visible.\n" +
+                           "Double-click with " + clickInstruction + " button on the tray icon to trigger the\n" +
+                           "  action event. Brief information about action events is printed\n" +
+                           "  below. After each action event the tray icon is removed from\n" +
+                           "  the tray and then added back in a second.\n" +
+                           "The test performs some automatic checks when removing the icon. If\n" +
+                           "  something is wrong the corresponding message is displayed below.\n" +
+                           "  Repeat double-clicks several times. If no 'Test FAILED' messages\n" +
+                           "  are printed, press PASS button else FAIL button.";
         }
-        Sysout.createDialogWithInstructions(instructions);
+
+        PassFailJFrame.builder()
+                .title("Test Instructions Frame")
+                .instructions(instructions)
+                .testTimeOut(10)
+                .rows(10)
+                .columns(45)
+                .testUI(DisposeInActionEventTest::showFrameAndIcon)
+                .build()
+                .awaitAndCheck();
     }
 
-    @Override
-    public void start() {
-        setSize(200, 200);
-        setVisible(true);
-        validate();
+    private static JFrame showFrameAndIcon() {
+        JFrame frame = new JFrame("DisposeInActionEventTest");
+        frame.setLayout(new BorderLayout());
+        frame.setSize(200, 200);
+        frame.setVisible(true);
 
-        if (!traySupported) return;
-
-        System.setProperty("sun.awt.exception.handler", "DisposeInActionEventTest$EDTExceptionHandler");
+        System.setProperty("sun.awt.exception.handler\n",
+                           "DisposeInActionEventTest$EDTExceptionHandler");
 
         BufferedImage img = new BufferedImage(32, 32, BufferedImage.TYPE_INT_ARGB);
         Graphics g = img.createGraphics();
@@ -100,8 +101,8 @@ public class DisposeInActionEventTest extends Applet {
         g.fillRect(6, 6, 20, 20);
         g.dispose();
 
-        systemTray = SystemTray.getSystemTray();
-        trayIcon = new TrayIcon(img);
+        SystemTray systemTray = SystemTray.getSystemTray();
+        TrayIcon trayIcon = new TrayIcon(img);
         trayIcon.setImageAutoSize(true);
         trayIcon.addActionListener(ev -> {
             Sysout.println(ev.toString());
@@ -112,18 +113,18 @@ public class DisposeInActionEventTest extends Applet {
                     systemTray.add(trayIcon);
                 } catch (AWTException | InterruptedException e) {
                     Sysout.println(e.toString());
-                    Sysout.println("!!! The test coudn't be performed !!!");
+                    Sysout.println("!!! The test couldn't be performed !!!");
                 }
-            }
-            ).start();
-        }
-        );
+            }).start();
+        });
 
         try {
             systemTray.add(trayIcon);
         } catch (AWTException e) {
             Sysout.println(e.toString());
-            Sysout.println("!!! The test coudn't be performed !!!");
+            Sysout.println("!!! The test couldn't be performed !!!");
         }
+
+        return frame;
     }
 }
