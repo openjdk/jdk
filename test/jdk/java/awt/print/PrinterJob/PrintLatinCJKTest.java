@@ -46,12 +46,16 @@ import javax.swing.JComponent;
 
 public class PrintLatinCJKTest implements Printable {
 
-    private static PrintLatinCJKTest testInstance = new PrintLatinCJKTest();
-    private static final String info = """
+    private static final String TEXT = "\u4e00\u4e01\u4e02\u4e03\u4e04English";
+
+    private static final String INFO = """
             You need a printer for this test. If you have none, let
             the test pass. If there is a printer, press Print, send
             the output to the printer, and examine it. It should have
-            text looking like this : \u4e00\u4e01\u4e02\u4e03\u4e04English
+            text looking like this:
+            """
+            + TEXT + """
+
 
             To test 8022536, if a remote printer is the system default,
             it should show in the dialog as the selected printer.
@@ -62,7 +66,7 @@ public class PrintLatinCJKTest implements Printable {
         b.addActionListener((ae) -> {
             try {
                 PrinterJob job = PrinterJob.getPrinterJob();
-                job.setPrintable(testInstance);
+                job.setPrintable(new PrintLatinCJKTest());
                 if (job.printDialog()) {
                     job.print();
                 }
@@ -87,14 +91,14 @@ public class PrintLatinCJKTest implements Printable {
         }
         g.translate((int) pf.getImageableX(), (int) pf.getImageableY());
         g.setFont(new Font("Dialog", Font.PLAIN, 36));
-        g.drawString("\u4e00\u4e01\u4e02\u4e03\u4e04English", 20, 100);
+        g.drawString(TEXT, 20, 100);
         return Printable.PAGE_EXISTS;
     }
 
     public static void main(String[] args) throws InterruptedException, InvocationTargetException {
         PassFailJFrame.builder()
                       .title("Print Latin CJK Test")
-                      .instructions(info)
+                      .instructions(INFO)
                       .testTimeOut(10)
                       .rows(10)
                       .columns(35)
