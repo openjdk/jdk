@@ -1,7 +1,7 @@
-DeconstructionPatternErrors.java:42:37: compiler.err.illegal.start.of.type
-DeconstructionPatternErrors.java:44:28: compiler.err.illegal.start.of.type
-DeconstructionPatternErrors.java:46:42: compiler.err.expected: ';'
-DeconstructionPatternErrors.java:46:43: compiler.err.not.stmt
+DeconstructionPatternErrors.java:35:37: compiler.err.illegal.start.of.type
+DeconstructionPatternErrors.java:37:28: compiler.err.illegal.start.of.type
+DeconstructionPatternErrors.java:39:42: compiler.err.expected: ';'
+DeconstructionPatternErrors.java:39:43: compiler.err.not.stmt
 DeconstructionPatternErrors.java:15:29: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: java.util.List<java.lang.String>, java.util.ArrayList<java.lang.Integer>)
 DeconstructionPatternErrors.java:16:29: compiler.err.instanceof.reifiable.not.safe: java.lang.Object, java.util.ArrayList<java.lang.Integer>
 DeconstructionPatternErrors.java:17:29: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: java.lang.String, int)
@@ -20,8 +20,4 @@ DeconstructionPatternErrors.java:27:13: compiler.err.instanceof.reifiable.not.sa
 DeconstructionPatternErrors.java:28:40: compiler.err.match.binding.exists
 DeconstructionPatternErrors.java:29:56: compiler.err.already.defined: kindname.variable, v1, kindname.method, meth()
 DeconstructionPatternErrors.java:29:64: compiler.err.already.defined: kindname.variable, v2, kindname.method, meth()
-DeconstructionPatternErrors.java:30:29: compiler.err.prob.found.req: (compiler.misc.not.applicable.types: int, byte)
-DeconstructionPatternErrors.java:31:29: compiler.err.prob.found.req: (compiler.misc.not.applicable.types: int, long)
-DeconstructionPatternErrors.java:33:21: compiler.err.prob.found.req: (compiler.misc.not.applicable.types: int, byte)
-DeconstructionPatternErrors.java:34:21: compiler.err.prob.found.req: (compiler.misc.not.applicable.types: int, long)
-26 errors
+22 errors

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ extern "C" {
 #define PASSED 0
 #define STATUS_FAILED 2
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jint result = PASSED;
 
 JNIEXPORT jint JNICALL
@@ -42,7 +42,7 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jvmtiCapabilities caps;
 
   res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     LOG("Wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }
@@ -64,7 +64,7 @@ Java_contmon03_check(JNIEnv *env, jclass cls, jthread thread) {
   jvmtiError err;
   jobject monitor;
 
-  if (jvmti == NULL) {
+  if (jvmti == nullptr) {
     LOG("JVMTI client was not properly loaded!\n");
     return STATUS_FAILED;
   }
@@ -80,7 +80,7 @@ Java_contmon03_check(JNIEnv *env, jclass cls, jthread thread) {
 
   LOG(">>> null pointer check ...\n");
 
-  err = jvmti->GetCurrentContendedMonitor(thread, NULL);
+  err = jvmti->GetCurrentContendedMonitor(thread, nullptr);
   if (err != JVMTI_ERROR_NULL_POINTER) {
     LOG("Error expected: JVMTI_ERROR_NULL_POINTER,\n");
     LOG("           got: %s (%d)\n", TranslateError(err), err);

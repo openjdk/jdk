@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,224 +21,162 @@
  * questions.
  */
 
+import java.awt.BasicStroke;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.geom.Rectangle2D;
+import java.awt.print.PageFormat;
+import java.awt.print.Pageable;
+import java.awt.print.Paper;
+import java.awt.print.Printable;
+import java.awt.print.PrinterException;
+import java.awt.print.PrinterJob;
+
+import jtreg.SkippedException;
+
 /*
  * @test
  * @bug 4355514
+ * @key printer
+ * @summary Prints a rectangle to show the imageable area of a
+ *          12in x 14in custom paper size.
+ * @library /java/awt/regtesthelpers
+ * @library /test/lib
+ * @build PassFailJFrame
+ * @build jtreg.SkippedException
+ * @run main/manual CustomPaper 4355514
+ */
+
+/*
+ * @test
  * @bug 4385157
  * @key printer
  * @summary Prints a rectangle to show the imageable area of a
  *          12in x 14in custom paper size.
- * @run main/manual CustomPaper
+ * @library /java/awt/regtesthelpers
+ * @library /test/lib
+ * @build PassFailJFrame
+ * @build jtreg.SkippedException
+ * @run main/manual CustomPaper 4385157
  */
+public class CustomPaper implements Pageable, Printable {
 
-import java.awt.*;
-import java.awt.print.*;
-import java.awt.geom.*;
+    private static final double PIXELS_PER_INCH = 72.0;
 
-public class CustomPaper implements Pageable, Printable{
+    private final PrinterJob printerJob;
+    private PageFormat pageFormat;
 
-  private static double PIXELS_PER_INCH = 72.0;
-
-  private PrinterJob printerJob;
-  private PageFormat pageFormat;
-
-  CustomPaper(){
-    printerJob = PrinterJob.getPrinterJob();
-    createPageFormat();
-  }
-
-  private void createPageFormat(){
-    pageFormat = new PageFormat();
-    Paper p = new Paper();
-    double width   = 12.0*PIXELS_PER_INCH;
-    double height  = 14.0*PIXELS_PER_INCH;
-    double ix      = PIXELS_PER_INCH;
-    double iy      = PIXELS_PER_INCH;
-    double iwidth  = width  - 2.0*PIXELS_PER_INCH;
-    double iheight = height - 2.0*PIXELS_PER_INCH;
-    p.setSize(width, height);
-    p.setImageableArea(ix, iy, iwidth, iheight);
-    pageFormat.setPaper(p);
-  }
-
-  public Printable getPrintable(int index){
-    return this;
-  }
-
-  public PageFormat getPageFormat(int index){
-    return pageFormat;
-  }
-
-  public int getNumberOfPages(){
-    return 1;
-  }
-
-  public void print(){
-    if(printerJob.printDialog())
-        {
-      try{
-        printerJob.setPageable(this);
-        printerJob.print();
-      }catch(Exception e){e.printStackTrace();}
+    CustomPaper() {
+        printerJob = PrinterJob.getPrinterJob();
+        createPageFormat();
     }
 
-  }
-
-  public int print(Graphics g, PageFormat pf, int pageIndex){
-    if(pageIndex == 0){
-        Graphics2D g2 = (Graphics2D)g;
-        Rectangle2D r = new Rectangle2D.Double(pf.getImageableX(),
-                                               pf.getImageableY(),
-                                               pf.getImageableWidth(),
-                                               pf.getImageableHeight());
-      g2.setStroke(new BasicStroke(3.0f));
-      g2.draw(r);
-      return PAGE_EXISTS;
-    }else{
-      return NO_SUCH_PAGE;
+    private void createPageFormat() {
+        pageFormat = new PageFormat();
+        Paper p = new Paper();
+        double width = 12.0 * PIXELS_PER_INCH;
+        double height = 14.0 * PIXELS_PER_INCH;
+        double iwidth = width - 2.0 * PIXELS_PER_INCH;
+        double iheight = height - 2.0 * PIXELS_PER_INCH;
+        p.setSize(width, height);
+        p.setImageableArea(PIXELS_PER_INCH, PIXELS_PER_INCH, iwidth, iheight);
+        pageFormat.setPaper(p);
     }
-  }
 
-  public static void main(String[] args){
+    @Override
+    public Printable getPrintable(int index) {
+        return this;
+    }
 
-        String[] instructions =
-        {
-            "You must have a printer that supports custom paper size of ",
-            "at least 12 x 14 inches to perform this test. It requires",
-            "user interaction and you must have a 12 x 14 inch paper available.",
-            " ",
-            "To test bug ID 4385157, click OK on print dialog box to print.",
-            " ",
-            "To test bug ID 4355514, select the printer in the Print Setup dialog and add a ",
-            "custom paper size under Printer properties' Paper selection menu. ",
-            "Set the dimension  to width=12 inches and height=14 inches.",
-            "Select this custom paper size before proceeding to print.",
-            " ",
-            "Visual inspection of the one-page printout is needed. A passing",
-            "test will print a rectangle of the imageable area which is approximately",
-            "10 x 12 inches.",
+    @Override
+    public PageFormat getPageFormat(int index) {
+        return pageFormat;
+    }
+
+    @Override
+    public int getNumberOfPages() {
+        return 1;
+    }
+
+    private void print() throws PrinterException {
+        if (printerJob.printDialog()) {
+            printerJob.setPageable(this);
+            printerJob.print();
+        } else {
+            PassFailJFrame.forceFail("Printing canceled by user");
+        }
+    }
+
+    @Override
+    public int print(Graphics g, PageFormat pf, int pageIndex) {
+        if (pageIndex == 0) {
+            Graphics2D g2 = (Graphics2D) g;
+            Rectangle2D r = new Rectangle2D.Double(pf.getImageableX(),
+                    pf.getImageableY(),
+                    pf.getImageableWidth(),
+                    pf.getImageableHeight());
+            g2.setStroke(new BasicStroke(3.0f));
+            g2.draw(r);
+            return PAGE_EXISTS;
+        } else {
+            return NO_SUCH_PAGE;
+        }
+    }
+
+    private static final String TOP = """
+         You must have a printer that supports custom paper size of
+         at least 12 x 14 inches to perform this test. It requires
+         user interaction and you must have a 12 x 14 inch paper available.
+
+        """;
+
+    private static final String BOTTOM = """
+
+         Visual inspection of the one-page printout is needed. A passing
+         test will print a rectangle of the imageable area which is
+         approximately 10 x 12 inches.
+        """;
+
+    private static final String INSTRUCTIONS_4355514 = """
+         Select the printer in the Print Setup dialog and add a custom
+         paper size under 'Printer properties' Paper selection menu.
+         Set the dimension to width=12 inches and height=14 inches.
+         Select this custom paper size before proceeding to print.
+        """;
+
+    private static final String INSTRUCTIONS_4385157 = """
+         Click OK on print dialog box to print.
+        """;
+
+    public static void main(String[] args) throws Exception {
+        String instructions;
+
+        if (PrinterJob.lookupPrintServices().length == 0) {
+            throw new SkippedException("Printer not configured or available."
+                    + " Test cannot continue.");
+        }
+
+        if (args.length != 1) {
+            throw new RuntimeException("Select a test by passing 4355514 or 4385157");
+        }
+
+        instructions = switch (args[0]) {
+            case "4355514" -> TOP + INSTRUCTIONS_4355514 + BOTTOM;
+            case "4385157" -> TOP + INSTRUCTIONS_4385157 + BOTTOM;
+            default -> throw new RuntimeException("Unknown bugid " + args[0] + "."
+                    + "Valid values: 4355514 or 4385157");
         };
-        Sysout.createDialog( );
-        Sysout.printInstructions( instructions );
+
+        PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
+                .title("CustomPaper Test Instructions")
+                .instructions(instructions)
+                .testTimeOut(5)
+                .rows((int) instructions.lines().count() + 1)
+                .columns(45)
+                .build();
 
         CustomPaper pt = new CustomPaper();
         pt.print();
-        //System.exit (0);
-  }
-
+        passFailJFrame.awaitAndCheck();
+    }
 }
-
-
-class Sysout {
-   private static TestDialog dialog;
-
-   public static void createDialogWithInstructions( String[] instructions )
-    {
-      dialog = new TestDialog( new Frame(), "Instructions" );
-      dialog.printInstructions( instructions );
-      dialog.show();
-      println( "Any messages for the tester will display here." );
-    }
-
-   public static void createDialog( )
-    {
-      dialog = new TestDialog( new Frame(), "Instructions" );
-      String[] defInstr = { "Instructions will appear here. ", "" } ;
-      dialog.printInstructions( defInstr );
-      dialog.show();
-      println( "Any messages for the tester will display here." );
-    }
-
-
-   public static void printInstructions( String[] instructions )
-    {
-      dialog.printInstructions( instructions );
-    }
-
-
-   public static void println( String messageIn )
-    {
-      dialog.displayMessage( messageIn );
-    }
-
-}// Sysout  class
-
-/**
-  This is part of the standard test machinery.  It provides a place for the
-   test instructions to be displayed, and a place for interactive messages
-   to the user to be displayed.
-  To have the test instructions displayed, see Sysout.
-  To have a message to the user be displayed, see Sysout.
-  Do not call anything in this dialog directly.
-  */
-class TestDialog extends Dialog {
-
-   TextArea instructionsText;
-   TextArea messageText;
-   int maxStringLength = 80;
-
-   //DO NOT call this directly, go through Sysout
-   public TestDialog( Frame frame, String name )
-    {
-      super( frame, name );
-      int scrollBoth = TextArea.SCROLLBARS_BOTH;
-      instructionsText = new TextArea( "", 15, maxStringLength, scrollBoth );
-      add( "North", instructionsText );
-
-      messageText = new TextArea( "", 5, maxStringLength, scrollBoth );
-      add("Center", messageText);
-
-      pack();
-
-      show();
-    }// TestDialog()
-
-   //DO NOT call this directly, go through Sysout
-   public void printInstructions( String[] instructions )
-    {
-      //Clear out any current instructions
-      instructionsText.setText( "" );
-
-      //Go down array of instruction strings
-
-      String printStr, remainingStr;
-      for( int i=0; i < instructions.length; i++ )
-       {
-         //chop up each into pieces maxSringLength long
-         remainingStr = instructions[ i ];
-         while( remainingStr.length() > 0 )
-          {
-            //if longer than max then chop off first max chars to print
-            if( remainingStr.length() >= maxStringLength )
-             {
-               //Try to chop on a word boundary
-               int posOfSpace = remainingStr.
-                  lastIndexOf( ' ', maxStringLength - 1 );
-
-               if( posOfSpace <= 0 ) posOfSpace = maxStringLength - 1;
-
-               printStr = remainingStr.substring( 0, posOfSpace + 1 );
-               remainingStr = remainingStr.substring( posOfSpace + 1 );
-             }
-            //else just print
-            else
-             {
-               printStr = remainingStr;
-               remainingStr = "";
-             }
-
-            instructionsText.append( printStr + "\n" );
-
-          }// while
-
-       }// for
-
-    }//printInstructions()
-
-   //DO NOT call this directly, go through Sysout
-   public void displayMessage( String messageIn )
-    {
-      messageText.append( messageIn + "\n" );
-    }
-
- }// TestDialog  class

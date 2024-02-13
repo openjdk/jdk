@@ -2444,7 +2444,8 @@ public final class String
      *          {@code -1} if the character does not occur.
      */
     public int indexOf(int ch) {
-        return indexOf(ch, 0);
+        return isLatin1() ? StringLatin1.indexOf(value, ch, 0, value.length)
+                : StringUTF16.indexOf(value, ch, 0, value.length >> 1);
     }
 
     /**
@@ -2500,8 +2501,9 @@ public final class String
      * {@code fromIndex} were larger than the string length, or were negative.
      */
     public int indexOf(int ch, int fromIndex) {
-        return isLatin1() ? StringLatin1.indexOf(value, ch, fromIndex, length())
-                : StringUTF16.indexOf(value, ch, fromIndex, length());
+        fromIndex = Math.max(fromIndex, 0);
+        return isLatin1() ? StringLatin1.indexOf(value, ch, Math.min(fromIndex, value.length), value.length)
+                : StringUTF16.indexOf(value, ch, Math.min(fromIndex, value.length >> 1), value.length >> 1);
     }
 
     /**

@@ -417,6 +417,12 @@ class MacroAssembler: public Assembler {
   inline void call_stub_and_return_to(Register function_entry, Register return_pc);
 
   void post_call_nop();
+  static bool is_post_call_nop(int instr_bits) {
+    const uint32_t nineth_bit = opp_u_field(1, 9, 9);
+    const uint32_t opcode_mask = 0b111110 << OPCODE_SHIFT;
+    const uint32_t pcn_mask = opcode_mask | nineth_bit;
+    return (instr_bits & pcn_mask) == (Assembler::CMPLI_OPCODE | nineth_bit);
+  }
 
   //
   // Java utilities
