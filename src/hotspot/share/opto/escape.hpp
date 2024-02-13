@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,6 @@
 
 class  Compile;
 class  Node;
-class  AbstractLockNode;
 class  CallNode;
 class  PhiNode;
 class  PhaseTransform;
@@ -629,10 +628,7 @@ public:
   // Perform escape analysis
   static void do_analysis(Compile *C, PhaseIterGVN *igvn);
 
-  bool not_global_escape(Node *n) const;
-
-  // Check that lock/unlock can be eliminated.
-  bool can_eliminate_lock(AbstractLockNode* alock) const;
+  bool not_global_escape(Node *n);
 
   // To be used by, e.g., BarrierSetC2 impls
   Node* get_addp_base(Node* addp);
