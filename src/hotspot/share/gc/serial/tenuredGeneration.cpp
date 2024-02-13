@@ -29,6 +29,7 @@
 #include "gc/serial/serialHeap.hpp"
 #include "gc/serial/tenuredGeneration.inline.hpp"
 #include "gc/shared/collectorCounters.hpp"
+#include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
@@ -411,6 +412,35 @@ bool TenuredGeneration::promotion_attempt_is_safe(size_t max_promotion_in_bytes)
     res? "":" not", available, res? ">=":"<", av_promo, max_promotion_in_bytes);
 
   return res;
+}
+
+oop TenuredGeneration::promote(oop obj, size_t obj_size) {
+  assert(obj_size == obj->size(), "bad obj_size passed in");
+
+#ifndef PRODUCT
+  if (SerialHeap::heap()->promotion_should_fail()) {
+    return nullptr;
+  }
+#endif  // #ifndef PRODUCT
+
+  // Allocate new object.
+  HeapWord* result = allocate(obj_size, false);
+  if (result == nullptr) {
+    // Promotion of obj into gen failed.  Try to expand and allocate.
+    result = expand_and_allocate(obj_size, false);
+    if (result == nullptr) {
+      return nullptr;
+    }
+  }
+
+  // Copy to new location.
+  Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(obj), result, obj_size);
+  oop new_obj = cast_to_oop<HeapWord*>(result);
+
+  // Transform object if it is a stack chunk.
+  ContinuationGCSupport::transform_stack_chunk(new_obj);
+
+  return new_obj;
 }
 
 void TenuredGeneration::collect(bool   full,
