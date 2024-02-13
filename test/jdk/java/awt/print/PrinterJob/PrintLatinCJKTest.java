@@ -31,7 +31,6 @@
  * @run main/manual PrintLatinCJKTest
  */
 
-import java.awt.BorderLayout;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.print.PageFormat;
@@ -44,14 +43,10 @@ import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JComponent;
-import javax.swing.JFrame;
-
-import static javax.swing.SwingUtilities.invokeAndWait;
 
 public class PrintLatinCJKTest implements Printable {
 
     private static PrintLatinCJKTest testInstance = new PrintLatinCJKTest();
-    private static JFrame frame;
     private static final String info = """
             You need a printer for this test. If you have none, let
             the test pass. If there is a printer, press Print, send
@@ -102,11 +97,8 @@ public class PrintLatinCJKTest implements Printable {
                       .instructions(info)
                       .testTimeOut(10)
                       .rows(10)
-                      .columns(45)
-//                      .splitUI(PrintLatinCJKTest::createTestUI)
-//                      .splitUIRight(PrintLatinCJKTest::createTestUI)
-                      .splitUIBottom(PrintLatinCJKTest::createTestUI)
-//                      .testUI(PrintLatinCJKTest::createTestUI)
+                      .columns(35)
+                      .splitUI(PrintLatinCJKTest::createTestUI)
                       .build()
                       .awaitAndCheck();
     }
