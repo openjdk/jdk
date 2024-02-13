@@ -1,7 +1,7 @@
 <synth>
   <style id="backingStyle">
     <font name="Dialog" size="12" />
-    
+
     <state>
       <color value="green" type="BACKGROUND" />
       <color value="black" type="FOREGROUND" />
@@ -16,4 +16,4 @@
   </style>
   <bind style="buttonStyle" type="REGION" key="Button" />
 </synth>
-  
+

@@ -27,14 +27,14 @@
     <toy>
         <name>Barbie-Blue</name>
         <price>13.99</price>
-    </toy>        
+    </toy>
     <toy>
         <name>Barbie-White</name>
         <price>13.99</price>
-    </toy>   
+    </toy>
     <toy>
         <name>Barbie-Plain</name>
         <price>13.99</price>
-    </toy>           
+    </toy>
 </toys>
 

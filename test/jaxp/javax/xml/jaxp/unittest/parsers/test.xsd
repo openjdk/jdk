@@ -15,7 +15,7 @@
                 <xs:element name="ref" maxOccurs="unbounded" minOccurs="0" type="xs:string" />
             </xs:sequence>
         </xs:complexType>
-                                        
+
         <!-- identity constraint -->
         <xs:key name="key">
             <xs:selector xpath=".//tn:a/tn:b|.//tn:a/tn:b/tn:c"/>
@@ -26,13 +26,13 @@
             <xs:field xpath="."/>
         </xs:keyref>
     </xs:element>
-    
+
     <xs:element name="c">
         <xs:complexType>
             <xs:attribute name="id" type="xs:string"/>
         </xs:complexType>
     </xs:element>
-                
+
     <xs:element name="b">
         <xs:complexType>
             <xs:sequence>

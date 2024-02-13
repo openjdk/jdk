@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<!DOCTYPE note [                           
+<!DOCTYPE note [
 <!ELEMENT note    (to,from,heading,body)>
 <!ELEMENT to      (#PCDATA)>
 <!NOTATION gs SYSTEM "GhostScript">
@@ -12,8 +12,8 @@
 
 
  <!NOTATION name SYSTEM "sysId">
-]>                         
+]>
 <note>
 <to>lll</to>
 
-</note> 
+</note>

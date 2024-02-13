@@ -6,10 +6,10 @@
 ]>
 <city name = "Bangalore" population = "100000">
 
-	<country state = "Karnatka">START India  <![CDATA[CS}}}}}}]]> India END</country>
+        <country state = "Karnatka">START India  <![CDATA[CS}}}}}}]]> India END</country>
         <foo>&amp;&lt; <![CDATA[cdatastart<><>>><>><<<<cdataend]]> entitystart &a; entityend</foo>
         &b;
-	<description>a&amp;b</description>
-         <?CityHotels Information about the hotels is passed to different appications for processing. ?>	
+        <description>a&amp;b</description>
+         <?CityHotels Information about the hotels is passed to different appications for processing. ?>
 
 </city>

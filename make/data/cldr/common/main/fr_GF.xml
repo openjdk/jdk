@@ -6,18 +6,18 @@ SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
-	<identity>
-		<version number="$Revision$"/>
-		<language type="fr"/>
-		<territory type="GF"/>
-	</identity>
-	<dates>
-		<timeZoneNames>
-			<metazone type="French_Guiana">
-				<short>
-					<standard>GFT</standard>
-				</short>
-			</metazone>
-		</timeZoneNames>
-	</dates>
+        <identity>
+                <version number="$Revision$"/>
+                <language type="fr"/>
+                <territory type="GF"/>
+        </identity>
+        <dates>
+                <timeZoneNames>
+                        <metazone type="French_Guiana">
+                                <short>
+                                        <standard>GFT</standard>
+                                </short>
+                        </metazone>
+                </timeZoneNames>
+        </dates>
 </ldml>

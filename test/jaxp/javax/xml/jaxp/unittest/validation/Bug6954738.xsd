@@ -9,9 +9,9 @@
     <xs:element name="Document" type="T_Document"/>
     <xs:element name="Bug" type="Text"/>
     <xs:simpleType name="Text">
-		<xs:restriction base="xs:string">
-			<xs:pattern value="[0-9A-Za-z ]{1,8000}"/>
-		</xs:restriction>
-	</xs:simpleType>
+                <xs:restriction base="xs:string">
+                        <xs:pattern value="[0-9A-Za-z ]{1,8000}"/>
+                </xs:restriction>
+        </xs:simpleType>
 </xs:schema>
 

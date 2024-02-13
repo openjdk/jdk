@@ -105,19 +105,19 @@
         <xs:element name="user">
            <xs:complexType>
               <xs:sequence>
-		 <xs:element name="Name" type="xs:string" minOccurs="0" />
-		 
+                 <xs:element name="Name" type="xs:string" minOccurs="0" />
 
-		 <xs:element name="addresses">
-		    <xs:complexType>
-	               <xs:sequence>
-		          <xs:element name="homeAddress" type="AddressType"/>
-	               </xs:sequence>
-	            </xs:complexType>
-	         </xs:element>
+
+                 <xs:element name="addresses">
+                    <xs:complexType>
+                       <xs:sequence>
+                          <xs:element name="homeAddress" type="AddressType"/>
+                       </xs:sequence>
+                    </xs:complexType>
+                 </xs:element>
              </xs:sequence>
 
 
-	   </xs:complexType>
-  	</xs:element>
+           </xs:complexType>
+          </xs:element>
 </xs:schema>

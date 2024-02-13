@@ -16,7 +16,7 @@
       <xsd:field    xpath="."/>
     </xsd:keyref>
   </xsd:element>
-  
+
   <xsd:element name="item" type="itemType"/>
 
   <xsd:attribute name="uniqueAttr" type="xsd:string"/>

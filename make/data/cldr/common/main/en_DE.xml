@@ -6,23 +6,23 @@ SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
-	<identity>
-		<version number="$Revision$"/>
-		<language type="en"/>
-		<territory type="DE"/>
-	</identity>
-	<numbers>
-		<symbols numberSystem="latn">
-			<decimal>,</decimal>
-			<group>.</group>
-			<superscriptingExponent>·</superscriptingExponent>
-		</symbols>
-		<percentFormats numberSystem="latn">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern>#,##0 %</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-	</numbers>
+        <identity>
+                <version number="$Revision$"/>
+                <language type="en"/>
+                <territory type="DE"/>
+        </identity>
+        <numbers>
+                <symbols numberSystem="latn">
+                        <decimal>,</decimal>
+                        <group>.</group>
+                        <superscriptingExponent>·</superscriptingExponent>
+                </symbols>
+                <percentFormats numberSystem="latn">
+                        <percentFormatLength>
+                                <percentFormat>
+                                        <pattern>#,##0 %</pattern>
+                                </percentFormat>
+                        </percentFormatLength>
+                </percentFormats>
+        </numbers>
 </ldml>

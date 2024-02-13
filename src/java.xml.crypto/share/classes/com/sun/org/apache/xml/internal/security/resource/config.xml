@@ -95,7 +95,7 @@
                           JAVACLASS="com.sun.org.apache.xml.internal.security.algorithms.implementations.SignatureBaseRSA$SignatureRSASHA384" />
       <SignatureAlgorithm URI="http://www.w3.org/2001/04/xmldsig-more#rsa-sha512"
                           JAVACLASS="com.sun.org.apache.xml.internal.security.algorithms.implementations.SignatureBaseRSA$SignatureRSASHA512" />
-                          
+
       <SignatureAlgorithm URI="http://www.w3.org/2007/05/xmldsig-more#sha1-rsa-MGF1"
                           JAVACLASS="com.sun.org.apache.xml.internal.security.algorithms.implementations.SignatureBaseRSA$SignatureRSASHA1MGF1" />
       <SignatureAlgorithm URI="http://www.w3.org/2007/05/xmldsig-more#sha224-rsa-MGF1"
@@ -106,7 +106,7 @@
                           JAVACLASS="com.sun.org.apache.xml.internal.security.algorithms.implementations.SignatureBaseRSA$SignatureRSASHA384MGF1" />
       <SignatureAlgorithm URI="http://www.w3.org/2007/05/xmldsig-more#sha512-rsa-MGF1"
                           JAVACLASS="com.sun.org.apache.xml.internal.security.algorithms.implementations.SignatureBaseRSA$SignatureRSASHA512MGF1" />
-                          
+
       <SignatureAlgorithm URI="http://www.w3.org/2007/05/xmldsig-more#sha3-224-rsa-MGF1"
                           JAVACLASS="com.sun.org.apache.xml.internal.security.algorithms.implementations.SignatureBaseRSA$SignatureRSASHA3_224MGF1" />
       <SignatureAlgorithm URI="http://www.w3.org/2007/05/xmldsig-more#sha3-256-rsa-MGF1"
@@ -115,7 +115,7 @@
                           JAVACLASS="com.sun.org.apache.xml.internal.security.algorithms.implementations.SignatureBaseRSA$SignatureRSASHA3_384MGF1" />
       <SignatureAlgorithm URI="http://www.w3.org/2007/05/xmldsig-more#sha3-512-rsa-MGF1"
                           JAVACLASS="com.sun.org.apache.xml.internal.security.algorithms.implementations.SignatureBaseRSA$SignatureRSASHA3_512MGF1" />
-                          
+
       <SignatureAlgorithm URI="http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha1"
                           JAVACLASS="com.sun.org.apache.xml.internal.security.algorithms.implementations.SignatureECDSA$SignatureECDSASHA1" />
       <SignatureAlgorithm URI="http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha224"
@@ -133,7 +133,7 @@
                           JAVACLASS="com.sun.org.apache.xml.internal.security.algorithms.implementations.SignatureEDDSA$SignatureEd25519" />
       <SignatureAlgorithm URI="http://www.w3.org/2021/04/xmldsig-more#eddsa-ed448"
                           JAVACLASS="com.sun.org.apache.xml.internal.security.algorithms.implementations.SignatureEDDSA$SignatureEd448" />
-                          
+
       <SignatureAlgorithm URI="http://www.w3.org/2001/04/xmldsig-more#hmac-md5"
                           JAVACLASS="com.sun.org.apache.xml.internal.security.algorithms.implementations.IntegrityHmac$IntegrityHmacMD5" />
       <SignatureAlgorithm URI="http://www.w3.org/2001/04/xmldsig-more#hmac-ripemd160"
@@ -166,7 +166,7 @@
                     AlgorithmClass="MessageDigest"
                     RequirementLevel="REQUIRED"
                     JCEName="SHA-1"/>
-                    
+
          <Algorithm URI="http://www.w3.org/2001/04/xmldsig-more#sha224"
                     Description="SHA-224 message digest"
                     AlgorithmClass="MessageDigest"
@@ -191,37 +191,37 @@
                     AlgorithmClass="MessageDigest"
                     RequirementLevel="OPTIONAL"
                     JCEName="SHA-512"/>
-                    
+
          <Algorithm URI="http://www.w3.org/2007/05/xmldsig-more#whirlpool"
                     Description="WHIRLPOOL message digest"
                     AlgorithmClass="MessageDigest"
                     RequirementLevel="OPTIONAL"
                     JCEName="WHIRLPOOL"/>
-                    
+
          <Algorithm URI="http://www.w3.org/2007/05/xmldsig-more#sha3-224"
                     Description="SHA-3 message digest with 224 bit"
                     AlgorithmClass="MessageDigest"
                     RequirementLevel="OPTIONAL"
                     JCEName="SHA3-224"/>
-                    
+
          <Algorithm URI="http://www.w3.org/2007/05/xmldsig-more#sha3-256"
                     Description="SHA-3 message digest with 256 bit"
                     AlgorithmClass="MessageDigest"
                     RequirementLevel="OPTIONAL"
-                    JCEName="SHA3-256"/>                     
+                    JCEName="SHA3-256"/>
 
          <Algorithm URI="http://www.w3.org/2007/05/xmldsig-more#sha3-384"
                     Description="SHA-3 message digest with 384 bit"
                     AlgorithmClass="MessageDigest"
                     RequirementLevel="OPTIONAL"
                     JCEName="SHA3-384"/>
-                    
+
          <Algorithm URI="http://www.w3.org/2007/05/xmldsig-more#sha3-512"
                     Description="SHA-3 message digest with 512 bit"
                     AlgorithmClass="MessageDigest"
                     RequirementLevel="OPTIONAL"
                     JCEName="SHA3-512"/>
-                               
+
          <!-- Signature Algorithms -->
          <Algorithm URI="http://www.w3.org/2000/09/xmldsig#dsa-sha1"
                     Description="Digital Signature Algorithm with SHA-1 message digest"
@@ -260,7 +260,7 @@
                     SpecificationURL="http://www.ietf.org/rfc/rfc4051.txt"
                     RequiredKey="RSA"
                     JCEName="SHA224withRSA"/>
-                    
+
          <Algorithm URI="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"
                     Description="RSA Signature with SHA-256 message digest"
                     AlgorithmClass="Signature"
@@ -284,7 +284,7 @@
                     SpecificationURL="http://www.ietf.org/rfc/rfc4051.txt"
                     RequiredKey="RSA"
                     JCEName="SHA512withRSA"/>
-                    
+
          <Algorithm URI="http://www.w3.org/2007/05/xmldsig-more#sha1-rsa-MGF1"
                     Description="RSASSA-PSS Signature with SHA-1 message digest"
                     AlgorithmClass="Signature"
@@ -323,7 +323,7 @@
                     SpecificationURL="http://www.ietf.org/rfc/rfc6931.txt"
                     RequiredKey="RSA"
                     JCEName="SHA512withRSAandMGF1"/>
-                    
+
          <Algorithm URI="http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha1"
                     Description="ECDSA Signature with SHA-1 message digest"
                     AlgorithmClass="Signature"
@@ -339,7 +339,7 @@
                     SpecificationURL="http://www.ietf.org/rfc/rfc4051.txt"
                     RequiredKey="EC"
                     JCEName="SHA224withECDSA"/>
-                    
+
          <Algorithm URI="http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha256"
                     Description="ECDSA Signature with SHA-256 message digest"
                     AlgorithmClass="Signature"
@@ -363,7 +363,7 @@
                     SpecificationURL="http://www.ietf.org/rfc/rfc4051.txt"
                     RequiredKey="EC"
                     JCEName="SHA512withECDSA"/>
-                    
+
          <Algorithm URI="http://www.w3.org/2007/05/xmldsig-more#ecdsa-ripemd160"
                     Description="ECDSA Signature with RIPEMD-160 message digest"
                     AlgorithmClass="Signature"
@@ -371,7 +371,7 @@
                     SpecificationURL="https://tools.ietf.org/html/rfc6931"
                     RequiredKey="EC"
                     JCEName="RIPEMD160withECDSA"/>
-                    
+
          <!-- MAC Algorithms -->
          <Algorithm URI="http://www.w3.org/2001/04/xmldsig-more#hmac-md5"
                     Description="Message Authentication code using MD5"
@@ -398,7 +398,7 @@
                     KeyLength="0"
                     RequiredKey=""
                     JCEName="HmacSHA1"/>
-                    
+
          <Algorithm URI="http://www.w3.org/2001/04/xmldsig-more#hmac-sha224"
                     Description="Message Authentication code using SHA-224"
                     AlgorithmClass="Mac"
@@ -471,7 +471,7 @@
                     IVLength="128"
                     RequiredKey="AES"
                     JCEName="AES/CBC/ISO10126Padding"/>
-                    
+
          <Algorithm URI="http://www.w3.org/2009/xmlenc11#aes128-gcm"
                    Description="Block encryption using AES with a key length of 128 bit in GCM"
                    AlgorithmClass="BlockEncryption"
@@ -480,7 +480,7 @@
                    IVLength="96"
                    RequiredKey="AES"
                    JCEName="AES/GCM/NoPadding"/>
-                   
+
          <Algorithm URI="http://www.w3.org/2009/xmlenc11#aes192-gcm"
                    Description="Block encryption using AES with a key length of 192 bit in GCM"
                    AlgorithmClass="BlockEncryption"
@@ -498,7 +498,7 @@
                    IVLength="96"
                    RequiredKey="AES"
                    JCEName="AES/GCM/NoPadding"/>
-                   
+
          <Algorithm URI="http://www.w3.org/2007/05/xmldsig-more#seed128-cbc"
                     Description="Block encryption using SEED with a key length of 128 bit"
                     AlgorithmClass="BlockEncryption"
@@ -507,7 +507,7 @@
                     IVLength="128"
                     RequiredKey="SEED"
                     JCEName="SEED/CBC/ISO10126Padding"/>
-                    
+
          <Algorithm URI="http://www.w3.org/2001/04/xmldsig-more#camellia128-cbc"
                     Description="Block encryption using Camellia with a key length of 128 bit"
                     AlgorithmClass="BlockEncryption"
@@ -516,7 +516,7 @@
                     IVLength="128"
                     RequiredKey="Camellia"
                     JCEName="Camellia/CBC/ISO10126Padding"/>
-                    
+
          <Algorithm URI="http://www.w3.org/2001/04/xmldsig-more#camellia192-cbc"
                     Description="Block encryption using Camellia with a key length of 192 bit"
                     AlgorithmClass="BlockEncryption"
@@ -525,7 +525,7 @@
                     IVLength="128"
                     RequiredKey="Camellia"
                     JCEName="Camellia/CBC/ISO10126Padding"/>
-                    
+
          <Algorithm URI="http://www.w3.org/2001/04/xmldsig-more#camellia256-cbc"
                     Description="Block encryption using Camellia with a key length of 256 bit"
                     AlgorithmClass="BlockEncryption"
@@ -534,7 +534,7 @@
                     IVLength="128"
                     RequiredKey="Camellia"
                     JCEName="Camellia/CBC/ISO10126Padding"/>
-         
+
          <Algorithm URI="http://www.w3.org/2001/04/xmlenc#rsa-1_5"
                     Description="Key Transport RSA-v1.5"
                     AlgorithmClass="KeyTransport"
@@ -548,7 +548,7 @@
                     RequirementLevel="REQUIRED"
                     RequiredKey="RSA"
                     JCEName="RSA/ECB/OAEPPadding"/>
-                    
+
          <Algorithm URI="http://www.w3.org/2009/xmlenc11#rsa-oaep"
                     Description="Key Transport RSA-OAEP"
                     AlgorithmClass="KeyTransport"
@@ -594,7 +594,7 @@
                     KeyLength="256"
                     RequiredKey="AES"
                     JCEName="AESWrap"/>
-                    
+
          <Algorithm URI="http://www.w3.org/2001/04/xmldsig-more#kw-camellia128"
                     Description="Symmetric Key Wrap using CAMELLIA with a key length of 128 bit"
                     AlgorithmClass="SymmetricKeyWrap"
@@ -602,7 +602,7 @@
                     KeyLength="128"
                     RequiredKey="Camellia"
                     JCEName="CamelliaWrap"/>
-                    
+
          <Algorithm URI="http://www.w3.org/2001/04/xmldsig-more#kw-camellia192"
                     Description="Symmetric Key Wrap using CAMELLIA with a key length of 192 bit"
                     AlgorithmClass="SymmetricKeyWrap"
@@ -610,7 +610,7 @@
                     KeyLength="192"
                     RequiredKey="Camellia"
                     JCEName="CamelliaWrap"/>
-                    
+
          <Algorithm URI="http://www.w3.org/2001/04/xmldsig-more#kw-camellia256"
                     Description="Symmetric Key Wrap using CAMELLIA with a key length of 256 bit"
                     AlgorithmClass="SymmetricKeyWrap"
@@ -618,7 +618,7 @@
                     KeyLength="256"
                     RequiredKey="Camellia"
                     JCEName="CamelliaWrap"/>
-                    
+
          <Algorithm URI="http://www.w3.org/2007/05/xmldsig-more#kw-seed128"
                     Description="Symmetric Key Wrap using SEED with a key length of 128 bit"
                     AlgorithmClass="SymmetricKeyWrap"
@@ -660,7 +660,7 @@
       <Resolver JAVACLASS="com.sun.org.apache.xml.internal.security.keys.keyresolver.implementations.ECKeyValueResolver"
                 DESCRIPTION="Can extract EC public keys" />
    </KeyResolver>
- 
+
    <PrefixMappings>
       <!-- Many classes create Elements which are in a specific namespace;
            here, the prefixes for these namespaces are defined. But this

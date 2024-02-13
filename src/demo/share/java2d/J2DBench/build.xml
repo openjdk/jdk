@@ -96,14 +96,14 @@
         excludes="j2dbench/report/**" >
       <manifest>
         <attribute name="Built-By" value="${user.name}"/>
-	<attribute name="Main-Class" value="j2dbench.J2DBench"/>
+        <attribute name="Main-Class" value="j2dbench.J2DBench"/>
       </manifest>
     </jar>
     <jar jarfile="${dist}/J2DAnalyzer.jar" basedir="${build}"
         includes="j2dbench/report/**" >
       <manifest>
         <attribute name="Built-By" value="${user.name}"/>
-	<attribute name="Main-Class" value="j2dbench.report.J2DAnalyzer"/>
+        <attribute name="Main-Class" value="j2dbench.report.J2DAnalyzer"/>
       </manifest>
     </jar>
   </target>

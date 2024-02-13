@@ -211,7 +211,7 @@
                             </method>
                         </member>
                     </interface>
-                </member> 
+                </member>
             </class>
 
             <!-- Errors and exceptions -->
@@ -394,7 +394,7 @@
                     <constant basename="VALUE" count="3"/>
                 </member>
             </enum>
-        
+
             <enum basename="SampleEnum">
                 <modifier>public</modifier>
                 <member>

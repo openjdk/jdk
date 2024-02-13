@@ -2,7 +2,7 @@
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
 >
 
-<!-- 
+<!--
 base='string', pattern='', value='#x9;', type='invalid', RULE='1'
 -->
 
@@ -18,7 +18,7 @@ base='string', pattern='', value='#x9;', type='invalid', RULE='1'
    <xsd:attribute name="att">
        <xsd:simpleType>
            <xsd:restriction base="xsd:string">
-               <xsd:pattern value=""/>    
+               <xsd:pattern value=""/>
            </xsd:restriction>
        </xsd:simpleType>
    </xsd:attribute>

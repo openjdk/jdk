@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <personnel>
 
-<person id="Big.Boss"  A100 = "" 
+<person id="Big.Boss"  A100 = ""
 A101 = "" A102 = "" A103 = ""
 >
     <name><family>Boss</family> <given>Big</given></name>

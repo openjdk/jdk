@@ -10,8 +10,8 @@ For terms of use, see http://www.unicode.org/copyright.html
     <version number="$Revision$"/>
     <keyword>
         <key name="cf" description="Currency format key" since="28">
-        	<type name="standard" description="Standard currency format" since="28"/>
-        	<type name="account" description="Accounting currency format" since="28"/>
+                <type name="standard" description="Standard currency format" since="28"/>
+                <type name="account" description="Accounting currency format" since="28"/>
         </key>
         <key name="cu" description="Currency type key" alias="currency">
             <type name="adp" description="Andorran Peseta" since="1.9"/>

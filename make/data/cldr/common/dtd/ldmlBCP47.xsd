@@ -33,28 +33,28 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
       </xs:attribute>
     </xs:complexType>
   </xs:element>
-  
-  
-  
-  
-  
+
+
+
+
+
   <xs:element name="generation">
     <xs:complexType>
       <xs:attribute name="date" use="required"/>
     </xs:complexType>
   </xs:element>
-  
-  
-  
-  
+
+
+
+
   <xs:element name="cldrVersion">
     <xs:complexType>
       <xs:attribute name="version" use="required"/>
     </xs:complexType>
   </xs:element>
-  
-  
-  
+
+
+
   <xs:element name="keyword">
     <xs:complexType>
       <xs:sequence>
@@ -93,17 +93,17 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
       <xs:attribute name="since"/>
     </xs:complexType>
   </xs:element>
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
   <xs:element name="type">
     <xs:complexType>
       <xs:attribute name="name" type="xs:NMTOKEN" use="required"/>
@@ -122,18 +122,18 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
       <xs:attribute name="iana"/>
     </xs:complexType>
   </xs:element>
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
   <xs:element name="attribute">
     <xs:complexType>
       <xs:attribute name="name" type="xs:NMTOKEN" use="required"/>

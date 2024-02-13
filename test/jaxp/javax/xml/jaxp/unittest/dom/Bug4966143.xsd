@@ -2,7 +2,7 @@
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
             xmlns:testNS="testNS"
             targetNamespace="testNS" elementFormDefault="qualified">
-    
+
     <xsd:element name="test6">
         <xsd:complexType>
             <xsd:complexContent>

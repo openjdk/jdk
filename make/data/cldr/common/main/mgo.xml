@@ -6,291 +6,291 @@ SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
-	<identity>
-		<version number="$Revision$"/>
-		<language type="mgo"/>
-	</identity>
-	<localeDisplayNames>
-		<languages>
-			<language type="mgo">metaʼ</language>
-			<language type="und">ngam tisɔʼ</language>
-		</languages>
-		<scripts>
-			<script type="Latn">ngam ŋwaʼri</script>
-			<script type="Zxxx">ngam choʼ</script>
-			<script type="Zzzz">abo ŋwaʼri tisɔʼ</script>
-		</scripts>
-		<territories>
-			<territory type="CM">Kamalun</territory>
-			<territory type="ZZ">aba aben tisɔ̀</territory>
-		</territories>
-		<types>
-			<type key="calendar" type="gregorian">ngàb mə̀kala</type>
-			<type key="numbers" type="latn">inu</type>
-		</types>
-	</localeDisplayNames>
-	<characters>
-		<exemplarCharacters>[aà b {ch} d eè ə{ə̀} f g {gh} iì j k m n ŋ oò ɔ{ɔ̀} p r s t uù w y z ʼ]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[c h l q v x]</exemplarCharacters>
-		<exemplarCharacters type="index">[A B {CH} D E Ə F G {GH} I J K M N Ŋ O Ɔ P R S T U W Y Z ʼ]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[, ; \: ! ? . '‘’ &quot;“”]</exemplarCharacters>
-	</characters>
-	<dates>
-		<calendars>
-			<calendar type="generic">
-				<dateFormats>
-					<dateFormatLength type="full">
-						<dateFormat>
-							<pattern>EEEE, G y MMMM dd</pattern>
-							<datetimeSkeleton>GyMMMMEEEEdd</datetimeSkeleton>
-						</dateFormat>
-					</dateFormatLength>
-					<dateFormatLength type="long">
-						<dateFormat>
-							<pattern>G y MMMM d</pattern>
-						</dateFormat>
-					</dateFormatLength>
-					<dateFormatLength type="medium">
-						<dateFormat>
-							<pattern>G y MMM d</pattern>
-						</dateFormat>
-					</dateFormatLength>
-					<dateFormatLength type="short">
-						<dateFormat>
-							<pattern>GGGGG y-MM-dd</pattern>
-						</dateFormat>
-					</dateFormatLength>
-				</dateFormats>
-				<dateTimeFormats>
-					<dateTimeFormatLength type="full">
-						<dateTimeFormat>
-							<pattern>{1} {0}</pattern>
-						</dateTimeFormat>
-					</dateTimeFormatLength>
-					<dateTimeFormatLength type="long">
-						<dateTimeFormat>
-							<pattern>{1} {0}</pattern>
-						</dateTimeFormat>
-					</dateTimeFormatLength>
-					<dateTimeFormatLength type="medium">
-						<dateTimeFormat>
-							<pattern>{1} {0}</pattern>
-						</dateTimeFormat>
-					</dateTimeFormatLength>
-					<dateTimeFormatLength type="short">
-						<dateTimeFormat>
-							<pattern>{1} {0}</pattern>
-						</dateTimeFormat>
-					</dateTimeFormatLength>
-				</dateTimeFormats>
-			</calendar>
-			<calendar type="gregorian">
-				<months>
-					<monthContext type="format">
-						<monthWidth type="abbreviated">
-							<month type="1">mbegtug</month>
-							<month type="2">imeg àbùbì</month>
-							<month type="3">imeg mbəŋchubi</month>
-							<month type="4">iməg ngwə̀t</month>
-							<month type="5">iməg fog</month>
-							<month type="6">iməg ichiibɔd</month>
-							<month type="7">iməg àdùmbə̀ŋ</month>
-							<month type="8">iməg ichika</month>
-							<month type="9">iməg kud</month>
-							<month type="10">iməg tèsiʼe</month>
-							<month type="11">iməg zò</month>
-							<month type="12">iməg krizmed</month>
-						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1">iməg mbegtug</month>
-							<month type="2">imeg àbùbì</month>
-							<month type="3">imeg mbəŋchubi</month>
-							<month type="4">iməg ngwə̀t</month>
-							<month type="5">iməg fog</month>
-							<month type="6">iməg ichiibɔd</month>
-							<month type="7">iməg àdùmbə̀ŋ</month>
-							<month type="8">iməg ichika</month>
-							<month type="9">iməg kud</month>
-							<month type="10">iməg tèsiʼe</month>
-							<month type="11">iməg zò</month>
-							<month type="12">iməg krizmed</month>
-						</monthWidth>
-					</monthContext>
-					<monthContext type="stand-alone">
-						<monthWidth type="narrow">
-							<month type="1">M1</month>
-							<month type="2">A2</month>
-							<month type="3">M3</month>
-							<month type="4">N4</month>
-							<month type="5">F5</month>
-							<month type="6">I6</month>
-							<month type="7">A7</month>
-							<month type="8">I8</month>
-							<month type="9">K9</month>
-							<month type="10">10</month>
-							<month type="11">11</month>
-							<month type="12">12</month>
-						</monthWidth>
-					</monthContext>
-				</months>
-				<days>
-					<dayContext type="format">
-						<dayWidth type="short">
-							<day type="sun">1</day>
-							<day type="mon">2</day>
-							<day type="tue">3</day>
-							<day type="wed">4</day>
-							<day type="thu">5</day>
-							<day type="fri">6</day>
-							<day type="sat">7</day>
-						</dayWidth>
-						<dayWidth type="wide">
-							<day type="sun">Aneg 1</day>
-							<day type="mon">Aneg 2</day>
-							<day type="tue">Aneg 3</day>
-							<day type="wed">Aneg 4</day>
-							<day type="thu">Aneg 5</day>
-							<day type="fri">Aneg 6</day>
-							<day type="sat">Aneg 7</day>
-						</dayWidth>
-					</dayContext>
-					<dayContext type="stand-alone">
-						<dayWidth type="narrow">
-							<day type="sun">A1</day>
-							<day type="mon">A2</day>
-							<day type="tue">A3</day>
-							<day type="wed">A4</day>
-							<day type="thu">A5</day>
-							<day type="fri">A6</day>
-							<day type="sat">A7</day>
-						</dayWidth>
-					</dayContext>
-				</days>
-				<dateFormats>
-					<dateFormatLength type="full">
-						<dateFormat>
-							<pattern>EEEE, y MMMM dd</pattern>
-							<datetimeSkeleton>yMMMMEEEEdd</datetimeSkeleton>
-						</dateFormat>
-					</dateFormatLength>
-					<dateFormatLength type="long">
-						<dateFormat>
-							<pattern>y MMMM d</pattern>
-						</dateFormat>
-					</dateFormatLength>
-					<dateFormatLength type="medium">
-						<dateFormat>
-							<pattern>y MMM d</pattern>
-						</dateFormat>
-					</dateFormatLength>
-					<dateFormatLength type="short">
-						<dateFormat>
-							<pattern>y-MM-dd</pattern>
-						</dateFormat>
-					</dateFormatLength>
-				</dateFormats>
-				<timeFormats>
-					<timeFormatLength type="full">
-						<timeFormat>
-							<pattern>HH:mm:ss zzzz</pattern>
-						</timeFormat>
-					</timeFormatLength>
-					<timeFormatLength type="long">
-						<timeFormat>
-							<pattern>HH:mm:ss z</pattern>
-						</timeFormat>
-					</timeFormatLength>
-					<timeFormatLength type="medium">
-						<timeFormat>
-							<pattern>HH:mm:ss</pattern>
-						</timeFormat>
-					</timeFormatLength>
-					<timeFormatLength type="short">
-						<timeFormat>
-							<pattern>HH:mm</pattern>
-						</timeFormat>
-					</timeFormatLength>
-				</timeFormats>
-				<dateTimeFormats>
-					<dateTimeFormatLength type="full">
-						<dateTimeFormat>
-							<pattern>{1} {0}</pattern>
-						</dateTimeFormat>
-					</dateTimeFormatLength>
-					<dateTimeFormatLength type="long">
-						<dateTimeFormat>
-							<pattern>{1} {0}</pattern>
-						</dateTimeFormat>
-					</dateTimeFormatLength>
-					<dateTimeFormatLength type="medium">
-						<dateTimeFormat>
-							<pattern>{1} {0}</pattern>
-						</dateTimeFormat>
-					</dateTimeFormatLength>
-					<dateTimeFormatLength type="short">
-						<dateTimeFormat>
-							<pattern>{1} {0}</pattern>
-						</dateTimeFormat>
-					</dateTimeFormatLength>
-				</dateTimeFormats>
-			</calendar>
-		</calendars>
-		<fields>
-			<field type="year">
-				<displayName>fituʼ</displayName>
-			</field>
-			<field type="month">
-				<displayName>iməg</displayName>
-			</field>
-			<field type="week">
-				<displayName>nkap</displayName>
-			</field>
-			<field type="day">
-				<displayName>anəg</displayName>
-				<relative type="-1">ikwiri</relative>
-				<relative type="0">tèchɔ̀ŋ</relative>
-				<relative type="1">isu</relative>
-				<relative type="2">isu ywi</relative>
-			</field>
-			<field type="weekday">
-				<displayName>anəg agu nkap</displayName>
-			</field>
-		</fields>
-	</dates>
-	<numbers>
-		<currencyFormats numberSystem="latn">
-			<unitPattern count="one">{0} {1}</unitPattern>
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencies>
-			<currency type="XAF">
-				<displayName>shirè</displayName>
-			</currency>
-			<currency type="XXX">
-				<displayName>iku ikap mɔʼɔ</displayName>
-			</currency>
-		</currencies>
-	</numbers>
-	<units>
-		<unitLength type="short">
-			<unit type="duration-month">
-				<displayName draft="provisional">m</displayName>
-			</unit>
-			<unit type="duration-day">
-				<displayName draft="provisional">d</displayName>
-			</unit>
-			<unit type="duration-hour">
-				<displayName draft="provisional">h</displayName>
-			</unit>
-			<unit type="duration-second">
-				<displayName draft="provisional">s</displayName>
-			</unit>
-		</unitLength>
-	</units>
-	<posix>
-		<messages>
-			<yesstr>èè</yesstr>
-			<nostr>ideg.</nostr>
-		</messages>
-	</posix>
+        <identity>
+                <version number="$Revision$"/>
+                <language type="mgo"/>
+        </identity>
+        <localeDisplayNames>
+                <languages>
+                        <language type="mgo">metaʼ</language>
+                        <language type="und">ngam tisɔʼ</language>
+                </languages>
+                <scripts>
+                        <script type="Latn">ngam ŋwaʼri</script>
+                        <script type="Zxxx">ngam choʼ</script>
+                        <script type="Zzzz">abo ŋwaʼri tisɔʼ</script>
+                </scripts>
+                <territories>
+                        <territory type="CM">Kamalun</territory>
+                        <territory type="ZZ">aba aben tisɔ̀</territory>
+                </territories>
+                <types>
+                        <type key="calendar" type="gregorian">ngàb mə̀kala</type>
+                        <type key="numbers" type="latn">inu</type>
+                </types>
+        </localeDisplayNames>
+        <characters>
+                <exemplarCharacters>[aà b {ch} d eè ə{ə̀} f g {gh} iì j k m n ŋ oò ɔ{ɔ̀} p r s t uù w y z ʼ]</exemplarCharacters>
+                <exemplarCharacters type="auxiliary">[c h l q v x]</exemplarCharacters>
+                <exemplarCharacters type="index">[A B {CH} D E Ə F G {GH} I J K M N Ŋ O Ɔ P R S T U W Y Z ʼ]</exemplarCharacters>
+                <exemplarCharacters type="punctuation">[, ; \: ! ? . '‘’ &quot;“”]</exemplarCharacters>
+        </characters>
+        <dates>
+                <calendars>
+                        <calendar type="generic">
+                                <dateFormats>
+                                        <dateFormatLength type="full">
+                                                <dateFormat>
+                                                        <pattern>EEEE, G y MMMM dd</pattern>
+                                                        <datetimeSkeleton>GyMMMMEEEEdd</datetimeSkeleton>
+                                                </dateFormat>
+                                        </dateFormatLength>
+                                        <dateFormatLength type="long">
+                                                <dateFormat>
+                                                        <pattern>G y MMMM d</pattern>
+                                                </dateFormat>
+                                        </dateFormatLength>
+                                        <dateFormatLength type="medium">
+                                                <dateFormat>
+                                                        <pattern>G y MMM d</pattern>
+                                                </dateFormat>
+                                        </dateFormatLength>
+                                        <dateFormatLength type="short">
+                                                <dateFormat>
+                                                        <pattern>GGGGG y-MM-dd</pattern>
+                                                </dateFormat>
+                                        </dateFormatLength>
+                                </dateFormats>
+                                <dateTimeFormats>
+                                        <dateTimeFormatLength type="full">
+                                                <dateTimeFormat>
+                                                        <pattern>{1} {0}</pattern>
+                                                </dateTimeFormat>
+                                        </dateTimeFormatLength>
+                                        <dateTimeFormatLength type="long">
+                                                <dateTimeFormat>
+                                                        <pattern>{1} {0}</pattern>
+                                                </dateTimeFormat>
+                                        </dateTimeFormatLength>
+                                        <dateTimeFormatLength type="medium">
+                                                <dateTimeFormat>
+                                                        <pattern>{1} {0}</pattern>
+                                                </dateTimeFormat>
+                                        </dateTimeFormatLength>
+                                        <dateTimeFormatLength type="short">
+                                                <dateTimeFormat>
+                                                        <pattern>{1} {0}</pattern>
+                                                </dateTimeFormat>
+                                        </dateTimeFormatLength>
+                                </dateTimeFormats>
+                        </calendar>
+                        <calendar type="gregorian">
+                                <months>
+                                        <monthContext type="format">
+                                                <monthWidth type="abbreviated">
+                                                        <month type="1">mbegtug</month>
+                                                        <month type="2">imeg àbùbì</month>
+                                                        <month type="3">imeg mbəŋchubi</month>
+                                                        <month type="4">iməg ngwə̀t</month>
+                                                        <month type="5">iməg fog</month>
+                                                        <month type="6">iməg ichiibɔd</month>
+                                                        <month type="7">iməg àdùmbə̀ŋ</month>
+                                                        <month type="8">iməg ichika</month>
+                                                        <month type="9">iməg kud</month>
+                                                        <month type="10">iməg tèsiʼe</month>
+                                                        <month type="11">iməg zò</month>
+                                                        <month type="12">iməg krizmed</month>
+                                                </monthWidth>
+                                                <monthWidth type="wide">
+                                                        <month type="1">iməg mbegtug</month>
+                                                        <month type="2">imeg àbùbì</month>
+                                                        <month type="3">imeg mbəŋchubi</month>
+                                                        <month type="4">iməg ngwə̀t</month>
+                                                        <month type="5">iməg fog</month>
+                                                        <month type="6">iməg ichiibɔd</month>
+                                                        <month type="7">iməg àdùmbə̀ŋ</month>
+                                                        <month type="8">iməg ichika</month>
+                                                        <month type="9">iməg kud</month>
+                                                        <month type="10">iməg tèsiʼe</month>
+                                                        <month type="11">iməg zò</month>
+                                                        <month type="12">iməg krizmed</month>
+                                                </monthWidth>
+                                        </monthContext>
+                                        <monthContext type="stand-alone">
+                                                <monthWidth type="narrow">
+                                                        <month type="1">M1</month>
+                                                        <month type="2">A2</month>
+                                                        <month type="3">M3</month>
+                                                        <month type="4">N4</month>
+                                                        <month type="5">F5</month>
+                                                        <month type="6">I6</month>
+                                                        <month type="7">A7</month>
+                                                        <month type="8">I8</month>
+                                                        <month type="9">K9</month>
+                                                        <month type="10">10</month>
+                                                        <month type="11">11</month>
+                                                        <month type="12">12</month>
+                                                </monthWidth>
+                                        </monthContext>
+                                </months>
+                                <days>
+                                        <dayContext type="format">
+                                                <dayWidth type="short">
+                                                        <day type="sun">1</day>
+                                                        <day type="mon">2</day>
+                                                        <day type="tue">3</day>
+                                                        <day type="wed">4</day>
+                                                        <day type="thu">5</day>
+                                                        <day type="fri">6</day>
+                                                        <day type="sat">7</day>
+                                                </dayWidth>
+                                                <dayWidth type="wide">
+                                                        <day type="sun">Aneg 1</day>
+                                                        <day type="mon">Aneg 2</day>
+                                                        <day type="tue">Aneg 3</day>
+                                                        <day type="wed">Aneg 4</day>
+                                                        <day type="thu">Aneg 5</day>
+                                                        <day type="fri">Aneg 6</day>
+                                                        <day type="sat">Aneg 7</day>
+                                                </dayWidth>
+                                        </dayContext>
+                                        <dayContext type="stand-alone">
+                                                <dayWidth type="narrow">
+                                                        <day type="sun">A1</day>
+                                                        <day type="mon">A2</day>
+                                                        <day type="tue">A3</day>
+                                                        <day type="wed">A4</day>
+                                                        <day type="thu">A5</day>
+                                                        <day type="fri">A6</day>
+                                                        <day type="sat">A7</day>
+                                                </dayWidth>
+                                        </dayContext>
+                                </days>
+                                <dateFormats>
+                                        <dateFormatLength type="full">
+                                                <dateFormat>
+                                                        <pattern>EEEE, y MMMM dd</pattern>
+                                                        <datetimeSkeleton>yMMMMEEEEdd</datetimeSkeleton>
+                                                </dateFormat>
+                                        </dateFormatLength>
+                                        <dateFormatLength type="long">
+                                                <dateFormat>
+                                                        <pattern>y MMMM d</pattern>
+                                                </dateFormat>
+                                        </dateFormatLength>
+                                        <dateFormatLength type="medium">
+                                                <dateFormat>
+                                                        <pattern>y MMM d</pattern>
+                                                </dateFormat>
+                                        </dateFormatLength>
+                                        <dateFormatLength type="short">
+                                                <dateFormat>
+                                                        <pattern>y-MM-dd</pattern>
+                                                </dateFormat>
+                                        </dateFormatLength>
+                                </dateFormats>
+                                <timeFormats>
+                                        <timeFormatLength type="full">
+                                                <timeFormat>
+                                                        <pattern>HH:mm:ss zzzz</pattern>
+                                                </timeFormat>
+                                        </timeFormatLength>
+                                        <timeFormatLength type="long">
+                                                <timeFormat>
+                                                        <pattern>HH:mm:ss z</pattern>
+                                                </timeFormat>
+                                        </timeFormatLength>
+                                        <timeFormatLength type="medium">
+                                                <timeFormat>
+                                                        <pattern>HH:mm:ss</pattern>
+                                                </timeFormat>
+                                        </timeFormatLength>
+                                        <timeFormatLength type="short">
+                                                <timeFormat>
+                                                        <pattern>HH:mm</pattern>
+                                                </timeFormat>
+                                        </timeFormatLength>
+                                </timeFormats>
+                                <dateTimeFormats>
+                                        <dateTimeFormatLength type="full">
+                                                <dateTimeFormat>
+                                                        <pattern>{1} {0}</pattern>
+                                                </dateTimeFormat>
+                                        </dateTimeFormatLength>
+                                        <dateTimeFormatLength type="long">
+                                                <dateTimeFormat>
+                                                        <pattern>{1} {0}</pattern>
+                                                </dateTimeFormat>
+                                        </dateTimeFormatLength>
+                                        <dateTimeFormatLength type="medium">
+                                                <dateTimeFormat>
+                                                        <pattern>{1} {0}</pattern>
+                                                </dateTimeFormat>
+                                        </dateTimeFormatLength>
+                                        <dateTimeFormatLength type="short">
+                                                <dateTimeFormat>
+                                                        <pattern>{1} {0}</pattern>
+                                                </dateTimeFormat>
+                                        </dateTimeFormatLength>
+                                </dateTimeFormats>
+                        </calendar>
+                </calendars>
+                <fields>
+                        <field type="year">
+                                <displayName>fituʼ</displayName>
+                        </field>
+                        <field type="month">
+                                <displayName>iməg</displayName>
+                        </field>
+                        <field type="week">
+                                <displayName>nkap</displayName>
+                        </field>
+                        <field type="day">
+                                <displayName>anəg</displayName>
+                                <relative type="-1">ikwiri</relative>
+                                <relative type="0">tèchɔ̀ŋ</relative>
+                                <relative type="1">isu</relative>
+                                <relative type="2">isu ywi</relative>
+                        </field>
+                        <field type="weekday">
+                                <displayName>anəg agu nkap</displayName>
+                        </field>
+                </fields>
+        </dates>
+        <numbers>
+                <currencyFormats numberSystem="latn">
+                        <unitPattern count="one">{0} {1}</unitPattern>
+                        <unitPattern count="other">{0} {1}</unitPattern>
+                </currencyFormats>
+                <currencies>
+                        <currency type="XAF">
+                                <displayName>shirè</displayName>
+                        </currency>
+                        <currency type="XXX">
+                                <displayName>iku ikap mɔʼɔ</displayName>
+                        </currency>
+                </currencies>
+        </numbers>
+        <units>
+                <unitLength type="short">
+                        <unit type="duration-month">
+                                <displayName draft="provisional">m</displayName>
+                        </unit>
+                        <unit type="duration-day">
+                                <displayName draft="provisional">d</displayName>
+                        </unit>
+                        <unit type="duration-hour">
+                                <displayName draft="provisional">h</displayName>
+                        </unit>
+                        <unit type="duration-second">
+                                <displayName draft="provisional">s</displayName>
+                        </unit>
+                </unitLength>
+        </units>
+        <posix>
+                <messages>
+                        <yesstr>èè</yesstr>
+                        <nostr>ideg.</nostr>
+                </messages>
+        </posix>
 </ldml>

@@ -20,13 +20,13 @@
               </xs:element>
             </xs:sequence>
           </xs:complexType>
-          
+
           <xs:key name="checkAttrib">
             <xs:selector xpath=".//e1"/>
             <xs:field xpath="@a1"/>
             <xs:field xpath="e2/@a2"/>
           </xs:key>
-          
+
         </xs:element>
       </xs:sequence>
     </xs:complexType>

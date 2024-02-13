@@ -17,7 +17,7 @@
       </xsd:simpleContent>
     </xsd:complexType>
   </xsd:element>
-  
+
   <xsd:element name="D" type="xsd:string" fixed="hey"/>
 
   <xsd:attribute name="attr" type="xsd:string"/>
@@ -36,13 +36,13 @@
 
   <xsd:complexType name="Y">
     <xsd:complexContent>
-	    <xsd:restriction base="X">
-		    <xsd:sequence>
-		      <xsd:any processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
-		    </xsd:sequence>
-		    <xsd:attribute ref="attr" fixed="typeY"/>
-		    <xsd:attribute ref="unparsedEntityAttr" use="prohibited"/>
-	    </xsd:restriction>
+            <xsd:restriction base="X">
+                    <xsd:sequence>
+                      <xsd:any processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+                    </xsd:sequence>
+                    <xsd:attribute ref="attr" fixed="typeY"/>
+                    <xsd:attribute ref="unparsedEntityAttr" use="prohibited"/>
+            </xsd:restriction>
     </xsd:complexContent>
   </xsd:complexType>
 
@@ -54,20 +54,20 @@
     <xsd:attribute ref="attr"/>
     <xsd:attribute ref="unparsedEntityAttr"/>
   </xsd:complexType>
-  
+
   <xsd:complexType name="idType">
     <xsd:complexContent>
-	    <xsd:extension base="X">
-		    <xsd:attribute name="idAttr" type="xsd:ID"/>
-	    </xsd:extension>
+            <xsd:extension base="X">
+                    <xsd:attribute name="idAttr" type="xsd:ID"/>
+            </xsd:extension>
     </xsd:complexContent>
   </xsd:complexType>
 
   <xsd:complexType name="idrefType">
     <xsd:complexContent>
-	    <xsd:extension base="X">
-		    <xsd:attribute name="idrefAttr" type="xsd:IDREF"/>
-	    </xsd:extension>
+            <xsd:extension base="X">
+                    <xsd:attribute name="idrefAttr" type="xsd:IDREF"/>
+            </xsd:extension>
     </xsd:complexContent>
   </xsd:complexType>
 

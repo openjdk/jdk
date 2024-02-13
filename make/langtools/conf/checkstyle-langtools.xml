@@ -6,11 +6,11 @@
 <!--
    Checks for initial langtools code conventions, we are starting with
    imports and import orders and this will grow to encompass other
-   violations over time. 
+   violations over time.
 -->
 
 <module name="Checker">
-    
+
     <!-- Checks for whitespace. -->
     <module name="FileTabCharacter">
         <property name="fileExtensions" value=".java"/>
@@ -33,12 +33,12 @@
     -->
         <module name="GenericWhitespace"/>
         <module name="RedundantImport"/>
-        <module name="UnusedImports"/>  
+        <module name="UnusedImports"/>
         <module name="ImportOrder">
             <property name="groups" value="java, javax, org, com"/>
             <property name="ordered" value="true"/>
             <property name="separated" value="true"/>
-        </module>        
+        </module>
         <module name="EmptyForInitializerPad">
             <property name="option" value="space"/>
         </module>

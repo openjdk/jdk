@@ -8,7 +8,7 @@
     </xsd:sequence>
    </xsd:complexType>
   </xsd:element>
-    
+
     <xsd:simpleType name="AsciiStringType">
         <xsd:restriction base="xsd:string">
             <xsd:pattern value="\p{IsBasicLatin}*" />

@@ -2,7 +2,7 @@
 <xsd:schema xmlns:xsd='http://www.w3.org/2001/XMLSchema' >
 <!-- Schema to test nonPositiveInteger datatype -->
   <xsd:element name='test' type='fooType' />
-  <xsd:complexType name='fooType' > 
+  <xsd:complexType name='fooType' >
     <xsd:sequence>
       <xsd:element name='foo' >
         <xsd:simpleType>

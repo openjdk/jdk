@@ -6,18 +6,18 @@ SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
-	<identity>
-		<version number="$Revision$"/>
-		<language type="arn"/>
-	</identity>
-	<localeDisplayNames>
-		<languages>
-			<language type="arn">Mapudungun</language>
-		</languages>
-	</localeDisplayNames>
-	<characters>
-		<exemplarCharacters>[a {ch} d e f g i k lḻ {ll} m nñṉ {ng} o p r s {sh} tṯ {tr} uü w y]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[b c h j q x z]</exemplarCharacters>
-		<exemplarCharacters type="index">[A {CH} D E F G I K LḺ {LL} M NÑṈ {NG} O P R S {SH} TṮ {TR} UÜ W Y]</exemplarCharacters>
-	</characters>
+        <identity>
+                <version number="$Revision$"/>
+                <language type="arn"/>
+        </identity>
+        <localeDisplayNames>
+                <languages>
+                        <language type="arn">Mapudungun</language>
+                </languages>
+        </localeDisplayNames>
+        <characters>
+                <exemplarCharacters>[a {ch} d e f g i k lḻ {ll} m nñṉ {ng} o p r s {sh} tṯ {tr} uü w y]</exemplarCharacters>
+                <exemplarCharacters type="auxiliary">[b c h j q x z]</exemplarCharacters>
+                <exemplarCharacters type="index">[A {CH} D E F G I K LḺ {LL} M NÑṈ {NG} O P R S {SH} TṮ {TR} UÜ W Y]</exemplarCharacters>
+        </characters>
 </ldml>

@@ -2,14 +2,14 @@
 <xsd:schema xmlns:xsd='http://www.w3.org/2001/XMLSchema' >
 <!-- Schema to test NMTOKENS datatype -->
   <xsd:element name='test' type='fooType' />
-  <xsd:complexType name='fooType' > 
+  <xsd:complexType name='fooType' >
     <xsd:sequence>
       <xsd:element name='foo' >
         <xsd:complexType>
           <xsd:simpleContent>
             <xsd:extension base="xsd:string">
               <xsd:attribute name='attrTest'>
-                <xsd:simpleType> 
+                <xsd:simpleType>
                   <xsd:restriction base="xsd:NMTOKENS">
                             <xsd:length value="5"/>
                             <xsd:minLength value="1"/>

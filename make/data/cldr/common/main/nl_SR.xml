@@ -6,25 +6,25 @@ SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
-	<identity>
-		<version number="$Revision$"/>
-		<language type="nl"/>
-		<territory type="SR"/>
-	</identity>
-	<dates>
-		<timeZoneNames>
-			<metazone type="Suriname">
-				<short>
-					<standard>SRT</standard>
-				</short>
-			</metazone>
-		</timeZoneNames>
-	</dates>
-	<numbers>
-		<currencies>
-			<currency type="SRD">
-				<symbol>$</symbol>
-			</currency>
-		</currencies>
-	</numbers>
+        <identity>
+                <version number="$Revision$"/>
+                <language type="nl"/>
+                <territory type="SR"/>
+        </identity>
+        <dates>
+                <timeZoneNames>
+                        <metazone type="Suriname">
+                                <short>
+                                        <standard>SRT</standard>
+                                </short>
+                        </metazone>
+                </timeZoneNames>
+        </dates>
+        <numbers>
+                <currencies>
+                        <currency type="SRD">
+                                <symbol>$</symbol>
+                        </currency>
+                </currencies>
+        </numbers>
 </ldml>

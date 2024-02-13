@@ -132,7 +132,7 @@
 <!ELEMENT iso ( #PCDATA )>
 
 <!ELEMENT ccsid (ebcdic?, ibmpc?, aix?, windows?)>
-<!ELEMENT ebcdic ( #PCDATA )> 
+<!ELEMENT ebcdic ( #PCDATA )>
 <!ELEMENT ibmpc ( #PCDATA )>
 <!ELEMENT aix ( #PCDATA )>
 <!ELEMENT windows ( #PCDATA )>

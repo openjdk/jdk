@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<env:Envelope xmlns:enc="http://schemas.xmlsoap.org/soap/encoding/" 
-    xmlns:env="http://schemas.xmlsoap.org/soap/envelope/" 
-    xmlns:ns0="http://headertest.org/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" 
+<env:Envelope xmlns:enc="http://schemas.xmlsoap.org/soap/encoding/"
+    xmlns:env="http://schemas.xmlsoap.org/soap/envelope/"
+    xmlns:ns0="http://headertest.org/" xmlns:xsd="http://www.w3.org/2001/XMLSchema"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
    <env:Body>
-	<ds:X509Certificate xmlns="" xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+        <ds:X509Certificate xmlns="" xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
 MIIDVjCCAxICBD6kKrMwCwYHKoZIzjgEAwUAMIGPMQswCQYDVQQGEwJVUzELMAkGA1UECBMCQ0Ex
 FDASBgNVBAcTC1NhbnRhIENsYXJhMR8wHQYDVQQKExZTdW4gTWljcm9zeXN0ZW1zLCBJbmMuMR4w
 HAYDVQQLExVKYXZhIGFuZCBYTUwgU29mdHdhcmUxHDAaBgNVBAMTE0pXUy1TZWN1cml0eSBDbGll

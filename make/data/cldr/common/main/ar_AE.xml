@@ -6,45 +6,45 @@ SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
-	<identity>
-		<version number="$Revision$"/>
-		<language type="ar"/>
-		<territory type="AE"/>
-	</identity>
-	<localeDisplayNames>
-		<territories>
-			<territory type="CI" alt="variant" draft="contributed">ساحل العاج</territory>
-			<territory type="TL" alt="variant" draft="contributed">التيمور الشرقية</territory>
-		</territories>
-	</localeDisplayNames>
-	<dates>
-		<calendars>
-			<calendar type="gregorian">
-				<eras>
-					<eraNames>
-						<era type="0" alt="variant" draft="contributed">قبل الميلاد</era>
-					</eraNames>
-					<eraAbbr>
-						<era type="0" alt="variant" draft="contributed">ق.م</era>
-					</eraAbbr>
-				</eras>
-			</calendar>
-		</calendars>
-		<fields>
-			<field type="year">
-				<relative type="-1" draft="contributed">السنة الماضية</relative>
-				<relative type="0" draft="contributed">هذه السنة</relative>
-				<relative type="1" draft="contributed">السنة التالية</relative>
-			</field>
-		</fields>
-	</dates>
-	<numbers>
-		<defaultNumberingSystem>latn</defaultNumberingSystem>
-		<defaultNumberingSystem alt="latn">latn</defaultNumberingSystem>
-		<currencies>
-			<currency type="BND">
-				<symbol alt="narrow" draft="contributed">$</symbol>
-			</currency>
-		</currencies>
-	</numbers>
+        <identity>
+                <version number="$Revision$"/>
+                <language type="ar"/>
+                <territory type="AE"/>
+        </identity>
+        <localeDisplayNames>
+                <territories>
+                        <territory type="CI" alt="variant" draft="contributed">ساحل العاج</territory>
+                        <territory type="TL" alt="variant" draft="contributed">التيمور الشرقية</territory>
+                </territories>
+        </localeDisplayNames>
+        <dates>
+                <calendars>
+                        <calendar type="gregorian">
+                                <eras>
+                                        <eraNames>
+                                                <era type="0" alt="variant" draft="contributed">قبل الميلاد</era>
+                                        </eraNames>
+                                        <eraAbbr>
+                                                <era type="0" alt="variant" draft="contributed">ق.م</era>
+                                        </eraAbbr>
+                                </eras>
+                        </calendar>
+                </calendars>
+                <fields>
+                        <field type="year">
+                                <relative type="-1" draft="contributed">السنة الماضية</relative>
+                                <relative type="0" draft="contributed">هذه السنة</relative>
+                                <relative type="1" draft="contributed">السنة التالية</relative>
+                        </field>
+                </fields>
+        </dates>
+        <numbers>
+                <defaultNumberingSystem>latn</defaultNumberingSystem>
+                <defaultNumberingSystem alt="latn">latn</defaultNumberingSystem>
+                <currencies>
+                        <currency type="BND">
+                                <symbol alt="narrow" draft="contributed">$</symbol>
+                        </currency>
+                </currencies>
+        </numbers>
 </ldml>

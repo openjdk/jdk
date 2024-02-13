@@ -9,9 +9,9 @@
                <xs:element name="name" type="xs:string" minOccurs="0"/>
                <xs:element name="price" type="xs:string" minOccurs="0"/>
              </xs:sequence>
-          </xs:complexType>  
+          </xs:complexType>
         </xs:element>
       </xs:sequence>
-    </xs:complexType>  
+    </xs:complexType>
   </xs:element>
 </xs:schema>

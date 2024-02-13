@@ -7,7 +7,7 @@
 
   <body>
     <p> Welcome to the world of typography! Here is a book that you may find useful.</p>
-    <b:title style="font-family: sans-serif;">Digital Typography</b:title> 
+    <b:title style="font-family: sans-serif;">Digital Typography</b:title>
     <b:author>Donald Knuth</b:author>
     <?netscape http://www.hotmail.com?>
   </body>

@@ -2,7 +2,7 @@
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
 >
 
-<!-- 
+<!--
 base='string', pattern='', value='a', type='invalid', RULE='1'
 -->
 

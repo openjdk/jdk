@@ -7,7 +7,7 @@
 
   <body>
     <p></p>
-    <b:title style="font-family: sans-serif;">Digital Typography</b:title> 
+    <b:title style="font-family: sans-serif;">Digital Typography</b:title>
     <b:author>Donald Knuth</b:author>
     <book b:aaa ="value">fjfjf</book>
   </body>

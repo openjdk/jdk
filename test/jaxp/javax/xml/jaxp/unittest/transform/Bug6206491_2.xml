@@ -5,7 +5,7 @@
     <!ELEMENT ids (id*)>
     <!ELEMENT id EMPTY>
     <!ELEMENT department EMPTY>
-    
+
     <!ATTLIST organization  id              ID  #IMPLIED
     >
     <!ATTLIST company   id                  ID  #REQUIRED

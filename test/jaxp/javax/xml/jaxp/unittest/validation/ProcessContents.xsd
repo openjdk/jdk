@@ -4,7 +4,7 @@
 <xs:element name="my_lax">
    <xs:complexType>
       <xs:sequence>
-         <xs:any processContents="lax" maxOccurs="unbounded"/>			  
+         <xs:any processContents="lax" maxOccurs="unbounded"/>
       </xs:sequence>
    </xs:complexType>
 </xs:element>
@@ -12,7 +12,7 @@
 <xs:element name="my_skip">
    <xs:complexType>
       <xs:sequence>
-         <xs:any processContents="skip" maxOccurs="unbounded"/>			  
+         <xs:any processContents="skip" maxOccurs="unbounded"/>
       </xs:sequence>
    </xs:complexType>
 </xs:element>

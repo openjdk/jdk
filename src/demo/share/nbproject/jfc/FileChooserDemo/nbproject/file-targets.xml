@@ -32,9 +32,9 @@
 -->
 
 <project basedir=".." name="FileChooserDemo/file">
-    
+
     <import file="../build.xml"/>
-    
+
     <target name="compile-selected" depends="-init">
         <fail unless="includes">Must set property 'includes'</fail>
         <mkdir dir="${classes.dir}"/>
@@ -42,5 +42,5 @@
             <classpath path="${cp}"/>
         </javac>
     </target>
-    
+
 </project>

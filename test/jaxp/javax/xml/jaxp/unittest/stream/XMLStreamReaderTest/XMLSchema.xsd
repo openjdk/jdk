@@ -14,7 +14,7 @@
 <!ATTLIST xs:simpleContent   id  ID  #IMPLIED>
 <!ATTLIST xs:extension       id  ID  #IMPLIED>
 <!ATTLIST xs:element         id  ID  #IMPLIED>
-<!ATTLIST xs:group           id  ID  #IMPLIED> 
+<!ATTLIST xs:group           id  ID  #IMPLIED>
 <!ATTLIST xs:all             id  ID  #IMPLIED>
 <!ATTLIST xs:choice          id  ID  #IMPLIED>
 <!ATTLIST xs:sequence        id  ID  #IMPLIED>
@@ -68,8 +68,8 @@
 <xs:schema targetNamespace="http://www.w3.org/2001/XMLSchema" blockDefault="#all" elementFormDefault="qualified" version="1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema" xml:lang="EN" xmlns:hfp="http://www.w3.org/2001/XMLSchema-hasFacetAndProperty">
  <xs:annotation>
   <xs:documentation>
-    Part 1 version: Id: structures.xsd,v 1.2 2004/01/15 11:34:25 ht Exp 
-    Part 2 version: Id: datatypes.xsd,v 1.3 2004/01/23 18:11:13 ht Exp 
+    Part 1 version: Id: structures.xsd,v 1.2 2004/01/15 11:34:25 ht Exp
+    Part 2 version: Id: datatypes.xsd,v 1.3 2004/01/23 18:11:13 ht Exp
   </xs:documentation>
  </xs:annotation>
 
@@ -143,7 +143,7 @@
    <xs:element ref="xs:notation"/>
   </xs:choice>
  </xs:group>
- 
+
  <xs:group name="redefinable">
   <xs:annotation>
    <xs:documentation>
@@ -188,7 +188,7 @@
    #all or (possibly empty) subset of {extension, restriction}</xs:documentation>
   </xs:annotation>
   <xs:union>
-   <xs:simpleType>    
+   <xs:simpleType>
     <xs:restriction base="xs:token">
      <xs:enumeration value="#all"/>
     </xs:restriction>
@@ -220,7 +220,7 @@
    #all or (possibly empty) subset of {extension, restriction, list, union}</xs:documentation>
   </xs:annotation>
   <xs:union>
-   <xs:simpleType>    
+   <xs:simpleType>
     <xs:restriction base="xs:token">
      <xs:enumeration value="#all"/>
     </xs:restriction>
@@ -276,17 +276,17 @@
    <xs:selector xpath="xs:complexType|xs:simpleType"/>
    <xs:field xpath="@name"/>
   </xs:key>
- 
+
   <xs:key name="group">
    <xs:selector xpath="xs:group"/>
    <xs:field xpath="@name"/>
   </xs:key>
- 
+
   <xs:key name="attributeGroup">
    <xs:selector xpath="xs:attributeGroup"/>
    <xs:field xpath="@name"/>
   </xs:key>
- 
+
   <xs:key name="notation">
    <xs:selector xpath="xs:notation"/>
    <xs:field xpath="@name"/>
@@ -337,8 +337,8 @@
    <xs:element ref="xs:sequence"/>
   </xs:choice>
  </xs:group>
- 
- 
+
+
 
  <xs:group name="nestedParticle">
   <xs:choice>
@@ -349,7 +349,7 @@
    <xs:element ref="xs:any"/>
   </xs:choice>
  </xs:group>
- 
+
  <xs:group name="particle">
   <xs:choice>
    <xs:element name="element" type="xs:localElement"/>
@@ -360,7 +360,7 @@
    <xs:element ref="xs:any"/>
   </xs:choice>
  </xs:group>
- 
+
  <xs:complexType name="attribute">
   <xs:complexContent>
    <xs:extension base="xs:annotated">
@@ -384,7 +384,7 @@
    </xs:extension>
   </xs:complexContent>
  </xs:complexType>
- 
+
  <xs:complexType name="topLevelAttribute">
   <xs:complexContent>
    <xs:restriction base="xs:attribute">
@@ -460,7 +460,7 @@
    </xs:extension>
   </xs:complexContent>
  </xs:complexType>
- 
+
  <xs:complexType name="topLevelComplexType">
   <xs:complexContent>
    <xs:restriction base="xs:complexType">
@@ -473,7 +473,7 @@
    </xs:restriction>
   </xs:complexContent>
  </xs:complexType>
- 
+
  <xs:complexType name="localComplexType">
   <xs:complexContent>
    <xs:restriction base="xs:complexType">
@@ -489,7 +489,7 @@
    </xs:restriction>
   </xs:complexContent>
  </xs:complexType>
- 
+
  <xs:complexType name="restrictionType">
   <xs:complexContent>
    <xs:extension base="xs:annotated">
@@ -502,7 +502,7 @@
     </xs:sequence>
     <xs:attribute name="base" type="xs:QName" use="required"/>
    </xs:extension>
-  </xs:complexContent>       
+  </xs:complexContent>
  </xs:complexType>
 
  <xs:complexType name="complexRestrictionType">
@@ -521,7 +521,7 @@
     </xs:sequence>
     <xs:anyAttribute namespace="##other" processContents="lax"/>
    </xs:restriction>
-  </xs:complexContent>       
+  </xs:complexContent>
  </xs:complexType>
 
  <xs:complexType name="extensionType">
@@ -533,7 +533,7 @@
     </xs:sequence>
     <xs:attribute name="base" type="xs:QName" use="required"/>
    </xs:extension>
-  </xs:complexContent>       
+  </xs:complexContent>
  </xs:complexType>
 
  <xs:element name="complexContent" id="complexContent">
@@ -546,7 +546,7 @@
      <xs:choice>
       <xs:element name="restriction" type="xs:complexRestrictionType"/>
       <xs:element name="extension" type="xs:extensionType"/>
-     </xs:choice>     
+     </xs:choice>
      <xs:attribute name="mixed" type="xs:boolean">
       <xs:annotation>
        <xs:documentation>
@@ -608,7 +608,7 @@
    </xs:complexContent>
   </xs:complexType>
  </xs:element>
- 
+
  <xs:element name="complexType" type="xs:topLevelComplexType" id="complexType">
   <xs:annotation>
    <xs:documentation source="http://www.w3.org/TR/xmlschema-1/#element-complexType"/>
@@ -625,7 +625,7 @@
     restriction}</xs:documentation>
    </xs:annotation>
    <xs:union>
-    <xs:simpleType>    
+    <xs:simpleType>
      <xs:restriction base="xs:token">
       <xs:enumeration value="#all"/>
      </xs:restriction>
@@ -641,7 +641,7 @@
       </xs:simpleType>
      </xs:list>
     </xs:simpleType>
-   </xs:union>  
+   </xs:union>
   </xs:simpleType>
 
  <xs:complexType name="element" abstract="true">
@@ -677,7 +677,7 @@
    </xs:extension>
   </xs:complexContent>
  </xs:complexType>
- 
+
  <xs:complexType name="topLevelElement">
   <xs:complexContent>
    <xs:restriction base="xs:element">
@@ -698,7 +698,7 @@
    </xs:restriction>
   </xs:complexContent>
  </xs:complexType>
- 
+
  <xs:complexType name="localElement">
   <xs:complexContent>
    <xs:restriction base="xs:element">
@@ -738,7 +738,7 @@
    </xs:extension>
   </xs:complexContent>
  </xs:complexType>
- 
+
  <xs:complexType name="realGroup">
   <xs:complexContent>
    <xs:restriction base="xs:group">
@@ -816,7 +816,7 @@
    </xs:restriction>
   </xs:complexContent>
  </xs:complexType>
- 
+
  <xs:complexType name="simpleExplicitGroup">
   <xs:complexContent>
    <xs:restriction base="xs:explicitGroup">
@@ -830,7 +830,7 @@
    </xs:restriction>
   </xs:complexContent>
  </xs:complexType>
- 
+
  <xs:group name="allModel">
   <xs:sequence>
       <xs:element ref="xs:annotation" minOccurs="0"/>
@@ -844,8 +844,8 @@
       </xs:choice>
      </xs:sequence>
  </xs:group>
- 
- 
+
+
  <xs:complexType name="narrowMaxMin">
   <xs:annotation>
    <xs:documentation>restricted max/min</xs:documentation>
@@ -976,7 +976,7 @@
               ##other    - - any non-conflicting WFXML/attribute from
                               namespace other than targetNS
 
-              ##local    - - any unqualified non-conflicting WFXML/attribute 
+              ##local    - - any unqualified non-conflicting WFXML/attribute
 
               one or     - - any non-conflicting WFXML/attribute from
               more URI        the listed namespaces
@@ -1031,7 +1031,7 @@
    </xs:extension>
   </xs:complexContent>
  </xs:complexType>
- 
+
  <xs:complexType name="namedAttributeGroup">
   <xs:complexContent>
    <xs:restriction base="xs:attributeGroup">
@@ -1129,10 +1129,10 @@ use</xs:documentation>
         <xs:annotation>
          <xs:documentation>The following pattern is intended to allow XPath
                            expressions per the following EBNF:
-          Selector    ::=    Path ( '|' Path )*  
-          Path    ::=    ('.//')? Step ( '/' Step )*  
-          Step    ::=    '.' | NameTest  
-          NameTest    ::=    QName | '*' | NCName ':' '*'  
+          Selector    ::=    Path ( '|' Path )*
+          Path    ::=    ('.//')? Step ( '/' Step )*
+          Step    ::=    '.' | NameTest
+          NameTest    ::=    QName | '*' | NCName ':' '*'
                            child:: is also allowed
          </xs:documentation>
         </xs:annotation>
@@ -1166,7 +1166,7 @@ use</xs:documentation>
          <xs:documentation>The following pattern is intended to allow XPath
                            expressions per the same EBNF as for selector,
                            with the following change:
-          Path    ::=    ('.//')? ( Step '/' )* ( Step | '@' NameTest ) 
+          Path    ::=    ('.//')? ( Step '/' )* ( Step | '@' NameTest )
          </xs:documentation>
         </xs:annotation>
         <xs:pattern value="(\.//)?((((child::)?((\i\c*:)?(\i\c*|\*)))|\.)/)*((((child::)?((\i\c*:)?(\i\c*|\*)))|\.)|((attribute::|@)((\i\c*:)?(\i\c*|\*))))(\|(\.//)?((((child::)?((\i\c*:)?(\i\c*|\*)))|\.)/)*((((child::)?((\i\c*:)?(\i\c*|\*)))|\.)|((attribute::|@)((\i\c*:)?(\i\c*|\*)))))*">
@@ -1303,7 +1303,7 @@ use</xs:documentation>
 
  <xs:notation name="XMLSchemaStructures" public="structures" system="http://www.w3.org/2000/08/XMLSchema.xsd"/>
  <xs:notation name="XML" public="REC-xml-19980210" system="http://www.w3.org/TR/1998/REC-xml-19980210"/>
-  
+
  <xs:complexType name="anyType" mixed="true">
   <xs:annotation>
    <xs:documentation>

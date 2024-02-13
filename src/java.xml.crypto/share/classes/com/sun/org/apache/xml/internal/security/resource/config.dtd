@@ -2,7 +2,7 @@
 
 <!ELEMENT Configuration (CanonicalizationMethods , TransformAlgorithms , JCEAlgorithmMappings , Log4J , ResourceBundles , UnitTests , ResourceResolvers , KeyResolvers)>
 
-<!ATTLIST Configuration  xmlns CDATA  #FIXED 'http://www.xmlsecurity.org/NS/#configuration' 
+<!ATTLIST Configuration  xmlns CDATA  #FIXED 'http://www.xmlsecurity.org/NS/#configuration'
 target        CDATA  #IMPLIED>
 <!ELEMENT CanonicalizationMethods (CanonicalizationMethod+)>
 

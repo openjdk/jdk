@@ -34,7 +34,7 @@
 <project name="Font2DTest" basedir="." default="jar">
 
     <import file="nbproject/jdk.xml"/>
-    
+
     <target name="-prop-init">
         <property file="user.build.properties"/>
         <property file="build.properties"/>
@@ -76,7 +76,7 @@
         <nbbrowse file="${applet.html}"/>
         -->
     </target>
-    
+
     <target name="javadoc" depends="-init" description="Build Javadoc.">
         <mkdir dir="${javadoc.dir}"/>
         <javadoc destdir="${javadoc.dir}">

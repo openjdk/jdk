@@ -2,7 +2,7 @@
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
 >
 
-<!-- 
+<!--
 base='string', pattern='', value='#xD;', type='invalid', RULE='1'
 -->
 
@@ -16,7 +16,7 @@ base='string', pattern='', value='#xD;', type='invalid', RULE='1'
 
 <xsd:simpleType name="Regex">
        <xsd:restriction base="xsd:string">
-           <xsd:pattern value=""/>    
+           <xsd:pattern value=""/>
        </xsd:restriction>
 </xsd:simpleType>
 

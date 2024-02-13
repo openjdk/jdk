@@ -25,14 +25,14 @@
  questions.
 -->
 
-<xsd:schema 
+<xsd:schema
       xmlns:xsd="http://www.w3.org/2001/XMLSchema"
       targetNamespace="http://standards.iso.org/iso/9075/2002/12/sqlxml"
       xmlns:sqlxml="http://standards.iso.org/iso/9075/2002/12/sqlxml">
   <xsd:annotation>
     <xsd:documentation>
       ISO/IEC 9075-14:2003 (SQL/XML)
-      This document contains definitions of types and 
+      This document contains definitions of types and
       annotations as specified in ISO/IEC 9075-14:2003.
     </xsd:documentation>
   </xsd:annotation>
@@ -97,7 +97,7 @@
       </xsd:sequence>
       <xsd:attribute name="kind"
                         type="sqlxml:kindKeyword"/>
-      <xsd:attribute name="name" 
+      <xsd:attribute name="name"
                         type="sqlxml:typeKeyword" use="optional"/>
       <xsd:attribute name="length" type="xsd:integer"
                         use="optional"/>

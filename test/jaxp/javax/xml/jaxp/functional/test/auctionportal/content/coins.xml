@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
-<im:coin 
-     xmlns:im="http://www.hibid.com/items" 
-     xmlns="http://www.hibid.com/items" 
+<im:coin
+     xmlns:im="http://www.hibid.com/items"
+     xmlns="http://www.hibid.com/items"
      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
      xmlns:it="http://someimport.com">
-  <im:description> 
+  <im:description>
     <im:info> 1950 gold coin
     </im:info>
   </im:description>

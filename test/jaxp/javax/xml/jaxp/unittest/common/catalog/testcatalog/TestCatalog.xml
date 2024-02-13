@@ -7,7 +7,7 @@
         <systemSuffix systemIdSuffix="test.dtd" uri="test.dtd"/>
         <system systemId="file:/externalParameterEntity" uri="paramEntity.dtd"/>
         <system systemId="XSLDTD.dtd" uri="XSLDTD.dtd"/>
-        
+
     </group>
 
     <group id="xsds" prefer = "system" xml:base = "xsds/">

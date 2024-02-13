@@ -7,7 +7,7 @@
 
   <body>
     <p name = "attributeValue"> Welcome to the world of typography! Here is a book that you may find useful.</p>
-    <b:title b:style="font-family: sans-serif;">Digital Typography</b:title> 
+    <b:title b:style="font-family: sans-serif;">Digital Typography</b:title>
     <b:author>Donald Knuth</b:author>
     <b:aaa b:style="font-family">this is it</b:aaa>
   </body>

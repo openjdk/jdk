@@ -6,25 +6,25 @@ SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
-	<identity>
-		<version number="$Revision$"/>
-		<language type="zh"/>
-		<script type="Hant"/>
-		<territory type="MO"/>
-	</identity>
-	<localeDisplayNames>
-		<languages>
-			<language type="yue" alt="menu">粵語</language>
-		</languages>
-		<territories>
-			<territory type="CI" alt="variant">象牙海岸</territory>
-		</territories>
-	</localeDisplayNames>
-	<numbers>
-		<currencies>
-			<currency type="MOP">
-				<symbol>MOP$</symbol>
-			</currency>
-		</currencies>
-	</numbers>
+        <identity>
+                <version number="$Revision$"/>
+                <language type="zh"/>
+                <script type="Hant"/>
+                <territory type="MO"/>
+        </identity>
+        <localeDisplayNames>
+                <languages>
+                        <language type="yue" alt="menu">粵語</language>
+                </languages>
+                <territories>
+                        <territory type="CI" alt="variant">象牙海岸</territory>
+                </territories>
+        </localeDisplayNames>
+        <numbers>
+                <currencies>
+                        <currency type="MOP">
+                                <symbol>MOP$</symbol>
+                        </currency>
+                </currencies>
+        </numbers>
 </ldml>

@@ -60,7 +60,7 @@ openOffice:quarter4Abbreviation?)>
 <!ELEMENT openOffice:belowWord (#PCDATA)>
 
 <!-- START_DEPRECATED -->
-<!ELEMENT openOffice:quarter1Abbreviation (#PCDATA)>   
+<!ELEMENT openOffice:quarter1Abbreviation (#PCDATA)>
 <!ELEMENT openOffice:quarter2Abbreviation (#PCDATA)>
 <!ELEMENT openOffice:quarter3Abbreviation (#PCDATA)>
 <!ELEMENT openOffice:quarter4Abbreviation (#PCDATA)>

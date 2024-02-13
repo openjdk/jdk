@@ -85,7 +85,7 @@
                         <type>boolean</type>
                     </method>
                 </member>
-            </annotation> 
+            </annotation>
         </package>
     </module>
 </sampleapi>

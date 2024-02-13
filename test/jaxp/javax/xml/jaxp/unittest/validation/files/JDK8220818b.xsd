@@ -81,4 +81,4 @@
     <xs:attributeGroup name="typedMemberAttributes">
         <xs:attribute name="type" type="xs:Name" />
     </xs:attributeGroup>
-</xs:schema> 
+</xs:schema>

@@ -5,20 +5,20 @@
 
 <toys>
 
-    <toy id="1">	
+    <toy id="1">
         <name>The Martian</name>
         <price>98470</price>
     </toy>
     <toy id="2">
         <name>The Doll</name>
         <price>345</price>
-    </toy>         
+    </toy>
     <toy id="3">
         &toy3;
-    </toy>    
+    </toy>
     <toy id="4">
         <name>The Spaceship</name>
         <price>725</price>
-    </toy>         
-     
+    </toy>
+
 </toys>

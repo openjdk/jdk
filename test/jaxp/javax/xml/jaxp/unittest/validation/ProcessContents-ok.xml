@@ -10,7 +10,7 @@
       <my_strict>
          <un_define>TTT</un_define>
       </my_strict>
-   </my_skip>   
+   </my_skip>
    <my_lax>
          <my_int>2555</my_int>
          <un_define>TTT</un_define>

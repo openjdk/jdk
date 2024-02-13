@@ -6,18 +6,18 @@ SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
-	<identity>
-		<version number="$Revision$"/>
-		<language type="ha"/>
-		<territory type="NE"/>
-	</identity>
-	<localeDisplayNames>
-		<scripts>
-			<script type="Cans">Haɗaɗɗun Gaɓoɓin Ƴan Asali na Kanada</script>
-		</scripts>
-	</localeDisplayNames>
-	<characters>
-		<exemplarCharacters type="auxiliary">[áàâ éèê íìî óòô p q {r̃} úùû v x {ʼy}]</exemplarCharacters>
-		<exemplarCharacters type="index">[A B Ɓ C D Ɗ E F G H I J K Ƙ L M N O P Q R S T U V W X Y Ƴ Z]</exemplarCharacters>
-	</characters>
+        <identity>
+                <version number="$Revision$"/>
+                <language type="ha"/>
+                <territory type="NE"/>
+        </identity>
+        <localeDisplayNames>
+                <scripts>
+                        <script type="Cans">Haɗaɗɗun Gaɓoɓin Ƴan Asali na Kanada</script>
+                </scripts>
+        </localeDisplayNames>
+        <characters>
+                <exemplarCharacters type="auxiliary">[áàâ éèê íìî óòô p q {r̃} úùû v x {ʼy}]</exemplarCharacters>
+                <exemplarCharacters type="index">[A B Ɓ C D Ɗ E F G H I J K Ƙ L M N O P Q R S T U V W X Y Ƴ Z]</exemplarCharacters>
+        </characters>
 </ldml>

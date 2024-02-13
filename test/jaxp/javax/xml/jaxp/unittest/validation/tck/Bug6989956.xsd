@@ -16,17 +16,17 @@
   </xsd:simpleType>
 
   <xsd:simpleType name="u3">
-	<xsd:restriction base="u1">
+        <xsd:restriction base="u1">
               <xsd:enumeration value='x'/>
               <xsd:enumeration value='y'/>
               <xsd:enumeration value='1'/>
-	</xsd:restriction>
+        </xsd:restriction>
   </xsd:simpleType>
   <xsd:element name="root">
     <xsd:complexType>
-	<xsd:choice maxOccurs="40">
-		<xsd:element name="c" type="u3" minOccurs="0" maxOccurs="100"/>
-	</xsd:choice>
+        <xsd:choice maxOccurs="40">
+                <xsd:element name="c" type="u3" minOccurs="0" maxOccurs="100"/>
+        </xsd:choice>
     </xsd:complexType>
   </xsd:element>
 

@@ -73,7 +73,7 @@
     <jar jarfile="${dist}/RenderPerfTest.jar" basedir="${build}">
       <manifest>
         <attribute name="Built-By" value="${user.name}"/>
-	<attribute name="Main-Class" value="renderperf.RenderPerfTest"/>
+        <attribute name="Main-Class" value="renderperf.RenderPerfTest"/>
       </manifest>
     </jar>
   </target>

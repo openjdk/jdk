@@ -10,22 +10,22 @@
 
         <xs:import schemaLocation="coinsImportMe.xsd" namespace="http://someimport.com"/>
 
-          
+
 
         <xs:element name="coin">
            <xs:complexType>
               <xs:sequence>
-	         <xs:element name="description" type="it:description" />
-	         <xs:element name="dates_data" type="im:dates_data" />
+                 <xs:element name="description" type="it:description" />
+                 <xs:element name="dates_data" type="im:dates_data" />
               </xs:sequence>
-	   </xs:complexType>
-  	</xs:element>
+           </xs:complexType>
+          </xs:element>
 
            <xs:complexType name="description">
               <xs:sequence>
-	         <xs:element name="info" type="xs:string" />
+                 <xs:element name="info" type="xs:string" />
               </xs:sequence>
-	   </xs:complexType>
+           </xs:complexType>
 
 
           <xs:simpleType name="yearType">

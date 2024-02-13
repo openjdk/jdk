@@ -31,10 +31,10 @@
     <author>Leif Samuelsson</author>
     <copyright>&#194; Sun Microsystems, Inc, 2003</copyright>
     <description>
-	  A fallback theme for Swing's GTK Look and Feel, in case no other metacity 
-	  theme can be found. Note: This theme is not intended to work with the
-	  Metacity window manager, nor to be used for any purpose other than stated
-	  here.
+          A fallback theme for Swing's GTK Look and Feel, in case no other metacity
+          theme can be found. Note: This theme is not intended to work with the
+          Metacity window manager, nor to be used for any purpose other than stated
+          here.
      </description>
   </info>
 
@@ -62,80 +62,80 @@
 
     <piece position="entire_background">
       <draw_ops>
-	  <rectangle color="black" x="0" y="0" width="width-1" height="height-1"/>
-	  <rectangle color="black" x="left_width-1" y="1" width="width-left_width-right_width+1" height="height-bottom_height-1"/>
+          <rectangle color="black" x="0" y="0" width="width-1" height="height-1"/>
+          <rectangle color="black" x="left_width-1" y="1" width="width-left_width-right_width+1" height="height-bottom_height-1"/>
       </draw_ops>
     </piece>
 
     <piece position="title">
       <draw_ops>
-	<title color="black" x="2" y="0"/>
+        <title color="black" x="2" y="0"/>
       </draw_ops>
     </piece>
 
     <piece position="titlebar">
       <draw_ops>
-	<gradient type="diagonal" x="1" y="1" width="width-2" height="height-2">
-		<color value="shade/gtk:bg[NORMAL]/1.0"/>
-		<color value="shade/gtk:bg[NORMAL]/0.9"/>
-	</gradient>
-	<line color="black" x1="left_width" y1="height-1" x2="width-right_width" y2="height-1"/>
+        <gradient type="diagonal" x="1" y="1" width="width-2" height="height-2">
+                <color value="shade/gtk:bg[NORMAL]/1.0"/>
+                <color value="shade/gtk:bg[NORMAL]/0.9"/>
+        </gradient>
+        <line color="black" x1="left_width" y1="height-1" x2="width-right_width" y2="height-1"/>
       </draw_ops>
     </piece>
 
     <button function="close" state="normal">
       <draw_ops>
-	<include name="button"/>
-	<line color="black" x1="3"       y1="3" x2="width-5" y2="height-5"/>
-	<line color="black" x1="width-5" y1="3" x2="3"       y2="height-5"/>
+        <include name="button"/>
+        <line color="black" x1="3"       y1="3" x2="width-5" y2="height-5"/>
+        <line color="black" x1="width-5" y1="3" x2="3"       y2="height-5"/>
       </draw_ops>
     </button>
 
     <button function="close" state="pressed">
       <draw_ops>
-	<include name="button_pressed"/>
-	<line color="black" x1="4"       y1="4" x2="width-4" y2="height-4"/>
-	<line color="black" x1="width-4" y1="4" x2="4"       y2="height-4"/>
+        <include name="button_pressed"/>
+        <line color="black" x1="4"       y1="4" x2="width-4" y2="height-4"/>
+        <line color="black" x1="width-4" y1="4" x2="4"       y2="height-4"/>
       </draw_ops>
     </button>
 
     <button function="minimize" state="normal">
       <draw_ops>
-	<include name="button"/>
-	<line color="black" x1="4"       y1="height-4" x2="width-5" y2="height-4"/>
+        <include name="button"/>
+        <line color="black" x1="4"       y1="height-4" x2="width-5" y2="height-4"/>
       </draw_ops>
     </button>
 
     <button function="minimize" state="pressed">
       <draw_ops>
-	<include name="button_pressed"/>
-	<line color="black" x1="5"       y1="height-3" x2="width-4" y2="height-3"/>
+        <include name="button_pressed"/>
+        <line color="black" x1="5"       y1="height-3" x2="width-4" y2="height-3"/>
       </draw_ops>
     </button>
 
     <button function="maximize" state="normal">
       <draw_ops>
-	<include name="button"/>
-	<rectangle color="black" x="3" y="3" width="width-3-5" height="height-3-5"/>
+        <include name="button"/>
+        <rectangle color="black" x="3" y="3" width="width-3-5" height="height-3-5"/>
       </draw_ops>
     </button>
 
     <button function="maximize" state="pressed">
       <draw_ops>
-	<include name="button_pressed"/>
-	<rectangle color="black" x="4" y="4" width="width-3-5" height="height-3-5"/>
+        <include name="button_pressed"/>
+        <rectangle color="black" x="4" y="4" width="width-3-5" height="height-3-5"/>
       </draw_ops>
     </button>
 
     <button function="menu" state="normal">
       <draw_ops>
-	<include name="button"/>
+        <include name="button"/>
       </draw_ops>
     </button>
 
     <button function="menu" state="pressed">
       <draw_ops>
-	<include name="button_pressed"/>
+        <include name="button_pressed"/>
       </draw_ops>
     </button>
   </frame_style>
@@ -145,24 +145,24 @@
 
     <piece position="entire_background">
       <draw_ops>
-	  <rectangle color="black" x="0" y="0" width="width-1" height="height-1"/>
-	  <rectangle color="black" x="left_width-1" y="1" width="width-left_width-right_width+1" height="height-bottom_height-1"/>
+          <rectangle color="black" x="0" y="0" width="width-1" height="height-1"/>
+          <rectangle color="black" x="left_width-1" y="1" width="width-left_width-right_width+1" height="height-bottom_height-1"/>
       </draw_ops>
     </piece>
 
     <piece position="title">
       <draw_ops>
-	<title color="black" x="2" y="((height - title_height) / 2) `max` 0"/>
+        <title color="black" x="2" y="((height - title_height) / 2) `max` 0"/>
       </draw_ops>
     </piece>
 
     <piece position="titlebar">
       <draw_ops>
-	<gradient type="diagonal" x="1" y="1" width="width-2" height="height-2">
-		<color value="#f0f0f0"/>
-		<color value="shade/gtk:bg[NORMAL]/1.0"/>
-	</gradient>
-	<line color="black" x1="left_width" y1="height-1" x2="width-right_width" y2="height-1"/>
+        <gradient type="diagonal" x="1" y="1" width="width-2" height="height-2">
+                <color value="#f0f0f0"/>
+                <color value="shade/gtk:bg[NORMAL]/1.0"/>
+        </gradient>
+        <line color="black" x1="left_width" y1="height-1" x2="width-right_width" y2="height-1"/>
       </draw_ops>
     </piece>
 

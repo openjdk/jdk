@@ -18,14 +18,14 @@
 -->
 
 <ns1:toys xmlns:ns1="http://ns1.java.com">
-	<![CDATA[<greeting>Hello</greeting>]]>
-    <toy id="1">	
+        <![CDATA[<greeting>Hello</greeting>]]>
+    <toy id="1">
         <name>&name1;</name>
         <price>98470</price>
     </toy>
     <toy id="2">
         <name>&name2;</name>
         <price>345</price>
-    </toy>         
+    </toy>
 </ns1:toys>
 

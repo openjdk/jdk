@@ -2,7 +2,7 @@
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
 >
 
-<!-- 
+<!--
 base='string', pattern='ab|(d))', value='', type='error', RULE='2,3,4,5,6,7,8,9'
 -->
 
@@ -18,7 +18,7 @@ base='string', pattern='ab|(d))', value='', type='error', RULE='2,3,4,5,6,7,8,9'
    <xsd:attribute name="att">
        <xsd:simpleType>
            <xsd:restriction base="xsd:string">
-               <xsd:pattern value="ab|(d))"/>    
+               <xsd:pattern value="ab|(d))"/>
            </xsd:restriction>
        </xsd:simpleType>
    </xsd:attribute>

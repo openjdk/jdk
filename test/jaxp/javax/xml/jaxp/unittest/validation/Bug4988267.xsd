@@ -9,7 +9,7 @@
       </xsd:choice>
     </xsd:complexType>
   </xsd:element>
-  
+
   <xsd:element name="bar"/>
 
 </xsd:schema>

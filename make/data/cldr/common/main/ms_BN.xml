@@ -6,71 +6,71 @@ SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
-	<identity>
-		<version number="$Revision$"/>
-		<language type="ms"/>
-		<territory type="BN"/>
-	</identity>
-	<dates>
-		<calendars>
-			<calendar type="buddhist">
-				<dateFormats>
-					<dateFormatLength type="full">
-						<dateFormat>
-							<pattern>dd MMMM y G</pattern>
-							<datetimeSkeleton>GyMMMMdd</datetimeSkeleton>
-						</dateFormat>
-					</dateFormatLength>
-				</dateFormats>
-			</calendar>
-			<calendar type="generic">
-				<dateFormats>
-					<dateFormatLength type="full">
-						<dateFormat>
-							<pattern>dd MMMM y G</pattern>
-							<datetimeSkeleton>GyMMMMdd</datetimeSkeleton>
-						</dateFormat>
-					</dateFormatLength>
-				</dateFormats>
-			</calendar>
-			<calendar type="gregorian">
-				<dateFormats>
-					<dateFormatLength type="full">
-						<dateFormat>
-							<pattern>dd MMMM y</pattern>
-							<datetimeSkeleton>yMMMMdd</datetimeSkeleton>
-						</dateFormat>
-					</dateFormatLength>
-				</dateFormats>
-			</calendar>
-			<calendar type="islamic">
-				<dateFormats>
-					<dateFormatLength type="full">
-						<dateFormat>
-							<pattern>dd MMMM y G</pattern>
-							<datetimeSkeleton>GyMMMMdd</datetimeSkeleton>
-						</dateFormat>
-					</dateFormatLength>
-				</dateFormats>
-			</calendar>
-		</calendars>
-	</dates>
-	<numbers>
-		<symbols numberSystem="latn">
-			<decimal>,</decimal>
-			<group>.</group>
-		</symbols>
-		<currencyFormats numberSystem="latn">
-			<currencyFormatLength>
-				<currencyFormat type="standard">
-					<pattern>¤ #,##0.00</pattern>
-				</currencyFormat>
-			</currencyFormatLength>
-		</currencyFormats>
-		<currencies>
-			<currency type="BND">
-				<symbol>$</symbol>
-			</currency>
-		</currencies>
-	</numbers>
+        <identity>
+                <version number="$Revision$"/>
+                <language type="ms"/>
+                <territory type="BN"/>
+        </identity>
+        <dates>
+                <calendars>
+                        <calendar type="buddhist">
+                                <dateFormats>
+                                        <dateFormatLength type="full">
+                                                <dateFormat>
+                                                        <pattern>dd MMMM y G</pattern>
+                                                        <datetimeSkeleton>GyMMMMdd</datetimeSkeleton>
+                                                </dateFormat>
+                                        </dateFormatLength>
+                                </dateFormats>
+                        </calendar>
+                        <calendar type="generic">
+                                <dateFormats>
+                                        <dateFormatLength type="full">
+                                                <dateFormat>
+                                                        <pattern>dd MMMM y G</pattern>
+                                                        <datetimeSkeleton>GyMMMMdd</datetimeSkeleton>
+                                                </dateFormat>
+                                        </dateFormatLength>
+                                </dateFormats>
+                        </calendar>
+                        <calendar type="gregorian">
+                                <dateFormats>
+                                        <dateFormatLength type="full">
+                                                <dateFormat>
+                                                        <pattern>dd MMMM y</pattern>
+                                                        <datetimeSkeleton>yMMMMdd</datetimeSkeleton>
+                                                </dateFormat>
+                                        </dateFormatLength>
+                                </dateFormats>
+                        </calendar>
+                        <calendar type="islamic">
+                                <dateFormats>
+                                        <dateFormatLength type="full">
+                                                <dateFormat>
+                                                        <pattern>dd MMMM y G</pattern>
+                                                        <datetimeSkeleton>GyMMMMdd</datetimeSkeleton>
+                                                </dateFormat>
+                                        </dateFormatLength>
+                                </dateFormats>
+                        </calendar>
+                </calendars>
+        </dates>
+        <numbers>
+                <symbols numberSystem="latn">
+                        <decimal>,</decimal>
+                        <group>.</group>
+                </symbols>
+                <currencyFormats numberSystem="latn">
+                        <currencyFormatLength>
+                                <currencyFormat type="standard">
+                                        <pattern>¤ #,##0.00</pattern>
+                                </currencyFormat>
+                        </currencyFormatLength>
+                </currencyFormats>
+                <currencies>
+                        <currency type="BND">
+                                <symbol>$</symbol>
+                        </currency>
+                </currencies>
+        </numbers>
 </ldml>

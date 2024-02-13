@@ -34,7 +34,7 @@
 <project name="Metalworks" basedir="." default="jar">
 
     <import file="nbproject/jdk.xml"/>
-    
+
     <target name="-prop-init">
         <property file="user.build.properties"/>
         <property file="build.properties"/>

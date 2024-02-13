@@ -3,7 +3,7 @@
 [
         <!ELEMENT Name (#PCDATA)>
         <!ATTLIST Name type CDATA "fiction">
-       
+
 ]>
 
 <Book>

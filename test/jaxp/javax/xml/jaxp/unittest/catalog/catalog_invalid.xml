@@ -2,7 +2,7 @@
 <catalog
   xmlns="xyz">
 
-    <public publicId="-//W3C//DTD XHTML 1.0 Strict//EN" 
+    <public publicId="-//W3C//DTD XHTML 1.0 Strict//EN"
             uri="catalog/xhtml1-strict.dtd"/>
 
 </catalog>

@@ -70,24 +70,24 @@
 <!--================== Feature Test Entities ==============================-->
 
 <!ENTITY % HTML.Recommended "IGNORE"
-	-- Certain features of the language are necessary for compatibility
-	   with widespread usage, but they may compromise the structural
-	   integrity of a document. This feature test entity enables
-	   a more prescriptive document type definition that eliminates
-	   the above features.
-	-->
+        -- Certain features of the language are necessary for compatibility
+           with widespread usage, but they may compromise the structural
+           integrity of a document. This feature test entity enables
+           a more prescriptive document type definition that eliminates
+           the above features.
+        -->
 
 <!ENTITY % HTML.HotJava "INCLUDE"
-	-- HotJava specific extensions to the default HTML 3.2 DTD -->
+        -- HotJava specific extensions to the default HTML 3.2 DTD -->
 
 <!-- Currently we are using the HTML.3.2.Conflict entity to work around
      a bug in the DTD parser where the first declaration of an ENTITY/ELEMENT
      or ATTLIST is not taking precedence over subsequent declarations of the same
-     item.  Therefore we need to explicitly "IGNORE" subsequent declarations 
-     in order for HotJava specific extensions to take effect. 
+     item.  Therefore we need to explicitly "IGNORE" subsequent declarations
+     in order for HotJava specific extensions to take effect.
   -->
 <!ENTITY % HTML.3.2.Conflict "IGNORE"
-	-- 3.2 features to be ignored -->
+        -- 3.2 features to be ignored -->
 
 
 <!--================== Imported Names =====================================-->
@@ -237,18 +237,18 @@
 <!ELEMENT BODY O O  %body.content>
 <![ %HTML.HotJava [
     <!ATTLIST BODY
-	    background %URL #IMPLIED  -- texture tile for document background --
-	    %body-color-attrs;  -- bgcolor, text, link, vlink, alink --
-	    width NUTOKEN #IMPLIED
-	    height NUTOKEN #IMPLIED
-	    >
+            background %URL #IMPLIED  -- texture tile for document background --
+            %body-color-attrs;  -- bgcolor, text, link, vlink, alink --
+            width NUTOKEN #IMPLIED
+            height NUTOKEN #IMPLIED
+            >
 ]]>
 
 <![ %HTML.3.2.Conflict [
     <!ATTLIST BODY
             background %URL #IMPLIED  -- texture tile for document background --
             %body-color-attrs;  -- bgcolor, text, link, vlink, alink --
-	    >
+            >
 ]]>
 
 
@@ -266,7 +266,7 @@
 <![ %HTML.3.2.Conflict [
     <!ATTLIST DIV
             align   (left|center|right) #IMPLIED -- alignment of following text --
-	    >
+            >
 ]]>
 
 <!-- CENTER is a shorthand for DIV with ALIGN=CENTER -->
@@ -280,27 +280,27 @@
 <![ %HTML.HotJava [
     <!ELEMENT A - - (%text|%heading|PRE)* -(A)>
     <!ATTLIST A
-	    name    CDATA   #IMPLIED    -- named link end --
-	    href    %URL    #IMPLIED    -- URL for linked resource --
-	    rel     CDATA   #IMPLIED    -- forward link types --
-	    rev     CDATA   #IMPLIED    -- reverse link types --
-	    title   CDATA   #IMPLIED    -- advisory title string --
-	    target  CDATA   #IMPLIED
-       	    shape   %SHAPE  #IMPLIED    -- (OBJECT tag specific) -- 
-	    coords  %COORDS #IMPLIED    -- always needed except for shape=default (OBJECT tag specific)--
+            name    CDATA   #IMPLIED    -- named link end --
+            href    %URL    #IMPLIED    -- URL for linked resource --
+            rel     CDATA   #IMPLIED    -- forward link types --
+            rev     CDATA   #IMPLIED    -- reverse link types --
+            title   CDATA   #IMPLIED    -- advisory title string --
+            target  CDATA   #IMPLIED
+                   shape   %SHAPE  #IMPLIED    -- (OBJECT tag specific) --
+            coords  %COORDS #IMPLIED    -- always needed except for shape=default (OBJECT tag specific)--
             ismap   (ismap) #IMPLIED    -- (OBJECT tag specific) --
-	    >
+            >
 ]]>
 
 <![ %HTML.3.2.Conflict [
     <!ELEMENT A - - (%text)* -(A)>
     <!ATTLIST A
-	    name    CDATA   #IMPLIED    -- named link end --
-	    href    %URL    #IMPLIED    -- URL for linked resource --
-	    rel     CDATA   #IMPLIED    -- forward link types --
-	    rev     CDATA   #IMPLIED    -- reverse link types --
-	    title   CDATA   #IMPLIED    -- advisory title string --
-	    >
+            name    CDATA   #IMPLIED    -- named link end --
+            href    %URL    #IMPLIED    -- URL for linked resource --
+            rel     CDATA   #IMPLIED    -- forward link types --
+            rev     CDATA   #IMPLIED    -- reverse link types --
+            title   CDATA   #IMPLIED    -- advisory title string --
+            >
 ]]>
 
 <!--================== Client-side image maps ============================-->
@@ -325,13 +325,13 @@
 
 <![ %HTML.HotJava [
     <!ATTLIST AREA
-	shape   %SHAPE  rect
-	coords  %COORDS #IMPLIED  -- always needed except for shape=default --
-	href    %URL    #IMPLIED  -- this region acts as hypertext link --
-	nohref (nohref) #IMPLIED  -- this region has no action --
-	alt     CDATA   #IMPLIED  -- make HotJava more forgiving --
-	target  CDATA   #IMPLIED
-	>
+        shape   %SHAPE  rect
+        coords  %COORDS #IMPLIED  -- always needed except for shape=default --
+        href    %URL    #IMPLIED  -- this region acts as hypertext link --
+        nohref (nohref) #IMPLIED  -- this region has no action --
+        alt     CDATA   #IMPLIED  -- make HotJava more forgiving --
+        target  CDATA   #IMPLIED
+        >
 ]]>
 
 
@@ -385,7 +385,7 @@
 
 <![ %HTML.HotJava [
     <!ENTITY % IAlign "top|middle|bottom|left|right
-			|texttop|absmiddle|baseline|absbottom">
+                        |texttop|absmiddle|baseline|absbottom">
 ]]>
 
 <![ %HTML.3.2.Conflict [
@@ -397,33 +397,33 @@
 <!ELEMENT IMG    - O EMPTY --  Embedded image -->
 <![ %HTML.HotJava [
     <!ATTLIST IMG
-	    src     %URL         #REQUIRED  -- URL of image to embed --
-	    alt     CDATA        #IMPLIED   -- for display in place of image --
-	    align   %ImgAlign  	 baseline   -- vertical or horizontal alignment --
-	    height  %Pixels      #IMPLIED   -- suggested height in pixels --
-	    width   %Pixels      #IMPLIED   -- suggested width in pixels --
-	    border  %Pixels      #IMPLIED   -- suggested link border width --
-	    hspace  %Pixels      #IMPLIED   -- suggested horizontal gutter --
-	    vspace  %Pixels      #IMPLIED   -- suggested vertical gutter --
-	    usemap  %URL         #IMPLIED   -- use client-side image map --
-	    ismap   (ismap)      #IMPLIED   -- use server image map --
-	    lowsrc  %URL         #IMPLIED
-	    >
+            src     %URL         #REQUIRED  -- URL of image to embed --
+            alt     CDATA        #IMPLIED   -- for display in place of image --
+            align   %ImgAlign           baseline   -- vertical or horizontal alignment --
+            height  %Pixels      #IMPLIED   -- suggested height in pixels --
+            width   %Pixels      #IMPLIED   -- suggested width in pixels --
+            border  %Pixels      #IMPLIED   -- suggested link border width --
+            hspace  %Pixels      #IMPLIED   -- suggested horizontal gutter --
+            vspace  %Pixels      #IMPLIED   -- suggested vertical gutter --
+            usemap  %URL         #IMPLIED   -- use client-side image map --
+            ismap   (ismap)      #IMPLIED   -- use server image map --
+            lowsrc  %URL         #IMPLIED
+            >
 ]]>
 
 <![ %HTML.3.2.Conflict [
     <!ATTLIST IMG
-	    src     %URL      #REQUIRED  -- URL of image to embed --
-	    alt     CDATA     #IMPLIED   -- for display in place of image --
-	    align   (%IAlign) #IMPLIED   -- vertical or horizontal alignment --
-	    height  %Pixels   #IMPLIED   -- suggested height in pixels --
-	    width   %Pixels   #IMPLIED   -- suggested width in pixels --
-	    border  %Pixels   #IMPLIED   -- suggested link border width --
-	    hspace  %Pixels   #IMPLIED   -- suggested horizontal gutter --
-	    vspace  %Pixels   #IMPLIED   -- suggested vertical gutter --
-	    usemap  %URL      #IMPLIED   -- use client-side image map --
-	    ismap   (ismap)   #IMPLIED   -- use server image map --
-	    >
+            src     %URL      #REQUIRED  -- URL of image to embed --
+            alt     CDATA     #IMPLIED   -- for display in place of image --
+            align   (%IAlign) #IMPLIED   -- vertical or horizontal alignment --
+            height  %Pixels   #IMPLIED   -- suggested height in pixels --
+            width   %Pixels   #IMPLIED   -- suggested width in pixels --
+            border  %Pixels   #IMPLIED   -- suggested link border width --
+            hspace  %Pixels   #IMPLIED   -- suggested horizontal gutter --
+            vspace  %Pixels   #IMPLIED   -- suggested vertical gutter --
+            usemap  %URL      #IMPLIED   -- use client-side image map --
+            ismap   (ismap)   #IMPLIED   -- use server image map --
+            >
 ]]>
 
 <!-- USEMAP points to a MAP element which may be in this document
@@ -444,32 +444,32 @@
 <![ %HTML.HotJava [
     <!ELEMENT APPLET - - (%flow|%heading|%form|TR|TD)* +(PARAM)>
     <!ATTLIST APPLET
-	    codebase %URL      #IMPLIED   -- code base --
-	    code     CDATA     #IMPLIED  -- class file --
-	    alt      CDATA     #IMPLIED   -- for display in place of applet --
-	    name     CDATA     #IMPLIED   -- applet name --
-	    archive  CDATA     #IMPLIED   -- archive attribute for jar files --
-	    width    %Pixels   #REQUIRED  -- suggested width in pixels --
-	    height   %Pixels   #REQUIRED  -- suggested height in pixels --
-	    align    (%IAlign) baseline   -- vertical or horizontal alignment --
-	    hspace   %Pixels   #IMPLIED   -- suggested horizontal gutter --
-	    vspace   %Pixels   #IMPLIED   -- suggested vertical gutter --
-	    >
+            codebase %URL      #IMPLIED   -- code base --
+            code     CDATA     #IMPLIED  -- class file --
+            alt      CDATA     #IMPLIED   -- for display in place of applet --
+            name     CDATA     #IMPLIED   -- applet name --
+            archive  CDATA     #IMPLIED   -- archive attribute for jar files --
+            width    %Pixels   #REQUIRED  -- suggested width in pixels --
+            height   %Pixels   #REQUIRED  -- suggested height in pixels --
+            align    (%IAlign) baseline   -- vertical or horizontal alignment --
+            hspace   %Pixels   #IMPLIED   -- suggested horizontal gutter --
+            vspace   %Pixels   #IMPLIED   -- suggested vertical gutter --
+            >
 ]]>
 
 <![ %HTML.3.2.Conflict [
     <!ELEMENT APPLET - - (%text)* +(PARAM)>
     <!ATTLIST APPLET
-	    codebase %URL      #IMPLIED   -- code base --
-	    code     CDATA     #REQUIRED  -- class file --
-	    alt      CDATA     #IMPLIED   -- for display in place of applet --
-	    name     CDATA     #IMPLIED   -- applet name --
-	    width    %Pixels   #REQUIRED  -- suggested width in pixels --
-	    height   %Pixels   #REQUIRED  -- suggested height in pixels --
-	    align    (%IAlign) #IMPLIED   -- vertical or horizontal alignment --
-	    hspace   %Pixels   #IMPLIED   -- suggested horizontal gutter --
-	    vspace   %Pixels   #IMPLIED   -- suggested vertical gutter --
-	    >
+            codebase %URL      #IMPLIED   -- code base --
+            code     CDATA     #REQUIRED  -- class file --
+            alt      CDATA     #IMPLIED   -- for display in place of applet --
+            name     CDATA     #IMPLIED   -- applet name --
+            width    %Pixels   #REQUIRED  -- suggested width in pixels --
+            height   %Pixels   #REQUIRED  -- suggested height in pixels --
+            align    (%IAlign) #IMPLIED   -- vertical or horizontal alignment --
+            hspace   %Pixels   #IMPLIED   -- suggested horizontal gutter --
+            vspace   %Pixels   #IMPLIED   -- suggested vertical gutter --
+            >
 ]]>
 
 
@@ -506,7 +506,7 @@ Here is an example:
   content of the OBJECT element if displaying the actual element will take
   a long time to render). This provides for backwards compatibility with
   existing browsers, and allows authors to specify alternative media via
-  nested OBJECT elements. 
+  nested OBJECT elements.
 -->
 
 <!-- This is identical to the HMTL3.2 body.content entity.
@@ -550,7 +550,7 @@ Here is an example:
         name     %URL      #IMPLIED   -- submit as part of form --
         >
 
-                         
+
 <!--=================== Horizontal Rule ===================================-->
 
 <!ELEMENT HR    - O EMPTY>
@@ -640,7 +640,7 @@ Here is an example:
 <!-- definition lists - DT for term, DD for its definition -->
 
 
-<!-- 
+<!--
       Changed to enable hotjava to read netscape bookmarks.
 -->
 <![ %HTML.HotJava [
@@ -654,7 +654,7 @@ Here is an example:
 <!ATTLIST DL
         compact (compact) #IMPLIED -- more compact style --
         >
-<!-- 
+<!--
       Changed to enable hotjava to read netscape bookmarks.
       Also hotjava's hotlist uses the same format to save its
       bookmarks.
@@ -697,18 +697,18 @@ Here is an example:
 
 <![ %HTML.HotJava [
     <!ATTLIST OL -- ordered lists --
-	    type      %OLStyle   "1"   -- numbering style --
-	    start     NUMBER     #IMPLIED   -- starting sequence number --
-	    compact  (compact)   #IMPLIED   -- reduced interitem spacing --
-	    >
+            type      %OLStyle   "1"   -- numbering style --
+            start     NUMBER     #IMPLIED   -- starting sequence number --
+            compact  (compact)   #IMPLIED   -- reduced interitem spacing --
+            >
 ]]>
 
 <![ %HTML.3.2.Conflict [
     <!ATTLIST OL -- ordered lists --
-	    type      %OLStyle   #IMPLIED   -- numbering style --
-	    start     NUMBER     #IMPLIED   -- starting sequence number --
-	    compact  (compact)   #IMPLIED   -- reduced interitem spacing --
-	    >
+            type      %OLStyle   #IMPLIED   -- numbering style --
+            start     NUMBER     #IMPLIED   -- starting sequence number --
+            compact  (compact)   #IMPLIED   -- reduced interitem spacing --
+            >
 ]]>
 
 <!-- bullet styles -->
@@ -779,8 +779,8 @@ Here is an example:
         type %InputType TEXT     -- what kind of widget is needed --
         name  CDATA #IMPLIED     -- required for all but submit and reset --
         value  CDATA #IMPLIED     -- required for radio and checkboxes --
-	border   %Pixels      #IMPLIED   -- suggested image border width --
-        checked	  (checked) #IMPLIED -- for radio buttons and check boxes --
+        border   %Pixels      #IMPLIED   -- suggested image border width --
+        checked          (checked) #IMPLIED -- for radio buttons and check boxes --
         size CDATA  #IMPLIED     -- specific to each type of field --
         maxlength NUMBER #IMPLIED
         src   %URL  #IMPLIED     -- for fields with background images --
@@ -794,7 +794,7 @@ Here is an example:
         type %InputType TEXT     -- what kind of widget is needed --
         name  CDATA #IMPLIED     -- required for all but submit and reset --
         value  CDATA #IMPLIED     -- required for radio and checkboxes --
-        checked	  (checked) #IMPLIED -- for radio buttons and check boxes --
+        checked          (checked) #IMPLIED -- for radio buttons and check boxes --
         size CDATA  #IMPLIED     -- specific to each type of field --
         maxlength NUMBER #IMPLIED
         src   %URL  #IMPLIED     -- for fields with background images --
@@ -866,23 +866,23 @@ Here is an example:
 <![ %HTML.HotJava [
 
     <!ATTLIST table                       -- table element --
-	    align     %Where;   #IMPLIED  -- table position relative to window --
-	    width     %Length   #IMPLIED  -- table width relative to window --
-	    border    %Pixels   #IMPLIED  -- controls frame width around table --
-	    cellspacing %Pixels #IMPLIED  -- spacing between cells --
-	    cellpadding %Pixels #IMPLIED  -- spacing within cells --
-	    bgcolor   %color	#IMPLIED  -- def background color of all cells --
-	    >
+            align     %Where;   #IMPLIED  -- table position relative to window --
+            width     %Length   #IMPLIED  -- table width relative to window --
+            border    %Pixels   #IMPLIED  -- controls frame width around table --
+            cellspacing %Pixels #IMPLIED  -- spacing between cells --
+            cellpadding %Pixels #IMPLIED  -- spacing within cells --
+            bgcolor   %color        #IMPLIED  -- def background color of all cells --
+            >
 ]]>
 
 <![ %HTML.3.2.Conflict [
     <!ATTLIST table                       -- table element --
-	    align     %Where;   #IMPLIED  -- table position relative to window --
-	    width     %Length   #IMPLIED  -- table width relative to window --
-	    border    %Pixels   #IMPLIED  -- controls frame width around table --
-	    cellspacing %Pixels #IMPLIED  -- spacing between cells --
-	    cellpadding %Pixels #IMPLIED  -- spacing within cells --
-	    >
+            align     %Where;   #IMPLIED  -- table position relative to window --
+            width     %Length   #IMPLIED  -- table width relative to window --
+            border    %Pixels   #IMPLIED  -- controls frame width around table --
+            cellspacing %Pixels #IMPLIED  -- spacing between cells --
+            cellpadding %Pixels #IMPLIED  -- spacing within cells --
+            >
 ]]>
 
 <![ %HTML.HotJava [
@@ -896,43 +896,43 @@ Here is an example:
 
 <![ %HTML.HotJava [
     <!ATTLIST CAPTION
-	    align (top|bottom) top
-	    >
+            align (top|bottom) top
+            >
 ]]>
 
 <![ %HTML.3.2.Conflict [
     <!ATTLIST CAPTION
-	    align (top|bottom) #IMPLIED
-	    >
+            align (top|bottom) #IMPLIED
+            >
 ]]>
 
 <![ %HTML.HotJava [
     <!ATTLIST tr                       -- table row --
-	    %cell.halign;              -- horizontal alignment in cells --
-	    %cell.valign;              -- vertical alignment in cells --
-	    bgcolor %color  #IMPLIED   -- def bkg color for cells in row --
-	    >
+            %cell.halign;              -- horizontal alignment in cells --
+            %cell.valign;              -- vertical alignment in cells --
+            bgcolor %color  #IMPLIED   -- def bkg color for cells in row --
+            >
 ]]>
 
 <![ %HTML.3.2.Conflict [
     <!ATTLIST tr                       -- table row --
-	    %cell.halign;              -- horizontal alignment in cells --
-	    %cell.valign;              -- vertical alignment in cells --
-	    >
+            %cell.halign;              -- horizontal alignment in cells --
+            %cell.valign;              -- vertical alignment in cells --
+            >
 ]]>
 
 <![ %HTML.HotJava [
 
     <!ATTLIST (th|td)                  -- header or data cell --
-	    nowrap (nowrap)  #IMPLIED  -- suppress word wrap --
-	    bgcolor %color   #IMPLIED  -- cell background color --
-	    rowspan NUMBER   1         -- number of rows spanned by cell --
-	    colspan NUMBER   1         -- number of cols spanned by cell --
-	    %cell.halign;              -- horizontal alignment in cell --
-	    %cell.valign;              -- vertical alignment in cell --
-	    width   %Length  #IMPLIED  -- suggested width for cell --
-	    height  %Length  #IMPLIED  -- suggested height for cell --
-	    >
+            nowrap (nowrap)  #IMPLIED  -- suppress word wrap --
+            bgcolor %color   #IMPLIED  -- cell background color --
+            rowspan NUMBER   1         -- number of rows spanned by cell --
+            colspan NUMBER   1         -- number of cols spanned by cell --
+            %cell.halign;              -- horizontal alignment in cell --
+            %cell.valign;              -- vertical alignment in cell --
+            width   %Length  #IMPLIED  -- suggested width for cell --
+            height  %Length  #IMPLIED  -- suggested height for cell --
+            >
 ]]>
 
 <![ %HTML.3.2.Conflict [
@@ -1024,15 +1024,15 @@ Here is an example:
 <!-- this definition of script for hotjava is done so that all html tags
      that occur within the script tags can be ignored - given that
      currently hotjava does not support javascript.  -->
-     
+
 <![ %HTML.HotJava [
     <!ELEMENT SCRIPT - - %body.content  -(%head.misc) -- script statements -->
 ]]>
 
 <![ %HTML.HotJava [
     <!ATTLIST SCRIPT
-	    language    CDATA   #IMPLIED
-	    >
+            language    CDATA   #IMPLIED
+            >
 ]]>
 
 <!--================ Document Structure ===================================-->
@@ -1068,19 +1068,19 @@ Here is an example:
 
 <!ELEMENT FRAMESET - O (FRAMESET|FRAME|NOFRAMES)*>
 <!ATTLIST FRAMESET
-	rows CDATA #IMPLIED
-	cols CDATA #IMPLIED
+        rows CDATA #IMPLIED
+        cols CDATA #IMPLIED
 >
 
 <!ELEMENT FRAME - O EMPTY>
 <!ATTLIST FRAME
-	src	    CDATA	#IMPLIED
-	name	    CDATA	#IMPLIED
-	frameborder NUMBER	1  -- the DTD says (1|0) --
-	marginwidth NUMBER	#IMPLIED
-	marginheight NUMBER	#IMPLIED
-	scrolling (yes|no|auto) AUTO
-	noresize    (noresize)  #IMPLIED
+        src            CDATA        #IMPLIED
+        name            CDATA        #IMPLIED
+        frameborder NUMBER        1  -- the DTD says (1|0) --
+        marginwidth NUMBER        #IMPLIED
+        marginheight NUMBER        #IMPLIED
+        scrolling (yes|no|auto) AUTO
+        noresize    (noresize)  #IMPLIED
 >
 
 <!ELEMENT NOFRAMES - - CDATA>

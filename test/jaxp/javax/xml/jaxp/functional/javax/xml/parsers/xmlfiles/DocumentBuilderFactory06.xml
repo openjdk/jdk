@@ -22,8 +22,8 @@
 
 </to>
 <with>   <message>with whitespace</message>   </with>
-<ar:from>	<tab>Jani</tab></ar:from>
+<ar:from>        <tab>Jani</tab></ar:from>
 <br:from>Next</br:from>
 <heading>Reminder</heading>
 <body> weekend!</body>
-</note> 
+</note>

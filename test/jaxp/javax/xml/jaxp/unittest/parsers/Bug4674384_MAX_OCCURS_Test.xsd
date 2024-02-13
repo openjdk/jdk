@@ -8,8 +8,8 @@
      <xsd:element name="a" type="A"/>
      <xsd:complexType name="A">
           <xsd:sequence>
-	       <xsd:element name="b" type="xsd:string" maxOccurs="3000"/>
-	  </xsd:sequence>
+               <xsd:element name="b" type="xsd:string" maxOccurs="3000"/>
+          </xsd:sequence>
      </xsd:complexType>
 
 </xsd:schema>

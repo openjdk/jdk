@@ -6,18 +6,18 @@ SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
-	<identity>
-		<version number="$Revision$"/>
-		<language type="ar"/>
-		<territory type="EG"/>
-	</identity>
-	<localeDisplayNames>
-		<languages>
-			<language type="da" draft="contributed">الدنماركية</language>
-		</languages>
-	</localeDisplayNames>
-	<numbers>
-		<defaultNumberingSystem>arab</defaultNumberingSystem>
-		<defaultNumberingSystem alt="latn">latn</defaultNumberingSystem>
-	</numbers>
+        <identity>
+                <version number="$Revision$"/>
+                <language type="ar"/>
+                <territory type="EG"/>
+        </identity>
+        <localeDisplayNames>
+                <languages>
+                        <language type="da" draft="contributed">الدنماركية</language>
+                </languages>
+        </localeDisplayNames>
+        <numbers>
+                <defaultNumberingSystem>arab</defaultNumberingSystem>
+                <defaultNumberingSystem alt="latn">latn</defaultNumberingSystem>
+        </numbers>
 </ldml>

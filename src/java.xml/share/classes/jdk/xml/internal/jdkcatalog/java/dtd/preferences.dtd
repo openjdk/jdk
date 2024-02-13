@@ -80,7 +80,7 @@ A UNE UTILISATION PARTICULIERE OU A L'ABSENCE DE CONTREFACON.
 
 <!-- The preferences element contains an optional version attribute,
       which specifies version of DTD. -->
-<!ATTLIST preferences EXTERNAL_XML_VERSION CDATA "0.0" >  
+<!ATTLIST preferences EXTERNAL_XML_VERSION CDATA "0.0" >
 
 <!-- The root element has a map representing the root's preferences
      (if any), and one node for each child of the root (if any). -->

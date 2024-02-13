@@ -22,7 +22,7 @@
 ]>
 <report>
     <tests>
-        <test>  
+        <test>
             <id>Test Id</id>
             <name>Test Name</name>
             <description>My Desc</description>

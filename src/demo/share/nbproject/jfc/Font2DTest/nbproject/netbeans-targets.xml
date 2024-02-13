@@ -34,7 +34,7 @@
 <project basedir=".." name="Font2DTest/NB">
 
     <import file="../build.xml"/>
-    
+
     <target name="debug" depends="compile,-jdk-presetdef-nbjpdastart">
         <nbjpdastart addressproperty="jpda.address" name="Font2DTest" transport="dt_socket">
             <classpath path="${run.cp}"/>
@@ -44,7 +44,7 @@
             <jvmarg value="-agentlib:jdwp=transport=dt_socket,server=n,suspend=n,address=${jpda.address}"/>
         </java>
     </target>
-    
+
     <target name="debug-fix" depends="-init">
         <javac srcdir="${src.dir}" destdir="${classes.dir}" debug="true" deprecation="${deprecation}">
             <classpath path="${cp}"/>
@@ -56,11 +56,11 @@
             </fileset>
         </nbjpdareload>
     </target>
-    
+
     <target name="show-javadoc" depends="javadoc">
         <nbbrowse file="${javadoc.dir}/index.html"/>
     </target>
-    
+
     <target name="profile" depends="compile">
         <nbprofiledirect>
             <classpath path="${run.cp}"/>
@@ -74,5 +74,5 @@
             <env key="Path" path="${profiler.info.agentpath}:${env.Path}"/>
         </java>
     </target>
-    
+
 </project>

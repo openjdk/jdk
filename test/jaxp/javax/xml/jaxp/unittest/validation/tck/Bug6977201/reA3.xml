@@ -2,7 +2,7 @@
 <doc  xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
     xsi:noNamespaceSchemaLocation='reA3.xsd' >
 
-<!-- 
+<!--
 base='string', pattern='', value='#x20;', type='invalid', RULE='1'
 -->
 

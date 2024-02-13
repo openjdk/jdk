@@ -6,17 +6,17 @@ SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
-	<identity>
-		<version number="$Revision$"/>
-		<language type="ff"/>
-		<script type="Adlm"/>
-		<territory type="SN"/>
-	</identity>
-	<numbers>
-		<currencies>
-			<currency type="GNF">
-				<symbol>GNF</symbol>
-			</currency>
-		</currencies>
-	</numbers>
+        <identity>
+                <version number="$Revision$"/>
+                <language type="ff"/>
+                <script type="Adlm"/>
+                <territory type="SN"/>
+        </identity>
+        <numbers>
+                <currencies>
+                        <currency type="GNF">
+                                <symbol>GNF</symbol>
+                        </currency>
+                </currencies>
+        </numbers>
 </ldml>

@@ -6,7 +6,7 @@
    </h:head>
    <h:body>
      <h:p>Welcome to the world of typography! Here is a book that you may find useful.</h:p>
-     <b:title h:style="font-family: sans-serif;">Digital Typography</b:title> 
+     <b:title h:style="font-family: sans-serif;">Digital Typography</b:title>
      <b:author>Donald Knuth</b:author>
  </h:body>
  </html>

@@ -24,7 +24,7 @@
        <xs:element name="AptNo" type ="xs:unsignedShort" minOccurs="0" maxOccurs="1" />
        <xs:element name="StreetNo" type ="xs:short" minOccurs="0" maxOccurs="1" />
     </xs:sequence>
-   <xs:attribute ref="accountID"/> 
+   <xs:attribute ref="accountID"/>
   </xs:complexType>
 </xs:element>
 
@@ -46,7 +46,7 @@
 </xs:complexType>
 
 
-<!-- This may all not make too much sense 
+<!-- This may all not make too much sense
      but just to  check the date features of schema-->
 <xs:complexType name="DateType">
   <xs:sequence>

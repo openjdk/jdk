@@ -6,18 +6,18 @@ SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
-	<identity>
-		<version number="$Revision$"/>
-		<language type="smj"/>
-	</identity>
-	<localeDisplayNames>
-		<languages>
-			<language type="smj">julevsámegiella</language>
-		</languages>
-	</localeDisplayNames>
-	<characters>
-		<exemplarCharacters>[aáåä b d e f g h i j k l m nń o p r s t u v]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[c ñ ö q w x y z]</exemplarCharacters>
-		<exemplarCharacters type="index">[AÁÅÄ B D E F G H I J K L M NŃ O P R S T U V]</exemplarCharacters>
-	</characters>
+        <identity>
+                <version number="$Revision$"/>
+                <language type="smj"/>
+        </identity>
+        <localeDisplayNames>
+                <languages>
+                        <language type="smj">julevsámegiella</language>
+                </languages>
+        </localeDisplayNames>
+        <characters>
+                <exemplarCharacters>[aáåä b d e f g h i j k l m nń o p r s t u v]</exemplarCharacters>
+                <exemplarCharacters type="auxiliary">[c ñ ö q w x y z]</exemplarCharacters>
+                <exemplarCharacters type="index">[AÁÅÄ B D E F G H I J K L M NŃ O P R S T U V]</exemplarCharacters>
+        </characters>
 </ldml>
