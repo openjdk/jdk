@@ -54,10 +54,10 @@ public abstract class NMTBenchmark_wb {
     @Param({"2", "4", "8", "16"})
     public int THREADS;
 
-    @Param({"16", "32", "64"})
+    @Param({"25", "50", "100", "200", "400"})
     public int REGIONS;
 
-    @Param({"4", "8", "16", "32", "64"})
+    @Param({"25", "50", "100"})
     public int SUB_REGIONS;
 
     private static final int PAGE_SIZE = 1024 * 4;
@@ -97,12 +97,12 @@ public abstract class NMTBenchmark_wb {
 
         for (int r = 0; r < reserved_regions_count; r++) {
           long base = base_array[r];
-          for (int i = 0; i < region_count; i += 4) commit  (base, i    );
-          for (int i = 1; i < region_count; i += 4) commit  (base, i    ); // causes merge from right
-          for (int i = 4; i < region_count; i += 4) commit  (base, i - 1); // causes merge from left
-          for (int i = 4; i < region_count; i += 4) uncommit(base, i - 1); // causes split from left
-          for (int i = 1; i < region_count; i += 4) uncommit(base, i    ); // causes split from right
-          for (int i = 0; i < region_count; i += 4) uncommit(base, i    ); // remove the regions
+          for (int i = 0; i < committed_regions_count; i += 4) commit  (base, i    );
+          for (int i = 1; i < committed_regions_count; i += 4) commit  (base, i    ); // causes merge from right
+          for (int i = 4; i < committed_regions_count; i += 4) commit  (base, i - 1); // causes merge from left
+          for (int i = 4; i < committed_regions_count; i += 4) uncommit(base, i - 1); // causes split from left
+          for (int i = 1; i < committed_regions_count; i += 4) uncommit(base, i    ); // causes split from right
+          for (int i = 0; i < committed_regions_count; i += 4) uncommit(base, i    ); // remove the regions
         }
 
         for (int i = 0; i < reserved_regions_count; i++)
@@ -143,7 +143,7 @@ public abstract class NMTBenchmark_wb {
     @Fork(value = 2, jvmArgsPrepend = { WB_JAR_APPEND, WB_UNLOCK_OPTION, WB_API, ADD_EXPORTS, MISC_PACKAGE, "-XX:NativeMemoryTracking=summary"})
     public static class NMTSummary extends NMTBenchmark_wb { }
 
-    @Fork(value = 2, jvmArgsPrepend = { WB_JAR_APPEND, WB_UNLOCK_OPTION, WB_API, ADD_EXPORTS, MISC_PACKAGE, "-XX:NativeMemoryTracking=detail"})
-    public static class NMTDetail extends NMTBenchmark_wb { }
+    // @Fork(value = 2, jvmArgsPrepend = { WB_JAR_APPEND, WB_UNLOCK_OPTION, WB_API, ADD_EXPORTS, MISC_PACKAGE, "-XX:NativeMemoryTracking=detail"})
+    // public static class NMTDetail extends NMTBenchmark_wb { }
 
 }
