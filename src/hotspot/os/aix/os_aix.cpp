@@ -1491,10 +1491,9 @@ struct vmembk_t {
   // also check that range is fully page aligned to the page size if the block.
   void assert_is_valid_subrange(char* p, size_t s) const {
     if (!contains_range(p, s)) {
-      log_trace(os,map)(RANGEFMT " is not a sub "
+      fatal(os,map)(RANGEFMT " is not a sub "
               "range of " RANGEFMT, RANGEFMTARGS(p, s),
               RANGEFMTARGS(addr, size));
-      guarantee0(false);
     }
     if (!is_aligned_to(p, pagesize) || !is_aligned_to(p + s, pagesize)) {
       log_trace(os,map)("range " RANGEFMT " is not aligned to pagesize (%lu)", RANGEFMTARGS(p, s), (unsigned long) pagesize);

@@ -152,23 +152,23 @@ typedef void (*java_call_t)(JavaValue* value, const methodHandle& method, JavaCa
 
 class MallocTracker;
 
-
 // Preserve errno across a range of calls
 
 class ErrnoPreserver {
-    int _e;
-    public:
-        ErrnoPreserver() {
-            _e = errno;
-        }
+  int _e;
 
-        ~ErrnoPreserver() {
-            errno = _e;
-        }
+public:
+  ErrnoPreserver() {
+    _e = errno;
+  }
 
-        int saved_errno() {
-          return _e;
-        }
+  ~ErrnoPreserver() {
+    errno = _e;
+  }
+
+  int saved_errno() {
+    return _e;
+  }
 };
 
 class os: AllStatic {

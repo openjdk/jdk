@@ -1812,9 +1812,9 @@ char* os::reserve_memory(size_t bytes, bool executable, MEMFLAGS flags) {
   char* result = pd_reserve_memory(bytes, executable);
   if (result != nullptr) {
     MemTracker::record_virtual_memory_reserve(result, bytes, CALLER_PC, flags);
-    log_debug(os,map)("Reserved " RANGEFMT, RANGEFMTARGS(result, bytes));
+    log_debug(os, map)("Reserved " RANGEFMT, RANGEFMTARGS(result, bytes));
   } else {
-    log_info(os,map)("Reserve failed (%zu bytes)", bytes);
+    log_info(os, map)("Reserve failed (%zu bytes)", bytes);
   }
   return result;
 }
@@ -1823,9 +1823,9 @@ char* os::attempt_reserve_memory_at(char* addr, size_t bytes, bool executable, M
   char* result = SimulateFullAddressSpace ? nullptr : pd_attempt_reserve_memory_at(addr, bytes, executable);
   if (result != nullptr) {
     MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC, flag);
-    log_debug(os,map)("Reserved " RANGEFMT, RANGEFMTARGS(result, bytes));
+    log_debug(os, map)("Reserved " RANGEFMT, RANGEFMTARGS(result, bytes));
   } else {
-    log_info(os,map)("Attempt to reserve " RANGEFMT " failed", RANGEFMTARGS(addr, bytes));
+    log_info(os, map)("Attempt to reserve " RANGEFMT " failed", RANGEFMTARGS(addr, bytes));
   }
   return result;
 }
@@ -2033,9 +2033,9 @@ bool os::commit_memory(char* addr, size_t bytes, bool executable) {
   bool res = pd_commit_memory(addr, bytes, executable);
   if (res) {
     MemTracker::record_virtual_memory_commit((address)addr, bytes, CALLER_PC);
-    log_debug(os,map)("Committed " RANGEFMT, RANGEFMTARGS(addr, bytes));
+    log_debug(os, map)("Committed " RANGEFMT, RANGEFMTARGS(addr, bytes));
   } else {
-    log_info(os,map)("Failed to commit " RANGEFMT, RANGEFMTARGS(addr, bytes));
+    log_info(os, map)("Failed to commit " RANGEFMT, RANGEFMTARGS(addr, bytes));
   }
   return res;
 }
@@ -2046,9 +2046,9 @@ bool os::commit_memory(char* addr, size_t size, size_t alignment_hint,
   bool res = os::pd_commit_memory(addr, size, alignment_hint, executable);
   if (res) {
     MemTracker::record_virtual_memory_commit((address)addr, size, CALLER_PC);
-    log_debug(os,map)("Committed " RANGEFMT, RANGEFMTARGS(addr, size));
+    log_debug(os, map)("Committed " RANGEFMT, RANGEFMTARGS(addr, size));
   } else {
-    log_info(os,map)("Failed to commit " RANGEFMT, RANGEFMTARGS(addr, size));
+    log_info(os, map)("Failed to commit " RANGEFMT, RANGEFMTARGS(addr, size));
   }
   return res;
 }
@@ -2081,9 +2081,9 @@ bool os::uncommit_memory(char* addr, size_t bytes, bool executable) {
   }
 
   if (res) {
-    log_debug(os,map)("Uncommitted " RANGEFMT, RANGEFMTARGS(addr, bytes));
+    log_debug(os, map)("Uncommitted " RANGEFMT, RANGEFMTARGS(addr, bytes));
   } else {
-    log_info(os,map)("Failed to uncommit " RANGEFMT, RANGEFMTARGS(addr, bytes));
+    log_info(os, map)("Failed to uncommit " RANGEFMT, RANGEFMTARGS(addr, bytes));
   }
 
   return res;
@@ -2103,9 +2103,9 @@ bool os::release_memory(char* addr, size_t bytes) {
     res = pd_release_memory(addr, bytes);
   }
   if (!res) {
-    log_info(os,map)("Failed to release " RANGEFMT, RANGEFMTARGS(addr, bytes));
+    log_info(os, map)("Failed to release " RANGEFMT, RANGEFMTARGS(addr, bytes));
   } else {
-    log_debug(os,map)("Released " RANGEFMT, RANGEFMTARGS(addr, bytes));
+    log_debug(os, map)("Released " RANGEFMT, RANGEFMTARGS(addr, bytes));
   }
   return res;
 }
@@ -2214,9 +2214,9 @@ char* os::reserve_memory_special(size_t size, size_t alignment, size_t page_size
   if (result != nullptr) {
     // The memory is committed
     MemTracker::record_virtual_memory_reserve_and_commit((address)result, size, CALLER_PC);
-    log_debug(os,map)("Reserved and committed " RANGEFMT, RANGEFMTARGS(result, size));
+    log_debug(os, map)("Reserved and committed " RANGEFMT, RANGEFMTARGS(result, size));
   } else {
-    log_info(os,map)("Reserve and commit failed (%zu bytes)", size);
+    log_info(os, map)("Reserve and commit failed (%zu bytes)", size);
   }
 
   return result;

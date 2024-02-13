@@ -3682,15 +3682,17 @@ static char* anon_mmap_aligned(char* req_addr, size_t bytes, size_t alignment) {
       char* const end_aligned = start_aligned + bytes;
       char* const end = start + extra_size;
       if (start_aligned > start) {
-        if (::munmap(start, start_aligned - start) != 0) {
+        const size_t l = start_aligned - start;
+        if (::munmap(start, l) != 0) {
           ErrnoPreserver ep;
-          log_trace(os,map)("munmap failed: " RANGEFMT " errno=(%s)", RANGEFMTARGS(start, (size_t) (start_aligned - start)), os::strerror(ep.saved_errno()));
+          log_trace(os,map)("munmap failed: " RANGEFMT " errno=(%s)", RANGEFMTARGS(start, l), os::strerror(ep.saved_errno()));
         }
       }
       if (end_aligned < end) {
-        if (::munmap(end_aligned, end - end_aligned) != 0) {
+        const size_t l = end - end-aligned;
+        if (::munmap(end_aligned, l) != 0) {
           ErrnoPreserver ep;
-          log_trace(os,map)("munmap failed: " RANGEFMT " errno=(%s)", RANGEFMTARGS(end_aligned, (size_t) (end - end_aligned)), os::strerror(ep.saved_errno()));
+          log_trace(os,map)("munmap failed: " RANGEFMT " errno=(%s)", RANGEFMTARGS(end_aligned, l), os::strerror(ep.saved_errno()));
         }
       }
       start = start_aligned;
