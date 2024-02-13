@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,13 @@
  * questions.
  */
 
-package com.sun.crypto.provider;
+package sun.security.util;
 
 import java.io.IOException;
 import java.security.AlgorithmParametersSpi;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
 import javax.crypto.spec.GCMParameterSpec;
-import sun.security.util.HexDumpEncoder;
-import sun.security.util.*;
 
 /**
  * This class implements the parameter set used with
@@ -46,8 +44,7 @@ import sun.security.util.*;
  *
  * </pre>
  *
- * @author Valerie Peng
- * @since 1.8
+ * @since 13
  */
 public final class GCMParameters extends AlgorithmParametersSpi {
 
