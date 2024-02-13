@@ -23,6 +23,7 @@
 
 package jdk.internal.org.objectweb.asm;
 
+import java.lang.classfile.ClassModel;
 import java.lang.reflect.InaccessibleObjectException;
 
 public class ClassWriterExt extends ClassWriter {
@@ -120,21 +121,12 @@ public class ClassWriterExt extends ClassWriter {
         cacheMHandles = value;
     }
 
-    public int getBytecodeLength(MethodVisitor mv) {
-        ByteVector code;
-        try {
-            java.lang.reflect.Field field = mv.getClass().getDeclaredField("code");
-            field.setAccessible(true);
-            code = (ByteVector) field.get(mv);
-        } catch (InaccessibleObjectException | SecurityException | ReflectiveOperationException e) {
-            throw new Error("can not read field 'code' from class " + mv.getClass(), e);
-        }
-        try {
-            java.lang.reflect.Field field = code.getClass().getDeclaredField("length");
-            field.setAccessible(true);
-            return field.getInt(code);
-        } catch (InaccessibleObjectException | SecurityException | ReflectiveOperationException e) {
-            throw new Error("can not read field 'length' from class " + code.getClass(), e);
+    public int getBytecodeLength(ClassModel cm) {
+        ConstantPool constantPool = cm.constantPool();
+        if (constantPool instanceof ClassReader classReader) {
+            return classReader.classfileLength();
+        } else {
+            throw new IllegalArgumentException("Invalid ConstantPool implementation: ClassReader expected");
         }
     }
 }
