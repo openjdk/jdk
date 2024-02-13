@@ -769,12 +769,24 @@ public class CLDRConverter {
             String tzKey = Optional.ofNullable((String)handlerSupplMeta.get(tzid))
                                    .orElse(tzid);
             // Follow link, if needed
-            var tzLink = tzdbLinks.getOrDefault(tzKey, tzKey);
-            Object data = map.get(TIMEZONE_ID_PREFIX + tzLink);
-            if (data == null) {
-                // Check for original tzkey, as some tz, such as America/Buenos_Aires,
-                // does have resources with the original tz
-                data = map.get(TIMEZONE_ID_PREFIX + tzKey);
+            var tzLink = tzdbLinks.get(tzKey);
+            if (tzLink == null && tzdbLinks.containsValue(tzKey)) {
+                // reverse link search
+                // this is needed as in tzdb, "America/Buenos_Aires" links to
+                // "America/Argentina/Buenos_Aires", but CLDR contains metaZone
+                // "Argentina" only for "America/Buenos_Aires" (as of CLDR 44)
+                // Both tzids should have "Argentina" meta zone names
+                tzLink = tzdbLinks.entrySet().stream()
+                        .filter(e -> e.getValue().equals(tzKey))
+                        .map(Map.Entry::getKey)
+                        .findAny()
+                        .orElse(null);
+
+            }
+            Object data = map.get(TIMEZONE_ID_PREFIX + tzKey);
+            if (data == null && tzLink != null) {
+                // data for tzLink
+                data = map.get(TIMEZONE_ID_PREFIX + tzLink);
             }
 
             if (data instanceof String[] tznames) {
@@ -790,11 +802,10 @@ public class CLDRConverter {
                     names.put(tzid, tznames);
                 }
             } else {
-                String meta = handlerMetaZones.get(tzLink);
-                if (meta == null) {
-                    // Check for original tzkey, as some tz, such as America/Buenos_Aires,
-                    // does have resources with the original tz
-                    meta = handlerMetaZones.get(tzKey);
+                String meta = handlerMetaZones.get(tzKey);
+                if (meta == null && tzLink != null) {
+                    // Check for tzLink
+                    meta = handlerMetaZones.get(tzLink);
                 }
                 if (meta != null) {
                     String metaKey = METAZONE_ID_PREFIX + meta;
@@ -806,6 +817,9 @@ public class CLDRConverter {
                         // Keep the metazone prefix here.
                         names.putIfAbsent(metaKey, tznames);
                         names.put(tzid, meta);
+                        if (tzLink != null) {
+                            names.put(tzLink, meta);
+                        }
                     }
                 } else if (id.equals("root")) {
                     // supply TZDB short names if available
