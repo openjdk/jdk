@@ -409,10 +409,9 @@ extern "C" {
   int SpinPause() {
     if (UseZihintpause) {
       // PAUSE is encoded as a FENCE instruction with pred=W, succ=0, fm=0, rd=x0, and rs1=x0.
-      // fence   w, 0
       // To do: __asm__ volatile("pause " : : : );
-      // We need to compile against march with zihintpause.
-      // Currently we do not.
+      // Since we're currently not passing '-march=..._zihintpause' to the compiler,
+      // it will not recognize the "pause" instruction, hence the hard-coded instruction.
       __asm__ volatile(".word 0x0100000f  " : : : );
       return 1;
     }
