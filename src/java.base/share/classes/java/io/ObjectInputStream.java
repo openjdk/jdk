@@ -392,6 +392,7 @@ public class ObjectInputStream
      * @see     ObjectInputStream#readFields()
      * @see     ObjectOutputStream#ObjectOutputStream(OutputStream)
      */
+    @SuppressWarnings("this-escape")
     public ObjectInputStream(InputStream in) throws IOException {
         verifySubclass();
         bin = new BlockDataInputStream(in);

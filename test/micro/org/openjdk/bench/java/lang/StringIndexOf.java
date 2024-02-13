@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Thread)
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
-@Fork(value = 1)
+@Fork(value = 3)
 public class StringIndexOf {
 
     private String dataString;
@@ -109,6 +109,21 @@ public class StringIndexOf {
     @Benchmark
     public int searchChar16ShortSuccess() {
         return string16Short.indexOf(searchChar16);
+    }
+
+    @Benchmark
+    public int searchCharLongWithOffsetSuccess() {
+        return dataStringBig.indexOf(searchChar, 3);
+    }
+
+    @Benchmark
+    public int searchCharMediumWithOffsetSuccess() {
+        return searchStringBig.indexOf(searchChar, 3);
+    }
+
+    @Benchmark
+    public int searchCharShortWithOffsetSuccess() {
+        return searchString.indexOf(searchChar, 1);
     }
 
     @Benchmark

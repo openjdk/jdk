@@ -2614,24 +2614,7 @@ instruct vstring_equalsL(iRegP_R11 str1, iRegP_R13 str2, iRegI_R14 cnt,
   ins_encode %{
     // Count is in 8-bit bytes; non-Compact chars are 16 bits.
     __ string_equals_v($str1$$Register, $str2$$Register,
-                       $result$$Register, $cnt$$Register, 1);
-  %}
-  ins_pipe(pipe_class_memory);
-%}
-
-instruct vstring_equalsU(iRegP_R11 str1, iRegP_R13 str2, iRegI_R14 cnt,
-                         iRegI_R10 result, vReg_V2 v2,
-                         vReg_V3 v3, vReg_V4 v4, vReg_V5 v5, rFlagsReg cr)
-%{
-  predicate(UseRVV && ((StrEqualsNode*)n)->encoding() == StrIntrinsicNode::UU);
-  match(Set result (StrEquals (Binary str1 str2) cnt));
-  effect(USE_KILL str1, USE_KILL str2, USE_KILL cnt, TEMP v2, TEMP v3, TEMP v4, TEMP v5, KILL cr);
-
-  format %{ "String Equals $str1, $str2, $cnt -> $result\t#@string_equalsU" %}
-  ins_encode %{
-    // Count is in 8-bit bytes; non-Compact chars are 16 bits.
-    __ string_equals_v($str1$$Register, $str2$$Register,
-                       $result$$Register, $cnt$$Register, 2);
+                       $result$$Register, $cnt$$Register);
   %}
   ins_pipe(pipe_class_memory);
 %}
@@ -3217,7 +3200,7 @@ instruct vcvtBtoX(vReg dst, vReg src) %{
       __ csrwi(CSR_FRM, C2_MacroAssembler::rne);
       __ vfcvt_f_x_v(as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg));
     } else {
-      __ integer_extend_v(as_VectorRegister($dst$$reg), bt, 
+      __ integer_extend_v(as_VectorRegister($dst$$reg), bt,
                           Matcher::vector_length(this), as_VectorRegister($src$$reg), T_BYTE);
     }
   %}
