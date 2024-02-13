@@ -122,11 +122,6 @@ class Space: public CHeapObj<mtGC> {
   // given address.
   bool is_in_reserved(const void* p) const { return _bottom <= p && p < _end; }
 
-  // Test whether p is double-aligned
-  static bool is_aligned(void* p) {
-    return ::is_aligned(p, sizeof(double));
-  }
-
   // Size computations.  Sizes are in bytes.
   size_t capacity()     const { return byte_size(bottom(), end()); }
   virtual size_t used() const = 0;
