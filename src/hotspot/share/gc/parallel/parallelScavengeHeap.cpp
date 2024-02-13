@@ -102,7 +102,6 @@ jint ParallelScavengeHeap::initialize() {
   assert(old_gen()->max_gen_size() == old_rs.size(), "Consistency check");
 
   double max_gc_pause_sec = ((double) MaxGCPauseMillis)/1000.0;
-  double max_gc_minor_pause_sec = ((double) MaxGCMinorPauseMillis)/1000.0;
 
   const size_t eden_capacity = _young_gen->eden_space()->capacity_in_bytes();
   const size_t old_capacity = _old_gen->capacity_in_bytes();
@@ -113,7 +112,6 @@ jint ParallelScavengeHeap::initialize() {
                              young_gen()->to_space()->capacity_in_bytes(),
                              GenAlignment,
                              max_gc_pause_sec,
-                             max_gc_minor_pause_sec,
                              GCTimeRatio
                              );
 
@@ -532,6 +530,14 @@ void ParallelScavengeHeap::resize_all_tlabs() {
   CollectedHeap::resize_all_tlabs();
 }
 
+void ParallelScavengeHeap::prune_scavengable_nmethods() {
+  ScavengableNMethods::prune_nmethods_not_into_young();
+}
+
+void ParallelScavengeHeap::prune_unlinked_nmethods() {
+  ScavengableNMethods::prune_unlinked_nmethods();
+}
+
 // This method is used by System.gc() and JVMTI.
 void ParallelScavengeHeap::collect(GCCause::Cause cause) {
   assert(!Heap_lock->owned_by_self(),
@@ -861,10 +867,6 @@ void ParallelScavengeHeap::unregister_nmethod(nmethod* nm) {
 
 void ParallelScavengeHeap::verify_nmethod(nmethod* nm) {
   ScavengableNMethods::verify_nmethod(nm);
-}
-
-void ParallelScavengeHeap::prune_scavengable_nmethods() {
-  ScavengableNMethods::prune_nmethods();
 }
 
 GrowableArray<GCMemoryManager*> ParallelScavengeHeap::memory_managers() {

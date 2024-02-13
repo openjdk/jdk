@@ -396,4 +396,9 @@ public class CompletenessTest extends KullaTesting {
         assertStatus("int[] m = {1, 2}, n = new int[0];  int i;", COMPLETE,
                      "int[] m = {1, 2}, n = new int[0];");
     }
+
+    public void testInstanceOf() {
+        assertStatus("i instanceof Integer", COMPLETE, "i instanceof Integer");
+        assertStatus("i instanceof int", COMPLETE, "i instanceof int");
+    }
 }

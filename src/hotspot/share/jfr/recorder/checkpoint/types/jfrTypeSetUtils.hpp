@@ -91,6 +91,8 @@ class ClearArtifact {
   bool operator()(T const& value) {
     CLEAR_SERIALIZED(value);
     assert(IS_NOT_SERIALIZED(value), "invariant");
+    assert(IS_NOT_LEAKP(value), "invariant");
+    assert(IS_NOT_TRANSIENT(value), "invariant");
     SET_PREVIOUS_EPOCH_CLEARED_BIT(value);
     CLEAR_PREVIOUS_EPOCH_METHOD_AND_CLASS(value);
     return true;
@@ -103,32 +105,12 @@ class ClearArtifact<const Method*> {
   bool operator()(const Method* method) {
     assert(METHOD_FLAG_USED_PREVIOUS_EPOCH(method), "invariant");
     CLEAR_SERIALIZED_METHOD(method);
-    assert(METHOD_NOT_SERIALIZED(method), "invariant");
+    assert(METHOD_IS_NOT_SERIALIZED(method), "invariant");
+    assert(METHOD_IS_NOT_LEAKP(method), "invariant");
+    assert(METHOD_IS_NOT_TRANSIENT(method), "invariant");
     SET_PREVIOUS_EPOCH_METHOD_CLEARED_BIT(method);
     CLEAR_PREVIOUS_EPOCH_METHOD_FLAG(method);
     return true;
-  }
-};
-
-template <typename T>
-class SerializePredicate {
-  bool _class_unload;
- public:
-  SerializePredicate(bool class_unload) : _class_unload(class_unload) {}
-  bool operator()(T const& value) {
-    assert(value != nullptr, "invariant");
-    return _class_unload ? true : IS_NOT_SERIALIZED(value);
-  }
-};
-
-template <>
-class SerializePredicate<const Method*> {
-  bool _class_unload;
- public:
-  SerializePredicate(bool class_unload) : _class_unload(class_unload) {}
-  bool operator()(const Method* method) {
-    assert(method != nullptr, "invariant");
-    return _class_unload ? true : METHOD_NOT_SERIALIZED(method);
   }
 };
 
@@ -146,11 +128,23 @@ class SymbolPredicate {
   }
 };
 
+class KlassUsedPredicate {
+  bool _current_epoch;
+public:
+  KlassUsedPredicate(bool current_epoch) : _current_epoch(current_epoch) {}
+  bool operator()(const Klass* klass) {
+    return _current_epoch ? USED_THIS_EPOCH(klass) : USED_PREVIOUS_EPOCH(klass);
+  }
+};
+
 class MethodUsedPredicate {
   bool _current_epoch;
 public:
   MethodUsedPredicate(bool current_epoch) : _current_epoch(current_epoch) {}
   bool operator()(const Klass* klass) {
+    if (!klass->is_instance_klass()) {
+      return false;
+    }
     return _current_epoch ? METHOD_USED_THIS_EPOCH(klass) : METHOD_USED_PREVIOUS_EPOCH(klass);
   }
 };
@@ -162,9 +156,9 @@ class MethodFlagPredicate {
   MethodFlagPredicate(bool current_epoch) : _current_epoch(current_epoch) {}
   bool operator()(const Method* method) {
     if (_current_epoch) {
-      return leakp ? IS_METHOD_LEAKP_USED(method) : METHOD_FLAG_USED_THIS_EPOCH(method);
+      return leakp ? METHOD_IS_LEAKP(method) : METHOD_FLAG_USED_THIS_EPOCH(method);
     }
-    return leakp ? IS_METHOD_LEAKP_USED(method) : METHOD_FLAG_USED_PREVIOUS_EPOCH(method);
+    return leakp ? METHOD_IS_LEAKP(method) : METHOD_FLAG_USED_PREVIOUS_EPOCH(method);
   }
 };
 
@@ -183,7 +177,7 @@ class LeakPredicate<const Method*> {
   LeakPredicate(bool class_unload) {}
   bool operator()(const Method* method) {
     assert(method != nullptr, "invariant");
-    return IS_METHOD_LEAKP_USED(method);
+    return METHOD_IS_LEAKP(method);
   }
 };
 
@@ -206,7 +200,10 @@ class JfrArtifactSet : public JfrCHeapObj {
   JfrSymbolTable* _symbol_table;
   GrowableArray<const Klass*>* _klass_list;
   GrowableArray<const Klass*>* _klass_loader_set;
+  GrowableArray<const Klass*>* _klass_loader_leakp_set;
+  GrowableArray<const Klass*>* _unloading_set;
   size_t _total_count;
+  bool _class_unload;
 
  public:
   JfrArtifactSet(bool class_unload);
@@ -231,14 +228,20 @@ class JfrArtifactSet : public JfrCHeapObj {
   int entries() const;
   size_t total_count() const;
   void register_klass(const Klass* k);
-  bool should_do_loader_klass(const Klass* k);
+  bool should_do_cld_klass(const Klass* k, bool leakp);
+  bool should_do_unloading_artifact(const void* ptr);
   void increment_checkpoint_id();
 
   template <typename Functor>
   void iterate_klasses(Functor& functor) const {
     for (int i = 0; i < _klass_list->length(); ++i) {
       if (!functor(_klass_list->at(i))) {
-        break;
+        return;
+      }
+    }
+    for (int i = 0; i < _klass_loader_set->length(); ++i) {
+      if (!functor(_klass_loader_set->at(i))) {
+        return;
       }
     }
   }

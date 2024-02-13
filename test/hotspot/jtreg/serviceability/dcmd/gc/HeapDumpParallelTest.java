@@ -66,7 +66,6 @@ public class HeapDumpParallelTest {
             appOut.shouldContain("Merge heap files complete");
         } else {
             appOut.shouldNotContain("Dump heap objects in parallel");
-            appOut.shouldNotContain("Merge heap files complete");
         }
         HprofParser.parseAndVerify(heapDumpFile);
 

@@ -734,7 +734,7 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
       ShouldNotReachHere();
     }
   }
-  return align_up(stk, 2);
+  return stk;
 }
 
 #if defined(COMPILER1) || defined(COMPILER2)
@@ -2039,6 +2039,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
                                               in_ByteSize(-1),
                                               oop_maps,
                                               exception_offset);
+    if (nm == nullptr) return nm;
     if (method->is_continuation_enter_intrinsic()) {
       ContinuationEntry::set_enter_code(nm, interpreted_entry_offset);
     } else if (method->is_continuation_yield_intrinsic()) {

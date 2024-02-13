@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1012,7 +1012,7 @@ inline size_t ConcurrentHashTable<CONFIG, F>::
 // Constructor
 template <typename CONFIG, MEMFLAGS F>
 inline ConcurrentHashTable<CONFIG, F>::
-ConcurrentHashTable(size_t log2size, size_t log2size_limit, size_t grow_hint, bool enable_statistics, void* context)
+ConcurrentHashTable(size_t log2size, size_t log2size_limit, size_t grow_hint, bool enable_statistics, Mutex::Rank rank, void* context)
     : _context(context), _new_table(nullptr), _log2_size_limit(log2size_limit),
       _log2_start_size(log2size), _grow_hint(grow_hint),
       _size_limit_reached(false), _resize_lock_owner(nullptr),
@@ -1023,8 +1023,7 @@ ConcurrentHashTable(size_t log2size, size_t log2size_limit, size_t grow_hint, bo
   } else {
     _stats_rate = nullptr;
   }
-  _resize_lock =
-    new Mutex(Mutex::service-1, "ConcurrentHashTableResize_lock");
+  _resize_lock = new Mutex(rank, "ConcurrentHashTableResize_lock");
   _table = new InternalTable(log2size);
   assert(log2size_limit >= log2size, "bad ergo");
   _size_limit_reached = _table->_log2_size == _log2_size_limit;

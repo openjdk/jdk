@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -418,14 +418,18 @@ public class ClassUseWriter extends SubWriterHolderWriter {
 
     @Override
     protected Navigation getNavBar(PageMode pageMode, Element element) {
-        Content mdleLinkContent = getModuleLink(utils.elementUtils.getModuleOf(typeElement),
-                contents.moduleLabel);
-        Content classLinkContent = getLink(new HtmlLinkInfo(
-                configuration, HtmlLinkInfo.Kind.PLAIN, typeElement)
-                .label(resources.getText("doclet.Class"))
-                .skipPreview(true));
-        return super.getNavBar(pageMode, element)
-                .setNavLinkModule(mdleLinkContent)
-                .setNavLinkClass(classLinkContent);
+        List<Content> subnavLinks = new ArrayList<>();
+        if (configuration.showModules) {
+            subnavLinks.add(getBreadcrumbLink(utils.elementUtils.getModuleOf(typeElement), false));
+        }
+        // We may generate a class-use page for an otherwise undocumented page in the condition below.
+        boolean isUndocumented = options.noDeprecated() && utils.isDeprecated(typeElement);
+        subnavLinks.add(getBreadcrumbLink(utils.containingPackage(typeElement), isUndocumented));
+        if (!isUndocumented) {
+            subnavLinks.add(getBreadcrumbLink(typeElement, true));
+        }
+
+        return super.getNavBar(pageMode, element).setSubNavLinks(subnavLinks);
     }
 }
+

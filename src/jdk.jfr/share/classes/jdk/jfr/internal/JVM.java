@@ -50,7 +50,7 @@ public final class JVM {
      */
     public static final Object CHUNK_ROTATION_MONITOR = new ChunkRotationMonitor();
 
-    private volatile static boolean nativeOK;
+    private static volatile boolean nativeOK;
 
     private static native void registerNatives();
 
@@ -659,4 +659,12 @@ public final class JVM {
      * @param stackFilterId the stack filter ID to unregister
      */
     public static native void unregisterStackFilter(long stackFilterId);
+
+    /**
+     * Sets bits used for event settings, like cutoff(ticks) and level
+     *
+     * @param eventTypeId the id of the event type
+     * @param value
+     */
+    public static native void setMiscellaneous(long eventTypeId, long value);
 }

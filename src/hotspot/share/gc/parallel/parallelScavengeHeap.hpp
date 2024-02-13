@@ -80,8 +80,6 @@ class ParallelScavengeHeap : public CollectedHeap {
   static PSAdaptiveSizePolicy*       _size_policy;
   static PSGCAdaptivePolicyCounters* _gc_policy_counters;
 
-  SoftRefPolicy _soft_ref_policy;
-
   unsigned int _death_march_count;
 
   GCMemoryManager* _young_manager;
@@ -135,8 +133,6 @@ class ParallelScavengeHeap : public CollectedHeap {
     return "Parallel";
   }
 
-  SoftRefPolicy* soft_ref_policy() override { return &_soft_ref_policy; }
-
   GrowableArray<GCMemoryManager*> memory_managers() override;
   GrowableArray<MemoryPool*> memory_pools() override;
 
@@ -176,6 +172,7 @@ class ParallelScavengeHeap : public CollectedHeap {
   void verify_nmethod(nmethod* nm) override;
 
   void prune_scavengable_nmethods();
+  void prune_unlinked_nmethods();
 
   size_t max_capacity() const override;
 

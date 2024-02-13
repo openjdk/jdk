@@ -32,11 +32,12 @@
 #define VIRTUAL_THREAD  "Ljava/lang/VirtualThread;"
 
 static JNINativeMethod methods[] = {
-    { "notifyJvmtiStart",        "()V",  (void *)&JVM_VirtualThreadStart },
-    { "notifyJvmtiEnd",          "()V",  (void *)&JVM_VirtualThreadEnd },
-    { "notifyJvmtiMount",        "(Z)V", (void *)&JVM_VirtualThreadMount },
-    { "notifyJvmtiUnmount",      "(Z)V", (void *)&JVM_VirtualThreadUnmount },
-    { "notifyJvmtiHideFrames",   "(Z)V", (void *)&JVM_VirtualThreadHideFrames },
+    { "notifyJvmtiStart",          "()V",  (void *)&JVM_VirtualThreadStart },
+    { "notifyJvmtiEnd",            "()V",  (void *)&JVM_VirtualThreadEnd },
+    { "notifyJvmtiMount",          "(Z)V", (void *)&JVM_VirtualThreadMount },
+    { "notifyJvmtiUnmount",        "(Z)V", (void *)&JVM_VirtualThreadUnmount },
+    { "notifyJvmtiHideFrames",     "(Z)V", (void *)&JVM_VirtualThreadHideFrames },
+    { "notifyJvmtiDisableSuspend", "(Z)V", (void *)&JVM_VirtualThreadDisableSuspend },
 };
 
 JNIEXPORT void JNICALL
