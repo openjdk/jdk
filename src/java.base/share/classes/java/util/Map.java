@@ -818,7 +818,7 @@ public interface Map<K, V> {
      * @param key key with which the specified value is to be associated
      * @param value value to be associated with the specified key
      * @return {@code null} if the specified key was absent or had a {@code null}
-     *         value, else returns the value currently associated with the key. (A
+     *         value, else returns the value currently associated with {@code key}. (A
      *         {@code null} return can also indicate that the map previously
      *         associated {@code null} with the key, if the implementation supports
      *         null values.)
