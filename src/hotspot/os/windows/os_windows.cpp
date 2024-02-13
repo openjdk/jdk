@@ -840,6 +840,20 @@ julong os::win32::available_memory() {
   return (julong)ms.ullAvailPhys;
 }
 
+jlong os::total_swap_space() {
+  MEMORYSTATUSEX ms;
+  ms.dwLength = sizeof(ms);
+  GlobalMemoryStatusEx(&ms);
+  return (jlong) ms.ullTotalPageFile;
+}
+
+jlong os::free_swap_space() {
+  MEMORYSTATUSEX ms;
+  ms.dwLength = sizeof(ms);
+  GlobalMemoryStatusEx(&ms);
+  return (jlong) ms.ullAvailPageFile;
+}
+
 julong os::physical_memory() {
   return win32::physical_memory();
 }
@@ -2469,9 +2483,9 @@ LONG Handle_IDiv_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
 #elif defined(_M_AMD64)
   PCONTEXT ctx = exceptionInfo->ContextRecord;
   address pc = (address)ctx->Rip;
-  guarantee(pc[0] >= Assembler::REX && pc[0] <= Assembler::REX_WRXB && pc[1] == 0xF7 || pc[0] == 0xF7,
+  guarantee((pc[0] >= Assembler::REX && pc[0] <= Assembler::REX_WRXB && pc[1] == 0xF7) || pc[0] == 0xF7,
             "not an idiv opcode, pc[0] = 0x%x and pc[1] = 0x%x", pc[0], pc[1]);
-  guarantee(pc[0] >= Assembler::REX && pc[0] <= Assembler::REX_WRXB && (pc[2] & ~0x7) == 0xF8 || (pc[1] & ~0x7) == 0xF8,
+  guarantee((pc[0] >= Assembler::REX && pc[0] <= Assembler::REX_WRXB && (pc[2] & ~0x7) == 0xF8) || (pc[1] & ~0x7) == 0xF8,
             "cannot handle non-register operands, pc[0] = 0x%x, pc[1] = 0x%x and pc[2] = 0x%x", pc[0], pc[1], pc[2]);
   if (pc[0] == 0xF7) {
     // set correct result values and continue after idiv instruction
@@ -3330,7 +3344,7 @@ char* os::replace_existing_mapping_with_file_mapping(char* base, size_t size, in
 // Multiple threads can race in this code but it's not possible to unmap small sections of
 // virtual space to get requested alignment, like posix-like os's.
 // Windows prevents multiple thread from remapping over each other so this loop is thread-safe.
-static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int file_desc) {
+static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int file_desc, MEMFLAGS flag = mtNone) {
   assert(is_aligned(alignment, os::vm_allocation_granularity()),
       "Alignment must be a multiple of allocation granularity (page size)");
   assert(is_aligned(size, os::vm_allocation_granularity()),
@@ -3343,8 +3357,8 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
   static const int max_attempts = 20;
 
   for (int attempt = 0; attempt < max_attempts && aligned_base == nullptr; attempt ++) {
-    char* extra_base = file_desc != -1 ? os::map_memory_to_file(extra_size, file_desc) :
-                                         os::reserve_memory(extra_size);
+    char* extra_base = file_desc != -1 ? os::map_memory_to_file(extra_size, file_desc, flag) :
+                                         os::reserve_memory(extra_size, false, flag);
     if (extra_base == nullptr) {
       return nullptr;
     }
@@ -3360,8 +3374,8 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
 
     // Attempt to map, into the just vacated space, the slightly smaller aligned area.
     // Which may fail, hence the loop.
-    aligned_base = file_desc != -1 ? os::attempt_map_memory_to_file_at(aligned_base, size, file_desc) :
-                                     os::attempt_reserve_memory_at(aligned_base, size);
+    aligned_base = file_desc != -1 ? os::attempt_map_memory_to_file_at(aligned_base, size, file_desc, flag) :
+                                     os::attempt_reserve_memory_at(aligned_base, size, false, flag);
   }
 
   assert(aligned_base != nullptr, "Did not manage to re-map after %d attempts?", max_attempts);
@@ -3374,8 +3388,8 @@ char* os::reserve_memory_aligned(size_t size, size_t alignment, bool exec) {
   return map_or_reserve_memory_aligned(size, alignment, -1 /* file_desc */);
 }
 
-char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int fd) {
-  return map_or_reserve_memory_aligned(size, alignment, fd);
+char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int fd, MEMFLAGS flag) {
+  return map_or_reserve_memory_aligned(size, alignment, fd, flag);
 }
 
 char* os::pd_reserve_memory(size_t bytes, bool exec) {
@@ -3796,6 +3810,11 @@ bool os::unguard_memory(char* addr, size_t bytes) {
 
 void os::pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint) { }
 void os::pd_free_memory(char *addr, size_t bytes, size_t alignment_hint) { }
+
+size_t os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
+  return page_size;
+}
+
 void os::numa_make_global(char *addr, size_t bytes)    { }
 void os::numa_make_local(char *addr, size_t bytes, int lgrp_hint)    { }
 bool os::numa_topology_changed()                       { return false; }

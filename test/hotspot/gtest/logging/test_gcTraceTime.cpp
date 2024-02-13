@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,13 +45,13 @@ TEST_VM_F(GCTraceTimeTest, full) {
   {
     ThreadInVMfromNative tvn(JavaThread::current());
     MutexLocker lock(Heap_lock); // Needed to read heap usage
-    GCTraceTime(Debug, gc) timer("Test GC", NULL, GCCause::_allocation_failure, true);
+    GCTraceTime(Debug, gc) timer("Test GC", nullptr, GCCause::_allocation_failure, true);
   }
 
   const char* expected[] = {
     "[gc,start", "] Test GC (Allocation Failure)",
     "[gc", "] Test GC (Allocation Failure) ", "M) ", "ms",
-    NULL
+    nullptr
   };
   EXPECT_TRUE(file_contains_substrings_in_order(TestLogFileName, expected));
 }
@@ -68,13 +68,13 @@ TEST_VM_F(GCTraceTimeTest, full_multitag) {
   {
     ThreadInVMfromNative tvn(JavaThread::current());
     MutexLocker lock(Heap_lock); // Needed to read heap usage
-    GCTraceTime(Debug, gc, ref) timer("Test GC", NULL, GCCause::_allocation_failure, true);
+    GCTraceTime(Debug, gc, ref) timer("Test GC", nullptr, GCCause::_allocation_failure, true);
   }
 
   const char* expected[] = {
     "[gc,ref,start", "] Test GC (Allocation Failure)",
     "[gc,ref", "] Test GC (Allocation Failure) ", "M) ", "ms",
-    NULL
+    nullptr
   };
   EXPECT_TRUE(file_contains_substrings_in_order(TestLogFileName, expected));
 }
@@ -89,7 +89,7 @@ TEST_VM_F(GCTraceTimeTest, no_heap) {
   EXPECT_TRUE(gc_start_debug.is_enabled());
 
   {
-    GCTraceTime(Debug, gc) timer("Test GC", NULL, GCCause::_allocation_failure, false);
+    GCTraceTime(Debug, gc) timer("Test GC", nullptr, GCCause::_allocation_failure, false);
   }
 
   const char* expected[] = {
@@ -97,7 +97,7 @@ TEST_VM_F(GCTraceTimeTest, no_heap) {
     "[gc,start", "] Test GC (Allocation Failure)",
     // [2.975s][debug][gc      ] Test GC (Allocation Failure) 0.026ms
     "[gc", "] Test GC (Allocation Failure) ", "ms",
-    NULL
+    nullptr
   };
   EXPECT_TRUE(file_contains_substrings_in_order(TestLogFileName, expected));
 
@@ -120,7 +120,7 @@ TEST_VM_F(GCTraceTimeTest, no_cause) {
   {
     ThreadInVMfromNative tvn(JavaThread::current());
     MutexLocker lock(Heap_lock); // Needed to read heap usage
-    GCTraceTime(Debug, gc) timer("Test GC", NULL, GCCause::_no_gc, true);
+    GCTraceTime(Debug, gc) timer("Test GC", nullptr, GCCause::_no_gc, true);
   }
 
   const char* expected[] = {
@@ -128,7 +128,7 @@ TEST_VM_F(GCTraceTimeTest, no_cause) {
     "[gc,start", "] Test GC",
     // [2.975s][debug][gc      ] Test GC 59M->59M(502M) 0.026ms
     "[gc", "] Test GC ", "M) ", "ms",
-    NULL
+    nullptr
   };
   EXPECT_TRUE(file_contains_substrings_in_order(TestLogFileName, expected));
 }
@@ -143,7 +143,7 @@ TEST_VM_F(GCTraceTimeTest, no_heap_no_cause) {
   EXPECT_TRUE(gc_start_debug.is_enabled());
 
   {
-    GCTraceTime(Debug, gc) timer("Test GC", NULL, GCCause::_no_gc, false);
+    GCTraceTime(Debug, gc) timer("Test GC", nullptr, GCCause::_no_gc, false);
   }
 
   const char* expected[] = {
@@ -151,7 +151,7 @@ TEST_VM_F(GCTraceTimeTest, no_heap_no_cause) {
     "[gc,start", "] Test GC",
     // [2.975s][debug][gc      ] Test GC 0.026ms
     "[gc", "] Test GC ", "ms",
-    NULL
+    nullptr
   };
   EXPECT_TRUE(file_contains_substrings_in_order(TestLogFileName, expected));
 

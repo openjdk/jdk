@@ -311,7 +311,6 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_indexOfL_char:            return inline_string_indexOfChar(StrIntrinsicNode::L);
 
   case vmIntrinsics::_equalsL:                  return inline_string_equals(StrIntrinsicNode::LL);
-  case vmIntrinsics::_equalsU:                  return inline_string_equals(StrIntrinsicNode::UU);
 
   case vmIntrinsics::_vectorizedHashCode:       return inline_vectorizedHashCode();
 

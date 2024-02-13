@@ -44,7 +44,7 @@ public:
     VirtualMemoryTracker::snapshot_thread_stacks();
 
     ReservedMemoryRegion* rmr = VirtualMemoryTracker::_reserved_regions->find(ReservedMemoryRegion(stack_end, stack_size));
-    ASSERT_TRUE(rmr != NULL);
+    ASSERT_TRUE(rmr != nullptr);
 
     ASSERT_EQ(rmr->base(), stack_end);
     ASSERT_EQ(rmr->size(), stack_size);
@@ -58,7 +58,7 @@ public:
     address stack_top = stack_end + stack_size;
     bool found_stack_top = false;
 
-    for (const CommittedMemoryRegion* region = iter.next(); region != NULL; region = iter.next()) {
+    for (const CommittedMemoryRegion* region = iter.next(); region != nullptr; region = iter.next()) {
       if (region->base() + region->size() == stack_top) {
         ASSERT_TRUE(region->size() <= stack_size);
         found_stack_top = true;
@@ -95,7 +95,7 @@ public:
     char* base = os::reserve_memory(size, !ExecMem, mtThreadStack);
     bool result = os::commit_memory(base, size, !ExecMem);
     size_t index;
-    ASSERT_NE(base, (char*)NULL);
+    ASSERT_NE(base, (char*)nullptr);
     for (index = 0; index < touch_pages; index ++) {
       char* touch_addr = base + page_sz * page_num[index];
       *touch_addr = 'a';
@@ -109,14 +109,14 @@ public:
     VirtualMemoryTracker::snapshot_thread_stacks();
 
     ReservedMemoryRegion* rmr = VirtualMemoryTracker::_reserved_regions->find(ReservedMemoryRegion((address)base, size));
-    ASSERT_TRUE(rmr != NULL);
+    ASSERT_TRUE(rmr != nullptr);
 
     bool precise_tracking_supported = false;
     CommittedRegionIterator iter = rmr->iterate_committed_regions();
-    for (const CommittedMemoryRegion* region = iter.next(); region != NULL; region = iter.next()) {
+    for (const CommittedMemoryRegion* region = iter.next(); region != nullptr; region = iter.next()) {
       if (region->size() == size) {
         // platforms that do not support precise tracking.
-        ASSERT_TRUE(iter.next() == NULL);
+        ASSERT_TRUE(iter.next() == nullptr);
         break;
       } else {
         precise_tracking_supported = true;
@@ -136,7 +136,7 @@ public:
     VirtualMemoryTracker::remove_released_region((address)base, size);
 
     rmr = VirtualMemoryTracker::_reserved_regions->find(ReservedMemoryRegion((address)base, size));
-    ASSERT_TRUE(rmr == NULL);
+    ASSERT_TRUE(rmr == nullptr);
   }
 
   static void test_committed_region() {
@@ -161,7 +161,7 @@ public:
     const size_t num_pages = 4;
     const size_t size = num_pages * page_sz;
     char* base = os::reserve_memory(size, !ExecMem, mtTest);
-    ASSERT_NE(base, (char*)NULL);
+    ASSERT_NE(base, (char*)nullptr);
     result = os::commit_memory(base, size, !ExecMem);
 
     ASSERT_TRUE(result);

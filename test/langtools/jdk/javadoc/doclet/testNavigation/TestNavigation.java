@@ -412,7 +412,7 @@ public class TestNavigation extends JavadocTester {
                     <ol class="sub-nav-list">
                     <li><a href="package-summary.html">Unnamed Package</a></li>
                     &nbsp;&gt;&nbsp;
-                    <li><a href="C.html" class="current-selection" title="class in Unnamed Package">C</a></li>
+                    <li><a href="C.html" class="current-selection">C</a></li>
                     </ol>""");
     }
 

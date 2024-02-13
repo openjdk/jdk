@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,69 +30,48 @@
  * system property.
  * @author Luis-Miguel Alventosa, Joel Feraud
  *
- * @run clean ImplVersionTest ImplVersionCommand
+ * @library /test/lib
  * @run build ImplVersionTest ImplVersionCommand ImplVersionReader
  * @run main ImplVersionTest
  */
+
+import jdk.test.lib.process.ProcessTools;
 
 import java.io.File;
 
 public class ImplVersionTest {
 
-    public static void main(String[] args) {
-        try {
-            // Get OS name
-            //
-            String osName = System.getProperty("os.name");
-            System.out.println("osName = " + osName);
-            if ("Windows 98".equals(osName)) {
-                // Disable this test on Win98 due to parsing
-                // errors (bad handling of white spaces) when
-                // J2SE is installed under "Program Files".
-                //
-                System.out.println("This test is disabled on Windows 98.");
-                System.out.println("Bye! Bye!");
-                return;
-            }
+    public static void main(String[] args) throws Exception {
 
-            // Get Java Home
-            String javaHome = System.getProperty("java.home");
+        // Get test src
+        //
+        String testSrc = System.getProperty("test.src");
 
-            // Get test src
-            //
-            String testSrc = System.getProperty("test.src");
+        // Get test classes
+        String testClasses = System.getProperty("test.classes");
 
-            // Get test classes
-            String testClasses = System.getProperty("test.classes");
+        // Build command string
 
-            // Build command string
-            String command =
-                javaHome + File.separator + "bin" + File.separator + "java " +
-                " -classpath " + testClasses +
-                " -Djava.security.manager -Djava.security.policy==" + testSrc +
-                File.separator + "policy -Dtest.classes=" + testClasses +
-                " ImplVersionCommand " + System.getProperty("java.runtime.version");
-            System.out.println("ImplVersionCommand Exec Command = " + command);
+        String[] command = new String[] {
+            "-Djava.security.manager",
+            "-Djava.security.policy==" + testSrc + File.separator + "policy",
+            "-Dtest.classes=" + testClasses,
+            "ImplVersionCommand",
+            System.getProperty("java.runtime.version")
+        };
 
-            // Exec command
-            Process proc = Runtime.getRuntime().exec(command);
-            new ImplVersionReader(proc, proc.getInputStream()).start();
-            new ImplVersionReader(proc, proc.getErrorStream()).start();
-            int exitValue = proc.waitFor();
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(command);
+        Process proc = pb.start();
+        new ImplVersionReader(proc, proc.getInputStream()).start();
+        new ImplVersionReader(proc, proc.getErrorStream()).start();
+        int exitValue = proc.waitFor();
 
-            System.out.println("ImplVersionCommand Exit Value = " +
-                               exitValue);
-            if (exitValue != 0) {
-                System.out.println("TEST FAILED: Incorrect exit value " +
-                                   "from ImplVersionCommand");
-                System.exit(exitValue);
-            }
-            // Test OK!
-            System.out.println("Bye! Bye!");
-        } catch (Exception e) {
-            System.out.println("Unexpected exception caught = " + e);
-            e.printStackTrace();
-            System.exit(1);
+        System.out.println("ImplVersionCommand Exit Value = " + exitValue);
+        if (exitValue != 0) {
+            throw new RuntimeException("TEST FAILED: Incorrect exit value " +
+                                       "from ImplVersionCommand " + exitValue);
         }
+        // Test OK!
+        System.out.println("Bye! Bye!");
     }
 }
