@@ -49,11 +49,11 @@ public class PageDlgPrnButton implements Printable
 
     public static void main(String[] args) throws Exception {
 
-        if (PrinterJob.lookupPrintServices().length == 0) {
+        if (PrinterJob.lookupPrintServices().length < 2) {
             throw new RuntimeException("Printer not configured or available.");
         }
 
-        PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
+        PassFailJFrame passFailJFrame = PassFailJFrame.builder()
                 .instructions(INSTRUCTIONS)
                 .rows((int) INSTRUCTIONS.lines().count() + 1)
                 .columns(45)
