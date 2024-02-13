@@ -43,6 +43,7 @@ import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JComponent;
+import javax.swing.JOptionPane;
 
 public class PrintLatinCJKTest implements Printable {
 
@@ -72,6 +73,10 @@ public class PrintLatinCJKTest implements Printable {
                 }
             } catch (PrinterException ex) {
                 ex.printStackTrace();
+                String msg = "PrinterException: " + ex.getMessage();
+                JOptionPane.showMessageDialog(b, msg, "Error occurred",
+                                              JOptionPane.ERROR_MESSAGE);
+                PassFailJFrame.forceFail(msg);
             }
         });
 
@@ -86,7 +91,7 @@ public class PrintLatinCJKTest implements Printable {
     @Override
     public int print(Graphics g, PageFormat pf, int pageIndex)
                          throws PrinterException {
-        if (pageIndex > 0) {
+        if (pageIndex == 0) {
             return Printable.NO_SUCH_PAGE;
         }
         g.translate((int) pf.getImageableX(), (int) pf.getImageableY());
