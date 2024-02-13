@@ -3215,6 +3215,7 @@ static size_t large_page_init_decide_size() {
                          !FLAG_IS_DEFAULT(LargePageSizeInBytes);
 
 #define WARN(msg) if (warn_on_failure) { warning(msg); }
+#define WARN1(msg,p) if (warn_on_failure) { warning(msg,p); }
 
   if (!request_lock_memory_privilege()) {
     WARN("JVM cannot use large page memory because it does not have enough privilege to lock pages in memory.");
@@ -3227,15 +3228,33 @@ static size_t large_page_init_decide_size() {
     return 0;
   }
 
-#if defined(IA32) || defined(AMD64)
-  if (size > 4*M || LargePageSizeInBytes > 4*M) {
-    WARN("JVM cannot use large pages bigger than 4mb.");
-    return 0;
-  }
+  // Check if OS version is 11 or greater
+  if (schedules_all_processor_groups) {
+      // OS-specific logic for versions 11 or greater
+      // You can implement specific checks or logic here for newer OS versions
+}
+  else {
+      // Existing logic for OS versions less than 11
+#if defined(IA32)
+      if (size > 4 * M || LargePageSizeInBytes > 4 * M) {
+          WARN("JVM cannot use large pages bigger than 4mb.");
+          return 0;
+      }
+#elif defined(AMD64)
+      if (!EnableAllLargePageSizes) {
+          if (size > 4 * M || LargePageSizeInBytes > 4 * M) {
+              WARN("JVM cannot use large pages bigger than 4mb.");
+              return 0;
+          }
+      }
 #endif
+  }
 
   if (LargePageSizeInBytes > 0 && LargePageSizeInBytes % size == 0) {
-    size = LargePageSizeInBytes;
+      size = LargePageSizeInBytes;
+  }
+  else {
+      WARN1("JVM cannot use large pages that are not a multiple of minimum large page size (%d), defaulting to minimum page size.", size);
   }
 
 #undef WARN
@@ -3251,8 +3270,23 @@ void os::large_page_init() {
   _large_page_size = large_page_init_decide_size();
   const size_t default_page_size = os::vm_page_size();
   if (_large_page_size > default_page_size) {
-    _page_sizes.add(_large_page_size);
+ #if !defined(IA32)
+      // Check if the OS version is 11 or higher
+      if (schedules_all_processor_groups && EnableAllLargePageSizes) {
+
+          // Additional logic needed for ARM architecture
+          size_t min_size = GetLargePageMinimum();
+
+          // Populate _page_sizes with large page sizes less than or equal to _large_page_size.
+          for (size_t page_size = min_size; page_size < _large_page_size; page_size *= 2) {
+              _page_sizes.add(page_size);
+          }
+      }
+#endif
+
+      _page_sizes.add(_large_page_size);
   }
+  // Set UseLargePages based on whether a large page size was successfully determined
 
   UseLargePages = _large_page_size != 0;
 }

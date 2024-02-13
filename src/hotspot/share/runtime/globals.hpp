@@ -247,6 +247,9 @@ const int ObjectAlignmentInBytes = 8;
           "page size for the environment as the maximum)")                  \
           range(0, max_uintx)                                               \
                                                                             \
+  product(bool, EnableAllLargePageSizes, false, EXPERIMENTAL,               \
+          "Using high time resolution (for Windows 11+ and Win64 only)")    \ 
+                                                                            \
   product(size_t, LargePageHeapSizeThreshold, 128*M,                        \
           "Use large pages if maximum heap is at least this big")           \
           range(0, max_uintx)                                               \

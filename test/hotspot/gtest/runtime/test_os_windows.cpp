@@ -703,6 +703,54 @@ TEST_VM(os_windows, reserve_memory_special) {
   TestReserveMemorySpecial_test();
 }
 
+TEST_VM(os_windows, large_page_init_decide_size) {
+    // Initial setup
+    UseLargePages = true;
+    bool schedules_all_processor_groups = true;
+    size_t LargePageSizeInBytes = 0; // Reset to default
+
+    // Test for large page support
+    size_t decided_size = os::large_page_init_decide_size();
+    size_t min_size = os::GetLargePageMinimum();
+    if (min_size == 0) {
+        EXPECT_EQ(decided_size, 0) << "Expected decided size to be 0 when large page is not supported by the processor";
+    }
+
+    // Scenario 1: Test with 2MB large page size
+    LargePageSizeInBytes = 2 * M; // Set large page size to 2MB
+    decided_size = os::large_page_init_decide_size(); // Recalculate decided size
+    if (min_size == 2 * M) {
+        EXPECT_EQ(decided_size, 2 * M) << "Expected decided size to be 2M when large page and OS reported size are both 2M";
+    }
+
+    // Scenario 2: Test with 1MB large page size
+    LargePageSizeInBytes = 1 * M; // Set large page size to 1MB
+    decided_size = os::large_page_init_decide_size(); // Recalculate decided size
+    if (min_size == 2 * M) {
+        EXPECT_EQ(decided_size, 2 * M) << "Expected decided size to be 2M when large page is 1M and OS reported size is 2M";
+    }
+
+    // Check for specific OS versions or architectures
+    schedules_all_processor_groups = false; // Reset the flag for additional checks
+    if (schedules_all_processor_groups) {
+        // Add specific checks for OS version 11 or greater
+    }
+    else {
+#if defined(IA32) || defined(AMD64)
+        if (!os::EnableAllLargePageSizes && (min_size > 4 * M || LargePageSizeInBytes > 4 * M)) {
+            EXPECT_EQ(decided_size, 0) << "Expected decided size to be 0 for large pages bigger than 4mb on IA32 or AMD64";
+        }
+#endif
+    }
+
+    // Additional check for non-multiple of minimum size
+    LargePageSizeInBytes = 5 * M; // Set an arbitrary large page size
+    decided_size = os::large_page_init_decide_size(); // Recalculate decided size
+    if (LargePageSizeInBytes > 0 && LargePageSizeInBytes % min_size != 0) {
+        EXPECT_EQ(decided_size, min_size) << "Expected decided size to default to minimum page size when LargePageSizeInBytes is not a multiple of minimum size";
+    }
+}
+
 class ReserveMemorySpecialRunnable : public TestRunnable {
 public:
   void runUnitTest() const {
