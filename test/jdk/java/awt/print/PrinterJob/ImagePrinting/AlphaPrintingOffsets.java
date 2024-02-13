@@ -29,9 +29,6 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.print.Book;
 import java.awt.print.PageFormat;
-import static java.awt.print.PageFormat.LANDSCAPE;
-import static java.awt.print.PageFormat.PORTRAIT;
-import static java.awt.print.PageFormat.REVERSE_LANDSCAPE;
 import java.awt.print.Paper;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
@@ -41,44 +38,58 @@ import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.standard.Sides;
 import javax.swing.JFrame;
 
+import static java.awt.print.PageFormat.LANDSCAPE;
+import static java.awt.print.PageFormat.PORTRAIT;
+import static java.awt.print.PageFormat.REVERSE_LANDSCAPE;
+
 /*
  * @test
  * @bug 8307246
  * @key printer
  * @library ../../../regtesthelpers
  * @build PassFailJFrame
- * @summary Test for comparing offsets of images drawn with opaque and translucent colors printed in all orientations
+ * @summary Test for comparing offsets of images drawn with opaque
+ *          and translucent colors printed in all orientations
  * @run main/manual AlphaPrintingOffsets
  */
 
 public class AlphaPrintingOffsets {
     private static final String INSTRUCTIONS =
-                    "Tested bug occurs only on-paper printing so you mustn't use PDF printer\n\n" +
-                    "1.Java print dialog should appear.\n" +
+            "Tested bug occurs only on-paper printing " +
+                    "so you mustn't use PDF printer\n\n" +
+                    "1. Java print dialog should appear.\n" +
                     "2. Press the Print button on the Java Print dialog.\n" +
-                    "3. Please check the page margin rectangle are properly drawn and visible on all sides on all pages.\n" +
+                    "3. Please check the page margin rectangle are properly " +
+                    "drawn and visible on all sides on all pages.\n" +
                     "If so, press PASS, else press FAIL.\n\n" +
-                    "Also you may run this test in paper-saving mode. Due to tested bug affects pages printed with transparency in LANDSCAPE and REVERSE_LANDSCAPE orientations " +
-                    "there is an option to print only 2 pages affected. To do it pass PaperSavingMode parameter.";
+                    "Also you may run this test in paper-saving mode. Due " +
+                    "to tested bug affects pages printed with transparency " +
+                    "in LANDSCAPE and REVERSE_LANDSCAPE orientations there " +
+                    "is an option to print only 2 pages affected. " +
+                    "To do it pass PaperSavingMode parameter.";
 
     private static boolean isPaperSavingMode = false;
 
     public static void main(String[] args) throws Exception {
         if (PrinterJob.lookupPrintServices().length > 0) {
 
-            String instructionsHeader = "This test prints 6 pages with page margin rectangle and a text message. \n";
+            String instructionsHeader = "This test prints 6 pages with page " +
+                    "margin rectangle and a text message. \n";
             if (args.length > 0) {
                 isPaperSavingMode = args[0].equals("PaperSavingMode");
             }
             if (isPaperSavingMode) {
-                instructionsHeader = "This test prints 2 pages with page margin rectangle and a text message. \n";
+                instructionsHeader = "This test prints 2 pages with page " +
+                        "margin rectangle and a text message. \n";
             }
-            PassFailJFrame.builder().rows(15).instructions(instructionsHeader + INSTRUCTIONS)
-                    .testUI(() -> createTestUI()).build().awaitAndCheck();
+            PassFailJFrame.builder().instructions(instructionsHeader + INSTRUCTIONS)
+                    .rows(15).testUI(() -> createTestUI()).build().awaitAndCheck();
 
         } else {
-            System.out.println("Test failed : Printer not configured or available.");
-            throw new RuntimeException("Test failed : Printer not configured or available.");
+            System.out.println("Test failed : " +
+                    "Printer not configured or available.");
+            throw new RuntimeException("Test failed : " +
+                    "Printer not configured or available.");
         }
 
     }
@@ -146,79 +157,81 @@ public class AlphaPrintingOffsets {
                 throw new RuntimeException("Exception whilst printing.");
             }
         } else {
-            throw new RuntimeException("Test failed : "
-                    + "User selected 'Cancel' button on the print dialog");
+            throw new RuntimeException("Test failed : " +
+                    "User selected 'Cancel' button on the print dialog");
+        }
+    }
+
+    static class CustomPrintable implements Printable {
+        private static final int THICKNESS = 10;
+        private static final int MARGIN = 15;
+        private static final int SMALL_RECTANGLE_SIZE = 5;
+        private final int alphaValue;
+
+        public CustomPrintable(int alpha) {
+            alphaValue = alpha;
+        }
+
+        private String getOrientStr(int orient) {
+            switch (orient) {
+                case PORTRAIT:
+                    return "PORTRAIT";
+                case LANDSCAPE:
+                    return "LANDSCAPE";
+                case REVERSE_LANDSCAPE:
+                    return "REVERSE_LANDSCAPE";
+                default:
+                    return "BAD Orientation";
+            }
+        }
+
+        @Override
+        public int print(Graphics g, PageFormat pageFormat, int pageIndex) {
+
+            if (pageIndex > 5) {
+                return Printable.NO_SUCH_PAGE;
+            }
+
+            drawRectangle(g, pageFormat.getImageableX(), pageFormat.getImageableY(),
+                    pageFormat.getImageableWidth(), pageFormat.getImageableHeight());
+
+            drawSmallRectangle(g, pageFormat.getImageableX(), pageFormat.getImageableY(),
+                    pageFormat.getImageableWidth(), pageFormat.getImageableHeight());
+
+            drawMsg(g, 300, 300, pageFormat.getOrientation());
+            return Printable.PAGE_EXISTS;
+        }
+
+        private void drawRectangle(Graphics g, double x, double y, double width, double height) {
+            Graphics2D g2d = (Graphics2D) g;
+            g2d.setStroke(new BasicStroke(THICKNESS));
+
+            // Draw rectangle with thick border lines
+            g2d.drawRect((int) x + MARGIN, (int) y + MARGIN,
+                    (int) width - MARGIN * 2, (int) height - MARGIN * 2);
+        }
+
+        private void drawSmallRectangle(Graphics g, double x, double y, double width, double height) {
+            Graphics2D g2d = (Graphics2D) g;
+            Color originalColor = g2d.getColor();
+
+            g2d.setColor(new Color(0, 0, 0, alphaValue));
+            // Calculate the position to center the smaller rectangle
+            double centerX = x + (width - SMALL_RECTANGLE_SIZE) / 2;
+            double centerY = y + (height - SMALL_RECTANGLE_SIZE) / 2;
+
+            g2d.fillRect((int) centerX, (int) centerY, SMALL_RECTANGLE_SIZE, SMALL_RECTANGLE_SIZE);
+
+            g2d.setColor(originalColor);
+        }
+
+        private void drawMsg(Graphics g, int x, int y, int orient) {
+            Graphics2D g2d = (Graphics2D) g;
+
+            String msg = "Orient= " + getOrientStr(orient);
+            msg += " Color=" + (alphaValue != 255 ? " ALPHA" : " OPAQUE");
+            g2d.drawString(msg, x, y);
         }
     }
 }
 
-class CustomPrintable implements Printable {
-    private static final int THICKNESS = 10;
-    private static final int MARGIN = 15;
-    private static final int SMALL_RECTANGLE_SIZE = 5;
-    private int alphaValue;
-
-    public CustomPrintable(int alpha) {
-        alphaValue = alpha;
-    }
-
-    private static String getOrientStr(int orient) {
-        switch (orient) {
-            case PORTRAIT:
-                return "PORTRAIT";
-            case LANDSCAPE:
-                return "LANDSCAPE";
-            case REVERSE_LANDSCAPE:
-                return "REVERSE_LANDSCAPE";
-            default:
-                return "BAD Orientation";
-        }
-    }
-
-    @Override
-    public int print(Graphics g, PageFormat pageFormat, int pageIndex) {
-
-        if (pageIndex > 5) {
-            return Printable.NO_SUCH_PAGE;
-        }
-
-        drawRectangle(g, pageFormat.getImageableX(), pageFormat.getImageableY(),
-                pageFormat.getImageableWidth(), pageFormat.getImageableHeight());
-
-        drawSmallRectangle(g, pageFormat.getImageableX(), pageFormat.getImageableY(),
-                pageFormat.getImageableWidth(), pageFormat.getImageableHeight());
-
-        drawMsg(g, 300, 300, pageFormat.getOrientation());
-        return Printable.PAGE_EXISTS;
-    }
-
-    private void drawRectangle(Graphics g, double x, double y, double width, double height) {
-        Graphics2D g2d = (Graphics2D) g;
-        g2d.setStroke(new BasicStroke(THICKNESS));
-
-        // Draw rectangle with thick border lines
-        g2d.drawRect((int) x + MARGIN, (int) y + MARGIN, (int) width - MARGIN * 2, (int) height - MARGIN * 2);
-    }
-
-    private void drawSmallRectangle(Graphics g, double x, double y, double width, double height) {
-        Graphics2D g2d = (Graphics2D) g;
-        Color originalColor = g2d.getColor();
-
-        g2d.setColor(new Color(0, 0, 0, alphaValue));
-        // Calculate the position to center the smaller rectangle
-        double centerX = x + (width - SMALL_RECTANGLE_SIZE) / 2;
-        double centerY = y + (height - SMALL_RECTANGLE_SIZE) / 2;
-
-        g2d.fillRect((int) centerX, (int) centerY, SMALL_RECTANGLE_SIZE, SMALL_RECTANGLE_SIZE);
-
-        g2d.setColor(originalColor);
-    }
-
-    private void drawMsg(Graphics g, int x, int y, int orient) {
-        Graphics2D g2d = (Graphics2D) g;
-
-        String msg = "Orient= " + getOrientStr(orient);
-        msg += " Color=" + (alphaValue != 255 ? " ALPHA" : " OPAQUE");
-        g2d.drawString(msg, x, y);
-    }
-}
