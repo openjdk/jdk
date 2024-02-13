@@ -33,8 +33,6 @@ import java.awt.print.PrinterJob;
 import java.text.AttributedCharacterIterator;
 import java.text.AttributedString;
 
-import jtreg.SkippedException;
-
 /*
  * @test
  * @bug 4185019
@@ -42,7 +40,7 @@ import jtreg.SkippedException;
  * @summary Confirm that all of the drawString methods on Graphics2D
  *          work for printer graphics objects.
  * @library /test/lib /java/awt/regtesthelpers
- * @build PassFailJFrame jtreg.SkippedException
+ * @build PassFailJFrame
  * @run main/manual DrawStringMethods
  */
 public class DrawStringMethods implements Printable {
@@ -57,7 +55,7 @@ public class DrawStringMethods implements Printable {
     public static void main(String[] args) throws Exception {
 
         if (PrinterJob.lookupPrintServices().length == 0) {
-            throw new SkippedException("Printer not configured or available.");
+            throw new RuntimeException("Printer not configured or available.");
         }
 
         PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()

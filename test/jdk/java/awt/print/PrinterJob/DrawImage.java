@@ -35,15 +35,13 @@ import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
 
-import jtreg.SkippedException;
-
 /*
  * @test
  * @bug 4329866
  * @key printer
  * @summary Confirm that no printing exception is generated.
  * @library /java/awt/regtesthelpers /test/lib
- * @build PassFailJFrame jtreg.SkippedException
+ * @build PassFailJFrame
  * @run main/manual DrawImage
  */
 public class DrawImage {
@@ -102,7 +100,7 @@ public class DrawImage {
     public static void main(String[] args) throws Exception {
 
         if (PrinterJob.lookupPrintServices().length == 0) {
-            throw new SkippedException("Printer not configured or available.");
+            throw new RuntimeException("Printer not configured or available.");
         }
 
         BufferedImage image = prepareFrontImage();

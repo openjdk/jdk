@@ -43,15 +43,13 @@ import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.standard.Copies;
 import javax.print.attribute.standard.SheetCollate;
 
-import jtreg.SkippedException;
-
 /*
  * @test
  * @bug 6362683 8012381
  * @summary Collation should work.
  * @key printer
  * @library /java/awt/regtesthelpers
- * @build PassFailJFrame jtreg.SkippedException
+ * @build PassFailJFrame
  * @run main/manual Collate2DPrintingTest
  */
 public class Collate2DPrintingTest
@@ -135,7 +133,7 @@ public class Collate2DPrintingTest
     public static void main(String[] args) throws Exception {
 
         if (PrinterJob.lookupPrintServices().length == 0) {
-            throw new SkippedException("Printer not configured or available.");
+            throw new RuntimeException("Printer not configured or available.");
         }
 
         PassFailJFrame.builder()
