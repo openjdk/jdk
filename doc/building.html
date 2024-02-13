@@ -526,7 +526,7 @@ header files as provided by your distribution.</p>
 <p>The basic tooling is provided as part of the core operating system,
 but you will most likely need to install developer packages.</p>
 <p>For apt-based distributions (Debian, Ubuntu, etc), try this:</p>
-<pre><code>sudo apt-get install build-essential</code></pre>
+<pre><code>sudo apt-get install build-essential autoconf</code></pre>
 <p>For rpm-based distributions (Fedora, Red Hat, etc), try this:</p>
 <pre><code>sudo yum groupinstall &quot;Development Tools&quot;</code></pre>
 <p>For Alpine Linux, aside from basic tooling, install the GNU versions
@@ -2166,15 +2166,26 @@ you can create a directory under <code>build</code> and run
 <code>configure</code> from there, e.g.
 <code>mkdir build/&lt;name&gt; &amp;&amp; cd build/&lt;name&gt; &amp;&amp; bash ../../configure</code>.</p>
 <p>Then you can build that configuration using
-<code>make CONF_NAME=&lt;name&gt;</code> or
-<code>make CONF=&lt;pattern&gt;</code>, where
-<code>&lt;pattern&gt;</code> is a substring matching one or several
-configurations, e.g. <code>CONF=debug</code>. The special empty pattern
-(<code>CONF=</code>) will match <em>all</em> available configuration, so
-<code>make CONF= hotspot</code> will build the <code>hotspot</code>
-target for all configurations. Alternatively, you can execute
-<code>make</code> in the configuration directory, e.g.
-<code>cd build/&lt;name&gt; &amp;&amp; make</code>.</p>
+<code>make CONF=&lt;selector&gt;</code>, where
+<code>&lt;selector&gt;</code> is interpreted as follows:</p>
+<ul>
+<li>If <code>&lt;selector&gt;</code> exacly matches the name of a
+configuration, this and only this configuration will be selected.</li>
+<li>If <code>&lt;selector&gt;</code> matches (i.e. is a substring of)
+the names of several configurations, then all these configurations will
+be selected.</li>
+<li>If <code>&lt;selector&gt;</code> is empty (i.e. <code>CONF=</code>),
+then all configurations will be selected.</li>
+<li>If <code>&lt;selector&gt;</code> begins with <code>!</code>, then
+all configurations <strong>not</strong> matching the string following
+<code>!</code> will be selected.</li>
+</ul>
+<p>A more specialized version, <code>CONF_NAME=&lt;name&gt;</code> also
+exists, which will only match if the given <code>&lt;name&gt;</code>
+exactly matches a single configuration.</p>
+<p>Alternatively, you can execute <code>make</code> in the configuration
+directory, e.g. <code>cd build/&lt;name&gt; &amp;&amp; make</code>.</p>
+<p><code>make CONF_NAME=&lt;name&gt;</code> or</p>
 <h3 id="handling-reconfigurations">Handling Reconfigurations</h3>
 <p>If you update the repository and part of the configure script has
 changed, the build system will force you to re-run
