@@ -2423,7 +2423,7 @@ LEAF(MemBar, Instruction)
 class BlockPair: public CompilationResourceObj {
  private:
   BlockBegin* _from;
-  int _index;
+  int _index; // sux index of 'to' block
  public:
   BlockPair(BlockBegin* from, int index): _from(from), _index(index) {}
   BlockBegin* from() const { return _from; }
