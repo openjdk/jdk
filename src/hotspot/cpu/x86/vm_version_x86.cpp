@@ -307,7 +307,6 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ movl(rax, 7);
     __ movl(rcx, 1);
     __ cpuid();
-    //TODO: add supported check
     __ lea(rsi, Address(rbp, in_bytes(VM_Version::sef_cpuid7_ecx1_offset())));
     __ movl(Address(rsi, 0), rax);
     __ movl(Address(rsi, 4), rbx);
