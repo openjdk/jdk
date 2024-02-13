@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package jdk.internal.foreign.layout;
 
 import jdk.internal.foreign.LayoutPath;
-import jdk.internal.foreign.LayoutPath.PathElementImpl.PathKind;
 import jdk.internal.foreign.Utils;
 
 import java.lang.foreign.GroupLayout;
@@ -40,11 +39,11 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
-import java.util.EnumSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 public abstract sealed class AbstractLayout<L extends AbstractLayout<L> & MemoryLayout>
         permits AbstractGroupLayout, PaddingLayoutImpl, SequenceLayoutImpl, ValueLayouts.AbstractValueLayout {
@@ -174,12 +173,14 @@ public abstract sealed class AbstractLayout<L extends AbstractLayout<L> & Memory
 
     public long byteOffset(PathElement... elements) {
         return computePathOp(LayoutPath.rootPath((MemoryLayout) this), LayoutPath::offset,
-                EnumSet.of(PathKind.SEQUENCE_ELEMENT, PathKind.SEQUENCE_RANGE, PathKind.DEREF_ELEMENT), elements);
+                Set.of(LayoutPath.SequenceElement.class, LayoutPath.SequenceElementByRange.class, LayoutPath.DereferenceElement.class),
+                elements);
     }
 
     public MethodHandle byteOffsetHandle(PathElement... elements) {
         return computePathOp(LayoutPath.rootPath((MemoryLayout) this), LayoutPath::offsetHandle,
-                EnumSet.of(PathKind.DEREF_ELEMENT), elements);
+                Set.of(LayoutPath.DereferenceElement.class),
+                elements);
     }
 
     public VarHandle varHandle(PathElement... elements) {
@@ -197,23 +198,27 @@ public abstract sealed class AbstractLayout<L extends AbstractLayout<L> & Memory
 
     public MethodHandle sliceHandle(PathElement... elements) {
         return computePathOp(LayoutPath.rootPath((MemoryLayout) this), LayoutPath::sliceHandle,
-                Set.of(PathKind.DEREF_ELEMENT), elements);
+                Set.of(LayoutPath.DereferenceElement.class),
+                elements);
     }
 
     public MemoryLayout select(PathElement... elements) {
         return computePathOp(LayoutPath.rootPath((MemoryLayout) this), LayoutPath::layout,
-                EnumSet.of(PathKind.SEQUENCE_ELEMENT_INDEX, PathKind.SEQUENCE_RANGE, PathKind.DEREF_ELEMENT), elements);
+                Set.of(LayoutPath.SequenceElementByIndex.class, LayoutPath.SequenceElementByRange.class, LayoutPath.DereferenceElement.class),
+                elements);
     }
 
     private static <Z> Z computePathOp(LayoutPath path, Function<LayoutPath, Z> finalizer,
-                                       Set<PathKind> badKinds, PathElement... elements) {
+                                       Set<Class<?>> badTypes, PathElement... elements) {
         Objects.requireNonNull(elements);
         for (PathElement e : elements) {
-            LayoutPath.PathElementImpl pathElem = (LayoutPath.PathElementImpl)Objects.requireNonNull(e);
-            if (badKinds.contains(pathElem.kind())) {
-                throw new IllegalArgumentException(String.format("Invalid %s selection in layout path", pathElem.kind().description()));
+            Objects.requireNonNull(e);
+            if (badTypes.contains(e.getClass())) {
+                throw new IllegalArgumentException("Invalid selection in layout path: " + e);
             }
-            path = pathElem.apply(path);
+            @SuppressWarnings("unchecked")
+            UnaryOperator<LayoutPath> pathOp = (UnaryOperator<LayoutPath>) e;
+            path = pathOp.apply(path);
         }
         return finalizer.apply(path);
     }

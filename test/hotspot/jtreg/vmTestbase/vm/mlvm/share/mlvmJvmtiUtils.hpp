@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,23 +21,25 @@
  * questions.
  */
 
-/**
- * @test
- * @bug 7200264
- * @summary 7192963 changes disabled shift vectors
- * @requires vm.cpu.features ~= ".*sse4\\.1.*" & vm.debug & vm.flavor == "server"
- * @requires !vm.emulatedClient & !vm.graal.enabled
- * @library /test/lib /
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:StressLongCountedLoop=0
- *                   compiler.c2.cr7200264.TestSSE4IntVect
- */
+#ifndef MLVMJVMTIUTILS_HPP_
+#define MLVMJVMTIUTILS_HPP_
 
-package compiler.c2.cr7200264;
+#include "jvmti.h"
 
-public class TestSSE4IntVect {
-    public static void main(String[] args) throws Throwable {
-        TestDriver test = new TestDriver();
-        test.addExpectedVectorization("MulVI", 2);
-        test.run();
-    }
+extern "C" {
+
+void copyFromJString(JNIEnv * pEnv, jstring src, char ** dst);
+
+struct MethodName {
+    char methodName[256];
+    char classSig[256];
+} MethodNameStruct;
+
+struct MethodName * getMethodName(jvmtiEnv * pJvmtiEnv, jmethodID method);
+
+char * locationToString(jvmtiEnv * pJvmtiEnv, jmethodID method, jlocation location);
+
+void * getTLS(jvmtiEnv * pJvmtiEnv, jthread thread, jsize sizeToAllocate);
 }
+
+#endif /* MLVMJVMTIUTILS_HPP_ */

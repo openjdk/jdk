@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,25 +21,8 @@
  * questions.
  */
 
-#ifndef MLVMJVMTIUTILS_H_
-#define MLVMJVMTIUTILS_H_
+// key:  compiler.err.illegal.digit.in.binary.literal
 
-#include "jvmti.h"
-
-extern "C" {
-
-void copyFromJString(JNIEnv * pEnv, jstring src, char ** dst);
-
-struct MethodName {
-    char methodName[256];
-    char classSig[256];
-} MethodNameStruct;
-
-struct MethodName * getMethodName(jvmtiEnv * pJvmtiEnv, jmethodID method);
-
-char * locationToString(jvmtiEnv * pJvmtiEnv, jmethodID method, jlocation location);
-
-void * getTLS(jvmtiEnv * pJvmtiEnv, jthread thread, jsize sizeToAllocate);
+class IllegalDigitInOctalLiteral {
+    int i = 0b8;
 }
-
-#endif /* MLVMJVMTIUTILS_H_ */

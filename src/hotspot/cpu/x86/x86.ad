@@ -1312,7 +1312,7 @@ int HandlerImpl::emit_exception_handler(CodeBuffer& cbuf) {
   // That's why we must use the macroassembler to generate a handler.
   C2_MacroAssembler _masm(&cbuf);
   address base = __ start_a_stub(size_exception_handler());
-  if (base == NULL) {
+  if (base == nullptr) {
     ciEnv::current()->record_failure("CodeCache is full");
     return 0;  // CodeBuffer::expand failed
   }
@@ -1330,7 +1330,7 @@ int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf) {
   // That's why we must use the macroassembler to generate a handler.
   C2_MacroAssembler _masm(&cbuf);
   address base = __ start_a_stub(size_deopt_handler());
-  if (base == NULL) {
+  if (base == nullptr) {
     ciEnv::current()->record_failure("CodeCache is full");
     return 0;  // CodeBuffer::expand failed
   }
@@ -2181,7 +2181,7 @@ MachOper* Matcher::pd_specialize_generic_vector_operand(MachOper* generic_opnd, 
     }
   }
   ShouldNotReachHere();
-  return NULL;
+  return nullptr;
 }
 
 bool Matcher::is_reg2reg_move(MachNode* m) {
@@ -2350,7 +2350,7 @@ class FusedPatternMatcher {
   int _con_op;
 
   static int match_next(Node* n, int next_op, int next_op_idx) {
-    if (n->in(1) == NULL || n->in(2) == NULL) {
+    if (n->in(1) == nullptr || n->in(2) == nullptr) {
       return -1;
     }
 
@@ -2417,7 +2417,7 @@ class FusedPatternMatcher {
 
 static bool is_bmi_pattern(Node* n, Node* m) {
   assert(UseBMI1Instructions, "sanity");
-  if (n != NULL && m != NULL) {
+  if (n != nullptr && m != nullptr) {
     if (m->Opcode() == Op_LoadI) {
       FusedPatternMatcher<TypeInt> bmii(n, m, Op_ConI);
       return bmii.match(Op_AndI, -1, Op_SubI,  1,  0)  ||
@@ -7441,7 +7441,7 @@ instruct vround_reg_evex(vec dst, vec src, rRegP tmp, vec xtmp1, vec xtmp2, kReg
 // --------------------------------- VectorMaskCmp --------------------------------------
 
 instruct vcmpFD(legVec dst, legVec src1, legVec src2, immI8 cond) %{
-  predicate(n->bottom_type()->isa_vectmask() == NULL &&
+  predicate(n->bottom_type()->isa_vectmask() == nullptr &&
             Matcher::vector_length_in_bytes(n->in(1)->in(1)) >=  8 && // src1
             Matcher::vector_length_in_bytes(n->in(1)->in(1)) <= 32 && // src1
             is_floating_point_type(Matcher::vector_element_basic_type(n->in(1)->in(1)))); // src1 T_FLOAT, T_DOUBLE
@@ -7461,7 +7461,7 @@ instruct vcmpFD(legVec dst, legVec src1, legVec src2, immI8 cond) %{
 
 instruct evcmpFD64(vec dst, vec src1, vec src2, immI8 cond, kReg ktmp) %{
   predicate(Matcher::vector_length_in_bytes(n->in(1)->in(1)) == 64 && // src1
-            n->bottom_type()->isa_vectmask() == NULL &&
+            n->bottom_type()->isa_vectmask() == nullptr &&
             is_floating_point_type(Matcher::vector_element_basic_type(n->in(1)->in(1)))); // src1 T_FLOAT, T_DOUBLE
   match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
   effect(TEMP ktmp);
@@ -7501,7 +7501,7 @@ instruct evcmpFD(kReg dst, vec src1, vec src2, immI8 cond) %{
 %}
 
 instruct vcmp_direct(legVec dst, legVec src1, legVec src2, immI8 cond) %{
-  predicate(n->bottom_type()->isa_vectmask() == NULL &&
+  predicate(n->bottom_type()->isa_vectmask() == nullptr &&
             !Matcher::is_unsigned_booltest_pred(n->in(2)->get_int()) &&
             Matcher::vector_length_in_bytes(n->in(1)->in(1)) >=  4 && // src1
             Matcher::vector_length_in_bytes(n->in(1)->in(1)) <= 32 && // src1
@@ -7521,7 +7521,7 @@ instruct vcmp_direct(legVec dst, legVec src1, legVec src2, immI8 cond) %{
 %}
 
 instruct vcmp_negate(legVec dst, legVec src1, legVec src2, immI8 cond, legVec xtmp) %{
-  predicate(n->bottom_type()->isa_vectmask() == NULL &&
+  predicate(n->bottom_type()->isa_vectmask() == nullptr &&
             !Matcher::is_unsigned_booltest_pred(n->in(2)->get_int()) &&
             Matcher::vector_length_in_bytes(n->in(1)->in(1)) >=  4 && // src1
             Matcher::vector_length_in_bytes(n->in(1)->in(1)) <= 32 && // src1
@@ -7542,7 +7542,7 @@ instruct vcmp_negate(legVec dst, legVec src1, legVec src2, immI8 cond, legVec xt
 %}
 
 instruct vcmpu(legVec dst, legVec src1, legVec src2, immI8 cond, legVec xtmp) %{
-  predicate(n->bottom_type()->isa_vectmask() == NULL &&
+  predicate(n->bottom_type()->isa_vectmask() == nullptr &&
             Matcher::is_unsigned_booltest_pred(n->in(2)->get_int()) &&
             Matcher::vector_length_in_bytes(n->in(1)->in(1)) >=  4 && // src1
             Matcher::vector_length_in_bytes(n->in(1)->in(1)) <= 32 && // src1
@@ -7569,7 +7569,7 @@ instruct vcmpu(legVec dst, legVec src1, legVec src2, immI8 cond, legVec xtmp) %{
 %}
 
 instruct vcmp64(vec dst, vec src1, vec src2, immI8 cond, kReg ktmp) %{
-  predicate((n->bottom_type()->isa_vectmask() == NULL &&
+  predicate((n->bottom_type()->isa_vectmask() == nullptr &&
              Matcher::vector_length_in_bytes(n->in(1)->in(1)) == 64) && // src1
              is_integral_type(Matcher::vector_element_basic_type(n->in(1)->in(1)))); // src1
   match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
@@ -7785,7 +7785,7 @@ instruct blendvp(vec dst, vec src, vec mask, rxmm0 tmp) %{
 
 instruct vblendvpI(legVec dst, legVec src1, legVec src2, legVec mask) %{
   predicate(UseAVX > 0 && !EnableX86ECoreOpts &&
-            n->in(2)->bottom_type()->isa_vectmask() == NULL &&
+            n->in(2)->bottom_type()->isa_vectmask() == nullptr &&
             Matcher::vector_length_in_bytes(n) <= 32 &&
             is_integral_type(Matcher::vector_element_basic_type(n)));
   match(Set dst (VectorBlend (Binary src1 src2) mask));
@@ -7799,7 +7799,7 @@ instruct vblendvpI(legVec dst, legVec src1, legVec src2, legVec mask) %{
 
 instruct vblendvpFD(legVec dst, legVec src1, legVec src2, legVec mask) %{
   predicate(UseAVX > 0 && !EnableX86ECoreOpts &&
-            n->in(2)->bottom_type()->isa_vectmask() == NULL &&
+            n->in(2)->bottom_type()->isa_vectmask() == nullptr &&
             Matcher::vector_length_in_bytes(n) <= 32 &&
             !is_integral_type(Matcher::vector_element_basic_type(n)));
   match(Set dst (VectorBlend (Binary src1 src2) mask));
@@ -7813,7 +7813,7 @@ instruct vblendvpFD(legVec dst, legVec src1, legVec src2, legVec mask) %{
 
 instruct vblendvp(legVec dst, legVec src1, legVec src2, legVec mask, legVec vtmp) %{
   predicate(UseAVX > 0 && EnableX86ECoreOpts &&
-            n->in(2)->bottom_type()->isa_vectmask() == NULL &&
+            n->in(2)->bottom_type()->isa_vectmask() == nullptr &&
             Matcher::vector_length_in_bytes(n) <= 32);
   match(Set dst (VectorBlend (Binary src1 src2) mask));
   format %{ "vector_blend  $dst,$src1,$src2,$mask\t! using $vtmp as TEMP" %}
@@ -7829,7 +7829,7 @@ instruct vblendvp(legVec dst, legVec src1, legVec src2, legVec mask, legVec vtmp
 
 instruct evblendvp64(vec dst, vec src1, vec src2, vec mask, kReg ktmp) %{
   predicate(Matcher::vector_length_in_bytes(n) == 64 &&
-            n->in(2)->bottom_type()->isa_vectmask() == NULL);
+            n->in(2)->bottom_type()->isa_vectmask() == nullptr);
   match(Set dst (VectorBlend (Binary src1 src2) mask));
   format %{ "vector_blend  $dst,$src1,$src2,$mask\t! using k2 as TEMP" %}
   effect(TEMP ktmp);
@@ -8046,7 +8046,7 @@ instruct ktest_ge8(rFlagsRegU cr, kReg src1, kReg src2) %{
 //------------------------------------- LoadMask --------------------------------------------
 
 instruct loadMask(legVec dst, legVec src) %{
-  predicate(n->bottom_type()->isa_vectmask() == NULL && !VM_Version::supports_avx512vlbw());
+  predicate(n->bottom_type()->isa_vectmask() == nullptr && !VM_Version::supports_avx512vlbw());
   match(Set dst (VectorLoadMask src));
   effect(TEMP dst);
   format %{ "vector_loadmask_byte $dst, $src\n\t" %}
@@ -8086,7 +8086,7 @@ instruct loadMask_evex(kReg dst, vec src,  vec xtmp) %{
 //------------------------------------- StoreMask --------------------------------------------
 
 instruct vstoreMask1B(vec dst, vec src, immI_1 size) %{
-  predicate(Matcher::vector_length(n) < 64 && n->in(1)->bottom_type()->isa_vectmask() == NULL);
+  predicate(Matcher::vector_length(n) < 64 && n->in(1)->bottom_type()->isa_vectmask() == nullptr);
   match(Set dst (VectorStoreMask src size));
   format %{ "vector_store_mask $dst, $src \t! elem size is $size byte[s]" %}
   ins_encode %{
@@ -8104,7 +8104,7 @@ instruct vstoreMask1B(vec dst, vec src, immI_1 size) %{
 %}
 
 instruct vstoreMask2B(vec dst, vec src, vec xtmp, immI_2 size) %{
-  predicate(Matcher::vector_length(n) <= 16 && n->in(1)->bottom_type()->isa_vectmask() == NULL);
+  predicate(Matcher::vector_length(n) <= 16 && n->in(1)->bottom_type()->isa_vectmask() == nullptr);
   match(Set dst (VectorStoreMask src size));
   effect(TEMP_DEF dst, TEMP xtmp);
   format %{ "vector_store_mask $dst, $src \t! elem size is $size byte[s]" %}
@@ -8127,7 +8127,7 @@ instruct vstoreMask2B(vec dst, vec src, vec xtmp, immI_2 size) %{
 %}
 
 instruct vstoreMask4B(vec dst, vec src, vec xtmp, immI_4 size) %{
-  predicate(UseAVX <= 2 && Matcher::vector_length(n) <= 8 && n->in(1)->bottom_type()->isa_vectmask() == NULL);
+  predicate(UseAVX <= 2 && Matcher::vector_length(n) <= 8 && n->in(1)->bottom_type()->isa_vectmask() == nullptr);
   match(Set dst (VectorStoreMask src size));
   format %{ "vector_store_mask $dst, $src \t! elem size is $size byte[s]" %}
   effect(TEMP_DEF dst, TEMP xtmp);
@@ -8187,7 +8187,7 @@ instruct storeMask8B_avx(vec dst, vec src, immI_8 size, vec vtmp) %{
 %}
 
 instruct vstoreMask4B_evex_novectmask(vec dst, vec src, immI_4 size) %{
-  predicate(UseAVX > 2 && n->in(1)->bottom_type()->isa_vectmask() == NULL);
+  predicate(UseAVX > 2 && n->in(1)->bottom_type()->isa_vectmask() == nullptr);
   match(Set dst (VectorStoreMask src size));
   format %{ "vector_store_mask $dst, $src \t! elem size is $size byte[s]" %}
   ins_encode %{
@@ -8203,7 +8203,7 @@ instruct vstoreMask4B_evex_novectmask(vec dst, vec src, immI_4 size) %{
 %}
 
 instruct vstoreMask8B_evex_novectmask(vec dst, vec src, immI_8 size) %{
-  predicate(UseAVX > 2 && n->in(1)->bottom_type()->isa_vectmask() == NULL);
+  predicate(UseAVX > 2 && n->in(1)->bottom_type()->isa_vectmask() == nullptr);
   match(Set dst (VectorStoreMask src size));
   format %{ "vector_store_mask $dst, $src \t! elem size is $size byte[s]" %}
   ins_encode %{
@@ -9040,7 +9040,7 @@ instruct vmask_tolong_evex(rRegL dst, kReg mask, rFlagsReg cr) %{
 %}
 
 instruct vmask_tolong_bool(rRegL dst, vec mask, vec xtmp, rFlagsReg cr) %{
-  predicate(n->in(1)->bottom_type()->isa_vectmask() == NULL);
+  predicate(n->in(1)->bottom_type()->isa_vectmask() == nullptr);
   match(Set dst (VectorMaskToLong mask));
   format %{ "vector_tolong_bool $dst, $mask \t! using $xtmp as TEMP" %}
   effect(TEMP_DEF dst, TEMP xtmp, KILL cr);
@@ -9056,7 +9056,7 @@ instruct vmask_tolong_bool(rRegL dst, vec mask, vec xtmp, rFlagsReg cr) %{
 %}
 
 instruct vmask_tolong_avx(rRegL dst, vec mask, immI size, vec xtmp, rFlagsReg cr) %{
-  predicate(n->in(1)->in(1)->bottom_type()->isa_vectmask() == NULL);
+  predicate(n->in(1)->in(1)->bottom_type()->isa_vectmask() == nullptr);
   match(Set dst (VectorMaskToLong (VectorStoreMask mask size)));
   format %{ "vector_tolong_avx $dst, $mask \t! using $xtmp as TEMP" %}
   effect(TEMP_DEF dst, TEMP xtmp, KILL cr);
@@ -9089,7 +9089,7 @@ instruct vmask_truecount_evex(rRegI dst, kReg mask, rRegL tmp, rFlagsReg cr) %{
 %}
 
 instruct vmask_truecount_bool(rRegI dst, vec mask, rRegL tmp, vec xtmp, rFlagsReg cr) %{
-  predicate(n->in(1)->bottom_type()->isa_vectmask() == NULL);
+  predicate(n->in(1)->bottom_type()->isa_vectmask() == nullptr);
   match(Set dst (VectorMaskTrueCount mask));
   effect(TEMP_DEF dst, TEMP tmp, TEMP xtmp, KILL cr);
   format %{ "vector_truecount_bool $dst, $mask \t! using $tmp, $xtmp as TEMP" %}
@@ -9105,7 +9105,7 @@ instruct vmask_truecount_bool(rRegI dst, vec mask, rRegL tmp, vec xtmp, rFlagsRe
 %}
 
 instruct vmask_truecount_avx(rRegI dst, vec mask, immI size, rRegL tmp, vec xtmp, rFlagsReg cr) %{
-  predicate(n->in(1)->in(1)->bottom_type()->isa_vectmask() == NULL);
+  predicate(n->in(1)->in(1)->bottom_type()->isa_vectmask() == nullptr);
   match(Set dst (VectorMaskTrueCount (VectorStoreMask mask size)));
   effect(TEMP_DEF dst, TEMP tmp, TEMP xtmp, KILL cr);
   format %{ "vector_truecount_avx $dst, $mask \t! using $tmp, $xtmp as TEMP" %}
@@ -9139,7 +9139,7 @@ instruct vmask_first_or_last_true_evex(rRegI dst, kReg mask, rRegL tmp, rFlagsRe
 %}
 
 instruct vmask_first_or_last_true_bool(rRegI dst, vec mask, rRegL tmp, vec xtmp, rFlagsReg cr) %{
-  predicate(n->in(1)->bottom_type()->isa_vectmask() == NULL);
+  predicate(n->in(1)->bottom_type()->isa_vectmask() == nullptr);
   match(Set dst (VectorMaskFirstTrue mask));
   match(Set dst (VectorMaskLastTrue mask));
   effect(TEMP_DEF dst, TEMP tmp, TEMP xtmp, KILL cr);
@@ -9156,7 +9156,7 @@ instruct vmask_first_or_last_true_bool(rRegI dst, vec mask, rRegL tmp, vec xtmp,
 %}
 
 instruct vmask_first_or_last_true_avx(rRegI dst, vec mask, immI size, rRegL tmp, vec xtmp, rFlagsReg cr) %{
-  predicate(n->in(1)->in(1)->bottom_type()->isa_vectmask() == NULL);
+  predicate(n->in(1)->in(1)->bottom_type()->isa_vectmask() == nullptr);
   match(Set dst (VectorMaskFirstTrue (VectorStoreMask mask size)));
   match(Set dst (VectorMaskLastTrue (VectorStoreMask mask size)));
   effect(TEMP_DEF dst, TEMP tmp, TEMP xtmp, KILL cr);
@@ -10011,7 +10011,7 @@ instruct mask_not_imm(kReg dst, kReg src, immI_M1 cnt) %{
 %}
 
 instruct long_to_maskLE8_avx(vec dst, rRegL src, rRegL rtmp1, rRegL rtmp2, vec xtmp) %{
-  predicate(n->bottom_type()->isa_vectmask() == NULL && Matcher::vector_length(n) <= 8);
+  predicate(n->bottom_type()->isa_vectmask() == nullptr && Matcher::vector_length(n) <= 8);
   match(Set dst (VectorLongToMask src));
   effect(TEMP dst, TEMP rtmp1, TEMP rtmp2, TEMP xtmp);
   format %{ "long_to_mask_avx $dst, $src\t! using $rtmp1, $rtmp2, $xtmp as TEMP" %}
@@ -10026,7 +10026,7 @@ instruct long_to_maskLE8_avx(vec dst, rRegL src, rRegL rtmp1, rRegL rtmp2, vec x
 
 
 instruct long_to_maskGT8_avx(vec dst, rRegL src, rRegL rtmp1, rRegL rtmp2, vec xtmp1, rFlagsReg cr) %{
-  predicate(n->bottom_type()->isa_vectmask() == NULL && Matcher::vector_length(n) > 8);
+  predicate(n->bottom_type()->isa_vectmask() == nullptr && Matcher::vector_length(n) > 8);
   match(Set dst (VectorLongToMask src));
   effect(TEMP dst, TEMP rtmp1, TEMP rtmp2, TEMP xtmp1, KILL cr);
   format %{ "long_to_mask_avx $dst, $src\t! using $rtmp1, $rtmp2, $xtmp1, as TEMP" %}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,37 +21,11 @@
  * questions.
  */
 
-#ifndef NSK_MUTEX_H
-#define NSK_MUTEX_H
-
-extern "C" {
-
 /**
- * Structure to hold mutex data (the content is platform-specific)
+ * Preview package.
  */
-typedef struct _MUTEX MUTEX;
+@PreviewFeature(feature=Feature.TEST)
+package preview;
 
-/**
- * Create a mutex
- */
-MUTEX* MUTEX_create();
-
-/**
- * Acquire a mutex
- */
-void MUTEX_acquire(MUTEX* mutex);
-
-/**
- * Release a mutex
- */
-void MUTEX_release(MUTEX* mutex);
-
-/**
- * Destroy a mutex
- */
-void MUTEX_destroy(MUTEX* mutex);
-
-
-}
-
-#endif
+import jdk.internal.javac.PreviewFeature;
+import jdk.internal.javac.PreviewFeature.Feature;
