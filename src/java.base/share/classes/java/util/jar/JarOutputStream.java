@@ -35,7 +35,9 @@ import java.io.*;
  * for writing an optional {@code Manifest} entry. The
  * {@code Manifest} can be used to specify meta-information about
  * the JAR file and its entries.
- *
+ * <p> Unless otherwise noted, passing a {@code null} argument to a constructor
+ * or method in this class will cause a {@link NullPointerException} to be
+ * thrown.
  * @author  David Connelly
  * @see     Manifest
  * @see     java.util.zip.ZipOutputStream

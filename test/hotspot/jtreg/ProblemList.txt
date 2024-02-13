@@ -76,9 +76,6 @@ compiler/jvmci/TestUncaughtErrorInCompileMethod.java 8309073 generic-all
 compiler/floatingpoint/TestSubnormalFloat.java 8317810 generic-i586
 compiler/floatingpoint/TestSubnormalDouble.java 8317810 generic-i586
 
-compiler/intrinsics/float16/TestConstFloat16ToFloat.java 8325264 macosx-aarch64
-compiler/intrinsics/float16/Binary16Conversion.java 8325264 macosx-aarch64
-
 #############################################################################
 
 # :hotspot_gc
@@ -87,6 +84,7 @@ gc/epsilon/TestMemoryMXBeans.java 8206434 generic-all
 gc/g1/humongousObjects/objectGraphTest/TestObjectGraphAfterGC.java 8156755 generic-all
 gc/g1/logging/TestG1LoggingFailure.java 8169634 generic-all
 gc/g1/humongousObjects/TestHeapCounters.java 8178918 generic-all
+gc/parallel/TestAlwaysPreTouchBehavior.java 8325218 linux-all
 gc/TestAllocHumongousFragment.java#adaptive 8298781 generic-all
 gc/TestAllocHumongousFragment.java#aggressive 8298781 generic-all
 gc/TestAllocHumongousFragment.java#iu-aggressive 8298781 generic-all

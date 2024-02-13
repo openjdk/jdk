@@ -441,7 +441,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "macosx-x64": {
             target_os: "macosx",
             target_cpu: "x64",
-            dependencies: ["devkit", "gtest", "pandoc"],
+            dependencies: ["devkit", "gtest", "graphviz", "pandoc"],
             configure_args: concat(common.configure_args_64bit, "--with-zlib=system",
                 "--with-macosx-version-max=11.00.00",
                 "--enable-compatible-cds-alignment",
@@ -453,7 +453,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "macosx-aarch64": {
             target_os: "macosx",
             target_cpu: "aarch64",
-            dependencies: ["devkit", "gtest", "pandoc"],
+            dependencies: ["devkit", "gtest", "graphviz", "pandoc"],
             configure_args: concat(common.configure_args_64bit,
                 "--with-macosx-version-max=11.00.00"),
         },
@@ -486,7 +486,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "linux-aarch64": {
             target_os: "linux",
             target_cpu: "aarch64",
-            dependencies: ["devkit", "gtest", "build_devkit", "pandoc"],
+            dependencies: ["devkit", "gtest", "build_devkit", "graphviz", "pandoc"],
             configure_args: [
                 "--with-zlib=system",
                 "--disable-dtrace",
@@ -1237,7 +1237,7 @@ var getJibProfilesDependencies = function (input, common) {
         graphviz: {
             organization: common.organization,
             ext: "tar.gz",
-            revision: "2.38.0-1+1.1",
+            revision: "9.0.0+1.0",
             module: "graphviz-" + input.target_platform,
             configure_args: "DOT=" + input.get("graphviz", "install_path") + "/dot",
             environment_path: input.get("graphviz", "install_path")
