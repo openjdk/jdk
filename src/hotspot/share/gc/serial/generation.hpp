@@ -58,9 +58,6 @@ class GCStats;
 class Generation: public CHeapObj<mtGC> {
   friend class VMStructs;
  private:
-  MemRegion _prev_used_region; // for collectors that want to "remember" a value for
-                               // used region at some specific point during collection.
-
   GCMemoryManager* _gc_manager;
 
  protected:
@@ -83,13 +80,6 @@ class Generation: public CHeapObj<mtGC> {
   Generation(ReservedSpace rs, size_t initial_byte_size);
 
  public:
-  // The set of possible generation kinds.
-  enum Name {
-    DefNew,
-    MarkSweepCompact,
-    Other
-  };
-
   enum SomePublicConstants {
     // Generations are GenGrain-aligned and have size that are multiples of
     // GenGrain.
@@ -98,9 +88,6 @@ class Generation: public CHeapObj<mtGC> {
     LogOfGenGrain = 16 ARM32_ONLY(+1),
     GenGrain = 1 << LogOfGenGrain
   };
-
-
-  virtual Generation::Name kind() { return Generation::Other; }
 
   virtual size_t capacity() const = 0;  // The maximum number of object bytes the
                                         // generation can currently hold.
@@ -112,22 +99,11 @@ class Generation: public CHeapObj<mtGC> {
   // for the allocation of objects.
   virtual size_t max_capacity() const;
 
-  // If this is a young generation, the maximum number of bytes that can be
-  // allocated in this generation before a GC is triggered.
-  virtual size_t capacity_before_gc() const { return 0; }
-
   // The largest number of contiguous free bytes in the generation,
   // including expansion  (Assumes called at a safepoint.)
   virtual size_t contiguous_available() const = 0;
   // The largest number of contiguous free bytes in this or any higher generation.
   virtual size_t max_contiguous_available() const;
-
-  // Return an estimate of the maximum allocation that could be performed
-  // in the generation without triggering any collection or expansion
-  // activity.  It is "unsafe" because no locks are taken; the result
-  // should be treated as an approximation, not a guarantee, for use in
-  // heuristic resizing decisions.
-  virtual size_t unsafe_max_alloc_nogc() const = 0;
 
   // Returns true if this generation cannot be expanded further
   // without a GC. Override as appropriate.
@@ -137,27 +113,10 @@ class Generation: public CHeapObj<mtGC> {
 
   MemRegion reserved() const { return _reserved; }
 
-  // Returns a region guaranteed to contain all the objects in the
-  // generation.
-  virtual MemRegion used_region() const { return _reserved; }
-
-  MemRegion prev_used_region() const { return _prev_used_region; }
-  virtual void  save_used_region()   { _prev_used_region = used_region(); }
-
-  // Returns "TRUE" iff "p" points into the committed areas in the generation.
-  // For some kinds of generations, this may be an expensive operation.
-  // To avoid performance problems stemming from its inadvertent use in
-  // product jvm's, we restrict its use to assertion checking or
-  // verification only.
-  virtual bool is_in(const void* p) const;
-
   /* Returns "TRUE" iff "p" points into the reserved area of the generation. */
   bool is_in_reserved(const void* p) const {
     return _reserved.contains(p);
   }
-
-  // Iteration - do not use for time critical operations
-  virtual void space_iterate(SpaceClosure* blk, bool usedOnly = false) = 0;
 
   // Returns "true" iff this generation should be used to allocate an
   // object of the given size.  Young generations might
@@ -224,14 +183,6 @@ class Generation: public CHeapObj<mtGC> {
   // still unsuccessful, return "null".
   virtual HeapWord* expand_and_allocate(size_t word_size, bool is_tlab) = 0;
 
-  // Some generations may require some cleanup or preparation actions before
-  // allowing a collection.  The default is to do nothing.
-  virtual void gc_prologue(bool full) {}
-
-  // Some generations may require some cleanup actions after a collection.
-  // The default is to do nothing.
-  virtual void gc_epilogue(bool full) {}
-
   // Save the high water marks for the used space in a generation.
   virtual void record_spaces_top() {}
 
@@ -244,44 +195,9 @@ class Generation: public CHeapObj<mtGC> {
   GCStats* gc_stats() const { return _gc_stats; }
   virtual void update_gc_stats(Generation* current_generation, bool full) {}
 
-  // Accessing "marks".
-
-  // This function gives a generation a chance to note a point between
-  // collections.  For example, a contiguous generation might note the
-  // beginning allocation point post-collection, which might allow some later
-  // operations to be optimized.
-  virtual void save_marks() {}
-
-  // This function is "true" iff any no allocations have occurred in the
-  // generation since the last call to "save_marks".
-  virtual bool no_allocs_since_save_marks() = 0;
-
-  // When an older generation has been collected, and perhaps resized,
-  // this method will be invoked on all younger generations (from older to
-  // younger), allowing them to resize themselves as appropriate.
-  virtual void compute_new_size() = 0;
-
   // Printing
   virtual const char* name() const = 0;
   virtual const char* short_name() const = 0;
-
-  // Iteration.
-
-  // Iterate over all objects in the generation, calling "cl.do_object" on
-  // each.
-  virtual void object_iterate(ObjectClosure* cl);
-
-  // Block abstraction.
-
-  // Returns the address of the start of the "block" that contains the
-  // address "addr".  We say "blocks" instead of "object" since some heaps
-  // may not pack objects densely; a chunk may either be an object or a
-  // non-object.
-  virtual HeapWord* block_start(const void* addr) const;
-
-  // Requires "addr" to be the start of a block, and returns "TRUE" iff
-  // the block is an object.
-  virtual bool block_is_obj(const HeapWord* addr) const;
 
   virtual void print() const;
   virtual void print_on(outputStream* st) const;

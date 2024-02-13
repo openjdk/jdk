@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,12 @@
 #include <string.h>
 #include "jvmti.h"
 #include "jvmti_common.h"
-#include "../get_stack_trace.h"
+#include "../get_stack_trace.hpp"
 
 extern "C" {
 
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiEventCallbacks callbacks;
 static jboolean wasFramePop = JNI_FALSE;
 static jmethodID mid_checkPoint, mid_chain4;
@@ -116,7 +116,7 @@ void JNICALL SingleStep(jvmtiEnv *jvmti_env, JNIEnv *jni,
     }
 
 
-    if (classBytes == NULL) {
+    if (classBytes == nullptr) {
       jni->FatalError("ERROR: don't have any bytes");
     }
 
@@ -125,11 +125,11 @@ void JNICALL SingleStep(jvmtiEnv *jvmti_env, JNIEnv *jni,
 
     classDef.klass = klass;
     classDef.class_byte_count = jni->GetArrayLength(classBytes);
-    classDef.class_bytes = (unsigned char *) jni->GetByteArrayElements(classBytes, NULL);
+    classDef.class_bytes = (unsigned char *) jni->GetByteArrayElements(classBytes, nullptr);
     check_jvmti_status(jni, jvmti_env->RedefineClasses(1, &classDef), "RedefineClasses failed.");
 
     jni->DeleteGlobalRef(classBytes);
-    classBytes = NULL;
+    classBytes = nullptr;
     if (!compare_stack_trace(jvmti_env, jni, thread, 2)) {
       jni->ThrowNew(jni->FindClass("java/lang/RuntimeException"), "Stacktrace differs from expected.");
     }
@@ -140,7 +140,7 @@ JNIEXPORT jint JNICALL
 Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jvmtiError err;
   jint res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     LOG("Wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }
@@ -176,12 +176,12 @@ Java_getstacktr08_getReady(JNIEnv *jni, jclass cls, jclass clazz, jbyteArray byt
   mid_chain4 = jni->GetStaticMethodID(clazz, "chain4", "()V");
 
   check_jvmti_status(jni, jvmti->SetBreakpoint(mid_checkPoint, 0), "SetBreakpoint failed.");
-  set_event_notification_mode(jvmti, jni, JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, NULL);
+  set_event_notification_mode(jvmti, jni, JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, nullptr);
 }
 
 JNIEXPORT void JNICALL
 Java_getstacktr08_nativeChain(JNIEnv *jni, jclass cls, jclass clazz) {
-  if (mid_chain4 != NULL) {
+  if (mid_chain4 != nullptr) {
     jni->CallStaticVoidMethod(clazz, mid_chain4);
   }
   if (!compare_stack_trace(jvmti, jni, get_current_thread(jvmti, jni), 3)) {

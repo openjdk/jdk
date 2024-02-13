@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ extern "C" {
 #define STATUS_FAILED 2
 #define PASSED 0
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiCapabilities caps;
 static jvmtiEventCallbacks callbacks;
 static jint result = PASSED;
@@ -63,12 +63,12 @@ ClassFileLoadHook(jvmtiEnv *jvmti_env, JNIEnv *env,
     char *sig;
     char *gen;
 
-    if (name != NULL && (strcmp(name, CLASS_NAME) == 0)) {
+    if (name != nullptr && (strcmp(name, CLASS_NAME) == 0)) {
         if (printdump == JNI_TRUE) {
             printf("Received class file load hook event for class %s\n", name);
         }
 
-        if (redefined_class != NULL) {
+        if (redefined_class != nullptr) {
             err = jvmti->GetClassSignature(redefined_class, &sig, &gen);
             if (err != JVMTI_ERROR_NONE) {
                 printf("(GetClassSignature) unexpected error: %s (%d)\n",
@@ -106,7 +106,7 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
     jint res;
     jvmtiError err;
 
-    if (options != NULL && strcmp(options, "printdump") == 0) {
+    if (options != nullptr && strcmp(options, "printdump") == 0) {
         printdump = JNI_TRUE;
     }
 
@@ -150,14 +150,14 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
         return JNI_ERR;
     }
 
-    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, NULL);
+    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, nullptr);
     if (err != JVMTI_ERROR_NONE) {
         printf("Failed to enable event JVMTI_EVENT_VM_INIT: %s (%d)\n",
                TranslateError(err), err);
         return JNI_ERR;
     }
 
-    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, NULL);
+    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, nullptr);
     if (err != JVMTI_ERROR_NONE) {
         printf("Failed to enable event JVMTI_EVENT_CLASS_FILE_LOAD_HOOK: %s (%d)\n",
                TranslateError(err), err);
@@ -173,7 +173,7 @@ Java_nsk_jvmti_unit_events_redefineCFLH_JvmtiTest_makeRedefinition(JNIEnv *env,
     jvmtiClassDefinition classDef;
     jvmtiError err;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("JVMTI client was not properly loaded!\n");
         return STATUS_FAILED;
     }
@@ -185,7 +185,7 @@ Java_nsk_jvmti_unit_events_redefineCFLH_JvmtiTest_makeRedefinition(JNIEnv *env,
 /* filling the structure jvmtiClassDefinition */
     classDef.klass = redefCls;
     classDef.class_byte_count = env->GetArrayLength(classBytes);
-    classDef.class_bytes = (unsigned char *) env->GetByteArrayElements(classBytes, NULL);
+    classDef.class_bytes = (unsigned char *) env->GetByteArrayElements(classBytes, nullptr);
 
     if (fl == 2) {
         printf(">>>>>>>> Invoke RedefineClasses():\n");
