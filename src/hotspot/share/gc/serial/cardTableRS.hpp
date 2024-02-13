@@ -30,7 +30,6 @@
 #include "oops/oop.hpp"
 
 class OldGenScanClosure;
-class Space;
 class TenuredGeneration;
 class TenuredSpace;
 
@@ -62,8 +61,6 @@ public:
   CardTableRS(MemRegion whole_heap);
 
   void scan_old_to_young_refs(TenuredSpace* sp);
-
-  virtual void verify_used_region_at_save_marks(Space* sp) const NOT_DEBUG_RETURN;
 
   void inline_write_ref_field_gc(void* field) {
     CardValue* byte = byte_for(field);
