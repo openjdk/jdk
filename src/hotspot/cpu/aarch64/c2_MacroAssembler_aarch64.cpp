@@ -381,7 +381,7 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register t1, Regis
             /*acquire*/ false, /*release*/ true, /*weak*/ false, noreg);
     br(Assembler::EQ, unlocked);
 
-    // Load link store conditional exclusive failed.
+    // Compare and exchange failed.
     // Restore lock-stack and handle the unlock in runtime.
     DEBUG_ONLY(str(obj, Address(rthread, top));)
     addw(top, top, oopSize);
