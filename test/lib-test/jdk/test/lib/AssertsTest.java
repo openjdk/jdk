@@ -103,10 +103,16 @@ public class AssertsTest {
         expectPass(Assertion.EQBA, b1, b1);
         expectPass(Assertion.EQBA, b1, b11);
         expectPass(Assertion.EQBA, (byte[])null, (byte[])null);
+        expectPass(Assertion.NEQBA, b1, b2);
+        expectPass(Assertion.NEQBA, b1, (byte[])null);
+        expectPass(Assertion.NEQBA, (byte[])null, b1);
 
         expectFail(Assertion.EQBA, b1, b2);
         expectFail(Assertion.EQBA, (byte[])null, b1);
         expectFail(Assertion.EQBA, b1, (byte[])null);
+        expectFail(Assertion.NEQBA, b1, b1);
+        expectFail(Assertion.NEQBA, b1, b11);
+        expectFail(Assertion.NEQBA, (byte[])null, (byte[])null);
     }
 
     private static void testGreaterThanOrEqual() throws Exception {
@@ -212,29 +218,45 @@ public class AssertsTest {
 
     private static void expectPass(Assertion assertion, byte[] b1, byte[] b2)
             throws Exception {
-        Asserts.assertTrue(assertion == Assertion.EQBA);
-        String msg = "Expected " + Assertion.asString("assertEqualsByteArray",
-                Arrays.toString(b1), Arrays.toString(b2)) + " to pass";
-        Asserts.assertEqualsByteArray(b1, b2, msg);
+        if (assertion == Assertion.EQBA) {
+            String msg = "Expected " + Assertion.asString("assertEqualsByteArray",
+                    Arrays.toString(b1), Arrays.toString(b2)) + " to pass";
+            Asserts.assertEqualsByteArray(b1, b2, msg);
+        } else {
+            String msg = "Expected " + Assertion.asString("assertNotEqualsByteArray",
+                    Arrays.toString(b1), Arrays.toString(b2)) + " to pass";
+            Asserts.assertNotEqualsByteArray(b1, b2, msg);
+        }
     }
 
     private static void expectFail(Assertion assertion, byte[] b1, byte[] b2)
             throws Exception {
-        Asserts.assertTrue(assertion == Assertion.EQBA);
-        try {
-            Asserts.assertEqualsByteArray(b1, b2);
-        } catch (RuntimeException e) {
-            return;
+        if (assertion == Assertion.EQBA) {
+            try {
+                Asserts.assertEqualsByteArray(b1, b2);
+            } catch (RuntimeException e) {
+                return;
+            }
+            throw new Exception("Expected "
+                    + Assertion.asString("assertEqualsByteArray",
+                    Arrays.toString(b1), Arrays.toString(b2))
+                    + " to throw a RuntimeException");
+        } else {
+            try {
+                Asserts.assertNotEqualsByteArray(b1, b2);
+            } catch (RuntimeException e) {
+                return;
+            }
+            throw new Exception("Expected "
+                    + Assertion.asString("assertNotEqualsByteArray",
+                    Arrays.toString(b1), Arrays.toString(b2))
+                    + " to throw a RuntimeException");
         }
-        throw new Exception("Expected "
-                + Assertion.asString("assertEqualsByteArray",
-                Arrays.toString(b1), Arrays.toString(b2))
-                + " to throw a RuntimeException");
     }
 }
 
 enum Assertion {
-    LT, LTE, EQ, EQBA, GTE, GT, NE, NULL, NOTNULL, FALSE, TRUE;
+    LT, LTE, EQ, EQBA, NEQBA, GTE, GT, NE, NULL, NOTNULL, FALSE, TRUE;
 
     @SuppressWarnings("unchecked")
     public static <T extends Comparable<T>> void run(Assertion assertion, T ... args) {

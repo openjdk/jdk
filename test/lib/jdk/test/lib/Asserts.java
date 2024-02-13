@@ -249,6 +249,18 @@ public class Asserts {
     }
 
     /**
+     * Asserts that {@code lhs} is not the same byte array as {@code rhs}.
+     *
+     * @param lhs The left hand side of the comparison.
+     * @param rhs The right hand side of the comparison.
+     * @throws RuntimeException if the assertion is not true.
+     * @see #assertEqualsByteArray(byte[], byte[], String)
+     */
+    public static void assertNotEqualsByteArray(byte[] lhs, byte[] rhs) {
+        assertNotEqualsByteArray(lhs, rhs, null);
+    }
+
+    /**
      * Asserts that {@code lhs} is the same byte array as {@code rhs}.
      *
      * @param lhs The left hand side of the comparison.
@@ -258,6 +270,23 @@ public class Asserts {
      */
     public static void assertEqualsByteArray(byte[] lhs, byte[] rhs, String msg) {
         if (!Arrays.equals(lhs, rhs)) {
+            msg = Objects.toString(msg, "assertEqualsByteArray")
+                    + ": expected " + HexFormat.of().formatHex(lhs)
+                    + " to equal " + HexFormat.of().formatHex(rhs);
+            fail(msg);
+        }
+    }
+
+    /**
+     * Asserts that {@code lhs} is not the same byte array as {@code rhs}.
+     *
+     * @param lhs The left hand side of the comparison.
+     * @param rhs The right hand side of the comparison.
+     * @param msg A description of the assumption; {@code null} for a default message.
+     * @throws RuntimeException if the assertion is not true.
+     */
+    public static void assertNotEqualsByteArray(byte[] lhs, byte[] rhs, String msg) {
+        if (Arrays.equals(lhs, rhs)) {
             msg = Objects.toString(msg, "assertEqualsByteArray")
                     + ": expected " + HexFormat.of().formatHex(lhs)
                     + " to equal " + HexFormat.of().formatHex(rhs);
