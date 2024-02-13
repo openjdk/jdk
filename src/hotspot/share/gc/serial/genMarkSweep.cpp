@@ -441,10 +441,9 @@ void GenMarkSweep::invoke_at_safepoint(bool clear_all_softrefs) {
   // Increment the invocation count
   _total_invocations++;
 
-  // Capture used regions for each generation that will be
-  // subject to collection, so that card table adjustments can
-  // be made intelligently (see clear / invalidate further below).
-  gch->save_used_regions();
+  // Capture used regions for old-gen to reestablish old-to-young invariant
+  // after full-gc.
+  gch->old_gen()->save_used_region();
 
   allocate_stacks();
 

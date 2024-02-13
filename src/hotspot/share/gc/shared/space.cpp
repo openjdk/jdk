@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
-#include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/space.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "gc/shared/spaceDecorator.inline.hpp"
@@ -141,20 +140,12 @@ void ContiguousSpace::verify() const {
   guarantee(p == top(), "end of last object must match end of space");
 }
 
-bool Space::obj_is_alive(const HeapWord* p) const {
-  assert (block_is_obj(p), "The address should point to an object");
-  return true;
-}
-
 void ContiguousSpace::object_iterate(ObjectClosure* blk) {
-  if (is_empty()) return;
-  object_iterate_from(bottom(), blk);
-}
-
-void ContiguousSpace::object_iterate_from(HeapWord* mark, ObjectClosure* blk) {
-  while (mark < top()) {
-    blk->do_object(cast_to_oop(mark));
-    mark += cast_to_oop(mark)->size();
+  HeapWord* addr = bottom();
+  while (addr < top()) {
+    oop obj = cast_to_oop(addr);
+    blk->do_object(obj);
+    addr += obj->size();
   }
 }
 

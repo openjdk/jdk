@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ JNIEXPORT jint JNICALL Agent_OnAttach(JavaVM *vm, char *optionsString, void *res
     // can't use NSK_DISPLAY since needed for nsk_ functions initialization isn't done here
 
     jni = (JNIEnv*) nsk_aod_createJNIEnv(vm);
-    if (jni == NULL)
+    if (jni == nullptr)
         return JNI_ERR;
 
     printf("%s: initialization was done\n", AGENT_NAME);
@@ -51,7 +51,7 @@ JNIEXPORT jint JNICALL Agent_OnAttach(JavaVM *vm, char *optionsString, void *res
     if (!NSK_VERIFY(nsk_aod_agentLoaded(jni, AGENT_NAME)))
         return JNI_ERR;
 
-    if (optionsString == NULL) {
+    if (optionsString == nullptr) {
         success = 0;
         printf("%s: ERROR: unexpected null options\n", AGENT_NAME);
         fflush(stdout);
