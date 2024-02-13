@@ -72,7 +72,7 @@ public class SocketOptions {
                 // Check returned user name
 
                 if (!s1.equals(s2)) {
-                    throw new RuntimeException("wrong username");
+                    throw new RuntimeException("wrong username, we got " + s1 + " but property user.name is " + s2);
                 }
 
                 // Try setting the option: Read only
