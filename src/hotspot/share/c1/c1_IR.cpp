@@ -311,6 +311,10 @@ class CriticalEdgeFinder: public BlockClosure {
   BlockPairList blocks;
 
  public:
+  CriticalEdgeFinder(IR* ir) {
+    ir->iterate_preorder(this);
+  }
+
   void block_do(BlockBegin* bb) {
     BlockEnd* be = bb->end();
     int nos = be->number_of_sux();
@@ -318,7 +322,7 @@ class CriticalEdgeFinder: public BlockClosure {
       for (int i = 0; i < nos; i++) {
         BlockBegin* sux = be->sux_at(i);
         if (sux->number_of_preds() >= 2) {
-          blocks.append(new BlockPair(bb, sux, i));
+          blocks.append(new BlockPair(bb, i));
         }
       }
     }
@@ -328,9 +332,9 @@ class CriticalEdgeFinder: public BlockClosure {
     for (int i = 0; i < blocks.length(); i++) {
       BlockPair* pair = blocks.at(i);
       BlockBegin* from = pair->from();
-      BlockBegin* to = pair->to();
       int index = pair->index();
-      if (to != from->end()->sux_at(index)) {
+      BlockBegin* to = from->end()->sux_at(index);
+      if (to->is_set(BlockBegin::critical_edge_split_flag)) {
         // inserted
         continue;
       }
@@ -346,9 +350,7 @@ class CriticalEdgeFinder: public BlockClosure {
 };
 
 void IR::split_critical_edges() {
-  CriticalEdgeFinder cef;
-
-  iterate_preorder(&cef);
+  CriticalEdgeFinder cef(this);
   cef.split_edges();
 }
 
