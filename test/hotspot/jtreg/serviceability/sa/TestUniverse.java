@@ -53,7 +53,8 @@ public class TestUniverse {
 
         switch (gc) {
         case Serial:
-            expStrings.add("Gen 1:   old");
+            expStrings.add("SerialHeap");
+            expStrings.add("eden");
             break;
 
         case Parallel:

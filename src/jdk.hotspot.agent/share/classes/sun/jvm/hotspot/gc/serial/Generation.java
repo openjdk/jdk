@@ -22,11 +22,12 @@
  *
  */
 
-package sun.jvm.hotspot.gc.shared;
+package sun.jvm.hotspot.gc.serial;
 
 import java.io.*;
 import java.util.*;
 import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.gc.shared.*;
 import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
@@ -103,14 +104,6 @@ public abstract class Generation extends VMObject {
       generation. */
   public MemRegion usedRegion() {
     return reserved();
-  }
-
-  /* Returns "TRUE" iff "p" points into an allocated object in the
-     generation. */
-  public boolean isIn(Address p) {
-    GenerationIsInClosure blk = new GenerationIsInClosure(p);
-    spaceIterate(blk);
-    return (blk.space() != null);
   }
 
   /** Returns "TRUE" iff "p" points into the reserved area of the
