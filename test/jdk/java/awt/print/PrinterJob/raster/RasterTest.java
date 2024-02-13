@@ -135,6 +135,7 @@ public class RasterTest extends Frame implements ActionListener {
             ig.setColor(alphablue);
             ig.fillRect(75, 75, 125, 125);
             g.drawImage(bimg, 10, 25, this);
+            ig.dispose();
 
             GradientPaint gp =
                     new GradientPaint(10.0f, 10.0f, alphablue, 210.0f, 210.0f, alphared, true);
