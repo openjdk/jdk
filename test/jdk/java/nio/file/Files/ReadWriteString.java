@@ -29,8 +29,13 @@ import java.nio.charset.MalformedInputException;
 import java.nio.charset.UnmappableCharacterException;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.US_ASCII;
-import static java.nio.charset.StandardCharsets.UTF_16;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.charset.StandardCharsets.UTF_16;
+import static java.nio.charset.StandardCharsets.UTF_16BE;
+import static java.nio.charset.StandardCharsets.UTF_16LE;
+import static java.nio.charset.StandardCharsets.UTF_32;
+import static java.nio.charset.StandardCharsets.UTF_32BE;
+import static java.nio.charset.StandardCharsets.UTF_32LE;
 import java.nio.file.Files;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
@@ -156,7 +161,15 @@ public class ReadWriteString {
             {testFiles[1], TEXT_ASCII, US_ASCII, UTF_8},
             {testFiles[1], TEXT_UNICODE, UTF_8, null},
             {testFiles[1], TEXT_UNICODE, UTF_8, UTF_8},
-            {testFiles[1], TEXT_PERSON_CART_WHEELING, UTF_16, UTF_16}
+            {testFiles[1], TEXT_ASCII, US_ASCII, ISO_8859_1},
+            {testFiles[1], TEXT_PERSON_CART_WHEELING, UTF_16, UTF_16},
+            {testFiles[1], TEXT_PERSON_CART_WHEELING, UTF_16BE, UTF_16BE},
+            {testFiles[1], TEXT_PERSON_CART_WHEELING, UTF_16LE, UTF_16LE},
+            {testFiles[1], TEXT_PERSON_CART_WHEELING, UTF_32, UTF_32},
+            {testFiles[1], TEXT_PERSON_CART_WHEELING, UTF_32BE, UTF_32BE},
+            {testFiles[1], TEXT_PERSON_CART_WHEELING, UTF_32LE, UTF_32LE},
+            {testFiles[1], TEXT_PERSON_CART_WHEELING, WINDOWS_1252, WINDOWS_1252},
+            {testFiles[1], TEXT_PERSON_CART_WHEELING, WINDOWS_31J, WINDOWS_31J}
         };
     }
 
@@ -307,12 +320,12 @@ public class ReadWriteString {
     }
 
     // Verify File.readString with UTF16 to confirm proper string length and contents.
+    // A regression test for 8325590
     @Test
-    public void regression_8325590() throws IOException {
+    public void testSingleUTF16() throws IOException {
         String original = "🤸";    // "\ud83e\udd38";
-        Path tmp = Files.createTempFile("tmp", ".txt");
-        Files.writeString(tmp, original, UTF_16);
-        String actual = Files.readString(tmp, UTF_16);
+        Files.writeString(testFiles[0], original, UTF_16);
+        String actual = Files.readString(testFiles[0], UTF_16);
         if (!actual.equals(original)) {
             System.out.printf("expected (%s), was (%s)\n", original, actual);
             System.out.printf("expected UTF_16 bytes: %s\n", Arrays.toString(original.getBytes(UTF_16)));
