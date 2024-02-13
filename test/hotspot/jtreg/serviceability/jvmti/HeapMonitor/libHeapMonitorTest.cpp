@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -34,8 +34,8 @@ extern "C" {
 #define FALSE 0
 #define PRINT_OUT 0
 
-static jvmtiEnv *jvmti = NULL;
-static jvmtiEnv *second_jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
+static jvmtiEnv *second_jvmti = nullptr;
 
 typedef struct _ObjectTrace{
   jweak object;
@@ -138,7 +138,7 @@ static void print_out_frames(JNIEnv* env, ObjectTrace* trace) {
     // Get basic information out of the trace.
     jlocation bci = frames[i].location;
     jmethodID methodid = frames[i].method;
-    char *name = NULL, *signature = NULL, *file_name = NULL;
+    char *name = nullptr, *signature = nullptr, *file_name = nullptr;
     jclass declaring_class;
     int line_number;
     jvmtiError err;
@@ -166,18 +166,18 @@ static void print_out_frames(JNIEnv* env, ObjectTrace* trace) {
       continue;
     }
 
-    // Compare now, none should be NULL.
-    if (name == NULL) {
+    // Compare now, none should be null.
+    if (name == nullptr) {
       fprintf(stderr, "\tUnknown name\n");
       continue;
     }
 
-    if (file_name == NULL) {
+    if (file_name == nullptr) {
       fprintf(stderr, "\tUnknown file\n");
       continue;
     }
 
-    if (signature == NULL) {
+    if (signature == nullptr) {
       fprintf(stderr, "\tUnknown signature\n");
       continue;
     }
@@ -204,7 +204,7 @@ static jboolean check_sample_content(JNIEnv* env,
     // Get basic information out of the trace.
     jlocation bci = frames[i].location;
     jmethodID methodid = frames[i].method;
-    char *name = NULL, *signature = NULL, *file_name = NULL;
+    char *name = nullptr, *signature = nullptr, *file_name = nullptr;
     jclass declaring_class;
     int line_number;
     jboolean differ;
@@ -227,16 +227,16 @@ static jboolean check_sample_content(JNIEnv* env,
       return FALSE;
     }
 
-    // Compare now, none should be NULL.
-    if (name == NULL) {
+    // Compare now, none should be null.
+    if (name == nullptr) {
       return FALSE;
     }
 
-    if (file_name == NULL) {
+    if (file_name == nullptr) {
       return FALSE;
     }
 
-    if (signature == NULL) {
+    if (signature == nullptr) {
       return FALSE;
     }
 
@@ -267,14 +267,14 @@ static int fill_native_frames(JNIEnv* env, jobjectArray frames,
                               ExpectedContentFrame* native_frames, size_t size) {
   size_t i;
   for (i = 0; i < size; i++) {
-    jclass frame_class = NULL;
+    jclass frame_class = nullptr;
     jfieldID line_number_field_id = 0;
     int line_number = 0;
     jfieldID string_id = 0;
-    jstring string_object = NULL;
-    const char* method = NULL;
-    const char* file_name = NULL;
-    const char* signature = NULL;
+    jstring string_object = nullptr;
+    const char* method = nullptr;
+    const char* file_name = nullptr;
+    const char* signature = nullptr;
 
     jobject obj = env->GetObjectArrayElement(frames, (jsize) i);
 
@@ -410,7 +410,7 @@ static void event_storage_add_garbage_collected_object(EventStorage* storage,
                                                        ObjectTrace* object) {
   int idx = storage->garbage_history_index;
   ObjectTrace* old_object = storage->garbage_collected_objects[idx];
-  if (old_object != NULL) {
+  if (old_object != nullptr) {
     free(old_object->frames);
     free(storage->garbage_collected_objects[idx]);
   }
@@ -496,7 +496,7 @@ static jboolean event_storage_garbage_contains(JNIEnv* env,
   for (i = 0; i < storage->garbage_history_size; i++) {
     ObjectTrace* trace = storage->garbage_collected_objects[i];
 
-    if (trace == NULL) {
+    if (trace == nullptr) {
       continue;
     }
 
@@ -587,14 +587,14 @@ static void event_storage_compact(EventStorage* storage, JNIEnv* jni) {
     ObjectTrace* live_object = live_objects[i];
     jweak object = live_object->object;
 
-    if (!jni->IsSameObject(object, NULL)) {
+    if (!jni->IsSameObject(object, nullptr)) {
       if (dest != i) {
         live_objects[dest] = live_object;
         dest++;
       }
     } else {
       jni->DeleteWeakGlobalRef(object);
-      live_object->object = NULL;
+      live_object->object = nullptr;
 
       event_storage_add_garbage_collected_object(storage, live_object);
     }
@@ -607,7 +607,7 @@ static void event_storage_compact(EventStorage* storage, JNIEnv* jni) {
 static void event_storage_free_objects(ObjectTrace** array, int max) {
   int i;
   for (i = 0; i < max; i++) {
-    free(array[i]), array[i] = NULL;
+    free(array[i]), array[i] = nullptr;
   }
 }
 
@@ -620,7 +620,7 @@ static void event_storage_reset(EventStorage* storage) {
   storage->live_object_additions = 0;
   storage->live_object_size = 0;
   storage->live_object_count = 0;
-  free(storage->live_objects), storage->live_objects = NULL;
+  free(storage->live_objects), storage->live_objects = nullptr;
 
   event_storage_free_objects(storage->garbage_collected_objects,
                              storage->garbage_history_size);
@@ -799,13 +799,13 @@ void JNICALL GarbageCollectionFinish(jvmtiEnv *jvmti_env) {
 
 static int enable_notifications() {
   if (check_error(jvmti->SetEventNotificationMode(
-      JVMTI_ENABLE, JVMTI_EVENT_GARBAGE_COLLECTION_FINISH, NULL),
+      JVMTI_ENABLE, JVMTI_EVENT_GARBAGE_COLLECTION_FINISH, nullptr),
                      "Set event notifications")) {
     return 1;
   }
 
   return check_error(jvmti->SetEventNotificationMode(
-      JVMTI_ENABLE, JVMTI_EVENT_SAMPLED_OBJECT_ALLOC, NULL),
+      JVMTI_ENABLE, JVMTI_EVENT_SAMPLED_OBJECT_ALLOC, nullptr),
                      "Set event notifications");
 }
 
@@ -816,14 +816,14 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jvmtiCapabilities caps;
 
   res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     fprintf(stderr, "Error: wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }
 
   // Get second jvmti environment.
   res = jvm->GetEnv((void **) &second_jvmti, JVMTI_VERSION);
-  if (res != JNI_OK || second_jvmti == NULL) {
+  if (res != JNI_OK || second_jvmti == nullptr) {
     fprintf(stderr, "Error: wrong result of a valid second call to GetEnv!\n");
     return JNI_ERR;
   }
@@ -893,11 +893,11 @@ Java_MyPackage_HeapMonitor_enableSamplingEvents(JNIEnv* env, jclass cls) {
 JNIEXPORT void JNICALL
 Java_MyPackage_HeapMonitor_disableSamplingEvents(JNIEnv* env, jclass cls) {
   check_error(jvmti->SetEventNotificationMode(
-      JVMTI_DISABLE, JVMTI_EVENT_SAMPLED_OBJECT_ALLOC, NULL),
+      JVMTI_DISABLE, JVMTI_EVENT_SAMPLED_OBJECT_ALLOC, nullptr),
               "Set event notifications");
 
   check_error(jvmti->SetEventNotificationMode(
-      JVMTI_DISABLE, JVMTI_EVENT_GARBAGE_COLLECTION_FINISH, NULL),
+      JVMTI_DISABLE, JVMTI_EVENT_GARBAGE_COLLECTION_FINISH, nullptr),
               "Garbage Collection Finish");
 }
 
@@ -912,8 +912,8 @@ static ExpectedContentFrame *get_native_frames(JNIEnv* env, jclass cls,
 
   native_frames = reinterpret_cast<ExpectedContentFrame*> (malloc(size * sizeof(*native_frames)));
 
-  if (native_frames == NULL) {
-    env->FatalError("Error in get_native_frames: malloc returned NULL\n");
+  if (native_frames == nullptr) {
+    env->FatalError("Error in get_native_frames: malloc returned null\n");
   }
 
   if (fill_native_frames(env, frames, native_frames, size) != 0) {
@@ -934,7 +934,7 @@ Java_MyPackage_HeapMonitor_obtainedEvents(JNIEnv* env, jclass cls,
   result = event_storage_contains(env, &global_event_storage, native_frames,
                                   size, check_lines);
 
-  free(native_frames), native_frames = NULL;
+  free(native_frames), native_frames = nullptr;
   return result;
 }
 
@@ -949,7 +949,7 @@ Java_MyPackage_HeapMonitor_garbageContains(JNIEnv* env, jclass cls,
   result = event_storage_garbage_contains(env, &global_event_storage,
                                           native_frames, size, check_lines);
 
-  free(native_frames), native_frames = NULL;
+  free(native_frames), native_frames = nullptr;
   return result;
 }
 
@@ -964,7 +964,7 @@ Java_MyPackage_HeapMonitor_getSize(JNIEnv* env, jclass cls,
   result = event_storage_get_size(env, &global_event_storage,
                                   native_frames, size, check_lines);
 
-  free(native_frames), native_frames = NULL;
+  free(native_frames), native_frames = nullptr;
   return result;
 }
 
@@ -1083,7 +1083,7 @@ Java_MyPackage_HeapMonitorTwoAgentsTest_enablingSamplingInSecondaryAgent(
 JNIEXPORT void JNICALL
 Java_MyPackage_HeapMonitor_enableVMEvents(JNIEnv* env, jclass cls) {
   check_error(jvmti->SetEventNotificationMode(
-      JVMTI_ENABLE, JVMTI_EVENT_VM_OBJECT_ALLOC, NULL),
+      JVMTI_ENABLE, JVMTI_EVENT_VM_OBJECT_ALLOC, nullptr),
               "Set vm event notifications");
 }
 
@@ -1103,19 +1103,19 @@ static jobject allocate_object(JNIEnv* env) {
   jmethodID constructor;
   jobject result;
 
-  if (env->ExceptionOccurred() || cls == NULL) {
+  if (env->ExceptionOccurred() || cls == nullptr) {
     env->FatalError("Error in jni FindClass: Cannot find Object class\n");
   }
 
   constructor = env->GetMethodID(cls, "<init>", "()V");
-  if (env->ExceptionOccurred() || constructor == NULL) {
+  if (env->ExceptionOccurred() || constructor == nullptr) {
     env->FatalError("Error in jni GetMethodID: Cannot find Object class constructor\n");
   }
 
   // Call back constructor to allocate a new instance, with an int argument
   result = env->NewObject(cls, constructor);
 
-  if (env->ExceptionOccurred() || result == NULL) {
+  if (env->ExceptionOccurred() || result == nullptr) {
     env->FatalError("Error in jni NewObject: Cannot allocate an object\n");
   }
   return result;
@@ -1135,8 +1135,8 @@ void JNICALL RecursiveSampledObjectAlloc(jvmtiEnv *jvmti_env,
   // infinite recursion here.
   int i;
   for (i = 0; i < 1000; i++) {
-    if (allocate_object(jni_env) == NULL) {
-      jni_env->FatalError("allocate_object returned NULL\n");
+    if (allocate_object(jni_env) == nullptr) {
+      jni_env->FatalError("allocate_object returned null\n");
     }
   }
 

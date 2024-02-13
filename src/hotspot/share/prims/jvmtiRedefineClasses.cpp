@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1820,6 +1820,12 @@ jvmtiError VM_RedefineClasses::merge_cp_and_rewrite(
   if (!result) {
     // The merge can fail due to memory allocation failure or due
     // to robustness checks.
+    return JVMTI_ERROR_INTERNAL;
+  }
+
+  // ensure merged constant pool size does not overflow u2
+  if (merge_cp_length > 0xFFFF) {
+    log_warning(redefine, class, constantpool)("Merged constant pool overflow: %d entries", merge_cp_length);
     return JVMTI_ERROR_INTERNAL;
   }
 

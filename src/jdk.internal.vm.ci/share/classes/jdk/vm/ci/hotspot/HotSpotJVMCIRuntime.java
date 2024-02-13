@@ -23,7 +23,6 @@
 package jdk.vm.ci.hotspot;
 
 import static jdk.vm.ci.common.InitTimer.timer;
-import static jdk.vm.ci.hotspot.HotSpotJVMCICompilerFactory.CompilationLevelAdjustment.None;
 import static jdk.vm.ci.services.Services.IS_BUILDING_NATIVE_IMAGE;
 import static jdk.vm.ci.services.Services.IS_IN_NATIVE_IMAGE;
 
@@ -241,8 +240,8 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
                 "name (a stub) or fully qualified name (an nmethod) contains this option's value as a substring."),
         ForceTranslateFailure(String.class, null, "Forces HotSpotJVMCIRuntime.translate to throw an exception in the context " +
                 "of the peer runtime. The value is a filter that can restrict the forced failure to matching translated " +
-                "objects. See HotSpotJVMCIRuntime.postTranslation for more details. This option exists soley to test " +
-                "correct handling of translation failure."),
+                "objects. See HotSpotJVMCIRuntime.postTranslation for more details. This option exists solely to test " +
+                "correct handling of translation failures."),
         PrintConfig(Boolean.class, false, "Prints VM configuration available via JVMCI."),
         AuditHandles(Boolean.class, false, "Record stack trace along with scoped foreign object reference wrappers " +
                 "to debug issue with a wrapper being used after its scope has closed."),
@@ -468,7 +467,6 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
     private final JVMCIBackend hostBackend;
 
     private final JVMCICompilerFactory compilerFactory;
-    private final HotSpotJVMCICompilerFactory hsCompilerFactory;
     private volatile JVMCICompiler compiler;
     protected final HotSpotJVMCIReflection reflection;
 
@@ -572,18 +570,6 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         }
 
         compilerFactory = HotSpotJVMCICompilerConfig.getCompilerFactory(this);
-        if (compilerFactory instanceof HotSpotJVMCICompilerFactory) {
-            hsCompilerFactory = (HotSpotJVMCICompilerFactory) compilerFactory;
-            if (hsCompilerFactory.getCompilationLevelAdjustment() != None) {
-                String name = HotSpotJVMCICompilerFactory.class.getName();
-                String msg = String.format("%s.getCompilationLevelAdjustment() is no longer supported. " +
-                                "Use %s.excludeFromJVMCICompilation() instead.", name, name);
-                throw new UnsupportedOperationException(msg);
-            }
-        } else {
-            hsCompilerFactory = null;
-        }
-
         if (config.getFlag("JVMCIPrintProperties", Boolean.class)) {
             if (vmLogStream == null) {
                 vmLogStream = new PrintStream(getLogStream());

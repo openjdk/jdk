@@ -61,7 +61,7 @@
 #include "runtime/globals_extension.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
-#include "runtime/reflectionUtils.hpp"
+#include "runtime/reflection.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/vframe.inline.hpp"
@@ -179,20 +179,11 @@ Handle JavaArgumentUnboxer::next_arg(BasicType expectedType) {
   CompilerThreadCanCallJava ccj(thread, __is_hotspot);     \
   JVMCIENV_FROM_JNI(JVMCI::compilation_tick(thread), env); \
 
-static JavaThread* get_current_thread(bool allow_null=true) {
-  Thread* thread = Thread::current_or_null_safe();
-  if (thread == nullptr) {
-    assert(allow_null, "npe");
-    return nullptr;
-  }
-  return JavaThread::cast(thread);
-}
-
 // Entry to native method implementation that transitions
 // current thread to '_thread_in_vm'.
 #define C2V_VMENTRY(result_type, name, signature)        \
   JNIEXPORT result_type JNICALL c2v_ ## name signature { \
-  JavaThread* thread = get_current_thread();             \
+  JavaThread* thread = JavaThread::current_or_null();    \
   if (thread == nullptr) {                               \
     env->ThrowNew(JNIJVMCI::InternalError::clazz(),      \
         err_msg("Cannot call into HotSpot from JVMCI shared library without attaching current thread")); \
@@ -203,7 +194,7 @@ static JavaThread* get_current_thread(bool allow_null=true) {
 
 #define C2V_VMENTRY_(result_type, name, signature, result) \
   JNIEXPORT result_type JNICALL c2v_ ## name signature { \
-  JavaThread* thread = get_current_thread();             \
+  JavaThread* thread = JavaThread::current_or_null();    \
   if (thread == nullptr) {                               \
     env->ThrowNew(JNIJVMCI::InternalError::clazz(),      \
         err_msg("Cannot call into HotSpot from JVMCI shared library without attaching current thread")); \
@@ -219,7 +210,7 @@ static JavaThread* get_current_thread(bool allow_null=true) {
 // current thread to '_thread_in_vm'.
 #define C2V_VMENTRY_PREFIX(result_type, name, signature) \
   JNIEXPORT result_type JNICALL c2v_ ## name signature { \
-  JavaThread* thread = get_current_thread();
+  JavaThread* thread = JavaThread::current_or_null();
 
 #define C2V_END }
 
@@ -2616,7 +2607,7 @@ static void attachSharedLibraryThread(JNIEnv* env, jbyteArray name, jboolean as_
   if (res != JNI_OK) {
     JNI_THROW("attachSharedLibraryThread", InternalError, err_msg("Trying to attach thread returned %d", res));
   }
-  JavaThread* thread = get_current_thread(false);
+  JavaThread* thread = JavaThread::thread_from_jni_environment(hotspotEnv);
   const char* attach_error;
   {
     // Transition to VM
@@ -3074,7 +3065,7 @@ C2V_VMENTRY_0(jint, registerCompilerPhase, (JNIEnv* env, jobject, jstring jphase
 C2V_END
 
 C2V_VMENTRY(void, notifyCompilerPhaseEvent, (JNIEnv* env, jobject, jlong startTime, jint phase, jint compileId, jint level))
-  EventCompilerPhase event;
+  EventCompilerPhase event(UNTIMED);
   if (event.should_commit()) {
     CompilerEvent::PhaseEvent::post(event, startTime, phase, compileId, level);
   }
