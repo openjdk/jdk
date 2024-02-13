@@ -174,6 +174,14 @@ public final class PassFailJFrame {
      */
     private static final String EMPTY_REASON = "(no reason provided)";
 
+    /**
+     * List of windows or frames managed by the {@code PassFailJFrame}
+     * framework. These windows are automatically disposed of when the
+     * test is finished.
+     * <p>
+     * <b>Note:</b> access to this field has to be synchronized by
+     * {@code PassFailJFrame.class}.
+     */
     private static final List<Window> windowList = new ArrayList<>();
 
     private static final CountDownLatch latch = new CountDownLatch(1);
@@ -723,10 +731,12 @@ public final class PassFailJFrame {
                 break;
 
             case WINDOWS:
-                windowList.stream()
-                          .filter(Window::isShowing)
-                          .map(Window::getBounds)
-                          .forEach(PassFailJFrame::captureScreen);
+                synchronized (PassFailJFrame.class) {
+                    windowList.stream()
+                              .filter(Window::isShowing)
+                              .map(Window::getBounds)
+                              .forEach(PassFailJFrame::captureScreen);
+                }
                 break;
 
             default:
