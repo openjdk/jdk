@@ -32,6 +32,10 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/os.inline.hpp"
 
+// These are inline variants of Thread::SpinAcquire with optional blocking in VM.
+// Unfortunately, there is no good way to do a conditional RAII object in the
+// middle of the method without dealing with macros.
+
 void ShenandoahLock::contended_lock(bool allow_block_for_safepoint) {
   Thread* thread = Thread::current();
   if (allow_block_for_safepoint && thread->is_Java_thread()) {
@@ -45,13 +49,12 @@ void ShenandoahLock::contended_lock_no_block() {
   int ctr = 0;
   int yields = 0;
   while (Atomic::cmpxchg(&_state, 0, 1) != 0) {
-    ++ctr;
-    if ((ctr & 0xFFF) == 0 || !os::is_MP()) {
+    if ((++ctr & 0xFFF) == 0) {
       if (yields > 5) {
         os::naked_short_sleep(1);
       } else {
         os::naked_yield();
-        ++yields;
+        yields++;
       }
     } else {
       SpinPause();
@@ -63,14 +66,13 @@ void ShenandoahLock::contended_lock_or_block(JavaThread* java_thread) {
   int ctr = 0;
   int yields = 0;
   while (Atomic::cmpxchg(&_state, 0, 1) != 0) {
-    ++ctr;
-    if ((ctr & 0xFFF) == 0 || !os::is_MP()) {
+    if ((++ctr & 0xFFF) == 0) {
       ThreadBlockInVM tbivm(java_thread);
       if (yields > 5) {
         os::naked_short_sleep(1);
       } else {
         os::naked_yield();
-        ++yields;
+        yields++;
       }
     } else {
       SpinPause();
