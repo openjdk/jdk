@@ -28,6 +28,7 @@
 
 /* @test id=use-all-windows-processor-groups
  * @summary Run gtests with all Windows processor groups enabled
+ * @library /test/lib
  * @requires os.family == "windows"
  * @run main/native GTestWrapper --gtest_filter=os* -XX:+UseAllWindowsProcessorGroups
  */
