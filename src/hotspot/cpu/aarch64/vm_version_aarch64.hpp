@@ -110,7 +110,8 @@ enum Ampere_CPU_Model {
     CPU_MODEL_ALTRA     = 0xd0c, /* CPU implementer is CPU_ARM, Neoverse N1 */
     CPU_MODEL_ALTRAMAX  = 0xd0c, /* CPU implementer is CPU_ARM, Neoverse N1 */
     CPU_MODEL_AMPERE_1  = 0xac3, /* CPU implementer is CPU_AMPERE */
-    CPU_MODEL_AMPERE_1A = 0xac4  /* CPU implementer is CPU_AMPERE */
+    CPU_MODEL_AMPERE_1A = 0xac4, /* CPU implementer is CPU_AMPERE */
+    CPU_MODEL_AMPERE_1B = 0xac5  /* AMPERE_1B core Implements ARMv8.7 with CSSC, MTE, SM3/SM4 extensions */
 };
 
 #define CPU_FEATURE_FLAGS(decl)               \
