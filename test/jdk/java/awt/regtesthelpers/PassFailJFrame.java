@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,6 +114,13 @@ import static javax.swing.SwingUtilities.isEventDispatchThread;
  * The {@code Builder.testUI} methods accept interfaces which create one window
  * or a list of windows if the test needs multiple windows,
  * or directly a single window, an array of windows or a list of windows.
+ * <p>
+ * For simple test UI, use {@code Builder.splitUI}, or explicitly
+ * {@code Builder.splitUIRight} or {@code Builder.splitUIBottom} with
+ * a {@code PanelCreator}. The framework will call the provided
+ * {@code createUIPanel} to create the component with test UI and
+ * will place it as the right or bottom component in a split pane
+ * along with instruction UI.
  * <p>
  * Alternatively, use one of the {@code PassFailJFrame} constructors to
  * create an object, then create secondary test UI, register it
@@ -277,8 +284,18 @@ public final class PassFailJFrame {
                                    enableScreenCapture));
     }
 
-    private PassFailJFrame(Builder builder) throws InterruptedException,
-            InvocationTargetException {
+    /**
+     * Configures {@code PassFailJFrame} using the builder.
+     * It creates test UI specified using {@code testUI} or {@code splitUI}
+     * methods on EDT.
+     * @param builder the builder with the parameters
+     * @throws InterruptedException if the current thread is interrupted while
+     *              waiting for EDT to complete a task
+     * @throws InvocationTargetException if an exception is thrown while
+     *              running a task on EDT
+     */
+    private PassFailJFrame(final Builder builder)
+            throws InterruptedException, InvocationTargetException {
         invokeOnEDT(() -> createUI(builder));
 
         if (!builder.splitUI && builder.panelCreator != null) {
@@ -313,11 +330,10 @@ public final class PassFailJFrame {
 
             if (builder.positionWindows != null) {
                 positionInstructionFrame(builder.position);
-                invokeOnEDT(() -> {
-                    builder.positionWindows
-                           .positionTestWindows(unmodifiableList(builder.testWindows),
-                                                builder.instructionUIHandler);
-                });
+                invokeOnEDT(() ->
+                        builder.positionWindows
+                               .positionTestWindows(unmodifiableList(builder.testWindows),
+                                                    builder.instructionUIHandler));
             } else if (builder.testWindows.size() == 1) {
                 Window window = builder.testWindows.get(0);
                 positionTestWindow(window, builder.position);
@@ -490,8 +506,19 @@ public final class PassFailJFrame {
         List<? extends Window> createTestUI();
     }
 
+    /**
+     * Creates a component (panel) with test UI
+     * to be hosted in a split pane or a frame.
+     */
     @FunctionalInterface
     public interface PanelCreator {
+        /**
+         * Creates a component which hosts test UI. This component
+         * is placed into a split pane or into a frame to display the UI.
+         * <p>
+         * This method is called by the framework on the EDT.
+         * @return a component (panel) with test UI
+         */
         JComponent createUIPanel();
     }
 
@@ -1155,6 +1182,16 @@ public final class PassFailJFrame {
             }
         }
 
+        /**
+         * Adds a {@code PanelCreator} which the framework will use
+         * to create a component and place it into a dialog.
+         *
+         * @param panelCreator a {@code PanelCreator} to create a component
+         *                     with test UI
+         * @return this builder
+         * @throws IllegalStateException if split UI was enabled using
+         *              a {@code splitUI} method
+         */
         public Builder testUI(PanelCreator panelCreator) {
             if (splitUI) {
                 throw new IllegalStateException("Can't combine splitUI and "
@@ -1164,20 +1201,82 @@ public final class PassFailJFrame {
             return this;
         }
 
+        /**
+         * Adds a {@code PanelCreator} which the framework will use
+         * to create a component with test UI and display it in a split pane.
+         * <p>
+         * By default, horizontal orientation is used,
+         * and test UI is displayed to the right of the instruction UI.
+         *
+         * @param panelCreator a {@code PanelCreator} to create a component
+         *                     with test UI
+         * @return this builder
+         *
+         * @throws IllegalStateException if a {@code PanelCreator} is
+         *              already set
+         * @throws IllegalArgumentException if {panelCreator} is {@code null}
+         */
         public Builder splitUI(PanelCreator panelCreator) {
             return splitUIRight(panelCreator);
         }
 
+        /**
+         * Adds a {@code PanelCreator} which the framework will use
+         * to create a component with test UI and display it
+         * to the right of instruction UI.
+         *
+         * @param panelCreator a {@code PanelCreator} to create a component
+         *                     with test UI
+         * @return this builder
+         *
+         * @throws IllegalStateException if a {@code PanelCreator} is
+         *              already set
+         * @throws IllegalArgumentException if {panelCreator} is {@code null}
+         */
         public Builder splitUIRight(PanelCreator panelCreator) {
-            splitUI = true;
-            splitUIOrientation = JSplitPane.HORIZONTAL_SPLIT;
-            this.panelCreator = panelCreator;
-            return this;
+            return splitUI(panelCreator, JSplitPane.HORIZONTAL_SPLIT);
         }
 
+        /**
+         * Adds a {@code PanelCreator} which the framework will use
+         * to create a component with test UI and display it
+         * in the bottom of instruction UI.
+         *
+         * @param panelCreator a {@code PanelCreator} to create a component
+         *                     with test UI
+         * @return this builder
+         *
+         * @throws IllegalStateException if a {@code PanelCreator} is
+         *              already set
+         * @throws IllegalArgumentException if {panelCreator} is {@code null}
+         */
         public Builder splitUIBottom(PanelCreator panelCreator) {
+            return splitUI(panelCreator, JSplitPane.VERTICAL_SPLIT);
+        }
+
+        /**
+         * Enables split UI and stores the orientation of the split pane.
+         *
+         * @param panelCreator a {@code PanelCreator} to create a component
+         *                     with test UI
+         * @param splitUIOrientation orientation of the split pane
+         * @return this builder
+         *
+         * @throws IllegalStateException if a {@code PanelCreator} is
+         *              already set
+         * @throws IllegalArgumentException if {panelCreator} is {@code null}
+         */
+        private Builder splitUI(PanelCreator panelCreator,
+                                int splitUIOrientation) {
+            if (panelCreator == null) {
+                throw new IllegalArgumentException("A PanelCreator cannot be null");
+            }
+            if (this.panelCreator != null) {
+                throw new IllegalStateException("A PanelCreator is already set");
+            }
+
             splitUI = true;
-            splitUIOrientation = JSplitPane.VERTICAL_SPLIT;
+            this.splitUIOrientation = splitUIOrientation;
             this.panelCreator = panelCreator;
             return this;
         }
@@ -1272,6 +1371,11 @@ public final class PassFailJFrame {
         }
     }
 
+    /**
+     * Creates a builder for configuring {@code PassFailJFrame}.
+     *
+     * @return the builder for configuring {@code PassFailJFrame}
+     */
     public static Builder builder() {
         return new Builder();
     }
