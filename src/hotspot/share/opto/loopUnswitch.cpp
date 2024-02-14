@@ -139,7 +139,7 @@ class UnswitchedLoopSelector : public StackObj {
  private:
   IfNode* find_unswitch_candidate(IdealLoopTree* loop) {
     IfNode* unswitch_candidate = _phase->find_unswitch_candidate(loop);
-    assert(unswitch_candidate != nullptr, "must exist");
+    assert(unswitch_candidate != nullptr, "guaranteed to exist by policy_unswitching");
     assert(_phase->is_member(loop, unswitch_candidate), "must be inside original loop");
     return unswitch_candidate;
   }
@@ -356,19 +356,20 @@ void PhaseIdealLoop::hoist_invariant_check_casts(const IdealLoopTree* loop, cons
                                                  const UnswitchedLoopSelector& unswitched_loop_selector) {
   IfNode* unswitch_candidate = unswitched_loop_selector.unswitch_candidate();
   IfNode* loop_selector = unswitched_loop_selector.selector();
-  Node_List worklist;
+  ResourceMark rm;
+  GrowableArray<CheckCastPPNode*> loop_invariant_check_casts;
   for (DUIterator_Fast imax, i = unswitch_candidate->fast_outs(imax); i < imax; i++) {
     IfProjNode* proj = unswitch_candidate->fast_out(i)->as_IfProj();
     // Copy to a worklist for easier manipulation
     for (DUIterator_Fast jmax, j = proj->fast_outs(jmax); j < jmax; j++) {
-      Node* use = proj->fast_out(j);
-      if (use->Opcode() == Op_CheckCastPP && loop->is_invariant(use->in(1))) {
-        worklist.push(use);
+      Node* check_cast = proj->fast_out(j)->isa_CheckCastPP();
+      if (check_cast != nullptr && loop->is_invariant(check_cast->in(1))) {
+        loop_invariant_check_casts.push(check_cast);
       }
     }
     IfProjNode* loop_selector_if_proj = loop_selector->proj_out(proj->_con)->as_IfProj();
-    while (worklist.size() > 0) {
-      Node* cast = worklist.pop();
+    while (loop_invariant_check_casts.size() > 0) {
+      CheckCastPPNode* cast = loop_invariant_check_casts.pop();
       Node* cast_clone = cast->clone();
       cast_clone->set_req(0, loop_selector_if_proj);
       _igvn.replace_input_of(cast, 1, cast_clone);
@@ -384,8 +385,8 @@ void PhaseIdealLoop::hoist_invariant_check_casts(const IdealLoopTree* loop, cons
 void PhaseIdealLoop::add_unswitched_loop_version_bodies_to_igvn(IdealLoopTree* loop, const Node_List& old_new) {
   loop->record_for_igvn();
   for(int i = loop->_body.size() - 1; i >= 0 ; i--) {
-    Node *n = loop->_body[i];
-    Node *n_clone = old_new[n->_idx];
+    Node* n = loop->_body[i];
+    Node* n_clone = old_new[n->_idx];
     _igvn._worklist.push(n_clone);
   }
 }

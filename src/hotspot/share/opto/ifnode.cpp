@@ -458,6 +458,7 @@ IfNode* IfNode::make_with_same_profile(IfNode* if_node_profile, Node* ctrl, Bool
   if (if_node_profile->Opcode() == Op_If) {
     return new IfNode(ctrl, bol, if_node_profile->_prob, if_node_profile->_fcnt);
   } else {
+    assert(if_node_profile->Opcode() == Op_RangeCheck, "only IfNode or RangeCheckNode expected");
     return new RangeCheckNode(ctrl, bol, if_node_profile->_prob, if_node_profile->_fcnt);
   }
 }
