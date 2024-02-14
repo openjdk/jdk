@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,12 @@
  * @test
  * @bug 6329116 6756569 6757131 6758988 6764308 6796489 6834474 6609737 6507067
  *      7039469 7090843 7103108 7103405 7158483 8008577 8059206 8064560 8072042
- *      8077685 8151876 8166875 8169191 8170316 8176044
- * @summary Make sure that timezone short display names are idenical to Olson's data.
- * @run junit/othervm -Djava.locale.providers=COMPAT,SPI Bug6329116
+ *      8077685 8151876 8166875 8169191 8170316 8176044 8174269
+ * @summary Make sure that timezone short display names are identical to Olson's data.
+ * @run junit Bug6329116
  */
 
 import java.io.*;
-import java.text.*;
 import java.util.*;
 
 import org.junit.jupiter.api.Test;
@@ -40,7 +39,11 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 public class Bug6329116 {
 
-    static Locale[] locales = Locale.getAvailableLocales();
+    // Do not test all locales, as some locales have localized
+    // short names in CLDR. Test only for the US locale
+
+    // static Locale[] locales = Locale.getAvailableLocales();
+    static Locale[] locales = {Locale.US};
     static String[] timezones = TimeZone.getAvailableIDs();
 
     @Test

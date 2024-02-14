@@ -792,16 +792,16 @@ public class CLDRConverter {
 
             if (data instanceof String[] tznames) {
                 // Hack for UTC. UTC is an alias to Etc/UTC in CLDR
-//                if (tzid.equals("Etc/UTC") && !map.containsKey(TIMEZONE_ID_PREFIX + "UTC")) {
-//                    names.put(METAZONE_ID_PREFIX + META_ETCUTC_ZONE_NAME, tznames);
-//                    names.put(tzid, META_ETCUTC_ZONE_NAME);
-//                    names.put("UTC", META_ETCUTC_ZONE_NAME);
-//                } else {
+                if (tzid.equals("Etc/UTC") && !map.containsKey(TIMEZONE_ID_PREFIX + "UTC")) {
+                    names.put(METAZONE_ID_PREFIX + META_ETCUTC_ZONE_NAME, tznames);
+                    names.put(tzid, META_ETCUTC_ZONE_NAME);
+                    names.put("UTC", META_ETCUTC_ZONE_NAME);
+                } else {
                     // TZDB short names
                     tznames = Arrays.copyOf(tznames, tznames.length);
                     fillTZDBShortNames(tzid, tznames);
                     names.put(tzid, tznames);
-//                }
+                }
             } else {
                 String meta = handlerMetaZones.get(tzKey);
                 if (meta == null && tzLink != null) {
@@ -840,10 +840,10 @@ public class CLDRConverter {
         names.putAll(exCities);
 
         // If there's no UTC entry at this point, add an empty one
-//        if (!names.isEmpty() && !names.containsKey("UTC")) {
-//            names.putIfAbsent(METAZONE_ID_PREFIX + META_EMPTY_ZONE_NAME, EMPTY_ZONE);
-//            names.put("UTC", META_EMPTY_ZONE_NAME);
-//        }
+        if (!names.isEmpty() && !names.containsKey("UTC")) {
+            names.putIfAbsent(METAZONE_ID_PREFIX + META_EMPTY_ZONE_NAME, EMPTY_ZONE);
+            names.put("UTC", META_EMPTY_ZONE_NAME);
+        }
 
         // Finally some compatibility stuff
         ZoneId.SHORT_IDS.entrySet().stream()

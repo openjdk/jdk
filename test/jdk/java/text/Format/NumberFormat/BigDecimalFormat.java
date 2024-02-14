@@ -23,9 +23,9 @@
 
 /*
  * @test
- * @bug 4018937 8008577
+ * @bug 4018937 8008577 8174269
  * @summary Confirm that methods which are newly added to support BigDecimal and BigInteger work as expected.
- * @run junit/othervm -Djava.locale.providers=COMPAT,SPI BigDecimalFormat
+ * @run junit BigDecimalFormat
  */
 
 import java.math.BigDecimal;
