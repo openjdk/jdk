@@ -523,6 +523,13 @@ bool SuperWord::SLP_extract() {
 
   split_packs_longer_than_max_vector_size();
 
+  // TODO split:
+  // implemented (size, filter if not possible?)
+  // power of 2 size
+  // mutual dependence
+  // use_def size match - maybe multiple times: first create natural borders, after propagate
+  // TODO idea: maybe assert instead of filter below?
+
   // Now we only remove packs:
   construct_my_pack_map();
   filter_packs_for_power_of_2_size();
@@ -1806,7 +1813,7 @@ void SuperWord::filter_packs_for_profitable() {
   while (true) {
     int old_packset_length = _packset.length();
     filter_packs(nullptr, // don't dump each time
-                 "size is not a power of 2",
+                 "not profitable",
                  [&](const Node_List* pack) {
                    return profitable(pack);
                  });
