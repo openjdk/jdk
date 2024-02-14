@@ -91,7 +91,7 @@ public class PrintLatinCJKTest implements Printable {
     @Override
     public int print(Graphics g, PageFormat pf, int pageIndex)
                          throws PrinterException {
-        if (pageIndex == 0) {
+        if (pageIndex > 0) {
             return Printable.NO_SUCH_PAGE;
         }
         g.translate((int) pf.getImageableX(), (int) pf.getImageableY());
