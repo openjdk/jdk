@@ -13144,6 +13144,10 @@ void Assembler::cdqq() {
   emit_int16(REX_W, (unsigned char)0x99);
 }
 
+void Assembler::cdqe() {
+  emit_int16(REX_W, (unsigned char)0x98);
+}
+
 void Assembler::clflush(Address adr) {
   assert(VM_Version::supports_clflush(), "should do");
   prefix(adr);

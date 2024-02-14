@@ -31,7 +31,7 @@ import java.util.Random;
 
 public class IndexOf {
 
-  static Random generator = new Random(1999);
+  static Random generator = new Random();
   private static boolean failure = false;
 
   public static void main(String[] args) throws Exception {
@@ -41,13 +41,9 @@ public class IndexOf {
       int foo = testName.indexOf("dex");
     }
     System.out.println("");
-    generator.setSeed(1999);
     simpleTest();
-    generator.setSeed(1999);
     compareIndexOfLastIndexOf();
-    generator.setSeed(1999);
     compareStringStringBuffer();
-    generator.setSeed(1999);
     compareExhaustive();
 
     if (failure)
@@ -100,21 +96,16 @@ public class IndexOf {
   private static void compareExhaustive() {
     int failCount = 0;
     String sourceString;
-    StringBuffer sourceBuffer;
     String targetString;
-    String targetStringBeginning;
-    String targetStringMiddle;
-    String targetStringEnd;
     int hsLen = 97;
-    int maxNeedleLen = hsLen / 2;
+    int maxNeedleLen = hsLen;// / 2;
     int haystackLen;
     int needleLen;
-    int hsBegin, hsEnd, nBegin, nEnd;
+    int hsBegin, nBegin;
 
     for (int i = 0; i < 10000; i++) {
       do {
         sourceString = generateTestString(hsLen - 1, hsLen);
-        sourceBuffer = new StringBuffer(sourceString);
         targetString = generateTestString(maxNeedleLen - 1, maxNeedleLen);
       } while (naiveFind(sourceString, targetString, 0) != -1);
 
@@ -130,6 +121,7 @@ public class IndexOf {
                 System.out.println("Target="+targetString.substring(nBegin, nBegin + needleLen));
                 System.out.println("haystackLen="+haystackLen+" neeldeLen="+needleLen+" hsBegin="+hsBegin+" nBegin="+nBegin+
                                    " iResult="+iResult+" nResult="+nResult);
+                failCount++;
               }
             }
           }
@@ -208,33 +200,32 @@ public class IndexOf {
 
   private static void compareStringStringBuffer() {
     int failCount = 0;
-  boolean make_new = true;
+    boolean make_new = true;
 
-      String fragment = null;
-      StringBuffer testBuffer = null;
-      String testString = null;
-      int testIndex = 0;
-    generator.setSeed(1999);
+    String fragment = null;
+    StringBuffer testBuffer = null;
+    String testString = null;
+    int testIndex = 0;
 
     for (int x = 0; x < 1000000; x++) {
-    if (make_new) {
-        testString = generateTestString(1, 100);
-        int len = testString.length();
+      if (make_new) {
+          testString = generateTestString(1, 100);
+          int len = testString.length();
 
-        testBuffer = new StringBuffer(len);
-        testBuffer.append(testString);
-        if (!testString.equals(testBuffer.toString()))
-        throw new RuntimeException("Initial equality failure");
+          testBuffer = new StringBuffer(len);
+          testBuffer.append(testString);
+          if (!testString.equals(testBuffer.toString()))
+          throw new RuntimeException("Initial equality failure");
 
-        int x1 = 0;
-        int x2 = 1000;
-        while (x2 > testString.length()) {
-        x1 = generator.nextInt(len);
-        x2 = generator.nextInt(100);
-        x2 = x1 + x2;
-        }
-        fragment = testString.substring(x1, x2);
-    }
+          int x1 = 0;
+          int x2 = 1000;
+          while (x2 > testString.length()) {
+          x1 = generator.nextInt(len);
+          x2 = generator.nextInt(100);
+          x2 = x1 + x2;
+          }
+          fragment = testString.substring(x1, x2);
+      }
 
       int sAnswer = testString.indexOf(fragment);
       int sbAnswer = testBuffer.indexOf(fragment);
@@ -259,8 +250,7 @@ public class IndexOf {
         int sA = xx.indexOf(yy);
       }
 
-    if (make_new)
-        testIndex = getRandomIndex(-100, 100);
+      if (make_new) testIndex = getRandomIndex(-100, 100);
 
       sAnswer = testString.indexOf(fragment, testIndex);
       sbAnswer = testBuffer.indexOf(fragment, testIndex);
@@ -272,7 +262,7 @@ public class IndexOf {
         System.err.println("  testString = '" + testString + "'");
         System.err.println("  testBuffer = '" + testBuffer + "'");
         failCount++;
-    make_new = false;
+        make_new = false;
       } else {
         if ((sAnswer > testString.length()) || ((sAnswer != -1) && (sAnswer < testIndex) && (fragment.length() != 0))) {
           System.err.println("IndexOf returned value out of range; return: " + sAnswer + " length max: "

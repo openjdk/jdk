@@ -121,9 +121,11 @@ void StubGenerator::string_indexof_big_loop_helper(int size, Label& bailout, Lab
   __ movq(r11, -1);
   __ testq(rsi, rsi);
   __ jle(bailout);
+  // Load ymm0 with copies of first byte of needle and ymm1 with copies of last byte of needle
   __ vpbroadcastb(xmm0, Address(r14, 0), Assembler::AVX_256bit);
   __ vpbroadcastb(xmm1, Address(r14, size - 1), Assembler::AVX_256bit);
   __ leaq(rax, Address(r14, rsi, Address::times_1));
+  // Calculate first increment to ensure last read is exactly 32 bytes
   __ leal(rcx, Address(rsi, 33 - size));
   __ andl(rcx, 0x1f);
   __ cmpl(rsi, 0x21);
@@ -131,18 +133,24 @@ void StubGenerator::string_indexof_big_loop_helper(int size, Label& bailout, Lab
   __ cmovl(Assembler::aboveEqual, rdx, rcx);
   __ movq(rcx, rbx);
   __ jmpb(temp);
+
   __ bind(loop_top);
   __ addq(rcx, rdx);
   __ movl(rdx, 0x20);
   __ cmpq(rcx, rax);
   __ jae(bailout);
+
   __ bind(temp);
+  // Compare first byte of needle to haystack
   __ vpcmpeqb(xmm2, xmm0, Address(rcx, 0), Assembler::AVX_256bit);
+  // Compare last byte of needle to haystack at proper position
   __ vpcmpeqb(xmm3, xmm1, Address(rcx, size - 1), Assembler::AVX_256bit);
   __ vpand(xmm2, xmm3, xmm2, Assembler::AVX_256bit);
   __ vpmovmskb(rsi, xmm2, Assembler::AVX_256bit);
   __ testl(rsi, rsi);
   __ je_b(loop_top);
+  // At this point, we have at least one "match" where first and last bytes
+  // of the needle are found the correct distance apart.
 }
 
 /******************************************************************************/
@@ -207,11 +215,10 @@ address StubGenerator::generate_string_indexof() {
   if (VM_Version::supports_avx2()) {  // AVX2 version
     Label L_begin;
 
-    Label L_0x403852, L_0x403bbd, L_0x403bca, L_0x403844;
-    Label L_0x403b91, L_0x403bd2, L_0x4033c2, L_0x403838, L_0x403733, L_0x403841;
-    Label L_0x40320e, L_0x403215, L_0x403265, L_0x40326f, L_0x403233, L_0x40315a;
-    Label L_0x4032a0, L_0x40386a, L_0x40331c, L_0x403302, L_0x403b38, L_0x403360;
-    Label L_0x4038bd, L_0x4038b5;
+    Label L_returnRBP, L_returnRAX, L_checkRangeAndReturn;
+    Label L_bigDefaultNotFound, L_bigCaseFixupAndReturn, L_small7_8_fixup, L_checkRangeAndReturnRCX;
+    Label L_returnZero, L_haystackGreaterThan31, L_copyToStackDone, L_bigSwitchTop, L_copyToStack, L_smallSwitchTop;
+    Label L_bigCaseDefault, L_smallCaseDefault;
 
     address jump_table;
     address jump_table_1;
@@ -229,7 +236,8 @@ address StubGenerator::generate_string_indexof() {
     // Unroll for speed
     small_hs_jmp_table[0] = __ pc();
     {
-      Label L_tmp1, L_tmp2, L_tmp3, L_tmp4, L_tmp5, L_0x403ba5;
+      Label L_tmp1, L_tmp2, L_tmp3, L_tmp4, L_tmp5, L_returnRDI, L_tail;
+
       __ movzbl(rcx, Address(r14, 0));
       __ movl(rax, rbx);
       __ andl(rax, 0xf);
@@ -241,15 +249,17 @@ address StubGenerator::generate_string_indexof() {
       __ testq(rax, rax);
       __ je_b(L_tmp1);
       __ xorl(rdi, rdi);
+
       __ bind(L_tmp2);
       __ cmpb(Address(rbx, rdi, Address::times_1), rcx);
-      __ je(L_0x403ba5);
+      __ je(L_returnRDI);
       __ incq(rdi);
       __ cmpq(rax, rdi);
       __ jne(L_tmp2);
+
       __ bind(L_tmp1);
       __ cmpq(rdx, rsi);
-      __ jae(L_0x403852);
+      __ jae(L_returnRBP);
       __ movq(rdi, rsi);
       __ subq(rdi, rax);
       __ movq(rdx, rdi);
@@ -260,121 +270,135 @@ address StubGenerator::generate_string_indexof() {
       __ vpbroadcastb(xmm0, xmm0, Assembler::AVX_256bit);
       __ leaq(r10, Address(rbx, rax, Address::times_1));
       __ xorl(r8, r8);
+
       __ bind(L_tmp4);
       __ vpcmpeqb(xmm1, xmm0, Address(r10, r8, Address::times_1), Assembler::AVX_256bit);
       __ vpmovmskb(r11, xmm1, Assembler::AVX_256bit);
       __ testl(r11, r11);
-      __ jne(L_0x403bbd);
+      __ jne(L_tail);
       __ addq(r8, 0x10);
       __ cmpq(r8, r9);
       __ jbe(L_tmp4);
+
       __ bind(L_tmp3);
       __ cmpq(rdx, rdi);
-      __ jae(L_0x403852);
+      __ jae(L_returnRBP);
       __ addq(rax, rdx);
+
       __ bind(L_tmp5);
       __ cmpb(Address(rbx, rax, Address::times_1), rcx);
-      __ je(L_0x403bca);
+      __ je(L_returnRAX);
       __ incq(rax);
       __ cmpq(rsi, rax);
       __ jne(L_tmp5);
-      __ jmp(L_0x403852);
-      __ bind(L_0x403ba5);
+      __ jmp(L_returnRBP);
+
+      __ bind(L_returnRDI);
       __ movq(rbp, rdi);
-      __ jmp(L_0x403852);
+      __ jmp(L_returnRBP);
+
+      __ bind(L_tail);
+      // Small case tail stuff
+      __ tzcntl(rcx, r11);
+      __ addq(rax, rcx);
+      __ addq(rax, r8);
+
+      __ bind(L_returnRAX);
+      __ movq(rbp, rax);
+      __ jmp(L_returnRBP);
     }
 // Small case 2:
     small_hs_jmp_table[1] = __ pc();
     {
       Label L_loopTop;
-      string_indexof_small_loop_helper(2, L_0x403844, L_loopTop);
-      __ jmp(L_0x403bca);
+      string_indexof_small_loop_helper(2, L_checkRangeAndReturn, L_loopTop);
+      __ jmp(L_returnRAX);
     }
 // Small case 3:
     small_hs_jmp_table[2] = __ pc();
     {
       Label L_loopTop;
-      string_indexof_small_loop_helper(3, L_0x403844, L_loopTop);
+      string_indexof_small_loop_helper(3, L_checkRangeAndReturn, L_loopTop);
       __ movzbl(rdx, Address(rbx, rax, Address::times_1, 1));
       __ cmpb(rdx, Address(r14, 1));
       __ jne(L_loopTop);
-      __ jmp(L_0x403bca);
+      __ jmp(L_returnRAX);
     }
 // Small case 4:
     small_hs_jmp_table[3] = __ pc();
     {
       Label L_loopTop;
-      string_indexof_small_loop_helper(4, L_0x403844, L_loopTop);
+      string_indexof_small_loop_helper(4, L_checkRangeAndReturn, L_loopTop);
       __ movzwl(rdx, Address(rbx, rax, Address::times_1, 1));
       __ cmpw(Address(r14, 1), rdx);
       __ jne(L_loopTop);
-      __ jmp(L_0x403bca);
+      __ jmp(L_returnRAX);
     }
 // Small case 5:
     small_hs_jmp_table[4] = __ pc();
     {
       Label L_loopTop;
-      string_indexof_small_loop_helper(5, L_0x403844, L_loopTop);
+      string_indexof_small_loop_helper(5, L_checkRangeAndReturn, L_loopTop);
       __ movl(rdx, Address(rbx, rax, Address::times_1, 1));
       __ cmpl(rdx, Address(r14, 1));
       __ jne(L_loopTop);
-      __ jmp(L_0x403bca);
+      __ jmp(L_returnRAX);
     }
 // Small case 6:
     small_hs_jmp_table[5] = __ pc();
     {
       Label L_loopTop;
-      string_indexof_small_loop_helper(6, L_0x403844, L_loopTop);
+      string_indexof_small_loop_helper(6, L_checkRangeAndReturn, L_loopTop);
       __ movl(rdx, Address(rbx, rax, Address::times_1, 1));
       __ cmpl(rdx, Address(r14, 1));
       __ jne(L_loopTop);
-      __ jmp(L_0x403bca);
+      __ jmp(L_returnRAX);
     }
 // Small case 7:
     small_hs_jmp_table[6] = __ pc();
     {
       Label L_loopTop;
-      string_indexof_small_loop_helper(7, L_0x403844, L_loopTop);
+      string_indexof_small_loop_helper(7, L_checkRangeAndReturn, L_loopTop);
       __ movl(rdx, Address(rbx, rax, Address::times_1, 1));
       __ cmpl(rdx, Address(r14, 1));
       __ jne(L_loopTop);
       __ movzbl(rdx, Address(rbx, rax, Address::times_1, 5));
       __ cmpb(rdx, Address(r14, 5));
       __ jne(L_loopTop);
-      __ jmp(L_0x403bca);
+      __ jmp(L_returnRAX);
     }
 // Small case 8:
     small_hs_jmp_table[7] = __ pc();
     {
       Label L_loopTop;
-      string_indexof_small_loop_helper(8, L_0x403844, L_loopTop);
+      string_indexof_small_loop_helper(8, L_checkRangeAndReturn, L_loopTop);
       __ movl(rdx, Address(rbx, rax, Address::times_1, 1));
       __ cmpl(rdx, Address(r14, 1));
       __ jne(L_loopTop);
       __ movzwl(rdx, Address(rbx, rax, Address::times_1, 5));
       __ cmpw(Address(r14, 5), rdx);
       __ jne(L_loopTop);
-      __ jmp(L_0x403bca);
+      __ jmp(L_returnRAX);
     }
 // Small case 9:
     small_hs_jmp_table[8] = __ pc();
     {
       Label L_loopTop;
-      string_indexof_small_loop_helper(9, L_0x403844, L_loopTop);
+      string_indexof_small_loop_helper(9, L_checkRangeAndReturn, L_loopTop);
       __ movq(rdx, Address(rbx, rax, Address::times_1, 1));
       __ cmpq(rdx, Address(r14, 1));
       __ jne(L_loopTop);
-      __ jmp(L_0x403bca);
+      __ jmp(L_returnRAX);
     }
 // Small case 10:
     small_hs_jmp_table[9] = __ pc();
     {
       Label L_loopTop;
-      string_indexof_small_loop_helper(10, L_0x403844, L_loopTop);
+      string_indexof_small_loop_helper(10, L_checkRangeAndReturn, L_loopTop);
       __ movq(rdx, Address(rbx, rax, Address::times_1, 1));
       __ cmpq(rdx, Address(r14, 1));
       __ jne(L_loopTop);
-      __ jmp(L_0x403bca);
+      __ jmp(L_returnRAX);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////
@@ -386,72 +410,58 @@ address StubGenerator::generate_string_indexof() {
 // Big case 1:
     large_hs_jmp_table[0] = __ pc();
     {
-      Label L_0x403b51, L_0x403bad, L_0x403b6e;
+      Label L_notInFirst32, L_found, L_loopTop;
       __ vpbroadcastb(xmm0, Address(r14, 0), Assembler::AVX_256bit);
       __ vpcmpeqb(xmm1, xmm0, Address(rbx, 0), Assembler::AVX_256bit);
       __ vpmovmskb(rax, xmm1, Assembler::AVX_256bit);
       __ testl(rax, rax);
-      __ je_b(L_0x403b51);
+      __ je_b(L_notInFirst32);
       __ tzcntl(r11, rax);
-      __ jmp(L_0x403844);
+      __ jmp(L_checkRangeAndReturn);
 // Big case 1 body:
-      __ bind(L_0x403b51);
+      __ bind(L_notInFirst32);
       __ movq(rax, rsi);
       __ andq(rax, -32);
       __ andl(rsi, 0x1f);
       __ movq(r11, -1);
       __ cmpq(rsi, rax);
-      __ jge(L_0x403844);
+      __ jge(L_checkRangeAndReturn);
       __ addq(rax, rbx);
 
-      __ bind(L_0x403b6e);
+      __ bind(L_loopTop);
       __ vpcmpeqb(xmm1, xmm0, Address(rbx, rsi, Address::times_1), Assembler::AVX_256bit);
       __ vpmovmskb(rcx, xmm1, Assembler::AVX_256bit);
       __ testl(rcx, rcx);
-      __ je_b(L_0x403bad);
+      __ jne_b(L_found);
       __ leaq(rcx, Address(rbx, rsi, Address::times_1));
       __ addq(rcx, 0x20);
       __ addq(rsi, 0x20);
       __ cmpq(rcx, rax);
-      __ jb(L_0x403b6e);
-      __ jmp(L_0x403844);
+      __ jb(L_loopTop);
+      __ jmp(L_checkRangeAndReturn);
 
-      __ bind(L_0x403bad);
+      __ bind(L_found);
       __ tzcntl(r11, rcx);
       __ addq(r11, rsi);
-      __ jmp(L_0x403844);
+      __ jmp(L_checkRangeAndReturn);
     }
 
-  __ bind(L_0x403b91);
-  __ tzcntl(rcx, rsi);
-  __ subq(rax, rbx);
-  __ addq(rax, rcx);
-  __ movq(r11, rax);
-  __ jmp(L_0x403844);
-
-  __ bind(L_0x403bbd);
-   // Small case tail stuff
-  __ tzcntl(rcx, r11);
-  __ addq(rax, rcx);
-  __ addq(rax, r8);
-  __ bind(L_0x403bca);
-  __ movq(rbp, rax);
-  __ jmp(L_0x403852);
-
    // Big case default stuff
-  __ bind(L_0x403bd2);
+  __ bind(L_bigDefaultNotFound);
   __ movq(r10, Address(rsp, 0x20));
   __ movq(r11, -1);
-  __ jmp(L_0x403844);
+  __ jmp(L_checkRangeAndReturn);
 
 
 
 // Big case 2:
     large_hs_jmp_table[1] = __ pc();
     {
+      Label L_found, L_loopTop;
+
       __ movq(r11, -1);
       __ testq(rsi, rsi);
-      __ jle(L_0x403844);
+      __ jle(L_checkRangeAndReturn);
       __ vpbroadcastb(xmm0, Address(r14, 0), Assembler::AVX_256bit);
       __ vpbroadcastb(xmm1, Address(r14, 1), Assembler::AVX_256bit);
       __ leaq(rcx, Address(rbx, rsi, Address::times_1));
@@ -462,27 +472,34 @@ address StubGenerator::generate_string_indexof() {
       __ cmovl(Assembler::aboveEqual, rdx, rax);
       __ movq(rax, rbx);
 
-      __ bind(L_0x4033c2);
+      __ bind(L_loopTop);
       __ vpcmpeqb(xmm2, xmm0, Address(rax, 0), Assembler::AVX_256bit);
       __ vpcmpeqb(xmm3, xmm1, Address(rcx, 1), Assembler::AVX_256bit);
       __ vpand(xmm2, xmm3, xmm2, Assembler::AVX_256bit);
       __ vpmovmskb(rsi, xmm2, Assembler::AVX_256bit);
       __ testl(rsi, rsi);
-      __ je_b(L_0x403b91);
+      __ jne_b(L_found);
       __ addq(rax, rdx);
       __ cmpq(rax, rcx);
-      __ jae(L_0x403844);
+      __ jae(L_checkRangeAndReturn);
       __ vpcmpeqb(xmm2, xmm0, Address(rax, 0), Assembler::AVX_256bit);
       __ vpcmpeqb(xmm3, xmm1, Address(rax, 1), Assembler::AVX_256bit);
       __ vpand(xmm2, xmm3, xmm2, Assembler::AVX_256bit);
       __ vpmovmskb(rsi, xmm2, Assembler::AVX_256bit);
       __ testl(rsi, rsi);
-      __ jne_b(L_0x403b91);
+      __ jne_b(L_found);
       __ addq(rax, 0x20);
       __ movl(rdx, 0x20);
       __ cmpq(rax, rcx);
-      __ jb(L_0x4033c2);
-      __ jmp(L_0x403844);
+      __ jb(L_loopTop);
+      __ jmp(L_checkRangeAndReturn);
+
+      __ bind(L_found);
+      __ tzcntl(rcx, rsi);
+      __ subq(rax, rbx);
+      __ addq(rax, rcx);
+      __ movq(r11, rax);
+      __ jmp(L_checkRangeAndReturn);
     }
 
 
@@ -492,13 +509,13 @@ address StubGenerator::generate_string_indexof() {
     {
       Label L_loopTop, L_innerLoop;
 
-      string_indexof_big_loop_helper(3, L_0x403844, L_loopTop);
+      string_indexof_big_loop_helper(3, L_checkRangeAndReturn, L_loopTop);
       __ movzbl(rdi, Address(r14, 1));
       __ align(16);
       __ bind(L_innerLoop);
       __ tzcntl(r8, rsi);
       __ cmpb(Address(rcx, r8, Address::times_1, 1), rdi);
-      __ je(L_0x403838);
+      __ je(L_bigCaseFixupAndReturn);
       __ blsrl(rsi, rsi);
       __ jne(L_innerLoop);
       __ jmp(L_loopTop);
@@ -511,13 +528,13 @@ address StubGenerator::generate_string_indexof() {
     {
       Label L_loopTop, L_innerLoop;
 
-      string_indexof_big_loop_helper(4, L_0x403844, L_loopTop);
+      string_indexof_big_loop_helper(4, L_checkRangeAndReturn, L_loopTop);
       __ movzwl(rdi, Address(r14, 1));
       __ align(16);
       __ bind(L_innerLoop);
       __ tzcntl(r8, rsi);
       __ cmpw(Address(rcx, r8, Address::times_1, 1), rdi);
-      __ je(L_0x403838);
+      __ je(L_bigCaseFixupAndReturn);
       __ blsrl(rsi, rsi);
       __ jne(L_innerLoop);
       __ jmp(L_loopTop);
@@ -530,13 +547,13 @@ address StubGenerator::generate_string_indexof() {
     {
       Label L_loopTop, L_innerLoop;
 
-      string_indexof_big_loop_helper(5, L_0x403844, L_loopTop);
+      string_indexof_big_loop_helper(5, L_checkRangeAndReturn, L_loopTop);
       __ movl(rdi, Address(r14, 1));
       __ align(16);
       __ bind(L_innerLoop);
       __ tzcntl(r8, rsi);
       __ cmpl(Address(rcx, r8, Address::times_1, 1), rdi);
-      __ je(L_0x403838);
+      __ je(L_bigCaseFixupAndReturn);
       __ blsrl(rsi, rsi);
       __ jne(L_innerLoop);
       __ jmp(L_loopTop);
@@ -549,13 +566,13 @@ address StubGenerator::generate_string_indexof() {
     {
       Label L_loopTop, L_innerLoop;
 
-      string_indexof_big_loop_helper(6, L_0x403844, L_loopTop);
+      string_indexof_big_loop_helper(6, L_checkRangeAndReturn, L_loopTop);
       __ movl(rdi, Address(r14, 1));
       __ align(16);
       __ bind(L_innerLoop);
       __ tzcntl(r8, rsi);
       __ cmpl(Address(rcx, r8, Address::times_1, 1), rdi);
-      __ je(L_0x403838);
+      __ je(L_bigCaseFixupAndReturn);
       __ blsrl(rsi, rsi);
       __ jne(L_innerLoop);
       __ jmp(L_loopTop);
@@ -568,7 +585,7 @@ address StubGenerator::generate_string_indexof() {
     {
       Label L_loopTop, L_innerLoop, L_tmp;
 
-      string_indexof_big_loop_helper(7, L_0x403844, L_loopTop);
+      string_indexof_big_loop_helper(7, L_checkRangeAndReturn, L_loopTop);
       __ movl(rdi, Address(r14, 1));
       __ jmpb(L_tmp);
       __ align(16);
@@ -581,7 +598,7 @@ address StubGenerator::generate_string_indexof() {
       __ movzbl(r9, Address(rcx, r8, Address::times_1, 5));
       __ cmpb(r9, Address(r14, 5));
       __ jne(L_innerLoop);
-      __ jmp(L_0x403733);
+      __ jmp(L_small7_8_fixup);
     }
 
 
@@ -591,7 +608,7 @@ address StubGenerator::generate_string_indexof() {
     {
       Label L_loopTop, L_innerLoop, L_tmp;
 
-      string_indexof_big_loop_helper(8, L_0x403844, L_loopTop);
+      string_indexof_big_loop_helper(8, L_checkRangeAndReturn, L_loopTop);
       __ movl(rdi, Address(r14, 1));
       __ jmpb(L_tmp);
       __ align(16);
@@ -604,10 +621,10 @@ address StubGenerator::generate_string_indexof() {
       __ movzwl(r9, Address(rcx, r8, Address::times_1, 5));
       __ cmpw(Address(r14, 5), r9);
       __ jne(L_innerLoop);
-      __ bind(L_0x403733);
+      __ bind(L_small7_8_fixup);
       __ subq(rcx, rbx);
       __ addq(rcx, r8);
-      __ jmp(L_0x403841);
+      __ jmp(L_checkRangeAndReturnRCX);
     }
 
 
@@ -617,13 +634,13 @@ address StubGenerator::generate_string_indexof() {
     {
       Label L_loopTop, L_innerLoop;
 
-      string_indexof_big_loop_helper(9, L_0x403844, L_loopTop);
+      string_indexof_big_loop_helper(9, L_checkRangeAndReturn, L_loopTop);
       __ movq(rdi, Address(r14, 1));
       __ align(16);
       __ bind(L_innerLoop);
       __ tzcntl(r8, rsi);
       __ cmpq(Address(rcx, r8, Address::times_1, 1), rdi);
-      __ je(L_0x403838);
+      __ je(L_bigCaseFixupAndReturn);
       __ blsrl(rsi, rsi);
       __ jne(L_innerLoop);
       __ jmp(L_loopTop);
@@ -636,13 +653,13 @@ address StubGenerator::generate_string_indexof() {
     {
       Label L_loopTop, L_innerLoop;
 
-      string_indexof_big_loop_helper(10, L_0x403844, L_loopTop);
+      string_indexof_big_loop_helper(10, L_checkRangeAndReturn, L_loopTop);
       __ movq(rdi, Address(r14, 1));
       __ align(16);
       __ bind(L_innerLoop);
       __ tzcntl(r8, rsi);
       __ cmpq(Address(rcx, r8, Address::times_1, 1), rdi);
-      __ je(L_0x403838);
+      __ je(L_bigCaseFixupAndReturn);
       __ blsrl(rsi, rsi);
       __ jne(L_innerLoop);
       __ jmp(L_loopTop);
@@ -673,69 +690,75 @@ address StubGenerator::generate_string_indexof() {
     //
     // Big case default:
 
-    __ bind(L_0x4032a0);
-    __ movq(r11, -1);
-    __ testq(rsi, rsi);
-    __ jle(L_0x403844);
-    __ movq(Address(rsp, 0x20), r10);
-    __ leaq(rax, Address(rbx, rsi, Address::times_1));
-    __ movq(Address(rsp, 0x10), rax);
-    __ vpbroadcastb(xmm0, Address(r14, 0), Assembler::AVX_256bit);
-    __ vmovdqu(Address(rsp, 0x50), xmm0);
-    __ vpbroadcastb(xmm0, Address(r12, r14, Address::times_1, -1), Assembler::AVX_256bit);
-    __ vmovdqu(Address(rsp, 0x30), xmm0);
-    __ movl(rax, rsi);
-    __ subl(rax, r12);
-    __ incl(rax);
-    __ andl(rax, 0x1f);
-    __ cmpq(rsi, 0x21);
-    __ movl(rcx, 0x20);
-    __ cmovl(Assembler::aboveEqual, rcx, rax);
-    __ incq(r14);
-    __ movq(rax, rbx);
-    __ movq(rbx, r14);
-    __ leaq(r15, Address(r12, -0x2));
-    __ movq(Address(rsp, 0x28), rax);
-    __ jmpb(L_0x40331c);
-    __ bind(L_0x403302);
-    __ movq(rax, Address(rsp, 0x8));
-    __ addq(rax, Address(rsp, 0x18));
-    __ movl(rcx, 0x20);
-    __ cmpq(rax, Address(rsp, 0x10));
-    __ jae(L_0x403bd2);
+    {
+      Label L_loopTop, L_loopMid, L_innerLoop, L_found;
 
-    __ bind(L_0x40331c);
-    __ movq(Address(rsp, 0x18), rcx);
-    __ vmovdqu(xmm0, Address(rsp, 0x50));
-    __ vpcmpeqb(xmm0, xmm0, Address(rax, 0), Assembler::AVX_256bit);
-    __ vmovdqu(xmm1, Address(rsp, 0x30));
-    __ movq(Address(rsp, 0x8), rax);
-    __ vpcmpeqb(xmm1, xmm1, Address(rax, r12, Address::times_1, -1), Assembler::AVX_256bit);
-    __ vpand(xmm0, xmm1, xmm0, Assembler::AVX_256bit);
-    __ vpmovmskb(r13, xmm0, Assembler::AVX_256bit);
-    __ testl(r13, r13);
-    __ je(L_0x403302);
-    __ movq(rax, Address(rsp, 0x8));
-    __ leaq(r14, Address(rax, 0x1));
-    __ align(8);
-    __ bind(L_0x403360);
-    __ tzcntl(rbp, r13);
-    __ leaq(rdi, Address(r14, rbp, Address::times_1));
-    ((C2_MacroAssembler*) _masm)-> arrays_equals(true, rdi, rbx, r15, rax, rdx, xmm0, xmm1,
-                     false /* char */, knoreg);
-    __ testl(rax, rax);
-    __ je_b(L_0x403b38);
-    __ blsrl(r13, r13);
-    __ jne(L_0x403360);
-    __ jmp(L_0x403302);
+      __ bind(L_bigCaseDefault);
+      __ movq(r11, -1);
+      __ testq(rsi, rsi);
+      __ jle(L_checkRangeAndReturn);
+      __ movq(Address(rsp, 0x20), r10);
+      __ leaq(rax, Address(rbx, rsi, Address::times_1));
+      __ movq(Address(rsp, 0x10), rax);
+      __ vpbroadcastb(xmm0, Address(r14, 0), Assembler::AVX_256bit);
+      __ vmovdqu(Address(rsp, 0x50), xmm0);
+      __ vpbroadcastb(xmm0, Address(r12, r14, Address::times_1, -1), Assembler::AVX_256bit);
+      __ vmovdqu(Address(rsp, 0x30), xmm0);
+      __ movl(rax, rsi);
+      __ subl(rax, r12);
+      __ incl(rax);
+      __ andl(rax, 0x1f);
+      __ cmpq(rsi, 0x21);
+      __ movl(rcx, 0x20);
+      __ cmovl(Assembler::aboveEqual, rcx, rax);
+      __ incq(r14);
+      __ movq(rax, rbx);
+      __ movq(rbx, r14);
+      __ leaq(r15, Address(r12, -0x2));
+      __ movq(Address(rsp, 0x28), rax);
+      __ jmpb(L_loopMid);
 
-    __ bind(L_0x403b38);
-    __ movl(rax, rbp);
-    __ movq(r11, Address(rsp, 0x8));
-    __ subq(r11, Address(rsp, 0x28));
-    __ addq(r11, rax);
-    __ movq(r10, Address(rsp, 0x20));
-    __ jmp(L_0x403844);
+      __ bind(L_loopTop);
+      __ movq(rax, Address(rsp, 0x8));
+      __ addq(rax, Address(rsp, 0x18));
+      __ movl(rcx, 0x20);
+      __ cmpq(rax, Address(rsp, 0x10));
+      __ jae(L_bigDefaultNotFound);
+
+      __ bind(L_loopMid);
+      __ movq(Address(rsp, 0x18), rcx);
+      __ vmovdqu(xmm0, Address(rsp, 0x50));
+      __ vpcmpeqb(xmm0, xmm0, Address(rax, 0), Assembler::AVX_256bit);
+      __ vmovdqu(xmm1, Address(rsp, 0x30));
+      __ movq(Address(rsp, 0x8), rax);
+      __ vpcmpeqb(xmm1, xmm1, Address(rax, r12, Address::times_1, -1), Assembler::AVX_256bit);
+      __ vpand(xmm0, xmm1, xmm0, Assembler::AVX_256bit);
+      __ vpmovmskb(r13, xmm0, Assembler::AVX_256bit);
+      __ testl(r13, r13);
+      __ je(L_loopTop);
+      __ movq(rax, Address(rsp, 0x8));
+      __ leaq(r14, Address(rax, 0x1));
+
+      __ align(8);
+      __ bind(L_innerLoop);
+      __ tzcntl(rbp, r13);
+      __ leaq(rdi, Address(r14, rbp, Address::times_1));
+      __ arrays_equals(true, rdi, rbx, r15, rax, rdx, xmm0, xmm1,
+                      false /* char */, knoreg);
+      __ testl(rax, rax);
+      __ jne_b(L_found);
+      __ blsrl(r13, r13);
+      __ jne(L_innerLoop);
+      __ jmp(L_loopTop);
+
+      __ bind(L_found);
+      __ movl(rax, rbp);
+      __ movq(r11, Address(rsp, 0x8));
+      __ subq(r11, Address(rsp, 0x28));
+      __ addq(r11, rax);
+      __ movq(r10, Address(rsp, 0x20));
+      __ jmp(L_checkRangeAndReturn);
+    }
 
     ////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////
@@ -743,67 +766,72 @@ address StubGenerator::generate_string_indexof() {
     //
     // Small case default:
 
-    __ bind(L_0x40386a);
-    __ incq(rsi);
-    __ subq(rsi, r12);
-    __ je(L_0x403852);
-    __ movzbl(rcx, Address(r14, 0));
-    __ leaq(rax, Address(r14, 0x1));
-    __ movq(Address(rsp, 0x8), rax);
-    __ cmpq(rsi, 0x2);
-    __ movl(rcx, 0x1);
-    __ cmovl(Assembler::aboveEqual, rdx, rsi);
-    __ leaq(rax, Address(r12, -0x2));
-    __ movq(Address(rsp, 0x50), rax);
-    __ leaq(rsi, Address(rbx, r12, Address::times_1));
-    __ decq(rsi);
-    __ leaq(rax, Address(rbx, 0x1));
-    __ movq(Address(rsp, 0x10), rax);
-    __ xorl(r15, r15);
-    __ movq(Address(rsp, 0x18), rdx);
-    __ movq(Address(rsp, 0x30), rsi);
-    __ jmpb(L_0x4038bd);
-    __ bind(L_0x4038b5);
-    __ incq(r15);
-    __ cmpq(rdx, r15);
-    __ je(L_0x403852);
+    {
+      Label L_loopTop, L_loopMid;
 
-    __ bind(L_0x4038bd);
-    __ cmpb(Address(rbx, r15, Address::times_1), rcx);
-    __ jne(L_0x4038b5);
-    __ movzbl(rax, Address(rsi, r15, Address::times_1));
-    __ cmpb(Address(r14, r13, Address::times_1), rax);
-    __ jne(L_0x4038b5);
+      __ bind(L_smallCaseDefault);
+      __ incq(rsi);
+      __ subq(rsi, r12);
+      __ je(L_returnRBP);
+      __ movzbl(rcx, Address(r14, 0));
+      __ leaq(rax, Address(r14, 0x1));
+      __ movq(Address(rsp, 0x8), rax);
+      __ cmpq(rsi, 0x2);
+      __ movl(rcx, 0x1);
+      __ cmovl(Assembler::aboveEqual, rdx, rsi);
+      __ leaq(rax, Address(r12, -0x2));
+      __ movq(Address(rsp, 0x50), rax);
+      __ leaq(rsi, Address(rbx, r12, Address::times_1));
+      __ decq(rsi);
+      __ leaq(rax, Address(rbx, 0x1));
+      __ movq(Address(rsp, 0x10), rax);
+      __ xorl(r15, r15);
+      __ movq(Address(rsp, 0x18), rdx);
+      __ movq(Address(rsp, 0x30), rsi);
+      __ jmpb(L_loopMid);
 
-    __ movq(rax, Address(rsp, 0x10));
-    __ leaq(rdi, Address(rax, r15, Address::times_1));
-    __ movq(rsi, Address(rsp, 0x8));
-    __ movq(rdx, Address(rsp, 0x50));
-    ((C2_MacroAssembler*) _masm)-> arrays_equals(true, rdi, rsi, rdx, rax, r12, xmm0, xmm1,
-                     false /* char */, knoreg);
-    __ testl(rax, rax);
-    __ jne(L_0x4038b5);
-    __ movq(rbp, r15);
-    __ jmp(L_0x403852);
+      __ bind(L_loopTop);
+      __ incq(r15);
+      __ cmpq(rdx, r15);
+      __ je(L_returnRBP);
+
+      __ bind(L_loopMid);
+      __ cmpb(Address(rbx, r15, Address::times_1), rcx);
+      __ jne(L_loopTop);
+      __ movzbl(rax, Address(rsi, r15, Address::times_1));
+      __ cmpb(Address(r14, r13, Address::times_1), rax);
+      __ jne(L_loopTop);
+
+      __ movq(rax, Address(rsp, 0x10));
+      __ leaq(rdi, Address(rax, r15, Address::times_1));
+      __ movq(rsi, Address(rsp, 0x8));
+      __ movq(rdx, Address(rsp, 0x50));
+      __ arrays_equals(true, rdi, rsi, rdx, rax, r12, xmm0, xmm1,
+                      false /* char */, knoreg);
+      __ testl(rax, rax);
+      __ je_b(L_loopTop);
+      __ movq(rbp, r15);
+      __ jmp(L_returnRBP);
+    }
 
     ////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////
 
-    __ bind(L_0x403838);
+    __ bind(L_bigCaseFixupAndReturn);
     __ movl(rax, r8);
     __ subq(rcx, rbx);
     __ addq(rcx, rax);
 
-    __ bind(L_0x403841);
+    __ bind(L_checkRangeAndReturnRCX);
     __ movq(r11, rcx);
 
-    __ bind(L_0x403844);
+    __ bind(L_checkRangeAndReturn);
     __ cmpq(r11, r10);
     __ movq(rbp, -1);
     __ cmovq(Assembler::belowEqual, rbp, r11);
 
-    __ bind(L_0x403852);
+    __ bind(L_returnRBP);
     __ movq(rax, rbp);
     __ addptr(rsp, 0xf0);
 #ifdef _WIN64
@@ -856,38 +884,40 @@ address StubGenerator::generate_string_indexof() {
     // }
     __ movq(r10, rsi);
     __ subq(r10, rcx);
-    __ jb(L_0x403852);
+    __ jb(L_returnRBP);
     __ movq(r12, rcx);
     __ testq(rcx, rcx);
-    __ je_b(L_0x40320e);
+    __ je_b(L_returnZero);
     __ movq(r14, rdx);
     __ movq(rbx, rdi);
     __ cmpq(rsi, 0x20);
-    __ jae_b(L_0x403215);
+    __ jae_b(L_haystackGreaterThan31);
 
-    __ cmpq(r10, 0xb);
-    __ jae_b(L_0x403233);
-    __ bind(L_0x40315a);
+    // __ cmpq(r10, 0xb);      // ASGASG
+    // __ jae_b(L_copyToStack);
+    __ jmpb(L_copyToStack);
+
+    __ bind(L_smallSwitchTop);
     __ leaq(r13, Address(r12, -1));
     __ cmpq(r13, 0x9);
-    __ ja(L_0x40386a);
+    __ ja(L_smallCaseDefault);
     __ mov64(r15, (int64_t)jump_table_1);
     __ jmp(Address(r15, r13, Address::times_8));
 
-    __ bind(L_0x40320e);
+    __ bind(L_returnZero);
     __ xorl(rbp, rbp);
-    __ jmp(L_0x403852);
+    __ jmp(L_returnRBP);
 
-    __ bind(L_0x403215);
+    __ bind(L_haystackGreaterThan31);
     __ leaq(rax, Address(r12, 0x1f));
     __ cmpq(rax, rsi);
-    __ jle(L_0x40326f);
+    __ jle(L_bigSwitchTop);
     __ cmpq(rsi, 0x20);
-    __ ja(L_0x40315a);
+    __ ja(L_smallSwitchTop);
     // __ cmpq(r10, 0xa);
-    // __ jbe(L_0x40315a);
+    // __ jbe(L_smallSwitchTop);
 
-    __ bind(L_0x403233);
+    __ bind(L_copyToStack);
     __ leal(rdx, Address(rsi, -1));
     __ andl(rdx, 0x10);
     __ movl(rax, rsi);
@@ -898,18 +928,19 @@ address StubGenerator::generate_string_indexof() {
     __ vmovdqu(xmm0, Address(rcx, rbx, Address::times_1, -0x10));
     __ vmovdqu(Address(rsp, 0x70), xmm0);
     __ testl(rdx, rdx);
-    __ je_b(L_0x403265);
+    __ je_b(L_copyToStackDone);
 
     __ vmovdqu(xmm0, Address(rbx, rcx, Address::times_1));
     __ vmovdqu(Address(rsp, 0x80), xmm0);
-    __ bind(L_0x403265);
-    __ emit_int16(0x48, 0x98);
+
+    __ bind(L_copyToStackDone);
+    __ cdqe();
     __ leaq(rbx, Address(rsp, rax, Address::times_1));
     __ addq(rbx, 0x70);
-    __ bind(L_0x40326f);
+    __ bind(L_bigSwitchTop);
     __ leaq(rax, Address(r12, -1));
     __ cmpq(rax, 0x9);
-    __ ja(L_0x4032a0);
+    __ ja(L_bigCaseDefault);
     __ mov64(r15, (int64_t)jump_table);
     __ jmp(Address(r15, rax, Address::times_8));
 

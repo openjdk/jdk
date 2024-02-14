@@ -1094,6 +1094,7 @@ private:
   void cdql();
 
   void cdqq();
+  void cdqe();
 
   void cld();
 
