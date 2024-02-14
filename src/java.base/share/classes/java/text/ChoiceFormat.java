@@ -232,7 +232,7 @@ public class ChoiceFormat extends NumberFormat {
      * limits} are not in ascending order.
      *
      * @implSpec Given an incorrect pattern, this implementation may either
-     * throw an {@code IllegalArgumentException} or succeed and discard the incorrect
+     * throw an exception or succeed and discard the incorrect
      * portion. Discarding the incorrect portion may result in a ChoiceFormat
      * with empty {@code limits} and {@code choices}.
      *
@@ -401,7 +401,7 @@ public class ChoiceFormat extends NumberFormat {
      * ##patterns Patterns} section.
      *
      * @implSpec Given an incorrect pattern, this implementation may either
-     * throw an {@code IllegalArgumentException} or succeed and discard the incorrect
+     * throw an exception or succeed and discard the incorrect
      * portion. Discarding the incorrect portion may result in a ChoiceFormat
      * with empty {@code limits} and {@code choices}.
      *
