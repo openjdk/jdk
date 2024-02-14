@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.openjdk.bench.vm.gc.system_gc;
+package org.openjdk.bench.vm.gc.systemgc;
 
 import java.util.ArrayList;
 import java.util.HashMap;

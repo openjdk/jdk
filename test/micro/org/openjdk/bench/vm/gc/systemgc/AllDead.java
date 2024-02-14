@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.openjdk.bench.vm.gc.system_gc;
+package org.openjdk.bench.vm.gc.systemgc;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -39,11 +39,10 @@ import java.util.concurrent.TimeUnit;
 @Fork(value=25, jvmArgsAppend={"-Xmx5g", "-Xms5g", "-Xmn3g", "-XX:+AlwaysPreTouch"})
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
-public class HalfHashedHalfDead {
+public class AllDead {
 
     /*
-     * Test the System GC when there is a big amount of objects
-     * with hash codes calculated.
+     * Test the System GC when all allocated objects are dead.
      *
      * The jvmArgs are provided to avoid GCs during object creation.
      */
@@ -53,17 +52,7 @@ public class HalfHashedHalfDead {
     @Setup(Level.Iteration)
     public void generateGarbage() {
         holder = GarbageGenerator.generateObjectArrays();
-        // Keeping half the objects and calculating the hash code to
-        // force some GCs to preserve marks.
-        for (Object[] objectArray: holder) {
-            for (int i = 0; i < objectArray.length; i++) {
-                if (i % 2 == 0) {
-                    objectArray[i].hashCode();
-                } else {
-                    objectArray[i] = null;
-                }
-            }
-        }
+        holder = null;
     }
 
     @Benchmark
