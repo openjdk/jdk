@@ -36,11 +36,11 @@
 // Loop Unswitching is a loop optimization to move an invariant, non-loop-exiting test in the loop body before the loop.
 // Such a test is either always true or always false in all loop iterations and could therefore only be executed once.
 // To achieve that, we duplicate the loop and change the original and cloned loop as follows:
-// - Original loop -> true-path-loop: The true-path-path of the invariant, non-loop-exiting test in the original loop
-//                                    is kept while the false-path-path is killed. We call this unswitched loop version
+// - Original loop -> true-path-loop: The true-path of the invariant, non-loop-exiting test in the original loop
+//                                    is kept while the false-path is killed. We call this unswitched loop version
 //                                    the true-path-loop.
-// - Cloned loop -> False-path-loop:  The false-path-path of the invariant, non-loop-exiting test in the cloned loop
-//                                    is kept while the true-path-path is killed. We call this unswitched loop version
+// - Cloned loop -> False-path-loop:  The false-path of the invariant, non-loop-exiting test in the cloned loop
+//                                    is kept while the true-path is killed. We call this unswitched loop version
 //                                    the false-path loop.
 //
 // The invariant, non-loop-exiting test can now be moved before both loops (to only execute it once) and turned into a
