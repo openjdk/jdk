@@ -92,7 +92,6 @@ import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.Pair;
-import java.util.ServiceLoader;
 import java.util.regex.Pattern;
 import java.util.stream.StreamSupport;
 import jdk.internal.org.commonmark.ext.gfm.tables.TablesExtension;
@@ -239,7 +238,7 @@ public abstract class JavadocHelper implements AutoCloseable {
             IOException[] exception = new IOException[1];
             Comparator<int[]> spanComp =
                     (span1, span2) -> span1[0] != span2[0] ? span2[0] - span1[0]
-                                                           : span2[1] - span1[0];
+                                                           : span2[1] - span1[1];
             //spans in the docComment that should be replaced with the given Strings:
             Map<int[], List<String>> replace = new TreeMap<>(spanComp);
             DocSourcePositions sp = trees.getSourcePositions();
@@ -276,7 +275,10 @@ public abstract class JavadocHelper implements AutoCloseable {
 
                         String htmlWithPlaceHolders = stripParagraphs(HtmlRenderer.builder().build().render(document));
                         for (String part : htmlWithPlaceHolders.split(PLACEHOLDER_PATTERN, -1)) {
-                            replace.put(joinedMarkdowns.replaceSpans.remove(0), List.of(part));
+                            int[] replaceSpan = joinedMarkdowns.replaceSpans.remove(0);
+
+                            replace.computeIfAbsent(replaceSpan, s -> new ArrayList<>())
+                                   .add(part);
                         }
                     }
                     return super.scan(nodes, p);
@@ -804,13 +806,6 @@ public abstract class JavadocHelper implements AutoCloseable {
             Iterable<? extends CompilationUnitTree> cuts = task.parse();
 
             task.enter();
-            //TODO: the standard transformer breaks text tree positions:
-//            for (DocCommentTreeTransformer transformer : ServiceLoader.load(DocTree.class.getModule().getLayer(), DocCommentTreeTransformer.class)) {
-//                if ("standard".equals(transformer.name())) {
-//                    DocTrees.instance(task).setDocCommentTreeTransformer(transformer);
-//                    break;
-//                }
-//            }
 
             return Pair.of(task, cuts.iterator().next());
         }
@@ -836,18 +831,18 @@ public abstract class JavadocHelper implements AutoCloseable {
 
             for (DocTree tree : trees) {
                 if (tree instanceof RawTextTree t) {
-                    //TODO: handle FFFC appearing in the text
-//                    if (t.getKind() != DocTree.Kind.MARKDOWN) {
-//                        throw new IllegalStateException(t.getKind().toString());
-//                    }
+                    if (t.getKind() != DocTree.Kind.MARKDOWN) {
+                        throw new IllegalStateException(t.getKind().toString());
+                    }
                     String code = t.getContent();
-//                    // handle the (unlikely) case of any U+FFFC characters existing in the code
-//                    int start = 0;
-//                    int pos;
-//                    while ((pos = code.indexOf(PLACEHOLDER, start)) != -1) {
-//                        replacements.add(PLACEHOLDER);
-//                        start = pos + 1;
-//                    }
+                    // handle the (unlikely) case of any U+FFFC characters existing in the code
+                    int start = 0;
+                    int pos;
+                    while ((pos = code.indexOf(PLACEHOLDER, start)) != -1) {
+                        replaceSpans.add(new int[] {currentSpanStart, currentSpanStart + pos - start});
+                        currentSpanStart += pos - start + 1;
+                        start = pos + 1;
+                    }
                     sourceBuilder.append(code);
                 } else {
                     int treeStart = (int) sp.getStartPosition(null, comment, tree);
@@ -877,7 +872,7 @@ public abstract class JavadocHelper implements AutoCloseable {
                 input = input.substring(0, input.length() - 1);
             }
 
-            return input;
+            return input.replace("<p>", "\n<p>");
         }
 
         private static final String PLACEHOLDER_PATTERN = Pattern.quote("" + PLACEHOLDER);

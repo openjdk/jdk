@@ -297,6 +297,8 @@ public class JavadocHelperTest {
                       "///\n" +
                       "/// *Another* __paragraph__.\n" +
                       "///\n" +
+                      "/// Paragraph \uFFFC with \uFFFC replacement \uFFFC character.\n" +
+                      "///\n" +
                       "/// @param p1 prefix {@inheritDoc} suffix\n" +
                       "/// @param p2 prefix {@inheritDoc} suffix\n" +
                       "/// @param p3 prefix {@inheritDoc} suffix\n" +
@@ -306,7 +308,10 @@ public class JavadocHelperTest {
                       "/// @return prefix {@inheritDoc} suffix\n",
                       getSubTest,
                       "Prefix javadoc1 suffix.\n" +
+                      "\n" +
                       "<p><em>Another</em> <strong>paragraph</strong>.\n" +
+                      "\n" +
+                      "<p>Paragraph \ufffc with \ufffc replacement \ufffc character.\n" +
                       "\n" +
                       "@param p1 prefix param1 suffix\n" +
                       "@param p2 prefix param2 suffix\n" +
@@ -381,6 +386,10 @@ public class JavadocHelperTest {
             try (JavadocHelper helper = JavadocHelper.create(task, Arrays.asList(srcZip))) {
                 String javadoc = helper.getResolvedDocComment(el);
 
+                if (!javadoc.equals(expectedJavadoc)) {
+                    javadoc.equals(expectedJavadoc);
+                    System.err.println("!!!");
+                }
                 assertEquals(javadoc, expectedJavadoc);
             }
         }

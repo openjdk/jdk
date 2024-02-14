@@ -83,7 +83,6 @@ module jdk.jshell {
     exports jdk.jshell.spi;
     exports jdk.jshell.tool;
 
-    uses com.sun.source.util.DocTrees.DocCommentTreeTransformer;
     uses jdk.jshell.spi.ExecutionControlProvider;
     uses jdk.internal.editor.spi.BuildInEditorProvider;
 
