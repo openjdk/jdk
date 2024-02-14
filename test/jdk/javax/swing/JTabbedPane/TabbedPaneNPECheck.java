@@ -54,8 +54,10 @@ public class TabbedPaneNPECheck {
             SwingUtilities.invokeAndWait(me::test);
         } finally {
             if (mainFrame != null) {
-                mainFrame.setVisible(false);
-                mainFrame.dispose();
+                SwingUtilities.invokeAndWait(() -> {
+                    mainFrame.setVisible(false);
+                    mainFrame.dispose();
+                });
             }
         }
     }
