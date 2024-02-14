@@ -86,6 +86,18 @@ class HugePageConfiguration {
         return _thpPageSize;
     }
 
+    public long getThpPageSizeFallback() {
+        long pageSize = getThpPageSize();
+        if (pageSize != 0) {
+            return pageSize;
+        }
+        pageSize = getStaticDefaultHugePageSize();
+        if (pageSize != 0) {
+            return Math.min(pageSize, 16 * 1024 * 1024);
+        }
+        return 2 * 1024 * 1024;
+    }
+
     // Returns true if the THP support is enabled
     public boolean supportsTHP() {
         return _thpMode == THPMode.always || _thpMode == THPMode.madvise;
