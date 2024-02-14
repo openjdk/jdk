@@ -92,6 +92,9 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
 
     private ZipCoder zc;
 
+    // Flag to indicate readEnd should expect 64 bit Data Descriptor size fields
+    private boolean expect64BitDataDescriptor;
+
     /**
      * Check to make sure that this stream has not been closed
      */
@@ -521,6 +524,13 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
         }
         e.method = get16(tmpbuf, LOCHOW);
         e.xdostime = get32(tmpbuf, LOCTIM);
+
+        // Expect 32-bit Data Descriptor size fields by default
+        expect64BitDataDescriptor = false;
+
+        long csize = get32(tmpbuf, LOCSIZ);
+        long size = get32(tmpbuf, LOCLEN);
+
         if ((flag & 8) == 8) {
             /* "Data Descriptor" present */
             if (e.method != DEFLATED) {
@@ -529,8 +539,8 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
             }
         } else {
             e.crc = get32(tmpbuf, LOCCRC);
-            e.csize = get32(tmpbuf, LOCSIZ);
-            e.size = get32(tmpbuf, LOCLEN);
+            e.csize = csize;
+            e.size = size;
         }
         len = get16(tmpbuf, LOCEXT);
         if (len > 0) {
@@ -538,6 +548,8 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
             readFully(extra, 0, len);
             e.setExtra0(extra,
                         e.csize == ZIP64_MAGICVAL || e.size == ZIP64_MAGICVAL, true);
+            // Determine if readEnd should expect 64-bit size fields in the Data Descriptor
+            expect64BitDataDescriptor = expect64BitDataDescriptor(extra, flag, csize, size);
         }
         return e;
     }
@@ -577,7 +589,8 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
         if ((flag & 8) == 8) {
             /* "Data Descriptor" present */
             if (inf.getBytesWritten() > ZIP64_MAGICVAL ||
-                inf.getBytesRead() > ZIP64_MAGICVAL) {
+                inf.getBytesRead() > ZIP64_MAGICVAL ||
+                    expect64BitDataDescriptor) {
                 // ZIP64 format
                 readFully(tmpbuf, 0, ZIP64_EXTHDR);
                 long sig = get32(tmpbuf, 0);
@@ -623,6 +636,49 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
                 "invalid entry CRC (expected 0x" + Long.toHexString(e.crc) +
                 " but got 0x" + Long.toHexString(crc.getValue()) + ")");
         }
+    }
+
+    /**
+     * Determine whether the {@link #readEnd(ZipEntry)} method should interpret the
+     * 'compressed size' and 'uncompressed size' fields of the Data Descriptor record
+     * as 64-bit numbers instead of the regular 32-bit numbers.
+     *
+     * Returns true if the LOC has the 'streaming mode' flag set, at least one of the
+     * 'compressed size' and 'uncompressed size' are set to the Zip64 magic value
+     * 0xFFFFFFFF, and the LOC's extra field contains a Zip64 Extended Information Field.
+     *
+     * @param extra the LOC extra field to look for a Zip64 field in
+     * @param flag the value of the 'general purpose bit flag' field in the LOC
+     * @param csize the value of the 'compressed size' field in the LOC
+     * @param size  the value of the 'uncompressed size' field in the LOC
+     */
+    private boolean expect64BitDataDescriptor(byte[] extra, int flag, long csize, long size) {
+        // The LOC's 'general purpose bit flag' 3 must indicate use of a Data Descriptor
+        if ((flag & 8) == 0) {
+            return false;
+        }
+
+        // At least one LOC size field must be marked for Zip64
+        if (csize != ZIP64_MAGICVAL && size != ZIP64_MAGICVAL) {
+            return false;
+        }
+
+        // Look for a Zip64 field
+        int headerSize = 2 * Short.BYTES; // id + size
+        if (extra != null) {
+            for (int i = 0; i + headerSize < extra.length;) {
+                int id = get16(extra, i);
+                int dsize = get16(extra, i + Short.BYTES);
+                if (i + headerSize + dsize > extra.length) {
+                    return false; // Invalid size
+                }
+                if (id == ZIP64_EXTID) {
+                    return true;
+                }
+                i += headerSize + dsize;
+            }
+        }
+        return false;
     }
 
     /*
