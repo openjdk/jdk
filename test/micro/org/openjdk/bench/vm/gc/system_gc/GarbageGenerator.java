@@ -37,7 +37,7 @@ public class GarbageGenerator {
      * @return ArrayList of 1024 Objects[].
      */
     static ArrayList<Object[]> generateObjectArrays() {
-        ArrayList<Object[]>  tmp = new ArrayList<>();
+        ArrayList<Object[]> tmp = new ArrayList<>();
         for (int i = 0; i < GarbageGenerator.K; i++) {
             Object[] x = new Object[GarbageGenerator.K];
             for (int j=0; j < GarbageGenerator.K; j++) {
@@ -60,7 +60,7 @@ public class GarbageGenerator {
         // Aiming for ~ 1gb of heap usage. For different sizes
         // the average size is ~ 4k.
         Object[] tmp = new Object[sameSize ? M : M / 4];
-        for(int i = 0 ; i < tmp.length; i++) {
+        for (int i = 0; i < tmp.length; i++) {
             if (sameSize) {
                 tmp[i] = new byte[K];
             } else {
@@ -74,7 +74,7 @@ public class GarbageGenerator {
     public static HashMap<Integer, byte[]> generateAndFillHashMap(boolean sameSize) {
         HashMap<Integer, byte[]> tmp = new HashMap<>();
         int numberOfObjects = sameSize ? M : M / 4;
-        for(int i = 0 ; i < numberOfObjects; i++) {
+        for (int i = 0; i < numberOfObjects; i++) {
             if (sameSize) {
                 tmp.put(i, new byte[K]);
             } else {
@@ -88,7 +88,7 @@ public class GarbageGenerator {
     public static TreeMap<Integer, byte[]> generateAndFillTreeMap(boolean sameSize) {
         TreeMap<Integer, byte[]> tmp = new TreeMap<>();
         int numberOfObjects = sameSize ? M : M / 4;
-        for(int i = 0 ; i < numberOfObjects; i++) {
+        for (int i = 0; i < numberOfObjects; i++) {
             if (sameSize) {
                 tmp.put(i, new byte[K]);
             } else {
