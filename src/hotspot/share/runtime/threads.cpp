@@ -1185,6 +1185,7 @@ void Threads::metadata_handles_do(void f(Metadata*)) {
 GrowableArray<JavaThread*>* Threads::get_pending_threads(ThreadsList * t_list,
                                                          int count,
                                                          address monitor) {
+  assert(Thread::current()->is_VM_thread(), "Must be the VM thread");
   GrowableArray<JavaThread*>* result = new GrowableArray<JavaThread*>(count);
 
   int i = 0;
