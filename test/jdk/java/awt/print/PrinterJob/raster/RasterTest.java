@@ -104,10 +104,11 @@ public class RasterTest extends Frame implements ActionListener {
     static class RasterCanvas extends Canvas implements Printable {
 
         public int print(Graphics g, PageFormat pgFmt, int pgIndex) {
+
             if (pgIndex > 0) {
                 return Printable.NO_SUCH_PAGE;
             }
-            
+
             Graphics2D g2d = (Graphics2D) g;
             g2d.translate(pgFmt.getImageableX(), pgFmt.getImageableY());
             doPaint(g2d);

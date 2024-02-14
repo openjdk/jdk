@@ -210,7 +210,7 @@ public class ValidatePage extends Frame implements Printable {
                 displayPageFormatAttributes();
             } catch (NumberFormatException nfe) {
                 JOptionPane.showMessageDialog(null,
-                        "NumberFormatException occured","Error",
+                        "NumberFormatException occured", "Error",
                         JOptionPane.ERROR_MESSAGE);
             }
         });
