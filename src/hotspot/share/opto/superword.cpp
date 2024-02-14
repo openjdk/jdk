@@ -1533,6 +1533,21 @@ void SuperWord::combine_pairs_to_longer_packs() {
 #endif
 }
 
+
+template <typename SplitStrategy>
+void SuperWord::split_packs(const char* split_name,
+                            SplitStrategy strategy) {
+  // TODO
+  // idea:
+  // iterate over all packs
+  // call strategy on it: must tell how many nodes to split away from end
+  //                      from end: so we don't have to create too many or move
+  // if 0 or all: no-op
+  // else:
+  // split, but don't make 1-size packs (rejection!)
+  // repeat until stabilizes
+}
+
 void SuperWord::split_packs_longer_than_max_vector_size() {
   assert(!_packset.is_empty(), "packset not empty");
   DEBUG_ONLY( int old_packset_length = _packset.length(); )
