@@ -33,7 +33,7 @@ import java.awt.print.PrinterJob;
  * @test
  * @bug 4884389 7183516
  * @key printer
- * @library /test/lib /java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @summary Font specified with face name loses style on printing
  * @run main/manual PrintAllFonts
@@ -47,8 +47,6 @@ public class PrintAllFonts implements Printable {
     private int thisPage = 0;
 
     private static final String INSTRUCTIONS =
-            "You must have a printer available to perform this test.\n" +
-            "\n" +
             "This bug is system dependent and is not always reproducible.\n" +
             "A passing test will have all text printed with correct font style.";
 

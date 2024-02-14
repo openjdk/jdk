@@ -35,7 +35,7 @@ import java.awt.print.PrinterJob;
  * @bug 4245280
  * @key printer
  * @summary PrinterJob not cancelled when PrinterJob.cancel() is used
- * @library /test/lib /java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual PrinterJobCancel
  */
@@ -45,14 +45,11 @@ public class PrinterJobCancel extends Thread implements Printable {
     private final boolean okayed;
 
     private static final String INSTRUCTIONS =
-            "Test that print job cancellation works.\n" +
-            "You must have a printer available to perform this test.\n" +
-            "This test silently starts a print job and while the job is\n" +
-            "still being printed, cancels the print job\n" +
+            "Test that print job cancellation works.\n\n" +
+            "This test starts after clicking OK / Print button, while the job is\n" +
+            "progress automatically cancels the print job.\n" +
             "You should see a message on System.out that the job\n" +
-            "was properly cancelled.\n" +
-            "You will need to kill the application manually since regression\n" +
-            "tests apparently aren't supposed to call System.exit()";
+            "was properly cancelled.";
 
     public static void main(String[] args) throws Exception {
 
@@ -72,7 +69,9 @@ public class PrinterJobCancel extends Thread implements Printable {
             Thread.sleep(5000);
             pjc.pj.cancel();
         }
-
+        else {
+            PassFailJFrame.forceFail("User cancelled");
+        }
         passFailJFrame.awaitAndCheck();
     }
 
@@ -92,9 +91,9 @@ public class PrinterJobCancel extends Thread implements Printable {
             System.out.println("got the expected PrintAbortException");
             PassFailJFrame.forcePass();
         } catch (PrinterException prex) {
+            prex.printStackTrace();
             PassFailJFrame.forceFail("This is wrong .. we shouldn't be here, " +
                                      "Looks like a test failure");
-            prex.printStackTrace();
         } finally {
             System.out.println("DONE PRINTING");
             if (!cancelWorked) {

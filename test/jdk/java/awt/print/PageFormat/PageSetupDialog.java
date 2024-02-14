@@ -43,7 +43,7 @@ import java.awt.print.PrinterJob;
  * @bug 4197377 4299145 6358747 6574633
  * @key printer
  * @summary Page setup dialog settings
- * @library /test/lib /java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual PageSetupDialog
  */
@@ -66,8 +66,6 @@ public class PageSetupDialog extends Frame implements Printable {
     boolean reverse = false;
 
     private static final String INSTRUCTIONS =
-            " You must have a printer available to perform this test\n" +
-            "\n" +
             " This test is very flexible and requires much interaction.\n" +
             " If the platform print dialog supports it, adjust orientation\n" +
             " and margins and print pages and compare the results with the request.";
@@ -77,14 +75,16 @@ public class PageSetupDialog extends Frame implements Printable {
         myHeightLabel.setText("Format Height = " + myPageFormat.getHeight());
         myImageableXLabel.setText("Format Left Margin = "
                 + myPageFormat.getImageableX());
-        myImageableRightLabel.setText("Format Right Margin = " + (myPageFormat.getWidth()
-                - (myPageFormat.getImageableX() + myPageFormat.getImageableWidth())));
+        myImageableRightLabel.setText("Format Right Margin = "
+                + (myPageFormat.getWidth()
+                        - (myPageFormat.getImageableX() + myPageFormat.getImageableWidth())));
         myImageableWidthLabel.setText("Format ImageableWidth = "
                 + myPageFormat.getImageableWidth());
         myImageableYLabel.setText("Format Top Margin = "
                 + myPageFormat.getImageableY());
-        myImageableBottomLabel.setText("Format Bottom Margin = " + (myPageFormat.getHeight()
-                - (myPageFormat.getImageableY() + myPageFormat.getImageableHeight())));
+        myImageableBottomLabel.setText("Format Bottom Margin = "
+                + (myPageFormat.getHeight()
+                        - (myPageFormat.getImageableY() + myPageFormat.getImageableHeight())));
         myImageableHeightLabel.setText("Format ImageableHeight = "
                 + myPageFormat.getImageableHeight());
         int o = myPageFormat.getOrientation();
@@ -108,12 +108,14 @@ public class PageSetupDialog extends Frame implements Printable {
         ph.setText("Paper Height = " + p.getHeight());
         pglm.setText("Paper Left Margin = " + p.getImageableX());
         pgiw.setText("Paper Imageable Width = " + p.getImageableWidth());
-        pgrm.setText("Paper Right Margin = " + (p.getWidth()
-                - (p.getImageableX() + p.getImageableWidth())));
+        pgrm.setText("Paper Right Margin = "
+                + (p.getWidth()
+                        - (p.getImageableX() + p.getImageableWidth())));
         pgtm.setText("Paper Top Margin = " + p.getImageableY());
         pgih.setText("Paper Imageable Height = " + p.getImageableHeight());
-        pgbm.setText("Paper Bottom Margin = " + (p.getHeight()
-                - (p.getImageableY() + p.getImageableHeight())));
+        pgbm.setText("Paper Bottom Margin = "
+                + (p.getHeight()
+                        - (p.getImageableY() + p.getImageableHeight())));
     }
 
     public PageSetupDialog() {
@@ -173,8 +175,8 @@ public class PageSetupDialog extends Frame implements Printable {
                 try {
                     myPrinterJob.print();
                 } catch (PrinterException pe) {
-                    PassFailJFrame.forceFail( "Test Failed");
                     pe.printStackTrace();
+                    PassFailJFrame.forceFail("Test failed because of PrinterException");
                 }
             }
         });
@@ -186,8 +188,8 @@ public class PageSetupDialog extends Frame implements Printable {
                 try {
                     myPrinterJob.print();
                 } catch (PrinterException pe) {
-                    PassFailJFrame.forceFail( "Test Failed");
                     pe.printStackTrace();
+                    PassFailJFrame.forceFail("Test failed because of PrinterException");
                 }
             }
         });

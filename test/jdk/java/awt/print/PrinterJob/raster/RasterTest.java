@@ -42,7 +42,7 @@ import java.awt.print.PrinterJob;
  * @bug 4242639
  * @summary Printing quality problem on Canon and NEC
  * @key printer
- * @library /test/lib /java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual RasterTest
  */
@@ -51,7 +51,6 @@ public class RasterTest extends Frame implements ActionListener {
     private final RasterCanvas c;
 
     private static final String INSTRUCTIONS =
-            "You must have a printer available to perform this test\n" +
             "This test uses rendering operations which force the implementation\n" +
             "to print the page as a raster\n" +
             "You should see two square images, the 1st containing overlapping\n" +
@@ -96,8 +95,8 @@ public class RasterTest extends Frame implements ActionListener {
             try {
                 pj.print();
             } catch (PrinterException pe) {
-                PassFailJFrame.forceFail( "Test Failed");
                 pe.printStackTrace();
+                PassFailJFrame.forceFail("Test failed because of PrinterException");
             }
         }
     }

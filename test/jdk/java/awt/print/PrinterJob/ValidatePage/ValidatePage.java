@@ -37,13 +37,14 @@ import java.awt.print.Paper;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
+import javax.swing.JOptionPane;
 
 /*
  * @test
  * @bug 4252108 6229507
  * @key printer
  * @summary PrinterJob.validatePage() is unimplemented.
- * @library /test/lib /java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual ValidatePage
  */
@@ -67,14 +68,16 @@ public class ValidatePage extends Frame implements Printable {
         myWidthLabel.setText("Format Width = " + drnd(myPageFormat.getWidth()));
         myHeightLabel.setText("Format Height = " + drnd(myPageFormat.getHeight()));
         myImageableXLabel.setText("Format Left Margin = " + drnd(myPageFormat.getImageableX()));
-        myImageableRightLabel.setText("Format Right Margin = " + drnd(myPageFormat.getWidth()
-                - (myPageFormat.getImageableX() + myPageFormat.getImageableWidth())));
+        myImageableRightLabel.setText("Format Right Margin = "
+                + drnd(myPageFormat.getWidth()
+                        - (myPageFormat.getImageableX() + myPageFormat.getImageableWidth())));
         myImageableWidthLabel.setText("Format ImageableWidth = "
                 + drnd(myPageFormat.getImageableWidth()));
         myImageableYLabel.setText("Format Top Margin = "
                 + drnd(myPageFormat.getImageableY()));
-        myImageableBottomLabel.setText("Format Bottom Margin = " + drnd(myPageFormat.getHeight()
-                - (myPageFormat.getImageableY() + myPageFormat.getImageableHeight())));
+        myImageableBottomLabel.setText("Format Bottom Margin = "
+                + drnd(myPageFormat.getHeight()
+                        - (myPageFormat.getImageableY() + myPageFormat.getImageableHeight())));
         myImageableHeightLabel.setText("Format ImageableHeight = "
                 + drnd(myPageFormat.getImageableHeight()));
         int o = myPageFormat.getOrientation();
@@ -93,24 +96,17 @@ public class ValidatePage extends Frame implements Printable {
         pgiw.setText("Paper Imageable Width = " + drnd(p.getImageableWidth()));
         pgih.setText("Paper Imageable Height = " + drnd(p.getImageableHeight()));
 
-        pgrm.setText("Paper Right Margin = " + drnd(p.getWidth()
-                - (p.getImageableX() + p.getImageableWidth())));
+        pgrm.setText("Paper Right Margin = "
+                + drnd(p.getWidth()
+                        - (p.getImageableX() + p.getImageableWidth())));
         pgtm.setText("Paper Top Margin = " + drnd(p.getImageableY()));
-        pgbm.setText("Paper Bottom Margin = " + drnd(p.getHeight()
-                - (p.getImageableY() + p.getImageableHeight())));
+        pgbm.setText("Paper Bottom Margin = "
+                + drnd(p.getHeight()
+                        - (p.getImageableY() + p.getImageableHeight())));
     }
 
     static String drnd(double d) {
-        d = d * 10.0 + 0.5;
-        d = Math.floor(d) / 10.0;
-        String ds = Double.toString(d);
-        int decimal_pos = ds.indexOf(".");
-        int len = ds.length();
-        if (len > decimal_pos + 2) {
-            return ds.substring(0, decimal_pos + 2);
-        } else {
-            return ds;
-        }
+        return String.format("%.2f", d);
     }
 
     public ValidatePage() {
@@ -185,8 +181,8 @@ public class ValidatePage extends Frame implements Printable {
                 myPrinterJob.setPrintable(ValidatePage.this, myPageFormat);
                 myPrinterJob.print();
             } catch (PrinterException pe) {
-                PassFailJFrame.forceFail( "Test Failed");
                 pe.printStackTrace();
+                PassFailJFrame.forceFail("Test failed because of PrinterException");
             }
         });
 
@@ -213,8 +209,9 @@ public class ValidatePage extends Frame implements Printable {
                 myPageFormat.setPaper(p1);
                 displayPageFormatAttributes();
             } catch (NumberFormatException nfe) {
-                PassFailJFrame.forceFail( "Test Failed");
-                nfe.printStackTrace();
+                JOptionPane.showMessageDialog(null,
+                        "NumberFormatException occured","Error",
+                        JOptionPane.ERROR_MESSAGE);
             }
         });
         panel.add(setButton);
@@ -225,15 +222,14 @@ public class ValidatePage extends Frame implements Printable {
         panel.add(printButton);
         add(panel);
         TextArea ta = new TextArea(10, 45);
-        String ls = System.getProperty("line.Separator", "\n");
         ta.setText(
-                "When validating a page, the process is 1st to find the closest matching " + ls +
-                "paper size, next to make sure the requested imageable area fits within " + ls +
-                "the printer's imageable area for that paper size. Finally the top and " + ls +
-                "left margins will be shrunk if they are too great for the adjusted " + ls +
-                "imageable area to fit at that position. They will shrink by the minimum" + ls +
-                "needed to accomodate the imageable area." + ls + ls +
-                "To test 6229507, put the minimum margins (all 0s) in Page Setup dialog." + ls +
+                "When validating a page, the process is 1st to find the closest matching \n" +
+                "paper size, next to make sure the requested imageable area fits within \n" +
+                "the printer's imageable area for that paper size. Finally the top and \n" +
+                "left margins will be shrunk if they are too great for the adjusted \n" +
+                "imageable area to fit at that position. They will shrink by the minimum\n" +
+                "needed to accomodate the imageable area.\n \n \n" +
+                "To test 6229507, put the minimum margins (all 0s) in Page Setup dialog.\n" +
                 "Compare Imageable width, height, and margins of portrait against landscape.");
 
         ta.setEditable(false);
@@ -276,24 +272,22 @@ public class ValidatePage extends Frame implements Printable {
     }
 
     private static final String INSTRUCTIONS =
-            "You must have a printer available to perform this test\n" +
             "This test is very flexible and requires much interaction.\n" +
-            "There are several buttons.\n" +
+            "There are several buttons.\n\n" +
             "Set Paper: if all fields are valid numbers it sets the Paper object.\n" +
             "This is used to create arbitrary nonsensical paper sizes to help\n" +
-            "test validatePage.\n" +
-            "Default Page: sets a default page. This should always be valid.\n" +
+            "test validatePage.\n\n" +
+            "Default Page: sets a default page. This should always be valid.\n\n" +
             "Page Setup: brings up the page dialog. You must OK this dialog\n" +
             "for it to have any effect. You can use this to set different size,\n" +
-            "orientation and margins - which of course affect imageable area.\n" +
+            "orientation and margins - which of course affect imageable area.\n\n" +
             "Printer: Used to set the current printer. Useful because current\n" +
             "printer affects the choice of paper sizes available.\n" +
-            "You must OK this dialog for it to have any effect.\n" +
-            "Validate Page:\n" +
-            "The most important button in the test. By setting nonsensical\n" +
-            "or valid papers with varying margins etc, this should always find\n" +
-            "the closest\n" +
-            "match within the limits of what is possible on the current printer.\n" +
+            "You must OK this dialog for it to have any effect.\n\n" +
+            "Validate Page:The most important button in the test.\n" +
+            "By setting nonsensical or valid papers with varying margins etc,\n" +
+            "this should always find the closest match within the limits of\n" +
+            "what is possible on the current printer.\n\n" +
             "Print: to the current printer. Not vital for this test request.";
 
     public static void main(String[] args) throws Exception {
