@@ -156,12 +156,8 @@ class UnswitchedLoopSelector : public StackObj {
 
   IfProjNode* create_proj_to_loop(const PathToLoop path_to_loop) {
     const uint dom_depth = _phase->dom_depth(_original_loop_entry);
-    IfProjNode* proj_to_loop;
-    if (path_to_loop == TRUE_PATH) {
-      proj_to_loop = new IfTrueNode(_selector);
-    } else {
-      proj_to_loop = new IfFalseNode(_selector);
-    }
+    IfProjNode* proj_to_loop = (path_to_loop == TRUE_PATH) ? new IfTrueNode(_selector)
+                                                             new IfFalseNode(_selector);
     _phase->register_node(proj_to_loop, _outer_loop, _selector, dom_depth);
     return proj_to_loop;
   }
