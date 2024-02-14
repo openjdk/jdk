@@ -245,11 +245,12 @@ class MacroAssembler: public Assembler {
                    VMRegPair dst,
                    bool is_receiver,
                    int* receiver_offset);
+#endif // _LP64
+
   // Compare char[] or byte[] arrays.
   void arrays_equals(bool is_array_equ, Register ary1, Register ary2,
                      Register limit, Register result, Register chr,
                      XMMRegister vec1, XMMRegister vec2, bool is_char, KRegister mask = knoreg);
-#endif // _LP64
 
   // Support for VM calls
   //

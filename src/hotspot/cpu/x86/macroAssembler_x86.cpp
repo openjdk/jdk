@@ -9793,6 +9793,8 @@ void MacroAssembler::cache_wbsync(bool is_pre)
   }
 }
 
+#endif // _LP64
+
 // Compare char[] or byte[] arrays aligned to 4 bytes or substrings.
 void MacroAssembler::arrays_equals(bool is_array_equ, Register ary1, Register ary2,
                                    Register limit, Register result, Register chr,
@@ -10003,8 +10005,6 @@ void MacroAssembler::arrays_equals(bool is_array_equ, Register ary1, Register ar
     vpxor(vec2, vec2);
   }
 }
-
-#endif // _LP64
 
 Assembler::Condition MacroAssembler::negate_condition(Assembler::Condition cond) {
   switch (cond) {
