@@ -27,8 +27,8 @@
 
 #include "gc/g1/g1BlockOffsetTable.hpp"
 #include "gc/g1/g1HeapRegionTracer.hpp"
-#include "gc/g1/g1HeapRegionType.hpp"
 #include "gc/g1/g1HeapRegionTraceType.hpp"
+#include "gc/g1/g1HeapRegionType.hpp"
 #include "gc/g1/g1SurvRateGroup.hpp"
 #include "gc/shared/ageTable.hpp"
 #include "gc/shared/spaceDecorator.hpp"
