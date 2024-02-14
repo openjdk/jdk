@@ -277,7 +277,7 @@ define SetupBasicVariables3
   $1_BASENAME := $$($1_PREFIX)$$($1_NAME)$$($1_SUFFIX)
   $1_TARGET := $$($1_OUTPUT_DIR)/$$($1_BASENAME)
   $1_NOSUFFIX := $$($1_PREFIX)$$($1_NAME)
-  $1_SAFE_NAME := $$(strip $$(subst /,_,$1))
+  $1_SAFE_NAME := $$(strip $$(subst /,_, $1))
 endef
 
 ################################################################################
@@ -302,7 +302,7 @@ define PrintInfo
   # This is a rough heuristic and may not always print accurate information.
   # The $1_BUILD_INFO and $1_BUILD_INFO_DEPS variables are used in
   # TestFilesCompilation.gmk.
-  $$(call SetIfEmpty,$1_BUILD_INFO_LOG_MACRO, LogWarn)
+  $$(call SetIfEmpty, $1_BUILD_INFO_LOG_MACRO, LogWarn)
   $1_BUILD_INFO_DEPS := $$($1_SRCS) $$($1_COMPILE_VARDEPS_FILE)
   $$($1_BUILD_INFO): $$($1_BUILD_INFO_DEPS)
         ifeq ($$(wildcard $$($1_TARGET)), )
