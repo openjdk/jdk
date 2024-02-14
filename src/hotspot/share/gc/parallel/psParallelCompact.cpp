@@ -2053,7 +2053,7 @@ void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
       FlushMarkingStatsCache() : WorkerTask("FlushMarkingStatsCache") {}
       void work(uint worker_id) override {
         ParCompactionManager* cm = ParCompactionManager::gc_thread_compaction_manager(worker_id);
-        cm->destroy_marking_stats_cache();
+        cm->flush_and_destroy_marking_stats_cache();
       }
     } task;
     ParallelScavengeHeap::heap()->workers().run_task(&task);
