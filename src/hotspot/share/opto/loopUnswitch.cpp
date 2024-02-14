@@ -110,7 +110,7 @@ IfNode* PhaseIdealLoop::find_unswitch_candidate(const IdealLoopTree* loop) const
   return unswitch_candidate;
 }
 
-// This class creates an If node (i.e. loop selector) that selects if the true-path- or the false-path-loop should be
+// This class creates an If node (i.e. loop selector) that selects if the true-path-loop or the false-path-loop should be
 // executed at runtime. This is done by finding an invariant and non-loop-exiting unswitch candidate If node (guaranteed
 // to exist at this point) to perform Loop Unswitching on.
 class UnswitchedLoopSelector : public StackObj {
