@@ -1383,24 +1383,12 @@ void MachUEPNode::format( PhaseRegAlloc *ra_, outputStream* st ) const {
 
 void MachUEPNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   MacroAssembler masm(&cbuf);
-#ifdef ASSERT
-  uint insts_size = cbuf.insts_size();
-#endif
-  masm.cmpptr(rax, Address(rcx, oopDesc::klass_offset_in_bytes()));
-  masm.jump_cc(Assembler::notEqual,
-               RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
-  /* WARNING these NOPs are critical so that verified entry point is properly
-     aligned for patching by NativeJump::patch_verified_entry() */
-  int nops_cnt = 2;
-  if( !OptoBreakpoint ) // Leave space for int3
-     nops_cnt += 1;
-  masm.nop(nops_cnt);
-
-  assert(cbuf.insts_size() - insts_size == size(ra_), "checking code size of inline cache node");
+  masm.ic_check(CodeEntryAlignment);
 }
 
 uint MachUEPNode::size(PhaseRegAlloc *ra_) const {
-  return OptoBreakpoint ? 11 : 12;
+  return MachNode::size(ra_); // too many variables; just compute it
+                              // the hard way
 }
 
 
@@ -1842,7 +1830,7 @@ encode %{
         cbuf.shared_stub_to_interp_for(_method, cbuf.insts()->mark_off());
       } else {
         // Emit stubs for static call.
-        address stub = CompiledStaticCall::emit_to_interp_stub(cbuf, mark);
+        address stub = CompiledDirectCall::emit_to_interp_stub(cbuf, mark);
         if (stub == nullptr) {
           ciEnv::current()->record_failure("CodeCache is full");
           return;
