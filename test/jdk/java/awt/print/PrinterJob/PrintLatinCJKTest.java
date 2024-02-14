@@ -39,11 +39,7 @@ import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
 import java.lang.reflect.InvocationTargetException;
-
-import javax.swing.BorderFactory;
-import javax.swing.Box;
 import javax.swing.JButton;
-import javax.swing.JComponent;
 import javax.swing.JFrame;
 
 import static javax.swing.SwingUtilities.invokeAndWait;
@@ -62,26 +58,32 @@ public class PrintLatinCJKTest implements Printable {
             it should show in the dialog as the selected printer.
             """;
 
-    private static JComponent createTestUI() {
-        JButton b = new JButton("Print");
-        b.addActionListener((ae) -> {
-            try {
-                PrinterJob job = PrinterJob.getPrinterJob();
-                job.setPrintable(testInstance);
-                if (job.printDialog()) {
-                    job.print();
+    public static void showFrame() throws InterruptedException, InvocationTargetException {
+        invokeAndWait( () -> {
+            frame = new JFrame("Test Frame");
+            JButton b = new JButton("Print");
+            b.addActionListener((ae) -> {
+                try {
+                    PrinterJob job = PrinterJob.getPrinterJob();
+                    job.setPrintable(testInstance);
+                    if (job.printDialog()) {
+                        job.print();
+                    }
+                } catch (PrinterException ex) {
+                    ex.printStackTrace();
                 }
-            } catch (PrinterException ex) {
-                ex.printStackTrace();
-            }
-        });
+            });
+            frame.getContentPane().add(b, BorderLayout.SOUTH);
+            frame.pack();
 
-        Box main = Box.createHorizontalBox();
-        main.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
-        main.add(Box.createHorizontalGlue());
-        main.add(b);
-        main.add(Box.createHorizontalGlue());
-        return main;
+            // add the test frame to dispose
+            PassFailJFrame.addTestWindow(frame);
+
+            // Arrange the test instruction frame and test frame side by side
+            PassFailJFrame.positionTestWindow(frame,
+                    PassFailJFrame.Position.HORIZONTAL);
+            frame.setVisible(true);
+        });
     }
 
     @Override
@@ -97,17 +99,16 @@ public class PrintLatinCJKTest implements Printable {
     }
 
     public static void main(String[] args) throws InterruptedException, InvocationTargetException {
-        PassFailJFrame.builder()
-                      .title("Print Latin CJK Test")
-                      .instructions(info)
-                      .testTimeOut(10)
-                      .rows(10)
-                      .columns(45)
-//                      .splitUI(PrintLatinCJKTest::createTestUI)
-//                      .splitUIRight(PrintLatinCJKTest::createTestUI)
-                      .splitUIBottom(PrintLatinCJKTest::createTestUI)
-//                      .testUI(PrintLatinCJKTest::createTestUI)
-                      .build()
-                      .awaitAndCheck();
+        PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
+                .title("Test Instructions Frame")
+                .instructions(info)
+                .testTimeOut(10)
+                .rows(10)
+                .columns(45)
+                .build();
+        showFrame();
+        passFailJFrame.awaitAndCheck();
     }
 }
+
+
