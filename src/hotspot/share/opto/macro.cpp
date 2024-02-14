@@ -2354,7 +2354,10 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
   if (!C->coarsened_locks_consistent()) {
     return; // recompile without Coarsened locks if broken
   } else {
-    C->mark_coarsened_boxes();
+    // After coarsened locks are eliminated locking regions
+    // become unbalanced. We should not execute any more
+    // locks elimination optimizations on them.
+    C->mark_unbalanced_boxes();
   }
 
   // First, attempt to eliminate locks
