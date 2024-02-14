@@ -938,15 +938,17 @@ public class MarkdownTransformer implements JavacTrees.DocCommentTreeTransformer
          */
         private void copyTo(int endPos) {
             int startPos = copyStartPos;
+            int rawTextStartPos = copyStartPos;
             int pos;
             while ((pos = source.indexOf(PLACEHOLDER, startPos)) != -1 && pos < endPos) {
                 text.append(source, startPos, pos);
                 assert replaceIter.hasNext();
                 Object r = replaceIter.next();
                 if (r instanceof DCTree t) {
-                    flushText(startPos);
+                    flushText(rawTextStartPos);
                     trees.add(t);
                     replaceAdjustPos += t.getEndPosition() - t.getStartPosition() - 1;
+                    rawTextStartPos = pos + 1;
                 } else if (r.equals(PLACEHOLDER)) {
                     text.append(PLACEHOLDER);
                 } else {
@@ -957,7 +959,7 @@ public class MarkdownTransformer implements JavacTrees.DocCommentTreeTransformer
             if (startPos < endPos) {
                 text.append(source, startPos, endPos);
             }
-            flushText(startPos);
+            flushText(rawTextStartPos);
         }
 
         /**

@@ -46,13 +46,37 @@ import javax.tools.*;
 public class MarkdownTransformerPositionTest {
 
     public static void main(String... args) throws Exception {
-        String source = """
-                        /// Markdown test
-                        ///
-                        /// @author testAuthor
-                        public class Test {
-                        }
-                        """;
+        MarkdownTransformerPositionTest t = new MarkdownTransformerPositionTest();
+
+        t.simpleTest();
+        t.testWithReplacements();
+    }
+
+    private void simpleTest() throws Exception {
+        runTest("""
+                /// Markdown test
+                ///
+                /// @author testAuthor
+                public class Test {
+                }
+                """,
+                "Markdown test",
+                "testAuthor");
+    }
+
+    private void testWithReplacements() throws Exception {
+        runTest("""
+                /// Markdown \uFFFC test \uFFFC with \uFFFC replacements.
+                ///
+                /// @author testAuthor
+                public class Test {
+                }
+                """,
+                "Markdown \uFFFC test \uFFFC with \uFFFC replacements.",
+                "testAuthor");
+    }
+
+    private void runTest(String source, String... expectedRawSpans) throws Exception {
         JavaCompiler comp = ToolProvider.getSystemJavaCompiler();
         JavacTask task = (JavacTask)comp.getTask(null, null, null, null, null, Arrays.asList(new JavaSource(source)));
         CompilationUnitTree cu = task.parse().iterator().next();
@@ -73,11 +97,11 @@ public class MarkdownTransformerPositionTest {
             }
         }.scan(docComment, null);
 
-        List<String> expectedRawSpans = List.of("Markdown test", "testAuthor");
+        List<String> expectedRawSpansList = List.of(expectedRawSpans);
 
-        if (!expectedRawSpans.equals(rawSpans)) {
+        if (!expectedRawSpansList.equals(rawSpans)) {
             throw new AssertionError("Incorrect raw text spans, should be: " +
-                    expectedRawSpans + ", but is: " + rawSpans);
+                    expectedRawSpansList + ", but is: " + rawSpans);
         }
 
         System.err.println("Test result: success, boot modules: " + ModuleLayer.boot().modules());
