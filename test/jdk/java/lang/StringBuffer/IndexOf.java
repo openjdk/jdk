@@ -217,7 +217,7 @@ public class IndexOf {
     generator.setSeed(1999);
 
     for (int x = 0; x < 1000000; x++) {
-    if(make_new) {
+    if (make_new) {
         testString = generateTestString(1, 100);
         int len = testString.length();
 
@@ -259,7 +259,7 @@ public class IndexOf {
         int sA = xx.indexOf(yy);
       }
 
-    if(make_new)
+    if (make_new)
         testIndex = getRandomIndex(-100, 100);
 
       sAnswer = testString.indexOf(fragment, testIndex);
@@ -292,7 +292,7 @@ public class IndexOf {
         failCount++;
       }
 
-      if(make_new) testIndex = getRandomIndex(-100, 100);
+      if (make_new) testIndex = getRandomIndex(-100, 100);
 
       sAnswer = testString.lastIndexOf(fragment, testIndex);
       sbAnswer = testBuffer.lastIndexOf(fragment, testIndex);

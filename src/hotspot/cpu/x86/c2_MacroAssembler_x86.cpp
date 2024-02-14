@@ -4140,7 +4140,7 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
 }
 
 // Compare char[] or byte[] arrays aligned to 4 bytes or substrings.
-void C2_MacroAssembler::arrays_equals(bool is_array_equ, Register ary1, Register ary2,
+void C2_MacroAssembler::arrays_equals(bool is_array_equ, Register ary1, Register ary2, // Move to MacroAssembler_x86.cpp
                                       Register limit, Register result, Register chr,
                                       XMMRegister vec1, XMMRegister vec2, bool is_char, KRegister mask) {
   ShortBranchVerifier sbv(this);
