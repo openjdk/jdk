@@ -62,10 +62,10 @@
 //      if (invariant-test)           UNSWITCHED              [Cloned Parse Predicates]         [Cloned Parse Predicates]
 //        if-path                     =========>              [Cloned Template                  [Cloned Template
 //      else                                                   Assertion Predicates]             Assertion Predicates]
-//        // could be empty                                         |                                  |
-//        [else-path]                                         True-Path-Loop                    False-Path-Loop
-//      stmt2                                                   cloned stmt1                      cloned stmt1
-//    Endloop                                                   cloned if-path                    [cloned else-path]
+//        [else-path]                                               |                                  |
+//      stmt2                                                 True-Path-Loop                    False-Path-Loop
+//    Endloop                                                   cloned stmt1                      cloned stmt1
+//                                                              cloned if-path                    cloned else-path
 //                                                              cloned stmt2                      cloned stmt2
 //                                                            Endloop                           Endloop
 
@@ -204,14 +204,14 @@ class UnswitchedLoopSelector : public StackObj {
 // Class to unswitch the original loop and create Predicates at the new unswitched loop versions. The newly cloned loop
 // becomes the false-path-loop while original loop becomes the true-path-loop.
 class OriginalLoop : public StackObj {
-  LoopNode* const _strip_mined_loop_head;
+  LoopNode* const _loop_head; // OuterStripMinedLoopNode if loop strip mined, else just the loop head.
   IdealLoopTree* const _loop;
   Node_List& _old_new;
   PhaseIdealLoop* const _phase;
 
  public:
   OriginalLoop(IdealLoopTree* loop, Node_List& old_new)
-      : _strip_mined_loop_head(loop->_head->as_Loop()->skip_strip_mined()),
+      : _loop_head(loop->_head->as_Loop()->skip_strip_mined()),
         _loop(loop),
         _old_new(old_new),
         _phase(loop->_phase) {}
@@ -219,8 +219,8 @@ class OriginalLoop : public StackObj {
 
  private:
   void fix_loop_entries(IfProjNode* true_path_loop_entry, IfProjNode* false_path_loop_entry) {
-    _phase->replace_loop_entry(_strip_mined_loop_head, true_path_loop_entry);
-    LoopNode* false_path_loop_strip_mined_head = old_to_new(_strip_mined_loop_head)->as_Loop();
+    _phase->replace_loop_entry(_loop_head, true_path_loop_entry);
+    LoopNode* false_path_loop_strip_mined_head = old_to_new(_loop_head)->as_Loop();
     _phase->replace_loop_entry(false_path_loop_strip_mined_head, false_path_loop_entry);
   }
 
@@ -261,7 +261,7 @@ class OriginalLoop : public StackObj {
   // Unswitch the original loop on the invariant loop selector by creating a true-path-loop and a false-path-loop.
   // Remove the unswitch candidate If from both unswitched loop versions which are now covered by the loop selector If.
   void unswitch(const UnswitchedLoopSelector& unswitched_loop_selector) {
-    _phase->clone_loop(_loop, _old_new, _phase->dom_depth(_strip_mined_loop_head),
+    _phase->clone_loop(_loop, _old_new, _phase->dom_depth(_loop_head),
                        PhaseIdealLoop::CloneIncludesStripMined, unswitched_loop_selector.selector());
 
     // At this point, the selector If projections are the corresponding loop entries.
