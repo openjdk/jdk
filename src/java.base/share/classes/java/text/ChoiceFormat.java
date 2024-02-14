@@ -230,6 +230,12 @@ public class ChoiceFormat extends NumberFormat {
      * Patterns} section. Unlike {@link #setChoices(double[], String[])} this
      * method will throw an {@code IllegalArgumentException} if the {@code
      * limits} are not in ascending order.
+     *
+     * @implSpec Given an incorrect pattern, this implementation may either
+     * throw an {@code IllegalArgumentException} or succeed and discard the incorrect
+     * portion. Discarding the incorrect portion may result in a ChoiceFormat
+     * with empty {@code limits} and {@code choices}.
+     *
      * @param newPattern a pattern string
      * @throws    NullPointerException if {@code newPattern}
      *            is {@code null}
@@ -393,6 +399,11 @@ public class ChoiceFormat extends NumberFormat {
      * based on the pattern.
      * The syntax for the ChoiceFormat pattern can be seen in the {@linkplain
      * ##patterns Patterns} section.
+     *
+     * @implSpec Given an incorrect pattern, this implementation may either
+     * throw an {@code IllegalArgumentException} or succeed and discard the incorrect
+     * portion. Discarding the incorrect portion may result in a ChoiceFormat
+     * with empty {@code limits} and {@code choices}.
      *
      * @param newPattern the new pattern string
      * @throws    NullPointerException if {@code newPattern} is
