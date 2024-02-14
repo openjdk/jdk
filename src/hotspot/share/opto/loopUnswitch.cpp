@@ -24,6 +24,8 @@
 
 #include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
+#include "opto/castnode.hpp"
+#include "opto/cfgnode.hpp"
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/loopnode.hpp"
@@ -32,13 +34,28 @@
 #include "opto/rootnode.hpp"
 
 // Loop Unswitching is a loop optimization to move an invariant, non-loop-exiting test in the loop body before the loop.
-// This is done by duplicating the loop and placing the if-path in one unswitched loop version (i.e. the true-path-loop)
-// and the else-path in the other (i.e. the false-path-loop). The invariant test only needs to be checked once and
-// depending on the outcome, one or the other unswitched loop version is executed:
+// Such a test is either always true or always false in all loop iterations and could therefore only be executed once.
+// To achieve that, we duplicate the loop and change the original and cloned loop as follows:
+// - Original loop -> true-path-loop: The true-path-block of the invariant, non-loop-exiting test in the original loop
+//                                    is kept while the false-path-block is killed. We call this unswitched loop version
+//                                    the true-path-loop.
+// - Cloned loop -> False-path-loop:  The false-path-block of the invariant, non-loop-exiting test in the cloned loop
+//                                    is kept while the true-path-block is killed. We call this unswitched loop version
+//                                    the false-path loop.
+//
+// The invariant, non-loop-exiting test can now be moved before both loops (to only execute it once) and turned into a
+// loop selector If node to select at runtime which unswitched loop version should be executed.
+// - Loop selector true?  Execute the true-path-loop.
+// - Loop selector false? Execute the false-path-loop.
+//
+// Note that even though an invariant test that exits the loop could also be optimized with Loop Unswitching, it is more
+// efficient to simply peel the loop which achieves the same result in a simpler manner (also see policy_peeling()).
+//
+// The following graph summarizes the Loop Unswitching optimization:
 //
 //                                                                    [Initialized Assertion Predicates]
 //                                                                                    |
-//    [Predicates]                                                             if (invariant-test)
+//    [Predicates]                                                         loop selector If (invariant-test)
 //         |                                                                  /                   \
 //    Original Loop                                                       true?                  false?
 //      stmt1                                                             /                         \
@@ -127,7 +144,7 @@ class UnswitchedLoopSelector : public StackObj {
  public:
   UnswitchedLoopSelector(IdealLoopTree* loop)
       : _phase(loop->_phase),
-        _outer_loop(loop->_head->as_Loop()->is_strip_mined() ? loop->_parent->_parent : loop->_parent),
+        _outer_loop(loop->skip_strip_mined()->_parent),
         _original_loop_entry(loop->_head->as_Loop()->skip_strip_mined()->in(LoopNode::EntryControl)),
         _unswitch_candidate(find_unswitch_candidate(loop)),
         _selector(create_selector_if()),
@@ -156,8 +173,12 @@ class UnswitchedLoopSelector : public StackObj {
 
   IfProjNode* create_proj_to_loop(const PathToLoop path_to_loop) {
     const uint dom_depth = _phase->dom_depth(_original_loop_entry);
-    IfProjNode* proj_to_loop = (path_to_loop == TRUE_PATH) ? new IfTrueNode(_selector)
-                                                             new IfFalseNode(_selector);
+    IfProjNode* proj_to_loop;
+    if (path_to_loop == TRUE_PATH) {
+      proj_to_loop = new IfTrueNode(_selector);
+    } else {
+      proj_to_loop = new IfFalseNode(_selector);
+    }
     _phase->register_node(proj_to_loop, _outer_loop, _selector, dom_depth);
     return proj_to_loop;
   }
@@ -180,6 +201,86 @@ class UnswitchedLoopSelector : public StackObj {
   }
 };
 
+// Class to unswitch the original loop and create Predicates at the new unswitched loop versions. The newly cloned loop
+// becomes the false-path-loop while original loop becomes the true-path-loop.
+class OriginalLoop : public StackObj {
+  LoopNode* const _strip_mined_loop_head;
+  IdealLoopTree* const _loop;
+  Node_List& _old_new;
+  PhaseIdealLoop* const _phase;
+
+ public:
+  OriginalLoop(IdealLoopTree* loop, Node_List& old_new)
+      : _strip_mined_loop_head(loop->_head->as_Loop()->skip_strip_mined()),
+        _loop(loop),
+        _old_new(old_new),
+        _phase(loop->_phase) {}
+  NONCOPYABLE(OriginalLoop);
+
+ private:
+  void fix_loop_entries(IfProjNode* true_path_loop_entry, IfProjNode* false_path_loop_entry) {
+    _phase->replace_loop_entry(_strip_mined_loop_head, true_path_loop_entry);
+    LoopNode* false_path_loop_strip_mined_head = old_to_new(_strip_mined_loop_head)->as_Loop();
+    _phase->replace_loop_entry(false_path_loop_strip_mined_head, false_path_loop_entry);
+  }
+
+  Node* old_to_new(const Node* old) const {
+    return _old_new[old->_idx];
+  }
+
+#ifdef ASSERT
+  void verify_unswitched_loop_versions(LoopNode* true_path_loop_head,
+                                       const UnswitchedLoopSelector& unswitched_loop_selector) const {
+    verify_unswitched_loop_version(true_path_loop_head, unswitched_loop_selector.true_path_loop_proj());
+    verify_unswitched_loop_version(old_to_new(true_path_loop_head)->as_Loop(),
+                                   unswitched_loop_selector.false_path_loop_proj());
+  }
+
+  static void verify_unswitched_loop_version(LoopNode* loop_head, IfProjNode* loop_selector_if_proj) {
+    Node* entry = loop_head->skip_strip_mined()->in(LoopNode::EntryControl);
+    const Predicates predicates(entry);
+    // When skipping all predicates, we should end up at 'loop_selector_if_proj'.
+    assert(loop_selector_if_proj == predicates.entry(), "should end up at loop selector If");
+  }
+#endif // ASSERT
+
+// Remove the unswitch candidate If nodes in both unswitched loop versions which are now dominated by the loop selector
+// If node. Keep the true-path-block in the true-path-loop and the false-path-block in the false-path-loop by setting
+// the bool input accordingly. The unswitch candidate If nodes are folded in the next IGVN round.
+  void remove_unswitch_candidate_from_loops(const UnswitchedLoopSelector& unswitched_loop_selector) {
+    IfNode* unswitching_candidate = unswitched_loop_selector.unswitch_candidate();
+    _phase->igvn().rehash_node_delayed(unswitching_candidate);
+    _phase->dominated_by(unswitched_loop_selector.true_path_loop_proj(), unswitching_candidate);
+
+    IfNode* unswitching_candidate_clone = _old_new[unswitching_candidate->_idx]->as_If();
+    _phase->igvn().rehash_node_delayed(unswitching_candidate_clone);
+    _phase->dominated_by(unswitched_loop_selector.false_path_loop_proj(), unswitching_candidate_clone);
+  }
+
+ public:
+  // Unswitch the original loop on the invariant loop selector by creating a true-path-loop and a false-path-loop.
+  // Remove the unswitch candidate If from both unswitched loop versions which are now covered by the loop selector If.
+  void unswitch(const UnswitchedLoopSelector& unswitched_loop_selector) {
+    _phase->clone_loop(_loop, _old_new, _phase->dom_depth(_strip_mined_loop_head),
+                       PhaseIdealLoop::CloneIncludesStripMined, unswitched_loop_selector.selector());
+
+    // At this point, the selector If projections are the corresponding loop entries.
+    // clone_parse_and_assertion_predicates_to_unswitched_loop() could clone additional predicates after the selector
+    // If projections. The loop entries are updated accordingly.
+    IfProjNode* true_path_loop_entry = unswitched_loop_selector.true_path_loop_proj();
+    IfProjNode* false_path_loop_entry = unswitched_loop_selector.false_path_loop_proj();
+    _phase->clone_parse_and_assertion_predicates_to_unswitched_loop(_loop, _old_new,
+                                                                    true_path_loop_entry, false_path_loop_entry);
+
+    fix_loop_entries(true_path_loop_entry, false_path_loop_entry);
+
+    DEBUG_ONLY(verify_unswitched_loop_versions(_loop->_head->as_Loop(), unswitched_loop_selector);)
+
+    _phase->recompute_dom_depth();
+    remove_unswitch_candidate_from_loops(unswitched_loop_selector);
+  }
+};
+
 // See comments below file header for more information about Loop Unswitching.
 void PhaseIdealLoop::do_unswitching(IdealLoopTree* loop, Node_List& old_new) {
   assert(LoopUnswitching, "LoopUnswitching must be enabled");
@@ -196,7 +297,9 @@ void PhaseIdealLoop::do_unswitching(IdealLoopTree* loop, Node_List& old_new) {
   revert_to_normal_loop(original_head);
 
   const UnswitchedLoopSelector unswitched_loop_selector(loop);
-  create_unswitched_loop_versions(loop, old_new, unswitched_loop_selector);
+  OriginalLoop original_loop(loop, old_new);
+  original_loop.unswitch(unswitched_loop_selector);
+
   hoist_invariant_check_casts(loop, old_new, unswitched_loop_selector);
   add_unswitched_loop_version_bodies_to_igvn(loop, old_new);
 
@@ -252,99 +355,13 @@ void PhaseIdealLoop::trace_loop_unswitching_result(const UnswitchedLoopSelector&
 }
 #endif
 
+// When unswitching a counted loop, we need to convert it back to a normal loop since it's not a proper pre, main or,
+// post loop anymore after loop unswitching.
 void PhaseIdealLoop::revert_to_normal_loop(const LoopNode* loop_head) {
-  if (loop_head->is_CountedLoop() && !loop_head->as_CountedLoop()->is_normal_loop()) {
-    loop_head->as_CountedLoop()->set_normal_loop();
+  CountedLoopNode* cl = loop_head->isa_CountedLoop();
+  if (cl != nullptr && !cl->is_normal_loop()) {
+    cl->set_normal_loop();
   }
-}
-
-// Class to unswitch the original loop and create Predicates at the new unswitched loop versions. The newly cloned loop
-// becomes the false-path-loop while original loop becomes the true-path-loop.
-class OriginalLoop : public StackObj {
-  LoopNode* const _strip_mined_loop_head;
-  IdealLoopTree* const _loop;
-  Node_List* const _old_new;
-  PhaseIdealLoop* const _phase;
-
- public:
-  OriginalLoop(IdealLoopTree* loop, Node_List* old_new)
-      : _strip_mined_loop_head(loop->_head->as_Loop()->skip_strip_mined()),
-        _loop(loop),
-        _old_new(old_new),
-        _phase(loop->_phase) {}
-  NONCOPYABLE(OriginalLoop);
-
- private:
-  void fix_loop_entries(IfProjNode* true_path_loop_entry, IfProjNode* false_path_loop_entry) {
-    _phase->replace_loop_entry(_strip_mined_loop_head, true_path_loop_entry);
-    LoopNode* false_path_loop_strip_mined_head = old_to_new(_strip_mined_loop_head)->as_Loop();
-    _phase->replace_loop_entry(false_path_loop_strip_mined_head, false_path_loop_entry);
-  }
-
-  Node* old_to_new(const Node* old) const {
-    return _old_new->at(old->_idx);
-  }
-
-#ifdef ASSERT
-  void verify_unswitched_loop_versions(LoopNode* true_path_loop_head,
-                                       const UnswitchedLoopSelector& unswitched_loop_selector) const {
-    verify_unswitched_loop_version(true_path_loop_head, unswitched_loop_selector.true_path_loop_proj());
-    verify_unswitched_loop_version(old_to_new(true_path_loop_head)->as_Loop(),
-                                   unswitched_loop_selector.false_path_loop_proj());
-  }
-
-  static void verify_unswitched_loop_version(LoopNode* loop_head, IfProjNode* loop_selector_if_proj) {
-    Node* entry = loop_head->skip_strip_mined()->in(LoopNode::EntryControl);
-    const Predicates predicates(entry);
-    // When skipping all predicates, we should end up at 'loop_selector_if_proj'.
-    assert(loop_selector_if_proj == predicates.entry(), "should end up at loop selector If");
-  }
-#endif // ASSERT
-
- public:
-  // Unswitch on the invariant loop selector by creating two unswitched loop versions.
-  void unswitch(const UnswitchedLoopSelector& unswitched_loop_selector) {
-    _phase->clone_loop(_loop, *_old_new, _phase->dom_depth(_strip_mined_loop_head),
-                       PhaseIdealLoop::CloneIncludesStripMined, unswitched_loop_selector.selector());
-
-    // At this point, the selector If projections are the corresponding loop entries.
-    // clone_parse_and_assertion_predicates_to_unswitched_loop() could clone additional predicates after the selector
-    // If projections. The loop entries are updated accordingly.
-    IfProjNode* true_path_loop_entry = unswitched_loop_selector.true_path_loop_proj();
-    IfProjNode* false_path_loop_entry = unswitched_loop_selector.false_path_loop_proj();
-    _phase->clone_parse_and_assertion_predicates_to_unswitched_loop(_loop, *_old_new,
-                                                                    true_path_loop_entry, false_path_loop_entry);
-
-    fix_loop_entries(true_path_loop_entry, false_path_loop_entry);
-
-    DEBUG_ONLY(verify_unswitched_loop_versions(_loop->_head->as_Loop(), unswitched_loop_selector);)
-  }
-};
-
-// Create a true-path- and a false-path-loop version of the original loop by cloning the loop and inserting an If to
-// select one of the versions at runtime. Remove the unswitch candidate If node from both unswitched loop versions.
-void PhaseIdealLoop::create_unswitched_loop_versions(IdealLoopTree* loop, Node_List& old_new,
-                                                     const UnswitchedLoopSelector& unswitched_loop_selector) {
-
-  OriginalLoop original_loop(loop, &old_new);
-  original_loop.unswitch(unswitched_loop_selector);
-  recompute_dom_depth();
-
-  remove_unswitch_candidate_from_loops(old_new, unswitched_loop_selector);
-}
-
-// Remove the unswitch candidate If nodes in both unswitched loop versions which are now dominated by the loop selector
-// If node. Keep the true path block in the true-path-loop and the false path block in the false-path-loop by setting
-// the bool input accordingly. The unswitch candidate If nodes are folded in the next IGVN round.
-void PhaseIdealLoop::remove_unswitch_candidate_from_loops(const Node_List& old_new,
-                                                          const UnswitchedLoopSelector& unswitched_loop_selector) {
-  IfNode* unswitching_candidate = unswitched_loop_selector.unswitch_candidate();
-  _igvn.rehash_node_delayed(unswitching_candidate);
-  dominated_by(unswitched_loop_selector.true_path_loop_proj(), unswitching_candidate);
-
-  IfNode* unswitching_candidate_clone = old_new[unswitching_candidate->_idx]->as_If();
-  _igvn.rehash_node_delayed(unswitching_candidate_clone);
-  dominated_by(unswitched_loop_selector.false_path_loop_proj(), unswitching_candidate_clone);
 }
 
 // Hoist invariant CheckCastPPNodes out of each unswitched loop version to the appropriate loop selector If projection.
@@ -358,13 +375,13 @@ void PhaseIdealLoop::hoist_invariant_check_casts(const IdealLoopTree* loop, cons
     IfProjNode* proj = unswitch_candidate->fast_out(i)->as_IfProj();
     // Copy to a worklist for easier manipulation
     for (DUIterator_Fast jmax, j = proj->fast_outs(jmax); j < jmax; j++) {
-      Node* check_cast = proj->fast_out(j)->isa_CheckCastPP();
+      CheckCastPPNode* check_cast = proj->fast_out(j)->isa_CheckCastPP();
       if (check_cast != nullptr && loop->is_invariant(check_cast->in(1))) {
         loop_invariant_check_casts.push(check_cast);
       }
     }
     IfProjNode* loop_selector_if_proj = loop_selector->proj_out(proj->_con)->as_IfProj();
-    while (loop_invariant_check_casts.size() > 0) {
+    while (loop_invariant_check_casts.length() > 0) {
       CheckCastPPNode* cast = loop_invariant_check_casts.pop();
       Node* cast_clone = cast->clone();
       cast_clone->set_req(0, loop_selector_if_proj);

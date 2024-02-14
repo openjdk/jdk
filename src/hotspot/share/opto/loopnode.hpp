@@ -771,6 +771,11 @@ public:
     return _has_range_checks;
   }
 
+  // Return the strip mined loop tree if there is an outer strip mined loop. Otherwise, return this.
+  IdealLoopTree* skip_strip_mined() {
+    return _head->as_Loop()->is_strip_mined() ? _parent : this;
+  }
+
 #ifndef PRODUCT
   void dump_head();       // Dump loop head only
   void dump();            // Dump this loop recursively
@@ -1416,8 +1421,7 @@ public:
  private:
   static bool has_control_dependencies_from_predicates(LoopNode* head);
   static void revert_to_normal_loop(const LoopNode* loop_head);
-  void create_unswitched_loop_versions(IdealLoopTree* loop, Node_List& old_new,
-                                       const UnswitchedLoopSelector& unswitched_loop_selector);
+
   void hoist_invariant_check_casts(const IdealLoopTree* loop, const Node_List& old_new,
                                    const UnswitchedLoopSelector& unswitched_loop_selector);
   void add_unswitched_loop_version_bodies_to_igvn(IdealLoopTree* loop, const Node_List& old_new);

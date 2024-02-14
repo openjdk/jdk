@@ -4192,7 +4192,8 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
   Node_List *split_if_set = nullptr;
   Node_List *split_bool_set = nullptr;
   Node_List *split_cex_set = nullptr;
-  fix_data_uses(wq, loop, ControlAroundStripMined, head->is_strip_mined() ? loop->_parent : loop, new_counter, old_new, worklist, split_if_set, split_bool_set, split_cex_set);
+  fix_data_uses(wq, loop, ControlAroundStripMined, loop->skip_strip_mined(), new_counter, old_new, worklist,
+                split_if_set, split_bool_set, split_cex_set);
 
   finish_clone_loop(split_if_set, split_bool_set, split_cex_set);
 
