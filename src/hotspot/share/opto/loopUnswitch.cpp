@@ -36,11 +36,11 @@
 // Loop Unswitching is a loop optimization to move an invariant, non-loop-exiting test in the loop body before the loop.
 // Such a test is either always true or always false in all loop iterations and could therefore only be executed once.
 // To achieve that, we duplicate the loop and change the original and cloned loop as follows:
-// - Original loop -> true-path-loop: The true-path-block of the invariant, non-loop-exiting test in the original loop
-//                                    is kept while the false-path-block is killed. We call this unswitched loop version
+// - Original loop -> true-path-loop: The true-path-path of the invariant, non-loop-exiting test in the original loop
+//                                    is kept while the false-path-path is killed. We call this unswitched loop version
 //                                    the true-path-loop.
-// - Cloned loop -> False-path-loop:  The false-path-block of the invariant, non-loop-exiting test in the cloned loop
-//                                    is kept while the true-path-block is killed. We call this unswitched loop version
+// - Cloned loop -> False-path-loop:  The false-path-path of the invariant, non-loop-exiting test in the cloned loop
+//                                    is kept while the true-path-path is killed. We call this unswitched loop version
 //                                    the false-path loop.
 //
 // The invariant, non-loop-exiting test can now be moved before both loops (to only execute it once) and turned into a
@@ -60,12 +60,12 @@
 //    Original Loop                                                       true?                  false?
 //      stmt1                                                             /                         \
 //      if (invariant-test)           UNSWITCHED              [Cloned Parse Predicates]         [Cloned Parse Predicates]
-//        if-block                    =========>              [Cloned Template                  [Cloned Template
+//        if-path                     =========>              [Cloned Template                  [Cloned Template
 //      else                                                   Assertion Predicates]             Assertion Predicates]
 //        // could be empty                                         |                                  |
-//        [else-block]                                        True-Path-Loop                    False-Path-Loop
+//        [else-path]                                         True-Path-Loop                    False-Path-Loop
 //      stmt2                                                   cloned stmt1                      cloned stmt1
-//    Endloop                                                   cloned if-block                   [cloned else-block]
+//    Endloop                                                   cloned if-path                    [cloned else-path]
 //                                                              cloned stmt2                      cloned stmt2
 //                                                            Endloop                           Endloop
 
@@ -245,7 +245,7 @@ class OriginalLoop : public StackObj {
 #endif // ASSERT
 
 // Remove the unswitch candidate If nodes in both unswitched loop versions which are now dominated by the loop selector
-// If node. Keep the true-path-block in the true-path-loop and the false-path-block in the false-path-loop by setting
+// If node. Keep the true-path-path in the true-path-loop and the false-path-path in the false-path-loop by setting
 // the bool input accordingly. The unswitch candidate If nodes are folded in the next IGVN round.
   void remove_unswitch_candidate_from_loops(const UnswitchedLoopSelector& unswitched_loop_selector) {
     IfNode* unswitching_candidate = unswitched_loop_selector.unswitch_candidate();
