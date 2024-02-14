@@ -6343,6 +6343,7 @@ void MacroAssembler::double_move(VMRegPair src, VMRegPair dst, Register tmp) {
 //
 //  - obj: the object to be locked
 //  - t1, t2, t3: temporary registers, will be destroyed
+//  - slow: branched to if locking fails, absolute offset may larger than 32KB (imm14 encoding).
 void MacroAssembler::lightweight_lock(Register obj, Register t1, Register t2, Register t3, Label& slow) {
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
   assert_different_registers(obj, t1, t2, t3, rscratch1);
@@ -6390,6 +6391,7 @@ void MacroAssembler::lightweight_lock(Register obj, Register t1, Register t2, Re
 //
 // - obj: the object to be unlocked
 // - t1, t2, t3: temporary registers
+// - slow: branched to if unlocking fails, absolute offset may larger than 32KB (imm14 encoding).
 void MacroAssembler::lightweight_unlock(Register obj, Register t1, Register t2, Register t3, Label& slow) {
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
   // cmpxchg clobbers rscratch1.
