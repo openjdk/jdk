@@ -101,7 +101,7 @@ public class objmonusage001 {
                 //       worker thread is in wait() and is not notified
                 // - notify_waiter_thread == runn[i]:
                 //       worker thread is in wait() and is not notified
-                //          
+                //
                 // This is a stable verification point because the worker thread is in wait()
                 // and is not notified and the main thread is doing the verification.
                 //
