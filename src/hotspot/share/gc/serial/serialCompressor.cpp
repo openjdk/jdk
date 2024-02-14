@@ -164,8 +164,8 @@ class SCCompacter {
   // Clear table (only required for assertion in forwardee()).
   void clear(HeapWord* from, HeapWord* to) {
     size_t from_block = addr_to_block_idx(from);
-    size_t to_block = addr_to_block_idx(align_up(to, bytes_per_block()));
-    Copy::fill_to_words(reinterpret_cast<HeapWord*>(&_bot[from_block]), to_block - from_block);
+    size_t num_blocks = align_up(pointer_delta(to, from), words_per_block()) / words_per_block();
+    Copy::fill_to_words(reinterpret_cast<HeapWord*>(&_bot[from_block]), num_blocks);
   }
 #endif // ASSERT
 
@@ -187,7 +187,16 @@ class SCCompacter {
       return _mark_bitmap.get_next_marked_addr(addr, limit);
     } else {
       // Find beginning of live chunk.
-      HeapWord* current = _mark_bitmap.get_last_unmarked_addr(start, addr) + 1;
+      HeapWord* current = _mark_bitmap.get_last_unmarked_addr(start, addr);
+      if (current == addr) {
+        // No clear bit found before search range, start of range because that must
+        // be the previous object.
+        current = start;
+      } else {
+        // Use first marked word, this must be an object.
+        assert(!_mark_bitmap.is_marked(current), "must not be marked");
+        current = current + 1;
+      }
       // Forward-search to first object >= addr.
       while (current < addr) {
         size_t obj_size = cast_to_oop(current)->size();
@@ -260,10 +269,12 @@ class SCCompacter {
       HeapWord* top = space->top();
       HeapWord** table_start = &_bot[addr_to_block_idx(bottom)];
       HeapWord** addr = align_down(table_start, os::vm_page_size());
-      HeapWord** table_end = &_bot[addr_to_block_idx(top)];
-      size_t num_blocks = table_end - addr;
+      size_t num_blocks = align_up(pointer_delta(top, bottom), words_per_block()) / words_per_block();
+      HeapWord** table_end = table_start + num_blocks;
+      size_t aligned_num_blocks = pointer_delta(reinterpret_cast<void*>(align_up(table_end, os::vm_page_size())), reinterpret_cast<void*>(addr), BytesPerWord);
       if (num_blocks > 0) {
-        size_t size_in_bytes = align_up(num_blocks * sizeof(HeapWord*), os::vm_page_size());
+        size_t size_in_bytes = aligned_num_blocks * sizeof(HeapWord*);
+        assert(is_aligned(size_in_bytes, os::vm_page_size()), "size of table must be page-size aligned");
         const char* msg = "Not enough memory to allocate block-offset-table for Serial Full GC";
         os::commit_memory_or_exit(reinterpret_cast<char*>(addr), size_in_bytes, false /* exec */, msg);
       }
