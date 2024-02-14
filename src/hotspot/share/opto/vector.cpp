@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -276,7 +276,7 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) {
     SafePointNode* sfpt = safepoints.pop()->as_SafePoint();
 
     uint first_ind = (sfpt->req() - sfpt->jvms()->scloff());
-    Node* sobj = new SafePointScalarObjectNode(vec_box->box_type(), vec_box, first_ind, n_fields);
+    Node* sobj = new SafePointScalarObjectNode(vec_box->box_type(), vec_box, first_ind, sfpt->jvms()->depth(), n_fields);
     sobj->init_req(0, C->root());
     sfpt->add_req(vec_value);
 

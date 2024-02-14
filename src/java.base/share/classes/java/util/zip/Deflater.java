@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,10 @@ import static java.util.zip.ZipUtils.NIO_ACCESS;
  * protected by patents. It is fully described in the specifications at
  * the <a href="package-summary.html#package-description">java.util.zip
  * package description</a>.
+ * <p>
+ * Unless otherwise noted, passing a {@code null} argument to a method
+ * in this class will cause a {@link NullPointerException} to be
+ * thrown.
  * <p>
  * This class deflates sequences of bytes into ZLIB compressed data format.
  * The input byte sequence is provided in either byte array or byte buffer,
@@ -196,6 +200,7 @@ public class Deflater {
      * @param level the compression level (0-9)
      * @param nowrap if true then use GZIP compatible compression
      */
+    @SuppressWarnings("this-escape")
     public Deflater(int level, boolean nowrap) {
         this.level = level;
         this.strategy = DEFAULT_STRATEGY;

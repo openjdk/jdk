@@ -1174,24 +1174,27 @@ class G1MergeHeapRootsTask : public WorkerTask {
       }
 
       HeapRegion* r = g1h->region_at(region_index);
-      if (r->rem_set()->is_empty()) {
-        return false;
-      }
+
+      assert(r->rem_set()->is_complete(), "humongous candidates must have complete remset");
 
       guarantee(r->rem_set()->occupancy_less_or_equal_than(G1EagerReclaimRemSetThreshold),
                 "Found a not-small remembered set here. This is inconsistent with previous assumptions.");
 
-      _cl.merge_card_set_for_region(r);
+      if (!r->rem_set()->is_empty()) {
+        _cl.merge_card_set_for_region(r);
 
-      // We should only clear the card based remembered set here as we will not
-      // implicitly rebuild anything else during eager reclaim. Note that at the moment
-      // (and probably never) we do not enter this path if there are other kind of
-      // remembered sets for this region.
-      // We want to continue collecting remembered set entries for humongous regions
-      // that were not reclaimed.
-      r->rem_set()->clear(true /* only_cardset */, true /* keep_tracked */);
+        // We should only clear the card based remembered set here as we will not
+        // implicitly rebuild anything else during eager reclaim. Note that at the moment
+        // (and probably never) we do not enter this path if there are other kind of
+        // remembered sets for this region.
+        // We want to continue collecting remembered set entries for humongous regions
+        // that were not reclaimed.
+        r->rem_set()->clear(true /* only_cardset */, true /* keep_tracked */);
+      }
 
-      assert(r->rem_set()->is_empty() && r->rem_set()->is_complete(), "must be for eager reclaim candidates");
+      // Postcondition
+      assert(r->rem_set()->is_empty(), "must be empty after flushing");
+      assert(r->rem_set()->is_complete(), "should still be after flushing");
 
       return false;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,6 @@
 #include "jni_util.h"
 #include "jdk_internal_agent_FileSystemImpl.h"
 
-#ifdef _ALLBSD_SOURCE
-#define stat64 stat
-#endif
-
 /*
  * JNI_OnLoad
  */
@@ -60,11 +56,11 @@ JNIEXPORT jboolean JNICALL Java_jdk_internal_agent_FileSystemImpl_isAccessUserOn
     jboolean isCopy;
     const char *path = JNU_GetStringPlatformChars(env, str, &isCopy);
     if (path != NULL) {
-        struct stat64 sb;
-        if (stat64(path, &sb) == 0) {
+        struct stat sb;
+        if (stat(path, &sb) == 0) {
             res = ((sb.st_mode & (S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH)) == 0) ? JNI_TRUE : JNI_FALSE;
         } else {
-            JNU_ThrowIOExceptionWithLastError(env, "stat64 failed");
+            JNU_ThrowIOExceptionWithLastError(env, "stat failed");
         }
         if (isCopy) {
             JNU_ReleaseStringPlatformChars(env, str, path);

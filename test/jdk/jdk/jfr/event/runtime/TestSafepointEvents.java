@@ -52,8 +52,8 @@ public class TestSafepointEvents {
     static final String[] EVENT_NAMES = new String[] {
         EventNames.SafepointBegin,
         EventNames.SafepointStateSynchronization,
+        // EventNames.SafepointCleanupTask,
         EventNames.SafepointCleanup,
-        EventNames.SafepointCleanupTask,
         EventNames.SafepointEnd
     };
 

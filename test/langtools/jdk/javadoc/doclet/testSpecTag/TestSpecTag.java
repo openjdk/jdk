@@ -365,8 +365,8 @@ public class TestSpecTag extends JavadocTester {
                     <button id="external-specs-tab2" role="tab" aria-selected="false" aria-controls="external-specs.tabpanel" \
                     tabindex="-1" onkeydown="switchTab(event)" onclick="show('external-specs', 'external-specs-tab2', 2)" \
                     class="table-tab">example.net</button></div>
-                    <div id="external-specs.tabpanel" role="tabpanel">
-                    <div class="summary-table two-column-summary" aria-labelledby="external-specs-tab0">
+                    <div id="external-specs.tabpanel" role="tabpanel" aria-labelledby="external-specs-tab0">
+                    <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Specification</div>
                     <div class="table-header col-last">Referenced In</div>""",
                 """

@@ -28,7 +28,6 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
-#include "code/icBuffer.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/serial/cardTableRS.hpp"
 #include "gc/serial/defNewGeneration.inline.hpp"
@@ -94,7 +93,6 @@ SerialHeap::SerialHeap() :
     _young_gen(nullptr),
     _old_gen(nullptr),
     _rem_set(nullptr),
-    _soft_ref_policy(),
     _gc_policy_counters(new GCPolicyCounters("Copy:MSC", 2, 2)),
     _incremental_collection_failed(false),
     _young_manager(nullptr),
@@ -145,17 +143,6 @@ GrowableArray<MemoryPool*> SerialHeap::memory_pools() {
   memory_pools.append(_survivor_pool);
   memory_pools.append(_old_pool);
   return memory_pools;
-}
-
-void SerialHeap::young_process_roots(OopClosure* root_closure,
-                                     OopIterateClosure* old_gen_closure,
-                                     CLDClosure* cld_closure) {
-  MarkingCodeBlobClosure mark_code_closure(root_closure, CodeBlobToOopClosure::FixRelocations, false /* keepalive nmethods */);
-
-  process_roots(SO_ScavengeCodeCache, root_closure,
-                cld_closure, cld_closure, &mark_code_closure);
-
-  old_gen()->younger_refs_iterate(old_gen_closure);
 }
 
 void SerialHeap::safepoint_synchronize_begin() {
@@ -1051,8 +1038,6 @@ void SerialHeap::print_heap_change(const PreGenGCValues& pre_gc_values) const {
 }
 
 void SerialHeap::gc_prologue(bool full) {
-  assert(InlineCacheBuffer::is_empty(), "should have cleaned up ICBuffer");
-
   // Fill TLAB's and such
   ensure_parsability(true);   // retire TLABs
 
