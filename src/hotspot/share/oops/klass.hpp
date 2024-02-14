@@ -155,6 +155,9 @@ class Klass : public Metadata {
   // All klasses loaded by a class loader are chained through these links
   Klass*      _next_link;
 
+  uintptr_t _hash;
+  uintptr_t _bitmap;
+
   // The VM's representation of the ClassLoader used to load this class.
   // Provide access the corresponding instance java.lang.ClassLoader.
   ClassLoaderData* _class_loader_data;
@@ -231,7 +234,9 @@ protected:
   void set_secondary_super_cache(Klass* k) { _secondary_super_cache = k; }
 
   Array<Klass*>* secondary_supers() const { return _secondary_supers; }
-  void set_secondary_supers(Array<Klass*>* k) { _secondary_supers = k; }
+  void set_secondary_supers(Array<Klass*>* k);
+
+  uintptr_t hash() const { return _hash; }
 
   // Return the element of the _super chain of the given depth.
   // If there is no such element, return either null or this.
@@ -399,6 +404,8 @@ protected:
   static ByteSize subklass_offset()              { return byte_offset_of(Klass, _subklass); }
   static ByteSize next_sibling_offset()          { return byte_offset_of(Klass, _next_sibling); }
 #endif
+  static ByteSize hash_offset()                  { return byte_offset_of(Klass, _hash); }
+  static ByteSize bitmap_offset()                { return byte_offset_of(Klass, _bitmap); }
 
   // Unpacking layout_helper:
   static const int _lh_neutral_value           = 0;  // neutral non-array non-instance value

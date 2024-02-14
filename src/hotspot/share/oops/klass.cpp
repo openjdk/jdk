@@ -84,6 +84,15 @@ void Klass::set_name(Symbol* n) {
   if (CDSConfig::is_dumping_archive() && is_instance_klass()) {
     SystemDictionaryShared::init_dumptime_info(InstanceKlass::cast(this));
   }
+  ResourceMark rm;
+  const char *s = n->as_C_string();
+  int l = strlen(s);
+  uint64_t hash = 1;
+  for (int i = 0; i < l; i++) {
+    hash *= 17;
+    hash += (u1)s[i];
+  }
+  _hash = hash * 11400714819323198485llu; // (2 / (1 + sqrt(5.0))) * 0x1.0p64
 }
 
 bool Klass::is_subclass_of(const Klass* k) const {
@@ -200,7 +209,8 @@ Klass::Klass() : _kind(UnknownKlassKind) {
 // The constructor is also used from CppVtableCloner,
 // which doesn't zero out the memory before calling the constructor.
 Klass::Klass(KlassKind kind) : _kind(kind),
-                           _shared_class_path_index(-1) {
+                               _hash(uintptr_t(this) * 11400714819323198485llu), // (2 / (1 + sqrt(5.0))) * 0x1.0p64
+                               _shared_class_path_index(-1) {
   CDS_ONLY(_shared_class_flags = 0;)
   CDS_JAVA_HEAP_ONLY(_archived_mirror_index = -1;)
   _primary_supers[0] = this;
@@ -236,6 +246,54 @@ bool Klass::can_be_primary_super_slow() const {
     return true;
 }
 
+void Klass::set_secondary_supers(Array<Klass*>* secondaries) {
+  ResourceMark rm;
+  uint64_t bitmap = 0;
+  GrowableArray<Klass*>* hashed_secondaries = new GrowableArray<Klass*>(64);
+
+  if (! secondaries) {
+    _bitmap = 0;
+    _secondary_supers = nullptr;
+    return;
+  }
+
+  for (int i = 0; i < 64; i++)   hashed_secondaries->push(nullptr);
+
+  if (secondaries->length() > 6) {
+    asm("nop");
+  }
+
+  for (int j = 0; j < secondaries->length(); j++) {
+    Klass *k = secondaries->at(j);
+    unsigned int slot = k->hash() >> (64 - 6);
+    {
+      int i;
+      for (i = 0; i < 64; i++, slot++) {
+        slot &= 63;
+        if (hashed_secondaries->at(slot) == nullptr) {
+          bitmap |= uint64_t(1) << slot;
+          hashed_secondaries->at_put(slot, k);
+          break;
+        }
+      }
+      if (i == 64) {
+        assert(false, "fubar");
+      }
+    }
+  }
+
+  int i = 0;
+  for (int slot = 0; slot < hashed_secondaries->length(); slot++) {
+    if (hashed_secondaries->at(slot) != nullptr) {
+      secondaries->at_put(i, hashed_secondaries->at(slot));  // add secondaries on the end.
+      i++;
+    }
+  }
+
+  _bitmap = bitmap;
+  _secondary_supers = secondaries;
+}
+
 void Klass::initialize_supers(Klass* k, Array<InstanceKlass*>* transitive_interfaces, TRAPS) {
   if (k == nullptr) {
     set_super(nullptr);
@@ -245,6 +303,12 @@ void Klass::initialize_supers(Klass* k, Array<InstanceKlass*>* transitive_interf
     assert(super() == nullptr || super() == vmClasses::Object_klass(),
            "initialize this only once to a non-trivial value");
     set_super(k);
+
+    if (Verbose) {
+      const char *name = external_name();
+      fprintf(stderr, "init supers: %s (hash 0x%llx)\n", name, (unsigned long long)hash());
+    }
+
     Klass* sup = k;
     int sup_depth = sup->super_depth();
     juint my_depth  = MIN2(sup_depth + 1, (int)primary_super_limit());

@@ -5225,6 +5225,15 @@ InstanceKlass* ClassFileParser::create_instance_klass(bool changed_by_loadhook,
 
   fill_instance_klass(ik, changed_by_loadhook, cl_inst_info, CHECK_NULL);
 
+  {
+    ResourceMark rm;
+    const char *needle = "org.openjdk.bench.vm.lang.IntfSubtype$A10";
+    const char *haystack = ik->external_name();
+    if (strcmp(needle, haystack) == 0) {
+      fprintf(stderr, "Klass: %s!\n", haystack);
+    }
+  }
+
   assert(_klass == ik, "invariant");
 
   return ik;

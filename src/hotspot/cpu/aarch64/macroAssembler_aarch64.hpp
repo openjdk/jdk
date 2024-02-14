@@ -998,6 +998,14 @@ public:
                                      Label* L_failure,
                                      bool set_cond_codes = false);
 
+  void check_klass_subtype_slow_path(Register sub_klass,
+                                     Klass *super_klass,
+                                     Register temp,
+                                     Register temp2,
+                                     Register temp3,
+                                     FloatRegister vtemp,
+                                     Register result);
+
   // Simplified, combined version, good for typical uses.
   // Falls through on failure.
   void check_klass_subtype(Register sub_klass,
@@ -1636,5 +1644,7 @@ struct tableswitch {
   Label _after;
   Label _branches;
 };
+
+bool trueReturner();
 
 #endif // CPU_AARCH64_MACROASSEMBLER_AARCH64_HPP

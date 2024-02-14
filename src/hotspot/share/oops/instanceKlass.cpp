@@ -3621,8 +3621,10 @@ void InstanceKlass::print_on(outputStream* st) const {
     }
   }
 
+  st->print(BULLET"hash:              0x%lx (hash=%ld)", hash(), hash() >> (64-6));    st->cr();
+  st->print(BULLET"bitmap:            0x%lx", _bitmap);                                st->cr();
   st->print(BULLET"arrays:            "); Metadata::print_value_on_maybe_null(st, array_klasses()); st->cr();
-  st->print(BULLET"methods:           "); methods()->print_value_on(st);                  st->cr();
+  st->print(BULLET"methods:           "); methods()->print_value_on(st);               st->cr();
   if (Verbose || WizardMode) {
     Array<Method*>* method_array = methods();
     for (int i = 0; i < method_array->length(); i++) {
@@ -3699,6 +3701,11 @@ void InstanceKlass::print_on(outputStream* st) const {
   st->print(BULLET"itable length      %d (start addr: " PTR_FORMAT ")", itable_length(), p2i(start_of_itable())); st->cr();
   if (itable_length() > 0 && (Verbose || WizardMode))  print_vtable(start_of_itable(), itable_length(), st);
   st->print_cr(BULLET"---- static fields (%d words):", static_field_size());
+  st->print_cr(BULLET"---- secondary supers (%d words):", _secondary_supers->length());
+  for (int i = 0; i < _secondary_supers->length(); i++) {
+    st->print_cr("  %d:  %p (hash=%ld)", i, _secondary_supers->at(i), _secondary_supers->at(i)->hash() >> (64-6));
+  }
+
   FieldPrinter print_static_field(st);
   ((InstanceKlass*)this)->do_local_static_fields(&print_static_field);
   st->print_cr(BULLET"---- non-static fields (%d words):", nonstatic_field_size());

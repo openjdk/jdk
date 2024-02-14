@@ -1457,6 +1457,18 @@ void MacroAssembler::repne_scanw(Register addr, Register value, Register count,
   bind(Lexit);
 }
 
+void argh(Klass *sub_klass, Klass *super_klass) {
+  fprintf(stderr, "Got here \n");
+}
+
+bool trueReturner() {
+  return true;
+}
+
+void piddle() {
+  asm("nop");
+}
+
 void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
                                                    Register super_klass,
                                                    Register temp_reg,
@@ -1469,7 +1481,7 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
     assert_different_registers(sub_klass, super_klass, temp_reg, temp2_reg, rscratch1);
 #define IS_A_TEMP(reg) ((reg) == temp_reg || (reg) == temp2_reg)
 
-  Label L_fallthrough;
+  Label L_fallthrough, DONE_IT;
   int label_nulls = 0;
   if (L_success == nullptr)   { L_success   = &L_fallthrough; label_nulls++; }
   if (L_failure == nullptr)   { L_failure   = &L_fallthrough; label_nulls++; }
@@ -1481,7 +1493,20 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
   Address secondary_supers_addr(sub_klass, ss_offset);
   Address super_cache_addr(     sub_klass, sc_offset);
 
-  BLOCK_COMMENT("check_klass_subtype_slow_path");
+  BLOCK_COMMENT("check_klass_subtype_slow_path {");
+
+  ldr(rscratch1, Address(sub_klass, Klass::bitmap_offset()));
+  ldr(rscratch2, Address(super_klass, Klass::hash_offset()));
+  lsr(rscratch2, rscratch2, 64 - 6);
+  lsrv(rscratch1, rscratch1, rscratch2);
+  andr(rscratch1, rscratch1, (u1)1);
+  cmp(rscratch1, (u1)1);
+  mov(r5, 1);
+  br(Assembler::NE, *L_failure);
+
+#ifdef CHECK_KLASS_SUBTYPE_SLOW_PATH_CONSISTENCY
+  stp(rscratch1, rscratch1, Address(pre(sp, -2 * wordSize)));
+#endif
 
   // Do a linear scan of the secondary super-klass chain.
   // This code is rarely used, so simplicity is a virtue here.
@@ -1529,48 +1554,134 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
   // Unspill the temp. registers:
   pop(pushed_registers, sp);
 
+#ifdef CHECK_KLASS_SUBTYPE_SLOW_PATH_CONSISTENCY
+  // Restore the flags
+  ldp(rscratch1, rscratch2, Address(post(sp, 2 * wordSize)));
+
+  {
+    Label OK1, OK2;
+    cbnz(rscratch1, OK1); // Branch if found in mask
+    br(Assembler::NE, OK1); // Branch if not found in mask and & not equal
+    stop("fubar");
+    bind(OK1);
+  }
+#endif
+
   br(Assembler::NE, *L_failure);
 
   // Success. Try to cache the super we found and proceed in triumph.
-  uint32_t super_cache_backoff = checked_cast<uint32_t>(SecondarySuperMissBackoff);
-  if (super_cache_backoff > 0) {
-    Label L_skip_same, L_skip_different;
-
-    // Are we trying to store the same value in the global cache?
-    ldr(rscratch1, Address(rthread, JavaThread::backoff_secondary_super_value_offset()));
-    cmp(rscratch1, super_klass);
-    br(Assembler::NE, L_skip_different);
-
-    // Trying to store the same value, have we tried enough times?
-    ldrw(rscratch1, Address(rthread, JavaThread::backoff_secondary_super_miss_offset()));
-    subw(rscratch1, rscratch1, 1);
-    tbz(rscratch1, 31, L_skip_same);
-
-    // Store!
-    str(super_klass, super_cache_addr);
-
-    // Store the current attempted value and reset the backoff count.
-    bind(L_skip_different);
-    movw(rscratch1, super_cache_backoff);
-    str(super_klass, Address(rthread, JavaThread::backoff_secondary_super_value_offset()));
-
-    // Store the new value for backoff count: either decremented
-    // for the same class, or re-initialized for the different class.
-    bind(L_skip_same);
-    strw(rscratch1, Address(rthread, JavaThread::backoff_secondary_super_miss_offset()));
-
-    // The operations above destroy condition codes set by scan.
-    // This is the success path, restore them ourselves.
-    cmp(zr, zr); // Set Z flag
-  } else {
-    str(super_klass, super_cache_addr);
+  {
+    Label dont;
+    ldr(rscratch1, super_cache_addr);
+    cbnz(rscratch1, dont);
+    // str(super_klass, super_cache_addr);
+    bind(dont);
   }
-
   if (L_success != &L_fallthrough) {
     b(*L_success);
   }
 
 #undef IS_A_TEMP
+
+  bind(DONE_IT);
+  BLOCK_COMMENT("} check_klass_subtype_slow_path");
+
+  bind(L_fallthrough);
+}
+
+void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
+                                                   Klass *super_klass,
+                                                   Register temp,
+                                                   Register temp2,
+                                                   Register temp3,
+                                                   FloatRegister vtemp,
+                                                   Register result) {
+  assert_different_registers(sub_klass, temp, temp2, temp3, rscratch1, rscratch2);
+
+  Label L_fallthrough, L_success, L_failure;
+
+  // a couple of useful fields in sub_klass:
+  int ss_offset = in_bytes(Klass::secondary_supers_offset());
+  int sc_offset = in_bytes(Klass::secondary_super_cache_offset());
+  Address secondary_supers_addr(sub_klass, ss_offset);
+  Address super_cache_addr(     sub_klass, sc_offset);
+
+  BLOCK_COMMENT("check_klass_subtype_slow_path {");
+
+  const Register
+    r_array_index = rscratch2,
+    r_bitmap = rscratch1,
+    r_array_length = temp,
+    r_super_klass = temp2,
+    r_array_base = temp3;
+
+  ldr(r_bitmap, Address(sub_klass, Klass::bitmap_offset()));
+  if (super_klass->hash() != 0) {
+    ldrd(vtemp, Address(sub_klass, Klass::bitmap_offset()));
+  }
+  u1 bit = checked_cast<u1> (super_klass->hash() >> (64 - 6));
+  tbz(r_bitmap, bit, L_failure);
+
+  mov(lr, CAST_FROM_FN_PTR(address, &piddle));
+  blr(lr);
+
+  // Get the first array index that can contain super_klass into vtemp
+  if (super_klass->hash() != 0) {
+    if (bit < 63)   shld(vtemp, vtemp, 63 - bit);
+    cnt(vtemp, T8B, vtemp);
+    addv(vtemp, T8B, vtemp);
+    fmovd(r_array_index, vtemp);
+  } else {
+    mov(r_array_index, (u1)1);
+  }
+
+// #ifdef CHECK_KLASS_SUBTYPE_SLOW_PATH_CONSISTENCY
+//   stp(rscratch1, rscratch1, Address(pre(sp, -2 * wordSize)));
+// #endif
+
+// #ifndef PRODUCT
+//   mov(rscratch2, (address)&SharedRuntime::_partial_subtype_ctr);
+//   Address pst_counter_addr(rscratch2);
+//   ldr(rscratch1, pst_counter_addr);
+//   add(rscratch1, rscratch1, 1);
+//   str(rscratch1, pst_counter_addr);
+// #endif //PRODUCT
+
+  ror(r_bitmap, r_bitmap, bit);
+  mov_metadata(r_super_klass, super_klass);
+
+  // We will consult the secondary-super array.
+  // mov_metadata(r_array_base, (Metadata*)super_klass->secondary_supers());
+  ldr(r_array_base, Address(sub_klass, in_bytes(Klass::secondary_supers_offset())));
+  // Load the array length.
+  ldrw(r_array_length, Address(r_array_base, Array<Klass*>::length_offset_in_bytes()));
+
+  // Skip to start of data.
+  // add(r_array_base, r_array_base, Array<Klass*>::base_offset_in_bytes());
+
+  {
+    // Linear probe
+    Label LOOPY;
+    bind(LOOPY);
+    ldr(result, Address(r_array_base, r_array_index, Address::lsl(LogBytesPerWord)));
+    cmp(result, r_super_klass);
+    br(EQ, L_success);
+    tbz(r_bitmap, 1, L_failure); // End of run
+    ror(r_bitmap, r_bitmap, 1);
+    add(r_array_index, r_array_base, 1);
+    cmp(r_array_index, r_array_length);
+    csel(r_array_index, zr, r_array_index, EQ);
+    b(LOOPY);
+  }
+
+  bind(L_failure);
+  mov(result, (u1)0);
+  b(L_fallthrough);
+
+  bind(L_success);
+  mov(result, (u1)1);
+
+  BLOCK_COMMENT("} check_klass_subtype_slow_path");
 
   bind(L_fallthrough);
 }
