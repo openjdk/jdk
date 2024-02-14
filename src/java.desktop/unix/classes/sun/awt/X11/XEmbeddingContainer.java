@@ -74,7 +74,7 @@ public class XEmbeddingContainer extends XEmbedHelper implements XEventDispatche
     boolean checkXEmbed(long child) {
         try (Arena arena = Arena.ofConfined()){
             MemorySegment data = arena.allocate(X_EMBED_INFO_LAYOUT);
-            if (XEmbedInfo.getAtomData(child, data)) {
+            if (XEmbedInfo.getAtomData(child, arena, data)) {
                 int protocol = (int)X_EMBED_INFO_PROTOCOL.get(data, 0L);
                 int flags = (int)X_EMBED_INFO_FLAGS.get(data, 0L);
                 return true;
