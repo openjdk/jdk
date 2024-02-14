@@ -138,6 +138,7 @@ public:
   static bool supports_thp()                    { return thp_mode() == THPMode::madvise || thp_mode() == THPMode::always; }
   static THPMode thp_mode()                     { return _thp_support.mode(); }
   static size_t thp_pagesize()                  { return _thp_support.pagesize(); }
+  static size_t thp_pagesize_fallback();
 
   static bool supports_shmem_thp()              { return _shmem_thp_support.is_enabled(); }
   static ShmemTHPMode shmem_thp_mode()          { return _shmem_thp_support.mode(); }

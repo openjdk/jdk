@@ -3815,20 +3815,6 @@ static bool validate_thps_configured() {
   return true;
 }
 
-static void thp_pagesize_fallback() {
-    // Older kernels won't publish the THP page size. Fall back to default static huge page size,
-    // since that is likely to be the THP page size as well. Don't do it if the page size is considered
-    // too large to avoid large alignment waste. If static huge page size is unknown, use educated guess.
-    log_info(pagesize) ("Cannot determine THP page size (kernel < 4.10 ?)");
-    if (HugePages::supports_static_hugepages()) {
-        log_info(pagesize) ("Assuming THP page size to be same as default static hugepage size (limit 16M)");
-        _large_page_size = MIN2(HugePages::default_static_hugepage_size(), 16 * M);
-        return;
-    }
-    log_info(pagesize) ("Assuming THP page size to be 2M");
-    _large_page_size = 2 * M;
-}
-
 void os::large_page_init() {
   Linux::large_page_init();
 }
@@ -3890,7 +3876,9 @@ void os::Linux::large_page_init() {
     // - os::pagesizes() has two members, the THP page size and the system page size
     _large_page_size = HugePages::thp_pagesize();
     if (_large_page_size == 0) {
-        thp_pagesize_fallback();
+        log_info(pagesize) ("Cannot determine THP page size (kernel < 4.10 ?)");
+        _large_page_size = HugePages::thp_pagesize_fallback();
+        log_info(pagesize) ("Assuming THP page size to be: " EXACTFMT " (heuristics)", EXACTFMTARGS(_large_page_size));
     }
     _page_sizes.add(_large_page_size);
     _page_sizes.add(os::vm_page_size());
