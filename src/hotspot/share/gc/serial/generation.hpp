@@ -142,15 +142,6 @@ class Generation: public CHeapObj<mtGC> {
   // Thread-local allocation buffers
   virtual bool supports_tlab_allocation() const { return false; }
 
-  // "obj" is the address of an object in a younger generation.  Allocate space
-  // for "obj" in the current (or some higher) generation, and copy "obj" into
-  // the newly allocated space, if possible, returning the result (or null if
-  // the allocation failed).
-  //
-  // The "obj_size" argument is just obj->size(), passed along so the caller can
-  // avoid repeating the virtual call to retrieve it.
-  virtual oop promote(oop obj, size_t obj_size);
-
   // Returns "true" iff collect() should subsequently be called on this
   // this generation. See comment below.
   // This is a generic implementation which can be overridden.
