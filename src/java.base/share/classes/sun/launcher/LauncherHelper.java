@@ -873,7 +873,7 @@ public final class LauncherHelper {
                 try {
                     jarFile.close();
                 } catch (IOException ioe) {
-                    abort(ioe, "java.launcher.jar.error1", what);
+                    abort(ioe, "java.launcher.jar.error5", what);
                 }
             }
         }
