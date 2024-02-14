@@ -258,23 +258,29 @@ public:
   // that it assumes counted loops and requires that reduction nodes are not
   // used within the loop except by their reduction cycle predecessors.
   void mark_reductions();
+
   // Whether n is a reduction operator and part of a reduction cycle.
   // This function can be used for individual queries outside auto-vectorization,
   // e.g. to inform matching in target-specific code. Otherwise, the
   // almost-equivalent but faster mark_reductions() is preferable.
   static bool is_reduction(const Node* n);
+
   // Whether n is marked as a reduction node.
   bool is_marked_reduction(const Node* n) const { return _loop_reductions.test(n->_idx); }
+
   bool is_marked_reduction_loop() const { return !_loop_reductions.is_empty(); }
+
   // Are s1 and s2 reductions with a data path between them?
   bool is_marked_reduction_pair(Node* s1, Node* s2) const;
 
 private:
   // Whether n is a standard reduction operator.
   static bool is_reduction_operator(const Node* n);
+
   // Whether n is part of a reduction cycle via the 'input' edge index. To bound
   // the search, constrain the size of reduction cycles to LoopMaxUnroll.
   static bool in_reduction_cycle(const Node* n, uint input);
+
   // Reference to the i'th input node of n, commuting the inputs of binary nodes
   // whose edges have been swapped. Assumes n is a commutative operation.
   static Node* original_input(const Node* n, uint i);
@@ -479,8 +485,6 @@ public:
   NONCOPYABLE(VLoopAnalyzer);
 
   bool success() const { return _success; }
-
-  Arena* arena()       { return &_arena; }
 
   // Read-only accessors for submodules
   const VLoop& vloop()                           const { return _vloop; }
