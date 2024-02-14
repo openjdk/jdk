@@ -2929,7 +2929,7 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) {
 }
 
 // Return nullptr if success, else failure message
-const char* VLoopBody::construct() {
+VStatus VLoopBody::construct() {
   assert(_body.length() == 0, "body is empty");
 
   // First pass over loop body:
@@ -2953,7 +2953,7 @@ const char* VLoopBody::construct() {
           n->dump();
         }
 #endif
-        return VLoopBody::FAILURE_NODE_NOT_ALLOWED;
+        return VStatus::make_failure(VLoopBody::FAILURE_NODE_NOT_ALLOWED);
       }
 
 #ifdef ASSERT
@@ -3025,7 +3025,7 @@ const char* VLoopBody::construct() {
 #endif
 
   assert(rpo_idx == -1 && body_count == _body.length(), "all body members found");
-  return nullptr; // success
+  return VStatus::make_success();
 }
 
 // Initialize per node info

@@ -40,40 +40,38 @@ bool VLoop::check_preconditions() {
   }
 #endif
 
-  const char* return_state = check_preconditions_helper();
-  assert(return_state != nullptr, "must have return state");
-  if (return_state == VLoop::SUCCESS) {
-    return true; // success
-  }
-
+  VStatus status = check_preconditions_helper();
+  if (!status.is_success()) {
 #ifndef PRODUCT
-  if (is_trace_preconditions()) {
-    tty->print_cr("VLoop::check_preconditions: failed: %s", return_state);
-  }
+    if (is_trace_preconditions()) {
+      tty->print_cr("VLoop::check_preconditions: failed: %s", status.failure_reason());
+    }
 #endif
-  return false; // failure
+    return false; // failure
+  }
+  return true; // success
 }
 
-const char* VLoop::check_preconditions_helper() {
+VStatus VLoop::check_preconditions_helper() {
   // Only accept vector width that is power of 2
   int vector_width = Matcher::vector_width_in_bytes(T_BYTE);
   if (vector_width < 2 || !is_power_of_2(vector_width)) {
-    return VLoop::FAILURE_VECTOR_WIDTH;
+    return VStatus::make_failure(VLoop::FAILURE_VECTOR_WIDTH);
   }
 
   // Only accept valid counted loops (int)
   if (!_lpt->_head->as_Loop()->is_valid_counted_loop(T_INT)) {
-    return VLoop::FAILURE_VALID_COUNTED_LOOP;
+    return VStatus::make_failure(VLoop::FAILURE_VALID_COUNTED_LOOP);
   }
   _cl = _lpt->_head->as_CountedLoop();
   _iv = _cl->phi()->as_Phi();
 
   if (_cl->is_vectorized_loop()) {
-    return VLoop::FAILURE_ALREADY_VECTORIZED;
+    return VStatus::make_failure(VLoop::FAILURE_ALREADY_VECTORIZED);
   }
 
   if (_cl->is_unroll_only()) {
-    return VLoop::FAILURE_UNROLL_ONLY;
+    return VStatus::make_failure(VLoop::FAILURE_UNROLL_ONLY);
   }
 
   // Check for control flow in the body
@@ -89,12 +87,12 @@ const char* VLoop::check_preconditions_helper() {
       _lpt->dump_head();
     }
 #endif
-    return VLoop::FAILURE_CONTROL_FLOW;
+    return VStatus::make_failure(VLoop::FAILURE_CONTROL_FLOW);
   }
 
   // Make sure the are no extra control users of the loop backedge
   if (_cl->back_control()->outcnt() != 1) {
-    return VLoop::FAILURE_BACKEDGE;
+    return VStatus::make_failure(VLoop::FAILURE_BACKEDGE);
   }
 
   // To align vector memory accesses in the main-loop, we will have to adjust
@@ -102,16 +100,16 @@ const char* VLoop::check_preconditions_helper() {
   if (_cl->is_main_loop()) {
     CountedLoopEndNode* pre_end = _cl->find_pre_loop_end();
     if (pre_end == nullptr) {
-      return VLoop::FAILURE_PRE_LOOP_LIMIT;
+      return VStatus::make_failure(VLoop::FAILURE_PRE_LOOP_LIMIT);
     }
     Node* pre_opaq1 = pre_end->limit();
     if (pre_opaq1->Opcode() != Op_Opaque1) {
-      return VLoop::FAILURE_PRE_LOOP_LIMIT;
+      return VStatus::make_failure(VLoop::FAILURE_PRE_LOOP_LIMIT);
     }
     _pre_loop_end = pre_end;
   }
 
-  return VLoop::SUCCESS;
+  return VStatus::make_success();
 }
 
 // Return true iff all submodules are loaded successfully
@@ -124,24 +122,22 @@ bool VLoopAnalyzer::setup_submodules() {
   }
 #endif
 
-  const char* state = setup_submodules_helper();
-    if (state == VLoopAnalyzer::SUCCESS) {
-    return true; // success
-  }
-
+  VStatus status = setup_submodules_helper();
+  if (!status.is_success()) {
 #ifndef PRODUCT
-  if (vloop().is_trace_loop_analyzer()) {
-    tty->print_cr("\nVLoopAnalyze::setup_submodules: failed: %s", state);
-  }
+    if (vloop().is_trace_loop_analyzer()) {
+      tty->print_cr("\nVLoopAnalyze::setup_submodules: failed: %s", status.failure_reason());
+    }
 #endif
-  return false; // failed
+    return false; // failed
+  }
+  return true; // success
 }
 
-// Return SUCCESS string iff all submodules are setup successfully
-const char* VLoopAnalyzer::setup_submodules_helper() {
+VStatus VLoopAnalyzer::setup_submodules_helper() {
   // Skip any loop that has not been assigned max unroll by analysis.
   if (SuperWordLoopUnrollAnalysis && vloop().cl()->slp_max_unroll() == 0) {
-    return VLoopAnalyzer::FAILURE_NO_MAX_UNROLL;
+    return VStatus::make_failure(VLoopAnalyzer::FAILURE_NO_MAX_UNROLL);
   }
 
   if (SuperWordReductions) {
@@ -150,22 +146,22 @@ const char* VLoopAnalyzer::setup_submodules_helper() {
 
   _memory_slices.find_memory_slices();
 
-  // If there is no memory slice detected, that means there is no store.
+  // If there is no memory slice detected, it means there is no store.
   // If there is no reduction and no store, then we give up, because
   // vectorization is not possible anyway (given current limitations).
   if (!reductions().is_marked_reduction_loop() &&
       _memory_slices.heads().is_empty()) {
-    return VLoopAnalyzer::FAILURE_NO_REDUCTION_OR_STORE;
+    return VStatus::make_failure(VLoopAnalyzer::FAILURE_NO_REDUCTION_OR_STORE);
   }
 
-  const char* body_failure = _body.construct();
-  if (body_failure != nullptr) {
-    return body_failure;
+  VStatus body_status = _body.construct();
+  if (!body_status.is_success()) {
+    return body_status;
   }
 
   _types.compute_vector_element_type();
 
-  return VLoopAnalyzer::SUCCESS;
+  return VStatus::make_success();
 }
 
 #ifndef PRODUCT

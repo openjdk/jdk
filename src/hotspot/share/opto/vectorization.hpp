@@ -33,6 +33,28 @@
 // Code in this file and the vectorization.cpp contains shared logics and
 // utilities for C2's loop auto-vectorization.
 
+class VStatus : public StackObj {
+private:
+  const char* _failure_reason;
+
+  VStatus(const char* failure_reason) : _failure_reason(failure_reason) {}
+
+public:
+  static VStatus make_success() { return VStatus(nullptr); }
+
+  static VStatus make_failure(const char* failure_reason) {
+    assert(failure_reason != nullptr, "must have reason");
+    return VStatus(failure_reason);
+  }
+
+  bool is_success() const { return _failure_reason == nullptr; }
+
+  const char* failure_reason() const {
+    assert(!is_success(), "only failures have reason");
+    return _failure_reason;
+  }
+};
+
 #ifndef PRODUCT
 // Access to TraceAutoVectorization tags
 class VTrace : public StackObj {
@@ -62,7 +84,6 @@ private:
 
   NOT_PRODUCT(VTrace _vtrace;)
 
-  static constexpr char const* SUCCESS                    = "success";
   static constexpr char const* FAILURE_ALREADY_VECTORIZED = "loop already vectorized";
   static constexpr char const* FAILURE_UNROLL_ONLY        = "loop only wants to be unrolled";
   static constexpr char const* FAILURE_VECTOR_WIDTH       = "vector_width must be power of 2";
@@ -145,7 +166,7 @@ public:
   bool check_preconditions();
 
 private:
-  const char* check_preconditions_helper();
+  VStatus check_preconditions_helper();
 };
 
 // Optimization to keep allocation of large arrays in AutoVectorization low.
@@ -319,7 +340,7 @@ public:
 
   NONCOPYABLE(VLoopBody);
 
-  const char* construct();
+  VStatus construct();
   const GrowableArray<Node*>& body() const { return _body; }
   NOT_PRODUCT( void print() const; )
 
@@ -425,7 +446,6 @@ private:
 // as possible, though some submodules do require other submodules.
 class VLoopAnalyzer : StackObj {
 private:
-  static constexpr char const* SUCCESS                       = "success";
   static constexpr char const* FAILURE_NO_MAX_UNROLL         = "slp max unroll analysis required";
   static constexpr char const* FAILURE_NO_REDUCTION_OR_STORE = "no reduction and no store in loop";
 
@@ -471,7 +491,7 @@ public:
 
 private:
   bool setup_submodules();
-  const char* setup_submodules_helper();
+  VStatus setup_submodules_helper();
 };
 
 // A vectorization pointer (VPointer) has information about an address for
