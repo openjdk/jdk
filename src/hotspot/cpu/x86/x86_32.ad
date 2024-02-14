@@ -1990,14 +1990,14 @@ encode %{
   enc_class Con32FPR_as_bits(immFPR src) %{        // storeF_imm
     // Output Float immediate bits
     jfloat jf = $src$$constant;
-    int    jf_as_bits = PrimitiveConversions::cast<jint>( jf );
+    int    jf_as_bits = jint_cast( jf );
     emit_d32(cbuf, jf_as_bits);
   %}
 
   enc_class Con32F_as_bits(immF src) %{      // storeX_imm
     // Output Float immediate bits
     jfloat jf = $src$$constant;
-    int    jf_as_bits = PrimitiveConversions::cast<jint>( jf );
+    int    jf_as_bits = jint_cast( jf );
     emit_d32(cbuf, jf_as_bits);
   %}
 
@@ -3512,7 +3512,7 @@ operand immD0() %{
   // Do additional (and counter-intuitive) test against NaN to work around VC++
   // bug that generates code such that NaNs compare equal to 0.0 AND do not
   // compare equal to -0.0.
-  predicate( UseSSE>=2 && PrimitiveConversions::cast<jlong>(n->getd()) == 0 );
+  predicate( UseSSE>=2 && jlong_cast(n->getd()) == 0 );
   match(ConD);
 
   format %{ %}
@@ -3561,7 +3561,7 @@ operand immF() %{
 
 // Float Immediate zero.  Zero and not -0.0
 operand immF0() %{
-  predicate( UseSSE >= 1 && PrimitiveConversions::cast<jint>(n->getf()) == 0 );
+  predicate( UseSSE >= 1 && jint_cast(n->getf()) == 0 );
   match(ConF);
 
   op_cost(5);

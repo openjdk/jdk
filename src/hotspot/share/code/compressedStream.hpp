@@ -64,8 +64,8 @@ class CompressedReadStream : public CompressedStream {
   jchar    read_char()                 { return (jchar   ) read_int();  }
   jshort   read_short()                { return (jshort  ) read_signed_int(); }
   jint     read_signed_int();
-  jfloat   read_float();               // PrimitiveConversions::cast<jfloat>(reverse_bits(read_int()))
-  jdouble  read_double();              // PrimitiveConversions::cast<jdouble>(2*reverse_bits(read_int))
+  jfloat   read_float();               // jfloat_cast(reverse_bits(read_int()))
+  jdouble  read_double();              // jdouble_cast(2*reverse_bits(read_int))
   jlong    read_long();                // jlong_from(2*read_signed_int())
 
   jint     read_int() {
@@ -101,7 +101,7 @@ class CompressedWriteStream : public CompressedStream {
   void write_char(jchar value)         { write_int(value); }
   void write_short(jshort value)       { write_signed_int(value);  }
   void write_signed_int(jint value)    { write_int(UNSIGNED5::encode_sign(value)); }
-  void write_float(jfloat value);      // write_int(reverse_bits(PrimitiveConversions::cast<jint>(v)))
+  void write_float(jfloat value);      // write_int(reverse_bits(jint_cast(v)))
   void write_double(jdouble value);    // write_int(reverse_bits(<low,high>))
   void write_long(jlong value);        // write_signed_int(<low,high>)
 

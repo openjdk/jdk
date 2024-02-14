@@ -29,7 +29,6 @@
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
-#include "metaprogramming/primitiveConversions.hpp"
 
 // Get constants like JVM_T_CHAR and JVM_SIGNATURE_INT, before pulling in <jvm.h>.
 #include "classfile_constants.h"
@@ -294,6 +293,9 @@ inline size_t heap_word_size(size_t byte_size) {
   return (byte_size + (HeapWordSize-1)) >> LogHeapWordSize;
 }
 
+inline jfloat jfloat_cast(jint x);
+inline jdouble jdouble_cast(jlong x);
+
 //-------------------------------------------
 // Constant for jlong (standardized by C++11)
 
@@ -307,9 +309,9 @@ const jlong max_jlong = CONST64(0x7fffffffffffffff);
 //-------------------------------------------
 // Constant for jdouble
 const jlong min_jlongDouble = CONST64(0x0000000000000001);
-const jdouble min_jdouble = PrimitiveConversions::cast<jdouble>(min_jlongDouble);
+const jdouble min_jdouble = jdouble_cast(min_jlongDouble);
 const jlong max_jlongDouble = CONST64(0x7fefffffffffffff);
-const jdouble max_jdouble = PrimitiveConversions::cast<jdouble>(max_jlongDouble);
+const jdouble max_jdouble = jdouble_cast(max_jlongDouble);
 
 const size_t K                  = 1024;
 const size_t M                  = K*K;
@@ -540,9 +542,9 @@ const jint min_jint = (jint)1 << (sizeof(jint)*BitsPerByte-1); // 0x80000000 == 
 const jint max_jint = (juint)min_jint - 1;                     // 0x7FFFFFFF == largest jint
 
 const jint min_jintFloat = (jint)(0x00000001);
-const jfloat min_jfloat = PrimitiveConversions::cast<jfloat>(min_jintFloat);
+const jfloat min_jfloat = jfloat_cast(min_jintFloat);
 const jint max_jintFloat = (jint)(0x7f7fffff);
-const jfloat max_jfloat = PrimitiveConversions::cast<jfloat>(max_jintFloat);
+const jfloat max_jfloat = jfloat_cast(max_jintFloat);
 
 //----------------------------------------------------------------------------------------------------
 // JVM spec restrictions
@@ -638,6 +640,25 @@ inline double percent_of(T numerator, T denominator) {
 
 //----------------------------------------------------------------------------------------------------
 // Special casts
+// Cast floats into same-size integers and vice-versa w/o changing bit-pattern
+typedef union {
+  jfloat f;
+  jint i;
+} FloatIntConv;
+
+typedef union {
+  jdouble d;
+  jlong l;
+  julong ul;
+} DoubleLongConv;
+
+inline jint    jint_cast    (jfloat  x)  { return ((FloatIntConv*)&x)->i; }
+inline jfloat  jfloat_cast  (jint    x)  { return ((FloatIntConv*)&x)->f; }
+
+inline jlong   jlong_cast   (jdouble x)  { return ((DoubleLongConv*)&x)->l;  }
+inline julong  julong_cast  (jdouble x)  { return ((DoubleLongConv*)&x)->ul; }
+inline jdouble jdouble_cast (jlong   x)  { return ((DoubleLongConv*)&x)->d;  }
+
 inline jint low (jlong value)                    { return jint(value); }
 inline jint high(jlong value)                    { return jint(value >> 32); }
 

@@ -2148,11 +2148,11 @@ void C2_MacroAssembler::vector_round_neon(FloatRegister dst, FloatRegister src, 
     case T2S:
     case T4S:
       fmovs(tmp1, T, 0.5f);
-      mov(rscratch1, PrimitiveConversions::cast<jint>(0x1.0p23f));
+      mov(rscratch1, jint_cast(0x1.0p23f));
       break;
     case T2D:
       fmovd(tmp1, T, 0.5);
-      mov(rscratch1, PrimitiveConversions::cast<julong>(0x1.0p52));
+      mov(rscratch1, julong_cast(0x1.0p52));
       break;
     default:
       assert(T == T2S || T == T4S || T == T2D, "invalid arrangement");
@@ -2181,10 +2181,10 @@ void C2_MacroAssembler::vector_round_sve(FloatRegister dst, FloatRegister src, F
 
   switch (T) {
     case S:
-      mov(rscratch1, PrimitiveConversions::cast<jint>(0x1.0p23f));
+      mov(rscratch1, jint_cast(0x1.0p23f));
       break;
     case D:
-      mov(rscratch1, PrimitiveConversions::cast<julong>(0x1.0p52));
+      mov(rscratch1, julong_cast(0x1.0p52));
       break;
     default:
       assert(T == S || T == D, "invalid register variant");
@@ -2231,12 +2231,12 @@ void C2_MacroAssembler::vector_signum_sve(FloatRegister dst, FloatRegister src, 
     switch (T) {
     case S:
       sve_and(vtmp, T, min_jint); // Extract the sign bit of float value in every lane of src
-      sve_orr(vtmp, T, PrimitiveConversions::cast<jint>(1.0f)); // OR it with +1 to make the final result +1 or -1 depending
+      sve_orr(vtmp, T, jint_cast(1.0)); // OR it with +1 to make the final result +1 or -1 depending
                                         // on the sign of the float value
       break;
     case D:
       sve_and(vtmp, T, min_jlong);
-      sve_orr(vtmp, T, PrimitiveConversions::cast<jlong>(1.0));
+      sve_orr(vtmp, T, jlong_cast(1.0));
       break;
     default:
       assert(false, "unsupported");

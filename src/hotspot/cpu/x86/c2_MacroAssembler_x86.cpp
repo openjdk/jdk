@@ -4936,7 +4936,7 @@ void C2_MacroAssembler::vector_round_double_evex(XMMRegister dst, XMMRegister sr
   // and re-instantiate original MXCSR.RC mode after that.
   ldmxcsr(new_mxcsr, tmp /*rscratch*/);
 
-  mov64(tmp, PrimitiveConversions::cast<julong>(0.5));
+  mov64(tmp, julong_cast(0.5L));
   evpbroadcastq(xtmp1, tmp, vec_enc);
   vaddpd(xtmp1, src , xtmp1, vec_enc);
   evcvtpd2qq(dst, xtmp1, vec_enc);
@@ -4953,7 +4953,7 @@ void C2_MacroAssembler::vector_round_float_evex(XMMRegister dst, XMMRegister src
   // and re-instantiate original MXCSR.RC mode after that.
   ldmxcsr(new_mxcsr, tmp /*rscratch*/);
 
-  movl(tmp, PrimitiveConversions::cast<jint>(0.5f));
+  movl(tmp, jint_cast(0.5));
   movq(xtmp1, tmp);
   vbroadcastss(xtmp1, xtmp1, vec_enc);
   vaddps(xtmp1, src , xtmp1, vec_enc);
@@ -4971,7 +4971,7 @@ void C2_MacroAssembler::vector_round_float_avx(XMMRegister dst, XMMRegister src,
   // and re-instantiate original MXCSR.RC mode after that.
   ldmxcsr(new_mxcsr, tmp /*rscratch*/);
 
-  movl(tmp, PrimitiveConversions::cast<jint>(0.5f));
+  movl(tmp, jint_cast(0.5));
   movq(xtmp1, tmp);
   vbroadcastss(xtmp1, xtmp1, vec_enc);
   vaddps(xtmp1, src , xtmp1, vec_enc);

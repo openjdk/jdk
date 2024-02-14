@@ -176,9 +176,9 @@ bool MethodComparator::args_same(Bytecodes::Code const c_old,  Bytecodes::Code c
       if (old_cp->long_at(cpi_old) != new_cp->long_at(cpi_new))
         return false;
     } else {
-      // Use PrimitiveConversions::cast<jlong> to compare the bits rather than numerical values.
+      // Use jlong_cast to compare the bits rather than numerical values.
       // This makes a difference for NaN constants.
-      if (PrimitiveConversions::cast<jlong>(old_cp->double_at(cpi_old)) != PrimitiveConversions::cast<jlong>(new_cp->double_at(cpi_new)))
+      if (jlong_cast(old_cp->double_at(cpi_old)) != jlong_cast(new_cp->double_at(cpi_new)))
         return false;
     }
     break;
@@ -288,9 +288,9 @@ bool MethodComparator::pool_constants_same(const int cpi_old, const int cpi_new,
       if (old_cp->int_at(cpi_old) != new_cp->int_at(cpi_new))
         return false;
     } else {
-      // Use PrimitiveConversions::cast<jint> to compare the bits rather than numerical values.
+      // Use jint_cast to compare the bits rather than numerical values.
       // This makes a difference for NaN constants.
-      if (PrimitiveConversions::cast<jint>(old_cp->float_at(cpi_old)) != PrimitiveConversions::cast<jint>(new_cp->float_at(cpi_new)))
+      if (jint_cast(old_cp->float_at(cpi_old)) != jint_cast(new_cp->float_at(cpi_new)))
         return false;
     }
   } else if (tag_old.is_string() && tag_new.is_string()) {

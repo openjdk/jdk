@@ -2371,7 +2371,7 @@ operand immI_Pow2M1()
 // Float Immediate zero
 operand immF0()
 %{
-  predicate(PrimitiveConversions::cast<jint>(n->getf()) == 0);
+  predicate(jint_cast(n->getf()) == 0);
   match(ConF);
 
   op_cost(5);
@@ -2392,7 +2392,7 @@ operand immF()
 // Double Immediate zero
 operand immD0()
 %{
-  predicate(PrimitiveConversions::cast<jlong>(n->getd()) == 0);
+  predicate(jlong_cast(n->getd()) == 0);
   match(ConD);
 
   op_cost(5);
@@ -5415,7 +5415,7 @@ instruct storeF_imm(memory mem, immF src)
   ins_cost(50);
   format %{ "movl    $mem, $src\t# float" %}
   ins_encode %{
-    __ movl($mem$$Address, PrimitiveConversions::cast<jint>($src$$constant));
+    __ movl($mem$$Address, jint_cast($src$$constant));
   %}
   ins_pipe(ialu_mem_imm);
 %}

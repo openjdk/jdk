@@ -132,21 +132,21 @@ class LIR_Const: public LIR_OprPtr {
   jint      as_jint_bits() const       { type_check(T_FLOAT, T_INT, T_ADDRESS); return _value.get_jint(); }
   jint      as_jint_lo_bits() const    {
     if (type() == T_DOUBLE) {
-      return low(PrimitiveConversions::cast<jlong>(_value.get_jdouble()));
+      return low(jlong_cast(_value.get_jdouble()));
     } else {
       return as_jint_lo();
     }
   }
   jint      as_jint_hi_bits() const    {
     if (type() == T_DOUBLE) {
-      return high(PrimitiveConversions::cast<jlong>(_value.get_jdouble()));
+      return high(jlong_cast(_value.get_jdouble()));
     } else {
       return as_jint_hi();
     }
   }
   jlong      as_jlong_bits() const    {
     if (type() == T_DOUBLE) {
-      return PrimitiveConversions::cast<jlong>(_value.get_jdouble());
+      return jlong_cast(_value.get_jdouble());
     } else {
       return as_jlong();
     }
@@ -158,7 +158,7 @@ class LIR_Const: public LIR_OprPtr {
   bool is_zero_float() {
     jfloat f = as_jfloat();
     jfloat ok = 0.0f;
-    return PrimitiveConversions::cast<jint>(f) == PrimitiveConversions::cast<jint>(ok);
+    return jint_cast(f) == jint_cast(ok);
   }
 
   bool is_one_float() {
@@ -169,7 +169,7 @@ class LIR_Const: public LIR_OprPtr {
   bool is_zero_double() {
     jdouble d = as_jdouble();
     jdouble ok = 0.0;
-    return PrimitiveConversions::cast<jlong>(d) == PrimitiveConversions::cast<jlong>(ok);
+    return jlong_cast(d) == jlong_cast(ok);
   }
 
   bool is_one_double() {

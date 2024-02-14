@@ -115,9 +115,9 @@ bool LIRGenerator::can_store_as_constant(Value v, BasicType type) const {
   } else if (v->type()->as_ObjectConstant() != nullptr) {
     return v->type()->as_ObjectConstant()->value()->is_null_object();
   } else if (v->type()->as_FloatConstant() != nullptr) {
-    return PrimitiveConversions::cast<jint>(v->type()->as_FloatConstant()->value()) == 0.0f;
+    return jint_cast(v->type()->as_FloatConstant()->value()) == 0.0f;
   } else if (v->type()->as_DoubleConstant() != nullptr) {
-    return PrimitiveConversions::cast<jlong>(v->type()->as_DoubleConstant()->value()) == 0.0;
+    return jlong_cast(v->type()->as_DoubleConstant()->value()) == 0.0;
   }
   return false;
 }

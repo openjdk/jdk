@@ -3043,7 +3043,7 @@ operand immD()
 // Double Immediate: +0.0d
 operand immD0()
 %{
-  predicate(PrimitiveConversions::cast<jlong>(n->getd()) == 0);
+  predicate(jlong_cast(n->getd()) == 0);
   match(ConD);
 
   op_cost(0);
@@ -3063,7 +3063,7 @@ operand immF()
 // Float Immediate: +0.0f.
 operand immF0()
 %{
-  predicate(PrimitiveConversions::cast<jint>(n->getf()) == 0);
+  predicate(jint_cast(n->getf()) == 0);
   match(ConF);
 
   op_cost(0);

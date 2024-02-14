@@ -662,8 +662,8 @@ class MemoryBuffer: public CompilationResourceObj {
       switch (con->type()->tag()) {
         case intTag:    return con->type()->as_IntConstant()->value() == 0;
         case longTag:   return con->type()->as_LongConstant()->value() == 0;
-        case floatTag:  return PrimitiveConversions::cast<jint>(con->type()->as_FloatConstant()->value()) == 0;
-        case doubleTag: return PrimitiveConversions::cast<jlong>(con->type()->as_DoubleConstant()->value()) == PrimitiveConversions::cast<jlong>(0ll);
+        case floatTag:  return jint_cast(con->type()->as_FloatConstant()->value()) == 0;
+        case doubleTag: return jlong_cast(con->type()->as_DoubleConstant()->value()) == jlong_cast(0);
         case objectTag: return con->type() == objectNull;
         default:  ShouldNotReachHere();
       }

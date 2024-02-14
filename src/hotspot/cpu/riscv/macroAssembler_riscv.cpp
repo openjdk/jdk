@@ -4487,7 +4487,7 @@ void MacroAssembler::java_round_float(Register dst, FloatRegister src, FloatRegi
   // this instructions calling sequence provides performance improvement on all tested devices;
   // don't change it without re-verification
   Label done;
-  mv(t0, PrimitiveConversions::cast<jint>(0.5f));
+  mv(t0, jint_cast(0.5f));
   fmv_w_x(ftmp, t0);
 
   // dst = 0 if NaN
@@ -4517,7 +4517,7 @@ void MacroAssembler::java_round_double(Register dst, FloatRegister src, FloatReg
   // this instructions calling sequence provides performance improvement on all tested devices;
   // don't change it without re-verification
   Label done;
-  mv(t0, PrimitiveConversions::cast<julong>(0.5));
+  mv(t0, julong_cast(0.5));
   fmv_d_x(ftmp, t0);
 
   // dst = 0 if NaN
