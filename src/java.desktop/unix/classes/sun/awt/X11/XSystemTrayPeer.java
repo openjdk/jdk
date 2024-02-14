@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.awt.peer.SystemTrayPeer;
 import sun.awt.SunToolkit;
 import sun.awt.AppContext;
 import sun.awt.AWTAccessor;
+import sun.awt.UNIXToolkit;
 import sun.util.logging.PlatformLogger;
 
 public class XSystemTrayPeer implements SystemTrayPeer, XMSelectionListener {
@@ -55,11 +56,14 @@ public class XSystemTrayPeer implements SystemTrayPeer, XMSelectionListener {
 
         selection.addSelectionListener(this);
 
-        long selection_owner = selection.getOwner(SCREEN);
-        available = (selection_owner != XConstants.None);
+        UNIXToolkit tk = (UNIXToolkit)Toolkit.getDefaultToolkit();
+        if (!tk.shouldDisableSystemTray()) {
+            long selection_owner = selection.getOwner(SCREEN);
+            available = (selection_owner != XConstants.None);
 
-        if (log.isLoggable(PlatformLogger.Level.FINE)) {
-            log.fine(" check if system tray is available. selection owner: " + selection_owner);
+            if (log.isLoggable(PlatformLogger.Level.FINE)) {
+                log.fine(" check if system tray is available. selection owner: " + selection_owner);
+            }
         }
     }
 
