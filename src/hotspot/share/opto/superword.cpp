@@ -758,14 +758,14 @@ void SuperWord::dependence_graph() {
 
   // First, assign a dependence node to each memory node
   for (int i = 0; i < body().length(); i++ ) {
-    Node *n = body().at(i);
+    Node* n = body().at(i);
     if (n->is_Mem() || n->is_memory_phi()) {
       _dg.make_node(n);
     }
   }
 
-  const GrowableArray<PhiNode*> &mem_slice_head = vloop_analyzer().memory_slices().heads();
-  const GrowableArray<MemNode*> &mem_slice_tail = vloop_analyzer().memory_slices().tails();
+  const GrowableArray<PhiNode*>& mem_slice_head = vloop_analyzer().memory_slices().heads();
+  const GrowableArray<MemNode*>& mem_slice_tail = vloop_analyzer().memory_slices().tails();
 
   ResourceMark rm;
   GrowableArray<Node*> slice_nodes;
