@@ -53,16 +53,3 @@ $(CLDR_GEN_DONE): $(wildcard $(CLDR_DATA_DIR)/dtd/*.dtd) \
 	$(TOUCH) $@
 
 TARGETS += $(CLDR_GEN_DONE)
-
-################################################################################
-
-include GensrcProperties.gmk
-
-$(eval $(call SetupCompileProperties, COMPILE_PROPERTIES, \
-    SRC_DIRS := $(MODULE_SRC)/share/classes/sun/util/resources, \
-    CLASS := sun.util.resources.LocaleNamesBundle, \
-    KEEP_ALL_TRANSLATIONS := true, \
-))
-
-# Skip generating zh_HK from zh_TW for this module.
-TARGETS += $(filter-out %_zh_HK.java, $(COMPILE_PROPERTIES))

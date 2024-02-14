@@ -149,7 +149,6 @@ public abstract class LocaleProviderAdapter {
         } else {
             // Default preference list.
             typeList.add(Type.CLDR);
-            typeList.add(Type.JRE);
         }
         adapterPreference = Collections.unmodifiableList(typeList);
 
