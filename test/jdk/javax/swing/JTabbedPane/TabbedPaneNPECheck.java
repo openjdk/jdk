@@ -30,6 +30,11 @@
  * @run main TabbedPaneNPECheck
  */
 
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.lang.reflect.InvocationTargetException;
 import javax.accessibility.Accessible;
 import javax.accessibility.AccessibleComponent;
 import javax.accessibility.AccessibleContext;
@@ -37,11 +42,6 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingUtilities;
-import java.awt.BorderLayout;
-import java.awt.Dimension;
-import java.awt.Point;
-import java.awt.Rectangle;
-import java.lang.reflect.InvocationTargetException;
 
 public class TabbedPaneNPECheck {
     JTabbedPane pane;
@@ -53,7 +53,7 @@ public class TabbedPaneNPECheck {
         try {
             SwingUtilities.invokeAndWait(me::test);
         } finally {
-            if(mainFrame != null) {
+            if (mainFrame != null) {
                 mainFrame.setVisible(false);
                 mainFrame.dispose();
             }
@@ -88,7 +88,7 @@ public class TabbedPaneNPECheck {
                     AccessibleComponent component = (AccessibleComponent) accessible;
                     Point p = component.getLocationOnScreen();
                     Rectangle r = component.getBounds();
-                } catch(NullPointerException npe){
+                } catch (NullPointerException npe){
                     throw new RuntimeException("Unexpected NullPointerException " +
                             "while getting accessible component bounds: " + npe);
                 }
