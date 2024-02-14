@@ -1228,6 +1228,8 @@ inline TableStatistics ConcurrentHashTable<CONFIG, F>::
   InternalTable* table = get_table();
   size_t num_batches = table->_size / batch_size;
   for (size_t batch_start = 0; batch_start < _table->_size; batch_start += batch_size) {
+    // We batch the use of ScopedCS here as it has been found to be quite expensive to
+    // invoke it for every single bucket.
     size_t batch_end = MIN2(batch_start + batch_size, _table->_size);
     ScopedCS cs(thread, this);
     for (size_t bucket_it = batch_start; bucket_it < batch_end; bucket_it++) {
