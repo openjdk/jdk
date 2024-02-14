@@ -92,14 +92,6 @@ public class DefNewGeneration extends Generation {
         || to().contains(p);
   }
 
-  public void spaceIterate(SpaceClosure blk, boolean usedOnly) {
-    blk.doSpace(eden());
-    blk.doSpace(from());
-    if (!usedOnly) {
-      blk.doSpace(to());
-    }
-  }
-
   public void liveRegionsIterate(LiveRegionsClosure closure) {
     closure.doLiveRegions(eden());
     closure.doLiveRegions(from());

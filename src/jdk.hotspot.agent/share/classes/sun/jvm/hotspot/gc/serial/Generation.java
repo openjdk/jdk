@@ -118,13 +118,7 @@ public abstract class Generation extends VMObject {
 
   public abstract String name();
 
-  /** Equivalent to spaceIterate(blk, false) */
-  public void spaceIterate(SpaceClosure blk) {
-    spaceIterate(blk, false);
-  }
-
   /** Iteration - do not use for time critical operations */
-  public abstract void spaceIterate(SpaceClosure blk, boolean usedOnly);
   public abstract void liveRegionsIterate(LiveRegionsClosure closure);
 
   public void print() { printOn(System.out); }
