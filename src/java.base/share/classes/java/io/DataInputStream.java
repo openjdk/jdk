@@ -577,10 +577,12 @@ loop:   while (true) {
      *               valid modified UTF-8 encoding of a Unicode string.
      * @see        java.io.DataInputStream#readUnsignedShort()
      */
-    public static String readUTF(DataInput in) throws IOException {
+    public static final String readUTF(DataInput in) throws IOException {
         int utflen = in.readUnsignedShort();
         byte[] bytearr;
-        if (in instanceof DataInputStream dis) {
+        DataInputStream dis = null;
+        if (in instanceof DataInputStream) {
+            dis = (DataInputStream)in;
             if (dis.bytearr.length < utflen) {
                 dis.bytearr = new byte[utflen << 1];
             }
@@ -590,77 +592,80 @@ loop:   while (true) {
         }
         in.readFully(bytearr, 0, utflen);
 
-        int asciiCount = 0;
+        int count;
+        char[] chararr;
         if (utflen > 7) {
-            asciiCount = JLA.countPositives(bytearr, 0, utflen);
-            if (asciiCount == utflen) {
+            // When there's a chunk of ASCII 0-127, the modified UTF-8 stream can use a similar
+            // fast-path as regular UTF-8.
+            count = JLA.countPositives(bytearr, 0, utflen);
+            if (count == utflen) {
                 // For ASCII ISO-8859-1 is equivalent to UTF-8, while avoiding a redundant
                 // scan
                 return new String(bytearr, 0, utflen, StandardCharsets.ISO_8859_1);
             }
-        }
-        char[] chararr;
-        if (in instanceof DataInputStream dis) {
-            if (dis.chararr.length < utflen) {
-                dis.chararr = new char[utflen << 1];
-            }
-            chararr = dis.chararr;
+            chararr = getCharBuf(utflen, dis);
+            JLA.inflateBytesToChars(bytearr, 0, chararr, 0, count);
         } else {
-            chararr = new char[utflen];
+            chararr = getCharBuf(utflen, dis);
+            count = 0;
         }
-        int chars = decodeUTF(bytearr, 0, chararr, utflen, asciiCount);
-        return new String(chararr, 0, chars);
-    }
-
-    static int decodeUTF(byte[] src, int srcOff, char[] dst, int utflen, int asciiCount) throws UTFDataFormatException {
-        JLA.inflateBytesToChars(src, srcOff, dst, 0, asciiCount);
         int c, char2, char3;
-        int srcPos = asciiCount + srcOff;
-        int end = utflen + srcOff;
-        int dstPos = asciiCount;
-        while (srcPos < end) {
-            c = (int) src[srcPos] & 0xff;
+        int chararr_count = count;
+        while (count < utflen) {
+            c = (int) bytearr[count] & 0xff;
             switch (c >> 4) {
                 case 0, 1, 2, 3, 4, 5, 6, 7 -> {
                     /* 0xxxxxxx*/
-                    srcPos++;
-                    dst[dstPos++] = (char)c;
+                    count++;
+                    chararr[chararr_count++]=(char)c;
                 }
                 case 12, 13 -> {
                     /* 110x xxxx   10xx xxxx*/
-                    srcPos += 2;
-                    if (srcPos > end)
+                    count += 2;
+                    if (count > utflen)
                         throw new UTFDataFormatException(
                             "malformed input: partial character at end");
-                    char2 = src[srcPos - 1];
+                    char2 = bytearr[count-1];
                     if ((char2 & 0xC0) != 0x80)
                         throw new UTFDataFormatException(
-                            "malformed input around byte " + srcPos);
-                    dst[dstPos++]=(char)(((c     & 0x1F) << 6) |
-                                          (char2 & 0x3F));
+                            "malformed input around byte " + count);
+                    chararr[chararr_count++]=(char)(((c & 0x1F) << 6) |
+                                                    (char2 & 0x3F));
                 }
                 case 14 -> {
                     /* 1110 xxxx  10xx xxxx  10xx xxxx */
-                    srcPos += 3;
-                    if (srcPos > end)
+                    count += 3;
+                    if (count > utflen)
                         throw new UTFDataFormatException(
                             "malformed input: partial character at end");
-                    char2 = src[srcPos - 2];
-                    char3 = src[srcPos - 1];
+                    char2 = bytearr[count-2];
+                    char3 = bytearr[count-1];
                     if (((char2 & 0xC0) != 0x80) || ((char3 & 0xC0) != 0x80))
                         throw new UTFDataFormatException(
-                            "malformed input around byte " + (srcPos-1));
-                    dst[dstPos++] = (char)(((c     & 0x0F) << 12) |
-                                           ((char2 & 0x3F) << 6)  |
-                                           ((char3 & 0x3F) << 0));
+                            "malformed input around byte " + (count-1));
+                    chararr[chararr_count++]=(char)(((c     & 0x0F) << 12) |
+                                                    ((char2 & 0x3F) << 6)  |
+                                                    ((char3 & 0x3F) << 0));
                 }
                 default ->
                     /* 10xx xxxx,  1111 xxxx */
                     throw new UTFDataFormatException(
-                        "malformed input around byte " + srcPos);
+                        "malformed input around byte " + count);
             }
         }
         // The number of chars produced may be less than utflen
-        return dstPos;
+        return new String(chararr, 0, chararr_count);
+    }
+
+    private static char[] getCharBuf(int utflen, DataInputStream dis) {
+        if (dis != null) {
+            char[] chararr = dis.chararr;
+            if (chararr.length < utflen) {
+                dis.chararr = chararr = new char[utflen << 1];
+            }
+            return chararr;
+        } else {
+            return new char[utflen];
+        }
     }
 }

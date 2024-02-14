@@ -3696,7 +3696,9 @@ public class ObjectInputStream
                 // Avoid allocating a StringBuilder if there's enough data in buf and
                 // cbuf is large enough
                 if (avail >= utflen && utflen <= CHAR_BUF_SIZE) {
-                    int cbufPos = readUTFSpan(ascii, utflen);
+                    JLA.inflateBytesToChars(buf, pos, cbuf, 0, ascii);
+                    pos += ascii;
+                    int cbufPos = readUTFSpan(ascii, utflen - ascii);
                     return new String(cbuf, 0, cbufPos);
                 }
                 // a reasonable initial capacity based on the UTF length
@@ -3739,18 +3741,44 @@ public class ObjectInputStream
          * Appends read characters to cbuf. Returns the current position
          * in cbuf.
          */
-        private int readUTFSpan(int asciiCount, long utflen)
+        private int readUTFSpan(int cpos, long utflen)
             throws IOException
         {
             int start = pos;
             int avail = Math.min(end - pos, CHAR_BUF_SIZE);
             // stop short of last char unless all of utf bytes in buffer
-            avail = (utflen > avail) ? avail - 2 : (int)utflen;
+            int stop = start + ((utflen > avail) ? avail - 2 : (int) utflen);
             boolean outOfBounds = false;
-            int cpos = 0;
+
             try {
-                cpos = DataInputStream.decodeUTF(buf, start, cbuf, avail, asciiCount);
-                pos += avail;
+                while (pos < stop) {
+                    int b1, b2, b3;
+                    b1 = buf[pos++] & 0xFF;
+                    switch (b1 >> 4) {
+                        case 0, 1, 2, 3, 4, 5, 6, 7 -> // 1 byte format: 0xxxxxxx
+                            cbuf[cpos++] = (char) b1;
+                        case 12, 13 -> {  // 2 byte format: 110xxxxx 10xxxxxx
+                            b2 = buf[pos++];
+                            if ((b2 & 0xC0) != 0x80) {
+                                throw new UTFDataFormatException();
+                            }
+                            cbuf[cpos++] = (char) (((b1 & 0x1F) << 6) |
+                                                   ((b2 & 0x3F) << 0));
+                        }
+                        case 14 -> {  // 3 byte format: 1110xxxx 10xxxxxx 10xxxxxx
+                            b3 = buf[pos + 1];
+                            b2 = buf[pos + 0];
+                            pos += 2;
+                            if ((b2 & 0xC0) != 0x80 || (b3 & 0xC0) != 0x80) {
+                                throw new UTFDataFormatException();
+                            }
+                            cbuf[cpos++] = (char) (((b1 & 0x0F) << 12) |
+                                                   ((b2 & 0x3F) << 6) |
+                                                   ((b3 & 0x3F) << 0));
+                        }
+                        default ->  throw new UTFDataFormatException(); // 10xx xxxx, 1111 xxxx
+                    }
+                }
             } catch (ArrayIndexOutOfBoundsException ex) {
                 outOfBounds = true;
             } finally {
