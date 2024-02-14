@@ -963,7 +963,8 @@ void SerialHeap::generation_iterate(GenClosure* cl,
 }
 
 bool SerialHeap::is_maximal_no_gc() const {
-  return _young_gen->is_maximal_no_gc() && _old_gen->is_maximal_no_gc();
+  // We don't expand young-gen except at a GC.
+  return _old_gen->is_maximal_no_gc();
 }
 
 void SerialHeap::save_marks() {
