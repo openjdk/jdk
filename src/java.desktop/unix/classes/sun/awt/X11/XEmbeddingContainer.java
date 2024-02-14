@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,16 @@
 package sun.awt.X11;
 
 import java.awt.*;
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
+import java.lang.ref.Reference;
 import java.util.HashMap;
 import java.awt.event.KeyEvent;
 import sun.awt.AWTAccessor;
 
 public class XEmbeddingContainer extends XEmbedHelper implements XEventDispatcher {
-    HashMap<Long, java.awt.peer.ComponentPeer> children = new HashMap<>();
+    private final HashMap<Long, java.awt.peer.ComponentPeer> children = new HashMap<>();
 
     XEmbeddingContainer() {
     }
@@ -68,15 +72,13 @@ public class XEmbeddingContainer extends XEmbedHelper implements XEventDispatche
     }
 
     boolean checkXEmbed(long child) {
-        long data = unsafe.allocateMemory(8);
-        try {
-            if (XEmbedInfo.getAtomData(child, data, 2)) {
-                int protocol = unsafe.getInt(data);
-                int flags = unsafe.getInt(data);
+        try (Arena arena = Arena.ofConfined()){
+            MemorySegment data = arena.allocate(X_EMBED_INFO_LAYOUT);
+            if (XEmbedInfo.getAtomData(child, data)) {
+                int protocol = (int)X_EMBED_INFO_PROTOCOL.get(data, 0L);
+                int flags = (int)X_EMBED_INFO_FLAGS.get(data, 0L);
                 return true;
             }
-        } finally {
-            unsafe.freeMemory(data);
         }
         return false;
     }
@@ -130,19 +132,23 @@ public class XEmbeddingContainer extends XEmbedHelper implements XEventDispatche
 
     void forwardKeyEvent(long child, KeyEvent e) {
         byte[] bdata = AWTAccessor.getAWTEventAccessor().getBData(e);
-        long data = Native.toData(bdata);
-        if (data == 0) {
+        if (bdata == null) {
             return;
         }
-        XKeyEvent ke = new XKeyEvent(data);
-        ke.set_window(child);
-        XToolkit.awtLock();
-        try {
-            XlibWrapper.XSendEvent(XToolkit.getDisplay(), child, false, XConstants.NoEventMask, data);
+        try (Arena arena = Arena.ofConfined()) {
+            var data = arena.allocateFrom(ValueLayout.JAVA_BYTE, bdata);
+            try {
+                XKeyEvent ke = new XKeyEvent(data.address());
+                ke.set_window(child);
+                XToolkit.awtLock();
+                try {
+                    XlibWrapper.XSendEvent(XToolkit.getDisplay(), child, false, XConstants.NoEventMask, data.address());
+                } finally {
+                    XToolkit.awtUnlock();
+                }
+            } finally {
+                Reference.reachabilityFence(data);
+            }
         }
-        finally {
-            XToolkit.awtUnlock();
-        }
-        XlibWrapper.unsafe.freeMemory(data);
     }
 }

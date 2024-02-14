@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,11 @@ import sun.util.logging.PlatformLogger;
 
 import java.awt.AWTKeyStroke;
 import java.awt.event.InputEvent;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemoryLayout.PathElement;
+import java.lang.foreign.StructLayout;
+import java.lang.foreign.ValueLayout;
+import java.lang.invoke.VarHandle;
 
 /**
  * Common class for all XEmbed protocol participating classes.
@@ -76,7 +81,16 @@ public class XEmbedHelper {
     static final int XEMBED_MODIFIER_SUPER   = (1 << 3);
     static final int XEMBED_MODIFIER_HYPER   = (1 << 4);
 
+    static StructLayout X_EMBED_INFO_LAYOUT = MemoryLayout.structLayout(
+            ValueLayout.JAVA_INT.withName("protocol"),
+            ValueLayout.JAVA_INT.withName("flags")
+    );
+
+    static VarHandle X_EMBED_INFO_PROTOCOL = X_EMBED_INFO_LAYOUT.varHandle(PathElement.groupElement("protocol"));
+    static VarHandle X_EMBED_INFO_FLAGS = X_EMBED_INFO_LAYOUT.varHandle(PathElement.groupElement("flags"));
+
     static XAtom XEmbedInfo;
+
     static XAtom XEmbed;
 
     XEmbedHelper() {

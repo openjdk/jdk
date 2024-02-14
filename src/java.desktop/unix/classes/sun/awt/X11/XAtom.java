@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,26 @@
 
 package sun.awt.X11;
 
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
+import java.lang.ref.Reference;
+import java.util.HashMap;
+
+import jdk.internal.misc.Unsafe;
+
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 /**
  * XAtom is a class that allows you to create and modify X Window properties.
  * An X Atom is an identifier for a property that you can set on any X Window.
  * Standard X Atom are defined by X11 and these atoms are defined in this class
  * for convenience. Common X Atoms like {@code XA_WM_NAME} are used to communicate with the
  * Window manager to let it know the Window name. The use and protocol for these
- * atoms are defined in the Inter client communications converntions manual.
+ * atoms are defined in the Inter client communications conventions manual.
  * User specified XAtoms are defined by specifying a name that gets Interned
  * by the XServer and an {@code XAtom} object is returned. An {@code XAtom} can also be created
- * by using a pre-exisiting atom like {@code XA_WM_CLASS}. A {@code display} has to be specified
+ * by using a pre-existing atom like {@code XA_WM_CLASS}. A {@code display} has to be specified
  * in order to create an {@code XAtom}. <p> <p>
  *
  * Once an {@code XAtom} instance is created, you can call get and set property methods to
@@ -57,13 +67,6 @@ package sun.awt.X11;
  * @author  Bino George
  * @since       1.5
  */
-
-import java.util.HashMap;
-
-import jdk.internal.misc.Unsafe;
-
-import static java.nio.charset.StandardCharsets.ISO_8859_1;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 public final class XAtom {
 
@@ -409,6 +412,21 @@ public final class XAtom {
      */
     public void setCard32Property(XBaseWindow window, long value) {
         setCard32Property(window.getWindow(), value);
+    }
+
+    /**
+     * Gets uninterpreted set of data from property and stores them in the data segment.
+     * Property type is the same as current atom, property is current atom.
+     * Property format is 32. Property 'delete' is false.
+     * Returns boolean if requested type, format, length match returned values
+     * and returned data pointer is not null.
+     */
+    public boolean getAtomData(long window, MemorySegment data) {
+        try {
+            return getAtomData(window, data.address(), (int) (data.byteSize() / ValueLayout.JAVA_INT.byteSize()));
+        } finally {
+            Reference.reachabilityFence(data);
+        }
     }
 
     /**
