@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,25 +19,13 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_OOPS_COMPILEDICHOLDER_INLINE_HPP
-#define SHARE_OOPS_COMPILEDICHOLDER_INLINE_HPP
+/**
+ * Preview package.
+ */
+@PreviewFeature(feature=Feature.TEST)
+package preview;
 
-#include "oops/compiledICHolder.hpp"
-
-#include "oops/klass.inline.hpp"
-
-inline bool CompiledICHolder::is_loader_alive() {
-  Klass* k = _is_metadata_method ? ((Method*)_holder_metadata)->method_holder() : (Klass*)_holder_metadata;
-  if (!k->is_loader_alive()) {
-    return false;
-  }
-  if (!_holder_klass->is_loader_alive()) {
-    return false;
-  }
-  return true;
-}
-
-#endif // SHARE_OOPS_COMPILEDICHOLDER_INLINE_HPP
+import jdk.internal.javac.PreviewFeature;
+import jdk.internal.javac.PreviewFeature.Feature;
