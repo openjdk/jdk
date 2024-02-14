@@ -45,21 +45,21 @@ import jtreg.SkippedException;
 
 public class HeapDumpInstanceSize {
 
-	private static Snapshot readHeapdump(File file) throws Exception {
+    private static Snapshot readHeapdump(File file) throws Exception {
         System.out.println("Reading " + file + "...");
         Snapshot snapshot = Reader.readFile(file.getPath(), true, 0);
         System.out.println("Resolving snapshot...");
         snapshot.resolve(true);
         System.out.println("Snapshot resolved.");
-		return snapshot;
-	}
+        return snapshot;
+    }
 
     private static Snapshot heapdumpSA(long pid, String fileName) throws Exception {
         File dumpFile = new File(fileName);
         ClhsdbLauncher launcher = new ClhsdbLauncher();
-		String command = "dumpheap " + fileName;
-		List<String> cmds = List.of(command);
-		launcher.run(pid, cmds, null, null);
+        String command = "dumpheap " + fileName;
+        List<String> cmds = List.of(command);
+        launcher.run(pid, cmds, null, null);
         return readHeapdump(dumpFile);
     }
 
