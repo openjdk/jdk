@@ -28,6 +28,8 @@ import java.io.PrintStream;
 public class objmonusage001 {
     final static int JCK_STATUS_BASE = 95;
     final static int NUMBER_OF_THREADS = 32;
+    final static boolean ADD_DELAYS_FOR_RACES = false;
+    final static boolean CHECK_FOR_BAD_RESULTS = false;
 
     static {
         try {
@@ -41,8 +43,21 @@ public class objmonusage001 {
     }
 
     native static int getResult();
-    native static void check(int i, Object o, Thread owner,
-                             int entryCount, int notifyWaiterCount);
+    native static void check(int index, Object syncObject, Thread owner, int entryCount,
+                             Thread waiterThread, int waiterCount,
+                             Thread notifyWaiterThread, int notifyWaiterCount);
+
+    static void verify(int index, Object syncObject, Thread owner, int entryCount,
+                       Thread waiterThread, int waiterCount,
+                       Thread notifyWaiterThread, int notifyWaiterCount) {
+        if (CHECK_FOR_BAD_RESULTS) {
+            check(index, syncObject, owner, entryCount,
+                  waiterThread, waiterCount, notifyWaiterThread, notifyWaiterCount);
+        } else {
+            check(index, syncObject, owner, entryCount,
+                  null, 0, notifyWaiterThread, notifyWaiterCount);
+        }
+    }
 
     public static void main(String argv[]) {
         argv = nsk.share.jvmti.JVMTITest.commonInit(argv);
@@ -51,12 +66,13 @@ public class objmonusage001 {
     }
 
     public static int run(String argv[], PrintStream out) {
+        Thread mainThread = Thread.currentThread();
         Object syncObject[] = new Object[NUMBER_OF_THREADS];
         objmonusage001a runn[] = new objmonusage001a[NUMBER_OF_THREADS];
 
         for (int i = 0; i < NUMBER_OF_THREADS; i++) {
             syncObject[i] = new Object();
-            runn[i] = new objmonusage001a(i, syncObject[i]);
+            runn[i] = new objmonusage001a(mainThread, i, syncObject[i]);
         }
 
         for (int i = 0; i < NUMBER_OF_THREADS; i++) {
@@ -68,8 +84,53 @@ public class objmonusage001 {
                     out.println(e);
                     return 2;
                 }
+
+                // verify2:
+                // - owner == main:
+                //       main thread owns the monitor and worker thread
+                //       is in wait() and is not notified
+                // - entry_count == 1:
+                //       main thread reentered 1 time
+                // - waiter_count == 0:
+                //       main thread has already reentered the monitor and worker thread
+                //       is in wait() and is not notified so it is not waiting to reenter
+                //       the monitor
+                // - waiter_thread == null:
+                //       no thread is waiting to reenter the monitor
+                // - notify_waiter_count == 1:
+                //       worker thread is in wait() and is not notified
+                // - notify_waiter_thread == runn[i]:
+                //       worker thread is in wait() and is not notified
+                //          
+                // This is a stable verification point because the worker thread is in wait()
+                // and is not notified and the main thread is doing the verification.
+                //
+                verify(NUMBER_OF_THREADS + i, syncObject[i], mainThread, 1,
+                       runn[i], 1, runn[i], 1);
             }
-            check(NUMBER_OF_THREADS + i, syncObject[i], null, 0, 1);
+
+            // verify-3:
+            // - owner == null:
+            //       main thread does not own the monitor and worker thread is in
+            //       wait() and is not notified so there is no owner
+            // - entry_count == 0:
+            //       no owner so entry_count is 0
+            // - waiter_count == 0:
+            //       main thread is not trying to enter the monitor and worker thread
+            //       is in wait() and is not notified so it is not waiting to reenter
+            //       the monitor
+            // - waiter_thread == null:
+            //       no thread is waiting to reenter the monitor
+            // - notify_waiter_count == 1:
+            //       worker thread is in wait() and is not notified
+            // - notify_waiter_thread == runn[i]:
+            //       worker thread is in wait() and is not notified
+            //
+            // This is a stable verification point because the worker thread is in wait()
+            // and is not notified and the main thread is doing the verification.
+            //
+            verify((NUMBER_OF_THREADS * 2) + i, syncObject[i], null, 0,
+                   runn[i], 1, runn[i], 1);
         }
 
         for (int i = 0; i < NUMBER_OF_THREADS; i++) {
@@ -88,20 +149,46 @@ public class objmonusage001 {
 }
 
 class objmonusage001a extends Thread {
+    Thread mainThread;
     Object syncObject;
-    int ind;
+    int index;
 
-    public objmonusage001a(int i, Object s) {
-        ind = i;
+    public objmonusage001a(Thread mt, int i, Object s) {
+        mainThread = mt;
+        index = i;
         syncObject = s;
     }
 
     public void run() {
         synchronized (syncObject) {
-            objmonusage001.check(ind, syncObject, this, 1, 1);
+            // verify-1:
+            // - owner == this_thread:
+            //       this worker thread is owner
+            // - entry_count == 1:
+            //       worker thread entered 1 time
+            // - waiter_count == 0:
+            //       main thread is in wait() and is not notified so it is not
+            //       waiting to reenter the monitor
+            // - waiter_thread == null:
+            //       no thread is waiting to reenter the monitor
+            // - notify_waiter_count == 1:
+            //        main thread is in wait() and is not notified
+            // - notify_waiter_thread == mainThread:
+            //       main thread is in wait() and is not notified
+            //
+            // This is a stable verification point because the main thread is in wait()
+            // and is not notified and this worker thread is doing the verification.
+            //
+            objmonusage001.verify(index, syncObject, this, 1,
+                                  mainThread, 1, mainThread, 1);
             syncObject.notify();
+
             try {
                 syncObject.wait();
+
+                if (objmonusage001.ADD_DELAYS_FOR_RACES) {
+                    Thread.sleep(1000);
+                }
             } catch (InterruptedException e) {
                 throw new Error("Unexpected " + e);
             }
