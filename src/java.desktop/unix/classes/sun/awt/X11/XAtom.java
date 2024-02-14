@@ -428,8 +428,9 @@ public final class XAtom {
                 return false;
             }
             long bytes = (long) length * getAtomSize();
+            @SuppressWarnings("restricted")
             MemorySegment source = MemorySegment.ofAddress(getter.getData())
-                    .reinterpret(bytes, arena, ms -> {});
+                    .reinterpret(bytes, arena, null);
             MemorySegment.copy(source, 0, data, 0, bytes);
             return true;
         } finally {
