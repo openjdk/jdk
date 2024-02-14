@@ -27,7 +27,6 @@
 
 #include "utilities/debug.hpp"
 #include "utilities/enumIterator.hpp"
-#include "utilities/globalDefinitions.hpp"
 
 enum class G1GCPauseType : uint {
   YoungGC,
