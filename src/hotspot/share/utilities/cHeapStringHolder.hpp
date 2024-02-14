@@ -35,8 +35,6 @@ private:
   char* _string;
 
 public:
-  static int _cnt;
-
   CHeapStringHolder(MEMFLAGS memflags) :
     _memflags(memflags), _string(nullptr) {}
   ~CHeapStringHolder() { clear(); };

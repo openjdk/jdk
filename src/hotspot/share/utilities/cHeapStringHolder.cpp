@@ -25,9 +25,6 @@
 #include "runtime/orderAccess.hpp"
 #include "utilities/cHeapStringHolder.hpp"
 
-#include "utilities/ostream.hpp" // TODO rm with _cnt
-int CHeapStringHolder::_cnt = 0;
-
 void CHeapStringHolder::set(const char* string) {
   clear();
   if (string != nullptr) {
@@ -37,8 +34,6 @@ void CHeapStringHolder::set(const char* string) {
     _string[len] = 0; // terminating null
     // Make sure it is written before the pointer is used again
     OrderAccess::storestore();
-
-    tty->print_cr("new string: %d", ++_cnt);
   }
 }
 
@@ -46,7 +41,5 @@ void CHeapStringHolder::clear() {
   if (_string != nullptr) {
     FREE_C_HEAP_ARRAY(char, _string);
     _string = nullptr;
-
-    tty->print_cr("rm string: %d", --_cnt);
   }
 }
