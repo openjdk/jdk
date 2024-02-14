@@ -55,7 +55,7 @@ import static java.awt.print.PageFormat.REVERSE_LANDSCAPE;
 
 public class AlphaPrintingOffsets {
     private static final String INSTRUCTIONS =
-            "Tested bug occurs only on-paper printing " +
+                    "Tested bug occurs only on-paper printing " +
                     "so you mustn't use PDF printer\n\n" +
                     "1. Java print dialog should appear.\n" +
                     "2. Press the Print button on the Java Print dialog.\n" +
@@ -82,14 +82,15 @@ public class AlphaPrintingOffsets {
                 instructionsHeader = "This test prints 2 pages with page " +
                         "margin rectangle and a text message. \n";
             }
-            PassFailJFrame.builder().instructions(instructionsHeader + INSTRUCTIONS)
-                    .rows(15).testUI(() -> createTestUI()).build().awaitAndCheck();
+            PassFailJFrame.builder()
+                    .instructions(instructionsHeader + INSTRUCTIONS)
+                    .rows(15)
+                    .testUI(() -> createTestUI())
+                    .build()
+                    .awaitAndCheck();
 
         } else {
-            System.out.println("Test failed : " +
-                    "Printer not configured or available.");
-            throw new RuntimeException("Test failed : " +
-                    "Printer not configured or available.");
+            throw new RuntimeException("Test failed : Printer not configured or available.");
         }
 
     }
@@ -134,8 +135,7 @@ public class AlphaPrintingOffsets {
             bookPageSavingTest.append(printableTransparent, pageFormatL);
             bookPageSavingTest.append(printableTransparent, pageFormatRL);
             printerJob.setPageable(bookPageSavingTest);
-        }
-        else {
+        } else {
             Printable printableOpaque = new CustomPrintable(255);
             Book bookDefaultTest = new Book();
             bookDefaultTest.append(printableOpaque, pageFormatP);
