@@ -72,6 +72,7 @@ serviceability/sa/ClhsdbVmStructsDump.java                    8307393   generic-
 serviceability/sa/ClhsdbWhere.java                            8307393   generic-all
 serviceability/sa/DeadlockDetectionTest.java                  8307393   generic-all
 serviceability/sa/JhsdbThreadInfoTest.java                    8307393   generic-all
+serviceability/sa/HeapDumpInstanceSize.java                   8307393   generic-all
 serviceability/sa/LingeredAppSysProps.java                    8307393   generic-all
 serviceability/sa/LingeredAppWithDefaultMethods.java          8307393   generic-all
 serviceability/sa/LingeredAppWithEnum.java                    8307393   generic-all

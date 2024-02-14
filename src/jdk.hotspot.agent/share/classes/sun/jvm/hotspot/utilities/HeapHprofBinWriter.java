@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -745,8 +745,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
             writeObjectID(null);
         }
 
-        if (k instanceof InstanceKlass) {
-            InstanceKlass ik = (InstanceKlass) k;
+        if (k instanceof InstanceKlass ik) {
             writeObjectID(ik.getClassLoader());
             writeObjectID(null);  // ik.getJavaMirror().getSigners());
             writeObjectID(null);  // ik.getJavaMirror().getProtectionDomain());
@@ -754,9 +753,10 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
             writeObjectID(null);
             writeObjectID(null);
             List<Field> fields = getInstanceFields(ik);
-            int instSize = getSizeForFields(fields);
-            classDataCache.put(ik, new ClassData(instSize, fields));
-            out.writeInt(instSize);
+            int fieldSize = getSizeForFields(fields);
+            classDataCache.put(ik, new ClassData(fieldSize, fields));
+            long instanceSize = ik.getSizeHelper() * VM.getVM().getBytesPerWord();
+            out.writeInt((int)instanceSize);
 
             // For now, ignore constant pool - HAT ignores too!
             // output number of cp entries as zero.
