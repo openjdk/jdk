@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4068067
  * @summary test NumberFormat with exponential separator symbols. It also tests the new
@@ -30,18 +30,18 @@
  * @run junit DFSExponential
  */
 
-import java.util.*;
-import java.text.*;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.Locale;
 
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
-public class DFSExponential
-{
+public class DFSExponential {
 
-
-   public void DFSExponenTest() throws Exception {
+    @Test
+    public void DFSExponenTest() throws Exception {
         DecimalFormatSymbols sym = new DecimalFormatSymbols(Locale.US);
         String pat[] = { "0.####E0", "00.000E00", "##0.####E000", "0.###E0;[0.###E0]"  };
         double val[] = { 0.01234, 123456789, 1.23e300, -3.141592653e-271 };
