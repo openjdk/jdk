@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1297,24 +1297,12 @@ public class Flow {
 
     private boolean isBpCovered(Type componentType, PatternDescription newNested) {
         if (newNested instanceof BindingPattern bp) {
-            var seltype = types.erasure(componentType);
+            Type seltype = types.erasure(componentType);
+            Type pattype = types.erasure(bp.type);
 
-            if (seltype.isPrimitive()) {
-                if (types.isSameType(bp.type, types.boxedClass(seltype).type)) {
-                    return true;
-                }
-
-                // if the target is unconditionally exact to the pattern, target is covered
-                if (types.isUnconditionallyExact(seltype, bp.type)) {
-                    return true;
-                }
-            } else if (seltype.isReference() && bp.type.isPrimitive() && types.isCastable(seltype, bp.type)) {
-                return true;
-            } else {
-                if (types.isSubtype(seltype, types.erasure(bp.type))) {
-                    return true;
-                }
-            }
+            return seltype.isPrimitive() ?
+                    types.isUnconditionallyExact(seltype, pattype) :
+                    (bp.type.isPrimitive() && types.isUnconditionallyExact(types.unboxedType(seltype), bp.type)) || types.isSubtype(seltype, pattype);
         }
         return false;
     }

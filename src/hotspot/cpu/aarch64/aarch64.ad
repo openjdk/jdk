@@ -2205,14 +2205,14 @@ void MachUEPNode::format(PhaseRegAlloc* ra_, outputStream* st) const
 {
   st->print_cr("# MachUEPNode");
   if (UseCompressedClassPointers) {
-    st->print_cr("\tldrw rscratch1, j_rarg0 + oopDesc::klass_offset_in_bytes()]\t# compressed klass");
-    if (CompressedKlassPointers::shift() != 0) {
-      st->print_cr("\tdecode_klass_not_null rscratch1, rscratch1");
-    }
+    st->print_cr("\tldrw rscratch1, [j_rarg0 + oopDesc::klass_offset_in_bytes()]\t# compressed klass");
+    st->print_cr("\tldrw r10, [rscratch2 + CompiledICData::speculated_klass_offset()]\t# compressed klass");
+    st->print_cr("\tcmpw rscratch1, r10");
   } else {
-   st->print_cr("\tldr rscratch1, j_rarg0 + oopDesc::klass_offset_in_bytes()]\t# compressed klass");
+    st->print_cr("\tldr rscratch1, [j_rarg0 + oopDesc::klass_offset_in_bytes()]\t# compressed klass");
+    st->print_cr("\tldr r10, [rscratch2 + CompiledICData::speculated_klass_offset()]\t# compressed klass");
+    st->print_cr("\tcmp rscratch1, r10");
   }
-  st->print_cr("\tcmp r0, rscratch1\t # Inline cache check");
   st->print_cr("\tbne, SharedRuntime::_ic_miss_stub");
 }
 #endif
@@ -2221,14 +2221,7 @@ void MachUEPNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
 {
   // This is the unverified entry point.
   C2_MacroAssembler _masm(&cbuf);
-
-  __ cmp_klass(j_rarg0, rscratch2, rscratch1);
-  Label skip;
-  // TODO
-  // can we avoid this skip and still use a reloc?
-  __ br(Assembler::EQ, skip);
-  __ far_jump(RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
-  __ bind(skip);
+  __ ic_check(InteriorEntryAlignment);
 }
 
 uint MachUEPNode::size(PhaseRegAlloc* ra_) const
@@ -2582,7 +2575,7 @@ Assembler::Condition to_assembler_cond(BoolTest::mask cond) {
 }
 
 // Binary src (Replicate con)
-bool is_valid_sve_arith_imm_pattern(Node* n, Node* m) {
+static bool is_valid_sve_arith_imm_pattern(Node* n, Node* m) {
   if (n == nullptr || m == nullptr) {
     return false;
   }
@@ -2623,7 +2616,7 @@ bool is_valid_sve_arith_imm_pattern(Node* n, Node* m) {
 
 // (XorV src (Replicate m1))
 // (XorVMask src (MaskAll m1))
-bool is_vector_bitwise_not_pattern(Node* n, Node* m) {
+static bool is_vector_bitwise_not_pattern(Node* n, Node* m) {
   if (n != nullptr && m != nullptr) {
     return (n->Opcode() == Op_XorV || n->Opcode() == Op_XorVMask) &&
            VectorNode::is_all_ones_vector(m);
@@ -3715,7 +3708,7 @@ encode %{
         cbuf.shared_stub_to_interp_for(_method, call - cbuf.insts_begin());
       } else {
         // Emit stub for static call
-        address stub = CompiledStaticCall::emit_to_interp_stub(cbuf, call);
+        address stub = CompiledDirectCall::emit_to_interp_stub(cbuf, call);
         if (stub == nullptr) {
           ciEnv::current()->record_failure("CodeCache is full");
           return;
@@ -8289,7 +8282,7 @@ instruct membar_acquire() %{
   ins_cost(VOLATILE_REF_COST);
 
   format %{ "membar_acquire\n\t"
-            "dmb ishld" %}
+            "dmb ish" %}
 
   ins_encode %{
     __ block_comment("membar_acquire");
@@ -8343,12 +8336,11 @@ instruct membar_release() %{
   ins_cost(VOLATILE_REF_COST);
 
   format %{ "membar_release\n\t"
-            "dmb ishst\n\tdmb ishld" %}
+            "dmb ish" %}
 
   ins_encode %{
     __ block_comment("membar_release");
-    __ membar(Assembler::StoreStore);
-    __ membar(Assembler::LoadStore);
+    __ membar(Assembler::LoadStore|Assembler::StoreStore);
   %}
   ins_pipe(pipe_serial);
 %}

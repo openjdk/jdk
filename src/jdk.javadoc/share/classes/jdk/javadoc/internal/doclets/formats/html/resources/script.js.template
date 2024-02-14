@@ -363,7 +363,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
         scrollTimeout = setTimeout(() => {
             scrollTimeout = null;
             handleScroll();
-        }, 50);
+        }, 100);
     }
     function handleScroll() {
         if (!sidebar || !sidebar.offsetParent || sidebar.classList.contains("hide-sidebar")) {
@@ -445,7 +445,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
     // Resize handler
     function handleResize(e) {
         if (expanded) {
-            if (windowWidth != window.innerWidth) {
+            if (windowWidth !== window.innerWidth) {
                 collapse();
             } else {
                 expand();

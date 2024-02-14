@@ -77,8 +77,8 @@ class Space: public CHeapObj<mtGC> {
   // Accessors
   HeapWord* bottom() const         { return _bottom; }
   HeapWord* end() const            { return _end;    }
-  virtual void set_bottom(HeapWord* value) { _bottom = value; }
-  virtual void set_end(HeapWord* value)    { _end = value; }
+  void set_bottom(HeapWord* value) { _bottom = value; }
+  void set_end(HeapWord* value)    { _end = value; }
 
   HeapWord* saved_mark_word() const  { return _saved_mark_word; }
 
@@ -121,11 +121,6 @@ class Space: public CHeapObj<mtGC> {
   // Returns true iff the given reserved memory of the space contains the
   // given address.
   bool is_in_reserved(const void* p) const { return _bottom <= p && p < _end; }
-
-  // Test whether p is double-aligned
-  static bool is_aligned(void* p) {
-    return ::is_aligned(p, sizeof(double));
-  }
 
   // Size computations.  Sizes are in bytes.
   size_t capacity()     const { return byte_size(bottom(), end()); }

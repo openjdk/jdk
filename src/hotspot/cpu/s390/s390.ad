@@ -1341,51 +1341,9 @@ void MachUEPNode::format(PhaseRegAlloc *ra_, outputStream *os) const {
 #endif
 
 void MachUEPNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
+  // This is Unverified Entry Point
   C2_MacroAssembler _masm(&cbuf);
-  const int ic_miss_offset = 2;
-
-  // Inline_cache contains a klass.
-  Register ic_klass = as_Register(Matcher::inline_cache_reg_encode());
-  // ARG1 is the receiver oop.
-  Register R2_receiver = Z_ARG1;
-  int      klass_offset = oopDesc::klass_offset_in_bytes();
-  AddressLiteral icmiss(SharedRuntime::get_ic_miss_stub());
-  Register R1_ic_miss_stub_addr = Z_R1_scratch;
-
-  // Null check of receiver.
-  // This is the null check of the receiver that actually should be
-  // done in the caller. It's here because in case of implicit null
-  // checks we get it for free.
-  assert(!MacroAssembler::needs_explicit_null_check(oopDesc::klass_offset_in_bytes()),
-         "second word in oop should not require explicit null check.");
-  if (!ImplicitNullChecks) {
-    Label valid;
-    if (VM_Version::has_CompareBranch()) {
-      __ z_cgij(R2_receiver, 0, Assembler::bcondNotEqual, valid);
-    } else {
-      __ z_ltgr(R2_receiver, R2_receiver);
-      __ z_bre(valid);
-    }
-    // The ic_miss_stub will handle the null pointer exception.
-    __ load_const_optimized(R1_ic_miss_stub_addr, icmiss);
-    __ z_br(R1_ic_miss_stub_addr);
-    __ bind(valid);
-  }
-
-  // Check whether this method is the proper implementation for the class of
-  // the receiver (ic miss check).
-  {
-    Label valid;
-    // Compare cached class against klass from receiver.
-    // This also does an implicit null check!
-    __ compare_klass_ptr(ic_klass, klass_offset, R2_receiver, false);
-    __ z_bre(valid);
-    // The inline cache points to the wrong method. Call the
-    // ic_miss_stub to find the proper method.
-    __ load_const_optimized(R1_ic_miss_stub_addr, icmiss);
-    __ z_br(R1_ic_miss_stub_addr);
-    __ bind(valid);
-  }
+  __ ic_check(CodeEntryAlignment);
 }
 
 uint MachUEPNode::size(PhaseRegAlloc *ra_) const {
@@ -2146,7 +2104,7 @@ encode %{
     assert(__ inst_mark() != nullptr, "emit_call_reloc must set_inst_mark()");
 
     if (_method) { // Emit stub for static call.
-      address stub = CompiledStaticCall::emit_to_interp_stub(cbuf);
+      address stub = CompiledDirectCall::emit_to_interp_stub(cbuf);
       if (stub == nullptr) {
         ciEnv::current()->record_failure("CodeCache is full");
         return;

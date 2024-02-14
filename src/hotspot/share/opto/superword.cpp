@@ -517,15 +517,19 @@ bool SuperWord::SLP_extract() {
     return false;
   }
 
-  extend_packlist();
+  extend_packset_with_more_pairs_by_following_use_and_def();
 
-  combine_packs();
+  combine_pairs_to_longer_packs();
 
-  filter_packs_for_alignment();
+  split_packs_longer_than_max_vector_size();
 
+  // Now we only remove packs:
   construct_my_pack_map();
-
-  filter_packs();
+  filter_packs_for_power_of_2_size();
+  filter_packs_for_mutual_independence();
+  filter_packs_for_alignment();
+  filter_packs_for_implemented();
+  filter_packs_for_profitable();
 
   DEBUG_ONLY(verify_packs();)
 
@@ -1081,7 +1085,7 @@ bool SuperWord::independent(Node* s1, Node* s2) {
 // is the smallest depth of all nodes from the nodes list. Once we have
 // traversed all those nodes, and have not found another node from the
 // nodes list, we know that all nodes in the nodes list are independent.
-bool SuperWord::mutually_independent(Node_List* nodes) const {
+bool SuperWord::mutually_independent(const Node_List* nodes) const {
   ResourceMark rm;
   Unique_Node_List worklist;
   VectorSet nodes_set;
@@ -1169,9 +1173,8 @@ int SuperWord::data_size(Node* s) {
   return bsize;
 }
 
-//------------------------------extend_packlist---------------------------
 // Extend packset by following use->def and def->use links from pack members.
-void SuperWord::extend_packlist() {
+void SuperWord::extend_packset_with_more_pairs_by_following_use_and_def() {
   bool changed;
   do {
     packset_sort(_packset.length());
@@ -1192,7 +1195,7 @@ void SuperWord::extend_packlist() {
 
 #ifndef PRODUCT
   if (is_trace_superword_packset()) {
-    tty->print_cr("\nAfter Superword::extend_packlist");
+    tty->print_cr("\nAfter Superword::extend_packset_with_more_pairs_by_following_use_and_def");
     print_packset();
   }
 #endif
@@ -1478,12 +1481,13 @@ int SuperWord::adjacent_profit(Node* s1, Node* s2) { return 2; }
 int SuperWord::pack_cost(int ct)   { return ct; }
 int SuperWord::unpack_cost(int ct) { return ct; }
 
-//------------------------------combine_packs---------------------------
 // Combine packs A and B with A.last == B.first into A.first..,A.last,B.second,..B.last
-void SuperWord::combine_packs() {
+void SuperWord::combine_pairs_to_longer_packs() {
 #ifdef ASSERT
+  assert(!_packset.is_empty(), "packset not empty");
   for (int i = 0; i < _packset.length(); i++) {
     assert(_packset.at(i) != nullptr, "no nullptr in packset");
+    assert(_packset.at(i)->size() == 2, "all packs are pairs");
   }
 #endif
 
@@ -1509,92 +1513,147 @@ void SuperWord::combine_packs() {
     }
   }
 
-  // Split packs which have size greater then max vector size.
-  for (int i = 0; i < _packset.length(); i++) {
-    Node_List* p1 = _packset.at(i);
-    if (p1 != nullptr) {
-      uint max_vlen = max_vector_size_in_def_use_chain(p1->at(0)); // Max elements in vector
-      assert(is_power_of_2(max_vlen), "sanity");
-      uint psize = p1->size();
-      if (!is_power_of_2(psize)) {
-        // We currently only support power-of-2 sizes for vectors.
-#ifndef PRODUCT
-        if (is_trace_superword_rejections()) {
-          tty->cr();
-          tty->print_cr("WARNING: Removed pack[%d] with size that is not a power of 2:", i);
-          print_pack(p1);
-        }
-#endif
-        _packset.at_put(i, nullptr);
-        continue;
-      }
-      if (psize > max_vlen) {
-        Node_List* pack = new Node_List();
-        for (uint j = 0; j < psize; j++) {
-          pack->push(p1->at(j));
-          if (pack->size() >= max_vlen) {
-            assert(is_power_of_2(pack->size()), "sanity");
-            _packset.append(pack);
-            pack = new Node_List();
-          }
-        }
-        _packset.at_put(i, nullptr);
-      }
-    }
-  }
-
-  // We know that the nodes in a pair pack were independent - this gives us independence
-  // at distance 1. But now that we may have more than 2 nodes in a pack, we need to check
-  // if they are all mutually independent. If there is a dependence we remove the pack.
-  // This is better than giving up completely - we can have partial vectorization if some
-  // are rejected and others still accepted.
-  //
-  // Examples with dependence at distance 1 (pack pairs are not created):
-  // for (int i ...) { v[i + 1] = v[i] + 5; }
-  // for (int i ...) { v[i] = v[i - 1] + 5; }
-  //
-  // Example with independence at distance 1, but dependence at distance 2 (pack pairs are
-  // created and we need to filter them out now):
-  // for (int i ...) { v[i + 2] = v[i] + 5; }
-  // for (int i ...) { v[i] = v[i - 2] + 5; }
-  //
-  // Note: dependencies are created when a later load may reference the same memory location
-  // as an earlier store. This happens in "read backward" or "store forward" cases. On the
-  // other hand, "read forward" or "store backward" cases do not have such dependencies:
-  // for (int i ...) { v[i] = v[i + 1] + 5; }
-  // for (int i ...) { v[i - 1] = v[i] + 5; }
-  for (int i = 0; i < _packset.length(); i++) {
-    Node_List* p = _packset.at(i);
-    if (p != nullptr) {
-      // reductions are trivially connected
-      if (!is_marked_reduction(p->at(0)) &&
-          !mutually_independent(p)) {
-#ifndef PRODUCT
-        if (is_trace_superword_rejections()) {
-          tty->cr();
-          tty->print_cr("WARNING: Found dependency at distance greater than 1.");
-          tty->print_cr("In pack[%d]", i);
-          print_pack(p);
-        }
-#endif
-        _packset.at_put(i, nullptr);
-      }
-    }
-  }
-
   // Remove all nullptr from packset
   compress_packset();
 
+  assert(!_packset.is_empty(), "must have combined some packs");
+
 #ifndef PRODUCT
   if (is_trace_superword_packset()) {
-    tty->print_cr("\nAfter Superword::combine_packs");
+    tty->print_cr("\nAfter Superword::combine_pairs_to_longer_packs");
     print_packset();
   }
 #endif
 }
 
+void SuperWord::split_packs_longer_than_max_vector_size() {
+  assert(!_packset.is_empty(), "packset not empty");
+  DEBUG_ONLY( int old_packset_length = _packset.length(); )
+
+  for (int i = 0; i < _packset.length(); i++) {
+    Node_List* pack = _packset.at(i);
+    assert(pack != nullptr, "no nullptr in packset");
+    uint max_vlen = max_vector_size_in_def_use_chain(pack->at(0));
+    assert(is_power_of_2(max_vlen), "sanity");
+    uint pack_size = pack->size();
+    if (pack_size <= max_vlen) {
+      continue;
+    }
+    // Split off the "upper" nodes into new packs
+    Node_List* new_pack = new Node_List();
+    for (uint j = max_vlen; j < pack_size; j++) {
+      Node* n = pack->at(j);
+      // is new_pack full?
+      if (new_pack->size() >= max_vlen) {
+        assert(is_power_of_2(new_pack->size()), "sanity %d", new_pack->size());
+        _packset.append(new_pack);
+        new_pack = new Node_List();
+      }
+      new_pack->push(n);
+    }
+    // remaining new_pack
+    if (new_pack->size() > 1) {
+      _packset.append(new_pack);
+    } else {
+#ifndef PRODUCT
+      if (is_trace_superword_rejections()) {
+        tty->cr();
+        tty->print_cr("WARNING: Node dropped out of odd size pack:");
+        new_pack->at(0)->dump();
+        print_pack(pack);
+      }
+#endif
+    }
+    // truncate
+    while (pack->size() > max_vlen) {
+      pack->pop();
+    }
+  }
+
+  assert(old_packset_length <= _packset.length(), "we only increased the number of packs");
+
+#ifndef PRODUCT
+  if (is_trace_superword_packset()) {
+    tty->print_cr("\nAfter Superword::split_packs_longer_than_max_vector_size");
+    print_packset();
+  }
+#endif
+}
+
+template <typename FilterPredicate>
+void SuperWord::filter_packs(const char* filter_name,
+                             const char* error_message,
+                             FilterPredicate filter) {
+  int new_packset_length = 0;
+  for (int i = 0; i < _packset.length(); i++) {
+    Node_List* pack = _packset.at(i);
+    assert(pack != nullptr, "no nullptr in packset");
+    if (filter(pack)) {
+      assert(i >= new_packset_length, "only move packs down");
+      _packset.at_put(new_packset_length++, pack);
+    } else {
+      remove_pack_at(i);
+#ifndef PRODUCT
+      if (is_trace_superword_rejections()) {
+        tty->cr();
+        tty->print_cr("WARNING: Removed pack: %s:", error_message);
+        print_pack(pack);
+      }
+#endif
+    }
+  }
+
+  assert(_packset.length() >= new_packset_length, "filter only reduces number of packs");
+  _packset.trunc_to(new_packset_length);
+
+#ifndef PRODUCT
+  if (is_trace_superword_packset() && filter_name != nullptr) {
+    tty->print_cr("\nAfter %s:", filter_name);
+    print_packset();
+  }
+#endif
+}
+
+void SuperWord::filter_packs_for_power_of_2_size() {
+  filter_packs("SuperWord::filter_packs_for_power_of_2_size",
+               "size is not a power of 2",
+               [&](const Node_List* pack) {
+                 return is_power_of_2(pack->size());
+               });
+}
+
+// We know that the nodes in a pair pack were independent - this gives us independence
+// at distance 1. But now that we may have more than 2 nodes in a pack, we need to check
+// if they are all mutually independent. If there is a dependence we remove the pack.
+// This is better than giving up completely - we can have partial vectorization if some
+// are rejected and others still accepted.
+//
+// Examples with dependence at distance 1 (pack pairs are not created):
+// for (int i ...) { v[i + 1] = v[i] + 5; }
+// for (int i ...) { v[i] = v[i - 1] + 5; }
+//
+// Example with independence at distance 1, but dependence at distance 2 (pack pairs are
+// created and we need to filter them out now):
+// for (int i ...) { v[i + 2] = v[i] + 5; }
+// for (int i ...) { v[i] = v[i - 2] + 5; }
+//
+// Note: dependencies are created when a later load may reference the same memory location
+// as an earlier store. This happens in "read backward" or "store forward" cases. On the
+// other hand, "read forward" or "store backward" cases do not have such dependencies:
+// for (int i ...) { v[i] = v[i + 1] + 5; }
+// for (int i ...) { v[i - 1] = v[i] + 5; }
+void SuperWord::filter_packs_for_mutual_independence() {
+  filter_packs("SuperWord::filter_packs_for_mutual_independence",
+               "found dependency between nodes at distance greater than 1",
+               [&](const Node_List* pack) {
+                 // reductions are trivially connected
+                 return is_marked_reduction(pack->at(0)) ||
+                        mutually_independent(pack);
+               });
+}
+
 // Find the set of alignment solutions for load/store pack.
-const AlignmentSolution* SuperWord::pack_alignment_solution(Node_List* pack) {
+const AlignmentSolution* SuperWord::pack_alignment_solution(const Node_List* pack) {
   assert(pack != nullptr && (pack->at(0)->is_Load() || pack->at(0)->is_Store()), "only load/store packs");
 
   const MemNode* mem_ref = pack->at(0)->as_Mem();
@@ -1638,41 +1697,36 @@ void SuperWord::filter_packs_for_alignment() {
   AlignmentSolution const* current = new TrivialAlignmentSolution();
   int mem_ops_count = 0;
   int mem_ops_rejected = 0;
-  for (int i = 0; i < _packset.length(); i++) {
-    Node_List* p = _packset.at(i);
-    if (p != nullptr) {
-      if (p->at(0)->is_Load() || p->at(0)->is_Store()) {
-        mem_ops_count++;
-        // Find solution for pack p, and filter with current solution.
-        const AlignmentSolution* s = pack_alignment_solution(p);
-        const AlignmentSolution* intersect = current->filter(s);
+
+  filter_packs("SuperWord::filter_packs_for_alignment",
+               "rejected by AlignVector (strict alignment requirement)",
+               [&](const Node_List* pack) {
+                 // Only memops need to be aligned.
+                 if (!pack->at(0)->is_Load() &&
+                     !pack->at(0)->is_Store()) {
+                   return true; // accept all non memops
+                 }
+
+                 mem_ops_count++;
+                 const AlignmentSolution* s = pack_alignment_solution(pack);
+                 const AlignmentSolution* intersect = current->filter(s);
 
 #ifndef PRODUCT
-        if (is_trace_align_vector()) {
-          tty->print("  solution for pack:         ");
-          s->print();
-          tty->print("  intersection with current: ");
-          intersect->print();
-        }
+                 if (is_trace_align_vector()) {
+                   tty->print("  solution for pack:         ");
+                   s->print();
+                   tty->print("  intersection with current: ");
+                   intersect->print();
+                 }
 #endif
+                 if (intersect->is_empty()) {
+                   mem_ops_rejected++;
+                   return false; // reject because of empty solution
+                 }
 
-        if (intersect->is_empty()) {
-          // Solution failed or is not compatible, remove pack i.
-#ifndef PRODUCT
-          if (is_trace_superword_rejections() || is_trace_align_vector()) {
-            tty->print_cr("Rejected by AlignVector:");
-            p->at(0)->dump();
-          }
-#endif
-          _packset.at_put(i, nullptr);
-          mem_ops_rejected++;
-        } else {
-          // Solution is compatible.
-          current = intersect;
-        }
-      }
-    }
-  }
+                 current = intersect;
+                 return true; // accept because of non-empty solution
+               });
 
 #ifndef PRODUCT
   if (is_trace_superword_info() || is_trace_align_vector()) {
@@ -1689,16 +1743,6 @@ void SuperWord::filter_packs_for_alignment() {
     // -> must change pre-limit to achieve alignment
     set_align_to_ref(current->as_constrained()->mem_ref());
   }
-
-  // Remove all nullptr from packset
-  compress_packset();
-
-#ifndef PRODUCT
-  if (is_trace_superword_packset() || is_trace_align_vector()) {
-    tty->print_cr("\nAfter Superword::filter_packs_for_alignment");
-    print_packset();
-  }
-#endif
 }
 
 // Compress packset, such that it has no nullptr entries
@@ -1716,7 +1760,7 @@ void SuperWord::compress_packset() {
 
 //-----------------------------construct_my_pack_map--------------------------
 // Construct the map from nodes to packs.  Only valid after the
-// point where a node is only in one pack (after combine_packs).
+// point where a node is only in one pack (after combine_pairs_to_longer_packs).
 void SuperWord::construct_my_pack_map() {
   for (int i = 0; i < _packset.length(); i++) {
     Node_List* p = _packset.at(i);
@@ -1735,23 +1779,22 @@ void SuperWord::construct_my_pack_map() {
   }
 }
 
-//------------------------------filter_packs---------------------------
-// Remove packs that are not implemented or not profitable.
-void SuperWord::filter_packs() {
-  // Remove packs that are not implemented
-  for (int i = _packset.length() - 1; i >= 0; i--) {
-    Node_List* pk = _packset.at(i);
-    bool impl = implemented(pk);
-    if (!impl) {
-#ifndef PRODUCT
-      if (is_trace_superword_rejections()) {
-        tty->print_cr("Unimplemented");
-        pk->at(0)->dump();
-      }
-#endif
-      remove_pack_at(i);
-    }
-    Node *n = pk->at(0);
+// Remove packs that are not implemented
+void SuperWord::filter_packs_for_implemented() {
+  filter_packs("SuperWord::filter_packs_for_implemented",
+               "Unimplemented",
+               [&](const Node_List* pack) {
+                 return implemented(pack);
+               });
+}
+
+// Remove packs that are not profitable.
+void SuperWord::filter_packs_for_profitable() {
+  // Count the number of reductions vs other vector ops, for the
+  // reduction profitability heuristic.
+  for (int i = 0; i < _packset.length(); i++) {
+    Node_List* pack = _packset.at(i);
+    Node* n = pack->at(0);
     if (is_marked_reduction(n)) {
       _num_reductions++;
     } else {
@@ -1760,28 +1803,22 @@ void SuperWord::filter_packs() {
   }
 
   // Remove packs that are not profitable
-  bool changed;
-  do {
-    changed = false;
-    for (int i = _packset.length() - 1; i >= 0; i--) {
-      Node_List* pk = _packset.at(i);
-      bool prof = profitable(pk);
-      if (!prof) {
-#ifndef PRODUCT
-        if (is_trace_superword_rejections()) {
-          tty->print_cr("Unprofitable");
-          pk->at(0)->dump();
-        }
-#endif
-        remove_pack_at(i);
-        changed = true;
-      }
+  while (true) {
+    int old_packset_length = _packset.length();
+    filter_packs(nullptr, // don't dump each time
+                 "size is not a power of 2",
+                 [&](const Node_List* pack) {
+                   return profitable(pack);
+                 });
+    // Repeat until stable
+    if (old_packset_length == _packset.length()) {
+      break;
     }
-  } while (changed);
+  }
 
 #ifndef PRODUCT
   if (is_trace_superword_packset()) {
-    tty->print_cr("\nAfter Superword::filter_packs");
+    tty->print_cr("\nAfter Superword::filter_packs_for_profitable");
     print_packset();
     tty->cr();
   }
@@ -1790,7 +1827,7 @@ void SuperWord::filter_packs() {
 
 //------------------------------implemented---------------------------
 // Can code be generated for pack p?
-bool SuperWord::implemented(Node_List* p) {
+bool SuperWord::implemented(const Node_List* p) {
   bool retValue = false;
   Node* p0 = p->at(0);
   if (p0 != nullptr) {
@@ -1850,7 +1887,7 @@ bool SuperWord::requires_long_to_int_conversion(int opc) {
 
 //------------------------------same_inputs--------------------------
 // For pack p, are all idx operands the same?
-bool SuperWord::same_inputs(Node_List* p, int idx) {
+bool SuperWord::same_inputs(const Node_List* p, int idx) {
   Node* p0 = p->at(0);
   uint vlen = p->size();
   Node* p0_def = p0->in(idx);
@@ -1866,7 +1903,7 @@ bool SuperWord::same_inputs(Node_List* p, int idx) {
 
 //------------------------------profitable---------------------------
 // For pack p, are all operands and all uses (with in the block) vector?
-bool SuperWord::profitable(Node_List* p) {
+bool SuperWord::profitable(const Node_List* p) {
   Node* p0 = p->at(0);
   uint start, end;
   VectorNode::vector_operands(p0, &start, &end);
@@ -3329,7 +3366,7 @@ void SuperWord::remove_pack_at(int pos) {
     Node* s = p->at(i);
     set_my_pack(s, nullptr);
   }
-  _packset.remove_at(pos);
+  _packset.at_put(pos, nullptr);
 }
 
 void SuperWord::packset_sort(int n) {

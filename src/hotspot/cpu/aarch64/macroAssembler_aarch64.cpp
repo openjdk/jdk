@@ -29,6 +29,7 @@
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "ci/ciEnv.hpp"
+#include "code/compiledIC.hpp"
 #include "compiler/compileTask.hpp"
 #include "compiler/disassembler.hpp"
 #include "compiler/oopMap.hpp"
@@ -965,7 +966,7 @@ int MacroAssembler::max_trampoline_stub_size() {
 }
 
 void MacroAssembler::emit_static_call_stub() {
-  // CompiledDirectStaticCall::set_to_interpreted knows the
+  // CompiledDirectCall::set_to_interpreted knows the
   // exact layout of this stub.
 
   isb();
@@ -995,8 +996,49 @@ address MacroAssembler::ic_call(address entry, jint method_index) {
   // address const_ptr = long_constant((jlong)Universe::non_oop_word());
   // uintptr_t offset;
   // ldr_constant(rscratch2, const_ptr);
-  movptr(rscratch2, (uintptr_t)Universe::non_oop_word());
+  movptr(rscratch2, (intptr_t)Universe::non_oop_word());
   return trampoline_call(Address(entry, rh));
+}
+
+int MacroAssembler::ic_check_size() {
+  if (target_needs_far_branch(CAST_FROM_FN_PTR(address, SharedRuntime::get_ic_miss_stub()))) {
+    return NativeInstruction::instruction_size * 7;
+  } else {
+    return NativeInstruction::instruction_size * 5;
+  }
+}
+
+int MacroAssembler::ic_check(int end_alignment) {
+  Register receiver = j_rarg0;
+  Register data = rscratch2;
+  Register tmp1 = rscratch1;
+  Register tmp2 = r10;
+
+  // The UEP of a code blob ensures that the VEP is padded. However, the padding of the UEP is placed
+  // before the inline cache check, so we don't have to execute any nop instructions when dispatching
+  // through the UEP, yet we can ensure that the VEP is aligned appropriately. That's why we align
+  // before the inline cache check here, and not after
+  align(end_alignment, offset() + ic_check_size());
+
+  int uep_offset = offset();
+
+  if (UseCompressedClassPointers) {
+    ldrw(tmp1, Address(receiver, oopDesc::klass_offset_in_bytes()));
+    ldrw(tmp2, Address(data, CompiledICData::speculated_klass_offset()));
+    cmpw(tmp1, tmp2);
+  } else {
+    ldr(tmp1, Address(receiver, oopDesc::klass_offset_in_bytes()));
+    ldr(tmp2, Address(data, CompiledICData::speculated_klass_offset()));
+    cmp(tmp1, tmp2);
+  }
+
+  Label dont;
+  br(Assembler::EQ, dont);
+  far_jump(RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
+  bind(dont);
+  assert((offset() % end_alignment) == 0, "Misaligned verified entry point");
+
+  return uep_offset;
 }
 
 // Implementation of call_VM versions
@@ -1100,7 +1142,14 @@ void MacroAssembler::get_vm_result_2(Register metadata_result, Register java_thr
 }
 
 void MacroAssembler::align(int modulus) {
-  while (offset() % modulus != 0) nop();
+  align(modulus, offset());
+}
+
+// Ensure that the code at target bytes offset from the current offset() is aligned
+// according to modulus.
+void MacroAssembler::align(int modulus, int target) {
+  int delta = target - offset();
+  while ((offset() + delta) % modulus != 0) nop();
 }
 
 void MacroAssembler::post_call_nop() {
@@ -1197,7 +1246,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
 }
 
 // Look up the method for a megamorphic invokeinterface call in a single pass over itable:
-// - check recv_klass (actual object class) is a subtype of resolved_klass from CompiledICHolder
+// - check recv_klass (actual object class) is a subtype of resolved_klass from CompiledICData
 // - find a holder_klass (class that implements the method) vtable offset and get the method from vtable by index
 // The target method is determined by <holder_klass, itable_index>.
 // The receiver klass is in recv_klass.
@@ -2066,21 +2115,14 @@ void MacroAssembler::membar(Membar_mask_bits order_constraint) {
   address last = code()->last_insn();
   if (last != nullptr && nativeInstruction_at(last)->is_Membar() && prev == last) {
     NativeMembar *bar = NativeMembar_at(prev);
-    // Don't promote DMB ST|DMB LD to DMB (a full barrier) because
-    // doing so would introduce a StoreLoad which the caller did not
-    // intend
-    if (AlwaysMergeDMB || bar->get_kind() == order_constraint
-        || bar->get_kind() == AnyAny
-        || order_constraint == AnyAny) {
-      // We are merging two memory barrier instructions.  On AArch64 we
-      // can do this simply by ORing them together.
-      bar->set_kind(bar->get_kind() | order_constraint);
-      BLOCK_COMMENT("merged membar");
-      return;
-    }
+    // We are merging two memory barrier instructions.  On AArch64 we
+    // can do this simply by ORing them together.
+    bar->set_kind(bar->get_kind() | order_constraint);
+    BLOCK_COMMENT("merged membar");
+  } else {
+    code()->set_last_insn(pc());
+    dmb(Assembler::barrier(order_constraint));
   }
-  code()->set_last_insn(pc());
-  dmb(Assembler::barrier(order_constraint));
 }
 
 bool MacroAssembler::try_merge_ldst(Register rt, const Address &adr, size_t size_in_bytes, bool is_store) {
