@@ -89,12 +89,7 @@ public:
     return _consecutive_degenerated_gcs;
   }
 
-  // Returns true if this is an 'explicit' gc request and ExplicitGCInvokesConcurrent is disabled,
-  // or if this is an 'implicit' gc request and ShenandoahImplicitGCInvokesConcurrent is disabled.
   static bool should_run_full_gc(GCCause::Cause cause);
-
-  // Returns false if this is an `explicit` gc request and DisableExplicitGC is active, otherwise
-  // returns true.
   static bool should_handle_requested_gc(GCCause::Cause cause);
 };
 
