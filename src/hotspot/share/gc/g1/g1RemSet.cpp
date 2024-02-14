@@ -1192,6 +1192,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
         r->rem_set()->clear(true /* only_cardset */, true /* keep_tracked */);
       }
 
+      // Postcondition
       assert(r->rem_set()->is_empty(), "must be empty after flushing");
       assert(r->rem_set()->is_complete(), "should still be after flushing");
 
