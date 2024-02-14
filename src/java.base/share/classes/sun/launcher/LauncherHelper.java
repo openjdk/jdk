@@ -821,13 +821,17 @@ public final class LauncherHelper {
         // get the class name
         String cn;
         // store the jar file
-        JarFile jarFile;
+        JarFile jarFile = null;
         switch (mode) {
             case LM_CLASS:
                 cn = what;
                 break;
             case LM_JAR:
-                jarFile = new JarFile(what);
+                try {
+                    jarFile = new JarFile(what);
+                } catch (IOException ioe) {
+                    abort(ioe, "java.launcher.jar.error1", what);
+                }
                 cn = getMainClassFromJar(what, jarFile);
                 break;
             default:
