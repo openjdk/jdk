@@ -23,7 +23,6 @@
  * questions.
  */
 
-#include <Carbon/Carbon.h>
 #import "CMenuItem.h"
 #import "CMenu.h"
 #import "AWTEvent.h"

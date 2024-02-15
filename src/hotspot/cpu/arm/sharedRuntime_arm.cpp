@@ -254,10 +254,7 @@ bool SharedRuntime::is_wide_vector(int size) {
 
 int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
                                         VMRegPair *regs,
-                                        VMRegPair *regs2,
                                         int total_args_passed) {
-  assert(regs2 == nullptr, "not needed on arm");
-
   int slot = 0;
   int ireg = 0;
 #ifdef __ABI_HARD__
@@ -444,7 +441,6 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
     }
   }
 
-  if (slot & 1) slot++;
   return slot;
 }
 
@@ -795,7 +791,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     out_sig_bt[argc++] = in_sig_bt[i];
   }
 
-  int out_arg_slots = c_calling_convention(out_sig_bt, out_regs, nullptr, total_c_args);
+  int out_arg_slots = c_calling_convention(out_sig_bt, out_regs, total_c_args);
   int stack_slots = SharedRuntime::out_preserve_stack_slots() + out_arg_slots;
   // Since object arguments need to be wrapped, we must preserve space
   // for those object arguments which come in registers (GPR_PARAMS maximum)

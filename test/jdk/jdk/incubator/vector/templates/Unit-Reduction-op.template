@@ -3,5 +3,9 @@
     static void [[TEST]]Reduce$vectorteststype$(IntFunction<$type$[]> fa) {
 [[KERNEL]]
         assertReductionArraysEquals(r, ra, a,
+#if[FP]
+                $vectorteststype$::[[TEST]]Reduce, $vectorteststype$::[[TEST]]ReduceAll, RELATIVE_ROUNDING_ERROR);
+#else[FP]
                 $vectorteststype$::[[TEST]]Reduce, $vectorteststype$::[[TEST]]ReduceAll);
+#end[FP]
     }

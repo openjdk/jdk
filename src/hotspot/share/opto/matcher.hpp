@@ -331,7 +331,7 @@ public:
 
   // Identify extra cases that we might want to vectorize automatically
   // And exclude cases which are not profitable to auto-vectorize.
-  static bool match_rule_supported_superword(int opcode, int vlen, BasicType bt);
+  static bool match_rule_supported_auto_vectorization(int opcode, int vlen, BasicType bt);
 
   // identify extra cases that we might want to provide match rules for
   // e.g. Op_ vector nodes and other intrinsics while guarding with vlen
@@ -355,7 +355,7 @@ public:
             Matcher::min_vector_size(bt) <= size);
   }
   // Limits on max vector size (number of elements) for auto-vectorization.
-  static int superword_max_vector_size(const BasicType bt);
+  static int max_vector_size_auto_vectorization(const BasicType bt);
 
   // Actual max scalable vector register length.
   static int scalable_vector_reg_size(const BasicType bt);
@@ -376,6 +376,9 @@ public:
   // Vector element basic type
   static BasicType vector_element_basic_type(const Node* n);
   static BasicType vector_element_basic_type(const MachNode* use, const MachOper* opnd);
+
+  // Vector element basic type is non double word integral type.
+  static bool is_non_long_integral_vector(const Node* n);
 
   // Check if given booltest condition is unsigned or not
   static inline bool is_unsigned_booltest_pred(int bt) {

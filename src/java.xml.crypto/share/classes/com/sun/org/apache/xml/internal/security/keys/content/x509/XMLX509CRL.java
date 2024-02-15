@@ -64,6 +64,7 @@ public class XMLX509CRL extends SignatureElementProxy implements XMLX509DataCont
     }
 
     /** {@inheritDoc} */
+    @Override
     public String getBaseLocalName() {
         return Constants._TAG_X509CRL;
     }

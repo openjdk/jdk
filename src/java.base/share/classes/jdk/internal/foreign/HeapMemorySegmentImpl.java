@@ -33,14 +33,13 @@ import java.util.Optional;
 
 import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;
 
 /**
  * Implementation for heap memory segments. A heap memory segment is composed by an offset and
  * a base object (typically an array). To enhance performances, the access to the base object needs to feature
  * sharp type information, as well as sharp null-check information. For this reason, many concrete subclasses
- * of {@link HeapMemorySegmentImpl} are defined (e.g. {@link OfFloat}, so that each subclass can override the
+ * of {@link HeapMemorySegmentImpl} are defined (e.g. {@link OfFloat}), so that each subclass can override the
  * {@link HeapMemorySegmentImpl#unsafeGetBase()} method so that it returns an array of the correct (sharp) type. Note that
  * the field type storing the 'base' coordinate is just Object; similarly, all the constructor in the subclasses
  * accept an Object 'base' parameter instead of a sharper type (e.g. {@code byte[]}). This is deliberate, as
@@ -49,13 +48,15 @@ import jdk.internal.vm.annotation.ForceInline;
  */
 abstract sealed class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
 
-    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
-    private static final int BYTE_ARR_BASE = UNSAFE.arrayBaseOffset(byte[].class);
+    // Constants defining the maximum alignment supported by various kinds of heap arrays.
+    // While for most arrays, the maximum alignment is constant (the size, in bytes, of the array elements),
+    // note that the alignment of a long[]/double[] depends on the platform: it's 4-byte on x86, but 8 bytes on x64
+    // (as specified by the JAVA_LONG layout constant).
 
-    private static final long MAX_ALIGN_1 = ValueLayout.JAVA_BYTE.byteAlignment();
-    private static final long MAX_ALIGN_2 = ValueLayout.JAVA_SHORT.byteAlignment();
-    private static final long MAX_ALIGN_4 = ValueLayout.JAVA_INT.byteAlignment();
-    private static final long MAX_ALIGN_8 = ValueLayout.JAVA_LONG.byteAlignment();
+    private static final long MAX_ALIGN_BYTE_ARRAY = ValueLayout.JAVA_BYTE.byteAlignment();
+    private static final long MAX_ALIGN_SHORT_ARRAY = ValueLayout.JAVA_SHORT.byteAlignment();
+    private static final long MAX_ALIGN_INT_ARRAY = ValueLayout.JAVA_INT.byteAlignment();
+    private static final long MAX_ALIGN_LONG_ARRAY = ValueLayout.JAVA_LONG.byteAlignment();
 
     final long offset;
     final Object base;
@@ -88,7 +89,7 @@ abstract sealed class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
             throw new UnsupportedOperationException("Not an address to an heap-allocated byte array");
         }
         JavaNioAccess nioAccess = SharedSecrets.getJavaNioAccess();
-        return nioAccess.newHeapByteBuffer(baseByte, (int)offset - BYTE_ARR_BASE, (int) byteSize(), null);
+        return nioAccess.newHeapByteBuffer(baseByte, (int)offset - Utils.BaseAndScale.BYTE.base(), (int) byteSize(), null);
     }
 
     // factories
@@ -111,12 +112,12 @@ abstract sealed class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
 
         @Override
         public long maxAlignMask() {
-            return MAX_ALIGN_1;
+            return MAX_ALIGN_BYTE_ARRAY;
         }
 
         @Override
         public long address() {
-            return offset - Unsafe.ARRAY_BYTE_BASE_OFFSET;
+            return offset - Utils.BaseAndScale.BYTE.base();
         }
     }
 
@@ -138,12 +139,12 @@ abstract sealed class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
 
         @Override
         public long maxAlignMask() {
-            return MAX_ALIGN_2;
+            return MAX_ALIGN_SHORT_ARRAY;
         }
 
         @Override
         public long address() {
-            return offset - Unsafe.ARRAY_CHAR_BASE_OFFSET;
+            return offset - Utils.BaseAndScale.CHAR.base();
         }
     }
 
@@ -165,12 +166,12 @@ abstract sealed class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
 
         @Override
         public long maxAlignMask() {
-            return MAX_ALIGN_2;
+            return MAX_ALIGN_SHORT_ARRAY;
         }
 
         @Override
         public long address() {
-            return offset - Unsafe.ARRAY_SHORT_BASE_OFFSET;
+            return offset - Utils.BaseAndScale.SHORT.base();
         }
     }
 
@@ -192,12 +193,12 @@ abstract sealed class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
 
         @Override
         public long maxAlignMask() {
-            return MAX_ALIGN_4;
+            return MAX_ALIGN_INT_ARRAY;
         }
 
         @Override
         public long address() {
-            return offset - Unsafe.ARRAY_INT_BASE_OFFSET;
+            return offset - Utils.BaseAndScale.INT.base();
         }
     }
 
@@ -219,12 +220,12 @@ abstract sealed class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
 
         @Override
         public long maxAlignMask() {
-            return MAX_ALIGN_8;
+            return MAX_ALIGN_LONG_ARRAY;
         }
 
         @Override
         public long address() {
-            return offset - Unsafe.ARRAY_LONG_BASE_OFFSET;
+            return offset - Utils.BaseAndScale.LONG.base();
         }
     }
 
@@ -246,12 +247,12 @@ abstract sealed class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
 
         @Override
         public long maxAlignMask() {
-            return MAX_ALIGN_4;
+            return MAX_ALIGN_INT_ARRAY;
         }
 
         @Override
         public long address() {
-            return offset - Unsafe.ARRAY_FLOAT_BASE_OFFSET;
+            return offset - Utils.BaseAndScale.FLOAT.base();
         }
     }
 
@@ -273,12 +274,12 @@ abstract sealed class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
 
         @Override
         public long maxAlignMask() {
-            return MAX_ALIGN_8;
+            return MAX_ALIGN_LONG_ARRAY;
         }
 
         @Override
         public long address() {
-            return offset - Unsafe.ARRAY_DOUBLE_BASE_OFFSET;
+            return offset - Utils.BaseAndScale.DOUBLE.base();
         }
     }
 

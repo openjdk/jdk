@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,7 @@ public class TestANewArray {
         byte[] classFile_254 = dumpClassFile(cfv, test_Dimension_254, array_Dimension_254);
         writeClassFileFromByteArray(classFile_254);
         System.err.println("Running with cfv: " + cfv + ", test_Dimension_254");
-        ProcessBuilder pb = ProcessTools.createTestJvm("-verify", "-cp", ".",  classCName);
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder("-verify", "-cp", ".",  classCName);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldNotContain("java.lang.VerifyError");
         output.shouldHaveExitValue(0);
@@ -78,7 +78,7 @@ public class TestANewArray {
         byte[] classFile_255 = dumpClassFile(cfv, test_Dimension_255, array_Dimension_255);
         writeClassFileFromByteArray(classFile_255);
         System.err.println("Running with cfv: " + cfv + ", test_Dimension_255");
-        pb = ProcessTools.createTestJvm("-verify", "-cp", ".",  classCName);
+        pb = ProcessTools.createTestJavaProcessBuilder("-verify", "-cp", ".",  classCName);
         output = new OutputAnalyzer(pb.start());
         // If anewarray has an operand with 255 array dimensions then VerifyError should
         // be thrown because the resulting array would have 256 dimensions.
@@ -95,7 +95,7 @@ public class TestANewArray {
         byte[] classFile_264 = dumpClassFile(cfv, test_Dimension_264, array_Dimension_264);
         writeClassFileFromByteArray(classFile_264);
         System.err.println("Running with cfv: " + cfv + ", test_Dimension_264");
-        pb = ProcessTools.createTestJvm("-verify", "-cp", ".",  classCName);
+        pb = ProcessTools.createTestJavaProcessBuilder("-verify", "-cp", ".",  classCName);
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("java.lang.ClassFormatError");
         output.shouldHaveExitValue(1);

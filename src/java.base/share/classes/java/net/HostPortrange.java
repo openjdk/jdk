@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package java.net;
 
-import java.net.*;
 import java.util.Formatter;
 import java.util.Locale;
 import sun.net.util.IPAddressUtil;
@@ -137,7 +136,7 @@ class HostPortrange {
                     }
                     this.ipv4 = this.literal = ipv4;
                     if (ipv4) {
-                        byte[] ip = IPAddressUtil.validateNumericFormatV4(hoststr);
+                        byte[] ip = IPAddressUtil.validateNumericFormatV4(hoststr, false);
                         if (ip == null) {
                             throw new IllegalArgumentException("illegal IPv4 address");
                         }

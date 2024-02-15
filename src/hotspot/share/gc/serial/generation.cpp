@@ -31,7 +31,6 @@
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
-#include "gc/shared/generationSpec.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "gc/shared/spaceDecorator.inline.hpp"
 #include "logging/log.hpp"
@@ -55,14 +54,6 @@ Generation::Generation(ReservedSpace rs, size_t initial_size) :
   }
   _reserved = MemRegion((HeapWord*)_virtual_space.low_boundary(),
           (HeapWord*)_virtual_space.high_boundary());
-}
-
-size_t Generation::initial_size() {
-  SerialHeap* serial_heap = SerialHeap::heap();
-  if (serial_heap->is_young_gen(this)) {
-    return serial_heap->young_gen_spec()->init_size();
-  }
-  return serial_heap->old_gen_spec()->init_size();
 }
 
 size_t Generation::max_capacity() const {
@@ -92,26 +83,6 @@ void Generation::print_summary_info_on(outputStream* st) {
                sr->invocations > 0 ? time / sr->invocations : 0.0);
 }
 
-// Utility iterator classes
-
-class GenerationIsInClosure : public SpaceClosure {
- public:
-  const void* _p;
-  Space* sp;
-  virtual void do_space(Space* s) {
-    if (sp == nullptr) {
-      if (s->is_in(_p)) sp = s;
-    }
-  }
-  GenerationIsInClosure(const void* p) : _p(p), sp(nullptr) {}
-};
-
-bool Generation::is_in(const void* p) const {
-  GenerationIsInClosure blk(p);
-  ((Generation*)this)->space_iterate(&blk);
-  return blk.sp != nullptr;
-}
-
 size_t Generation::max_contiguous_available() const {
   // The largest number of contiguous free words in this or any higher generation.
   size_t avail = contiguous_available();
@@ -120,14 +91,6 @@ size_t Generation::max_contiguous_available() const {
     old_avail = SerialHeap::heap()->old_gen()->contiguous_available();
   }
   return MAX2(avail, old_avail);
-}
-
-bool Generation::promotion_attempt_is_safe(size_t max_promotion_in_bytes) const {
-  size_t available = max_contiguous_available();
-  bool   res = (available >= max_promotion_in_bytes);
-  log_trace(gc)("Generation: promo attempt is%s safe: available(" SIZE_FORMAT ") %s max_promo(" SIZE_FORMAT ")",
-                res? "":" not", available, res? ">=":"<", max_promotion_in_bytes);
-  return res;
 }
 
 // Ignores "ref" and calls allocate().
@@ -158,103 +121,4 @@ oop Generation::promote(oop obj, size_t obj_size) {
   ContinuationGCSupport::transform_stack_chunk(new_obj);
 
   return new_obj;
-}
-
-// Some of these are mediocre general implementations.  Should be
-// overridden to get better performance.
-
-class GenerationBlockStartClosure : public SpaceClosure {
- public:
-  const void* _p;
-  HeapWord* _start;
-  virtual void do_space(Space* s) {
-    if (_start == nullptr && s->is_in_reserved(_p)) {
-      _start = s->block_start(_p);
-    }
-  }
-  GenerationBlockStartClosure(const void* p) { _p = p; _start = nullptr; }
-};
-
-HeapWord* Generation::block_start(const void* p) const {
-  GenerationBlockStartClosure blk(p);
-  // Cast away const
-  ((Generation*)this)->space_iterate(&blk);
-  return blk._start;
-}
-
-class GenerationBlockSizeClosure : public SpaceClosure {
- public:
-  const HeapWord* _p;
-  size_t size;
-  virtual void do_space(Space* s) {
-    if (size == 0 && s->is_in_reserved(_p)) {
-      size = s->block_size(_p);
-    }
-  }
-  GenerationBlockSizeClosure(const HeapWord* p) { _p = p; size = 0; }
-};
-
-class GenerationBlockIsObjClosure : public SpaceClosure {
- public:
-  const HeapWord* _p;
-  bool is_obj;
-  virtual void do_space(Space* s) {
-    if (!is_obj && s->is_in_reserved(_p)) {
-      is_obj |= s->block_is_obj(_p);
-    }
-  }
-  GenerationBlockIsObjClosure(const HeapWord* p) { _p = p; is_obj = false; }
-};
-
-bool Generation::block_is_obj(const HeapWord* p) const {
-  GenerationBlockIsObjClosure blk(p);
-  // Cast away const
-  ((Generation*)this)->space_iterate(&blk);
-  return blk.is_obj;
-}
-
-class GenerationObjIterateClosure : public SpaceClosure {
- private:
-  ObjectClosure* _cl;
- public:
-  virtual void do_space(Space* s) {
-    s->object_iterate(_cl);
-  }
-  GenerationObjIterateClosure(ObjectClosure* cl) : _cl(cl) {}
-};
-
-void Generation::object_iterate(ObjectClosure* cl) {
-  GenerationObjIterateClosure blk(cl);
-  space_iterate(&blk);
-}
-
-void Generation::prepare_for_compaction(CompactPoint* cp) {
-  // Generic implementation, can be specialized
-  ContiguousSpace* space = first_compaction_space();
-  while (space != nullptr) {
-    space->prepare_for_compaction(cp);
-    space = space->next_compaction_space();
-  }
-}
-
-class AdjustPointersClosure: public SpaceClosure {
- public:
-  void do_space(Space* sp) {
-    sp->adjust_pointers();
-  }
-};
-
-void Generation::adjust_pointers() {
-  // Note that this is done over all spaces, not just the compactible
-  // ones.
-  AdjustPointersClosure blk;
-  space_iterate(&blk, true);
-}
-
-void Generation::compact() {
-  ContiguousSpace* sp = first_compaction_space();
-  while (sp != nullptr) {
-    sp->compact();
-    sp = sp->next_compaction_space();
-  }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import jdk.test.lib.JDKToolLauncher;
+import jdk.test.lib.Utils;
 import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.process.ProcessTools;
 
@@ -133,17 +134,15 @@ public class ModuleTestUtil {
      */
     public static void runModule(String mp, String mn, List<String> localeList)
             throws Throwable {
-        JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("java");
-        launcher.addToolArg("-ea")
-                .addToolArg("-esa")
-                .addToolArg("-p")
-                .addToolArg(mp)
-                .addToolArg("-m")
-                .addToolArg(mn);
-        localeList.forEach(launcher::addToolArg);
-
-        int exitCode = ProcessTools.executeCommand(launcher.getCommand())
-                                   .getExitValue();
+        List<String> args = List.of(
+                "-ea", "-esa",
+                "-p", mp,
+                "-m", mn);
+        // Build process (with VM flags)
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
+                Stream.concat(args.stream(), localeList.stream()).toList());
+        // Evaluate process status
+        int exitCode = ProcessTools.executeCommand(pb).getExitValue();
         if (exitCode != 0) {
             throw new RuntimeException("Execution of the test failed. "
                     + "Unexpected exit code: " + exitCode);
@@ -161,19 +160,17 @@ public class ModuleTestUtil {
      */
     public static void runModuleWithCp(String cp, String mp, String mn,
             List<String> localeList, boolean expected) throws Throwable {
-        JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("java");
-        launcher.addToolArg("-ea")
-                .addToolArg("-esa")
-                .addToolArg("-cp")
-                .addToolArg(cp)
-                .addToolArg("-p")
-                .addToolArg(mp)
-                .addToolArg("-m")
-                .addToolArg(mn);
-        localeList.forEach(launcher::addToolArg);
+        List<String> args = List.of(
+                "-ea", "-esa",
+                "-cp", cp,
+                "-p", mp,
+                "-m", mn);
+        // Build process (with VM flags)
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
+                Stream.concat(args.stream(), localeList.stream()).toList());
+        // Evaluate process status
+        int exitCode = ProcessTools.executeCommand(pb).getExitValue();
 
-        int exitCode = ProcessTools.executeCommand(launcher.getCommand())
-                                   .getExitValue();
         if (expected) {
             if (exitCode != 0) {
                 throw new RuntimeException("Execution of the test loads bundles "
@@ -198,18 +195,17 @@ public class ModuleTestUtil {
      */
     public static void runModuleWithLegacyCode(String mp, String mn, List<String> localeList)
             throws Throwable {
-        JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("java");
-        launcher.addToolArg("-ea")
-                .addToolArg("-esa")
-                .addToolArg("-Djava.locale.useOldISOCodes=true")
-                .addToolArg("-p")
-                .addToolArg(mp)
-                .addToolArg("-m")
-                .addToolArg(mn);
-        localeList.forEach(launcher::addToolArg);
+        List<String> args = List.of(
+                "-ea", "-esa",
+                "-Djava.locale.useOldISOCodes=true",
+                "-p", mp,
+                "-m", mn);
+        // Build process (with VM flags)
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
+                Stream.concat(args.stream(), localeList.stream()).toList());
+        // Evaluate process status
+        int exitCode = ProcessTools.executeCommand(pb).getExitValue();
 
-        int exitCode = ProcessTools.executeCommand(launcher.getCommand())
-                .getExitValue();
         if (exitCode != 0) {
             throw new RuntimeException("Execution of the test failed. "
                     + "Unexpected exit code: " + exitCode);

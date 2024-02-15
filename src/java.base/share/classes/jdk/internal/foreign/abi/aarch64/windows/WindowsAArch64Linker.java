@@ -47,13 +47,12 @@ public final class WindowsAArch64Linker extends AbstractLinker {
 
     static final Map<String, MemoryLayout> CANONICAL_LAYOUTS =
             SharedUtils.canonicalLayouts(ValueLayout.JAVA_INT, ValueLayout.JAVA_LONG, ValueLayout.JAVA_CHAR);
-    private static WindowsAArch64Linker instance;
 
     public static WindowsAArch64Linker getInstance() {
-        if (instance == null) {
-            instance = new WindowsAArch64Linker();
+        class Holder {
+            private static final WindowsAArch64Linker INSTANCE =  new WindowsAArch64Linker();
         }
-        return instance;
+        return Holder.INSTANCE;
     }
 
     @Override

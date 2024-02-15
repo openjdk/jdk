@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2480,23 +2480,30 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
   assert_different_registers(obj, k_RInfo, klass_RInfo);
 
   if (op->should_profile()) {
+    Register mdo = klass_RInfo;
+    metadata2reg(md->constant_encoding(), mdo);
     NearLabel not_null;
     __ compareU64_and_branch(obj, (intptr_t) 0, Assembler::bcondNotEqual, not_null);
     // Object is null; update MDO and exit.
-    Register mdo = klass_RInfo;
-    metadata2reg(md->constant_encoding(), mdo);
     Address data_addr(mdo, md->byte_offset_of_slot(data, DataLayout::header_offset()));
     int header_bits = DataLayout::flag_mask_to_header_mask(BitData::null_seen_byte_constant());
     __ or2mem_8(data_addr, header_bits);
     __ branch_optimized(Assembler::bcondAlways, *obj_is_null);
     __ bind(not_null);
+
+    NearLabel update_done;
+    Register recv = k_RInfo;
+    __ load_klass(recv, obj);
+    type_profile_helper(mdo, md, data, recv, Rtmp1, &update_done);
+    Address counter_addr(mdo, md->byte_offset_of_slot(data, CounterData::count_offset()));
+    __ add2mem_64(counter_addr, DataLayout::counter_increment, Rtmp1);
+    __ bind(update_done);
   } else {
     __ compareU64_and_branch(obj, (intptr_t) 0, Assembler::bcondEqual, *obj_is_null);
   }
 
-  NearLabel profile_cast_failure, profile_cast_success;
-  Label *failure_target = op->should_profile() ? &profile_cast_failure : failure;
-  Label *success_target = op->should_profile() ? &profile_cast_success : success;
+  Label *failure_target = failure;
+  Label *success_target = success;
 
   // Patching may screw with our temporaries,
   // so let's do it before loading the class.
@@ -2536,28 +2543,12 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
       store_parameter(klass_RInfo, 0); // sub
       store_parameter(k_RInfo, 1);     // super
       emit_call_c(a); // Sets condition code 0 for match (2 otherwise).
-      CHECK_BAILOUT2(profile_cast_failure, profile_cast_success);
       __ branch_optimized(Assembler::bcondNotEqual, *failure_target);
       // Fall through to success case.
     }
   }
 
-  if (op->should_profile()) {
-    Register mdo = klass_RInfo, recv = k_RInfo;
-    assert_different_registers(obj, mdo, recv);
-    __ bind(profile_cast_success);
-    metadata2reg(md->constant_encoding(), mdo);
-    __ load_klass(recv, obj);
-    type_profile_helper(mdo, md, data, recv, Rtmp1, success);
-    __ branch_optimized(Assembler::bcondAlways, *success);
-
-    __ bind(profile_cast_failure);
-    metadata2reg(md->constant_encoding(), mdo);
-    __ add2mem_64(Address(mdo, md->byte_offset_of_slot(data, CounterData::count_offset())), -(int)DataLayout::counter_increment, Rtmp1);
-    __ branch_optimized(Assembler::bcondAlways, *failure);
-  } else {
-    __ branch_optimized(Assembler::bcondAlways, *success);
-  }
+  __ branch_optimized(Assembler::bcondAlways, *success);
 }
 
 void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
@@ -2587,21 +2578,29 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
       assert(data != nullptr,                "need data for type check");
       assert(data->is_ReceiverTypeData(), "need ReceiverTypeData for type check");
     }
-    NearLabel profile_cast_success, profile_cast_failure, done;
-    Label *success_target = op->should_profile() ? &profile_cast_success : &done;
-    Label *failure_target = op->should_profile() ? &profile_cast_failure : stub->entry();
+    NearLabel done;
+    Label *success_target = &done;
+    Label *failure_target = stub->entry();
 
     if (op->should_profile()) {
+      Register mdo = klass_RInfo;
+      metadata2reg(md->constant_encoding(), mdo);
       NearLabel not_null;
       __ compareU64_and_branch(value, (intptr_t) 0, Assembler::bcondNotEqual, not_null);
       // Object is null; update MDO and exit.
-      Register mdo = klass_RInfo;
-      metadata2reg(md->constant_encoding(), mdo);
       Address data_addr(mdo, md->byte_offset_of_slot(data, DataLayout::header_offset()));
       int header_bits = DataLayout::flag_mask_to_header_mask(BitData::null_seen_byte_constant());
       __ or2mem_8(data_addr, header_bits);
       __ branch_optimized(Assembler::bcondAlways, done);
       __ bind(not_null);
+
+      NearLabel update_done;
+      Register recv = k_RInfo;
+      __ load_klass(recv, value);
+      type_profile_helper(mdo, md, data, recv, Rtmp1, &update_done);
+      Address counter_addr(mdo, md->byte_offset_of_slot(data, CounterData::count_offset()));
+      __ add2mem_64(counter_addr, DataLayout::counter_increment, Rtmp1);
+      __ bind(update_done);
     } else {
       __ compareU64_and_branch(value, (intptr_t) 0, Assembler::bcondEqual, done);
     }
@@ -2619,24 +2618,8 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
     store_parameter(klass_RInfo, 0); // sub
     store_parameter(k_RInfo, 1);     // super
     emit_call_c(a); // Sets condition code 0 for match (2 otherwise).
-    CHECK_BAILOUT3(profile_cast_success, profile_cast_failure, done);
     __ branch_optimized(Assembler::bcondNotEqual, *failure_target);
     // Fall through to success case.
-
-    if (op->should_profile()) {
-      Register mdo = klass_RInfo, recv = k_RInfo;
-      assert_different_registers(value, mdo, recv);
-      __ bind(profile_cast_success);
-      metadata2reg(md->constant_encoding(), mdo);
-      __ load_klass(recv, value);
-      type_profile_helper(mdo, md, data, recv, Rtmp1, &done);
-      __ branch_optimized(Assembler::bcondAlways, done);
-
-      __ bind(profile_cast_failure);
-      metadata2reg(md->constant_encoding(), mdo);
-      __ add2mem_64(Address(mdo, md->byte_offset_of_slot(data, CounterData::count_offset())), -(int)DataLayout::counter_increment, Rtmp1);
-      __ branch_optimized(Assembler::bcondAlways, *stub->entry());
-    }
 
     __ bind(done);
   } else {
@@ -2670,7 +2653,6 @@ void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
   Register addr = op->addr()->as_pointer_register();
   Register t1_cmp = Z_R1_scratch;
   if (op->code() == lir_cas_long) {
-    assert(VM_Version::supports_cx8(), "wrong machine");
     Register cmp_value_lo = op->cmp_value()->as_register_lo();
     Register new_value_lo = op->new_value()->as_register_lo();
     __ z_lgr(t1_cmp, cmp_value_lo);

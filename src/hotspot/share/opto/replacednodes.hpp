@@ -76,6 +76,10 @@ class ReplacedNodes {
   bool is_empty() const;
   void dump(outputStream *st) const;
   void apply(Compile* C, Node* ctl);
+
+  bool is_dominator(const Node* ctl, Node* n) const;
+
+  void collect_nodes_to_clone(const Node_Stack& stack, Unique_Node_List& to_fix);
 };
 
 #endif // SHARE_OPTO_REPLACEDNODES_HPP

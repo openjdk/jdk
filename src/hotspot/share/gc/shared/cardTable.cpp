@@ -30,10 +30,10 @@
 #include "gc/shared/space.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/virtualspace.hpp"
+#include "nmt/memTracker.hpp"
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #if INCLUDE_PARALLELGC
 #include "gc/parallel/objectStartArray.hpp"
@@ -53,11 +53,6 @@ void CardTable::initialize_card_size() {
 
   // Set blockOffsetTable size based on card table entry size
   BOTConstants::initialize_bot_size(_card_shift);
-
-#if INCLUDE_PARALLELGC
-  // Set ObjectStartArray block size based on card table entry size
-  ObjectStartArray::initialize_block_size(_card_shift);
-#endif
 
   log_info_p(gc, init)("CardTable entry size: " UINT32_FORMAT,  _card_size);
 }

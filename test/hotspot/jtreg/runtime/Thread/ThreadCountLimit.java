@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,17 @@
 /**
  * @test
  * @summary Stress test that reaches the process limit for thread count, or time limit.
+ * @requires os.family != "aix"
  * @key stress
  * @run main/othervm -Xmx1g ThreadCountLimit
+ */
+
+/**
+ * @test
+ * @summary Stress test that reaches the process limit for thread count, or time limit.
+ * @requires os.family == "aix"
+ * @key stress
+ * @run main/othervm -Xmx1g -XX:MaxExpectedDataSegmentSize=16g ThreadCountLimit
  */
 
 import java.util.concurrent.CountDownLatch;

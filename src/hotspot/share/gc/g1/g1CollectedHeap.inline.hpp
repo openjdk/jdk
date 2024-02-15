@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1EvacFailureRegions.hpp"
 #include "gc/g1/g1Policy.hpp"
+#include "gc/g1/g1RegionPinCache.inline.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionManager.inline.hpp"
@@ -209,6 +210,8 @@ G1HeapRegionAttr G1CollectedHeap::region_attr(uint idx) const {
 }
 
 void G1CollectedHeap::register_humongous_candidate_region_with_region_attr(uint index) {
+  assert(!region_at(index)->has_pinned_objects(), "must be");
+  assert(region_at(index)->rem_set()->is_complete(), "must be");
   _region_attr.set_humongous_candidate(index);
 }
 
@@ -218,9 +221,12 @@ void G1CollectedHeap::register_new_survivor_region_with_region_attr(HeapRegion* 
 
 void G1CollectedHeap::register_region_with_region_attr(HeapRegion* r) {
   _region_attr.set_remset_is_tracked(r->hrm_index(), r->rem_set()->is_tracked());
+  _region_attr.set_is_pinned(r->hrm_index(), r->has_pinned_objects());
 }
 
 void G1CollectedHeap::register_old_region_with_region_attr(HeapRegion* r) {
+  assert(!r->has_pinned_objects(), "must be");
+  assert(r->rem_set()->is_complete(), "must be");
   _region_attr.set_in_old(r->hrm_index(), r->rem_set()->is_tracked());
   _rem_set->exclude_region_from_scan(r->hrm_index());
 }
@@ -255,6 +261,23 @@ inline bool G1CollectedHeap::is_obj_dead(const oop obj, const HeapRegion* hr) co
     // region is not guaranteed to be parsable. Use the bitmap for liveness.
     return !concurrent_mark()->mark_bitmap()->is_marked(obj);
   }
+}
+
+inline void G1CollectedHeap::pin_object(JavaThread* thread, oop obj) {
+  assert(obj != nullptr, "obj must not be null");
+  assert(!is_gc_active(), "must not pin objects during a GC");
+  assert(obj->is_typeArray(), "must be typeArray");
+
+  uint obj_region_idx = heap_region_containing(obj)->hrm_index();
+  G1ThreadLocalData::pin_count_cache(thread).inc_count(obj_region_idx);
+}
+
+inline void G1CollectedHeap::unpin_object(JavaThread* thread, oop obj) {
+  assert(obj != nullptr, "obj must not be null");
+  assert(!is_gc_active(), "must not unpin objects during a GC");
+
+  uint obj_region_idx = heap_region_containing(obj)->hrm_index();
+  G1ThreadLocalData::pin_count_cache(thread).dec_count(obj_region_idx);
 }
 
 inline bool G1CollectedHeap::is_obj_dead(const oop obj) const {

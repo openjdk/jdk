@@ -110,6 +110,23 @@ public class SocketReadEvent extends Event {
      * timestamp and the given start time.  If the duration is meets
      * or exceeds the configured value (determined by calling the generated method
      * {@link #shouldCommit(long)}), an event will be emitted by calling
+     * {@link #emit(long, long, long, SocketAddress, long)}
+     *
+     * @param start  the start time
+     * @param nbytes  how many bytes were transferred
+     * @param remote  the address of the remote socket
+     * @param timeout  maximum time to wait
+     */
+    public static void offer(long start, long nbytes, SocketAddress remote, long timeout) {
+        long duration = timestamp() - start;
+        if (shouldCommit(duration)) {
+            emit(start, duration, nbytes, remote, timeout);
+        }
+    }
+
+    /**
+     * Helper method to perform a common task of getting event data ready and
+     * then emitting the event by calling
      * {@link #commit(long, long, String, String, int, long, long, boolean)}.
      *
      * @param start  the start time

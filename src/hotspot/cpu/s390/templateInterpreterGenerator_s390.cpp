@@ -40,6 +40,7 @@
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/resolvedIndyEntry.hpp"
+#include "oops/resolvedMethodEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/arguments.hpp"
@@ -658,12 +659,9 @@ address TemplateInterpreterGenerator::generate_return_entry_for (TosState state,
     __ load_resolved_indy_entry(cache, index);
     __ z_llgh(size, in_bytes(ResolvedIndyEntry::num_parameters_offset()), cache);
   } else {
-    const int flags_offset = in_bytes(ConstantPoolCache::base_offset() +
-                                      ConstantPoolCacheEntry::flags_offset());
-    __ get_cache_and_index_at_bcp(cache, index, 1, index_size);
-
-    // #args is in rightmost byte of the _flags field.
-    __ z_llgc(size, Address(cache, index, flags_offset + (sizeof(size_t) - 1)));
+    assert(index_size == sizeof(u2), "Can only be u2");
+    __ load_method_entry(cache, index);
+    __ load_sized_value(size, Address(cache, in_bytes(ResolvedMethodEntry::num_parameters_offset())), sizeof(u2), false /*is_signed*/);
   }
   __ z_sllg(size, size, Interpreter::logStackElementSize); // Each argument size in bytes.
   __ z_agr(Z_esp, size);                                   // Pop arguments.

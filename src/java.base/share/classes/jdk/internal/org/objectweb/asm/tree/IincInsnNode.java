@@ -104,4 +104,3 @@ public class IincInsnNode extends AbstractInsnNode {
         return new IincInsnNode(var, incr).cloneAnnotations(this);
     }
 }
-

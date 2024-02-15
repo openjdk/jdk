@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ public class SABase extends CiReplayBase {
         }
         ProcessBuilder pb;
         try {
-            pb = ProcessTools.createTestJvm("--add-modules", "jdk.hotspot.agent",
+            pb = ProcessTools.createTestJavaProcessBuilder("--add-modules", "jdk.hotspot.agent",
                    "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot=ALL-UNNAMED",
                     "sun.jvm.hotspot.CLHSDB", JDKToolFinder.getTestJDKTool("java"),
                     TEST_CORE_FILE_NAME);

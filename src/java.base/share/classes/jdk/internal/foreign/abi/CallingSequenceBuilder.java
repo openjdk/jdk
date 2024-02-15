@@ -25,16 +25,17 @@
 package jdk.internal.foreign.abi;
 
 import jdk.internal.foreign.Utils;
-import jdk.internal.foreign.abi.Binding.Allocate;
+import jdk.internal.foreign.abi.Binding.*;
 import jdk.internal.foreign.abi.Binding.BoxAddress;
 import jdk.internal.foreign.abi.Binding.BufferLoad;
 import jdk.internal.foreign.abi.Binding.BufferStore;
 import jdk.internal.foreign.abi.Binding.Cast;
 import jdk.internal.foreign.abi.Binding.Copy;
 import jdk.internal.foreign.abi.Binding.Dup;
+import jdk.internal.foreign.abi.Binding.SegmentBase;
+import jdk.internal.foreign.abi.Binding.SegmentOffset;
 import jdk.internal.foreign.abi.Binding.ShiftLeft;
 import jdk.internal.foreign.abi.Binding.ShiftRight;
-import jdk.internal.foreign.abi.Binding.UnboxAddress;
 import jdk.internal.foreign.abi.Binding.VMLoad;
 import jdk.internal.foreign.abi.Binding.VMStore;
 import sun.security.action.GetPropertyAction;
@@ -217,19 +218,19 @@ public class CallingSequenceBuilder {
 
     static boolean isUnbox(Binding binding) {
         return switch (binding) {
-            case VMStore      unused -> true;
-            case BufferLoad   unused -> true;
-            case Copy         unused -> true;
-            case UnboxAddress unused -> true;
-            case Dup          unused -> true;
-            case ShiftLeft    unused -> true;
-            case ShiftRight   unused -> true;
-            case Cast         unused -> true;
-
-            case VMLoad       unused -> false;
-            case BufferStore  unused -> false;
-            case Allocate     unused -> false;
-            case BoxAddress   unused -> false;
+            case VMStore       unused -> true;
+            case BufferLoad    unused -> true;
+            case Copy          unused -> true;
+            case Dup           unused -> true;
+            case SegmentBase   unused -> true;
+            case SegmentOffset unused -> true;
+            case ShiftLeft     unused -> true;
+            case ShiftRight    unused -> true;
+            case Cast          unused -> true;
+            case VMLoad        unused -> false;
+            case BufferStore   unused -> false;
+            case Allocate      unused -> false;
+            case BoxAddress    unused -> false;
         };
     }
 
@@ -252,19 +253,20 @@ public class CallingSequenceBuilder {
 
     static boolean isBox(Binding binding) {
         return switch (binding) {
-            case VMLoad       unused -> true;
-            case BufferStore  unused -> true;
-            case Copy         unused -> true;
-            case Allocate     unused -> true;
-            case BoxAddress   unused -> true;
-            case Dup          unused -> true;
-            case ShiftLeft    unused -> true;
-            case ShiftRight   unused -> true;
-            case Cast         unused -> true;
+            case VMLoad        unused -> true;
+            case BufferStore   unused -> true;
+            case Copy          unused -> true;
+            case Allocate      unused -> true;
+            case BoxAddress    unused -> true;
+            case Dup           unused -> true;
+            case ShiftLeft     unused -> true;
+            case ShiftRight    unused -> true;
+            case Cast          unused -> true;
 
-            case VMStore      unused -> false;
-            case BufferLoad   unused -> false;
-            case UnboxAddress unused -> false;
+            case VMStore       unused -> false;
+            case BufferLoad    unused -> false;
+            case SegmentBase   unused -> false;
+            case SegmentOffset unused -> false;
         };
     }
 
