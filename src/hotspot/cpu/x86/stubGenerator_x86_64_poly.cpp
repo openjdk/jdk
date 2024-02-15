@@ -1062,8 +1062,8 @@ address StubGenerator::generate_poly1305_processBlocks() {
   C[l-1] = M[i] || '10...0'
   such that, length(C[i]) = 130 bits, for i ∈ [0, l).
 
-  Let * indicate scalar multiplication (i.e., c = a * b);
-  Let × indicate scalar multiplication followed by reduction modulo P (i.e., c = a × b = {(a * b) mod P})
+  Let * indicate scalar multiplication (i.e., w = u * v);
+  Let × indicate scalar multiplication followed by reduction modulo P (i.e., z = u × v = {(u * v) mod P})
 
   POLY1305_MAC = (POLY1305_EVAL_POLYNOMIAL(C, R, P) + K) mod 2^128; where,
 
@@ -1090,25 +1090,25 @@ address StubGenerator::generate_poly1305_processBlocks() {
 
   Gall-Gueron[1] 4-way SIMD Algorithm[2] for POLY1305_EVAL_POLYNOMIAL(C, R, P):
 
-  Define mathematical vectors as below:
+  Define mathematical vectors (not same as SIMD vector lanes) as below:
   R4321   = [R^4, R^3, R^2, R^1];
   R4444   = [R^4, R^4, R^4, R^4];
-  Ci      = [C[4i], C[4i+1], C[4i+2], C[4i+3]] for i ∈ [0, l')
-  Ex: C0  = [C0, C1, C2, C3]
-  Ex: C1  = [C4, C5, C6, C7]
+  COEF[i] = [C[4i], C[4i+1], C[4i+2], C[4i+3]] for i ∈ [0, l'). For example, COEF[0] and COEF[1] shown below.
+  COEF[0] = [C0, C1, C2, C3]
+  COEF[1] = [C4, C5, C6, C7]
   T       = [T0, T1, T2, T3] be a temporary vector
-  ACC     = [acc, 0, 0, 0]; acc has hash from previous computations (if any)
-  ⊗ indicates component-wise multiplication followed by modulo reduction
-  ⊕ indicates component-wise addition, + indicates scalar addition
+  ACC     = [acc, 0, 0, 0]; acc has hash from previous computations (if any), otherwise 0.
+  ⊗ indicates component-wise vector multiplication followed by modulo reduction
+  ⊕ indicates component-wise vector addition, + indicates scalar addition
 
   POLY1305_EVAL_POLYNOMIAL(C, R, P) {
-    T ← ACC
-    T ← T ⊕ C0;
+    T ← ACC; # load accumulator
+    T ← T ⊕ COEF[0]; # add accumulator to the first 4 blocks
     Compute R4321, R4444;
     # SIMD loop
-    l' = floor(l/4)
+    l' = floor(l/4); # operate on 4 blocks at a time
     for (i = 1 to l'-1):
-      T ← (R4444 ⊗ T) ⊕ Ci;
+      T ← (R4444 ⊗ T) ⊕ COEF[i];
     T ← R4321 ⊗ T;
     SUM ← T0 + T1 + T2 + T3;
 
@@ -1177,7 +1177,7 @@ void StubGenerator::poly1305_process_blocks_avx2(
 
   /* Compute the following steps of POLY1305_EVAL_POLYNOMIAL algorithm
     T ← ACC
-    T ← T ⊕ C0;
+    T ← T ⊕ COEF[0];
   */
 
   // Spread accumulator into 44-bit limbs in quadwords
@@ -1372,7 +1372,7 @@ void StubGenerator::poly1305_process_blocks_avx2(
     Compute the following steps of POLY1305_EVAL_POLYNOMIAL algorithm
     l' = floor(l/4)
     for (i = 1 to l'-1):
-      T ← (R4444 ⊗ T) ⊕ Ci;
+      T ← (R4444 ⊗ T) ⊕ COEF[i];
   */
 
   // Perform multiply and reduce while loading the next block and adding it in interleaved manner
