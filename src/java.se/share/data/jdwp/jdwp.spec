@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1619,8 +1619,8 @@ JDWP "Java(tm) Debug Wire Protocol"
         (Reply
             (threadObject owner "The monitor owner, or null if it is not currently owned.")
             (int entryCount "The number of times the monitor has been entered.")
-            (Repeat waiters "The number of threads that are waiting for the monitor "
-                            "0 if there is no current owner"
+            (Repeat waiters "The total number of threads that are waiting to enter or re-enter "
+                            "the monitor, or waiting to be notified by the monitor."
                 (threadObject thread "A thread waiting for this monitor.")
             )
         )
