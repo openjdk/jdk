@@ -224,13 +224,13 @@ class SuperWord : public ResourceObj {
   static void unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_factor);
 
   // VLoop Accessors
-  PhaseIdealLoop* phase()               const { return _vloop.phase(); }
-  PhaseIterGVN& igvn()                  const { return _vloop.phase()->igvn(); }
-  IdealLoopTree* lpt()                  const { return _vloop.lpt(); }
-  CountedLoopNode* cl()                 const { return _vloop.cl(); }
-  PhiNode* iv()                         const { return _vloop.iv(); }
-  int iv_stride()                       const { return cl()->stride_con(); }
-  bool in_bb(const Node* n)             const { return _vloop.in_bb(n); }
+  PhaseIdealLoop* phase()     const { return _vloop.phase(); }
+  PhaseIterGVN& igvn()        const { return _vloop.phase()->igvn(); }
+  IdealLoopTree* lpt()        const { return _vloop.lpt(); }
+  CountedLoopNode* cl()       const { return _vloop.cl(); }
+  PhiNode* iv()               const { return _vloop.iv(); }
+  int iv_stride()             const { return cl()->stride_con(); }
+  bool in_bb(const Node* n)   const { return _vloop.in_bb(n); }
 
   // VLoopReductions Accessors
   bool is_marked_reduction(const Node* n) const {
