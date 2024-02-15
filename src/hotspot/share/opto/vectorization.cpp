@@ -115,17 +115,17 @@ VStatus VLoop::check_preconditions_helper() {
 // Return true iff all submodules are loaded successfully
 bool VLoopAnalyzer::setup_submodules() {
 #ifndef PRODUCT
-  if (vloop().is_trace_loop_analyzer()) {
+  if (_vloop.is_trace_loop_analyzer()) {
     tty->print_cr("\nVLoopAnalyzer::setup_submodules");
-    vloop().lpt()->dump_head();
-    vloop().cl()->dump();
+    _vloop.lpt()->dump_head();
+    _vloop.cl()->dump();
   }
 #endif
 
   VStatus status = setup_submodules_helper();
   if (!status.is_success()) {
 #ifndef PRODUCT
-    if (vloop().is_trace_loop_analyzer()) {
+    if (_vloop.is_trace_loop_analyzer()) {
       tty->print_cr("\nVLoopAnalyze::setup_submodules: failed: %s", status.failure_reason());
     }
 #endif
@@ -136,7 +136,7 @@ bool VLoopAnalyzer::setup_submodules() {
 
 VStatus VLoopAnalyzer::setup_submodules_helper() {
   // Skip any loop that has not been assigned max unroll by analysis.
-  if (SuperWordLoopUnrollAnalysis && vloop().cl()->slp_max_unroll() == 0) {
+  if (SuperWordLoopUnrollAnalysis && _vloop.cl()->slp_max_unroll() == 0) {
     return VStatus::make_failure(VLoopAnalyzer::FAILURE_NO_MAX_UNROLL);
   }
 
@@ -284,7 +284,7 @@ bool VPointer::invariant(Node* n) const {
       // main loop (Illegal invariant happens when n_c is a CastII node that
       // prevents data nodes to flow above the main loop).
       Node* n_c = phase()->get_ctrl(n);
-      return phase()->is_dominator(n_c, vloop().pre_loop_head());
+      return phase()->is_dominator(n_c, _vloop.pre_loop_head());
     }
   }
   return is_not_member;

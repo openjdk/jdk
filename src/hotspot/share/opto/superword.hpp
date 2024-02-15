@@ -198,6 +198,7 @@ class SWNodeInfo {
 class SuperWord : public ResourceObj {
  private:
   const VLoopAnalyzer& _vloop_analyzer;
+  const VLoop&         _vloop;
 
   // Arena for small data structures. Large data structures are allocated in
   // VSharedData, and reused over many AutoVectorizations.
@@ -222,118 +223,114 @@ class SuperWord : public ResourceObj {
   // Decide if loop can eventually be vectorized, and what unrolling factor is required.
   static void unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_factor);
 
-  // VLoopAnalyzer Accessors
-  const VLoopAnalyzer& vloop_analyzer() const { return _vloop_analyzer; }
-
   // VLoop Accessors
-  const VLoop& vloop()                  const { return vloop_analyzer().vloop(); }
-  PhaseIdealLoop* phase()               const { return vloop().phase(); }
-  PhaseIterGVN& igvn()                  const { return vloop().phase()->igvn(); }
-  IdealLoopTree* lpt()                  const { return vloop().lpt(); }
-  CountedLoopNode* cl()                 const { return vloop().cl(); }
-  PhiNode* iv()                         const { return vloop().iv(); }
+  PhaseIdealLoop* phase()               const { return _vloop.phase(); }
+  PhaseIterGVN& igvn()                  const { return _vloop.phase()->igvn(); }
+  IdealLoopTree* lpt()                  const { return _vloop.lpt(); }
+  CountedLoopNode* cl()                 const { return _vloop.cl(); }
+  PhiNode* iv()                         const { return _vloop.iv(); }
   int iv_stride()                       const { return cl()->stride_con(); }
-  bool in_bb(const Node* n)             const { return vloop().in_bb(n); }
+  bool in_bb(const Node* n)             const { return _vloop.in_bb(n); }
 
   // VLoopReductions Accessors
   bool is_marked_reduction(const Node* n) const {
-    return vloop_analyzer().reductions().is_marked_reduction(n);
+    return _vloop_analyzer.reductions().is_marked_reduction(n);
   }
 
   bool reduction(Node* n1, Node* n2) const {
-    return vloop_analyzer().reductions().is_marked_reduction_pair(n1, n2);
+    return _vloop_analyzer.reductions().is_marked_reduction_pair(n1, n2);
   }
 
   // VLoopMemorySlices Accessors
   bool same_memory_slice(MemNode* n1, MemNode* n2) const {
-    return vloop_analyzer().memory_slices().same_memory_slice(n1, n2);
+    return _vloop_analyzer.memory_slices().same_memory_slice(n1, n2);
   }
 
   // VLoopBody Accessors
   const GrowableArray<Node*>& body() const {
-    return vloop_analyzer().body().body();
+    return _vloop_analyzer.body().body();
   }
 
   int bb_idx(const Node* n) const     {
-    return vloop_analyzer().body().bb_idx(n);
+    return _vloop_analyzer.body().bb_idx(n);
   }
 
   // VLoopTypes Accessors
   const Type* velt_type(Node* n) const {
-    return vloop_analyzer().types().velt_type(n);
+    return _vloop_analyzer.types().velt_type(n);
   }
 
   BasicType velt_basic_type(Node* n) const {
-    return vloop_analyzer().types().velt_basic_type(n);
+    return _vloop_analyzer.types().velt_basic_type(n);
   }
 
   bool same_velt_type(Node* n1, Node* n2) const {
-    return vloop_analyzer().types().same_velt_type(n1, n2);
+    return _vloop_analyzer.types().same_velt_type(n1, n2);
   }
 
   int data_size(Node* n) const {
-    return vloop_analyzer().types().data_size(n);
+    return _vloop_analyzer.types().data_size(n);
   }
 
   int vector_width(Node* n) const {
-    return vloop_analyzer().types().vector_width(n);
+    return _vloop_analyzer.types().vector_width(n);
   }
 
   int vector_width_in_bytes(const Node* n) const {
-    return vloop_analyzer().types().vector_width_in_bytes(n);
+    return _vloop_analyzer.types().vector_width_in_bytes(n);
   }
 
 #ifndef PRODUCT
   // TraceAutoVectorization and TraceSuperWord
   bool is_trace_superword_alignment() const {
     // Too verbose for TraceSuperWord
-    return vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_ALIGNMENT);
+    return _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_ALIGNMENT);
   }
 
   bool is_trace_superword_dependence_graph() const {
     return TraceSuperWord ||
-           vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_DEPENDENCE_GRAPH);
+           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_DEPENDENCE_GRAPH);
   }
 
   bool is_trace_superword_adjacent_memops() const {
     return TraceSuperWord ||
-           vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_ADJACENT_MEMOPS);
+           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_ADJACENT_MEMOPS);
   }
 
   bool is_trace_superword_rejections() const {
     return TraceSuperWord ||
-           vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_REJECTIONS);
+           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_REJECTIONS);
   }
 
   bool is_trace_superword_packset() const {
     return TraceSuperWord ||
-           vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_PACKSET);
+           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_PACKSET);
   }
 
   bool is_trace_superword_info() const {
     return TraceSuperWord ||
-           vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_INFO);
+           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_INFO);
   }
 
   bool is_trace_superword_verbose() const {
     // Too verbose for TraceSuperWord
-    return vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_VERBOSE);
+    return _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_VERBOSE);
   }
 
   bool is_trace_superword_any() const {
     return TraceSuperWord ||
            is_trace_align_vector() ||
-           vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_ALIGNMENT) ||
-           vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_DEPENDENCE_GRAPH) ||
-           vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_ADJACENT_MEMOPS) ||
-           vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_REJECTIONS) ||
-           vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_PACKSET) ||
-           vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_INFO) ||
-           vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_VERBOSE);
+           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_ALIGNMENT) ||
+           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_DEPENDENCE_GRAPH) ||
+           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_ADJACENT_MEMOPS) ||
+           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_REJECTIONS) ||
+           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_PACKSET) ||
+           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_INFO) ||
+           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_VERBOSE);
   }
 
   bool is_trace_align_vector() const {
-    return vloop().vtrace().is_trace(TraceAutoVectorizationTag::ALIGN_VECTOR) ||
+    return _vloop.vtrace().is_trace(TraceAutoVectorizationTag::ALIGN_VECTOR) ||
            is_trace_superword_verbose();
   }
 #endif

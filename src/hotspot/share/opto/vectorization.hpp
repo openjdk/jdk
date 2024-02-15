@@ -130,27 +130,27 @@ public:
   const VTrace& vtrace()      const { return _vtrace; }
 
   bool is_trace_preconditions() const {
-    return vtrace().is_trace(TraceAutoVectorizationTag::PRECONDITIONS);
+    return _vtrace.is_trace(TraceAutoVectorizationTag::PRECONDITIONS);
   }
 
   bool is_trace_loop_analyzer() const {
-    return vtrace().is_trace(TraceAutoVectorizationTag::LOOP_ANALYZER);
+    return _vtrace.is_trace(TraceAutoVectorizationTag::LOOP_ANALYZER);
   }
 
   bool is_trace_memory_slices() const {
-    return vtrace().is_trace(TraceAutoVectorizationTag::MEMORY_SLICES);
+    return _vtrace.is_trace(TraceAutoVectorizationTag::MEMORY_SLICES);
   }
 
   bool is_trace_body() const {
-    return vtrace().is_trace(TraceAutoVectorizationTag::BODY);
+    return _vtrace.is_trace(TraceAutoVectorizationTag::BODY);
   }
 
   bool is_trace_vector_element_type() const {
-    return vtrace().is_trace(TraceAutoVectorizationTag::TYPES);
+    return _vtrace.is_trace(TraceAutoVectorizationTag::TYPES);
   }
 
   bool is_trace_pointer_analysis() const {
-    return vtrace().is_trace(TraceAutoVectorizationTag::POINTER_ANALYSIS);
+    return _vtrace.is_trace(TraceAutoVectorizationTag::POINTER_ANALYSIS);
   }
 #endif
 
@@ -221,7 +221,6 @@ public:
   NONCOPYABLE(VLoopReductions);
 
 private:
-  const VLoop& vloop() const { return _vloop; }
   // Search for a path P = (n_1, n_2, ..., n_k) such that:
   // - original_input(n_i, input) = n_i+1 for all 1 <= i < k,
   // - path(n) for all n in P,
@@ -295,8 +294,6 @@ private:
   GrowableArray<PhiNode*> _heads;
   GrowableArray<MemNode*> _tails;
 
-  const VLoop& vloop() const { return _vloop; }
-
 public:
   VLoopMemorySlices(Arena* arena, const VLoop& vloop) :
     _vloop(vloop),
@@ -335,8 +332,6 @@ private:
   // Mapping node->_idx -> body_idx
   // Can be very large, and thus lives in VSharedData
   GrowableArray<int>&  _body_idx;
-
-  const VLoop& vloop() const { return _vloop; }
 
 public:
   VLoopBody(Arena* arena, const VLoop& vloop, VSharedData& vshared) :
@@ -384,9 +379,6 @@ private:
   // bb_idx -> vector element type
   GrowableArray<const Type*> _velt_type;
 
-  const VLoop& vloop() const    { return _vloop; }
-  const VLoopBody& body() const { return _body; }
-
 public:
   VLoopTypes(Arena* arena,
              const VLoop& vloop,
@@ -400,8 +392,8 @@ public:
   NOT_PRODUCT( void print() const; )
 
   const Type* velt_type(const Node* n) const {
-    assert(vloop().in_bb(n), "only call on nodes in loop");
-    const Type* t = _velt_type.at(body().bb_idx(n));
+    assert(_vloop.in_bb(n), "only call on nodes in loop");
+    const Type* t = _velt_type.at(_body.bb_idx(n));
     assert(t != nullptr, "must have type");
     return t;
   }
@@ -439,8 +431,8 @@ public:
 private:
   void set_velt_type(Node* n, const Type* t) {
     assert(t != nullptr, "cannot set nullptr");
-    assert(vloop().in_bb(n), "only call on nodes in loop");
-    _velt_type.at_put(body().bb_idx(n), t);
+    assert(_vloop.in_bb(n), "only call on nodes in loop");
+    _velt_type.at_put(_body.bb_idx(n), t);
   }
 
   // Smallest type containing range of values
@@ -478,7 +470,7 @@ public:
     _reductions      (&_arena, vloop),
     _memory_slices   (&_arena, vloop),
     _body            (&_arena, vloop, vshared),
-    _types           (&_arena, vloop, body())
+    _types           (&_arena, vloop, _body)
   {
     _success = setup_submodules();
   }
@@ -522,10 +514,9 @@ class VPointer : public ArenaObj {
   bool        _analyze_only; // Used in loop unrolling only for vpointer trace
   uint        _stack_idx;    // Used in loop unrolling only for vpointer trace
 
-  const VLoop&    vloop() const { return _vloop; }
-  PhaseIdealLoop* phase() const { return vloop().phase(); }
-  IdealLoopTree*  lpt() const   { return vloop().lpt(); }
-  PhiNode*        iv() const    { return vloop().iv(); }
+  PhaseIdealLoop* phase() const { return _vloop.phase(); }
+  IdealLoopTree*  lpt() const   { return _vloop.lpt(); }
+  PhiNode*        iv() const    { return _vloop.iv(); }
 
   bool is_loop_member(Node* n) const;
   bool invariant(Node* n) const;
@@ -598,7 +589,7 @@ class VPointer : public ArenaObj {
   bool overlap_possible_with_any_in(Node_List* p) {
     for (uint k = 0; k < p->size(); k++) {
       MemNode* mem = p->at(k)->as_Mem();
-      VPointer p_mem(mem, vloop());
+      VPointer p_mem(mem, _vloop);
       // Only if we know that we have Less or Greater can we
       // be sure that there can never be an overlap between
       // the two memory regions.

@@ -40,9 +40,10 @@
 
 SuperWord::SuperWord(const VLoopAnalyzer &vloop_analyzer) :
   _vloop_analyzer(vloop_analyzer),
+  _vloop(vloop_analyzer.vloop()),
   _arena(mtCompiler),
   _packset(arena(), 8,  0, nullptr),                        // packs for the current block
-  _node_info(arena(), vloop().estimated_body_length(), 0, SWNodeInfo::initial), // info needed per node
+  _node_info(arena(), _vloop.estimated_body_length(), 0, SWNodeInfo::initial), // info needed per node
   _clone_map(phase()->C->clone_map()),                      // map of nodes created in cloning
   _align_to_ref(nullptr),                                   // memory reference to align vectors to
   _dg(arena()),                                             // dependence graph
@@ -299,7 +300,7 @@ Node* VLoopReductions::original_input(const Node* n, uint i) {
 
 void VLoopReductions::mark_reductions() {
   assert(_loop_reductions.is_empty(), "must not yet be computed");
-  CountedLoopNode* cl = vloop().cl();
+  CountedLoopNode* cl = _vloop.cl();
 
   // Iterate through all phi nodes associated to the loop and search for
   // reduction cycles in the basic block.
@@ -311,7 +312,7 @@ void VLoopReductions::mark_reductions() {
     if (phi->outcnt() == 0) {
       continue;
     }
-    if (phi == vloop().iv()) {
+    if (phi == _vloop.iv()) {
       continue;
     }
     // The phi's loop-back is considered the first node in the reduction cycle.
@@ -335,9 +336,9 @@ void VLoopReductions::mark_reductions() {
       // to the phi node following edge index 'input'.
       PathEnd path =
         find_in_path(
-          first, input, vloop().lpt()->_body.size(),
+          first, input, _vloop.lpt()->_body.size(),
           [&](const Node* n) { return n->Opcode() == first->Opcode() &&
-                                      vloop().in_bb(n); },
+                                      _vloop.in_bb(n); },
           [&](const Node* n) { return n == phi; });
       if (path.first != nullptr) {
         reduction_input = input;
@@ -356,7 +357,7 @@ void VLoopReductions::mark_reductions() {
     for (int i = 0; i < path_nodes; i++) {
       for (DUIterator_Fast jmax, j = current->fast_outs(jmax); j < jmax; j++) {
         Node* u = current->fast_out(j);
-        if (!vloop().in_bb(u)) {
+        if (!_vloop.in_bb(u)) {
           continue;
         }
         if (u == succ) {
@@ -533,13 +534,13 @@ void SuperWord::find_adjacent_refs() {
       set_align_to_ref(align_to_mem_ref);
     }
 
-    VPointer align_to_ref_p(mem_ref, vloop());
+    VPointer align_to_ref_p(mem_ref, _vloop);
     // Set alignment relative to "align_to_ref" for all related memory operations.
     for (int i = memops.size() - 1; i >= 0; i--) {
       MemNode* s = memops.at(i)->as_Mem();
       if (isomorphic(s, mem_ref) &&
            (!_do_vector_loop || same_origin_idx(s, mem_ref))) {
-        VPointer p2(s, vloop());
+        VPointer p2(s, _vloop);
         if (p2.comparable(align_to_ref_p)) {
           int align = memory_alignment(s, iv_adjustment);
           set_alignment(s, align);
@@ -598,11 +599,11 @@ MemNode* SuperWord::find_align_to_ref(Node_List &memops, int &idx) {
   // Count number of comparable memory ops
   for (uint i = 0; i < memops.size(); i++) {
     MemNode* s1 = memops.at(i)->as_Mem();
-    VPointer p1(s1, vloop());
+    VPointer p1(s1, _vloop);
     for (uint j = i+1; j < memops.size(); j++) {
       MemNode* s2 = memops.at(j)->as_Mem();
       if (isomorphic(s1, s2)) {
-        VPointer p2(s2, vloop());
+        VPointer p2(s2, _vloop);
         if (p1.comparable(p2)) {
           (*cmp_ct.adr_at(i))++;
           (*cmp_ct.adr_at(j))++;
@@ -623,7 +624,7 @@ MemNode* SuperWord::find_align_to_ref(Node_List &memops, int &idx) {
     if (s->is_Store()) {
       int vw = vector_width_in_bytes(s);
       assert(vw > 1, "sanity");
-      VPointer p(s, vloop());
+      VPointer p(s, _vloop);
       if ( cmp_ct.at(j) >  max_ct ||
           (cmp_ct.at(j) == max_ct &&
             ( vw >  max_vw ||
@@ -646,7 +647,7 @@ MemNode* SuperWord::find_align_to_ref(Node_List &memops, int &idx) {
       if (s->is_Load()) {
         int vw = vector_width_in_bytes(s);
         assert(vw > 1, "sanity");
-        VPointer p(s, vloop());
+        VPointer p(s, _vloop);
         if ( cmp_ct.at(j) >  max_ct ||
             (cmp_ct.at(j) == max_ct &&
               ( vw >  max_vw ||
@@ -719,7 +720,7 @@ int SuperWord::get_vw_bytes_special(MemNode* s) {
 //---------------------------get_iv_adjustment---------------------------
 // Calculate loop's iv adjustment for this memory ops.
 int SuperWord::get_iv_adjustment(MemNode* mem_ref) {
-  VPointer align_to_ref_p(mem_ref, vloop());
+  VPointer align_to_ref_p(mem_ref, _vloop);
   int offset = align_to_ref_p.offset_in_bytes();
   int scale  = align_to_ref_p.scale_in_bytes();
   int elt_size = align_to_ref_p.memory_size();
@@ -764,8 +765,8 @@ void SuperWord::dependence_graph() {
     }
   }
 
-  const GrowableArray<PhiNode*>& mem_slice_head = vloop_analyzer().memory_slices().heads();
-  const GrowableArray<MemNode*>& mem_slice_tail = vloop_analyzer().memory_slices().tails();
+  const GrowableArray<PhiNode*>& mem_slice_head = _vloop_analyzer.memory_slices().heads();
+  const GrowableArray<MemNode*>& mem_slice_tail = _vloop_analyzer.memory_slices().tails();
 
   ResourceMark rm;
   GrowableArray<Node*> slice_nodes;
@@ -776,7 +777,7 @@ void SuperWord::dependence_graph() {
     MemNode* tail = mem_slice_tail.at(i);
 
     // Get slice in predecessor order (last is first)
-    vloop_analyzer().memory_slices().get_slice(head, tail, slice_nodes);
+    _vloop_analyzer.memory_slices().get_slice(head, tail, slice_nodes);
 
     // Make the slice dependent on the root
     DepMem* slice = _dg.dep(head);
@@ -794,13 +795,13 @@ void SuperWord::dependence_graph() {
       if (_dg.dep(s1)->in_cnt() == 0) {
         _dg.make_edge(slice, s1);
       }
-      VPointer p1(s1->as_Mem(), vloop());
+      VPointer p1(s1->as_Mem(), _vloop);
       bool sink_dependent = true;
       for (int k = j - 1; k >= 0; k--) {
         Node* s2 = slice_nodes.at(k);
         if (s1->is_Load() && s2->is_Load())
           continue;
-        VPointer p2(s2->as_Mem(), vloop());
+        VPointer p2(s2->as_Mem(), _vloop);
 
         int cmp = p1.cmp(p2);
         if (!VPointer::not_equal(cmp)) {
@@ -831,12 +832,12 @@ void SuperWord::dependence_graph() {
 void VLoopMemorySlices::find_memory_slices() {
   assert(_heads.is_empty(), "not yet computed");
   assert(_tails.is_empty(), "not yet computed");
-  CountedLoopNode* cl = vloop().cl();
+  CountedLoopNode* cl = _vloop.cl();
 
   // Iterate over all memory phis
   for (DUIterator_Fast imax, i = cl->fast_outs(imax); i < imax; i++) {
     PhiNode* phi = cl->fast_out(i)->isa_Phi();
-    if (phi != nullptr && vloop().in_bb(phi) && phi->is_memory_phi()) {
+    if (phi != nullptr && _vloop.in_bb(phi) && phi->is_memory_phi()) {
       Node* phi_tail = phi->in(LoopNode::LoopBackControl);
       if (phi_tail != phi->in(LoopNode::EntryControl)) {
         _heads.push(phi);
@@ -845,7 +846,7 @@ void VLoopMemorySlices::find_memory_slices() {
     }
   }
 
-  NOT_PRODUCT( if (vloop().is_trace_memory_slices()) { print(); } )
+  NOT_PRODUCT( if (_vloop.is_trace_memory_slices()) { print(); } )
 }
 
 #ifndef PRODUCT
@@ -865,19 +866,19 @@ void VLoopMemorySlices::get_slice(PhiNode* head, MemNode* tail, GrowableArray<No
   Node* n = tail;
   Node* prev = nullptr;
   while (true) {
-    assert(vloop().in_bb(n), "must be in block");
+    assert(_vloop.in_bb(n), "must be in block");
     for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
       Node* out = n->fast_out(i);
       if (out->is_Load()) {
-        if (vloop().in_bb(out)) {
+        if (_vloop.in_bb(out)) {
           slice.push(out);
         }
       } else {
         // FIXME
-        if (out->is_MergeMem() && !vloop().in_bb(out)) {
+        if (out->is_MergeMem() && !_vloop.in_bb(out)) {
           // Either unrolling is causing a memory edge not to disappear,
           // or need to run igvn.optimize() again before SLP
-        } else if (out->is_memory_phi() && !vloop().in_bb(out)) {
+        } else if (out->is_memory_phi() && !_vloop.in_bb(out)) {
           // Ditto.  Not sure what else to check further.
         } else if (out->Opcode() == Op_StoreCM && out->in(MemNode::OopStore) == n) {
           // StoreCM has an input edge used as a precedence edge.
@@ -895,7 +896,7 @@ void VLoopMemorySlices::get_slice(PhiNode* head, MemNode* tail, GrowableArray<No
   }
 
 #ifndef PRODUCT
-  if (vloop().is_trace_memory_slices()) {
+  if (_vloop.is_trace_memory_slices()) {
     tty->print_cr("\nVLoopMemorySlices::get_slice:");
     head->dump();
     for (int j = slice.length() - 1; j >= 0 ; j--) {
@@ -970,8 +971,8 @@ bool SuperWord::are_adjacent_refs(Node* s1, Node* s2) {
 
   // Adjacent memory references must have the same base, be comparable
   // and have the correct distance between them.
-  VPointer p1(s1->as_Mem(), vloop());
-  VPointer p2(s2->as_Mem(), vloop());
+  VPointer p1(s1->as_Mem(), _vloop);
+  VPointer p2(s2->as_Mem(), _vloop);
   if (p1.base() != p2.base() || !p1.comparable(p2)) return false;
   int diff = p2.offset_in_bytes() - p1.offset_in_bytes();
   return diff == data_size(s1);
@@ -1602,8 +1603,8 @@ const AlignmentSolution* SuperWord::pack_alignment_solution(const Node_List* pac
   assert(pack != nullptr && (pack->at(0)->is_Load() || pack->at(0)->is_Store()), "only load/store packs");
 
   const MemNode* mem_ref = pack->at(0)->as_Mem();
-  VPointer mem_ref_p(mem_ref, vloop());
-  const CountedLoopEndNode* pre_end = vloop().pre_loop_end();
+  VPointer mem_ref_p(mem_ref, _vloop);
+  const CountedLoopEndNode* pre_end = _vloop.pre_loop_end();
   assert(pre_end->stride_is_con(), "pre loop stride is constant");
 
   AlignmentSolver solver(pack->at(0)->as_Mem(),
@@ -2273,7 +2274,7 @@ void SuperWord::schedule_reorder_memops(Node_List &memops_schedule) {
   // loop we may have a different last store, and we need to adjust the uses accordingly.
   GrowableArray<Node*> old_last_store_in_slice(max_slices, max_slices, nullptr);
 
-  const GrowableArray<PhiNode*> &mem_slice_head = vloop_analyzer().memory_slices().heads();
+  const GrowableArray<PhiNode*> &mem_slice_head = _vloop_analyzer.memory_slices().heads();
 
   // (1) Set up the initial memory state from Phi. And find the old last store.
   for (int i = 0; i < mem_slice_head.length(); i++) {
@@ -2394,7 +2395,7 @@ bool SuperWord::output() {
         // Walk up the memory chain, and ignore any StoreVector that provably
         // does not have any memory dependency.
         while (mem->is_StoreVector()) {
-          VPointer p_store(mem->as_Mem(), vloop());
+          VPointer p_store(mem->as_Mem(), _vloop);
           if (p_store.overlap_possible_with_any_in(p)) {
             break;
           } else {
@@ -2937,10 +2938,10 @@ VStatus VLoopBody::construct() {
   //  (2) Count number of nodes, and create a temporary map (_idx -> bb_idx).
   //  (3) Verify that all non-ctrl nodes have an input inside the loop.
   int body_count = 0;
-  for (uint i = 0; i < vloop().lpt()->_body.size(); i++) {
-    Node* n = vloop().lpt()->_body.at(i);
+  for (uint i = 0; i < _vloop.lpt()->_body.size(); i++) {
+    Node* n = _vloop.lpt()->_body.at(i);
     set_bb_idx(n, i); // Create a temporary map
-    if (vloop().in_bb(n)) {
+    if (_vloop.in_bb(n)) {
       body_count++;
 
       if (n->is_LoadStore() || n->is_MergeMem() ||
@@ -2948,7 +2949,7 @@ VStatus VLoopBody::construct() {
         // Bailout if the loop has LoadStore, MergeMem or data Proj
         // nodes. Superword optimization does not work with them.
 #ifndef PRODUCT
-        if (vloop().is_trace_body()) {
+        if (_vloop.is_trace_body()) {
           tty->print_cr("VLoopBody::construct: fails because of unhandled node:");
           n->dump();
         }
@@ -2961,7 +2962,7 @@ VStatus VLoopBody::construct() {
         bool found = false;
         for (uint j = 0; j < n->req(); j++) {
           Node* def = n->in(j);
-          if (def != nullptr && vloop().in_bb(def)) {
+          if (def != nullptr && _vloop.in_bb(def)) {
             found = true;
             break;
           }
@@ -2978,8 +2979,8 @@ VStatus VLoopBody::construct() {
   VectorSet visited;
   VectorSet post_visited;
 
-  visited.set(bb_idx(vloop().cl()));
-  stack.push(vloop().cl());
+  visited.set(bb_idx(_vloop.cl()));
+  stack.push(_vloop.cl());
 
   // Do a depth first walk over out edges
   int rpo_idx = body_count - 1;
@@ -2992,9 +2993,9 @@ VStatus VLoopBody::construct() {
       const int old_length = stack.length();
       for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
         Node* use = n->fast_out(i);
-        if (vloop().in_bb(use) && !visited.test(bb_idx(use)) &&
+        if (_vloop.in_bb(use) && !visited.test(bb_idx(use)) &&
             // Don't go around backedge
-            (!use->is_Phi() || n == vloop().cl())) {
+            (!use->is_Phi() || n == _vloop.cl())) {
           stack.push(use);
         }
       }
@@ -3019,7 +3020,7 @@ VStatus VLoopBody::construct() {
   }
 
 #ifndef PRODUCT
-  if (vloop().is_trace_body()) {
+  if (_vloop.is_trace_body()) {
     print();
   }
 #endif
@@ -3120,7 +3121,7 @@ int SuperWord::max_vector_size_in_def_use_chain(Node* n) {
 
 void VLoopTypes::compute_vector_element_type() {
 #ifndef PRODUCT
-  if (vloop().is_trace_vector_element_type()) {
+  if (_vloop.is_trace_vector_element_type()) {
     tty->print_cr("\nVLoopTypes::compute_vector_element_type:");
   }
 #endif
@@ -3151,13 +3152,13 @@ void VLoopTypes::compute_vector_element_type() {
         Node* in  = n->in(j);
         // Don't propagate through a memory
         if (!in->is_Mem() &&
-            vloop().in_bb(in) &&
+            _vloop.in_bb(in) &&
             velt_type(in)->basic_type() == T_INT &&
             data_size(n) < data_size(in)) {
           bool same_type = true;
           for (DUIterator_Fast kmax, k = in->fast_outs(kmax); k < kmax; k++) {
             Node *use = in->fast_out(k);
-            if (!vloop().in_bb(use) || !same_velt_type(use, n)) {
+            if (!_vloop.in_bb(use) || !same_velt_type(use, n)) {
               same_type = false;
               break;
             }
@@ -3175,7 +3176,7 @@ void VLoopTypes::compute_vector_element_type() {
             if (VectorNode::is_shift_opcode(op) || op == Op_AbsI || op == Op_ReverseBytesI) {
               Node* load = in->in(1);
               if (load->is_Load() &&
-                  vloop().in_bb(load) &&
+                  _vloop.in_bb(load) &&
                   (velt_type(load)->basic_type() == T_INT)) {
                 // Only Load nodes distinguish signed (LoadS/LoadB) and unsigned
                 // (LoadUS/LoadUB) values. Store nodes only have one version.
@@ -3200,9 +3201,9 @@ void VLoopTypes::compute_vector_element_type() {
       assert(nn->is_Cmp(), "always have Cmp above Bool");
     }
     if (nn->is_Cmp() && nn->in(0) == nullptr) {
-      assert(vloop().in_bb(nn->in(1)) || vloop().in_bb(nn->in(2)),
+      assert(_vloop.in_bb(nn->in(1)) || _vloop.in_bb(nn->in(2)),
              "one of the inputs must be in the loop too");
-      if (vloop().in_bb(nn->in(1))) {
+      if (_vloop.in_bb(nn->in(1))) {
         set_velt_type(n, velt_type(nn->in(1)));
       } else {
         set_velt_type(n, velt_type(nn->in(2)));
@@ -3210,7 +3211,7 @@ void VLoopTypes::compute_vector_element_type() {
     }
   }
 #ifndef PRODUCT
-  if (vloop().is_trace_vector_element_type()) {
+  if (_vloop.is_trace_vector_element_type()) {
     for (int i = 0; i < body.length(); i++) {
       Node* n = body.at(i);
       velt_type(n)->dump();
@@ -3229,7 +3230,7 @@ int SuperWord::memory_alignment(MemNode* s, int iv_adjust) {
     tty->print("SuperWord::memory_alignment within a vector memory reference for %d:  ", s->_idx); s->dump();
   }
 #endif
-  VPointer p(s, vloop());
+  VPointer p(s, _vloop);
   if (!p.valid()) {
     NOT_PRODUCT(if(is_trace_superword_alignment()) tty->print_cr("SuperWord::memory_alignment: VPointer p invalid, return bottom_align");)
     return bottom_align;
@@ -3269,7 +3270,7 @@ const Type* VLoopTypes::container_type(Node* n) const {
     }
     return Type::get_const_basic_type(bt);
   }
-  const Type* t = vloop().phase()->igvn().type(n);
+  const Type* t = _vloop.phase()->igvn().type(n);
   if (t->basic_type() == T_INT) {
     // A narrow type of arithmetic operations will be determined by
     // propagating the type of memory operations.
@@ -3279,8 +3280,8 @@ const Type* VLoopTypes::container_type(Node* n) const {
 }
 
 bool VLoopMemorySlices::same_memory_slice(MemNode* m1, MemNode* m2) const {
-  return vloop().phase()->C->get_alias_index(m1->adr_type()) ==
-         vloop().phase()->C->get_alias_index(m2->adr_type());
+  return _vloop.phase()->C->get_alias_index(m1->adr_type()) ==
+         _vloop.phase()->C->get_alias_index(m2->adr_type());
 }
 
 //------------------------------in_packset---------------------------
@@ -3363,19 +3364,19 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   assert(cl()->is_main_loop(), "can only do alignment for main loop");
 
   // The opaque node for the limit, where we adjust the input
-  Opaque1Node* pre_opaq = vloop().pre_loop_end()->limit()->as_Opaque1();
+  Opaque1Node* pre_opaq = _vloop.pre_loop_end()->limit()->as_Opaque1();
 
   // Current pre-loop limit.
   Node* old_limit = pre_opaq->in(1);
 
   // Where we put new limit calculations.
-  Node* pre_ctrl = vloop().pre_loop_head()->in(LoopNode::EntryControl);
+  Node* pre_ctrl = _vloop.pre_loop_head()->in(LoopNode::EntryControl);
 
   // Ensure the original loop limit is available from the pre-loop Opaque1 node.
   Node* orig_limit = pre_opaq->original_loop_limit();
   assert(orig_limit != nullptr && igvn().type(orig_limit) != Type::TOP, "");
 
-  VPointer align_to_ref_p(align_to_ref, vloop());
+  VPointer align_to_ref_p(align_to_ref, _vloop);
   assert(align_to_ref_p.valid(), "sanity");
 
   // For the main-loop, we want the address of align_to_ref to be memory aligned
