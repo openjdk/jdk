@@ -180,20 +180,30 @@ void C1_MacroAssembler::try_allocate(Register obj, Register var_size_in_bytes, i
 
 void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register len, Register t1, Register t2) {
   assert_different_registers(obj, klass, len);
-  // This assumes that all prototype bits fit in an int32_t
-  mov(t1, (int32_t)(intptr_t)markWord::prototype().value());
-  str(t1, Address(obj, oopDesc::mark_offset_in_bytes()));
-
-  if (UseCompressedClassPointers) { // Take care not to kill klass
-    encode_klass_not_null(t1, klass);
-    strw(t1, Address(obj, oopDesc::klass_offset_in_bytes()));
+  if (UseCompactObjectHeaders) {
+    ldr(t1, Address(klass, Klass::prototype_header_offset()));
+    str(t1, Address(obj, oopDesc::mark_offset_in_bytes()));
   } else {
-    str(klass, Address(obj, oopDesc::klass_offset_in_bytes()));
+    // This assumes that all prototype bits fit in an int32_t
+    mov(t1, (int32_t)(intptr_t)markWord::prototype().value());
+    str(t1, Address(obj, oopDesc::mark_offset_in_bytes()));
+
+    if (UseCompressedClassPointers) { // Take care not to kill klass
+      encode_klass_not_null(t1, klass);
+      strw(t1, Address(obj, oopDesc::klass_offset_in_bytes()));
+    } else {
+      str(klass, Address(obj, oopDesc::klass_offset_in_bytes()));
+    }
   }
 
   if (len->is_valid()) {
     strw(len, Address(obj, arrayOopDesc::length_offset_in_bytes()));
-  } else if (UseCompressedClassPointers) {
+    if (UseCompactObjectHeaders) {
+      // With compact headers, arrays have a 32bit alignment gap after the length.
+      assert(arrayOopDesc::length_offset_in_bytes() == 8, "check length offset");
+      strw(zr, Address(obj, arrayOopDesc::length_offset_in_bytes() + sizeof(jint)));
+    }
+  } else if (UseCompressedClassPointers && !UseCompactObjectHeaders) {
     store_klass_gap(obj, zr);
   }
 }
@@ -312,9 +322,7 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register t1, 
 void C1_MacroAssembler::inline_cache_check(Register receiver, Register iCache) {
   verify_oop(receiver);
   // explicit null check not needed since load from [klass_offset] causes a trap
-  // check against inline cache
-  assert(!MacroAssembler::needs_explicit_null_check(oopDesc::klass_offset_in_bytes()), "must add explicit null check");
-
+  // check against inline cache. This is checked in Universe::genesis()..
   cmp_klass(receiver, iCache, rscratch1);
 }
 

@@ -875,7 +875,7 @@ void DefNewGeneration::remove_forwarding_pointers() {
   struct ResetForwardedMarkWord : ObjectClosure {
     void do_object(oop obj) override {
       if (obj->is_forwarded()) {
-        obj->init_mark();
+        obj->forward_safe_init_mark();
       }
     }
   } cl;
@@ -898,8 +898,7 @@ void DefNewGeneration::handle_promotion_failure(oop old) {
 
   ContinuationGCSupport::transform_stack_chunk(old);
 
-  // forward to self
-  old->forward_to(old);
+  old->forward_to_self();
 
   _promo_failure_scan_stack.push(old);
 

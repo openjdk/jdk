@@ -694,7 +694,7 @@
           range(128, NOT_LP64(512) LP64_ONLY(1024))                         \
           constraint(GCCardSizeInBytesConstraintFunc,AtParse)               \
                                                                             \
-  develop(bool, UseAltGCForwarding, false,                                  \
+  product(bool, UseAltGCForwarding, false, EXPERIMENTAL,                    \
           "Use alternative GC forwarding that preserves object headers")    \
 
 // end of GC_FLAGS

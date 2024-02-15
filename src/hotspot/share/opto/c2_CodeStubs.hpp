@@ -110,7 +110,17 @@ public:
   int max_size() const;
   void emit(C2_MacroAssembler& masm);
 };
-#endif
+
+class C2LoadNKlassStub : public C2CodeStub {
+private:
+  Register _dst;
+public:
+  C2LoadNKlassStub(Register dst) : C2CodeStub(), _dst(dst) {}
+  Register dst() { return _dst; }
+  int max_size() const;
+  void emit(C2_MacroAssembler& masm);
+};
+#endif // _LP64
 
 //-----------------------------C2GeneralStub-----------------------------------
 // A generalized stub that can be used to implement an arbitrary stub in a
