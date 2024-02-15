@@ -303,6 +303,7 @@ public abstract class UNIXToolkit extends SunToolkit
             }
         } catch (IOException
                  | InterruptedException
+                 | IllegalThreadStateException
                  | NumberFormatException ignored) {
         }
 
