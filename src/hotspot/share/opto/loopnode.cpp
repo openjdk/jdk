@@ -5093,6 +5093,7 @@ void PhaseIdealLoop::expand_sv_get_hits_in_cache_and_load_from_cache(ScopedValue
     _igvn.replace_node(load_from_cache, success_phi);
   }
   _igvn.replace_node(hits_in_cache, C->top());
+  lazy_update(iff, cache_not_null_iff);
 }
 
 // Java code for ScopedValue.get() probes a first cache location and in case of a miss, a second one. We should have

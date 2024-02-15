@@ -35,6 +35,7 @@ import java.util.List;
 /*
  * @test
  * @bug 8320649
+ * @summary C2: Optimize scoped values
  * @library /test/lib /
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
