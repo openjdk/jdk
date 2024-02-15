@@ -52,8 +52,6 @@ public class TestJTabbedPaneOpaqueColor {
     private static JFrame frame;
     private static JTabbedPane tabPane;
     private static final String INSTRUCTIONS =
-            " In WindowsLookAndFeel, click Pass as test is not " +
-                    "applicable on WindowsLookAndFeel.\n" +
             " The background color of panel (which contains the tabbed pane)" +
                     "is green.\n" +
             " The background color of the tabbed pane is red.\n\n" +
@@ -104,7 +102,8 @@ public class TestJTabbedPaneOpaqueColor {
         UIManager.LookAndFeelInfo[] laf = UIManager.getInstalledLookAndFeels();
         JPanel lafButtonPanel = new JPanel(new GridLayout(1, 3));
         for (int i = 0; i < laf.length; ++i) {
-            if (laf[i].getName().contains("Motif")) {
+            if (laf[i].getName().contains("Motif")
+                || laf[i].getName().contains("Windows")) {
                 continue;
             }
             JButton button = new JButton(laf[i].getName());
