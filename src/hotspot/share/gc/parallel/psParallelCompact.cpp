@@ -2018,6 +2018,17 @@ public:
   }
 };
 
+static void flush_marking_stats_cache() {
+  struct FlushMarkingStatsCache : public WorkerTask {
+    FlushMarkingStatsCache() : WorkerTask("FlushMarkingStatsCache") {}
+    void work(uint worker_id) override {
+      ParCompactionManager* cm = ParCompactionManager::gc_thread_compaction_manager(worker_id);
+      cm->flush_and_destroy_marking_stats_cache();
+    }
+  } task;
+  ParallelScavengeHeap::heap()->workers().run_task(&task);
+}
+
 void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
   // Recursively traverse all live objects and mark them
   GCTraceTime(Info, gc, phases) tm("Marking Phase", &_gc_timer);
@@ -2046,17 +2057,11 @@ void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
     gc_tracer->report_gc_reference_stats(stats);
     pt.print_all_references();
   }
+
   {
     GCTraceTime(Debug, gc, phases) tm("Flush Marking Stats", &_gc_timer);
 
-    struct FlushMarkingStatsCache : public WorkerTask {
-      FlushMarkingStatsCache() : WorkerTask("FlushMarkingStatsCache") {}
-      void work(uint worker_id) override {
-        ParCompactionManager* cm = ParCompactionManager::gc_thread_compaction_manager(worker_id);
-        cm->flush_and_destroy_marking_stats_cache();
-      }
-    } task;
-    ParallelScavengeHeap::heap()->workers().run_task(&task);
+    flush_marking_stats_cache();
   }
 
   // This is the point where the entire marking should have completed.
