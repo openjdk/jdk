@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 
 // Helper to avoid interference from the cleanup delay queue by draining it
 // immediately after creation.
-TempNewSymbol stable_temp_symbol(Symbol* sym) {
+static TempNewSymbol stable_temp_symbol(Symbol* sym) {
   TempNewSymbol t = sym;
   TempSymbolCleanupDelayer::drain_queue();
   return t;

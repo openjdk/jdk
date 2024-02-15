@@ -1268,7 +1268,8 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 }
 #endif // !__APPLE__
 
-int _print_dll_info_cb(const char * name, address base_address, address top_address, void * param) {
+static int _print_dll_info_cb(const char * name, address base_address,
+                              address top_address, void * param) {
   outputStream * out = (outputStream *) param;
   out->print_cr(INTPTR_FORMAT " \t%s", (intptr_t)base_address, name);
   return 0;

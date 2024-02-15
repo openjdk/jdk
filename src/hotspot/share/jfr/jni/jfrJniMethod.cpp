@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@
 #include "jfr/recorder/repository/jfrEmergencyDump.hpp"
 #include "jfr/recorder/service/jfrEventThrottler.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
+#include "jfr/recorder/service/jfrRecorderService.hpp"
 #include "jfr/recorder/stacktrace/jfrStackFilter.hpp"
 #include "jfr/recorder/stacktrace/jfrStackFilterRegistry.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
@@ -348,7 +349,8 @@ JVM_ENTRY_NO_ENV(void, jfr_set_force_instrumentation(JNIEnv* env, jclass jvm, jb
 JVM_END
 
 JVM_ENTRY_NO_ENV(void, jfr_emit_old_object_samples(JNIEnv* env, jclass jvm, jlong cutoff_ticks, jboolean emit_all, jboolean skip_bfs))
-  LeakProfiler::emit_events(cutoff_ticks, emit_all == JNI_TRUE, skip_bfs == JNI_TRUE);
+  JfrRecorderService service;
+  service.emit_leakprofiler_events(cutoff_ticks, emit_all == JNI_TRUE, skip_bfs == JNI_TRUE);
 JVM_END
 
 JVM_ENTRY_NO_ENV(void, jfr_exclude_thread(JNIEnv* env, jclass jvm, jobject t))

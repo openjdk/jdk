@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,7 +164,7 @@ frame os::get_sender_for_C_frame(frame* fr) {
   return frame(fr->sender_sp(), fr->link(), fr->sender_pc());
 }
 
-intptr_t* _get_previous_fp() {
+static intptr_t* _get_previous_fp() {
 #if defined(__clang__)
   intptr_t **ebp;
   __asm__ __volatile__ ("mov %%" SPELL_REG_FP ", %0":"=r"(ebp):);
