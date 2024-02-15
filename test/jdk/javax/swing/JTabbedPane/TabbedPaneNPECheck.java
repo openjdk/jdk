@@ -45,7 +45,7 @@ import javax.swing.SwingUtilities;
 
 public class TabbedPaneNPECheck {
     JTabbedPane pane;
-    static JFrame mainFrame;
+    JFrame mainFrame;
     public static void main(String[] args) throws InterruptedException,
             InvocationTargetException {
         TabbedPaneNPECheck me = new TabbedPaneNPECheck();
@@ -53,12 +53,7 @@ public class TabbedPaneNPECheck {
         try {
             SwingUtilities.invokeAndWait(me::test);
         } finally {
-            if (mainFrame != null) {
-                SwingUtilities.invokeAndWait(() -> {
-                    mainFrame.setVisible(false);
-                    mainFrame.dispose();
-                });
-            }
+            SwingUtilities.invokeAndWait(me::shutdownGUI);
         }
     }
 
@@ -92,9 +87,16 @@ public class TabbedPaneNPECheck {
                     Rectangle r = component.getBounds();
                 } catch (NullPointerException npe){
                     throw new RuntimeException("Unexpected NullPointerException " +
-                            "while getting accessible component bounds: " + npe);
+                            "while getting accessible component bounds: ", npe);
                 }
             }
+        }
+    }
+
+    public void shutdownGUI() {
+        if (mainFrame != null) {
+            mainFrame.setVisible(false);
+            mainFrame.dispose();
         }
     }
 }
