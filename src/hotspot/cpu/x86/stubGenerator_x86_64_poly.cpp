@@ -1058,11 +1058,12 @@ address StubGenerator::generate_poly1305_processBlocks() {
   message block M[i] is concatenated with bits '10' to make a 130-bit block.
   The last block (<= 16-byte length) is concatenated with 1 followed by 0s to make a 130-bit block.
   Therefore, we define
-  C[i]   = M[i] || 10 for 0 <= i <= l-2 ;
-  C[l-1] = M[i] || 10^(128-r), r = length(M[l-1]) in bits.
+  C[i]   = M[i] || '10' for 0 <= i <= l-2 ;
+  C[l-1] = M[i] || '10...0'
+  such that, length(C[i]) = 130 bits, for i ∈ [0, l).
 
-  Let * indicate multiplication (i.e., c = a * b);
-  Let × indicate multiplication and reduction modulo P (i.e., c = a × b = {(a * b) mod P})
+  Let * indicate scalar multiplication (i.e., c = a * b);
+  Let × indicate scalar multiplication followed by reduction modulo P (i.e., c = a × b = {(a * b) mod P})
 
   POLY1305_MAC = (POLY1305_EVAL_POLYNOMIAL(C, R, P) + K) mod 2^128; where,
 
@@ -1098,7 +1099,7 @@ address StubGenerator::generate_poly1305_processBlocks() {
   T       = [T0, T1, T2, T3] be a temporary vector
   ACC     = [acc, 0, 0, 0]; acc has hash from previous computations (if any)
   ⊗ indicates component-wise multiplication followed by modulo reduction
-  ⊕ indicates component-wise addition
+  ⊕ indicates component-wise addition, + indicates scalar addition
 
   POLY1305_EVAL_POLYNOMIAL(C, R, P) {
     T ← ACC
