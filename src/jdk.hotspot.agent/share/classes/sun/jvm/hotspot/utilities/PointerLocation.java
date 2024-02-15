@@ -113,11 +113,11 @@ public class PointerLocation {
   }
 
   public boolean isInNewGen() {
-    return ((gen != null) && (gen.equals(((SerialHeap)heap).getGen(0))));
+    return ((gen != null) && (gen.equals(((SerialHeap)heap).youngGen())));
   }
 
   public boolean isInOldGen() {
-    return ((gen != null) && (gen.equals(((SerialHeap)heap).getGen(1))));
+    return ((gen != null) && (gen.equals(((SerialHeap)heap).oldGen())));
   }
 
   public boolean inOtherGen() {
