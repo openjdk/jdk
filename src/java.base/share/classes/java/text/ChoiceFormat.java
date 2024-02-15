@@ -277,6 +277,7 @@ public class ChoiceFormat extends NumberFormat {
                     break;
                 case '<', '#', '\u2264':
                     if (inQuote || seg == Segment.FORMAT) {
+                        // Don't interpret relational symbols if parsing the format
                         seg.bldr.append(ch);
                     } else {
                         // Build the numerical value of the limit
