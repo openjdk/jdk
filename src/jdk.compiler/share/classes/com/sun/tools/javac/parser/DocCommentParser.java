@@ -430,10 +430,12 @@ public class DocCommentParser {
                                 textStart = bp;
                             }
                             lastNonWhite = bp;
+                            var saveNewline = newline;
                             if (ch == '`' || ch == '~' && lineKind == LineKind.CODE_FENCE) {
                                 int end = skipMarkdownCode(ch, count(ch), lineKind);
                                 if (end == -1) {
                                     bp = lastNonWhite;
+                                    newline = saveNewline;
                                     nextChar();
                                 } else {
                                     lastNonWhite = end - 1;

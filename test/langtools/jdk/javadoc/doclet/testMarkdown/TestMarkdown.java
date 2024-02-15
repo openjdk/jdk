@@ -1268,7 +1268,40 @@ public class TestMarkdown extends JavadocTester {
                     <span class="element-name">m</span>()</div>
                     <div class="block">Abc ` def <code>xyz</code> ghi ` jkl.
                     More.</div>""");
+    }
 
+    @Test
+    public void testBacktickAt(Path base) throws Exception {
+        Path src = base.resolve("src");
 
+        // in the following, note that the @ following the backtick
+        // is just a literal character and not part of any tag
+        tb.writeJavaFiles(src,
+                """
+                    package p;
+                    public class C {
+                        /// First sentence.
+                        /// Abc `@' def.
+                        /// More.
+                        public void m() { }
+                    }
+                    """);
+
+        javadoc("-d", base.resolve("api").toString(),
+                "-Xdoclint:syntax", // enable check for "no tag after '@'
+                "--no-platform-links",
+                "--source-path", src.toString(),
+                "p");
+        checkExit(Exit.OK);
+
+        checkOutput(Output.OUT, false,
+                "C.java:4: error: no tag name after '@'");
+
+        checkOutput("p/C.html", true,
+                """
+                    <div class="block">First sentence.
+                    Abc `@' def.
+                    More.</div>
+                    </div>""");
     }
 }
