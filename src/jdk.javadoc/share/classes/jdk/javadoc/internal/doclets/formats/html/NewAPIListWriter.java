@@ -112,7 +112,7 @@ public class NewAPIListWriter extends SummaryListWriter<NewAPIBuilder> {
                                 ? getTableCaption(headingKey)
                                 : Text.of(release),
                         element -> {
-                            List<? extends SinceTree> since = getSinceTrees(element);
+                            List<? extends SinceTree> since = utils.getBlockTags(element, SINCE, SinceTree.class);
                             if (since.isEmpty()) {
                                 return false;
                             }

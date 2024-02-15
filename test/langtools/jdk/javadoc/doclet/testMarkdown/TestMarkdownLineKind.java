@@ -71,7 +71,7 @@ public class TestMarkdownLineKind extends JavadocTester {
 
     enum TestCase {
         BLANK("""
-                                    
+
                     abc ` def""",
                 """
                         <p>abc ` def</p>"""),
@@ -85,7 +85,7 @@ public class TestMarkdownLineKind extends JavadocTester {
         // this is an almost redundant test case, since we need a blank line before the
         // setext heading, so that the heading does not get merged with the preceding text
         SETEXT_UNDERLINE("""
-                    
+
                     Setext Heading
                     =============
                     abc ` def""",
@@ -147,7 +147,7 @@ public class TestMarkdownLineKind extends JavadocTester {
         // this is an almost redundant test case, since we need a blank line before the
         // code block, so that the content does not get merged with the preceding text
         INDENTED_CODE_BLOCK("""
-                    
+
                         indented code
                     abc `def""",
                 """
