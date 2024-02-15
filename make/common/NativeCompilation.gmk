@@ -132,6 +132,10 @@ define SetupNativeCompilationBody
   # In this functions, helpers named Setup<Foo> are just setting variables.
   # Functions called Create<Foo> are setting up rules to create files.
 
+  ###
+  ### Prepare for compilation and linking
+  ###
+
   $$(eval $$(call VerifyArguments,$1))
 
   # Setup variables for the rest of the function to work with
@@ -156,6 +160,13 @@ define SetupNativeCompilationBody
   # Need to make sure TARGET is first on list before starting to create files
   $1 := $$($1_TARGET)
 
+  # Have make print information about the library when we start compiling
+  $$(eval $$(call PrintStartInfo,$1))
+
+  ###
+  ### Compile all native source code files
+  ###
+
   # Create a PCH, if requested
   $$(eval $$(call CreatePrecompiledHeader,$1))
 
@@ -167,9 +178,6 @@ define SetupNativeCompilationBody
       )) \
   )
 
-  # Have make print information about the library when we start compiling
-  $$(eval $$(call PrintInfo,$1))
-
   ifeq ($(call isTargetOs, windows), true)
     # On windows we need to create a resource file
     $$(eval $$(call CreateWindowsResourceFile,$1))
@@ -179,6 +187,10 @@ define SetupNativeCompilationBody
   # files, and import it in the makefile.
   $$(eval $$(call CreateDependencyFile,$1))
   $$(eval $$(call ImportDependencyFile,$1))
+
+  ###
+  ### Link the object files into a native output library/executable
+  ###
 
   # Handle native debug symbols
   $$(eval $$(call CreateDebugSymbols,$1))
@@ -274,8 +286,6 @@ endef
 ################################################################################
 # Setup machinery needed by the build system
 define SetupBuildSystemSupport
-  $1_BUILD_INFO := $$($1_OBJECT_DIR)/_build-info.marker
-
   # Track variable changes for all variables that affect the compilation command
   # lines for all object files in this setup. This includes at least all the
   # variables used in the call to add_native_source below.
@@ -288,13 +298,15 @@ endef
 
 ################################################################################
 # Have make print information about the library when we start compiling
-define PrintInfo
+define PrintStartInfo
   # Setup rule for printing progress info when compiling source files.
   # This is a rough heuristic and may not always print accurate information.
   # The $1_BUILD_INFO and $1_BUILD_INFO_DEPS variables are used in
   # TestFilesCompilation.gmk.
   $$(call SetIfEmpty, $1_BUILD_INFO_LOG_MACRO, LogWarn)
   $1_BUILD_INFO_DEPS := $$($1_SRCS) $$($1_COMPILE_VARDEPS_FILE)
+  $1_BUILD_INFO := $$($1_OBJECT_DIR)/_build-info.marker
+
   $$($1_BUILD_INFO): $$($1_BUILD_INFO_DEPS)
         ifeq ($$(wildcard $$($1_TARGET)), )
 	  $$(call $$($1_BUILD_INFO_LOG_MACRO), \
