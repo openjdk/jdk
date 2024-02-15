@@ -521,7 +521,7 @@ void SerialHeap::do_collection(bool full,
 
     print_heap_before_gc();
 
-    if (run_verification && VerifyGCLevel <= 0 && VerifyBeforeGC) {
+    if (run_verification && VerifyBeforeGC) {
       prepare_for_verify();
       prepared_for_verification = true;
     }
@@ -533,7 +533,7 @@ void SerialHeap::do_collection(bool full,
                        full,
                        size,
                        is_tlab,
-                       run_verification && VerifyGCLevel <= 0,
+                       run_verification,
                        do_clear_all_soft_refs);
 
     if (size > 0 && (!is_tlab || _young_gen->supports_tlab_allocation()) &&
@@ -571,8 +571,7 @@ void SerialHeap::do_collection(bool full,
 
     print_heap_before_gc();
 
-    if (!prepared_for_verification && run_verification &&
-        VerifyGCLevel <= 1 && VerifyBeforeGC) {
+    if (!prepared_for_verification && run_verification && VerifyBeforeGC) {
       prepare_for_verify();
     }
 
@@ -598,7 +597,7 @@ void SerialHeap::do_collection(bool full,
                        full,
                        size,
                        is_tlab,
-                       run_verification && VerifyGCLevel <= 1,
+                       run_verification,
                        do_clear_all_soft_refs);
 
     CodeCache::on_gc_marking_cycle_finish();
