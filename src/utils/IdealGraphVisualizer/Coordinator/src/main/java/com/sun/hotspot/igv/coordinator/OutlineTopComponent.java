@@ -38,16 +38,14 @@ import com.sun.hotspot.igv.view.DiagramViewModel;
 import com.sun.hotspot.igv.view.EditorTopComponent;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.event.ActionEvent;
 import java.io.*;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
-import javax.swing.JFileChooser;
-import javax.swing.JScrollPane;
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
+import javax.swing.*;
 import javax.swing.border.Border;
 import org.netbeans.api.progress.ProgressHandle;
 import org.netbeans.api.progress.ProgressHandleFactory;
@@ -60,13 +58,11 @@ import org.openide.explorer.ExplorerUtils;
 import org.openide.explorer.view.BeanTreeView;
 import org.openide.modules.Places;
 import org.openide.nodes.Node;
-import org.openide.util.Exceptions;
-import org.openide.util.Lookup;
-import org.openide.util.NbBundle;
-import org.openide.util.RequestProcessor;
+import org.openide.util.*;
 import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
+import javax.swing.JButton;
 
 /**
  *
@@ -81,6 +77,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     private FolderNode root;
     private SaveAllAction saveAllAction;
     private RemoveAllAction removeAllAction;
+    private JButton changeWorkspaceButton;
     private GraphNode[] selectedGraphs = new GraphNode[0];
     private final Set<FolderNode> selectedFolders = new HashSet<>();
     private static final int WORKUNITS = 10000;
@@ -127,14 +124,40 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         removeAllAction.setEnabled(false);
         toolbar.add(removeAllAction);
 
-        toolbar.add(GarbageCollectAction.get(GarbageCollectAction.class).getToolbarPresenter());
-
         for (Toolbar tb : ToolbarPool.getDefault().getToolbars()) {
+            if (tb.getName().equals("GlobalToolbar")) {
+                continue;
+            }
             tb.setVisible(false);
+        }
+
+        JToolBar globalToolbar = ToolbarPool.getDefault().findToolbar("GlobalToolbar");
+        if (globalToolbar != null) {
+            Icon folderIcon = UIManager.getIcon("FileView.hardDriveIcon");
+            changeWorkspaceButton = new JButton("Select a workspace...", folderIcon);
+            changeWorkspaceButton.setToolTipText("Select a workspace...");
+            changeWorkspaceButton.addActionListener(this::onChangeWorkspaceClicked);
+            globalToolbar.add(changeWorkspaceButton);
+            globalToolbar.add(Box.createHorizontalGlue());
+            globalToolbar.add(GarbageCollectAction.get(GarbageCollectAction.class).getToolbarPresenter());
+            globalToolbar.revalidate();
+            globalToolbar.repaint();
         }
 
         document.getChangedEvent().addListener(g -> documentChanged());
         loadWorkspace();
+    }
+
+    private void onChangeWorkspaceClicked(ActionEvent event) {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Select Workspace Folder");
+        fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        fileChooser.setAcceptAllFileFilterUsed(false);
+
+        if (fileChooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
+            File currentWorkspace = fileChooser.getSelectedFile();
+            changeWorkspaceButton.setText(currentWorkspace.getAbsolutePath());
+        }
     }
 
     private void documentChanged() {
