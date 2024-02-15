@@ -2395,7 +2395,7 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(ConditionRegister fla
   }
 
   const Register mark = tmp1;
-  const Register t = tmp3;
+  const Register t = tmp3; // Usage of R0 allowed!
 
   { // Lightweight locking
 
@@ -2414,7 +2414,7 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(ConditionRegister fla
 
     // Check if recursive.
     subi(t, top, oopSize);
-    ldx(t, t, R16_thread);
+    ldx(t, R16_thread, t);
     cmpd(flag, obj, t);
     beq(flag, push);
 
@@ -2465,13 +2465,13 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(ConditionRegister fla
     bne(flag, slow_path);
 
     // Recursive.
-    ld(t, in_bytes(ObjectMonitor::recursions_offset() - ObjectMonitor::owner_offset()), owner_addr);
-    addi(t, t, 1);
-    std(t, in_bytes(ObjectMonitor::recursions_offset() - ObjectMonitor::owner_offset()), owner_addr);
+    ld(tmp1, in_bytes(ObjectMonitor::recursions_offset() - ObjectMonitor::owner_offset()), owner_addr);
+    addi(tmp1, tmp1, 1);
+    std(tmp1, in_bytes(ObjectMonitor::recursions_offset() - ObjectMonitor::owner_offset()), owner_addr);
   }
 
   bind(locked);
-  inc_held_monitor_count(t);
+  inc_held_monitor_count(tmp1);
 
 #ifdef ASSERT
   // Check that locked label is reached with flags == EQ.
