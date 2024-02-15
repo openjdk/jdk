@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ typedef struct {
   jlocation c_loc;
 } exceptionInfo;
 
-static jvmtiEnv *jvmti_env = NULL;
+static jvmtiEnv *jvmti_env = nullptr;
 static jvmtiEventCallbacks callbacks;
 static jint result = PASSED;
 static exceptionInfo exs[] = {
@@ -139,13 +139,13 @@ Exception(jvmtiEnv *jvmti, JNIEnv *jni, jthread thr,
 
   bool found = false;
   for (size_t i = 0; i < sizeof(exs)/sizeof(exceptionInfo); i++) {
-    if (ex.name != NULL && strcmp(ex.name, exs[i].name) == 0
-        && ex.t_cls != NULL && strcmp(ex.t_cls, exs[i].t_cls) == 0
-        && ex.t_name != NULL && strcmp(ex.t_name, exs[i].t_name) == 0
-        && ex.t_sig != NULL && strcmp(ex.t_sig, exs[i].t_sig) == 0
-        && ex.c_cls != NULL && strcmp(ex.c_cls, exs[i].c_cls) == 0
-        && ex.c_name != NULL && strcmp(ex.c_name, exs[i].c_name) == 0
-        && ex.c_sig != NULL && strcmp(ex.c_sig, exs[i].c_sig) == 0
+    if (ex.name != nullptr && strcmp(ex.name, exs[i].name) == 0
+        && ex.t_cls != nullptr && strcmp(ex.t_cls, exs[i].t_cls) == 0
+        && ex.t_name != nullptr && strcmp(ex.t_name, exs[i].t_name) == 0
+        && ex.t_sig != nullptr && strcmp(ex.t_sig, exs[i].t_sig) == 0
+        && ex.c_cls != nullptr && strcmp(ex.c_cls, exs[i].c_cls) == 0
+        && ex.c_name != nullptr && strcmp(ex.c_name, exs[i].c_name) == 0
+        && ex.c_sig != nullptr && strcmp(ex.c_sig, exs[i].c_sig) == 0
         && ex.t_loc == exs[i].t_loc && ex.c_loc == exs[i].c_loc) {
       jboolean isVirtual = jni->IsVirtualThread(thr);
       if (isVirtualExpected != isVirtual) {
@@ -175,7 +175,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jvmtiCapabilities caps;
 
   res = jvm->GetEnv((void **) &jvmti_env, JVMTI_VERSION_1_1);
-  if (res != JNI_OK || jvmti_env == NULL) {
+  if (res != JNI_OK || jvmti_env == nullptr) {
     LOG("Wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }
@@ -217,27 +217,27 @@ Java_exception01_check(JNIEnv *jni, jclass cls) {
   jclass clz;
   jmethodID mid;
 
-  if (jvmti_env == NULL) {
+  if (jvmti_env == nullptr) {
     LOG("JVMTI client was not properly loaded!\n");
     return STATUS_FAILED;
   }
   clz = jni->FindClass("exception01c");
-  if (clz == NULL) {
+  if (clz == nullptr) {
     LOG("Cannot find exception01c class!\n");
     return STATUS_FAILED;
   }
   clz = jni->FindClass("exception01b");
-  if (clz == NULL) {
+  if (clz == nullptr) {
     LOG("Cannot find exception01b class!\n");
     return STATUS_FAILED;
   }
   clz = jni->FindClass("exception01a");
-  if (clz == NULL) {
+  if (clz == nullptr) {
     LOG("Cannot find exception01a class!\n");
     return STATUS_FAILED;
   }
   mid = jni->GetStaticMethodID(clz, "run", "()V");
-  if (mid == NULL) {
+  if (mid == nullptr) {
     LOG("Cannot find method run!\n");
     return STATUS_FAILED;
   }

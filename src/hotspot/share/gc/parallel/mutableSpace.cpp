@@ -120,11 +120,12 @@ void MutableSpace::initialize(MemRegion mr,
     }
 
     if (AlwaysPreTouch) {
+      size_t pretouch_page_size = UseLargePages ? page_size : os::vm_page_size();
       PretouchTask::pretouch("ParallelGC PreTouch head", (char*)head.start(), (char*)head.end(),
-                             page_size, pretouch_workers);
+                             pretouch_page_size, pretouch_workers);
 
       PretouchTask::pretouch("ParallelGC PreTouch tail", (char*)tail.start(), (char*)tail.end(),
-                             page_size, pretouch_workers);
+                             pretouch_page_size, pretouch_workers);
     }
 
     // Remember where we stopped so that we can continue later.

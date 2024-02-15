@@ -25,7 +25,6 @@
 
 // no precompiled headers
 #include "classfile/vmSymbols.hpp"
-#include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
@@ -287,6 +286,34 @@ julong os::Linux::free_memory() {
   free_mem = (julong)si.freeram * si.mem_unit;
   log_trace(os)("free memory: " JULONG_FORMAT, free_mem);
   return free_mem;
+}
+
+jlong os::total_swap_space() {
+  if (OSContainer::is_containerized()) {
+    if (OSContainer::memory_limit_in_bytes() > 0) {
+      return (jlong)(OSContainer::memory_and_swap_limit_in_bytes() - OSContainer::memory_limit_in_bytes());
+    }
+  }
+  struct sysinfo si;
+  int ret = sysinfo(&si);
+  if (ret != 0) {
+    return -1;
+  }
+  return  (jlong)(si.totalswap * si.mem_unit);
+}
+
+jlong os::free_swap_space() {
+  if (OSContainer::is_containerized()) {
+    // TODO add a good implementation
+    return -1;
+  } else {
+    struct sysinfo si;
+    int ret = sysinfo(&si);
+    if (ret != 0) {
+      return -1;
+    }
+    return (jlong)(si.freeswap * si.mem_unit);
+  }
 }
 
 julong os::physical_memory() {
@@ -3710,14 +3737,14 @@ bool os::unguard_memory(char* addr, size_t size) {
 }
 
 static int hugetlbfs_page_size_flag(size_t page_size) {
-  if (page_size != HugePages::default_static_hugepage_size()) {
+  if (page_size != HugePages::default_explicit_hugepage_size()) {
     return (exact_log2(page_size) << MAP_HUGE_SHIFT);
   }
   return 0;
 }
 
 static bool hugetlbfs_sanity_check(size_t page_size) {
-  const os::PageSizes page_sizes = HugePages::static_info().pagesizes();
+  const os::PageSizes page_sizes = HugePages::explicit_hugepage_info().pagesizes();
   assert(page_sizes.contains(page_size), "Invalid page sizes passed");
 
   // Include the page size flag to ensure we sanity check the correct page size.
@@ -3897,8 +3924,8 @@ void os::Linux::large_page_init() {
     return;
   }
 
-  // Check if the OS supports static hugepages.
-  if (!UseTransparentHugePages && !HugePages::supports_static_hugepages()) {
+  // Check if the OS supports explicit hugepages.
+  if (!UseTransparentHugePages && !HugePages::supports_explicit_hugepages()) {
     warn_no_large_pages_configured();
     UseLargePages = false;
     return;
@@ -3908,8 +3935,12 @@ void os::Linux::large_page_init() {
     // In THP mode:
     // - os::large_page_size() is the *THP page size*
     // - os::pagesizes() has two members, the THP page size and the system page size
-    assert(HugePages::thp_pagesize() > 0, "Missing OS info");
     _large_page_size = HugePages::thp_pagesize();
+    if (_large_page_size == 0) {
+        log_info(pagesize) ("Cannot determine THP page size (kernel < 4.10 ?)");
+        _large_page_size = HugePages::thp_pagesize_fallback();
+        log_info(pagesize) ("Assuming THP page size to be: " EXACTFMT " (heuristics)", EXACTFMTARGS(_large_page_size));
+    }
     _page_sizes.add(_large_page_size);
     _page_sizes.add(os::vm_page_size());
     // +UseTransparentHugePages implies +UseLargePages
@@ -3917,12 +3948,12 @@ void os::Linux::large_page_init() {
 
   } else {
 
-    // In static hugepage mode:
-    // - os::large_page_size() is the default static hugepage size (/proc/meminfo "Hugepagesize")
+    // In explicit hugepage mode:
+    // - os::large_page_size() is the default explicit hugepage size (/proc/meminfo "Hugepagesize")
     // - os::pagesizes() contains all hugepage sizes the kernel supports, regardless whether there
     //   are pages configured in the pool or not (from /sys/kernel/hugepages/hugepage-xxxx ...)
-    os::PageSizes all_large_pages = HugePages::static_info().pagesizes();
-    const size_t default_large_page_size = HugePages::default_static_hugepage_size();
+    os::PageSizes all_large_pages = HugePages::explicit_hugepage_info().pagesizes();
+    const size_t default_large_page_size = HugePages::default_explicit_hugepage_size();
 
     // 3) Consistency check and post-processing
 
@@ -4006,7 +4037,7 @@ static bool commit_memory_special(size_t bytes,
                                       char* req_addr,
                                       bool exec) {
   assert(UseLargePages, "Should only get here for huge pages");
-  assert(!UseTransparentHugePages, "Should only get here for static hugepage mode");
+  assert(!UseTransparentHugePages, "Should only get here for explicit hugepage mode");
   assert(is_aligned(bytes, page_size), "Unaligned size");
   assert(is_aligned(req_addr, page_size), "Unaligned address");
   assert(req_addr != nullptr, "Must have a requested address for special mappings");
@@ -4040,7 +4071,7 @@ static char* reserve_memory_special_huge_tlbfs(size_t bytes,
                                                size_t page_size,
                                                char* req_addr,
                                                bool exec) {
-  const os::PageSizes page_sizes = HugePages::static_info().pagesizes();
+  const os::PageSizes page_sizes = HugePages::explicit_hugepage_info().pagesizes();
   assert(UseLargePages, "only for Huge TLBFS large pages");
   assert(is_aligned(req_addr, alignment), "Must be");
   assert(is_aligned(req_addr, page_size), "Must be");
@@ -4119,7 +4150,7 @@ size_t os::large_page_size() {
   return _large_page_size;
 }
 
-// static hugepages (hugetlbfs) allow application to commit large page memory
+// explicit hugepages (hugetlbfs) allow application to commit large page memory
 // on demand.
 // However, when committing memory with hugepages fails, the region
 // that was supposed to be committed will lose the old reservation

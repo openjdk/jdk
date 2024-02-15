@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 
 #define TARGET_CLASS_NAME "LTarget;"
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 
 static void
 check_jvmti_status(JNIEnv* jni, jvmtiError err, const char* msg) {
@@ -42,7 +42,7 @@ void JNICALL classprepare(jvmtiEnv* jvmti_env, JNIEnv* jni_env, jthread thread, 
     char* buf;
     jvmtiError err;
 
-    err = jvmti->GetClassSignature(klass, &buf, NULL);
+    err = jvmti->GetClassSignature(klass, &buf, nullptr);
     check_jvmti_status(jni_env, err, "classprepare: GetClassSignature error");
 
     if (strncmp(buf, TARGET_CLASS_NAME, strlen(TARGET_CLASS_NAME)) == 0) {
@@ -95,13 +95,13 @@ JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM* vm, char* options, void* reserved) {
         return JNI_ERR;
     }
 
-    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_PREPARE, NULL);
+    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_PREPARE, nullptr);
     if (err != JNI_OK) {
         printf("Agent_OnLoad: SetEventNotificationMode CLASS_PREPARE error\n");
         return JNI_ERR;
     }
 
-    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, NULL);
+    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, nullptr);
     if (err != JNI_OK) {
         printf("Agent_OnLoad: SetEventNotificationMode BREAKPOINT error\n");
         return JNI_ERR;

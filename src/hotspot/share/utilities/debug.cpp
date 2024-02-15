@@ -26,7 +26,6 @@
 #include "classfile/classPrinter.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
-#include "code/icBuffer.hpp"
 #include "code/nmethod.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"

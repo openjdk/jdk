@@ -172,7 +172,7 @@ public class TestModulePackages extends JavadocTester {
                     &nbsp;&gt;&nbsp;
                     <li><a href="package-summary.html">p</a></li>
                     &nbsp;&gt;&nbsp;
-                    <li><a href="C.html" class="current-selection" title="class in p">C</a></li>
+                    <li><a href="C.html" class="current-selection">C</a></li>
                     </ol>
                     """);
         checkOutput("o/p/C.html", true,
@@ -182,7 +182,7 @@ public class TestModulePackages extends JavadocTester {
                     &nbsp;&gt;&nbsp;
                     <li><a href="package-summary.html">p</a></li>
                     &nbsp;&gt;&nbsp;
-                    <li><a href="C.html" class="current-selection" title="class in p">C</a></li>
+                    <li><a href="C.html" class="current-selection">C</a></li>
                     </ol>
                     """);
         checkOutput("type-search-index.js", true,
