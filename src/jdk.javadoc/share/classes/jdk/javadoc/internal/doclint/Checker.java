@@ -1018,7 +1018,6 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                     .filter(t -> !isBlank(t))
                     .findFirst();
             if (first.isEmpty() || first.get() != tree) {
-                dct.getFirstSentence().forEach(t -> System.err.println(t.getKind() + ": >>|" + t + "|<<"));
                 env.messages.warning(SYNTAX, tree, "dc.return.not.first");
             }
         }
