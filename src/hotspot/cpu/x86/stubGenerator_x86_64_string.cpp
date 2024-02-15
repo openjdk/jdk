@@ -216,7 +216,7 @@ address StubGenerator::generate_string_indexof() {
     Label L_begin;
 
     Label L_returnRBP, L_returnRAX, L_checkRangeAndReturn;
-    Label L_bigDefaultNotFound, L_bigCaseFixupAndReturn, L_small7_8_fixup, L_checkRangeAndReturnRCX;
+    Label L_bigCaseFixupAndReturn, L_small7_8_fixup, L_checkRangeAndReturnRCX;
     Label L_returnZero, L_haystackGreaterThan31, L_copyToStackDone, L_bigSwitchTop, L_copyToStack, L_smallSwitchTop;
     Label L_bigCaseDefault, L_smallCaseDefault;
 
@@ -445,12 +445,6 @@ address StubGenerator::generate_string_indexof() {
       __ addq(r11, rsi);
       __ jmp(L_checkRangeAndReturn);
     }
-
-   // Big case default stuff
-  __ bind(L_bigDefaultNotFound);
-  __ movq(r10, Address(rsp, 0x20));
-  __ movq(r11, -1);
-  __ jmp(L_checkRangeAndReturn);
 
 
 
@@ -691,7 +685,7 @@ address StubGenerator::generate_string_indexof() {
     // Big case default:
 
     {
-      Label L_loopTop, L_loopMid, L_innerLoop, L_found;
+      Label L_loopTop, L_loopMid, L_innerLoop, L_found, L_bigDefaultNotFound;
 
       __ bind(L_bigCaseDefault);
       __ movq(r11, -1);
@@ -757,6 +751,12 @@ address StubGenerator::generate_string_indexof() {
       __ subq(r11, Address(rsp, 0x28));
       __ addq(r11, rax);
       __ movq(r10, Address(rsp, 0x20));
+      __ jmp(L_checkRangeAndReturn);
+
+      // Big case default stuff
+      __ bind(L_bigDefaultNotFound);
+      __ movq(r10, Address(rsp, 0x20));
+      __ movq(r11, -1);
       __ jmp(L_checkRangeAndReturn);
     }
 
@@ -893,9 +893,9 @@ address StubGenerator::generate_string_indexof() {
     __ cmpq(rsi, 0x20);
     __ jae_b(L_haystackGreaterThan31);
 
-    // __ cmpq(r10, 0xb);      // ASGASG
-    // __ jae_b(L_copyToStack);
-    __ jmpb(L_copyToStack);
+    __ cmpq(r10, 0xb);      // ASGASG
+    __ jae_b(L_copyToStack);
+    // __ jmpb(L_copyToStack);
 
     __ bind(L_smallSwitchTop);
     __ leaq(r13, Address(r12, -1));
@@ -914,8 +914,9 @@ address StubGenerator::generate_string_indexof() {
     __ jle(L_bigSwitchTop);
     __ cmpq(rsi, 0x20);
     __ ja(L_smallSwitchTop);
-    // __ cmpq(r10, 0xa);
-    // __ jbe(L_smallSwitchTop);
+
+    __ cmpq(r10, 0xa);
+    __ jbe(L_smallSwitchTop);
 
     __ bind(L_copyToStack);
     __ leal(rdx, Address(rsi, -1));
