@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,8 +71,9 @@ public class SignedJarWithCustomClassLoader {
                                 "-signedjar signed.jar test.jar test")
                      .shouldHaveExitValue(0);
 
+        System.setProperty("test.noclasspath", "true");
         // run app with system class loader set to custom classloader
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
             "-cp", "signed.jar",
             "-Djava.system.class.loader=CustomClassLoader", "Main");
         ProcessTools.executeProcess(pb)
@@ -85,7 +86,7 @@ public class SignedJarWithCustomClassLoader {
                      .shouldHaveExitValue(0);
 
         // run app again, should still succeed even though SHA-1 is disabled
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-cp", "signed.jar",
             "-Djava.system.class.loader=CustomClassLoader", "Main");
         ProcessTools.executeProcess(pb)
