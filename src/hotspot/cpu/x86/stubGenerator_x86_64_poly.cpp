@@ -1125,7 +1125,6 @@ address StubGenerator::generate_poly1305_processBlocks() {
       to store all the limbs of 4 different 130-bit message blocks, we need 3 YMM registers in total.
   (4) In the AVX2 implementation, multiplication followed by modulo reduction and addition are performed for 4 blocks at a time.
 
-
 */
 
 void StubGenerator::poly1305_process_blocks_avx2(
