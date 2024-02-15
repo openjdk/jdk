@@ -318,8 +318,8 @@ size_t HugePages::thp_pagesize_fallback() {
     if (thp_pagesize() != 0) {
         return thp_pagesize();
     }
-    if (supports_static_hugepages()) {
-        return MIN2(default_static_hugepage_size(), 16 * M);
+    if (supports_explicit_hugepages()) {
+        return MIN2(default_explicit_hugepage_size(), 16 * M);
     }
     return 2 * M;
 }
