@@ -557,7 +557,7 @@ public abstract class HtmlDocletWriter {
     }
 
     /**
-     * {@returns the plain-text content of a named HTML element in a list of content}
+     * {@return the plain-text content of a named HTML element in a list of content}
      *
      * @param trees the list of content
      * @param name the name og the HTML element
