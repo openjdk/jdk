@@ -36,7 +36,7 @@ package com.sun.source.doctree;
  * @apiNote
  * There is no requirement that the comment containing the tag and the comment
  * containing the inherited documentation should either be both Markdown comments
- * or both standard (not Markdown) comments.
+ * or both traditional (not Markdown) comments.
  *
  * @since 1.8
  */
