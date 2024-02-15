@@ -29,9 +29,10 @@ import java.awt.SystemTray;
 import java.awt.TrayIcon;
 import java.awt.image.BufferedImage;
 import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JTextArea;
 
 import jdk.test.lib.Platform;
-import test.java.awt.regtesthelpers.Sysout;
 
 /*
  * @test
@@ -44,6 +45,7 @@ import test.java.awt.regtesthelpers.Sysout;
  */
 public class DisposeInActionEventTest {
     private static boolean traySupported;
+    private static JTextArea textArea;
 
     public static void main(String[] args) throws Exception {
         String instructions;
@@ -65,7 +67,7 @@ public class DisposeInActionEventTest {
                            "  Area on Gnome or System Tray on KDE) is visible.\n" +
                            "Double-click with " + clickInstruction + " button on the tray icon to trigger the\n" +
                            "  action event. Brief information about action events is printed\n" +
-                           "  below. After each action event the tray icon is removed from\n" +
+                           "  in the frame. After each action event the tray icon is removed from\n" +
                            "  the tray and then added back in a second.\n" +
                            "The test performs some automatic checks when removing the icon. If\n" +
                            "  something is wrong the corresponding message is displayed below.\n" +
@@ -87,6 +89,9 @@ public class DisposeInActionEventTest {
     private static JFrame showFrameAndIcon() {
         JFrame frame = new JFrame("DisposeInActionEventTest");
         frame.setLayout(new BorderLayout());
+
+        textArea = new JTextArea();
+        frame.getContentPane().add(textArea);
         frame.setSize(200, 200);
         frame.setVisible(true);
 
@@ -105,15 +110,15 @@ public class DisposeInActionEventTest {
         TrayIcon trayIcon = new TrayIcon(img);
         trayIcon.setImageAutoSize(true);
         trayIcon.addActionListener(ev -> {
-            Sysout.println(ev.toString());
+            textArea.append(ev.toString());
             systemTray.remove(trayIcon);
             new Thread(() -> {
                 try {
                     Thread.sleep(1000);
                     systemTray.add(trayIcon);
                 } catch (AWTException | InterruptedException e) {
-                    Sysout.println(e.toString());
-                    Sysout.println("!!! The test couldn't be performed !!!");
+                    textArea.append(e.toString());
+                    textArea.append("!!! The test couldn't be performed !!!");
                 }
             }).start();
         });
@@ -121,8 +126,8 @@ public class DisposeInActionEventTest {
         try {
             systemTray.add(trayIcon);
         } catch (AWTException e) {
-            Sysout.println(e.toString());
-            Sysout.println("!!! The test couldn't be performed !!!");
+            textArea.append(e.toString());
+            textArea.append("!!! The test couldn't be performed !!!");
         }
 
         return frame;
