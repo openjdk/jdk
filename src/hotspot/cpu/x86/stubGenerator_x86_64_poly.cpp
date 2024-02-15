@@ -1045,7 +1045,7 @@ address StubGenerator::generate_poly1305_processBlocks() {
   Note: a compact summary of the Goll-Gueron AVX2 algorithm developed in [1] is presented in [2].
   [3] Wikipedia, "Parallel evaluation of Horner's method",
       (url: https://en.wikipedia.org/wiki/Horner%27s_method)
- -----------------------------------------------------------------------------------------------
+ ----------------------------------------------------------
 
   Poly1305 AVX2 algorithm:
 
@@ -1068,10 +1068,10 @@ address StubGenerator::generate_poly1305_processBlocks() {
 
   POLY1305_EVAL_POLYNOMIAL(C, R, P) = {C[0] * R^l + C[1] * R^(l-1) + ... + C[l-2] * R^2 + C[l-1] * R} mod P
     = R × {C[0] × R^(l-1) + C[1] × R^(l-2) + ... + C[l-2] × R + C[l-1]}
-    = R × Polynomial(R; C[0], C[1], ... ,C[l-2], C[l-1]
+    = R × Polynomial(R; C[0], C[1], ... ,C[l-2], C[l-1])
   Where,
   Polynomial(R; C[0], C[1], ... ,C[l-2], C[l-1]) = Σ{C[i] × R^(l-i-1)} for i ∈ [0, l)
-  -----------------------------------------------------------------------------------------------
+  ----------------------------------------------------------
 
   Parallel evaluation of POLY1305_EVAL_POLYNOMIAL(C, R, P):
   Let the number of message blocks l = 4*l' + ρ where ρ = l mod 4.
@@ -1085,7 +1085,7 @@ address StubGenerator::generate_poly1305_processBlocks() {
   Then,
   POLY1305_EVAL_POLYNOMIAL(C, R, P) = SUM if ρ = 0 (i.e., l is multiple of 4)
                         = R × Polynomial(R; SUM + C[l-ρ], C[l-ρ+1], ... , C[l-1]) if ρ > 0
-  -----------------------------------------------------------------------------------------------
+  ----------------------------------------------------------
 
   Gall-Gueron[1] 4-way SIMD Algorithm[2] for POLY1305_EVAL_POLYNOMIAL(C, R, P):
 
@@ -1117,8 +1117,14 @@ address StubGenerator::generate_poly1305_processBlocks() {
     return SUM;
   }
 
-  Each 130-bit block is represented using three 44-bit limbs (most significant limb is only 42-bit).
-  (The Goll-Gueron implementation[1] uses five 26-bit limbs instead)
+  Notes:
+  (1) Each 130-bit block is represented using three 44-bit limbs (most significant limb is only 42-bit).
+      (The Goll-Gueron implementation[1] uses five 26-bit limbs instead).
+  (2) Each component of the mathematical vectors is a 130-bit value. The above mathemetical vectors are not to be confused with SIMD vector lanes.
+  (3) Each AVX2 YMM register can store four 44-bit limbs in quadwords. Since each 130-bit message block is represented using 3 limbs,
+      to store all the limbs of 4 different 130-bit message blocks, we need 3 YMM registers in total.
+  (4) In the AVX2 implementation, multiplication followed by modulo reduction and addition are performed for 4 blocks at a time.
+
 
 */
 
