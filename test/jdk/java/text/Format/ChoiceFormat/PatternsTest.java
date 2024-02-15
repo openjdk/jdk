@@ -135,6 +135,8 @@ public class PatternsTest {
                 // Prior to 6801704, it created the broken "0#foo|1#bar|1#"
                 // which caused formatting 1 to return an empty string
                 arguments("0#foo|1#bar|baz|", "0#foo|1#bar"),
+                // Same as previous, with additional incomplete subPatterns
+                arguments("0#foo|1#bar|baz|quux", "0#foo|1#bar"),
 
                 // --- These throw an ArrayIndexOutOfBoundsException
                 // when attempting to format with them as the incomplete patterns
