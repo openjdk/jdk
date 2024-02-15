@@ -41,9 +41,9 @@
 
 
 void C2_MacroAssembler::fast_lock_lightweight(ConditionRegister flag, Register obj, Register box,
-                                              Register tmp1, Register tmp2) {
+                                              Register tmp1, Register tmp2, Register tmp3) {
   // TODO: Current implementation does not use box, consider removing a TEMP and use box instead.
-  compiler_fast_lock_lightweight_object(flag, obj, tmp1, tmp2, box);
+  compiler_fast_lock_lightweight_object(flag, obj, tmp1, tmp2, tmp3);
 }
 
 void C2_MacroAssembler::fast_unlock_lightweight(ConditionRegister flag, Register obj, Register box,
