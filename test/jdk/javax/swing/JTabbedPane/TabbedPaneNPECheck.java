@@ -85,7 +85,7 @@ public class TabbedPaneNPECheck {
                     AccessibleComponent component = (AccessibleComponent) accessible;
                     Point p = component.getLocationOnScreen();
                     Rectangle r = component.getBounds();
-                } catch (NullPointerException npe){
+                } catch (NullPointerException npe) {
                     throw new RuntimeException("Unexpected NullPointerException " +
                             "while getting accessible component bounds: ", npe);
                 }
