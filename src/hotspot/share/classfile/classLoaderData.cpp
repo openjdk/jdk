@@ -961,7 +961,11 @@ void ClassLoaderData::print_on(outputStream* out) const {
     _holder.print_on(out);
     out->print_cr("");
   }
-  out->print_cr(" - class loader        " INTPTR_FORMAT, p2i(_class_loader.ptr_raw()));
+  if (!_unloading) {
+    out->print_cr(" - class loader        " INTPTR_FORMAT, p2i(_class_loader.peek()));
+  } else {
+    out->print_cr(" - class loader        <unloading, oop is bad>");
+  }
   out->print_cr(" - metaspace           " INTPTR_FORMAT, p2i(_metaspace));
   out->print_cr(" - unloading           %s", _unloading ? "true" : "false");
   out->print_cr(" - class mirror holder %s", _has_class_mirror_holder ? "true" : "false");
