@@ -129,36 +129,39 @@ include native/ToolchainDefinitions.gmk
 #
 SetupNativeCompilation = $(NamedParamsMacroTemplate)
 define SetupNativeCompilationBody
+  # In this functions, helpers named Setup<Foo> are just setting variables.
+  # Functions called Create<Foo> are setting up rules to create files.
+
   $$(eval $$(call VerifyArguments,$1))
 
   # Setup variables for the rest of the function to work with
   $$(eval $$(call SetupBasicVariables,$1))
-  $$(eval $$(call SetupDebugSymbols,$1))
-
-  # Need to make sure TARGET is first on list
-  $1 := $$($1_TARGET)
 
   # Setup the toolchain to be used
   $$(eval $$(call SetupToolchain,$1))
 
-  # Figure out all source files to compile
-  $$(eval $$(call LocateSourceFiles,$1))
-
-  # ... and what the output object files will be
+  # Find all source files to compile and determine the output object file names
+  $$(eval $$(call SetupSourceFiles,$1))
   $$(eval $$(call SetupOutputFiles,$1))
 
   # Setup CFLAGS/CXXFLAGS based on warnings, optimizations, extra flags etc.
+  $$(eval $$(call SetupDebugSymbols,$1))
   $$(eval $$(call SetupCompilerFlags,$1))
 
   # Machinery needed for the build to function properly
   $$(eval $$(call SetupBuildSystemSupport,$1))
 
+  $$(eval $$(call RemoveSuperfluousOutputFiles,$1))
+
+  # Need to make sure TARGET is first on list before starting to create files
+  $1 := $$($1_TARGET)
+
   # Create a PCH, if requested
   $$(eval $$(call CreatePrecompiledHeader,$1))
 
-  # Now call SetupCompileNativeFile for each source file we are going to compile.
+  # Now call CreateCompiledNativeFile for each source file we are going to compile.
   $$(foreach file, $$($1_SRCS), \
-      $$(eval $$(call SetupCompileNativeFile,$1_$$(notdir $$(file)),\
+      $$(eval $$(call CreateCompiledNativeFile,$1_$$(notdir $$(file)),\
           FILE := $$(file), \
           BASE := $1, \
       )) \
