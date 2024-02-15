@@ -123,15 +123,29 @@ public class TestMarkdownLineKind extends JavadocTester {
                     <pre><code>code block
                     </code></pre>"""),
 
-        BULLETED_LIST_ITEM("""
+        BULLETED_LIST_ITEM_SPACE("""
                     * list ` item""",
                 """
                     <ul>
                     <li>list ` item</li>
                     </ul>"""),
 
-        ORDERED_LIST_ITEM("""
+        BULLETED_LIST_ITEM_TAB("""
+                    *\tlist ` item""",
+                """
+                    <ul>
+                    <li>list ` item</li>
+                    </ul>"""),
+
+        ORDERED_LIST_ITEM_SPACE("""
                     1. list ` item""",
+                """
+                    <ol>
+                    <li>list ` item</li>
+                    </ol>"""),
+
+        ORDERED_LIST_ITEM_TAB("""
+                    1.\tlist ` item""",
                 """
                     <ol>
                     <li>list ` item</li>

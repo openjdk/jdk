@@ -1430,14 +1430,14 @@ public class DocCommentParser {
          * Bullet list item: * + - followed by a space
          * @see <a href="https://spec.commonmark.org/0.30/#list-items">List items</a>
          */
-        BULLETED_LIST_ITEM(Pattern.compile("[-+*] .*")),
+        BULLETED_LIST_ITEM(Pattern.compile("[-+*][ \t].*")),
 
         /**
          * Ordered list item: a sequence of 1-9 arabic digits (0-9), followed by
          * either a . character or a )
          * @see <a href="https://spec.commonmark.org/0.30/#list-items">List items</a>
          */
-        ORDERED_LIST_ITEM(Pattern.compile("[0-9]{1,9}[.)].*")),
+        ORDERED_LIST_ITEM(Pattern.compile("[0-9]{1,9}[.)][ \t].*")),
 
         /**
          * Block quote: >
